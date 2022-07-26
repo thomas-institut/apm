@@ -281,8 +281,12 @@ $app->group('/api', function (RouteCollectorProxy $group){
         ->setName('search.keyword');
 
     $group->post('/search/docs',
-        ApiSearch::class . ':getDocs')
+        ApiSearch::class . ':getAllDocs')
         ->setName('search.docs');
+
+    $group->post('/search/transcribers',
+        ApiSearch::class . ':getAllTranscribers')
+        ->setName('search.transcribers');
 
     // API -> log message from front end
     $group->post('/admin/log',

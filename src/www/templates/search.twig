@@ -9,24 +9,32 @@
         // Get selectors of searchBox, docBox and contextSlider
         let searchBox = $("#searchBox")
         let docBox = $("#docBox")
-        let docList = $("#docList")
+        let transBox = $("#transcriberBox")
         let contextSlider = $("#contextSlider")
 
         // Key-Up functions for search box, docBox and contextSlider - all call the displayResults-function –
         searchBox.on("keyup", delay(function () {
-          displayResults(searchBox, contextSlider, docBox)
+          displayResults(searchBox, contextSlider, docBox, transBox)
         }, 300))
 
         docBox.on("click", () => {
-          getDocs ()
+          getValues ('docs')
         })
 
         docBox.on("input", () => {
-          displayResults(searchBox, contextSlider, docBox)
+          displayResults(searchBox, contextSlider, docBox, transBox)
+        })
+
+        transBox.on("click", () => {
+          getValues ('transcribers')
+        })
+
+        transBox.on("input", () => {
+          displayResults(searchBox, contextSlider, docBox, transBox)
         })
 
         contextSlider.on("change", () => {
-          displayResults(searchBox, contextSlider, docBox)
+          displayResults(searchBox, contextSlider, docBox, transBox)
         })
       })
 
@@ -44,12 +52,14 @@
       }
 
       // Function to get list of docs from ApiSearch
-      function getDocs () {
+      function getValues (category) {
 
-        $.post("{{ url_for('search.docs') }}").done((apiResponse) => {
+        if (category === 'docs') {
 
-          let docList = $("#docList")
-          docList.empty()
+          $.post("{{ url_for('search.docs') }}").done((apiResponse) => {
+
+            let docList = $("#docList")
+            docList.empty()
 
             if (apiResponse.status !== 'OK') {
               console.log(`Error in query for docs!`)
@@ -63,15 +73,41 @@
             }
             console.log(apiResponse)
 
-            let docs = apiResponse['docs']
+            let docs = apiResponse[category]
 
-          docs.forEach(function (item, index) {docList.append(`<option>${item}</option>`)})
+            docs.forEach(function (item) {docList.append(`<option>${item}</option>`)})
 
-        })
+          })
+        }
+        else if (category === 'transcribers') {
+
+          $.post("{{ url_for('search.transcribers') }}").done((apiResponse) => {
+
+            let transList = $("#transcriberList")
+            transList.empty()
+
+            if (apiResponse.status !== 'OK') {
+              console.log(`Error in query for transcribers!`)
+              if (apiResponse.errorData !== undefined) {
+                console.log(apiResponse.errorData)
+              }
+              errorMessage
+                .html('Error while getting transcribers list, please report to technical administrators.')
+                .removeClass('text-error')
+              return
+            }
+            console.log(apiResponse)
+
+            let transcribers = apiResponse[category]
+
+            transcribers.forEach(function (item) {transList.append(`<option>${item}</option>`)})
+
+          })
+        }
       }
 
       // Function to collect and display the search results in readable form
-      function displayResults (searchBox, contextSlider, docBox) {
+      function displayResults (searchBox, contextSlider, docBox, transBox) {
 
         // Get selectors
         let errorMessage = $("#error_message")
@@ -89,12 +125,13 @@
         let searchText = searchBox.val()
         let sliderVal = contextSlider.val()
         let docName = docBox.val();
+        let transcriber = transBox.val();
 
         // Get instance of ApmUrlGenerator for creating links to matching docs
         let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
 
           // Send all user input to ApiSearch (via routing in index.php) and print returned matches
-          $.post("{{ url_for('search.keyword') }}", { searchText: searchText, sliderVal: sliderVal, docName: docName })
+          $.post("{{ url_for('search.keyword') }}", { searchText: searchText, sliderVal: sliderVal, docName: docName, transcriber: transcriber })
             .done((apiResponse) => {
 
               if (apiResponse.status !== 'OK') {
@@ -116,6 +153,7 @@
 
               // If there are no matches, display this to the user and empty the table
               if (numMatchedColumns === 0) {
+                resultsTableB.empty()
                 numMatchesTable
                   .html(`<tr><td>Matched Documents: &nbsp</td><td>0</td><tr><td>Matched Passages:</td><td>0</td>`)
                   .addClass('text-warning')
@@ -155,6 +193,7 @@
                   keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keywords)
 
                   // Fill table with results
+                  resultsTableB.empty()
                   resultsTableB.append(
                     `<tr><td>${title}</td><td>${keywordsInContextString}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${link}</td></tr>`)
                 }
@@ -173,6 +212,7 @@
                 // Make table head
                 resultsTableH.empty()
                 resultsTableH.append(`<tr><th>Title</th><th>Matched Passage</th><th>Page</th><th>Column</th><th>Transcriber</th><th>Link</th></tr>`)
+                resultsTableB.empty()
 
                 // Write all matches into the results table
                 for (let i = 0; i < numMatchedColumns; i++) {
@@ -338,7 +378,7 @@
 {% block content %}
     <h1> Search </h1>
 <table class="dataTable" id="searchTable">
-    <tr><td><b>Keywords</b></td><td><b>Transcript</b></td><td><b>Transcriber</b></td><td><b>Size of Passage</b></td></tr>
+    <tr><td><b>Keywords</b></td><td><b>Transcript</b></td><td><b>Transcriber</b></td><td><b>Radius</b></td></tr>
 
     <tr>
         <td>
@@ -349,14 +389,14 @@
         </td>
         <td>
             <form>
-                <input list="docList" name="browser" id="docBox">
+                <input list="docList" id="docBox">
                 <datalist id="docList">
                 </datalist>
             </form>
         </td>
         <td>
             <form>
-                <input list="transcriberList" name="browser" id="transcriberBox">
+                <input list="transcriberList" id="transcriberBox">
                 <datalist id="transcriberList">
                 </datalist>
             </form>
@@ -373,7 +413,7 @@
     <br>
     <div id="error_message"></div>
 
-    <br>
+    <br><br>
     <table class="doctable" id="numMatchesTable">
     </table>
     <br>

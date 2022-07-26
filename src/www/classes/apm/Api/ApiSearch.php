@@ -38,6 +38,7 @@ class ApiSearch extends ApiController
         $searchString = strtolower($_POST['searchText']);
         $cSize = $_POST['sliderVal'];
         $docName = $_POST['docName'];
+        $transcriber = $_POST['transcriber'];
 
         // Remove additional blanks before, after or in between keywords – necessary for a clean search and position/context-handling, also in js (?)
         $searchString = $this->removeAdditionalBlanks($searchString);
@@ -73,7 +74,7 @@ class ApiSearch extends ApiController
 
         // Query index
         try {
-            $query = $this->queryIndex($client, $indexName, $docName, $firstKeyword, $queryAlg);
+            $query = $this->queryIndex($client, $indexName, $docName, $transcriber, $firstKeyword, $queryAlg);
         } catch (\Exception $e) {
             $status = "Opensearch query problem";
 
@@ -87,7 +88,6 @@ class ApiSearch extends ApiController
                     'errorData' => $e->getMessage()
                 ]);
         }
-
 
         // Get all information about the matches
         $data = $this->getDataAboutMatches($query, $docName, $keywords, $queryAlg, $cSize);
@@ -155,10 +155,10 @@ class ApiSearch extends ApiController
     }
 
     // Function to query a given OpenSearch-index
-    private function queryIndex ($client, $indexName, $docName, $keyword, $queryAlg) {
+    private function queryIndex ($client, $indexName, $docName, $transcriber, $keyword, $queryAlg) {
 
         // Search in all indexed columns
-        if ($docName === "") {
+        if ($docName === "" and $transcriber === "") {
 
             $query = $client->search([
                 'index' => $indexName,
@@ -176,6 +176,61 @@ class ApiSearch extends ApiController
         }
 
         // Search only in the indexed columns of a single document, specified by its title
+        elseif ($transcriber === "") {
+
+            $query = $client->search([
+                'index' => $indexName,
+                'body' => [
+                    'size' => 10000,
+                    'query' => [
+                        'bool' => [
+                            'filter' => [
+                                'match_phrase_prefix' => [
+                                    'title' => [
+                                        "query" => $docName
+                                    ]
+                                ]
+                            ],
+                            'must' => [
+                                $queryAlg => [
+                                    'transcript' => [
+                                        "query" => $keyword
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]);
+        }
+
+        elseif ($docName === "") {
+
+            $query = $client->search([
+                'index' => $indexName,
+                'body' => [
+                    'size' => 10000,
+                    'query' => [
+                        'bool' => [
+                            'filter' => [
+                                'match_phrase_prefix' => [
+                                    'transcriber' => [
+                                        "query" => $transcriber
+                                    ]
+                                ]
+                            ],
+                            'must' => [
+                                $queryAlg => [
+                                    'transcript' => [
+                                        "query" => $keyword
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]);
+        }
         else {
 
             $query = $client->search([
@@ -191,6 +246,14 @@ class ApiSearch extends ApiController
                                     ]
                                 ]
                             ],
+                            'should' => [
+                                'match_phrase_prefix' => [
+                                    'transcriber' => [
+                                        "query" => $transcriber,
+                                    ]
+                                ]
+                            ],
+                            "minimum_should_match" => 1,
                             'must' => [
                                 $queryAlg => [
                                     'transcript' => [
@@ -364,7 +427,7 @@ class ApiSearch extends ApiController
     }
 
     // Function to get all docs
-    public function getDocs (Request $request, Response $response): Response
+    public function getAllDocs (Request $request, Response $response): Response
     {
         $config = $this->systemManager->getConfig();
 
@@ -387,7 +450,7 @@ class ApiSearch extends ApiController
         }
 
         // Get a list of all docs
-        $docs =  $this->getListOfPossibleValuesFromIndex($client, $indexName, 'title');
+        $docs =  $this->getAllValues($client, $indexName, 'title');
 
         return $this->responseWithJson($response, [
             'docs' => $docs,
@@ -395,8 +458,40 @@ class ApiSearch extends ApiController
             'status' => $status]);
     }
 
+    // Function to get all docs
+    public function getAllTranscribers (Request $request, Response $response): Response
+    {
+        $config = $this->systemManager->getConfig();
+
+        // Status variable for communicating errors in the api response – has no effect right now?
+        $status = 'OK';
+        // Get current time, which will be returned in the api response
+        $now = TimeString::now();
+
+        $indexName = 'transcripts';
+
+        try {
+            $client = (new ClientBuilder())
+                ->setHosts($config[ApmConfigParameter::OPENSEARCH_HOSTS])
+                ->setBasicAuthentication($config[ApmConfigParameter::OPENSEARCH_USER], $config[ApmConfigParameter::OPENSEARCH_PASSWORD])
+                ->setSSLVerification(false) // For testing only. Use certificate for validation
+                ->build();
+        } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
+            $status = 'Connecting to OpenSearch server failed.';
+            return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
+        }
+
+        // Get a list of all transcribers
+        $transcribers =  $this->getAllValues($client, $indexName, 'transcriber');
+
+        return $this->responseWithJson($response, [
+            'transcribers' => $transcribers,
+            'serverTime' => $now,
+            'status' => $status]);
+    }
+
     // Function to get a full list of doc or transcriber values in the index – i. e. set the $field argument to 'title'
-    private function getListOfPossibleValuesFromIndex ($client, $indexName, $field) {
+    private function getAllValues ($client, $indexName, $field) {
 
         // Array to return
         $values = [];

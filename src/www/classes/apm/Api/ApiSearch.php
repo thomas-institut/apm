@@ -33,8 +33,8 @@ class ApiSearch extends ApiController
 
         // Get all the user input and convert keyword to lower-case for better handling in following code (esp. for the getPositionsOfKeyword-function)
         $searchString = strtolower($_POST['searchText']);
-        $cSize = $_POST['sliderVal'];
-        $docName = $_POST['docName'];
+        $cSize = $_POST['radius'];
+        $docName = $_POST['title'];
         $transcriber = $_POST['transcriber'];
 
         // Remove additional blanks before, after or in between keywords – necessary for a clean search and position/context-handling, also in js (?)

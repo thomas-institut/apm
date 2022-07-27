@@ -25,6 +25,7 @@ use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
 use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
+use PHPUnit\Util\Exception;
 use ThomasInstitut\TimeString\TimeString;
 
 //require '/home/lukas/apm/vendor/autoload.php';
@@ -33,17 +34,6 @@ use ThomasInstitut\TimeString\TimeString;
  * Description of IndexDocs
  *
  * Command line utility, which indexes all transcripts out of the sql-database by using methods of the DataManager class
- *
- * After indexing, to always get all matches for a query, this command should be run in the OpenSearch Dashboards console:
- *  PUT /transcripts/_settings
-    {
-    "index.plugins.index_state_management.rollover_skip": true,
-    "index": {
-    "max_result_window": 20000
-    }
-    }
- *
- * I suppose the plugin-line can be skipped
  *
  * @author Lukas Reichert
  */
@@ -66,12 +56,23 @@ class IndexDocs extends CommandLineUtility {
         $this->indexName = 'transcripts';
 
         // Clear existing index and create new index
-        $this->client->indices()->delete([
-            'index' => $this->indexName
-        ]);
+        try {
+            $this->client->indices()->delete([
+                'index' => $this->indexName
+            ]);
+        } catch (Exception $e) {
+            print ("No existing index called 'transcripts'. Indexing continues...");
+        }
 
         $this->client->indices()->create([
-            'index' => $this->indexName
+            'index' => $this->indexName,
+            'body' => [
+                'settings' => [
+                    'index' => [
+                        'max_result_window' => 50000
+                    ]
+                ]
+            ]
         ]);
 
         // Get a list of all docIDs in the sql-database

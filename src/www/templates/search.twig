@@ -192,6 +192,7 @@
         // Get instance of ApmUrlGenerator for creating links to matching docs
         let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
 
+        // Get column data of search result
         let data = results['data']
 
         // Count matches
@@ -230,7 +231,7 @@
           let keywords = data[0]['keywords']
           let docID = data[0]['docID']
 
-          // Add link to matched column
+          // Get link for matched column
           let url = urlGenerator.sitePageView(docID, page, column)
           let link = getLink(url)
 
@@ -250,8 +251,6 @@
         // If there is more than one matched column, display them all with exact information
         else {
 
-          var precTitle = " "
-
           // Display number of matches
           numMatchesTable
             .html(`<tr><td>Matched Documents: &nbsp</td><td>${numMatchedDocs}</td><tr><td>Matched Passages:</td><td>${numMatches}</td>`)
@@ -261,6 +260,10 @@
           resultsTableH.empty()
           resultsTableH.append(`<tr><th>Title</th><th>Matched Passage</th><th>Page</th><th>Column</th><th>Transcriber</th><th>Link</th></tr>`)
           resultsTableB.empty()
+
+          // Make variable for storing title of preceeding column in the dataset to display only ONE title,
+          // if there are plenty matched columns of the same document
+          let precTitle = " "
 
           // Write all matches into the results table
           for (let i = 0; i < numMatchedColumns; i++) {
@@ -276,7 +279,7 @@
             let keywordFreq = data[i]['keywordFreq']
             let docID = data[i]['docID']
 
-            // Add link to matched column
+            // Get link for matched column
             let url = urlGenerator.sitePageView(docID, page, column)
             let link = getLink(url)
 

@@ -28,9 +28,7 @@ class ApiSearch extends ApiController
         // Set the name of the index, that should be queried
         $indexName = 'transcripts';
 
-        // Status variable for communicating errors in the api response – has no effect right now?
         $status = 'OK';
-        // Get current time, which will be returned in the api response
         $now = TimeString::now();
 
         // Get all the user input and convert keyword to lower-case for better handling in following code (esp. for the getPositionsOfKeyword-function)
@@ -40,43 +38,29 @@ class ApiSearch extends ApiController
         $transcriber = $_POST['transcriber'];
 
         // Remove additional blanks before, after or in between keywords – necessary for a clean search and position/context-handling, also in js (?)
-        $searchString = $this->removeAdditionalBlanks($searchString);
+        $searchString = $this->removeBlanks($searchString);
 
-        $config = $this->systemManager->getConfig();
         // Instantiate OpenSearch client
         try {
-            $client = (new ClientBuilder())
-                ->setHosts($config[ApmConfigParameter::OPENSEARCH_HOSTS])
-                ->setBasicAuthentication($config[ApmConfigParameter::OPENSEARCH_USER], $config[ApmConfigParameter::OPENSEARCH_PASSWORD])
-                ->setSSLVerification(false) // For testing only. Use certificate for validation
-                ->build();
+            $client = $this->instantiateClient();
         } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
             $status = 'Connecting to OpenSearch server failed.';
             return $this->responseWithJson($response, ['searchString' => $searchString,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
 
-        // Pack all keywords in the search string into an array
+        // Explode all keywords inside the search string to an array – get the first keyword
         $keywords = explode(" ", $searchString);
-
-        // Get the first keyword
         $firstKeyword = $keywords[0];
 
-        // Choose query algorithm, depending on the length of the keyword
-        $keywordLen = strlen($firstKeyword);
-
-        if ($keywordLen < 4) {
-            $queryAlg = 'match';
-        }
-        else {
-            $queryAlg = 'match_phrase_prefix';
-        }
+        // Choose query algorithm for OpenSearch-Query, depending on the length of the keyword
+        $queryAlg=$this->chooseQueryAlg($firstKeyword);
 
         // Query index
         try {
             $query = $this->queryIndex($client, $indexName, $docName, $transcriber, $firstKeyword, $queryAlg);
         } catch (\Exception $e) {
             $status = "Opensearch query problem";
-
+            
             return $this->responseWithJson($response,
                 [
                     'searchString' => $searchString,
@@ -89,13 +73,13 @@ class ApiSearch extends ApiController
         }
 
         // Get all information about the matches
-        $data = $this->getDataAboutMatches($query, $docName, $keywords, $queryAlg, $cSize);
+        $data = $this->getInfoAboutMatches($query, $keywords, $queryAlg, $cSize);
 
-        // If there is more than one keyword, remove all matches, which do not match all the keywords
+        // If there is more than one keyword, extract all columns, which do match all the keywords
         $numKeywords = count($keywords);
         if ($numKeywords !== 1) {
             for ($i=1; $i<$numKeywords; $i++) {
-                $data = $this->extractColumnsWithMultipleKeywords($data, $keywords[$i]);
+                $data = $this->extractMultiMatchColumns($data, $keywords[$i]);
             }
         }
 
@@ -105,6 +89,7 @@ class ApiSearch extends ApiController
             $numMatches = $numMatches + $matchedColumn['keywordFreq'];
         }
 
+        // ApiResponse
         return $this->responseWithJson($response, [
             'searchString' => $searchString,
             'numMatches' => $numMatches,
@@ -113,44 +98,49 @@ class ApiSearch extends ApiController
             'status' => $status]);
     }
 
-    // Function to get results with match of multiple keywords
-    private function extractColumnsWithMultipleKeywords ($data, $keyword) {
+    private function removeBlanks ($string) {
 
-        // First, remove all keywordsInContext from $data, which do not match the keyword
-        foreach ($data as $i=>$matchedColumn) {
-            foreach ($matchedColumn['keywordsInContext'] as $j=>$keywordInContext) {
+        // Reduce multiple blanks following each other anywhere in the keyword to one single blank
+        $string = preg_replace('!\s+!', ' ', $string);
 
-                // Make a string, which storer full context in it – needed for checking for keyword
-                $contextString = "";
-                foreach ($keywordInContext as $string) {
-                    $contextString = $contextString . " " . $string;
-                }
-
-                // If the keyword is not in the contextString, remove keywordsInContext, keywordPosInContext from $data
-                // Adjust the keywordFreq in $data
-                if (strpos($contextString, $keyword) === false && strpos($contextString, ucfirst($keyword)) === false) {
-                    unset($data[$i]['keywordsInContext'][$j]);
-                    unset($data[$i]['keywordPosInContext'][$j]);
-                    $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] - 1;
-                    }
-                }
-            }
-
-        // Second, unset all columns, which do not any more have keywordsInContext
-        foreach ($data as $i=>$matchedColumn) {
-            if ($matchedColumn['keywordsInContext'] === []) {
-                unset ($data[$i]);
-            }
-
-            // Reset the keys of the remaining arrays
-            else {
-                $data[$i]['keywordsInContext'] = array_values($matchedColumn['keywordsInContext']);
-                $data[$i]['keywordPosInContext'] = array_values($matchedColumn['keywordPosInContext']);
-            }
+        // Remove blank at the end of the keyword
+        if (substr($string, -1) == " ") {
+            $string = substr($string, 0, -1);
         }
 
-        // Reset keys of $data and return the array
-        return array_values($data);
+        // Remove blank at the beginning of the keyword
+        if (substr($string, 0, 1) == " ") {
+            $string = substr($string, 1);
+        }
+
+        return $string;
+    }
+
+    // Function, which instantiates OpenSearch client
+    private function instantiateClient ()
+    {
+        // Load authetication data from config-file
+        $config = $this->systemManager->getConfig();
+
+        $client = (new ClientBuilder())
+            ->setHosts($config[ApmConfigParameter::OPENSEARCH_HOSTS])
+            ->setBasicAuthentication($config[ApmConfigParameter::OPENSEARCH_USER], $config[ApmConfigParameter::OPENSEARCH_PASSWORD])
+            ->setSSLVerification(false) // For testing only. Use certificate for validation
+            ->build();
+
+        return $client;
+    }
+
+    // Function to choose the query algorithm from OpenSearch
+    private function chooseQueryAlg ($keyword): string
+    {
+        $keywordLen = strlen($keyword);
+        if ($keywordLen < 4) {
+            return 'match';
+        }
+        else {
+            return 'match_phrase_prefix';
+        }
     }
 
     // Function to query a given OpenSearch-index
@@ -174,7 +164,7 @@ class ApiSearch extends ApiController
             ]);
         }
 
-        // Search only in the indexed columns of a single document, specified by its title
+        // Search only in the specific columns, specified by transcriber or title
         elseif ($transcriber === "") {
 
             $query = $client->search([
@@ -230,6 +220,7 @@ class ApiSearch extends ApiController
                 ]
             ]);
         }
+        // Transcriber AND title are given
         else {
 
             $query = $client->search([
@@ -270,7 +261,7 @@ class ApiSearch extends ApiController
     }
 
     // Get all information about matches, specified for a single document or all documents
-    private function getDataAboutMatches ($query, $docName, $keywords, $queryAlg, $cSize) {
+    private function getInfoAboutMatches ($query, $keywords, $queryAlg, $cSize) {
 
         $data = [];
         $numMatchedColumns = $query['hits']['total']['value'];
@@ -312,7 +303,6 @@ class ApiSearch extends ApiController
                     sort($keywordPositions);
                 }
 
-
                 // Get total keyword frequency in matched column
                 $keywordFreq = count($keywordPositions);
 
@@ -331,9 +321,9 @@ class ApiSearch extends ApiController
                 // each array contains the information about a single column.
 
                 // The check for keywordFreq seems redundant, but is necessary, because the getPositionsOfKeyword-functions is more strict than the query
-                // in OpenSearch. It could be, that keywordFreq is 0 for a column, which does contain a match according to the OpenSearch-algorithm.
+                // in OpenSearch. It could be, that keywordFreq is indeed 0 for a column, which does contain a match according to the OpenSearch-algorithm.
                 // This is because the latter matches words wih hyphens, i. e. "res-", if the searched keyword is actually "res" –
-                // in the getPositionsOfKeyword-function this is corrected and not treated as a match.
+                // in the getPositionsOfKeyword-function this is handled differently and not treated as a match.
 
                 // Collect matches in all columns
                 if ($keywordFreq !== 0) {
@@ -361,6 +351,45 @@ class ApiSearch extends ApiController
         return $data;
     }
 
+    // Function to get results with match of multiple keywords
+    private function extractMultiMatchColumns ($data, $keyword) {
+
+        // First, remove all keywordsInContext from $data, which do not match the keyword
+        foreach ($data as $i=>$matchedColumn) {
+            foreach ($matchedColumn['keywordsInContext'] as $j=>$keywordInContext) {
+
+                // Make a string, which storer full context in it – needed for checking for keyword
+                $contextString = "";
+                foreach ($keywordInContext as $string) {
+                    $contextString = $contextString . " " . $string;
+                }
+
+                // If the keyword is not in the contextString, remove keywordsInContext, keywordPosInContext from $data
+                // Adjust the keywordFreq in $data
+                if (strpos($contextString, $keyword) === false && strpos($contextString, ucfirst($keyword)) === false) {
+                    unset($data[$i]['keywordsInContext'][$j]);
+                    unset($data[$i]['keywordPosInContext'][$j]);
+                    $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] - 1;
+                }
+            }
+        }
+
+        // Second, unset all columns, which do not any more have keywordsInContext
+        foreach ($data as $i=>$matchedColumn) {
+            if ($matchedColumn['keywordsInContext'] === []) {
+                unset ($data[$i]);
+            }
+
+            // Reset the keys of the remaining arrays
+            else {
+                $data[$i]['keywordsInContext'] = array_values($matchedColumn['keywordsInContext']);
+                $data[$i]['keywordPosInContext'] = array_values($matchedColumn['keywordPosInContext']);
+            }
+        }
+
+        // Reset keys of $data and return the array
+        return array_values($data);
+    }
 
     // Function to get all the positions of a given keyword in a transcripted column (full match or phrase match, measured in words)
     private function getPositionsOfKeyword ($words, $keyword, $queryAlg): array {
@@ -425,72 +454,8 @@ class ApiSearch extends ApiController
         return [$keywordInContext, $keywordPosInContext];
     }
 
-    // Function to get all docs
-    public function getAllDocs (Request $request, Response $response): Response
-    {
-        $config = $this->systemManager->getConfig();
-
-        // Status variable for communicating errors in the api response – has no effect right now?
-        $status = 'OK';
-        // Get current time, which will be returned in the api response
-        $now = TimeString::now();
-
-        $indexName = 'transcripts';
-
-        try {
-            $client = (new ClientBuilder())
-                ->setHosts($config[ApmConfigParameter::OPENSEARCH_HOSTS])
-                ->setBasicAuthentication($config[ApmConfigParameter::OPENSEARCH_USER], $config[ApmConfigParameter::OPENSEARCH_PASSWORD])
-                ->setSSLVerification(false) // For testing only. Use certificate for validation
-                ->build();
-        } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
-            $status = 'Connecting to OpenSearch server failed.';
-            return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
-        }
-
-        // Get a list of all docs
-        $docs =  $this->getAllValues($client, $indexName, 'title');
-
-        return $this->responseWithJson($response, [
-            'docs' => $docs,
-            'serverTime' => $now,
-            'status' => $status]);
-    }
-
-    // Function to get all docs
-    public function getAllTranscribers (Request $request, Response $response): Response
-    {
-        $config = $this->systemManager->getConfig();
-
-        // Status variable for communicating errors in the api response – has no effect right now?
-        $status = 'OK';
-        // Get current time, which will be returned in the api response
-        $now = TimeString::now();
-
-        $indexName = 'transcripts';
-
-        try {
-            $client = (new ClientBuilder())
-                ->setHosts($config[ApmConfigParameter::OPENSEARCH_HOSTS])
-                ->setBasicAuthentication($config[ApmConfigParameter::OPENSEARCH_USER], $config[ApmConfigParameter::OPENSEARCH_PASSWORD])
-                ->setSSLVerification(false) // For testing only. Use certificate for validation
-                ->build();
-        } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
-            $status = 'Connecting to OpenSearch server failed.';
-            return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
-        }
-
-        // Get a list of all transcribers
-        $transcribers =  $this->getAllValues($client, $indexName, 'transcriber');
-
-        return $this->responseWithJson($response, [
-            'transcribers' => $transcribers,
-            'serverTime' => $now,
-            'status' => $status]);
-    }
-
-    // Function to get a full list of doc or transcriber values in the index – i. e. set the $field argument to 'title'
-    private function getAllValues ($client, $indexName, $field) {
+    // Function to get a full list of i. e. titles or transcribers values in the index – i. e. set the $category argument to 'title'
+    private function getListFromIndex ($client, $indexName, $category) {
 
         // Array to return
         $values = [];
@@ -508,10 +473,9 @@ class ApiSearch extends ApiController
             ]
         ]);
 
-        // Append every value of the queried field to the $values-array, if not already done
+        // Append every value of the queried field to the $values-array, if not already done before (no duplicates)
         foreach ($query['hits']['hits'] as $column) {
-
-            $value = $column['_source'][$field];
+            $value = $column['_source'][$category];
             if (in_array($value, $values) === false) {
                 $values[] = $value;
             }
@@ -520,21 +484,53 @@ class ApiSearch extends ApiController
         return $values;
     }
 
-    private function removeAdditionalBlanks ($string) {
+    // ApiCall – Function to get all doc titles
+    public function getTitles (Request $request, Response $response): Response
+    {
+        $status = 'OK';
+        $now = TimeString::now();
+        $indexName = 'transcripts';
 
-        // Reduce multiple blanks following each other anywhere in the keyword to one single blank
-        $string = preg_replace('!\s+!', ' ', $string);
-
-        // Remove blank at the end of the keyword
-        if (substr($string, -1) == " ") {
-            $string = substr($string, 0, -1);
+        // Instantiae OpenSearch client
+        try {
+            $client = $this->instantiateClient();
+        } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
+            $status = 'Connecting to OpenSearch server failed.';
+            return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
         }
 
-        // Remove blank at the beginning of the keyword
-        if (substr($string, 0, 1) == " ") {
-            $string = substr($string, 1);
+        // Get a list of all titles
+        $titles =  $this->getListFromIndex($client, $indexName, 'title');
+
+        // Api Response
+        return $this->responseWithJson($response, [
+            'titles' => $titles,
+            'serverTime' => $now,
+            'status' => $status]);
+    }
+
+    // API Call – Function to get all transcribers
+    public function getTranscribers (Request $request, Response $response): Response
+    {
+        $status = 'OK';
+        $now = TimeString::now();
+        $indexName = 'transcripts';
+
+        // Instantiate OpenSearch client
+        try {
+            $client = $this->instantiateClient();
+        } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
+            $status = 'Connecting to OpenSearch server failed.';
+            return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
         }
 
-        return $string;
+        // Get a list of all transcribers
+        $transcribers =  $this->getListFromIndex($client, $indexName, 'transcriber');
+
+        // Api Response
+        return $this->responseWithJson($response, [
+            'transcribers' => $transcribers,
+            'serverTime' => $now,
+            'status' => $status]);
     }
 }

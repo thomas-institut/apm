@@ -18,7 +18,7 @@
         }, 300))
 
         docBox.on("click", () => {
-          getValues ('docs')
+          getValues ('titles')
         })
 
         docBox.on("input", delay(function () {
@@ -61,18 +61,18 @@
         };
       }
 
-      // Function to get list of docs from ApiSearch
+      // Function to get list of titles from ApiSearch
       function getValues (category) {
 
-        if (category === 'docs') {
+        if (category === 'titles') {
 
-          $.post("{{ url_for('search.docs') }}").done((apiResponse) => {
+          $.post("{{ url_for('search.titles') }}").done((apiResponse) => {
 
-            let docList = $("#docList")
-            docList.empty()
+            let titleList = $("#docList")
+            titleList.empty()
 
             if (apiResponse.status !== 'OK') {
-              console.log(`Error in query for docs!`)
+              console.log(`Error in query for titles!`)
               if (apiResponse.errorData !== undefined) {
                 console.log(apiResponse.errorData)
               }
@@ -83,9 +83,9 @@
             }
             console.log(apiResponse)
 
-            let docs = apiResponse[category]
+            let titles = apiResponse[category]
 
-            docs.forEach(function (item) {docList.append(`<option>${item}</option>`)})
+            titles.forEach(function (item) {titleList.append(`<option>${item}</option>`)})
 
           })
         }

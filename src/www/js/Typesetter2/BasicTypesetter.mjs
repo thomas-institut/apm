@@ -33,6 +33,8 @@ import * as GlueType from './GlueType.mjs'
 import { toFixedPrecision } from '../toolbox/Util.mjs'
 import { makeCopyOfArray } from '../toolbox/ArrayUtil.mjs'
 import { ObjectFactory } from './ObjectFactory.mjs'
+import { FirstFitLineBreaker } from './FirstFitLineBreaker.mjs'
+import { LineBreaker } from './LineBreaker.mjs'
 
 const signature = 'BasicTypesetter 0.1'
 
@@ -66,376 +68,19 @@ export class BasicTypesetter extends Typesetter2 {
     this.debug = this.options.debug
   }
 
-  /**
-   *
-   * @param {TypesetterItem[]}itemArray
-   * @param {number}desiredLineWidth
-   * @private
-   */
-  _calculateAdjustmentRatio(itemArray, desiredLineWidth) {
-    // this.debug && console.log(`Calculation adj ratio, desired LW = ${desiredLineWidth}`)
-    // this.debug && console.log( `on ${itemArray.length} items`)
-    let totalWidth = itemArray.map( (item) => {
-      return item.getWidth()
-    }).reduce( (total, x) => { return total+x}, 0)
-    // this.debug && console.log(`Total width: ${totalWidth}`)
-    if (desiredLineWidth === totalWidth) {
-      return 0
-    }
-    if (totalWidth < desiredLineWidth) {
-      // short line
-      let totalGlueStretch = itemArray.map( (item) => {
-        if (item instanceof Glue) {
-          return item.getStretch()
-        }
-        return 0
-      }).reduce( (total, x) => { return total+x}, 0)
-      // this.debug && console.log(`total glue stretch = ${totalGlueStretch}`)
-      if (totalGlueStretch <=0) {
-        return null
-      }
-      return (desiredLineWidth - totalWidth)/totalGlueStretch
-    }
-    // long line
-    let totalGlueShrink = itemArray.map ( (item) => {
-      if (item instanceof Glue) {
-        return item.getShrink()
-      }
-      return 0
-    }).reduce( (total, x) => { return total+x}, 0)
-    // this.debug && console.log(`total glue shrink = ${totalGlueShrink}`)
-    if (totalGlueShrink <=0) {
-      return null
-    }
-    return (desiredLineWidth - totalWidth)/totalGlueShrink
-  }
-
-  __measureTextBoxes(itemArray) {
-    return new Promise ( async (resolve) => {
-      for (let i = 0; i < itemArray.length; i++) {
-        if (itemArray[i] instanceof TextBox) {
-          if (itemArray[i].getWidth() === -1) {
-            //this.debug && console.log(`Getting text box width`)
-            let measuredWidth = await this.options.textBoxMeasurer.getBoxWidth(itemArray[i])
-            itemArray[i].setWidth(measuredWidth)
-          }
-          if (itemArray[i].getHeight() === -1) {
-            let measuredHeight = await this.options.textBoxMeasurer.getBoxHeight(itemArray[i])
-            itemArray[i].setHeight(measuredHeight)
-          }
-        }
-        if (itemArray[i] instanceof  Penalty) {
-          if (itemArray[i].hasItemToInsert() && itemArray[i].getItemToInsert() instanceof TextBox) {
-            let item = itemArray[i].getItemToInsert()
-            if (item.getWidth() === -1){
-              let measuredWidth = await this.options.textBoxMeasurer.getBoxWidth(item)
-              item.setWidth(measuredWidth)
-            }
-            if (item.getHeight() === -1){
-              let measureHeight = await this.options.textBoxMeasurer.getBoxHeight(item)
-              item.setHeight(measureHeight)
-            }
-          }
-        }
-      }
-      resolve()
-    })
-  }
-
-  /**
-   *
-   * @param {TypesetterItem[]}itemArray
-   * @param {Penalty|null} penalty
-   * @param {number}flagsInARow
-   * @return {Promise}
-   * @private
-   */
-  _calculateBadness(itemArray, penalty= null, flagsInARow = 0) {
-    return new Promise( async (resolve) =>{
-      let lineItemArray =  makeCopyOfArray(itemArray)
-      let penaltyValue = 0
-      if (penalty !== null) {
-        penaltyValue = penalty.getPenalty()
-        if (penalty.hasItemToInsert()) {
-          lineItemArray.push(penalty.getItemToInsert())
-        }
-        if (penalty.isFlagged()) {
-          penaltyValue += (flagsInARow +1)*FLAG_PENALTY
-        }
-      }
-      lineItemArray = this.__compactItemArray(lineItemArray)
-      await this.__measureTextBoxes(lineItemArray)
-      if (this.debug) {
-        let tmpList = (new ItemList()).setList(lineItemArray)
-        // console.log(`Calculating badness of line '${tmpList.getText()}'`)
-      }
-      let adjRatio = this._calculateAdjustmentRatio(lineItemArray, this.lineWidth)
-      if (adjRatio === null || adjRatio < -1) {
-        resolve(INFINITE_BADNESS)
-      }
-      let badness = 100*Math.pow( Math.abs(adjRatio), 3)
-      resolve(badness > INFINITE_BADNESS ? INFINITE_BADNESS : badness + penaltyValue)
-    })
-
-  }
-
-  /**
-   * Determines line break points in an item array
-   * using the best-fit algorithm
-   * @param {TypesetterItem[]}itemArray
-   * @return {Promise}
-   * @private
-   */
-  _getBreakPoints(itemArray) {
-    return new Promise( async (resolve) => {
-      this.debug && console.log(`Getting break points of a paragraph with ${itemArray.length} items`)
-      let breaks = []
-      let currentBadness = INFINITE_BADNESS
-      let currentLine = []
-      let currentBestBreakPoint = -1
-      let flagsInARow = 0
-      for(let i =0; i < itemArray.length; i++) {
-        let item = itemArray[i]
-        if (item instanceof Box) {
-          // this.debug && console.log(`Item ${i} is a Box, pushing it`)
-          currentLine.push(item)
-          continue
-        }
-        if (item instanceof Penalty) {
-          this.debug && console.log(`Item ${i} is a Penalty`)
-          let penaltyValue = item.getPenalty()
-          if (penaltyValue === MINUS_INFINITE_PENALTY) {
-            this.debug && console.log(`Infinite penalty, so add a break at ${i}`)
-            breaks.push(i)
-            flagsInARow = 0
-            currentLine=[]
-            continue
-          }
-          if (currentLine.length !== 0 && penaltyValue < INFINITE_PENALTY) {
-            // tentative breaking point
-            let breakBadness = await this._calculateBadness(currentLine, item, flagsInARow)
-            this.debug && console.log(`Badness breaking at ${i} is ${breakBadness}`)
-            if (breakBadness > currentBadness) {
-              // we found a minimum, eject line
-              this.debug && console.log(`...which is more than current badness (${currentBadness}), so insert a break at ${currentBestBreakPoint} `)
-              breaks.push(currentBestBreakPoint)
-              let itemAtBreak = itemArray[currentBestBreakPoint]
-              if (itemAtBreak instanceof Penalty) {
-                if (itemAtBreak.isFlagged()) {
-                  flagsInARow++
-                  this.debug && console.log(`Break point is a flagged penalty, flags in a row = ${flagsInARow}`)
-                }
-              } else {
-                this.debug && console.log(`Break point is not a flagged penalty, flag in a row is now 0`)
-                flagsInARow = 0
-              }
-              currentLine=[]
-              // this.debug && console.log(`Initializing next line`)
-              let j = currentBestBreakPoint
-              while (j <= i && !(itemArray[j] instanceof Box) ) {
-                // this.debug && console.log(`... skipping item ${j}, not a box`)
-                j++
-              }
-              while (j <=i) {
-                // this.debug && console.log(`...adding item ${j}`)
-                currentLine.push(itemArray[j])
-                j++
-              }
-
-              currentBadness = INFINITE_BADNESS
-              currentBestBreakPoint = -1
-            } else {
-              currentBestBreakPoint = i
-              currentBadness = breakBadness
-            }
-          }
-          continue
-        }
-        // this.debug && console.log(`Item ${i} is Glue`)
-        // item is glue
-        if (itemArray[i-1] instanceof Box) {
-          // this.debug && console.log(`Previous item was a Box, so this is a tentative break point`)
-          // tentative break point
-          let breakBadness = await this._calculateBadness(currentLine)
-          // this.debug && console.log(`Badness breaking at ${i} is ${breakBadness}`)
-
-          if (breakBadness > currentBadness) {
-            // we found a minimum, eject line
-            this.debug && console.log(`...which is more than current badness (${currentBadness}), so insert a break at ${currentBestBreakPoint} `)
-            breaks.push(currentBestBreakPoint)
-            let itemAtBreak = itemArray[currentBestBreakPoint]
-            if (itemAtBreak instanceof Penalty) {
-              if (itemAtBreak.isFlagged()) {
-                flagsInARow++
-                this.debug && console.log(`Break point is a flagged penalty, flags in a row = ${flagsInARow}`)
-              }
-            } else {
-              this.debug && console.log(`Break point is not a flagged penalty, flag in a row is now 0`)
-              flagsInARow = 0
-            }
-            currentLine=[]
-            // this.debug && console.log(`Initializing next line`)
-            let j = currentBestBreakPoint
-            while (j <= i && !(itemArray[j] instanceof Box) ) {
-              // this.debug && console.log(`... skipping item ${j}, not a box`)
-              j++
-            }
-            while (j <=i) {
-              // this.debug && console.log(`...adding item ${j}`)
-              currentLine.push(itemArray[j])
-              j++
-            }
-
-            currentBadness = INFINITE_BADNESS
-            currentBestBreakPoint = -1
-          } else {
-            // this.debug && console.log(`...which is less or equal than current badness (${currentBadness}), so ${i} is the current best break point `)
-            currentBadness = breakBadness
-            currentBestBreakPoint = i
-            currentLine.push(item)
-          }
-        } else {
-          if (currentLine.length !== 0) {
-            // this.debug && console.log(`Pushing it to currentLine`)
-            currentLine.push(item)
-          }
-        }
-      }
-      resolve(breaks)
-    })
-  }
-
-  /**
-   * Tries to merge an item with another item
-   * E.g. two text boxes with the same font descriptions
-   * Returns an array of items with 1 item if there was
-   * a merge or with 2 item if no merge was possible
-   * @param {TypesetterItem}item
-   * @param {TypesetterItem}nextItem
-   * @return {TypesetterItem[]}
-   * @private
-   */
-  __mergeItemWithNext(item, nextItem) {
-    if (item.constructor.name !== nextItem.constructor.name) {
-      // no merge possible between two items of different class
-      //this.debug && console.log(`Cannot merge ${item.constructor.name} with ${nextItem.constructor.name}`)
-      return [ item, nextItem]
-    }
-    // merging only text boxes for now
-    if (item instanceof TextBox && nextItem instanceof TextBox) {
-      // this.debug && console.log(`Trying to merge two text boxes: '${item.getText()}' + '${nextItem.getText()}'`)
-      if (item.getFontFamily() !== nextItem.getFontFamily()) {
-        // this.debug && console.log(`... not the same font family: '${item.getFontFamily()}' !== '${nextItem.getFontFamily()}'`)
-        return [item, nextItem]
-      }
-      if (item.getFontSize() !== nextItem.getFontSize()) {
-        // this.debug && console.log(`... not the same font size`)
-        return [item, nextItem]
-      }
-      if (item.getFontWeight() !== nextItem.getFontWeight()) {
-        // this.debug && console.log(`... not the same font weight`)
-        return [item, nextItem]
-      }
-      if (item.getFontStyle() !== nextItem.getFontStyle()) {
-        // this.debug && console.log(`... not the same font style`)
-        return [item, nextItem]
-      }
-      // this.debug && console.log(`...font specs are equal, merging`)
-      // creating a new object so that the original object is not changed
-      let newItem = ObjectFactory.fromObject(item.getExportObject())
-      return [ newItem.setText(item.getText() + nextItem.getText())]
-    }
-  }
-
-  /**
-   *
-   * @param {TypesetterItem[]}itemArray
-   * @private
-   */
-  __compactItemArray(itemArray) {
-    //this.debug && console.log(`Compacting line`)
-    return itemArray.reduce( (currentArray, item) => {
-      if (currentArray.length === 0) {
-        return [item]
-      }
-      let lastItem = currentArray.pop()
-      let mergedArray = this.__mergeItemWithNext(lastItem, item)
-      for (let i = 0; i < mergedArray.length; i++) {
-        currentArray.push(mergedArray[i])
-      }
-      return currentArray
-    }, [])
-  }
-
-  /**
-   * Gets an array of ItemList corresponding to each line from
-   * an item array and an array of break points.
-   * @param {TypesetterItem[]}itemArray
-   * @param {number[]}breakpoints
-   * @return {ItemList[]}
-   * @private
-   */
-  _getLinesFromBreakpoints(itemArray, breakpoints) {
-    let lines = []
-    let lineStartIndex = 0
-    breakpoints.forEach( (breakIndex) => {
-      let newLine = new ItemList(TypesetterItemDirection.HORIZONTAL)
-      while(!(itemArray[lineStartIndex] instanceof Box) && lineStartIndex < breakIndex) {
-        lineStartIndex++
-      }
-      for (let i = lineStartIndex; i < breakIndex; i++) {
-          newLine.pushItem(itemArray[i])
-      }
-      let breakItem = itemArray[breakIndex]
-      if (breakItem instanceof Penalty) {
-        if (breakItem.hasItemToInsert()) {
-          // add the item
-          newLine.pushItem(breakItem.getItemToInsert())
-        }
-      }
-      // filter out penalties
-      newLine.setList( newLine.getList().filter ( (item) => {
-        return !(item instanceof Penalty)
-      }))
-      newLine.setList(this.__compactItemArray(newLine.getList()))
-      lines.push(newLine)
-      lineStartIndex = breakIndex
-    })
-    return lines
-  }
-
-
   typesetHorizontalList (list) {
     return new Promise( async (resolve) => {
       let inputList = await super.typesetHorizontalList(list)
       this.debug && console.log(`Typesetting horizontal list, desired lineWidth = ${this.lineWidth}`)
 
       // First fit algorithm
-      // first, measure current text boxes
-      // note that since there some text boxes might get merged later on, this
-      // does not guarantee that ALL text boxes used during the process will have
-      // a valid measurement
       let itemArray = inputList.getList()
-      //await this.__measureTextBoxes(itemArray)
 
+      this.debug && console.log(`Sending item array to FirstFitLineBreaker`)
+      let lines = await FirstFitLineBreaker.breakIntoLines(itemArray, this.lineWidth, this.options.textBoxMeasurer)
 
-      let lineBreaks = await this._getBreakPoints(itemArray)
-      // add a break at the end if there isn't one
-      if (lineBreaks[lineBreaks.length-1] !== itemArray.length -1) {
-        lineBreaks.push(itemArray.length -1)
-      }
-      this.debug && console.log(`Break points:`)
-      this.debug && console.log(lineBreaks)
-      let lines = this._getLinesFromBreakpoints(itemArray, lineBreaks)
-      this.debug && console.log(`Lines:`)
-      this.debug && console.log(lines.map( (line) => {
-        return { text: line.getText(), data: line.metadata}
-      }))
-      // final line measurement
-      // should be very quick since all possible merged combinations have been measured before
-      for (let i = 0; i < lines.length; i++) {
-        await this.__measureTextBoxes(lines[i].getList())
-      }
+      this.debug && console.log(`Got ${lines.length} lines back`)
+      this.debug && console.log(lines)
 
       // post-process lines
       let lineNumberInParagraph = 1
@@ -461,7 +106,7 @@ export class BasicTypesetter extends Typesetter2 {
         }))
 
         // adjust glue
-        let adjRatio = this._calculateAdjustmentRatio(line.getList(), this.lineWidth)
+        let adjRatio = LineBreaker.calculateAdjustmentRatio(line.getList(), this.lineWidth)
         line.addMetadata(MetadataKey.ADJUSTMENT_RATIO, adjRatio)
         let unadjustedLineWidth = line.getWidth()
         line.addMetadata(MetadataKey.UNADJUSTED_LINE_WIDTH, toFixedPrecision(unadjustedLineWidth, 3))
@@ -560,17 +205,33 @@ export class BasicTypesetter extends Typesetter2 {
     })
   }
 
+  /**
+   * Typesets a vertical list containing non-typeset text.
+   * Returns a promise that will be resolved with a typeset TypesetterDocument
+   *
+   * Each vertical item must be either a horizontal list
+   * containing a paragraph or vertical glue.
+   *
+   * A paragraph is a horizontal list containing text and
+   * inter-word glue. The typesetter will convert it to
+   * a vertical list with the paragraph properly split into lines
+   *
+   * @param mainTextList
+   * @return {Promise<unknown>}
+   */
   typeset (mainTextList) {
     if (mainTextList.getDirection() !== TypesetterItemDirection.VERTICAL) {
       throw new Error(`Cannot typeset a non-vertical list`)
     }
     return new Promise ( async (resolve) => {
+      // Generate a vertical list to be typeset
       let verticalListToTypeset = new ItemList(TypesetterItemDirection.VERTICAL)
-
       let paragraphNumber = 0
+      // Go over each vertical item in the input list
       for (const verticalItem of mainTextList.getList()) {
         if (verticalItem instanceof Glue) {
           if (verticalItem.getDirection() === TypesetterItemDirection.VERTICAL) {
+            // VERTICAL GLUE, just add it to the list to typeset
             verticalListToTypeset.pushItem(verticalItem)
           } else {
             console.warn(`${signature}: ignoring horizontal glue while building main text vertical list`)
@@ -579,24 +240,23 @@ export class BasicTypesetter extends Typesetter2 {
         }
         if (verticalItem instanceof ItemList) {
           if (verticalItem.getDirection() === TypesetterItemDirection.HORIZONTAL) {
+            // HORIZONTAL LIST, i.e., a paragraph
             this.debug && console.log(`Processing horizontal list, i.e., a paragraph`)
             paragraphNumber++
             let typesetParagraph = await this.typesetHorizontalList(verticalItem)
             typesetParagraph.getList().forEach((typesetItem) => {
               if (typesetItem instanceof ItemList) {
+                // add paragraph number info to each line in the paragraph
                 typesetItem.addMetadata(MetadataKey.PARAGRAPH_NUMBER, paragraphNumber)
               }
               verticalListToTypeset.pushItem(typesetItem)
             })
           }
         }
+        // any other item type is ignored
       }
-      // this.debug && console.log(`Finished assembling vertical list to typeset`)
-      // this.debug && console.log(deepCopy(verticalListToTypeset))
       // set any interLine glue that still unset and add absolute line numbers
       verticalListToTypeset = this.__fixInterLineGlue(verticalListToTypeset)
-      // this.debug && console.log(`Finished fixing inter line glue`)
-      // this.debug && console.log(deepCopy(verticalListToTypeset))
       verticalListToTypeset = this.__addAbsoluteLineNumbers(verticalListToTypeset)
       verticalListToTypeset.addMetadata(MetadataKey.LIST_TYPE, ListType.MAIN_TEXT)
 

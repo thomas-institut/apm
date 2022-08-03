@@ -8,15 +8,11 @@ import { TextBoxFactory } from '../../../js/Typesetter2/TextBoxFactory.mjs'
 import { BrowserUtilities } from '../../../js/toolbox/BrowserUtilities.mjs'
 import { CanvasTextBoxMeasurer } from '../../../js/Typesetter2/CanvasTextBoxMeasurer.mjs'
 import { isRtl, removeExtraWhiteSpace, trimWhiteSpace } from '../../../js/toolbox/Util.mjs'
-
 import { Typesetter2 } from '../../../js/Typesetter2/Typesetter2.mjs'
 import { BasicTypesetter } from '../../../js/Typesetter2/BasicTypesetter.mjs'
 import { ItemList } from '../../../js/Typesetter2/ItemList.mjs'
 import * as TypesetterItemDirection from '../../../js/Typesetter2/TypesetterItemDirection.mjs'
 import { CanvasRenderer } from '../../../js/Typesetter2/CanvasRenderer.mjs'
-// import * as PDFLib from 'pdf-lib'
-// import fontkit from '@pdf-lib/fontkit'
-// import { PdfRenderer } from '../../../js/Typesetter2/PdfRenderer.mjs'
 import { TypesetterDocument } from '../../../js/Typesetter2/TypesetterDocument.mjs'
 import { TextBox } from '../../../js/Typesetter2/TextBox.mjs'
 import { Box } from '../../../js/Typesetter2/Box.mjs'
@@ -53,12 +49,6 @@ const zoomSteps = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3
 const defaultZoomStep = 3
 
 const defaultCanvasPageMargin = 20
-
-// const freeSerifFontUrl = 'https://averroes.uni-koeln.de/fonts/freefont/FreeSerif.ttf'
-// let freeSerifFontBytes = null
-//
-// const linuxLibertineFontUrl = 'https://averroes.uni-koeln.de/fonts/LinuxLibertine/LinLibertine_Rah.ttf'
-// let linuxLibertineFontBytes = null
 
 $( () => {
   new Playground()
@@ -592,53 +582,10 @@ class Playground {
    * @param {TypesetterDocument}doc
    */
   async _render(doc) {
-
-    // let pages = doc.getPages()
     console.log(`Rendering document, ${doc.getPageCount()} pages`)
-
     let jsonData = JSON.stringify(doc.getExportObject())
-
     $('#docJson').html(jsonData)
-
     this.__renderCanvas(doc)
-
-    // let startTime = window.performance.now()
-    // let pdfUrl = await  this.__getPdfDownloadURLFromServer(jsonData)
-    // let endTime = window.performance.now()
-    // console.log(`PDF rendered in server in ${endTime-startTime}ms`)
-    // console.log(pdfUrl)
-
-
-    // PDF render
-    // const pdfDoc = await PDFLib.PDFDocument.create();
-    // pdfDoc.registerFontkit(fontkit)
-    // if (freeSerifFontBytes === null) {
-    //   console.log(`Fetching FreeSerif font`)
-    //   freeSerifFontBytes = await fetch(freeSerifFontUrl).then( res => res.arrayBuffer())
-    // }
-    // if (linuxLibertineFontBytes === null) {
-    //   console.log(`Fetching LinuxLibertine font`)
-    //   linuxLibertineFontBytes = await fetch(linuxLibertineFontUrl).then( res => res.arrayBuffer())
-    // }
-    //
-    // const freeSerifFont = await pdfDoc.embedFont(freeSerifFontBytes, {
-    //   subset: true
-    // })
-    // const linuxLibertineFont = await pdfDoc.embedFont(linuxLibertineFontBytes, {
-    //   subset: true
-    // })
-    //
-    // let fonts = {  'FreeSerif': freeSerifFont, 'Linux Libertine': linuxLibertineFont}
-    //
-    // let pdfRenderer = new PdfRenderer( {
-    //   pdfDocument: pdfDoc,
-    //   fonts: fonts,
-    //   defaultPageHeight: this.pageHeight
-    // })
-    //
-    // pdfRenderer.renderDocument(this.currentTypesetDocument)
-    // document.getElementById('pdfFrame').src = await pdfDoc.saveAsBase64({ dataUri: true });
-
   }
 
   __getPdfDownloadURLFromServer(rawTypesetDataJson) {

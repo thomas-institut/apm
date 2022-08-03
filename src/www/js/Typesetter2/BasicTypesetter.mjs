@@ -21,31 +21,25 @@ import { ItemList } from './ItemList.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 import { Glue } from './Glue.mjs'
 import { TextBox } from './TextBox.mjs'
-import { INFINITE_PENALTY, MINUS_INFINITE_PENALTY, Penalty } from './Penalty.mjs'
+import { Penalty } from './Penalty.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { TypesetterPage } from './TypesetterPage.mjs'
-import { TextBoxMeasurer } from './TextBoxMeasurer.mjs'
+import { TextBoxMeasurer } from './TextBoxMeasurer/TextBoxMeasurer.mjs'
 import { TypesetterDocument } from './TypesetterDocument.mjs'
-import { Box } from './Box.mjs'
 import * as MetadataKey from './MetadataKey.mjs'
 import * as ListType from './ListType.mjs'
 import * as GlueType from './GlueType.mjs'
 import { toFixedPrecision } from '../toolbox/Util.mjs'
-import { makeCopyOfArray } from '../toolbox/ArrayUtil.mjs'
-import { ObjectFactory } from './ObjectFactory.mjs'
-import { FirstFitLineBreaker } from './FirstFitLineBreaker.mjs'
-import { LineBreaker } from './LineBreaker.mjs'
+import { FirstFitLineBreaker } from './LineBreaker/FirstFitLineBreaker.mjs'
+import { LineBreaker } from './LineBreaker/LineBreaker.mjs'
 
 const signature = 'BasicTypesetter 0.1'
-
-const INFINITE_BADNESS = 100000000
-const FLAG_PENALTY = 3000
 
 export class BasicTypesetter extends Typesetter2 {
   constructor (options) {
     super()
     let oc = new OptionsChecker({
-      context: 'SimpleTypesetter',
+      context: signature,
       optionsDefinition: {
         pageWidth: { type: 'number', required: true},
         pageHeight: { type: 'number', required: true},
@@ -66,6 +60,23 @@ export class BasicTypesetter extends Typesetter2 {
     this.lineSkip = this.options.lineSkip
     this.minLineSkip = this.options.minLineSkip
     this.debug = this.options.debug
+    this.pageOutputProcessors = []
+  }
+
+  /**
+   *
+   * @param {PageProcessor[]}pageOutputProcessorArray
+   */
+  setPageOutputProcessors(pageOutputProcessorArray) {
+    this.pageOutputProcessors = pageOutputProcessorArray
+  }
+
+  /**
+   *
+   * @param {PageProcessor}pageOutputProcessor
+   */
+  addPageOutputProcessor(pageOutputProcessor) {
+    this.pageOutputProcessors.push(pageOutputProcessor)
   }
 
   typesetHorizontalList (list) {
@@ -217,7 +228,7 @@ export class BasicTypesetter extends Typesetter2 {
    * a vertical list with the paragraph properly split into lines
    *
    * @param mainTextList
-   * @return {Promise<unknown>}
+   * @return {Promise<TypesetterDocument>}
    */
   typeset (mainTextList) {
     if (mainTextList.getDirection() !== TypesetterItemDirection.VERTICAL) {
@@ -263,11 +274,28 @@ export class BasicTypesetter extends Typesetter2 {
       let pageList = await this.typesetVerticalList(verticalListToTypeset)
       let doc = new TypesetterDocument()
       doc.addMetadata('typesetter', signature)
-      doc.setPages(pageList.getList().map((pageItemList) => {
+      let thePages = pageList.getList().map((pageItemList) => {
         pageItemList.setShiftX(this.options.marginLeft).setShiftY(this.options.marginTop)
         return new TypesetterPage(this.options.pageWidth, this.options.pageHeight,
           [pageItemList])
-      }))
+      }).map( (page, pageIndex) => {
+        // add metadata
+        page.addMetadata(MetadataKey.PAGE_NUMBER, pageIndex+1)
+        // "normal" foliation, other processors may change it
+        page.addMetadata(MetadataKey.PAGE_FOLIATION, `${pageIndex+1}`)
+        return page
+      })
+      // Apply page processors
+      let processedPages = []
+      for (let pageIndex = 0; pageIndex < thePages.length; pageIndex++){
+        let processedPage = thePages[pageIndex]
+        for (let processorIndex = 0; processorIndex < this.pageOutputProcessors.length; processorIndex++) {
+          this.debug && console.log(`Applying page output processor ${processorIndex}`)
+          processedPage = await this.pageOutputProcessors[processorIndex].process(processedPage)
+        }
+        processedPages.push(processedPage)
+      }
+      doc.setPages(processedPages)
       doc.setDimensionsFromPages()
       resolve(doc)
     })
@@ -306,7 +334,7 @@ export class BasicTypesetter extends Typesetter2 {
               break
             }
           }
-          // item is a box or a LTR text box
+          // item is a box or an LTR text box
           orderedTokenIndices.push(i)
           break
 
@@ -409,7 +437,7 @@ export class BasicTypesetter extends Typesetter2 {
             && item.getMetadata(MetadataKey.GLUE_TYPE) === GlueType.INTER_LINE
             && item.getMetadata(MetadataKey.INTER_LINE_GLUE_SET) === false
           ) {
-            this.debug && console.log(`Item ${i} is inter line glue that is not set`)
+            // this.debug && console.log(`Item ${i} is inter line glue that is not set`)
             currentInterLineGlue = item
             state = 1
           } else {
@@ -422,12 +450,12 @@ export class BasicTypesetter extends Typesetter2 {
             && item.hasMetadata(MetadataKey.LIST_TYPE)
             && item.getMetadata(MetadataKey.LIST_TYPE) === ListType.LINE) {
 
-            this.debug && console.log(`Got a line in state 1, setting inter line glue`)
+            // this.debug && console.log(`Got a line in state 1, setting inter line glue`)
             let nextLineHeight = item.getHeight()
             currentInterLineGlue.setHeight(this.__getInterLineGlueHeight(nextLineHeight))
               .addMetadata(MetadataKey.INTER_LINE_GLUE_SET, true)
             outputList.pushItem(currentInterLineGlue)
-            this.debug && console.log(`Pushing ${tmpItems.length} item(s) in temp stack to output list`)
+            // this.debug && console.log(`Pushing ${tmpItems.length} item(s) in temp stack to output list`)
             outputList.pushItemArray(tmpItems)
             outputList.pushItem(item)
             tmpItems = []

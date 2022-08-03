@@ -36,11 +36,11 @@
 
 
 import { TypesetterRenderer } from './TypesetterRenderer.mjs'
-import { Typesetter2 } from './Typesetter2.mjs'
-import { Glue } from './Glue.mjs'
-import { ItemList } from './ItemList.mjs'
-import { TextBox } from './TextBox.mjs'
-import { Box } from './Box.mjs'
+import { Typesetter2 } from '../Typesetter2.mjs'
+import { Glue } from '../Glue.mjs'
+import { ItemList } from '../ItemList.mjs'
+import { TextBox } from '../TextBox.mjs'
+import { Box } from '../Box.mjs'
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 

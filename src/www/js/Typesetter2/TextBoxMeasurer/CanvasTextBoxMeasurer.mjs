@@ -17,9 +17,9 @@
  */
 
 import { TextBoxMeasurer } from './TextBoxMeasurer.mjs'
-import { BrowserUtilities } from '../toolbox/BrowserUtilities.mjs'
-import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
-import { FontBaselineInfo } from './FontBaselineInfo.mjs'
+import { BrowserUtilities } from '../../toolbox/BrowserUtilities.mjs'
+import { resolvedPromise } from '../../toolbox/FunctionUtil.mjs'
+import { FontBaselineInfo } from '../FontBaselineInfo.mjs'
 
 
 export class CanvasTextBoxMeasurer extends TextBoxMeasurer {

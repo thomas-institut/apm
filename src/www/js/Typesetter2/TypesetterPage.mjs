@@ -46,6 +46,14 @@ export class TypesetterPage extends TypesetterObject {
     this.items = items
   }
 
+  /**
+   *
+   * @param {TypesetterItem}item
+   */
+  addItem(item) {
+    this.items.push(item)
+  }
+
   getWidth() {
     return this.width
   }

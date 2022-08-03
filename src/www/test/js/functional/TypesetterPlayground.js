@@ -6,13 +6,13 @@
 
 import { TextBoxFactory } from '../../../js/Typesetter2/TextBoxFactory.mjs'
 import { BrowserUtilities } from '../../../js/toolbox/BrowserUtilities.mjs'
-import { CanvasTextBoxMeasurer } from '../../../js/Typesetter2/CanvasTextBoxMeasurer.mjs'
+import { CanvasTextBoxMeasurer } from '../../../js/Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer.mjs'
 import { isRtl, removeExtraWhiteSpace, trimWhiteSpace } from '../../../js/toolbox/Util.mjs'
 import { Typesetter2 } from '../../../js/Typesetter2/Typesetter2.mjs'
 import { BasicTypesetter } from '../../../js/Typesetter2/BasicTypesetter.mjs'
 import { ItemList } from '../../../js/Typesetter2/ItemList.mjs'
 import * as TypesetterItemDirection from '../../../js/Typesetter2/TypesetterItemDirection.mjs'
-import { CanvasRenderer } from '../../../js/Typesetter2/CanvasRenderer.mjs'
+import { CanvasRenderer } from '../../../js/Typesetter2/Renderer/CanvasRenderer.mjs'
 import { TypesetterDocument } from '../../../js/Typesetter2/TypesetterDocument.mjs'
 import { TextBox } from '../../../js/Typesetter2/TextBox.mjs'
 import { Box } from '../../../js/Typesetter2/Box.mjs'
@@ -20,6 +20,7 @@ import { Glue} from '../../../js/Typesetter2/Glue.mjs'
 import { Penalty } from '../../../js/Typesetter2/Penalty.mjs'
 import { LanguageDetector } from '../../../js/toolbox/LanguageDetector.mjs'
 import text from 'quill/blots/text'
+import { AddPageNumbers } from '../../../js/Typesetter2/PageProcessor/AddPageNumbers'
 
 const defaultPageWidth = Typesetter2.cm2px(14.8)
 const defaultPageHeight  = Typesetter2.cm2px(21)
@@ -148,6 +149,7 @@ class Playground {
     this.currentTypesetDocument = await this._typesetPlainText(text)
     let typesetEndTime = window.performance.now()
     console.log(`Text typeset in ${typesetEndTime - startTime} ms`)
+    console.log(this.currentTypesetDocument)
     await this._render(this.currentTypesetDocument)
     let renderEndTime = window.performance.now()
     console.log(`Rendered in ${renderEndTime - typesetEndTime} ms`)
@@ -550,6 +552,14 @@ class Playground {
     this.getPdfButton.html('Get')
     typesetterOptions.textBoxMeasurer =  this.textBoxMeasurer
     let ts = new BasicTypesetter(typesetterOptions)
+    ts.addPageOutputProcessor( new AddPageNumbers({
+      fontFamily: this.fontFamily,
+      fontSize: this.fontSize,
+      marginTop: this.pageHeight - this.marginBottom/2,
+      marginLeft: this.marginLeft,
+      lineWidth: this.pageWidth - this.marginLeft - this.marginRight,
+      textBoxMeasurer: this.textBoxMeasurer
+    }))
     return ts.typeset(verticalListToTypeset)
   }
 

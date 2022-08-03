@@ -1,6 +1,6 @@
-import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
-import { Glue } from './Glue.mjs'
-import { ItemList } from './ItemList.mjs'
+import { resolvedPromise } from '../../toolbox/FunctionUtil.mjs'
+import { Glue } from '../Glue.mjs'
+import { ItemList } from '../ItemList.mjs'
 
 export class LineBreaker {
   constructor () {

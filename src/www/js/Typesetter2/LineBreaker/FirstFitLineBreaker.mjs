@@ -1,11 +1,11 @@
 import { LineBreaker } from './LineBreaker.mjs'
-import { TextBox } from './TextBox.mjs'
-import { INFINITE_PENALTY, MINUS_INFINITE_PENALTY, Penalty } from './Penalty.mjs'
-import { Box } from './Box.mjs'
-import { makeCopyOfArray } from '../toolbox/ArrayUtil.mjs'
-import { ItemList } from './ItemList.mjs'
-import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
-import { ObjectFactory } from './ObjectFactory.mjs'
+import { TextBox } from '../TextBox.mjs'
+import { INFINITE_PENALTY, MINUS_INFINITE_PENALTY, Penalty } from '../Penalty.mjs'
+import { Box } from '../Box.mjs'
+import { makeCopyOfArray } from '../../toolbox/ArrayUtil.mjs'
+import { ItemList } from '../ItemList.mjs'
+import * as TypesetterItemDirection from '../TypesetterItemDirection.mjs'
+import { ObjectFactory } from '../ObjectFactory.mjs'
 
 
 const INFINITE_BADNESS = 100000000

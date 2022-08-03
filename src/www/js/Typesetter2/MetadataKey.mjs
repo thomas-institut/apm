@@ -30,7 +30,11 @@ export const ADJUSTMENT_RATIO = 'adjustmentRatio'
 export const UNADJUSTED_LINE_WIDTH = 'unadjustedLineWidth'
 export const LIST_TYPE = 'type'
 export const GLUE_TYPE = 'type'
+export const ITEM_TYPE = 'type'
 export const INTER_LINE_GLUE_SET = 'interLineGlueSet'
 export const HAS_RTL_TEXT = 'hasRightToLeftText'
 export const ORIGINAL_ARRAY_INDEX = 'originalArrayIndex'
+
+export const PAGE_NUMBER = 'pageNumber'
+export const PAGE_FOLIATION = 'pageFoliation'
 

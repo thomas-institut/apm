@@ -35,9 +35,9 @@ export class Typesetter2 {
   }
 
   /**
-   * Converts a horizontal list of typesetter items into a vertical list
-   * consisting of a series of lines of a certain width given previously
-   * to the typesetter and inter-line glue
+   * Converts a horizontal list into a vertical list
+   * consisting of a series of lines of a certain width (given previously
+   * to the typesetter) and inter-line glue
    *
    * In essence, splits a horizontal list into lines.
    *
@@ -46,7 +46,7 @@ export class Typesetter2 {
    * be rendered correctly.
    *
    * @param {ItemList}list
-   * @return {Promise}
+   * @return {Promise<ItemList>}
    */
   typesetHorizontalList(list) {
     // performs type checks and returns the input list if there's no problem
@@ -61,13 +61,13 @@ export class Typesetter2 {
   }
 
   /**
-   * Converts a vertical list into a horizontal lists consisting of vertical lists
+   * Converts a vertical list into a horizontal list consisting of vertical lists
    * where each one fits into a given height (previously given to the typesetter).
    *
    * In essence, splits a vertical list into pages
    *
    * @param {ItemList}list
-   * @return {Promise}
+   * @return {Promise<ItemList>}
    */
   typesetVerticalList(list) {
     // performs type checks and returns the input list if there's no problem
@@ -90,7 +90,7 @@ export class Typesetter2 {
    * main text block.
    *
    * @param {ItemList}list
-   * @return {Promise}
+   * @return {Promise<TypesetterDocument>}
    */
   typeset(list) {
     return resolvedPromise(new TypesetterDocument())

@@ -16,7 +16,7 @@
  *
  */
 
-import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
+import { resolvedPromise } from '../../toolbox/FunctionUtil.mjs'
 
 export class TextBoxMeasurer {
 

@@ -20,7 +20,7 @@ import { Glue} from '../../../js/Typesetter2/Glue.mjs'
 import { Penalty } from '../../../js/Typesetter2/Penalty.mjs'
 import { LanguageDetector } from '../../../js/toolbox/LanguageDetector.mjs'
 import text from 'quill/blots/text'
-import { AddPageNumbers } from '../../../js/Typesetter2/PageProcessor/AddPageNumbers'
+import { AddPageNumbers } from '../../../js/Typesetter2/PageProcessor/AddPageNumbers.mjs'
 
 const defaultPageWidth = Typesetter2.cm2px(14.8)
 const defaultPageHeight  = Typesetter2.cm2px(21)
@@ -539,6 +539,8 @@ class Playground {
       marginBottom: this.marginBottom,
       marginLeft: this.marginLeft,
       marginRight: this.marginRight,
+      defaultFontFamily: this.fontFamily,
+      defaultFontSize: this.fontSize,
       lineSkip: this.lineSkip,
       debug: true
     }
@@ -552,14 +554,6 @@ class Playground {
     this.getPdfButton.html('Get')
     typesetterOptions.textBoxMeasurer =  this.textBoxMeasurer
     let ts = new BasicTypesetter(typesetterOptions)
-    ts.addPageOutputProcessor( new AddPageNumbers({
-      fontFamily: this.fontFamily,
-      fontSize: this.fontSize,
-      marginTop: this.pageHeight - this.marginBottom/2,
-      marginLeft: this.marginLeft,
-      lineWidth: this.pageWidth - this.marginLeft - this.marginRight,
-      textBoxMeasurer: this.textBoxMeasurer
-    }))
     return ts.typeset(verticalListToTypeset)
   }
 

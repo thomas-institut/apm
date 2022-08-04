@@ -32,8 +32,12 @@ import * as GlueType from './GlueType.mjs'
 import { toFixedPrecision } from '../toolbox/Util.mjs'
 import { FirstFitLineBreaker } from './LineBreaker/FirstFitLineBreaker.mjs'
 import { LineBreaker } from './LineBreaker/LineBreaker.mjs'
+import { AddPageNumbers } from './PageProcessor/AddPageNumbers.mjs'
 
 const signature = 'BasicTypesetter 0.1'
+
+const validPageNumbersPositions = [ 'top', 'bottom']
+const validAligns = [ 'center', 'left', 'right']
 
 export class BasicTypesetter extends Typesetter2 {
   constructor (options) {
@@ -49,6 +53,10 @@ export class BasicTypesetter extends Typesetter2 {
         marginRight: { type: 'number', default: 50},
         lineSkip: { type: 'number', default: 24},
         minLineSkip: { type: 'number', default: 0},
+        defaultFontFamily: { type: 'string', default: 'FreeSerif'},
+        defaultFontSize: { type: 'number', default: 16},
+        pageNumbers: { type: 'string', default: 'bottom center'},
+        footerMargin: { type: 'number', default: 11},
         textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
         justify: { type: 'boolean', default: true},
         debug: { type: 'boolean', default: false}
@@ -61,7 +69,12 @@ export class BasicTypesetter extends Typesetter2 {
     this.minLineSkip = this.options.minLineSkip
     this.debug = this.options.debug
     this.pageOutputProcessors = []
+    if (this.options.pageNumbers !== 'none') {
+      this.addPageOutputProcessor( this.__constructAddPageNumberProcessor())
+    }
   }
+
+
 
   /**
    *
@@ -474,6 +487,53 @@ export class BasicTypesetter extends Typesetter2 {
 
   __getInterLineGlueHeight(nextLineHeight) {
       return Math.max(this.minLineSkip, this.lineSkip - nextLineHeight)
+  }
+
+  /**
+   * @return AddPageNumbers
+   * @private
+   */
+  __constructAddPageNumberProcessor() {
+    let parsedOptions = this.__parsePageNumberOptions(this.options.pageNumbers)
+    let pageNumbersMarginTop = this.options.pageHeight - this.options.marginBottom + this.options.footerMargin
+    let pageNumbersMarginLeft = this.options.marginLeft
+    let lineWidth = this.options.pageWidth - this.options.marginRight - this.options.marginLeft
+
+    if (parsedOptions.position === 'top') {
+      pageNumbersMarginTop = this.options.marginTop - this.options.footerMargin - this.options.defaultFontSize
+    }
+
+    return new AddPageNumbers({
+      fontFamily: this.options.defaultFontFamily,
+      fontSize: this.options.defaultFontSize,
+      marginTop: pageNumbersMarginTop,
+      marginLeft: pageNumbersMarginLeft,
+      lineWidth: lineWidth,
+      align: parsedOptions.align,
+      textBoxMeasurer: this.options.textBoxMeasurer
+    })
+  }
+
+  /**
+   *
+   * @param {string}optionString
+   * @private
+   */
+  __parsePageNumberOptions(optionString) {
+    let align = 'center'
+    let position = 'bottom'
+
+    let fields = optionString.split(' ')
+
+    if (fields[0] !== undefined && validPageNumbersPositions.indexOf(fields[0]) !== -1) {
+        position = fields[0]
+    }
+
+    if (fields[1] !== undefined && validAligns.indexOf(fields[1]) !== -1) {
+      align = fields[1]
+    }
+    return { position: position, align: align}
+
   }
 
 

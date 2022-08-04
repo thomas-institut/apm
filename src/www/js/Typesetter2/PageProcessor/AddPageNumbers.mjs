@@ -21,12 +21,15 @@ export class AddPageNumbers extends PageProcessor {
         marginTop: { type: 'number', default: 20},
         marginLeft: { type: 'number', default: 20},
         lineWidth:  { type: 'number', default: 100},
-        center: { type: 'boolean', default: true},
+        align: { type: 'string', default: 'center'},
         debug: { type: 'boolean', default: true}
       }
     })
     this.options = oc.getCleanOptions(options)
     this.debug = this.options.debug
+
+    this.debug && console.log(`AddPageNumbers options`)
+    this.debug && console.log(this.options)
 
   }
 
@@ -38,6 +41,7 @@ export class AddPageNumbers extends PageProcessor {
         // no page number, can't do anything
         resolve(thePage)
       }
+
       this.debug && console.log(`Adding page numbers to page ${pageNumber}`)
       let foliation = page.getMetadata(MetadataKey.PAGE_FOLIATION)
       if (foliation=== undefined) {
@@ -48,21 +52,30 @@ export class AddPageNumbers extends PageProcessor {
         fontSize: this.options.fontSize,
         fontStyle: this.options.fontStyle
       })
-
-
+      let textHeight = await this.options.textBoxMeasurer.getBoxHeight(pageNumberTextBox)
       pageNumberTextBox.setShiftY(this.options.marginTop)
+        .setHeight(textHeight)
         .addMetadata(MetadataKey.ITEM_TYPE, 'PageNumber')
-      if (this.options.center) {
-        let boxWidth = await this.options.textBoxMeasurer.getBoxWidth(pageNumberTextBox)
-        pageNumberTextBox.setShiftX(this.options.marginLeft + this.options.lineWidth/2 - boxWidth/2)
-      } else {
-        pageNumberTextBox.setShiftX(this.options.marginLeft)
+
+
+
+      switch(this.options.align) {
+        case 'center':
+          let boxWidth = await this.options.textBoxMeasurer.getBoxWidth(pageNumberTextBox)
+          pageNumberTextBox.setShiftX(this.options.marginLeft + this.options.lineWidth/2 - boxWidth/2)
+          break
+
+        case 'left':
+          pageNumberTextBox.setShiftX(this.options.marginLeft)
+          break
+
+        case 'right':
+          let textWidth = await this.options.textBoxMeasurer.getBoxWidth(pageNumberTextBox)
+          pageNumberTextBox.setShiftX(this.options.marginLeft + this.options.lineWidth - textWidth)
       }
 
       page.addItem( pageNumberTextBox)
-
       resolve(thePage)
-
     })
   }
 

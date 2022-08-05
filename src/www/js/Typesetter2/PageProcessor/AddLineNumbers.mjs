@@ -17,7 +17,7 @@ export class AddLineNumbers extends PageProcessor {
    let oc = new OptionsChecker({
      context: "AddLineNumbers Page Processor",
      optionsDefinition: {
-       showLineNumbers: { type: 'boolean', default: true},
+
        numberStyle: { type: 'string', default: 'arabic'},
        showLineOne: {type: 'boolean', default: true},
        lineNumberShift: { type: 'number', default: 0},

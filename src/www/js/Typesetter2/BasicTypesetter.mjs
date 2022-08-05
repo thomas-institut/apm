@@ -268,20 +268,22 @@ export class BasicTypesetter extends Typesetter2 {
   }
 
   /**
-   * Typesets a vertical list containing non-typeset text.
-   * Returns a promise that will be resolved with a typeset TypesetterDocument
+   * Typesets a list of paragraphs into a multipage document with
+   * optional line and page numbers.
    *
-   * Each vertical item must be either a horizontal list
+   * Each vertical item in the input list must be either a horizontal list
    * containing a paragraph or vertical glue.
    *
    * A paragraph is a horizontal list containing text and
    * inter-word glue. The typesetter will convert it to
-   * a vertical list with the paragraph properly split into lines
+   * a vertical list with the paragraph properly split into lines and
+   * then break it into pages
    *
    * @param mainTextList
+   * @param data
    * @return {Promise<TypesetterDocument>}
    */
-  typeset (mainTextList) {
+  typeset (mainTextList, data = null) {
     if (mainTextList.getDirection() !== TypesetterItemDirection.VERTICAL) {
       throw new Error(`Cannot typeset a non-vertical list`)
     }

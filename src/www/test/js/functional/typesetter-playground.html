@@ -64,15 +64,25 @@
         div.row-label {
             font-size: 1.1em;
         }
+
+        ul.help {
+            font-size: 0.8em;
+        }
     </style>
 </head>
 <body>
     <h1>Typesetter2 Playground</h1>
-    <p>Seeing the (new) typesetter in action!</p>
     <div id="mainRow" class="row">
         <div id="dataInput" class="col-4">
             <div class="form-group">
                 <label for="textToTypesetTextArea">Text To Typeset:</label>
+
+                    <ul class="help">
+                        <li>Formatting: {fmt text}, where fmt can be b,i, bi, large, x-large, small,
+                    sub, sup.</li>
+                        <li>Line breaking penalties: {pen number}</li>
+                        <li>Optional hyphen: {h}</li>
+                    </ul>
                 <textarea class="form-control" id="textToTypesetTextArea" rows="10"></textarea>
 
             </div>

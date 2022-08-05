@@ -82,17 +82,21 @@ export class Typesetter2 {
   }
 
   /**
-   * Typesets a list of typesetter items returning a typeset document
+   * Typesets an ItemList returning a TypesetterDocument
    *
    * Each concrete typesetter may impose constraints on the type
    * of list and items that are allowed as input. Normally,
    * the input list will be a vertical list with the paragraphs of the
    * main text block.
    *
+   * The optional data parameter can be used to provide additional guiding
+   * information to the typesetter
+   *
    * @param {ItemList}list
+   * @param {any} data
    * @return {Promise<TypesetterDocument>}
    */
-  typeset(list) {
+  typeset(list, data = null) {
     return resolvedPromise(new TypesetterDocument())
   }
 

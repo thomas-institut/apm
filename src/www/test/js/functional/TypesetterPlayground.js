@@ -19,16 +19,14 @@ import { Box } from '../../../js/Typesetter2/Box.mjs'
 import { Glue} from '../../../js/Typesetter2/Glue.mjs'
 import { Penalty } from '../../../js/Typesetter2/Penalty.mjs'
 import { LanguageDetector } from '../../../js/toolbox/LanguageDetector.mjs'
-import text from 'quill/blots/text'
-import { AddPageNumbers } from '../../../js/Typesetter2/PageProcessor/AddPageNumbers.mjs'
 
-const defaultPageWidth = Typesetter2.cm2px(14.8)
-const defaultPageHeight  = Typesetter2.cm2px(21)
+const defaultPageWidth = Typesetter2.cm2px(21)
+const defaultPageHeight  = Typesetter2.cm2px(29.7)
 
-const defaultMarginTop = Typesetter2.cm2px(1)
-const defaultMarginLeft = Typesetter2.cm2px(1)
-const defaultMarginBottom = Typesetter2.cm2px(1)
-const defaultMarginRight = Typesetter2.cm2px(1)
+const defaultMarginTop = Typesetter2.cm2px(2)
+const defaultMarginLeft = Typesetter2.cm2px(2)
+const defaultMarginBottom = Typesetter2.cm2px(2)
+const defaultMarginRight = Typesetter2.cm2px(2)
 
 const sampleText = `This is a test.
 
@@ -542,7 +540,15 @@ class Playground {
       defaultFontFamily: this.fontFamily,
       defaultFontSize: this.fontSize,
       lineSkip: this.lineSkip,
+      showPageNumbers: true,
+      pageNumbersOptions: {
+        fontFamily: this.fontFamily,
+        fontSize: this.fontSize*0.8,
+      },
+      showLineNumbers: true,
       lineNumbersOptions: {
+        fontFamily: this.fontFamily,
+        fontSize: this.fontSize*0.6,
         frequency: 5
       },
       debug: true

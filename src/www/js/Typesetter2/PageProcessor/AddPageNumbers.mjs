@@ -22,7 +22,7 @@ export class AddPageNumbers extends PageProcessor {
         marginLeft: { type: 'number', default: 20},
         lineWidth:  { type: 'number', default: 100},
         align: { type: 'string', default: 'center'},
-        debug: { type: 'boolean', default: true}
+        debug: { type: 'boolean', default: false}
       }
     })
     this.options = oc.getCleanOptions(options)

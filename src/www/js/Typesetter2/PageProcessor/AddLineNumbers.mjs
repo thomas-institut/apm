@@ -17,8 +17,8 @@ export class AddLineNumbers extends PageProcessor {
    let oc = new OptionsChecker({
      context: "AddLineNumbers Page Processor",
      optionsDefinition: {
-
-       numberStyle: { type: 'string', default: 'arabic'},
+       listTypeToNumber: { type: 'string', default: ListType.MAIN_TEXT},
+       numberStyle: { type: 'string', default: ''},
        showLineOne: {type: 'boolean', default: true},
        lineNumberShift: { type: 'number', default: 0},
        frequency: { type: 'number', default: 5},
@@ -27,7 +27,7 @@ export class AddLineNumbers extends PageProcessor {
        fontFamily: { type: 'string', default: 'FreeSerif'},
        fontSize: { type: 'number', default: Typesetter2.pt2px(10) },
        textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
-       debug: { type: 'boolean', default: true}
+       debug: { type: 'boolean', default: false}
      }
    })
    this.options = oc.getCleanOptions(options)

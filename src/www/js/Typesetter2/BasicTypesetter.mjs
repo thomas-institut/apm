@@ -109,16 +109,6 @@ export class BasicTypesetter extends Typesetter2 {
 
   }
 
-
-
-  // /**
-  //  *
-  //  * @param {PageProcessor[]}pageOutputProcessorArray
-  //  */
-  // setPageOutputProcessors(pageOutputProcessorArray) {
-  //   this.pageOutputProcessors = pageOutputProcessorArray
-  // }
-
   /**
    *
    * @param {PageProcessor}pageOutputProcessor
@@ -130,16 +120,16 @@ export class BasicTypesetter extends Typesetter2 {
   typesetHorizontalList (list) {
     return new Promise( async (resolve) => {
       let inputList = await super.typesetHorizontalList(list)
-      this.debug && console.log(`Typesetting horizontal list, desired lineWidth = ${this.lineWidth}`)
+      // this.debug && console.log(`Typesetting horizontal list, desired lineWidth = ${this.lineWidth}`)
 
       // First fit algorithm
       let itemArray = inputList.getList()
 
-      this.debug && console.log(`Sending item array to FirstFitLineBreaker`)
+      // this.debug && console.log(`Sending item array to FirstFitLineBreaker`)
       let lines = await FirstFitLineBreaker.breakIntoLines(itemArray, this.lineWidth, this.options.textBoxMeasurer)
 
-      this.debug && console.log(`Got ${lines.length} lines back`)
-      this.debug && console.log(lines)
+      // this.debug && console.log(`Got ${lines.length} lines back`)
+      // this.debug && console.log(lines)
 
       // post-process lines
       let lineNumberInParagraph = 1
@@ -268,8 +258,7 @@ export class BasicTypesetter extends Typesetter2 {
   }
 
   /**
-   * Typesets a list of paragraphs into a multipage document with
-   * optional line and page numbers.
+   * Typesets a list of paragraphs into a multipage document
    *
    * Each vertical item in the input list must be either a horizontal list
    * containing a paragraph or vertical glue.
@@ -278,6 +267,8 @@ export class BasicTypesetter extends Typesetter2 {
    * inter-word glue. The typesetter will convert it to
    * a vertical list with the paragraph properly split into lines and
    * then break it into pages
+   *
+   *
    *
    * @param mainTextList
    * @param data
@@ -305,7 +296,7 @@ export class BasicTypesetter extends Typesetter2 {
         if (verticalItem instanceof ItemList) {
           if (verticalItem.getDirection() === TypesetterItemDirection.HORIZONTAL) {
             // HORIZONTAL LIST, i.e., a paragraph
-            this.debug && console.log(`Processing horizontal list, i.e., a paragraph`)
+            // this.debug && console.log(`Processing horizontal list, i.e., a paragraph`)
             paragraphNumber++
             let typesetParagraph = await this.typesetHorizontalList(verticalItem)
             typesetParagraph.getList().forEach((typesetItem) => {
@@ -343,7 +334,7 @@ export class BasicTypesetter extends Typesetter2 {
       for (let pageIndex = 0; pageIndex < thePages.length; pageIndex++){
         let processedPage = thePages[pageIndex]
         for (let processorIndex = 0; processorIndex < this.pageOutputProcessors.length; processorIndex++) {
-          this.debug && console.log(`Applying page output processor ${processorIndex}`)
+          // this.debug && console.log(`Applying page output processor ${processorIndex}`)
           processedPage = await this.pageOutputProcessors[processorIndex].process(processedPage)
         }
         processedPages.push(processedPage)
@@ -464,7 +455,7 @@ export class BasicTypesetter extends Typesetter2 {
         && item.hasMetadata(MetadataKey.LIST_TYPE)
         && item.getMetadata(MetadataKey.LIST_TYPE) === ListType.LINE) {
         lineNumber++
-        this.debug && console.log(`Adding line number ${lineNumber} metadata`)
+        // this.debug && console.log(`Adding line number ${lineNumber} metadata`)
         item.addMetadata(MetadataKey.LINE_NUMBER, lineNumber)
       }
       outputList.pushItem(item)
@@ -479,7 +470,7 @@ export class BasicTypesetter extends Typesetter2 {
    * @private
    */
   __fixInterLineGlue(verticalList) {
-    this.debug && console.log(`Fixing inter line glue`)
+    // this.debug && console.log(`Fixing inter line glue`)
     let outputList = new ItemList(TypesetterItemDirection.VERTICAL)
     let state = 0
     let currentInterLineGlue = null

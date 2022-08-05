@@ -57,8 +57,6 @@ export class AddPageNumbers extends PageProcessor {
         .setHeight(textHeight)
         .addMetadata(MetadataKey.ITEM_TYPE, 'PageNumber')
 
-
-
       switch(this.options.align) {
         case 'center':
           let boxWidth = await this.options.textBoxMeasurer.getBoxWidth(pageNumberTextBox)

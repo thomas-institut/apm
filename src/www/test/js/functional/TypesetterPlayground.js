@@ -542,6 +542,9 @@ class Playground {
       defaultFontFamily: this.fontFamily,
       defaultFontSize: this.fontSize,
       lineSkip: this.lineSkip,
+      lineNumbersOptions: {
+        frequency: 5
+      },
       debug: true
     }
     this.currentRawDataToTypeset = JSON.stringify({

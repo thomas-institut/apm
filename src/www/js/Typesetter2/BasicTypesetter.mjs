@@ -33,11 +33,15 @@ import { toFixedPrecision } from '../toolbox/Util.mjs'
 import { FirstFitLineBreaker } from './LineBreaker/FirstFitLineBreaker.mjs'
 import { LineBreaker } from './LineBreaker/LineBreaker.mjs'
 import { AddPageNumbers } from './PageProcessor/AddPageNumbers.mjs'
+import { AddLineNumbers } from './PageProcessor/AddLineNumbers.mjs'
 
 const signature = 'BasicTypesetter 0.1'
 
-const validPageNumbersPositions = [ 'top', 'bottom']
-const validAligns = [ 'center', 'left', 'right']
+// const validPageNumbersPositions = [ 'top', 'bottom']
+// const validAligns = [ 'center', 'left', 'right']
+
+const defaultFontFamily = 'FreeSerif'
+const defaultFontSize = Typesetter2.pt2px(12)
 
 export class BasicTypesetter extends Typesetter2 {
   constructor (options) {
@@ -53,10 +57,12 @@ export class BasicTypesetter extends Typesetter2 {
         marginRight: { type: 'number', default: 50},
         lineSkip: { type: 'number', default: 24},
         minLineSkip: { type: 'number', default: 0},
-        defaultFontFamily: { type: 'string', default: 'FreeSerif'},
-        defaultFontSize: { type: 'number', default: 16},
-        pageNumbers: { type: 'string', default: 'bottom center'},
-        footerMargin: { type: 'number', default: 11},
+        defaultFontFamily: { type: 'string', default: defaultFontFamily},
+        defaultFontSize: { type: 'number', default: defaultFontSize},
+        showPageNumbers: { type: 'boolean', default: true},
+        pageNumbersOptions: { type: 'object', default: {}},
+        showLineNumbers: { type: 'boolean', default: true},
+        lineNumbersOptions: { type: 'object', default: {}},
         textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
         justify: { type: 'boolean', default: true},
         debug: { type: 'boolean', default: false}
@@ -69,20 +75,49 @@ export class BasicTypesetter extends Typesetter2 {
     this.minLineSkip = this.options.minLineSkip
     this.debug = this.options.debug
     this.pageOutputProcessors = []
-    if (this.options.pageNumbers !== 'none') {
-      this.addPageOutputProcessor( this.__constructAddPageNumberProcessor())
+    if (this.options.showPageNumbers) {
+      let pnOc = new OptionsChecker({
+        context: `${signature} - Page Numbers`,
+        optionsDefinition: {
+          position: { type: 'string', default: 'bottom'},
+          align: {type: 'string', default: 'center'},
+          margin: { type: 'number', default: Typesetter2.cm2px(0.5) },
+          fontFamily: { type: 'string', default: defaultFontFamily},
+          fontSize: { type: 'number', default: defaultFontSize*0.8},
+        }
+      })
+      let pnOptions = pnOc.getCleanOptions(this.options.pageNumbersOptions)
+      this.addPageOutputProcessor( this.__constructAddPageNumberProcessor(pnOptions))
     }
+    if (this.options.showLineNumbers) {
+      let lnOc = new OptionsChecker({
+        context: `${signature} - Line Numbers`,
+        optionsDefinition: {
+          xPosition: { type: 'number', default: this.options.marginLeft - Typesetter2.cm2px(0.5)},
+          align: {type: 'string', default: 'right'},
+          fontFamily: { type: 'string', default: defaultFontFamily},
+          fontSize: { type: 'number', default: defaultFontSize*0.6},
+          numberStyle: { type: 'string', default: ''},
+          showLineOne: {type: 'boolean', default: true},
+          lineNumberShift: { type: 'number', default: 0},
+          frequency: { type: 'number', default: 5},
+        }
+      })
+      let lnOptions = lnOc.getCleanOptions(this.options.lineNumbersOptions)
+      this.addPageOutputProcessor(this.__constructAddLineNumbersProcessor(lnOptions))
+    }
+
   }
 
 
 
-  /**
-   *
-   * @param {PageProcessor[]}pageOutputProcessorArray
-   */
-  setPageOutputProcessors(pageOutputProcessorArray) {
-    this.pageOutputProcessors = pageOutputProcessorArray
-  }
+  // /**
+  //  *
+  //  * @param {PageProcessor[]}pageOutputProcessorArray
+  //  */
+  // setPageOutputProcessors(pageOutputProcessorArray) {
+  //   this.pageOutputProcessors = pageOutputProcessorArray
+  // }
 
   /**
    *
@@ -211,6 +246,9 @@ export class BasicTypesetter extends Typesetter2 {
             currentVerticalList.trimEndGlue()
             outputList.pushItem(currentVerticalList)
             currentVerticalList = new ItemList(TypesetterItemDirection.VERTICAL)
+            if (list.hasMetadata(MetadataKey.LIST_TYPE)) {
+              currentVerticalList.addMetadata(MetadataKey.LIST_TYPE, list.getMetadata(MetadataKey.LIST_TYPE))
+            }
             currentVerticalList.pushItem(item)
             currentY = item.getHeight()
           } else {
@@ -424,6 +462,7 @@ export class BasicTypesetter extends Typesetter2 {
         && item.hasMetadata(MetadataKey.LIST_TYPE)
         && item.getMetadata(MetadataKey.LIST_TYPE) === ListType.LINE) {
         lineNumber++
+        this.debug && console.log(`Adding line number ${lineNumber} metadata`)
         item.addMetadata(MetadataKey.LINE_NUMBER, lineNumber)
       }
       outputList.pushItem(item)
@@ -450,7 +489,7 @@ export class BasicTypesetter extends Typesetter2 {
             && item.getMetadata(MetadataKey.GLUE_TYPE) === GlueType.INTER_LINE
             && item.getMetadata(MetadataKey.INTER_LINE_GLUE_SET) === false
           ) {
-            // this.debug && console.log(`Item ${i} is inter line glue that is not set`)
+            // this.debug && console.log(`Item ${i} is interline glue that is not set`)
             currentInterLineGlue = item
             state = 1
           } else {
@@ -493,50 +532,32 @@ export class BasicTypesetter extends Typesetter2 {
    * @return AddPageNumbers
    * @private
    */
-  __constructAddPageNumberProcessor() {
-    let parsedOptions = this.__parsePageNumberOptions(this.options.pageNumbers)
-    let pageNumbersMarginTop = this.options.pageHeight - this.options.marginBottom + this.options.footerMargin
+  __constructAddPageNumberProcessor(options) {
+    let pageNumbersMarginTop = this.options.pageHeight - this.options.marginBottom + options.margin
     let pageNumbersMarginLeft = this.options.marginLeft
     let lineWidth = this.options.pageWidth - this.options.marginRight - this.options.marginLeft
 
-    if (parsedOptions.position === 'top') {
-      pageNumbersMarginTop = this.options.marginTop - this.options.footerMargin - this.options.defaultFontSize
+    if (options.position === 'top') {
+      pageNumbersMarginTop = this.options.marginTop - options.margin - options.fontSize
     }
-
     return new AddPageNumbers({
-      fontFamily: this.options.defaultFontFamily,
-      fontSize: this.options.defaultFontSize,
+      fontFamily: options.fontFamily,
+      fontSize: options.fontSize,
       marginTop: pageNumbersMarginTop,
       marginLeft: pageNumbersMarginLeft,
       lineWidth: lineWidth,
-      align: parsedOptions.align,
+      align: options.align,
       textBoxMeasurer: this.options.textBoxMeasurer
     })
   }
 
   /**
    *
-   * @param {string}optionString
+   * @return {AddLineNumbers}
    * @private
    */
-  __parsePageNumberOptions(optionString) {
-    let align = 'center'
-    let position = 'bottom'
-
-    let fields = optionString.split(' ')
-
-    if (fields[0] !== undefined && validPageNumbersPositions.indexOf(fields[0]) !== -1) {
-        position = fields[0]
-    }
-
-    if (fields[1] !== undefined && validAligns.indexOf(fields[1]) !== -1) {
-      align = fields[1]
-    }
-    return { position: position, align: align}
-
+  __constructAddLineNumbersProcessor(options) {
+    options.textBoxMeasurer = this.options.textBoxMeasurer
+    return new AddLineNumbers(options)
   }
-
-
-
-
 }

@@ -22,5 +22,6 @@
 
 
 export const MAIN_TEXT = 'MainText'
+export const LINE_NUMBERS = 'LineNumbers'
 export const LINE = 'line'
 

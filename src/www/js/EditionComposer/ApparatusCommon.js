@@ -23,7 +23,7 @@
 import { TypesetterTokenFactory } from '../Typesetter/TypesetterTokenFactory'
 import * as WitnessTokenType from '../Witness/WitnessTokenType'
 import * as ApparatusSubEntryType from '../Edition/SubEntryType'
-import { NumeralStyles } from '../toolbox/NumeralStyles'
+import { NumeralStyles } from '../toolbox/NumeralStyles.mjs'
 import { FmtText } from '../FmtText/FmtText'
 import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'

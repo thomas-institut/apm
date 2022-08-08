@@ -16,15 +16,12 @@
  *
  */
 
-
-import { HORIZONTAL } from '../TypesetterItemDirection.mjs'
 import { Glue } from '../Glue.mjs'
 import { Box } from '../Box.mjs'
 import * as TypesetterItemDirection from '../TypesetterItemDirection.mjs'
 import { ItemList } from '../ItemList.mjs'
 import { Penalty } from '../Penalty.mjs'
 import { TextBox } from '../TextBox.mjs'
-import { list } from 'quill/ui/icons.js'
 
 export class TypesetterRenderer {
 

@@ -38,3 +38,4 @@ export const ORIGINAL_ARRAY_INDEX = 'originalArrayIndex'
 export const PAGE_NUMBER = 'pageNumber'
 export const PAGE_FOLIATION = 'pageFoliation'
 
+export const MAIN_TEXT_ORIGINAL_INDEX = 'mainTextOriginalIndex'

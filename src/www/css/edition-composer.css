@@ -94,6 +94,11 @@ svg.edition-svg {
 }
 
 
+#edition-preview-new div.panel-content {
+    overflow: scroll;
+    background: #fcfaf7;
+}
+
 /* Admin panel */
 #admin {
     margin-left: 1rem;

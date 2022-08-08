@@ -58,6 +58,7 @@ import { KeyCache } from '../toolbox/KeyCache'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
 import { TechSupportPanel } from './TechSupportPanel'
 import { FmtText } from '../FmtText/FmtText'
+import { EditionPreviewPanelNew } from './EditionPreviewPanelNew'
 
 // CONSTANTS
 
@@ -66,6 +67,7 @@ const editionTitleId = 'edition-title'
 const collationTableTabId = 'collation-table'
 const mainTextTabId = 'main-text-panel'
 const editionPreviewTabId = 'edition-preview'
+const editionPreviewNewTabId = 'edition-preview-new'
 const witnessInfoTabId = 'witness-info'
 const adminPanelTabId = 'admin'
 const techSupportTabId = 'tech'
@@ -217,6 +219,14 @@ export class EditionComposer {
       verbose: false
     })
 
+    this.editionPreviewPanelNew = new EditionPreviewPanelNew({
+      containerSelector: `#${editionPreviewNewTabId}`,
+      ctData: this.ctData,
+      edition: this.edition,
+      langDef: this.options.langDef,
+      debug: true
+    })
+
     this.apparatusPanels = this.edition.apparatuses
       .map( (apparatus, index) => {
         return new ApparatusPanel({
@@ -270,6 +280,7 @@ export class EditionComposer {
       })
       .concat([
         createTabConfig(editionPreviewTabId, 'Edition Preview', this.editionPreviewPanel),
+        createTabConfig(editionPreviewNewTabId, 'Preview (beta)', this.editionPreviewPanelNew),
         createTabConfig(adminPanelTabId, 'Admin', this.adminPanel),
     ])
 

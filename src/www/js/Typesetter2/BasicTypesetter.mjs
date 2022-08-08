@@ -74,6 +74,8 @@ export class BasicTypesetter extends Typesetter2 {
     this.lineSkip = this.options.lineSkip
     this.minLineSkip = this.options.minLineSkip
     this.debug = this.options.debug
+    this.debug && console.log(`Options`)
+    this.debug && console.log(this.options)
     this.pageOutputProcessors = []
     if (this.options.showPageNumbers) {
       let pnOc = new OptionsChecker({

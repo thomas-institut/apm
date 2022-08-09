@@ -4,6 +4,7 @@ import * as MetadataKey from '../MetadataKey.mjs'
 import { TextBoxFactory } from '../TextBoxFactory.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { TextBoxMeasurer } from '../TextBoxMeasurer/TextBoxMeasurer.mjs'
+import { NumeralStyles } from '../../toolbox/NumeralStyles.mjs'
 
 export class AddPageNumbers extends PageProcessor {
 
@@ -17,6 +18,7 @@ export class AddPageNumbers extends PageProcessor {
         fontFamily: { type: 'string', required: true},
         fontSize: { type: 'number', required: true},
         fontStyle: { type: 'string', default: ''},
+        numberStyle: { type: 'string', default: ''},
         textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
         marginTop: { type: 'number', default: 20},
         marginLeft: { type: 'number', default: 20},
@@ -45,7 +47,7 @@ export class AddPageNumbers extends PageProcessor {
       this.debug && console.log(`Adding page numbers to page ${pageNumber}`)
       let foliation = page.getMetadata(MetadataKey.PAGE_FOLIATION)
       if (foliation=== undefined) {
-        foliation = `${pageNumber}`
+        foliation = `${this._getPageNumberString(pageNumber)}`
       }
       let pageNumberTextBox = TextBoxFactory.simpleText(foliation, {
         fontFamily: this.options.fontFamily,
@@ -75,6 +77,25 @@ export class AddPageNumbers extends PageProcessor {
       page.addItem( pageNumberTextBox)
       resolve(thePage)
     })
+  }
+
+  /**
+   *
+   * @param {number}pageNumber
+   * @return {string}
+   * @private
+   */
+  _getPageNumberString(pageNumber) {
+    switch(this.options.numberStyle) {
+      case 'arabic':
+      case 'ara':
+      case 'ar':
+        return NumeralStyles.toDecimalArabic(pageNumber)
+
+      default:
+        return `${pageNumber}`
+
+    }
   }
 
 }

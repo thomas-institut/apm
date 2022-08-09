@@ -86,6 +86,7 @@ export class BasicTypesetter extends Typesetter2 {
           margin: { type: 'number', default: Typesetter2.cm2px(0.5) },
           fontFamily: { type: 'string', default: defaultFontFamily},
           fontSize: { type: 'number', default: defaultFontSize*0.8},
+          numberStyle: { type: 'string', default: ''},
         }
       })
       let pnOptions = pnOc.getCleanOptions(this.options.pageNumbersOptions)
@@ -328,7 +329,7 @@ export class BasicTypesetter extends Typesetter2 {
         // add metadata
         page.addMetadata(MetadataKey.PAGE_NUMBER, pageIndex+1)
         // "normal" foliation, other processors may change it
-        page.addMetadata(MetadataKey.PAGE_FOLIATION, `${pageIndex+1}`)
+        //page.addMetadata(MetadataKey.PAGE_FOLIATION, `${pageIndex+1}`)
         return page
       })
       // Apply page processors
@@ -520,6 +521,7 @@ export class BasicTypesetter extends Typesetter2 {
     return new AddPageNumbers({
       fontFamily: options.fontFamily,
       fontSize: options.fontSize,
+      numberStyle: options.numberStyle,
       marginTop: pageNumbersMarginTop,
       marginLeft: pageNumbersMarginLeft,
       lineWidth: lineWidth,

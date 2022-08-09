@@ -2,7 +2,6 @@ import { MainText } from './MainText'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { Typesetter2 } from '../Typesetter2/Typesetter2.mjs'
 import { TextBoxMeasurer } from '../Typesetter2/TextBoxMeasurer/TextBoxMeasurer.mjs'
-import { TextBoxFactory } from '../Typesetter2/TextBoxFactory.mjs'
 import { Box } from '../Typesetter2/Box.mjs'
 import { ItemList } from '../Typesetter2/ItemList.mjs'
 import * as TypesetterItemDirection from '../Typesetter2/TypesetterItemDirection.mjs'
@@ -20,7 +19,7 @@ const defaultSpaceStretchFactor = 1/6
 const defaultSpaceShrinkFactor = 1/3
 
 const defaultParagraphStyles = {
-  normal: { indentInEms: 2},
+  normal: { indentInEms: 1},
   h1: { fontSizeFactor: 1.5, fontWeight: 'bold', center: true, spaceBeforeInEms: 2, spaceAfterInEms: 1},
   h2: { fontSizeFactor: 1.2, fontWeight: 'bold', spaceBeforeInEms: 1, spaceAfterInEms: 0.5},
   h3: { fontWeight: 'bold', spaceBeforeInEms: 0.5, spaceAfterInEms: 0.25}
@@ -161,6 +160,7 @@ export class EditionTypesetting {
       let paragraphStyleDef = this.paragraphStyles[paragraphStyle]
       if (paragraphStyleDef === undefined) {
         console.warn(`Unknown main text paragraph type '${mainTextParagraph.type}', using 'normal`)
+        paragraphStyle = 'normal'
         paragraphStyleDef = this.paragraphStyles['normal']
       }
       if (paragraphStyleDef.spaceBefore !== 0) {
@@ -236,6 +236,10 @@ export class EditionTypesetting {
    * @private
    */
   __detectAndSetTextDirection(textBox) {
+    if (textBox.getTextDirection() !== '') {
+      // do not change if text direction is already set
+      return textBox
+    }
     let detectedLang = this.languageDetector.detectLang(textBox.getText())
     if (isRtl(detectedLang)) {
       return textBox.setRightToLeft()

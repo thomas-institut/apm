@@ -346,6 +346,9 @@ export class FirstFitLineBreaker extends LineBreaker {
       // debug && console.log(`...font specs are equal, merging`)
       // creating a new object so that the original object is not changed
       let newItem = ObjectFactory.fromObject(item.getExportObject())
+      if (item.getTextDirection() === 'rtl') {
+        return [ newItem.setText( nextItem.getText() + item.getText())]
+      }
       return [ newItem.setText(item.getText() + nextItem.getText())]
     }
   }

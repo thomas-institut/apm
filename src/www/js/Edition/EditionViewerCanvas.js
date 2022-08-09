@@ -25,6 +25,7 @@ import { EditionTypesetting } from './EditionTypesetting'
 import { BasicTypesetter } from '../Typesetter2/BasicTypesetter.mjs'
 import { ItemList } from '../Typesetter2/ItemList.mjs'
 import * as TypesetterItemDirection from '../Typesetter2/TypesetterItemDirection.mjs'
+import { isRtl } from '../toolbox/Util.mjs'
 
 const pageMarginInCanvas = 20
 
@@ -165,6 +166,13 @@ export class EditionViewerCanvas {
         let verticalListToTypeset = editionTypesettingHelper.generateListToTypesetFromMainText(this.edition)
         this.debug && console.log(`List to typeset`)
         this.debug && console.log(verticalListToTypeset)
+        let lineNumbersAlign = 'right'
+        let lineNumbersX = this.geometry.margin.left - this.geometry.textToLineNumbers
+        if (isRtl(this.edition.lang)) {
+          lineNumbersAlign = 'left'
+          lineNumbersX = this.geometry.pageWidth - this.geometry.margin.right + this.geometry.textToLineNumbers
+        }
+
         let ts = new BasicTypesetter({
           pageWidth: this.geometry.pageWidth,
           pageHeight: this.geometry.pageHeight,
@@ -178,13 +186,17 @@ export class EditionViewerCanvas {
           showPageNumbers: true,
           pageNumbersOptions: {
             fontFamily: this.options.fontFamily,
-            fontSize: this.geometry.mainTextFontSize*0.8,
+            fontSize: this.geometry.mainTextFontSize,
+            numberStyle: this.edition.lang
           },
           showLineNumbers: true,
           lineNumbersOptions: {
             fontFamily: this.options.fontFamily,
-            fontSize: this.geometry.mainTextFontSize*0.6,
-            frequency: 5
+            fontSize: this.geometry.mainTextFontSize*this.options.lineNumbersFontSizeMultiplier,
+            frequency: 5,
+            numberStyle: this.edition.lang,
+            align: lineNumbersAlign,
+            xPosition: lineNumbersX
           },
           textBoxMeasurer: this.canvasMeasurer,
           debug: true

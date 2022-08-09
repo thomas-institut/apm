@@ -359,76 +359,58 @@ export class BasicTypesetter extends Typesetter2 {
     let state = 0
     let orderedTokenIndices = []
     let reverseStack = []
-    let glueArray = []
+    let hangingGlueArray = []
     let hasRTLText = false
     line.getList().forEach( (item, i) => {
       switch (state) {
-        case 0:
-          if (item instanceof Glue) {
+        case 0:   // processing LTR items
+          if (item.getTextDirection() === 'rtl') {
+            reverseStack.push(i)
+            hasRTLText = true
+            state = 1
+          } else {
             orderedTokenIndices.push(i)
-            break
           }
-          if (item instanceof Penalty) {
-            orderedTokenIndices.push(i)
-            break
-          }
-          if (item instanceof TextBox) {
-            if (item.getTextDirection() === 'rtl') {
-              reverseStack.push(i)
-              hasRTLText = true
-              state = 1
-              break
-            }
-          }
-          // item is a box or an LTR text box
-          orderedTokenIndices.push(i)
           break
 
-        case 1:
-          if (item instanceof Glue) {
-            glueArray.push(i)
-            break
-          }
-          if (item instanceof Penalty) {
-            reverseStack.push(i)
-            break
-          }
-          if (item instanceof TextBox) {
-            if (item.getTextDirection() !== 'rtl') {
-              // back to LTR
-              while (reverseStack.length > 0) {
-                orderedTokenIndices.push(reverseStack.pop())
-              }
-              // push hanging glue tokens
-              for (let j = 0; j < glueArray.length; j++) {
-                orderedTokenIndices.push(glueArray[j])
-              }
-              glueArray = []
-              orderedTokenIndices.push(i)
-              state = 0
-            } else {
-              // still RTL
-              // put glue array in reverse stack
-              while(glueArray.length > 0) {
-                reverseStack.push(glueArray.pop())
-              }
-              reverseStack.push(i)
+        case 1:  // processing RTL items
+          if (item.getTextDirection() === 'ltr') {
+            // back to LTR
+            while (reverseStack.length > 0) {
+              orderedTokenIndices.push(reverseStack.pop())
             }
+            // push hanging glue items
+            for (let j = 0; j < hangingGlueArray.length; j++) {
+              orderedTokenIndices.push(hangingGlueArray[j])
+            }
+            hangingGlueArray = []
+            orderedTokenIndices.push(i)
+            state = 0
             break
           }
-          // item is a box or a TRL text box
-          reverseStack.push(i)
+          // still RTL
+          // put hanging glue in reverse stack
+          while(hangingGlueArray.length > 0) {
+            reverseStack.push(hangingGlueArray.pop())
+          }
+          if (item instanceof Glue && item.getTextDirection() === '') {
+            // put glue of undefined text direction in hanging glue array
+            hangingGlueArray.push(i)
+          } else {
+            reverseStack.push(i)
+          }
           break
       }
     })
     // dump whatever is on the reverse stack
-    // empty the reverse stack
+    // this.debug && console.log(`Finished processing items, reverse stack has ${reverseStack.length} items`)
+    // this.debug && console.log(reverseStack)
     while(reverseStack.length > 0) {
       orderedTokenIndices.push(reverseStack.pop())
     }
-    // empty the glue array
-    for (let j = 0; j < glueArray.length; j++) {
-      orderedTokenIndices.push(glueArray[j])
+    // empty the hanging glue array
+    for (let j = 0; j < hangingGlueArray.length; j++) {
+      orderedTokenIndices.push(hangingGlueArray[j])
     }
     // some sanity checks
     if (orderedTokenIndices.length !== line.getItemCount()) {
@@ -509,7 +491,7 @@ export class BasicTypesetter extends Typesetter2 {
             currentInterLineGlue = null
             state = 0
           } else {
-            this.debug && console.log(`Saving item ${i} in temp stack`)
+            //this.debug && console.log(`Saving item ${i} in temp stack`)
             tmpItems.push(item)
           }
           break

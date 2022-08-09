@@ -12,6 +12,8 @@ import * as MainTextTokenType from './MainTextTokenType'
 import { TextBox } from '../Typesetter2/TextBox.mjs'
 import { Typesetter2TokenRenderer } from '../FmtText/Renderer/Typesetter2TokenRenderer'
 import { Penalty } from '../Typesetter2/Penalty.mjs'
+import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
+import { getTextDirectionForLang, isRtl } from '../toolbox/Util.mjs'
 
 
 const defaultSpaceStretchFactor = 1/6
@@ -149,9 +151,9 @@ export class EditionTypesetting {
     if (!this.isSetup) {
       throw 'EditionTypesetting not set up yet'
     }
-    let textDirection = this.__getTextDirectionFromLang(this.options.lang)
+    let textDirection = getTextDirectionForLang(this.options.lang)
+    this.languageDetector = new LanguageDetector({ defaultLang: this.options.lang})
     let verticalItems = []
-
 
     MainText.getParagraphs(edition.mainText).forEach( (mainTextParagraph) => {
       let paragraphToTypeset = new ItemList(TypesetterItemDirection.HORIZONTAL)
@@ -164,16 +166,12 @@ export class EditionTypesetting {
       if (paragraphStyleDef.spaceBefore !== 0) {
         verticalItems.push( (new Glue(TypesetterItemDirection.VERTICAL)).setHeight(paragraphStyleDef.spaceBefore))
       }
-      if (textDirection === 'rtl') {
-        paragraphToTypeset.pushItem( (new Box().setWidth(0)))
-        paragraphToTypeset.pushItem(Glue.createLineFillerGlue())
+      if (paragraphStyleDef.indentWidth !== 0 ) {
+        paragraphToTypeset.pushItem(this.__createIndentBox(paragraphStyle, textDirection))
       }
-      if (textDirection === 'ltr' && paragraphStyleDef.indentWidth !== 0 ) {
-        paragraphToTypeset.pushItem(this.__createIndentBox(paragraphStyle))
-      }
-      if (textDirection === 'ltr' && paragraphStyleDef.center) {
+      if (paragraphStyleDef.center) {
         paragraphToTypeset.pushItem( (new Box().setWidth(0)))
-        paragraphToTypeset.pushItem(Glue.createLineFillerGlue())
+        paragraphToTypeset.pushItem(Glue.createLineFillerGlue().setTextDirection(textDirection))
       }
       mainTextParagraph.tokens.forEach( (mainTextToken) => {
         switch(mainTextToken.type) {
@@ -188,22 +186,21 @@ export class EditionTypesetting {
             if (textItems.length > 0) {
               // tag the first item with the original index
               textItems[0].addMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX, mainTextToken.originalIndex)
+              // detect text direction for text boxes
+              textItems = textItems.map ( (item) => {
+                if (item instanceof TextBox) {
+                  return this.__detectAndSetTextDirection(item)
+                }
+                return item
+              })
               paragraphToTypeset.pushItemArray(textItems)
             }
             break
 
         }
       })
-      if (textDirection === 'rtl' && paragraphStyleDef.indentWidth !== 0 ) {
-        paragraphToTypeset.pushItem(this.__createIndentBox(paragraphStyle))
-      }
-      if (textDirection === 'ltr') {
-        paragraphToTypeset.pushItem(Glue.createLineFillerGlue())
-      }
-      if (textDirection === 'rtl' && paragraphStyleDef.center) {
-        paragraphToTypeset.pushItem(Glue.createLineFillerGlue())
-      }
 
+      paragraphToTypeset.pushItem(Glue.createLineFillerGlue().setTextDirection(textDirection))
       paragraphToTypeset.pushItem(Penalty.createForcedBreakPenalty())
       verticalItems.push(paragraphToTypeset)
       if (paragraphStyleDef.spaceAfter !== 0) {
@@ -222,8 +219,8 @@ export class EditionTypesetting {
    * @return {Box}
    * @private
    */
-  __createIndentBox(style) {
-    return (new Box()).setWidth(this.paragraphStyles[style].indentWidth)
+  __createIndentBox(style, textDirection) {
+    return (new Box()).setWidth(this.paragraphStyles[style].indentWidth).setTextDirection(textDirection)
   }
 
 
@@ -233,17 +230,21 @@ export class EditionTypesetting {
       .setShrink(this.paragraphStyles[style].spaceShrink)
   }
 
-
-  __getTextDirectionFromLang(lang) {
-    switch (lang) {
-      case 'ar':
-      case 'he':
-        return 'rtl'
-
-      default:
-        return 'ltr'
+  /**
+   *
+   * @param {TextBox}textBox
+   * @private
+   */
+  __detectAndSetTextDirection(textBox) {
+    let detectedLang = this.languageDetector.detectLang(textBox.getText())
+    if (isRtl(detectedLang)) {
+      return textBox.setRightToLeft()
+    } else {
+      return textBox.setLeftToRight()
     }
   }
+
+
 
 
 

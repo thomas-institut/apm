@@ -21,7 +21,7 @@ import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 
 const defaultFontFamily = 'serif'
 const defaultFontSize = 14
-const defaultTextDirection = 'ltr'
+
 
 /**
  * A text to be rendered with a given font family, size, style and weight
@@ -54,17 +54,11 @@ export class TextBox extends Box {
      */
     this.fontStyle = ''
     /**
-     * The font weight: normal (''), bold, semibold
+     * The font weight: normal (''), bold, semi-bold
      * @type {string}
      */
     this.fontWeight = ''
-    /**
-     * The text's writing direction: ltr or rtl
-     * A correct value here might be necessary for
-     * correct rendering in some contexts.
-     * @type {string}
-     */
-    this.textDirection = defaultTextDirection
+
 
     /**
      * Width and height start as undefined.
@@ -88,19 +82,6 @@ export class TextBox extends Box {
     return this.text
   }
 
-  setLeftToRight() {
-    this.textDirection = 'ltr'
-    return this
-  }
-
-  setRightToLeft() {
-    this.textDirection = 'rtl'
-    return this
-  }
-
-  getTextDirection() {
-    return this.textDirection
-  }
 
   /**
    *
@@ -179,9 +160,7 @@ export class TextBox extends Box {
     if (this.fontWeight !== '') {
       obj.fontWeight = this.fontWeight
     }
-    if (this.textDirection !== defaultTextDirection) {
-      obj.textDirection = this.textDirection
-    }
+
     return obj
   }
 
@@ -193,7 +172,7 @@ export class TextBox extends Box {
       fontSize: defaultFontSize,
       fontStyle: '',
       fontWeight: '',
-      textDirection: defaultTextDirection
+
     }
     this._copyValues(template, object, mergeValues)
     return this

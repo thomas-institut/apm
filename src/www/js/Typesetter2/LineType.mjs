@@ -17,12 +17,10 @@
  */
 
 /**
- * List type constants to be used in metadata
+ * Line type constants to be used in metadata
  */
 
 
-export const MAIN_TEXT_BLOCK = 'MainTextBlock'
-export const LINE_NUMBERS = 'LineNumbers'
-export const LINE = 'line'
-
+export const MAIN_TEXT_LINE = 'MainTextLine'
+export const APPARATUS = 'ApparatusLine'
 

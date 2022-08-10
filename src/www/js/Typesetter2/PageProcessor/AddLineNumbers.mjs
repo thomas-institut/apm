@@ -2,6 +2,7 @@ import { PageProcessor } from './PageProcessor.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import * as MetadataKey from '../MetadataKey.mjs'
 import * as ListType from '../ListType.mjs'
+import * as LineType from '../LineType.mjs'
 import { ItemList } from '../ItemList.mjs'
 import * as TypesetterItemDirection from '../TypesetterItemDirection.mjs'
 import { TextBoxFactory } from '../TextBoxFactory.mjs'
@@ -17,7 +18,8 @@ export class AddLineNumbers extends PageProcessor {
    let oc = new OptionsChecker({
      context: "AddLineNumbers Page Processor",
      optionsDefinition: {
-       listTypeToNumber: { type: 'string', default: ListType.MAIN_TEXT},
+       listTypeToNumber: { type: 'string', default: ListType.MAIN_TEXT_BLOCK},
+       lineTypeToNumber: { type: 'string', default: ''},
        numberStyle: { type: 'string', default: ''},
        showLineOne: {type: 'boolean', default: true},
        lineNumberShift: { type: 'number', default: 0},
@@ -52,26 +54,41 @@ export class AddLineNumbers extends PageProcessor {
      let pageItems = page.getItems()
      let mainTextIndex = pageItems.map( (item) => {
        return item.hasMetadata(MetadataKey.LIST_TYPE) ? item.getMetadata(MetadataKey.LIST_TYPE) : 'undefined'
-     }).indexOf(ListType.MAIN_TEXT)
+     }).indexOf(ListType.MAIN_TEXT_BLOCK)
      if (mainTextIndex === -1) {
        resolve(page)
        return
      }
-     this.debug && console.log(`MainTextList at index ${mainTextIndex}`)
+     this.debug && console.log(`MainTextBlock at index ${mainTextIndex}`)
      let mainTextList = pageItems[mainTextIndex]
      if (mainTextList instanceof ItemList) {
        let linesWithNumberIndices = []
        let mainTextListItems = mainTextList.getList()
        mainTextListItems.forEach( (item, itemIndex) => {
-         if (item.hasMetadata(MetadataKey.LIST_TYPE) && item.getMetadata(MetadataKey.LIST_TYPE) === ListType.LINE) {
-           let lineNumber = item.getMetadata(MetadataKey.LINE_NUMBER)
-           if (lineNumber !== undefined) {
-             if (lineNumber === 1 && this.options.showLineOne) {
+         if (!item.hasMetadata(MetadataKey.LIST_TYPE)) {
+           // no list type =>  do nothing
+           return
+         }
+         if (item.getMetadata(MetadataKey.LIST_TYPE) !== ListType.LINE) {
+           // not a line => do nothing
+           return
+         }
+         if (this.options.lineTypeToNumber !== '' && !item.hasMetadata(MetadataKey.LINE_TYPE)) {
+           // need to filter out a specific line type, but no line type is set => do nothing
+           return
+         }
+         if (this.options.lineTypeToNumber !== '' && item.getMetadata(MetadataKey.LINE_TYPE) !== this.options.lineTypeToNumber ) {
+           // not the right line type => do nothing
+           return
+         }
+         // a line of the right type
+         let lineNumber = item.getMetadata(MetadataKey.LINE_NUMBER)
+         if (lineNumber !== undefined) {
+           if (lineNumber === 1 && this.options.showLineOne) {
+            linesWithNumberIndices.push(itemIndex)
+           } else {
+             if ((lineNumber % this.options.frequency)=== 0){
                linesWithNumberIndices.push(itemIndex)
-             } else {
-               if ((lineNumber % this.options.frequency)=== 0){
-                 linesWithNumberIndices.push(itemIndex)
-               }
              }
            }
          }

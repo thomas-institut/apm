@@ -23,8 +23,6 @@ import { BrowserUtilities } from '../toolbox/BrowserUtilities.mjs'
 import { Typesetter2 } from '../Typesetter2/Typesetter2.mjs'
 import { EditionTypesetting } from './EditionTypesetting'
 import { BasicTypesetter } from '../Typesetter2/BasicTypesetter.mjs'
-import { ItemList } from '../Typesetter2/ItemList.mjs'
-import * as TypesetterItemDirection from '../Typesetter2/TypesetterItemDirection.mjs'
 import { isRtl } from '../toolbox/Util.mjs'
 
 const pageMarginInCanvas = 20

@@ -16,6 +16,8 @@
  *
  */
 
+import { lTrimCharacters, rTrimCharacters, trimCharacters } from '../toolbox/Util.mjs'
+
 export const punctuationDefinition = [
   { char: '.', // period
     default: { isPunctuation: true, sticksToPrevious: true, sticksToNext: false }},
@@ -216,3 +218,31 @@ function __sticks(char, lang, toNext) {
   }
   return def.default[stickTo]
 }
+
+/**
+ *
+ * @param {string}someString
+ * @param {string}lang
+ */
+export function trimInitialPunctuation(someString, lang = '') {
+  return lTrimCharacters(someString, getPunctuationCharactersForLang(lang))
+}
+
+/**
+ *
+ * @param {string}someString
+ * @param {string}lang
+ */
+export function trimFinalPunctuation(someString, lang = '') {
+  return rTrimCharacters(someString, getPunctuationCharactersForLang(lang))
+}
+
+/**
+ *
+ * @param {string}someString
+ * @param {string}lang
+ */
+export function trimPunctuation(someString, lang = '') {
+  return trimCharacters(someString, getPunctuationCharactersForLang(lang))
+}
+

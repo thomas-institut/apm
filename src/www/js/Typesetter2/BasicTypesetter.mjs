@@ -21,19 +21,21 @@ import { ItemList } from './ItemList.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 import { Glue } from './Glue.mjs'
 import { TextBox } from './TextBox.mjs'
-import { Penalty } from './Penalty.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { TypesetterPage } from './TypesetterPage.mjs'
 import { TextBoxMeasurer } from './TextBoxMeasurer/TextBoxMeasurer.mjs'
 import { TypesetterDocument } from './TypesetterDocument.mjs'
 import * as MetadataKey from './MetadataKey.mjs'
 import * as ListType from './ListType.mjs'
+import * as LineType from './LineType.mjs'
 import * as GlueType from './GlueType.mjs'
 import { toFixedPrecision } from '../toolbox/Util.mjs'
 import { FirstFitLineBreaker } from './LineBreaker/FirstFitLineBreaker.mjs'
 import { LineBreaker } from './LineBreaker/LineBreaker.mjs'
 import { AddPageNumbers } from './PageProcessor/AddPageNumbers.mjs'
 import { AddLineNumbers } from './PageProcessor/AddLineNumbers.mjs'
+import { StringCounter } from '../toolbox/StringCounter.js'
+import { trimPunctuation } from '../defaults/Punctuation.js'
 
 const signature = 'BasicTypesetter 0.1'
 
@@ -261,7 +263,7 @@ export class BasicTypesetter extends Typesetter2 {
   }
 
   /**
-   * Typesets a list of paragraphs into a multipage document
+   * Typesets a list of paragraphs into document
    *
    * Each vertical item in the input list must be either a horizontal list
    * containing a paragraph or vertical glue.
@@ -271,13 +273,14 @@ export class BasicTypesetter extends Typesetter2 {
    * a vertical list with the paragraph properly split into lines and
    * then break it into pages
    *
-   *
+   * the optional extraData parameter may contain apparatuses, footnotes
+   * and end notes that must be typeset together with the main text.
    *
    * @param mainTextList
-   * @param data
+   * @param extraData
    * @return {Promise<TypesetterDocument>}
    */
-  typeset (mainTextList, data = null) {
+  typeset (mainTextList, extraData = null) {
     if (mainTextList.getDirection() !== TypesetterItemDirection.VERTICAL) {
       throw new Error(`Cannot typeset a non-vertical list`)
     }
@@ -306,6 +309,11 @@ export class BasicTypesetter extends Typesetter2 {
               if (typesetItem instanceof ItemList) {
                 // add paragraph number info to each line in the paragraph
                 typesetItem.addMetadata(MetadataKey.PARAGRAPH_NUMBER, paragraphNumber)
+                typesetItem.addMetadata(MetadataKey.LINE_TYPE, LineType.MAIN_TEXT_LINE)
+
+                // Count text token occurrences within the line
+                this.__addOccurrenceInLineMetadata(typesetItem)
+
               }
               verticalListToTypeset.pushItem(typesetItem)
             })
@@ -316,7 +324,10 @@ export class BasicTypesetter extends Typesetter2 {
       // set any interLine glue that still unset and add absolute line numbers
       verticalListToTypeset = this.__fixInterLineGlue(verticalListToTypeset)
       verticalListToTypeset = this.__addAbsoluteLineNumbers(verticalListToTypeset)
-      verticalListToTypeset.addMetadata(MetadataKey.LIST_TYPE, ListType.MAIN_TEXT)
+      verticalListToTypeset.addMetadata(MetadataKey.LIST_TYPE, ListType.MAIN_TEXT_BLOCK)
+
+      this.debug && console.log(`Main text Vertical list with typeset paragraphs`)
+      this.debug && console.log(verticalListToTypeset)
 
       let pageList = await this.typesetVerticalList(verticalListToTypeset)
       let doc = new TypesetterDocument()
@@ -346,6 +357,64 @@ export class BasicTypesetter extends Typesetter2 {
       doc.setDimensionsFromPages()
       resolve(doc)
     })
+  }
+
+  /**
+   *
+   * @param {ItemList}line
+   * @return {ItemList}
+   * @private
+   */
+  __addOccurrenceInLineMetadata(line) {
+    // TODO: fix this counter
+    //  The current version does not take into account the fact that some text tokens might be
+    //  merged with punctuation
+    if (line.getDirection() !== TypesetterItemDirection.HORIZONTAL) {
+      // not a horizontal list, i.e., not a line => do nothing
+      return line
+    }
+    // count occurrences
+    let originalOrderItems = line.getList()
+    if (line.hasMetadata(MetadataKey.HAS_REORDERED_ITEMS) && line.getMetadata(MetadataKey.HAS_REORDERED_ITEMS) === true) {
+      if (line.hasMetadata(MetadataKey.ORIGINAL_ITEM_ORDER)) {
+        let originalOrder = line.getMetadata(MetadataKey.ORIGINAL_ITEM_ORDER)
+        originalOrderItems = []
+        let items = line.getList()
+        originalOrder.forEach( (index) => {
+          originalOrderItems.push(items[index])
+        })
+      }
+    }
+    let occurrencesCounter = new StringCounter()
+    originalOrderItems.forEach( (item)=> {
+      if (item instanceof TextBox) {
+        let text = item.getText()
+        let token = this.__getTextTokenForCountingPurposes(text)
+        if (text !== token) {
+          item.addMetadata(MetadataKey.TOKEN_FOR_COUNTING_PURPOSES, token)
+        }
+        occurrencesCounter.addString(token)
+        item.addMetadata(MetadataKey.TOKEN_OCCURRENCE_IN_LINE, occurrencesCounter.getCount(token))
+      }
+    })
+    // tag total occurrences
+    originalOrderItems.forEach( (item)=> {
+      if (item instanceof TextBox) {
+        let token = item.getText()
+        if (item.hasMetadata(MetadataKey.TOKEN_FOR_COUNTING_PURPOSES)) {
+          token = item.getMetadata(MetadataKey.TOKEN_FOR_COUNTING_PURPOSES)
+        }
+        item.addMetadata(MetadataKey.TOKEN_TOTAL_OCCURRENCES_IN_LINE, occurrencesCounter.getCount(token))
+      }
+    })
+
+    // this.debug && console.log(`Tagged original items`)
+    // this.debug && console.log(originalOrderItems)
+    return line
+  }
+
+  __getTextTokenForCountingPurposes(text) {
+     return trimPunctuation(text.toLowerCase())
   }
 
   /**
@@ -422,10 +491,14 @@ export class BasicTypesetter extends Typesetter2 {
     if (hasRTLText) {
       this.debug && console.log(`Line has RTL text`)
       line.addMetadata(MetadataKey.HAS_RTL_TEXT, true)
+      line.addMetadata(MetadataKey.HAS_REORDERED_ITEMS, true)
       let originalItemArray = line.getList()
-      line.setList(orderedTokenIndices.map( (index) => {
+      let originalOrder = orderedTokenIndices.map( () => { return -1})
+      line.setList(orderedTokenIndices.map( (index, newIndex) => {
+        originalOrder[index] = newIndex
         return originalItemArray[index].addMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX, index)
       }))
+      line.addMetadata(MetadataKey.ORIGINAL_ITEM_ORDER, originalOrder)
       this.debug && console.log(`Processed line`)
       this.debug && console.log(line)
     }
@@ -537,6 +610,8 @@ export class BasicTypesetter extends Typesetter2 {
    */
   __constructAddLineNumbersProcessor(options) {
     options.textBoxMeasurer = this.options.textBoxMeasurer
+    options.listTypeToNumber = ListType.MAIN_TEXT_BLOCK
+    options.lineTypeToNumber = LineType.MAIN_TEXT_LINE
     return new AddLineNumbers(options)
   }
 }

@@ -33,9 +33,16 @@ export const GLUE_TYPE = 'type'
 export const ITEM_TYPE = 'type'
 export const INTER_LINE_GLUE_SET = 'interLineGlueSet'
 export const HAS_RTL_TEXT = 'hasRightToLeftText'
+export const HAS_REORDERED_ITEMS = 'hasReorderedItems'
+export const ORIGINAL_ITEM_ORDER = 'originalItemOrder'
 export const ORIGINAL_ARRAY_INDEX = 'originalArrayIndex'
 
 export const PAGE_NUMBER = 'pageNumber'
 export const PAGE_FOLIATION = 'pageFoliation'
 
-export const MAIN_TEXT_ORIGINAL_INDEX = 'mainTextOriginalIndex'
+export const MAIN_TEXT_ORIGINAL_INDEX = 'editionMainTextIndex'
+export const LINE_TYPE  = 'lineType'
+
+export const TOKEN_FOR_COUNTING_PURPOSES = 'textTokenForCountingPurposes'
+export const TOKEN_OCCURRENCE_IN_LINE = 'textTokenOccurrenceInLine'
+export const TOKEN_TOTAL_OCCURRENCES_IN_LINE = 'textTokenTotalOccurrencesInLine'

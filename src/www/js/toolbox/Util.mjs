@@ -43,6 +43,54 @@ export function rTrimWhiteSpace(someString) {
   return someString.replace(/\s+$/, '')
 }
 
+/**
+ *
+ * @param {string}someString
+ * @param {string[]}charactersToTrim
+ */
+export function lTrimCharacters(someString, charactersToTrim) {
+  let firstNonTrimmedCharacterIndex = -1
+  for (let i=0; i < someString.length && firstNonTrimmedCharacterIndex === -1; i++) {
+    if (charactersToTrim.indexOf(someString.charAt(i))===-1) {
+      firstNonTrimmedCharacterIndex = i
+    }
+  }
+  if (firstNonTrimmedCharacterIndex === -1) {
+    return ''
+  }
+  return someString.substring(firstNonTrimmedCharacterIndex, someString.length)
+}
+
+/**
+ *
+ * @param {string}someString
+ * @param {string[]}charactersToTrim
+ */
+export function rTrimCharacters(someString, charactersToTrim) {
+  let lastNonTrimmedCharacterIndex = -1
+  for (let i= (someString.length -1); i >=0 && lastNonTrimmedCharacterIndex === -1; i--) {
+    if (charactersToTrim.indexOf(someString.charAt(i))===-1) {
+      lastNonTrimmedCharacterIndex = i
+    }
+  }
+  if (lastNonTrimmedCharacterIndex === -1) {
+    return ''
+  }
+  return someString.substring(0, lastNonTrimmedCharacterIndex+1)
+}
+
+/**
+ *
+ * @param {string}someString
+ * @param {string[]}charactersToTrim
+ */
+export function trimCharacters(someString, charactersToTrim) {
+  return rTrimCharacters(lTrimCharacters(someString, charactersToTrim), charactersToTrim)
+}
+
+
+
+
 export function rTrimNewlineCharacters(someString) {
   return someString.replace(/\n+$/, '')
 }

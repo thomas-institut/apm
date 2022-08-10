@@ -216,12 +216,24 @@ export class EditionTypesetting {
 
   /**
    *
+   * @param {ItemList}typesetMainTextVerticalList
+   * @param {Edition}edition
+   * @return {ItemList}
+   */
+  generateApparatusVerticalListToTypeset(typesetMainTextVerticalList, edition) {
+    //
+  }
+
+  /**
+   *
    * @return {Box}
    * @private
    */
   __createIndentBox(style, textDirection) {
     return (new Box()).setWidth(this.paragraphStyles[style].indentWidth).setTextDirection(textDirection)
   }
+
+
 
 
   __createNormalSpaceGlue(style) {

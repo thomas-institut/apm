@@ -24,18 +24,52 @@ import { FontBaselineInfo } from '../FontBaselineInfo.mjs'
 
 export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
 
-  getBoxWidth (token) {
+  constructor (useCache = true) {
+    super()
+    this.useCache = useCache
+    if (this.useCache) {
+      // this.heightCache = new Map()
+      this.widthCache = new Map()
+      this.cacheHits = 0
+      this.realMeasurements = 0
+    }
+    this.debug = false
+  }
+
+  /**
+   *
+   * @param {TextBox}textBox
+   * @private
+   */
+  __getCacheKeyForTextBox(textBox) {
+    return `${textBox.getText()}${textBox.getFontFamily()}${textBox.getFontSize()}${textBox.getFontWeight()}${textBox.getFontStyle()}`
+  }
+
+  getBoxWidth (textBox) {
+    if (this.useCache) {
+      let cacheKey = this.__getCacheKeyForTextBox(textBox)
+      if (this.widthCache.has(cacheKey)) {
+        this.debug && console.log(`Getting width from cache`)
+        this.cacheHits++
+        return resolvedPromise(this.widthCache.get(cacheKey))
+      } else {
+        this.realMeasurements++
+      }
+    }
+    this.debug && console.log(`Measuring width`)
+
     let context = this.__getContext()
-    let fontWeight = token.getFontWeight() === '' ? 'normal' : token.getFontWeight()
-    let fontStyle = token.getFontStyle() === '' ? 'normal' : token.getFontStyle()
+    let fontWeight = textBox.getFontWeight() === '' ? 'normal' : textBox.getFontWeight()
+    let fontStyle = textBox.getFontStyle() === '' ? 'normal' : textBox.getFontStyle()
     let fontVariant = 'normal'
-    context.font = `${fontStyle} ${fontVariant} ${fontWeight} ${token.fontSize}px ${token.getFontFamily()} `
-    let metrics = context.measureText(token.text);
+    context.font = `${fontStyle} ${fontVariant} ${fontWeight} ${textBox.fontSize}px ${textBox.getFontFamily()} `
+    let metrics = context.measureText(textBox.text);
     return resolvedPromise(metrics.width)
   }
 
   getBoxHeight (token) {
     // TODO: change this to a better measurement
+    // no need to cache this
     return resolvedPromise(FontBaselineInfo.getBaseline(token.getFontFamily(), token.getFontSize()))
   }
 

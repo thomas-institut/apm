@@ -24,6 +24,7 @@ import { Typesetter2 } from '../Typesetter2/Typesetter2.mjs'
 import { EditionTypesetting } from './EditionTypesetting'
 import { BasicTypesetter } from '../Typesetter2/BasicTypesetter.mjs'
 import { isRtl } from '../toolbox/Util.mjs'
+import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 
 const pageMarginInCanvas = 20
 
@@ -154,14 +155,14 @@ export class EditionViewerCanvas {
   __typesetEdition() {
     return new Promise( (resolve) => {
       let editionTypesettingHelper = new EditionTypesetting({
-        lang: this.edition.lang,
+        edition: this.edition,
         defaultFontFamily: this.options.fontFamily,
         defaultFontSize: Typesetter2.pt2px(this.options.mainTextFontSizeInPts),
         textBoxMeasurer: this.canvasMeasurer,
         debug: true
       })
-      editionTypesettingHelper.setup().then( () => {
-        let verticalListToTypeset = editionTypesettingHelper.generateListToTypesetFromMainText(this.edition)
+      editionTypesettingHelper.setup().then( async () => {
+        let verticalListToTypeset = await editionTypesettingHelper.generateListToTypesetFromMainText()
         this.debug && console.log(`List to typeset`)
         this.debug && console.log(verticalListToTypeset)
         let lineNumbersAlign = 'right'
@@ -197,9 +198,16 @@ export class EditionViewerCanvas {
             xPosition: lineNumbersX
           },
           textBoxMeasurer: this.canvasMeasurer,
+          getApparatusListToTypeset: (mainTextVerticalList, apparatus) => {
+            return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus)
+          },
+          preTypesetApparatuses: () => {
+            editionTypesettingHelper.resetExtractedMetadataInfo()
+            return resolvedPromise(true)
+          },
           debug: true
         })
-        resolve (ts.typeset(verticalListToTypeset))
+        resolve (ts.typeset(verticalListToTypeset, { apparatuses: this.edition.apparatuses}))
       })
     })
   }

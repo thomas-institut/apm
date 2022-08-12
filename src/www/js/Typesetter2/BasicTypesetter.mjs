@@ -34,8 +34,9 @@ import { FirstFitLineBreaker } from './LineBreaker/FirstFitLineBreaker.mjs'
 import { LineBreaker } from './LineBreaker/LineBreaker.mjs'
 import { AddPageNumbers } from './PageProcessor/AddPageNumbers.mjs'
 import { AddLineNumbers } from './PageProcessor/AddLineNumbers.mjs'
-import { StringCounter } from '../toolbox/StringCounter.js'
-import { trimPunctuation } from '../defaults/Punctuation.js'
+import { StringCounter } from '../toolbox/StringCounter.mjs'
+import { trimPunctuation } from '../defaults/Punctuation.mjs'
+import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 
 const signature = 'BasicTypesetter 0.1'
 
@@ -65,7 +66,37 @@ export class BasicTypesetter extends Typesetter2 {
         pageNumbersOptions: { type: 'object', default: {}},
         showLineNumbers: { type: 'boolean', default: true},
         lineNumbersOptions: { type: 'object', default: {}},
+        apparatusesAtEndOfDocument: { type: 'boolean', default: true},
         textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
+        // a function to typeset an apparatus, must return a Promise
+        // for a horizontal ItemList that will then be typeset and added to the document/page
+        getApparatusListToTypeset: { type: 'function', default: (mainTextVerticalList, apparatus) => {
+          console.log(`Default typeset apparatus called`)
+          return resolvedPromise(new ItemList())
+        }},
+        // a function that will be called before typesetting the apparatuses
+        // this gives the apparatus typesetting engine an opportunity to reset or initialize
+        // its state if needed
+        // it should return a promise to a boolean
+        preTypesetApparatuses: { type: 'function', default: () => {
+          return resolvedPromise(true)
+          }},
+        textToApparatusGlue: {
+          type: 'object',
+          default: {
+            height: Typesetter2.cm2px(2),
+            shrink: 0,
+            stretch: 0
+          }
+        },
+        interApparatusGlue: {
+          type: 'object',
+          default: {
+            height: defaultFontSize,
+            shrink: defaultFontSize*0.25,
+            stretch: defaultFontSize*0.5
+          }
+        },
         justify: { type: 'boolean', default: true},
         debug: { type: 'boolean', default: false}
       }
@@ -133,8 +164,8 @@ export class BasicTypesetter extends Typesetter2 {
       // this.debug && console.log(`Sending item array to FirstFitLineBreaker`)
       let lines = await FirstFitLineBreaker.breakIntoLines(itemArray, this.lineWidth, this.options.textBoxMeasurer)
 
-      // this.debug && console.log(`Got ${lines.length} lines back`)
-      // this.debug && console.log(lines)
+      this.debug && console.log(`Got ${lines.length} lines back`)
+      this.debug && console.log(lines)
 
       // post-process lines
       let lineNumberInParagraph = 1
@@ -280,7 +311,7 @@ export class BasicTypesetter extends Typesetter2 {
    * @param extraData
    * @return {Promise<TypesetterDocument>}
    */
-  typeset (mainTextList, extraData = null) {
+  typeset (mainTextList, extraData = {  }) {
     if (mainTextList.getDirection() !== TypesetterItemDirection.VERTICAL) {
       throw new Error(`Cannot typeset a non-vertical list`)
     }
@@ -329,6 +360,30 @@ export class BasicTypesetter extends Typesetter2 {
       this.debug && console.log(`Main text Vertical list with typeset paragraphs`)
       this.debug && console.log(verticalListToTypeset)
 
+      if (extraData.apparatuses !== undefined && this.options.apparatusesAtEndOfDocument) {
+        let apparatuses = await this.__typesetApparatuses(verticalListToTypeset, extraData.apparatuses)
+        this.debug && console.log(`Typeset apparatuses`)
+        this.debug && console.log(apparatuses)
+        if (apparatuses.length > 0) {
+          verticalListToTypeset.pushItem( (new Glue(TypesetterItemDirection.VERTICAL))
+            .setHeight(this.options.textToApparatusGlue.height)
+            .setStretch(this.options.textToApparatusGlue.stretch)
+            .setShrink(this.options.textToApparatusGlue.shrink))
+
+          for (let i = 0; i < apparatuses.length; i++) {
+
+            verticalListToTypeset.pushItemArray(apparatuses[i].getList())
+            if (i !== apparatuses.length-1) {
+              verticalListToTypeset.pushItem( (new Glue(TypesetterItemDirection.VERTICAL))
+                .setHeight(this.options.interApparatusGlue.height)
+                .setStretch(this.options.interApparatusGlue.stretch)
+                .setShrink(this.options.interApparatusGlue.shrink)
+              )
+            }
+          }
+        }
+      }
+
       let pageList = await this.typesetVerticalList(verticalListToTypeset)
       let doc = new TypesetterDocument()
       doc.addMetadata('typesetter', signature)
@@ -356,6 +411,30 @@ export class BasicTypesetter extends Typesetter2 {
       doc.setPages(processedPages)
       doc.setDimensionsFromPages()
       resolve(doc)
+    })
+  }
+
+  /**
+   * Returns a typeset vertical list for each apparatus
+   * @param {ItemList}typesetMainTextVerticalList
+   * @param {Object[]}apparatuses
+   * @return {Promise<ItemList[]>}
+   * @private
+   */
+  __typesetApparatuses(typesetMainTextVerticalList, apparatuses) {
+    return new Promise( async (resolve) => {
+      await this.options.preTypesetApparatuses()
+      let outputArray = []
+      for (let i = 0; i < apparatuses.length; i++) {
+        let apparatusListToTypeset = await this.options.getApparatusListToTypeset(typesetMainTextVerticalList, apparatuses[i])
+        if (apparatusListToTypeset.getDirection() === TypesetterItemDirection.HORIZONTAL) {
+          this.debug && console.log(`Typesetting apparatus ${i}`)
+          outputArray.push(await this.typesetHorizontalList(apparatusListToTypeset))
+        } else {
+          console.warn(`Apparatus ${i} list to typeset is vertical, this is not implemented yet`)
+        }
+      }
+      resolve(outputArray)
     })
   }
 

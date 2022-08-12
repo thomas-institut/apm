@@ -17,7 +17,6 @@
  */
 
 import { TypesetterObject } from './TypesetterObject.mjs'
-import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 import { ObjectFactory } from './ObjectFactory.mjs'
 import { TypesetterItem } from './TypesetterItem.mjs'
 

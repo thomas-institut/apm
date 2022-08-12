@@ -37,6 +37,9 @@ export const HAS_REORDERED_ITEMS = 'hasReorderedItems'
 export const ORIGINAL_ITEM_ORDER = 'originalItemOrder'
 export const ORIGINAL_ARRAY_INDEX = 'originalArrayIndex'
 
+export const MERGED_ITEM = 'mergedItem'
+export const SOURCE_ITEMS_EXPORT = 'sourceItems'
+
 export const PAGE_NUMBER = 'pageNumber'
 export const PAGE_FOLIATION = 'pageFoliation'
 

@@ -165,9 +165,13 @@ export class TypesetterItem extends TypesetterObject {
 
   /**
    *
-   * @param height
+   * @param {number}height
    */
   setHeight(height) {
+    if (typeof height !== 'number') {
+      console.warn(`Trying to set height non-number ${height}`)
+      console.warn(this)
+    }
     this.height = height
     return this
   }

@@ -17,7 +17,7 @@
  */
 
 
-import { StringCounter } from '../toolbox/StringCounter'
+import { StringCounter } from '../toolbox/StringCounter.mjs'
 import * as MainTexTokenType from '../Edition/MainTextTokenType'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
 

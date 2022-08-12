@@ -16,7 +16,7 @@
  *
  */
 
-import * as Punctuation from '../defaults/Punctuation'
+import * as Punctuation from '../defaults/Punctuation.mjs'
 import { WitnessToken } from '../Witness/WitnessToken'
 
 export class WitnessTokenStringParser {

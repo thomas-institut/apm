@@ -18,9 +18,10 @@
 
 import { Box } from './Box.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
+import { Typesetter2 } from './Typesetter2.mjs'
 
-const defaultFontFamily = 'serif'
-const defaultFontSize = 14
+const defaultFontFamily = 'FreeSerif'
+const defaultFontSize = Typesetter2.pt2px(12)
 
 
 /**

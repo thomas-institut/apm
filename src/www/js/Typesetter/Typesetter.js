@@ -69,7 +69,7 @@ import { isRtl } from '../toolbox/Util.mjs'
 
 import * as VerticalAlign from '../FmtText/VerticalAlign'
 import * as HorizontalAlign from './HorizontalAlign'
-import { StringCounter } from '../toolbox/StringCounter'
+import { StringCounter } from '../toolbox/StringCounter.mjs'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
 
 export class Typesetter {

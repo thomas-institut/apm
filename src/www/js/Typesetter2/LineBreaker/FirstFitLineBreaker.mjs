@@ -5,6 +5,7 @@ import { Box } from '../Box.mjs'
 import { makeCopyOfArray } from '../../toolbox/ArrayUtil.mjs'
 import { ItemList } from '../ItemList.mjs'
 import * as TypesetterItemDirection from '../TypesetterItemDirection.mjs'
+import * as MetadataKey from '../MetadataKey.mjs'
 import { ObjectFactory } from '../ObjectFactory.mjs'
 
 
@@ -48,14 +49,15 @@ export class FirstFitLineBreaker extends LineBreaker {
   static _measureTextBoxes(itemArray, textBoxMeasurer) {
     return new Promise ( async (resolve) => {
       for (let i = 0; i < itemArray.length; i++) {
-        if (itemArray[i] instanceof TextBox) {
-          if (itemArray[i].getWidth() === -1) {
+        let item = itemArray[i]
+        if (item instanceof TextBox) {
+          if (item.getWidth() === -1) {
             //debug && console.log(`Getting text box width`)
-            let measuredWidth = await textBoxMeasurer.getBoxWidth(itemArray[i])
-            itemArray[i].setWidth(measuredWidth)
+            let measuredWidth = await textBoxMeasurer.getBoxWidth(item)
+            item.setWidth(measuredWidth)
           }
           if (itemArray[i].getHeight() === -1) {
-            let measuredHeight = await textBoxMeasurer.getBoxHeight(itemArray[i])
+            let measuredHeight = await textBoxMeasurer.getBoxHeight(item)
             itemArray[i].setHeight(measuredHeight)
           }
         }
@@ -346,11 +348,28 @@ export class FirstFitLineBreaker extends LineBreaker {
       // debug && console.log(`...font specs are equal, merging`)
       // creating a new object so that the original object is not changed
       let newItem = ObjectFactory.fromObject(item.getExportObject())
+
+      newItem.addMetadata(MetadataKey.MERGED_ITEM, true)
+
       if (item.getTextDirection() === 'rtl') {
-        return [ newItem.setText( nextItem.getText() + item.getText())]
+        newItem.setText( nextItem.getText() + item.getText())
+        newItem.addMetadata(MetadataKey.SOURCE_ITEMS_EXPORT, [
+          nextItem.getExportObject(),
+          item.getExportObject()
+        ])
+      } else {
+        newItem.setText(item.getText() + nextItem.getText())
+        newItem.addMetadata(MetadataKey.SOURCE_ITEMS_EXPORT, [
+          item.getExportObject(),
+          nextItem.getExportObject()
+        ])
       }
-      return [ newItem.setText(item.getText() + nextItem.getText())]
+      // console.log(`New merged item`)
+      // console.log(newItem)
+      return [ newItem ]
     }
+    // other than text boxes
+    return [item, nextItem]
   }
 
 }

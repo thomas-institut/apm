@@ -46,7 +46,6 @@ class ApiTypesetPdf extends ApiController
         $requiredFields = [
             'jsonData',
         ];
-
         // jsonData should parse into an object with two fields: options and mainTextList,
         // but it's no use checking it here when the nodejs app will do it and
         // generate an error if there's any problem

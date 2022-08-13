@@ -30,7 +30,7 @@ const defaultIcons = {
   busy: '<i class="fas fa-circle-notch fa-spin"></i>'
 }
 
-const canvasIdPrefix = 'edition-preview-canvas-'
+const canvasId = 'edition-preview-canvas-new'
 const exportPdfButtonId = 'export-pdf-btn-new'
 
 export class EditionPreviewPanelNew extends PanelWithToolbar {
@@ -40,7 +40,6 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
     let optionsSpec = {
       ctData: { type: 'object', required: true},
       edition: { type: 'object', objectClass: Edition, required: true},
-      apparatus: { type: 'object', default: []},
       langDef: { type: 'object', required: true},
       icons: { type: 'object', default: defaultIcons}
     }
@@ -62,7 +61,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
 
 
   generateContentHtml (tabId, mode, visible) {
-    return `<canvas id="${canvasIdPrefix}${tabId}"></canvas>`
+    return `<canvas id="${canvasId}"></canvas>`
   }
 
   postRender (id, mode, visible) {
@@ -71,7 +70,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       edition: this.edition,
       fontFamily:  this.options.langDef[this.edition.lang].editionFont,
       scale: 1,
-      canvasElement: document.getElementById(`${canvasIdPrefix}${id}`),
+      canvasElement: document.getElementById(`${canvasId}`),
       debug: true
     })
 
@@ -83,6 +82,26 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
 
     this.viewer.render().then( () => {
       console.log(`Edition rendered`)
+    })
+  }
+
+  updateData(ctData, edition) {
+    this.verbose && console.log(`Updating data`)
+    this.ctData = ctData
+    this.edition = edition
+    this.updatePreview()
+  }
+
+  updatePreview() {
+    this.viewer = new EditionViewerCanvas({
+      edition: this.edition,
+      fontFamily:  this.options.langDef[this.edition.lang].editionFont,
+      scale: 1,
+      canvasElement: document.getElementById(`${canvasId}`),
+      debug: true
+    })
+    this.viewer.render().then( () => {
+      console.log(`Edition rendered again`)
     })
   }
 

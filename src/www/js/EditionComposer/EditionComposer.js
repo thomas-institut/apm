@@ -526,6 +526,7 @@ export class EditionComposer {
     this.mainTextPanel.updateData(this.ctData, this.edition)  // mainTextPanel takes care of updating the apparatus panels
     this.collationTablePanel.updateCtData(this.ctData, 'EditionComposer')
     this.editionPreviewPanel.updateData(this.ctData, this.edition)
+    this.editionPreviewPanelNew.updateData(this.ctData, this.edition)
     this.witnessInfoPanel.updateCtData(this.ctData, updateWitnessInfo)
   }
 
@@ -1100,6 +1101,7 @@ export class EditionComposer {
         this.collationTablePanel.updateCtData(newCtData, 'EditionComposer')
       }
       this.editionPreviewPanel.updateData(this.ctData, this.edition)
+      this.editionPreviewPanelNew.updateData(this.ctData, this.edition)
       this.witnessInfoPanel.updateCtData(this.ctData, true)
       this._updateSaveArea()
     }

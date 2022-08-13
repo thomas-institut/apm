@@ -44,16 +44,56 @@ def print_item(context, x, y, the_item):
         print_text_box(context, x, y, the_item)
 
 
-def print_item_list(context, x, y, the_list_item):
-    tmp_x = x + px2pt(get_value(the_list_item, 'shiftX', 0))
-    tmp_y = y + px2pt(get_value(the_list_item, 'shiftY', 0))
+def print_horizontal_list(context, x, y, horizontal_list):
+    tmp_x = x + px2pt(get_value(horizontal_list, 'shiftX', 0))
+    tmp_y = y + px2pt(get_value(horizontal_list, 'shiftY', 0))
+    text_direction = horizontal_list['textDirection']
 
-    for some_item in the_list_item['list']:
-        print_item(context, tmp_x, tmp_y, some_item)
-        if the_list_item['direction'] == HORIZONTAL:
-            tmp_x += px2pt(some_item['width'])
+    if text_direction == 'rtl':
+        # start from the 'end' of the line for RTL lines
+        tmp_x += px2pt(get_horizontal_list_width(horizontal_list))
+
+    for some_item in horizontal_list['list']:
+        item_width = px2pt(some_item['width'])
+        item_text_direction = get_value(some_item, 'textDirection', '')
+        if item_text_direction == text_direction:
+            print_item(context, tmp_x, tmp_y, some_item)
         else:
-            tmp_y += px2pt(some_item['height'])
+            # a reverse item
+            if text_direction == 'ltr':
+                # need to render the RTL item to the right of its position
+                print_item(context,tmp_x+item_width, tmp_y, some_item)
+            else:
+                # need to render the LTR item to the left of its position
+                print_item(context, tmp_x - item_width, tmp_y, some_item)
+
+        if text_direction == 'ltr':
+            tmp_x += item_width
+        else:
+            tmp_x -= item_width
+
+
+def print_vertical_list(context, x, y, vertical_list):
+    tmp_x = x + px2pt(get_value(vertical_list, 'shiftX', 0))
+    tmp_y = y + px2pt(get_value(vertical_list, 'shiftY', 0))
+
+    for some_item in vertical_list['list']:
+        print_item(context, tmp_x, tmp_y, some_item)
+        tmp_y += px2pt(some_item['height'])
+
+
+def print_item_list(context, x, y, the_list_item):
+    if the_list_item['direction'] == HORIZONTAL:
+        print_horizontal_list(context, x, y, the_list_item)
+    else:
+        print_vertical_list(context, x, y, the_list_item)
+
+
+def get_horizontal_list_width(horizontal_list):
+    width = 0
+    for some_item in horizontal_list['list']:
+        width += get_value(some_item, 'width', 0)
+    return width
 
 
 def print_text_box(context, x, y, text_box):
@@ -73,14 +113,6 @@ def print_text_box(context, x, y, text_box):
         desc.set_style(Pango.Style.ITALIC)
     layout.set_font_description(desc)
     layout.set_text(text_box['text'])
-    # ink, logical = layout.get_extents()
-    # baseline = layout.get_baseline()/Pango.SCALE
-    # delta_y = 0
-    # if baseline != text_box_height:
-    #     delta_y = text_box_height - baseline
-    #     if delta_y != 0:
-    #         print("Found non-zero delta y: '", text_box['text'], "' : ", delta_y, "\n")
-
     context.move_to(x + shift_x, y + shift_y)
     context.set_source_rgb(0, 0, 0)
     PangoCairo.show_layout(context, layout)

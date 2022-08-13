@@ -169,10 +169,13 @@ export class EditionTypesetting {
   generateApparatusVerticalListToTypeset(typesetMainTextVerticalList, apparatus) {
     return new Promise( async (resolve) => {
       // TODO: restrict line numbers to output
+      this.debug && console.log(`Getting apparatus vertical list to typeset`)
+      this.debug && console.log(apparatus)
       let textDirection = getTextDirectionForLang(this.edition.lang)
       let outputList = new ItemList(TypesetterItemDirection.HORIZONTAL)
       if (apparatus.entries.length === 0) {
-        return outputList
+        resolve(outputList)
+        return
       }
       if (this.extractedMetadataInfo === undefined) {
         this.extractedMetadataInfo = this.__extractLineInfoFromMetadata(typesetMainTextVerticalList)
@@ -182,7 +185,8 @@ export class EditionTypesetting {
       }
       if (this.extractedMetadataInfo.length === 0) {
         this.debug && console.log(`No line info in metadata, nothing to typeset for apparatus ${apparatus.type}`)
-        return outputList
+        resolve(outputList)
+        return
       }
 
       this.debug && console.log(`Apparatus '${apparatus.type}' with ${apparatus.entries.length} entries in total.`)

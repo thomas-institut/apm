@@ -146,6 +146,7 @@ export class EditionViewerCanvas {
       console.log('Nothing to do, no pages to render')
       return
     }
+    this.debug && console.log(`Rendering canvas`)
     this.canvasRenderer.renderDocument(doc)
   }
 

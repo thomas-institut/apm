@@ -423,17 +423,22 @@ export class BasicTypesetter extends Typesetter2 {
    */
   __typesetApparatuses(typesetMainTextVerticalList, apparatuses) {
     return new Promise( async (resolve) => {
+      this.debug && console.log(`Typesetting ${apparatuses.length} apparatuses`)
       await this.options.preTypesetApparatuses()
       let outputArray = []
       for (let i = 0; i < apparatuses.length; i++) {
+        this.debug && console.log(`Typesetting apparatus ${i}`)
         let apparatusListToTypeset = await this.options.getApparatusListToTypeset(typesetMainTextVerticalList, apparatuses[i])
         if (apparatusListToTypeset.getDirection() === TypesetterItemDirection.HORIZONTAL) {
           this.debug && console.log(`Typesetting apparatus ${i}`)
           outputArray.push(await this.typesetHorizontalList(apparatusListToTypeset))
+          this.debug && console.log(`Finished typesetting apparatus ${i}`)
         } else {
           console.warn(`Apparatus ${i} list to typeset is vertical, this is not implemented yet`)
         }
       }
+      this.debug && console.log(`Finished typesetting all apparatuses`)
+      this.debug && console.log(outputArray)
       resolve(outputArray)
     })
   }

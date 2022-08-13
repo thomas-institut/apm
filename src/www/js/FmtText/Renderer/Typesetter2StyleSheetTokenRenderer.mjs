@@ -57,14 +57,11 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
   /**
    *
    * @param {FmtTextToken[]}fmtText
-   * @param {string}lang
    * @param {string|string[]}styleNames
    * @return{ Promise<TypesetterItem[]>}
    */
-  renderWithStyle(fmtText, lang, styleNames) {
+  renderWithStyle(fmtText, styleNames) {
     return new Promise( async (resolve) => {
-      // console.log(`Rendering fmtText as Typesetter2 items`)
-      this.__getTextDirection(lang)
       let items = []
       for(let tokenIndex = 0; tokenIndex < fmtText.length; tokenIndex++) {
         let token = fmtText[tokenIndex]
@@ -85,16 +82,6 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
               glueItem.setWidth(token.width).setStretch(token.stretch).setShrink(token.shrink)
             }
             items.push(glueItem)
-            // if (token.space === -1) {
-            //   // This is to deal with old fmtText, where normal was coded as space -1
-            //   items.push(glueItem)
-            // }
-            // if (token.space !== '') {
-            //   items.push(glueItem)
-            // } else {
-            //   glueItem.setWidth(token.width).setStretch(token.stretch).setShrink(token.shrink)
-            //   items.push(glueItem)
-            // }
             break
 
           case FmtTokenType.TEXT:
@@ -128,8 +115,8 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
    * @param lang
    * @return {Promise<TypesetterItem[]>}
    */
-  render (fmtText, lang = '') {
-    return this.renderWithStyle(fmtText, lang, 'default')
+  render(fmtText, lang = '') {
+    return this.renderWithStyle(fmtText, 'default')
   }
 
   __getTextDirection(lang) {

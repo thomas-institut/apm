@@ -248,7 +248,12 @@ export class StyleSheet {
     }
     //this.debug && console.log(`Style string: '${styleString}'`)
 
-    let styleArray = styleString.split(' ').filter( (styleName) => { return this.styleExists(styleName)})
+    let styleArray = styleString.split(' ').filter( (styleName) => {
+      let styleExists = this.styleExists(styleName)
+      if (!styleExists) {
+        console.warn(`Style '${styleName}' does not exist`)
+      }
+      return this.styleExists(styleName)})
     let stylesToApply = []
     styleArray.forEach( (styleName) => {
       stylesToApply = stylesToApply.concat(this.__getStyleAncestryLine(styleName))
@@ -261,7 +266,7 @@ export class StyleSheet {
     let line = [styleName]
 
     let styleDef = this.getStyleDef(styleName)
-    if (styleDef !== undefined && styleDef.parent !== '') {
+    if (styleDef !== undefined && styleDef.parent !== undefined && styleDef.parent !== '') {
       let parentAncestry = this.__getStyleAncestryLine(styleDef.parent)
       line = parentAncestry.concat(line)
     }

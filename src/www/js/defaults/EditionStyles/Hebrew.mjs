@@ -9,7 +9,6 @@ export const defaultHebrewEditionStyle = {
   },
   formattingStyles: {
     default: {
-      parent: '',
       text: {
         fontFamily: 'Linux Libertine',
         fontSize: Typesetter2.pt2px(12),
@@ -31,15 +30,14 @@ export const defaultHebrewEditionStyle = {
       }
     },
     hebrewText: {
-      parent: ''
     },
     latinText: {
-      parent: '',
       text: {
         fontFamily: 'FreeSerif'
       }
     },
     normal: {
+      parent: 'default',
       paragraph: {
         indent: '1 em'
       }
@@ -83,14 +81,36 @@ export const defaultHebrewEditionStyle = {
         fontSize: '0.9 em',
       }
     },
+    lineRangeSeparator: {
+      text: {
+        fontWeight: 'bold',
+      }
+    },
+    entrySeparator: {
+      // text: {
+      //   fontWeight: 'bold',
+      // }
+    },
+    afterLineRange: {
+      glue: {
+        width: '2.5 sp',
+        stretch: '1 sp',
+        shrink: '0.5 sp'
+      }
+    },
+    interEntry: {
+      glue: {
+        width: '1.5 sp',
+        stretch: '0.5 sp',
+        shrink: '0.25 sp'
+      }
+    },
     apparatusLineNumbers: {
-      parent: 'apparatus',
       text: {
         fontWeight: 'bold',
       }
     },
     apparatusKeyword: {
-      parent: 'apparatus',
       text: {
         fontSize: '0.8 em',
       }

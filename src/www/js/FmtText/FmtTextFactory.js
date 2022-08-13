@@ -39,7 +39,7 @@ export class FmtTextFactory {
   /**
    * Creates a FmtText array from a string
    * @param {string} theString
-   * @returns { FmtTextToken[] }
+   * @returns {FmtTextToken[]}
    */
   static fromString(theString) {
 

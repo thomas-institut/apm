@@ -170,6 +170,9 @@ export class BasicTypesetter extends Typesetter2 {
       // post-process lines
       let lineNumberInParagraph = 1
       lines = lines.map((line) => {
+        // inherit text direction from input list
+        line.setTextDirection(inputList.getTextDirection())
+
         // add list type
         line.addMetadata(MetadataKey.LIST_TYPE, ListType.LINE)
 
@@ -210,7 +213,7 @@ export class BasicTypesetter extends Typesetter2 {
         line.addMetadata(MetadataKey.LINE_RATIO, toFixedPrecision(line.getWidth() / unadjustedLineWidth, 3))
 
         // take care of rtl text
-        line = this.__reorderRtlText(line)
+        line = this.__reorderReversedDirectionText(line)
         return line
       })
 
@@ -507,28 +510,29 @@ export class BasicTypesetter extends Typesetter2 {
    * @return {ItemList}
    * @private
    */
-  __reorderRtlText(line) {
-    // first version: assume horizontal lists are processed LTR
-    // so, RTL item must be arranged in reverse order
+  __reorderReversedDirectionText(line) {
+
     let state = 0
     let orderedTokenIndices = []
     let reverseStack = []
     let hangingGlueArray = []
-    let hasRTLText = false
+    let hasReverseText = false
+    let lineTextDirection = line.getTextDirection()
+    let reverseDirection = lineTextDirection === 'ltr' ? 'rtl' : 'ltr'
     line.getList().forEach( (item, i) => {
       switch (state) {
-        case 0:   // processing LTR items
-          if (item.getTextDirection() === 'rtl') {
+        case 0:   // processing items in the same text direction as the line
+          if (item.getTextDirection() === reverseDirection) {
             reverseStack.push(i)
-            hasRTLText = true
+            hasReverseText = true
             state = 1
           } else {
             orderedTokenIndices.push(i)
           }
           break
 
-        case 1:  // processing RTL items
-          if (item.getTextDirection() === 'ltr') {
+        case 1:  // processing item with reverse direction
+          if (item.getTextDirection() === lineTextDirection) {
             // back to LTR
             while (reverseStack.length > 0) {
               orderedTokenIndices.push(reverseStack.pop())
@@ -542,7 +546,7 @@ export class BasicTypesetter extends Typesetter2 {
             state = 0
             break
           }
-          // still RTL
+          // still reverse direction
           // put hanging glue in reverse stack
           while(hangingGlueArray.length > 0) {
             reverseStack.push(hangingGlueArray.pop())
@@ -571,10 +575,10 @@ export class BasicTypesetter extends Typesetter2 {
       console.error(`Ordered token indices and tokensWithInitial glue are not the same length: 
         ${orderedTokenIndices.length} !== ${line.getItemCount()}`)
     }
-    // if there was some RTL text, reorder items
-    if (hasRTLText) {
-      this.debug && console.log(`Line has RTL text`)
-      line.addMetadata(MetadataKey.HAS_RTL_TEXT, true)
+    // if there was some reverse text, reorder items
+    if (hasReverseText) {
+      this.debug && console.log(`Line with ${lineTextDirection} direction has ${reverseDirection} text`)
+      line.addMetadata(MetadataKey.HAS_REVERSE_TEXT, true)
       line.addMetadata(MetadataKey.HAS_REORDERED_ITEMS, true)
       let originalItemArray = line.getList()
       let originalOrder = orderedTokenIndices.map( () => { return -1})

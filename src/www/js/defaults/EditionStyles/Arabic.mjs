@@ -28,7 +28,6 @@ export const defaultArabicEditionStyle = {
   },
   formattingStyles: {
     default: {
-      parent: '',
       text: {
         fontFamily: 'Noto Naskh Arabic',
         fontSize: Typesetter2.pt2px(12),
@@ -50,10 +49,8 @@ export const defaultArabicEditionStyle = {
       }
     },
     arabicText: {
-      parent: ''
     },
     latinText: {
-      parent: '',
       text: {
         fontFamily: 'FreeSerif'
       }
@@ -103,14 +100,36 @@ export const defaultArabicEditionStyle = {
         fontSize: '0.9 em',
       }
     },
+    lineRangeSeparator: {
+      text: {
+        fontWeight: 'bold',
+      }
+    },
+    entrySeparator: {
+      // text: {
+      //   fontWeight: 'bold',
+      // }
+    },
+    afterLineRange: {
+      glue: {
+        width: '2.5 sp',
+        stretch: '1 sp',
+        shrink: '0.5 sp'
+      }
+    },
+    interEntry: {
+      glue: {
+        width: '1.5 sp',
+        stretch: '0.5 sp',
+        shrink: '0.25 sp'
+      }
+    },
     apparatusLineNumbers: {
-      parent: 'apparatus',
       text: {
         fontWeight: 'bold',
       }
     },
     apparatusKeyword: {
-      parent: 'apparatus',
       text: {
         fontSize: '0.8 em',
       }

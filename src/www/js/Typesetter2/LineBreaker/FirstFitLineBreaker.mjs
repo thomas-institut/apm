@@ -345,25 +345,30 @@ export class FirstFitLineBreaker extends LineBreaker {
         // debug && console.log(`... not the same font style`)
         return [item, nextItem]
       }
+      if (item.getTextDirection() !== nextItem.getTextDirection()) {
+        debug && console.log(`... not the same text direction`)
+        return [item, nextItem]
+      }
       // debug && console.log(`...font specs are equal, merging`)
       // creating a new object so that the original object is not changed
       let newItem = ObjectFactory.fromObject(item.getExportObject())
 
       newItem.addMetadata(MetadataKey.MERGED_ITEM, true)
+      newItem.setTextDirection(item.getTextDirection())
 
-      if (item.getTextDirection() === 'rtl') {
-        newItem.setText( nextItem.getText() + item.getText())
-        newItem.addMetadata(MetadataKey.SOURCE_ITEMS_EXPORT, [
-          nextItem.getExportObject(),
-          item.getExportObject()
-        ])
-      } else {
+      // if (item.getTextDirection() === 'rtl') {
+      //   newItem.setText( nextItem.getText() + item.getText())
+      //   newItem.addMetadata(MetadataKey.SOURCE_ITEMS_EXPORT, [
+      //     nextItem.getExportObject(),
+      //     item.getExportObject()
+      //   ])
+      // } else {
         newItem.setText(item.getText() + nextItem.getText())
         newItem.addMetadata(MetadataKey.SOURCE_ITEMS_EXPORT, [
           item.getExportObject(),
           nextItem.getExportObject()
         ])
-      }
+      // }
       // console.log(`New merged item`)
       // console.log(newItem)
       return [ newItem ]

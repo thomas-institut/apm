@@ -66,6 +66,7 @@ class Playground {
     this.marginBottomInput = $('#marginBottom')
     this.marginLeftInput = $('#marginLeft')
     this.marginRightInput = $('#marginRight')
+    this.textDirectionInput = $('#textDirection')
     this.fontFamilyInput = $('#fontFamily')
     this._setupFontFamilyInput(this.fontFamilyInput, defaultFonts)
     this.fontSizeInput = $('#fontSize')
@@ -97,6 +98,7 @@ class Playground {
     this.marginLeft = defaultMarginLeft
     this.lineSkip = defaultLineSkip
     this.parSkip = defaultParSkip
+    this.textDirection = 'ltr'
     this._setFont(defaultFonts[0], defaultFontSize).then( () => {
       this._setInputFieldsFromCurrentValues()
       this.lastText = this.inputTextArea.val()
@@ -110,6 +112,7 @@ class Playground {
     this.marginRightInput.on('change', this.getOnChangeInputField())
     this.pageWidthInput.on('change', this.getOnChangeInputField())
     this.pageHeightInput.on('change', this.getOnChangeInputField())
+    this.textDirectionInput.on('change', this.getOnChangeInputField())
     this.fontFamilyInput.on('change', this.getOnChangeInputField())
     this.fontSizeInput.on('change', this.getOnChangeInputField())
     this.lineSkipInput.on('change', this.getOnChangeInputField())
@@ -214,6 +217,15 @@ class Playground {
     this.fontSizeInput.val(Typesetter2.px2pt(this.fontSize))
     this.lineSkipInput.val(Typesetter2.px2pt(this.lineSkip))
     this.parSkipInput.val(Typesetter2.px2pt(this.parSkip))
+    this.textDirectionInput.val(this.textDirection)
+  }
+
+  __changeTextDirectionInBrowser() {
+    if (this.textDirection === 'ltr') {
+      this.inputTextArea.removeClass('rtl')
+    } else {
+      this.inputTextArea.addClass('rtl')
+    }
   }
 
   _getDataFromInputFields() {
@@ -225,6 +237,9 @@ class Playground {
     this.marginRight = this.__getPxDimensionFromInputField('cm',this.marginRightInput, 0, this.pageWidth/2, defaultMarginRight)
     this.lineSkip = this.__getPxDimensionFromInputField('pt', this.lineSkipInput, 12, 72, 24)
     this.parSkip = this.__getPxDimensionFromInputField('pt', this.parSkipInput, 0, 72, 0)
+    this.textDirection = this.textDirectionInput.val()
+    this.__changeTextDirectionInBrowser()
+
     return this._setFont(
       defaultFonts[this.fontFamilyInput.val()],
       this.__getPxDimensionFromInputField('pt', this.fontSizeInput, 8, 48, 12)
@@ -377,11 +392,14 @@ class Playground {
     console.log(ptt)
     let verticalListToTypeset = new ItemList(TypesetterItemDirection.VERTICAL)
     ptt.forEach( (parToTypeset) => {
+      parToTypeset.setTextDirection(this.textDirection)
       verticalListToTypeset.pushItem(parToTypeset)
       if (this.parSkip > 0) {
         verticalListToTypeset.pushItem( (new Glue(TypesetterItemDirection.VERTICAL)).setHeight(this.parSkip))
       }
     })
+    console.log('Vertical list to typeset')
+    console.log(verticalListToTypeset)
     return verticalListToTypeset
   }
 

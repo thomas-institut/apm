@@ -23,7 +23,7 @@ export class AsyncFmtTextRenderer {
 
   /**
    *
-   * @param {FmtTextToken[]} fmtText
+   * @param {FmtTextToken[]}fmtText
    * @param {string}lang
    * @return {Promise}
    */

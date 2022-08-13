@@ -68,6 +68,10 @@
         ul.help {
             font-size: 0.8em;
         }
+
+        .rtl {
+            direction: rtl;
+        }
     </style>
 </head>
 <body>
@@ -92,10 +96,17 @@
 
             <div class="form-row">
                 <div class="row-label col-3">
-                    Font<br/>
+                    Text<br/>
                 </div>
-                <div class="col-6">
-                    <label for="fontFamily">Family</label>
+                <div class="col-2">
+                <label for="textDirection">Direction</label>
+                <select class="form-control" id="textDirection">
+                    <option value="ltr">LTR</option>
+                    <option value="rtl">RTL</option>
+                </select>
+                </div>
+                <div class="col-4">
+                    <label for="fontFamily">Font</label>
                     <select class="form-control" id="fontFamily">
                         <option>Times New Roman</option>
                         <option>Arial</option>

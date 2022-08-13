@@ -26,27 +26,58 @@ import { TextBox } from '../TextBox.mjs'
 export class TypesetterRenderer {
 
   /**
-   * Renders a horizontal list at the renderer's
-   * current x,y position plus the given shifts
-   * @param {ItemList} list
-   * @param {number}shiftX
-   * @param {number}shiftY
+   * Renders a horizontal list at the given x,y position
+   * @param horizontalList
+   * @param x
+   * @param y
    */
-  renderHorizontalList(list, shiftX=0, shiftY=0) {
-    // do nothing, the actual work should be done by
-    // one descendant of this class
+  renderHorizontalList(horizontalList, x=0, y=0) {
+    let [shiftX, shiftY] = this.getDeviceCoordinates(horizontalList.getShiftX(), horizontalList.getShiftY())
+    let currentX = x + shiftX
+    let currentY = y + shiftY
+    let textDirection = horizontalList.getTextDirection()
+    if (textDirection === 'rtl') {
+      let [listWidth, ] = this.getDeviceCoordinates(horizontalList.getWidth(), horizontalList.getHeight())
+      currentX += listWidth
+    }
+    horizontalList.getList().forEach( (item) => {
+      let [itemWidth, ] = this.getDeviceCoordinates(item.getWidth(), item.getHeight())
+      if (item.getTextDirection() === textDirection || item.getTextDirection() === '') {
+        this.renderItem(item, currentX, currentY)
+      } else {
+        // a reverse item
+        if (textDirection==='ltr') {
+            // need to render the RTL item to right of its position
+            this.renderItem(item, currentX+itemWidth, currentY)
+        } else {
+          // need to render the RTL item to left of its position
+          this.renderItem(item, currentX-itemWidth, currentY)
+        }
+      }
+
+      if (textDirection === 'ltr') {
+        currentX += itemWidth
+      } else {
+        currentX -= itemWidth
+      }
+    })
   }
 
   /**
-   * Renders a horizontal list at the renderer's
-   * current x,y position plus the given shifts
-   * @param {ItemList}list
-   * @param {number}shiftX
-   * @param {number}shiftY
+   * Renders a vertical list at the given x,y position
+   * @param verticalList
+   * @param x
+   * @param y
    */
-  renderVerticalList(list, shiftX=0, shiftY=0) {
-    // do nothing, the actual work should be done by
-    // one descendant of this class
+  renderVerticalList(verticalList, x=0, y=0) {
+    let [shiftX, shiftY] = this.getDeviceCoordinates(verticalList.getShiftX(), verticalList.getShiftY())
+    let currentX = x + shiftX
+    let currentY = y + shiftY
+    verticalList.getList().forEach( (item) => {
+      this.renderItem(item, currentX, currentY)
+      let [, itemHeight] = this.getDeviceCoordinates(item.getWidth(), item.getHeight())
+      currentY += itemHeight
+    })
   }
 
   /**
@@ -137,22 +168,15 @@ export class TypesetterRenderer {
    * @param {number}y
    */
   renderList(listItem, x, y) {
-    let [shiftX, shiftY] = this.getDeviceCoordinates(listItem.getShiftX(), listItem.getShiftY())
-    let currentX = x + shiftX
-    let currentY = y + shiftY
-    listItem.getList().forEach( (item) => {
-      this.renderItem(item, currentX, currentY)
-      let [itemWidth, itemHeight] = this.getDeviceCoordinates(item.getWidth(), item.getHeight())
-      switch(listItem.getDirection()) {
-        case TypesetterItemDirection.HORIZONTAL:
-          currentX += itemWidth
-          break
+    switch(listItem.getDirection()) {
+      case TypesetterItemDirection.HORIZONTAL:
+        this.renderHorizontalList(listItem,x,y)
+        break
 
-        case TypesetterItemDirection.VERTICAL:
-          currentY += itemHeight
-          break
-      }
-    })
+      case TypesetterItemDirection.VERTICAL:
+        this.renderVerticalList(listItem,x, y)
+        break
+    }
   }
 
   /**

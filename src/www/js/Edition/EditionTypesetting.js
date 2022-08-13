@@ -26,6 +26,7 @@ import {defaultStyleSheet} from '../Typesetter2/Style/DefaultStyleSheet.mjs'
 import { StyleSheet } from '../Typesetter2/Style/StyleSheet'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { Typesetter2StyleSheetTokenRenderer } from '../FmtText/Renderer/Typesetter2StyleSheetTokenRenderer.mjs'
+import text from 'quill/blots/text'
 
 
 let defaultEditionStyles = {
@@ -86,12 +87,14 @@ export class EditionTypesetting {
       }
       let edition = this.options.edition
       let textDirection = this.textDirection
+      this.debug && console.log(`Edition language is '${this.edition.lang}',  ${textDirection}`)
       this.languageDetector = new LanguageDetector({ defaultLang: edition.lang})
       let verticalItems = []
       let mainTextParagraphs = MainText.getParagraphs(edition.mainText)
       for (let mainTextParagraphIndex = 0; mainTextParagraphIndex < mainTextParagraphs.length; mainTextParagraphIndex++) {
         let mainTextParagraph = mainTextParagraphs[mainTextParagraphIndex]
         let paragraphToTypeset = new ItemList(TypesetterItemDirection.HORIZONTAL)
+        paragraphToTypeset.setTextDirection(textDirection)
         let paragraphStyle = mainTextParagraph.type
         // this.debug && console.log(`Main text paragraph style: '${paragraphStyle}'`)
         if (!this.ss.styleExists(paragraphStyle)) {
@@ -122,17 +125,19 @@ export class EditionTypesetting {
               break
 
             case MainTextTokenType.TEXT:
-              let textItems = await this.tokenRenderer.renderWithStyle(mainTextToken.fmtText, edition.lang, paragraphStyle)
+              let textItems = await this.tokenRenderer.renderWithStyle(mainTextToken.fmtText, paragraphStyle)
               if (textItems.length > 0) {
                 // tag the first item with the original index
                 textItems[0].addMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX, mainTextToken.originalIndex)
                 // detect text direction for text boxes
                 textItems = textItems.map ( (item) => {
                   if (item instanceof TextBox) {
-                    return this.__detectAndSetTextDirection(item)
+                    return this.__detectAndSetTextBoxTextDirection(item)
                   }
                   return item
                 })
+                // this.debug && console.log(`Pushing items`)
+                // this.debug && console.log(textItems)
                 paragraphToTypeset.pushItemArray(textItems)
               }
               break
@@ -173,6 +178,7 @@ export class EditionTypesetting {
       this.debug && console.log(apparatus)
       let textDirection = getTextDirectionForLang(this.edition.lang)
       let outputList = new ItemList(TypesetterItemDirection.HORIZONTAL)
+      outputList.setTextDirection(textDirection)
       if (apparatus.entries.length === 0) {
         resolve(outputList)
         return
@@ -239,12 +245,16 @@ export class EditionTypesetting {
       lineRangesKeys.sort()
       for (let lineRangeKeyIndex = 0; lineRangeKeyIndex < lineRangesKeys.length; lineRangeKeyIndex++) {
         let lineRange = lineRanges[lineRangesKeys[lineRangeKeyIndex]]
+        // line number
         outputList.pushItemArray(await this._getTsItemsFromStr(this.__getLineStringFromRange(lineRange.lineFrom, lineRange.lineTo), 'apparatus apparatusLineNumbers', textDirection))
         outputList.pushItem((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
         for (let entryIndex = 0; entryIndex<lineRange.entries.length; entryIndex++) {
           let entry = lineRange.entries[entryIndex]
-          outputList.pushItemArray(await this._getTsItemsFromStr(entry.lemmaText, 'apparatus'))
-          outputList.pushItemArray(await this.tokenRenderer.renderWithStyle(this._getSeparatorFmtText(entry), this.edition.lang, 'apparatus'))
+          // lemma text
+          outputList.pushItemArray(await this._getTsItemsFromStr(entry.lemmaText, 'apparatus', 'detect'))
+          // separator
+          let separatorItems = await this.tokenRenderer.renderWithStyle(this._getSeparatorFmtText(entry), 'apparatus', textDirection)
+          outputList.pushItemArray(this.__setTextDirection(separatorItems, textDirection))
           outputList.pushItem((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
           // typeset sub entries
           for (let subEntryIndex = 0; subEntryIndex < entry.subEntries.length; subEntryIndex++) {
@@ -255,14 +265,14 @@ export class EditionTypesetting {
             }
           }
           if (entryIndex !== lineRange.entries.length -1) {
-            outputList.pushItem((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
-            outputList.pushItemArray(await this._getTsItemsFromStr('|', 'apparatus', textDirection))
-            outputList.pushItem((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
+            outputList.pushItem((await this.__createNormalSpaceGlue('apparatus interEntry')).setTextDirection(textDirection))
+            outputList.pushItemArray(await this._getTsItemsFromStr('|', 'apparatus entrySeparator', textDirection))
+            outputList.pushItem((await this.__createNormalSpaceGlue('apparatus interEntry')).setTextDirection(textDirection))
           }
         }
         outputList.pushItem((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
-        outputList.pushItemArray(await this._getTsItemsFromStr('||', 'apparatus', textDirection))
-        outputList.pushItem((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
+        outputList.pushItemArray(await this._getTsItemsFromStr('||', 'apparatus lineRangeSeparator', textDirection))
+        outputList.pushItem((await this.__createNormalSpaceGlue('apparatus afterLineRange')).setTextDirection(textDirection))
       }
 
       outputList.pushItem(Glue.createLineFillerGlue().setTextDirection(textDirection))
@@ -291,28 +301,28 @@ export class EditionTypesetting {
       let items = []
       switch(subEntry.type) {
         case 'variant':
-          pushArray(items, await this.tokenRenderer.renderWithStyle(subEntry.fmtText, this.edition.lang, 'apparatus'))
-          items.push(await this.__createNormalSpaceGlue('apparatus'))
+          pushArray(items, this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect'))
+          items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           let siglaTextBox = await this.ss.apply((new TextBox()).setText(this.__getSiglaString(subEntry.witnessData)), 'apparatus')
-          items.push(siglaTextBox)
+          items.push(siglaTextBox.setTextDirection(this.textDirection))
           break
 
         case 'omission':
         case 'addition':
           let keyword = this.editionStyle.strings[subEntry.type]
-          let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword), 'apparatus apparatusKeyword')
+          let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
           items.push(keywordTextBox)
-          items.push(await this.__createNormalSpaceGlue('apparatus'))
+          items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           if (subEntry.type === 'addition') {
-            pushArray(items, await this.tokenRenderer.renderWithStyle(subEntry.fmtText, this.edition.lang, 'apparatus'))
-            items.push(await this.__createNormalSpaceGlue('apparatus'))
+            pushArray(items, this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect'))
+            items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           }
           let siglaTextBox2 = await this.ss.apply((new TextBox()).setText(this.__getSiglaString(subEntry.witnessData)), 'apparatus')
-          items.push(siglaTextBox2)
+          items.push(siglaTextBox2.setTextDirection(this.textDirection))
           break
 
         case 'fullCustom': {
-          pushArray(items, await this.tokenRenderer.renderWithStyle(subEntry.fmtText, this.edition.lang, 'apparatus'))
+          pushArray(items, this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect'))
           break
         }
       }
@@ -473,12 +483,16 @@ export class EditionTypesetting {
    * @param {TextBox}textBox
    * @private
    */
-  __detectAndSetTextDirection(textBox) {
+  __detectAndSetTextBoxTextDirection(textBox) {
     if (textBox.getTextDirection() !== '') {
       // do not change if text direction is already set
+      this.debug && console.log(`Text box '${textBox.getText()}' direction is already set: '${textBox.getTextDirection()}'`)
       return textBox
     }
     let detectedLang = this.languageDetector.detectLang(textBox.getText())
+    if (detectedLang !== this.edition.lang) {
+      this.debug && console.log(`Text box with non '${this.edition.lang}' text: ${textBox.getText()} ('${detectedLang} detected)`)
+    }
     if (isRtl(detectedLang)) {
       return textBox.setRightToLeft()
     } else {
@@ -486,19 +500,61 @@ export class EditionTypesetting {
     }
   }
 
-  _getTsItemsFromStr(someString, style = 'normal', forceTextDirection = '') {
+  /**
+   *
+   * @param {TypesetterItem[]}items
+   * @param {string}textDirection
+   * @private
+   */
+  __forceTextDirection(items, textDirection) {
+    return items.map( (item) => {
+      item.setTextDirection(textDirection)
+    })
+  }
+
+  /**
+   *
+   * @param {string}someString
+   * @param {string}style
+   * @param {string}textDirection
+   * @return {Promise<unknown>}
+   * @private
+   */
+  _getTsItemsFromStr(someString, style = 'normal', textDirection = 'detect') {
     return new Promise( async (resolve) => {
       let fmtText = FmtTextFactory.fromString(someString)
 
-      let items = await this.tokenRenderer.renderWithStyle(fmtText, this.edition.lang, style)
-      if (forceTextDirection !== '') {
-        items.forEach( (item) => {
-          item.setTextDirection(forceTextDirection)
-        })
-      }
+      let items = await this.tokenRenderer.renderWithStyle(fmtText, style)
+      items = this.__setTextDirection(items, textDirection)
       resolve(items)
     })
+  }
 
+  /**
+   *
+   * @param {TypesetterItem[]}items
+   * @param {string}textDirection
+   * @private
+   */
+  __setTextDirection(items, textDirection) {
+    switch(textDirection) {
+      case 'rtl':
+      case 'ltr':
+        items.forEach( (item) => {
+          item.setTextDirection(textDirection)
+        })
+        break
+
+      case 'detect':
+        items.forEach((item) => {
+          if (item instanceof TextBox ) {
+            return this.__detectAndSetTextBoxTextDirection(item)
+          }
+          return item
+        })
+        break
+    }
+    return items
   }
 
   /**

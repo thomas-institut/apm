@@ -142,10 +142,12 @@ export class ItemList extends TypesetterItem {
       }
       return ''
     })
-    if (this.hasMetadata(MetadataKey.HAS_RTL_TEXT) && this.getMetadata(MetadataKey.HAS_RTL_TEXT) === true) {
+    if (this.hasMetadata(MetadataKey.HAS_REVERSE_TEXT) && this.getMetadata(MetadataKey.HAS_REVERSE_TEXT) === true) {
+      // TODO: properly implement this!!!
       let originalIndexes = this.getList().map( (item) => {
         return item.getMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX)
       })
+
     }
 
     return textArray.join('')

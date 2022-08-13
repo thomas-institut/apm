@@ -26,6 +26,7 @@ export const defaultLatinEditionStyle =  {
   },
   formattingStyles: {
     normal: {
+      parent: 'default',
       paragraph: {
         indent: '1 em'
       }
@@ -69,14 +70,36 @@ export const defaultLatinEditionStyle =  {
         fontSize: '0.9 em',
       }
     },
+    lineRangeSeparator: {
+      text: {
+        fontWeight: 'bold',
+      }
+    },
+    entrySeparator: {
+      // text: {
+      //   fontWeight: 'bold',
+      // }
+    },
+    afterLineRange: {
+      glue: {
+        width: '2.5 sp',
+        stretch: '1 sp',
+        shrink: '0.5 sp'
+      }
+    },
+    interEntry: {
+      glue: {
+        width: '1.5 sp',
+        stretch: '0.5 sp',
+        shrink: '0.25 sp'
+      }
+    },
     apparatusLineNumbers: {
-      parent: '',
       text: {
         fontWeight: 'bold',
       }
     },
     apparatusKeyword: {
-      parent: '',
       text: {
         fontStyle: 'italic',
       }

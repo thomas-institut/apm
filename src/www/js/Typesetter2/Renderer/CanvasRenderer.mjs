@@ -63,10 +63,15 @@ export class CanvasRenderer extends TypesetterRenderer {
     let fontWeight = textBoxItem.getFontWeight() === '' ? 'normal' : textBoxItem.getFontWeight()
     let fontStyle = textBoxItem.getFontStyle() === '' ? 'normal' : textBoxItem.getFontStyle()
     let fontVariant = 'normal'
+    let currentCanvasDirection = this.ctx.direction
+    if (textBoxItem.getTextDirection() !== '') {
+      this.ctx.direction = textBoxItem.getTextDirection()
+    }
     this.ctx.font = `${fontStyle} ${fontVariant} ${fontWeight} ${fontSize}px ${textBoxItem.getFontFamily()} `
     this.ctx.fillStyle = '#000000'
     this.ctx.fillText(textBoxItem.getText(), x + shiftX,
       y +shiftY + textBoxHeight)
+    this.ctx.direction = currentCanvasDirection
   }
 
   getDeviceCoordinates (x, y) {

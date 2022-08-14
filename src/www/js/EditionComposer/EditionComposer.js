@@ -44,7 +44,7 @@ import { AdminPanel } from './AdminPanel'
 import { EditionPreviewPanel } from './EditionPreviewPanel'
 import { MainTextPanel } from './MainTextPanel'
 import { ApparatusPanel } from './ApparatusPanel'
-import { Edition } from '../Edition/Edition'
+import { Edition } from '../Edition/Edition.mjs'
 import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
 import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
 import * as CollationTableType from '../constants/CollationTableType'
@@ -57,7 +57,7 @@ import { ServerLogger } from '../Server/ServerLogger'
 import { KeyCache } from '../toolbox/KeyCache'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
 import { TechSupportPanel } from './TechSupportPanel'
-import { FmtText } from '../FmtText/FmtText'
+import { FmtText } from '../FmtText/FmtText.mjs'
 import { EditionPreviewPanelNew } from './EditionPreviewPanelNew'
 
 // CONSTANTS
@@ -224,6 +224,7 @@ export class EditionComposer {
       ctData: this.ctData,
       edition: this.edition,
       langDef: this.options.langDef,
+      getPdfDownloadUrl: this.genGetPdfDownloadUrlForPreviewPanel(),
       debug: true
     })
 
@@ -719,6 +720,39 @@ export class EditionComposer {
        this.errorButton.removeClass('blink').addClass('hidden')
      }
      this._updateSaveArea()
+  }
+
+  genGetPdfDownloadUrlForPreviewPanel() {
+    return (rawData) => {
+      return new Promise( (resolve, reject) => {
+        let apiUrl = this.options.urlGenerator.apiTypesetRaw()
+        let dataJson = JSON.stringify(rawData)
+        console.log(`About to make API call for PDF download url, data size is ${dataJson.length}`)
+        console.log(`Calling typeset API at ${apiUrl}`)
+        $.post(
+          apiUrl,
+          {data: JSON.stringify({
+              jsonData: dataJson
+            })}
+        ).done(
+          apiResponse => {
+            console.log(`Got response from the server:`)
+            console.log(apiResponse)
+            if (apiResponse.url === undefined) {
+              console.error('No url given by server')
+              reject()
+            }
+            resolve(apiResponse.url)
+          }
+        ).fail (
+          error => {
+            console.error('PDF API error')
+            console.log(error)
+            reject()
+          }
+        )
+      })
+    }
   }
 
 

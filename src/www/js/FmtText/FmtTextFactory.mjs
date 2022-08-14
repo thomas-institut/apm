@@ -31,8 +31,8 @@ be just { type: glue }  and a text token { text: 'someString' }
  */
 
 
-import { FmtTextTokenFactory } from './FmtTextTokenFactory'
-import { FmtTextToken } from './FmtTextToken'
+import { FmtTextTokenFactory } from './FmtTextTokenFactory.mjs'
+import { FmtTextToken } from './FmtTextToken.mjs'
 
 export class FmtTextFactory {
 

@@ -1,4 +1,4 @@
-import { MainText } from './MainText'
+import { MainText } from './MainText.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { Typesetter2 } from '../Typesetter2/Typesetter2.mjs'
 import { TextBoxMeasurer } from '../Typesetter2/TextBoxMeasurer/TextBoxMeasurer.mjs'
@@ -8,26 +8,22 @@ import * as TypesetterItemDirection from '../Typesetter2/TypesetterItemDirection
 import * as MetadataKey from '../Typesetter2/MetadataKey.mjs'
 import * as ListType from '../Typesetter2/ListType.mjs'
 import { Glue } from '../Typesetter2/Glue.mjs'
-import * as MainTextTokenType from './MainTextTokenType'
+import * as MainTextTokenType from './MainTextTokenType.mjs'
 import { TextBox } from '../Typesetter2/TextBox.mjs'
-import { Typesetter2TokenRenderer } from '../FmtText/Renderer/Typesetter2TokenRenderer'
 import { Penalty } from '../Typesetter2/Penalty.mjs'
 import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
 import { getTextDirectionForLang, isRtl } from '../toolbox/Util.mjs'
-import { FmtTextFactory} from '../FmtText/FmtTextFactory'
+import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
 import { ObjectFactory } from '../Typesetter2/ObjectFactory.mjs'
-import { Edition } from './Edition'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
 
 import { defaultLatinEditionStyle} from '../defaults/EditionStyles/Latin.mjs'
 import { defaultArabicEditionStyle} from '../defaults/EditionStyles/Arabic.mjs'
 import {defaultHebrewEditionStyle} from '../defaults/EditionStyles/Hebrew.mjs'
 import {defaultStyleSheet} from '../Typesetter2/Style/DefaultStyleSheet.mjs'
-import { StyleSheet } from '../Typesetter2/Style/StyleSheet'
+import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { Typesetter2StyleSheetTokenRenderer } from '../FmtText/Renderer/Typesetter2StyleSheetTokenRenderer.mjs'
-import text from 'quill/blots/text'
-
 
 let defaultEditionStyles = {
   la: defaultLatinEditionStyle,
@@ -41,7 +37,7 @@ export class EditionTypesetting {
     let oc = new OptionsChecker({
       context: 'EditionTypesetting',
       optionsDefinition: {
-        edition: { type: 'object', objectClass: Edition},
+        edition: { type: 'object'},
         editionStyleName: { type: 'string', default: ''},
         textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
         debug: { type: 'boolean',  default: false}
@@ -68,6 +64,7 @@ export class EditionTypesetting {
       textBoxMeasurer: this.textBoxMeasurer
     })
     this.isSetup = true
+    this.languageDetector = new LanguageDetector({ defaultLang: this.options.edition.lang})
   }
 
   setup() {
@@ -88,7 +85,7 @@ export class EditionTypesetting {
       let edition = this.options.edition
       let textDirection = this.textDirection
       this.debug && console.log(`Edition language is '${this.edition.lang}',  ${textDirection}`)
-      this.languageDetector = new LanguageDetector({ defaultLang: edition.lang})
+
       let verticalItems = []
       let mainTextParagraphs = MainText.getParagraphs(edition.mainText)
       for (let mainTextParagraphIndex = 0; mainTextParagraphIndex < mainTextParagraphs.length; mainTextParagraphIndex++) {
@@ -176,6 +173,7 @@ export class EditionTypesetting {
       // TODO: restrict line numbers to output
       this.debug && console.log(`Getting apparatus vertical list to typeset`)
       this.debug && console.log(apparatus)
+
       let textDirection = getTextDirectionForLang(this.edition.lang)
       let outputList = new ItemList(TypesetterItemDirection.HORIZONTAL)
       outputList.setTextDirection(textDirection)

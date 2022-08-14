@@ -17,10 +17,10 @@
  */
 
 import { FmtTextRenderer } from './FmtTextRenderer'
-import * as FmtTokenType from '../FmtTextTokenType'
-import * as FontStyle from '../FontStyle'
-import * as FontWeight from '../FontWeight'
-import * as VerticalAlign from '../VerticalAlign'
+import * as FmtTokenType from '../FmtTextTokenType.mjs'
+import * as FontStyle from '../FontStyle.mjs'
+import * as FontWeight from '../FontWeight.mjs'
+import * as VerticalAlign from '../VerticalAlign.mjs'
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Glue } from '../../Typesetter2/Glue.mjs'

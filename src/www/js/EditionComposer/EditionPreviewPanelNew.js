@@ -21,17 +21,18 @@
 
 
 import { PanelWithToolbar } from './PanelWithToolbar'
-import { Edition } from '../Edition/Edition'
+import { Edition } from '../Edition/Edition.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { ZoomController } from '../toolbox/ZoomController'
 import { EditionViewerCanvas } from '../Edition/EditionViewerCanvas'
+import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 
 const defaultIcons = {
   busy: '<i class="fas fa-circle-notch fa-spin"></i>'
 }
 
 const canvasId = 'edition-preview-canvas-new'
-const exportPdfButtonId = 'export-pdf-btn-new'
+const downloadPdfButtonId = 'export-pdf-btn-new'
 
 export class EditionPreviewPanelNew extends PanelWithToolbar {
 
@@ -41,7 +42,15 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       ctData: { type: 'object', required: true},
       edition: { type: 'object', objectClass: Edition, required: true},
       langDef: { type: 'object', required: true},
-      icons: { type: 'object', default: defaultIcons}
+      icons: { type: 'object', default: defaultIcons},
+      //
+      getPdfDownloadUrl: {
+        type: 'function',
+        default: (data) => {
+          this.debug && console.log(`Default getPdfDownloadUrl called`)
+          this.debug && console.log(data)
+          return resolvedPromise('')}
+        }
     }
     let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'Edition Preview Panel New'})
     this.options = oc.getCleanOptions(options)
@@ -54,8 +63,9 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
     return ` <div class="zoom-controller">
                     </div>
                     <div>
-                        <a id="${exportPdfButtonId}" class="tb-button margin-left-med" href="#" download="apm-edition-preview.pdf"
-                           title="Download PDF"><small>PDF</small> <i class="fas fa-download"></i></a>
+                        <a id="${downloadPdfButtonId}" class="tb-button margin-left-med" href="#" title="Download PDF">
+                            <small>PDF</small> <i class="fas fa-download"></i>
+                        </a>
                     </div>`
   }
 
@@ -65,6 +75,9 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
   }
 
   postRender (id, mode, visible) {
+
+    this.downloadPdfButton = $(`#${downloadPdfButtonId}`)
+    this.downloadPdfButton.off('click')
 
     this.viewer = new EditionViewerCanvas({
       edition: this.edition,
@@ -77,12 +90,48 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
     this.zoomController = new ZoomController({
       containerSelector: `${this.containerSelector} div.zoom-controller`,
       onZoom: this.__genOnZoom(),
-      debug: true
+      debug: false
     })
 
     this.viewer.render().then( () => {
+      this.downloadPdfButton.on('click', this._genOnClickDownloadPdfButton())
       console.log(`Edition rendered`)
     })
+  }
+
+  _genOnClickDownloadPdfButton() {
+    return () => {
+      let typesettingParameters = this.viewer.getTypesettingParameters()
+      if (typesettingParameters === undefined) {
+        console.log(`Edition typesetting not ready yet`)
+        return
+      }
+      // delete browser specific options, these will
+      // be set by the server-side process
+      typesettingParameters.typesetterOptions.textBoxMeasurer = undefined
+      typesettingParameters.typesetterOptions.getApparatusListToTypeset = undefined
+      typesettingParameters.typesetterOptions.preTypesetApparatuses = undefined
+      typesettingParameters.helperOptions.textBoxMeasurer = undefined
+
+      let data = {
+        options: typesettingParameters.typesetterOptions,
+        helperOptions: typesettingParameters.helperOptions,
+        mainTextList: typesettingParameters.mainTextVerticalListToTypeset.getExportObject(),
+        extraData: typesettingParameters.extraData
+      }
+      let currentButtonHtml = this.downloadPdfButton.html()
+      this.downloadPdfButton.html(`Waiting for server's PDF... ${this.options.icons.busy}`)
+      this.options.getPdfDownloadUrl(data).then( (url) => {
+        this.debug && console.log(`PDF download URL: ${url}`)
+        this.downloadPdfButton.html(currentButtonHtml)
+        if (url !== undefined && url !== '') {
+          window.open(url)
+        }
+      }).catch( () => {
+        console.log('PDF export error')
+      })
+
+    }
   }
 
   updateData(ctData, edition) {

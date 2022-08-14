@@ -23,9 +23,9 @@ import Quill from '../QuillLoader'
 import Small from './QuillBlots/Small'
 import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
 import { CustomApparatusQuillDeltaConverter } from './QuillDelta/CustomApparatusQuillDeltaConverter'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import Superscript from './QuillBlots/Superscript'
-import { FmtText } from '../FmtText/FmtText'
+import { FmtText } from '../FmtText/FmtText.mjs'
 import { removeExtraWhiteSpace, removeWhiteSpace } from '../toolbox/Util.mjs'
 
 const simpleFormats = [ 'bold', 'italic', 'small', 'superscript']

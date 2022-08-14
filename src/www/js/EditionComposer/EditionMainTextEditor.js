@@ -24,7 +24,7 @@ import Small from './QuillBlots/Small'
 import Superscript from './QuillBlots/Superscript'
 
 import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { GenericQuillDeltaConverter } from './QuillDelta/GenericQuillDeltaConverter'
 
 const simpleFormats = [

@@ -62,12 +62,11 @@ FmtTextToken := {
  */
 
 
-import * as FmtTextTokenType from './FmtTextTokenType'
-import * as FontStyle from './FontStyle'
-import * as FontSize from './FontSize'
-import * as FontWeight from './FontWeight'
-import * as VerticalAlign from './VerticalAlign'
-import * as ParagraphStyle from './ParagraphStyle'
+import * as FmtTextTokenType from './FmtTextTokenType.mjs'
+import * as FontStyle from './FontStyle.mjs'
+import * as FontSize from './FontSize.mjs'
+import * as FontWeight from './FontWeight.mjs'
+import * as VerticalAlign from './VerticalAlign.mjs'
 
 export const DEFAULT_GLUE_SPACE = 'normal'
 

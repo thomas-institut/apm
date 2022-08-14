@@ -16,7 +16,7 @@
  *
  */
 
-import { FmtText } from '../FmtText'
+import { FmtText } from '../FmtText.mjs'
 
 export class FmtTextRenderer {
 

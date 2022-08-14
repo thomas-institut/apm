@@ -19,12 +19,18 @@ from gi.repository import PangoCairo
 
 HORIZONTAL = 0
 VERTICAL = 1
+debug = True
 
 if len(sys.argv) != 2:
     print("Need an out file name")
     exit(0)
 
 output_file_name = sys.argv[1]
+
+
+def debug_msg(msg):
+    if debug:
+        print(msg)
 
 
 def px2pt(px):
@@ -99,8 +105,17 @@ def get_horizontal_list_width(horizontal_list):
 def print_text_box(context, x, y, text_box):
     shift_x = px2pt(get_value(text_box, 'shiftX', 0))
     shift_y = px2pt(get_value(text_box, 'shiftY', 0))
+    tb_text_direction = get_value(text_box, 'textDirection', '')
+
     # text_box_height = px2pt(get_value(text_box, 'height', 0))
     layout = PangoCairo.create_layout(context)
+
+    if tb_text_direction == 'rtl':
+        debug_msg("RTL text box: " + text_box['text'])
+        tb_width = px2pt(get_value(text_box, 'width', 0))
+        debug_msg("Shifting " + str(tb_width) + " pts to the left")
+        shift_x -= tb_width
+
     desc = Pango.FontDescription()
     desc.set_family(text_box['fontFamily'])
     desc.set_absolute_size(px2pt(text_box['fontSize'])*Pango.SCALE)
@@ -118,12 +133,14 @@ def print_text_box(context, x, y, text_box):
     PangoCairo.show_layout(context, layout)
 
 
+debug_msg("Output file name: " + output_file_name)
 input_str = sys.stdin.read()
 doc = json.loads(input_str)
 
 surface_pdf = cairo.PDFSurface(output_file_name, px2pt(doc['width']), px2pt(doc['height']))
 ctx_pdf = cairo.Context(surface_pdf)
 
+debug_msg("Rendering " + str(len(doc['pages'])) + " pages")
 for page in doc['pages']:
     surface_pdf.set_size(px2pt(page['width']), px2pt(page['height']))
     for item in page['items']:

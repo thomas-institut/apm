@@ -17,10 +17,10 @@
  */
 
 
-import * as MainTextTokenType from './MainTextTokenType'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory'
-import { FmtText } from '../FmtText/FmtText'
-import { FmtTextToken } from '../FmtText/FmtTextToken'
+import * as MainTextTokenType from './MainTextTokenType.mjs'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
+import { FmtText } from '../FmtText/FmtText.mjs'
+import { FmtTextToken } from '../FmtText/FmtTextToken.mjs'
 
 /**
  * A token that can appear in the main text of an edition.

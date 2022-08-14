@@ -363,6 +363,9 @@ export class BasicTypesetter extends Typesetter2 {
       this.debug && console.log(`Main text Vertical list with typeset paragraphs`)
       this.debug && console.log(verticalListToTypeset)
 
+      this.debug && console.log(`Extra data`)
+      this.debug && console.log(extraData)
+
       if (extraData.apparatuses !== undefined && this.options.apparatusesAtEndOfDocument) {
         let apparatuses = await this.__typesetApparatuses(verticalListToTypeset, extraData.apparatuses)
         this.debug && console.log(`Typeset apparatuses`)

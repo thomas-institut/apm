@@ -16,7 +16,7 @@
  *
  */
 
-import * as EditionMainTextTokenType from './MainTextTokenType'
+import * as EditionMainTextTokenType from './MainTextTokenType.mjs'
 
 /**
  * Functions to deal with an array of MainTexToken

@@ -18,7 +18,7 @@
 
 import { CtData } from '../CtData'
 import { CtDataCleaner } from './CtDataCleaner'
-import { FmtTextFactory } from '../../FmtText/FmtTextFactory'
+import { FmtTextFactory } from '../../FmtText/FmtTextFactory.mjs'
 import { deepCopy } from '../../toolbox/Util.mjs'
 import * as CollationTableType from '../../Witness/WitnessTokenClass'
 import { CollationTableConsistencyCleaner } from './CollationTableConsistencyCleaner'

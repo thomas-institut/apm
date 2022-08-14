@@ -1,8 +1,8 @@
 
 import * as SubEntryType from './SubEntryType'
 import * as SubEntrySource from './SubEntrySource'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory'
-import { FmtText } from '../FmtText/FmtText'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
+import { FmtText } from '../FmtText/FmtText.mjs'
 import { hashCodeInt32 } from '../toolbox/Util.mjs'
 
 

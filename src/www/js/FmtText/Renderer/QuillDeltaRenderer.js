@@ -17,13 +17,13 @@
  */
 
 import { FmtTextRenderer } from './FmtTextRenderer'
-import * as FmtTextTokenType from '../FmtTextTokenType'
-import * as FontStyle from '../FontStyle'
-import * as FontSize from '../FontSize'
-import * as FontWeight from '../FontWeight'
-import * as VerticalAlign from '../VerticalAlign'
-import * as MarkType from '../MarkType'
-import * as ParagraphStyle from '../ParagraphStyle'
+import * as FmtTextTokenType from '../FmtTextTokenType.mjs'
+import * as FontStyle from '../FontStyle.mjs'
+import * as FontSize from '../FontSize.mjs'
+import * as FontWeight from '../FontWeight.mjs'
+import * as VerticalAlign from '../VerticalAlign.mjs'
+import * as MarkType from '../MarkType.mjs'
+import * as ParagraphStyle from '../ParagraphStyle.mjs'
 
 export class QuillDeltaRenderer extends FmtTextRenderer {
 

@@ -55,7 +55,7 @@ import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
 import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
 import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
-import { FmtText } from '../FmtText/FmtText'
+import { FmtText } from '../FmtText/FmtText.mjs'
 
 export class CollationTablePanel extends PanelWithToolbar {
   constructor (options = {}) {

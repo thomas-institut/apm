@@ -16,18 +16,18 @@
  *
  */
 
-import * as FmtTokenType from '../FmtTextTokenType.js'
-import * as VerticalAlign from '../VerticalAlign.js'
+import * as FmtTokenType from '../FmtTextTokenType.mjs'
+import * as VerticalAlign from '../VerticalAlign.mjs'
 import * as DefaultStyleSheet from '../../Typesetter2/Style/DefaultStyleSheet.mjs'
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Glue } from '../../Typesetter2/Glue.mjs'
 import { TextBoxFactory } from '../../Typesetter2/TextBoxFactory.mjs'
-import { StyleSheet} from '../../Typesetter2/Style/StyleSheet.js'
+import { StyleSheet} from '../../Typesetter2/Style/StyleSheet.mjs'
 import { TextBoxMeasurer } from '../../Typesetter2/TextBoxMeasurer/TextBoxMeasurer.mjs'
-import { AsyncFmtTextRenderer} from './AsyncFmtTextRenderer.js'
-import * as FontStyle from '../FontStyle.js'
-import * as FontWeight from '../FontWeight.js'
+import { AsyncFmtTextRenderer} from './AsyncFmtTextRenderer.mjs'
+import * as FontStyle from '../FontStyle.mjs'
+import * as FontWeight from '../FontWeight.mjs'
 
 
 export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {

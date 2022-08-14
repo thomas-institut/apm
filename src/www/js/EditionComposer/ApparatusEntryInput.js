@@ -26,10 +26,10 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { ApparatusCommon } from './ApparatusCommon'
 import { ApparatusEntryTextEditor } from './ApparatusEntryTextEditor'
 import { varsAreEqual } from '../toolbox/ArrayUtil.mjs'
-import { FmtTextFactory} from '../FmtText/FmtTextFactory'
+import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
 import { MultiToggle } from '../widgets/MultiToggle'
 import { deepCopy } from '../toolbox/Util.mjs'
-import { FmtText } from '../FmtText/FmtText'
+import { FmtText } from '../FmtText/FmtText.mjs'
 
 const updateEntryLabel = 'Update Apparatus'
 const maxEntryTextWordsToShow = 10

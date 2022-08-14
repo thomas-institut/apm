@@ -15,13 +15,13 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
-import { Edition } from './Edition'
+import { Edition } from './Edition.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { CanvasTextBoxMeasurer } from '../Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer.mjs'
 import { CanvasRenderer } from '../Typesetter2/Renderer/CanvasRenderer.mjs'
 import { BrowserUtilities } from '../toolbox/BrowserUtilities.mjs'
 import { Typesetter2 } from '../Typesetter2/Typesetter2.mjs'
-import { EditionTypesetting } from './EditionTypesetting'
+import { EditionTypesetting } from './EditionTypesetting.mjs'
 import { BasicTypesetter } from '../Typesetter2/BasicTypesetter.mjs'
 import { isRtl } from '../toolbox/Util.mjs'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
@@ -105,6 +105,10 @@ export class EditionViewerCanvas {
     this.editionDoc = null
   }
 
+  getTypesettingParameters() {
+    return this.typesettingParameters
+  }
+
 
   render() {
     return new Promise( (resolve) => {
@@ -150,20 +154,21 @@ export class EditionViewerCanvas {
     this.canvasRenderer.renderDocument(doc)
   }
 
-
-
-
   __typesetEdition() {
     return new Promise( (resolve) => {
-      let editionTypesettingHelper = new EditionTypesetting({
+      // reset typesetting data
+      this.typesettingParameters = undefined
+      let helperOptions = {
         edition: this.edition,
         defaultFontFamily: this.options.fontFamily,
         defaultFontSize: Typesetter2.pt2px(this.options.mainTextFontSizeInPts),
         textBoxMeasurer: this.canvasMeasurer,
         debug: true
-      })
+      }
+      let editionTypesettingHelper = new EditionTypesetting(helperOptions)
       editionTypesettingHelper.setup().then( async () => {
         let verticalListToTypeset = await editionTypesettingHelper.generateListToTypesetFromMainText()
+        this.mainTextVerticalListToTypeset = verticalListToTypeset
         this.debug && console.log(`List to typeset`)
         this.debug && console.log(verticalListToTypeset)
         let lineNumbersAlign = 'right'
@@ -172,43 +177,48 @@ export class EditionViewerCanvas {
           lineNumbersAlign = 'left'
           lineNumbersX = this.geometry.pageWidth - this.geometry.margin.right + this.geometry.textToLineNumbers
         }
-
-        let ts = new BasicTypesetter({
-          pageWidth: this.geometry.pageWidth,
-          pageHeight: this.geometry.pageHeight,
-          marginTop: this.geometry.margin.top,
-          marginBottom: this.geometry.margin.bottom,
-          marginLeft: this.geometry.margin.left,
-          marginRight: this.geometry.margin.right,
-          defaultFontFamily: this.options.fontFamily,
-          defaultFontSize:  this.geometry.mainTextFontSize,
-          lineSkip: this.geometry.mainTextLineHeight,
-          showPageNumbers: true,
-          pageNumbersOptions: {
-            fontFamily: this.options.fontFamily,
-            fontSize: this.geometry.mainTextFontSize,
-            numberStyle: this.edition.lang
+        this.typesettingParameters = {
+          mainTextVerticalListToTypeset: verticalListToTypeset,
+          helperOptions: helperOptions,
+          typesetterOptions: {
+            pageWidth: this.geometry.pageWidth,
+            pageHeight: this.geometry.pageHeight,
+            marginTop: this.geometry.margin.top,
+            marginBottom: this.geometry.margin.bottom,
+            marginLeft: this.geometry.margin.left,
+            marginRight: this.geometry.margin.right,
+            defaultFontFamily: this.options.fontFamily,
+            defaultFontSize:  this.geometry.mainTextFontSize,
+            lineSkip: this.geometry.mainTextLineHeight,
+            showPageNumbers: true,
+            pageNumbersOptions: {
+              fontFamily: this.options.fontFamily,
+              fontSize: this.geometry.mainTextFontSize,
+              numberStyle: this.edition.lang
+            },
+            showLineNumbers: true,
+            lineNumbersOptions: {
+              fontFamily: this.options.fontFamily,
+              fontSize: this.geometry.mainTextFontSize*this.options.lineNumbersFontSizeMultiplier,
+              frequency: 5,
+              numberStyle: this.edition.lang,
+              align: lineNumbersAlign,
+              xPosition: lineNumbersX
+            },
+            textBoxMeasurer: this.canvasMeasurer,
+            getApparatusListToTypeset: (mainTextVerticalList, apparatus) => {
+              return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus)
+            },
+            preTypesetApparatuses: () => {
+              editionTypesettingHelper.resetExtractedMetadataInfo()
+              return resolvedPromise(true)
+            },
+            debug: true
           },
-          showLineNumbers: true,
-          lineNumbersOptions: {
-            fontFamily: this.options.fontFamily,
-            fontSize: this.geometry.mainTextFontSize*this.options.lineNumbersFontSizeMultiplier,
-            frequency: 5,
-            numberStyle: this.edition.lang,
-            align: lineNumbersAlign,
-            xPosition: lineNumbersX
-          },
-          textBoxMeasurer: this.canvasMeasurer,
-          getApparatusListToTypeset: (mainTextVerticalList, apparatus) => {
-            return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus)
-          },
-          preTypesetApparatuses: () => {
-            editionTypesettingHelper.resetExtractedMetadataInfo()
-            return resolvedPromise(true)
-          },
-          debug: true
-        })
-        resolve (ts.typeset(verticalListToTypeset, { apparatuses: this.edition.apparatuses}))
+          extraData: { apparatuses: this.edition.apparatuses}
+        }
+        let ts = new BasicTypesetter(this.typesettingParameters.typesetterOptions)
+        resolve (ts.typeset(verticalListToTypeset, this.typesettingParameters.extraData))
       })
     })
   }

@@ -17,11 +17,11 @@
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { Edition } from './Edition'
+import { Edition } from './Edition.mjs'
 import { Typesetter } from '../Typesetter/Typesetter'
-import {FmtTextFactory} from '../FmtText/FmtTextFactory'
+import {FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
 
-import * as MainTextTokenType from './MainTextTokenType'
+import * as MainTextTokenType from './MainTextTokenType.mjs'
 import { TypesetterTokenFactory } from '../Typesetter/TypesetterTokenFactory'
 import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'
 import { getTextDirectionForLang, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
@@ -29,12 +29,12 @@ import { pushArray } from '../toolbox/ArrayUtil.mjs'
 import { ApparatusCommon } from '../EditionComposer/ApparatusCommon'
 
 import * as SubEntryType from '../Edition/SubEntryType'
-import { FmtText } from '../FmtText/FmtText'
+import { FmtText } from '../FmtText/FmtText.mjs'
 
-import * as VerticalAlign from '../FmtText/VerticalAlign'
-import * as FontSize from '../FmtText/FontSize'
+import * as VerticalAlign from '../FmtText/VerticalAlign.mjs'
+import * as FontSize from '../FmtText/FontSize.mjs'
 import * as HorizontalAlign from '../Typesetter/HorizontalAlign'
-import { MainText } from './MainText'
+import { MainText } from './MainText.mjs'
 import { Paragraph } from '../Typesetter/Paragraph'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)

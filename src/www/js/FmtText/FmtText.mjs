@@ -16,10 +16,10 @@
  *
  */
 
-import {FmtTextFactory} from './FmtTextFactory'
+import {FmtTextFactory} from './FmtTextFactory.mjs'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
-import * as FmtTextTokenType from './FmtTextTokenType'
-import {FmtTextTokenFactory} from './FmtTextTokenFactory'
+import * as FmtTextTokenType from './FmtTextTokenType.mjs'
+import {FmtTextTokenFactory} from './FmtTextTokenFactory.mjs'
 
 /**
  *  FmtText is meant to be an output-independent and versatile representation of formatted text

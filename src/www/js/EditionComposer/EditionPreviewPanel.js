@@ -25,7 +25,7 @@
  */
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { PanelWithToolbar } from './PanelWithToolbar'
-import { Edition } from '../Edition/Edition'
+import { Edition } from '../Edition/Edition.mjs'
 import { EditionViewerSvg } from '../Edition/EditionViewerSvg'
 
 

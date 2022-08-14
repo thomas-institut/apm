@@ -5,16 +5,16 @@ window.ArrayUtil = ArrayUtil
 import * as FunctionUtil from '../../js/toolbox/FunctionUtil.mjs'
 window.FunctionUtil = FunctionUtil
 
-import { FmtTextTokenFactory } from '../../js/FmtText/FmtTextTokenFactory'
+import { FmtTextTokenFactory } from '../../js/FmtText/FmtTextTokenFactory.mjs'
 window.FmtTextTokenFactory = FmtTextTokenFactory
 
-import { FmtTextToken } from '../../js/FmtText/FmtTextToken'
+import { FmtTextToken } from '../../js/FmtText/FmtTextToken.mjs'
 window.FmtTextToken = FmtTextToken
 
-import * as FmtTextTokenType from '../../js/FmtText/FmtTextTokenType'
+import * as FmtTextTokenType from '../../js/FmtText/FmtTextTokenType.mjs'
 window.FmtTextTokenType = FmtTextTokenType
 
-import {FmtTextFactory} from '../../js/FmtText/FmtTextFactory'
+import {FmtTextFactory} from '../../js/FmtText/FmtTextFactory.mjs'
 window.FmtTextFactory = FmtTextFactory
 
 import {PageRange} from '../../js/PageRange'

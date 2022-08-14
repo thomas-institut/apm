@@ -27,7 +27,7 @@ import * as SubEntrySource from './SubEntrySource'
 import { CtData } from '../CtData/CtData'
 import { Apparatus } from './Apparatus'
 import { ApparatusSubEntry } from './ApparatusSubEntry'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { ApparatusEntry } from './ApparatusEntry'
 
 import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'

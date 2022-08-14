@@ -18,7 +18,7 @@
 
 
 import { StringCounter } from '../toolbox/StringCounter.mjs'
-import * as MainTexTokenType from '../Edition/MainTextTokenType'
+import * as MainTexTokenType from '../Edition/MainTextTokenType.mjs'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
 
 export function getTypesettingInfo(containerSelector, classPrefix, tokens) {

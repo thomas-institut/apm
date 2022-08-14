@@ -71,7 +71,7 @@ SubEntryWitnessInfo := {
 
  */
 
-import { MainTextToken } from './MainTextToken'
+import { MainTextToken } from './MainTextToken.mjs'
 
 export class Edition {
 

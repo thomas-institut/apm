@@ -17,15 +17,15 @@
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { Edition } from '../Edition/Edition'
+import { Edition } from '../Edition/Edition.mjs'
 import { ApparatusCommon } from './ApparatusCommon'
 import { PanelWithToolbar } from './PanelWithToolbar'
 import { getIntArrayIdFromClasses } from '../toolbox/UserInterfaceUtil'
 import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import { CtData } from '../CtData/CtData'
 import { onClickAndDoubleClick } from '../toolbox/DoubleClick'
-import { FmtText } from '../FmtText/FmtText'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory'
+import { FmtText } from '../FmtText/FmtText.mjs'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { ApparatusEntryTextEditor } from './ApparatusEntryTextEditor'
 import { capitalizeFirstLetter, deepCopy, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { varsAreEqual } from '../toolbox/ArrayUtil.mjs'

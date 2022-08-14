@@ -16,10 +16,10 @@
  *
  */
 
-import { FmtTextToken } from './FmtTextToken'
-import * as FmtTextTokenType from './FmtTextTokenType'
-import * as ParagraphStyle from './ParagraphStyle'
-import * as MarkType from './MarkType'
+import { FmtTextToken } from './FmtTextToken.mjs'
+import * as FmtTextTokenType from './FmtTextTokenType.mjs'
+import * as ParagraphStyle from './ParagraphStyle.mjs'
+import * as MarkType from './MarkType.mjs'
 
 export class FmtTextTokenFactory {
 

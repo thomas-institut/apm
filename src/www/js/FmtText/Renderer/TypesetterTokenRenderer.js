@@ -17,13 +17,13 @@
  */
 
 import { FmtTextRenderer } from './FmtTextRenderer'
-import * as FmtTokenType from '../FmtTextTokenType'
+import * as FmtTokenType from '../FmtTextTokenType.mjs'
 import { TypesetterToken } from '../../Typesetter/TypesetterToken'
 import * as TypesetterTokenType from '../../Typesetter/TypesetterTokenType'
 import { TypesetterTokenFactory } from '../../Typesetter/TypesetterTokenFactory'
-import * as FontStyle from '../FontStyle'
-import * as FontWeight from '../FontWeight'
-import * as VerticalAlign from '../VerticalAlign'
+import * as FontStyle from '../FontStyle.mjs'
+import * as FontWeight from '../FontWeight.mjs'
+import * as VerticalAlign from '../VerticalAlign.mjs'
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 

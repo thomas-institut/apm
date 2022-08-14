@@ -67,7 +67,7 @@ import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
 import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
 import { isRtl } from '../toolbox/Util.mjs'
 
-import * as VerticalAlign from '../FmtText/VerticalAlign'
+import * as VerticalAlign from '../FmtText/VerticalAlign.mjs'
 import * as HorizontalAlign from './HorizontalAlign'
 import { StringCounter } from '../toolbox/StringCounter.mjs'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'

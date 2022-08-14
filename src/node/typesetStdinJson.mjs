@@ -25,8 +25,12 @@ import fs from 'node:fs'
 import { hrtime } from 'node:process'
 
 import {ObjectFactory} from '../www/js/Typesetter2/ObjectFactory.mjs'
-import { PangoMeasurerNodeGTK } from './PangoMeasurerNodeGTK.mjs'
+import {PangoMeasurerNodeGTK} from './PangoMeasurerNodeGTK.mjs'
 import {BasicTypesetter} from '../www/js/Typesetter2/BasicTypesetter.mjs'
+import {EditionTypesetting} from '../www/js/Edition/EditionTypesetting.mjs'
+import {resolvedPromise} from '../www/js/toolbox/FunctionUtil.mjs'
+
+const debug = true
 
 if (process.argv.length < 3) {
   console.log(`Usage: node typesetStdinJson.mjs outputFileName`)
@@ -61,12 +65,29 @@ try {
 } catch (e) {
   exitWithError(`Error building typesetter object from input main text list: '${e.toString()}'`)
 }
-
 data.options.textBoxMeasurer = new PangoMeasurerNodeGTK()
-let typesetterExec = new BasicTypesetter(data.options)
+
+if (data.helperOptions !== undefined) {
+  debug && console.log(`Helper options given, so this is an edition!`)
+  debug && console.log(`Extradata`)
+  debug && console.log(data.extraData)
+  data.helperOptions.textBoxMeasurer = data.options.textBoxMeasurer
+  debug && console.log('Helper options')
+  debug && console.log(data.helperOptions)
+  let editionTypesettingHelper = new EditionTypesetting(data.helperOptions)
+  data.options.getApparatusListToTypeset = (mainTextVerticalList, apparatus) => {
+    return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus)
+  }
+    data.options.preTypesetApparatuses = () => {
+    editionTypesettingHelper.resetExtractedMetadataInfo()
+    return resolvedPromise(true)
+  }
+}
+
+let typesetter = new BasicTypesetter(data.options)
 
 let start = hrtime.bigint()
-typesetterExec.typeset(mainTextList).then( (r) => {
+typesetter.typeset(mainTextList, data.extraData).then( (r) => {
   let end = hrtime.bigint()
   info.stats = getStats()
   info.stats.processingTime = Number(end-start)/1000000

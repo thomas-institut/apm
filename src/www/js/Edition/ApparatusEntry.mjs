@@ -1,5 +1,5 @@
 
-import * as SubEntryType from '../Edition/SubEntryType'
+import * as SubEntryType from './SubEntryType.mjs'
 
 
 export class ApparatusEntry {
@@ -24,12 +24,17 @@ export class ApparatusEntry {
    * @return {boolean}
    */
   allSubEntriesAreOmissions() {
-    for (let i = 0; i < this.subEntries.length; i++) {
-      if (this.subEntries[i].type !== SubEntryType.OMISSION) {
+    return ApparatusEntry.allSubEntriesInEntryObjectAreOmissions(this)
+  }
+
+  static allSubEntriesInEntryObjectAreOmissions(entry) {
+    for (let i = 0; i < entry.subEntries.length; i++) {
+      if (entry.subEntries[i].type !== SubEntryType.OMISSION) {
         return false
       }
     }
     return true
   }
+
 
 }

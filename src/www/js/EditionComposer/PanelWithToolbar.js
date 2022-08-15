@@ -24,7 +24,7 @@ export class PanelWithToolbar extends Panel {
   onResize (visible) {
     super.onResize(visible)
     if (this.maximizeContentArea) {
-      //this.verbose && console.log(`Resizing content area for '${this.containerSelector}'`)
+      //console.log(`Resizing content area for '${this.containerSelector}'`)
       maximizeElementHeightInParent($(this.getContentAreaSelector()), $(this.containerSelector), $(this.getToolbarSelector()).outerHeight())
     }
   }

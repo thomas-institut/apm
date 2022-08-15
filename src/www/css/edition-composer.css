@@ -95,9 +95,13 @@ svg.edition-svg {
 
 
 #edition-preview-new div.panel-content {
-    overflow: scroll;
+    overflow: auto;
     background: #fcfaf7;
 }
+
+/*#edition-preview-canvas-new {*/
+/*    overflow: visible;*/
+/*}*/
 
 /* Admin panel */
 #admin {

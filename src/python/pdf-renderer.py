@@ -47,7 +47,7 @@ def print_item(context, x, y, the_item):
     if the_item['class'] == 'ItemList':
         print_item_list(context, x, y, the_item)
     elif the_item['class'] == 'TextBox':
-        print_text_box(context, x, y, the_item)
+        print_text_box(context, x,y, the_item)
 
 
 def print_horizontal_list(context, x, y, horizontal_list):

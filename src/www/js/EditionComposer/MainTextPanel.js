@@ -28,7 +28,7 @@ import { getSingleIntIdFromAncestor, getSingleIntIdFromClasses } from '../toolbo
 import { getTypesettingInfo } from '../Typesetter/BrowserTypesettingCalculations'
 import { doNothing, wait } from '../toolbox/FunctionUtil.mjs'
 import { MultiToggle } from '../widgets/MultiToggle'
-import { ApparatusCommon } from './ApparatusCommon'
+import { ApparatusCommon } from './ApparatusCommon.js'
 import * as EditionMainTextTokenType from '../Edition/MainTextTokenType.mjs'
 import { Edition } from '../Edition/Edition.mjs'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'

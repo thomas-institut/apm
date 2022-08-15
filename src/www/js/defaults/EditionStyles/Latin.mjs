@@ -82,16 +82,16 @@ export const defaultLatinEditionStyle =  {
     },
     afterLineRange: {
       glue: {
-        width: '2.5 sp',
-        stretch: '1 sp',
+        width: '4 sp',
+        stretch: '2.5 sp',
         shrink: '0.5 sp'
       }
     },
     interEntry: {
       glue: {
-        width: '1.5 sp',
-        stretch: '0.5 sp',
-        shrink: '0.25 sp'
+        width: '2.5 sp',
+        stretch: '1.5 sp',
+        shrink: '0.5 sp'
       }
     },
     apparatusLineNumbers: {

@@ -1,5 +1,5 @@
 
-import * as SubEntryType from './SubEntryType'
+import * as SubEntryType from './SubEntryType.mjs'
 import * as SubEntrySource from './SubEntrySource'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { FmtText } from '../FmtText/FmtText.mjs'

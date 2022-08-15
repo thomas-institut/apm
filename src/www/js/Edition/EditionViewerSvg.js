@@ -26,9 +26,9 @@ import { TypesetterTokenFactory } from '../Typesetter/TypesetterTokenFactory'
 import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'
 import { getTextDirectionForLang, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
-import { ApparatusCommon } from '../EditionComposer/ApparatusCommon'
+import { ApparatusCommon } from '../EditionComposer/ApparatusCommon.js'
 
-import * as SubEntryType from '../Edition/SubEntryType'
+import * as SubEntryType from './SubEntryType.mjs'
 import { FmtText } from '../FmtText/FmtText.mjs'
 
 import * as VerticalAlign from '../FmtText/VerticalAlign.mjs'
@@ -36,6 +36,7 @@ import * as FontSize from '../FmtText/FontSize.mjs'
 import * as HorizontalAlign from '../Typesetter/HorizontalAlign'
 import { MainText } from './MainText.mjs'
 import { Paragraph } from '../Typesetter/Paragraph'
+import { ApparatusUtil } from './ApparatusUtil.mjs'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
@@ -386,7 +387,7 @@ export class EditionViewerSvg {
 
   _getLemmaTypesetterTokens(apparatusEntry, typesettingInfo, map) {
     let lemmaTokens = []
-    let lemmaComponents = ApparatusCommon.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText)
+    let lemmaComponents = ApparatusUtil.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText)
 
     switch(lemmaComponents.type) {
       case 'custom':

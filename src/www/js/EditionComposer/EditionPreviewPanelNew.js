@@ -96,6 +96,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
     this.viewer.render().then( () => {
       this.downloadPdfButton.on('click', this._genOnClickDownloadPdfButton())
       console.log(`Edition rendered`)
+      this.onResize()
     })
   }
 
@@ -159,6 +160,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       return new Promise ( (resolve) => {
         this.viewer.setScale(scale).then( () => {
           this.debug && console.log(`Resolving ${scale}`)
+          this.onResize()
           resolve(scale)
         })
       })

@@ -23,7 +23,7 @@
 import { ConfirmDialog, DIALOG, INLINE, EXTRA_LARGE_DIALOG } from '../pages/common/ConfirmDialog'
 import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { ApparatusCommon } from './ApparatusCommon'
+import { ApparatusCommon } from './ApparatusCommon.js'
 import { ApparatusEntryTextEditor } from './ApparatusEntryTextEditor'
 import { varsAreEqual } from '../toolbox/ArrayUtil.mjs'
 import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'

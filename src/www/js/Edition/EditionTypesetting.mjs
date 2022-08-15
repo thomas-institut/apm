@@ -1,6 +1,5 @@
 import { MainText } from './MainText.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { Typesetter2 } from '../Typesetter2/Typesetter2.mjs'
 import { TextBoxMeasurer } from '../Typesetter2/TextBoxMeasurer/TextBoxMeasurer.mjs'
 import { Box } from '../Typesetter2/Box.mjs'
 import { ItemList } from '../Typesetter2/ItemList.mjs'
@@ -12,7 +11,7 @@ import * as MainTextTokenType from './MainTextTokenType.mjs'
 import { TextBox } from '../Typesetter2/TextBox.mjs'
 import { Penalty } from '../Typesetter2/Penalty.mjs'
 import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
-import { getTextDirectionForLang, isRtl } from '../toolbox/Util.mjs'
+import { getTextDirectionForLang, isRtl, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
 import { ObjectFactory } from '../Typesetter2/ObjectFactory.mjs'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
@@ -24,12 +23,23 @@ import {defaultStyleSheet} from '../Typesetter2/Style/DefaultStyleSheet.mjs'
 import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { Typesetter2StyleSheetTokenRenderer } from '../FmtText/Renderer/Typesetter2StyleSheetTokenRenderer.mjs'
+import { ApparatusUtil } from './ApparatusUtil.mjs'
+import { NumeralStyles } from '../toolbox/NumeralStyles.mjs'
+import { TextBoxFactory } from '../Typesetter2/TextBoxFactory.mjs'
+import { SiglaGroup } from './SiglaGroup.mjs'
+import { ApparatusEntry } from './ApparatusEntry.mjs'
+import { FmtText } from '../FmtText/FmtText.mjs'
 
 let defaultEditionStyles = {
   la: defaultLatinEditionStyle,
   ar: defaultArabicEditionStyle,
   he: defaultHebrewEditionStyle
 }
+
+const defaultLemmaSeparator = ']'
+const doubleVerticalLine = String.fromCodePoint(0x2016)
+const verticalLine = String.fromCodePoint(0x007c)
+
 
 export class EditionTypesetting {
 
@@ -51,6 +61,8 @@ export class EditionTypesetting {
     if (this.options.editionStyleName === '') {
       this.options.editionStyleName = this.edition.lang
     }
+
+    this.siglaGroups = this.edition.siglaGroups.map( (sg) => { return SiglaGroup.fromObject(sg)})
 
     this.textDirection = getTextDirectionForLang(this.edition.lang)
     this.textBoxMeasurer = this.options.textBoxMeasurer
@@ -141,7 +153,6 @@ export class EditionTypesetting {
 
           }
         }
-
 
         paragraphToTypeset.pushItem(Glue.createLineFillerGlue().setTextDirection(textDirection))
         paragraphToTypeset.pushItem(Penalty.createForcedBreakPenalty())
@@ -248,12 +259,14 @@ export class EditionTypesetting {
         outputList.pushItem((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
         for (let entryIndex = 0; entryIndex<lineRange.entries.length; entryIndex++) {
           let entry = lineRange.entries[entryIndex]
+          // pre-lemma
+          outputList.pushItemArray(await this._getTsItemsForPreLemma(entry))
           // lemma text
-          outputList.pushItemArray(await this._getTsItemsFromStr(entry.lemmaText, 'apparatus', 'detect'))
+          outputList.pushItemArray(await this._getTsItemsForLemma(entry))
+          // post lemma
+          outputList.pushItemArray(await this._getTsItemsForPostLemma(entry))
           // separator
-          let separatorItems = await this.tokenRenderer.renderWithStyle(this._getSeparatorFmtText(entry), 'apparatus', textDirection)
-          outputList.pushItemArray(this.__setTextDirection(separatorItems, textDirection))
-          outputList.pushItem((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
+          outputList.pushItemArray(await this._getTsItemsForSeparator(entry))
           // typeset sub entries
           for (let subEntryIndex = 0; subEntryIndex < entry.subEntries.length; subEntryIndex++) {
             let subEntry = entry.subEntries[subEntryIndex]
@@ -264,12 +277,12 @@ export class EditionTypesetting {
           }
           if (entryIndex !== lineRange.entries.length -1) {
             outputList.pushItem((await this.__createNormalSpaceGlue('apparatus interEntry')).setTextDirection(textDirection))
-            outputList.pushItemArray(await this._getTsItemsFromStr('|', 'apparatus entrySeparator', textDirection))
+            outputList.pushItemArray(await this._getTsItemsFromStr(verticalLine, 'apparatus entrySeparator', textDirection))
             outputList.pushItem((await this.__createNormalSpaceGlue('apparatus interEntry')).setTextDirection(textDirection))
           }
         }
         outputList.pushItem((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
-        outputList.pushItemArray(await this._getTsItemsFromStr('||', 'apparatus lineRangeSeparator', textDirection))
+        outputList.pushItemArray(await this._getTsItemsFromStr(doubleVerticalLine, 'apparatus lineRangeSeparator', textDirection))
         outputList.pushItem((await this.__createNormalSpaceGlue('apparatus afterLineRange')).setTextDirection(textDirection))
       }
 
@@ -279,6 +292,187 @@ export class EditionTypesetting {
       this.debug && console.log(outputList)
       resolve(outputList)
     })
+  }
+
+  _getTsItemsForSeparator(entry) {
+    return new Promise( async (resolve) => {
+      let items = []
+      switch(entry.separator) {
+        case '':
+          // default separator
+          if (!ApparatusEntry.allSubEntriesInEntryObjectAreOmissions(entry)) {
+            pushArray(items, await this._getTsItemsFromStr(defaultLemmaSeparator, 'apparatus', this.textDirection))
+          }
+          break
+
+        case 'off':
+          // no separator
+          break
+
+        case 'colon':
+          pushArray(items, await this._getTsItemsFromStr(':', 'apparatus', this.textDirection))
+          break
+
+        default:
+          // custom separator
+          pushArray(items, await this._getTsItemsFromStr(removeExtraWhiteSpace(FmtText.getPlainText(entry.separator)), 'apparatus', this.textDirection))
+          break
+      }
+      items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+      resolve(items)
+    })
+  }
+
+  _getTsItemsForPostLemma(entry) {
+    return new Promise( async (resolve) => {
+      let items = []
+      switch(entry.postLemma) {
+        case '':
+          //do nothing
+          break
+
+        // LEAVE this in case there are standard post-lemma strings
+        //
+        // case 'ante':
+        // case 'post':
+        //   let keyword = this.editionStyle.strings[entry.preLemma]
+        //   let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
+        //   items.push(keywordTextBox)
+        //   items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+        //   break
+
+        default:
+          // a custom post lemma
+          items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+          // TODO: check formatting here
+          let customPostLemmaBox = await this.ss.apply((new TextBox()).setText(FmtText.getPlainText(entry.postLemma)).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
+          items.push(customPostLemmaBox)
+          // items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+      }
+
+      resolve(items)
+    })
+  }
+
+  _getTsItemsForPreLemma(entry) {
+    return new Promise( async (resolve) => {
+      let items = []
+      switch(entry.preLemma) {
+        case '':
+          //do nothing
+          break
+
+        case 'ante':
+        case 'post':
+          let keyword = this.editionStyle.strings[entry.preLemma]
+          let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
+          items.push(keywordTextBox)
+          items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+          break
+
+        default:
+          // a custom pre-lemma
+          let customPreLemmaBox = await this.ss.apply((new TextBox()).setText(FmtText.getPlainText(entry.preLemma)).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
+          items.push(customPreLemmaBox)
+          items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+      }
+
+      resolve(items)
+    })
+  }
+
+  _getTsItemsForSigla(subEntry) {
+    return new Promise( async (resolve) => {
+      let items = []
+      let siglaData = ApparatusUtil.getSiglaData(subEntry.witnessData, this.sigla, this.siglaGroups)
+      for (let i = 0; i < siglaData.length; i++) {
+        let siglumData = siglaData[i]
+        let siglumItem = await this.ss.apply(TextBoxFactory.simpleText(siglumData.siglum), 'apparatus')
+        this.__detectAndSetTextBoxTextDirection(siglumItem)
+        items.push(siglumItem)
+        if (siglumData.hand !== 0) {
+          let handItem = await this.ss.apply(TextBoxFactory.simpleText(this.getNumberString(siglumData.hand, this.edition.lang)), 'apparatus superscript')
+          this.__detectAndSetTextBoxTextDirection(handItem)
+          items.push(handItem)
+        }
+      }
+      resolve(items)
+    })
+  }
+
+
+  _getTsItemsForLemma(entry) {
+    return new Promise( async (resolve) => {
+      let tsItems = []
+      let lemmaComponents = ApparatusUtil.getLemmaComponents(entry.lemma, entry.lemmaText)
+
+      switch(lemmaComponents.type) {
+        case 'custom':
+          tsItems = await this._getTsItemsFromStr(lemmaComponents.text, 'apparatus', 'detect')
+          resolve(tsItems)
+          return
+
+        case 'full':
+          pushArray(tsItems, await this._getTsItemsFromStr(entry.lemmaText, 'apparatus', 'detect') )
+          pushArray(tsItems, await this._getTsItemsForLemmaOccurrenceNumber(entry.from))
+          resolve(tsItems)
+          return
+
+        case 'shortened':
+          pushArray(tsItems, await this._getTsItemsFromStr(lemmaComponents.from, 'apparatus', 'detect') )
+          pushArray(tsItems, await this._getTsItemsForLemmaOccurrenceNumber(entry.from))
+          pushArray(tsItems, await this._getTsItemsFromStr(lemmaComponents.separator, 'apparatus', 'detect') )
+          pushArray(tsItems, await this._getTsItemsFromStr(lemmaComponents.to, 'apparatus', 'detect') )
+          pushArray(tsItems, await this._getTsItemsForLemmaOccurrenceNumber(entry.to))
+          resolve(tsItems)
+          return
+
+        default:
+          console.warn(`Unknown lemma component type '${lemmaComponents.type}'`)
+          resolve( await this._getTsItemsFromStr('Lemma???', 'apparatus', 'detect'))
+          return
+      }
+    })
+
+  }
+
+  _getOccurrenceInLineInfo(mainTextIndex) {
+    if (this.extractedMetadataInfo === undefined) {
+      console.warn(`Attempting to get occurrence in line values before extracting info from typeset metadata`)
+      return [1, 1]
+    }
+
+    let infoIndex = this.mainTextIndices.indexOf(mainTextIndex)
+    if (infoIndex === -1) {
+      console.warn(`No occurrence in line info found for main text index ${mainTextIndex}`)
+      return [1, 1]
+    }
+    return [this.extractedMetadataInfo[infoIndex].occurrenceInLine, this.extractedMetadataInfo[infoIndex].totalOccurrencesInLine ]
+  }
+
+  _getTsItemsForLemmaOccurrenceNumber(mainTextIndex) {
+    return new Promise (async (resolve) => {
+      let tsItems = []
+      let lemmaNumberString = ''
+      let [occurrenceInLine, numberOfOccurrencesInLine] = this._getOccurrenceInLineInfo(mainTextIndex)
+      if (numberOfOccurrencesInLine > 1) {
+        lemmaNumberString = this.getNumberString(occurrenceInLine, this.edition.lang)
+      }
+      if (lemmaNumberString !== '') {
+        let lemmaNumberTextBox = TextBoxFactory.simpleText(lemmaNumberString)
+        await this.ss.apply(lemmaNumberTextBox, [ 'apparatus superscript'])
+        this.__detectAndSetTextBoxTextDirection(lemmaNumberTextBox)
+        tsItems.push(lemmaNumberTextBox)
+      }
+      resolve(tsItems)
+    })
+  }
+
+  getNumberString(n, lang) {
+    if (lang === 'ar') {
+      return NumeralStyles.toDecimalArabic(n)
+    }
+    return NumeralStyles.toDecimalWestern(n)
   }
 
   _getSeparatorFmtText(entry) {
@@ -301,8 +495,9 @@ export class EditionTypesetting {
         case 'variant':
           pushArray(items, this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect'))
           items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
-          let siglaTextBox = await this.ss.apply((new TextBox()).setText(this.__getSiglaString(subEntry.witnessData)), 'apparatus')
-          items.push(siglaTextBox.setTextDirection(this.textDirection))
+          pushArray(items, await this._getTsItemsForSigla(subEntry))
+          // let siglaTextBox = await this.ss.apply((new TextBox()).setText(this.__getSiglaString(subEntry.witnessData)), 'apparatus')
+          // items.push(siglaTextBox.setTextDirection(this.textDirection))
           break
 
         case 'omission':
@@ -315,8 +510,9 @@ export class EditionTypesetting {
             pushArray(items, this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect'))
             items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           }
-          let siglaTextBox2 = await this.ss.apply((new TextBox()).setText(this.__getSiglaString(subEntry.witnessData)), 'apparatus')
-          items.push(siglaTextBox2.setTextDirection(this.textDirection))
+          pushArray(items, await this._getTsItemsForSigla(subEntry))
+          // let siglaTextBox2 = await this.ss.apply((new TextBox()).setText(this.__getSiglaString(subEntry.witnessData)), 'apparatus')
+          // items.push(siglaTextBox2.setTextDirection(this.textDirection))
           break
 
         case 'fullCustom': {
@@ -328,17 +524,11 @@ export class EditionTypesetting {
     })
 
   }
-
-  __getSiglaString(witnessData) {
-    // TODO: implement sigla groups
-    return witnessData.map( (wd) => {return this.sigla[wd.witnessIndex]}).join('')
-  }
-
   __getLineStringFromRange(from, to) {
     if (from === to) {
-      return String(from)
+      return this.getNumberString(from, this.edition.lang)
     }
-    return `${from}-${to}`
+    return `${this.getNumberString(from, this.edition.lang)}-${this.getNumberString(to, this.edition.lang)}`
   }
 
   /**
@@ -488,28 +678,15 @@ export class EditionTypesetting {
       return textBox
     }
     let detectedLang = this.languageDetector.detectLang(textBox.getText())
-    if (detectedLang !== this.edition.lang) {
-      this.debug && console.log(`Text box with non '${this.edition.lang}' text: ${textBox.getText()} ('${detectedLang} detected)`)
-    }
+    // if (detectedLang !== this.edition.lang) {
+    //   this.debug && console.log(`Text box with non '${this.edition.lang}' text: ${textBox.getText()} ('${detectedLang} detected)`)
+    // }
     if (isRtl(detectedLang)) {
       return textBox.setRightToLeft()
     } else {
       return textBox.setLeftToRight()
     }
   }
-
-  /**
-   *
-   * @param {TypesetterItem[]}items
-   * @param {string}textDirection
-   * @private
-   */
-  __forceTextDirection(items, textDirection) {
-    return items.map( (item) => {
-      item.setTextDirection(textDirection)
-    })
-  }
-
   /**
    *
    * @param {string}someString
@@ -554,27 +731,4 @@ export class EditionTypesetting {
     }
     return items
   }
-
-  /**
-   *
-   * @param style
-   * @return {TextBox}
-   * @private
-   */
-  _createTextBoxWithStyle(style) {
-    let styleDef = defaultEditionStyles[this.options.editionStyle].formattingStyles[style]
-    if (styleDef === undefined) {
-      console.warn(`Style '${style}' is undefined`)
-    }
-
-    return (new TextBox()).setFontFamily(styleDef.fontFamily)
-      .setFontSize(styleDef.fontSize)
-      .setFontWeight(styleDef.fontWeight)
-      .setFontStyle(styleDef.fontStyle)
-  }
-
-
-
-
-
 }

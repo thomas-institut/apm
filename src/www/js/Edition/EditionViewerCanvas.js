@@ -25,6 +25,7 @@ import { EditionTypesetting } from './EditionTypesetting.mjs'
 import { BasicTypesetter } from '../Typesetter2/BasicTypesetter.mjs'
 import { isRtl } from '../toolbox/Util.mjs'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
+import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
 
 const pageMarginInCanvas = 20
 
@@ -206,8 +207,8 @@ export class EditionViewerCanvas {
               xPosition: lineNumbersX
             },
             textBoxMeasurer: this.canvasMeasurer,
-            getApparatusListToTypeset: (mainTextVerticalList, apparatus) => {
-              return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus)
+            getApparatusListToTypeset: (mainTextVerticalList, apparatus, lineFrom, lineTo) => {
+              return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo)
             },
             preTypesetApparatuses: () => {
               editionTypesettingHelper.resetExtractedMetadataInfo()
@@ -218,7 +219,10 @@ export class EditionViewerCanvas {
           extraData: { apparatuses: this.edition.apparatuses}
         }
         let ts = new BasicTypesetter(this.typesettingParameters.typesetterOptions)
-        resolve (ts.typeset(verticalListToTypeset, this.typesettingParameters.extraData))
+        let profiler = new BasicProfiler('Typesetting', true)
+        let tsOutput = await ts.typeset(verticalListToTypeset, this.typesettingParameters.extraData)
+        profiler.stop('last')
+        resolve (tsOutput)
       })
     })
   }

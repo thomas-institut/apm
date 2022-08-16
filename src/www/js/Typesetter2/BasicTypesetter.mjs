@@ -37,11 +37,12 @@ import { AddLineNumbers } from './PageProcessor/AddLineNumbers.mjs'
 import { StringCounter } from '../toolbox/StringCounter.mjs'
 import { trimPunctuation } from '../defaults/Punctuation.mjs'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
+import { MAX_LINE_COUNT } from '../Edition/EditionTypesetting.mjs'
 
 const signature = 'BasicTypesetter 0.1'
 
-// const validPageNumbersPositions = [ 'top', 'bottom']
-// const validAligns = [ 'center', 'left', 'right']
+
+const INFINITE_VERTICAL_BADNESS = 100000000
 
 const defaultFontFamily = 'FreeSerif'
 const defaultFontSize = Typesetter2.pt2px(12)
@@ -66,11 +67,11 @@ export class BasicTypesetter extends Typesetter2 {
         pageNumbersOptions: { type: 'object', default: {}},
         showLineNumbers: { type: 'boolean', default: true},
         lineNumbersOptions: { type: 'object', default: {}},
-        apparatusesAtEndOfDocument: { type: 'boolean', default: true},
+        apparatusesAtEndOfDocument: { type: 'boolean', default: false},
         textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
-        // a function to typeset an apparatus, must return a Promise
+        // a function to typeset an apparatus for the given line range must return a Promise
         // for a horizontal ItemList that will then be typeset and added to the document/page
-        getApparatusListToTypeset: { type: 'function', default: (mainTextVerticalList, apparatus) => {
+        getApparatusListToTypeset: { type: 'function', default: (mainTextVerticalList, apparatus, lineFrom, lineTo) => {
           console.log(`Default typeset apparatus called`)
           return resolvedPromise(new ItemList())
         }},
@@ -86,15 +87,15 @@ export class BasicTypesetter extends Typesetter2 {
           default: {
             height: Typesetter2.cm2px(2),
             shrink: 0,
-            stretch: 0
+            stretch: Typesetter2.cm2px(50)  // basically infinite stretch!
           }
         },
         interApparatusGlue: {
           type: 'object',
           default: {
-            height: defaultFontSize,
-            shrink: defaultFontSize*0.25,
-            stretch: defaultFontSize*0.5
+            height: defaultFontSize*2,
+            shrink: 0,
+            stretch: defaultFontSize*0.25
           }
         },
         justify: { type: 'boolean', default: true},
@@ -158,14 +159,20 @@ export class BasicTypesetter extends Typesetter2 {
       let inputList = await super.typesetHorizontalList(list)
       // this.debug && console.log(`Typesetting horizontal list, desired lineWidth = ${this.lineWidth}`)
 
+      let outputList = new ItemList(TypesetterItemDirection.VERTICAL)
       // First fit algorithm
       let itemArray = inputList.getList()
+
+      if (itemArray.length === 0) {
+        resolve(outputList)
+        return
+      }
 
       // this.debug && console.log(`Sending item array to FirstFitLineBreaker`)
       let lines = await FirstFitLineBreaker.breakIntoLines(itemArray, this.lineWidth, this.options.textBoxMeasurer)
 
-      this.debug && console.log(`Got ${lines.length} lines back`)
-      this.debug && console.log(lines)
+      // this.debug && console.log(`Got ${lines.length} lines back`)
+      // this.debug && console.log(lines)
 
       // post-process lines
       let lineNumberInParagraph = 1
@@ -187,7 +194,10 @@ export class BasicTypesetter extends Typesetter2 {
         line.setList( line.getList().map( (item) => {
           if (item instanceof TextBox) {
             if (item.getHeight() < lineHeight) {
-              item.setShiftY(lineHeight - item.getHeight() +item.shiftY)
+              let oldShiftY = item.getShiftY()
+              let newShiftY = lineHeight - item.getHeight() + oldShiftY
+              // this.debug && console.log(`Adjusting shiftY to align baselines. Text: '${item.getText()}', lineHeight: ${lineHeight}, item's Height: ${item.getHeight()}, new shiftY: ${newShiftY}`)
+              item.setShiftY(newShiftY)
             }
           }
           return item
@@ -217,9 +227,10 @@ export class BasicTypesetter extends Typesetter2 {
         return line
       })
 
-      let outputList = new ItemList(TypesetterItemDirection.VERTICAL)
+
       if (lines.length === 0) {
-        return outputList
+        resolve(outputList)
+        return
       }
 
       // add inter-line glue
@@ -231,6 +242,8 @@ export class BasicTypesetter extends Typesetter2 {
           let nextLineHeight = lines[i+1].getHeight()
           interLineGlue.setHeight(this.__getInterLineGlueHeight(nextLineHeight))
             .setWidth(this.lineWidth)
+            .setStretch(0)
+            .setShrink(0)
             .addMetadata(MetadataKey.INTER_LINE_GLUE_SET, true)
         } else {
           interLineGlue.setHeight(0)
@@ -360,50 +373,146 @@ export class BasicTypesetter extends Typesetter2 {
       verticalListToTypeset = this.__addAbsoluteLineNumbers(verticalListToTypeset)
       verticalListToTypeset.addMetadata(MetadataKey.LIST_TYPE, ListType.MAIN_TEXT_BLOCK)
 
-      this.debug && console.log(`Main text Vertical list with typeset paragraphs`)
-      this.debug && console.log(verticalListToTypeset)
+      // this.debug && console.log(`Main text Vertical list with typeset paragraphs`)
+      // this.debug && console.log(verticalListToTypeset)
+      //
+      // this.debug && console.log(`Extra data`)
+      // this.debug && console.log(extraData)
 
-      this.debug && console.log(`Extra data`)
-      this.debug && console.log(extraData)
+      // build the document
+      let thePages = []
+      let doc = new TypesetterDocument()
+      doc.addMetadata('typesetter', signature)
 
-      if (extraData.apparatuses !== undefined && this.options.apparatusesAtEndOfDocument) {
-        let apparatuses = await this.__typesetApparatuses(verticalListToTypeset, extraData.apparatuses)
-        this.debug && console.log(`Typeset apparatuses`)
-        this.debug && console.log(apparatuses)
-        if (apparatuses.length > 0) {
-          verticalListToTypeset.pushItem( (new Glue(TypesetterItemDirection.VERTICAL))
-            .setHeight(this.options.textToApparatusGlue.height)
-            .setStretch(this.options.textToApparatusGlue.stretch)
-            .setShrink(this.options.textToApparatusGlue.shrink))
+      if (extraData.apparatuses !== undefined) {
+        await this.options.preTypesetApparatuses()
+        if (this.options.apparatusesAtEndOfDocument) {
+          let apparatuses = await this.__typesetApparatuses(verticalListToTypeset, extraData.apparatuses)
+          this.debug && console.log(`Typeset apparatuses`)
+          this.debug && console.log(apparatuses)
+          if (apparatuses.length > 0) {
+            verticalListToTypeset.pushItem( (new Glue(TypesetterItemDirection.VERTICAL))
+              .setHeight(this.options.textToApparatusGlue.height)
+              .setStretch(this.options.textToApparatusGlue.stretch)
+              .setShrink(this.options.textToApparatusGlue.shrink)
+              .addMetadata(MetadataKey.GLUE_TYPE, GlueType.TEXT_TO_APPARATUS)
+            )
 
-          for (let i = 0; i < apparatuses.length; i++) {
+            for (let i = 0; i < apparatuses.length; i++) {
+              verticalListToTypeset.pushItemArray(apparatuses[i].getList())
+              if (i !== apparatuses.length-1) {
+                verticalListToTypeset.pushItem( (new Glue(TypesetterItemDirection.VERTICAL))
+                  .setHeight(this.options.interApparatusGlue.height)
+                  .setStretch(this.options.interApparatusGlue.stretch)
+                  .setShrink(this.options.interApparatusGlue.shrink)
+                  .addMetadata(MetadataKey.GLUE_TYPE, GlueType.INTER_APPARATUS)
+                )
+              }
+            }
+          }
+          // simple page break:
+          let pageList = await this.typesetVerticalList(verticalListToTypeset)
+          thePages = pageList.getList().map((pageItemList) => {
+            pageItemList.setShiftX(this.options.marginLeft).setShiftY(this.options.marginTop)
+            return new TypesetterPage(this.options.pageWidth, this.options.pageHeight,
+              [pageItemList])
+          }).map( (page, pageIndex) => {
+            // add metadata
+            page.addMetadata(MetadataKey.PAGE_NUMBER, pageIndex+1)
+            // "normal" foliation, other processors may change it
+            //page.addMetadata(MetadataKey.PAGE_FOLIATION, `${pageIndex+1}`)
+            return page
+          })
 
-            verticalListToTypeset.pushItemArray(apparatuses[i].getList())
-            if (i !== apparatuses.length-1) {
-              verticalListToTypeset.pushItem( (new Glue(TypesetterItemDirection.VERTICAL))
-                .setHeight(this.options.interApparatusGlue.height)
-                .setStretch(this.options.interApparatusGlue.stretch)
-                .setShrink(this.options.interApparatusGlue.shrink)
+        } else {
+          // apparatuses should go at the foot of each page
+          // go over the typeset text list determining the line ranges that fill up a page
+          let [firstLine, lastLine ] = this.__getTotalLineNumberRange(verticalListToTypeset)
+          // this.debug && console.log(`Main text has lines from ${firstLine} to ${lastLine}`)
+
+          // this.debug && console.log(`Typesetting apparatuses in the whole line range to fill up the appropriate apparatus data`)
+          await this.__typesetApparatuses(verticalListToTypeset, extraData.apparatuses)
+          let currentPageFirstLine = firstLine
+          let bestCurrentPageLastLine = firstLine-1
+          let bestCurrentPageBadness = INFINITE_VERTICAL_BADNESS
+          let bestCurrentPage = null
+          let currentPageNumber = 1
+          while(bestCurrentPageLastLine < lastLine) {
+            let verticalListToTest = new ItemList(TypesetterItemDirection.VERTICAL)
+            // this.debug && console.log(`*** Testing page from line ${currentPageFirstLine} to ${bestCurrentPageLastLine+1}`)
+            verticalListToTest.setList(this.__getVerticalListForLineRange(verticalListToTypeset, currentPageFirstLine, bestCurrentPageLastLine+1))
+            // this.debug && console.log(`vertical list to test`)
+            // this.debug && console.log(verticalListToTest)
+            // typeset and add the apparatuses to the list to test
+            let apparatuses = await this.__typesetApparatuses(verticalListToTypeset, extraData.apparatuses, currentPageFirstLine,bestCurrentPageLastLine+1 )
+            apparatuses = apparatuses.filter ( (app) => {
+              return app.getList().length !== 0
+            })
+            if (apparatuses.length > 0) {
+              verticalListToTest.pushItem( (new Glue(TypesetterItemDirection.VERTICAL))
+                .setHeight(this.options.textToApparatusGlue.height)
+                .setStretch(this.options.textToApparatusGlue.stretch)
+                .setShrink(this.options.textToApparatusGlue.shrink)
+                .addMetadata(MetadataKey.GLUE_TYPE, GlueType.TEXT_TO_APPARATUS)
+              )
+              for (let i = 0; i < apparatuses.length; i++) {
+                verticalListToTest.pushItemArray(apparatuses[i].getList())
+                if (i !== apparatuses.length-1) {
+                  verticalListToTest.pushItem( (new Glue(TypesetterItemDirection.VERTICAL))
+                    .setHeight(this.options.interApparatusGlue.height)
+                    .setStretch(this.options.interApparatusGlue.stretch)
+                    .setShrink(this.options.interApparatusGlue.shrink)
+                    .addMetadata(MetadataKey.GLUE_TYPE, GlueType.INTER_APPARATUS)
+                  )
+                }
+              }
+            } else {
+              // no apparatuses, add glue to fill up the page
+              verticalListToTest.pushItem( (new Glue(TypesetterItemDirection.VERTICAL))
+                .setHeight(0)
+                .setStretch(Typesetter2.cm2px(10))
+                .setShrink(0)
               )
             }
+            // assess the tested page
+            let badness = this.calculateVerticalListBadness(verticalListToTest, this.textAreaHeight)
+            // this.debug && console.log(` - Badness: ${badness}`)
+            if (badness <= bestCurrentPageBadness) {
+              // this.debug && console.log(`   => new best badness`)
+              bestCurrentPageBadness = badness
+              bestCurrentPage = verticalListToTest
+              bestCurrentPageLastLine++
+            }
+            if (badness > bestCurrentPageBadness) {
+              // this.debug && console.log(`Tested page is worse than current best, eject best page, lines ${currentPageFirstLine} to ${bestCurrentPageLastLine}`)
+              // worse page, eject current best page
+              if (bestCurrentPage === null) {
+                console.warn(`Found null best current page!!`)
+              } else {
+                bestCurrentPage
+                  .setShiftX(this.options.marginLeft)
+                  .setShiftY(this.options.marginTop)
+                  .addMetadata(MetadataKey.LIST_TYPE, ListType.MAIN_TEXT_BLOCK)
+                // this.debug && console.log(`************* Page ${currentPageNumber}`)
+                // this.debug && console.log(bestCurrentPage)
+
+                thePages.push ( this.__ejectBestPage(bestCurrentPage, currentPageNumber))
+                currentPageNumber++
+                currentPageFirstLine = bestCurrentPageLastLine + 1
+                // this.debug && console.log(`New current page is number ${currentPageNumber}, first line is ${currentPageFirstLine}`)
+                bestCurrentPageLastLine = currentPageFirstLine -1 // so that the next cycle tests from currentPageFirstLine to currentPageFirstLine
+                bestCurrentPageBadness = INFINITE_VERTICAL_BADNESS
+                bestCurrentPage = null
+              }
+            }
+          }
+          // reached the end, if there's  best page, eject it
+          if(bestCurrentPage !== null) {
+            thePages.push ( this.__ejectBestPage(bestCurrentPage, currentPageNumber))
           }
         }
       }
 
-      let pageList = await this.typesetVerticalList(verticalListToTypeset)
-      let doc = new TypesetterDocument()
-      doc.addMetadata('typesetter', signature)
-      let thePages = pageList.getList().map((pageItemList) => {
-        pageItemList.setShiftX(this.options.marginLeft).setShiftY(this.options.marginTop)
-        return new TypesetterPage(this.options.pageWidth, this.options.pageHeight,
-          [pageItemList])
-      }).map( (page, pageIndex) => {
-        // add metadata
-        page.addMetadata(MetadataKey.PAGE_NUMBER, pageIndex+1)
-        // "normal" foliation, other processors may change it
-        //page.addMetadata(MetadataKey.PAGE_FOLIATION, `${pageIndex+1}`)
-        return page
-      })
       // Apply page processors
       let processedPages = []
       for (let pageIndex = 0; pageIndex < thePages.length; pageIndex++){
@@ -420,31 +529,167 @@ export class BasicTypesetter extends Typesetter2 {
     })
   }
 
+  __ejectBestPage(verticalList, pageNumber) {
+    verticalList
+      .setShiftX(this.options.marginLeft)
+      .setShiftY(this.options.marginTop)
+      .addMetadata(MetadataKey.LIST_TYPE, ListType.MAIN_TEXT_BLOCK)
+
+    let adjRatio = this.calculateVerticalAdjustmentRatio(verticalList.getList(), this.textAreaHeight)
+    if (adjRatio !== null) {
+      let adjustedItems = verticalList.getList().map( (item) => {
+        if (item instanceof Glue) {
+          if (adjRatio>=0) {
+            item.setHeight(item.getHeight() + adjRatio*item.getStretch())
+          } else {
+            item.setHeight(item.getHeight() + adjRatio*item.getShrink())
+          }
+        }
+        return item
+      })
+      verticalList.setList(adjustedItems)
+    }
+
+    let page = new TypesetterPage(this.options.pageWidth, this.options.pageHeight,
+      [verticalList])
+    page.addMetadata(MetadataKey.PAGE_NUMBER, pageNumber)
+    return page
+  }
+
+  /**
+   *
+   * @param {ItemList}verticalList
+   * @param {number}desiredHeight
+   */
+  calculateVerticalListBadness(verticalList, desiredHeight) {
+    // TODO: take penalties into account
+    let adjRatio = this.calculateVerticalAdjustmentRatio(verticalList.getList(), desiredHeight)
+    if (adjRatio === null || adjRatio < -1) {
+      return INFINITE_VERTICAL_BADNESS
+    }
+    let badness = 100*Math.pow( Math.abs(adjRatio), 3)
+    return badness > INFINITE_VERTICAL_BADNESS ? INFINITE_VERTICAL_BADNESS : badness
+  }
+
+
+  calculateVerticalAdjustmentRatio(itemArray, desiredHeight) {
+    // this.debug && console.log(`Calculation adj ratio, desired height = ${desiredHeight}`)
+    // this.debug && console.log( `on ${itemArray.length} items`)
+    let totalHeight = itemArray.map( (item) => {
+      return item.getHeight()
+    }).reduce( (total, x) => { return total+x}, 0)
+    // this.debug && console.log(`Total height: ${totalHeight}`)
+    if (desiredHeight === totalHeight) {
+      return 0
+    }
+    if (totalHeight < desiredHeight) {
+      // short list
+      let totalGlueStretch = itemArray.map( (item) => {
+        if (item instanceof Glue) {
+          return item.getStretch()
+        }
+        return 0
+      }).reduce( (total, x) => { return total+x}, 0)
+      // this.debug && console.log(`total glue stretch = ${totalGlueStretch}`)
+      if (totalGlueStretch <=0) {
+        return null
+      }
+      return (desiredHeight - totalHeight)/totalGlueStretch
+    }
+    // tall list
+    let totalGlueShrink = itemArray.map ( (item) => {
+      if (item instanceof Glue) {
+        return item.getShrink()
+      }
+      return 0
+    }).reduce( (total, x) => { return total+x}, 0)
+    this.debug && console.log(`total glue shrink = ${totalGlueShrink}`)
+    if (totalGlueShrink <=0) {
+      return null
+    }
+    return (desiredHeight - totalHeight)/totalGlueShrink
+  }
+
+
+  __getTotalLineNumberRange(mainTextVerticalList) {
+    let minLine = MAX_LINE_COUNT
+    let maxLine = -1
+    mainTextVerticalList.getList().forEach( (item) => {
+      if (item instanceof ItemList
+        && item.hasMetadata(MetadataKey.LIST_TYPE)
+        && item.getMetadata(MetadataKey.LIST_TYPE) === ListType.LINE) {
+        let lineNumber =  item.getMetadata(MetadataKey.LINE_NUMBER)
+        minLine = Math.min(minLine, lineNumber)
+        maxLine = Math.max(maxLine, lineNumber)
+      }
+    })
+
+    return [minLine, maxLine]
+  }
+
+  /**
+   *
+   * @param {ItemList}mainTextVerticalList
+   * @param {number}lineFrom
+   * @param {number}lineTo
+   * @return {TypesetterItem[]}
+   * @private
+   */
+  __getVerticalListForLineRange(mainTextVerticalList, lineFrom, lineTo) {
+    // this.debug && console.log(`Getting  vertical list for line range ${lineFrom} to ${lineTo}`)
+    let itemsInRange = []
+    let addingItems = false
+    let foundLastLineToInclude = false
+    for (let i = 0; i < mainTextVerticalList.getList().length; i++) {
+      let item = mainTextVerticalList.getList()[i]
+      if (item instanceof ItemList && item.hasMetadata(MetadataKey.LIST_TYPE) && item.getMetadata(MetadataKey.LIST_TYPE) === ListType.LINE) {
+        if (item.hasMetadata(MetadataKey.LINE_NUMBER)) {
+          let lineNumber = item.getMetadata(MetadataKey.LINE_NUMBER)
+          //this.debug && console.log(`Found line ${lineNumber}`)
+          if (!addingItems && lineNumber >= lineFrom) {
+            addingItems = true
+          }
+          if (lineNumber === lineTo) {
+            foundLastLineToInclude = true
+          }
+        }
+      }
+      if (addingItems) {
+        itemsInRange.push(item)
+      }
+      if (foundLastLineToInclude) {
+        break
+      }
+    }
+    return itemsInRange
+  }
+
   /**
    * Returns a typeset vertical list for each apparatus
    * @param {ItemList}typesetMainTextVerticalList
    * @param {Object[]}apparatuses
+   * @param {number}lineFrom
+   * @param {number}lineTo
    * @return {Promise<ItemList[]>}
    * @private
    */
-  __typesetApparatuses(typesetMainTextVerticalList, apparatuses) {
+  __typesetApparatuses(typesetMainTextVerticalList, apparatuses, lineFrom = 1, lineTo = MAX_LINE_COUNT) {
     return new Promise( async (resolve) => {
-      this.debug && console.log(`Typesetting ${apparatuses.length} apparatuses`)
-      await this.options.preTypesetApparatuses()
+      // this.debug && console.log(`Typesetting ${apparatuses.length} apparatuses from lines ${lineFrom} to ${lineTo === MAX_LINE_COUNT ? 'end' : lineTo}`)
       let outputArray = []
       for (let i = 0; i < apparatuses.length; i++) {
-        this.debug && console.log(`Typesetting apparatus ${i}`)
-        let apparatusListToTypeset = await this.options.getApparatusListToTypeset(typesetMainTextVerticalList, apparatuses[i])
+        // this.debug && console.log(`Typesetting apparatus ${i}`)
+        let apparatusListToTypeset = await this.options.getApparatusListToTypeset(typesetMainTextVerticalList, apparatuses[i], lineFrom, lineTo)
         if (apparatusListToTypeset.getDirection() === TypesetterItemDirection.HORIZONTAL) {
-          this.debug && console.log(`Typesetting apparatus ${i}`)
+          // this.debug && console.log(`Typesetting apparatus ${i}`)
           outputArray.push(await this.typesetHorizontalList(apparatusListToTypeset))
-          this.debug && console.log(`Finished typesetting apparatus ${i}`)
+          // this.debug && console.log(`Finished typesetting apparatus ${i}`)
         } else {
           console.warn(`Apparatus ${i} list to typeset is vertical, this is not implemented yet`)
         }
       }
-      this.debug && console.log(`Finished typesetting all apparatuses`)
-      this.debug && console.log(outputArray)
+      // this.debug && console.log(`Finished typesetting all apparatuses`)
+      // this.debug && console.log(outputArray)
       resolve(outputArray)
     })
   }

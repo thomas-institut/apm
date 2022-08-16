@@ -25,6 +25,9 @@
 export const INTER_LINE = 'interLine'
 export const INTER_PARAGRAPH = 'postParagraph'
 
+export const TEXT_TO_APPARATUS = 'textToApparatusGlue'
+export const INTER_APPARATUS = 'interApparatusGlue'
+
 // Horizontal Glue
 
 export const LINE_FILLER = 'lineFiller'

@@ -206,6 +206,11 @@ export class TypesetterItem extends TypesetterObject {
    * @param {number}y
    */
   setShiftY(y) {
+    // if (y !== 0) {
+    //   console.log(`Setting non-zero shift Y: ${y}`)
+    //   console.trace()
+    //   console.log(this)
+    // }
     this.shiftY = y
     return this
   }

@@ -28,6 +28,7 @@ import { TextBoxMeasurer } from '../../Typesetter2/TextBoxMeasurer/TextBoxMeasur
 import { AsyncFmtTextRenderer} from './AsyncFmtTextRenderer.mjs'
 import * as FontStyle from '../FontStyle.mjs'
 import * as FontWeight from '../FontWeight.mjs'
+import { TextBox } from '../../Typesetter2/TextBox.mjs'
 
 
 export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
@@ -85,7 +86,7 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
             break
 
           case FmtTokenType.TEXT:
-            let textBox = await this.ss.apply(TextBoxFactory.simpleText(token.text), styleNames)
+            let textBox = await this.ss.apply( (new TextBox().setText(token.text)), styleNames)
             /**@var {TextBox} textBox*/
             if (token.fontStyle === FontStyle.ITALIC) {
               textBox.setFontStyle('italic')
@@ -93,11 +94,15 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
             if (token.fontWeight === FontWeight.BOLD) {
               textBox.setFontWeight('bold')
             }
-            if (token.fontSize < 1) {
+            if (token.fontSize < 1 && token.verticalAlign === VerticalAlign.BASELINE) {
+              // console.log(`Setting font size ${token.fontSize}`)
               textBox.setFontSize(textBox.getFontSize()*token.fontSize)
+              // console.log(textBox)
             }
             if (token.verticalAlign === VerticalAlign.SUPERSCRIPT) {
+              // console.log(`Setting superscript`)
               textBox = await this.ss.apply(textBox, 'superscript')
+              // console.log(textBox)
             }
             if (token.verticalAlign === VerticalAlign.SUBSCRIPT) {
               textBox = await this.ss.apply(textBox, 'subscript')

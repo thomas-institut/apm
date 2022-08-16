@@ -29,6 +29,7 @@ import { TextBoxFactory } from '../Typesetter2/TextBoxFactory.mjs'
 import { SiglaGroup } from './SiglaGroup.mjs'
 import { ApparatusEntry } from './ApparatusEntry.mjs'
 import { FmtText } from '../FmtText/FmtText.mjs'
+import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
 
 let defaultEditionStyles = {
   la: defaultLatinEditionStyle,
@@ -39,6 +40,8 @@ let defaultEditionStyles = {
 const defaultLemmaSeparator = ']'
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
+
+export const MAX_LINE_COUNT = 10000
 
 
 export class EditionTypesetting {
@@ -96,7 +99,7 @@ export class EditionTypesetting {
       }
       let edition = this.options.edition
       let textDirection = this.textDirection
-      this.debug && console.log(`Edition language is '${this.edition.lang}',  ${textDirection}`)
+      // this.debug && console.log(`Edition language is '${this.edition.lang}',  ${textDirection}`)
 
       let verticalItems = []
       let mainTextParagraphs = MainText.getParagraphs(edition.mainText)
@@ -111,8 +114,8 @@ export class EditionTypesetting {
           paragraphStyle = 'normal'
         }
         let paragraphStyleDef = await this.ss.getParagraphStyle(paragraphStyle)
-        this.debug && console.log(`Paragraph style ${paragraphStyle}`)
-        this.debug && console.log(paragraphStyleDef)
+        // this.debug && console.log(`Paragraph style ${paragraphStyle}`)
+        // this.debug && console.log(paragraphStyleDef)
 
         if (paragraphStyleDef.spaceBefore !== 0) {
           verticalItems.push( (new Glue(TypesetterItemDirection.VERTICAL)).setHeight(paragraphStyleDef.spaceBefore))
@@ -177,13 +180,13 @@ export class EditionTypesetting {
    *
    * @param {ItemList}typesetMainTextVerticalList
    * @param apparatus
+   * @param {number}firstLine
+   * @param {number}lastLine
    * @return {Promise<ItemList>}
    */
-  generateApparatusVerticalListToTypeset(typesetMainTextVerticalList, apparatus) {
+  generateApparatusVerticalListToTypeset(typesetMainTextVerticalList, apparatus, firstLine = 1, lastLine= MAX_LINE_COUNT) {
     return new Promise( async (resolve) => {
-      // TODO: restrict line numbers to output
-      this.debug && console.log(`Getting apparatus vertical list to typeset`)
-      this.debug && console.log(apparatus)
+      // this.debug && console.log(`Getting vertical list for apparatus '${apparatus.type}, line ${firstLine} to ${lastLine === MAX_LINE_COUNT ? 'end' : lastLine}`)
 
       let textDirection = getTextDirectionForLang(this.edition.lang)
       let outputList = new ItemList(TypesetterItemDirection.HORIZONTAL)
@@ -192,105 +195,147 @@ export class EditionTypesetting {
         resolve(outputList)
         return
       }
+      // let profiler = new BasicProfiler('ApparatusTypesetting')
+      // profiler.start()
       if (this.extractedMetadataInfo === undefined) {
+
+        // Generate apparatus information for this and future apparatus typesetting requests
         this.extractedMetadataInfo = this.__extractLineInfoFromMetadata(typesetMainTextVerticalList)
-        this.debug && console.log(`Line info from metadata`)
-        this.debug && console.log(this.extractedMetadataInfo)
-        this.mainTextIndices = this.extractedMetadataInfo.map ( (info) => { return info.mainTextIndex})
+        // this.debug && console.log(`Line info from metadata`)
+        // this.debug && console.log(this.extractedMetadataInfo)
+        this.mainTextIndices = this.extractedMetadataInfo.map((info) => { return info.mainTextIndex})
+        // reset apparatus data
+        this.appEntries = {}
+        this.lineRanges = {}
+        // profiler.lap('extracted metadata info')
       }
+
+
       if (this.extractedMetadataInfo.length === 0) {
         this.debug && console.log(`No line info in metadata, nothing to typeset for apparatus ${apparatus.type}`)
         resolve(outputList)
         return
       }
 
-      this.debug && console.log(`Apparatus '${apparatus.type}' with ${apparatus.entries.length} entries in total.`)
-      let minMainTextIndex = this.extractedMetadataInfo[0].mainTextIndex
-      let maxMainTextIndex = this.extractedMetadataInfo[this.extractedMetadataInfo.length-1].mainTextIndex
-      this.debug && console.log(` - MainText from index ${minMainTextIndex} to index ${maxMainTextIndex}`)
+      if (this.appEntries[apparatus.type] === undefined) {
+        // this.debug && console.log(`Apparatus '${apparatus.type}' with ${apparatus.entries.length} entries in total.`)
+        let minMainTextIndex = this.extractedMetadataInfo[0].mainTextIndex
+        let maxMainTextIndex = this.extractedMetadataInfo[this.extractedMetadataInfo.length - 1].mainTextIndex
+        // this.debug && console.log(` - MainText from index ${minMainTextIndex} to index ${maxMainTextIndex}`)
 
-      let appEntries = apparatus.entries.filter( (entry) => {
-        return (entry.from >= minMainTextIndex && entry.from <= maxMainTextIndex)
-      }).filter( (entry) => {
-        let subEntries = entry.subEntries
-        let thereAreEnabledSubEntries = false
-        for (let subEntryIndex = 0; thereAreEnabledSubEntries === false && subEntryIndex < subEntries.length; subEntryIndex++) {
-          if (subEntries[subEntryIndex].enabled) {
-            thereAreEnabledSubEntries = true
-          }
-        }
-        return thereAreEnabledSubEntries
-      })
-      this.debug && console.log(` - ${appEntries.length} apparatus entries to typeset`)
-
-      // get lines for each entry
-      let entriesWithLineInfo = appEntries.map ( (entry) => {
-        let lineFrom = this.__getLineForMainTextIndex(entry.from)
-        let lineTo = this.__getLineForMainTextIndex(entry.to)
-        return {
-          key: this.__getRangeUniqueString(lineFrom, lineTo),
-          lineFrom: lineFrom,
-          lineTo: lineTo,
-          entry: entry
-        }
-      })
-      let lineRanges = {}
-      entriesWithLineInfo.forEach( (entryWithLineInfo) => {
-        if (lineRanges[entryWithLineInfo.key] === undefined ) {
-          lineRanges[entryWithLineInfo.key] = {
-            key: entryWithLineInfo.key,
-            lineFrom: entryWithLineInfo.lineFrom,
-            lineTo: entryWithLineInfo.lineTo,
-            entries: []
-          }
-        }
-        lineRanges[entryWithLineInfo.key].entries.push(entryWithLineInfo.entry)
-      })
-
-      this.debug && console.log(`Line Ranges`)
-      this.debug && console.log(lineRanges)
-
-      let lineRangesKeys = Object.keys(lineRanges)
-      lineRangesKeys.sort()
-      for (let lineRangeKeyIndex = 0; lineRangeKeyIndex < lineRangesKeys.length; lineRangeKeyIndex++) {
-        let lineRange = lineRanges[lineRangesKeys[lineRangeKeyIndex]]
-        // line number
-        outputList.pushItemArray(await this._getTsItemsFromStr(this.__getLineStringFromRange(lineRange.lineFrom, lineRange.lineTo), 'apparatus apparatusLineNumbers', textDirection))
-        outputList.pushItem((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
-        for (let entryIndex = 0; entryIndex<lineRange.entries.length; entryIndex++) {
-          let entry = lineRange.entries[entryIndex]
-          // pre-lemma
-          outputList.pushItemArray(await this._getTsItemsForPreLemma(entry))
-          // lemma text
-          outputList.pushItemArray(await this._getTsItemsForLemma(entry))
-          // post lemma
-          outputList.pushItemArray(await this._getTsItemsForPostLemma(entry))
-          // separator
-          outputList.pushItemArray(await this._getTsItemsForSeparator(entry))
-          // typeset sub entries
-          for (let subEntryIndex = 0; subEntryIndex < entry.subEntries.length; subEntryIndex++) {
-            let subEntry = entry.subEntries[subEntryIndex]
-            outputList.pushItemArray(await this._getSubEntryTsItems(subEntry))
-            if (subEntryIndex !== entry.subEntries.length -1) {
-              outputList.pushItem((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
+        this.appEntries[apparatus.type] = apparatus.entries.filter( (entry) => {
+          return (entry.from >= minMainTextIndex && entry.from <= maxMainTextIndex)
+        }).filter( (entry) => {
+          let subEntries = entry.subEntries
+          let thereAreEnabledSubEntries = false
+          for (let subEntryIndex = 0; thereAreEnabledSubEntries === false && subEntryIndex < subEntries.length; subEntryIndex++) {
+            if (subEntries[subEntryIndex].enabled) {
+              thereAreEnabledSubEntries = true
             }
           }
-          if (entryIndex !== lineRange.entries.length -1) {
-            outputList.pushItem((await this.__createNormalSpaceGlue('apparatus interEntry')).setTextDirection(textDirection))
-            outputList.pushItemArray(await this._getTsItemsFromStr(verticalLine, 'apparatus entrySeparator', textDirection))
-            outputList.pushItem((await this.__createNormalSpaceGlue('apparatus interEntry')).setTextDirection(textDirection))
+          return thereAreEnabledSubEntries
+        })
+        // this.debug && console.log(` - ${this.appEntries[apparatus.type].length} apparatus entries to typeset in total`)
+        // get lines for each entry
+        let entriesWithLineInfo = this.appEntries[apparatus.type].map ( (entry) => {
+          let lineFrom = this.__getLineForMainTextIndex(entry.from)
+          let lineTo = this.__getLineForMainTextIndex(entry.to)
+          return {
+            key: this.__getRangeUniqueString(lineFrom, lineTo),
+            lineFrom: lineFrom,
+            lineTo: lineTo,
+            entry: entry
           }
+        })
+        this.lineRanges[apparatus.type] = {}
+
+        entriesWithLineInfo.forEach( (entryWithLineInfo) => {
+          if (this.lineRanges[apparatus.type][entryWithLineInfo.key] === undefined ) {
+            this.lineRanges[apparatus.type][entryWithLineInfo.key] = {
+              key: entryWithLineInfo.key,
+              lineFrom: entryWithLineInfo.lineFrom,
+              lineTo: entryWithLineInfo.lineTo,
+              entries: []
+            }
+          }
+          this.lineRanges[apparatus.type][entryWithLineInfo.key].entries.push(entryWithLineInfo.entry)
+        })
+
+        this.debug && console.log(`Line Ranges for apparatus '${apparatus.type}'`)
+        this.debug && console.log(this.lineRanges[apparatus.type])
+        // profiler.lap('line ranges calculated')
+
+        // build items list for every line range
+        let lineRangesKeys = Object.keys(this.lineRanges[apparatus.type])
+        for (let lineRangeKeyIndex = 0; lineRangeKeyIndex < lineRangesKeys.length; lineRangeKeyIndex++) {
+          let lineRange = this.lineRanges[apparatus.type][lineRangesKeys[lineRangeKeyIndex]]
+          let items = []
+          // line number
+          pushArray(items, await this._getTsItemsFromStr(this.__getLineStringFromRange(lineRange.lineFrom, lineRange.lineTo), 'apparatus apparatusLineNumbers', textDirection))
+          items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
+          for (let entryIndex = 0; entryIndex<lineRange.entries.length; entryIndex++) {
+            let entry = lineRange.entries[entryIndex]
+            // pre-lemma
+            pushArray(items, await this._getTsItemsForPreLemma(entry))
+            // lemma text
+            pushArray(items, await this._getTsItemsForLemma(entry))
+            // post lemma
+            pushArray(items, await this._getTsItemsForPostLemma(entry))
+            // separator
+            pushArray(items, await this._getTsItemsForSeparator(entry))
+            // typeset sub entries
+            for (let subEntryIndex = 0; subEntryIndex < entry.subEntries.length; subEntryIndex++) {
+              let subEntry = entry.subEntries[subEntryIndex]
+              if (!subEntry.enabled) {
+                continue
+              }
+              pushArray(items, await this._getSubEntryTsItems(subEntry))
+              if (subEntryIndex !== entry.subEntries.length -1) {
+                items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
+              }
+            }
+            if (entryIndex !== lineRange.entries.length -1) {
+              items.push((await this.__createNormalSpaceGlue('apparatus interEntry')).setTextDirection(textDirection))
+              pushArray(items, await this._getTsItemsFromStr(verticalLine, 'apparatus entrySeparator', textDirection))
+              items.push((await this.__createNormalSpaceGlue('apparatus interEntry')).setTextDirection(textDirection))
+            }
+          }
+          items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
+          pushArray(items, await this._getTsItemsFromStr(doubleVerticalLine, 'apparatus lineRangeSeparator', textDirection))
+          items.push((await this.__createNormalSpaceGlue('apparatus afterLineRange')).setTextDirection(textDirection))
+          lineRange.tsItemsExportObjects = items.map( (item) => { return item.getExportObject()})
         }
-        outputList.pushItem((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
-        outputList.pushItemArray(await this._getTsItemsFromStr(doubleVerticalLine, 'apparatus lineRangeSeparator', textDirection))
-        outputList.pushItem((await this.__createNormalSpaceGlue('apparatus afterLineRange')).setTextDirection(textDirection))
+        // profiler.lap('line ranges typeset')
       }
 
-      outputList.pushItem(Glue.createLineFillerGlue().setTextDirection(textDirection))
-      outputList.pushItem(Penalty.createForcedBreakPenalty())
-      this.debug && console.log(` => Output`)
-      this.debug && console.log(outputList)
+
+      let lineRangesKeysToTypeset = Object.keys(this.lineRanges[apparatus.type]).filter( (lineRangeKey) => {
+        return this.lineRanges[apparatus.type][lineRangeKey].lineFrom  >= firstLine && this.lineRanges[apparatus.type][lineRangeKey].lineFrom <= lastLine
+      })
+      lineRangesKeysToTypeset.sort()
+      for (let lineRangeKeyIndex = 0; lineRangeKeyIndex < lineRangesKeysToTypeset.length; lineRangeKeyIndex++) {
+        let lineRange = this.lineRanges[apparatus.type][lineRangesKeysToTypeset[lineRangeKeyIndex]]
+        outputList.pushItemArray(this.__getTsItemsFromExportObjectArray(lineRange.tsItemsExportObjects))
+      }
+      if (outputList.getList().length !== 0) {
+        outputList.pushItem(Glue.createLineFillerGlue().setTextDirection(textDirection))
+        outputList.pushItem((new Penalty()).setPenalty(100))
+        outputList.pushItem(Penalty.createForcedBreakPenalty())
+      }
+      // this.debug && console.log(` => Output`)
+      // this.debug && console.log(outputList)
+      // profiler.stop('output list prepared')
       resolve(outputList)
+    })
+  }
+
+  /**
+   *
+   * @param {Object[]}exportObjects
+   */
+  __getTsItemsFromExportObjectArray(exportObjects) {
+    return exportObjects.map ( (exportObject) => {
+      return ObjectFactory.fromObject(exportObject)
     })
   }
 
@@ -474,20 +519,6 @@ export class EditionTypesetting {
     }
     return NumeralStyles.toDecimalWestern(n)
   }
-
-  _getSeparatorFmtText(entry) {
-    switch(entry.separator) {
-      case 'colon':
-        return FmtTextFactory.fromAnything(':')
-
-      case '':
-        return FmtTextFactory.fromString(']')
-
-      default:
-        return FmtTextFactory.fromAnything(entry.separator)
-    }
-  }
-
   _getSubEntryTsItems(subEntry) {
     return new Promise( async (resolve) => {
       let items = []
@@ -516,7 +547,11 @@ export class EditionTypesetting {
           break
 
         case 'fullCustom': {
-          pushArray(items, this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect'))
+          // this.debug && console.log(`Adding full custom sub entry: '${FmtText.getPlainText(subEntry.fmtText)}'`)
+          let fullCustomItems  = this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect')
+          // this.debug && console.log(fullCustomItems)
+
+          pushArray(items, fullCustomItems)
           break
         }
       }

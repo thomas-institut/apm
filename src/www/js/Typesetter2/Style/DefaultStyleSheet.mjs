@@ -56,14 +56,14 @@ export const defaultStyleSheet = {
   superscript: {
     parent: '',
     text: {
-      fontSize: '0.8 em',
+      fontSize: '0.7 em',
       shiftY: '-0.6 em'
     }
   },
   subscript:  {
     parent: '',
     text: {
-      fontSize: '0.8 em',
+      fontSize: '0.7 em',
       shiftY: '0.6 em'
     }
   }

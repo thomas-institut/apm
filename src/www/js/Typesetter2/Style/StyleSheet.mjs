@@ -113,6 +113,10 @@ export class StyleSheet {
         if (item instanceof Glue) {
           [item, baseTextBox] = await this.applyStyleToGlue(item, styleDef, baseTextBox)
         } else if (item instanceof TextBox) {
+          if (item.getText() === 'scripts') {
+            console.log(`Applying style to TB: ${stylesToApply[i]}`)
+            console.log(styleDef)
+          }
           // debug && console.log(`Applying style to TB`)
           // debug && console.log(styleDef)
           item = await this.applyStyleToTextBox(item, styleDef)
@@ -175,8 +179,15 @@ export class StyleSheet {
           textBox.setFontWeight(fontDef.fontWeight)
         }
         if (fontDef.fontSize !== undefined && fontDef.fontSize !== '') {
+          if (textBox.getText() === 'scripts') {
+            console.log(`Changing font size text box, current font size = ${textBox.getFontSize()}`)
+          }
           let newFontSize = await this.getPixelValue(fontDef.fontSize, textBox)
           textBox.setFontSize(newFontSize)
+          if (textBox.getText() === 'scripts') {
+            console.log(`new font size: ${fontDef.fontSize} = ${textBox.getFontSize()}`)
+          }
+
         }
         if (fontDef.shiftY !== undefined && fontDef.shiftY !== '') {
           let newShiftY = await this.getPixelValue(fontDef.shiftY, textBox)

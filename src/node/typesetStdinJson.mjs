@@ -75,8 +75,8 @@ if (data.helperOptions !== undefined) {
   debug && console.log('Helper options')
   debug && console.log(data.helperOptions)
   let editionTypesettingHelper = new EditionTypesetting(data.helperOptions)
-  data.options.getApparatusListToTypeset = (mainTextVerticalList, apparatus) => {
-    return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus)
+  data.options.getApparatusListToTypeset = (mainTextVerticalList, apparatus, lineFrom, lineTo) => {
+    return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo)
   }
     data.options.preTypesetApparatuses = () => {
     editionTypesettingHelper.resetExtractedMetadataInfo()

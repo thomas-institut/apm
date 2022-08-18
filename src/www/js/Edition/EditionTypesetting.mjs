@@ -186,7 +186,7 @@ export class EditionTypesetting {
    */
   generateApparatusVerticalListToTypeset(typesetMainTextVerticalList, apparatus, firstLine = 1, lastLine= MAX_LINE_COUNT) {
     return new Promise( async (resolve) => {
-      // this.debug && console.log(`Getting vertical list for apparatus '${apparatus.type}, line ${firstLine} to ${lastLine === MAX_LINE_COUNT ? 'end' : lastLine}`)
+      this.debug && console.log(`Getting vertical list for apparatus '${apparatus.type}, line ${firstLine} to ${lastLine === MAX_LINE_COUNT ? 'end' : lastLine}`)
 
       let textDirection = getTextDirectionForLang(this.edition.lang)
       let outputList = new ItemList(TypesetterItemDirection.HORIZONTAL)
@@ -261,8 +261,8 @@ export class EditionTypesetting {
           this.lineRanges[apparatus.type][entryWithLineInfo.key].entries.push(entryWithLineInfo.entry)
         })
 
-        this.debug && console.log(`Line Ranges for apparatus '${apparatus.type}'`)
-        this.debug && console.log(this.lineRanges[apparatus.type])
+        // this.debug && console.log(`Line Ranges for apparatus '${apparatus.type}'`)
+        // this.debug && console.log(this.lineRanges[apparatus.type])
         // profiler.lap('line ranges calculated')
 
         // build items list for every line range
@@ -272,7 +272,10 @@ export class EditionTypesetting {
           let items = []
           // line number
           pushArray(items, await this._getTsItemsFromStr(this.__getLineStringFromRange(lineRange.lineFrom, lineRange.lineTo), 'apparatus apparatusLineNumbers', textDirection))
-          items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
+          // TODO: change this to a penalty
+          let glue = await this.__createNormalSpaceGlue('apparatus')
+          items.push( (new Box()).setWidth(glue.getWidth()))
+
           for (let entryIndex = 0; entryIndex<lineRange.entries.length; entryIndex++) {
             let entry = lineRange.entries[entryIndex]
             // pre-lemma
@@ -313,13 +316,14 @@ export class EditionTypesetting {
         return this.lineRanges[apparatus.type][lineRangeKey].lineFrom  >= firstLine && this.lineRanges[apparatus.type][lineRangeKey].lineFrom <= lastLine
       })
       lineRangesKeysToTypeset.sort()
+      // this.debug && console.log(`Line ranges to typeset`)
+      // this.debug && console.log(lineRangesKeysToTypeset)
       for (let lineRangeKeyIndex = 0; lineRangeKeyIndex < lineRangesKeysToTypeset.length; lineRangeKeyIndex++) {
         let lineRange = this.lineRanges[apparatus.type][lineRangesKeysToTypeset[lineRangeKeyIndex]]
         outputList.pushItemArray(this.__getTsItemsFromExportObjectArray(lineRange.tsItemsExportObjects))
       }
       if (outputList.getList().length !== 0) {
         outputList.pushItem(Glue.createLineFillerGlue().setTextDirection(textDirection))
-        outputList.pushItem((new Penalty()).setPenalty(100))
         outputList.pushItem(Penalty.createForcedBreakPenalty())
       }
       // this.debug && console.log(` => Output`)

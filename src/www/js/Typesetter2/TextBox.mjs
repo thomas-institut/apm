@@ -91,7 +91,7 @@ export class TextBox extends Box {
   setText(text) {
     // TODO: detect and reject newlines, control characters, etc
     if (this.text === text) {
-      return
+      return this
     }
     this.text = text
     this.resetMeasurements()

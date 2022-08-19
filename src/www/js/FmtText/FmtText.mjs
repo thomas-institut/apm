@@ -39,6 +39,9 @@ export class FmtText {
    */
   static getPlainText(fmtText) {
     let realFmtText = FmtTextFactory.fromAnything(fmtText)
+    if (realFmtText.length === 0) {
+      return ''
+    }
     return realFmtText.map( (token) => { return token.getPlainText()}).join('')
   }
 

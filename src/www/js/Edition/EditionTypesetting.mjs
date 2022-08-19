@@ -421,7 +421,13 @@ export class EditionTypesetting {
 
         default:
           // a custom pre-lemma
-          let customPreLemmaBox = await this.ss.apply((new TextBox()).setText(FmtText.getPlainText(entry.preLemma)).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
+          let customPreLemmaText = FmtText.getPlainText(entry.preLemma)
+          this.debug && console.log(`Custom pre-lemma: '${customPreLemmaText}'`)
+          let customPreLemmaBox = await this.ss.apply(
+            (new TextBox())
+              .setText(customPreLemmaText)
+              .setTextDirection(this.textDirection),
+            'apparatus apparatusKeyword')
           items.push(customPreLemmaBox)
           items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
       }

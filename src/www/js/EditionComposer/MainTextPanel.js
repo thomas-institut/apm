@@ -32,7 +32,7 @@ import { ApparatusCommon } from './ApparatusCommon.js'
 import * as EditionMainTextTokenType from '../Edition/MainTextTokenType.mjs'
 import { Edition } from '../Edition/Edition.mjs'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
-import { PanelWithToolbar } from './PanelWithToolbar'
+import { PanelWithToolbar } from '../MultiPanelUI/PanelWithToolbar'
 import { arraysAreEqual, prettyPrintArray, pushArray, varsAreEqual } from '../toolbox/ArrayUtil.mjs'
 import { CtData } from '../CtData/CtData'
 

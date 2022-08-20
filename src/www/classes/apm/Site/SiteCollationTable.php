@@ -28,14 +28,12 @@ namespace APM\Site;
 
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\FullTranscription\DocInfo;
-use APM\FullTranscription\PageInfo;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use InvalidArgumentException;
-use phpDocumentor\Reflection\Types\This;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 
 
 /**
@@ -210,7 +208,7 @@ class SiteCollationTable extends SiteController
                 }
                 if (ctype_digit($argWitnessSpec)) {
                     // for compatibility with existing API calls, if the argWitnessSpec is just a number,
-                    // it defaults to a full transcription with local witness Id 'A'
+                    // it defaults to a full transcription with local witness id 'A'
                     $docId = intval($argWitnessSpec);
                     if ($docId !== 0) {
                         $collationPageOptions['witnesses'][] = [
@@ -498,7 +496,7 @@ class SiteCollationTable extends SiteController
         // put titles in fullTx witnesses that don't have one
 
         // TODO: Check this default
-        $supressTimestampsInApiCalls = true;
+        $suppressTimestampsInApiCalls = true;
 
         for($i = 0; $i < count($apiCallOptions['witnesses']); $i++) {
             if ($apiCallOptions['witnesses'][$i]['type'] === WitnessType::FULL_TRANSCRIPTION) {
@@ -519,7 +517,7 @@ class SiteCollationTable extends SiteController
                         // here would be a place to fix the timeStamp, but it's better to leave it blank
                         // so that the system automatically gets the current version
 //                        if ($validWitnessFullTxInfo['timeStamp'] === '') {
-//                            $supressTimestampsInApiCalls = true;
+//                            $suppressTimestampsInApiCalls = true;
 //                        }
                         $found = true;
                         break;
@@ -554,7 +552,7 @@ class SiteCollationTable extends SiteController
             'num_docs' => $partialCollation ? count($apiCallOptions['witnesses']) : count($validWitnesses),
             'total_num_docs' => count($validWitnesses),
             'availableWitnesses' => $validWitnesses,
-            'suppressTimestampsInApiCalls' => $supressTimestampsInApiCalls,
+            'suppressTimestampsInApiCalls' => $suppressTimestampsInApiCalls,
             'normalizerData' => $this->getNormalizerData($language, 'standard'),
             'warnings' => $warnings
         ];

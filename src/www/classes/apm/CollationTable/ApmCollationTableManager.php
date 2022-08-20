@@ -51,12 +51,10 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
 
     public function __construct(UnitemporalDataTable $ctTable, CollationTableVersionManager $versionManager, LoggerInterface $logger)
     {
-
         $this->ctTable = $ctTable;
         $this->versionManager = $versionManager;
         $this->setLogger($logger);
     }
-
 
 
     public function getCollationTableVersionManager(): CollationTableVersionManager

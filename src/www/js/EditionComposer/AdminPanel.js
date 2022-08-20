@@ -31,7 +31,7 @@ import * as Util from '../toolbox/Util.mjs'
 import { doNothingPromise } from '../toolbox/FunctionUtil.mjs'
 import { ConfirmDialog } from '../pages/common/ConfirmDialog'
 import * as CollationTableType from '../constants/CollationTableType'
-import { Panel } from './Panel'
+import { Panel } from '../MultiPanelUI/Panel'
 
 const archiveButtonId = 'archive-table-btn'
 const versionHistoryDiv = 'version-history-div'

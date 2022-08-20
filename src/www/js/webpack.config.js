@@ -31,6 +31,11 @@ module.exports = {
       filename: 'EditionComposer.bundle.js',
       dependOn: 'QuillPack',
     },
+    MceComposer: {
+      import: './MceComposer/MceComposer.js',
+      filename: 'MceComposer.bundle.js',
+      // dependOn: 'QuillPack',
+    },
     AutomaticCollationTable: {
       import: './pages/AutomaticCollationTable/AutomaticCollationTable.js',
       filename: 'AutomaticCollationTable.bundle.js'

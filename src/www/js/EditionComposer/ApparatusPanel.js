@@ -19,7 +19,7 @@
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Edition } from '../Edition/Edition.mjs'
 import { ApparatusCommon } from './ApparatusCommon.js'
-import { PanelWithToolbar } from './PanelWithToolbar'
+import { PanelWithToolbar } from '../MultiPanelUI/PanelWithToolbar'
 import { getIntArrayIdFromClasses } from '../toolbox/UserInterfaceUtil'
 import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import { CtData } from '../CtData/CtData'

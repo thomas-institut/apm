@@ -24,6 +24,7 @@ namespace APM\System;
 
 use APM\CollationEngine\CollationEngine;
 use APM\CollationTable\CollationTableManager;
+use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\FullTranscription\TranscriptionManager;
 use APM\Plugin\HookManager;
@@ -141,6 +142,7 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     abstract public function getCollationEngine() : CollationEngine;
     abstract public function getTranscriptionManager() : TranscriptionManager;
     abstract public function getCollationTableManager() : CollationTableManager;
+    abstract public function getMultiChunkEditionManager() : MultiChunkEditionManager;
     abstract public function getSystemDataCache() : DataCache;
     abstract public function getBaseUrl(): string;
     abstract public function getTwig() : Twig;

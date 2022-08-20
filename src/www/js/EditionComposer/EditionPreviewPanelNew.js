@@ -20,7 +20,7 @@
 
 
 
-import { PanelWithToolbar } from './PanelWithToolbar'
+import { PanelWithToolbar } from '../MultiPanelUI/PanelWithToolbar'
 import { Edition } from '../Edition/Edition.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { ZoomController } from '../toolbox/ZoomController'

@@ -1,4 +1,4 @@
-import { MultiPanelUI}  from '../../../js/multi-panel-ui/MultiPanelUI'
+import { MultiPanelUI}  from '../../../js/MultiPanelUI/MultiPanelUI'
 import * as GetLorem from 'getlorem'
 import { EditableTextField } from '../../../js/widgets/EditableTextField'
 

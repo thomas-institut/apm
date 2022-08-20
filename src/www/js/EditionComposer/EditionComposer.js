@@ -16,18 +16,34 @@
  *
  */
 
+// defaults
 import { defaultLanguageDefinition } from '../defaults/languages'
-
-import * as WitnessTokenType from '../Witness/WitnessTokenType'
-import * as WitnessTokenClass from '../Witness/WitnessTokenClass'
-
-// widgets
-import { EditableTextField } from '../widgets/EditableTextField'
 
 // utilities
 import * as Util from '../toolbox/Util.mjs'
 import { capitalizeFirstLetter, deepCopy } from '../toolbox/Util.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
+import { pushArray } from '../toolbox/ArrayUtil.mjs'
+import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
+import { KeyCache } from '../toolbox/KeyCache'
+import { ServerLogger } from '../Server/ServerLogger'
+
+// MultiPanel UI
+import { MultiPanelUI } from '../MultiPanelUI/MultiPanelUI'
+import { TabConfig } from '../MultiPanelUI/TabConfig'
+
+// Panels
+import { WitnessInfoPanel } from './WitnessInfoPanel'
+import { CollationTablePanel } from './CollationTablePanel'
+import { AdminPanel } from './AdminPanel'
+import { EditionPreviewPanel } from './EditionPreviewPanel'
+import { MainTextPanel } from './MainTextPanel'
+import { ApparatusPanel } from './ApparatusPanel'
+import { EditionPreviewPanelNew } from './EditionPreviewPanelNew'
+import { TechSupportPanel } from './TechSupportPanel'
+
+// Widgets
+import { EditableTextField } from '../widgets/EditableTextField'
 
 // Normalizations
 import { NormalizerRegister } from '../pages/common/NormalizerRegister'
@@ -37,28 +53,21 @@ import { IgnoreShaddaNormalizer } from '../normalizers/IgnoreShaddaNormalizer'
 import { RemoveHamzahMaddahFromAlifWawYahNormalizer } from '../normalizers/RemoveHamzahMaddahFromAlifWawYahNormalizer'
 import { IgnoreTatwilNormalizer } from '../normalizers/IgnoreTatwilNormalizer'
 import { IgnoreIsolatedHamzaNormalizer } from '../normalizers/IgnoreIsolatedHamzaNormalizer'
-import { MultiPanelUI } from '../multi-panel-ui/MultiPanelUI'
-import { WitnessInfoPanel } from './WitnessInfoPanel'
-import { CollationTablePanel } from './CollationTablePanel'
-import { AdminPanel } from './AdminPanel'
-import { EditionPreviewPanel } from './EditionPreviewPanel'
-import { MainTextPanel } from './MainTextPanel'
-import { ApparatusPanel } from './ApparatusPanel'
-import { Edition } from '../Edition/Edition.mjs'
-import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
-import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
-import * as CollationTableType from '../constants/CollationTableType'
-import * as NormalizationSource from '../constants/NormalizationSource'
+
+
+// CtData and Edition core
 import { CtData } from '../CtData/CtData'
+import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
+import * as CollationTableType from '../constants/CollationTableType'
+import { Edition } from '../Edition/Edition.mjs'
+import * as NormalizationSource from '../constants/NormalizationSource'
 import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
 import { EditionWitnessReferencesCleaner } from '../CtData/CtDataCleaner/EditionWitnessReferencesCleaner'
 import { CollationTableConsistencyCleaner } from '../CtData/CtDataCleaner/CollationTableConsistencyCleaner'
-import { ServerLogger } from '../Server/ServerLogger'
-import { KeyCache } from '../toolbox/KeyCache'
-import { pushArray } from '../toolbox/ArrayUtil.mjs'
-import { TechSupportPanel } from './TechSupportPanel'
+import * as WitnessTokenType from '../Witness/WitnessTokenType'
+import * as WitnessTokenClass from '../Witness/WitnessTokenClass'
 import { FmtText } from '../FmtText/FmtText.mjs'
-import { EditionPreviewPanelNew } from './EditionPreviewPanelNew'
+
 
 // CONSTANTS
 
@@ -265,14 +274,14 @@ export class EditionComposer {
 
     // tab arrays
     let panelOneTabs = [
-      createTabConfig(mainTextTabId, 'Main Text', this.mainTextPanel),
-      createTabConfig(collationTableTabId, 'Collation Table', this.collationTablePanel),
-      createTabConfig(witnessInfoTabId, 'Witness Info', this.witnessInfoPanel)
+      TabConfig.createTabConfig(mainTextTabId, 'Main Text', this.mainTextPanel),
+      TabConfig.createTabConfig(collationTableTabId, 'Collation Table', this.collationTablePanel),
+      TabConfig.createTabConfig(witnessInfoTabId, 'Witness Info', this.witnessInfoPanel)
     ]
 
     let panelTwoTabs = this.edition.apparatuses
       .map( (apparatus, index) => {
-        return createTabConfig(
+        return TabConfig.createTabConfig(
           `apparatus-${index}`,
           this._getTitleForApparatusType(apparatus.type),
           this.apparatusPanels[index],
@@ -280,15 +289,15 @@ export class EditionComposer {
          )
       })
       .concat([
-        createTabConfig(editionPreviewTabId, 'Edition Preview', this.editionPreviewPanel),
-        createTabConfig(editionPreviewNewTabId, 'Preview (beta)', this.editionPreviewPanelNew),
-        createTabConfig(adminPanelTabId, 'Admin', this.adminPanel),
+        TabConfig.createTabConfig(editionPreviewTabId, 'Edition Preview', this.editionPreviewPanel),
+        TabConfig.createTabConfig(editionPreviewNewTabId, 'Preview (beta)', this.editionPreviewPanelNew),
+        TabConfig.createTabConfig(adminPanelTabId, 'Admin', this.adminPanel),
     ])
 
     if (this.options.isTechSupport) {
       console.log(`Adding tech support panel`)
       this.techSupportPanel.setActive(true)
-      panelTwoTabs.push( createTabConfig(techSupportTabId, 'Tech', this.techSupportPanel))
+      panelTwoTabs.push( TabConfig.createTabConfig(techSupportTabId, 'Tech', this.techSupportPanel))
     }
 
     this.multiPanelUI = new MultiPanelUI({
@@ -1289,31 +1298,7 @@ export class EditionComposer {
   _getLinkTitleForApparatusType(type){
     return `Click to show the Apparatus ${capitalizeFirstLetter(type)}`
   }
-
 }
-
-/**
- *
- * @param id
- * @param {string}title
- * @param panelObject
- * @param {string}linkTitle
- * @return {{onResize: function, postRender: function, contentClasses: ([]|*), onShown: function, onHidden: function, id, title, content: (function(*=, *=, *=): *)}}
- */
-function createTabConfig(id, title,  panelObject, linkTitle = '') {
-  return {
-    id: id,
-    title: title,
-    linkTitle: linkTitle,
-    content: (tabId, mode, visible) => { return panelObject.generateHtml(tabId, mode, visible) },
-    contentClasses: panelObject.getContentClasses(),
-    onResize: (id, visible) => {  panelObject.onResize(visible)},
-    postRender: (id, mode, visible) => { panelObject.postRender(id, mode, visible) },
-    onShown: (id) => { panelObject.onShown(id)},
-    onHidden: (id) => { panelObject.onHidden(id)}
-  }
-}
-
 
 // Load as global variable so that it can be referenced in the Twig template
 window.EditionComposer = EditionComposer

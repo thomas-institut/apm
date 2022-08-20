@@ -24,7 +24,7 @@
  *  - Sigla (with preset)
  *  - Witness update: update status, check for updates and launch the witness update task
  */
-import { Panel } from './Panel'
+import { Panel } from '../MultiPanelUI/Panel'
 import { doNothing, failPromise } from '../toolbox/FunctionUtil.mjs'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import * as Util from '../toolbox/Util.mjs'

@@ -208,6 +208,7 @@ export class MultiPanelUI {
       if (cleanPanelOptions.type === tabsPanel) {
         if (cleanPanelOptions.tabs.length === 0) {
           console.error(`MultiPanelUI: panel ${panelIndex} of type type 'tabs', but no tabs are given`)
+          return
         }
         let goodTabOptionsArray = []
         cleanPanelOptions.tabs.forEach( (tabOption, tabIndex) => {

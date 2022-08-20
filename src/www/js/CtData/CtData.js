@@ -30,6 +30,7 @@ import { deepCopy } from '../toolbox/Util.mjs'
 import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
 import * as NormalizationSource from '../constants/NormalizationSource'
 import * as WitnessType from '../Witness/WitnessTokenClass'
+import { pushArray, uniq } from '../toolbox/ArrayUtil.mjs'
 
 // cleaners
 import { CleanerZero } from './CtDataCleaner/CleanerZero'
@@ -38,7 +39,7 @@ import { CleanerOnePointOne } from './CtDataCleaner/CleanerOnePointOne'
 // updaters
 import { UpdaterToOnePointZero } from './CtDataUpdater/UpdaterToOnePointZero'
 import { UpdaterToOnePointOne } from './CtDataUpdater/UpdaterToOnePointOne'
-import { pushArray, uniq } from '../toolbox/ArrayUtil.mjs'
+
 
 
 

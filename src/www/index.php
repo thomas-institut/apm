@@ -29,11 +29,15 @@ namespace APM;
 use APM\Api\ApiLog;
 use APM\Api\ApiTranscription;
 use APM\Site\SiteApmLog;
+use APM\Site\SiteMultiChunkEdition;
 use APM\System\ConfigLoader;
 use Slim\App;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Routing\RouteCollectorProxy;
 use Slim\Views\TwigMiddleware;
+
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 
 use APM\System\ApmContainerKey;
 use APM\System\ApmSystemManager;
@@ -145,7 +149,7 @@ $app->get('/collation/quick', SiteCollationTable::class . ':quickCollationPage')
 
 // AUTHENTICATED ACCESS
 
-$app->group('', function (RouteCollectorProxy $group){
+$app->group('', function (RouteCollectorProxy $group) use ($container){
 
     // HOME
 
@@ -216,6 +220,16 @@ $app->group('', function (RouteCollectorProxy $group){
     $group->get('/edition/chunk/edit/{tableId}[/{type}]',
         SiteCollationTable::class . ':editCollationTable')
         ->setName('chunkedition.edit');
+
+
+    // MULTI-CHUNK EDITION
+    $group->get('/edition/multi/new',
+        function(Request $request, Response $response, array $args) use ($container){
+            $c = new SiteMultiChunkEdition($container);
+            return $c->newMultiChunkEdition($request, $response, $args);
+        }
+       )
+        ->setName('mce.new');
 
 
     // DOCS

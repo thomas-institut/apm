@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/bootstrap/dist/css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/bootstrap-icons/font/bootstrap-icons.css"/>
+{#    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules//quill/dist/quill.core.css"/>#}
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/styles.css"/>
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/multi-panel-ui/styles.css"/>
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/mc-edition-composer.css"/>
+
+    <link href='{{baseurl}}/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
+
+    <title></title>
+
+    <script type="text/javascript" src="{{baseurl}}/node_modules/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/node_modules/moment/moment.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/js/SimpleProfiler.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
+{#    <script type="application/javascript" src="{{baseurl}}/js/dist/Quill.bundle.js"></script>#}
+    <script type="application/javascript" src="{{baseurl}}/js/dist/MceComposer.bundle.js"></script>
+</head>
+<body>
+<div class="text-muted" style="margin: 20px;">
+    <p>Loading data..</p>
+    <div class="spinner-grow" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+</div>
+<script>
+
+  $(() => {
+    let userId = {{ userId }} ;
+    let editionId = {{  editionId }}
+
+    new MceComposer({
+      userId: userId,
+      editionId: editionId,
+      urlGenerator: new ApmUrlGenerator('{{ baseurl }}'),
+    })
+  })
+</script>
+</body>
+</html>

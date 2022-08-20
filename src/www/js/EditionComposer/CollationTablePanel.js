@@ -27,7 +27,7 @@
  *  - Collation table manipulation: moving, grouping, normalizations
  */
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { PanelWithToolbar } from './PanelWithToolbar'
+import { PanelWithToolbar } from '../MultiPanelUI/PanelWithToolbar'
 import { MultiToggle, optionChange } from '../widgets/MultiToggle'
 import { NiceToggle, toggleEvent } from '../widgets/NiceToggle'
 import { NormalizerRegister } from '../pages/common/NormalizerRegister'

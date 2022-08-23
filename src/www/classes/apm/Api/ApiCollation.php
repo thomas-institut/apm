@@ -22,8 +22,8 @@ namespace APM\Api;
 
 
 use APM\CollationTable\CollationTableVersionInfo;
+use APM\CollationTable\CtData;
 use APM\Core\Witness\EditionWitness;
-use APM\Engine\Engine;
 use APM\StandardData\CollationTableDataProvider;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
@@ -32,11 +32,9 @@ use APM\ToolBox\SiglumGenerator;
 use AverroesProject\Data\UserManagerUserInfoProvider;
 use Exception;
 use InvalidArgumentException;
-use \Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-use APM\Core\Witness\StringWitness;
 use APM\Core\Collation\CollationTable;
-use APM\Decorators\QuickCollationTableDecorator;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
 
@@ -56,6 +54,56 @@ class ApiCollation extends ApiController
     const ERROR_COLLATION_TABLE_DOES_NOT_EXIST = 2006;
     const ERROR_MISSING_VERSION_INFO = 2007;
 
+
+    public function  getTable(Request $request, Response $response, array $args): Response
+    {
+
+        $tableId = intval($request->getAttribute('tableId'));
+        $timeStamp = $request->getAttribute('timestamp',  TimeString::now());
+
+        $this->profiler->start();
+        $this->logger->debug("Get collation table id $tableId at $timeStamp");
+
+        $ctManager = $this->systemManager->getCollationTableManager();
+        try {
+            $ctData = $ctManager->getCollationTableById($tableId, $timeStamp);
+        } catch (InvalidArgumentException $e) {
+            $this->logger->info("Table $tableId not found");
+            return $this->responseWithJson($response,  [
+                'tableId' => $tableId,
+                'message' => 'Table not found'
+            ], 404);
+        }
+
+        $ctInfo = $ctManager->getCollationTableInfo($tableId, $timeStamp);
+        $versionInfoArray = $ctManager->getCollationTableVersions($tableId);
+        $authorId = -1;
+        $versionId = -1;
+        foreach($versionInfoArray as $vi) {
+            if ($vi->timeFrom === $ctInfo->timeFrom) {
+                $authorId = $vi->authorId;
+                $versionId = $vi->id;
+            }
+        }
+
+        $docs = CtData::getMentionedDocsFromCtData($ctData);
+        $docInfoArray = [];
+        foreach($docs as $docId) {
+            $docInfo = $this->systemManager->getDataManager()->getDocById($docId);
+            $docInfoArray[] = [ 'docId' => $docId, 'title' => $docInfo['title']];
+        }
+
+        return $this->responseWithJson($response, [
+            'ctData' => $ctData,
+            'ctInfo' => $ctInfo,
+            'timeStamp' => $ctInfo->timeFrom,
+            'versions' => $versionInfoArray,
+            'authorId' => $authorId,
+            'versionId' => $versionId,
+            'isLatestVersion' => $ctInfo->timeUntil === TimeString::END_OF_TIMES,
+            'docInfo' => $docInfoArray
+        ]);
+    }
 
     /**
      * Generates an automatic collation table from a POST request

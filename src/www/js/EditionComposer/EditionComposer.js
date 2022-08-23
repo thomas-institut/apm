@@ -67,6 +67,7 @@ import { CollationTableConsistencyCleaner } from '../CtData/CtDataCleaner/Collat
 import * as WitnessTokenType from '../Witness/WitnessTokenType'
 import * as WitnessTokenClass from '../Witness/WitnessTokenClass'
 import { FmtText } from '../FmtText/FmtText.mjs'
+import { PdfDownloadUrl } from './PdfDownloadUrl'
 
 
 // CONSTANTS
@@ -230,7 +231,7 @@ export class EditionComposer {
 
     this.editionPreviewPanelNew = new EditionPreviewPanelNew({
       containerSelector: `#${editionPreviewNewTabId}`,
-      ctData: this.ctData,
+      // ctData: this.ctData,
       edition: this.edition,
       langDef: this.options.langDef,
       getPdfDownloadUrl: this.genGetPdfDownloadUrlForPreviewPanel(),
@@ -536,7 +537,7 @@ export class EditionComposer {
     this.mainTextPanel.updateData(this.ctData, this.edition)  // mainTextPanel takes care of updating the apparatus panels
     this.collationTablePanel.updateCtData(this.ctData, 'EditionComposer')
     this.editionPreviewPanel.updateData(this.ctData, this.edition)
-    this.editionPreviewPanelNew.updateData(this.ctData, this.edition)
+    this.editionPreviewPanelNew.updateData(this.edition)
     this.witnessInfoPanel.updateCtData(this.ctData, updateWitnessInfo)
   }
 
@@ -732,36 +733,37 @@ export class EditionComposer {
   }
 
   genGetPdfDownloadUrlForPreviewPanel() {
-    return (rawData) => {
-      return new Promise( (resolve, reject) => {
-        let apiUrl = this.options.urlGenerator.apiTypesetRaw()
-        let dataJson = JSON.stringify(rawData)
-        console.log(`About to make API call for PDF download url, data size is ${dataJson.length}`)
-        console.log(`Calling typeset API at ${apiUrl}`)
-        $.post(
-          apiUrl,
-          {data: JSON.stringify({
-              jsonData: dataJson
-            })}
-        ).done(
-          apiResponse => {
-            console.log(`Got response from the server:`)
-            console.log(apiResponse)
-            if (apiResponse.url === undefined) {
-              console.error('No url given by server')
-              reject()
-            }
-            resolve(apiResponse.url)
-          }
-        ).fail (
-          error => {
-            console.error('PDF API error')
-            console.log(error)
-            reject()
-          }
-        )
-      })
-    }
+    return PdfDownloadUrl.genGetPdfDownloadUrlForPreviewPanel(this.options.urlGenerator)
+    // return (rawData) => {
+    //   return new Promise( (resolve, reject) => {
+    //     let apiUrl = this.options.urlGenerator.apiTypesetRaw()
+    //     let dataJson = JSON.stringify(rawData)
+    //     console.log(`About to make API call for PDF download url, data size is ${dataJson.length}`)
+    //     console.log(`Calling typeset API at ${apiUrl}`)
+    //     $.post(
+    //       apiUrl,
+    //       {data: JSON.stringify({
+    //           jsonData: dataJson
+    //         })}
+    //     ).done(
+    //       apiResponse => {
+    //         console.log(`Got response from the server:`)
+    //         console.log(apiResponse)
+    //         if (apiResponse.url === undefined) {
+    //           console.error('No url given by server')
+    //           reject()
+    //         }
+    //         resolve(apiResponse.url)
+    //       }
+    //     ).fail (
+    //       error => {
+    //         console.error('PDF API error')
+    //         console.log(error)
+    //         reject()
+    //       }
+    //     )
+    //   })
+    // }
   }
 
 
@@ -1144,7 +1146,7 @@ export class EditionComposer {
         this.collationTablePanel.updateCtData(newCtData, 'EditionComposer')
       }
       this.editionPreviewPanel.updateData(this.ctData, this.edition)
-      this.editionPreviewPanelNew.updateData(this.ctData, this.edition)
+      this.editionPreviewPanelNew.updateData(this.edition)
       this.witnessInfoPanel.updateCtData(this.ctData, true)
       this._updateSaveArea()
     }

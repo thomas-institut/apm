@@ -108,8 +108,8 @@ export class BasicTypesetter extends Typesetter2 {
     this.lineSkip = this.options.lineSkip
     this.minLineSkip = this.options.minLineSkip
     this.debug = this.options.debug
-    this.debug && console.log(`Options`)
-    this.debug && console.log(this.options)
+    // this.debug && console.log(`Options`)
+    // this.debug && console.log(this.options)
     this.pageOutputProcessors = []
     if (this.options.showPageNumbers) {
       let pnOc = new OptionsChecker({
@@ -677,7 +677,7 @@ export class BasicTypesetter extends Typesetter2 {
    */
   __typesetApparatuses(typesetMainTextVerticalList, apparatuses, lineFrom = 1, lineTo = MAX_LINE_COUNT) {
     return new Promise( async (resolve) => {
-      this.debug && console.log(`Typesetting ${apparatuses.length} apparatuses from lines ${lineFrom} to ${lineTo === MAX_LINE_COUNT ? 'end' : lineTo}`)
+      // this.debug && console.log(`Typesetting ${apparatuses.length} apparatuses from lines ${lineFrom} to ${lineTo === MAX_LINE_COUNT ? 'end' : lineTo}`)
       let outputArray = []
       for (let i = 0; i < apparatuses.length; i++) {
         // this.debug && console.log(`Typesetting apparatus ${i}`)

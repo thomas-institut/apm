@@ -72,8 +72,8 @@ export class EditionTypesetting {
     this.ss = new StyleSheet(defaultStyleSheet, this.textBoxMeasurer)
     this.editionStyle = defaultEditionStyles[this.options.editionStyleName]
     this.ss.merge(this.editionStyle.formattingStyles)
-    this.debug && console.log(`Stylesheet`)
-    this.debug && console.log(this.ss.getStyleDefinitions())
+    // this.debug && console.log(`Stylesheet`)
+    // this.debug && console.log(this.ss.getStyleDefinitions())
     this.tokenRenderer = new Typesetter2StyleSheetTokenRenderer({
       styleSheet: this.ss.getStyleDefinitions(),
       textBoxMeasurer: this.textBoxMeasurer
@@ -186,7 +186,7 @@ export class EditionTypesetting {
    */
   generateApparatusVerticalListToTypeset(typesetMainTextVerticalList, apparatus, firstLine = 1, lastLine= MAX_LINE_COUNT) {
     return new Promise( async (resolve) => {
-      this.debug && console.log(`Getting vertical list for apparatus '${apparatus.type}, line ${firstLine} to ${lastLine === MAX_LINE_COUNT ? 'end' : lastLine}`)
+      // this.debug && console.log(`Getting vertical list for apparatus '${apparatus.type}, line ${firstLine} to ${lastLine === MAX_LINE_COUNT ? 'end' : lastLine}`)
 
       let textDirection = getTextDirectionForLang(this.edition.lang)
       let outputList = new ItemList(TypesetterItemDirection.HORIZONTAL)

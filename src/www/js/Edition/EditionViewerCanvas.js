@@ -95,10 +95,10 @@ export class EditionViewerCanvas {
     this.debug = this.options.debug
     this.canvasRenderer = new CanvasRenderer(this.canvas)
 
-    this.debug && console.log(`Options`)
-    this.debug && console.log(this.options)
-    this.debug && console.log(`Geometry`)
-    this.debug && console.log(this.geometry)
+    // this.debug && console.log(`Options`)
+    // this.debug && console.log(this.options)
+    // this.debug && console.log(`Geometry`)
+    // this.debug && console.log(this.geometry)
 
     BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(this.geometry.pageWidth), Math.round(this.geometry.pageHeight))
     this.canvasRenderer.setScale(this.options.scale).setPageMargin(pageMarginInCanvas)
@@ -117,8 +117,8 @@ export class EditionViewerCanvas {
         // need to typeset the edition
         this.__typesetEdition().then( (doc) => {
           this.editionDoc = doc
-          this.debug && console.log(`Edition typeset`)
-          this.debug && console.log(doc)
+          // this.debug && console.log(`Edition typeset`)
+          // this.debug && console.log(doc)
           this.__renderCanvas(doc)
           resolve()
         })
@@ -132,7 +132,7 @@ export class EditionViewerCanvas {
   setScale(newScale) {
     return new Promise ( (resolve) => {
       this.canvasRenderer.setScale(newScale)
-      this.debug && console.log(`Scale set to ${newScale}`)
+      // this.debug && console.log(`Scale set to ${newScale}`)
       this.render().then( () => {
         resolve(newScale)
       })
@@ -151,9 +151,11 @@ export class EditionViewerCanvas {
       console.log('Nothing to do, no pages to render')
       return
     }
-    this.debug && console.log(`Rendering canvas`)
+    // this.debug && console.log(`Rendering canvas`)
     this.canvasRenderer.renderDocument(doc)
   }
+
+
 
   __typesetEdition() {
     return new Promise( (resolve) => {
@@ -170,8 +172,8 @@ export class EditionViewerCanvas {
       editionTypesettingHelper.setup().then( async () => {
         let verticalListToTypeset = await editionTypesettingHelper.generateListToTypesetFromMainText()
         this.mainTextVerticalListToTypeset = verticalListToTypeset
-        this.debug && console.log(`List to typeset`)
-        this.debug && console.log(verticalListToTypeset)
+        // this.debug && console.log(`List to typeset`)
+        // this.debug && console.log(verticalListToTypeset)
         let lineNumbersAlign = 'right'
         let lineNumbersX = this.geometry.margin.left - this.geometry.textToLineNumbers
         if (isRtl(this.edition.lang)) {

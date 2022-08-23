@@ -52,8 +52,8 @@ export class CriticalApparatusGenerator {
     //    table exchanging the references for the actual tokens and filling the null references with empty tokens
     let baseWitnessTokens = CtData.getCtWitnessTokens(ctData, baseWitnessIndex)
     let ctIndexToMainTextMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens.length, mainText)
-    console.log(`ctIndexToMainTextMap`)
-    console.log(ctIndexToMainTextMap)
+    // console.log(`ctIndexToMainTextMap`)
+    // console.log(ctIndexToMainTextMap)
 
     let lang = ctData['lang']
 

@@ -34,9 +34,9 @@ class CollationTableVersionInfo
     public int $id;
     /**
      * Collation table id
-     * @var string
+     * @var int
      */
-    public string $collationTableId;
+    public int $collationTableId;
 //    /**
 //     * @var int
 //     */
@@ -69,7 +69,7 @@ class CollationTableVersionInfo
     public function __construct()
     {
         $this->id = 0;
-        $this->collationTableId = 'AW00-0';
+        $this->collationTableId = 0;
         $this->timeFrom = TimeString::TIME_ZERO;
         $this->timeUntil = TimeString::TIME_ZERO;
         $this->authorId = 0;

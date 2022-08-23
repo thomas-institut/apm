@@ -27,6 +27,7 @@ namespace APM;
 
 
 use APM\Api\ApiLog;
+use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiTranscription;
 use APM\Site\SiteApmLog;
 use APM\Site\SiteMultiChunkEdition;
@@ -277,7 +278,7 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
 
 // USER AUTHENTICATED API
 
-$app->group('/api', function (RouteCollectorProxy $group){
+$app->group('/api', function (RouteCollectorProxy $group) use ($container){
     // ADMIN
 
     // API -> log message from front end
@@ -400,8 +401,23 @@ $app->group('/api', function (RouteCollectorProxy $group){
         ApiCollationTableConversion::class
     )->setName('api.collation.convert');
 
+    $group->get('/collation/get/{tableId}[/{timestamp}]',  function(Request $request, Response $response, array $args) use ($container){
+        $apiC = new ApiCollation($container);
+        return $apiC->getTable($request, $response, $args);
+    })->setName('api.collation.get');
+
+
+    // MULTI CHUNK EDITION
+
+    $group->get('/edition/multi/get/{editionId}[/{timestamp}]',
+        function(Request $request, Response $response, array $args) use ($container){
+            $apiC = new ApiMultiChunkEdition($container);
+            return $apiC->getEdition($request, $response, $args);
+        })->setName('api.multi_chunk.get');
+
     //  EDITION ENGINE
 
+    // TODO: check this, most likely obsolete
     $group->post('/edition/auto',
         ApiEditionEngine::class . ':automaticEditionEngine')
         ->setName('api.edition.auto');

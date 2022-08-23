@@ -69,10 +69,10 @@ export class CtDataEditionGenerator extends EditionGenerator{
     let apparatusGenerator = new CriticalApparatusGenerator()
     let generatedCriticalApparatus = apparatusGenerator.generateCriticalApparatusFromCtData(this.ctData, baseWitnessIndex, edition.mainText)
     let theMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens.length, edition.mainText)
-    console.log(`Generated critical apparatus`)
-    console.log(generatedCriticalApparatus)
-    console.log(`CtIndexToMainTextMap`)
-    console.log(theMap)
+    // console.log(`Generated critical apparatus`)
+    // console.log(generatedCriticalApparatus)
+    // console.log(`CtIndexToMainTextMap`)
+    // console.log(theMap)
     generatedCriticalApparatus = this._mergeCustomApparatusCriticusEntries(generatedCriticalApparatus, baseWitnessTokens, theMap, apparatusGenerator)
     edition.apparatuses = [
       generatedCriticalApparatus

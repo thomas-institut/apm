@@ -27,6 +27,7 @@
 namespace APM\Site;
 
 use APM\CollationTable\CollationTableVersionInfo;
+use APM\CollationTable\CtData;
 use APM\FullTranscription\DocInfo;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
@@ -163,13 +164,14 @@ class SiteCollationTable extends SiteController
     }
 
     protected function getMentionedDocsFromCtData(array $ctData) : array {
-        $docs = [];
-        foreach($ctData['witnesses'] as $witness) {
-            if ($witness['witnessType'] === WitnessType::FULL_TRANSCRIPTION) {
-                $docs[] = $witness['docId'];
-            }
-        }
-        return $docs;
+        return CtData::getMentionedDocsFromCtData($ctData);
+//        $docs = [];
+//        foreach($ctData['witnesses'] as $witness) {
+//            if ($witness['witnessType'] === WitnessType::FULL_TRANSCRIPTION) {
+//                $docs[] = $witness['docId'];
+//            }
+//        }
+//        return $docs;
     }
 
     /**

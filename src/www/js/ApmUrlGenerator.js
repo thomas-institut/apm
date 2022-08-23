@@ -93,6 +93,13 @@ class ApmUrlGenerator {
         return `${this.base}/api/collation/convert/${tableId}`;
     }
 
+    apiGetCollationTable(tableId, timeStamp = '') {
+        if (timeStamp !== '') {
+            return `${this.base}/api/collation/get/${tableId}/${timeStamp}`
+        }
+        return `${this.base}/api/collation/get/${tableId}`
+    }
+
     apiWitnessToEdition(witnessId) {
         return `${this.base}/api/witness/${witnessId}/to/edition`;
     }

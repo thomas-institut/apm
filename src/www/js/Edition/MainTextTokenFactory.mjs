@@ -54,4 +54,20 @@ export class MainTextTokenFactory {
     return t.setStyle(style)
   }
 
+  /**
+   *
+   * @param {MainTextToken}token
+   */
+  static clone(token) {
+    let t = new MainTextToken()
+    t.type = token.type
+    t.fmtText = token.fmtText
+    t.style = token.style
+    t.editionWitnessTokenIndex = token.editionWitnessTokenIndex
+    if (token.lang !== undefined) {
+      t.setLang(token.lang)
+    }
+    return t
+  }
+
 }

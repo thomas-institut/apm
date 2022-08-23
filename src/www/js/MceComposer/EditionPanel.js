@@ -53,7 +53,25 @@ export class EditionPanel extends Panel {
         <p>Search for chunks in the 'Chunk Search' tab and add one or more to start.</p>
 </div>`
     }
-    return `Chunks panel`
+    return this.__genChunksTable()
+  }
+
+
+  __genChunksTable() {
+    let html = '<table class="chunk-table">'
+    html += '<tr><th>Chunk</th><th>Table Id</th><th>Title</th><th>Version</th><th>Break</th></tr>'
+
+    this.mceData.chunks.forEach( (chunk) => {
+      html += `<tr><td>${chunk.chunkId}</td><td>${chunk.chunkEditionTableId}</td><td>${chunk.title}</td>
+                <td>${chunk.version}</td><td>${chunk.break}</td><td>[Delete] [Update]</td>
+</tr>`
+    })
+    return html
+  }
+
+  updateData(mceData) {
+    this.mceData = mceData
+    $(this.containerSelector).html(this.generateHtml())
   }
 
 

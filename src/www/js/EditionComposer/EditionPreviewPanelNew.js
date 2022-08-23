@@ -26,6 +26,7 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { ZoomController } from '../toolbox/ZoomController'
 import { EditionViewerCanvas } from '../Edition/EditionViewerCanvas'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
+import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
 
 const defaultIcons = {
   busy: '<i class="fas fa-circle-notch fa-spin"></i>'
@@ -39,7 +40,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
   constructor (options = {}) {
     super(options)
     let optionsSpec = {
-      ctData: { type: 'object', required: true},
+      // ctData: { type: 'object', required: true},
       edition: { type: 'object', objectClass: Edition, required: true},
       langDef: { type: 'object', required: true},
       icons: { type: 'object', default: defaultIcons},
@@ -54,13 +55,16 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
     }
     let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'Edition Preview Panel New'})
     this.options = oc.getCleanOptions(options)
-    this.ctData = this.options.ctData
+    // this.ctData = this.options.ctData
     this.edition = this.options.edition
 
   }
 
   generateToolbarHtml (tabId, mode, visible) {
     return ` <div class="zoom-controller">
+                    </div>
+                    <div>
+                        <span class="info-span">INFO</span>
                     </div>
                     <div>
                         <a id="${downloadPdfButtonId}" class="tb-button margin-left-med" href="#" title="Download PDF">
@@ -87,15 +91,20 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       debug: true
     })
 
+    this.infoSpan = $(`${this.containerSelector} span.info-span`)
+
     this.zoomController = new ZoomController({
       containerSelector: `${this.containerSelector} div.zoom-controller`,
       onZoom: this.__genOnZoom(),
       debug: false
     })
 
+    this.infoSpan.html('Generating preview...')
+
     this.viewer.render().then( () => {
       this.downloadPdfButton.on('click', this._genOnClickDownloadPdfButton())
       console.log(`Edition rendered`)
+      this.infoSpan.html('')
       this.onResize()
     })
   }
@@ -135,14 +144,17 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
     }
   }
 
-  updateData(ctData, edition) {
+  updateData(edition) {
     this.verbose && console.log(`Updating data`)
-    this.ctData = ctData
+    // this.ctData = ctData
     this.edition = edition
     this.updatePreview()
   }
 
   updatePreview() {
+    this.infoSpan.html('Generating preview...')
+    let profiler = new BasicProfiler('update preview')
+    profiler.start()
     this.viewer = new EditionViewerCanvas({
       edition: this.edition,
       fontFamily:  this.options.langDef[this.edition.lang].editionFont,
@@ -151,6 +163,8 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       debug: true
     })
     this.viewer.render().then( () => {
+      profiler.stop()
+      this.infoSpan.html('')
       console.log(`Edition rendered again`)
     })
   }
@@ -159,7 +173,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
     return  (scale) => {
       return new Promise ( (resolve) => {
         this.viewer.setScale(scale).then( () => {
-          this.debug && console.log(`Resolving ${scale}`)
+          // this.debug && console.log(`Resolving ${scale}`)
           this.onResize()
           resolve(scale)
         })

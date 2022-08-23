@@ -102,6 +102,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         $time = TimeString::now();
         $dbRow = $this->getDbRowFromCollationData($collationTableData, true, true);
         $collationTableId = $this->ctTable->createRowWithTime($dbRow, $time);
+        $this->logger->debug("New id: $collationTableId");
         $versionInfo->timeFrom = $time;
         $versionInfo->collationTableId = $collationTableId;
         if ($versionInfo->description === '') {
@@ -228,7 +229,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             /** @var MySqlUnitemporalDataTable $ctTable */
             $ctTable = $this->ctTable;
 
-            $result = $ctTable->select('id, title, type, archived',
+            $result = $ctTable->select('id, title, type, archived, valid_from, valid_until',
                 "id='$id' AND valid_from <='$timeStamp' and valid_until>'$timeStamp'",
                 0,
                 '',
@@ -242,6 +243,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         if (count($rows)=== 0) {
             throw new InvalidArgumentException("Table does not exist");
         }
+        $this->logger->debug('dbrows', $rows);
 
         return CollationTableInfo::createFromDbRow($rows[0]);
     }

@@ -1,5 +1,7 @@
 <?php
 
+global $config;
+
 // SUPPORT
 $config['support_contact_name'] = '<CONTACT>';
 $config['support_contact_email'] = '<CONTACT_EMAIL>';

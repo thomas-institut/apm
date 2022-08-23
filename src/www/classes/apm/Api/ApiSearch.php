@@ -10,8 +10,6 @@ use \Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\TimeString\TimeString;
 use function DI\string;
 
-//require '/home/lukas/apm/vendor/autoload.php';
-
 // set_time_limit(5); // Script should not run longer than 5 seconds - does this work like this?
 
 class ApiSearch extends ApiController

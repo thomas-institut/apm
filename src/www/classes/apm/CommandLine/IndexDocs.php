@@ -28,8 +28,6 @@ use OpenSearch\ClientBuilder;
 use PHPUnit\Util\Exception;
 use ThomasInstitut\TimeString\TimeString;
 
-//require '/home/lukas/apm/vendor/autoload.php';
-
 /**
  * Description of IndexDocs
  *
@@ -55,16 +53,17 @@ class IndexDocs extends CommandLineUtility {
         // Name of the index in OpenSearch
         $this->indexName = 'transcripts';
 
-        // Clear existing index and create new index
-        try {
+
+        // Delete existing and create new index
+        if ($this->client->indices()->exists([
+            'index' => $this->indexName])
+        ) {
             $this->client->indices()->delete([
                 'index' => $this->indexName
             ]);
-        } catch (Exception $e) {
-            print ("No existing index called 'transcripts'. Indexing continues...");
-        }
+        };
 
-        $this->client->indices()->create([
+       $this->client->indices()->create([
             'index' => $this->indexName,
             'body' => [
                 'settings' => [

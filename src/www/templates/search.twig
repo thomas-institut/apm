@@ -139,11 +139,15 @@
         let transcriptBox = $("#transcriptBox")
         let transcriberBox = $("#transcriberBox")
         let radiusSlider = $("#radiusSlider")
+        let spinner = $("#spinner")
 
         let searchText = keywordBox.val()
         let title = transcriptBox.val();
         let transcriber = transcriberBox.val();
         let radius = radiusSlider.val()
+
+        // Signal search process
+        spinner.html(`<div class="spinner-border" role="status"></div>`)
 
         // Send all user input to ApiSearch (via routing in index.php) and print returned matches
         $.post("{{ url_for('search.keyword') }}", { searchText: searchText, radius: radius, title: title, transcriber: transcriber })
@@ -164,11 +168,13 @@
             console.log(apiResponse)
 
             // Call displayResults-function
+            spinner.empty()
             displayResults(apiResponse)
 
       }).fail((status) => {
         console.log(status)
-        errorMessage
+        spinner.empty()
+          errorMessage
           .html('Search is currently not available. Please try again later.')
           .removeClass('text-error')
       })
@@ -183,11 +189,13 @@
         let resultsTableB = $("#resultsTable tbody")
         let resultsTableH = $("#resultsTable thead")
 
+
         // Clean tables and divs
         numMatchesTable.empty()
         resultsTableH.empty()
         resultsTableB.empty()
         errorMessage.empty()
+
 
         // Get instance of ApmUrlGenerator for creating links to matching docs
         let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
@@ -454,6 +462,10 @@
         </td>
     </tr>
 </table>
+
+  <div id="spinner" class="text-muted" style="margin: 20px; text-align: center;">
+    <br><br><br>
+  </div>
 
     <br>
     <div id="error_message"></div>

@@ -100,6 +100,10 @@ class ApmUrlGenerator {
         return `${this.base}/api/collation/get/${tableId}`
     }
 
+    apiGetActiveEditionInfo() {
+        return `${this.base}/api/collation/info/edition/active`
+    }
+
     apiGetMultiChunkEdition(editionId, timeStamp = '') {
         if (timeStamp !== '') {
             return `${this.base}/api/edition/multi/get/${editionId}/${timeStamp}`
@@ -206,5 +210,9 @@ class ApmUrlGenerator {
 
     siteEditMultiChunkEdition(editionId) {
         return `${this.base}/edition/multi/edit/${editionId}`
+    }
+
+    siteMultiChunkEditionNew() {
+        return `${this.base}/edition/multi/new`
     }
 }

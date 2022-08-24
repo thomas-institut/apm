@@ -160,6 +160,7 @@ export class MceComposer {
             this.regenerateEdition().then( () => {
               this.previewPanel.updateData(this.edition)
               this.editionPanel.updateData(this.mceData)
+              this.chunkSearchPanel.updateData(this.mceData)
               this.updateSaveUI()
               resolve()
             }, (error) => {
@@ -192,6 +193,7 @@ export class MceComposer {
      containerSelector: `#${chunkSearchPanelId}`,
      mceData: this.mceData,
      userId: this.options.userId,
+     urlGenerator: this.options.urlGenerator,
      addEdition: (id, timestamp) => {
        return this.chunkAdd(id, timestamp)
      },
@@ -524,6 +526,7 @@ export class MceComposer {
       console.log(`New MceData`)
       console.log(this.mceData)
       this.editionPanel.updateData(this.mceData)
+      this.chunkSearchPanel.updateData(this.mceData)
       this.updateSaveUI()
       this.regenerateEdition().then( () => {
         this.previewPanel.updateData(this.edition)
@@ -562,6 +565,7 @@ export class MceComposer {
         console.log(edition)
         this.editions[chunkIndex] = edition
         this.editionPanel.updateData(this.mceData)
+        this.chunkSearchPanel.updateData(this.mceData)
         this.updateSaveUI()
         this.regenerateEdition().then( () => {
           this.previewPanel.updateData(this.edition)
@@ -594,6 +598,7 @@ export class MceComposer {
           reject(this.errorDetail)
           return
         }
+
         this.regenerateEdition().then( () => {
           this.previewPanel.updateData(this.edition)
           resolve()
@@ -816,6 +821,9 @@ export class MceComposer {
     }
     this.mceData.chunks.push(newChunk)
 
+    // add it to the end of the list
+    this.mceData.chunkOrder.push(this.mceData.chunks.length -1)
+
     // add new witnesses and sigla
     for (let ctDataWitnessIndex = 0; ctDataWitnessIndex < ctData.witnesses.length; ctDataWitnessIndex++) {
       let ctDataWitnessInfo = ctData.witnesses[ctDataWitnessIndex]
@@ -880,6 +888,7 @@ export class MceComposer {
     console.log(edition)
     this.editions.push(edition)
     this.editionPanel.updateData(this.mceData)
+    this.chunkSearchPanel.updateData(this.mceData)
     this.updateSaveUI()
     return true
   }

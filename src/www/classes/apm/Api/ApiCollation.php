@@ -55,6 +55,13 @@ class ApiCollation extends ApiController
     const ERROR_MISSING_VERSION_INFO = 2007;
 
 
+    public function  getActiveEditions(Request $request, Response $response, array $args): Response
+    {
+        $infoArray = $this->systemManager->getCollationTableManager()->getActiveEditionTableInfo();
+        return $this->responseWithJson($response, $infoArray);
+    }
+
+
     public function  getTable(Request $request, Response $response, array $args): Response
     {
 

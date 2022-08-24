@@ -32,6 +32,22 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
         $this->setLogger($logger);
     }
 
+    public function getMultiChunkEditionInfoForUserId(int $userId): array
+    {
+        $ids = [];
+
+        $rows = $this->mceTable->findRowsWithTime([ 'author_id' => $userId], 0, TimeString::now());
+
+        foreach($rows as $row) {
+            $ids[] =  [
+                'id' => intval($row['id']),
+                'title' => $row['title']
+            ];
+        }
+
+        return $ids;
+    }
+
 
     /**
      * @inheritDoc

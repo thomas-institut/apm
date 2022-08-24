@@ -40,5 +40,7 @@ abstract class MultiChunkEditionManager
      */
     abstract public function getMultiChunkEditionIdsByWorkChunk(string $workId, int $chunkId) : array;
 
+    abstract public function getMultiChunkEditionInfoForUserId(int $userId): array;
+
 
 }

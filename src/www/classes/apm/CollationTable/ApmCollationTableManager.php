@@ -187,6 +187,27 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
 
     }
 
+
+    public function getActiveEditionTableInfo(): array {
+        $rows = $this->ctTable->findRowsWithTime(['archived' => 0, 'type' =>'edition'], 0,  TimeString::now());
+        $results = [];
+        foreach($rows as $row) {
+            $id = intval($row['id']);
+            $versionInfoArray = $this->getCollationTableVersionManager()->getCollationTableVersionInfo($id, 1);
+            if (count($versionInfoArray) === 0) {
+                $this->logger->warning("No versions found for supposedly active edition with id $id");
+                continue;
+            }
+            $results[] = [
+                'id' => $id,
+                'title' => $row['title'],
+                'chunkId' => $row['chunk_id'],
+                'lastVersion' => $versionInfoArray[0]
+                ];
+        }
+        return $results;
+    }
+
     public function getCollationTableIdsForChunk(string $chunkId, string $timeString): array
     {
 
@@ -243,17 +264,10 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         if (count($rows)=== 0) {
             throw new InvalidArgumentException("Table does not exist");
         }
-        $this->logger->debug('dbrows', $rows);
+//        $this->logger->debug('dbrows', $rows);
 
         return CollationTableInfo::createFromDbRow($rows[0]);
     }
-
-//    public function getCollationTableType(int $id, string $timeStamp = ''): string
-//    {
-//        // TODO: Implement getCollationTableType() method.
-//        return '';
-//    }
-
 
     public function getCollationTableStoredVersionsInfo(int $id): array
     {

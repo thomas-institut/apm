@@ -214,4 +214,6 @@ abstract class CollationTableManager implements ErrorReporter
         return $newData;
     }
 
+    abstract public function getActiveEditionTableInfo(): array;
+
 }

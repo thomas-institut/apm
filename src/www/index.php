@@ -413,6 +413,11 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         return $apiC->getTable($request, $response, $args);
     })->setName('api.collation.get');
 
+    $group->get('/collation/info/edition/active',  function(Request $request, Response $response, array $args) use ($container){
+        $apiC = new ApiCollation($container);
+        return $apiC->getActiveEditions($request, $response, $args);
+    })->setName('api.collation.info.edition.active');
+
 
     // MULTI CHUNK EDITION
 

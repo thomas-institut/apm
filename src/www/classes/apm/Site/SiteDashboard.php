@@ -83,6 +83,7 @@ class SiteDashboard extends SiteController
             ];
         }
 
+        $editionInfo = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionInfoForUserId($userId);
 
         $this->profiler->stop();
         $this->logProfilerData('dashboardPage-' . $this->userInfo['username'] . '-' . $userId);
@@ -90,6 +91,7 @@ class SiteDashboard extends SiteController
         return $this->renderPage($response, self::TEMPLATE_DASHBOARD, [
             'doclist' => $docListHtml,
             'tableInfo' => $tableInfo,
+            'editionInfo' => $editionInfo,
             'isRoot' => $this->userInfo['isRoot']
         ]);
     }

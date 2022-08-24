@@ -89,6 +89,10 @@ div#edition-panel h4 {
     padding: 0.5em;
 }
 
+.active-editions td, .active-editions th {
+    padding: 0.5em;
+}
+
 table.sigla-table {
     margin-left: 3em;
 }
@@ -122,4 +126,8 @@ div.sigla-groups-table {
     margin-top: 4em;
 }
 
+
+div.quick-add {
+    margin-top: 4em;
+}
 

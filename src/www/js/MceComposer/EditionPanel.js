@@ -212,6 +212,8 @@ export class EditionPanel extends Panel {
 
   updateData(mceData) {
     this.mceData = mceData
+    console.log(`Updating mceData, ${this.mceData.chunks.length} chunks`)
+
     this.options.getUpdateStatuses().then( (statuses) => {
       this.updateStatuses = statuses
       $(this.containerSelector).html(this.generateHtml())

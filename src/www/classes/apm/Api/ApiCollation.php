@@ -59,7 +59,14 @@ class ApiCollation extends ApiController
     {
 
         $tableId = intval($request->getAttribute('tableId'));
-        $timeStamp = $request->getAttribute('timestamp',  TimeString::now());
+        $timeStamp = '';
+        $compactEncodedTimeStamp =  $request->getAttribute('timestamp', '');
+        if ($compactEncodedTimeStamp !== '') {
+            $timeStamp = TimeString::compactDecode($compactEncodedTimeStamp);
+        }
+        if ($timeStamp === '') {
+            $timeStamp = TimeString::now();
+        }
 
         $this->profiler->start();
         $this->logger->debug("Get collation table id $tableId at $timeStamp");

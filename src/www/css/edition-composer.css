@@ -60,6 +60,18 @@ a.tb-button {
     color: grey;
 }
 
+button.zoom-btn, button.tb-button {
+    border: none;
+    background-color: transparent;
+    color: grey;
+}
+
+span.zoom-label {
+    display: inline-block;
+    width: 3em;
+}
+
+
 div.tab-pane {
     overflow-y: auto;
     overflow-x: auto;

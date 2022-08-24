@@ -93,11 +93,22 @@ class ApmUrlGenerator {
         return `${this.base}/api/collation/convert/${tableId}`;
     }
 
-    apiGetCollationTable(tableId, timeStamp = '') {
-        if (timeStamp !== '') {
-            return `${this.base}/api/collation/get/${tableId}/${timeStamp}`
+    apiGetCollationTable(tableId, compactEncodedTimeString = '') {
+        if (compactEncodedTimeString !== '') {
+            return `${this.base}/api/collation/get/${tableId}/${compactEncodedTimeString}`
         }
         return `${this.base}/api/collation/get/${tableId}`
+    }
+
+    apiGetMultiChunkEdition(editionId, timeStamp = '') {
+        if (timeStamp !== '') {
+            return `${this.base}/api/edition/multi/get/${editionId}/${timeStamp}`
+        }
+        return `${this.base}/api/edition/multi/get/${editionId}`
+    }
+
+    apiSaveMultiChunkEdition() {
+        return `${this.base}/api/edition/multi/save`
     }
 
     apiWitnessToEdition(witnessId) {
@@ -191,5 +202,9 @@ class ApmUrlGenerator {
 
     images() {
         return this.base + '/images'
+    }
+
+    siteEditMultiChunkEdition(editionId) {
+        return `${this.base}/edition/multi/edit/${editionId}`
     }
 }

@@ -19,4 +19,10 @@ class SiteMultiChunkEdition extends SiteController
         ]);
     }
 
+    public function getMultiChunkEdition(Request $request, Response $response, array $args) {
+        return $this->renderPage($response, self::TEMPLATE_EDITION_COMPOSER, [
+            'userId' => $this->userInfo['id'],
+            'editionId' => intval($request->getAttribute('editionId'))
+        ]);
+    }
 }

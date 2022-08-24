@@ -25,11 +25,12 @@ import { Edition } from '../Edition/Edition.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { ZoomController } from '../toolbox/ZoomController'
 import { EditionViewerCanvas } from '../Edition/EditionViewerCanvas'
-import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
+import { resolvedPromise, wait } from '../toolbox/FunctionUtil.mjs'
 import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
 
 const defaultIcons = {
-  busy: '<i class="fas fa-circle-notch fa-spin"></i>'
+  busy: '<i class="fas fa-circle-notch fa-spin"></i>',
+  updatePreview: '<i class="bi bi-arrow-counterclockwise"></i>'
 }
 
 const canvasId = 'edition-preview-canvas-new'
@@ -43,6 +44,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       // ctData: { type: 'object', required: true},
       edition: { type: 'object', objectClass: Edition, required: true},
       langDef: { type: 'object', required: true},
+      automaticUpdate: { type: 'boolean', default: false},
       icons: { type: 'object', default: defaultIcons},
       //
       getPdfDownloadUrl: {
@@ -64,12 +66,12 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
     return ` <div class="zoom-controller">
                     </div>
                     <div>
-                        <span class="info-span">INFO</span>
+                        <button class="tb-button update-preview-btn" title="Preview is outdated, click to update">${this.options.icons.updatePreview}</button>
                     </div>
                     <div>
-                        <a id="${downloadPdfButtonId}" class="tb-button margin-left-med" href="#" title="Download PDF">
+                        <button id="${downloadPdfButtonId}" class="tb-button margin-left-med" title="Download PDF">
                             <small>PDF</small> <i class="fas fa-download"></i>
-                        </a>
+                        </button>
                     </div>`
   }
 
@@ -81,17 +83,28 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
   postRender (id, mode, visible) {
 
     this.downloadPdfButton = $(`#${downloadPdfButtonId}`)
-    this.downloadPdfButton.off('click')
+    this.downloadPdfButton
+      .off('click')
+      .on('click', this._genOnClickDownloadPdfButton())
+      .addClass('hidden')
 
-    this.viewer = new EditionViewerCanvas({
-      edition: this.edition,
-      fontFamily:  this.options.langDef[this.edition.lang].editionFont,
-      scale: 1,
-      canvasElement: document.getElementById(`${canvasId}`),
-      debug: true
+    this.updatePreviewButton = $(`${this.containerSelector} .update-preview-btn`)
+    if (this.options.automaticUpdate) {
+      this.updatePreviewButton.addClass('hidden')
+    }
+
+    this.updatePreviewButton.on('click', () => {
+        this.updatePreview()
     })
 
-    this.infoSpan = $(`${this.containerSelector} span.info-span`)
+    this.viewer = new EditionViewerCanvas({
+          edition: this.edition,
+          fontFamily:  this.options.langDef[this.edition.lang].editionFont,
+          scale: 1,
+          canvasElement: document.getElementById(`${canvasId}`),
+          debug: true
+    })
+
 
     this.zoomController = new ZoomController({
       containerSelector: `${this.containerSelector} div.zoom-controller`,
@@ -99,14 +112,9 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       debug: false
     })
 
-    this.infoSpan.html('Generating preview...')
-
-    this.viewer.render().then( () => {
-      this.downloadPdfButton.on('click', this._genOnClickDownloadPdfButton())
-      console.log(`Edition rendered`)
-      this.infoSpan.html('')
-      this.onResize()
-    })
+    if (this.options.automaticUpdate) {
+      this.updatePreview()
+    }
   }
 
   _genOnClickDownloadPdfButton() {
@@ -148,29 +156,39 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
     this.verbose && console.log(`Updating data`)
     // this.ctData = ctData
     this.edition = edition
-    this.updatePreview()
+    if (this.options.automaticUpdate) {
+      this.updatePreview()
+    } else {
+      this.updatePreviewButton.removeClass('hidden')
+    }
   }
 
   updatePreview() {
-    this.infoSpan.html('Generating preview...')
-    let profiler = new BasicProfiler('update preview')
-    profiler.start()
-    this.viewer = new EditionViewerCanvas({
-      edition: this.edition,
-      fontFamily:  this.options.langDef[this.edition.lang].editionFont,
-      scale: 1,
-      canvasElement: document.getElementById(`${canvasId}`),
-      debug: true
-    })
-    this.viewer.render().then( () => {
-      profiler.stop()
-      this.infoSpan.html('')
-      console.log(`Edition rendered again`)
+    let currentButtonHtml = this.updatePreviewButton.html()
+    this.updatePreviewButton.html(`Updating... ${this.options.icons.busy}`)
+    // wait for browser to update toolbar span and button
+    wait(100).then( () => {
+      let profiler = new BasicProfiler('Update preview')
+      profiler.start()
+      this.viewer = new EditionViewerCanvas({
+        edition: this.edition,
+        fontFamily:  this.options.langDef[this.edition.lang].editionFont,
+        scale: 1,
+        canvasElement: document.getElementById(`${canvasId}`),
+        debug: true
+      })
+      this.viewer.render().then( () => {
+        profiler.stop()
+        this.updatePreviewButton.html(currentButtonHtml).addClass('hidden')
+        this.downloadPdfButton.removeClass('hidden')
+        console.log(`Edition rendered`)
+        this.onResize(true)
+      })
     })
   }
 
   __genOnZoom() {
-    return  (scale) => {
+    return (scale) => {
       return new Promise ( (resolve) => {
         this.viewer.setScale(scale).then( () => {
           // this.debug && console.log(`Resolving ${scale}`)

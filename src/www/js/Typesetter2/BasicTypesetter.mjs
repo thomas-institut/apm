@@ -827,7 +827,7 @@ export class BasicTypesetter extends Typesetter2 {
     }
     // if there was some reverse text, reorder items
     if (hasReverseText) {
-      this.debug && console.log(`Line with ${lineTextDirection} direction has ${reverseDirection} text`)
+      // this.debug && console.log(`Line with ${lineTextDirection} direction has ${reverseDirection} text`)
       line.addMetadata(MetadataKey.HAS_REVERSE_TEXT, true)
       line.addMetadata(MetadataKey.HAS_REORDERED_ITEMS, true)
       let originalItemArray = line.getList()
@@ -837,8 +837,8 @@ export class BasicTypesetter extends Typesetter2 {
         return originalItemArray[index].addMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX, index)
       }))
       line.addMetadata(MetadataKey.ORIGINAL_ITEM_ORDER, originalOrder)
-      this.debug && console.log(`Processed line`)
-      this.debug && console.log(line)
+      // this.debug && console.log(`Processed line`)
+      // this.debug && console.log(line)
     }
     return line
   }

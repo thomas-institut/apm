@@ -41,6 +41,8 @@ import { ApparatusEntry } from '../Edition/ApparatusEntry.mjs'
 import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry'
 import { SubEntryWitnessInfo } from '../Edition/SubEntryWitnessInfo'
 import { EditableTextField } from '../widgets/EditableTextField'
+import { TimeString } from '../toolbox/TimeString.mjs'
+import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
 
 const defaultIcons = {
   moveUp: '&uarr;',
@@ -72,8 +74,8 @@ const defaultChunkBreak = 'paragraph'
 
 // save button
 const saveButtonTextClassNoChanges = 'text-muted'
-// const saveButtonTextClassChanges = 'text-primary'
-// const saveButtonTextClassSaving = 'text-warning'
+const saveButtonTextClassChanges = 'text-primary'
+const saveButtonTextClassSaving = 'text-warning'
 // const saveButtonTextClassError = 'text-danger'
 
 
@@ -97,20 +99,16 @@ export class MceComposer {
     this.errorDetected = false
     this.errorDetail = ''
 
+    this.editionId = this.options.editionId
 
-    if (this.options.editionId === -1) {
-      // create empty MceEdition
-      this.editionId = -1
-      this.mceData = MceData.createEmpty()
-      this.lastSave = ''  // i.e., never
-    } else {
-      // load Mce Edition
-    }
-
+    // create empty MceEdition
+    this.mceData = MceData.createEmpty()
+    this.lastSave = ''  // i.e., never
     this.lastSavedMceData = deepCopy(this.mceData)
     this.changes = []
-
+    this.chunksToUpdateStatuses = []
     this.unsavedChanges = false
+
     $(window).on('beforeunload', () => {
       if (this.unsavedChanges) {
         //console.log("There are changes in editor")
@@ -129,28 +127,50 @@ export class MceComposer {
       },
       (error) => {
         console.error(error)
-        $('body').html('Error initializing, please report to administrators')
+        $('body').append(`<p class="text-danger">Error initializing: ${error}`)
       }
     )
   }
 
   async _init() {
-    await this._init_loadEdition()
     await this._init_setupUi()
     await this._init_saveArea()
+    await this._init_loadEdition()
     await this._init_titleEdit()
   }
 
  _init_loadEdition() {
     return new Promise( (resolve, reject) => {
-      if (this.options.editionId === -1) {
+      if (this.editionId === -1) {
         // create empty MceEdition
         this.editionId = -1
-        this.mceData = MceData.createEmpty()
         resolve()
       } else {
         // load Mce Edition
-        reject('Not implemented yet')
+        console.log(`Loading edition ${this.editionId}`)
+        let apiUrl = this.options.urlGenerator.apiGetMultiChunkEdition(this.editionId)
+        $.get(apiUrl).then( (data) => {
+          console.log(`Got data from server`)
+          console.log(data)
+          this.mceData = MceData.fix(data.mceData)
+          this.lastSavedMceData = deepCopy(this.mceData)
+          this.lastSave = data.validFrom
+          document.title = this.mceData.title
+          this.loadAllSingleChunkEditions().then( () => {
+            this.regenerateEdition().then( () => {
+              this.previewPanel.updateData(this.edition)
+              this.editionPanel.updateData(this.mceData)
+              this.updateSaveUI()
+              resolve()
+            }, (error) => {
+              console.error(error)
+              reject(`Cannot regenerate edition from data`)
+            })
+          })
+        }, (error) => {
+          console.error(error)
+          reject(`Cannot load edition`)
+        })
       }
     })
  }
@@ -160,6 +180,12 @@ export class MceComposer {
    this.editionPanel = new EditionPanel({
      containerSelector:  `#${editionPanelId}`,
      mceData: this.mceData,
+     urlGenerator: this.options.urlGenerator,
+     getUpdateStatuses: this._genGetUpdateStatuses(),
+     updateChunk: (chunkIndex) => { return this.chunkUpdate(chunkIndex)},
+     deleteChunk: (chunkIndex)=> { return this.chunkDelete(chunkIndex)},
+     updateChunkOrder: (newOrder) => { return this.updateChunkOrder(newOrder)},
+     updateSigla: (newSigla) => { return this.updateSigla(newSigla)},
      debug: true
    })
    this.chunkSearchPanel = new ChunkSearchPanel({
@@ -167,7 +193,7 @@ export class MceComposer {
      mceData: this.mceData,
      userId: this.options.userId,
      addEdition: (id, timestamp) => {
-       return this.addSingleChunkEdition(id, timestamp)
+       return this.chunkAdd(id, timestamp)
      },
      debug: true
    })
@@ -237,6 +263,20 @@ export class MceComposer {
 
  }
 
+  _genGetUpdateStatuses() {
+    return (force) => {
+      return new Promise( (resolve) => {
+        if (force) {
+          // here we should actually load data from the server
+          console.log(`Can't force right now`)
+        }
+        console.log(`Update statuses`)
+        console.log(this.chunksToUpdateStatuses)
+        resolve(this.chunksToUpdateStatuses)
+      })
+    }
+  }
+
   __genOnConfirmTitleField() {
 
     return  (data) => {
@@ -280,7 +320,8 @@ export class MceComposer {
         html: true,
         title: () => { return this.saveButtonPopoverTitle},
         content: () => { return this.saveButtonPopoverContent}
-      })
+      }).on('click', this._genOnClickSaveButton())
+
       this.updateSaveUI()
       //this.saveButton.on('click', thisObject.genOnClickSaveButton())
 
@@ -298,7 +339,44 @@ export class MceComposer {
       this.updateBugUI()
       resolve()
    })
+ }
 
+ _genOnClickSaveButton() {
+    return () => {
+      let changes = this.detectChanges()
+      if (changes.length === 0) {
+        console.log(`Click on save button without changes to save`)
+        return
+      }
+      let url = this.options.urlGenerator.apiSaveMultiChunkEdition()
+      let description = changes.join('. ')
+      this.saveButton.popover('hide')
+      this.saveButton.html(this.icons.busy)
+      this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassSaving)
+      console.log(`Saving edition with id ${this.editionId} with API call to ${url}`)
+      let apiCallOptions = {
+        editionId: this.editionId,
+        mceData: this.mceData,
+        description: description,
+      }
+      $.post(
+        url,
+        {data: JSON.stringify(apiCallOptions)}
+      ).done(  (apiResponse) => {
+        console.log(`Success saving edition, id is ${apiResponse.id}`)
+        console.log(apiResponse)
+        if (this.editionId === -1) {
+          // redirect to new edition's page
+          window.location.href = this.options.urlGenerator.siteEditMultiChunkEdition(apiResponse.id)
+        } else {
+          this.saveButton.html(this.icons.saveEdition)
+          this.lastSavedMceData = Util.deepCopy(this.mceData)
+          this.lastSave = apiResponse['saveTimeStamp']
+          this.unsavedChanges = false
+          this.updateSaveUI()
+        }
+      })
+    }
  }
 
  updateBugUI() {
@@ -345,6 +423,7 @@ export class MceComposer {
    }
    this.changes = this.detectChanges()
    if (this.changes.length === 0) {
+     this.unsavedChanges = false
      let lastSaveMsg = 'Never'
      if (this.lastSave !== '') {
        lastSaveMsg = Util.formatVersionTime(this.lastSave)
@@ -355,8 +434,10 @@ export class MceComposer {
      this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassNoChanges)
      this.__setButtonEnableStatus(this.saveButton, false)
    } else {
+     this.unsavedChanges = true
      this.saveButtonPopoverTitle = '<p>Click to save changes</p>'
      this.saveButtonPopoverContent = '<ul>' + this.changes.map( (change) => { return `<li>${change}</li>`}).join('') + '</ul>'
+     this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassChanges)
      this.__setButtonEnableStatus(this.saveButton, true)
    }
  }
@@ -372,12 +453,27 @@ export class MceComposer {
     }
     if (this.lastSavedMceData.chunks.length !== this.mceData.chunks.length) {
       let lastSavedTableIds = this.lastSavedMceData.chunks.map ( (chunk) => { return chunk.chunkEditionTableId})
+      let currentTableIds = this.mceData.chunks.map ( (chunk) => { return chunk.chunkEditionTableId})
       this.mceData.chunks.filter( (chunk) => {
         return lastSavedTableIds.indexOf(chunk.chunkEditionTableId) === -1
       }).forEach( (chunk) =>{
         changes.push(`Added chunk ${chunk.chunkId}`)
       })
+      this.lastSavedMceData.chunks.filter( (chunk) => {
+        return currentTableIds.indexOf(chunk.chunkEditionTableId) === -1
+      }).forEach( (chunk) =>{
+        changes.push(`Deleted chunk ${chunk.chunkId}`)
+      })
+    } else {
+      // same number of chunks
+      this.mceData.chunks.forEach( (chunk, chunkIndex) => {
+        let lastSavedChunk = this.lastSavedMceData.chunks[chunkIndex]
+        if (!varsAreEqual(chunk, lastSavedChunk)) {
+          changes.push(`Changes to ${chunk.chunkId}`)
+        }
+      })
     }
+
     return changes
  }
 
@@ -392,18 +488,99 @@ export class MceComposer {
     element.removeClass(allClasses).addClass(newClass)
   }
 
+  chunkDelete(chunkIndex) {
+    return new Promise( (resolve, reject) => {
+      if (this.mceData.chunks.length === 0) {
+        console.warn(`Attempt to delete chunks from empty edition`)
+        resolve()
+        return
+      }
+      if (this.mceData.chunks.length === 1) {
+        reject(`Deleting the only chunk in the edition is not permitted`)
+        return
+      }
+      if (chunkIndex >= this.mceData.chunks.length || chunkIndex < 0) {
+        console.warn(`Chunk delete on out of range index ${chunkIndex}`)
+        resolve()
+        return
+      }
+      console.log(`Deleting chunk ${chunkIndex}`)
+      let removedChunk = this.mceData.chunks.splice(chunkIndex, 1)
+      this.editions.splice(chunkIndex, 1)
+      this.chunksToUpdateStatuses.splice(chunkIndex, 1)
+
+      this.mceData.chunkOrder = this.mceData.chunkOrder.map ( (index)=> {
+        if (index === chunkIndex) {
+          return -1
+        }
+        if (index > chunkIndex) {
+          return index-1
+        }
+        return index
+      }).filter( (index) => { return index !== -1})
+
+      // TODO: handle witnesses and sigla
+
+      console.log(`New MceData`)
+      console.log(this.mceData)
+      this.editionPanel.updateData(this.mceData)
+      this.updateSaveUI()
+      this.regenerateEdition().then( () => {
+        this.previewPanel.updateData(this.edition)
+        resolve()
+      }, (error) => { reject(error)})
+    })
+  }
+
+  chunkUpdate(chunkIndex) {
+    return new Promise((resolve, reject) => {
+      let tableId = this.mceData.chunks[chunkIndex].chunkEditionTableId
+      this.getSingleChunkDataFromServer(tableId, '').then( (data) => {
+        let ctData = data['ctData']
+        if (ctData.archived)  {
+          reject(`Table ${tableId} is now archived`)
+          return
+        }
+
+        this.mceData.chunks[chunkIndex].version = data['timeStamp']
+        this.mceData.chunks[chunkIndex].title = ctData['title']
+        this.chunksToUpdateStatuses[chunkIndex] = false
+
+        // TODO: deal with changes in witnesses
+
+        let eg = new CtDataEditionGenerator({ ctData: ctData})
+        let edition
+        try {
+          edition = eg.generateEdition()
+        } catch (e) {
+          console.error(`Error generating edition`)
+          console.error(e)
+          this.errorDetail = `Error generating edition for table id ${tableId}, chunk ${ctData.chunkId}`
+          return
+        }
+        console.log(`Generated edition for table ${tableId}, chunk ${ctData.chunkId}`)
+        console.log(edition)
+        this.editions[chunkIndex] = edition
+        this.editionPanel.updateData(this.mceData)
+        this.updateSaveUI()
+        this.regenerateEdition().then( () => {
+          this.previewPanel.updateData(this.edition)
+          resolve()
+        }, (error) => { reject(error)})
+
+      }, (error) => { reject(error)})
+    })
+  }
+
   /**
    * Adds a single chunk edition to the multi chunk edition
    * @param {number}tableId
    * @param {string}timeStamp
    */
-  addSingleChunkEdition(tableId, timeStamp) {
+  chunkAdd(tableId, timeStamp) {
     return new Promise ( (resolve, reject) => {
       // first, get the table from the server
-      let url = this.options.urlGenerator.apiGetCollationTable(tableId, timeStamp)
-      $.get(url).then( (data) => {
-        console.log(`Got data from server for table ${tableId}`)
-        console.log(data)
+      this.getSingleChunkDataFromServer(tableId, timeStamp).then( (data) => {
         let ctData = data['ctData']
         if (ctData.type !== 'edition') {
           reject(`Table ${tableId} is not an edition`)
@@ -413,15 +590,14 @@ export class MceComposer {
           reject(`Table ${tableId} is archived`)
           return
         }
-        // cache doc data
-        data['docInfo'].forEach ( (docInfo) => {
-          this.cache.store(`DOC-${docInfo['docId']}`, docInfo)
-        })
-        if (!this.addChunk(tableId, ctData, data['timeStamp'])){
+        if (!this.addChunkToMceData(tableId, ctData, data['timeStamp'])){
           reject(this.errorDetail)
           return
         }
-        this.regenerateEdition().then( () => {resolve()}, (error) => { reject(error)})
+        this.regenerateEdition().then( () => {
+          this.previewPanel.updateData(this.edition)
+          resolve()
+        }, (error) => { reject(error)})
 
       }, (error) => {
         console.log(error)
@@ -433,6 +609,76 @@ export class MceComposer {
     })
   }
 
+  updateChunkOrder(newOrder) {
+    return new Promise( (resolve, reject) => {
+      this.mceData.chunkOrder = newOrder
+      this.editionPanel.updateData(this.mceData)
+      this.updateSaveUI()
+      this.regenerateEdition().then( () => {
+        this.previewPanel.updateData(this.edition)
+        resolve()
+      }, (error) => { reject(error)})
+    })
+  }
+
+  updateSigla(newSigla) {
+    return new Promise( (resolve, reject) => {
+      this.mceData.sigla = newSigla
+      this.editionPanel.updateData(this.mceData)
+      this.updateSaveUI()
+      this.regenerateEdition().then( () => {
+        this.previewPanel.updateData(this.edition)
+        resolve()
+      }, (error) => { reject(error)})
+    })
+  }
+
+  getSingleChunkDataFromServer(tableId, timeStamp = '', useCache = true) {
+    return new Promise( (resolve, reject) => {
+      let cacheKey = `SERVER-CHUNK-DATA-${tableId}-${timeStamp}`
+      if (useCache) {
+        let cachedData = this.cache.retrieve(cacheKey)
+        if (cachedData !== null) {
+          resolve(cachedData)
+        }
+      }
+      // really get from server
+      let url = this.options.urlGenerator.apiGetCollationTable(tableId, TimeString.compactEncode(timeStamp))
+      $.get(url).then( (data) => {
+        console.log(`Got data from server for table ${tableId}, timeStamp '${timeStamp}'`)
+        console.log(data)
+        // cache doc info
+        data['docInfo'].forEach ( (docInfo) => {
+          this.cache.store(`DOC-${docInfo['docId']}`, docInfo)
+        })
+        // cache data
+        cacheKey = `SERVER-CHUNK-DATA-${tableId}-${data['timeStamp']}`
+        this.cache.store(cacheKey, data)
+        resolve(data)
+      },
+        (error) => { reject(error)})
+    })
+  }
+
+  async loadAllSingleChunkEditions() {
+    for (let i = 0; i < this.mceData.chunks.length; i++) {
+      let chunk = this.mceData.chunks[i]
+      let data = await this.getSingleChunkDataFromServer(chunk.chunkEditionTableId, chunk.version )
+      this.chunksToUpdateStatuses[i] = !data['isLatestVersion']
+      let eg = new CtDataEditionGenerator({ ctData: data['ctData']})
+      let edition
+      try {
+        edition = eg.generateEdition()
+      } catch (e) {
+        console.error(`Error generating edition`)
+        console.error(e)
+        this.errorDetail = `Error generating edition for table id ${chunk.chunkEditionTableId}, chunk ${chunk.chunkId}`
+        return
+      }
+      this.editions.push(edition)
+    }
+  }
+
   regenerateEdition() {
     return new Promise( (resolve) => {
       console.log(`Regenerating edition with ${this.editions.length} chunks`)
@@ -441,6 +687,8 @@ export class MceComposer {
         resolve()
         return
       }
+
+      let profiler = new BasicProfiler('RegenerateEdition', true)
 
       this.edition = new Edition()
       this.edition.info = {
@@ -458,8 +706,9 @@ export class MceComposer {
       // merge main text
       let currentMainTextIndexShift = 0
       let nextChunkShift = 0
-      for (let editionIndex = 0; editionIndex < this.editions.length; editionIndex++) {
-        let singleChunkEdition = this.editions[editionIndex]
+      for (let chunkOrderIndex = 0; chunkOrderIndex < this.mceData.chunkOrder.length; chunkOrderIndex++) {
+        let chunkIndex = this.mceData.chunkOrder[chunkOrderIndex]
+        let singleChunkEdition = this.editions[chunkIndex]
         currentMainTextIndexShift = nextChunkShift
 
         // Add main text
@@ -469,10 +718,13 @@ export class MceComposer {
           return newToken
         }))
         nextChunkShift += singleChunkEdition.mainText.length
-        switch(this.mceData.chunks[editionIndex].break) {
+        switch(this.mceData.chunks[chunkIndex].break) {
           case 'paragraph':
-            this.edition.mainText.push( MainTextTokenFactory.createParagraphEnd())
-            nextChunkShift++
+            if (chunkOrderIndex !== this.mceData.chunkOrder.length -1) {
+              // add a paragraph mark if not the last chunk
+              this.edition.mainText.push( MainTextTokenFactory.createParagraphEnd())
+              nextChunkShift++
+            }
             break
 
           case 'page':
@@ -516,7 +768,7 @@ export class MceComposer {
               newSubEntry.witnessData = subEntry.witnessData.map ( (wd) => {
                 let newWd = new SubEntryWitnessInfo()
                 newWd.setHand(wd.hand)
-                newWd.setWitnessIndex(this.mceData.chunks[editionIndex].witnessIndices[wd.witnessIndex])
+                newWd.setWitnessIndex(this.mceData.chunks[chunkIndex].witnessIndices[wd.witnessIndex])
                 return newWd
               })
               return newSubEntry
@@ -526,12 +778,12 @@ export class MceComposer {
         }
       }
 
-      this.previewPanel.updateData(this.edition)
+      profiler.stop()
       resolve()
     })
   }
 
-  addChunk(tableId, ctData, timeStamp) {
+  addChunkToMceData(tableId, ctData, timeStamp) {
     // first, see if the exact chunk edition is already in
     for (let chunkIndex = 0; chunkIndex < this.mceData.chunks.length; chunkIndex++) {
       let chunk = this.mceData.chunks[chunkIndex]
@@ -567,12 +819,12 @@ export class MceComposer {
     // add new witnesses and sigla
     for (let ctDataWitnessIndex = 0; ctDataWitnessIndex < ctData.witnesses.length; ctDataWitnessIndex++) {
       let ctDataWitnessInfo = ctData.witnesses[ctDataWitnessIndex]
-      if (ctDataWitnessInfo.witnessType === 'edition') {
+      if (ctDataWitnessInfo['witnessType'] === 'edition') {
         newChunk.witnessIndices.push(-1)
         continue
       }
       let currentWitnessIndex = -1
-      let witnessId = `${ctDataWitnessInfo.witnessType}-${ctDataWitnessInfo.docId}-${ctDataWitnessInfo.localWitnessId}`
+      let witnessId = `${ctDataWitnessInfo['witnessType']}-${ctDataWitnessInfo.docId}-${ctDataWitnessInfo.localWitnessId}`
       for (let cwIndex = 0; cwIndex < this.mceData.witnesses.length; cwIndex++) {
         let mceWitness = this.mceData.witnesses[cwIndex]
         if (witnessId === mceWitness.witnessId) {
@@ -611,6 +863,9 @@ export class MceComposer {
     console.log(`MceData updated`)
     console.log(this.mceData)
 
+    // assume this is the last version
+    this.chunksToUpdateStatuses.push(false)
+
     let eg = new CtDataEditionGenerator({ ctData: ctData})
     let edition
     try {
@@ -632,6 +887,9 @@ export class MceComposer {
   genGetPdfDownloadUrlForPreviewPanel() {
     return PdfDownloadUrl.genGetPdfDownloadUrlForPreviewPanel(this.options.urlGenerator)
   }
+
+
+
 
 
 

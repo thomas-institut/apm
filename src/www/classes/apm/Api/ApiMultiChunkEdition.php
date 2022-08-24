@@ -13,13 +13,12 @@ class ApiMultiChunkEdition extends ApiController
     public function  getEdition(Request $request, Response $response, array $args): Response
     {
 
-
         $editionId = intval($request->getAttribute('editionId'));
         $timeStamp = $request->getAttribute('timestamp',  TimeString::now());
-
         try {
             $data = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionById($editionId, $timeStamp);
         } catch (\Exception $e) {
+            // this should almost never happen!
             $this->logger->error("Edition $editionId not found");
             return $this->responseWithJson($response,  [
                 'editionId' => $editionId,
@@ -27,13 +26,14 @@ class ApiMultiChunkEdition extends ApiController
             ], 404);
         }
 
+
         return $this->responseWithJson($response, $data);
     }
 
     public function saveEdition(Request $request, Response $response, array $args): Response
     {
         $apiCall = 'saveEdition';
-        $requiredFields = [ 'editionId', 'mceDataJson', 'description'];
+        $requiredFields = [ 'editionId', 'mceData', 'description'];
         $inputDataObject = $this->checkAndGetInputData($request, $response, $apiCall, $requiredFields);
         if (!is_array($inputDataObject)) {
             return $inputDataObject;
@@ -41,7 +41,7 @@ class ApiMultiChunkEdition extends ApiController
 
         $editionId = intval($inputDataObject['editionId']);
         $description = $inputDataObject['description'];
-        $mceData = json_decode($inputDataObject['mceDataJson'], true);
+        $mceData = $inputDataObject['mceData'];
         $authorId = $this->apiUserId;
 
         try {
@@ -58,10 +58,23 @@ class ApiMultiChunkEdition extends ApiController
                 'message' => $e->getMessage()
             ], 502);
         }
+        // get the edition's data to report timestamp
+
+        try {
+            $data = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionById($editionId);
+        } catch (\Exception $e) {
+            // this should almost never happen!
+            $this->logger->error("Edition $editionId not found");
+            return $this->responseWithJson($response,  [
+                'editionId' => $editionId,
+                'message' => 'Edition not found'
+            ], 404);
+        }
 
         return $this->responseWithJson($response, [
             'status' => 'OK',
-            'id' => $id
+            'id' => $id,
+            'saveTimeStamp' => $data['validFrom']
         ]);
     }
 }

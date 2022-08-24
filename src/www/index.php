@@ -229,8 +229,15 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
             $c = new SiteMultiChunkEdition($container);
             return $c->newMultiChunkEdition($request, $response, $args);
         }
-       )
-        ->setName('mce.new');
+       )->setName('mce.new');
+
+    $group->get('/edition/multi/edit/{editionId}',
+        function(Request $request, Response $response, array $args) use ($container){
+            $c = new SiteMultiChunkEdition($container);
+            return $c->getMultiChunkEdition($request, $response, $args);
+        }
+    )->setName('mce.edit');
+
 
 
     // DOCS
@@ -414,6 +421,11 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
             $apiC = new ApiMultiChunkEdition($container);
             return $apiC->getEdition($request, $response, $args);
         })->setName('api.multi_chunk.get');
+
+    $group->post('/edition/multi/save', function(Request $request, Response $response, array $args) use ($container){
+        $apiC = new ApiMultiChunkEdition($container);
+        return $apiC->saveEdition($request, $response, $args);
+    })->setName('api.multi_chunk.save');
 
     //  EDITION ENGINE
 

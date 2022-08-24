@@ -6,6 +6,7 @@ export class MceData {
   static createEmpty()  {
     return {
       chunks: [],
+      chunkOrder: [],
       title:  'New Edition',
       initialSpace: '',
       preamble: [],
@@ -21,6 +22,13 @@ export class MceData {
 
   static isEmpty(mceData) {
     return mceData['chunks'].length === 0
+  }
+
+  static fix(mceData) {
+    if (mceData.chunkOrder === undefined) {
+      mceData.chunkOrder = mceData.chunks.map ( (c,i) => { return i})
+    }
+    return mceData
   }
 
 }

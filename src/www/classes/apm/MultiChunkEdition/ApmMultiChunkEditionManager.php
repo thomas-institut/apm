@@ -52,9 +52,9 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
         $isCompressed = $dbData['compressed'] === '1';
 
         if ($isCompressed) {
-            $dataJson = gzuncompress($dbData['data']);
+            $dataJson = gzuncompress($dbData['mce_data']);
         } else {
-            $dataJson = $dbData['data'];
+            $dataJson = $dbData['mce_data'];
         }
 
         $mceData = json_decode($dataJson, true);

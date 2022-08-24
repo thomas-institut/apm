@@ -24,14 +24,15 @@ import { resolvedPromise } from './FunctionUtil.mjs'
  */
 
 const defaultIcons = {
-  zoomIn: '+',
-  zoomOut: '-',
+  zoomIn: '<i class="bi bi-zoom-in"></i>',
+  zoomOut: '<i class="bi bi-zoom-out"></i>',
 }
 
 const zoomSteps = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4]
 const defaultZoomStep = 3
 
 
+const zoomButtonClass = 'zoom-btn'
 const zoomInButtonClass = 'zoom-in-btn'
 const zoomOutButtonClass = 'zoom-out-btn'
 const zoomLabelClass = 'zoom-label'
@@ -105,8 +106,8 @@ export class ZoomController {
 
   __getToolbarHtml() {
     return `Zoom: <span class="${zoomLabelClass}">${this.__getZoomScaleString(this.currentScale)}</span>
-        <button class="${zoomOutButtonClass}"  title="Zoom Out">${this.options.icons.zoomOut}</button> 
-        <button class="${zoomInButtonClass}"  title="Zoom In">${this.options.icons.zoomIn}</button>`
+        <button class="${zoomButtonClass} ${zoomOutButtonClass}" title="Zoom Out">${this.options.icons.zoomOut}</button> 
+        <button class="${zoomButtonClass} ${zoomInButtonClass}" title="Zoom In">${this.options.icons.zoomIn}</button>`
   }
 
   __getZoomScaleString(scale) {

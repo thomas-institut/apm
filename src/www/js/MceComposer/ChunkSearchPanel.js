@@ -20,6 +20,7 @@
 import { Panel } from '../MultiPanelUI/Panel'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import * as Util from '../toolbox/Util.mjs'
+import { KeyCache } from '../toolbox/KeyCache'
 
 const defaultIcons = {
   alert: '<i class="fas fa-exclamation-triangle"></i>',
@@ -56,6 +57,7 @@ export class ChunkSearchPanel extends Panel {
     this.userId = this.options.userId
     this.activeEditionsData = null
     this.lastFilter = ''
+    this.cache = new KeyCache()
   }
 
   updateData(mceData) {
@@ -112,11 +114,43 @@ export class ChunkSearchPanel extends Panel {
       this.loadActiveEditionDataButton.html(`Loading ... ${this.icons.busy}`)
         $.get(this.options.urlGenerator.apiGetActiveEditionInfo()).then( (data) => {
           this.activeEditionsData = data
-          this.activeEditionTableContainer.html(this.__genActiveEditionTable(data))
-          this._setupActiveEditionTableButtons(data)
-          this.loadActiveEditionDataButton.html('Reload Data')
+          this._getUserInfoForData(data).then( () => {
+            this.activeEditionTableContainer.html(this.__genActiveEditionTable(data))
+            this._setupActiveEditionTableButtons(data)
+            this.loadActiveEditionDataButton.html('Reload Data')
+          })
         })
     }
+  }
+
+ _getUserInfoFromCache(userId) {
+    return this.cache.retrieve(`USER-${userId}`)
+ }
+
+  _getUserInfoForData(data) {
+    return new Promise(async (resolve) => {
+      for (let i = 0; i < data.length; i++) {
+        let userId = data[i]['lastVersion'].authorId
+        let cacheKey = `USER-${userId}`
+
+        let userData = this.cache.retrieve(cacheKey)
+        if (userData === null) {
+          try {
+            userData = await $.get(this.options.urlGenerator.apiUserGetInfo(userId))
+          } catch(e) {
+            console.warn(`Error retrieving user info for user ${userId}`)
+            userData = { id: userId, fullname: `User ${userId}`}
+          }
+          if (userData === undefined || userData.fullname === undefined) {
+            // bad data
+            console.warn(`Bad data for ${userId}`)
+            userData = { id: userId, fullname: `User ${userId}`}
+          }
+          this.cache.store(cacheKey, userData)
+        }
+      }
+      resolve()
+    })
   }
 
   _setupActiveEditionTableButtons(data) {
@@ -139,19 +173,13 @@ export class ChunkSearchPanel extends Panel {
         null,
         null,
         null,
+        null,
         {searchable: false, orderable: false},
       ]
     });
-
-    // if (this.lastFilter !== '') {
-    //   this.__getSearchElement().val(this.lastFilter)
-    // }
-
   }
 
-  __getSearchElement() {
-    return $("div.active-editions-table > div.dataTables_filter input")
-  }
+
 
   _genOnClickAddEdition(editionId) {
     return () => {
@@ -166,11 +194,15 @@ export class ChunkSearchPanel extends Panel {
         this.debug && console.log(`Edition ${editionId} added successfully`)
         infoSpan.html('')
       }, (error) => {
-        infoSpan.html(`Error adding chunk`).addClass('text-danger')
+        infoSpan.html(`Error adding chunk: ${error}`).addClass('text-danger')
+        button.html(buttonHtml)
         console.error(`Error trying to add edition ${editionId}: ${error}`)
       })
     }
   }
+
+
+
 
   __genActiveEditionTable(infoArray) {
     if (infoArray === null) {
@@ -184,10 +216,10 @@ export class ChunkSearchPanel extends Panel {
     console.log(tableIdsInMceData)
     return [
       '<table class="active-editions">',
-      '<thead><tr><th>Chunk</th><th>Title</th><th>Last Save</th><th></th></tr></thead>',
+      '<thead><tr><th>Chunk</th><th>Title</th><th>Author</th><th>Last Save</th><th></th></tr></thead>',
       infoArray.map( (info) => {
         let versionInfo = info['lastVersion']
-        let lastSaveLabel = `${Util.formatVersionTime(versionInfo['timeFrom'])} by ${versionInfo['authorId']}`
+        let lastSaveLabel = `${Util.formatVersionTime(versionInfo['timeFrom'])}`
         let addButton
         if (tableIdsInMceData.indexOf(info.id) === -1) {
           addButton = `<button class="btn btn-sm btn-outline-secondary add-edition-${info.id}">Add</button>`
@@ -197,6 +229,7 @@ export class ChunkSearchPanel extends Panel {
         return `<tr>
             <td>${info['chunkId']}</td>
             <td>${info['title']}</td>
+            <td>${this._getUserInfoFromCache(versionInfo.authorId).fullname}</td>
             <td><small>${lastSaveLabel}</small></td>
             <td>${addButton} <span class="info-span-edition-${info.id}"</td>
         </tr>`

@@ -45,7 +45,7 @@ class ApiMultiChunkEdition extends ApiController
         $authorId = $this->apiUserId;
 
         try {
-            $id = $this->systemManager->getMultiChunkEditionManager()->saveMultiChunkEdition($editionId, $mceData, $authorId, $description);
+            $editionId = $this->systemManager->getMultiChunkEditionManager()->saveMultiChunkEdition($editionId, $mceData, $authorId, $description);
         } catch (\Exception $e) {
             $this->logger->error("Error saving multi chunk edition", [
                 'id' => $editionId,
@@ -73,7 +73,7 @@ class ApiMultiChunkEdition extends ApiController
 
         return $this->responseWithJson($response, [
             'status' => 'OK',
-            'id' => $id,
+            'id' => $editionId,
             'saveTimeStamp' => $data['validFrom']
         ]);
     }

@@ -43,6 +43,7 @@ import { SubEntryWitnessInfo } from '../Edition/SubEntryWitnessInfo'
 import { EditableTextField } from '../widgets/EditableTextField'
 import { TimeString } from '../toolbox/TimeString.mjs'
 import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
+import { CtData } from '../CtData/CtData'
 
 const defaultIcons = {
   moveUp: '&uarr;',
@@ -144,6 +145,8 @@ export class MceComposer {
       if (this.editionId === -1) {
         // create empty MceEdition
         this.editionId = -1
+        this.editionPanel.showLoadingDataMessage(false)
+        this.editionPanel.updateData(this.mceData)
         resolve()
       } else {
         // load Mce Edition
@@ -369,6 +372,7 @@ export class MceComposer {
         console.log(apiResponse)
         if (this.editionId === -1) {
           // redirect to new edition's page
+          this.unsavedChanges = false
           window.location.href = this.options.urlGenerator.siteEditMultiChunkEdition(apiResponse.id)
         } else {
           this.saveButton.html(this.icons.saveEdition)
@@ -652,6 +656,7 @@ export class MceComposer {
       $.get(url).then( (data) => {
         console.log(`Got data from server for table ${tableId}, timeStamp '${timeStamp}'`)
         console.log(data)
+        data.ctData = CtData.getCleanAndUpdatedCtData(data.ctData)
         // cache doc info
         data['docInfo'].forEach ( (docInfo) => {
           this.cache.store(`DOC-${docInfo['docId']}`, docInfo)
@@ -800,7 +805,7 @@ export class MceComposer {
 
     // new chunk, check if it's the same language
     if (this.mceData.chunks.length !== 0 && this.mceData.lang !== ctData['lang']) {
-      this.errorDetail = `Table ${tableId} is of a different language (${ctData['lang']}`
+      this.errorDetail = `Wrong language (${ctData['lang']})`
       return false
     }
 

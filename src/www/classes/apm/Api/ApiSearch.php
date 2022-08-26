@@ -279,9 +279,10 @@ class ApiSearch extends ApiController
                 $pageID = $query['hits']['hits'][$i]['_id'];
 
                 // Make a list of words out of the transcript, which is used in following functions
-                // Therefore every line break in the transcript has to be replaced by a blank
+                // Therefore every line break in the transcript has to be replaced by a blank, hyphened words disappear
                 // Sometimes, I think, there are two words treated as one, but this does not disturb anything until now
                 $cleanTranscript = str_replace("\n", " ", $transcript);
+                $cleanTranscript = str_replace("- ", "", $cleanTranscript);
                 $words = explode(" ", $cleanTranscript);
 
                 // Get all lower-case and all upper-case keyword positions in the current column (measured in words)

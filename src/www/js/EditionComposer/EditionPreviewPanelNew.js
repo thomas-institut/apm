@@ -45,6 +45,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       edition: { type: 'object', objectClass: Edition, required: true},
       langDef: { type: 'object', required: true},
       automaticUpdate: { type: 'boolean', default: false},
+      outDatedLabel: { type: 'string', default: '<i class="bi bi-exclamation-triangle-fill"></i> Out-of-date '},
       icons: { type: 'object', default: defaultIcons},
       //
       getPdfDownloadUrl: {
@@ -63,16 +64,16 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
   }
 
   generateToolbarHtml (tabId, mode, visible) {
-    return ` <div class="zoom-controller">
-                    </div>
-                    <div>
-                        <button class="tb-button update-preview-btn" title="Preview is outdated, click to update">${this.options.icons.updatePreview}</button>
-                    </div>
-                    <div>
-                        <button id="${downloadPdfButtonId}" class="tb-button margin-left-med" title="Download PDF">
-                            <small>PDF</small> <i class="fas fa-download"></i>
-                        </button>
-                    </div>`
+    return `<div class="zoom-controller">
+        </div>
+        <div>
+            <button class="tb-button update-preview-btn" title="Not showing latest version, click to update">${this.options.outDatedLabel} ${this.options.icons.updatePreview}</button>
+        </div>
+        <div>
+            <button id="${downloadPdfButtonId}" class="tb-button margin-left-med" title="Download PDF">
+                <small>PDF</small> <i class="fas fa-download"></i>
+            </button>
+        </div>`
   }
 
 
@@ -165,7 +166,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
 
   updatePreview() {
     let currentButtonHtml = this.updatePreviewButton.html()
-    this.updatePreviewButton.html(`Updating... ${this.options.icons.busy}`)
+    this.updatePreviewButton.html(`Updating preview... ${this.options.icons.busy}`)
     // wait for browser to update toolbar span and button
     wait(100).then( () => {
       let profiler = new BasicProfiler('Update preview')

@@ -26,6 +26,7 @@ import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
 import { EditableTextField } from '../widgets/EditableTextField'
 import { transientAlert } from '../widgets/TransientAlert'
 import { ConfirmDialog } from '../pages/common/ConfirmDialog'
+import { SiglaGroupsUI } from '../EditionComposer/SiglaGroupsUI'
 
 const defaultIcons = {
   alert: '<i class="fas fa-exclamation-triangle"></i>',
@@ -34,6 +35,8 @@ const defaultIcons = {
   updateChunk: '<i class="bi bi-arrow-counterclockwise"></i>',
   moveUp: '<i class="bi bi-arrow-up-short"></i>',
   moveDown: '<i class="bi bi-arrow-down-short"></i>',
+  editSiglaGroup: '<i class="bi bi-pencil"></i>',
+  deleteSiglaGroup: '<i class="bi bi-trash"></i>'
 }
 
 export class EditionPanel extends Panel {
@@ -81,6 +84,16 @@ export class EditionPanel extends Panel {
         updateSigla: {
           type: 'function',
           default: (newSigla) => {
+            console.log(`Faking updating sigla`)
+            console.log(newSigla)
+            return resolvedPromise()
+          }
+        },
+        updateSiglaGroups: {
+          type: 'function',
+          default: (newSiglaGroups) => {
+            console.log(`Faking updating sigla groups`)
+            console.log(newSiglaGroups)
             return resolvedPromise()
           }
         },
@@ -122,17 +135,43 @@ export class EditionPanel extends Panel {
                 <h4>Sigla</h4>
                 ${this.__genSiglaTable()}
             </div>
-            <div class="sigla-groups-table">
+            <div class="sigla-groups">
                 <h4>Sigla Groups</h4>
-                ${this.__genSiglaGroupsTable()}
+                <div class="sigla-groups-table">${this.__genSiglaGroupsTable()}</div>
+                <button class="btn  btn-outline-secondary btn-sm add-sigla-group-btn"  title="Click to add a new sigla group">Add Sigla Group</button>
             </div>`
   }
 
   __genSiglaGroupsTable() {
-    if (this.mceData.siglaGroups.length === 0) {
-      return `<p><em>No sigla groups defined</em></p>`
+    return SiglaGroupsUI.genSiglaGroupsTable(this.mceData.siglaGroups, this.mceData.sigla, this.icons)
+  }
+
+  _genOnClickEditSiglaGroupButton(i) {
+    return (ev) => {
+      ev.preventDefault()
+      ev.stopPropagation()
+      this.verbose && console.log(`Edit sigla group ${i}`)
+      this._addEditSiglaGroup(i)
     }
-    return `${this.mceData.siglaGroups.length} sigla groups, table coming soon... `
+  }
+
+  _genOnClickDeleteSiglaGroup(i) {
+    return (ev) => {
+      ev.preventDefault()
+      ev.stopPropagation()
+      SiglaGroupsUI.confirmDeleteSiglaGroup(this.mceData.siglaGroups, i, this.mceData.sigla).then( () => {
+        this.verbose && console.log(`Deleting sigla group ${i}`)
+        this.mceData.siglaGroups = this.mceData.siglaGroups.filter( (sg, index) => {
+          return index !== i
+        })
+        this.options.updateSiglaGroups(this.mceData.siglaGroups)
+        this._reDrawSiglaGroupsTable()
+      }, (reason) => {
+        if (reason !== 'Canceled') {
+          console.error(`Error confirming deletion of sigla group ${i}`)
+        }
+      })
+    }
   }
 
   __genSiglaTable() {
@@ -247,6 +286,16 @@ export class EditionPanel extends Panel {
         onConfirm: this._genOnConfirmSiglumEdit(siglumIndex)
       })
     }
+
+    // setup sigla group table
+     this._setupSiglaGroupsTable()
+  }
+
+  _genOnClickAddSiglaGroupButton() {
+    return () => {
+      console.log(`Click on add sigla group button`)
+      this._addEditSiglaGroup(-1)
+    }
   }
 
   _genOnConfirmSiglumEdit(siglumIndex) {
@@ -273,10 +322,18 @@ export class EditionPanel extends Panel {
       this.mceData.sigla[siglumIndex] = newText
       this.options.updateSigla(this.mceData.sigla).then( () => {
         console.log(`Sigla updated`)
+        this._redrawSiglaGroupSigla()
       }, (error) => {
         console.error(`Error updating sigla: ${error}`)
       })
     }
+  }
+
+  _redrawSiglaGroupSigla(sigla) {
+    this.mceData.siglaGroups.forEach( (sg, i) => {
+      $(`${this.containerSelector} .sigla-group-siglum-${i}`).html(sg.siglum)
+      $(`${this.containerSelector} .sigla-group-sigla-${i}`).html(SiglaGroupsUI.getSiglaStringForWitnessIndexArray(this.mceData.sigla, sg.witnesses))
+    })
   }
 
   _genOnClickDeleteChunk(chunkIndex) {
@@ -325,7 +382,38 @@ export class EditionPanel extends Panel {
           chunkInfoSpan.html(`Error updating, please try again`).addClass('text-danger')
       })
     }
+  }
 
+  _addEditSiglaGroup(index) {
+    SiglaGroupsUI.addEditSiglaGroup(this.mceData.siglaGroups, index, this.mceData.sigla).then( (editedSiglaGroup) => {
+        if (index === -1) {
+          console.log(`Adding new sigla group`)
+          this.mceData.siglaGroups.push(editedSiglaGroup)
+        } else {
+          console.log(`Replacing sigla group at index ${index}`)
+          this.mceData.siglaGroups[index] = editedSiglaGroup
+        }
+        this.options.updateSiglaGroups(this.mceData.siglaGroups)
+        this._reDrawSiglaGroupsTable()
+      },
+      (reason) => {
+        if (reason !== 'Canceled') {
+          console.error(`Error editing sigla group: ${reason}`)
+        }
+      })
+  }
+
+  _reDrawSiglaGroupsTable() {
+    $(`${this.containerSelector} div.sigla-groups-table`).html(this.__genSiglaGroupsTable())
+    this._setupSiglaGroupsTable()
+  }
+
+  _setupSiglaGroupsTable() {
+    $(`${this.containerSelector} .add-sigla-group-btn`).off('click').on('click', this._genOnClickAddSiglaGroupButton())
+    this.mceData.siglaGroups.forEach( (sg, i) => {
+      $(`${this.containerSelector} .edit-sigla-group-btn-${i}`).off('click').on('click', this._genOnClickEditSiglaGroupButton(i))
+      $(`${this.containerSelector} .delete-sigla-group-btn-${i}`).off('click').on('click', this._genOnClickDeleteSiglaGroup(i))
+    })
   }
 
   _genOnClickUpDownButton(chunkIndex, position, direction) {

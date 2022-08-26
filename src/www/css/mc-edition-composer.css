@@ -122,10 +122,17 @@ div.sigla-table {
     margin-top: 4em;
 }
 
-div.sigla-groups-table {
+div.sigla-groups {
     margin-top: 4em;
 }
 
+div.sigla-groups-table {
+    margin: 1em;
+}
+
+.sigla-groups-table td, .sigla-groups-table th{
+    padding: 0.5em;
+}
 
 div.quick-add {
     margin-top: 4em;

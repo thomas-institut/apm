@@ -25,11 +25,18 @@ export class NumeralStyles {
   }
 
   static toDecimalArabic(n) {
+    if (n === -1) {
+      return '?'
+    }
     let decimalWestern = this.toDecimalWestern(n)
     let decimalArabic = ''
     for (let i = 0; i < decimalWestern.length; i++) {
       let digit = parseInt(decimalWestern.charAt(i))
-      decimalArabic += String.fromCodePoint(arabicZeroCodePoint + digit)
+      if (isNaN(digit)) {
+        console.log(`Found non-number in ${n}, character '${decimalWestern.charAt(i)}'`)
+      } else {
+        decimalArabic += String.fromCodePoint(arabicZeroCodePoint + digit)
+      }
     }
     return decimalArabic
   }

@@ -190,6 +190,7 @@ export class MceComposer {
      deleteChunk: (chunkIndex)=> { return this.chunkDelete(chunkIndex)},
      updateChunkOrder: (newOrder) => { return this.updateChunkOrder(newOrder)},
      updateSigla: (newSigla) => { return this.updateSigla(newSigla)},
+     updateSiglaGroups:  (newSiglaGroups) => { return this.updateSiglaGroups(newSiglaGroups, 'editionPanel')},
      debug: true
    })
    this.chunkSearchPanel = new ChunkSearchPanel({
@@ -449,38 +450,52 @@ export class MceComposer {
  }
 
  detectChanges() {
-    if (varsAreEqual(this.lastSavedMceData, this.mceData)) {
-      console.log(`No changes`)
-      return []
-    }
-    let changes = []
-    if (this.lastSavedMceData.title !== this.mceData.title) {
-      changes.push(`Changed title to '${this.mceData.title}'`)
-    }
-    if (this.lastSavedMceData.chunks.length !== this.mceData.chunks.length) {
-      let lastSavedTableIds = this.lastSavedMceData.chunks.map ( (chunk) => { return chunk.chunkEditionTableId})
-      let currentTableIds = this.mceData.chunks.map ( (chunk) => { return chunk.chunkEditionTableId})
-      this.mceData.chunks.filter( (chunk) => {
-        return lastSavedTableIds.indexOf(chunk.chunkEditionTableId) === -1
-      }).forEach( (chunk) =>{
-        changes.push(`Added chunk ${chunk.chunkId}`)
-      })
-      this.lastSavedMceData.chunks.filter( (chunk) => {
-        return currentTableIds.indexOf(chunk.chunkEditionTableId) === -1
-      }).forEach( (chunk) =>{
-        changes.push(`Deleted chunk ${chunk.chunkId}`)
-      })
-    } else {
-      // same number of chunks
-      this.mceData.chunks.forEach( (chunk, chunkIndex) => {
-        let lastSavedChunk = this.lastSavedMceData.chunks[chunkIndex]
-        if (!varsAreEqual(chunk, lastSavedChunk)) {
-          changes.push(`Changes to ${chunk.chunkId}`)
-        }
-      })
-    }
+   if (varsAreEqual(this.lastSavedMceData, this.mceData)) {
+     console.log(`No changes`)
+     return []
+   }
+   let changes = []
 
-    return changes
+   // change in title
+   if (this.lastSavedMceData.title !== this.mceData.title) {
+     changes.push(`Changed title to '${this.mceData.title}'`)
+   }
+
+   // sigla changes
+   if (!varsAreEqual(this.lastSavedMceData.sigla, this.mceData.sigla)) {
+     changes.push(`Changes in sigla`)
+   }
+
+   // sigla groups changes
+   if (!varsAreEqual(this.lastSavedMceData.siglaGroups, this.mceData.siglaGroups)) {
+     changes.push(`Changes in sigla groups`)
+   }
+
+   // changes in chunks
+   if (this.lastSavedMceData.chunks.length !== this.mceData.chunks.length) {
+     let lastSavedTableIds = this.lastSavedMceData.chunks.map ( (chunk) => { return chunk.chunkEditionTableId})
+     let currentTableIds = this.mceData.chunks.map ( (chunk) => { return chunk.chunkEditionTableId})
+     this.mceData.chunks.filter( (chunk) => {
+       return lastSavedTableIds.indexOf(chunk.chunkEditionTableId) === -1
+     }).forEach( (chunk) =>{
+       changes.push(`Added chunk ${chunk.chunkId}`)
+     })
+     this.lastSavedMceData.chunks.filter( (chunk) => {
+       return currentTableIds.indexOf(chunk.chunkEditionTableId) === -1
+     }).forEach( (chunk) =>{
+       changes.push(`Deleted chunk ${chunk.chunkId}`)
+     })
+   } else {
+     // same number of chunks
+     this.mceData.chunks.forEach( (chunk, chunkIndex) => {
+       let lastSavedChunk = this.lastSavedMceData.chunks[chunkIndex]
+       if (!varsAreEqual(chunk, lastSavedChunk)) {
+         changes.push(`Changes to ${chunk.chunkId}`)
+       }
+     })
+   }
+
+   return changes
  }
 
   /**
@@ -634,6 +649,20 @@ export class MceComposer {
     return new Promise( (resolve, reject) => {
       this.mceData.sigla = newSigla
       this.editionPanel.updateData(this.mceData)
+      this.updateSaveUI()
+      this.regenerateEdition().then( () => {
+        this.previewPanel.updateData(this.edition)
+        resolve()
+      }, (error) => { reject(error)})
+    })
+  }
+
+  updateSiglaGroups(newSiglaGroups, source = 'editionPanel') {
+    return new Promise( (resolve, reject) => {
+      this.mceData.siglaGroups = newSiglaGroups
+      if (source !== 'editionPanel') {
+        this.editionPanel.updateData(this.mceData)
+      }
       this.updateSaveUI()
       this.regenerateEdition().then( () => {
         this.previewPanel.updateData(this.edition)

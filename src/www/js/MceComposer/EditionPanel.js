@@ -25,8 +25,9 @@ import { resolvedPromise, wait } from '../toolbox/FunctionUtil.mjs'
 import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
 import { EditableTextField } from '../widgets/EditableTextField'
 import { transientAlert } from '../widgets/TransientAlert'
-import { ConfirmDialog } from '../pages/common/ConfirmDialog'
+import { ConfirmDialog, SMALL_DIALOG } from '../pages/common/ConfirmDialog'
 import { SiglaGroupsUI } from '../EditionComposer/SiglaGroupsUI'
+import { MultiToggle } from '../widgets/MultiToggle'
 
 const defaultIcons = {
   alert: '<i class="fas fa-exclamation-triangle"></i>',
@@ -94,6 +95,13 @@ export class EditionPanel extends Panel {
           default: (newSiglaGroups) => {
             console.log(`Faking updating sigla groups`)
             console.log(newSiglaGroups)
+            return resolvedPromise()
+          }
+        },
+        updateChunkBreak: {
+          type: 'function',
+          default: (chunkIndex, newBreak) => {
+            console.log(`Faking update chunk break fro chunk ${chunkIndex}, new break is '${newBreak}'`)
             return resolvedPromise()
           }
         },
@@ -203,7 +211,7 @@ export class EditionPanel extends Panel {
       }
       let deleteButton = ''
       if (this.mceData.chunks.length > 1) {
-        deleteButton = `<button class="chunk-table-btn delete-chunk delete-chunk-${chunkIndex}" title="Click to delete chunk">
+        deleteButton = `<button class="chunk-table-btn delete-chunk delete-chunk-${chunkIndex}" title="Click to remove chunk from this edition">
                 ${this.icons.deleteChunk}
             </button>`
       }
@@ -219,7 +227,7 @@ export class EditionPanel extends Panel {
         <td>${chunk.chunkId}</td>
         <td><a href="${this.options.urlGenerator.siteChunkEdition(chunk.chunkEditionTableId)}" title="Open in new tab" target="_blank">${chunk.title}</a></td>
         <td>${Util.formatVersionTime(chunk.version)}</td>
-        <td>${this._getBreakLabel(chunk.break)}</td>
+        <td class="chunk-break-td chunk-break-td-${chunkIndex}">${this._getBreakLabel(chunk.break)}</td>
         <td class="chunk-actions-td chunk-actions-td-${chunkIndex}">
             ${deleteButton}
             ${updateButton}
@@ -270,6 +278,31 @@ export class EditionPanel extends Panel {
       let chunkPosition = this.mceData.chunkOrder.indexOf(chunkIndex)
       $(`${this.containerSelector} button.move-up-${chunkIndex}`).on('click', this._genOnClickUpDownButton(chunkIndex, chunkPosition, 'up'))
       $(`${this.containerSelector} button.move-down-${chunkIndex}`).on('click', this._genOnClickUpDownButton(chunkIndex, chunkPosition, 'down'))
+
+      // break toggle
+      let toggle = new MultiToggle({
+        containerSelector: `${this.containerSelector} td.chunk-break-td-${chunkIndex}`,
+        wrapButtonsInDiv: false,
+        initialOption: chunk['break'],
+        buttonDef: [
+          { label: 'None', name: 'none', helpText: 'No break with next chunk'},
+          { label: 'Paragraph', name: 'paragraph', helpText: "Next chunk starts in new paragraph"},
+        ],
+      })
+      toggle.on('toggle', (ev) => {
+        console.log(`Chunk ${chunkIndex} break toggle`)
+        let newBreak = ev.detail.currentOption
+        if (newBreak === 'none') {
+          newBreak = ''
+        }
+        this.mceData.chunks[chunkIndex].break = newBreak
+        this.options.updateChunkBreak(chunkIndex, newBreak).then( () => {
+          console.log(`Chunk break updated`)
+        }, (reason) => {
+          console.error(`Error updating chunk break: ${reason}`)
+          toggle.setOptionByName(ev.detail.previousOption)
+        })
+      })
     })
 
     if (this.mceData.chunkOrder.length > 0) {
@@ -339,9 +372,11 @@ export class EditionPanel extends Panel {
   _genOnClickDeleteChunk(chunkIndex) {
     return () => {
       let confirmDialog = new ConfirmDialog({
-        body: `<p>Are you sure you want to delete this chunk?</p>`,
-        acceptButtonLabel: 'Delete',
+        body: `<p>Are you sure you want to remove <b>${this.mceData.chunks[chunkIndex].title}</b> (Chunk ${this.mceData.chunks[chunkIndex].chunkId}) from this edition?</p>`,
+        acceptButtonLabel: 'Remove',
         cancelButtonLabel: 'Cancel',
+        title: 'Please confirm:',
+        size: SMALL_DIALOG,
         acceptFunction: () => {
           let button =  $(`${this.containerSelector} button.delete-chunk-${chunkIndex}`)
           let chunkInfoSpan = $(`${this.containerSelector} .chunk-info-span-${chunkIndex}`)

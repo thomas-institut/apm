@@ -138,3 +138,24 @@ div.quick-add {
     margin-top: 4em;
 }
 
+.multitoggle-btn {
+    margin-right: 0.5em;
+}
+
+a.multitoggle-btn {
+    padding: 2px;
+    border: 1px solid #e8e8e8;
+    border-radius: 2px;
+    color: silver;
+    font-size: 0.9em;
+}
+a.multitoggle-btn:hover {
+    text-decoration: none;
+    color: gray;
+}
+
+
+a.multitoggle-btn.multitoggle-on {
+    border-color: gray;
+    color: gray;
+}

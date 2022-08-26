@@ -191,6 +191,7 @@ export class MceComposer {
      updateChunkOrder: (newOrder) => { return this.updateChunkOrder(newOrder)},
      updateSigla: (newSigla) => { return this.updateSigla(newSigla)},
      updateSiglaGroups:  (newSiglaGroups) => { return this.updateSiglaGroups(newSiglaGroups, 'editionPanel')},
+     updateChunkBreak:  (chunkIndex, newBreak) => { return this.updateChunkBreak(chunkIndex, newBreak, 'editionPanel')},
      debug: true
    })
    this.chunkSearchPanel = new ChunkSearchPanel({
@@ -657,7 +658,21 @@ export class MceComposer {
     })
   }
 
-  updateSiglaGroups(newSiglaGroups, source = 'editionPanel') {
+  updateChunkBreak(chunkIndex, newBreak, source) {
+    return new Promise ( (resolve, reject) => {
+      this.mceData.chunks[chunkIndex].break = newBreak
+      if (source !== 'editionPanel') {
+        this.editionPanel.updateData(this.mceData)
+      }
+      this.updateSaveUI()
+      this.regenerateEdition().then( () => {
+        this.previewPanel.updateData(this.edition)
+        resolve()
+      }, (error) => { reject(error)})
+    })
+  }
+
+  updateSiglaGroups(newSiglaGroups, source ) {
     return new Promise( (resolve, reject) => {
       this.mceData.siglaGroups = newSiglaGroups
       if (source !== 'editionPanel') {
@@ -766,6 +781,15 @@ export class MceComposer {
             }
             break
 
+
+          case '':
+            if (chunkOrderIndex !== this.mceData.chunkOrder.length -1) {
+              // add a paragraph mark if not the last chunk
+              this.edition.mainText.push( MainTextTokenFactory.createNormalGlue())
+              nextChunkShift++
+            }
+            break
+
           case 'page':
             // TODO: implement page break
             break
@@ -773,6 +797,7 @@ export class MceComposer {
           case 'section':
             // TODO: implement section break
             break
+
 
           default:
             // nothing to do!

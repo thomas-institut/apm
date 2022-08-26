@@ -603,7 +603,7 @@ export class BasicTypesetter extends Typesetter2 {
       }
       return 0
     }).reduce( (total, x) => { return total+x}, 0)
-    this.debug && console.log(`total glue shrink = ${totalGlueShrink}`)
+    // this.debug && console.log(`total glue shrink = ${totalGlueShrink}`)
     if (totalGlueShrink <=0) {
       return null
     }

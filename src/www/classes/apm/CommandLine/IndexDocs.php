@@ -153,6 +153,13 @@ class IndexDocs extends CommandLineUtility {
     private function indexCol ($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript): bool
     {
 
+        // Tokenization
+        $transcript_clean = str_replace("\n", " ", $transcript);
+        $transcript_clean = str_replace("- ", "", $transcript_clean);
+        $transcript_tokenized = explode(" ", $transcript_clean);
+
+        // Replace $transcript with $transcript_tokens below
+
         $this->client->create([
             'index' => $this->indexName,
             'id' => $id,

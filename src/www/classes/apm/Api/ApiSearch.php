@@ -153,7 +153,7 @@ class ApiSearch extends ApiController
                     'size' => 20000,
                     'query' => [
                         $queryAlg => [
-                            'transcript' => [
+                            'transcript_tokens' => [
                                 "query" => $keyword
                             ]
                         ]
@@ -180,7 +180,7 @@ class ApiSearch extends ApiController
                             ],
                             'must' => [
                                 $queryAlg => [
-                                    'transcript' => [
+                                    'transcript_tokens' => [
                                         "query" => $keyword
                                     ]
                                 ]
@@ -208,7 +208,7 @@ class ApiSearch extends ApiController
                             ],
                             'must' => [
                                 $queryAlg => [
-                                    'transcript' => [
+                                    'transcript_tokens' => [
                                         "query" => $keyword
                                     ]
                                 ]
@@ -244,7 +244,7 @@ class ApiSearch extends ApiController
                             "minimum_should_match" => 1,
                             'must' => [
                                 $queryAlg => [
-                                    'transcript' => [
+                                    'transcript_tokens' => [
                                         "query" => $keyword
                                     ]
                                 ]
@@ -281,13 +281,14 @@ class ApiSearch extends ApiController
                 // Make a list of words out of the transcript, which is used in following functions
                 // Therefore every line break in the transcript has to be replaced by a blank, hyphened words disappear
                 // Sometimes, I think, there are two words treated as one, but this does not disturb anything until now
-                $cleanTranscript = str_replace("\n", " ", $transcript);
-                $cleanTranscript = str_replace("- ", "", $cleanTranscript);
-                $words = explode(" ", $cleanTranscript);
+                // $cleanTranscript = str_replace("\n", " ", $transcript);
+                // $cleanTranscript = str_replace("- ", "", $cleanTranscript);
+                // $tokens = explode(" ", $cleanTranscript);
+                $tokens = $query['hits']['hits'][$i]['_source']['transcript_tokens'];
 
                 // Get all lower-case and all upper-case keyword positions in the current column (measured in words)
-                $keywordPositionsLC = $this->getPositionsOfKeyword($words, $keywords[0], $queryAlg);
-                $keywordPositionsUC = $this->getPositionsOfKeyword($words, ucfirst($keywords[0]), $queryAlg);
+                $keywordPositionsLC = $this->getPositionsOfKeyword($tokens, $keywords[0], $queryAlg);
+                $keywordPositionsUC = $this->getPositionsOfKeyword($tokens, ucfirst($keywords[0]), $queryAlg);
 
                 // Sort the keywordPositions to have them in ascending order like they appear in the manuscript –
                 // this, of course, is only effective if there is more than one occurence of the keyword in the column
@@ -311,7 +312,7 @@ class ApiSearch extends ApiController
                 $keywordPosInContext = [];
 
                 foreach ($keywordPositions as $keywordPos) {
-                    $keywordInContext = $this->getContextOfKeyword($words, $keywordPos, $cSize);
+                    $keywordInContext = $this->getContextOfKeyword($tokens, $keywordPos, $cSize);
                     $keywordsInContext[] = $keywordInContext[0];
                     $keywordPosInContext[] = $keywordInContext[1];
                 }
@@ -334,6 +335,7 @@ class ApiSearch extends ApiController
                         'pageID' => $pageID,
                         'docID' => $docID,
                         'transcript' => $transcript,
+                        'transcript_tokens' => $tokens,
                         'keywords' => $keywords,
                         'keywordFreq' => $keywordFreq,
                         'keywordsInContext' => $keywordsInContext,
@@ -391,16 +393,16 @@ class ApiSearch extends ApiController
     }
 
     // Function to get all the positions of a given keyword in a transcripted column (full match or phrase match, measured in words)
-    private function getPositionsOfKeyword ($words, $keyword, $queryAlg): array {
+    private function getPositionsOfKeyword ($tokens, $keyword, $queryAlg): array {
 
         // Array, which will be returned
         $keywordPositions = [];
 
         // Check every word of the list of words, if it matches the keyword
-        for ($i=0; $i<count($words); $i++) {
+        for ($i=0; $i<count($tokens); $i++) {
 
             // First, clean the word by erasing some special characters
-            $cleanWord = str_replace( array( '.', ',', ';', ':', "'"), '', $words[$i]);
+            $cleanWord = str_replace( array( '.', ',', ';', ':', "'"), '', $tokens[$i]);
 
             // If query algorithm is phrase match, add position of a word to the keywordPositions-array,
             // if it contains the searched keyword as a substring
@@ -423,20 +425,20 @@ class ApiSearch extends ApiController
     }
 
     // Function to get the surrounding context of a given keyword (via keywordPosition) in a given transcript
-    private function getContextOfKeyword ($words, $keywordPos, $cSize = 100): array
+    private function getContextOfKeyword ($tokens, $keywordPos, $cSize = 100): array
     {
         // Get total number of words in the transcript
-        $numWords = count($words);
+        $numWords = count($tokens);
 
         // Get a list of all preceding and all succeeding words of the keyword at keywordPosition – get the sizes of these lists
-        $precWords = array_slice($words, 0, $keywordPos);
-        $sucWords = array_slice($words, $keywordPos+1, $numWords);
+        $precWords = array_slice($tokens, 0, $keywordPos);
+        $sucWords = array_slice($tokens, $keywordPos+1, $numWords);
         $numPrecWords = count($precWords);
         $numSucWords = count($sucWords);
 
         // Get the keyword at the given keywordPosition into an array and use this array in the next step to add the context to it
         // Declare variable, which holds the keyword position relative to the total number of words in the keywordInContext-array
-        $keywordInContext = [$words[$keywordPos]];
+        $keywordInContext = [$tokens[$keywordPos]];
         $keywordPosInContext = 0;
 
         // Add as many preceding words to the keywordInContext-array, as the total number of preceding words and the desired context size allows

@@ -61,6 +61,7 @@ class IndexDocs extends CommandLineUtility {
             $this->client->indices()->delete([
                 'index' => $this->indexName
             ]);
+            print("Existing index was deleted!");
         };
 
        $this->client->indices()->create([
@@ -156,7 +157,7 @@ class IndexDocs extends CommandLineUtility {
         // Tokenization
         $transcript_clean = str_replace("\n", " ", $transcript);
         $transcript_clean = str_replace("- ", "", $transcript_clean);
-        $transcript_tokenized = explode(" ", $transcript_clean);
+        $transcript_tokens = explode(" ", $transcript_clean);
 
         // Replace $transcript with $transcript_tokens below
 
@@ -170,7 +171,8 @@ class IndexDocs extends CommandLineUtility {
                 'transcriber' => $transcriber,
                 'pageID' => $pageID,
                 'docID' => $docID,
-                'transcript' => $transcript
+                'transcript' => $transcript,
+                'transcript_tokens' => $transcript_tokens
             ]
         ]);
 

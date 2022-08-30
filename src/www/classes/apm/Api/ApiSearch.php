@@ -46,16 +46,17 @@ class ApiSearch extends ApiController
             return $this->responseWithJson($response, ['searchString' => $searchString,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
 
-        // Explode all keywords inside the search string to an array – get the first keyword
+        // Explode all keywords inside the search string to an array – get the main keyword
         $keywords = explode(" ", $searchString);
-        $firstKeyword = $keywords[0];
+        $numKeywords = count($keywords);
+        $mainKeyword = $keywords[0];
 
         // Choose query algorithm for OpenSearch-Query, depending on the length of the keyword
-        $queryAlg=$this->chooseQueryAlg($firstKeyword);
+        $queryAlg=$this->chooseQueryAlg($mainKeyword);
 
         // Query index
         try {
-            $query = $this->queryIndex($client, $indexName, $docName, $transcriber, $firstKeyword, $queryAlg);
+            $query = $this->queryIndex($client, $indexName, $docName, $transcriber, $mainKeyword, $queryAlg);
         } catch (\Exception $e) {
             $status = "Opensearch query problem";
             
@@ -74,7 +75,6 @@ class ApiSearch extends ApiController
         $data = $this->getInfoAboutMatches($query, $keywords, $queryAlg, $cSize);
 
         // If there is more than one keyword, extract all columns, which do match all the keywords
-        $numKeywords = count($keywords);
         if ($numKeywords !== 1) {
             for ($i=1; $i<$numKeywords; $i++) {
                 $data = $this->extractMultiMatchColumns($data, $keywords[$i]);
@@ -359,7 +359,7 @@ class ApiSearch extends ApiController
         foreach ($data as $i=>$matchedColumn) {
             foreach ($matchedColumn['keywordsInContext'] as $j=>$keywordInContext) {
 
-                // Make a string, which storer full context in it – needed for checking for keyword
+                // Make a string, which stores full context in it – needed for checking for keyword
                 $contextString = "";
                 foreach ($keywordInContext as $string) {
                     $contextString = $contextString . " " . $string;
@@ -375,7 +375,7 @@ class ApiSearch extends ApiController
             }
         }
 
-        // Second, unset all columns, which do not any more have keywordsInContext
+        // Second, unset all columns, which not anymore have keywordsInContext
         foreach ($data as $i=>$matchedColumn) {
             if ($matchedColumn['keywordsInContext'] === []) {
                 unset ($data[$i]);

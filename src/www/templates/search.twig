@@ -379,7 +379,7 @@
               let unmatchedPartPre = ""
               let unmatchedPartPost = ""
 
-              // If the unapitalized keyword is in the matched word, partition the word to be able to bolden only the part matching the keyword
+              // If the uncapitalized keyword is in the matched word, partition the word to be able to bolden only the part matching the keyword
               if (keywordIndex !== -1) {
                   matchedPart = stringContainingKeyword.substring(keywordIndex, keywordIndex + keywordLen)
                   unmatchedPartPre =  stringContainingKeyword.substring(0, keywordIndex)

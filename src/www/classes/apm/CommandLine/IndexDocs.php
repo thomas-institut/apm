@@ -61,7 +61,7 @@ class IndexDocs extends CommandLineUtility {
             $this->client->indices()->delete([
                 'index' => $this->indexName
             ]);
-            print("Existing index was deleted!");
+            print("Existing index *$this->indexName* was deleted!\n");
         };
 
        $this->client->indices()->create([
@@ -80,6 +80,10 @@ class IndexDocs extends CommandLineUtility {
 
         // Ascending ID for OpenSearch entries
         $id = 0;
+
+        // Run SparkNLP
+        // exec("python3 /home/lukas/Lemmatization/run_spark.py", $output);
+        // echo ($output);
 
         // Iterate over all docIDs
         foreach ($docList as $docID) {
@@ -109,10 +113,17 @@ class IndexDocs extends CommandLineUtility {
                     $transcript = $this->getPlainTextFromElements($elements);
                     $transcriber = $versions[0]['author_name'];
 
+                    // Get language of current column (document) - IS IT OK, THAT THE SEQ-ARGUMENT IS ALWAYS 1?
+                    $lang = $this->dm->getPageInfoByDocSeq($docID, 1)['lang'];
+
                     // Add columnData to the OpenSearch index with a unique ID
                     $id = $id + 1;
-                    $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript);
-                    print("$id: Doc $docID ($title) page $page col $col\n");
+
+                    // IF-CLAUSE ONLY FOR TESTING
+                    if ($lang == 'la') {
+                        $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang);
+                        print("$id: Doc $docID ($title) page $page col $col lang $lang\n");
+                    }
                 }
             }
         }
@@ -151,13 +162,34 @@ class IndexDocs extends CommandLineUtility {
     }
 
     // Function to add pages to the OpenSearch index
-    private function indexCol ($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript): bool
+    private function indexCol ($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang): bool
     {
 
-        // Tokenization
-        $transcript_clean = str_replace("\n", " ", $transcript);
-        $transcript_clean = str_replace("- ", "", $transcript_clean);
-        $transcript_tokens = explode(" ", $transcript_clean);
+        // CLTK Tokenization and Lemmatization (Latin)
+        if ($lang == 'la') {
+            $transcript_clean = str_replace("\n", " ", $transcript);
+            $transcript_clean = str_replace("- ", "", $transcript_clean);
+            echo ("Analyzing latin transcript with CLTK in Python...\n");
+            exec("python3 /home/lukas/Lemmatization/cltk_lemmatize_la.py $transcript_clean", $output);
+            $transcript_tokens = $output[2];
+            $transcript_lemmas = $output[3];
+        }
+        else {
+            $transcript_clean = str_replace("\n", " ", $transcript);
+            $transcript_clean = str_replace("- ", "", $transcript_clean);
+            $transcript_tokens = explode(" ", $transcript_clean);
+            $transcript_lemmas = [];
+        }
+        
+        // Spark NLP Tokenization and Lemmatization
+        // exec("python3 /home/lukas/Lemmatization/lemmatize.py $lang $transcript", $output, $retval);
+        // echo "Rückgabe mit Status $retval und Ausgabe:\n";
+        // print_r($output);
+
+        // PHP Tokenization
+        // $transcript_clean = str_replace("\n", " ", $transcript);
+        // $transcript_clean = str_replace("- ", "", $transcript_clean);
+        // $transcript_tokens = explode(" ", $transcript_clean);
 
         // Replace $transcript with $transcript_tokens below
 
@@ -172,7 +204,9 @@ class IndexDocs extends CommandLineUtility {
                 'pageID' => $pageID,
                 'docID' => $docID,
                 'transcript' => $transcript,
-                'transcript_tokens' => $transcript_tokens
+                'transcript_tokens' => $transcript_tokens,
+                'transcript_lemmas' => $transcript_lemmas
+
             ]
         ]);
 

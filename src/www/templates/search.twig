@@ -402,23 +402,25 @@
         // Bolden other keywords, if there is more than one in the original search
         for (i=1; i<keywords.length; i++) {
 
-          // Get keyword itself, length and position of keyword in the text with the boldened first keyword
-          let keyword = keywords[i]
-          let keywordLen = keyword.length
-          let keywordPos = textWithBoldKeyword.indexOf (keyword)
+          let prevIndex = 0
 
-          // If the actual keyword in lower-case is not in the text, get the upper-case keyword and its position
-          if (keywordPos === -1) {
-            keyword = keyword.replace(/^\w/, (c) => c.toUpperCase())
-            keywordPos = textWithBoldKeyword.indexOf (keyword)
-          }
+            // Get keyword itself, length and position of keyword in the text with the boldened first keyword
+            let keyword = keywords[i]
+            let keywordLen = keyword.length
+            let keywordPos = textWithBoldKeyword.indexOf(keyword, prevIndex)
 
-          // Get preceeding and succeeding characters of the actual keyword from textWithBoldKeyword
-          let precWords = textWithBoldKeyword.slice(0, keywordPos)
-          let succWords = textWithBoldKeyword.slice(keywordPos+keywordLen)
+            // If the actual keyword in lower-case is not in the text, get the upper-case keyword and its position
+            if (keywordPos === -1) {
+              keyword = keyword.replace(/^\w/, (c) => c.toUpperCase())
+              keywordPos = textWithBoldKeyword.indexOf(keyword)
+            }
 
-          // Concatenate precWords, the boldened keyword and the succWords
-          textWithBoldKeyword = precWords + keyword.bold() + succWords
+            // Get preceeding and succeeding characters of the actual keyword from textWithBoldKeyword
+            let precWords = textWithBoldKeyword.slice(0, keywordPos)
+            let succWords = textWithBoldKeyword.slice(keywordPos + keywordLen)
+
+            // Concatenate precWords, the boldened keyword and the succWords
+            textWithBoldKeyword = precWords + keyword.bold() + succWords
         }
 
         return textWithBoldKeyword

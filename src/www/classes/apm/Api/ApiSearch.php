@@ -277,6 +277,8 @@ class ApiSearch extends ApiController
                 $transcript = $query['hits']['hits'][$i]['_source']['transcript'];
                 $docID = $query['hits']['hits'][$i]['_source']['docID'];
                 $pageID = $query['hits']['hits'][$i]['_id'];
+                $tokens = $query['hits']['hits'][$i]['_source']['transcript_tokens'];
+                $lemmata = $query['hits']['hits'][$i]['_source']['transcript_lemmata'];
 
                 // Make a list of words out of the transcript, which is used in following functions
                 // Therefore every line break in the transcript has to be replaced by a blank, hyphened words disappear
@@ -284,7 +286,6 @@ class ApiSearch extends ApiController
                 // $cleanTranscript = str_replace("\n", " ", $transcript);
                 // $cleanTranscript = str_replace("- ", "", $cleanTranscript);
                 // $tokens = explode(" ", $cleanTranscript);
-                $tokens = $query['hits']['hits'][$i]['_source']['transcript_tokens'];
 
                 // Get all lower-case and all upper-case keyword positions in the current column (measured in words)
                 $keywordPositionsLC = $this->getPositionsOfKeyword($tokens, $keywords[0], $queryAlg);
@@ -336,6 +337,7 @@ class ApiSearch extends ApiController
                         'docID' => $docID,
                         'transcript' => $transcript,
                         'transcript_tokens' => $tokens,
+                        'transcript_lemmata' => $lemmata,
                         'keywords' => $keywords,
                         'keywordFreq' => $keywordFreq,
                         'keywordsInContext' => $keywordsInContext,
@@ -451,6 +453,12 @@ class ApiSearch extends ApiController
         for ($i=0; ($i<$cSize) and ($i<$numSucWords); $i++) {
             $keywordInContext[] = $sucWords[$i];
         }
+
+        // Remove blanks before punctuation
+        /*$keywordInContext = str_replace(" .", ".", $keywordInContext);
+        $keywordInContext = str_replace(" ,", ",", $keywordInContext);
+        $keywordInContext = str_replace(" [ ", "[", $keywordInContext);
+        $keywordInContext = str_replace(" ] ", "]", $keywordInContext);*/
 
         return [$keywordInContext, $keywordPosInContext];
     }

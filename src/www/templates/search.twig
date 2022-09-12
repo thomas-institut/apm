@@ -248,6 +248,7 @@
 
           for (let j = 0; j < keywordFreq; j++) {
             keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keywords)
+            keywordsInContextString = removeBlanksAroundPunctuation(keywordsInContextString)
 
             // Fill table with results
             resultsTableB.empty()
@@ -297,6 +298,7 @@
             for (let j = 0; j < keywordFreq; j++) {
 
               keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keywords)
+              keywordsInContextString = removeBlanksAroundPunctuation(keywordsInContextString)
 
               // Fill table with results
               if (title === precTitle) {
@@ -425,6 +427,16 @@
 
         return textWithBoldKeyword
       }
+
+      function removeBlanksAroundPunctuation (text) {
+        text = text.replaceAll(" .", ".")
+        text = text.replaceAll(" ,", ",")
+        text = text.replaceAll("[ ", "[")
+        text = text.replaceAll(" ]", "]")
+
+        return text
+      }
+
     </script>
 {%  endblock %}
 

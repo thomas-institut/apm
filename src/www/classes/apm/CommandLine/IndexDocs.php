@@ -75,6 +75,9 @@ class IndexDocs extends CommandLineUtility {
             ]
         ]);
 
+        print("New index *$this->indexName* was created!\n");
+
+
         // Get a list of all docIDs in the sql-database
         $docList = $this->dm->getDocIdList('title');
 
@@ -84,6 +87,8 @@ class IndexDocs extends CommandLineUtility {
         // Run SparkNLP
         // exec("python3 /home/lukas/Lemmatization/run_spark.py", $output);
         // echo ($output);
+
+        print("Start indexing...\n");
 
         // Iterate over all docIDs
         foreach ($docList as $docID) {
@@ -95,6 +100,7 @@ class IndexDocs extends CommandLineUtility {
             $transPages = $this->dm->getTranscribedPageListByDocId($docID);
 
             // Iterate over transcribed pages
+
             foreach ($transPages as $page) {
 
                 // Get pageID and number of columns of the page
@@ -120,10 +126,8 @@ class IndexDocs extends CommandLineUtility {
                     $id = $id + 1;
 
                     // IF-CLAUSE ONLY FOR TESTING
-                    if ($lang == 'la') {
-                        $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang);
-                        print("$id: Doc $docID ($title) page $page col $col lang $lang\n");
-                    }
+                    $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang);
+                    print("$id: Doc $docID ($title) page $page col $col lang $lang\n");
                 }
             }
         }
@@ -165,33 +169,21 @@ class IndexDocs extends CommandLineUtility {
     private function indexCol ($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang): bool
     {
 
-        // CLTK Tokenization and Lemmatization (Latin)
+        // Simplemma Tokenization and Lemmatization (Latin)
         if ($lang == 'la') {
             $transcript_clean = str_replace("\n", " ", $transcript);
             $transcript_clean = str_replace("- ", "", $transcript_clean);
-            echo ("Analyzing latin transcript with CLTK in Python...\n");
-            exec("python3 /home/lukas/Lemmatization/cltk_lemmatize_la.py $transcript_clean", $output);
-            $transcript_tokens = $output[2];
-            $transcript_lemmas = $output[3];
+            echo ("Analyzing latin transcript with Simplemma in Python...\n");
+            exec("python3 /home/lukas/Lemmatization/simplemma_lemmatize_la.py $transcript_clean", $output);
+            $transcript_tokens = explode(" ", $output[0]);
+            $transcript_lemmata = explode(" ", $output[1]);
         }
         else {
             $transcript_clean = str_replace("\n", " ", $transcript);
             $transcript_clean = str_replace("- ", "", $transcript_clean);
             $transcript_tokens = explode(" ", $transcript_clean);
-            $transcript_lemmas = [];
+            $transcript_lemmata = [];
         }
-        
-        // Spark NLP Tokenization and Lemmatization
-        // exec("python3 /home/lukas/Lemmatization/lemmatize.py $lang $transcript", $output, $retval);
-        // echo "Rückgabe mit Status $retval und Ausgabe:\n";
-        // print_r($output);
-
-        // PHP Tokenization
-        // $transcript_clean = str_replace("\n", " ", $transcript);
-        // $transcript_clean = str_replace("- ", "", $transcript_clean);
-        // $transcript_tokens = explode(" ", $transcript_clean);
-
-        // Replace $transcript with $transcript_tokens below
 
         $this->client->create([
             'index' => $this->indexName,
@@ -205,7 +197,7 @@ class IndexDocs extends CommandLineUtility {
                 'docID' => $docID,
                 'transcript' => $transcript,
                 'transcript_tokens' => $transcript_tokens,
-                'transcript_lemmas' => $transcript_lemmas
+                'transcript_lemmata' => $transcript_lemmata
 
             ]
         ]);

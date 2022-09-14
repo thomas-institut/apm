@@ -47,16 +47,30 @@ class ApiSearch extends ApiController
         }
 
         // Explode all keywords inside the search string to an array – get the main keyword
-        $keywords = explode(" ", $searchString);
-        $numKeywords = count($keywords);
-        $mainKeyword = $keywords[0];
+        // $keywords = explode(" ", $searchString);
 
-        // Choose query algorithm for OpenSearch-Query, depending on the length of the keyword
-        $queryAlg=$this->chooseQueryAlg($mainKeyword);
+        // Lemmatize keywords
+        exec("python3 /home/lukas/Lemmatization/Lemmatize_la_transcript.py $searchString", $output);
+        $keywords = explode(" ", $output[0]);
+        $keywordsLemmata = explode(" ", $output[1]);
+
+        $numKeywords = count($keywords);
+
+        $lemmatize = false;
+        if ($lemmatize) {
+            $mainKeyword = $keywordsLemmata[0];
+            $queryAlg = 'match';
+        }
+        else {
+            $mainKeyword = $keywords[0];
+            // Choose query algorithm for OpenSearch-Query, depending on the length of the keyword
+            $queryAlg=$this->chooseQueryAlg($mainKeyword);
+
+        }
 
         // Query index
         try {
-            $query = $this->queryIndex($client, $indexName, $docName, $transcriber, $mainKeyword, $queryAlg);
+            $query = $this->queryIndex($client, $indexName, $docName, $transcriber, $mainKeyword, $queryAlg, $lemmatize);
         } catch (\Exception $e) {
             $status = "Opensearch query problem";
             
@@ -72,7 +86,7 @@ class ApiSearch extends ApiController
         }
 
         // Get all information about the matches
-        $data = $this->getInfoAboutMatches($query, $keywords, $queryAlg, $cSize);
+        $data = $this->getInfoAboutMatches($query, $keywords, $keywordsLemmata, $queryAlg, $cSize, $lemmatize);
 
         // If there is more than one keyword, extract all columns, which do match all the keywords
         if ($numKeywords !== 1) {
@@ -142,7 +156,14 @@ class ApiSearch extends ApiController
     }
 
     // Function to query a given OpenSearch-index
-    private function queryIndex ($client, $indexName, $docName, $transcriber, $keyword, $queryAlg) {
+    private function queryIndex ($client, $indexName, $docName, $transcriber, $keyword, $queryAlg, $lemmatize) {
+
+        if ($lemmatize) {
+            $searchArea = 'transcript_lemmata';
+        }
+        else {
+            $searchArea = 'transcript_tokens';
+        }
 
         // Search in all indexed columns
         if ($docName === "" and $transcriber === "") {
@@ -153,7 +174,7 @@ class ApiSearch extends ApiController
                     'size' => 20000,
                     'query' => [
                         $queryAlg => [
-                            'transcript_tokens' => [
+                            $searchArea => [
                                 "query" => $keyword
                             ]
                         ]
@@ -180,7 +201,7 @@ class ApiSearch extends ApiController
                             ],
                             'must' => [
                                 $queryAlg => [
-                                    'transcript_tokens' => [
+                                    $searchArea => [
                                         "query" => $keyword
                                     ]
                                 ]
@@ -208,7 +229,7 @@ class ApiSearch extends ApiController
                             ],
                             'must' => [
                                 $queryAlg => [
-                                    'transcript_tokens' => [
+                                    $searchArea => [
                                         "query" => $keyword
                                     ]
                                 ]
@@ -244,7 +265,7 @@ class ApiSearch extends ApiController
                             "minimum_should_match" => 1,
                             'must' => [
                                 $queryAlg => [
-                                    'transcript_tokens' => [
+                                    $searchArea => [
                                         "query" => $keyword
                                     ]
                                 ]
@@ -259,7 +280,7 @@ class ApiSearch extends ApiController
     }
 
     // Get all information about matches, specified for a single document or all documents
-    private function getInfoAboutMatches ($query, $keywords, $queryAlg, $cSize) {
+    private function getInfoAboutMatches ($query, $keywords, $keywordsLemmata, $queryAlg, $cSize, $lemmatize) {
 
         $data = [];
         $numMatchedColumns = $query['hits']['total']['value'];
@@ -288,8 +309,14 @@ class ApiSearch extends ApiController
                 // $tokens = explode(" ", $cleanTranscript);
 
                 // Get all lower-case and all upper-case keyword positions in the current column (measured in words)
-                $keywordPositionsLC = $this->getPositionsOfKeyword($tokens, $keywords[0], $queryAlg);
-                $keywordPositionsUC = $this->getPositionsOfKeyword($tokens, ucfirst($keywords[0]), $queryAlg);
+                if ($lemmatize) {
+                    $keywordPositionsLC = $this->getPositionsOfKeyword($lemmata, $keywordsLemmata[0], $queryAlg);
+                    $keywordPositionsUC = $this->getPositionsOfKeyword($lemmata, ucfirst($keywordsLemmata[0]), $queryAlg);
+                }
+                else {
+                    $keywordPositionsLC = $this->getPositionsOfKeyword($tokens, $keywords[0], $queryAlg);
+                    $keywordPositionsUC = $this->getPositionsOfKeyword($tokens, ucfirst($keywords[0]), $queryAlg);
+                }
 
                 // Sort the keywordPositions to have them in ascending order like they appear in the manuscript –
                 // this, of course, is only effective if there is more than one occurence of the keyword in the column
@@ -311,11 +338,13 @@ class ApiSearch extends ApiController
                 // and append it to the keywordsInContext-array
                 $keywordsInContext = [];
                 $keywordPosInContext = [];
+                $keywordsUnlemmatized = [];
 
                 foreach ($keywordPositions as $keywordPos) {
                     $keywordInContext = $this->getContextOfKeyword($tokens, $keywordPos, $cSize);
                     $keywordsInContext[] = $keywordInContext[0];
                     $keywordPosInContext[] = $keywordInContext[1];
+                    $keywordsUnlemmatized[] = $keywordInContext[2];
                 }
 
                 // Add all information about the matched column to the matches array, which will become an array of arrays –
@@ -339,9 +368,12 @@ class ApiSearch extends ApiController
                         'transcript_tokens' => $tokens,
                         'transcript_lemmata' => $lemmata,
                         'keywords' => $keywords,
+                        'keywords_lemmata' => $keywordsLemmata,
+                        'keywords_unlemmatized' => $keywordsUnlemmatized,
                         'keywordFreq' => $keywordFreq,
                         'keywordsInContext' => $keywordsInContext,
-                        'keywordPosInContext' => $keywordPosInContext
+                        'keywordPosInContext' => $keywordPosInContext,
+                        'lemmatize' => $lemmatize
                     ];
                 }
             }
@@ -440,7 +472,8 @@ class ApiSearch extends ApiController
 
         // Get the keyword at the given keywordPosition into an array and use this array in the next step to add the context to it
         // Declare variable, which holds the keyword position relative to the total number of words in the keywordInContext-array
-        $keywordInContext = [$tokens[$keywordPos]];
+        $keywordUnlemmatized = $tokens[$keywordPos];
+        $keywordInContext = [$keywordUnlemmatized];
         $keywordPosInContext = 0;
 
         // Add as many preceding words to the keywordInContext-array, as the total number of preceding words and the desired context size allows
@@ -460,7 +493,7 @@ class ApiSearch extends ApiController
         $keywordInContext = str_replace(" [ ", "[", $keywordInContext);
         $keywordInContext = str_replace(" ] ", "]", $keywordInContext);*/
 
-        return [$keywordInContext, $keywordPosInContext];
+        return [$keywordInContext, $keywordPosInContext, $keywordUnlemmatized];
     }
 
     // Function to get a full list of i. e. titles or transcribers values in the index – i. e. set the $category argument to 'title'

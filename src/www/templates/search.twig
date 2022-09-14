@@ -236,7 +236,14 @@
           let keywordPosInContext = data[0]['keywordPosInContext']
           let keywordsInContext = data[0]['keywordsInContext']
           let keywordFreq = data[0]['keywordFreq']
-          let keywords = data[0]['keywords']
+
+          if (data[0]['lemmatize']) {
+            var keywords = data[0]['keywords_unlemmatized']
+          }
+          else {
+            var keywords = data[0]['keywords']
+          }
+
           let docID = data[0]['docID']
 
           // Get link for matched column
@@ -282,7 +289,14 @@
             let page = data[i]['page']
             let column = data[i]['column']
             let transcriber = data[i]['transcriber']
-            let keywords = data[i]['keywords']
+
+            if (data[0]['lemmatize']) {
+              var keywords = data[i]['keywords_unlemmatized']
+            }
+            else {
+              var keywords = data[i]['keywords']
+            }
+
             let keywordPosInContext = data[i]['keywordPosInContext']
             let keywordsInContext = data[i]['keywordsInContext']
             let keywordFreq = data[i]['keywordFreq']

@@ -174,7 +174,7 @@ class IndexDocs extends CommandLineUtility {
             $transcript_clean = str_replace("\n", " ", $transcript);
             $transcript_clean = str_replace("- ", "", $transcript_clean);
             echo ("Analyzing latin transcript with Simplemma in Python...\n");
-            exec("python3 /home/lukas/Lemmatization/simplemma_lemmatize_la.py $transcript_clean", $output);
+            exec("python3 /home/lukas/Lemmatization/Lemmatize_la_transcript.py $transcript_clean", $output);
             $transcript_tokens = explode(" ", $output[0]);
             $transcript_lemmata = explode(" ", $output[1]);
         }

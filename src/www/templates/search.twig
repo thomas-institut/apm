@@ -11,6 +11,7 @@
         let transcriptBox = $("#transcriptBox")
         let transcriberBox = $("#transcriberBox")
         let radiusSlider = $("#radiusSlider")
+        let lemmatizeBox = $("#lemmatize")
 
         // Key-Up functions for all boxes
         keywordBox.on("keyup", delay(function () {
@@ -52,6 +53,10 @@
         }}, 50))
 
         radiusSlider.on("change", () => {
+          search()
+        })
+
+        lemmatizeBox.on("change", () => {
           search()
         })
       })
@@ -139,18 +144,20 @@
         let transcriptBox = $("#transcriptBox")
         let transcriberBox = $("#transcriberBox")
         let radiusSlider = $("#radiusSlider")
+        let lemmatizeBox = $("#lemmatize")
         let spinner = $("#spinner")
 
         let searchText = keywordBox.val()
         let title = transcriptBox.val();
         let transcriber = transcriberBox.val();
         let radius = radiusSlider.val()
+        let lemmatize = lemmatizeBox.prop('checked')
 
         // Signal search process
         spinner.html(`<div class="spinner-border" role="status"></div>`)
 
         // Send all user input to ApiSearch (via routing in index.php) and print returned matches
-        $.post("{{ url_for('search.keyword') }}", { searchText: searchText, radius: radius, title: title, transcriber: transcriber })
+        $.post("{{ url_for('search.keyword') }}", { searchText: searchText, radius: radius, title: title, transcriber: transcriber, lemmatize: lemmatize })
           .done((apiResponse) => {
 
             // Catch errors
@@ -457,7 +464,7 @@
 {% block content %}
     <h1> Search </h1>
 <table class="dataTable" id="searchTable">
-    <tr><td><b>Keywords</b></td><td><b>Transcript</b></td><td><b>Transcriber</b></td><td><b>Radius</b></td></tr>
+    <tr><td><b>Keywords</b></td><td><b>Transcript</b></td><td><b>Transcriber</b></td><td><b>Radius</b></td><td align="center"><b>Lemmatization</b></td></tr>
 
     <tr>
         <td>
@@ -488,6 +495,11 @@
                 <input type="range" id="radiusSlider" name="radiusSlider" min="3" max="40" value="6">
             </form>
         </td>
+      <td align="center">
+        <div>
+          <input type="checkbox" id="lemmatize" name="lemmatize">
+        </div>
+      </td>
     </tr>
 </table>
 

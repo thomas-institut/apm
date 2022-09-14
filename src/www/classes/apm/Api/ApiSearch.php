@@ -34,6 +34,7 @@ class ApiSearch extends ApiController
         $cSize = $_POST['radius'];
         $docName = $_POST['title'];
         $transcriber = $_POST['transcriber'];
+        $lemmatize = filter_var($_POST['lemmatize'], FILTER_VALIDATE_BOOLEAN);
 
         // Remove additional blanks before, after or in between keywords – necessary for a clean search and position/context-handling, also in js (?)
         $searchString = $this->removeBlanks($searchString);
@@ -56,7 +57,7 @@ class ApiSearch extends ApiController
 
         $numKeywords = count($keywords);
 
-        $lemmatize = false;
+        // $lemmatize = true;
         if ($lemmatize) {
             $mainKeyword = $keywordsLemmata[0];
             $queryAlg = 'match';
@@ -65,7 +66,6 @@ class ApiSearch extends ApiController
             $mainKeyword = $keywords[0];
             // Choose query algorithm for OpenSearch-Query, depending on the length of the keyword
             $queryAlg=$this->chooseQueryAlg($mainKeyword);
-
         }
 
         // Query index

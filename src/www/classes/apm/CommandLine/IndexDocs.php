@@ -84,15 +84,11 @@ class IndexDocs extends CommandLineUtility {
         // Ascending ID for OpenSearch entries
         $id = 0;
 
-        // Run SparkNLP
-        // exec("python3 /home/lukas/Lemmatization/run_spark.py", $output);
-        // echo ($output);
-
         print("Start indexing...\n");
 
         // Iterate over all docIDs
         foreach ($docList as $docID) {
-            // Get title of every document
+            // Get title of every document$transcript_clean
             $docInfo = $this->dm->getDocById($docID);
             $title = ($docInfo['title']);
 
@@ -126,8 +122,10 @@ class IndexDocs extends CommandLineUtility {
                     $id = $id + 1;
 
                     // IF-CLAUSE ONLY FOR TESTING
-                    $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang);
-                    print("$id: Doc $docID ($title) page $page col $col lang $lang\n");
+                    //if ($lang === 'la') {
+                        $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang);
+                        print("$id: Doc $docID ($title) page $page col $col lang $lang\n");
+                    //}
                 }
             }
         }
@@ -172,11 +170,17 @@ class IndexDocs extends CommandLineUtility {
         // Simplemma Tokenization and Lemmatization (Latin)
         if ($lang == 'la') {
             $transcript_clean = str_replace("\n", " ", $transcript);
-            $transcript_clean = str_replace("- ", "", $transcript_clean);
-            echo ("Analyzing latin transcript with Simplemma in Python...\n");
+            // $transcript_clean = str_replace("- ", "", $transcript_clean);
+            echo ("Lemmatizing in Python...");
             exec("python3 /home/lukas/Lemmatization/Lemmatize_la_transcript.py $transcript_clean", $output);
-            $transcript_tokens = explode(" ", $output[0]);
-            $transcript_lemmata = explode(" ", $output[1]);
+            $transcript_tokens = explode("#", $output[0]);
+            $transcript_lemmata = explode("#", $output[1]);
+            if (count($transcript_tokens) !== count($transcript_lemmata)) {
+                print("Error! Array of tokens and lemmata do not have the same length!\n");
+            }
+            else {
+                print_r("...finished!\n");
+            }
         }
         else {
             $transcript_clean = str_replace("\n", " ", $transcript);
@@ -198,7 +202,6 @@ class IndexDocs extends CommandLineUtility {
                 'transcript' => $transcript,
                 'transcript_tokens' => $transcript_tokens,
                 'transcript_lemmata' => $transcript_lemmata
-
             ]
         ]);
 

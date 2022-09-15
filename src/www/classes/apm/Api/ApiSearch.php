@@ -52,9 +52,8 @@ class ApiSearch extends ApiController
 
         // Lemmatize keywords
         exec("python3 /home/lukas/Lemmatization/Lemmatize_la_transcript.py $searchString", $output);
-        $keywords = explode(" ", $output[0]);
-        $keywordsLemmata = explode(" ", $output[1]);
-
+        $keywords = explode("#", $output[0]);
+        $keywordsLemmata = explode("#", $output[1]);
         $numKeywords = count($keywords);
 
         // $lemmatize = true;
@@ -91,7 +90,7 @@ class ApiSearch extends ApiController
         // If there is more than one keyword, extract all columns, which do match all the keywords
         if ($numKeywords !== 1) {
             for ($i=1; $i<$numKeywords; $i++) {
-                $data = $this->extractMultiMatchColumns($data, $keywords[$i]);
+                $data = $this->extractMultiMatchColumns($data, $keywords[$i], $keywordsLemmata[$i], $lemmatize);
             }
         }
 
@@ -312,11 +311,11 @@ class ApiSearch extends ApiController
                 if ($lemmatize) {
                     $keywordPositionsLC = $this->getPositionsOfKeyword($lemmata, $keywordsLemmata[0], $queryAlg);
                     $keywordPositionsUC = $this->getPositionsOfKeyword($lemmata, ucfirst($keywordsLemmata[0]), $queryAlg);
-                }
-                else {
+                } else {
                     $keywordPositionsLC = $this->getPositionsOfKeyword($tokens, $keywords[0], $queryAlg);
                     $keywordPositionsUC = $this->getPositionsOfKeyword($tokens, ucfirst($keywords[0]), $queryAlg);
                 }
+
 
                 // Sort the keywordPositions to have them in ascending order like they appear in the manuscript –
                 // this, of course, is only effective if there is more than one occurence of the keyword in the column
@@ -337,12 +336,15 @@ class ApiSearch extends ApiController
                 // Get surrounding context of every occurence of the keyword in the matched column as a string
                 // and append it to the keywordsInContext-array
                 $keywordsInContext = [];
+                $lemmataInContext = [];
                 $keywordPosInContext = [];
                 $keywordsUnlemmatized = [];
 
                 foreach ($keywordPositions as $keywordPos) {
                     $keywordInContext = $this->getContextOfKeyword($tokens, $keywordPos, $cSize);
+                    $lemmaInContext = $this->getContextOfKeyword($lemmata, $keywordPos, $cSize);
                     $keywordsInContext[] = $keywordInContext[0];
+                    $lemmataInContext[] = $lemmaInContext[0];
                     $keywordPosInContext[] = $keywordInContext[1];
                     $keywordsUnlemmatized[] = $keywordInContext[2];
                 }
@@ -372,6 +374,7 @@ class ApiSearch extends ApiController
                         'keywords_unlemmatized' => $keywordsUnlemmatized,
                         'keywordFreq' => $keywordFreq,
                         'keywordsInContext' => $keywordsInContext,
+                        'lemmataInContext' => $lemmataInContext,
                         'keywordPosInContext' => $keywordPosInContext,
                         'lemmatize' => $lemmatize
                     ];
@@ -387,7 +390,7 @@ class ApiSearch extends ApiController
     }
 
     // Function to get results with match of multiple keywords
-    private function extractMultiMatchColumns ($data, $keyword) {
+    private function extractMultiMatchColumns ($data, $keyword, $lemma, $lemmatize) {
 
         // First, remove all keywordsInContext from $data, which do not match the keyword
         foreach ($data as $i=>$matchedColumn) {
@@ -395,8 +398,16 @@ class ApiSearch extends ApiController
 
                 // Make a string, which stores full context in it – needed for checking for keyword
                 $contextString = "";
-                foreach ($keywordInContext as $string) {
+                foreach ($keywordInContext as $k=>$string) {
                     $contextString = $contextString . " " . $string;
+
+                    // Add new keywordPos to keyPosInContext-array, if one of the additonal keywords matches
+                    if (strpos($string, $keyword) !== false) {
+                        $data[$i]['keywordPosInContext'][] = $k;
+                        $data[$i]['keywords_unlemmatized'][] = $keywordInContext[$k];
+                        $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] + 1;
+                    }
+
                 }
 
                 // If the keyword is not in the contextString, remove keywordsInContext, keywordPosInContext from $data
@@ -405,6 +416,9 @@ class ApiSearch extends ApiController
                     unset($data[$i]['keywordsInContext'][$j]);
                     unset($data[$i]['keywordPosInContext'][$j]);
                     $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] - 1;
+                }
+                else {
+
                 }
             }
         }
@@ -436,12 +450,13 @@ class ApiSearch extends ApiController
         for ($i=0; $i<count($tokens); $i++) {
 
             // First, clean the word by erasing some special characters
-            $cleanWord = str_replace( array( '.', ',', ';', ':', "'"), '', $tokens[$i]);
+            // $cleanWord = str_replace( array( '.', ',', ';', ':', "'"), '', $tokens[$i]);
+            $token = $tokens[$i];
 
             // If query algorithm is phrase match, add position of a word to the keywordPositions-array,
             // if it contains the searched keyword as a substring
             if ($queryAlg == 'match_phrase_prefix') {
-                if (substr_count($cleanWord, $keyword) !== 0) {
+                if (substr_count($token, $keyword) !== 0) {
                     $keywordPositions[] = $i;
                 }
             }
@@ -449,7 +464,7 @@ class ApiSearch extends ApiController
             // If query algoritm is match, add position of a word to the keywordPositions-array,
             // if word in transcript is identical to the searched keyword – this is the place, where words with hyphens won't match!
             elseif ($queryAlg = 'match') {
-                if ($cleanWord == $keyword) {
+                if ($token == $keyword) {
                     $keywordPositions[] = $i;
                 }
             }

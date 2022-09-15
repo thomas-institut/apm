@@ -243,13 +243,9 @@
           let keywordPosInContext = data[0]['keywordPosInContext']
           let keywordsInContext = data[0]['keywordsInContext']
           let keywordFreq = data[0]['keywordFreq']
+          let keywords = data[0]['keywords_unlemmatized']
+          let searchStrings = data[0]['keywords']
 
-          if (data[0]['lemmatize']) {
-            var keywords = data[0]['keywords_unlemmatized']
-          }
-          else {
-            var keywords = data[0]['keywords']
-          }
 
           let docID = data[0]['docID']
 
@@ -260,8 +256,8 @@
           // Convert the keywords in their context into a single string and highlight the keywords
           let keywordsInContextString = ""
 
-          for (let j = 0; j < keywordFreq; j++) {
-            keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keywords)
+          for (let j = 0; j < keywordsInContext.length; j++) {
+            keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keywords[j], searchStrings)
             keywordsInContextString = removeBlanksAroundPunctuation(keywordsInContextString)
 
             // Fill table with results
@@ -296,18 +292,13 @@
             let page = data[i]['page']
             let column = data[i]['column']
             let transcriber = data[i]['transcriber']
-
-            if (data[0]['lemmatize']) {
-              var keywords = data[i]['keywords_unlemmatized']
-            }
-            else {
-              var keywords = data[i]['keywords']
-            }
-
+            let keywords = data[i]['keywords_unlemmatized']
             let keywordPosInContext = data[i]['keywordPosInContext']
             let keywordsInContext = data[i]['keywordsInContext']
             let keywordFreq = data[i]['keywordFreq']
             let docID = data[i]['docID']
+            let searchStrings = data[i]['keywords']
+
 
             // Get link for matched column
             let url = urlGenerator.sitePageView(docID, page, column)
@@ -316,9 +307,9 @@
             // Convert all occurrences of the keyword in their contexts into a single string and highlight the keywords
             let keywordsInContextString = ""
 
-            for (let j = 0; j < keywordFreq; j++) {
+            for (let j = 0; j < keywordsInContext.length; j++) {
 
-              keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keywords)
+              keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keywords[j], searchStrings, keywords)
               keywordsInContextString = removeBlanksAroundPunctuation(keywordsInContextString)
 
               // Fill table with results
@@ -359,25 +350,23 @@
       }
 
       // Function to highlight the searched keyword in its context
-      function makeKeywordBold (keywordInContext, keywordPos, keywords) {
+      function makeKeywordBold (keywordInContext, keywordPos, keyword, searchStrings, keywords) {
 
         // Variable holding text with highlighted keyword in it and variable holding the capitalized keyword in it (used above)
         let textWithBoldKeyword = ""
-        let keyword = keywords[0]
 
         // Get capitalized keyword and length of keyword for correct boldening in the next steps
         let keywordCap = keyword.replace(/^\w/, (c) => c.toUpperCase())
-        let keywordLen = keyword.length
 
         // Iterate over all words
         for (i=0; i<keywordInContext.length; i++) {
 
           // Get current word of keywordInContext-array
-          let stringContainingKeyword = keywordInContext[i]
+          let token = keywordInContext[i]
 
           // If current index of array is not identical to position of keyword, append word at index to textWithBoldKeyword
-          if (i !== keywordPos) {
-            textWithBoldKeyword = textWithBoldKeyword + stringContainingKeyword + " "
+          if (token !== keyword && token !== keywordCap) {
+            textWithBoldKeyword = textWithBoldKeyword + token + " "
           }
 
           // If index is identical to position of keyword, append the boldened word to textWithBoldKeyword
@@ -386,16 +375,16 @@
 
           else {
             // If matched word is identical to searched keyword, append it to textWithBoldKeyword in bold letters
-            if (stringContainingKeyword === keyword || stringContainingKeyword === keywordCap) {
-              textWithBoldKeyword = textWithBoldKeyword + stringContainingKeyword.bold() + " "
-            }
+            //if (token === keyword || token === keywordCap) {
+              textWithBoldKeyword = textWithBoldKeyword + token.bold() + " "
+           //
 
             // If matched word is not identical to searched keyword, it needs more checks
-            else {
+            /*else {
               // Get the position of the searched keyword (capitalized and uncapitalized) in the matched word
               // One of these variables will have the value -1, which means the searched keyword is not in the matched word
-              let keywordIndex = stringContainingKeyword.indexOf(keyword)
-              let keywordCapIndex = stringContainingKeyword.indexOf(keywordCap)
+              let keywordIndex = token.indexOf(keyword)
+              let keywordCapIndex = token.indexOf(keywordCap)
 
               // Variables for the partitions of the matched word
               let matchedPart = ""
@@ -404,31 +393,31 @@
 
               // If the uncapitalized keyword is in the matched word, partition the word to be able to bolden only the part matching the keyword
               if (keywordIndex !== -1) {
-                  matchedPart = stringContainingKeyword.substring(keywordIndex, keywordIndex + keywordLen)
-                  unmatchedPartPre =  stringContainingKeyword.substring(0, keywordIndex)
-                  unmatchedPartPost = stringContainingKeyword.substring(keywordIndex + keywordLen)
+                  matchedPart = token.substring(keywordIndex, keywordIndex + keywordLen)
+                  unmatchedPartPre =  token.substring(0, keywordIndex)
+                  unmatchedPartPost = token.substring(keywordIndex + keywordLen)
               }
 
               // Same procedure as above, but with the capitalized keyword
               else {
-                  matchedPart = stringContainingKeyword.substring(keywordCapIndex, keywordCapIndex + keywordLen)
-                  unmatchedPartPre =  stringContainingKeyword.substring(0, keywordCapIndex)
-                  unmatchedPartPost = stringContainingKeyword.substring(keywordCapIndex + keywordLen)
+                  matchedPart = token.substring(keywordCapIndex, keywordCapIndex + keywordLen)
+                  unmatchedPartPre =  token.substring(0, keywordCapIndex)
+                  unmatchedPartPost = token.substring(keywordCapIndex + keywordLen)
               }
 
               // Append the three substrings to textWithBoldKeyword – bolden the matchedPart
               textWithBoldKeyword = textWithBoldKeyword + " " + unmatchedPartPre + matchedPart.bold() + unmatchedPartPost + " "
-            }
+            }*/
           }
         }
 
         // Bolden other keywords, if there is more than one in the original search
-        for (i=1; i<keywords.length; i++) {
+        for (i=1; i<searchStrings.length; i++) {
 
           let prevIndex = 0
 
             // Get keyword itself, length and position of keyword in the text with the boldened first keyword
-            let keyword = keywords[i]
+            let keyword = keywords[i] // DAS FUNKTIONIERT SO NICHT MEHR, DA ICH DER FUNKTION NUR EIN UNLEMMATIZED_KEYWORD ÜBERGEBE
             let keywordLen = keyword.length
             let keywordPos = textWithBoldKeyword.indexOf(keyword, prevIndex)
 

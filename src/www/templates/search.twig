@@ -212,7 +212,7 @@
 
         // Count matches
         let numMatchedColumns = data.length
-        let numMatches = results['numMatches']
+        let numMatchedPassages = results['numMatchedPassages']
         let numMatchedDocs = getNumMatchedDocs(data, numMatchedColumns)
 
         // If there are no matches, display this to the user and empty the table
@@ -224,11 +224,11 @@
         }
 
         // If there is exactly one matched column, display it with exact information
-        else if (numMatchedColumns === 1 && numMatches === 1) {
+        else if (numMatchedColumns === 1 && numMatchedPassages === 1) {
 
           // Display number of matches
           numMatchesTable
-            .html(`<tr><td>Matched Documents: &nbsp</td><td>${numMatchedDocs}</td><tr><td>Matched Passages:</td><td>${numMatches}</td>`)
+            .html(`<tr><td>Matched Documents: &nbsp</td><td>${numMatchedDocs}</td><tr><td>Matched Passages:</td><td>${numMatchedPassages}</td>`)
             .removeClass('text-warning')
 
           // Make table head
@@ -242,7 +242,6 @@
           let transcriber = data[0]['transcriber']
           let keywordPosInContext = data[0]['keywordPosInContext']
           let keywordsInContext = data[0]['keywordsInContext']
-          let keywordFreq = data[0]['keywordFreq']
           let keywords = data[0]['keywords_unlemmatized']
           let searchStrings = data[0]['keywords']
 
@@ -257,7 +256,7 @@
           let keywordsInContextString = ""
 
           for (let j = 0; j < keywordsInContext.length; j++) {
-            keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keywords[j], searchStrings)
+            keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keywords[j], searchStrings, keywords)
             keywordsInContextString = removeBlanksAroundPunctuation(keywordsInContextString)
 
             // Fill table with results
@@ -272,7 +271,7 @@
 
           // Display number of matches
           numMatchesTable
-            .html(`<tr><td>Matched Documents: &nbsp</td><td>${numMatchedDocs}</td><tr><td>Matched Passages:</td><td>${numMatches}</td>`)
+            .html(`<tr><td>Matched Documents: &nbsp</td><td>${numMatchedDocs}</td><tr><td>Matched Passages:</td><td>${numMatchedPassages}</td>`)
             .removeClass('text-warning')
 
           // Make table head
@@ -295,7 +294,6 @@
             let keywords = data[i]['keywords_unlemmatized']
             let keywordPosInContext = data[i]['keywordPosInContext']
             let keywordsInContext = data[i]['keywordsInContext']
-            let keywordFreq = data[i]['keywordFreq']
             let docID = data[i]['docID']
             let searchStrings = data[i]['keywords']
 
@@ -412,7 +410,7 @@
         }
 
         // Bolden other keywords, if there is more than one in the original search
-        for (i=1; i<searchStrings.length; i++) {
+        for (i=1; i<keywords.length; i++) {
 
           let prevIndex = 0
 

@@ -95,15 +95,15 @@ class ApiSearch extends ApiController
         }
 
         // Get total number of matches
-        $numMatches = 0;
+        $numMatchedPassages = 0;
         foreach ($data as $matchedColumn) {
-            $numMatches = $numMatches + $matchedColumn['keywordFreq'];
+            $numMatchedPassages = $numMatchedPassages + $matchedColumn['keywordFreq'];
         }
 
         // ApiResponse
         return $this->responseWithJson($response, [
             'searchString' => $searchString,
-            'numMatches' => $numMatches,
+            'numMatchedPassages' => $numMatchedPassages,
             'data' => $data,
             'serverTime' => $now,
             'status' => $status]);
@@ -401,11 +401,11 @@ class ApiSearch extends ApiController
                 foreach ($keywordInContext as $k=>$string) {
                     $contextString = $contextString . " " . $string;
 
-                    // Add new keywordPos to keyPosInContext-array, if one of the additonal keywords matches
+                    // Add new keywordPos to keyPosInContext-array, if one of the additional keywords matches
                     if (strpos($string, $keyword) !== false) {
                         $data[$i]['keywordPosInContext'][] = $k;
                         $data[$i]['keywords_unlemmatized'][] = $keywordInContext[$k];
-                        $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] + 1;
+                        // $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] + 1;
                     }
 
                 }
@@ -416,9 +416,6 @@ class ApiSearch extends ApiController
                     unset($data[$i]['keywordsInContext'][$j]);
                     unset($data[$i]['keywordPosInContext'][$j]);
                     $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] - 1;
-                }
-                else {
-
                 }
             }
         }

@@ -392,34 +392,66 @@ class ApiSearch extends ApiController
     // Function to get results with match of multiple keywords
     private function extractMultiMatchColumns ($data, $keyword, $lemma, $lemmatize) {
 
-        // First, remove all keywordsInContext from $data, which do not match the keyword
-        foreach ($data as $i=>$matchedColumn) {
-            foreach ($matchedColumn['keywordsInContext'] as $j=>$keywordInContext) {
+        if ($lemmatize) {
+            // First, remove all keywordsInContext from $data, which do not match the keyword
+            foreach ($data as $i => $matchedColumn) {
+                foreach ($matchedColumn['lemmataInContext'] as $j => $lemmataInContext) {
 
-                // Make a string, which stores full context in it – needed for checking for keyword
-                $contextString = "";
-                foreach ($keywordInContext as $k=>$string) {
-                    $contextString = $contextString . " " . $string;
+                    // Make a string, which stores full context in it – needed for checking for keyword
+                    $contextString = "";
+                    foreach ($lemmataInContext as $k => $string) {
+                        $contextString = $contextString . " " . $string;
 
-                    // Add new keywordPos to keyPosInContext-array, if one of the additional keywords matches
-                    if (strpos($string, $keyword) !== false) {
-                        $data[$i]['keywordPosInContext'][] = $k;
-                        $data[$i]['keywords_unlemmatized'][] = $keywordInContext[$k];
-                        // $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] + 1;
+                        // Add new keywordPos to keyPosInContext-array, if the additional keyword matches
+                        if (strpos($string, $lemma) !== false) {
+                            $data[$i]['keywordPosInContext'][] = $k;
+                            $data[$i]['keywords_unlemmatized'][] = $matchedColumn['keywordsInContext'][$j][$k];
+                            // $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] + 1;
+                        }
+
                     }
 
-                }
-
-                // If the keyword is not in the contextString, remove keywordsInContext, keywordPosInContext from $data
-                // Adjust the keywordFreq in $data
-                if (strpos($contextString, $keyword) === false && strpos($contextString, ucfirst($keyword)) === false) {
-                    unset($data[$i]['keywordsInContext'][$j]);
-                    unset($data[$i]['keywordPosInContext'][$j]);
-                    $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] - 1;
+                    // If the keyword is not in the contextString, remove keywordsInContext, keywordPosInContext from $data
+                    // Adjust the keywordFreq in $data
+                    if (strpos($contextString, $lemma) === false && strpos($contextString, ucfirst($keyword)) === false) {
+                        unset($data[$i]['keywordsInContext'][$j]);
+                        unset($data[$i]['lemmataInContext'][$j]);
+                        unset($data[$i]['keywordPosInContext'][$j]);
+                        $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] - 1;
+                    }
                 }
             }
         }
+        else {
+            // First, remove all keywordsInContext from $data, which do not match the keyword
+            foreach ($data as $i => $matchedColumn) {
+                foreach ($matchedColumn['keywordsInContext'] as $j => $keywordInContext) {
 
+                    // Make a string, which stores full context in it – needed for checking for keyword
+                    $contextString = "";
+                    foreach ($keywordInContext as $k => $string) {
+                        $contextString = $contextString . " " . $string;
+
+                        // Add new keywordPos to keyPosInContext-array, if the additional keyword matches
+                        if (strpos($string, $keyword) !== false) {
+                            $data[$i]['keywordPosInContext'][] = $k;
+                            unset($data[$i]['lemmataInContext'][$j]);
+                            $data[$i]['keywords_unlemmatized'][] = $keywordInContext[$k];
+                            // $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] + 1;
+                        }
+
+                    }
+
+                    // If the keyword is not in the contextString, remove keywordsInContext, keywordPosInContext from $data
+                    // Adjust the keywordFreq in $data
+                    if (strpos($contextString, $keyword) === false && strpos($contextString, ucfirst($keyword)) === false) {
+                        unset($data[$i]['keywordsInContext'][$j]);
+                        unset($data[$i]['keywordPosInContext'][$j]);
+                        $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] - 1;
+                    }
+                }
+            }
+        }
         // Second, unset all columns, which not anymore have keywordsInContext
         foreach ($data as $i=>$matchedColumn) {
             if ($matchedColumn['keywordsInContext'] === []) {

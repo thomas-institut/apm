@@ -350,51 +350,20 @@
       // Function to highlight the searched keyword in its context
       function makeKeywordBold (keywordInContext, keywordPos, searchStrings, keywords) {
 
-        // Variable holding text with highlighted keyword in it and variable holding the capitalized keyword in it (used above)
+        // Returned variable holding string with highlighted keywords in it
         let textWithBoldKeyword = ""
 
-        // Get capitalized keyword and length of keyword for correct boldening in the next steps
-        let keyword = keywords[0]
-        let keywordCap = keyword.replace(/^\w/, (c) => c.toUpperCase())
+        // Convert array to string with boldened keywords
 
-        // Iterate over all words
         for (i=0; i<keywordInContext.length; i++) {
-
           // Get current word of keywordInContext-array
           let token = keywordInContext[i]
-
-          // If current index of array is not identical to position of keyword, append word at index to textWithBoldKeyword
-          if (token !== keyword && token !== keywordCap) {
-            textWithBoldKeyword = textWithBoldKeyword + token + " "
+          // Bolden token, if it is one of the keywords
+          if (keywords.indexOf(token) !== -1) {
+            token = token.bold()
           }
-          else {
-              textWithBoldKeyword = textWithBoldKeyword + token.bold() + " "
-          }
-        }
-
-        // Bolden other keywords, if there is more than one in the original search
-        for (i=1; i<keywords.length; i++) {
-
-          // Get keyword itself, length and position of keyword in the text with the boldened first keyword
-          let keyword = keywords[i]
-          let keywordLen = keyword.length
-          let keywordPos = indexOfAll(textWithBoldKeyword, keyword)
-
-
-          // Counter for extending string for each boldened keyword
-          var boldTagCounter = 0
-
-          keywordPos.forEach(function (currentPos) {
-            // Get preceeding and succeeding characters of the actual keyword from textWithBoldKeyword
-            let precWords = textWithBoldKeyword.slice(0, currentPos+add)
-            let succWords = textWithBoldKeyword.slice(currentPos+add + keywordLen)
-
-            // Concatenate precWords, the boldened keyword and the succWords
-            textWithBoldKeyword = precWords + keyword.bold() + succWords
-
-            // Raise boldTagCOunter by 7 (because 7 characters are added to the origial string: <b></b>)
-            boldTagCounter = boldTagCounter+7
-          })
+          // Append token to returned string
+          textWithBoldKeyword = textWithBoldKeyword + token + " "
         }
 
         return textWithBoldKeyword

@@ -196,13 +196,11 @@
         let resultsTableB = $("#resultsTable tbody")
         let resultsTableH = $("#resultsTable thead")
 
-
-        // Clean tables and divs
+        // Empty tables and divs
         numMatchesTable.empty()
         resultsTableH.empty()
         resultsTableB.empty()
         errorMessage.empty()
-
 
         // Get instance of ApmUrlGenerator for creating links to matching docs
         let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
@@ -240,12 +238,9 @@
           let page = data[0]['page']
           let column = data[0]['column']
           let transcriber = data[0]['transcriber']
-          let keywordPosInContext = data[0]['keywordPosInContext']
-          let keywordsInContext = data[0]['keywordsInContext']
-          let keywords = data[0]['keywords_unlemmatized']
-          let searchStrings = data[0]['keywords']
-
-
+          let keywordsInContext = data[0]['passage_tokenized']
+          let keywords = data[0]['tokens_matched']
+          let searchStrings = data[0]['tokens_searched']
           let docID = data[0]['docID']
 
           // Get link for matched column
@@ -256,7 +251,7 @@
           let keywordsInContextString = ""
 
           for (let j = 0; j < keywordsInContext.length; j++) {
-            keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], searchStrings, keywords[j])
+            keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywords[j])
             keywordsInContextString = removeBlanksAroundPunctuation(keywordsInContextString)
 
             // Fill table with results
@@ -291,12 +286,10 @@
             let page = data[i]['page']
             let column = data[i]['column']
             let transcriber = data[i]['transcriber']
-            let keywords = data[i]['keywords_unlemmatized']
-            let keywordPosInContext = data[i]['keywordPosInContext']
-            let keywordsInContext = data[i]['keywordsInContext']
+            let keywords = data[i]['tokens_matched']
+            let keywordsInContext = data[i]['passage_tokenized']
             let docID = data[i]['docID']
-            let searchStrings = data[i]['keywords']
-
+            let searchStrings = data[i]['tokens_searched']
 
             // Get link for matched column
             let url = urlGenerator.sitePageView(docID, page, column)
@@ -307,7 +300,7 @@
 
             for (let j = 0; j < keywordsInContext.length; j++) {
 
-              keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], searchStrings, keywords[j])
+              keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywords[j])
               keywordsInContextString = removeBlanksAroundPunctuation(keywordsInContextString)
 
               // Fill table with results
@@ -348,7 +341,7 @@
       }
 
       // Function to highlight the searched keyword in its context
-      function makeKeywordBold (keywordInContext, keywordPos, searchStrings, keywords) {
+      function makeKeywordBold (keywordInContext, keywords) {
 
         // Returned variable holding string with highlighted keywords in it
         let textWithBoldKeyword = ""
@@ -365,7 +358,6 @@
           // Append token to returned string
           textWithBoldKeyword = textWithBoldKeyword + token + " "
         }
-
         return textWithBoldKeyword
       }
 

@@ -47,14 +47,11 @@ class ApiSearch extends ApiController
             return $this->responseWithJson($response, ['searchString' => $searchString,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
 
-        // Explode all keywords inside the search string to an array – get the main keyword
-        // $keywords = explode(" ", $searchString);
-
-        // Lemmatize keywords
+        // Tokenize and lemmatize searchString
         exec("python3 /home/lukas/Lemmatization/Lemmatize_la_transcript.py $searchString", $output);
-        $keywords = explode("#", $output[0]);
+        $tokens_searched = explode("#", $output[0]);
         $keywordsLemmata = explode("#", $output[1]);
-        $numKeywords = count($keywords);
+        $numKeywords = count($tokens_searched);
 
         // $lemmatize = true;
         if ($lemmatize) {
@@ -62,7 +59,7 @@ class ApiSearch extends ApiController
             $queryAlg = 'match';
         }
         else {
-            $mainKeyword = $keywords[0];
+            $mainKeyword = $tokens_searched[0];
             // Choose query algorithm for OpenSearch-Query, depending on the length of the keyword
             $queryAlg=$this->chooseQueryAlg($mainKeyword);
         }
@@ -85,27 +82,20 @@ class ApiSearch extends ApiController
         }
 
         // Get all information about the matches
-        $data = $this->getInfoAboutMatches($query, $keywords, $keywordsLemmata, $queryAlg, $cSize, $lemmatize);
+        $data = $this->getInfoAboutMatches($query, $tokens_searched, $keywordsLemmata, $queryAlg, $cSize, $lemmatize);
 
         // If there is more than one keyword, extract all columns, which do match all the keywords
         if ($numKeywords !== 1) {
             for ($i=1; $i<$numKeywords; $i++) {
-                $data = $this->extractMultiMatchColumns($data, $keywords[$i], $keywordsLemmata[$i], $lemmatize);
+                $data = $this->extractMultiMatchColumns($data, $tokens_searched[$i], $keywordsLemmata[$i], $lemmatize);
             }
         }
 
         // Get total number of matches
         $numMatchedPassages = 0;
         foreach ($data as $matchedColumn) {
-            $numMatchedPassages = $numMatchedPassages + $matchedColumn['keywordFreq'];
+            $numMatchedPassages = $numMatchedPassages + $matchedColumn['numPassages'];
         }
-
-        // Give data[keywords_unlemmatized] the structure of a set
-        /*for ($i=0; $i<count($data); $i++) {
-            for ($j = 0; $j<count($data[$i]['keywords:unlemmatized']); $j++) {
-                $data[$i]['keywords_unlemmatized'][$j] = array_unique($data[$i]['keywords_unlemmatized'][$j]);
-            }
-        }*/
 
         // ApiResponse
         return $this->responseWithJson($response, [
@@ -286,7 +276,7 @@ class ApiSearch extends ApiController
     }
 
     // Get all information about matches, specified for a single document or all documents
-    private function getInfoAboutMatches ($query, $keywords, $keywordsLemmata, $queryAlg, $cSize, $lemmatize) {
+    private function getInfoAboutMatches ($query, $tokens_searched, $keywordsLemmata, $queryAlg, $cSize, $lemmatize) {
 
         $data = [];
         $numMatchedColumns = $query['hits']['total']['value'];
@@ -304,23 +294,16 @@ class ApiSearch extends ApiController
                 $transcript = $query['hits']['hits'][$i]['_source']['transcript'];
                 $docID = $query['hits']['hits'][$i]['_source']['docID'];
                 $pageID = $query['hits']['hits'][$i]['_id'];
-                $tokens = $query['hits']['hits'][$i]['_source']['transcript_tokens'];
+                $transcript_tokenized = $query['hits']['hits'][$i]['_source']['transcript_tokens'];
                 $lemmata = $query['hits']['hits'][$i]['_source']['transcript_lemmata'];
-
-                // Make a list of words out of the transcript, which is used in following functions
-                // Therefore every line break in the transcript has to be replaced by a blank, hyphened words disappear
-                // Sometimes, I think, there are two words treated as one, but this does not disturb anything until now
-                // $cleanTranscript = str_replace("\n", " ", $transcript);
-                // $cleanTranscript = str_replace("- ", "", $cleanTranscript);
-                // $tokens = explode(" ", $cleanTranscript);
 
                 // Get all lower-case and all upper-case keyword positions in the current column (measured in words)
                 if ($lemmatize) {
                     $keywordPositionsLC = $this->getPositionsOfKeyword($lemmata, $keywordsLemmata[0], $queryAlg);
                     $keywordPositionsUC = $this->getPositionsOfKeyword($lemmata, ucfirst($keywordsLemmata[0]), $queryAlg);
                 } else {
-                    $keywordPositionsLC = $this->getPositionsOfKeyword($tokens, $keywords[0], $queryAlg);
-                    $keywordPositionsUC = $this->getPositionsOfKeyword($tokens, ucfirst($keywords[0]), $queryAlg);
+                    $keywordPositionsLC = $this->getPositionsOfKeyword($transcript_tokenized, $tokens_searched[0], $queryAlg);
+                    $keywordPositionsUC = $this->getPositionsOfKeyword($transcript_tokenized, ucfirst($tokens_searched[0]), $queryAlg);
                 }
 
 
@@ -341,19 +324,17 @@ class ApiSearch extends ApiController
                 $keywordFreq = count($keywordPositions);
 
                 // Get surrounding context of every occurrence of the keyword in the matched column as a string
-                // and append it to the keywordsInContext-array
-                $keywordsInContext = [];
-                $lemmataInContext = [];
-                $keywordPosInContext = [];
-                $keywordsUnlemmatized = [];
+                // and append it to the passage_tokenized-array
+                $passage_tokenized = [];
+                $passage_lemmatized = [];
+                $tokens_matched = [];
 
                 foreach ($keywordPositions as $keywordPos) {
-                    $keywordInContext = $this->getContextOfKeyword($tokens, $keywordPos, $cSize);
+                    $keywordInContext = $this->getContextOfKeyword($transcript_tokenized, $keywordPos, $cSize);
                     $lemmaInContext = $this->getContextOfKeyword($lemmata, $keywordPos, $cSize);
-                    $keywordsInContext[] = $keywordInContext[0];
-                    $lemmataInContext[] = $lemmaInContext[0];
-                    $keywordPosInContext[] = $keywordInContext[1];
-                    $keywordsUnlemmatized[] = [$keywordInContext[2]];
+                    $passage_tokenized[] = $keywordInContext[0];
+                    $passage_lemmatized[] = $lemmaInContext[0];
+                    $tokens_matched[] = [$keywordInContext[1]];
                 }
 
                 // Add all information about the matched column to the matches array, which will become an array of arrays –
@@ -374,15 +355,14 @@ class ApiSearch extends ApiController
                         'pageID' => $pageID,
                         'docID' => $docID,
                         'transcript' => $transcript,
-                        'transcript_tokens' => $tokens,
-                        'transcript_lemmata' => $lemmata,
-                        'keywords' => $keywords,
-                        'keywords_lemmata' => $keywordsLemmata,
-                        'keywords_unlemmatized' => $keywordsUnlemmatized,
-                        'keywordFreq' => $keywordFreq,
-                        'keywordsInContext' => $keywordsInContext,
-                        'lemmataInContext' => $lemmataInContext,
-                        'keywordPosInContext' => $keywordPosInContext,
+                        'transcript_tokenized' => $transcript_tokenized,
+                        'transcript_lemmatized' => $lemmata,
+                        'tokens_searched' => $tokens_searched,
+                        'tokens_lemmatized' => $keywordsLemmata,
+                        'tokens_matched' => $tokens_matched,
+                        'numPassages' => $keywordFreq,
+                        'passage_tokenized' => $passage_tokenized,
+                        'passage_lemmatized' => $passage_lemmatized,
                         'lemmatize' => $lemmatize
                     ];
                 }
@@ -400,41 +380,38 @@ class ApiSearch extends ApiController
     private function extractMultiMatchColumns ($data, $keyword, $lemma, $lemmatize) {
 
         if ($lemmatize) {
-            // First, remove all keywordsInContext from $data, which do not match the keyword
+            // First, remove all passage_tokenized from $data, which do not match the keyword
             foreach ($data as $i => $matchedColumn) {
-                foreach ($matchedColumn['lemmataInContext'] as $j => $lemmataInContext) {
+                foreach ($matchedColumn['passage_lemmatized'] as $j => $passage_lemmatized) {
 
                     // Make a string, which stores full context in it – needed for checking for keyword
                     $contextString = "";
-                    foreach ($lemmataInContext as $k => $string) {
+                    foreach ($passage_lemmatized as $k => $string) {
                         $contextString = $contextString . " " . $string;
 
                         // Add new keywordPos to keyPosInContext-array, if the additional keyword matches
                         if (strpos($string, $lemma) !== false) {
-                            // $data[$i]['keywordPosInContext'][] = $k;
-                            $data[$i]['keywords_unlemmatized'][$j][] = $matchedColumn['keywordsInContext'][$j][$k];
-                            $data[$i]['keywords_unlemmatized'][$j] = array_unique( $data[$i]['keywords_unlemmatized'][$j]);
-                            // $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] + 1;
+                            $data[$i]['tokens_matched'][$j][] = $matchedColumn['passage_tokenized'][$j][$k];
+                            $data[$i]['tokens_matched'][$j] = array_unique( $data[$i]['tokens_matched'][$j]);
                         }
 
                     }
 
-                    // If the keyword is not in the contextString, remove keywordsInContext, keywordPosInContext from $data
+                    // If the keyword is not in the contextString, remove passage_tokenized, first_token_position_in_passage from $data
                     // Adjust the keywordFreq in $data
                     if (strpos($contextString, $lemma) === false && strpos($contextString, ucfirst($keyword)) === false) {
-                        unset($data[$i]['keywordsInContext'][$j]);
-                        unset($data[$i]['lemmataInContext'][$j]);
-                        unset($data[$i]['keywordPosInContext'][$j]);
-                        unset($data[$i]['keywords_unlemmatized'][$j]);
-                        $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] - 1;
+                        unset($data[$i]['passage_tokenized'][$j]);
+                        unset($data[$i]['passage_lemmatized'][$j]);
+                        unset($data[$i]['tokens_matched'][$j]);
+                        $data[$i]['numPassages'] = $data[$i]['numPassages'] - 1;
                     }
                 }
             }
         }
         else {
-            // First, remove all keywordsInContext from $data, which do not match the keyword
+            // First, remove all passage_tokenized from $data, which do not match the keyword
             foreach ($data as $i => $matchedColumn) {
-                foreach ($matchedColumn['keywordsInContext'] as $j => $keywordInContext) {
+                foreach ($matchedColumn['passage_tokenized'] as $j => $keywordInContext) {
 
                     // Make a string, which stores full context in it – needed for checking for keyword
                     $contextString = "";
@@ -443,37 +420,33 @@ class ApiSearch extends ApiController
 
                         // Add new keywordPos to keyPosInContext-array, if the additional keyword matches
                         if (strpos($string, $keyword) !== false) {
-                            // $data[$i]['keywordPosInContext'][] = $k;
-                            $data[$i]['keywords_unlemmatized'][$j][] = $keywordInContext[$k];
-                            $data[$i]['keywords_unlemmatized'][$j] = array_unique( $data[$i]['keywords_unlemmatized'][$j]);
-                            // $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] + 1;
+                            $data[$i]['tokens_matched'][$j][] = $keywordInContext[$k];
+                            $data[$i]['tokens_matched'][$j] = array_unique( $data[$i]['tokens_matched'][$j]);
                         }
 
                     }
 
-                    // If the keyword is not in the contextString, remove keywordsInContext, keywordPosInContext from $data
+                    // If the keyword is not in the contextString, remove passage_tokenized, first_token_position_in_passage from $data
                     // Adjust the keywordFreq in $data
                     if (strpos($contextString, $keyword) === false && strpos($contextString, ucfirst($keyword)) === false) {
-                        unset($data[$i]['keywordsInContext'][$j]);
-                        unset($data[$i]['lemmataInContext'][$j]);
-                        unset($data[$i]['keywordPosInContext'][$j]);
-                        unset($data[$i]['keywords_unlemmatized'][$j]);
-                        $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] - 1;
+                        unset($data[$i]['passage_tokenized'][$j]);
+                        unset($data[$i]['passage_lemmatized'][$j]);
+                        unset($data[$i]['tokens_matched'][$j]);
+                        $data[$i]['numPassages'] = $data[$i]['numPassages'] - 1;
                     }
                 }
             }
         }
-        // Second, unset all columns, which not anymore have keywordsInContext
+        // Second, unset all columns, which not anymore have passage_tokenized
         foreach ($data as $i=>$matchedColumn) {
-            if ($matchedColumn['keywordsInContext'] === []) {
+            if ($matchedColumn['passage_tokenized'] === []) {
                 unset ($data[$i]);
             }
 
-            // Reset the keys of the remaining arrays and make keywords_unlemmatized unique
+            // Reset the keys of the remaining arrays and make tokens_matched unique
             else {
-                $data[$i]['keywordsInContext'] = array_values($matchedColumn['keywordsInContext']);
-                $data[$i]['keywordPosInContext'] = array_values($matchedColumn['keywordPosInContext']);
-                $data[$i]['keywords_unlemmatized'] = array_values($matchedColumn['keywords_unlemmatized']);
+                $data[$i]['passage_tokenized'] = array_values($matchedColumn['passage_tokenized']);
+                $data[$i]['tokens_matched'] = array_values($matchedColumn['tokens_matched']);
             }
         }
 
@@ -482,17 +455,17 @@ class ApiSearch extends ApiController
     }
 
     // Function to get all the positions of a given keyword in a transcripted column (full match or phrase match, measured in words)
-    private function getPositionsOfKeyword ($tokens, $keyword, $queryAlg): array {
+    private function getPositionsOfKeyword ($transcript_tokenized, $keyword, $queryAlg): array {
 
         // Array, which will be returned
         $keywordPositions = [];
 
         // Check every word of the list of words, if it matches the keyword
-        for ($i=0; $i<count($tokens); $i++) {
+        for ($i=0; $i<count($transcript_tokenized); $i++) {
 
             // First, clean the word by erasing some special characters
-            // $cleanWord = str_replace( array( '.', ',', ';', ':', "'"), '', $tokens[$i]);
-            $token = $tokens[$i];
+            // $cleanWord = str_replace( array( '.', ',', ';', ':', "'"), '', $transcript_tokenized[$i]);
+            $token = $transcript_tokenized[$i];
 
             // If query algorithm is phrase match, add position of a word to the keywordPositions-array,
             // if it contains the searched keyword as a substring
@@ -530,12 +503,10 @@ class ApiSearch extends ApiController
         // Declare variable, which holds the keyword position relative to the total number of words in the keywordInContext-array
         $keywordUnlemmatized = $tokens[$keywordPos];
         $keywordInContext = [$keywordUnlemmatized];
-        $keywordPosInContext = 0;
 
         // Add as many preceding words to the keywordInContext-array, as the total number of preceding words and the desired context size allows
         for ($i=0; ($i<$cSize) and ($i<$numPrecWords); $i++) {
             array_unshift($keywordInContext, array_reverse($precWords)[$i]);
-            $keywordPosInContext = $keywordPosInContext + 1;
         }
 
         // Add as many succeeding words to the keywordInContext-array, as the total number of succeeding words and the desired context size allows
@@ -543,13 +514,7 @@ class ApiSearch extends ApiController
             $keywordInContext[] = $sucWords[$i];
         }
 
-        // Remove blanks before punctuation
-        /*$keywordInContext = str_replace(" .", ".", $keywordInContext);
-        $keywordInContext = str_replace(" ,", ",", $keywordInContext);
-        $keywordInContext = str_replace(" [ ", "[", $keywordInContext);
-        $keywordInContext = str_replace(" ] ", "]", $keywordInContext);*/
-
-        return [$keywordInContext, $keywordPosInContext, $keywordUnlemmatized];
+        return [$keywordInContext, $keywordUnlemmatized];
     }
 
     // Function to get a full list of i. e. titles or transcribers values in the index – i. e. set the $category argument to 'title'

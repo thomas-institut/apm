@@ -100,6 +100,13 @@ class ApiSearch extends ApiController
             $numMatchedPassages = $numMatchedPassages + $matchedColumn['keywordFreq'];
         }
 
+        // Give data[keywords_unlemmatized] the structure of a set
+        /*for ($i=0; $i<count($data); $i++) {
+            for ($j = 0; $j<count($data[$i]['keywords:unlemmatized']); $j++) {
+                $data[$i]['keywords_unlemmatized'][$j] = array_unique($data[$i]['keywords_unlemmatized'][$j]);
+            }
+        }*/
+
         // ApiResponse
         return $this->responseWithJson($response, [
             'searchString' => $searchString,
@@ -333,7 +340,7 @@ class ApiSearch extends ApiController
                 // Get total keyword frequency in matched column
                 $keywordFreq = count($keywordPositions);
 
-                // Get surrounding context of every occurence of the keyword in the matched column as a string
+                // Get surrounding context of every occurrence of the keyword in the matched column as a string
                 // and append it to the keywordsInContext-array
                 $keywordsInContext = [];
                 $lemmataInContext = [];
@@ -346,7 +353,7 @@ class ApiSearch extends ApiController
                     $keywordsInContext[] = $keywordInContext[0];
                     $lemmataInContext[] = $lemmaInContext[0];
                     $keywordPosInContext[] = $keywordInContext[1];
-                    $keywordsUnlemmatized[] = $keywordInContext[2];
+                    $keywordsUnlemmatized[] = [$keywordInContext[2]];
                 }
 
                 // Add all information about the matched column to the matches array, which will become an array of arrays –
@@ -404,8 +411,9 @@ class ApiSearch extends ApiController
 
                         // Add new keywordPos to keyPosInContext-array, if the additional keyword matches
                         if (strpos($string, $lemma) !== false) {
-                            $data[$i]['keywordPosInContext'][] = $k;
-                            $data[$i]['keywords_unlemmatized'][] = $matchedColumn['keywordsInContext'][$j][$k];
+                            // $data[$i]['keywordPosInContext'][] = $k;
+                            $data[$i]['keywords_unlemmatized'][$j][] = $matchedColumn['keywordsInContext'][$j][$k];
+                            $data[$i]['keywords_unlemmatized'][$j] = array_unique( $data[$i]['keywords_unlemmatized'][$j]);
                             // $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] + 1;
                         }
 
@@ -417,6 +425,7 @@ class ApiSearch extends ApiController
                         unset($data[$i]['keywordsInContext'][$j]);
                         unset($data[$i]['lemmataInContext'][$j]);
                         unset($data[$i]['keywordPosInContext'][$j]);
+                        unset($data[$i]['keywords_unlemmatized'][$j]);
                         $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] - 1;
                     }
                 }
@@ -434,9 +443,9 @@ class ApiSearch extends ApiController
 
                         // Add new keywordPos to keyPosInContext-array, if the additional keyword matches
                         if (strpos($string, $keyword) !== false) {
-                            $data[$i]['keywordPosInContext'][] = $k;
-                            unset($data[$i]['lemmataInContext'][$j]);
-                            $data[$i]['keywords_unlemmatized'][] = $keywordInContext[$k];
+                            // $data[$i]['keywordPosInContext'][] = $k;
+                            $data[$i]['keywords_unlemmatized'][$j][] = $keywordInContext[$k];
+                            $data[$i]['keywords_unlemmatized'][$j] = array_unique( $data[$i]['keywords_unlemmatized'][$j]);
                             // $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] + 1;
                         }
 
@@ -446,7 +455,9 @@ class ApiSearch extends ApiController
                     // Adjust the keywordFreq in $data
                     if (strpos($contextString, $keyword) === false && strpos($contextString, ucfirst($keyword)) === false) {
                         unset($data[$i]['keywordsInContext'][$j]);
+                        unset($data[$i]['lemmataInContext'][$j]);
                         unset($data[$i]['keywordPosInContext'][$j]);
+                        unset($data[$i]['keywords_unlemmatized'][$j]);
                         $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] - 1;
                     }
                 }
@@ -458,10 +469,11 @@ class ApiSearch extends ApiController
                 unset ($data[$i]);
             }
 
-            // Reset the keys of the remaining arrays
+            // Reset the keys of the remaining arrays and make keywords_unlemmatized unique
             else {
                 $data[$i]['keywordsInContext'] = array_values($matchedColumn['keywordsInContext']);
                 $data[$i]['keywordPosInContext'] = array_values($matchedColumn['keywordPosInContext']);
+                $data[$i]['keywords_unlemmatized'] = array_values($matchedColumn['keywords_unlemmatized']);
             }
         }
 

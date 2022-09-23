@@ -256,7 +256,7 @@
           let keywordsInContextString = ""
 
           for (let j = 0; j < keywordsInContext.length; j++) {
-            keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keywords[j], searchStrings, keywords)
+            keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], searchStrings, keywords[j])
             keywordsInContextString = removeBlanksAroundPunctuation(keywordsInContextString)
 
             // Fill table with results
@@ -307,7 +307,7 @@
 
             for (let j = 0; j < keywordsInContext.length; j++) {
 
-              keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keywords[j], searchStrings, keywords)
+              keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], searchStrings, keywords[j])
               keywordsInContextString = removeBlanksAroundPunctuation(keywordsInContextString)
 
               // Fill table with results
@@ -348,12 +348,13 @@
       }
 
       // Function to highlight the searched keyword in its context
-      function makeKeywordBold (keywordInContext, keywordPos, keyword, searchStrings, keywords) {
+      function makeKeywordBold (keywordInContext, keywordPos, searchStrings, keywords) {
 
         // Variable holding text with highlighted keyword in it and variable holding the capitalized keyword in it (used above)
         let textWithBoldKeyword = ""
 
         // Get capitalized keyword and length of keyword for correct boldening in the next steps
+        let keyword = keywords[0]
         let keywordCap = keyword.replace(/^\w/, (c) => c.toUpperCase())
 
         // Iterate over all words
@@ -366,79 +367,53 @@
           if (token !== keyword && token !== keywordCap) {
             textWithBoldKeyword = textWithBoldKeyword + token + " "
           }
-
-          // If index is identical to position of keyword, append the boldened word to textWithBoldKeyword
-          // Therefore, it needs some checks, since we want to bolden only the searched term and not necessarily whole words or
-          // even additional words – rarely, but sometimes there can be two words together at the same index in the keywordInContext-array
-
           else {
-            // If matched word is identical to searched keyword, append it to textWithBoldKeyword in bold letters
-            //if (token === keyword || token === keywordCap) {
               textWithBoldKeyword = textWithBoldKeyword + token.bold() + " "
-           //
-
-            // If matched word is not identical to searched keyword, it needs more checks
-            /*else {
-              // Get the position of the searched keyword (capitalized and uncapitalized) in the matched word
-              // One of these variables will have the value -1, which means the searched keyword is not in the matched word
-              let keywordIndex = token.indexOf(keyword)
-              let keywordCapIndex = token.indexOf(keywordCap)
-
-              // Variables for the partitions of the matched word
-              let matchedPart = ""
-              let unmatchedPartPre = ""
-              let unmatchedPartPost = ""
-
-              // If the uncapitalized keyword is in the matched word, partition the word to be able to bolden only the part matching the keyword
-              if (keywordIndex !== -1) {
-                  matchedPart = token.substring(keywordIndex, keywordIndex + keywordLen)
-                  unmatchedPartPre =  token.substring(0, keywordIndex)
-                  unmatchedPartPost = token.substring(keywordIndex + keywordLen)
-              }
-
-              // Same procedure as above, but with the capitalized keyword
-              else {
-                  matchedPart = token.substring(keywordCapIndex, keywordCapIndex + keywordLen)
-                  unmatchedPartPre =  token.substring(0, keywordCapIndex)
-                  unmatchedPartPost = token.substring(keywordCapIndex + keywordLen)
-              }
-
-              // Append the three substrings to textWithBoldKeyword – bolden the matchedPart
-              textWithBoldKeyword = textWithBoldKeyword + " " + unmatchedPartPre + matchedPart.bold() + unmatchedPartPost + " "
-            }*/
           }
         }
 
         // Bolden other keywords, if there is more than one in the original search
         for (i=1; i<keywords.length; i++) {
 
-          let prevIndex = 0
+          // Get keyword itself, length and position of keyword in the text with the boldened first keyword
+          let keyword = keywords[i]
+          let keywordLen = keyword.length
+          let keywordPos = indexOfAll(textWithBoldKeyword, keyword)
 
-            // Get keyword itself, length and position of keyword in the text with the boldened first keyword
-            let keyword = keywords[i] // DAS FUNKTIONIERT SO NICHT MEHR, DA ICH DER FUNKTION NUR EIN UNLEMMATIZED_KEYWORD ÜBERGEBE
-            let keywordLen = keyword.length
-            let keywordPos = textWithBoldKeyword.indexOf(keyword, prevIndex)
 
-            // If the actual keyword in lower-case is not in the text, get the upper-case keyword and its position
-            if (keywordPos === -1) {
-              keyword = keyword.replace(/^\w/, (c) => c.toUpperCase())
-              keywordPos = textWithBoldKeyword.indexOf(keyword)
-            }
+          // Counter for extending string for each boldened keyword
+          var boldTagCounter = 0
 
+          keywordPos.forEach(function (currentPos) {
             // Get preceeding and succeeding characters of the actual keyword from textWithBoldKeyword
-            let precWords = textWithBoldKeyword.slice(0, keywordPos)
-            let succWords = textWithBoldKeyword.slice(keywordPos + keywordLen)
+            let precWords = textWithBoldKeyword.slice(0, currentPos+add)
+            let succWords = textWithBoldKeyword.slice(currentPos+add + keywordLen)
 
             // Concatenate precWords, the boldened keyword and the succWords
             textWithBoldKeyword = precWords + keyword.bold() + succWords
+
+            // Raise boldTagCOunter by 7 (because 7 characters are added to the origial string: <b></b>)
+            boldTagCounter = boldTagCounter+7
+          })
         }
 
         return textWithBoldKeyword
       }
 
+      function indexOfAll(text, keyword) {
+        var i = text.indexOf(keyword),
+                indexes = [];
+        while (i !== -1) {
+          indexes.push(i);
+          i = text.indexOf(keyword, ++i);
+        }
+        return indexes;
+      }
+
       function removeBlanksAroundPunctuation (text) {
         text = text.replaceAll(" .", ".")
         text = text.replaceAll(" ,", ",")
+        text = text.replaceAll(" :", ":")
         text = text.replaceAll("[ ", "[")
         text = text.replaceAll(" ]", "]")
 

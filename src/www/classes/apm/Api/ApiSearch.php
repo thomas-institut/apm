@@ -23,56 +23,55 @@ class ApiSearch extends ApiController
     // Function to search in an OpenSearch-Index, which gives back an api response to js
     public function search(Request $request, Response $response): Response
     {
-        // Set the name of the index, that should be queried
-        $indexName = 'transcripts';
-
+        // Set the name of the index, that should be queried and make status and now variables for the API response
+        $index_name = 'transcripts';
         $status = 'OK';
         $now = TimeString::now();
 
-        // Get all the user input and convert keyword to lower-case for better handling in following code (esp. for the getPositionsOfKeyword-function)
-        $searchString = strtolower($_POST['searchText']);
-        $cSize = $_POST['radius'];
-        $docName = $_POST['title'];
+        // Get user input
+        $searched_phrase = strtolower($_POST['searchText']);
+        $doc_title = $_POST['title'];
         $transcriber = $_POST['transcriber'];
+        $radius = $_POST['radius'];
         $lemmatize = filter_var($_POST['lemmatize'], FILTER_VALIDATE_BOOLEAN);
 
-        // Remove additional blanks before, after or in between keywords – necessary for a clean search and position/context-handling, also in js (?)
-        $searchString = $this->removeBlanks($searchString);
+        // Remove additional blanks before, after or in between keywords – necessary for a clean search
+        $searched_phrase = $this->removeBlanks($searched_phrase);
 
         // Instantiate OpenSearch client
         try {
             $client = $this->instantiateClient();
         } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
             $status = 'Connecting to OpenSearch server failed.';
-            return $this->responseWithJson($response, ['searchString' => $searchString,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
+            return $this->responseWithJson($response, ['searchString' => $searched_phrase,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
 
-        // Tokenize and lemmatize searchString
-        exec("python3 /home/lukas/Lemmatization/Lemmatize_la_transcript.py $searchString", $output);
-        $tokens_searched = explode("#", $output[0]);
-        $keywordsLemmata = explode("#", $output[1]);
-        $numKeywords = count($tokens_searched);
+        // Tokenize and lemmatize searched_string
+        exec("python3 /home/lukas/Lemmatization/Lemmatize_la_transcript.py $searched_phrase", $tokens);
+        $tokens_unlemmatized = explode("#", $tokens[0]);
+        $tokens_lemmatized = explode("#", $tokens[1]);
+        $num_tokens = count($tokens_unlemmatized);
 
-        // $lemmatize = true;
+        // Get the lemmatized or unlemmatized token for the query, depending on user choice for lemmatization
         if ($lemmatize) {
-            $mainKeyword = $keywordsLemmata[0];
-            $queryAlg = 'match';
+            $token_for_query = $tokens_lemmatized[0];
+            $query_algorithm = 'match';
         }
         else {
-            $mainKeyword = $tokens_searched[0];
+            $token_for_query = $tokens_unlemmatized[0];
             // Choose query algorithm for OpenSearch-Query, depending on the length of the keyword
-            $queryAlg=$this->chooseQueryAlg($mainKeyword);
+            $query_algorithm=$this->chooseQueryAlgorithm($token_for_query);
         }
 
-        // Query index
+        // Query index for the first token in searched_string – other tokens will be handled below
         try {
-            $query = $this->queryIndex($client, $indexName, $docName, $transcriber, $mainKeyword, $queryAlg, $lemmatize);
+            $query = $this->queryIndex($client, $index_name, $doc_title, $transcriber, $token_for_query, $query_algorithm, $lemmatize);
         } catch (\Exception $e) {
             $status = "Opensearch query problem";
             
             return $this->responseWithJson($response,
                 [
-                    'searchString' => $searchString,
+                    'searchString' => $searched_phrase,
                     'matches' => [],
                     'serverTime' => $now,
                     'status' => $status,
@@ -81,47 +80,47 @@ class ApiSearch extends ApiController
                 ]);
         }
 
-        // Get all information about the matches
-        $data = $this->getInfoAboutMatches($query, $tokens_searched, $keywordsLemmata, $queryAlg, $cSize, $lemmatize);
+        // Get all information about the matched columns, including passages with the matched keyword as lists of words
+        $data = $this->evaluateData($query, $tokens_unlemmatized, $tokens_lemmatized, $query_algorithm, $radius, $lemmatize);
 
-        // If there is more than one keyword, extract all columns, which do match all the keywords
-        if ($numKeywords !== 1) {
-            for ($i=1; $i<$numKeywords; $i++) {
-                $data = $this->extractMultiMatchColumns($data, $tokens_searched[$i], $keywordsLemmata[$i], $lemmatize);
+        // If there is more than one tokens_searched, extract all columns, which do match all the other tokens
+        if ($num_tokens !== 1) {
+            for ($i=1; $i<$num_tokens; $i++) {
+                $data = $this->evaluateDataForAdditionalTokens($data, $tokens_unlemmatized[$i], $tokens_lemmatized[$i], $lemmatize);
             }
         }
 
-        // Get total number of matches
-        $numMatchedPassages = 0;
-        foreach ($data as $matchedColumn) {
-            $numMatchedPassages = $numMatchedPassages + $matchedColumn['numPassages'];
+        // Get total number of matched passages
+        $num_passages = 0;
+        foreach ($data as $matched_column) {
+            $num_passages = $num_passages + $matched_column['num_passages'];
         }
 
         // ApiResponse
         return $this->responseWithJson($response, [
-            'searchString' => $searchString,
-            'numMatchedPassages' => $numMatchedPassages,
+            'searched_string' => $searched_phrase,
+            'num_passages' => $num_passages,
             'data' => $data,
             'serverTime' => $now,
             'status' => $status]);
     }
 
-    private function removeBlanks ($string) {
+    private function removeBlanks ($searched_phrase) {
 
         // Reduce multiple blanks following each other anywhere in the keyword to one single blank
-        $string = preg_replace('!\s+!', ' ', $string);
+        $string = preg_replace('!\s+!', ' ', $searched_phrase);
 
         // Remove blank at the end of the keyword
-        if (substr($string, -1) == " ") {
-            $string = substr($string, 0, -1);
+        if (substr($searched_phrase, -1) == " ") {
+            $searched_phrase = substr($searched_phrase, 0, -1);
         }
 
         // Remove blank at the beginning of the keyword
-        if (substr($string, 0, 1) == " ") {
-            $string = substr($string, 1);
+        if (substr($searched_phrase, 0, 1) == " ") {
+            $searched_phrase = substr($searched_phrase, 1);
         }
 
-        return $string;
+        return $searched_phrase;
     }
 
     // Function, which instantiates OpenSearch client
@@ -140,10 +139,10 @@ class ApiSearch extends ApiController
     }
 
     // Function to choose the query algorithm from OpenSearch
-    private function chooseQueryAlg ($keyword): string
+    private function chooseQueryAlgorithm ($token): string
     {
-        $keywordLen = strlen($keyword);
-        if ($keywordLen < 4) {
+        $token_length = strlen($token);
+        if ($token_length < 4) {
             return 'match';
         }
         else {
@@ -152,26 +151,27 @@ class ApiSearch extends ApiController
     }
 
     // Function to query a given OpenSearch-index
-    private function queryIndex ($client, $indexName, $docName, $transcriber, $keyword, $queryAlg, $lemmatize) {
+    private function queryIndex ($client, $index_name, $doc_title, $transcriber, $token_for_query, $query_algorithm, $lemmatize) {
 
+        // Check lemmatize (boolean) to determine the area of the query
         if ($lemmatize) {
-            $searchArea = 'transcript_lemmata';
+            $area_of_query = 'transcript_lemmata';
         }
         else {
-            $searchArea = 'transcript_tokens';
+            $area_of_query = 'transcript_tokens';
         }
 
         // Search in all indexed columns
-        if ($docName === "" and $transcriber === "") {
+        if ($doc_title === "" and $transcriber === "") {
 
             $query = $client->search([
-                'index' => $indexName,
+                'index' => $index_name,
                 'body' => [
                     'size' => 20000,
                     'query' => [
-                        $queryAlg => [
-                            $searchArea => [
-                                "query" => $keyword
+                        $query_algorithm => [
+                            $area_of_query => [
+                                "query" => $token_for_query
                             ]
                         ]
                     ]
@@ -183,7 +183,7 @@ class ApiSearch extends ApiController
         elseif ($transcriber === "") {
 
             $query = $client->search([
-                'index' => $indexName,
+                'index' => $index_name,
                 'body' => [
                     'size' => 20000,
                     'query' => [
@@ -191,14 +191,14 @@ class ApiSearch extends ApiController
                             'filter' => [
                                 'match_phrase_prefix' => [
                                     'title' => [
-                                        "query" => $docName
+                                        "query" => $doc_title
                                     ]
                                 ]
                             ],
                             'must' => [
-                                $queryAlg => [
-                                    $searchArea => [
-                                        "query" => $keyword
+                                $query_algorithm => [
+                                    $area_of_query => [
+                                        "query" => $token_for_query
                                     ]
                                 ]
                             ]
@@ -208,10 +208,10 @@ class ApiSearch extends ApiController
             ]);
         }
 
-        elseif ($docName === "") {
+        elseif ($doc_title === "") {
 
             $query = $client->search([
-                'index' => $indexName,
+                'index' => $index_name,
                 'body' => [
                     'size' => 20000,
                     'query' => [
@@ -224,9 +224,9 @@ class ApiSearch extends ApiController
                                 ]
                             ],
                             'must' => [
-                                $queryAlg => [
-                                    $searchArea => [
-                                        "query" => $keyword
+                                $query_algorithm => [
+                                    $area_of_query => [
+                                        "query" => $token_for_query
                                     ]
                                 ]
                             ]
@@ -239,7 +239,7 @@ class ApiSearch extends ApiController
         else {
 
             $query = $client->search([
-                'index' => $indexName,
+                'index' => $index_name,
                 'body' => [
                     'size' => 20000,
                     'query' => [
@@ -247,7 +247,7 @@ class ApiSearch extends ApiController
                             'filter' => [
                                 'match_phrase_prefix' => [
                                     'title' => [
-                                        "query" => $docName
+                                        "query" => $doc_title
                                     ]
                                 ]
                             ],
@@ -260,9 +260,9 @@ class ApiSearch extends ApiController
                             ],
                             "minimum_should_match" => 1,
                             'must' => [
-                                $queryAlg => [
-                                    $searchArea => [
-                                        "query" => $keyword
+                                $query_algorithm => [
+                                    $area_of_query => [
+                                        "query" => $token_for_query
                                     ]
                                 ]
                             ]
@@ -276,14 +276,14 @@ class ApiSearch extends ApiController
     }
 
     // Get all information about matches, specified for a single document or all documents
-    private function getInfoAboutMatches ($query, $tokens_searched, $keywordsLemmata, $queryAlg, $cSize, $lemmatize) {
+    private function evaluateData ($query, $tokens_unlemmatized, $tokens_lemmatized, $query_algorithm, $radius, $lemmatize) {
 
         $data = [];
-        $numMatchedColumns = $query['hits']['total']['value'];
+        $num_columns = $query['hits']['total']['value'];
 
         // If there are any matched columns, collect them all in an ordered array, using the arrays declared at the beginning of the function
-        if ($numMatchedColumns !== 0) {
-            for ($i = 0; $i < $numMatchedColumns; $i++) {
+        if ($num_columns !== 0) {
+            for ($i = 0; $i<$num_columns; $i++) {
 
                 // Get document title, page number, column number, transcriber, transcript, docID and pageID
                 // of every matched column in the OpenSearch index
@@ -295,158 +295,142 @@ class ApiSearch extends ApiController
                 $docID = $query['hits']['hits'][$i]['_source']['docID'];
                 $pageID = $query['hits']['hits'][$i]['_id'];
                 $transcript_tokenized = $query['hits']['hits'][$i]['_source']['transcript_tokens'];
-                $lemmata = $query['hits']['hits'][$i]['_source']['transcript_lemmata'];
+                $transcript_lemmatized = $query['hits']['hits'][$i]['_source']['transcript_lemmata'];
 
-                // Get all lower-case and all upper-case keyword positions in the current column (measured in words)
+                // Get all lower-case and upper-case token positions (lemmatized or unlemmatized) in the current column (measured in words)
                 if ($lemmatize) {
-                    $keywordPositionsLC = $this->getPositionsOfKeyword($lemmata, $keywordsLemmata[0], $queryAlg);
-                    $keywordPositionsUC = $this->getPositionsOfKeyword($lemmata, ucfirst($keywordsLemmata[0]), $queryAlg);
+                    $pos_lower = $this->getPositions($transcript_lemmatized, $tokens_lemmatized[0], $query_algorithm);
+                    $pos_upper = $this->getPositions($transcript_lemmatized, ucfirst($tokens_lemmatized[0]), $query_algorithm);
                 } else {
-                    $keywordPositionsLC = $this->getPositionsOfKeyword($transcript_tokenized, $tokens_searched[0], $queryAlg);
-                    $keywordPositionsUC = $this->getPositionsOfKeyword($transcript_tokenized, ucfirst($tokens_searched[0]), $queryAlg);
+                    $pos_lower = $this->getPositions($transcript_tokenized, $tokens_unlemmatized[0], $query_algorithm);
+                    $pos_upper = $this->getPositions($transcript_tokenized, ucfirst($tokens_unlemmatized[0]), $query_algorithm);
                 }
-
-
-                // Sort the keywordPositions to have them in ascending order like they appear in the manuscript –
-                // this, of course, is only effective if there is more than one occurence of the keyword in the column
 
                 // First, check if the keywordPostions in the arrays are the same (this is the case in hebrew and arabic,
                 // because there are no upper-case letters) – if so, just take keywordPositionsLC as full array of keywordPositions
-                if ($keywordPositionsLC === $keywordPositionsUC) {
-                    $keywordPositions = $keywordPositionsLC;
+                if ($pos_lower === $pos_upper) {
+                    $pos_all = $pos_lower;
                 }
                 else {
-                    $keywordPositions = array_merge($keywordPositionsLC, $keywordPositionsUC);
-                    sort($keywordPositions);
+                    $pos_all = array_merge($pos_lower, $pos_upper);
+                    sort($pos_all);
                 }
 
                 // Get total keyword frequency in matched column
-                $keywordFreq = count($keywordPositions);
+                $num_passages = count($pos_all);
 
                 // Get surrounding context of every occurrence of the keyword in the matched column as a string
-                // and append it to the passage_tokenized-array
+                // and append it to...
                 $passage_tokenized = [];
                 $passage_lemmatized = [];
                 $tokens_matched = [];
 
-                foreach ($keywordPositions as $keywordPos) {
-                    $keywordInContext = $this->getContextOfKeyword($transcript_tokenized, $keywordPos, $cSize);
-                    $lemmaInContext = $this->getContextOfKeyword($lemmata, $keywordPos, $cSize);
-                    $passage_tokenized[] = $keywordInContext[0];
-                    $passage_lemmatized[] = $lemmaInContext[0];
-                    $tokens_matched[] = [$keywordInContext[1]];
+                foreach ($pos_all as $pos) {
+                    $passage_tokenized[] = $this->getPassage($transcript_tokenized, $pos, $radius);
+                    $passage_lemmatized[] = $this->getPassage($transcript_lemmatized, $pos, $radius);
+                    $tokens_matched[] = [$transcript_tokenized[$pos]];
                 }
-
-                // Add all information about the matched column to the matches array, which will become an array of arrays –
-                // each array contains the information about a single column.
-
-                // The check for keywordFreq seems redundant, but is necessary, because the getPositionsOfKeyword-functions is more strict than the query
-                // in OpenSearch. It could be, that keywordFreq is indeed 0 for a column, which does contain a match according to the OpenSearch-algorithm.
-                // This is because the latter matches words wih hyphens, i. e. "res-", if the searched keyword is actually "res" –
-                // in the getPositionsOfKeyword-function this is handled differently and not treated as a match.
 
                 // Collect matches in all columns
-                if ($keywordFreq !== 0) {
-                    $data[] = [
-                        'title' => $title,
-                        'page' => $page,
-                        'column' => $column,
-                        'transcriber' => $transcriber,
-                        'pageID' => $pageID,
-                        'docID' => $docID,
-                        'transcript' => $transcript,
-                        'transcript_tokenized' => $transcript_tokenized,
-                        'transcript_lemmatized' => $lemmata,
-                        'tokens_searched' => $tokens_searched,
-                        'tokens_lemmatized' => $keywordsLemmata,
-                        'tokens_matched' => $tokens_matched,
-                        'numPassages' => $keywordFreq,
-                        'passage_tokenized' => $passage_tokenized,
-                        'passage_lemmatized' => $passage_lemmatized,
-                        'lemmatize' => $lemmatize
-                    ];
-                }
+                $data[] = [
+                    'title' => $title,
+                    'page' => $page,
+                    'column' => $column,
+                    'transcriber' => $transcriber,
+                    'pageID' => $pageID,
+                    'docID' => $docID,
+                    'transcript' => $transcript,
+                    'transcript_tokenized' => $transcript_tokenized,
+                    'transcript_lemmatized' => $transcript_lemmatized,
+                    'tokens_unlemmatized' => $tokens_unlemmatized,
+                    'tokens_lemmatized' => $tokens_lemmatized,
+                    'tokens_matched' => $tokens_matched,
+                    'num_passages' => $num_passages,
+                    'passage_tokenized' => $passage_tokenized,
+                    'passage_lemmatized' => $passage_lemmatized,
+                    'lemmatize' => $lemmatize
+                ];
             }
 
             // Bring the information by title in alphabetical, and by page and colum in ascending order
             array_multisort($data);
-
-            return $data;
         }
+
         return $data;
     }
 
     // Function to get results with match of multiple keywords
-    private function extractMultiMatchColumns ($data, $keyword, $lemma, $lemmatize) {
+    private function evaluateDataForAdditionalTokens ($data, $token_unlemmatized, $token_lemmatized, $lemmatize) {
 
         if ($lemmatize) {
             // First, remove all passage_tokenized from $data, which do not match the keyword
-            foreach ($data as $i => $matchedColumn) {
-                foreach ($matchedColumn['passage_lemmatized'] as $j => $passage_lemmatized) {
+            foreach ($data as $i => $column) {
+                foreach ($column['passage_lemmatized'] as $j => $passage_lemmatized) {
 
-                    // Make a string, which stores full context in it – needed for checking for keyword
-                    $contextString = "";
-                    foreach ($passage_lemmatized as $k => $string) {
-                        $contextString = $contextString . " " . $string;
+                    // Make a string, which stores full passage in it
+                    $passage_string = "";
 
-                        // Add new keywordPos to keyPosInContext-array, if the additional keyword matches
-                        if (strpos($string, $lemma) !== false) {
-                            $data[$i]['tokens_matched'][$j][] = $matchedColumn['passage_tokenized'][$j][$k];
-                            $data[$i]['tokens_matched'][$j] = array_unique( $data[$i]['tokens_matched'][$j]);
+                    foreach ($passage_lemmatized as $k => $token) {
+                        $passage_string = $passage_string . " " . $token;
+
+                        // Add matched token to data-array and make the tokens_matched-slot unique (no doubles)
+                        if ($token === $token_lemmatized) {
+                            $data[$i]['tokens_matched'][$j][] = $column['passage_tokenized'][$j][$k];
+                            $data[$i]['tokens_matched'][$j] = array_unique($data[$i]['tokens_matched'][$j]);
                         }
-
                     }
 
-                    // If the keyword is not in the contextString, remove passage_tokenized, first_token_position_in_passage from $data
-                    // Adjust the keywordFreq in $data
-                    if (strpos($contextString, $lemma) === false && strpos($contextString, ucfirst($keyword)) === false) {
+                    // If the token is not in the passage, remove passage_tokenized, passage_lemmatized and tokens_matched from $data
+                    // Also adjust the num_passages in $data
+                    if (strpos($passage_string, $token_lemmatized) === false) {
                         unset($data[$i]['passage_tokenized'][$j]);
                         unset($data[$i]['passage_lemmatized'][$j]);
                         unset($data[$i]['tokens_matched'][$j]);
-                        $data[$i]['numPassages'] = $data[$i]['numPassages'] - 1;
+                        $data[$i]['num_passages'] = $data[$i]['num_passages'] - 1;
                     }
                 }
             }
         }
-        else {
-            // First, remove all passage_tokenized from $data, which do not match the keyword
-            foreach ($data as $i => $matchedColumn) {
-                foreach ($matchedColumn['passage_tokenized'] as $j => $keywordInContext) {
+        else { // No lemmatization
+            // First, remove all passage_tokenized from $data, which do not match the token
+            foreach ($data as $i => $column) {
+                foreach ($column['passage_tokenized'] as $j => $passage_tokenized) {
 
                     // Make a string, which stores full context in it – needed for checking for keyword
-                    $contextString = "";
-                    foreach ($keywordInContext as $k => $string) {
-                        $contextString = $contextString . " " . $string;
+                    $passage_string = "";
+                    foreach ($passage_tokenized as $k => $token) {
+                        $passage_string = $passage_string . " " . $token;
 
                         // Add new keywordPos to keyPosInContext-array, if the additional keyword matches
-                        if (strpos($string, $keyword) !== false) {
-                            $data[$i]['tokens_matched'][$j][] = $keywordInContext[$k];
-                            $data[$i]['tokens_matched'][$j] = array_unique( $data[$i]['tokens_matched'][$j]);
+                        if (strpos($token, $token_unlemmatized) !== false) {
+                            $data[$i]['tokens_matched'][$j][] = $passage_tokenized[$k];
+                            $data[$i]['tokens_matched'][$j] = array_unique($data[$i]['tokens_matched'][$j]);
                         }
 
                     }
 
-                    // If the keyword is not in the contextString, remove passage_tokenized, first_token_position_in_passage from $data
-                    // Adjust the keywordFreq in $data
-                    if (strpos($contextString, $keyword) === false && strpos($contextString, ucfirst($keyword)) === false) {
+                    // If the token is not in the passage, remove passage_tokenized, passage_lemmatized and tokens_matched from $data
+                    // Also adjust the num_passages in $data
+                    if (strpos($passage_string, $token_unlemmatized) === false && strpos($passage_string, ucfirst($token_unlemmatized)) === false) {
                         unset($data[$i]['passage_tokenized'][$j]);
                         unset($data[$i]['passage_lemmatized'][$j]);
                         unset($data[$i]['tokens_matched'][$j]);
-                        $data[$i]['numPassages'] = $data[$i]['numPassages'] - 1;
+                        $data[$i]['num_passages'] = $data[$i]['num_passages'] - 1;
                     }
                 }
             }
         }
-        // Second, unset all columns, which not anymore have passage_tokenized
-        foreach ($data as $i=>$matchedColumn) {
-            if ($matchedColumn['passage_tokenized'] === []) {
+
+        // Second, unset all columns, which not anymore have any passage_tokenized
+        foreach ($data as $i=>$column) {
+            if ($column['passage_tokenized'] === []) {
                 unset ($data[$i]);
             }
 
             // Reset the keys of the remaining arrays and make tokens_matched unique
             else {
-                $data[$i]['passage_tokenized'] = array_values($matchedColumn['passage_tokenized']);
-                $data[$i]['tokens_matched'] = array_values($matchedColumn['tokens_matched']);
+                $data[$i]['passage_tokenized'] = array_values($column['passage_tokenized']);
+                $data[$i]['tokens_matched'] = array_values($column['tokens_matched']);
             }
         }
 
@@ -455,77 +439,72 @@ class ApiSearch extends ApiController
     }
 
     // Function to get all the positions of a given keyword in a transcripted column (full match or phrase match, measured in words)
-    private function getPositionsOfKeyword ($transcript_tokenized, $keyword, $queryAlg): array {
+    private function getPositions ($transcript_tokenized, $token, $query_algorithm): array {
 
         // Array, which will be returned
-        $keywordPositions = [];
+        $positions = [];
 
-        // Check every word of the list of words, if it matches the keyword
+        // Check every token of the list of tokens (which may be lemmatized), if it matches the token, which was given as an argument
         for ($i=0; $i<count($transcript_tokenized); $i++) {
 
-            // First, clean the word by erasing some special characters
-            // $cleanWord = str_replace( array( '.', ',', ';', ':', "'"), '', $transcript_tokenized[$i]);
-            $token = $transcript_tokenized[$i];
+            $current_token = $transcript_tokenized[$i];
 
-            // If query algorithm is phrase match, add position of a word to the keywordPositions-array,
-            // if it contains the searched keyword as a substring
-            if ($queryAlg == 'match_phrase_prefix') {
-                if (substr_count($token, $keyword) !== 0) {
-                    $keywordPositions[] = $i;
+            // If query algorithm is phrase match, add a position to the positions-array,
+            // if token in transcript contains the argument-token as a substring
+            if ($query_algorithm == 'match_phrase_prefix') {
+                if (substr_count($current_token, $token) !== 0) {
+                    $positions[] = $i;
                 }
             }
 
-            // If query algoritm is match, add position of a word to the keywordPositions-array,
-            // if word in transcript is identical to the searched keyword – this is the place, where words with hyphens won't match!
-            elseif ($queryAlg = 'match') {
-                if ($token == $keyword) {
-                    $keywordPositions[] = $i;
+            // If query algoritm is match, add a position to the positions-array, if the token in transcript is identical to the argument-token
+            elseif ($query_algorithm = 'match') {
+                if ($current_token == $token) {
+                    $positions[] = $i;
                 }
             }
         }
 
-        return $keywordPositions;
+        return $positions;
     }
 
     // Function to get the surrounding context of a given keyword (via keywordPosition) in a given transcript
-    private function getContextOfKeyword ($tokens, $keywordPos, $cSize = 100): array
+    private function getPassage ($transcript_tokenized, $pos, $radius = 100): array
     {
         // Get total number of words in the transcript
-        $numWords = count($tokens);
+        $num_tokens = count($transcript_tokenized);
 
-        // Get a list of all preceding and all succeeding words of the keyword at keywordPosition – get the sizes of these lists
-        $precWords = array_slice($tokens, 0, $keywordPos);
-        $sucWords = array_slice($tokens, $keywordPos+1, $numWords);
-        $numPrecWords = count($precWords);
-        $numSucWords = count($sucWords);
+        // Get a list of all preceding and all succeeding words of the token at pos – get the sizes of these lists
+        $prec_tokens = array_slice($transcript_tokenized, 0, $pos);
+        $suc_tokens = array_slice($transcript_tokenized, $pos+1, $num_tokens);
+        $num_prec_tokens = count($prec_tokens);
+        $num_suc_tokens = count($suc_tokens);
 
-        // Get the keyword at the given keywordPosition into an array and use this array in the next step to add the context to it
-        // Declare variable, which holds the keyword position relative to the total number of words in the keywordInContext-array
-        $keywordUnlemmatized = $tokens[$keywordPos];
-        $keywordInContext = [$keywordUnlemmatized];
+        // Get the matched token at the given position into an array and use this array in the next step to add the context to it
+        $passage = [$transcript_tokenized[$pos]];
 
-        // Add as many preceding words to the keywordInContext-array, as the total number of preceding words and the desired context size allows
-        for ($i=0; ($i<$cSize) and ($i<$numPrecWords); $i++) {
-            array_unshift($keywordInContext, array_reverse($precWords)[$i]);
+        // Add as many preceding tokens to the passage-array, as the total number of preceding tokens and the desired context size allows
+        for ($i=0; ($i<$radius) and ($i<$num_prec_tokens); $i++) {
+            array_unshift($passage, array_reverse($prec_tokens)[$i]);
         }
 
         // Add as many succeeding words to the keywordInContext-array, as the total number of succeeding words and the desired context size allows
-        for ($i=0; ($i<$cSize) and ($i<$numSucWords); $i++) {
-            $keywordInContext[] = $sucWords[$i];
+        for ($i=0; ($i<$radius) and ($i<$num_suc_tokens); $i++) {
+            $passage[] = $suc_tokens[$i];
         }
 
-        return [$keywordInContext, $keywordUnlemmatized];
+        return $passage;
     }
 
-    // Function to get a full list of i. e. titles or transcribers values in the index – i. e. set the $category argument to 'title'
-    private function getListFromIndex ($client, $indexName, $category) {
+    // Function to get a full list of i. e. titles or transcribers values in the index
+    private function getListFromIndex ($client, $index_name, $category) { // $category can be 'title' or 'transcriber'
 
         // Array to return
         $values = [];
 
         // Make a match_all query
         $query = $client->search([
-            'index' => $indexName,
+            'index' => $index_name,
             'size' => 20000,
             'body' => [
                 "query" => [
@@ -552,7 +531,7 @@ class ApiSearch extends ApiController
     {
         $status = 'OK';
         $now = TimeString::now();
-        $indexName = 'transcripts';
+        $index_name = 'transcripts';
 
         // Instantiae OpenSearch client
         try {
@@ -563,7 +542,7 @@ class ApiSearch extends ApiController
         }
 
         // Get a list of all titles
-        $titles =  $this->getListFromIndex($client, $indexName, 'title');
+        $titles =  $this->getListFromIndex($client, $index_name, 'title');
 
         // Api Response
         return $this->responseWithJson($response, [
@@ -577,7 +556,7 @@ class ApiSearch extends ApiController
     {
         $status = 'OK';
         $now = TimeString::now();
-        $indexName = 'transcripts';
+        $index_name = 'transcripts';
 
         // Instantiate OpenSearch client
         try {
@@ -588,7 +567,7 @@ class ApiSearch extends ApiController
         }
 
         // Get a list of all transcribers
-        $transcribers =  $this->getListFromIndex($client, $indexName, 'transcriber');
+        $transcribers =  $this->getListFromIndex($client, $index_name, 'transcriber');
 
         // Api Response
         return $this->responseWithJson($response, [

@@ -210,7 +210,7 @@
 
         // Count matches
         let numMatchedColumns = data.length
-        let numMatchedPassages = results['numMatchedPassages']
+        let numMatchedPassages = results['num_passages']
         let numMatchedDocs = getNumMatchedDocs(data, numMatchedColumns)
 
         // If there are no matches, display this to the user and empty the table
@@ -240,7 +240,6 @@
           let transcriber = data[0]['transcriber']
           let keywordsInContext = data[0]['passage_tokenized']
           let keywords = data[0]['tokens_matched']
-          let searchStrings = data[0]['tokens_searched']
           let docID = data[0]['docID']
 
           // Get link for matched column
@@ -289,7 +288,6 @@
             let keywords = data[i]['tokens_matched']
             let keywordsInContext = data[i]['passage_tokenized']
             let docID = data[i]['docID']
-            let searchStrings = data[i]['tokens_searched']
 
             // Get link for matched column
             let url = urlGenerator.sitePageView(docID, page, column)

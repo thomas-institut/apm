@@ -99,7 +99,7 @@ class ApiSearch extends ApiController
         // ApiResponse
         return $this->responseWithJson($response, [
             'searched_string' => $searched_phrase,
-            'num_passages' => $num_passages,
+            'num_passages_total' => $num_passages,
             'data' => $data,
             'serverTime' => $now,
             'status' => $status]);
@@ -382,7 +382,7 @@ class ApiSearch extends ApiController
 
                     // If the token is not in the passage, remove passage_tokenized, passage_lemmatized and tokens_matched from $data
                     // Also adjust the num_passages in $data
-                    if (strpos($passage_string, $token_lemmatized) === false) {
+                    if (in_array($token_lemmatized, $data[$i]['passage_lemmatized'][$j]) === false) {
                         unset($data[$i]['passage_tokenized'][$j]);
                         unset($data[$i]['passage_lemmatized'][$j]);
                         unset($data[$i]['tokens_matched'][$j]);
@@ -402,7 +402,7 @@ class ApiSearch extends ApiController
                         $passage_string = $passage_string . " " . $token;
 
                         // Add new keywordPos to keyPosInContext-array, if the additional keyword matches
-                        if (strpos($token, $token_unlemmatized) !== false) {
+                        if (strpos($token, $token_unlemmatized) !== false or strpos($token, ucfirst($token_unlemmatized)) !== false) {
                             $data[$i]['tokens_matched'][$j][] = $passage_tokenized[$k];
                             $data[$i]['tokens_matched'][$j] = array_unique($data[$i]['tokens_matched'][$j]);
                         }
@@ -427,9 +427,10 @@ class ApiSearch extends ApiController
                 unset ($data[$i]);
             }
 
-            // Reset the keys of the remaining arrays and make tokens_matched unique
+            // Reset the keys of the remaining arrays
             else {
                 $data[$i]['passage_tokenized'] = array_values($column['passage_tokenized']);
+                $data[$i]['passage_lemmatized'] = array_values($column['passage_lemmatized']);
                 $data[$i]['tokens_matched'] = array_values($column['tokens_matched']);
             }
         }

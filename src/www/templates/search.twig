@@ -209,12 +209,12 @@
         let data = results['data']
 
         // Count matches
-        let numMatchedColumns = data.length
-        let numMatchedPassages = results['num_passages_total']
-        let numMatchedDocs = getNumMatchedDocs(data, numMatchedColumns)
+        let num_columns = data.length
+        let num_passages = results['num_passages_total']
+        let num_docs = getNumDocs(data, num_columns)
 
         // If there are no matches, display this to the user and empty the table
-        if (numMatchedColumns === 0) {
+        if (num_columns === 0) {
           resultsTableB.empty()
           numMatchesTable
             .html(`<tr><td>Matched Documents: &nbsp</td><td>0</td><tr><td>Matched Passages:</td><td>0</td>`)
@@ -222,11 +222,11 @@
         }
 
         // If there is exactly one matched column, display it with exact information
-        else if (numMatchedColumns === 1 && numMatchedPassages === 1) {
+        else if (num_columns === 1 && num_passages === 1) {
 
           // Display number of matches
           numMatchesTable
-            .html(`<tr><td>Matched Documents: &nbsp</td><td>${numMatchedDocs}</td><tr><td>Matched Passages:</td><td>${numMatchedPassages}</td>`)
+            .html(`<tr><td>Matched Documents: &nbsp</td><td>${num_docs}</td><tr><td>Matched Passages:</td><td>${num_passages}</td>`)
             .removeClass('text-warning')
 
           // Make table head
@@ -238,25 +238,25 @@
           let page = data[0]['page']
           let column = data[0]['column']
           let transcriber = data[0]['transcriber']
-          let keywordsInContext = data[0]['passage_tokenized']
-          let keywords = data[0]['tokens_matched']
+          let passages = data[0]['passage_tokenized']
+          let tokens_matched = data[0]['tokens_matched']
           let docID = data[0]['docID']
 
           // Get link for matched column
           let url = urlGenerator.sitePageView(docID, page, column)
           let link = getLink(url)
 
-          // Convert the keywords in their context into a single string and highlight the keywords
-          let keywordsInContextString = ""
+          // Convert the tokens_matched in their context into a single string and highlight the tokens_matched
+          let passages_string = ""
 
-          for (let j = 0; j < keywordsInContext.length; j++) {
-            keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywords[j])
-            keywordsInContextString = removeBlanksAroundPunctuation(keywordsInContextString)
+          for (let j = 0; j < passages.length; j++) {
+            passages_string = highlight(passages[j], tokens_matched[j])
+            passages_string = removeBlanks(passages_string)
 
             // Fill table with results
             resultsTableB.empty()
             resultsTableB.append(
-              `<tr><td>${title}</td><td>${keywordsInContextString}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${link}</td></tr>`)
+              `<tr><td>${title}</td><td>${passages_string}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${link}</td></tr>`)
           }
         }
 
@@ -265,7 +265,7 @@
 
           // Display number of matches
           numMatchesTable
-            .html(`<tr><td>Matched Documents: &nbsp</td><td>${numMatchedDocs}</td><tr><td>Matched Passages:</td><td>${numMatchedPassages}</td>`)
+            .html(`<tr><td>Matched Documents: &nbsp</td><td>${num_docs}</td><tr><td>Matched Passages:</td><td>${num_passages}</td>`)
             .removeClass('text-warning')
 
           // Make table head
@@ -275,41 +275,41 @@
 
           // Make variable for storing title of preceeding column in the dataset to display only ONE title,
           // if there are plenty matched columns of the same document
-          let precTitle = " "
+          let prec_title = " "
 
           // Write all matches into the results table
-          for (let i = 0; i < numMatchedColumns; i++) {
+          for (let i = 0; i < num_columns; i++) {
 
             // Collect relevant Data from API response
             let title = data[i]['title']
             let page = data[i]['page']
             let column = data[i]['column']
             let transcriber = data[i]['transcriber']
-            let keywords = data[i]['tokens_matched']
-            let keywordsInContext = data[i]['passage_tokenized']
+            let tokens_matched = data[i]['tokens_matched']
+            let passages = data[i]['passage_tokenized']
             let docID = data[i]['docID']
 
             // Get link for matched column
             let url = urlGenerator.sitePageView(docID, page, column)
             let link = getLink(url)
 
-            // Convert all occurrences of the keyword in their contexts into a single string and highlight the keywords
-            let keywordsInContextString = ""
+            // Convert all occurrences of the keyword in their contexts into a single string and highlight the tokens_matched
+            let passages_string = ""
 
-            for (let j = 0; j < keywordsInContext.length; j++) {
+            for (let j = 0; j < passages.length; j++) {
 
-              keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywords[j])
-              keywordsInContextString = removeBlanksAroundPunctuation(keywordsInContextString)
+              passages_string = highlight(passages[j], tokens_matched[j])
+              passages_string = removeBlanks(passages_string)
 
               // Fill table with results
-              if (title === precTitle) {
+              if (title === prec_title) {
                 resultsTableB.append(
-                  `<tr><td></td><td>${keywordsInContextString}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${link}</td></tr>`)
+                  `<tr><td></td><td>${passages_string}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${link}</td></tr>`)
               }
               else {
                 resultsTableB.append(
-                  `<tr><td>${title}</td><td>${keywordsInContextString}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${link}</td></tr>`)
-                precTitle = title
+                  `<tr><td>${title}</td><td>${passages_string}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${link}</td></tr>`)
+                prec_title = title
               }
             }
           }
@@ -323,7 +323,7 @@
       }
 
       // Function to calculate total number of matched documents
-      function getNumMatchedDocs (data, numColumns) {
+      function getNumDocs (data, numColumns) {
 
         let numDocs = 0
         let prevTitle = ""
@@ -339,37 +339,37 @@
       }
 
       // Function to highlight the searched keyword in its context
-      function makeKeywordBold (keywordInContext, keywords) {
+      function highlight (passage, tokens_matched) {
 
-        // Returned variable holding string with highlighted keywords in it
-        let textWithBoldKeyword = ""
+        // Returned variable holding string with highlighted tokens_matched in it
+        let passage_highlighted = ""
 
-        // Convert array to string with boldened keywords
+        // Convert array to string with boldened tokens_matched
 
-        for (i=0; i<keywordInContext.length; i++) {
-          // Get current word of keywordInContext-array
-          let token = keywordInContext[i]
-          // Bolden token, if it is one of the keywords
-          if (keywords.indexOf(token) !== -1) {
+        for (i=0; i<passage.length; i++) {
+          // Get current word of passage-array
+          let token = passage[i]
+          // Bolden token, if it is one of the tokens_matched
+          if (tokens_matched.indexOf(token) !== -1) {
             token = token.bold()
           }
           // Append token to returned string
-          textWithBoldKeyword = textWithBoldKeyword + token + " "
+          passage_highlighted = passage_highlighted + token + " "
         }
-        return textWithBoldKeyword
+        return passage_highlighted
       }
 
-      function indexOfAll(text, keyword) {
-        var i = text.indexOf(keyword),
+      function indexOfAll(text, token) {
+        var i = text.indexOf(token),
                 indexes = [];
         while (i !== -1) {
           indexes.push(i);
-          i = text.indexOf(keyword, ++i);
+          i = text.indexOf(token, ++i);
         }
         return indexes;
       }
 
-      function removeBlanksAroundPunctuation (text) {
+      function removeBlanks (text) {
         text = text.replaceAll(" .", ".")
         text = text.replaceAll(" ,", ",")
         text = text.replaceAll(" :", ":")

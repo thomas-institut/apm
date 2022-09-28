@@ -47,7 +47,7 @@ class ApiSearch extends ApiController
         }
 
         // Tokenize and lemmatize searched_string
-        exec("python3 /home/lukas/Lemmatization/Lemmatize_la_transcript.py $searched_phrase", $tokens);
+        exec("python3 /home/lukas/apm/src/python/lemmatize_la_phrase.py $searched_phrase", $tokens);
         $tokens_unlemmatized = explode("#", $tokens[0]);
         $tokens_lemmatized = explode("#", $tokens[1]);
         $num_tokens = count($tokens_unlemmatized);

@@ -122,10 +122,10 @@ class IndexDocs extends CommandLineUtility {
                     $id = $id + 1;
 
                     // IF-CLAUSE ONLY FOR TESTING
-                    //if ($lang === 'la') {
+                    if ($lang === 'la') {
                         $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang);
                         print("$id: Doc $docID ($title) page $page col $col lang $lang\n");
-                    //}
+                    }
                 }
             }
         }
@@ -167,19 +167,35 @@ class IndexDocs extends CommandLineUtility {
     private function indexCol ($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang): bool
     {
 
+        // ERROR IN INDEXING: 8877: Doc 82 (M-IT-FLR-BML-Leop.Med.Fesul.162) page 25 col 2 lang la
+        // sh: 1: indivi-: not found
+        // sh: 1: esse: not found
+
         // Simplemma Tokenization and Lemmatization (Latin)
         if ($lang == 'la') {
-            $transcript_clean = str_replace("\n", " ", $transcript);
-            // $transcript_clean = str_replace("- ", "", $transcript_clean);
-            echo ("Lemmatizing in Python...");
-            exec("python3 /home/lukas/Lemmatization/Lemmatize_la_transcript.py $transcript_clean", $output);
-            $transcript_tokens = explode("#", $output[0]);
-            $transcript_lemmata = explode("#", $output[1]);
+
+            // Encode transcript for avoiding errors in shell command because of characters like "(", ")" or " "
+            $transcript_clean = str_replace("\n", "#", $transcript);
+            $transcript_clean = str_replace(" ", "#", $transcript_clean);
+            $transcript_clean = str_replace("(", "%", $transcript_clean);
+            $transcript_clean = str_replace(")", "§", $transcript_clean);
+
+            if (strlen($transcript_clean) > 3) {
+                echo ("Lemmatizing in Python...");
+                exec("python3 /home/lukas/apm/src/python/lemmatize_la_transcript.py $transcript_clean", $output);
+                $transcript_tokens = explode("#", $output[0]);
+                $transcript_lemmata = explode("#", $output[1]);
+            }
+            else {
+                $transcript_tokens = [];
+                $transcript_lemmata = [];
+                echo ("Transcript is too short for lemmatization...");
+            }
             if (count($transcript_tokens) !== count($transcript_lemmata)) {
                 print("Error! Array of tokens and lemmata do not have the same length!\n");
             }
             else {
-                print_r("...finished!\n");
+                print_r("finished!\n");
             }
         }
         else {

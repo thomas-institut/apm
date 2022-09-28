@@ -122,10 +122,10 @@ class IndexDocs extends CommandLineUtility {
                     $id = $id + 1;
 
                     // IF-CLAUSE ONLY FOR TESTING
-                    if ($lang === 'la') {
+                    //if ($lang === 'la') {
                         $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang);
                         print("$id: Doc $docID ($title) page $page col $col lang $lang\n");
-                    }
+                    //}
                 }
             }
         }
@@ -182,7 +182,7 @@ class IndexDocs extends CommandLineUtility {
 
             if (strlen($transcript_clean) > 3) {
                 echo ("Lemmatizing in Python...");
-                exec("python3 /home/lukas/apm/src/python/lemmatize_la_transcript.py $transcript_clean", $output);
+                exec("python3 ../python/lemmatize_la_transcript.py $transcript_clean", $output);
                 $transcript_tokens = explode("#", $output[0]);
                 $transcript_lemmata = explode("#", $output[1]);
             }

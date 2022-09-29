@@ -216,18 +216,13 @@
         // If there are no matches, display this to the user and empty the table
         if (num_columns === 0) {
           resultsTableB.empty()
-          noMatchesDiv
-            .html(`No matches found!<br><br>`)
-            .addClass('text-warning')
+          //noMatchesDiv
+            //.html(`Nothing found!<br><br>`)
+            //.addClass('text-warning')
         }
 
         // If there is exactly one matched column, display it with exact information
         else if (num_columns === 1 && num_passages === 1) {
-
-          // Display number of matches
-          //noMatchesDiv
-            //.html(`<tr><td>Matched Documents: &nbsp</td><td>${num_docs}</td><tr><td>Matched Passages:</td><td>${num_passages}</td>`)
-            //.removeClass('text-warning')
 
           // Make table head
           resultsTableH.empty()
@@ -262,11 +257,6 @@
 
         // If there is more than one matched column, display them all with exact information
         else {
-
-          // Display number of matches
-          //noMatchesDiv
-            //.html(`<tr><td>Matched Documents: &nbsp</td><td>${num_docs}</td><tr><td>Matched Passages:</td><td>${num_passages}</td>`)
-          //.removeClass('text-warning')
 
           // Make table head
           resultsTableH.empty()

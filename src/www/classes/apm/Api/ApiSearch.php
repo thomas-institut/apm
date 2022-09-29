@@ -46,8 +46,13 @@ class ApiSearch extends ApiController
             return $this->responseWithJson($response, ['searchString' => $searched_phrase,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
 
-        // Tokenize and lemmatize searched_string
-        exec("python3 ../python/lemmatize_la_phrase.py $searched_phrase", $tokens);
+        // Determine language of the searched phrase and tokenize and lemmatize the phrase
+        if (mb_detect_encoding($searched_phrase) == "ASCII") {
+            exec("python3 ../python/lemmatize_la_phrase.py $searched_phrase", $tokens);
+        } elseif (mb_detect_encoding($searched_phrase) == "UTF-8") {
+            exec("python3 ../python/lemmatize_ar_phrase.py $searched_phrase", $tokens);
+        }
+
         $tokens_unlemmatized = explode("#", $tokens[0]);
         $tokens_lemmatized = explode("#", $tokens[1]);
         $num_tokens = count($tokens_unlemmatized);
@@ -327,7 +332,9 @@ class ApiSearch extends ApiController
 
                 foreach ($pos_all as $pos) {
                     $passage_tokenized[] = $this->getPassage($transcript_tokenized, $pos, $radius);
-                    $passage_lemmatized[] = $this->getPassage($transcript_lemmatized, $pos, $radius);
+                    if ($lemmatize) {
+                        $passage_lemmatized[] = $this->getPassage($transcript_lemmatized, $pos, $radius);
+                    }
                     $tokens_matched[] = [$transcript_tokenized[$pos]];
                 }
 
@@ -458,7 +465,7 @@ class ApiSearch extends ApiController
                 }
             }
 
-            // If query algoritm is match, add a position to the positions-array, if the token in transcript is identical to the argument-token
+            // If query algorithm is match, add a position to the positions-array, if the token in transcript is identical to the argument-token
             elseif ($query_algorithm = 'match') {
                 if ($current_token == $token) {
                     $positions[] = $i;

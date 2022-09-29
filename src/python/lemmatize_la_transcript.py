@@ -6,7 +6,6 @@ transcript = sys.argv[1:][0]
 
 # Decoding
 transcript = transcript.replace("#", " ")
-# transcript = transcript.replace("\n", " ")
 transcript = transcript.replace("- ", "")
 transcript = transcript.replace("%", "(")
 transcript = transcript.replace("$", ")")

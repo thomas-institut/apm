@@ -172,7 +172,7 @@ class IndexDocs extends CommandLineUtility {
         // sh: 1: esse: not found
 
         // Simplemma Tokenization and Lemmatization (Latin)
-        if ($lang == 'la') {
+        if ($lang == 'la' or $lang == 'ar') {
 
             // Encode transcript for avoiding errors in shell command because of characters like "(", ")" or " "
             $transcript_clean = str_replace("\n", "#", $transcript);
@@ -182,17 +182,23 @@ class IndexDocs extends CommandLineUtility {
 
             if (strlen($transcript_clean) > 3) {
                 echo ("Lemmatizing in Python...");
-                exec("python3 ../../python/lemmatize_la_transcript.py $transcript_clean", $output);
-                $transcript_tokens = explode("#", $output[0]);
-                $transcript_lemmata = explode("#", $output[1]);
+                if ($lang == 'la') {
+                    exec("python3 ../../python/lemmatize_la_transcript.py $transcript_clean", $output);
+                } else {
+                    exec("python3 ../../python/lemmatize_ar_transcript.py $transcript_clean", $output);
+                }
+                $transcript_tokenized = explode("#", $output[0]);
+                $transcript_lemmatized = explode("#", $output[1]);
             }
             else {
-                $transcript_tokens = [];
-                $transcript_lemmata = [];
+                $transcript_tokenized = [];
+                $transcript_lemmatized = [];
                 echo ("Transcript is too short for lemmatization...");
             }
-            if (count($transcript_tokens) !== count($transcript_lemmata)) {
+            if (count($transcript_tokenized) !== count($transcript_lemmatized)) {
                 print("Error! Array of tokens and lemmata do not have the same length!\n");
+                print_r($transcript_tokenized);
+                print_r($transcript_lemmatized);
             }
             else {
                 print_r("finished!\n");
@@ -201,8 +207,8 @@ class IndexDocs extends CommandLineUtility {
         else {
             $transcript_clean = str_replace("\n", " ", $transcript);
             $transcript_clean = str_replace("- ", "", $transcript_clean);
-            $transcript_tokens = explode(" ", $transcript_clean);
-            $transcript_lemmata = [];
+            $transcript_tokenized = explode(" ", $transcript_clean);
+            $transcript_lemmatized = [];
         }
 
         $this->client->create([
@@ -216,8 +222,8 @@ class IndexDocs extends CommandLineUtility {
                 'pageID' => $pageID,
                 'docID' => $docID,
                 'transcript' => $transcript,
-                'transcript_tokens' => $transcript_tokens,
-                'transcript_lemmata' => $transcript_lemmata
+                'transcript_tokens' => $transcript_tokenized,
+                'transcript_lemmata' => $transcript_lemmatized
             ]
         ]);
 

@@ -256,7 +256,7 @@
             // Fill table with results
             resultsTableB.empty()
             resultsTableB.append(
-              `<tr><td>${title}</td><td>${passages_string}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${link}</td></tr>`)
+              `<tr><td>${title}</td><td align="justify">${passages_string}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${link}</td></tr>`)
           }
         }
 
@@ -304,11 +304,11 @@
               // Fill table with results
               if (title === prec_title) {
                 resultsTableB.append(
-                  `<tr><td></td><td>${passages_string}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${link}</td></tr>`)
+                  `<tr><td></td><td align="justify">${passages_string}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${link}</td></tr>`)
               }
               else {
                 resultsTableB.append(
-                  `<tr><td>${title}</td><td>${passages_string}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${link}</td></tr>`)
+                  `<tr><td>${title}</td><td align="justify">${passages_string}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${link}</td></tr>`)
                 prec_title = title
               }
             }
@@ -413,7 +413,7 @@
         <td>
             <form>
                 <label for="radiusSlider"></label>
-                <input type="range" id="radiusSlider" name="radiusSlider" min="3" max="40" value="6">
+                <input type="range" id="radiusSlider" name="radiusSlider" min="3" max="40" value="12">
             </form>
         </td>
       <td align="center">

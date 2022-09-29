@@ -494,6 +494,11 @@ class ApiSearch extends ApiController
             $passage[] = $suc_tokens[$i];
         }
 
+        // If first token passage is punctuation, remove it
+        if (strpos(".,:-–]", $passage[0]) !== false) {
+            array_shift($passage);
+        }
+
         return $passage;
     }
 

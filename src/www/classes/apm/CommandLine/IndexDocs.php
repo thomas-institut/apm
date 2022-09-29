@@ -182,7 +182,7 @@ class IndexDocs extends CommandLineUtility {
 
             if (strlen($transcript_clean) > 3) {
                 echo ("Lemmatizing in Python...");
-                exec("python3 ../python/lemmatize_la_transcript.py $transcript_clean", $output);
+                exec("python3 ../../python/lemmatize_la_transcript.py $transcript_clean", $output);
                 $transcript_tokens = explode("#", $output[0]);
                 $transcript_lemmata = explode("#", $output[1]);
             }

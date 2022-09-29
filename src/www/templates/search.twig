@@ -192,12 +192,12 @@
 
         // Get selectors for displaying results
         let errorMessage = $("#error_message")
-        let numMatchesTable = $("#numMatchesTable")
+        let noMatchesDiv = $("#noMatchesDiv")
         let resultsTableB = $("#resultsTable tbody")
         let resultsTableH = $("#resultsTable thead")
 
         // Empty tables and divs
-        numMatchesTable.empty()
+        noMatchesDiv.empty()
         resultsTableH.empty()
         resultsTableB.empty()
         errorMessage.empty()
@@ -216,8 +216,8 @@
         // If there are no matches, display this to the user and empty the table
         if (num_columns === 0) {
           resultsTableB.empty()
-          numMatchesTable
-            .html(`<tr><td>Matched Documents: &nbsp</td><td>0</td><tr><td>Matched Passages:</td><td>0</td>`)
+          noMatchesDiv
+            .html(`No matches found!<br><br>`)
             .addClass('text-warning')
         }
 
@@ -225,19 +225,19 @@
         else if (num_columns === 1 && num_passages === 1) {
 
           // Display number of matches
-          numMatchesTable
-            .html(`<tr><td>Matched Documents: &nbsp</td><td>${num_docs}</td><tr><td>Matched Passages:</td><td>${num_passages}</td>`)
-            .removeClass('text-warning')
+          //noMatchesDiv
+            //.html(`<tr><td>Matched Documents: &nbsp</td><td>${num_docs}</td><tr><td>Matched Passages:</td><td>${num_passages}</td>`)
+            //.removeClass('text-warning')
 
           // Make table head
           resultsTableH.empty()
-          resultsTableH.append(`<tr><th>Title</th><th>Matched Passage</th><th>Page</th><th>Column</th><th>Transcriber</th><th>Link</th></tr>`)
+          resultsTableH.append(`<tr><th>Matched Passage (${num_passages})</th><th>Document (${num_docs})</th><th>Page</th><th>Column</th><th>Transcriber</th><th>Link</th></tr>`)
 
           // Collect relevant data from API response
           let title = data[0]['title']
           let page = data[0]['page']
           let column = data[0]['column']
-          let transcriber = data[0]['transcriber']
+          let transcriber = data[0]['transcriber'].split(" ")[1]
           let passages = data[0]['passage_tokenized']
           let tokens_matched = data[0]['tokens_matched']
           let docID = data[0]['docID']
@@ -256,7 +256,7 @@
             // Fill table with results
             resultsTableB.empty()
             resultsTableB.append(
-              `<tr><td>${title}</td><td align="justify">${passages_string}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${link}</td></tr>`)
+              `<tr><td align="justify">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td align="center">${transcriber}</td><td align="center">${link}</td></tr>`)
           }
         }
 
@@ -264,13 +264,13 @@
         else {
 
           // Display number of matches
-          numMatchesTable
-            .html(`<tr><td>Matched Documents: &nbsp</td><td>${num_docs}</td><tr><td>Matched Passages:</td><td>${num_passages}</td>`)
-            .removeClass('text-warning')
+          //noMatchesDiv
+            //.html(`<tr><td>Matched Documents: &nbsp</td><td>${num_docs}</td><tr><td>Matched Passages:</td><td>${num_passages}</td>`)
+          //.removeClass('text-warning')
 
           // Make table head
           resultsTableH.empty()
-          resultsTableH.append(`<tr><th>Title</th><th>Matched Passage</th><th>Page</th><th>Column</th><th>Transcriber</th><th>Link</th></tr>`)
+          resultsTableH.append(`<tr><th>Matched Passage (${num_passages})</th><th>Document (${num_docs})</th><th>Page</th><th>Column</th><th>Transcriber</th><th>Link</th></tr>`)
           resultsTableB.empty()
 
           // Make variable for storing title of preceeding column in the dataset to display only ONE title,
@@ -284,7 +284,7 @@
             let title = data[i]['title']
             let page = data[i]['page']
             let column = data[i]['column']
-            let transcriber = data[i]['transcriber']
+            let transcriber = data[i]['transcriber'].split(" ")[1]
             let tokens_matched = data[i]['tokens_matched']
             let passages = data[i]['passage_tokenized']
             let docID = data[i]['docID']
@@ -304,11 +304,11 @@
               // Fill table with results
               if (title === prec_title) {
                 resultsTableB.append(
-                  `<tr><td></td><td align="justify">${passages_string}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${link}</td></tr>`)
+                  `<tr><td align="justify">${passages_string}</td><td></td><td align="center">${page}</td><td align="center">${column}</td><td align="center">${transcriber}</td><td align="center">${link}</td></tr>`)
               }
               else {
                 resultsTableB.append(
-                  `<tr><td>${title}</td><td align="justify">${passages_string}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${link}</td></tr>`)
+                  `<tr><td align="justify">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td align="center">${transcriber}</td><td align="center">${link}</td></tr>`)
                 prec_title = title
               }
             }
@@ -413,7 +413,7 @@
         <td>
             <form>
                 <label for="radiusSlider"></label>
-                <input type="range" id="radiusSlider" name="radiusSlider" min="3" max="40" value="12">
+                <input type="range" id="radiusSlider" name="radiusSlider" min="3" max="40" value="18">
             </form>
         </td>
       <td align="center">
@@ -428,15 +428,12 @@
     <br><br><br>
   </div>
 
-    <br>
     <div id="error_message"></div>
 
-    <br>
-    <table class="doctable" id="numMatchesTable">
-    </table>
-    <br>
+  <br>
+    <div id="noMatchesDiv">
+    </div>
 
-    <br>
     <table class="doctable dataTable no-footer" id="resultsTable">
         <thead></thead>
         <tbody></tbody>

@@ -363,8 +363,7 @@ class ApiSearch extends ApiController
                     'num_passages' => $num_passages,
                     'passage_tokenized' => $passage_tokenized,
                     'passage_lemmatized' => $passage_lemmatized,
-                    'lemmatize' => $lemmatize,
-                    'positions' => $pos_all
+                    'lemmatize' => $lemmatize
                 ];
             }
 
@@ -510,8 +509,8 @@ class ApiSearch extends ApiController
             $passage[] = $suc_tokens[$i];
         }
 
-        // If first token passage is punctuation, remove it
-        if (strpos(".,:-–]/", $passage[0]) !== false) {
+        // If first token of the passage is punctuation, remove it
+        if (empty($passage[0]) or strpos(".,:-–]/", $passage[0]) !== false) {
             array_shift($passage);
         }
 

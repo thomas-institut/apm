@@ -321,22 +321,30 @@ class ApiSearch extends ApiController
                     sort($pos_all);
                 }
 
-                // Get total keyword frequency in matched column
-                $num_passages = count($pos_all);
-
                 // Get surrounding context of every occurrence of the keyword in the matched column as a string
                 // and append it to...
                 $passage_tokenized = [];
                 $passage_lemmatized = [];
                 $tokens_matched = [];
 
+                // Variable to store previous position of matched token in it – used in the foreach-loop
+                $prev_pos = 0;
+
+                // Get all passages, which contain the matched token, as a list of tokens (and lemmata)
                 foreach ($pos_all as $pos) {
-                    $passage_tokenized[] = $this->getPassage($transcript_tokenized, $pos, $radius);
-                    if ($lemmatize) {
-                        $passage_lemmatized[] = $this->getPassage($transcript_lemmatized, $pos, $radius);
+                    if ($pos-$prev_pos>$radius) { // This checks, if the token at the actual position is not already contained in the previous passage
+                        $passage_tokenized[] = $this->getPassage($transcript_tokenized, $pos, $radius);
+                        if ($lemmatize) {
+                            $passage_lemmatized[] = $this->getPassage($transcript_lemmatized, $pos, $radius);
+                        }
+                        $tokens_matched[] = [$transcript_tokenized[$pos]];
+                        $prev_pos = $pos;
                     }
-                    $tokens_matched[] = [$transcript_tokenized[$pos]];
                 }
+
+                // Get total keyword frequency in matched column
+                $num_passages = count($passage_tokenized);
+
 
                 // Collect matches in all columns
                 $data[] = [
@@ -355,7 +363,8 @@ class ApiSearch extends ApiController
                     'num_passages' => $num_passages,
                     'passage_tokenized' => $passage_tokenized,
                     'passage_lemmatized' => $passage_lemmatized,
-                    'lemmatize' => $lemmatize
+                    'lemmatize' => $lemmatize,
+                    'positions' => $pos_all
                 ];
             }
 

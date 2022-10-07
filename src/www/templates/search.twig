@@ -251,7 +251,7 @@
             // Fill table with results
             resultsTableB.empty()
             resultsTableB.append(
-              `<tr><td align="justify">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td align="center">${transcriber}</td><td align="center">${link}</td></tr>`)
+              `<tr><td align="justify">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
           }
         }
 
@@ -294,11 +294,11 @@
               // Fill table with results
               if (title === prec_title) {
                 resultsTableB.append(
-                  `<tr><td align="justify">${passages_string}</td><td></td><td align="center">${page}</td><td align="center">${column}</td><td align="center">${transcriber}</td><td align="center">${link}</td></tr>`)
+                  `<tr><td align="justify">${passages_string}</td><td></td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
               }
               else {
                 resultsTableB.append(
-                  `<tr><td align="justify">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td align="center">${transcriber}</td><td align="center">${link}</td></tr>`)
+                  `<tr><td align="justify">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
                 prec_title = title
               }
             }

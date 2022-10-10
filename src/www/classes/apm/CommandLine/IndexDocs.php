@@ -84,6 +84,10 @@ class IndexDocs extends CommandLineUtility {
         // Ascending ID for OpenSearch entries
         $id = 0;
 
+        // Download language models for lemmatization
+        exec("python3 ../../python/download_models.py", $models_status);
+        print($models_status[0]);
+
         print("Start indexing...\n");
 
         // Iterate over all docIDs
@@ -122,7 +126,7 @@ class IndexDocs extends CommandLineUtility {
                     $id = $id + 1;
 
                     // IF-CLAUSE ONLY FOR TESTING
-                    //if ($lang === 'la') {
+                    //if ($lang === 'he') {
                         $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang);
                         print("$id: Doc $docID ($title) page $page col $col lang $lang\n");
                     //}
@@ -167,13 +171,7 @@ class IndexDocs extends CommandLineUtility {
     private function indexCol ($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang): bool
     {
 
-        // ERROR IN INDEXING: 8877: Doc 82 (M-IT-FLR-BML-Leop.Med.Fesul.162) page 25 col 2 lang la
-        // sh: 1: indivi-: not found
-        // sh: 1: esse: not found
-
-        // Simplemma Tokenization and Lemmatization (Latin)
-        if ($lang == 'la' or $lang == 'ar') {
-
+        // Tokenization and Lemmatization
             // Encode transcript for avoiding errors in shell command because of characters like "(", ")" or " "
             $transcript_clean = str_replace("\n", "#", $transcript);
             $transcript_clean = str_replace(" ", "#", $transcript_clean);
@@ -184,8 +182,11 @@ class IndexDocs extends CommandLineUtility {
                 echo ("Lemmatizing in Python...");
                 if ($lang == 'la') {
                     exec("python3 ../../python/lemmatize_la_transcript.py $transcript_clean", $output);
-                } else {
+                } elseif ($lang == 'ar') {
                     exec("python3 ../../python/lemmatize_ar_transcript.py $transcript_clean", $output);
+                }
+                elseif ($lang == 'he') {
+                    exec("python3 ../../python/lemmatize_he_transcript.py $transcript_clean", $output);
                 }
                 $transcript_tokenized = explode("#", $output[0]);
                 $transcript_lemmatized = explode("#", $output[1]);
@@ -203,13 +204,6 @@ class IndexDocs extends CommandLineUtility {
             else {
                 print_r("finished!\n");
             }
-        }
-        else {
-            $transcript_clean = str_replace("\n", " ", $transcript);
-            $transcript_clean = str_replace("- ", "", $transcript_clean);
-            $transcript_tokenized = explode(" ", $transcript_clean);
-            $transcript_lemmatized = [];
-        }
 
         $this->client->create([
             'index' => $this->indexName,

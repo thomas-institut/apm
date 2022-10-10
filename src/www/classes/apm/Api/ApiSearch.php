@@ -47,11 +47,22 @@ class ApiSearch extends ApiController
         }
 
         // Determine language of the searched phrase and tokenize and lemmatize the phrase
+        // $detector = new LanguageDetector\LanguageDetector();
+        // $lang = $detector->evaluate($searched_phrase)->getLanguage();
+
         if (mb_detect_encoding($searched_phrase) == "ASCII") {
             exec("python3 ../python/lemmatize_la_phrase.py $searched_phrase", $tokens);
         } elseif (mb_detect_encoding($searched_phrase) == "UTF-8") {
             exec("python3 ../python/lemmatize_ar_phrase.py $searched_phrase", $tokens);
         }
+
+            //} elseif ($lang == 'ar') {
+            //exec("python3 ../python/lemmatize_ar_phrase.py $searched_phrase", $tokens);
+        //} elseif ($lang == 'he') {
+            //exec("python3 ../python/lemmatize_he_phrase.py $searched_phrase", $tokens);
+        //}
+
+
 
         $tokens_unlemmatized = explode("#", $tokens[0]);
         $tokens_lemmatized = explode("#", $tokens[1]);

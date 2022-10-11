@@ -88,7 +88,7 @@ class IndexDocs extends CommandLineUtility {
         exec("python3 ../../python/download_models.py", $models_status);
         print($models_status[0]);
 
-        print("Start indexing...\n");
+        print("\nStart indexing...\n");
 
         // Iterate over all docIDs
         foreach ($docList as $docID) {
@@ -126,10 +126,10 @@ class IndexDocs extends CommandLineUtility {
                     $id = $id + 1;
 
                     // IF-CLAUSE ONLY FOR TESTING
-                    //if ($lang === 'he') {
+                    //if ($lang === 'ar' and $page === '366' and $docID === '144') {
                         $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang);
                         print("$id: Doc $docID ($title) page $page col $col lang $lang\n");
-                    //}
+                    // }
                 }
             }
         }
@@ -171,25 +171,15 @@ class IndexDocs extends CommandLineUtility {
     private function indexCol ($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang): bool
     {
 
-        // Tokenization and Lemmatization
-            // Encode transcript for avoiding errors in shell command because of characters like "(", ")" or " "
-            $transcript_clean = str_replace("\n", "#", $transcript);
-            $transcript_clean = str_replace(" ", "#", $transcript_clean);
-            $transcript_clean = str_replace("(", "%", $transcript_clean);
-            $transcript_clean = str_replace(")", "§", $transcript_clean);
-
-            if (strlen($transcript_clean) > 3) {
+        // Encode transcript for avoiding errors in shell command because of characters like "(", ")" or " "
+        $transcript_clean = $this->encode($transcript);
+#
+         // Tokenization and Lemmatization
+        if (strlen($transcript_clean) > 3) {
                 echo ("Lemmatizing in Python...");
-                if ($lang == 'la') {
-                    exec("python3 ../../python/lemmatize_la_transcript.py $transcript_clean", $output);
-                } elseif ($lang == 'ar') {
-                    exec("python3 ../../python/lemmatize_ar_transcript.py $transcript_clean", $output);
-                }
-                elseif ($lang == 'he') {
-                    exec("python3 ../../python/lemmatize_he_transcript.py $transcript_clean", $output);
-                }
-                $transcript_tokenized = explode("#", $output[0]);
-                $transcript_lemmatized = explode("#", $output[1]);
+                exec("python3 ../../python/Lemmatizer_Indexing.py $transcript_clean", $tokens_and_lemmata);
+                $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
+                $transcript_lemmatized = explode("#", $tokens_and_lemmata[1]);
             }
             else {
                 $transcript_tokenized = [];
@@ -223,5 +213,16 @@ class IndexDocs extends CommandLineUtility {
 
         return true;
     }
-    
+
+    private function encode($transcript) {
+        $transcript_clean = str_replace("\n", "#", $transcript);
+        $transcript_clean = str_replace(" ", "#", $transcript_clean);
+        $transcript_clean = str_replace("(", "%", $transcript_clean);
+        $transcript_clean = str_replace(")", "§", $transcript_clean);
+        $transcript_clean = str_replace("׳", "€", $transcript_clean);
+        $transcript_clean = str_replace("'", "\'", $transcript_clean);
+        $transcript_clean = str_replace("\"", "\\\"", $transcript_clean);
+
+        return $transcript_clean;
+    }
 }

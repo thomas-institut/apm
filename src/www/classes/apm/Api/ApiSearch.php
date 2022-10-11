@@ -45,36 +45,21 @@ class ApiSearch extends ApiController
             $status = 'Connecting to OpenSearch server failed.';
             return $this->responseWithJson($response, ['searchString' => $searched_phrase,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
-
-        // Determine language of the searched phrase and tokenize and lemmatize the phrase
-        // $detector = new LanguageDetector\LanguageDetector();
-        // $lang = $detector->evaluate($searched_phrase)->getLanguage();
-
-        if (mb_detect_encoding($searched_phrase) == "ASCII") {
-            exec("python3 ../python/lemmatize_la_phrase.py $searched_phrase", $tokens);
-        } elseif (mb_detect_encoding($searched_phrase) == "UTF-8") {
-            exec("python3 ../python/lemmatize_ar_phrase.py $searched_phrase", $tokens);
-        }
-
-            //} elseif ($lang == 'ar') {
-            //exec("python3 ../python/lemmatize_ar_phrase.py $searched_phrase", $tokens);
-        //} elseif ($lang == 'he') {
-            //exec("python3 ../python/lemmatize_he_phrase.py $searched_phrase", $tokens);
-        //}
-
-
-
-        $tokens_unlemmatized = explode("#", $tokens[0]);
-        $tokens_lemmatized = explode("#", $tokens[1]);
-        $num_tokens = count($tokens_unlemmatized);
+        
+        // Tokenzize and lemmatize search phrase in Python
+        exec("python3 ../python/Lemmatizer_Query.py $searched_phrase", $tokens_and_lemmata);
+        
+        $tokens_queried = explode("#", $tokens_and_lemmata[0]);
+        $lemmata = explode("#", $tokens_and_lemmata[1]);
+        $num_tokens = count($tokens_queried);
 
         // Get the lemmatized or unlemmatized token for the query, depending on user choice for lemmatization
         if ($lemmatize) {
-            $token_for_query = $tokens_lemmatized[0];
+            $token_for_query = $lemmata[0];
             $query_algorithm = 'match';
         }
         else {
-            $token_for_query = $tokens_unlemmatized[0];
+            $token_for_query = $tokens_queried[0];
             // Choose query algorithm for OpenSearch-Query, depending on the length of the keyword
             $query_algorithm=$this->chooseQueryAlgorithm($token_for_query);
         }
@@ -97,12 +82,12 @@ class ApiSearch extends ApiController
         }
 
         // Get all information about the matched columns, including passages with the matched keyword as lists of words
-        $data = $this->evaluateData($query, $tokens_unlemmatized, $tokens_lemmatized, $query_algorithm, $radius, $lemmatize);
+        $data = $this->evaluateData($query, $tokens_queried, $lemmata, $query_algorithm, $radius, $lemmatize);
 
         // If there is more than one tokens_searched, extract all columns, which do match all the other tokens
         if ($num_tokens !== 1) {
             for ($i=1; $i<$num_tokens; $i++) {
-                $data = $this->evaluateDataForAdditionalTokens($data, $tokens_unlemmatized[$i], $tokens_lemmatized[$i], $lemmatize);
+                $data = $this->evaluateDataForAdditionalTokens($data, $tokens_queried[$i], $lemmata[$i], $lemmatize);
             }
         }
 
@@ -292,7 +277,7 @@ class ApiSearch extends ApiController
     }
 
     // Get all information about matches, specified for a single document or all documents
-    private function evaluateData ($query, $tokens_unlemmatized, $tokens_lemmatized, $query_algorithm, $radius, $lemmatize) {
+    private function evaluateData ($query, $tokens_queried, $lemmata, $query_algorithm, $radius, $lemmatize) {
 
         $data = [];
         $num_columns = $query['hits']['total']['value'];
@@ -315,11 +300,11 @@ class ApiSearch extends ApiController
 
                 // Get all lower-case and upper-case token positions (lemmatized or unlemmatized) in the current column (measured in words)
                 if ($lemmatize) {
-                    $pos_lower = $this->getPositions($transcript_lemmatized, $tokens_lemmatized[0], $query_algorithm);
-                    $pos_upper = $this->getPositions($transcript_lemmatized, ucfirst($tokens_lemmatized[0]), $query_algorithm);
+                    $pos_lower = $this->getPositions($transcript_lemmatized, $lemmata[0], $query_algorithm);
+                    $pos_upper = $this->getPositions($transcript_lemmatized, ucfirst($lemmata[0]), $query_algorithm);
                 } else {
-                    $pos_lower = $this->getPositions($transcript_tokenized, $tokens_unlemmatized[0], $query_algorithm);
-                    $pos_upper = $this->getPositions($transcript_tokenized, ucfirst($tokens_unlemmatized[0]), $query_algorithm);
+                    $pos_lower = $this->getPositions($transcript_tokenized, $tokens_queried[0], $query_algorithm);
+                    $pos_upper = $this->getPositions($transcript_tokenized, ucfirst($tokens_queried[0]), $query_algorithm);
                 }
 
                 // First, check if the keywordPostions in the arrays are the same (this is the case in hebrew and arabic,
@@ -368,8 +353,8 @@ class ApiSearch extends ApiController
                     'transcript' => $transcript,
                     'transcript_tokenized' => $transcript_tokenized,
                     'transcript_lemmatized' => $transcript_lemmatized,
-                    'tokens_unlemmatized' => $tokens_unlemmatized,
-                    'tokens_lemmatized' => $tokens_lemmatized,
+                    'tokens_queried' => $tokens_queried,
+                    'lemmata' => $lemmata,
                     'tokens_matched' => $tokens_matched,
                     'num_passages' => $num_passages,
                     'passage_tokenized' => $passage_tokenized,

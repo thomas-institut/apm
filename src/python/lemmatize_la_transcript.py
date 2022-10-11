@@ -9,6 +9,9 @@ transcript = transcript.replace("#", " ")
 transcript = transcript.replace("- ", "")
 transcript = transcript.replace("%", "(")
 transcript = transcript.replace("$", ")")
+transcript = transcript.replace("€", "׳")
+transcript = transcript.replace("\\", "")
+
 
 # Get tokens and lemmata
 tokens = simplemma.simple_tokenizer(transcript)

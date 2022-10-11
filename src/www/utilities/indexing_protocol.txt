@@ -1,0 +1,69 @@
+Existing index *transcripts* was deleted!
+New index *transcripts* was created!
+Already downloaded a model for the 'he' language
+Start indexing...
+Lemmatizing in Python...finished!
+1: Doc 49 (Duran Magen Avot Livorno 1785) page 159 col 1 lang he
+Lemmatizing in Python...finished!
+2: Doc 49 (Duran Magen Avot Livorno 1785) page 160 col 1 lang he
+Lemmatizing in Python...finished!
+3: Doc 49 (Duran Magen Avot Livorno 1785) page 161 col 1 lang he
+Lemmatizing in Python...finished!
+4: Doc 49 (Duran Magen Avot Livorno 1785) page 162 col 1 lang he
+Lemmatizing in Python...finished!
+5: Doc 49 (Duran Magen Avot Livorno 1785) page 163 col 1 lang he
+Lemmatizing in Python...finished!
+6: Doc 49 (Duran Magen Avot Livorno 1785) page 164 col 1 lang he
+Lemmatizing in Python...finished!
+7: Doc 17 (Duran MS Paris BN hebr. 739) page 322 col 1 lang he
+Lemmatizing in Python...finished!
+8: Doc 17 (Duran MS Paris BN hebr. 739) page 323 col 1 lang he
+Lemmatizing in Python...finished!
+9: Doc 17 (Duran MS Paris BN hebr. 739) page 324 col 1 lang he
+Lemmatizing in Python...finished!
+10: Doc 17 (Duran MS Paris BN hebr. 739) page 325 col 1 lang he
+Lemmatizing in Python...finished!
+11: Doc 17 (Duran MS Paris BN hebr. 739) page 326 col 1 lang he
+Lemmatizing in Python...finished!
+12: Doc 17 (Duran MS Paris BN hebr. 739) page 327 col 1 lang he
+Lemmatizing in Python...Traceback (most recent call last):
+  File "../../python/Lemmatizer_Indexing.py", line 17, in <module>
+    transcript = sys.argv[1:][0]
+IndexError: list index out of range
+PHP Notice:  Undefined offset: 0 in /home/lukas/apm/src/www/classes/apm/CommandLine/IndexDocs.php on line 181
+PHP Notice:  Undefined offset: 1 in /home/lukas/apm/src/www/classes/apm/CommandLine/IndexDocs.php on line 182
+finished!
+13: Doc 17 (Duran MS Paris BN hebr. 739) page 328 col 1 lang he
+Lemmatizing in Python...finished!
+14: Doc 17 (Duran MS Paris BN hebr. 739) page 329 col 1 lang he
+Lemmatizing in Python...finished!
+15: Doc 17 (Duran MS Paris BN hebr. 739) page 330 col 1 lang he
+Lemmatizing in Python...finished!
+16: Doc 17 (Duran MS Paris BN hebr. 739) page 331 col 1 lang he
+Lemmatizing in Python...finished!
+17: Doc 13 (Duran, MA, Ms Copenhagen) page 1 col 1 lang he
+Lemmatizing in Python...finished!
+18: Doc 13 (Duran, MA, Ms Copenhagen) page 2 col 1 lang he
+Lemmatizing in Python...finished!
+19: Doc 13 (Duran, MA, Ms Copenhagen) page 3 col 1 lang he
+Lemmatizing in Python...finished!
+20: Doc 13 (Duran, MA, Ms Copenhagen) page 4 col 1 lang he
+Lemmatizing in Python...finished!
+21: Doc 13 (Duran, MA, Ms Copenhagen) page 5 col 1 lang he
+Lemmatizing in Python...finished!
+22: Doc 13 (Duran, MA, Ms Copenhagen) page 6 col 1 lang he
+Lemmatizing in Python...finished!
+23: Doc 13 (Duran, MA, Ms Copenhagen) page 7 col 1 lang he
+Lemmatizing in Python...finished!
+24: Doc 13 (Duran, MA, Ms Copenhagen) page 8 col 1 lang he
+Lemmatizing in Python...finished!
+25: Doc 13 (Duran, MA, Ms Copenhagen) page 9 col 1 lang he
+Lemmatizing in Python...finished!
+26: Doc 13 (Duran, MA, Ms Copenhagen) page 10 col 1 lang he
+Lemmatizing in Python...finished!
+27: Doc 13 (Duran, MA, Ms Copenhagen) page 11 col 1 lang he
+Lemmatizing in Python...finished!
+28: Doc 13 (Duran, MA, Ms Copenhagen) page 12 col 1 lang he
+Lemmatizing in Python...finished!
+29: Doc 13 (Duran, MA, Ms Copenhagen) page 13 col 1 lang he
+Lemmatizing in Python...

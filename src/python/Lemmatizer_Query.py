@@ -1,5 +1,6 @@
 import simplemma
 import spacy_udpipe
+import qalsadi.lemmatizer
 from langdetect import detect
 import sys
 
@@ -11,11 +12,15 @@ phrase = " ".join(phrase)
 lang = detect(phrase)
 
 # Tokenization and Lemmatization
-if (lang=='ar' or lang=='he'):
-    nlp = spacy_udpipe.load(lang)
+if (lang=='he'):
+    nlp = spacy_udpipe.load('he')
     annotations = nlp(phrase)
     tokens = [token.text for token in annotations]
     lemmata = [token.lemma_ for token in annotations]
+elif (lang=='ar'):
+    tokens = phrase.split(" ")
+    lemmatizer = qalsadi.lemmatizer.Lemmatizer()
+    lemmata = [lemmatizer.lemmatize(t) for t in tokens]
 else:
     tokens = simplemma.simple_tokenizer(phrase)
     lemmata = [simplemma.lemmatize(t, lang='la') for t in tokens]

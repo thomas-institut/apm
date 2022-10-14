@@ -48,9 +48,11 @@ class ApiSearch extends ApiController
         
         // Tokenzize and lemmatize search phrase in Python
         exec("python3 ../python/Lemmatizer_Query.py $searched_phrase", $tokens_and_lemmata);
-        
+
         $tokens_queried = explode("#", $tokens_and_lemmata[0]);
         $lemmata = explode("#", $tokens_and_lemmata[1]);
+
+
         $num_tokens = count($tokens_queried);
 
         // Get the lemmatized or unlemmatized token for the query, depending on user choice for lemmatization
@@ -99,6 +101,7 @@ class ApiSearch extends ApiController
 
         // ApiResponse
         return $this->responseWithJson($response, [
+            'tokens_and_lemmata' => $tokens_and_lemmata,
             'searched_string' => $searched_phrase,
             'num_passages_total' => $num_passages,
             'data' => $data,

@@ -1,6 +1,7 @@
 {
     "require": {
         "opensearch-project/opensearch-php": "^2.0",
-        "landrok/language-detector": "^1.3"
+        "landrok/language-detector": "^1.3",
+        "ext-json": "*"
     }
 }

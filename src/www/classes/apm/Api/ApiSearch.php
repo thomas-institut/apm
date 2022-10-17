@@ -34,16 +34,20 @@ class ApiSearch extends ApiController
         $transcriber = $_POST['transcriber'];
         $radius = $_POST['radius'];
         $lemmatize = filter_var($_POST['lemmatize'], FILTER_VALIDATE_BOOLEAN);
-
         // Remove additional blanks before, after or in between keywords – necessary for a clean search
         $searched_phrase = $this->removeBlanks($searched_phrase);
+
+        // ATTEMPTS TO SOLVE STRANGE HEBREW ERROR ON THE COMPUTER IN THE OFFICE
+        //$searched_phrase = "\\u05d0\\u05d3\\u05dd";
+        //$searched_phrase = json_decode('{"b": "\u05d0\u05d3\u05dd"}');
+        //$searched_phrase=json_decode('"'.$searched_phrase.'"');
 
         // Instantiate OpenSearch client
         try {
             $client = $this->instantiateClient();
         } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
             $status = 'Connecting to OpenSearch server failed.';
-            return $this->responseWithJson($response, ['searchString' => $searched_phrase,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
+            return $this->responseWithJson($response, ['searched_phrase' => $searched_phrase,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
         
         // Tokenzize and lemmatize search phrase in Python
@@ -66,7 +70,7 @@ class ApiSearch extends ApiController
             $query_algorithm=$this->chooseQueryAlgorithm($token_for_query);
         }
 
-        // Query index for the first token in searched_string – other tokens will be handled below
+        // Query index for the first token in searched_phrase – other tokens will be handled below
         try {
             $query = $this->queryIndex($client, $index_name, $doc_title, $transcriber, $token_for_query, $query_algorithm, $lemmatize);
         } catch (\Exception $e) {
@@ -74,7 +78,7 @@ class ApiSearch extends ApiController
             
             return $this->responseWithJson($response,
                 [
-                    'searchString' => $searched_phrase,
+                    'searched_phrase' => $searched_phrase,
                     'matches' => [],
                     'serverTime' => $now,
                     'status' => $status,
@@ -102,7 +106,7 @@ class ApiSearch extends ApiController
         // ApiResponse
         return $this->responseWithJson($response, [
             'tokens_and_lemmata' => $tokens_and_lemmata,
-            'searched_string' => $searched_phrase,
+            'searched_phrase' => $searched_phrase,
             'num_passages_total' => $num_passages,
             'data' => $data,
             'serverTime' => $now,
@@ -130,7 +134,7 @@ class ApiSearch extends ApiController
     // Function, which instantiates OpenSearch client
     private function instantiateClient ()
     {
-        // Load authetication data from config-file
+        // Load authentication data from config-file
         $config = $this->systemManager->getConfig();
 
         $client = (new ClientBuilder())

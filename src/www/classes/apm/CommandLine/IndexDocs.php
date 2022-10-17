@@ -205,6 +205,7 @@ class IndexDocs extends CommandLineUtility {
                 'transcriber' => $transcriber,
                 'pageID' => $pageID,
                 'docID' => $docID,
+                'lang' => $lang,
                 'transcript' => $transcript,
                 'transcript_tokens' => $transcript_tokenized,
                 'transcript_lemmata' => $transcript_lemmatized

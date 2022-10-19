@@ -126,10 +126,12 @@ class IndexDocs extends CommandLineUtility {
                     $id = $id + 1;
 
                     // IF-CLAUSE ONLY FOR TESTING
-                    //if ($lang === 'ar' and $page === '366' and $docID === '144') {
+                    // 10672: Doc 92 (M-VA-VAT-BAV-Pal.lat.1035) page 13 col 1 lang la
+                    // 'he', 328, 17
+                    if ($lang === 'la' and $page === '13' and $docID === '92') {
                         $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang);
                         print("$id: Doc $docID ($title) page $page col $col lang $lang\n");
-                    // }
+                    }
                 }
             }
         }
@@ -180,6 +182,7 @@ class IndexDocs extends CommandLineUtility {
                 exec("python3 ../../python/Lemmatizer_Indexing.py $transcript_clean", $tokens_and_lemmata);
                 $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
                 $transcript_lemmatized = explode("#", $tokens_and_lemmata[1]);
+                print ($transcript_clean);
             }
             else {
                 $transcript_tokenized = [];
@@ -202,10 +205,10 @@ class IndexDocs extends CommandLineUtility {
                 'title' => $title,
                 'page' => $page,
                 'column' => $col,
-                'transcriber' => $transcriber,
                 'pageID' => $pageID,
                 'docID' => $docID,
                 'lang' => $lang,
+                'transcriber' => $transcriber,
                 'transcript' => $transcript,
                 'transcript_tokens' => $transcript_tokenized,
                 'transcript_lemmata' => $transcript_lemmatized
@@ -223,6 +226,8 @@ class IndexDocs extends CommandLineUtility {
         $transcript_clean = str_replace("׳", "€", $transcript_clean);
         $transcript_clean = str_replace("'", "\'", $transcript_clean);
         $transcript_clean = str_replace("\"", "\\\"", $transcript_clean);
+        //$transcript_clean = str_replace('&nbsp;', '#', $transcript_clean);
+        //$transcript_clean = str_replace('&h2028;', '#', $transcript_clean);
 
         return $transcript_clean;
     }

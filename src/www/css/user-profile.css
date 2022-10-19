@@ -1,0 +1,45 @@
+div.info-section h1 {
+    font-size: 1rem;
+    margin-top: 2rem;
+}
+
+div.info-section h1.first {
+    font-size: 1.2rem;
+    margin-top: 0;
+}
+
+div.info-section h1.cp-header a, div.info-section h1.cp-header a:visited {
+    color: #122894;
+}
+
+div.info-section-content {
+    margin-left: 1rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+p.doc-title {
+    margin-bottom: 0.25em;
+}
+
+p.page-list {
+    margin-left: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9em;
+}
+
+div.chunk {
+    margin-bottom: 2rem;
+}
+
+p.mce-title {
+    margin-bottom: 0.25rem;
+}
+
+p.new-mce {
+    margin-top:2rem;
+}
+
+div.chunk p {
+    margin-bottom: 0.25rem;
+}

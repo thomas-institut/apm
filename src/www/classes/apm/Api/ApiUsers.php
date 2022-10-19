@@ -20,8 +20,10 @@
 
 namespace APM\Api;
 
+use APM\System\DataRetrieveHelper;
 use DI\DependencyException;
 use DI\NotFoundException;
+use InvalidArgumentException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use AverroesProject\Profiler\ApmProfiler;
@@ -352,5 +354,95 @@ class ApiUsers extends ApiController
                     ['apiUserId' => $this->apiUserId ,
                      'userId' => $newUserId]);
         return $response->withStatus(200);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getTranscribedPages(Request $request, Response $response) : Response
+    {
+        $apiCall = 'getTranscribedPages';
+        $this->profiler->start();
+
+        $dm = $this->getDataManager();
+        $docManager = $this->systemManager->getTranscriptionManager()->getDocManager();
+        $pageManager = $this->systemManager->getTranscriptionManager()->getPageManager();
+
+        $helper = new DataRetrieveHelper();
+        $helper->setLogger($this->logger);
+
+        $userId =  (int) $request->getAttribute('userId');
+        $docIds = $dm->getDocIdsTranscribedByUser($userId);
+        $docInfoArray = $helper->getDocInfoArrayFromList($docIds, $docManager);
+        $allPageIds = [];
+
+        foreach($docIds as $docId) {
+            $pageIds = $dm->getPageIdsTranscribedByUser($userId, $docId);
+            $docInfoArray[$docId]->pageIds = $pageIds;
+            foreach($pageIds as $pageId) {
+                $allPageIds[] = $pageId;
+            }
+        }
+
+        $pageInfoArray = $helper->getPageInfoArrayFromList($allPageIds, $pageManager);
+
+
+        $data = [
+            'docIds' => $docIds,
+            'docInfoArray' => $docInfoArray,
+            'pageInfoArray' => $pageInfoArray
+        ];
+
+        $this->profiler->stop();
+        $this->logProfilerData($apiCall);
+        return $this->responseWithJson($response, $data);
+    }
+
+
+    public function getCollationTableInfo(Request $request, Response $response) : Response {
+        $apiCall = 'getCollationTableInfo';
+        $this->profiler->start();
+        $userId =  (int) $request->getAttribute('userId');
+
+        $ctManager = $this->systemManager->getCollationTableManager();
+        $tableIds = $ctManager->getCollationTableVersionManager()->getActiveCollationTableIdsForUserId($userId);
+        $tableInfo = [];
+        foreach($tableIds as $tableId) {
+            try {
+                $ctData = $ctManager->getCollationTableById($tableId);
+            } catch(InvalidArgumentException $e) {
+                $this->logger->error("Table $tableId reported as being active does not exist. Is version table consistent?");
+                continue;
+            }
+            if ($ctData['archived']) {
+                continue;
+            }
+            $chunkId = $ctData['chunkId'] ?? $ctData['witnesses'][0]['chunkId'];
+
+            $tableInfo[] = [
+                'id' => $tableId,
+                'title' => $ctData['title'],
+                'type' => $ctData['type'],
+                'chunkId' => $chunkId,
+            ];
+        }
+        $this->profiler->stop();
+        $this->logProfilerData($apiCall);
+        return $this->responseWithJson($response, $tableInfo);
+    }
+
+
+    public function getMultiChunkEditionInfo(Request $request, Response $response) : Response {
+        $apiCall = 'getMultiChunkEditionInfo';
+        $this->profiler->start();
+        $userId =  (int) $request->getAttribute('userId');
+
+        $editionInfo = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionInfoForUserId($userId);
+
+        $this->profiler->stop();
+        $this->logProfilerData($apiCall);
+        return $this->responseWithJson($response, $editionInfo);
     }
 }

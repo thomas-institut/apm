@@ -17,11 +17,29 @@
  */
 
 
+import { CollapsePanel } from '../widgets/CollapsePanel'
+import { UserDocDataCommon } from './common/UserDocDataCommon'
+
 export class UserProfilePage {
   
   constructor(profileUserInfo, urlGenerator) {
     this.profileUserInfo = profileUserInfo
     this.pathFor = urlGenerator
+    this.userId = profileUserInfo['id']
+
+
+    this.infoArea = $('#new-info-area')
+
+    this.infoArea.html(this._genInfoSectionHtml())
+    this.mcEditionsCollapse = this.__constructCollapse('#multi-chunk-editions', 'Multi-Chunk Editions', [ 'first'])
+    this.chunkEditionsCollapse = this.__constructCollapse('#chunk-editions', 'Chunk Editions')
+    this.collationTablesCollapse = this.__constructCollapse('#collation-tables', 'Collation Tables')
+    this.transcriptionsCollapse = this.__constructCollapse('#transcriptions', 'Transcriptions')
+
+    this._fetchMultiChunkEditions()
+    this._fetchCollationTablesAndEditions()
+    this._fetchTranscriptions()
+
     let thisObject = this
     
     let userId = profileUserInfo['id']
@@ -122,6 +140,48 @@ export class UserProfilePage {
       })
     })
   }
+
+  __constructCollapse(selector, title, headerClasses = []) {
+    return new CollapsePanel({
+      containerSelector: selector,
+      title: title,
+      content: this.__genLoadingMessageHtml(),
+      contentClasses: [ 'info-section-content'],
+      headerClasses: headerClasses,
+      iconWhenHidden: '<small><i class="bi bi-caret-right-fill"></i></small>',
+      iconWhenShown: '<small><i class="bi bi-caret-down-fill"></i></small>',
+      iconAtEnd: true,
+      headerElement: 'h1',
+      initiallyShown: true,
+      debug: false
+    })
+  }
+
+  _fetchMultiChunkEditions() {
+    $.get(this.pathFor.apiUserGetMultiChunkEditionInfo(this.userId)).then( (data) => {
+      this.mcEditionsCollapse.setContent(UserDocDataCommon.generateMultiChunkEditionsListHtml(data, this.pathFor))
+    })
+  }
+
+
+  _fetchTranscriptions() {
+    $.get(this.pathFor.apiUserGetTranscribedPages(this.userId)).then( (data) => {
+      this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data, this.pathFor))
+    })
+  }
+
+  _fetchCollationTablesAndEditions() {
+    let apiUrl = this.pathFor.apiUserGetCollationTableInfo(this.userId)
+    $.get(apiUrl).then( (data) => {
+      let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data, this.pathFor)
+      this.chunkEditionsCollapse.setContent(listHtml.editions)
+      this.collationTablesCollapse.setContent(listHtml.cTables)
+    })
+  }
+
+  __genLoadingMessageHtml() {
+    return `Loading data  <span class="spinner-border spinner-border-sm" role="status"></span>`
+  }
   
   userProfileHtml (userInfo) {
     let str = '<img src="https://www.gravatar.com/avatar/' + userInfo['emailhash'] + '?d=mm&s=200" alt="User Gravatar">'
@@ -147,6 +207,15 @@ export class UserProfilePage {
         $('#userprofile').html(thisObject.userProfileHtml(thisObject.profileUserInfo))
       }
     )
+  }
+
+  _genInfoSectionHtml() {
+    return `<div id="multi-chunk-editions" class="info-section"></div>
+        <div id="chunk-editions" class="info-section"></div>
+        <div id="collation-tables" class="info-section"></div>
+        <div id="transcriptions" class="info-section"></div>
+        <div id="admin" class="info-section"></div>
+`
   }
   
 }

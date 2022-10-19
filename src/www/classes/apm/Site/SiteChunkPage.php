@@ -28,6 +28,7 @@ namespace APM\Site;
 
 use APM\FullTranscription\ApmChunkSegmentLocation;
 use APM\FullTranscription\ColumnVersionInfo;
+use APM\System\DataRetrieveHelper;
 use APM\System\WitnessType;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -119,8 +120,11 @@ class SiteChunkPage extends SiteController
             $fullLanguageInfo[$lang] = $langInfo;
         }
 
-        $pageInfoArray = $this->getPageInfoArrayFromList($pagesMentioned, $transcriptionManager->getPageManager());
-        $authorInfoArray = $this->getAuthorInfoArrayFromList($authorsMentioned, $dm->userManager);
+        $helper = new DataRetrieveHelper();
+        $helper->setLogger($this->logger);
+
+        $pageInfoArray = $helper->getPageInfoArrayFromList($pagesMentioned, $transcriptionManager->getPageManager());
+        $authorInfoArray = $helper->getAuthorInfoArrayFromList($authorsMentioned, $dm->userManager);
 
         $showAdminInfo = false;
         if ($dm->userManager->isUserAllowedTo($this->userInfo['id'], 'witness-view-details')) {

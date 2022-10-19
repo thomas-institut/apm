@@ -62,6 +62,18 @@ class ApmUrlGenerator {
     apiUserGetInfo(id) {
         return this.base + '/api/user/' + id + '/info';
     }
+
+    apiUserGetTranscribedPages(id) {
+        return this.base + '/api/user/' + id + '/transcribedPages';
+    }
+
+    apiUserGetCollationTableInfo(id) {
+        return this.base + '/api/user/' + id + '/collationTables';
+    }
+    apiUserGetMultiChunkEditionInfo(id) {
+        return this.base + '/api/user/' + id + '/multiChunkEditions';
+    }
+
     apiUserPasswordChange(id) {
         return this.base + '/api/user/' + id + '/changepassword';
     }

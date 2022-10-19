@@ -38,6 +38,7 @@ class SiteDashboard extends SiteController
 {
 
     const TEMPLATE_DASHBOARD = 'dashboard.twig';
+    const TEMPLATE_NEW_DASHBOARD = 'dashboard-new.twig';
 
     /**
      * @param Request $request
@@ -93,6 +94,24 @@ class SiteDashboard extends SiteController
             'tableInfo' => $tableInfo,
             'editionInfo' => $editionInfo,
             'isRoot' => $this->userInfo['isRoot']
+        ]);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function newDashboardPage(Request $request, Response $response): Response
+    {
+        $userId = (int) $this->userInfo['id'];
+
+        $this->profiler->start();
+
+        $this->manageCookies($request);
+        return $this->renderPage($response, self::TEMPLATE_NEW_DASHBOARD, [
+            'userId' => $userId,
+            'userInfo' => $this->userInfo,
         ]);
     }
 }

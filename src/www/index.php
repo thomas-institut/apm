@@ -160,10 +160,17 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
 
     // DASHBOARD
 
-    $group->get('/dashboard',
-        SiteDashboard::class . ':dashboardPage')
-        ->setName('dashboard');
+//    $group->get('/dashboard',
+//        SiteDashboard::class . ':dashboardPage')
+//        ->setName('dashboard');
 
+
+    $group->get('/dashboard',
+        function(Request $request, Response $response, array $args) use ($container){
+            $dashboard = new SiteDashboard($container);
+            return $dashboard->newDashboardPage($request, $response, $args);
+        })
+        ->setName('dashboard');
     // USER.PROFILE
 
     $group->get('/user/{username}',
@@ -380,6 +387,26 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
     $group->post('/user/new',
         ApiUsers::class . ':createNewUser')
         ->setName('api.user.new');
+
+    // API -> user : get pages transcribed by user
+    $group->get('/user/{userId}/transcribedPages', function(Request $request, Response $response, array $args) use ($container){
+        $apiUsers = new ApiUsers($container);
+        return $apiUsers->getTranscribedPages($request, $response, $args);
+    } )->setName('api.user.transcribedPages');
+
+    // API -> user : get collation tables (and chunk edition) by user
+    $group->get('/user/{userId}/collationTables', function(Request $request, Response $response, array $args) use ($container){
+        $apiUsers = new ApiUsers($container);
+        return $apiUsers->getCollationTableInfo($request, $response, $args);
+    } )->setName('api.user.collationTables');
+
+    // API -> user : get multi-chunk editions by user
+    $group->get('/user/{userId}/multiChunkEditions', function(Request $request, Response $response, array $args) use ($container){
+        $apiUsers = new ApiUsers($container);
+        return $apiUsers->getMultiChunkEditionInfo($request, $response, $args);
+    } )->setName('api.user.multiChunkEditions');
+
+
 
     // WITNESSES
     $group->get('/witness/get/{witnessId}[/{outputType}[/{cache}]]',

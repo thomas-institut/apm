@@ -108,6 +108,41 @@ export function numericSort(theArray, asc = true) {
   })
 }
 
+/**
+ *
+ * @param {*[]}theArray
+ * @param {string}fieldName
+ * @param {boolean}asc
+ * @return {*}
+ */
+export function numericFieldSort(theArray, fieldName, asc= true) {
+  return theArray.sort( (a,b) => {
+    if (asc) { return a[fieldName]-b[fieldName]}
+    return b[fieldName]-a[fieldName]
+  })
+}
+
+/**
+ *
+ * @param {*[]}theArray
+ * @param {string}fieldName
+ * @param {boolean}asc
+ * @return {*[]}
+ */
+export function stringFieldSort(theArray, fieldName, asc = true) {
+  return theArray.sort( (a,b) => {
+    let x = a[fieldName].toLowerCase()
+    let y = b[fieldName].toLowerCase()
+    if (x < y) {
+      return asc ? -1 : 1
+    }
+    if (x > y) {
+      return asc ? 1 : -1
+    }
+    return 0
+  })
+}
+
 export function pushArray(theArray, arrayToPush) {
   arrayToPush.forEach( (e) => {
     theArray.push(e)

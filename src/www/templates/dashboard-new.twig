@@ -1,0 +1,39 @@
+{% extends "base.twig" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extraCSS %}
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/dashboard.css"/>
+{% endblock %}
+
+{% block extraJS %}
+{#  <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>#}
+  <script type="application/javascript" src="{{baseurl}}/js/dist/DashboardPage.bundle.js"></script>
+{% endblock %}
+
+
+{% block finalBodyJS %}
+
+<script>
+
+  $(() => {
+    let urlGenerator = new ApmUrlGenerator('{{ baseurl }}')
+    let userId = parseInt('{{ userId }}')
+    let userInfo = JSON.parse("{{userInfo|json_encode|e('js')}}")
+
+    new DashboardPage(( {
+      urlGenerator: urlGenerator,
+      userId: userId,
+      userInfo: userInfo
+    }))
+
+  })
+</script>
+{%  endblock %}
+
+{% block content %}
+<div id="dashboard" class="dashboard">
+    New Dashboard coming up...
+</div>
+
+{% endblock %}

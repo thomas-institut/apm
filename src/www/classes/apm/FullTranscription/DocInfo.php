@@ -25,31 +25,37 @@ class DocInfo
     /**
      * @var int
      */
-    public $id;
+    public int $id;
     /**
      * @var string
      */
-    public $title;
+    public string $title;
     /**
      * @var string
      */
-    public $languageCode;
+    public string $languageCode;
     /**
      * @var string
      */
-    public $type;
+    public string $type;
     /**
      * @var string
      */
-    public $imageSource;
+    public string $imageSource;
     /**
      * @var string
      */
-    public $imageSourceData;
+    public string $imageSourceData;
     /**
      * @var string
      */
-    public $shortTitle;
+    public string $shortTitle;
+
+    /**
+     * Array of page Ids, not filled up from a simple database query!
+     * @var array
+     */
+    public array $pageIds;
 
     public function __construct()
     {
@@ -60,6 +66,7 @@ class DocInfo
         $this->type = '';
         $this->imageSource = '';
         $this->imageSourceData = '';
+        $this->pageIds = [];
     }
 
     public function setFromDatabaseRow(array $row) {

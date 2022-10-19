@@ -3,7 +3,6 @@ import spacy_udpipe
 import qalsadi.lemmatizer
 from langdetect import detect
 import sys
-import json
 
 # Get phrase from php exec-command
 phrase = sys.argv[1:]

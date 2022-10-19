@@ -37,10 +37,11 @@ class ApiSearch extends ApiController
         // Remove additional blanks before, after or in between keywords – necessary for a clean search
         $searched_phrase = $this->removeBlanks($searched_phrase);
 
-        // ATTEMPTS TO SOLVE STRANGE HEBREW ERROR ON THE COMPUTER IN THE OFFICE
+        // ATTEMPTS TO SOLVE STRANGE HEBREW ERROR
         //$searched_phrase = "\\u05d0\\u05d3\\u05dd";
         //$searched_phrase = json_decode('{"b": "\u05d0\u05d3\u05dd"}');
         //$searched_phrase=json_decode('"'.$searched_phrase.'"');
+        //$searched_phrase = 'אני יודע';
 
         // Instantiate OpenSearch client
         try {

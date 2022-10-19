@@ -1,6 +1,11 @@
 <?php
 
-$searched_phrase = '\\u05dc\\u05d3\\u05e2\\u05ea';
+#$searched_phrase = json_encode('אני יודע');
+#$searched_phrase = json_decode($searched_phrase);
+
+$searched_phrase = 'אני יודע';
+
+print_r($searched_phrase);
 
 exec("python3 /home/lukas/apm/src/python/Lemmatizer_Query.py $searched_phrase", $tokens_and_lemmata);
 

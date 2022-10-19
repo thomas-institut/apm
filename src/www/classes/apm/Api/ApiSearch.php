@@ -57,7 +57,7 @@ class ApiSearch extends ApiController
         $tokens_queried = explode("#", $tokens_and_lemmata[0]);
         $lemmata = explode("#", $tokens_and_lemmata[1]);
 
-
+        // Count tokens
         $num_tokens = count($tokens_queried);
 
         // Get the lemmatized or unlemmatized token for the query, depending on user choice for lemmatization

@@ -41,7 +41,7 @@ class ApiSearch extends ApiController
         //$searched_phrase = "\\u05d0\\u05d3\\u05dd";
         //$searched_phrase = json_decode('{"b": "\u05d0\u05d3\u05dd"}');
         //$searched_phrase=json_decode('"'.$searched_phrase.'"');
-        //$searched_phrase = 'אני יודע';
+        //$searched_phrase = 'לדעת';
 
         // Instantiate OpenSearch client
         try {
@@ -52,10 +52,14 @@ class ApiSearch extends ApiController
         }
         
         // Tokenzize and lemmatize search phrase in Python
-        exec("python3 ../python/Lemmatizer_Query.py $searched_phrase", $tokens_and_lemmata);
+        exec("python3 ../python/Lemmatizer_Query.py $searched_phrase", $tokens_and_lemmata, $retval);
 
-        $tokens_queried = explode("#", $tokens_and_lemmata[0]);
-        $lemmata = explode("#", $tokens_and_lemmata[1]);
+        // Log output from exec-function
+        $this->logger->debug('output', [$tokens_and_lemmata, $retval]);
+
+        // Get queried tokens and lemmata
+        $tokens_queried = explode("#", $tokens_and_lemmata[1]);
+        $lemmata = explode("#", $tokens_and_lemmata[2]);
 
         // Count tokens
         $num_tokens = count($tokens_queried);

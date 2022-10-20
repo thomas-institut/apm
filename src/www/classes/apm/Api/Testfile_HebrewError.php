@@ -3,7 +3,7 @@
 #$searched_phrase = json_encode('אני יודע');
 #$searched_phrase = json_decode($searched_phrase);
 
-$searched_phrase = 'شخص';
+$searched_phrase = 'לדעת';
 
 //print_r($searched_phrase);
 
@@ -14,6 +14,6 @@ print_r($tokens_and_lemmata);
 $tokens_queried = explode("#", $tokens_and_lemmata[0]);
 $lemmata = explode("#", $tokens_and_lemmata[1]);
 
-print_r ($tokens_queried[0]);
-print("\n");
-print_r ($lemmata[0]);
+//print_r ($tokens_queried[0]);
+//print("\n");
+//print_r ($lemmata[0]);

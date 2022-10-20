@@ -11,6 +11,9 @@ phrase = " ".join(phrase)
 # Detect language
 lang = detect(phrase)
 
+# Download Model for hebrew
+spacy_udpipe.download("he")
+
 # Tokenization and Lemmatization
 if (lang=='he'):
     nlp = spacy_udpipe.load('he')

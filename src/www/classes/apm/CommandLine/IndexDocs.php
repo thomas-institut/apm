@@ -126,11 +126,10 @@ class IndexDocs extends CommandLineUtility {
                     $id = $id + 1;
 
                     // IF-CLAUSE ONLY FOR TESTING
-                    // 10672: Doc 92 (M-VA-VAT-BAV-Pal.lat.1035) page 13 col 1 lang la
-                    //if ($lang === 'he' and $page === '328' and $docID === '17') {
+                    if ($lang === 'la' and $page === '34' and $docID === '82') {
                         $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang);
                         print("$id: Doc $docID ($title) page $page col $col lang $lang\n");
-                    //}
+                    }
                 }
             }
         }
@@ -178,10 +177,15 @@ class IndexDocs extends CommandLineUtility {
          // Tokenization and Lemmatization
         if (strlen($transcript_clean) > 3) {
                 echo ("Lemmatizing in Python...");
-                exec("python3 ../../python/Lemmatizer_Indexing.py $transcript_clean", $tokens_and_lemmata);
+                exec("python3 ../../python/Lemmatizer_Indexing.py $transcript_clean", $tokens_and_lemmata, $retval);
+
+
                 $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
                 $transcript_lemmatized = explode("#", $tokens_and_lemmata[1]);
-                //print ($transcript_clean);
+
+                print_r ($transcript_tokenized);
+                print_r ($transcript_lemmatized);
+                print($transcript_clean);
             }
             else {
                 $transcript_tokenized = [];
@@ -218,6 +222,8 @@ class IndexDocs extends CommandLineUtility {
     }
 
     private function encode($transcript) {
+
+        // Replace line breaks, blanks, brackets...these character can provoke errors in the exec-command
         $transcript_clean = str_replace("\n", "#", $transcript);
         $transcript_clean = str_replace(" ", "#", $transcript_clean);
         $transcript_clean = str_replace("(", "%", $transcript_clean);
@@ -228,7 +234,23 @@ class IndexDocs extends CommandLineUtility {
         $transcript_clean = str_replace(' ', '#', $transcript_clean);
         $transcript_clean = str_replace(' ', '#', $transcript_clean);
         $transcript_clean = str_replace('##', '#', $transcript_clean);
+        $transcript_clean = str_replace('T.', '', $transcript_clean);
 
+        // Remove numbers
+        for ($i=0; $i<10; $i++) {
+            $transcript_clean = str_replace("${i}", '', $transcript_clean);
+        }
+
+        // Transcript should not begin or end with hashtag
+        for ($i=0; $i<3; $i++) {
+            if (substr($transcript_clean, 0, 1) === '#') {
+                $transcript_clean = substr($transcript_clean, 1);
+            }
+
+            if (substr($transcript_clean, -1, 1) === '#') {
+                $transcript_clean = substr($transcript_clean, 0, -1);
+            }
+        }
 
         return $transcript_clean;
     }

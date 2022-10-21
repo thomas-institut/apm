@@ -17,6 +17,7 @@
  */
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
+import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 
 /**
  * A generic collapsible panel consisting of a header, a show/collapse button and a panel div
@@ -27,7 +28,6 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 export class CollapsePanel {
 
   constructor (options) {
-
     let optionsDefinition = {
       containerSelector: { type: 'string'},  // required container selector
       title: {type: 'string'},
@@ -36,14 +36,34 @@ export class CollapsePanel {
       contentClasses: { type: 'array', default: []},
       iconWhenShown: { type: 'string', default: '[-]'},
       iconWhenHidden: { type: 'string', default: '[+]'},
+      expandLinkTitle: { type: 'string', default: 'Click to expand'},
+      collapseLinkTitle: { type: 'string', default: 'Click to collapse'},
+      iconAtEnd: { type: 'boolean', default: true},
       content: { type: 'string', default: ''},
-      initiallyShown: { type: 'boolean', default: true}
+      initiallyShown: { type: 'boolean', default: true},
+      // function that will be called when the panel is shown
+      // should return a promise
+      onShow: { type: 'function', default: (panelObject)=> {
+          panelObject.debug && console.log(`Showing panel with selector '${panelObject.getContainerSelector()}'`)
+          return resolvedPromise(true)
+        }},
+      // function that will be called when the panel is hidden
+      onHide:
+        { type: 'function', default: (panelObject)=> {
+            panelObject.debug && console.log(`Hiding panel with selector '${panelObject.getContainerSelector()}'`)
+            return resolvedPromise(true)
+          }},
+      debug: { type: 'boolean', default: false}
     }
     let oc = new OptionsChecker({
      optionsDefinition: optionsDefinition,
       context: 'CollapsePanelWidget'
     })
     this.options = oc.getCleanOptions(options)
+    this.debug = this.options.debug
+    // this.debug && console.log(`Collapse Panel Options`)
+    // this.debug && console.log(options)
+    // this.debug && console.log(this.options)
     this.shown = this.options.initiallyShown
     this.containerSelector = this.options.containerSelector
     this.container = $(this.containerSelector)
@@ -52,6 +72,7 @@ export class CollapsePanel {
     this.titleSpan =  $(`${this.containerSelector} span.cp-title`)
 
     this.iconSpan = $(`${this.containerSelector} span.cp-icon`)
+    this.headerLink = $(`${this.containerSelector} a.cp-a`)
     this.contentDiv = $(`${this.containerSelector} div.cp-content`)
     $(`${this.containerSelector} .cp-a`).on('click', () => {
       this.toggle()
@@ -62,11 +83,15 @@ export class CollapsePanel {
     if (this.shown) {
       this.contentDiv.addClass('hidden')
       this.iconSpan.html(this.options.iconWhenHidden)
+      this.headerLink.attr('title', this.options.expandLinkTitle)
       this.shown = false
+      this.options.onHide(this)
     } else {
       this.contentDiv.removeClass('hidden')
       this.iconSpan.html(this.options.iconWhenShown)
+      this.headerLink.attr('title', this.options.collapseLinkTitle)
       this.shown = true
+      this.options.onShow(this)
     }
   }
 
@@ -74,13 +99,20 @@ export class CollapsePanel {
     this.contentDiv.html(content)
   }
 
+  getContainerSelector() {
+    return this.containerSelector
+  }
+
   __getHtml() {
     let icon = this.shown ? this.options.iconWhenShown : this.options.iconWhenHidden
+    let linkTitle = this.shown ? this.options.collapseLinkTitle: this.options.expandLinkTitle
+    let iconLink = `<a href="#" class="cp-a" title="${linkTitle}"><span class="cp-icon">${icon}</span></a>`
     let hiddenClass = this.shown ? '' : 'hidden'
     return `<div class="cp-container">
         <${this.options.headerElement} class="cp-header ${this.options.headerClasses.join(' ')}">
+            ${!this.options.iconAtEnd ? iconLink : ''}
             <span class="cp-title">${this.options.title}</span> 
-            <a href="#" class="cp-a"><span class="cp-icon">${icon}</span></a> 
+            ${this.options.iconAtEnd ? iconLink : ''}
         </${this.options.headerElement}>
         <div class="cp-content ${this.options.contentClasses.join(' ')} ${hiddenClass}">${this.options.content}</div>
      </div>`

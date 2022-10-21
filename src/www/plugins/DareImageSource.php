@@ -28,20 +28,27 @@ use APM\Plugin\ImageSourcePlugin;
  */
 class DareImageSource extends ImageSourcePlugin {
 
+    const IMAGE_URL_SCHEME = "https://oldsire.uni-koeln.de/%s/%d/jpg";
+    //const IMAGE_URL_SCHEME = "https://bilderberg.uni-koeln.de/images/books/%s/bigjpg/%s-%04d.jpg";
+    const OSD_CONFIG_SCHEME = "tileSources: {type: 'image', url:  '%s', buildPyramid: false,homeFillsViewer: true}";
+    //const BILDERBERG_DOC_URL_SCHEME = "https://bilderberg.uni-koeln.de/cgi-bin/berg.pas?page=book&book=%s";
+    const BILDERBERG_DOC_URL_SCHEME = "https://oldsire.uni-koeln.de/%s";
+    const DARE_DOC_URL_SCHEME = "https://dare.uni-koeln.de/app/manuscripts/%s";
+
    public function __construct($systemManager) {
         parent::__construct($systemManager, 'dare');
     }
        
     public function realGetImageUrl($imageSourceData, $imageNumber) 
     {
-        return sprintf("https://bilderberg.uni-koeln.de/images/books/%s/bigjpg/%s-%04d.jpg", 
+        return sprintf(self::IMAGE_URL_SCHEME,
                     $imageSourceData, 
-                    $imageSourceData, 
+                   // $imageSourceData,
                     $imageNumber);
     }
     
     public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber) {
-        return sprintf("tileSources: {type: 'image', url:  '%s', buildPyramid: false,homeFillsViewer: true}", 
+        return sprintf(self::OSD_CONFIG_SCHEME,
                 $this->realGetImageUrl($imageSourceData, $imageNumber));
     }
 
@@ -73,11 +80,11 @@ class DareImageSource extends ImageSourcePlugin {
     }
 
     private function getDareDocumentUrl(string $dareId) : string {
-       return "https://dare.uni-koeln.de/app/manuscripts/$dareId";
+       return sprintf(self::DARE_DOC_URL_SCHEME, $dareId);
     }
 
     private function getBilderbergDocumentUrl(string $dareId) : string {
-       return "https://bilderberg.uni-koeln.de/cgi-bin/berg.pas?page=book&book=$dareId";
+       return sprintf(self::BILDERBERG_DOC_URL_SCHEME, $dareId);
     }
 
 

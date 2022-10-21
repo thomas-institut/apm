@@ -21,13 +21,15 @@
 namespace APM\Api;
 
 use APM\CollationEngine\CollationEngine;
-use APM\StandardData\StandardTokenClass;
 use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
+use Exception;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ResponseInterface as Response;
-use \Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ServerRequestInterface as Request;
 
 use AverroesProject\Data\DataManager;
 use APM\System\SystemManager;
@@ -123,6 +125,8 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     /**
      * ApiController constructor.
      * @param ContainerInterface $ci
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function __construct(ContainerInterface $ci)
     {
@@ -235,7 +239,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
      * @param int $status
      * @return Response
      */
-    protected function responseWithJson(ResponseInterface $response, $data, $status = 200) : ResponseInterface {
+    protected function responseWithJson(ResponseInterface $response, $data, int $status = 200) : ResponseInterface {
         $payload = json_encode($data);
         return $this->responseWithJsonRaw($response, $payload, $status);
     }
@@ -246,7 +250,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
      * @param int $status
      * @return Response
      */
-    protected function responseWithJsonRaw(ResponseInterface $response, $json, $status = 200) : ResponseInterface {
+    protected function responseWithJsonRaw(ResponseInterface $response, $json, int $status = 200) : ResponseInterface {
         $response->getBody()->write($json);
 
         return $response
@@ -254,7 +258,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
             ->withStatus($status);
     }
 
-    protected function logException(\Exception  $e, $msg) {
+    protected function logException(Exception $e, $msg) {
         $this->logger->error("Exception caught: $msg", [ 'errorMsg' => $e->getMessage(), 'erroCode' => $e->getCode(), 'trace' => $e->getTraceAsString()]);
     }
 
@@ -262,9 +266,9 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     {
         $lapInfo = $this->profiler->getLaps();
         $totalTimeInMs = $this->getProfilerTotalTime() * 1000;
-        $totalQueries = $lapInfo[count($lapInfo)-1]['mysql-queries']['cummulative']['Total'];
-        $cacheHits = $lapInfo[count($lapInfo)-1]['cache']['cummulative']['hits'];
-        $cacheMisses = $lapInfo[count($lapInfo)-1]['cache']['cummulative']['misses'];
+        $totalQueries = $lapInfo[count($lapInfo)-1]['mysql-queries']['cumulative']['Total'];
+        $cacheHits = $lapInfo[count($lapInfo)-1]['cache']['cumulative']['hits'];
+        $cacheMisses = $lapInfo[count($lapInfo)-1]['cache']['cumulative']['misses'];
         $info = $fullLapInfo ? $lapInfo :[];
         $this->logger->debug(sprintf("PROFILER %s, finished in %0.2f ms, %d MySql queries, %d cache hits, %d misses",
             $pageTitle, $totalTimeInMs, $totalQueries, $cacheHits, $cacheMisses), $info);
@@ -273,7 +277,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     protected function getProfilerTotalTime() : float
     {
         $lapInfo = $this->profiler->getLaps();
-        return $lapInfo[count($lapInfo)-1]['time']['cummulative'];
+        return $lapInfo[count($lapInfo)-1]['time']['cumulative'];
     }
 
     protected function responseWithText(Response $response, string $text, int $status=200) : Response {

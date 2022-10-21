@@ -197,3 +197,6 @@ export function toFixedPrecision(someNumber, decimals) {
   return Math.floor(someNumber*factor) / factor
 }
 
+
+
+

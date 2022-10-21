@@ -35,7 +35,7 @@ use \Psr\Http\Message\ResponseInterface as Response;
 class SiteHomePage extends SiteController
 {
   
-    public function homePage(Request $request, Response $response)
+    public function homePage(Request $request, Response $response): Response
     {
         $dashBoardUrl =  $this->router->urlFor('dashboard');
         $this->logger->debug('Rerouting to ' . $dashBoardUrl);

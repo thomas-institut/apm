@@ -39,7 +39,7 @@ abstract class TranscriptionManager implements ErrorReporter
     abstract public function getColumnVersionManager() : ColumnVersionManager;
 
     /**
-     * Returns the ApmTranscriptionWitness contained in the given document for the given work and chunk number
+     * Returns the ApmTranscriptionWitness contained in the given document for the given work and work number
      * at the given time.
      * Throws an InvalidArgument exception if there's no valid witness.
      *
@@ -53,9 +53,9 @@ abstract class TranscriptionManager implements ErrorReporter
     abstract public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : ApmTranscriptionWitness;
 
     /**
-     * Returns a "map" of chunk locations in a particular document at the given time.
+     * Returns a "map" of work locations in a particular document at the given time.
      *
-     * The returned array contains ApmChunkSegmentLocation objects arranged by work, chunk, document and localWitnessId
+     * The returned array contains ApmChunkSegmentLocation objects arranged by work, work, document and localWitnessId
      *
      *
      * $returnedArray = [
@@ -120,7 +120,7 @@ abstract class TranscriptionManager implements ErrorReporter
 
 
     /**
-     * Returns a map of chunk locations for the given chunk (workId / chunkNumber) at the given time
+     * Returns a map of work locations for the given work (workId / chunkNumber) at the given time
      *
      * @param string $workId
      * @param int $chunkNumber
@@ -158,7 +158,7 @@ abstract class TranscriptionManager implements ErrorReporter
 
 
     /**
-     * Returns an array with version information about all the pages and columns in the chunk segment location
+     * Returns an array with version information about all the pages and columns in the work segment location
      * grouped by page sequence and column number:
      *
      * $returnedArray = [
@@ -174,7 +174,7 @@ abstract class TranscriptionManager implements ErrorReporter
 
 
     /**
-     * Returns all version information about every chunk segment location in the given location map.
+     * Returns all version information about every work segment location in the given location map.
      *
      * The returned array contains an array with version information in the same position in the map
      * as the relevant segment:
@@ -199,7 +199,7 @@ abstract class TranscriptionManager implements ErrorReporter
     abstract public function getLastSavesForDoc(int $docId, int $numSaves) : array;
 
     /**
-     * Returns an array of WitnessInfo object with the available witnessess for given chunk
+     * Returns an array of WitnessInfo object with the available witnessess for given work
      *
      * @param string $workId
      * @param int $chunkNumber

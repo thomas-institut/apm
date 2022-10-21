@@ -19,8 +19,6 @@
 
 namespace ThomasInstitut\Profiler;
 
-use InvalidArgumentException;
-use RuntimeException;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
@@ -30,34 +28,33 @@ class SimpleProfiler implements Profiler, ErrorReporter
     use SimpleErrorReporterTrait;
 
     const ERROR_CANNOT_USE_RESERVED_LAP_NAME = 100;
-    const ERROR_START_CALLED_WHEN_ALREADY_STARTED = 101;
     const ERROR_PROPERTY_NAME_ALREADY_IN_USE = 102;
     const ERROR_LAP_NAME_ALREADY_IN_USE = 103;
     const ERROR_LAP_CALLED_WHEN_NOT_RUNNING = 104;
     const ERROR_STOP_CALLED_WHEN_NOT_RUNNING = 105;
-    const ERROR_GETLAPS_CALLED_WHEN_RUNNING = 106;
+    const ERROR_GET_LAPS_CALLED_WHEN_RUNNING = 106;
 
 
     /**
      * @var array
      */
-    private $propertyTrackers;
+    private array $propertyTrackers;
     /**
      * @var array
      */
-    private $laps;
+    private array $laps;
     /**
      * @var array
      */
-    private $lapNames;
+    private array $lapNames;
     /**
      * @var array
      */
-    private $calculatedLaps;
+    private array $calculatedLaps;
     /**
      * @var bool
      */
-    private $running;
+    private bool $running;
 
     public function __construct()
     {
@@ -107,7 +104,7 @@ class SimpleProfiler implements Profiler, ErrorReporter
     {
         $this->resetError();
 
-        if (array_search($lapName, $this->lapNames) !== false) {
+        if (in_array($lapName, $this->lapNames)) {
             $this->throwInvalidArgumentException("Lap name '$lapName' has been used already", self::ERROR_LAP_NAME_ALREADY_IN_USE);
         }
 
@@ -128,7 +125,7 @@ class SimpleProfiler implements Profiler, ErrorReporter
     {
         $this->resetError();
 
-        if (array_search($stopLapName, $this->lapNames) !== false) {
+        if (in_array($stopLapName, $this->lapNames)) {
             $this->throwInvalidArgumentException("Lap name '$stopLapName' has been used already", self::ERROR_LAP_NAME_ALREADY_IN_USE);
         }
         if (!$this->isRunning()) {
@@ -149,7 +146,7 @@ class SimpleProfiler implements Profiler, ErrorReporter
         $this->resetError();
 
         if ($this->isRunning()) {
-            $this->throwRunTimeException("getLaps() called when still running", self::ERROR_GETLAPS_CALLED_WHEN_RUNNING);
+            $this->throwRunTimeException("getLaps() called when still running", self::ERROR_GET_LAPS_CALLED_WHEN_RUNNING);
         }
 
         if ($this->calculatedLaps === []) {

@@ -28,7 +28,7 @@ class ApiCollationTableConversion extends  ApiController
 {
     const ERROR_CANNOT_CONVERT = 6001;
 
-    public function __invoke(Request $request, Response $response)
+    public function __invoke(Request $request, Response $response): Response
     {
         $apiCall = 'convertToEdition';
         $this->profiler->start();

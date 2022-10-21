@@ -17,18 +17,10 @@
  *  
  */
 
-/**
- * @brief Site Controller class
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
- */
-
-
 namespace APM\Site;
 
-use InvalidArgumentException;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
-
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 
 /**
  * Site Controller class
@@ -44,55 +36,16 @@ class SiteDashboard extends SiteController
      * @param Response $response
      * @return Response
      */
-    public function dashboardPage(Request $request, Response $response): Response
+    public function DashboardPage(Request $request, Response $response): Response
     {
-        
-        $dataManager = $this->dataManager;
         $userId = (int) $this->userInfo['id'];
-
         $this->profiler->start();
-
-        $this->manageCookies($request);
-        $docIds = $dataManager->getDocIdsTranscribedByUser($userId);
-        
-        $docListHtml = '';
-        foreach($docIds as $docId) {
-            $docListHtml .= $this->genDocPagesListForUser($userId, $docId);
-        }
-
-        $ctManager = $this->systemManager->getCollationTableManager();
-        $tableIds = $ctManager->getCollationTableVersionManager()->getActiveCollationTableIdsForUserId($userId);
-        $tableInfo = [];
-        foreach($tableIds as $tableId) {
-            try {
-                $ctData = $ctManager->getCollationTableById($tableId);
-            } catch(InvalidArgumentException $e) {
-                $this->logger->error("Table $tableId reported as being active does not exist. Is version table consistent?");
-                continue;
-            }
-            if ($ctData['archived']) {
-                continue;
-            }
-            $chunkId = $ctData['chunkId'] ?? $ctData['witnesses'][0]['chunkId'];
-
-            $tableInfo[] = [
-                'id' => $tableId,
-                'title' => $ctData['title'],
-                'type' => $ctData['type'],
-                'chunkId' => $chunkId,
-            ];
-        }
-
-        $editionInfo = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionInfoForUserId($userId);
-
+        $this->reportCookieSize();
         $this->profiler->stop();
-        $this->logProfilerData('dashboardPage-' . $this->userInfo['username'] . '-' . $userId);
-
+        $this->logProfilerData('Dashboard');
         return $this->renderPage($response, self::TEMPLATE_DASHBOARD, [
-            'doclist' => $docListHtml,
-            'tableInfo' => $tableInfo,
-            'editionInfo' => $editionInfo,
-            'isRoot' => $this->userInfo['isRoot']
+            'userId' => $userId,
+            'userInfo' => $this->userInfo,
         ]);
     }
 }

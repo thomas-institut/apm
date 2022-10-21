@@ -1,7 +1,6 @@
 <?php
-
-/* 
- *  Copyright (C) 2019 Universität zu Köln
+/*
+ *  Copyright (C) 2019-2022 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,6 +28,7 @@ namespace APM;
 use APM\Api\ApiLog;
 use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiTranscription;
+use APM\Api\ApiWorks;
 use APM\Site\SiteApmLog;
 use APM\Site\SiteMultiChunkEdition;
 use APM\System\ConfigLoader;
@@ -134,18 +134,24 @@ $app->add(new TwigMiddleware($systemManager->getTwig(), $router, $app->getBasePa
  
 // LOGIN and LOGOUT
 $app->any('/login',
-    Authenticator::class . ':login')
+    function(Request $request, Response $response, array $args) use ($container){
+        $authenticator = new Authenticator($container);
+        return $authenticator->login($request, $response, $args);
+    })
     ->setName('login');
 
 $app->any('/logout',
-    Authenticator::class  . ':logout')
+    function(Request $request, Response $response, array $args) use ($container){
+        $authenticator = new Authenticator($container);
+        return $authenticator->logout($request, $response, $args);
+    })
     ->setName('logout');
 
 
 // PUBLIC ACCESS
 
-$app->get('/collation/quick', SiteCollationTable::class . ':quickCollationPage')
-    ->setName('quickcollation');
+//$app->get('/collation/quick', SiteCollationTable::class . ':quickCollationPage')
+//    ->setName('quickcollation');
 
 
 // AUTHENTICATED ACCESS
@@ -155,29 +161,44 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
     // HOME
 
     $group->get('/',
-        SiteHomePage::class . ':homePage')
+        function(Request $request, Response $response, array $args) use ($container){
+            $siteHomePage = new SiteHomePage($container);
+            return $siteHomePage->homePage($request, $response, $args);
+        })
         ->setName('home');
+
 
     // DASHBOARD
 
     $group->get('/dashboard',
-        SiteDashboard::class . ':dashboardPage')
+        function(Request $request, Response $response, array $args) use ($container){
+            $dashboard = new SiteDashboard($container);
+            return $dashboard->DashboardPage($request, $response, $args);
+        })
         ->setName('dashboard');
 
     // USER.PROFILE
-
     $group->get('/user/{username}',
-        SiteUserManager::class . ':userProfilePage')
+        function(Request $request, Response $response, array $args) use ($container){
+            $siteUserManager = new SiteUserManager($container);
+            return $siteUserManager->userProfilePage($request, $response, $args);
+        })
         ->setName('user.profile');
 
     // USER.SETTINGS
 
     $group->get('/user/{username}/settings',
-        SiteUserManager::class . ':userSettingsPage')
+        function(Request $request, Response $response, array $args) use ($container){
+            $siteUserManager = new SiteUserManager($container);
+            return $siteUserManager->userSettingsPage($request, $response, $args);
+        })
         ->setName('user.settings');
 
     $group->get('/users',
-        SiteUserManager::class . ':userManagerPage')
+        function(Request $request, Response $response, array $args) use ($container){
+            $siteUserManager = new SiteUserManager($container);
+            return $siteUserManager->userManagerPage($request, $response, $args);
+        })
         ->setName('user.manager');
 
     // CHUNKS
@@ -354,11 +375,24 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
     // API -> getPageInfo
     $group->post('/pages/info', ApiDocuments::class . ':getPageInfo')->setName('api.getPageInfo');
 
-    //  USERS
+    // WORKS
+
+    // API -> work : get work info
+    $group->get('/work/{workId}/info',
+        function(Request $request, Response $response, array $args) use ($container){
+            $apiWorks = new ApiWorks($container);
+            return $apiWorks->getWorkInfo($request, $response, $args);
+        })
+        ->setName('api.work.info');
+
+    //  USERS  / PEOPLE
 
     // API -> user : get profile info
     $group->get('/user/{userId}/info',
-        ApiUsers::class . ':getUserProfileInfo')
+        function(Request $request, Response $response, array $args) use ($container){
+            $apiUsers = new ApiUsers($container);
+            return $apiUsers->getUserProfileInfo($request, $response, $args);
+        })
         ->setName('api.user.info');
 
     // API -> user : update profile
@@ -380,6 +414,26 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
     $group->post('/user/new',
         ApiUsers::class . ':createNewUser')
         ->setName('api.user.new');
+
+    // API -> user : get pages transcribed by user
+    $group->get('/user/{userId}/transcribedPages', function(Request $request, Response $response, array $args) use ($container){
+        $apiUsers = new ApiUsers($container);
+        return $apiUsers->getTranscribedPages($request, $response, $args);
+    } )->setName('api.user.transcribedPages');
+
+    // API -> user : get collation tables (and chunk edition) by user
+    $group->get('/user/{userId}/collationTables', function(Request $request, Response $response, array $args) use ($container){
+        $apiUsers = new ApiUsers($container);
+        return $apiUsers->getCollationTableInfo($request, $response, $args);
+    } )->setName('api.user.collationTables');
+
+    // API -> user : get multi-chunk editions by user
+    $group->get('/user/{userId}/multiChunkEditions', function(Request $request, Response $response, array $args) use ($container){
+        $apiUsers = new ApiUsers($container);
+        return $apiUsers->getMultiChunkEditionInfo($request, $response, $args);
+    } )->setName('api.user.multiChunkEditions');
+
+
 
     // WITNESSES
     $group->get('/witness/get/{witnessId}[/{outputType}[/{cache}]]',

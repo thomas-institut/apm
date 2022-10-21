@@ -148,6 +148,8 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
 
     public function getActiveCollationTableIdsForUserId(int $userId): array
     {
+
+        $this->getSqlQueryCounterTracker()->incrementSelect();
          $rows = $this->dataTable->findRows(['author_id' => $userId, 'time_until' => TimeString::END_OF_TIMES]);
 
          $ids = [];
@@ -170,6 +172,7 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
     {
 
         // TODO: fix this, I'm just using a trick here
+        $this->getSqlQueryCounterTracker()->incrementSelect();
         $maxCtId = $this->dataTable->getMaxValueInColumn('ct_id');
         $ids = [];
         for ($i=1; $i<= $maxCtId; $i++) {
@@ -180,10 +183,6 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
 
     public function fixVersionSequence(int $ctId): array
     {
-
-
-
-
         return [];
     }
 }

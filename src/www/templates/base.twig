@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/bootstrap/dist/css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/bootstrap-icons/font/bootstrap-icons.css"/>
     <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/styles.css"/>
     <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/datatables.net-dt/css/jquery.dataTables.min.css"/>
 
@@ -35,9 +36,9 @@
                 <li class="nav-item"><a class="nav-link" href="{{url_for('dashboard')}}" title="Dashboard">Dashboard</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{url_for('docs')}}" title="Documents">Documents</a></li>
                 <li class="nav-item"><a class="nav-link"href="{{url_for('chunks')}}" title="Chunks">Chunks</a></li>
-                {% if userinfo.manageUsers %}
+{#                {% if userinfo.manageUsers %}#}
                 <li class="nav-item"><a class="nav-link"href="{{url_for('user.manager')}}" title="Users">Users</a></li>
-                {% endif %}
+{#                {% endif %}#}
                 <li class="nav-item dropdown">
                    <a href="/" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Project Info</a>
                    <ul class="dropdown-menu">

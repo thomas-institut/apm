@@ -29,6 +29,7 @@ namespace APM\Site;
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
 use APM\FullTranscription\DocInfo;
+use APM\System\DataRetrieveHelper;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
@@ -104,10 +105,14 @@ class SiteCollationTable extends SiteController
         $people[] = $workInfo['authorId'];
         $people = array_merge($people, $this->getMentionedAuthorsFromCtData($ctData));
         $people = array_merge($people, $this->getMentionedPeopleFromVersionArray($versionInfo));
-        $peopleInfo = $this->getAuthorInfoArrayFromList($people, $dm->userManager);
+        $helper = new DataRetrieveHelper();
+        $helper->setLogger($this->logger);
+        $peopleInfo = $helper->getAuthorInfoArrayFromList($people, $dm->userManager);
 
         $docs = $this->getMentionedDocsFromCtData($ctData);
-        $docInfo = $this->getDocInfoArrayFromList($docs, $this->systemManager->getTranscriptionManager()->getDocManager());
+        $helper = new DataRetrieveHelper();
+        $helper->setLogger($this->logger);
+        $docInfo = $helper->getDocInfoArrayFromList($docs, $this->systemManager->getTranscriptionManager()->getDocManager());
 
         $this->profiler->stop();
         $this->logProfilerData("Edit Collation Table");

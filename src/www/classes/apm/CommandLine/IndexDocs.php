@@ -126,10 +126,10 @@ class IndexDocs extends CommandLineUtility {
                     $id = $id + 1;
 
                     // IF-CLAUSE ONLY FOR TESTING
-                    if ($lang === 'la' and $page === '34' and $docID === '82') {
+                    //if ($lang === 'la' and $page === '34' and $docID === '82') {
                         $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang);
                         print("$id: Doc $docID ($title) page $page col $col lang $lang\n");
-                    }
+                    //}
                 }
             }
         }
@@ -183,9 +183,9 @@ class IndexDocs extends CommandLineUtility {
                 $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
                 $transcript_lemmatized = explode("#", $tokens_and_lemmata[1]);
 
-                print_r ($transcript_tokenized);
-                print_r ($transcript_lemmatized);
-                print($transcript_clean);
+                //print_r ($transcript_tokenized);
+                //print_r ($transcript_lemmatized);
+                //print($transcript_clean);
             }
             else {
                 $transcript_tokenized = [];

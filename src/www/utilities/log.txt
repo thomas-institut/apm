@@ -1,0 +1,2 @@
+Existing index *transcripts* was deleted!
+New index *transcripts* was created!

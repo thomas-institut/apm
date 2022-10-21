@@ -21,7 +21,7 @@ export class UserDocDataCommon {
   static generateTranscriptionListHtml(apiData, urlGenerator) {
     // in JS docInfoArray is not actually an array but an object
     let docArray = Object.keys(apiData['docInfoArray']).map( (key) => { return apiData['docInfoArray'][key] })
-    let html = ''
+    let html
     if (docArray.length === 0) {
       html= noneParagraph
     } else {
@@ -40,39 +40,68 @@ export class UserDocDataCommon {
     return html
   }
 
-  static generateCtTablesAndEditionsListHtml(apiData, urlGenerator) {
-    let expandedData = apiData.map ( (ctInfo) => {
+  static expandChunkIdsInApiData(apiData) {
+    return apiData.map ( (ctInfo) => {
       let chunkIdFields = ctInfo.chunkId.split('-')
-      ctInfo.chunk = chunkIdFields[0]
+      ctInfo.work = chunkIdFields[0]
       ctInfo.chunkNumber = parseInt(chunkIdFields[1])
       return ctInfo
     })
+  }
+
+  static generateCtTablesAndEditionsListHtml(apiData, urlGenerator, workInfoObject = {}) {
+    let expandedData = this.expandChunkIdsInApiData(apiData)
     let editions = expandedData.filter( (ctInfo) => { return ctInfo['type'] === 'edition'})
     let cTables = expandedData.filter( (ctInfo) => { return ctInfo['type'] === 'ctable'})
     return {
-      editions: this.__genCtList(editions, urlGenerator),
-      cTables: this.__genCtList(cTables, urlGenerator)
+      editions: this.__genCtList(editions, urlGenerator, workInfoObject),
+      cTables: this.__genCtList(cTables, urlGenerator, workInfoObject)
     }
   }
 
-  static __genCtList(ctInfoArray, urlGenerator) {
+  static fetchWorkInfoFromExpandedApiData(expandedApiData, urlGenerator) {
+    return new Promise( async (resolve) => {
+      let workList = this.getWorksFromCtInfoArray(expandedApiData)
+      let workInfoObject = {}
+      for (let i = 0; i < workList.length; i++) {
+        workInfoObject[workList[i]] =  await $.get(urlGenerator.apiWorkGetInfo(workList[i]))
+      }
+      resolve(workInfoObject)
+    })
+  }
+
+  static getWorksFromCtInfoArray(ctInfoArray) {
+    let works = {}
+    ctInfoArray.forEach( (ctInfo) => {
+      works[ctInfo.work] = true
+    })
+    return Object.keys(works)
+  }
+
+  static __genCtList(ctInfoArray, urlGenerator, workInfoObject) {
     if (ctInfoArray.length === 0) {
       return noneParagraph
     }
-    let chunks = {}
-    ctInfoArray.forEach( (ctInfo) => {
-      chunks[ctInfo.chunk] = true
-    })
     let html = ''
-    Object.keys(chunks).sort().forEach( (chunk) => {
-      html += `<div class="chunk">`
+    this.getWorksFromCtInfoArray(ctInfoArray).sort().forEach( (work) => {
+      html += `<div class="work">`
       let ctTables = ctInfoArray.filter( (ctInfo) => {
-        return ctInfo.chunk === chunk
+        return ctInfo.work === work
       })
+      let workInfo = workInfoObject[work]
+      let workTitle
+      if (workInfo === undefined) {
+        workTitle = work
+      } else {
+        workTitle = `${workInfo['author_name']}, <em>${workInfo['title']}</em> (${work})`
+      }
+      html += `<p class="work-title">${workTitle}</p>`
       ctTables = numericFieldSort(ctTables, 'chunkNumber')
       html += ctTables.map( ( ctInfo) => {
         let editUrl = urlGenerator.siteEditCollationTable(ctInfo.id)
-        return `<p class='ct-info'><a href="${editUrl}" title="Click to edit in new page/tab" target="_blank">${ctInfo.chunkId} : ${ctInfo.title}</a></p>`
+        let chunkUrl = urlGenerator.siteChunkPage(ctInfo.work, ctInfo.chunkNumber)
+        return `<p class='ct-info'><a href="${chunkUrl}" title="Click to see chunk ${ctInfo.chunkId} in a new page/tab" target="_blank>">${ctInfo.chunkNumber}</a> : 
+ <a href="${editUrl}" title="Click to edit in new page/tab" target="_blank">${ctInfo.title}</a></p>`
       }).join('')
       html += '</div>'
     })

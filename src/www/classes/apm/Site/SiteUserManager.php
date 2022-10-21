@@ -25,10 +25,8 @@
 
 namespace APM\Site;
 
-use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
-use ThomasInstitut\TimeString\TimeString;
 
 
 /**
@@ -76,33 +74,6 @@ class SiteUserManager extends SiteController
         
 
         $this->profiler->lap("Basic Info");
-        $userId = $userProfileInfo['id'];
-//        $docIds = $this->dataManager->getDocIdsTranscribedByUser($userId);
-//
-//        $docListHtml = '';
-//        foreach($docIds as $docId) {
-//            $docListHtml .= $this->genDocPagesListForUser($userId, $docId);
-//        }
-
-//        $ctManager = $this->systemManager->getCollationTableManager();
-//        $tableIds = $ctManager->getCollationTableVersionManager()->getActiveCollationTableIdsForUserId($userId);
-//        $tableInfo = [];
-//        foreach($tableIds as $tableId) {
-//            try {
-//                $ctData = $ctManager->getCollationTableById($tableId, TimeString::now());
-//            } catch(InvalidArgumentException $e) {
-//                $this->logger->error("Table $tableId reported as being active does not exist. Is version table consistent?");
-//                continue;
-//            }
-//            $chunkId = $ctData['chunkId'] ?? $ctData['witnesses'][0]['chunkId'];
-//
-//            $tableInfo[] = [
-//                'id' => $tableId,
-//                'title' => $ctData['title'],
-//                'type' => $ctData['type'],
-//                'chunkId' => $chunkId,
-//            ];
-//        }
 
         $this->profiler->stop();
         $this->logProfilerData('userProfilePage-' . $profileUsername);
@@ -110,8 +81,6 @@ class SiteUserManager extends SiteController
                     'theuser' => $userProfileInfo,
                     'canEditProfile' => $canEditProfile,
                     'canMakeRoot' => $canMakeRoot,
-//                    'doclist' => $docListHtml,
-//                    'tableInfo' => $tableInfo
         ]);
     }
 
@@ -124,16 +93,7 @@ class SiteUserManager extends SiteController
     {
         $this->profiler->start();
         $um = $this->dataManager->userManager;
-        if (!$um->isUserAllowedTo($this->userInfo['id'], 'manageUsers')){
-            return $this->renderPage(
-                    $response, 
-                    self::TEMPLATE_ERROR_NOT_ALLOWED,
-                    [
-                        'message' => 'You are not authorized to manage users.'
-                    ]
-                );
-        }
-        
+
         $users = $um->getUserInfoForAllUsers();
         
         $this->profiler->stop();

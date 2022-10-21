@@ -28,18 +28,21 @@ p.page-list {
     font-size: 0.9em;
 }
 
-div.chunk {
+div.work {
     margin-bottom: 2rem;
 }
 
+div.work p {
+    margin-bottom: 0.25rem;
+}
+
+p.ct-info {
+    margin-left: 1rem;
+}
 p.mce-title {
     margin-bottom: 0.25rem;
 }
 
 p.new-mce {
     margin-top:2rem;
-}
-
-div.chunk p {
-    margin-bottom: 0.25rem;
 }

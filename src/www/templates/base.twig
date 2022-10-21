@@ -36,9 +36,9 @@
                 <li class="nav-item"><a class="nav-link" href="{{url_for('dashboard')}}" title="Dashboard">Dashboard</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{url_for('docs')}}" title="Documents">Documents</a></li>
                 <li class="nav-item"><a class="nav-link"href="{{url_for('chunks')}}" title="Chunks">Chunks</a></li>
-                {% if userinfo.manageUsers %}
+{#                {% if userinfo.manageUsers %}#}
                 <li class="nav-item"><a class="nav-link"href="{{url_for('user.manager')}}" title="Users">Users</a></li>
-                {% endif %}
+{#                {% endif %}#}
                 <li class="nav-item dropdown">
                    <a href="/" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Project Info</a>
                    <ul class="dropdown-menu">

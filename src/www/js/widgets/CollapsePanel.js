@@ -28,7 +28,6 @@ import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 export class CollapsePanel {
 
   constructor (options) {
-
     let optionsDefinition = {
       containerSelector: { type: 'string'},  // required container selector
       title: {type: 'string'},

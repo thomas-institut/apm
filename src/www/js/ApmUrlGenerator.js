@@ -131,6 +131,10 @@ class ApmUrlGenerator {
         return `${this.base}/api/witness/${witnessId}/to/edition`;
     }
 
+    apiWorkGetInfo(workId) {
+        return `${this.base}/api/work/${workId}/info`;
+    }
+
     apiNewDoc() {
         return `${this.base}/api/doc/new`
     }

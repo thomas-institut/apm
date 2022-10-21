@@ -1,6 +1,23 @@
+/*
+ *  Copyright (C) 2022 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { CollapsePanel } from '../widgets/CollapsePanel'
-import { numericFieldSort, stringFieldSort } from '../toolbox/ArrayUtil.mjs'
 import { UserDocDataCommon } from './common/UserDocDataCommon'
 
 const newMceEditionIcon = '<i class="bi bi-file-plus"></i>'
@@ -22,24 +39,24 @@ export class DashboardPage {
     this.userId = this.options.userId
     this.userName = this.options.userInfo.username
     this.container = $('#dashboard')
-    this.container.html(this.__genHtml())
+    this.container.html(this.genHtml())
 
-    this.mcEditionsCollapse = this.__constructCollapse('#multi-chunk-editions', 'Multi-Chunk Editions', [ 'first'])
-    this.chunkEditionsCollapse = this.__constructCollapse('#chunk-editions', 'Chunk Editions')
-    this.collationTablesCollapse = this.__constructCollapse('#collation-tables', 'Collation Tables')
-    this.transcriptionsCollapse = this.__constructCollapse('#transcriptions', 'Transcriptions')
-    this.adminCollapse = this.__constructCollapse('#admin', 'Admin')
+    this.mcEditionsCollapse = this.constructCollapse('#multi-chunk-editions', 'Multi-Chunk Editions', [ 'first'])
+    this.chunkEditionsCollapse = this.constructCollapse('#chunk-editions', 'Chunk Editions')
+    this.collationTablesCollapse = this.constructCollapse('#collation-tables', 'Collation Tables')
+    this.transcriptionsCollapse = this.constructCollapse('#transcriptions', 'Transcriptions')
+    this.adminCollapse = this.constructCollapse('#admin', 'Admin')
 
-    this.adminCollapse.setContent(this.__genAdminSectionHtml())
+    this.adminCollapse.setContent(this.genAdminSectionHtml())
 
     // now get the data
-    this._fetchMultiChunkEditions()
-    this._fetchCollationTablesAndEditions()
-    this._fetchTranscriptions()
+    this.fetchMultiChunkEditions()
+    this.fetchCollationTablesAndEditions()
+    this.fetchTranscriptions()
 
   }
 
-  _fetchMultiChunkEditions() {
+  fetchMultiChunkEditions() {
     $.get(this.options.urlGenerator.apiUserGetMultiChunkEditionInfo(this.userId)).then( (data) => {
       let html = UserDocDataCommon.generateMultiChunkEditionsListHtml(data, this.options.urlGenerator)
       let newMceUrl = this.options.urlGenerator.siteMultiChunkEditionNew()
@@ -48,64 +65,41 @@ export class DashboardPage {
     })
   }
 
-  _fetchCollationTablesAndEditions() {
+  fetchCollationTablesAndEditions() {
     $.get(this.options.urlGenerator.apiUserGetCollationTableInfo(this.userId)).then( (data) => {
-      let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data, this.options.urlGenerator)
-      this.chunkEditionsCollapse.setContent(listHtml.editions)
-      this.collationTablesCollapse.setContent(listHtml.cTables)
-    })
-  }
-
-  __genCtList(ctInfoArray) {
-    if (ctInfoArray.length === 0) {
-      return '<p><em>None</em></p>'
-    }
-    let chunks = {}
-    ctInfoArray.forEach( (ctInfo) => {
-      chunks[ctInfo.chunk] = true
-    })
-    let html = ''
-   Object.keys(chunks).sort().forEach( (chunk) => {
-     html += `<div class="chunk">`
-      let ctTables = ctInfoArray.filter( (ctInfo) => {
-        return ctInfo.chunk === chunk
+      let expandedApiData = UserDocDataCommon.expandChunkIdsInApiData(data)
+      UserDocDataCommon.fetchWorkInfoFromExpandedApiData(expandedApiData, this.options.urlGenerator).then( (workInfoObject) => {
+        let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data, this.options.urlGenerator, workInfoObject)
+        this.chunkEditionsCollapse.setContent(listHtml.editions)
+        this.collationTablesCollapse.setContent(listHtml.cTables)
       })
-      ctTables = numericFieldSort(ctTables, 'chunkNumber')
-      html += ctTables.map( ( ctInfo) => {
-        let editUrl = this.options.urlGenerator.siteEditCollationTable(ctInfo.id)
-        return `<p class='ct-info'><a href="${editUrl}" title="Click to edit in new page/tab" target="_blank">${ctInfo.chunkId} : ${ctInfo.title}</a></p>`
-      }).join('')
-     html += '</div>'
     })
-    return html
   }
 
-  _fetchTranscriptions() {
+  fetchTranscriptions() {
     $.get(this.options.urlGenerator.apiUserGetTranscribedPages(this.userId)).then( (data) => {
       this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data, this.options.urlGenerator))
     })
   }
 
-  __genHtml() {
+  genHtml() {
     return `<div id="multi-chunk-editions" class="dashboard-section"></div>
         <div id="chunk-editions" class="dashboard-section"></div>
         <div id="collation-tables" class="dashboard-section"></div>
         <div id="transcriptions" class="dashboard-section"></div>
-        <div id="admin" class="dashboard-section"></div>
-`
+        <div id="admin" class="dashboard-section"></div>`
   }
 
-  __genAdminSectionHtml() {
+  genAdminSectionHtml() {
     return `
-        <p><a href="${this.options.urlGenerator.siteUserProfile(this.userName)}">Edit profile / Change Password</a></p>
-`
+        <p><a href="${this.options.urlGenerator.siteUserProfile(this.userName)}">Edit profile / Change Password</a></p>`
   }
 
-  __constructCollapse(selector, title, headerClasses = []) {
+  constructCollapse(selector, title, headerClasses = []) {
     return new CollapsePanel({
       containerSelector: selector,
       title: title,
-      content: this.__genLoadingMessageHtml(),
+      content: this.genLoadingMessageHtml(),
       contentClasses: [ 'dashboard-section-content'],
       headerClasses: headerClasses,
       iconWhenHidden: '<small><i class="bi bi-caret-right-fill"></i></small>',
@@ -117,7 +111,7 @@ export class DashboardPage {
     })
   }
 
-  __genLoadingMessageHtml() {
+  genLoadingMessageHtml() {
     return `Loading data  <span class="spinner-border spinner-border-sm" role="status"></span>`
   }
 }

@@ -40,8 +40,6 @@ export class CollapseToggleButton {
     
     this.collapseElement.on('show.bs.collapse', this.genOnShownFunction())
     this.collapseElement.on('hide.bs.collapse', this.genOnHiddenFunction())
-    
-    
   }
   
   genOnShownFunction() {
@@ -51,7 +49,6 @@ export class CollapseToggleButton {
   }
   
   genOnHiddenFunction() {
-    let thisObject = this
     return () => {
       this.iconSpan.html(this.hiddenIconHtml)
     }

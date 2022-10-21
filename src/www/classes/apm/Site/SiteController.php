@@ -26,15 +26,12 @@
 
 namespace APM\Site;
 
-use APM\FullTranscription\DocManager;
 use APM\FullTranscription\PageInfo;
-use APM\FullTranscription\PageManager;
 use APM\Plugin\HookManager;
 use APM\System\ApmContainerKey;
-use AverroesProject\Data\UserManager;
-use Dflydev\FigCookies\Cookies;
-use Exception;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use \Psr\Http\Message\ResponseInterface as Response;
 use APM\System\ApmSystemManager;
 use AverroesProject\Data\DataManager;
@@ -93,12 +90,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
      */
     protected $hookManager;
 
-//    /**
-//     * @var Logger
-//     */
-//    protected $logger;
-
-
     /**
      * @var RouteParser
      */
@@ -121,6 +112,8 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
      * SiteController constructor.
      * @param ContainerInterface $ci
      * @throws LoaderError
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function __construct(ContainerInterface $ci)
     {
@@ -163,9 +156,9 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     {
         $lapInfo = $this->profiler->getLaps();
         $totalTimeInMs = $this->getProfilerTotalTime() * 1000;
-        $totalQueries = $lapInfo[count($lapInfo)-1]['mysql-queries']['cummulative']['Total'];
-        $cacheHits = $lapInfo[count($lapInfo)-1]['cache']['cummulative']['hits'];
-        $cacheMisses = $lapInfo[count($lapInfo)-1]['cache']['cummulative']['misses'];
+        $totalQueries = $lapInfo[count($lapInfo)-1]['mysql-queries']['cumulative']['Total'];
+        $cacheHits = $lapInfo[count($lapInfo)-1]['cache']['cumulative']['hits'];
+        $cacheMisses = $lapInfo[count($lapInfo)-1]['cache']['cumulative']['misses'];
         $info = $fullLapInfo ? $lapInfo :[];
         $this->logger->debug(sprintf("PROFILER %s, finished in %0.2f ms, %d MySql queries, %d cache hits, %d misses",
             $pageTitle, $totalTimeInMs, $totalQueries, $cacheHits, $cacheMisses), $info);
@@ -174,13 +167,13 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     protected function getProfilerTotalTime() : float
     {
         $lapInfo = $this->profiler->getLaps();
-        return $lapInfo[count($lapInfo)-1]['time']['cummulative'];
+        return $lapInfo[count($lapInfo)-1]['time']['cumulative'];
     }
 
-    protected function responseWithText(Response $response, string $text, int $status=200) : Response {
-        $response->getBody()->write($text);
-        return $response->withStatus($status);
-    }
+//    protected function responseWithText(Response $response, string $text, int $status=200) : Response {
+//        $response->getBody()->write($text);
+//        return $response->withStatus($status);
+//    }
 
     /**
      * @param Response $response
@@ -245,7 +238,8 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     }
 
     // Utility function
-    protected function buildPageArray($pagesInfo, $transcribedPages, $navByPage = true){
+    protected function buildPageArray($pagesInfo, $transcribedPages, $navByPage = true): array
+    {
         $thePages = array();
         foreach ($pagesInfo as $page) {
             $thePage = array();
@@ -270,7 +264,8 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     }
 
     // Utility function
-    protected function buildPageArrayNew(array $pagesInfo, array $transcribedPages){
+    protected function buildPageArrayNew(array $pagesInfo, array $transcribedPages): array
+    {
         $thePages = [];
         foreach ($pagesInfo as $pageInfo) {
             /** @var $pageInfo PageInfo */
@@ -295,33 +290,33 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return $thePages;
     }
 
-    protected function genDocPagesListForUser($userId, $docId): string
-    {
-        $docInfo = $this->dataManager->getDocById($docId);
-        $url = $this->router->urlFor('doc.showdoc', ['id' => $docId]);
-        $title = $docInfo['title'];
-        $docListHtml = '<li>';
-        $docListHtml .= "<a href=\"$url\" title=\"View Document\">$title</a>";
-        $docListHtml .= '<br/><span style="font-size: 0.9em">';
-        $pageIds = $this->dataManager->getPageIdsTranscribedByUser($userId, $docId);
-
-        $nPagesInLine = 0;
-        $maxPagesInLine = 25;
-        foreach($pageIds as $pageId) {
-            $nPagesInLine++;
-            if ($nPagesInLine > $maxPagesInLine) {
-                $docListHtml .= "<br/>";
-                $nPagesInLine = 1;
-            }
-            $pageInfo = $this->dataManager->getPageInfo($pageId);
-            $pageNum = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
-            $pageUrl = $this->router->urlFor('pageviewer.docseq', ['doc' => $docId, 'seq'=>$pageInfo['seq']]);
-            $docListHtml .= "<a href=\"$pageUrl\" title=\"View page in new tab\" target=\"_blank\">$pageNum</a>&nbsp;&nbsp;";
-        }
-        $docListHtml .= '</span></li>';
-
-        return $docListHtml;
-    }
+//    protected function genDocPagesListForUser($userId, $docId): string
+//    {
+//        $docInfo = $this->dataManager->getDocById($docId);
+//        $url = $this->router->urlFor('doc.showdoc', ['id' => $docId]);
+//        $title = $docInfo['title'];
+//        $docListHtml = '<li>';
+//        $docListHtml .= "<a href=\"$url\" title=\"View Document\">$title</a>";
+//        $docListHtml .= '<br/><span style="font-size: 0.9em">';
+//        $pageIds = $this->dataManager->getPageIdsTranscribedByUser($userId, $docId);
+//
+//        $nPagesInLine = 0;
+//        $maxPagesInLine = 25;
+//        foreach($pageIds as $pageId) {
+//            $nPagesInLine++;
+//            if ($nPagesInLine > $maxPagesInLine) {
+//                $docListHtml .= "<br/>";
+//                $nPagesInLine = 1;
+//            }
+//            $pageInfo = $this->dataManager->getPageInfo($pageId);
+//            $pageNum = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
+//            $pageUrl = $this->router->urlFor('pageviewer.docseq', ['doc' => $docId, 'seq'=>$pageInfo['seq']]);
+//            $docListHtml .= "<a href=\"$pageUrl\" title=\"View page in new tab\" target=\"_blank\">$pageNum</a>&nbsp;&nbsp;";
+//        }
+//        $docListHtml .= '</span></li>';
+//
+//        return $docListHtml;
+//    }
 
 
     protected function getNormalizerData(string $language, string $category) : array {
@@ -338,11 +333,11 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return $normalizerData;
     }
 
-    protected function manageCookies(Request $request) {
-
+    protected function reportCookieSize() {
         $cookieString = $_SERVER['HTTP_COOKIE'] ?? 'N/A';
-        $this->codeDebug("Got a cookie string of " . strlen($cookieString) . " bytes for user " . $this->userInfo['id']);
-
+        if (strlen($cookieString) > self::COOKIE_SIZE_THRESHHOLD) {
+            $this->codeDebug("Got a cookie string of " . strlen($cookieString) . " bytes for user " . $this->userInfo['id']);
+        }
     }
 
 

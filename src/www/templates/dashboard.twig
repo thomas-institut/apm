@@ -6,130 +6,33 @@
     <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/dashboard.css"/>
 {% endblock %}
 
+{% block extraJS %}
+  <script type="application/javascript" src="{{baseurl}}/js/dist/DashboardPage.bundle.js"></script>
+{% endblock %}
+
 
 {% block finalBodyJS %}
 
 <script>
-    $(function() {
-        let  tableInfo = JSON.parse("{{tableInfo|json_encode|e('js')}}")
-        let editionInfo = JSON.parse("{{editionInfo|json_encode|e('js')}}")
-        let urlGenerator = new ApmUrlGenerator('{{ baseurl }}')
 
-      function genMultiChunkEditionTable(editionInfo, urlGen) {
-          console.log(`Generating html for ${editionInfo.length} multi chunk edition(s)`)
-          if (editionInfo.length === 0) {
-            return ''
-          }
-        return [
-          '<ul class="list-indented">',
-          editionInfo.map( (info) => {
-            return `<li><a href="${urlGen.siteEditMultiChunkEdition(info.id)}" target="_blank">${info.title}</a></li>`
-          }).join(''),
-          '</ul>'
-        ].join('')
-      }
+  $(() => {
+    let urlGenerator = new ApmUrlGenerator('{{ baseurl }}')
+    let userId = parseInt('{{ userId }}')
+    let userInfo = JSON.parse("{{userInfo|json_encode|e('js')}}")
 
-      function genCollationTableInfoHtml(tableInfo, urlGen, type) {
-        let html = ''
+    new DashboardPage(( {
+      urlGenerator: urlGenerator,
+      userId: userId,
+      userInfo: userInfo
+    }))
 
-        let tables = tableInfo.filter(info => info.type === type)
-        if (tables.length === 0) {
-          return ''
-        }
-
-
-        html += '<ul class="list-indented">'
-        for(const info of tables) {
-          let url =  urlGen.siteEditCollationTable(info['id'])
-          if (type === 'edition') {
-            url = urlGen.siteChunkEdition(info['id'])
-          }
-          html += '<li><a target="_blank" href="' +  url + '">' + info['chunkId'] + ': ' + info['title'] + '</a></li>'
-        }
-        html += '</ul>'
-        return html
-      }
-
-      let html = genCollationTableInfoHtml(tableInfo, urlGenerator, 'edition')
-      if (html === '') {
-        $('#myeditions').addClass('hidden')
-      } else {
-        $('#myeditions').html(html)
-      }
-
-      html = genCollationTableInfoHtml(tableInfo, urlGenerator, 'ctable')
-      if (html === '') {
-        $('#mycollationtables').addClass('hidden')
-      } else {
-        $('#mycollationtables').html(html)
-      }
-
-      html = genMultiChunkEditionTable(editionInfo, urlGenerator)
-      if (html === '') {
-        $('#my-multi-chunk-editions').addClass('hidden')
-      } else {
-        $('#my-multi-chunk-editions').html(html)
-      }
-
-      $('#new-multi-chunk-edition').html(`<a href="${urlGenerator.siteMultiChunkEditionNew()}" target="_blank">New Multi ChunkEdition</a>`)
-
-    })
+  })
 </script>
 {%  endblock %}
 
 {% block content %}
-<div class="dashboard">
-
-    <section id="section-multi-chunk-editions">
-        <h1>
-        <a role="button" title="Click to show/hide list" data-toggle="collapse" href="#my-multi-chunk-editions" aria-expanded="true" aria-controls="my-multi-chunk-editions">
-            <i class="fas fa-caret-right"></i></a>
-        My Multi Chunk Editions
-        </h1>
-        <div class="collapse show" id="my-multi-chunk-editions"></div>
-        <div id="new-multi-chunk-edition"></div>
-    </section>
-    <section id="section-ctables">
-        <h1>
-            <a role="button" title="Click to show/hide list" data-toggle="collapse" href="#mycollationtables" aria-expanded="true" aria-controls="mycollationtables">
-                <i class="fas fa-caret-right"></i></a>
-            My Collation Tables
-        </h1>
-        <div class="collapse show" id="mycollationtables"></div>
-    </section>
-
-    <section id="section-editions">
-        <h1>
-            <a role="button" title="Click to show/hide list" data-toggle="collapse" href="#myeditions" aria-expanded="true" aria-controls="mycollationtables">
-                <i class="fas fa-caret-right"></i></a>
-            My Chunk Editions
-        </h1>
-        <div class="collapse show" id="myeditions"></div>
-    </section>
-
-    <section>
-        <h1>
-            <a role="button" title="Click to show/hide list" data-toggle="collapse" href="#mymss" aria-expanded="true" aria-controls="mymss">
-                <i class="fas fa-caret-right"></i></a>
-            My Transcriptions
-        </h1>
-
-        <div class="collapse show" id="mymss">
-            <ul class="list-indented">{{doclist|raw}}</ul>
-            <a href="{{url_for('docs')}}">View all documents</a>
-        </div>
-    </section>
-
-
-
-    <section>
-        <h1>Admin</h1>
-        <ul>
-            <li><a href="{{url_for('user.profile', {'username' : userinfo.username})}}">Edit profile / Change Password</a></li>
-            {% if isRoot %}
-                <li><a href="{{ url_for('admin.log') }}">System Log</a></li>
-            {% endif %}
-        </ul>
-    </section>
+<div id="dashboard" class="dashboard">
+    New Dashboard coming up...
 </div>
+
 {% endblock %}

@@ -61,10 +61,6 @@ p.page-list {
     font-size: 0.9em;
 }
 
-div.chunk {
-    margin-bottom: 2rem;
-}
-
 p.mce-title {
     margin-bottom: 0.25rem;
 }
@@ -73,6 +69,14 @@ p.new-mce {
     margin-top:2rem;
 }
 
-div.chunk p {
+div.work {
+    margin-bottom: 2rem;
+}
+
+div.work p {
     margin-bottom: 0.25rem;
+}
+
+p.ct-info {
+    margin-left: 1rem;
 }

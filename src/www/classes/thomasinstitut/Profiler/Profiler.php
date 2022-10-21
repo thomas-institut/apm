@@ -37,7 +37,7 @@ interface Profiler
 
     const FIELD_LAP_NAME = 'LapName';
     const FIELD_ABSOLUTE = 'absolute';
-    const FIELD_CUMULATIVE = 'cummulative';
+    const FIELD_CUMULATIVE = 'cumulative';
     const FIELD_DELTA = 'delta';
 
     /**

@@ -95,7 +95,7 @@ class SimpleProfilerTest extends TestCase
             $exceptionCaught = true;
         }
         $this->assertTrue($exceptionCaught);
-        $this->assertEquals(SimpleProfiler::ERROR_GETLAPS_CALLED_WHEN_RUNNING, $profiler->getErrorCode());
+        $this->assertEquals(SimpleProfiler::ERROR_GET_LAPS_CALLED_WHEN_RUNNING, $profiler->getErrorCode());
 
         for ($i = 0; $i < $numLoops; $i++ ) {
             $counter->increment();

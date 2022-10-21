@@ -39,7 +39,7 @@ class ApiUsers extends ApiController
      * @param Response $response
      * @return Response
      */
-    public function getUserProfileInfo(Request $request, Response $response)
+    public function getUserProfileInfo(Request $request, Response $response): Response
     {
         $um = $this->getDataManager()->userManager;
         $apiCall = 'getUserProfileInfo';

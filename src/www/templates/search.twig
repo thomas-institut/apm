@@ -146,6 +146,10 @@
         let radiusSlider = $("#radiusSlider")
         let lemmatizeBox = $("#lemmatize")
         let spinner = $("#spinner")
+        let resultsTableB = $("#resultsTable tbody")
+        let resultsTableH = $("#resultsTable thead")
+        let errorMessage = $("#error_message")
+
 
         let searchText = keywordBox.val()
         let title = transcriptBox.val();
@@ -153,7 +157,9 @@
         let radius = radiusSlider.val()
         let lemmatize = lemmatizeBox.prop('checked')
 
-        // Signal search process
+        // Empty tabele and signal search process
+        resultsTableB.empty()
+        resultsTableH.empty()
         spinner.html(`<div class="spinner-border" role="status"></div>`)
 
         // Send all user input to ApiSearch (via routing in index.php) and print returned matches
@@ -191,16 +197,8 @@
       function displayResults (results) {
 
         // Get selectors for displaying results
-        let errorMessage = $("#error_message")
-        let noMatchesDiv = $("#noMatchesDiv")
         let resultsTableB = $("#resultsTable tbody")
         let resultsTableH = $("#resultsTable thead")
-
-        // Empty tables and divs
-        noMatchesDiv.empty()
-        resultsTableH.empty()
-        resultsTableB.empty()
-        errorMessage.empty()
 
         // Get instance of ApmUrlGenerator for creating links to matching docs
         let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
@@ -216,9 +214,6 @@
         // If there are no matches, display this to the user and empty the table
         if (num_columns === 0) {
           resultsTableB.empty()
-          //noMatchesDiv
-            //.html(`Nothing found!<br><br>`)
-            //.addClass('text-warning')
         }
 
         // If there is exactly one matched column, display it with exact information

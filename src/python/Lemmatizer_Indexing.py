@@ -12,6 +12,12 @@ def decode(transcript):
     transcript = transcript.replace("$", ")")
     transcript = transcript.replace("€", "׳")
     transcript = transcript.replace("\\", "")
+    transcript = transcript.replace("+", "|")
+    transcript = transcript.replace("°", "<")
+    transcript = transcript.replace("^", ">")
+    transcript = transcript.replace(";", "$")
+    transcript = transcript.replace("~", "`")
+
     return transcript
 
 # Get transcript from php exec-command

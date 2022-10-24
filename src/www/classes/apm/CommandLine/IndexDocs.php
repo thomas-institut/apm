@@ -126,7 +126,7 @@ class IndexDocs extends CommandLineUtility {
                     $id = $id + 1;
 
                     // IF-CLAUSE ONLY FOR TESTING
-                    //if ($lang === 'la' and $page === '34' and $docID === '82') {
+                    //if ($lang === 'he' and $page === '63' and $docID === '139') {
                         $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang);
                         print("$id: Doc $docID ($title) page $page col $col lang $lang\n");
                     //}
@@ -171,21 +171,23 @@ class IndexDocs extends CommandLineUtility {
     private function indexCol ($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang): bool
     {
 
+
         // Encode transcript for avoiding errors in shell command because of characters like "(", ")" or " "
+        //print($transcript);
         $transcript_clean = $this->encode($transcript);
-#
+
          // Tokenization and Lemmatization
         if (strlen($transcript_clean) > 3) {
                 echo ("Lemmatizing in Python...");
-                exec("python3 ../../python/Lemmatizer_Indexing.py $transcript_clean", $tokens_and_lemmata, $retval);
+                exec("python3 ../../python/Lemmatizer_Indexing.py $transcript_clean", $tokens_and_lemmata);
 
 
                 $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
                 $transcript_lemmatized = explode("#", $tokens_and_lemmata[1]);
 
-                //print_r ($transcript_tokenized);
-                //print_r ($transcript_lemmatized);
-                //print($transcript_clean);
+            //print_r ($transcript_tokenized);
+            //print_r ($transcript_lemmatized);
+            //print($transcript_clean);
             }
             else {
                 $transcript_tokenized = [];
@@ -233,24 +235,33 @@ class IndexDocs extends CommandLineUtility {
         $transcript_clean = str_replace("\"", "\\\"", $transcript_clean);
         $transcript_clean = str_replace(' ', '#', $transcript_clean);
         $transcript_clean = str_replace(' ', '#', $transcript_clean);
-        $transcript_clean = str_replace('##', '#', $transcript_clean);
         $transcript_clean = str_replace('T.', '', $transcript_clean);
+        $transcript_clean = str_replace('|', '+', $transcript_clean);
+        $transcript_clean = str_replace('<', '°', $transcript_clean);
+        $transcript_clean = str_replace('>', '^', $transcript_clean);
+        $transcript_clean = str_replace(';', '$', $transcript_clean);
+        $transcript_clean = str_replace('`', '~', $transcript_clean);
+
+
 
         // Remove numbers
         for ($i=0; $i<10; $i++) {
             $transcript_clean = str_replace("${i}", '', $transcript_clean);
         }
 
+        // Remove repitions of hashtags
+        while (strpos($transcript_clean, '##') !== false) {
+            $transcript_clean = str_replace('##', '#', $transcript_clean);
+        }
+
         // Transcript should not begin or end with hashtag
-        for ($i=0; $i<3; $i++) {
-            if (substr($transcript_clean, 0, 1) === '#') {
+        if (substr($transcript_clean, 0, 1) === '#') {
                 $transcript_clean = substr($transcript_clean, 1);
             }
 
-            if (substr($transcript_clean, -1, 1) === '#') {
-                $transcript_clean = substr($transcript_clean, 0, -1);
+        if (substr($transcript_clean, -1, 1) === '#') {
+            $transcript_clean = substr($transcript_clean, 0, -1);
             }
-        }
 
         return $transcript_clean;
     }

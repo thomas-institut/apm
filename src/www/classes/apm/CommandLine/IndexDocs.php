@@ -108,6 +108,8 @@ class IndexDocs extends CommandLineUtility {
                 $pageInfo = $this->dm->getPageInfo($pageID);
                 $numCols = $pageInfo['num_cols'];
 
+                // GET ALSO FOLIATION NUMBER AND SEQUENCE NUMBER
+
                 // Iterate over all columns of the page and get the corresponding transcripts and transcribers
                 for ($col = 1; $col <= $numCols; $col++) {
                     $versions = $this->dm->getTranscriptionVersionsWithAuthorInfo($pageID, $col);

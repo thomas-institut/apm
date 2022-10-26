@@ -20,14 +20,17 @@ if (lang=='he'):
     annotations = nlp(phrase)
     tokens = [token.text for token in annotations]
     lemmata = [token.lemma_ for token in annotations]
-elif (lang=='ar'):
+elif (lang=='ar' or lang=='fa'):
+    lang='ar'
     tokens = phrase.split(" ")
     lemmatizer = qalsadi.lemmatizer.Lemmatizer()
     lemmata = [lemmatizer.lemmatize(t) for t in tokens]
 else:
+    lang='la'
     tokens = simplemma.simple_tokenizer(phrase)
-    lemmata = [simplemma.lemmatize(t, lang='la') for t in tokens]
+    lemmata = [simplemma.lemmatize(t, lang=lang) for t in tokens]
 
 # Encode and print tokens and lemmata to work with them in php
+print(lang)
 print('#'.join(tokens))
 print('#'.join(lemmata))

@@ -58,8 +58,9 @@ class ApiSearch extends ApiController
         $this->logger->debug('output', [$tokens_and_lemmata, $retval]);
 
         // Get queried tokens and lemmata
-        $tokens_queried = explode("#", $tokens_and_lemmata[1]);
-        $lemmata = explode("#", $tokens_and_lemmata[2]);
+        $lang = $tokens_and_lemmata[1];
+        $tokens_queried = explode("#", $tokens_and_lemmata[2]);
+        $lemmata = explode("#", $tokens_and_lemmata[3]);
 
         // Count tokens
         $num_tokens = count($tokens_queried);
@@ -77,7 +78,7 @@ class ApiSearch extends ApiController
 
         // Query index for the first token in searched_phrase – other tokens will be handled below
         try {
-            $query = $this->queryIndex($client, $index_name, $doc_title, $transcriber, $token_for_query, $query_algorithm, $lemmatize);
+            $query = $this->queryIndex($client, $index_name, $doc_title, $lang, $transcriber, $token_for_query, $query_algorithm, $lemmatize);
         } catch (\Exception $e) {
             $status = "Opensearch query problem";
             
@@ -164,7 +165,7 @@ class ApiSearch extends ApiController
     }
 
     // Function to query a given OpenSearch-index
-    private function queryIndex ($client, $index_name, $doc_title, $transcriber, $token_for_query, $query_algorithm, $lemmatize) {
+    private function queryIndex ($client, $index_name, $doc_title, $lang, $transcriber, $token_for_query, $query_algorithm, $lemmatize) {
 
         // Check lemmatize (boolean) to determine the area of the query
         if ($lemmatize) {

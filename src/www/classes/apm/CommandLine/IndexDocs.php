@@ -125,11 +125,8 @@ class IndexDocs extends CommandLineUtility {
                     // Add columnData to the OpenSearch index with a unique ID
                     $id = $id + 1;
 
-                    // IF-CLAUSE ONLY FOR TESTING
-                    //if ($lang === 'he' and $page === '63' and $docID === '139') {
-                        $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang);
-                        print("$id: Doc $docID ($title) page $page col $col lang $lang\n");
-                    //}
+                    $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang);
+                    print("$id: Doc $docID ($title) page $page col $col lang $lang\n");
                 }
             }
         }

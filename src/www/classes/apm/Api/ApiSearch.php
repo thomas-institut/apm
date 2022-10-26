@@ -3,14 +3,10 @@ namespace APM\Api;
 
 use APM\System\ApmConfigParameter;
 use OpenSearch\ClientBuilder;
-use PhpParser\Error;
 use PHPUnit\Util\Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\TimeString\TimeString;
-use function DI\string;
-
-// set_time_limit(5); // Script should not run longer than 5 seconds - does this work like this?
 
 class ApiSearch extends ApiController
 {
@@ -20,28 +16,20 @@ class ApiSearch extends ApiController
      * @return Response
      */
 
-    // Function to search in an OpenSearch-Index, which gives back an api response to js
+    // Function to search in an OpenSearch-Index – returns an api response to js
     public function search(Request $request, Response $response): Response
     {
-        // Set the name of the index, that should be queried and make status and now variables for the API response
+        // Name of the index, that should be queried and informative variables for the API response
         $index_name = 'transcripts';
         $status = 'OK';
         $now = TimeString::now();
 
-        // Get user input
-        $searched_phrase = strtolower($_POST['searchText']);
+        // Get all user input!
+        $searched_phrase = $this->removeBlanks(strtolower($_POST['searchText'])); // Lower-case and without additional blanks
         $doc_title = $_POST['title'];
         $transcriber = $_POST['transcriber'];
         $radius = $_POST['radius'];
         $lemmatize = filter_var($_POST['lemmatize'], FILTER_VALIDATE_BOOLEAN);
-        // Remove additional blanks before, after or in between keywords – necessary for a clean search
-        $searched_phrase = $this->removeBlanks($searched_phrase);
-
-        // ATTEMPTS TO SOLVE STRANGE HEBREW ERROR
-        //$searched_phrase = "\\u05d0\\u05d3\\u05dd";
-        //$searched_phrase = json_decode('{"b": "\u05d0\u05d3\u05dd"}');
-        //$searched_phrase=json_decode('"'.$searched_phrase.'"');
-        //$searched_phrase = 'לדעת';
 
         // Instantiate OpenSearch client
         try {
@@ -51,13 +39,13 @@ class ApiSearch extends ApiController
             return $this->responseWithJson($response, ['searched_phrase' => $searched_phrase,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
         
-        // Tokenzize and lemmatize search phrase in Python
+        // Tokenization and lemmatization of searched phrase with Python
         exec("python3 ../python/Lemmatizer_Query.py $searched_phrase", $tokens_and_lemmata, $retval);
 
         // Log output from exec-function
         $this->logger->debug('output', [$tokens_and_lemmata, $retval]);
 
-        // Get queried tokens and lemmata
+        // Tokens and lemmata from searched phrase
         $lang = $tokens_and_lemmata[1];
         $tokens_queried = explode("#", $tokens_and_lemmata[2]);
         $lemmata = explode("#", $tokens_and_lemmata[3]);
@@ -65,7 +53,7 @@ class ApiSearch extends ApiController
         // Count tokens
         $num_tokens = count($tokens_queried);
 
-        // Get the lemmatized or unlemmatized token for the query, depending on user choice for lemmatization
+        // Get either lemmatized or unlemmatized token for the query, depending on the user's choice – set query algorithm
         if ($lemmatize) {
             $token_for_query = $lemmata[0];
             $query_algorithm = 'match';
@@ -76,12 +64,11 @@ class ApiSearch extends ApiController
             $query_algorithm=$this->chooseQueryAlgorithm($token_for_query);
         }
 
-        // Query index for the first token in searched_phrase – other tokens will be handled below
+        // Query index for the first token in searched_phrase – additional tokens will be handled below
         try {
-            $query = $this->queryIndex($client, $index_name, $doc_title, $lang, $transcriber, $token_for_query, $query_algorithm, $lemmatize);
+            $query = $this->queryIndex($client, $index_name, $doc_title, $transcriber, $token_for_query, $query_algorithm, $lemmatize);
         } catch (\Exception $e) {
             $status = "Opensearch query problem";
-            
             return $this->responseWithJson($response,
                 [
                     'searched_phrase' => $searched_phrase,
@@ -93,10 +80,10 @@ class ApiSearch extends ApiController
                 ]);
         }
 
-        // Get all information about the matched columns, including passages with the matched keyword as lists of words
+        // Get all information about the matched columns, including passages with the matched token as lists of tokens
         $data = $this->evaluateData($query, $tokens_queried, $lemmata, $query_algorithm, $radius, $lemmatize);
 
-        // If there is more than one tokens_searched, extract all columns, which do match all the other tokens
+        // If there is more than one token in the searched phrase, extract all columns, which do match all the other tokens
         if ($num_tokens !== 1) {
             for ($i=1; $i<$num_tokens; $i++) {
                 $data = $this->evaluateDataForAdditionalTokens($data, $tokens_queried[$i], $lemmata[$i], $lemmatize);
@@ -113,6 +100,7 @@ class ApiSearch extends ApiController
         return $this->responseWithJson($response, [
             'tokens_and_lemmata' => $tokens_and_lemmata,
             'searched_phrase' => $searched_phrase,
+            'lang' => $lang,
             'num_passages_total' => $num_passages,
             'data' => $data,
             'serverTime' => $now,
@@ -165,7 +153,7 @@ class ApiSearch extends ApiController
     }
 
     // Function to query a given OpenSearch-index
-    private function queryIndex ($client, $index_name, $doc_title, $lang, $transcriber, $token_for_query, $query_algorithm, $lemmatize) {
+    private function queryIndex ($client, $index_name, $doc_title, $transcriber, $token_for_query, $query_algorithm, $lemmatize) {
 
         // Check lemmatize (boolean) to determine the area of the query
         if ($lemmatize) {

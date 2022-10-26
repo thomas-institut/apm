@@ -203,8 +203,9 @@
         // Get instance of ApmUrlGenerator for creating links to matching docs
         let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
 
-        // Get column data of search result
+        // Get column data of search results and language of matched passages
         let data = results['data']
+        let lang = results['lang']
 
         // Count matches
         let num_columns = data.length
@@ -246,8 +247,18 @@
 
             // Fill table with results
             resultsTableB.empty()
-            resultsTableB.append(
-              `<tr><td align="justify">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+            if (lang==='la') {
+              resultsTableB.append(
+                      `<tr><td align="justify">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+            }
+            else if (lang==='he') {
+              resultsTableB.append(
+                      `<tr><td align="justify" class="text-he">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+            }
+            else if (lang==='ar') {
+              resultsTableB.append(
+                      `<tr><td align="justify" class="text-ar">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+            }
           }
         }
 
@@ -289,12 +300,32 @@
 
               // Fill table with results
               if (title === prec_title) {
-                resultsTableB.append(
-                  `<tr><td align="justify">${passages_string}</td><td></td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                if (lang==='la') {
+                  resultsTableB.append(
+                          `<tr><td align="justify">${passages_string}</td><td></td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                }
+                else if (lang==='he') {
+                  resultsTableB.append(
+                          `<tr><td align="justify" class="text-he">${passages_string}</td><td></td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                }
+                else if (lang==='ar') {
+                  resultsTableB.append(
+                          `<tr><td align="justify" class="text-ar">${passages_string}</td><td></td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                }
               }
               else {
-                resultsTableB.append(
-                  `<tr><td align="justify">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                if (lang==='la') {
+                  resultsTableB.append(
+                          `<tr><td align="justify">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                }
+                else if (lang==='he') {
+                  resultsTableB.append(
+                          `<tr><td align="justify" class="text-he">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                }
+                else if (lang==='ar') {
+                  resultsTableB.append(
+                          `<tr><td align="justify" class="text-ar">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                }
                 prec_title = title
               }
             }

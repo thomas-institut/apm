@@ -79,7 +79,7 @@ class IndexDocs extends CommandLineUtility {
 
 
         // Get a list of all docIDs in the sql-database
-        $docList = $this->dm->getDocIdList('title');
+        $doc_list = $this->dm->getDocIdList('title');
 
         // Ascending ID for OpenSearch entries
         $id = 0;
@@ -91,44 +91,48 @@ class IndexDocs extends CommandLineUtility {
         print("\nStart indexing...\n");
 
         // Iterate over all docIDs
-        foreach ($docList as $docID) {
+        foreach ($doc_list as $doc_id) {
             // Get title of every document$transcript_clean
-            $docInfo = $this->dm->getDocById($docID);
-            $title = ($docInfo['title']);
+            $doc_info = $this->dm->getDocById($doc_id);
+            $title = ($doc_info['title']);
 
             // Get a list of pageIDs with transcriptions
-            $transPages = $this->dm->getTranscribedPageListByDocId($docID);
+            $pages_transcribed = $this->dm->getTranscribedPageListByDocId($doc_id);
 
             // Iterate over transcribed pages
 
-            foreach ($transPages as $page) {
+            foreach ($pages_transcribed as $page) {
 
                 // Get pageID and number of columns of the page
-                $pageID = $this->dm->getpageIDByDocPage($docID, $page);
-                $pageInfo = $this->dm->getPageInfo($pageID);
-                $numCols = $pageInfo['num_cols'];
+                $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
+                $page_info = $this->dm->getPageInfo($page_id);
+                $num_cols = $page_info['num_cols'];
+                $seq_num = $page_info['seq'];
 
                 // GET ALSO FOLIATION NUMBER AND SEQUENCE NUMBER
 
                 // Iterate over all columns of the page and get the corresponding transcripts and transcribers
-                for ($col = 1; $col <= $numCols; $col++) {
-                    $versions = $this->dm->getTranscriptionVersionsWithAuthorInfo($pageID, $col);
+                for ($col = 1; $col <= $num_cols; $col++) {
+                    $versions = $this->dm->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
                     if (count($versions) === 0) {
                         // no transcription in this column
                         continue;
                     }
-                    $elements = $this->dm->getColumnElementsBypageID($pageID, $col);
+                    $elements = $this->dm->getColumnElementsBypageID($page_id, $col);
                     $transcript = $this->getPlainTextFromElements($elements);
                     $transcriber = $versions[0]['author_name'];
 
                     // Get language of current column (document) - IS IT OK, THAT THE SEQ-ARGUMENT IS ALWAYS 1?
-                    $lang = $this->dm->getPageInfoByDocSeq($docID, 1)['lang'];
+                    $lang = $this->dm->getPageInfoByDocSeq($doc_id, 1)['lang'];
 
                     // Add columnData to the OpenSearch index with a unique ID
                     $id = $id + 1;
 
-                    $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang);
-                    print("$id: Doc $docID ($title) page $page col $col lang $lang\n");
+                    // Check for underscores: title: "Duran Magen Avot Livorno 1785", page: "159", column: 1, docID 49
+                    if ($doc_id === '49' and $page === '159') {
+                        $this->indexCol($id, $title, $page, $seq_num, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+                        print("$id: Doc $doc_id ($title) page $page col $col lang $lang\n");
+                    }
                 }
             }
         }
@@ -167,7 +171,7 @@ class IndexDocs extends CommandLineUtility {
     }
 
     // Function to add pages to the OpenSearch index
-    private function indexCol ($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript, $lang): bool
+    private function indexCol ($id, $title, $page, $seq_num, $col, $transcriber, $page_id, $doc_id, $transcript, $lang): bool
     {
 
 
@@ -180,13 +184,16 @@ class IndexDocs extends CommandLineUtility {
                 echo ("Lemmatizing in Python...");
                 exec("python3 ../../python/Lemmatizer_Indexing.py $transcript_clean", $tokens_and_lemmata);
 
+                $lang_detected = $tokens_and_lemmata[0];
+                echo("in detected lang '$lang_detected'...");
 
-                $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
-                $transcript_lemmatized = explode("#", $tokens_and_lemmata[1]);
+                $transcript_tokenized = explode("#", $tokens_and_lemmata[1]);
+                $transcript_lemmatized = explode("#", $tokens_and_lemmata[2]);
 
             //print_r ($transcript_tokenized);
             //print_r ($transcript_lemmatized);
             //print($transcript_clean);
+            print($seq_num);
             }
             else {
                 $transcript_tokenized = [];
@@ -209,8 +216,8 @@ class IndexDocs extends CommandLineUtility {
                 'title' => $title,
                 'page' => $page,
                 'column' => $col,
-                'pageID' => $pageID,
-                'docID' => $docID,
+                'pageID' => $page_id,
+                'docID' => $doc_id,
                 'lang' => $lang,
                 'transcriber' => $transcriber,
                 'transcript' => $transcript,
@@ -241,14 +248,21 @@ class IndexDocs extends CommandLineUtility {
         $transcript_clean = str_replace(';', '$', $transcript_clean);
         $transcript_clean = str_replace('`', '~', $transcript_clean);
 
-
-
         // Remove numbers
         for ($i=0; $i<10; $i++) {
             $transcript_clean = str_replace("${i}", '', $transcript_clean);
         }
 
-        // Remove repitions of hashtags
+        // Remove repetitions of periods
+        while (strpos($transcript_clean, '.#.') !== false) {
+            $transcript_clean = str_replace('.#.', '', $transcript_clean);
+        }
+
+        while (strpos($transcript_clean, '..') !== false) {
+            $transcript_clean = str_replace('..', '', $transcript_clean);
+        }
+
+        // Remove repetions of hashtags
         while (strpos($transcript_clean, '##') !== false) {
             $transcript_clean = str_replace('##', '#', $transcript_clean);
         }

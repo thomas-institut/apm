@@ -15,7 +15,10 @@
 
         // Key-Up functions for all boxes
         keywordBox.on("keyup", delay(function () {
-          search()
+          let userText = $(this).val();
+          if (userText !== "") {
+            search()
+          }
         }, 300))
 
         transcriptBox.on("click", () => {

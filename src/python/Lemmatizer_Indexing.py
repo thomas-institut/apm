@@ -23,6 +23,8 @@ def decode(transcript):
 # Get transcript from php exec-command
 transcript = sys.argv[1:][0]
 
+#transcript = 'ובידיעתם'
+
 # Decoding
 transcript = decode(transcript)
 
@@ -35,7 +37,7 @@ if (lang=='he'):
     annotations = nlp(transcript)
     tokens = [token.text for token in annotations]
     lemmata = [token.lemma_ for token in annotations]
-elif (lang=='ar'):
+elif (lang == 'ar' or lang == 'fa'):
     tokens = transcript.split(" ")
     lemmatizer = qalsadi.lemmatizer.Lemmatizer()
     lemmata = [lemmatizer.lemmatize(t) for t in tokens]
@@ -44,6 +46,10 @@ else:
     lemmata = [simplemma.lemmatize(t, lang='la') for t in tokens]
 
 # Encode and print tokens and lemmata to work with them in php
+print(lang)
+#print(transcript)
+#print(tokens)
+#print(lemmata)
 print('#'.join(tokens))
 print('#'.join(lemmata))
 

@@ -23,7 +23,7 @@ def decode(transcript):
 # Get transcript from php exec-command
 transcript = sys.argv[1:][0]
 
-#transcript = 'ובידיעתם'
+#transcript = 'שיהיו'
 
 # Decoding
 transcript = decode(transcript)
@@ -34,9 +34,14 @@ lang = detect(transcript)
 # Tokenization and Lemmatization
 if (lang=='he'):
     nlp = spacy_udpipe.load('he')
-    annotations = nlp(transcript)
-    tokens = [token.text for token in annotations]
-    lemmata = [token.lemma_ for token in annotations]
+    tokens = transcript.split(" ")
+    lemmata = []
+    for t in tokens:
+        annotations = nlp(t)
+        lemma = ''.join([token.lemma_ for token in annotations])
+        lemmata.append(lemma)
+    #tokens = [token.text for token in annotations]
+    #lemmata = [token.lemma_ for token in annotations]
 elif (lang == 'ar' or lang == 'fa'):
     tokens = transcript.split(" ")
     lemmatizer = qalsadi.lemmatizer.Lemmatizer()
@@ -47,9 +52,6 @@ else:
 
 # Encode and print tokens and lemmata to work with them in php
 print(lang)
-#print(transcript)
-#print(tokens)
-#print(lemmata)
 print('#'.join(tokens))
 print('#'.join(lemmata))
 

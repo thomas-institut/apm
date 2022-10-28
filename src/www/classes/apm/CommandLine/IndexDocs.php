@@ -132,12 +132,10 @@ class IndexDocs extends CommandLineUtility {
                     $id = $id + 1;
 
                     // Check for underscores: title: "Duran Magen Avot Livorno 1785", page: "159", column: 1, docID 49
-                    //if ($doc_id === '49' and $page === '159') {
-                    if($title==='E-Blumberg-CCAA.hebrVII-ParvaNat') {
+                    if ($doc_id === '49' and $page === '159') {
                         $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
                         print("$id: Doc $doc_id ($title) page $page seq $seq foliation $foliation col $col lang $lang\n");
-                        //}
-                    }
+                        }
                 }
             }
         }
@@ -210,8 +208,6 @@ class IndexDocs extends CommandLineUtility {
             }
             if (count($transcript_tokenized) !== count($transcript_lemmatized)) {
                 print("Error! Array of tokens and lemmata do not have the same length!\n");
-                print_r($transcript_tokenized);
-                print_r($transcript_lemmatized);
             }
             else {
                 print_r("finished!\n");
@@ -243,6 +239,7 @@ class IndexDocs extends CommandLineUtility {
 
         // Replace line breaks, blanks, brackets...these character can provoke errors in the exec-command
         $transcript_clean = str_replace("\n", "#", $transcript);
+        $transcript_clean = str_replace(".", " .", $transcript_clean);
         $transcript_clean = str_replace(" ", "#", $transcript_clean);
         $transcript_clean = str_replace("(", "%", $transcript_clean);
         $transcript_clean = str_replace(")", "§", $transcript_clean);
@@ -263,6 +260,11 @@ class IndexDocs extends CommandLineUtility {
             $transcript_clean = str_replace("${i}", '', $transcript_clean);
         }
 
+        // Remove repetions of hashtags
+        while (strpos($transcript_clean, '##') !== false) {
+            $transcript_clean = str_replace('##', '#', $transcript_clean);
+        }
+
         // Remove repetitions of periods
         while (strpos($transcript_clean, '.#.') !== false) {
             $transcript_clean = str_replace('.#.', '', $transcript_clean);
@@ -272,7 +274,7 @@ class IndexDocs extends CommandLineUtility {
             $transcript_clean = str_replace('..', '', $transcript_clean);
         }
 
-        // Remove repetions of hashtags
+        // Remove repetions of hashtags again (in the foregoing steps could be originated new ones..)
         while (strpos($transcript_clean, '##') !== false) {
             $transcript_clean = str_replace('##', '#', $transcript_clean);
         }

@@ -132,10 +132,10 @@ class IndexDocs extends CommandLineUtility {
                     $id = $id + 1;
 
                     // Check for underscores: title: "Duran Magen Avot Livorno 1785", page: "159", column: 1, docID 49
-                    if ($doc_id === '49' and $page === '159') {
+                    //if ($doc_id === '49' and $page === '159') {
                         $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
                         print("$id: Doc $doc_id ($title) page $page seq $seq foliation $foliation col $col lang $lang\n");
-                        }
+                        //}
                 }
             }
         }

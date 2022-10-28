@@ -107,7 +107,7 @@ class IndexDocs extends CommandLineUtility {
                 $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
                 $page_info = $this->dm->getPageInfo($page_id);
                 $num_cols = $page_info['num_cols'];
-                $seq_num = $page_info['seq'];
+                $seq = $page_info['seq'];
 
                 // GET ALSO FOLIATION NUMBER AND SEQUENCE NUMBER
 
@@ -129,9 +129,11 @@ class IndexDocs extends CommandLineUtility {
                     $id = $id + 1;
 
                     // Check for underscores: title: "Duran Magen Avot Livorno 1785", page: "159", column: 1, docID 49
-                    if ($doc_id === '49' and $page === '159') {
-                        $this->indexCol($id, $title, $page, $seq_num, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
-                        print("$id: Doc $doc_id ($title) page $page col $col lang $lang\n");
+                    //if ($doc_id === '49' and $page === '159') {
+                    if($title==='E-Blumberg-CCAA.hebrVII-ParvaNat') {
+                        $this->indexCol($id, $title, $page, $seq, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+                        print("$id: Doc $doc_id ($title) page $page seq $seq col $col lang $lang\n");
+                        //}
                     }
                 }
             }
@@ -171,7 +173,7 @@ class IndexDocs extends CommandLineUtility {
     }
 
     // Function to add pages to the OpenSearch index
-    private function indexCol ($id, $title, $page, $seq_num, $col, $transcriber, $page_id, $doc_id, $transcript, $lang): bool
+    private function indexCol ($id, $title, $page, $seq, $col, $transcriber, $page_id, $doc_id, $transcript, $lang): bool
     {
 
 
@@ -193,7 +195,6 @@ class IndexDocs extends CommandLineUtility {
             //print_r ($transcript_tokenized);
             //print_r ($transcript_lemmatized);
             //print($transcript_clean);
-            print($seq_num);
             }
             else {
                 $transcript_tokenized = [];
@@ -215,6 +216,7 @@ class IndexDocs extends CommandLineUtility {
             'body' => [
                 'title' => $title,
                 'page' => $page,
+                'seq' => $seq,
                 'column' => $col,
                 'pageID' => $page_id,
                 'docID' => $doc_id,

@@ -291,6 +291,7 @@ class ApiSearch extends ApiController
                 // of every matched column in the OpenSearch index
                 $title = $query['hits']['hits'][$i]['_source']['title'];
                 $page = $query['hits']['hits'][$i]['_source']['page'];
+                $seq = $query['hits']['hits'][$i]['_source']['seq'];
                 $column = $query['hits']['hits'][$i]['_source']['column'];
                 $transcriber = $query['hits']['hits'][$i]['_source']['transcriber'];
                 $transcript = $query['hits']['hits'][$i]['_source']['transcript'];
@@ -347,6 +348,7 @@ class ApiSearch extends ApiController
                 $data[] = [
                     'title' => $title,
                     'page' => $page,
+                    'seq' => $seq,
                     'column' => $column,
                     'transcriber' => $transcriber,
                     'pageID' => $pageID,

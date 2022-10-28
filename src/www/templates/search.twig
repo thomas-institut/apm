@@ -231,6 +231,7 @@
           // Collect relevant data from API response
           let title = data[0]['title']
           let page = data[0]['page']
+          let seq = data[0]['seq']
           let column = data[0]['column']
           let transcriber = data[0]['transcriber'].split(" ")[1]
           let passages = data[0]['passage_tokenized']
@@ -238,7 +239,7 @@
           let docID = data[0]['docID']
 
           // Get link for matched column
-          let url = urlGenerator.sitePageView(docID, page, column)
+          let url = urlGenerator.sitePageView(docID, seq, column)
           let link = getLink(url)
 
           // Convert the tokens_matched in their context into a single string and highlight the tokens_matched
@@ -283,6 +284,7 @@
             // Collect relevant Data from API response
             let title = data[i]['title']
             let page = data[i]['page']
+            let seq = data[i]['seq']
             let column = data[i]['column']
             let transcriber = data[i]['transcriber'].split(" ")[1]
             let tokens_matched = data[i]['tokens_matched']
@@ -290,7 +292,7 @@
             let docID = data[i]['docID']
 
             // Get link for matched column
-            let url = urlGenerator.sitePageView(docID, page, column)
+            let url = urlGenerator.sitePageView(docID, seq, column)
             let link = getLink(url)
 
             // Convert all occurrences of the keyword in their contexts into a single string and highlight the tokens_matched

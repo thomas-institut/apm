@@ -122,8 +122,11 @@ class IndexDocs extends CommandLineUtility {
                     $transcript = $this->getPlainTextFromElements($elements);
                     $transcriber = $versions[0]['author_name'];
 
-                    // Get language of current column (document) - IS IT OK, THAT THE SEQ-ARGUMENT IS ALWAYS 1?
-                    $lang = $this->dm->getPageInfoByDocSeq($doc_id, 1)['lang'];
+                    // Get language of current column (document)
+                    $lang = $this->dm->getPageInfoByDocSeq($doc_id, $seq)['lang'];
+
+                    // Get foliation number
+                    $foliation = $this->dm->getPageFoliationByDocSeq($doc_id,  $seq);
 
                     // Add columnData to the OpenSearch index with a unique ID
                     $id = $id + 1;
@@ -131,8 +134,8 @@ class IndexDocs extends CommandLineUtility {
                     // Check for underscores: title: "Duran Magen Avot Livorno 1785", page: "159", column: 1, docID 49
                     //if ($doc_id === '49' and $page === '159') {
                     if($title==='E-Blumberg-CCAA.hebrVII-ParvaNat') {
-                        $this->indexCol($id, $title, $page, $seq, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
-                        print("$id: Doc $doc_id ($title) page $page seq $seq col $col lang $lang\n");
+                        $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+                        print("$id: Doc $doc_id ($title) page $page seq $seq foliation $foliation col $col lang $lang\n");
                         //}
                     }
                 }
@@ -173,7 +176,7 @@ class IndexDocs extends CommandLineUtility {
     }
 
     // Function to add pages to the OpenSearch index
-    private function indexCol ($id, $title, $page, $seq, $col, $transcriber, $page_id, $doc_id, $transcript, $lang): bool
+    private function indexCol ($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang): bool
     {
 
 
@@ -187,7 +190,11 @@ class IndexDocs extends CommandLineUtility {
                 exec("python3 ../../python/Lemmatizer_Indexing.py $transcript_clean", $tokens_and_lemmata);
 
                 $lang_detected = $tokens_and_lemmata[0];
-                echo("in detected lang '$lang_detected'...");
+
+                // Check, if transcript was lemmatized with the correct languge-specific algorithm
+                if ($lang !== $lang_detected) {
+                    echo("Error! Detected language $lang_detected is not correct.");
+                }
 
                 $transcript_tokenized = explode("#", $tokens_and_lemmata[1]);
                 $transcript_lemmatized = explode("#", $tokens_and_lemmata[2]);
@@ -217,6 +224,7 @@ class IndexDocs extends CommandLineUtility {
                 'title' => $title,
                 'page' => $page,
                 'seq' => $seq,
+                'foliation' => $foliation,
                 'column' => $col,
                 'pageID' => $page_id,
                 'docID' => $doc_id,

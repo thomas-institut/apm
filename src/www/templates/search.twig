@@ -226,12 +226,12 @@
 
           // Make table head
           resultsTableH.empty()
-          resultsTableH.append(`<tr><th>Matched Passage (${num_passages})</th><th>Document (${num_docs})</th><th>Page</th><th>Column</th><th>Transcriber</th><th>Link</th></tr>`)
+          resultsTableH.append(`<tr><th>Matched Passage (${num_passages})</th><th>Document (${num_docs})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
 
           // Collect relevant data from API response
           let title = data[0]['title']
-          let page = data[0]['page']
           let seq = data[0]['seq']
+          let foliation = data[0]['foliation']
           let column = data[0]['column']
           let transcriber = data[0]['transcriber'].split(" ")[1]
           let passages = data[0]['passage_tokenized']
@@ -253,15 +253,15 @@
             resultsTableB.empty()
             if (lang==='la') {
               resultsTableB.append(
-                      `<tr><td align="justify">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                      `<tr><td align="justify">${passages_string}</td><td>${title}</td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
             }
             else if (lang==='he') {
               resultsTableB.append(
-                      `<tr><td align="justify" class="text-he">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                      `<tr><td align="justify" class="text-he">${passages_string}</td><td>${title}</td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
             }
             else if (lang==='ar') {
               resultsTableB.append(
-                      `<tr><td align="justify" class="text-ar">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                      `<tr><td align="justify" class="text-ar">${passages_string}</td><td>${title}</td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
             }
           }
         }
@@ -271,7 +271,7 @@
 
           // Make table head
           resultsTableH.empty()
-          resultsTableH.append(`<tr><th>Matched Passage (${num_passages})</th><th>Document (${num_docs})</th><th>Page</th><th>Column</th><th>Transcriber</th><th>Link</th></tr>`)
+          resultsTableH.append(`<tr><th>Matched Passage (${num_passages})</th><th>Document (${num_docs})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
           resultsTableB.empty()
 
           // Make variable for storing title of preceeding column in the dataset to display only ONE title,
@@ -283,8 +283,8 @@
 
             // Collect relevant Data from API response
             let title = data[i]['title']
-            let page = data[i]['page']
             let seq = data[i]['seq']
+            let foliation = data[i]['foliation']
             let column = data[i]['column']
             let transcriber = data[i]['transcriber'].split(" ")[1]
             let tokens_matched = data[i]['tokens_matched']
@@ -307,29 +307,29 @@
               if (title === prec_title) {
                 if (lang==='la') {
                   resultsTableB.append(
-                          `<tr><td align="justify">${passages_string}</td><td></td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                          `<tr><td align="justify">${passages_string}</td><td></td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
                 }
                 else if (lang==='he') {
                   resultsTableB.append(
-                          `<tr><td align="justify" class="text-he">${passages_string}</td><td></td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                          `<tr><td align="justify" class="text-he">${passages_string}</td><td></td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
                 }
                 else if (lang==='ar') {
                   resultsTableB.append(
-                          `<tr><td align="justify" class="text-ar">${passages_string}</td><td></td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                          `<tr><td align="justify" class="text-ar">${passages_string}</td><td></td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
                 }
               }
               else {
                 if (lang==='la') {
                   resultsTableB.append(
-                          `<tr><td align="justify">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                          `<tr><td align="justify">${passages_string}</td><td>${title}</td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
                 }
                 else if (lang==='he') {
                   resultsTableB.append(
-                          `<tr><td align="justify" class="text-he">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                          `<tr><td align="justify" class="text-he">${passages_string}</td><td>${title}</td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
                 }
                 else if (lang==='ar') {
                   resultsTableB.append(
-                          `<tr><td align="justify" class="text-ar">${passages_string}</td><td>${title}</td><td align="center">${page}</td><td align="center">${column}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                          `<tr><td align="justify" class="text-ar">${passages_string}</td><td>${title}</td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
                 }
                 prec_title = title
               }

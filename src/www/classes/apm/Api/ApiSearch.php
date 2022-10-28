@@ -292,6 +292,7 @@ class ApiSearch extends ApiController
                 $title = $query['hits']['hits'][$i]['_source']['title'];
                 $page = $query['hits']['hits'][$i]['_source']['page'];
                 $seq = $query['hits']['hits'][$i]['_source']['seq'];
+                $foliation = $query['hits']['hits'][$i]['_source']['foliation'];
                 $column = $query['hits']['hits'][$i]['_source']['column'];
                 $transcriber = $query['hits']['hits'][$i]['_source']['transcriber'];
                 $transcript = $query['hits']['hits'][$i]['_source']['transcript'];
@@ -349,6 +350,7 @@ class ApiSearch extends ApiController
                     'title' => $title,
                     'page' => $page,
                     'seq' => $seq,
+                    'foliation' => $foliation,
                     'column' => $column,
                     'transcriber' => $transcriber,
                     'pageID' => $pageID,

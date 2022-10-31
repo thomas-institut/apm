@@ -329,8 +329,9 @@ class ApiSearch extends ApiController
                 $prev_pos = 0;
 
                 // Get all passages, which contain the matched token, as a list of tokens (and lemmata)
+                $counter = 0;
                 foreach ($pos_all as $pos) {
-                    if ($pos-$prev_pos>$radius) { // This checks, if the token at the actual position is not already contained in the previous passage
+                    if ($counter === 0 or $pos-$prev_pos>$radius) { // This checks, if the token at the actual position is not already contained in the previous passage
                         $passage_tokenized[] = $this->getPassage($transcript_tokenized, $pos, $radius);
                         if ($lemmatize) {
                             $passage_lemmatized[] = $this->getPassage($transcript_lemmatized, $pos, $radius);
@@ -338,6 +339,7 @@ class ApiSearch extends ApiController
                         $tokens_matched[] = [$transcript_tokenized[$pos]];
                         $prev_pos = $pos;
                     }
+                    $counter++;
                 }
 
                 // Get total keyword frequency in matched column
@@ -349,6 +351,7 @@ class ApiSearch extends ApiController
                     'title' => $title,
                     'page' => $page,
                     'seq' => $seq,
+                    'positions' => $pos_all,
                     'foliation' => $foliation,
                     'column' => $column,
                     'transcriber' => $transcriber,

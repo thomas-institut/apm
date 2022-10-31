@@ -1,7 +1,6 @@
 import simplemma
 import spacy_udpipe
 import qalsadi.lemmatizer
-from langdetect import detect
 import sys
 
 # Decoder of the in PHP encoded transcript
@@ -20,19 +19,15 @@ def decode(transcript):
 
     return transcript
 
-# Get transcript from php exec-command
-transcript = sys.argv[1:][0]
-
-#transcript = 'שיהיו'
+# Get lang and transcript from php exec-command
+lang = sys.argv[1:][0]
+transcript = sys.argv[2:][0]
 
 # Decoding
 transcript = decode(transcript)
 
-# Detect language
-lang = detect(transcript)
-
 # Tokenization and Lemmatization
-if (lang=='he'):
+if (lang=='he' or lang=='jrb'):
     nlp = spacy_udpipe.load('he')
     tokens = transcript.split(" ")
     lemmata = []
@@ -40,18 +35,15 @@ if (lang=='he'):
         annotations = nlp(t)
         lemma = ''.join([token.lemma_ for token in annotations])
         lemmata.append(lemma)
-    #tokens = [token.text for token in annotations]
-    #lemmata = [token.lemma_ for token in annotations]
-elif (lang == 'ar' or lang == 'fa'):
+elif (lang=='ar'):
     tokens = transcript.split(" ")
     lemmatizer = qalsadi.lemmatizer.Lemmatizer()
     lemmata = [lemmatizer.lemmatize(t) for t in tokens]
-else:
+elif (lang=='la'):
     tokens = simplemma.simple_tokenizer(transcript)
-    lemmata = [simplemma.lemmatize(t, lang='la') for t in tokens]
+    lemmata = [simplemma.lemmatize(t, lang=lang) for t in tokens]
 
 # Encode and print tokens and lemmata to work with them in php
-print(lang)
 print('#'.join(tokens))
 print('#'.join(lemmata))
 

@@ -17,9 +17,12 @@ spacy_udpipe.download("he")
 # Tokenization and Lemmatization
 if (lang=='he'):
     nlp = spacy_udpipe.load('he')
-    annotations = nlp(phrase)
-    tokens = [token.text for token in annotations]
-    lemmata = [token.lemma_ for token in annotations]
+    tokens = phrase.split(" ")
+    lemmata = []
+    for t in tokens:
+        annotations = nlp(t)
+        lemma = ''.join([token.lemma_ for token in annotations])
+        lemmata.append(lemma)
 elif (lang=='ar' or lang=='fa'):
     lang='ar'
     tokens = phrase.split(" ")

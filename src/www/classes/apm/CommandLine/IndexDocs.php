@@ -131,11 +131,8 @@ class IndexDocs extends CommandLineUtility {
                     // Add columnData to the OpenSearch index with a unique ID
                     $id = $id + 1;
 
-                    // Check for underscores: title: "Duran Magen Avot Livorno 1785", page: "159", column: 1, docID 49
-                    //if ($doc_id === '49' and $page === '159') {
-                        $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
-                        print("$id: Doc $doc_id ($title) page $page seq $seq foliation $foliation col $col lang $lang\n");
-                        //}
+                    $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+                    print("$id: Doc $doc_id ($title) page $page seq $seq foliation $foliation col $col lang $lang\n");
                 }
             }
         }
@@ -185,17 +182,10 @@ class IndexDocs extends CommandLineUtility {
          // Tokenization and Lemmatization
         if (strlen($transcript_clean) > 3) {
                 echo ("Lemmatizing in Python...");
-                exec("python3 ../../python/Lemmatizer_Indexing.py $transcript_clean", $tokens_and_lemmata);
+                exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_clean", $tokens_and_lemmata);
 
-                $lang_detected = $tokens_and_lemmata[0];
-
-                // Check, if transcript was lemmatized with the correct languge-specific algorithm
-                if ($lang !== $lang_detected) {
-                    echo("Error! Detected language $lang_detected is not correct.");
-                }
-
-                $transcript_tokenized = explode("#", $tokens_and_lemmata[1]);
-                $transcript_lemmatized = explode("#", $tokens_and_lemmata[2]);
+                $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
+                $transcript_lemmatized = explode("#", $tokens_and_lemmata[1]);
 
             //print_r ($transcript_tokenized);
             //print_r ($transcript_lemmatized);
@@ -240,6 +230,7 @@ class IndexDocs extends CommandLineUtility {
         // Replace line breaks, blanks, brackets...these character can provoke errors in the exec-command
         $transcript_clean = str_replace("\n", "#", $transcript);
         $transcript_clean = str_replace(".", " .", $transcript_clean);
+        $transcript_clean = str_replace(",", " ,", $transcript_clean);
         $transcript_clean = str_replace(" ", "#", $transcript_clean);
         $transcript_clean = str_replace("(", "%", $transcript_clean);
         $transcript_clean = str_replace(")", "§", $transcript_clean);

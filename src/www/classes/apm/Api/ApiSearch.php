@@ -331,15 +331,26 @@ class ApiSearch extends ApiController
                 // Get all passages, which contain the matched token, as a list of tokens (and lemmata)
                 $counter = 0;
                 foreach ($pos_all as $pos) {
-                    if ($counter === 0 or $pos-$prev_pos>$radius) { // This checks, if the token at the actual position is not already contained in the previous passage
+                    if ($counter === 0 or ($pos-$prev_pos)>$radius) { // This checks, if the token at the actual position is not already contained in the previous passage
                         $passage_tokenized[] = $this->getPassage($transcript_tokenized, $pos, $radius);
                         if ($lemmatize) {
                             $passage_lemmatized[] = $this->getPassage($transcript_lemmatized, $pos, $radius);
                         }
+                        // Create an array of all matched tokens in the current passage - used for highlighting keywords in js
                         $tokens_matched[] = [$transcript_tokenized[$pos]];
+                        foreach ($passage_tokenized[$counter] as $word) {
+                            if (strpos($word, $tokens_queried[0]) !== false) {
+                                $tokens_matched[$counter][] = $word;
+                            }
+                        }
+
+                        // Remove duplicates from the array in the tokens_matched array
+                        $tokens_matched[$counter] = array_values(array_unique($tokens_matched[$counter]));
+
+                        // Refresh variables
                         $prev_pos = $pos;
+                        $counter++;
                     }
-                    $counter++;
                 }
 
                 // Get total keyword frequency in matched column

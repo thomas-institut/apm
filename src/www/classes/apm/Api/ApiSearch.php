@@ -98,7 +98,6 @@ class ApiSearch extends ApiController
 
         // ApiResponse
         return $this->responseWithJson($response, [
-            'tokens_and_lemmata' => $tokens_and_lemmata,
             'searched_phrase' => $searched_phrase,
             'lang' => $lang,
             'num_passages_total' => $num_passages,

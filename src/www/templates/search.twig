@@ -13,26 +13,31 @@
         let radiusSlider = $("#radiusSlider")
         let lemmatizeBox = $("#lemmatize")
 
+        // Variable for previous keywords to avoid repetition of identical query
+        let oldKeywords = "gdfgwer"
+
         // Key-Up functions for all boxes
         keywordBox.on("keyup", delay(function () {
-          let userText = $(this).val();
-          if (userText !== "") {
+          let userText = $(this).val()
+          if (userText !== "" && userText !== oldKeywords) {
             search()
           }
-        }, 300))
+          oldKeywords = userText
+        }, 2000))
 
         transcriptBox.on("click", () => {
           getInput ('titles')
         })
 
         transcriptBox.on("input", delay(function () {
-          let userText = $(this).val();
-          if (userText === "") {
+          let userText = $(this).val()
+          let userKeywords = keywordBox.val()
+          if (userText === "" && userKeywords !== "") {
             search()
           }
           else {
           $("#titleList").find("option").each(function() {
-            if ($(this).val() === userText) {
+            if ($(this).val() === userText && userKeywords !== "") {
               search()
             }
           })
@@ -43,24 +48,31 @@
         })
 
         transcriberBox.on("input", delay(function () {
-          let userText = $(this).val();
-          if (userText === "") {
+          let userText = $(this).val()
+          let userKeywords = keywordBox.val()
+          if (userText === "" && userKeywords !== "") {
             search()
           }
           else {
           $("#transcriberList").find("option").each(function() {
-            if ($(this).val() === userText) {
+            if ($(this).val() === userText && userKeywords !== "") {
               search()
             }
           })
         }}, 50))
 
         radiusSlider.on("change", () => {
-          search()
+          let userKeywords = keywordBox.val()
+          if (userKeywords !== "" && userKeywords !== "") {
+            search()
+          }
         })
 
         lemmatizeBox.on("change", () => {
-          search()
+          let userKeywords = keywordBox.val()
+          if (userKeywords !== "" && userKeywords !== "") {
+            search()
+          }
         })
       })
 

@@ -34,19 +34,19 @@ class LocalImageSource extends ImageSourcePlugin {
         parent::__construct($systemManager, 'local');
     }
 
-    public function realGetImageUrl($imageSourceData, $imageNumber)  {
+    public function realGetImageUrl($imageSourceData, $imageNumber) :string {
         return sprintf( self::URL_LOCAL_REP . "/%s/%s-%04d.jpg",
             $imageSourceData,
             $imageSourceData,
             $imageNumber);
     }
     
-    public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber) {
+    public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber) : string{
         return sprintf("tileSources: {type: 'image', url:  '%s', buildPyramid: false,homeFillsViewer: true}", 
                 $this->realGetImageUrl($imageSourceData, $imageNumber));
     }
 
-    public function realGetDocInfoHtml($imageSourceData) {
+    public function realGetDocInfoHtml($imageSourceData) : string {
         return 'Images stored in local repository '. self::HTML_INFO_SEPARATOR .
             '<a href="' . self::URL_LOCAL_REP . '/' . $imageSourceData . '/"' .
             ' target="_blank"> Image Folder '. self::ICON_EXTERNAL_URL .  '</a>';

@@ -56,20 +56,8 @@ class IipServerImageSource extends ImageSourcePlugin {
 //        return array_merge($data, $metadata);
 //    }
 
-    public function realGetDocInfoHtml($imageSourceData) {
-
+    public function realGetDocInfoHtml($imageSourceData) : string{
         return "<em>IIP Server</em>";
-//        $html = "= <em>$imageSourceData</em>";
-//        $html .= self::HTML_INFO_SEPARATOR;
-//        $html .= '<a href="' . $this->getDareDocumentUrl($imageSourceData) . '" target="_blank" title="View document in DARE">' .
-//                'DARE ' . self::ICON_EXTERNAL_URL .  '</a>' ;
-//        $html .= self::HTML_INFO_SEPARATOR;
-//        $html .= '<a href="' . $this->getBilderbergDocumentUrl($imageSourceData) .
-//                '" target="_blank" title="View document in Bilderberg">' .
-//            'Bilderberg ' . self::ICON_EXTERNAL_URL .  '</a>' ;
-//
-//        return $html;
-
     }
 
 //    private function getDareDocumentUrl(string $dareId) : string {

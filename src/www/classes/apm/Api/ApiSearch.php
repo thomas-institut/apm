@@ -524,7 +524,7 @@ class ApiSearch extends ApiController
         }
 
         // If first token of the passage is punctuation, remove it
-        if (empty($passage[0]) or strpos(".,:-–]/", $passage[0]) !== false) {
+        if (empty($passage[0]) or strpos(".,:;- –]/", $passage[0]) !== false) {
             array_shift($passage);
         }
 

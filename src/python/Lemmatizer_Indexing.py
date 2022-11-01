@@ -14,7 +14,7 @@ def decode(transcript):
     transcript = transcript.replace("+", "|")
     transcript = transcript.replace("°", "<")
     transcript = transcript.replace("^", ">")
-    transcript = transcript.replace("$", ";")
+    transcript = transcript.replace("ß", ";")
     transcript = transcript.replace("~", "`")
 
     return transcript

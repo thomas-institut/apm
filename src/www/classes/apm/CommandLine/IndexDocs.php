@@ -25,8 +25,6 @@ use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
 use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
-use PHPUnit\Util\Exception;
-use ThomasInstitut\TimeString\TimeString;
 
 /**
  * Description of IndexDocs
@@ -131,8 +129,10 @@ class IndexDocs extends CommandLineUtility {
                     // Add columnData to the OpenSearch index with a unique ID
                     $id = $id + 1;
 
-                    $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
-                    print("$id: Doc $doc_id ($title) page $page seq $seq foliation $foliation col $col lang $lang\n");
+                    if ($title==='E-MinioPaluello-AL_33-DeArtePoetica') {
+                        $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+                        print("$id: Doc $doc_id ($title) page $page seq $seq foliation $foliation col $col lang $lang\n");
+                    }
                 }
             }
         }
@@ -243,8 +243,11 @@ class IndexDocs extends CommandLineUtility {
         $transcript_clean = str_replace('|', '+', $transcript_clean);
         $transcript_clean = str_replace('<', '°', $transcript_clean);
         $transcript_clean = str_replace('>', '^', $transcript_clean);
-        $transcript_clean = str_replace(';', '$', $transcript_clean);
+        $transcript_clean = str_replace(';', 'ß', $transcript_clean);
         $transcript_clean = str_replace('`', '~', $transcript_clean);
+        $transcript_clean = str_replace('[', '', $transcript_clean);
+        $transcript_clean = str_replace(']', '', $transcript_clean);
+
 
         // Remove numbers
         for ($i=0; $i<10; $i++) {

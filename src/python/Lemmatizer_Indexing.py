@@ -8,13 +8,13 @@ def decode(transcript):
     transcript = transcript.replace("#", " ")
     transcript = transcript.replace("- ", "")
     transcript = transcript.replace("%", "(")
-    transcript = transcript.replace("$", ")")
+    transcript = transcript.replace("§", ")")
     transcript = transcript.replace("€", "׳")
     transcript = transcript.replace("\\", "")
     transcript = transcript.replace("+", "|")
     transcript = transcript.replace("°", "<")
     transcript = transcript.replace("^", ">")
-    transcript = transcript.replace(";", "$")
+    transcript = transcript.replace("$", ";")
     transcript = transcript.replace("~", "`")
 
     return transcript

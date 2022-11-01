@@ -339,7 +339,7 @@ class ApiSearch extends ApiController
                         // Create an array of all matched tokens in the current passage - used for highlighting keywords in js
                         $tokens_matched[] = [$transcript_tokenized[$pos]];
                         foreach ($passage_tokenized[$counter] as $word) {
-                            if (strpos($word, $tokens_queried[0]) !== false) {
+                            if (strpos($word, $tokens_queried[0]) !== false or strpos($word, ucfirst($tokens_queried[0])) !== false ) {
                                 $tokens_matched[$counter][] = $word;
                             }
                         }

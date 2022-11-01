@@ -129,10 +129,8 @@ class IndexDocs extends CommandLineUtility {
                     // Add columnData to the OpenSearch index with a unique ID
                     $id = $id + 1;
 
-                    if ($title==='E-MinioPaluello-AL_33-DeArtePoetica') {
-                        $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
-                        print("$id: Doc $doc_id ($title) page $page seq $seq foliation $foliation col $col lang $lang\n");
-                    }
+                    $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+                    print("$id: Doc $doc_id ($title) page $page seq $seq foliation $foliation col $col lang $lang\n");
                 }
             }
         }

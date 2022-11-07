@@ -38,8 +38,8 @@ use OpenSearch\ClientBuilder;
 class IndexDocs extends CommandLineUtility {
 
     // Variables for OpenSearch client and the name of the index to create
-    private Client $client;
-    private string $indexName;
+    protected Client $client;
+    protected string $indexName;
 
     public function main($argc, $argv): bool
     {
@@ -164,7 +164,7 @@ class IndexDocs extends CommandLineUtility {
     }
 
     // Function to add pages to the OpenSearch index
-    private function indexCol ($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang): bool
+    protected function indexCol ($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang): bool
     {
         // Encode transcript for avoiding errors in exec shell command because of characters like "(", ")" or " "
         $transcript_clean = $this->encode($transcript);
@@ -215,7 +215,7 @@ class IndexDocs extends CommandLineUtility {
     }
 
     // Function to encode the transcript – makes it suitable for the exec-command
-    private function encode($transcript) {
+    protected function encode($transcript) {
 
         // Replace line breaks, blanks, brackets...these character can provoke errors in the exec-command
         $transcript_clean = str_replace("\n", "#", $transcript);

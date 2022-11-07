@@ -39,7 +39,7 @@ class ApiSearch extends ApiController
             return $this->responseWithJson($response, ['searched_phrase' => $searched_phrase,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
         
-        // Tokenization and lemmatization of searched phrase with Python
+        // Tokenization and lemmatization of searched phrase with python
         exec("python3 ../python/Lemmatizer_Query.py $searched_phrase", $tokens_and_lemmata, $retval);
 
         // Log output from exec-function
@@ -279,15 +279,17 @@ class ApiSearch extends ApiController
     // Get all information about matches, specified for a single document or all documents
     private function evaluateData ($query, $tokens_queried, $lemmata, $query_algorithm, $radius, $lemmatize) {
 
+        // Variable to collect all relevant data in
         $data = [];
+
+        // Get number of matched columns
         $num_columns = $query['hits']['total']['value'];
 
         // If there are any matched columns, collect them all in an ordered array, using the arrays declared at the beginning of the function
         if ($num_columns !== 0) {
             for ($i = 0; $i<$num_columns; $i++) {
 
-                // Get document title, page number, column number, transcriber, transcript, docID and pageID
-                // of every matched column in the OpenSearch index
+                // Get data of every matched column in the OpenSearch index
                 $title = $query['hits']['hits'][$i]['_source']['title'];
                 $page = $query['hits']['hits'][$i]['_source']['page'];
                 $seq = $query['hits']['hits'][$i]['_source']['seq'];
@@ -309,8 +311,8 @@ class ApiSearch extends ApiController
                     $pos_upper = $this->getPositions($transcript_tokenized, ucfirst($tokens_queried[0]), $query_algorithm);
                 }
 
-                // First, check if the keywordPostions in the arrays are the same (this is the case in hebrew and arabic,
-                // because there are no upper-case letters) – if so, just take keywordPositionsLC as full array of keywordPositions
+                // First, check if the positions in the arrays are the same (this is the case in hebrew and arabic
+                // because there are no upper-case letters) - if so, just take pos_lower as full array of positions, if not merge pos_lower and pos_upper
                 if ($pos_lower === $pos_upper) {
                     $pos_all = $pos_lower;
                 }
@@ -319,8 +321,7 @@ class ApiSearch extends ApiController
                     sort($pos_all);
                 }
 
-                // Get surrounding context of every occurrence of the keyword in the matched column as a string
-                // and append it to...
+                // Arrays to store matched passages and tokens in them
                 $passage_tokenized = [];
                 $passage_lemmatized = [];
                 $tokens_matched = [];
@@ -344,7 +345,7 @@ class ApiSearch extends ApiController
                             }
                         }
 
-                        // Remove duplicates from the array in the tokens_matched array
+                        // Remove duplicates from the array in the tokens_matched array and adjust the keys of the array
                         $tokens_matched[$counter] = array_values(array_unique($tokens_matched[$counter]));
 
                         // Refresh variables
@@ -353,11 +354,10 @@ class ApiSearch extends ApiController
                     }
                 }
 
-                // Get total keyword frequency in matched column
+                // Get number of matched passages in the matched column
                 $num_passages = count($passage_tokenized);
 
-
-                // Collect matches in all columns
+                // Collect data
                 $data[] = [
                     'title' => $title,
                     'page' => $page,
@@ -381,7 +381,7 @@ class ApiSearch extends ApiController
                 ];
             }
 
-            // Bring the information by title in alphabetical, and by page and colum in ascending order
+            // Bring information in alphabetical and numerical order
             array_multisort($data);
         }
 
@@ -392,7 +392,7 @@ class ApiSearch extends ApiController
     private function evaluateDataForAdditionalTokens ($data, $token_unlemmatized, $token_lemmatized, $lemmatize) {
 
         if ($lemmatize) {
-            // First, remove all passage_tokenized from $data, which do not match the keyword
+            // First, remove all passage_tokenized from $data, which do not match the additional keyword
             foreach ($data as $i => $column) {
                 foreach ($column['passage_lemmatized'] as $j => $passage_lemmatized) {
 
@@ -450,7 +450,7 @@ class ApiSearch extends ApiController
             }
         }
 
-        // Second, unset all columns, which not anymore have any passage_tokenized
+        // Second, unset all columns, which do not anymore have any passage_tokenized
         foreach ($data as $i=>$column) {
             if ($column['passage_tokenized'] === []) {
                 unset ($data[$i]);
@@ -468,7 +468,7 @@ class ApiSearch extends ApiController
         return array_values($data);
     }
 
-    // Function to get all the positions of a given keyword in a transcripted column (full match or phrase match, measured in words)
+    // Function to get all the positions of a given keyword in a trascribed column (full match or phrase match, measured in words)
     private function getPositions ($transcript_tokenized, $token, $query_algorithm): array {
 
         // Array, which will be returned
@@ -498,7 +498,7 @@ class ApiSearch extends ApiController
         return $positions;
     }
 
-    // Function to get the surrounding context of a given keyword (via keywordPosition) in a given transcript
+    // Function to get a given keyword in its context in a given transcript
     private function getPassage ($transcript_tokenized, $pos, $radius = 100): array
     {
         // Get total number of words in the transcript

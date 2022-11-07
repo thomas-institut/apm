@@ -3,7 +3,7 @@ import spacy_udpipe
 import qalsadi.lemmatizer
 import sys
 
-# Decoder of the in PHP encoded transcript
+# Decoder of the encoded transcript (encoding is done in php)
 def decode(transcript):
     transcript = transcript.replace("#", " ")
     transcript = transcript.replace("- ", "")
@@ -23,10 +23,10 @@ def decode(transcript):
 lang = sys.argv[1:][0]
 transcript = sys.argv[2:][0]
 
-# Decoding
+# Decode transcript
 transcript = decode(transcript)
 
-# Tokenization and Lemmatization
+# Tokenization and lemmatization in three langauges
 if (lang=='he' or lang=='jrb'):
     nlp = spacy_udpipe.load('he')
     tokens = transcript.split(" ")

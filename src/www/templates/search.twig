@@ -13,10 +13,12 @@
         let radiusSlider = $("#radiusSlider")
         let lemmatizeBox = $("#lemmatize")
 
-        // Variable for previous keywords to avoid repetition of identical query
+        // Variable for previous keywords to avoid repetition of identical queries
         let oldKeywords = "gdfgwer"
 
-        // Key-Up functions for all boxes
+        // KEY-UP FUNCTIONS FOR ALL BOXES
+
+        // Start query, if new keywords are given - delay the function to avoid unintended queries
         keywordBox.on("keyup", delay(function () {
           let userText = $(this).val()
           if (userText !== "" && userText !== oldKeywords) {
@@ -25,16 +27,22 @@
           oldKeywords = userText
         }, 2000))
 
+        // Get the doc-titles of the indexed columns
         transcriptBox.on("click", () => {
           getInput ('titles')
         })
 
+        // Start query, if a transcript is chosen - delay the function to avoid unintended queries
         transcriptBox.on("input", delay(function () {
           let userText = $(this).val()
           let userKeywords = keywordBox.val()
+
+          // Search, if transcript field is empty AND keywords field is not
           if (userText === "" && userKeywords !== "") {
             search()
           }
+
+          // Search, if a transcript is chosen
           else {
           $("#titleList").find("option").each(function() {
             if ($(this).val() === userText && userKeywords !== "") {
@@ -43,10 +51,12 @@
           })
         }}, 50))
 
+        // Get the transcribers of the indexed columns
         transcriberBox.on("click", () => {
           getInput ('transcribers')
         })
 
+        // Same as above (transcriptBox)
         transcriberBox.on("input", delay(function () {
           let userText = $(this).val()
           let userKeywords = keywordBox.val()
@@ -61,23 +71,24 @@
           })
         }}, 50))
 
+        // Start query, if the search radius has changed and keywords field is not empty
         radiusSlider.on("change", () => {
           let userKeywords = keywordBox.val()
-          if (userKeywords !== "" && userKeywords !== "") {
+          if (userKeywords !== "") {
             search()
           }
         })
 
+        // Start query, if lemmatization box gets checked/unnchecked and keywords field is not empty
         lemmatizeBox.on("change", () => {
           let userKeywords = keywordBox.val()
-          if (userKeywords !== "" && userKeywords !== "") {
+          if (userKeywords !== "") {
             search()
           }
         })
       })
 
-      // Function to delay keyup and sliderchange event to avoid unnecessary queries for unfinished user input –
-      // i. e. if quickly typed "natura", search only for "natura" and not for "n", "na", "nat",...
+      // Function to delay keyup and sliderchange events – avoids unnecessary queries for unfinished user input
       function delay (callback, ms) {
         let timer = 0;
         return function() {
@@ -165,14 +176,14 @@
         let resultsTableH = $("#resultsTable thead")
         let errorMessage = $("#error_message")
 
-
+        // Get values of all boxes/fields
         let searchText = keywordBox.val()
         let title = transcriptBox.val();
         let transcriber = transcriberBox.val();
         let radius = radiusSlider.val()
         let lemmatize = lemmatizeBox.prop('checked')
 
-        // Empty tabele and signal search process
+        // Empty the results-table and signalize search process
         resultsTableB.empty()
         resultsTableH.empty()
         spinner.html(`<div class="spinner-border" role="status"></div>`)
@@ -215,7 +226,7 @@
         let resultsTableB = $("#resultsTable tbody")
         let resultsTableH = $("#resultsTable thead")
 
-        // Get instance of ApmUrlGenerator for creating links to matching docs
+        // Get instance of ApmUrlGenerator to create links to matched doc pages
         let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
 
         // Get column data of search results and language of matched passages
@@ -227,13 +238,13 @@
         let num_passages = results['num_passages_total']
         let num_docs = getNumDocs(data, num_columns)
 
-        // If there are no matches, display this to the user and empty the table
+        // If there are no matches, display this to the user and empty the results-table
         if (num_columns === 0) {
           resultsTableH.empty()
           resultsTableB.empty()
         }
 
-        // If there is exactly one matched column, display it with exact information
+        // If there is exactly one matched passage, display it with exact information
         else if (num_columns === 1 && num_passages === 1) {
 
           // Make table head
@@ -250,18 +261,18 @@
           let tokens_matched = data[0]['tokens_matched']
           let docID = data[0]['docID']
 
-          // Get link for matched column
+          // Get link for matched page (sequence number)
           let url = urlGenerator.sitePageView(docID, seq, column)
           let link = getLink(url)
 
-          // Convert the tokens_matched in their context into a single string and highlight the tokens_matched
+          // Convert the tokens_matched in their context into a single string and highlight the matched tokens
           let passages_string = ""
 
           for (let j = 0; j < passages.length; j++) {
             passages_string = highlight(passages[j], tokens_matched[j])
             passages_string = removeBlanks(passages_string)
 
-            // Fill table with results
+            // Fill table with results - layout depends slightly on the language of the transcripts
             resultsTableB.empty()
             if (lang==='la') {
               resultsTableB.append(
@@ -278,7 +289,7 @@
           }
         }
 
-        // If there is more than one matched column, display them all with exact information
+        // If there is more than one matched passage, display them all with exact information
         else {
 
           // Make table head
@@ -287,7 +298,7 @@
           resultsTableB.empty()
 
           // Make variable for storing title of preceeding column in the dataset to display only ONE title,
-          // if there are plenty matched columns of the same document
+          // if there are plenty matched columns/passages of the same document
           let prec_title = " "
 
           // Write all matches into the results table
@@ -315,7 +326,7 @@
               passages_string = highlight(passages[j], tokens_matched[j])
               passages_string = removeBlanks(passages_string)
 
-              // Fill table with results
+              // Fill table with results - layout depends slightly on the language of the transcripts
               if (title === prec_title) {
                 if (lang==='la') {
                   resultsTableB.append(
@@ -353,7 +364,6 @@
       // Function to add a link to a string in html
       function getLink (url) {
         return `<a class="fas fa-external-link-alt" target="_blank" href=${url} </a>`;
-        // return `${string} &nbsp &nbsp &nbsp <a class="fas fa-external-link-alt" target="_blank" href=${url} </a>`;
       }
 
       // Function to calculate total number of matched documents
@@ -372,14 +382,13 @@
         return numDocs
       }
 
-      // Function to highlight the searched keyword in its context
+      // Function to highlight the searched keywords in their context
       function highlight (passage, tokens_matched) {
 
-        // Returned variable holding string with highlighted tokens_matched in it
+        // String to return – contains passages with highlighted words in it
         let passage_highlighted = ""
 
         // Convert array to string with boldened tokens_matched
-
         for (i=0; i<passage.length; i++) {
           // Get current word of passage-array
           let token = passage[i]
@@ -390,19 +399,11 @@
           // Append token to returned string
           passage_highlighted = passage_highlighted + token + " "
         }
+
         return passage_highlighted
       }
 
-      function indexOfAll(text, token) {
-        var i = text.indexOf(token),
-                indexes = [];
-        while (i !== -1) {
-          indexes.push(i);
-          i = text.indexOf(token, ++i);
-        }
-        return indexes;
-      }
-
+      // Function to remove inadequate blanks from transcript
       function removeBlanks (text) {
         text = text.replaceAll(" .", ".")
         text = text.replaceAll(" ,", ",")

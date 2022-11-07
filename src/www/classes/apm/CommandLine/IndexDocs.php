@@ -29,13 +29,15 @@ use OpenSearch\ClientBuilder;
 /**
  * Description of IndexDocs
  *
- * Command line utility, which indexes all transcripts out of the sql-database by using methods of the DataManager class
+ * Commandline utility to create an index of all transcripts in OpenSearch based on a sql-database
+ * Transcript will be lemmatized before indexing. All relevant data and metadata will be indexed.
  *
  * @author Lukas Reichert
  */
 
 class IndexDocs extends CommandLineUtility {
 
+    // Variables for OpenSearch client and the name of the index to create
     private Client $client;
     private string $indexName;
 
@@ -51,11 +53,8 @@ class IndexDocs extends CommandLineUtility {
         // Name of the index in OpenSearch
         $this->indexName = 'transcripts';
 
-
         // Delete existing and create new index
-        if ($this->client->indices()->exists([
-            'index' => $this->indexName])
-        ) {
+        if ($this->client->indices()->exists(['index' => $this->indexName])) {
             $this->client->indices()->delete([
                 'index' => $this->indexName
             ]);
@@ -75,39 +74,35 @@ class IndexDocs extends CommandLineUtility {
 
         print("New index *$this->indexName* was created!\n");
 
-
         // Get a list of all docIDs in the sql-database
         $doc_list = $this->dm->getDocIdList('title');
 
-        // Ascending ID for OpenSearch entries
+        // Variable to add a unique id to the indexed columns
         $id = 0;
 
-        // Download language models for lemmatization
-        exec("python3 ../../python/download_models.py", $models_status);
-        print($models_status[0]);
+        // Download hebrew language model for lemmatization
+        exec("python3 ../../python/download_model_he.py", $model_status);
+        print($model_status[0]);
 
         print("\nStart indexing...\n");
 
         // Iterate over all docIDs
         foreach ($doc_list as $doc_id) {
-            // Get title of every document$transcript_clean
+            // Get title of every document
             $doc_info = $this->dm->getDocById($doc_id);
             $title = ($doc_info['title']);
 
-            // Get a list of pageIDs with transcriptions
+            // Get a list of transcribed pages of the document
             $pages_transcribed = $this->dm->getTranscribedPageListByDocId($doc_id);
 
             // Iterate over transcribed pages
-
             foreach ($pages_transcribed as $page) {
 
-                // Get pageID and number of columns of the page
+                // Get pageID, number of columns and sequence number of the page
                 $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
                 $page_info = $this->dm->getPageInfo($page_id);
                 $num_cols = $page_info['num_cols'];
                 $seq = $page_info['seq'];
-
-                // GET ALSO FOLIATION NUMBER AND SEQUENCE NUMBER
 
                 // Iterate over all columns of the page and get the corresponding transcripts and transcribers
                 for ($col = 1; $col <= $num_cols; $col++) {
@@ -120,13 +115,13 @@ class IndexDocs extends CommandLineUtility {
                     $transcript = $this->getPlainTextFromElements($elements);
                     $transcriber = $versions[0]['author_name'];
 
-                    // Get language of current column (document)
+                    // Get language of current column (same as document)
                     $lang = $this->dm->getPageInfoByDocSeq($doc_id, $seq)['lang'];
 
-                    // Get foliation number
+                    // Get foliation number of the current page/sequence number
                     $foliation = $this->dm->getPageFoliationByDocSeq($doc_id,  $seq);
 
-                    // Add columnData to the OpenSearch index with a unique ID
+                    // Add data to the OpenSearch index with a unique id
                     $id = $id + 1;
 
                     $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
@@ -171,23 +166,18 @@ class IndexDocs extends CommandLineUtility {
     // Function to add pages to the OpenSearch index
     private function indexCol ($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang): bool
     {
-
-
-        // Encode transcript for avoiding errors in shell command because of characters like "(", ")" or " "
-        //print($transcript);
+        // Encode transcript for avoiding errors in exec shell command because of characters like "(", ")" or " "
         $transcript_clean = $this->encode($transcript);
 
-         // Tokenization and Lemmatization
+        // Tokenization and lemmatization
+        // Test existence of transcript and tokenize/lemmatize existing transcripts in python
         if (strlen($transcript_clean) > 3) {
                 echo ("Lemmatizing in Python...");
                 exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_clean", $tokens_and_lemmata);
 
+                // Get tokenized and lemmatized transcript
                 $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
                 $transcript_lemmatized = explode("#", $tokens_and_lemmata[1]);
-
-            //print_r ($transcript_tokenized);
-            //print_r ($transcript_lemmatized);
-            //print($transcript_clean);
             }
             else {
                 $transcript_tokenized = [];
@@ -201,6 +191,7 @@ class IndexDocs extends CommandLineUtility {
                 print_r("finished!\n");
             }
 
+            // Data to be stored on the OpenSearch index
         $this->client->create([
             'index' => $this->indexName,
             'id' => $id,
@@ -223,6 +214,7 @@ class IndexDocs extends CommandLineUtility {
         return true;
     }
 
+    // Function to encode the transcript – makes it suitable for the exec-command
     private function encode($transcript) {
 
         // Replace line breaks, blanks, brackets...these character can provoke errors in the exec-command
@@ -252,7 +244,7 @@ class IndexDocs extends CommandLineUtility {
             $transcript_clean = str_replace("${i}", '', $transcript_clean);
         }
 
-        // Remove repetions of hashtags
+        // Remove repetitions of hashtags
         while (strpos($transcript_clean, '##') !== false) {
             $transcript_clean = str_replace('##', '#', $transcript_clean);
         }
@@ -266,7 +258,7 @@ class IndexDocs extends CommandLineUtility {
             $transcript_clean = str_replace('..', '', $transcript_clean);
         }
 
-        // Remove repetions of hashtags again (in the foregoing steps could be originated new ones..)
+        // Remove repetitions of hashtags again (in the foregoing steps could be originated new ones..)
         while (strpos($transcript_clean, '##') !== false) {
             $transcript_clean = str_replace('##', '#', $transcript_clean);
         }

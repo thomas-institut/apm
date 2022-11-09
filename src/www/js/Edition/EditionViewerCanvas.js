@@ -135,6 +135,9 @@ export class EditionViewerCanvas {
       // this.debug && console.log(`Scale set to ${newScale}`)
       this.render().then( () => {
         resolve(newScale)
+      }).catch( (err) => {
+        console.error(`Error rendering canvas`)
+        console.log(err)
       })
     })
   }

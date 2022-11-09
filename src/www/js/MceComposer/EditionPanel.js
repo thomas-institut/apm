@@ -122,13 +122,18 @@ export class EditionPanel extends Panel {
     this.options.showLoadingDataMessage = yes
   }
 
+  updateLoadingMessage(newMessage) {
+    if (MceData.isEmpty(this.mceData) && this.options.showLoadingDataMessage)
+    {
+      $(this.getContainerSelector()).html(this.__genLoadingStateHtml(newMessage))
+    }
+  }
+
 
   generateHtml() {
     if (MceData.isEmpty(this.mceData)) {
       if (this.options.showLoadingDataMessage) {
-        return `<div class='empty-chunks-info'>
-        <p class="text-warning">Loading data...</p>
-</div>`
+        return this.__genLoadingStateHtml('Loading')
       }else {
         return `<div class='empty-chunks-info'>
         <p class="text-warning">${this.icons.alert} Edition is still empty.</p>
@@ -148,6 +153,12 @@ export class EditionPanel extends Panel {
                 <div class="sigla-groups-table">${this.__genSiglaGroupsTable()}</div>
                 <button class="btn  btn-outline-secondary btn-sm add-sigla-group-btn"  title="Click to add a new sigla group">Add Sigla Group</button>
             </div>`
+  }
+
+  __genLoadingStateHtml(loadingMessage) {
+    return `<div class='empty-chunks-info'>
+        <p class="text-warning">${loadingMessage}...</p>
+</div>`
   }
 
   __genSiglaGroupsTable() {

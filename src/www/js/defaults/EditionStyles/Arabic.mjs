@@ -43,9 +43,9 @@ export const defaultArabicEditionStyle = {
         spaceAfter: 0
       },
       glue: {
-        width: '1.2 sp',
+        width: '1.25 sp',
         shrink: '0.1 sp',
-        stretch: '0.3 sp'
+        stretch: '0.35 sp'
       }
     },
     arabicText: {

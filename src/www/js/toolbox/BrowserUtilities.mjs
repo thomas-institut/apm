@@ -24,7 +24,12 @@ export class BrowserUtilities {
     canvasElement.height = height * ratio;
     canvasElement.style.width = width + "px";
     canvasElement.style.height = height + "px";
-    canvasElement.getContext("2d").scale(ratio, ratio);
+    let context = canvasElement.getContext("2d")
+    try {
+      context.scale(ratio, ratio);
+    } catch (e) {
+      throw Error(`Could not scale canvas, device pixel ratio = ${ratio}, dimensions ${width}x${height}`)
+    }
     return canvasElement;
   }
 

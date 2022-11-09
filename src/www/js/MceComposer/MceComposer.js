@@ -151,6 +151,7 @@ export class MceComposer {
       } else {
         // load Mce Edition
         console.log(`Loading edition ${this.editionId}`)
+        this.editionPanel.updateLoadingMessage(`Loading multi-chunk edition`)
         let apiUrl = this.options.urlGenerator.apiGetMultiChunkEdition(this.editionId)
         $.get(apiUrl).then( (data) => {
           console.log(`Got data from server`)
@@ -715,7 +716,9 @@ export class MceComposer {
   }
 
   async loadAllSingleChunkEditions() {
-    for (let i = 0; i < this.mceData.chunks.length; i++) {
+    let numEditions = this.mceData.chunks.length
+    for (let i = 0; i < numEditions; i++) {
+      this.editionPanel.updateLoadingMessage(`Loading chunk edition ${i+1} of ${numEditions}`)
       let chunk = this.mceData.chunks[i]
       let data = await this.getSingleChunkDataFromServer(chunk.chunkEditionTableId, chunk.version )
       this.chunksToUpdateStatuses[i] = !data['isLatestVersion']

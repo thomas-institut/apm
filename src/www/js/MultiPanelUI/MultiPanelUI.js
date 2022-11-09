@@ -250,9 +250,8 @@ export class MultiPanelUI {
   }
 
   start() {
-    let thisObject = this
     return new Promise( (resolve) => {
-      thisObject._doStart()
+      this._doStart()
       resolve()
     })
   }

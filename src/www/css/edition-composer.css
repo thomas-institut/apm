@@ -382,6 +382,11 @@ div#text-editor-info h4 {
     font-family: var(--default-font-family);
 }
 
+b.blot-paragraph-number {
+    font-weight: normal;
+    background-color: #d9c6ae;
+}
+
 
 /* Collation Table Panel */
 

@@ -22,23 +22,34 @@ import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import Quill from '../QuillLoader'
 import Small from './QuillBlots/Small'
 import Superscript from './QuillBlots/Superscript'
+import ParagraphNumber from './QuillBlots/ParagraphNumber'
 
 import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { GenericQuillDeltaConverter } from './QuillDelta/GenericQuillDeltaConverter'
+import Inline from 'quill/blots/inline'
 
 const simpleFormats = [
   'bold',
   'italic',
+  'paragraphNumber'
   // 'small',
   // 'superscript'
 ]
+
+
+Inline.order = [
+  'cursor', 'inline',   // Must be lower
+  'underline', 'strike', 'italic', 'bold', 'paragraphNumber', 'script',
+  'link', 'code'        // Must be higher
+];
 
 const headingDepth = 3
 
 const buttons = {
   bold: { icon: '<i class="bi bi-type-bold"></i>' , title: 'Bold'},
   italic: { icon: '<i class="bi bi-type-italic"></i>' , title: 'Italic'},
+  paragraphNumber:  { icon: '<small class="fte-icon">[ ]</small>' , title: 'Paragraph Number'}
   // small: { icon: '<small class="fte-icon">S</small>', title: 'Small Font'},
   // superscript: { icon: '<small class="fte-icon">x<sup>2</sup>', title: 'Superscript'}
 }
@@ -224,5 +235,6 @@ function setButtonState(btn, state) {
 // Initialization
 Quill.register({
   'formats/small' : Small,
-  'formats/superscript' : Superscript
+  'formats/superscript' : Superscript,
+  'formats/paragraphNumber': ParagraphNumber
 }, true)

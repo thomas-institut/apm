@@ -35,7 +35,7 @@ use OpenSearch\ClientBuilder;
  * @author Lukas Reichert
  */
 
-class IndexDocs extends CommandLineUtility {
+class IndexCreater extends CommandLineUtility {
 
     // Variables for OpenSearch client and the name of the index to create
     protected Client $client;
@@ -89,8 +89,9 @@ class IndexDocs extends CommandLineUtility {
         // Iterate over all docIDs
         foreach ($doc_list as $doc_id) {
             // Get title of every document
-            $doc_info = $this->dm->getDocById($doc_id);
-            $title = ($doc_info['title']);
+            $title = $this->getTitle($doc_id);
+            //$doc_info = $this->dm->getDocById($doc_id);
+            //$title = ($doc_info['title']);
 
             // Get a list of transcribed pages of the document
             $pages_transcribed = $this->dm->getTranscribedPageListByDocId($doc_id);
@@ -99,10 +100,12 @@ class IndexDocs extends CommandLineUtility {
             foreach ($pages_transcribed as $page) {
 
                 // Get pageID, number of columns and sequence number of the page
-                $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
+                $page_id = $this->getPageID($doc_id, $page);
+                //$page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
                 $page_info = $this->dm->getPageInfo($page_id);
                 $num_cols = $page_info['num_cols'];
-                $seq = $page_info['seq'];
+                $seq = $this->getSeq($doc_id, $page);
+                //$seq = $page_info['seq'];
 
                 // Iterate over all columns of the page and get the corresponding transcripts and transcribers
                 for ($col = 1; $col <= $num_cols; $col++) {
@@ -111,15 +114,21 @@ class IndexDocs extends CommandLineUtility {
                         // no transcription in this column
                         continue;
                     }
-                    $elements = $this->dm->getColumnElementsBypageID($page_id, $col);
-                    $transcript = $this->getPlainTextFromElements($elements);
-                    $transcriber = $versions[0]['author_name'];
+
+                    $transcript = $this->getTranscript($doc_id, $page, $col);
+                    // $elements = $this->dm->getColumnElementsBypageID($page_id, $col);
+                    // $transcript = $this->getPlainTextFromElements($elements);
+
+                    $transcriber = $this->getTranscriber($doc_id, $page, $col);
+                    //$transcriber = $versions[0]['author_name'];
 
                     // Get language of current column (same as document)
-                    $lang = $this->dm->getPageInfoByDocSeq($doc_id, $seq)['lang'];
+                    $lang = $this->getLang($doc_id, $page);
+                    //$lang = $this->dm->getPageInfoByDocSeq($doc_id, $seq)['lang'];
 
                     // Get foliation number of the current page/sequence number
-                    $foliation = $this->dm->getPageFoliationByDocSeq($doc_id,  $seq);
+                    $foliation = $this->getFoliation($doc_id, $page);
+                    //$foliation = $this->dm->getPageFoliationByDocSeq($doc_id,  $seq);
 
                     // Add data to the OpenSearch index with a unique id
                     $id = $id + 1;
@@ -161,6 +170,44 @@ class IndexDocs extends CommandLineUtility {
             }
         }
         return $text;
+    }
+
+    protected function getPageID ($doc_id, $page) {
+        return $this->dm->getpageIDByDocPage($doc_id, $page);
+    }
+
+    protected function getTitle($doc_id) {
+        $doc_info = $this->dm->getDocById($doc_id);
+        return $doc_info['title'];
+    }
+
+    protected function getSeq($doc_id, $page) {
+        $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
+        $page_info = $this->dm->getPageInfo($page_id);
+        return $page_info['seq'];
+    }
+
+    protected function getTranscript($doc_id, $page, $col) {
+        $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
+        $elements = $this->dm->getColumnElementsBypageID($page_id, $col);
+        $transcript = $this->getPlainTextFromElements($elements);
+        return $transcript;
+    }
+
+    protected function getTranscriber($doc_id, $page, $col) {
+        $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
+        $versions = $this->dm->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
+        return $versions[0]['author_name'];
+    }
+
+    protected function getLang($doc_id, $page) {
+        $seq = $this->getSeq($doc_id, $page);
+        return $this->dm->getPageInfoByDocSeq($doc_id, $seq)['lang'];
+    }
+
+    protected function getFoliation($doc_id, $page) {
+        $seq = $this->getSeq($doc_id, $page);
+        return $this->dm->getPageFoliationByDocSeq($doc_id,  $seq);
     }
 
     // Function to add pages to the OpenSearch index

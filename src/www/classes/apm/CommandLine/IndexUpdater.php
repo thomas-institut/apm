@@ -56,54 +56,137 @@ class IndexUpdater extends IndexCreater
 
         print("\nStart updating index...\n");
 
-        // Get data from the scheduling table in sql
-        // TEST DATA
-        $doc_id = "153";
-        $page = "79";
-        $col = "1";
+        // TEST DATA FOR NEW ENTRY - SHOULD BE RECEIVED FROM SCHEDULER
+        $doc_id = "234543";
+        $page = "404";
+        $col = "5";
 
         // Get all indexing-relevant data
-
-        $title = $this->getTitle($doc_id);
+        /*$title = $this->getTitle($doc_id);
         $seq = $this->getSeq($doc_id, $page);
         $foliation = $this->getFoliation($doc_id, $page);
         $transcriber = $this->getTranscriber($doc_id, $page, $col);
         $page_id = $this->getPageID($doc_id, $page);
         $lang = $this->getLang($doc_id, $page);
-        $transcript = $this->getTranscript ($doc_id, $page, $col);
+        $transcript = $this->getTranscript ($doc_id, $page, $col);*/
 
-        // First Case: New transcription was created
+        // FOR TESTING
+        $title = "Hallo";
+        $seq = "67";
+        $foliation = "50b";
+        $transcriber = "Brad Pitt";
+        $page_id = "34";
+        $lang = "la";
+        $transcript = "Hic philosophum est et homo non potest dicere et non habitat in curia.";
 
-        // Get highest OpenSearch index id
-        $current_id = 11500; // Test
-        $id = $current_id + 1;
+        // Check if a new transcription was made or an existing one was changed
+        $transcription_exists = $this->transcriptionExists($this->client, $this->indexName, $doc_id, $page, $col);
 
-        // Add new transcription to index
-        $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
-        print("$id: Doc $doc_id ($title) page $page seq $seq foliation $foliation col $col lang $lang\n");
+        // FIRST CASE – Completely new transcription was created
+        if ($transcription_exists === 0) {
 
-        // Second Case: Existing transcription was changed
+            print("New transcription will be indexed!\n");
 
-        // Tokenize and lemmatize new transcription
-        echo("Lemmatizing in Python...");
-        $transcript_clean = $this->encode($transcript);
-        exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_clean", $tokens_and_lemmata);
+            // Generate unique ID for new entry
+            $id_list = $this->getIDs($this->client, $this->indexName);
+            $max_id = max($id_list);
+            $id = $max_id + 1;
 
-        // Get tokenized and lemmatized transcript
-        $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
-        $transcript_lemmatized = explode("#", $tokens_and_lemmata[1]);
+            // Add new transcription to index
+            $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+            print("$id: Doc $doc_id ($title) page $page seq $seq foliation $foliation col $col lang $lang\n");
+        }
+        else { // SECOND CASE – Existing transcription was changed
 
-        // Update index
-        $this->client->update([
-            'index' => $this->indexName,
-            'id' => $id,
+            print ("Indexed transcription will be changed!\n");
+
+            // Tokenize and lemmatize new transcription
+            /*echo("Lemmatizing in Python...");
+            $transcript_clean = $this->encode($transcript);
+            exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_clean", $tokens_and_lemmata);
+
+            // Get tokenized and lemmatized transcript
+            $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
+            $transcript_lemmatized = explode("#", $tokens_and_lemmata[1]);
+
+            // Update index
+            $this->client->update([
+                'index' => $this->indexName,
+                'id' => $id,
+                'body' => [
+                    'transcript' => $transcript,
+                    'transcript_tokens' => $transcript_tokenized,
+                    'transcript_lemmata' => $transcript_lemmatized
+                ]
+            ]);*/
+        }
+        return true;
+    }
+
+    // Function to get a full list of OpenSearch-IDs in the index
+    private function getIDs ($client, $index_name) {
+
+        // Array to return
+        $ids = [];
+
+        // Make a match_all query
+        $query = $client->search([
+            'index' => $index_name,
+            'size' => 20000,
             'body' => [
-                'transcript' => $transcript,
-                'transcript_tokens' => $transcript_tokenized,
-                'transcript_lemmata' => $transcript_lemmatized
+                "query" => [
+                    "match_all" => [
+                        "boost" => 1.0
+                    ]
+                ],
             ]
         ]);
 
-        return true;
+        // Append every id to the $ids-array
+        foreach ($query['hits']['hits'] as $column) {
+            $id = $column['_id'];
+            $ids[] = $id;
+        }
+
+        return $ids;
+    }
+
+    // Function to query a given OpenSearch-index
+    private function transcriptionExists ($client, $index_name, $doc_id, $page, $col) {
+
+            $query = $client->search([
+                'index' => $index_name,
+                'body' => [
+                    'size' => 20000,
+                    'query' => [
+                        'bool' => [
+                            'filter' => [
+                                'match' => [
+                                    'docID' => [
+                                        "query" => $doc_id
+                                    ]
+                                ]
+                            ],
+                            'should' => [
+                                'match' => [
+                                    'page' => [
+                                        "query" => $page,
+                                    ]
+                                ]
+                            ],
+                            "minimum_should_match" => 1,
+                            'must' => [
+                                'match' => [
+                                    'column' => [
+                                        "query" => $col
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]);
+
+            return $query['hits']['total']['value'];
     }
 }

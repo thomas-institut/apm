@@ -57,35 +57,35 @@ class IndexUpdater extends IndexCreater
         print("\nStart updating index...\n");
 
         // TEST DATA FOR NEW ENTRY - SHOULD BE RECEIVED FROM SCHEDULER
-        $doc_id = "234543";
+        $doc_id = "23";
         $page = "404";
-        $col = "5";
+        $col = "2";
 
-        // Get all indexing-relevant data
-        /*$title = $this->getTitle($doc_id);
+        // Get all indexing-relevant data from the SQL database
+        $title = $this->getTitle($doc_id);
         $seq = $this->getSeq($doc_id, $page);
         $foliation = $this->getFoliation($doc_id, $page);
         $transcriber = $this->getTranscriber($doc_id, $page, $col);
         $page_id = $this->getPageID($doc_id, $page);
         $lang = $this->getLang($doc_id, $page);
-        $transcript = $this->getTranscript ($doc_id, $page, $col);*/
+        $transcript = $this->getTranscript ($doc_id, $page, $col);
 
         // FOR TESTING
-        $title = "Hallo";
+        /*$title = "Hallo";
         $seq = "67";
         $foliation = "50b";
         $transcriber = "Brad Pitt";
         $page_id = "34";
         $lang = "la";
-        $transcript = "Hic philosophum est et homo non potest dicere et non habitat in curia.";
+        $transcript = "Hic philosophum est et homo non potest dicere et non habitat in curia curiosum curiositate.";*/
 
         // Check if a new transcription was made or an existing one was changed
-        $transcription_exists = $this->transcriptionExists($this->client, $this->indexName, $doc_id, $page, $col);
+        $transcription_status = $this->transcriptionStatus($this->client, $this->indexName, $doc_id, $page, $col);
 
         // FIRST CASE – Completely new transcription was created
-        if ($transcription_exists === 0) {
+        if ($transcription_status['exists'] === 0) {
 
-            print("New transcription will be indexed!\n");
+            print("Indexing new document...\n");
 
             // Generate unique ID for new entry
             $id_list = $this->getIDs($this->client, $this->indexName);
@@ -98,12 +98,16 @@ class IndexUpdater extends IndexCreater
         }
         else { // SECOND CASE – Existing transcription was changed
 
-            print ("Indexed transcription will be changed!\n");
+            print ("Updating document...");
+
+            // Get OpenSearch ID of changed column
+            $id = $transcription_status['id'];
 
             // Tokenize and lemmatize new transcription
-            /*echo("Lemmatizing in Python...");
+            echo("lemmatizing in Python...");
             $transcript_clean = $this->encode($transcript);
             exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_clean", $tokens_and_lemmata);
+            echo("lemmatized...");
 
             // Get tokenized and lemmatized transcript
             $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
@@ -114,11 +118,24 @@ class IndexUpdater extends IndexCreater
                 'index' => $this->indexName,
                 'id' => $id,
                 'body' => [
-                    'transcript' => $transcript,
-                    'transcript_tokens' => $transcript_tokenized,
-                    'transcript_lemmata' => $transcript_lemmatized
+                    'doc' => [
+                        'title' => $title,
+                        'page' => $page,
+                        'seq' => $seq,
+                        'foliation' => $foliation,
+                        'column' => $col,
+                        'pageID' => $page_id,
+                        'docID' => $doc_id,
+                        'lang' => $lang,
+                        'transcriber' => $transcriber,
+                        'transcript' => $transcript,
+                        'transcript_tokens' => $transcript_tokenized,
+                        'transcript_lemmata' => $transcript_lemmatized
+                    ]
                 ]
-            ]);*/
+            ]);
+
+            echo("updated!\n");
         }
         return true;
     }
@@ -152,7 +169,7 @@ class IndexUpdater extends IndexCreater
     }
 
     // Function to query a given OpenSearch-index
-    private function transcriptionExists ($client, $index_name, $doc_id, $page, $col) {
+    private function transcriptionStatus ($client, $index_name, $doc_id, $page, $col) {
 
             $query = $client->search([
                 'index' => $index_name,
@@ -187,6 +204,15 @@ class IndexUpdater extends IndexCreater
                 ]
             ]);
 
-            return $query['hits']['total']['value'];
+            $exists = $query['hits']['total']['value'];
+
+            // Get id, if there is already an existing transcription
+            if ($exists === 1) {
+                $id = $query['hits']['hits'][0]['_id'];
+            } else {
+                $id = 'None';
+            }
+
+            return ['exists' => $exists, 'id' => $id];
     }
 }

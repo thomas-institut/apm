@@ -21,12 +21,16 @@ import { TypesetterRenderer } from './TypesetterRenderer.mjs'
 
 export class CanvasRenderer extends TypesetterRenderer {
 
-  constructor (canvasElement) {
+  constructor (canvasElement, textDirection = '') {
     super()
     this.canvas = canvasElement
     this.ctx = this.canvas.getContext('2d')
     this.scale = 1
     this.pageMargin = 20
+    if (textDirection !== '') {
+      console.log(`Setting canvas text direction to '${textDirection}'`)
+      //this.ctx.direction = textDirection
+    }
   }
 
   setScale(scale) {
@@ -66,7 +70,10 @@ export class CanvasRenderer extends TypesetterRenderer {
     let currentCanvasDirection = this.ctx.direction
     if (textBoxItem.getTextDirection() !== '') {
       this.ctx.direction = textBoxItem.getTextDirection()
+      // console.log(`Setting canvas direction to ${this.ctx.direction}, default is ${currentCanvasDirection}`)
+      // console.log(textBoxItem)
     }
+
     this.ctx.font = `${fontStyle} ${fontVariant} ${fontWeight} ${fontSize}px ${textBoxItem.getFontFamily()} `
     this.ctx.fillStyle = '#000000'
     this.ctx.fillText(textBoxItem.getText(), x + shiftX,

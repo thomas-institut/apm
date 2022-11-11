@@ -28,11 +28,12 @@ import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { GenericQuillDeltaConverter } from './QuillDelta/GenericQuillDeltaConverter'
 import Inline from 'quill/blots/inline'
+import { isRtl } from '../toolbox/Util.mjs'
 
 const simpleFormats = [
   'bold',
   'italic',
-  'paragraphNumber'
+  // 'paragraphNumber'
   // 'small',
   // 'superscript'
 ]
@@ -46,10 +47,10 @@ Inline.order = [
 
 const headingDepth = 3
 
-const buttons = {
+const formatButtons = {
   bold: { icon: '<i class="bi bi-type-bold"></i>' , title: 'Bold'},
   italic: { icon: '<i class="bi bi-type-italic"></i>' , title: 'Italic'},
-  paragraphNumber:  { icon: '<small class="fte-icon">[ ]</small>' , title: 'Paragraph Number'}
+  // paragraphNumber:  { icon: '<small class="fte-icon">[ ]</small>' , title: 'Paragraph Number'}
   // small: { icon: '<small class="fte-icon">S</small>', title: 'Small Font'},
   // superscript: { icon: '<small class="fte-icon">x<sup>2</sup>', title: 'Superscript'}
 }
@@ -61,6 +62,20 @@ const headingIcons = [
   '<span class="mte-icon">H<sub>3</sub></span>'
 ]
 
+
+const characterButtons = {
+  common: {
+    leftDQM: { character: '“', title: 'Left Double Quotation Mark'},
+    rightDQM: { character: '”', title: 'Right Double Quotation Mark'},
+    leftSQM: { character: '‘', title: 'Left Single Quotation Mark'},
+    rightSQM: { character: '’', title: 'Right Single Quotation Mark'}
+  },
+  la: [
+
+  ],
+  ar: [],
+  he: []
+}
 
 const toolbarSeparator = '<span class="mte-tb-sep">&nbsp;</span>'
 
@@ -118,6 +133,11 @@ export class EditionMainTextEditor {
       $(this._getBtnSelectorHeading(i+1)).on('click', this._genOnClickHeadingButton(i+1, this.quillEditor))
     }
 
+    Object.keys(characterButtons.common).forEach( (key) => {
+      let btnSelector = this._getBtnSelectorCharacter(key)
+      $(btnSelector).on('click', this._genOnClickCharacter(key, this.quillEditor))
+    })
+
     this.quillEditor.on('selection-change', (range, oldRange, source) => {
       if (range === null) {
         this.debug && console.log(`Editor out of focus`)
@@ -168,6 +188,12 @@ export class EditionMainTextEditor {
     return `${this.containerSelector} .${format}-btn`
   }
 
+  _getBtnSelectorCharacter(characterKey) {
+    return `${this.containerSelector} .${characterKey}-btn`
+  }
+
+
+
   _getBtnSelectorHeading(headingNumber) {
     return `${this.containerSelector} .heading${headingNumber}-btn`
   }
@@ -184,6 +210,18 @@ export class EditionMainTextEditor {
       setButtonState(btn, currentState)
     }
   }
+
+  _genOnClickCharacter(characterKey, quill) {
+    return (ev) => {
+      ev.preventDefault()
+      let range = quill.getSelection()
+      if (range === null) {
+        return
+      }
+      quill.deleteText(range.index, range.length)
+      quill.insertText(range.index, characterButtons.common[characterKey].character)
+    }
+   }
 
   _genOnClickHeadingButton(headingNumber, quill) {
     return (ev) => {
@@ -211,14 +249,20 @@ export class EditionMainTextEditor {
 
     let buttonsHtml = simpleFormats
       .map( (fmt) => {
-        return `<button class="${fmt}-btn" title="${buttons[fmt].title}">${buttons[fmt].icon}</button>`
+        return `<button class="${fmt}-btn" title="${formatButtons[fmt].title}">${formatButtons[fmt].icon}</button>`
       })
       .join('')
     let headingButtonsHtml = ''
     for (let i=0;i < headingDepth; i++) {
       headingButtonsHtml += `<button class="heading${i+1}-btn" title="Heading ${i+1}">${headingIcons[i+1]}</button>`
     }
-    return `<div class="fte-toolbar text-${this.lang}">${buttonsHtml}${toolbarSeparator}${headingButtonsHtml}</div>
+
+    let characterButtonsHtml = Object.keys(characterButtons.common).map( (key) => {
+      let btnDef = characterButtons.common[key]
+      let char = isRtl(this.lang) && btnDef['rtlVersion'] !== undefined ? btnDef['rtlVersion'] : btnDef.character
+      return `<button class="${key}-btn" title="${btnDef.title}">${char}</button>`
+    }).join('')
+    return `<div class="fte-toolbar text-${this.lang}">${buttonsHtml}${toolbarSeparator}${headingButtonsHtml}${toolbarSeparator}${characterButtonsHtml}</div>
 <div class="fte-editor text-${this.lang}"></div>`
   }
 }

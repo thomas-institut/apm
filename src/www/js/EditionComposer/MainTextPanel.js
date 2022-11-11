@@ -908,7 +908,8 @@ export class MainTextPanel extends PanelWithToolbar {
         }
         return
       }
-      let tmpWitnessTokens = WitnessTokenStringParser.parse(fmtTextToken.text).map( (witnessToken) => {
+      // text
+      let tmpWitnessTokens = WitnessTokenStringParser.parseNew(fmtTextToken.text, this.edition.lang).map( (witnessToken) => {
         witnessToken.fmtText = FmtTextFactory.fromString(witnessToken.text).map((token) => {
               attributesToCopy.forEach((attribute) => {
                 if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute] !== '') {

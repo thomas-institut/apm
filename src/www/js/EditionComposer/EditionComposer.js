@@ -631,7 +631,7 @@ export class EditionComposer {
     }
 
     // parse new text into witness tokens
-    let parsedText = WitnessTokenStringParser.parse(newText, this.lang).filter ( (t) => {
+    let parsedText = WitnessTokenStringParser.parseNew(newText, this.lang).filter ( (t) => {
       return t.tokenType === WitnessTokenType.WORD || t.tokenType === WitnessTokenType.PUNCTUATION
     })
     console.log(`Parsed new text`)

@@ -19,15 +19,13 @@
 import * as WitnessTokenType from '../../Witness/WitnessTokenType.js'
 import { MainTextTokenFactory } from '../MainTextTokenFactory.mjs'
 import * as MainTextTokenType from '../MainTextTokenType.mjs'
+import { Punctuation } from '../../defaults/Punctuation.mjs'
 
 const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
 const INPUT_TOKEN_FIELD_NORMALIZED_TEXT = 'normalizedText'
 const INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE = 'normalizationSource'
 
-const noGluePunctuation = '.,:;?!'
-  + String.fromCodePoint(0x60C) // // Arabic comma
-  + String.fromCodePoint(0x61F) // Arabic question mark
 
 export class EditionMainTextGenerator {
 
@@ -91,9 +89,10 @@ export class EditionMainTextGenerator {
       }
 
     }
-    // add glue
+    // Add glue tokens
     let mainTextTokensWithGlue = []
     let firstWordAdded = false
+    let nextTokenMustStickToPrevious = false
     for(let i = 0; i < mainTextTokens.length; i++) {
       let mainTextToken = mainTextTokens[i]
       if (mainTextToken.type === MainTextTokenType.PARAGRAPH_END) {
@@ -115,7 +114,10 @@ export class EditionMainTextGenerator {
       if (!firstWordAdded) {
         addGlue = false
       }
-      if (noGluePunctuation.includes(tokenPlainText)) {
+      if (Punctuation.isCharacterPunctuation(tokenPlainText, lang, false) && Punctuation.sticksToPrevious(tokenPlainText, lang) ) {
+        addGlue = false
+      }
+      if (nextTokenMustStickToPrevious) {
         addGlue = false
       }
       if (addGlue) {
@@ -123,6 +125,7 @@ export class EditionMainTextGenerator {
       }
       mainTextTokensWithGlue.push(mainTextToken)
       firstWordAdded = true
+      nextTokenMustStickToPrevious = Punctuation.isCharacterPunctuation(tokenPlainText, lang, false) && Punctuation.sticksToNext(tokenPlainText, lang);
     }
     return mainTextTokensWithGlue
   }

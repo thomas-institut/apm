@@ -722,10 +722,17 @@ export class EditionTypesetting {
       this.debug && console.log(`Text box '${textBox.getText()}' direction is already set: '${textBox.getTextDirection()}'`)
       return textBox
     }
-    let detectedLang = this.languageDetector.detectLang(textBox.getText())
-    // if (detectedLang !== this.edition.lang) {
-    //   this.debug && console.log(`Text box with non '${this.edition.lang}' text: ${textBox.getText()} ('${detectedLang} detected)`)
-    // }
+    let detectedLang
+    // take care of neutral punctuation on its own
+    const neutralPunctuationCharacters = [ '[', ']', '(', ')', '{', '}', '«', '»', '.', ',', ';', '...', '"']
+    if (neutralPunctuationCharacters.indexOf(textBox.getText()) !== -1) {
+      detectedLang = this.edition.lang
+    } else {
+      detectedLang = this.languageDetector.detectLang(textBox.getText())
+    }
+    if (detectedLang !== this.edition.lang) {
+      this.debug && console.log(`Text box with non '${this.edition.lang}' text: '${textBox.getText()}' ('${detectedLang}' detected)`)
+    }
     if (isRtl(detectedLang)) {
       return textBox.setRightToLeft()
     } else {

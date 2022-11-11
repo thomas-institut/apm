@@ -110,11 +110,14 @@ def print_text_box(context, x, y, text_box):
     # text_box_height = px2pt(get_value(text_box, 'height', 0))
     layout = PangoCairo.create_layout(context)
 
+    text_to_render = text_box['text']
+
     if tb_text_direction == 'rtl':
         debug_msg("RTL text box: " + text_box['text'])
         tb_width = px2pt(get_value(text_box, 'width', 0))
         debug_msg("Shifting " + str(tb_width) + " pts to the left")
         shift_x -= tb_width
+        text_to_render = '\u202e' + text_to_render + '\u202c'
 
     desc = Pango.FontDescription()
     desc.set_family(text_box['fontFamily'])
@@ -127,7 +130,7 @@ def print_text_box(context, x, y, text_box):
     if font_style == 'italic':
         desc.set_style(Pango.Style.ITALIC)
     layout.set_font_description(desc)
-    layout.set_text(text_box['text'])
+    layout.set_text(text_to_render)
     context.move_to(x + shift_x, y + shift_y)
     context.set_source_rgb(0, 0, 0)
     PangoCairo.show_layout(context, layout)

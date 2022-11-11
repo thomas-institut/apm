@@ -93,7 +93,7 @@ export class EditionViewerCanvas {
     this.edition = this.options.edition
     this.canvas = this.options.canvasElement
     this.debug = this.options.debug
-    this.canvasRenderer = new CanvasRenderer(this.canvas)
+    this.canvasRenderer = new CanvasRenderer(this.canvas, this.edition.lang === 'la' ? 'ltr' : 'rtl')
 
     // this.debug && console.log(`Options`)
     // this.debug && console.log(this.options)
@@ -227,6 +227,8 @@ export class EditionViewerCanvas {
         let profiler = new BasicProfiler('Typesetting', true)
         let tsOutput = await ts.typeset(verticalListToTypeset, this.typesettingParameters.extraData)
         profiler.stop('last')
+        console.log(`Typeset doc`)
+        console.log(tsOutput)
         resolve (tsOutput)
       })
     })

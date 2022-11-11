@@ -141,6 +141,10 @@ export class CriticalApparatusGenerator {
         // ignore empty string (normally main text consisting only of punctuation)
         return
       }
+      // Check for main text that should not be processed
+      if (WitnessTokenStringParser.isNumberingLabel(normalizedGroupMainText)) {
+        return
+      }
       let groupVariants = []
       let groupOmissions = []
 

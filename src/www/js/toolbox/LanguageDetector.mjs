@@ -36,7 +36,7 @@ export class LanguageDetector {
       'he': /[\u0590-\u05FF]/gi,
     }
 
-    const punctuationRegex = /[.,;]/gi
+    const punctuationRegex = /[.,;\]\[()]/gi
     const numbersRegex = /[0-9]/gi
 
     for (const [lang, regex] of Object.entries(regexes)) {

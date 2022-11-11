@@ -41,4 +41,22 @@ export class NumeralStyles {
     return decimalArabic
   }
 
+  /**
+   *
+   * @param {string}str
+   * @return {boolean}
+   */
+  static isArabicNumber(str) {
+    return /^[\u0660-\u0669]+$/.test(str)
+  }
+
+  /**
+   *
+   * @param {string}str
+   * @return {boolean}
+   */
+  static isWesternNumber(str) {
+    return /^[0-9]$/.test(str)
+  }
+
 }

@@ -61,6 +61,8 @@ import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
 import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
 import { EditionViewerSvg } from '../Edition/EditionViewerSvg'
 
+import { Punctuation} from '../defaults/Punctuation.mjs'
+
 /** @namespace Twig */
 
 // constants
@@ -1870,7 +1872,7 @@ export class CollationTableEditor {
           return returnObject
       }
       let isPunctuationAllowed = areAllOtherRowsEmpty(thisObject.tableEditor.getMatrix().getColumn(col), tableRow)
-      if (WitnessTokenStringParser.strIsPunctuation(trimmedText, this.lang) && isPunctuationAllowed) {
+      if (Punctuation.stringIsAllPunctuation(trimmedText, this.lang) && isPunctuationAllowed) {
           return returnObject
       }
       returnObject.isValid = false
@@ -1909,7 +1911,7 @@ export class CollationTableEditor {
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = TranscriptionTokenType.EMPTY
       } else  {
-        let tokenType = WitnessTokenStringParser.strIsPunctuation(newText, this.lang) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
+        let tokenType = Punctuation.stringIsAllPunctuation(newText, this.lang) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = tokenType
         if (tokenType === TranscriptionTokenType.WORD) {

@@ -192,16 +192,16 @@ export class Punctuation {
    * @param lang
    * @return boolean
    */
-  static isPunctuation(theString, lang = ''){
+  static stringIsAllPunctuation(theString, lang = ''){
     for (let i = 0; i < theString.length; i++) {
-      if (!this.isCharacterPunctuation(theString.charAt(i), lang)) {
+      if (!this.characterIsPunctuation(theString.charAt(i), lang)) {
         return false
       }
     }
     return true
   }
 
-  static isCharacterPunctuation(char, lang = '', insideWord = false) {
+  static characterIsPunctuation(char, lang = '', insideWord = false) {
     let definitionObjectArray = getPunctuationDefinition(lang).filter( (def) => { return def['char'] === char})
     if (definitionObjectArray.length === 0) {
       return false
@@ -220,12 +220,12 @@ export class Punctuation {
    * @param theString
    * @param lang
    */
-  static hasPunctuation(theString, lang = '') {
+  static stringHasPunctuation(theString, lang = '') {
     for (let i = 0; i < theString.length; i++) {
       let char = theString.charAt(i)
       let insideWord = i > 0 && i < theString.length-1
       // console.log(`Processing character ${i}: '${char}', insideWord=${insideWord}`)
-      if (this.isCharacterPunctuation(char, lang, insideWord)) {
+      if (this.characterIsPunctuation(char, lang, insideWord)) {
         return true
       }
     }
@@ -322,27 +322,6 @@ export const extraArabic = [
 ]
 
 export const extraHebrew = []
-
-
-export function getValidPunctuationForLang(lang) {
-  let extra = []
-
-  switch (lang) {
-    case 'ar':
-      extra = extraArabic
-      break
-
-    case 'he':
-      extra = extraHebrew
-      break
-
-    case 'la':
-      extra = extraLatin
-      break
-  }
-  return common.concat(extra)
-}
-
 /**
  * 
  * @param lang
@@ -357,80 +336,6 @@ export function getPunctuationCharactersForLang(lang = '') {
   }).map ( (def) => { return def.char})
 }
 
-
-
-/**
- * Returns true if the given string is composed
- * only of punctuation characters for the given language
- * @param {string}theString
- * @param {string}lang
- * @return {boolean}
- */
-export function isPunctuation(theString, lang = '') {
-  for (let i=0; i < theString.length; i++) {
-
-  }
-  return getPunctuationCharactersForLang(lang).indexOf(theString) !== -1
-}
-
-/**
- *
- * @param {string}char
- * @param {string}lang
- * @return {boolean}
- */
-export function punctuationCharSticksToNext(char, lang) {
-  return __sticks(char, lang, true)
-}
-
-/**
- *
- * @param {string}char
- * @param {string}lang
- * @return {boolean}
- */
-export function punctuationCharSticksToPrevious(char, lang) {
-  return __sticks(char, lang, false)
-}
-
-/**
- *
- * @param {string}char
- * @param {string}lang
- * @param {boolean}toNext
- * @return {boolean}
- * @private
- */
-function __sticks(char, lang, toNext) {
-  let charDefArray = punctuationDefinition.filter((def) => { return def.char === char})
-  if (charDefArray.length === 0) {
-    throw Error(`Char '${char}' is not punctuation`)
-  }
-  let def = charDefArray[0]
-  let stickTo = toNext ? "sticksToNext" : "sticksToPrevious"
-  if (def[lang] !== undefined) {
-    return def[lang][stickTo]
-  }
-  return def.default[stickTo]
-}
-
-/**
- *
- * @param {string}someString
- * @param {string}lang
- */
-export function trimInitialPunctuation(someString, lang = '') {
-  return lTrimCharacters(someString, getPunctuationCharactersForLang(lang))
-}
-
-/**
- *
- * @param {string}someString
- * @param {string}lang
- */
-export function trimFinalPunctuation(someString, lang = '') {
-  return rTrimCharacters(someString, getPunctuationCharactersForLang(lang))
-}
 
 /**
  *

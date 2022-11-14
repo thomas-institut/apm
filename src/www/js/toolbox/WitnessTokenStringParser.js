@@ -16,8 +16,6 @@
  *
  */
 
-import * as PunctuationOld from '../defaults/Punctuation.mjs'
-
 import { Punctuation} from '../defaults/Punctuation.mjs'
 import { WitnessToken } from '../Witness/WitnessToken'
 import { pushArray } from './ArrayUtil.mjs'
@@ -26,14 +24,13 @@ import { NumeralStyles } from './NumeralStyles.mjs'
 export class WitnessTokenStringParser {
 
   /**
-   *
+   * Parses a string into an array of WitnessToken
    * @param {string}str
    * @param {string}lang
-   * @return WitnessToken[]
+   * @return {WitnessToken[]}
    */
-  static parseNew (str, lang) {
+  static parse (str, lang) {
     // console.log(`Parsing string '${str}', lang='${lang}'`)
-
     let state = 0
     let tokenArray = []
     let currentWhiteSpace = ''
@@ -76,10 +73,12 @@ export class WitnessTokenStringParser {
   }
 
   /**
-   *
+   * Parse an array of characters without whitespace into an
+   * array of WitnessToken
    * @param {string[]}chars
    * @param {string}lang
    * @return WitnessToken[]
+   * @private
    */
   static parseNonWhiteSpaceCharacters(chars, lang) {
     let length = chars.length
@@ -90,7 +89,7 @@ export class WitnessTokenStringParser {
 
     let word = chars.join('')
 
-    if (Punctuation.isPunctuation(word, lang)) {
+    if (Punctuation.stringIsAllPunctuation(word, lang)) {
       // all punctuation
       console.log(`Word '${word}' is all punctuation`)
       return [ (new WitnessToken()).setPunctuation(word)]
@@ -100,7 +99,7 @@ export class WitnessTokenStringParser {
       return [ (new WitnessToken()).setWord(word)]
     }
 
-    if (Punctuation.hasPunctuation(word, lang)) {
+    if (Punctuation.stringHasPunctuation(word, lang)) {
       // a mix of punctuation and non-punctuation
       // start a little state machine
       console.log(`Word '${word}' is a mix of punctuation a non-punctuation`)
@@ -112,7 +111,7 @@ export class WitnessTokenStringParser {
         let insideWord = i>0 && i < chars.length-1
         switch(state) {
           case 0:
-            if (Punctuation.isCharacterPunctuation(char, lang, insideWord )) {
+            if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
               tokenArray.push( (new WitnessToken()).setPunctuation(char))
             } else {
               curWord += char
@@ -121,7 +120,7 @@ export class WitnessTokenStringParser {
             break
 
           case 1:
-            if (Punctuation.isCharacterPunctuation(char, lang, insideWord )) {
+            if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
               tokenArray.push( (new WitnessToken()).setWord(curWord))
               curWord = ''
               tokenArray.push( (new WitnessToken()).setPunctuation(char))
@@ -138,7 +137,7 @@ export class WitnessTokenStringParser {
       return tokenArray
     } else {
       // no punctuation at all
-      // console.log(`Word '${word}' has no punctuation at all`)
+      // console.log(`Word '${word}' has no punctuation at all`
       return [ (new WitnessToken()).setWord(word)]
     }
   }
@@ -174,87 +173,21 @@ export class WitnessTokenStringParser {
   }
 
   /**
-   *
-   * @param str
-   * @param lang
-   * @return {WitnessToken[]}
-   */
-  static parse(str, lang = '') {
-    // TODO: redo this with a state machine
-    let tokenArray = []
-    let currentWord = ''
-    let currentWhiteSpace = ''
-    str.split('').forEach( (ch) => {
-      if (this.isWordToken(ch, lang)) {
-        // word
-        currentWord += ch
-        if (currentWhiteSpace !== '') {
-          tokenArray.push( (new WitnessToken()).setWhitespace(currentWhiteSpace))
-          currentWhiteSpace = ''
-        }
-        return
-      }
-      if (this.strIsPunctuation(ch, lang)) {
-        // punctuation
-        if (currentWord !== '') {
-          tokenArray.push( (new WitnessToken()).setWord(currentWord))
-          currentWord = ''
-        }
-        if (currentWhiteSpace !== '') {
-          tokenArray.push( (new WitnessToken()).setWhitespace(currentWhiteSpace))
-          currentWhiteSpace = ''
-        }
-        tokenArray.push( (new WitnessToken()).setPunctuation(ch))
-        return
-      }
-      // whitespace
-      if (currentWord !== '') {
-        tokenArray.push( (new WitnessToken()).setWord(currentWord))
-        currentWord = ''
-      }
-      currentWhiteSpace += ch
-    })
-    if (currentWord !== '') {
-      tokenArray.push( (new WitnessToken()).setWord(currentWord))
-    }
-
-    return tokenArray
-  }
-
-
-  /**
-   *
-   * @param text
-   * @param lang, if an empty string only common characters are checked
+   * Returns true if the given text has neither white space nor punctuation
+   * @param {string}text
+   * @param {string}lang
    * @return {boolean}
    */
-  static strIsPunctuation(text, lang = '') {
-    if (text === undefined) {
-      return false
-    }
-    let punctuationArray = PunctuationOld.getValidPunctuationForLang(lang)
-    for (let i = 0; i < text.length; i++) {
-      if (punctuationArray.indexOf(text.substr(i, 1)) === -1) {
-        return false
-      }
-    }
-    return true
-  }
-
   static isWordToken(text, lang = '') {
-    return !this.hasWhiteSpace(text) && !this.hasPunctuation(text, lang)
+    return !this.hasWhiteSpace(text) && !Punctuation.stringHasPunctuation(text, lang)
   }
 
-  static hasPunctuation(text, lang = '') {
-    let punctuationArray = PunctuationOld.getValidPunctuationForLang(lang)
-    for (let i = 0; i < text.length; i++) {
-      if (punctuationArray.indexOf(text.substr(i, 1)) !== -1) {
-        return true
-      }
-    }
-    return false
-  }
-
+  /**
+   * Returns true if the given text has white space
+   * @param {string}text
+   * @return {boolean}
+   * @private
+   */
   static hasWhiteSpace(text) {
     return /\s/.test(text)
   }

@@ -146,7 +146,7 @@ export class EditionMainTextEditor {
       if (oldRange === null) {
         oldRange = { index: -1, length: -1}
       }
-      this.debug && console.log(`Selection change from ${oldRange.index}:${oldRange.length} to ${range.index}:${range.length}, source ${source}`)
+      // this.debug && console.log(`Selection change from ${oldRange.index}:${oldRange.length} to ${range.index}:${range.length}, source ${source}`)
       let currentFormat = this.quillEditor.getFormat()
       simpleFormats.forEach( (fmt) => {
         setButtonState($(this._getBtnSelectorFormat(fmt)), currentFormat[fmt])
@@ -178,8 +178,8 @@ export class EditionMainTextEditor {
    */
   setText(newText, silent = false) {
     let newDelta = this.quillDeltaRenderer.render(FmtTextFactory.fromAnything(newText))
-    this.debug && console.log(`Setting text with new delta`)
-    this.debug && console.log(newDelta)
+    // this.debug && console.log(`Setting text with new delta`)
+    // this.debug && console.log(newDelta)
     let source = silent ? 'silent' : 'api'
     this.quillEditor.setContents(newDelta, source)
   }

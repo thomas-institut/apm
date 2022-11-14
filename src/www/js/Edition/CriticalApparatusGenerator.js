@@ -31,6 +31,7 @@ import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { ApparatusEntry } from './ApparatusEntry.mjs'
 
 import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
+import { Punctuation} from '../defaults/Punctuation.mjs'
 
 
 export class CriticalApparatusGenerator {
@@ -88,7 +89,7 @@ export class CriticalApparatusGenerator {
         let ctIndex = columnGroup.from
 
         while (ctIndex >= 0 && (baseWitnessTokens[ctIndex].type === WitnessTokenType.EMPTY ||
-          WitnessTokenStringParser.strIsPunctuation(baseWitnessTokens[ctIndex].text, lang))) {
+          Punctuation.stringIsAllPunctuation(baseWitnessTokens[ctIndex].text, lang))) {
           ctIndex--
         }
 
@@ -143,6 +144,7 @@ export class CriticalApparatusGenerator {
       }
       // Check for main text that should not be processed
       if (WitnessTokenStringParser.isNumberingLabel(normalizedGroupMainText)) {
+        console.log(`Main text ${normalizedGroupMainText} is a numbering label`)
         return
       }
       let groupVariants = []
@@ -230,7 +232,7 @@ export class CriticalApparatusGenerator {
   _findNonEmptyMainTextToken (ctIndex, ctIndexToMainTextMap, baseWitnessTokens, forward, lang = '') {
     while (ctIndex >= 0 && ctIndex < ctIndexToMainTextMap.length && (
       ctIndexToMainTextMap[ctIndex] === -1 ||
-      WitnessTokenStringParser.strIsPunctuation(baseWitnessTokens[ctIndex]['text'], lang))) {
+      Punctuation.stringIsAllPunctuation(baseWitnessTokens[ctIndex]['text'], lang))) {
       ctIndex = forward ? ctIndex + 1 : ctIndex - 1
     }
     if (ctIndex < 0 || ctIndex >= ctIndexToMainTextMap.length) {
@@ -305,7 +307,7 @@ export class CriticalApparatusGenerator {
           return ''
         }
         let theText = normalized ? ApparatusCommon.getNormalizedTextFromInputToken(token) : token['text']
-        if (WitnessTokenStringParser.strIsPunctuation(theText, lang)) {
+        if (Punctuation.stringIsAllPunctuation(theText, lang)) {
           return ''
         }
         return theText

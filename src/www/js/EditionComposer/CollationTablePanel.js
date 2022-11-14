@@ -56,6 +56,7 @@ import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
 import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
 import { FmtText } from '../FmtText/FmtText.mjs'
+import { Punctuation } from '../defaults/Punctuation.mjs'
 
 export class CollationTablePanel extends PanelWithToolbar {
   constructor (options = {}) {
@@ -959,7 +960,7 @@ export class CollationTablePanel extends PanelWithToolbar {
         // empty token
         this.ctData = CtData.emptyWitnessToken(this.ctData, witnessIndex, ref)
       } else  {
-        let tokenType = WitnessTokenStringParser.strIsPunctuation(newText, this.lang) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
+        let tokenType = Punctuation.stringIsAllPunctuation(newText, this.lang) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
         if (this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText'] === undefined) {
           // no formatting, just copy the text
           this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
@@ -1208,7 +1209,7 @@ export class CollationTablePanel extends PanelWithToolbar {
         return returnObject
       }
       let isPunctuationAllowed = areAllOtherRowsEmpty(this.tableEditor.getMatrix().getColumn(col), tableRow)
-      if (WitnessTokenStringParser.strIsPunctuation(trimmedText, this.lang) && isPunctuationAllowed) {
+      if (Punctuation.stringIsAllPunctuation(trimmedText, this.lang) && isPunctuationAllowed) {
         return returnObject
       }
       returnObject.isValid = false

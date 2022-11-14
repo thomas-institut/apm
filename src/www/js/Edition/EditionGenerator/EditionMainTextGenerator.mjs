@@ -114,7 +114,7 @@ export class EditionMainTextGenerator {
       if (!firstWordAdded) {
         addGlue = false
       }
-      if (Punctuation.isCharacterPunctuation(tokenPlainText, lang, false) && Punctuation.sticksToPrevious(tokenPlainText, lang) ) {
+      if (Punctuation.characterIsPunctuation(tokenPlainText, lang, false) && Punctuation.sticksToPrevious(tokenPlainText, lang) ) {
         addGlue = false
       }
       if (nextTokenMustStickToPrevious) {
@@ -125,7 +125,7 @@ export class EditionMainTextGenerator {
       }
       mainTextTokensWithGlue.push(mainTextToken)
       firstWordAdded = true
-      nextTokenMustStickToPrevious = Punctuation.isCharacterPunctuation(tokenPlainText, lang, false) && Punctuation.sticksToNext(tokenPlainText, lang);
+      nextTokenMustStickToPrevious = Punctuation.characterIsPunctuation(tokenPlainText, lang, false) && Punctuation.sticksToNext(tokenPlainText, lang);
     }
     return mainTextTokensWithGlue
   }

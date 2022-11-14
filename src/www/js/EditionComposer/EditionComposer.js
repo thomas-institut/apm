@@ -36,7 +36,6 @@ import { TabConfig } from '../MultiPanelUI/TabConfig'
 import { WitnessInfoPanel } from './WitnessInfoPanel'
 import { CollationTablePanel } from './CollationTablePanel'
 import { AdminPanel } from './AdminPanel'
-import { EditionPreviewPanel } from './EditionPreviewPanel'
 import { MainTextPanel } from './MainTextPanel'
 import { ApparatusPanel } from './ApparatusPanel'
 import { EditionPreviewPanelNew } from './EditionPreviewPanelNew'
@@ -69,14 +68,14 @@ import * as WitnessTokenClass from '../Witness/WitnessTokenClass'
 import { FmtText } from '../FmtText/FmtText.mjs'
 import { PdfDownloadUrl } from './PdfDownloadUrl'
 
-
+import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS
 
 // tab ids
 const editionTitleId = 'edition-title'
 const collationTableTabId = 'collation-table'
 const mainTextTabId = 'main-text-panel'
-const editionPreviewTabId = 'edition-preview'
+// const editionPreviewTabId = 'edition-preview'
 const editionPreviewNewTabId = 'edition-preview-new'
 const witnessInfoTabId = 'witness-info'
 const adminPanelTabId = 'admin'
@@ -220,14 +219,14 @@ export class EditionComposer {
       onConfirmArchive: this.genOnConfirmArchive()
     })
 
-    this.editionPreviewPanel = new EditionPreviewPanel({
-      containerSelector: `#${editionPreviewTabId}`,
-      ctData: this.ctData,
-      edition: this.edition,
-      langDef: this.options.langDef,
-      onPdfExport: this.genOnExportPdf(),
-      verbose: false
-    })
+    // this.editionPreviewPanel = new EditionPreviewPanel({
+    //   containerSelector: `#${editionPreviewTabId}`,
+    //   ctData: this.ctData,
+    //   edition: this.edition,
+    //   langDef: this.options.langDef,
+    //   onPdfExport: this.genOnExportPdf(),
+    //   verbose: false
+    // })
 
     this.editionPreviewPanelNew = new EditionPreviewPanelNew({
       containerSelector: `#${editionPreviewNewTabId}`,
@@ -290,8 +289,8 @@ export class EditionComposer {
          )
       })
       .concat([
-        TabConfig.createTabConfig(editionPreviewTabId, 'Edition Preview', this.editionPreviewPanel),
-        TabConfig.createTabConfig(editionPreviewNewTabId, 'Preview (beta)', this.editionPreviewPanelNew),
+        // TabConfig.createTabConfig(editionPreviewTabId, 'Edition Preview', this.editionPreviewPanel),
+        TabConfig.createTabConfig(editionPreviewNewTabId, 'Edition Preview', this.editionPreviewPanelNew),
         TabConfig.createTabConfig(adminPanelTabId, 'Admin', this.adminPanel),
     ])
 
@@ -536,7 +535,7 @@ export class EditionComposer {
 
     this.mainTextPanel.updateData(this.ctData, this.edition)  // mainTextPanel takes care of updating the apparatus panels
     this.collationTablePanel.updateCtData(this.ctData, 'EditionComposer')
-    this.editionPreviewPanel.updateData(this.ctData, this.edition)
+    // this.editionPreviewPanel.updateData(this.ctData, this.edition)
     this.editionPreviewPanelNew.updateData(this.edition)
     this.witnessInfoPanel.updateCtData(this.ctData, updateWitnessInfo)
   }
@@ -577,7 +576,7 @@ export class EditionComposer {
     let thisObject = this
 
     function replaceEditionWitnessToken(ctRow, tokenIndex, newText, lang) {
-      let tokenType = WitnessTokenStringParser.strIsPunctuation(newText, lang) ? WitnessTokenType.PUNCTUATION : WitnessTokenType.WORD
+      let tokenType = Punctuation.stringIsAllPunctuation(newText, lang) ? WitnessTokenType.PUNCTUATION : WitnessTokenType.WORD
       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['tokenClass'] = WitnessTokenClass.EDITION
       if (thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'] === undefined) {
         // no formatting, just copy the text
@@ -631,7 +630,7 @@ export class EditionComposer {
     }
 
     // parse new text into witness tokens
-    let parsedText = WitnessTokenStringParser.parseNew(newText, this.lang).filter ( (t) => {
+    let parsedText = WitnessTokenStringParser.parse(newText, this.lang).filter ( (t) => {
       return t.tokenType === WitnessTokenType.WORD || t.tokenType === WitnessTokenType.PUNCTUATION
     })
     console.log(`Parsed new text`)
@@ -767,36 +766,36 @@ export class EditionComposer {
   }
 
 
-  genOnExportPdf() {
-    let thisObject = this
-    return (svg) => {
-      return new Promise( (resolve, reject) => {
-        let apiUrl = thisObject.options.urlGenerator.apiConvertSvg()
-        if (svg === '') {
-          console.log('No SVG for PDF export')
-          resolve('')
-        }
-        console.log(`Calling export PDF API`)
-        $.post(
-          apiUrl,
-          {data: JSON.stringify({
-              pdfId: `ct-${thisObject.options.tableId}`,
-              svg: svg
-            })}
-        ).done(
-          apiResponse => {
-            resolve(apiResponse.url)
-          }
-        ).fail (
-          error => {
-            console.error('PDF API error')
-            console.log(error)
-            reject()
-          }
-        )
-      })
-    }
-  }
+  // genOnExportPdf() {
+  //   let thisObject = this
+  //   return (svg) => {
+  //     return new Promise( (resolve, reject) => {
+  //       let apiUrl = thisObject.options.urlGenerator.apiConvertSvg()
+  //       if (svg === '') {
+  //         console.log('No SVG for PDF export')
+  //         resolve('')
+  //       }
+  //       console.log(`Calling export PDF API`)
+  //       $.post(
+  //         apiUrl,
+  //         {data: JSON.stringify({
+  //             pdfId: `ct-${thisObject.options.tableId}`,
+  //             svg: svg
+  //           })}
+  //       ).done(
+  //         apiResponse => {
+  //           resolve(apiResponse.url)
+  //         }
+  //       ).fail (
+  //         error => {
+  //           console.error('PDF API error')
+  //           console.log(error)
+  //           reject()
+  //         }
+  //       )
+  //     })
+  //   }
+  // }
 
   /**
    * Changes the 'text-xxx' class to the new class, removing all others
@@ -1145,7 +1144,7 @@ export class EditionComposer {
       if (source !== 'collationTablePanel') {
         this.collationTablePanel.updateCtData(newCtData, 'EditionComposer')
       }
-      this.editionPreviewPanel.updateData(this.ctData, this.edition)
+      // this.editionPreviewPanel.updateData(this.ctData, this.edition)
       this.editionPreviewPanelNew.updateData(this.edition)
       this.witnessInfoPanel.updateCtData(this.ctData, true)
       this._updateSaveArea()

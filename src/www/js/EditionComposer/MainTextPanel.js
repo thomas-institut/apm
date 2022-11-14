@@ -395,7 +395,7 @@ export class MainTextPanel extends PanelWithToolbar {
     this.commitedFreeText = deepCopy(this.freeTextEditor.getFmtText())
     $(`${this.containerSelector} a.text-edit-revert-btn`).on('click', this._genOnClickTextEditRevertChanges())
     $(`${this.containerSelector} a.text-edit-commit-btn`).on('click', this._genOnClickTextEditCommitChanges())
-    this.verbose && console.log(`Now in beta mode`)
+    // this.verbose && console.log(`Now in text mode`)
   }
 
   __getWitnessTokenHtml(token, full = true) {
@@ -638,7 +638,7 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   __getChangeList(oldTokens, newTokens, editScript) {
-    const debugStateMachine = true
+    const debugStateMachine = false
     debugStateMachine && console.log(`Get change list state machine`)
 
     let state = 0
@@ -909,7 +909,7 @@ export class MainTextPanel extends PanelWithToolbar {
         return
       }
       // text
-      let tmpWitnessTokens = WitnessTokenStringParser.parseNew(fmtTextToken.text, this.edition.lang).map( (witnessToken) => {
+      let tmpWitnessTokens = WitnessTokenStringParser.parse(fmtTextToken.text, this.edition.lang).map( (witnessToken) => {
         witnessToken.fmtText = FmtTextFactory.fromString(witnessToken.text).map((token) => {
               attributesToCopy.forEach((attribute) => {
                 if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute] !== '') {

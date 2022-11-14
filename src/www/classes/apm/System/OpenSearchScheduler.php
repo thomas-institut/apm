@@ -46,7 +46,8 @@ class OpenSearchScheduler extends ApmSystemManager
             'doc_id' => $doc_id,
             'page' => $page,
             'column' => $col,
-            'time' => $now]);
+            'time_scheduled' => $now,
+            'time_updated' => '00:00:00']);
 
         return true;
     }

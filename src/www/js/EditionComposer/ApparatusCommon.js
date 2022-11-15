@@ -30,7 +30,7 @@ import { pushArray } from '../toolbox/ArrayUtil.mjs'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
 import { CtData } from '../CtData/CtData'
 import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
-import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
+import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser'
 import { escapeHtml } from '../toolbox/Util.mjs'
 import { ApparatusUtil } from '../Edition/ApparatusUtil.mjs'
 import { Punctuation} from '../defaults/Punctuation.mjs'
@@ -419,6 +419,7 @@ export class ApparatusCommon {
       .filter( (t, i) => { return i>=group.from && i<=group.to}) // get group main text columns
       .map( (t) => {   // get text for each column
         if (t.tokenType === WitnessTokenType.EMPTY) { return ''}
+        if (t.tokenType === WitnessTokenType.NUMBERING_LABEL) { return ''}
         if (Punctuation.stringIsAllPunctuation(t.text, lang)) { return  ''}
         if (normalized) {
           if (t.normalizedText !== undefined && t.normalizedText !== '') {

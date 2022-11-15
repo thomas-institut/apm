@@ -56,6 +56,7 @@ export class FmtTextTokenFactory {
         newText.fontWeight = fmtTextToken.fontWeight
         newText.verticalAlign = fmtTextToken.verticalAlign
         newText.fontSize = fmtTextToken.fontSize
+        newText.classList = fmtTextToken.classList
         break
 
       case FmtTextTokenType.GLUE:
@@ -95,7 +96,7 @@ export class FmtTextTokenFactory {
           throw new Error('No text in object')
         }
         newToken.setText(someObject.text)
-        let keysToCopy = ['verticalAlign', 'fontWeight', 'fontStyle', 'fontSize']
+        let keysToCopy = ['verticalAlign', 'fontWeight', 'fontStyle', 'fontSize', 'classList']
         keysToCopy.forEach( (key) => {
           if (someObject[key] !== undefined) {
             newToken[key] = someObject[key]

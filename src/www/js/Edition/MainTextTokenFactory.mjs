@@ -22,18 +22,18 @@ import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 
 export class MainTextTokenFactory {
 
-  static createSimpleText(text, editionWitnessTokenIndex, lang = '') {
+  static createSimpleText(type, text, editionWitnessTokenIndex, lang = '') {
     let t = new MainTextToken()
-    t.type = EditionMainTextTokenType.TEXT
+    t.type = type
     t.fmtText = FmtTextFactory.fromString(text)
     t.editionWitnessTokenIndex = editionWitnessTokenIndex
     t.setLang(lang)
     return t
   }
 
-  static createWithFmtText(fmtText, editionWitnessTokenIndex, lang = '') {
+  static createWithFmtText(type, fmtText, editionWitnessTokenIndex, lang = '') {
     let t = new MainTextToken()
-    t.type = EditionMainTextTokenType.TEXT
+    t.type = type
     t.fmtText = fmtText
     t.editionWitnessTokenIndex = editionWitnessTokenIndex
     t.setLang(lang)

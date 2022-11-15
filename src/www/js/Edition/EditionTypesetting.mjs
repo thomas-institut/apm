@@ -129,6 +129,7 @@ export class EditionTypesetting {
         }
         for (let tokenIndex = 0; tokenIndex < mainTextParagraph.tokens.length; tokenIndex++) {
           let mainTextToken = mainTextParagraph.tokens[tokenIndex]
+          let textItems
           switch(mainTextToken.type) {
             case MainTextTokenType.GLUE:
               let glue = await this.__createNormalSpaceGlue(paragraphStyle)
@@ -136,8 +137,20 @@ export class EditionTypesetting {
               paragraphToTypeset.pushItem(glue)
               break
 
+            case MainTextTokenType.NUMBERING_LABEL:
+              textItems = await this.tokenRenderer.renderWithStyle(mainTextToken.fmtText, paragraphStyle)
+              textItems.map( (item) => {
+                if (isRtl(this.edition.lang)) {
+                  return item.setRightToLeft()
+                } else {
+                  return item.setLeftToRight()
+                }
+              })
+              paragraphToTypeset.pushItemArray(textItems)
+              break
+
             case MainTextTokenType.TEXT:
-              let textItems = await this.tokenRenderer.renderWithStyle(mainTextToken.fmtText, paragraphStyle)
+              textItems = await this.tokenRenderer.renderWithStyle(mainTextToken.fmtText, paragraphStyle)
               if (textItems.length > 0) {
                 // tag the first item with the original index
                 textItems[0].addMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX, mainTextToken.originalIndex)

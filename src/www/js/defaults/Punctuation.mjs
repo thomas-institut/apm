@@ -16,7 +16,7 @@
  *
  */
 
-import { lTrimCharacters, rTrimCharacters, trimCharacters } from '../toolbox/Util.mjs'
+import { trimCharacters } from '../toolbox/Util.mjs'
 
 
 // NOTE: if not explicitly set, isPunctuationInsideWord is true
@@ -312,16 +312,6 @@ export const common =  [
   String.fromCodePoint(0x5C0), // Hebrew paseq
   String.fromCodePoint(0x5C3) // Hebrew soft pasuq
 ]
-
-export const extraLatin = [
-  '"'
-]
-
-export const extraArabic = [
-  '"'
-]
-
-export const extraHebrew = []
 /**
  * 
  * @param lang

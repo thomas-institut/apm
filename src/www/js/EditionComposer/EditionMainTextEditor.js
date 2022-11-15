@@ -22,7 +22,7 @@ import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import Quill from '../QuillLoader'
 import Small from './QuillBlots/Small'
 import Superscript from './QuillBlots/Superscript'
-import ParagraphNumber from './QuillBlots/ParagraphNumber'
+import NumberingLabel from './QuillBlots/NumberingLabel'
 
 import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
@@ -33,7 +33,7 @@ import { isRtl } from '../toolbox/Util.mjs'
 const simpleFormats = [
   'bold',
   'italic',
-  // 'paragraphNumber'
+  'numberingLabel'
   // 'small',
   // 'superscript'
 ]
@@ -41,7 +41,7 @@ const simpleFormats = [
 
 Inline.order = [
   'cursor', 'inline',   // Must be lower
-  'underline', 'strike', 'italic', 'bold', 'paragraphNumber', 'script',
+  'underline', 'strike', 'italic', 'bold', 'numberingLabel', 'script',
   'link', 'code'        // Must be higher
 ];
 
@@ -50,7 +50,7 @@ const headingDepth = 3
 const formatButtons = {
   bold: { icon: '<i class="bi bi-type-bold"></i>' , title: 'Bold'},
   italic: { icon: '<i class="bi bi-type-italic"></i>' , title: 'Italic'},
-  // paragraphNumber:  { icon: '<small class="fte-icon">[ ]</small>' , title: 'Paragraph Number'}
+  numberingLabel:  { icon: '<small class="fte-icon">x.y</small>' , title: 'Numbering Label'}
   // small: { icon: '<small class="fte-icon">S</small>', title: 'Small Font'},
   // superscript: { icon: '<small class="fte-icon">x<sup>2</sup>', title: 'Superscript'}
 }
@@ -64,17 +64,37 @@ const headingIcons = [
 
 
 const characterButtons = {
-  common: {
+  la: {
     leftDQM: { character: '“', title: 'Left Double Quotation Mark'},
     rightDQM: { character: '”', title: 'Right Double Quotation Mark'},
     leftSQM: { character: '‘', title: 'Left Single Quotation Mark'},
-    rightSQM: { character: '’', title: 'Right Single Quotation Mark'}
+    rightSQM: { character: '’', title: 'Right Single Quotation Mark'},
+    enDash: { character: '\u2013', title: 'En Dash'},
+    emDash: { character: '\u2014', title: 'Em dash'},
+    guillemetSt: { character: '«', title: 'Opening Guillemet'},
+    guillemetEnd: { character: '»', title: 'Closing Guillemet'}
   },
-  la: [
-
-  ],
-  ar: [],
-  he: []
+  ar: {
+    rightDQM: { character: '”', title: 'Right Double Quotation Mark'},
+    leftDQM: { character: '“', title: 'Left Double Quotation Mark'},
+    rightSQM: { character: '’', title: 'Right Single Quotation Mark'},
+    leftSQM: { character: '‘', title: 'Left Single Quotation Mark'},
+    enDash: { character: '\u2013', title: 'En Dash'},
+    emDash: { character: '\u2014', title: 'Em dash'},
+    guillemetSt: { character: '«', title: 'Opening Guillemet'},
+    guillemetEnd: { character: '»', title: 'Closing Guillemet'}
+  },
+  he: {
+    rightDQM: { character: '”', title: 'Right Double Quotation Mark'},
+    leftDQM: { character: '“', title: 'Left Double Quotation Mark'},
+    rightSQM: { character: '’', title: 'Right Single Quotation Mark'},
+    leftSQM: { character: '‘', title: 'Left Single Quotation Mark'},
+    enDash: { character: '\u2013', title: 'En Dash'},
+    emDash: { character: '\u2014', title: 'Em dash'},
+    guillemetSt: { character: '«', title: 'Opening Guillemet'},
+    guillemetEnd: { character: '»', title: 'Closing Guillemet'},
+    gershayim: { character: '\u05f4', title: 'Gershayim'}
+  }
 }
 
 const toolbarSeparator = '<span class="mte-tb-sep">&nbsp;</span>'
@@ -110,11 +130,23 @@ export class EditionMainTextEditor {
     this.container.html(this._getHtml())
     this.quillEditor = new Quill(`${this.containerSelector} .fte-editor`,{})
     this.onChange = cleanOptions.onChange
-    this.quillDeltaRenderer = new QuillDeltaRenderer()
+    this.quillDeltaRenderer = new QuillDeltaRenderer({
+      classToAttrTranslators: {
+        numberingLabel: (attr) => { attr.numberingLabel = true; return attr}
+      }
+    })
     this.quillDeltaConverter = new GenericQuillDeltaConverter({
       verbose: this.verbose,
       debug: false,
-      ignoreParagraphs: false
+      ignoreParagraphs: false,
+      attrToClassTranslators: {
+        numberingLabel: (value, classList) => {
+          if (value) {
+            classList = 'numberingLabel'
+          }
+          return classList
+        }
+      }
     })
 
 
@@ -133,7 +165,7 @@ export class EditionMainTextEditor {
       $(this._getBtnSelectorHeading(i+1)).on('click', this._genOnClickHeadingButton(i+1, this.quillEditor))
     }
 
-    Object.keys(characterButtons.common).forEach( (key) => {
+    Object.keys(characterButtons[this.lang]).forEach( (key) => {
       let btnSelector = this._getBtnSelectorCharacter(key)
       $(btnSelector).on('click', this._genOnClickCharacter(key, this.quillEditor))
     })
@@ -177,9 +209,11 @@ export class EditionMainTextEditor {
    * @param {boolean} silent
    */
   setText(newText, silent = false) {
+    this.debug && console.log(`Setting text`)
+    this.debug && console.log(newText)
     let newDelta = this.quillDeltaRenderer.render(FmtTextFactory.fromAnything(newText))
-    // this.debug && console.log(`Setting text with new delta`)
-    // this.debug && console.log(newDelta)
+    this.debug && console.log(`Setting text with new delta`)
+    this.debug && console.log(newDelta)
     let source = silent ? 'silent' : 'api'
     this.quillEditor.setContents(newDelta, source)
   }
@@ -202,8 +236,12 @@ export class EditionMainTextEditor {
     return (ev) => {
       ev.preventDefault()
       let currentFormat = quill.getFormat()
-      // console.log(currentFormat)
-      let currentState = currentFormat[format]
+      let currentState = false
+      if (currentFormat[format] !== undefined) {
+        currentState = currentFormat[format]
+      }
+      // console.log(`Click on format ${format}`)
+      // console.log(`Current state: ${currentState}`)
       let btn = $(buttonSelector)
       quill.format(format, !currentState)
       currentState = !currentState
@@ -219,7 +257,7 @@ export class EditionMainTextEditor {
         return
       }
       quill.deleteText(range.index, range.length)
-      quill.insertText(range.index, characterButtons.common[characterKey].character)
+      quill.insertText(range.index, characterButtons[this.lang][characterKey].character)
     }
    }
 
@@ -257,8 +295,8 @@ export class EditionMainTextEditor {
       headingButtonsHtml += `<button class="heading${i+1}-btn" title="Heading ${i+1}">${headingIcons[i+1]}</button>`
     }
 
-    let characterButtonsHtml = Object.keys(characterButtons.common).map( (key) => {
-      let btnDef = characterButtons.common[key]
+    let characterButtonsHtml = Object.keys(characterButtons[this.lang]).map( (key) => {
+      let btnDef = characterButtons[this.lang][key]
       let char = isRtl(this.lang) && btnDef['rtlVersion'] !== undefined ? btnDef['rtlVersion'] : btnDef.character
       return `<button class="${key}-btn" title="${btnDef.title}">${char}</button>`
     }).join('')
@@ -280,5 +318,5 @@ function setButtonState(btn, state) {
 Quill.register({
   'formats/small' : Small,
   'formats/superscript' : Superscript,
-  'formats/paragraphNumber': ParagraphNumber
+  'formats/numberingLabel': NumberingLabel
 }, true)

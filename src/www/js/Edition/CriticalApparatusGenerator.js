@@ -30,7 +30,7 @@ import { ApparatusSubEntry } from './ApparatusSubEntry'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { ApparatusEntry } from './ApparatusEntry.mjs'
 
-import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
+import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser'
 import { Punctuation} from '../defaults/Punctuation.mjs'
 
 
@@ -143,10 +143,10 @@ export class CriticalApparatusGenerator {
         return
       }
       // Check for main text that should not be processed
-      if (WitnessTokenStringParser.isNumberingLabel(normalizedGroupMainText)) {
-        console.log(`Main text ${normalizedGroupMainText} is a numbering label`)
-        return
-      }
+      // if (WitnessTokenStringParser.isNumberingLabel(normalizedGroupMainText)) {
+      //   console.log(`Main text ${normalizedGroupMainText} is a numbering label`)
+      //   return
+      // }
       let groupVariants = []
       let groupOmissions = []
 

@@ -60,7 +60,7 @@ import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditio
 import * as CollationTableType from '../constants/CollationTableType'
 import { Edition } from '../Edition/Edition.mjs'
 import * as NormalizationSource from '../constants/NormalizationSource'
-import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
+import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser'
 import { EditionWitnessReferencesCleaner } from '../CtData/CtDataCleaner/EditionWitnessReferencesCleaner'
 import { CollationTableConsistencyCleaner } from '../CtData/CtDataCleaner/CollationTableConsistencyCleaner'
 import * as WitnessTokenType from '../Witness/WitnessTokenType'
@@ -630,7 +630,7 @@ export class EditionComposer {
     }
 
     // parse new text into witness tokens
-    let parsedText = WitnessTokenStringParser.parse(newText, this.lang).filter ( (t) => {
+    let parsedText = EditionWitnessTokenStringParser.parse(newText, this.lang).filter ( (t) => {
       return t.tokenType === WitnessTokenType.WORD || t.tokenType === WitnessTokenType.PUNCTUATION
     })
     console.log(`Parsed new text`)

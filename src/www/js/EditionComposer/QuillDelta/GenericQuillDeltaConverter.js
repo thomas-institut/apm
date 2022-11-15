@@ -35,10 +35,16 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
     super(options)
 
     let optionsSpec = {
-      ignoreParagraphs: { type: 'boolean', default: true}
+      ignoreParagraphs: { type: 'boolean', default: true},
+      // an object containing attribute to class translators.
+      // e.g.
+      // {  someAttribute:  (attributeValue, currentClassList) => { ... return newClassList} }
+      attrToClassTranslators: { type: 'object', default: {}}
     }
     let oc= new OptionsChecker({optionsDefinition: optionsSpec, context:  'Generic QD Converter'})
     this.options = oc.getCleanOptions(options)
+    this.translators = this.options.attrToClassTranslators
+    this.translatorsAvailable = Object.keys(this.translators)
 
   }
 
@@ -116,6 +122,19 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
               theFmtText[i].fontSize = FontSize.SUPERSCRIPT
               theFmtText[i].verticalAlign = VerticalAlign.SUPERSCRIPT
             }
+            let attributesToIgnore = [ 'bold', 'italic', 'small', 'superscript']
+            let attrKeys =  Object.keys(ops.attributes)
+            let classList = ''
+            for (let j = 0; j <attrKeys.length; j++) {
+              let key = attrKeys[j]
+              if (attributesToIgnore.indexOf(key) !== -1) {
+                continue
+              }
+              if (this.translatorsAvailable.indexOf(key) !== -1) {
+                classList = this.translators[key](ops.attributes[key], classList)
+              }
+            }
+            theFmtText[i].classList = classList
           }
         }
         return theFmtText

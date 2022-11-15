@@ -74,6 +74,7 @@ export class FmtTextToken {
 
   constructor (type = FmtTextTokenType.TEXT) {
     this.type = type
+
     switch(type) {
       case FmtTextTokenType.TEXT:
         this.text = ''
@@ -81,6 +82,7 @@ export class FmtTextToken {
         this.fontWeight = FontWeight.NORMAL
         this.verticalAlign = VerticalAlign.BASELINE
         this.fontSize = FontSize.NORMAL
+        this.classList = ''  // a space-separated list of arbitrary text labels
         break
 
       case FmtTextTokenType.GLUE:
@@ -149,6 +151,27 @@ export class FmtTextToken {
 
   setSmallFont() {
     this.fontSize = FontSize.SMALL
+    return this
+  }
+
+  setClass(classList) {
+    this.classList = classList
+    return this
+  }
+
+  addClass(className) {
+    if (this.classList === '') {
+      this.classList = className
+    } else {
+      this.classList += ' '
+      this.classList += className
+    }
+    return this
+  }
+
+  removeClass(className) {
+    let classArray = this.classList.split(' ')
+    this.classList = classArray.filter( (currentClassName) => { return currentClassName !== className}).join(' ')
     return this
   }
 

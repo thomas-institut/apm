@@ -1,15 +1,20 @@
 import Inline from 'quill/blots/inline'
 
-const blotClassName = 'blot-paragraph-number'
+const blotClassName = 'blot-numbering-label'
 
-class ParagraphNumber extends Inline {
+class NumberingLabel extends Inline {
   static create(value) {
+    // console.log(`Creating numbering label with value ${value}`)
     let node = super.create()
     if (value) {
-      node.className += ` ${blotClassName}`
+      if (node.className !== '') {
+        node.className += ' '
+      }
+      node.className += blotClassName
     } else {
       node.className = this.removeClassFromString(node.className, blotClassName)
     }
+    // console.log(`Node class name is now '${node.className}'`)
     return node
   }
 
@@ -36,11 +41,11 @@ class ParagraphNumber extends Inline {
   }
 
   static classExistsInClassString(classString) {
-    return classString.split(' ').indexOf(classString)
+    return classString.split(' ').indexOf(classString) !== -1
   }
 }
 
-ParagraphNumber.blotName = 'paragraphNumber';
-ParagraphNumber.tagName = ['b'];
+NumberingLabel.blotName = 'numberingLabel';
+NumberingLabel.tagName = ['b'];
 
-export default ParagraphNumber;
+export default NumberingLabel;

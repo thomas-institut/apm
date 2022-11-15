@@ -25,3 +25,4 @@ export const EMPTY = 'empty'
 
 // Used in EditionWitnessToken
 export const FORMAT_MARK = 'formatMark'
+export const NUMBERING_LABEL = 'numberingLabel'

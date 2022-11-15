@@ -78,16 +78,24 @@ export class EditionMainTextGenerator {
         mainTextTokens.push(MainTextTokenFactory.createParagraphEnd(witnessToken['style']))
         continue
       }
+
+      if (tokenType === WitnessTokenType.NUMBERING_LABEL) {
+        console.log(`Generating main text token for numbering label '${witnessToken.text}'`)
+        mainTextTokens.push( MainTextTokenFactory.createSimpleText(MainTextTokenType.NUMBERING_LABEL, witnessToken.text, i, lang))
+        continue
+      }
+      // token
+
       if (witnessToken.fmtText === undefined) {
         mainTextTokens.push(
-          MainTextTokenFactory.createSimpleText(getTextFromWitnessToken(witnessToken, normalized, normalizationsToIgnore), i, lang)
+           MainTextTokenFactory.createSimpleText( MainTextTokenType.TEXT, getTextFromWitnessToken(witnessToken, normalized, normalizationsToIgnore), i, lang)
         )
+
       } else {
         mainTextTokens.push(
-          MainTextTokenFactory.createWithFmtText(witnessToken.fmtText, i, lang)
+          MainTextTokenFactory.createWithFmtText( MainTextTokenType.TEXT, witnessToken.fmtText, i, lang)
         )
       }
-
     }
     // Add glue tokens
     let mainTextTokensWithGlue = []
@@ -98,6 +106,15 @@ export class EditionMainTextGenerator {
       if (mainTextToken.type === MainTextTokenType.PARAGRAPH_END) {
         mainTextTokensWithGlue.push(mainTextToken)
         firstWordAdded = false
+        continue
+      }
+      if (mainTextToken.type === MainTextTokenType.NUMBERING_LABEL) {
+        if (firstWordAdded) {
+          mainTextTokensWithGlue.push(MainTextTokenFactory.createNormalGlue())
+        }
+        mainTextTokensWithGlue.push(mainTextToken)
+        nextTokenMustStickToPrevious = false
+        firstWordAdded = true
         continue
       }
 

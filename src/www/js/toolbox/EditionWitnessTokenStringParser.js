@@ -20,8 +20,9 @@ import { Punctuation} from '../defaults/Punctuation.mjs'
 import { WitnessToken } from '../Witness/WitnessToken'
 import { pushArray } from './ArrayUtil.mjs'
 import { NumeralStyles } from './NumeralStyles.mjs'
+import { EditionWitnessToken } from '../Witness/EditionWitnessToken'
 
-export class WitnessTokenStringParser {
+export class EditionWitnessTokenStringParser {
 
   /**
    * Parses a string into an array of WitnessToken
@@ -96,12 +97,14 @@ export class WitnessTokenStringParser {
     }
     if (this.isNumberingLabel(word)) {
       console.log(`Word '${word}' is a numbering label`)
-      return [ (new WitnessToken()).setWord(word)]
+      return [ (new EditionWitnessToken()).setNumberingLabel(word)]
     }
 
     if (Punctuation.stringHasPunctuation(word, lang)) {
       // a mix of punctuation and non-punctuation
       // start a little state machine
+      // TODO: detect matching square brackets and don't generate punctuation for the closing one
+      //  e.g:  'Roma[m]' should be a single word
       console.log(`Word '${word}' is a mix of punctuation a non-punctuation`)
       let state = 0
       let tokenArray = []

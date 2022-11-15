@@ -18,10 +18,15 @@
 
 import { FmtText } from '../FmtText.mjs'
 
+/**
+ * Base class for FmtText renderers
+ *
+ */
 export class FmtTextRenderer {
 
   /**
-   *
+   * The render method can return anything.
+   * The default is to return the plain text version of the text
    * @param {FmtTextToken[]} fmtText
    * @param {string}lang
    * @return {*}

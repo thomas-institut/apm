@@ -86,6 +86,14 @@ export class EditionWitnessToken extends WitnessToken {
     return this
   }
 
+  setNumberingLabel(label) {
+    this.__removeText()
+    this.__removeAllFormats()
+    this.text = label
+    this.tokenType = WitnessTokenType.NUMBERING_LABEL
+    return this
+  }
+
   /**
    *
    * @param {string} style

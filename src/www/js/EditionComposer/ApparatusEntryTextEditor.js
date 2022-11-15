@@ -69,7 +69,7 @@ export class ApparatusEntryTextEditor {
     this.container.html(this._getHtml())
     this.quillEditor = new Quill(`${this.containerSelector} .fte-editor`,{})
     this.onChange = cleanOptions.onChange
-    this.quillDeltaRenderer = new QuillDeltaRenderer()
+    this.quillDeltaRenderer = new QuillDeltaRenderer({})
 
     this.setText(cleanOptions.initialText)
     this.quillEditor.on('text-change', () => {

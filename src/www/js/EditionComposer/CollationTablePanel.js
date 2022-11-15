@@ -45,13 +45,14 @@ import {
 } from '../pages/common/TableEditor'
 import * as WitnessType from '../Witness/WitnessType'
 import * as TokenClass from '../Witness/WitnessTokenClass'
+import * as WitnessTokenType from '../Witness/WitnessTokenType'
 import * as Util from '../toolbox/Util.mjs'
 import * as CollationTableType from '../constants/CollationTableType'
 import * as CollationTableUtil from '../pages/common/CollationTableUtil'
 import * as PopoverFormatter from '../pages/common/CollationTablePopovers'
 import { FULL_TX } from '../Witness/WitnessTokenClass'
 import { CtData } from '../CtData/CtData'
-import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
+import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser'
 import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
 import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
@@ -1032,7 +1033,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       let tokenArray = this.ctData['witnesses'][witnessIndex]['tokens']
       let token = tokenArray[ref]
       if (token.tokenClass === TokenClass.EDITION) {
-        if (token.tokenType === 'formatMark') {
+        if (token.tokenType === WitnessTokenType.FORMAT_MARK) {
           switch(token.markType) {
             case 'par_end':
               return PARAGRAPH_MARK
@@ -1041,10 +1042,12 @@ export class CollationTablePanel extends PanelWithToolbar {
               return UNKNOWN_MARK
           }
         }
+        if (token.tokenType === WitnessTokenType.NUMBERING_LABEL) {
+          return `<span class='numbering-label'>${token.text}</span>`
+        }
         if (token.text === '') {
           return EMPTY_CONTENT
         }
-        // TODO: allow basic formatting
         if (token['fmtText'] === undefined) {
           return token['text']
         }
@@ -1204,7 +1207,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
       // this.verbose && console.log(`Validating text '${currentText}'`)
       let trimmedText = Util.trimWhiteSpace(currentText)
-      if (WitnessTokenStringParser.isWordToken(trimmedText)) {
+      if (EditionWitnessTokenStringParser.isWordToken(trimmedText)) {
         // TODO: do not allow words when the rest of the witnesses only have punctuation
         return returnObject
       }

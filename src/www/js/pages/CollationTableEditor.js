@@ -57,7 +57,7 @@ import { IgnoreTatwilNormalizer } from '../normalizers/IgnoreTatwilNormalizer'
 import { IgnoreIsolatedHamzaNormalizer } from '../normalizers/IgnoreIsolatedHamzaNormalizer'
 import { deepCopy } from '../toolbox/Util.mjs'
 import { CtData } from '../CtData/CtData'
-import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
+import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser'
 import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
 import { EditionViewerSvg } from '../Edition/EditionViewerSvg'
 
@@ -1867,7 +1867,7 @@ export class CollationTableEditor {
 
       //console.log(`Validating text '${currentText}'`)
       let trimmedText = Util.trimWhiteSpace(currentText)
-      if (WitnessTokenStringParser.isWordToken(trimmedText)) {
+      if (EditionWitnessTokenStringParser.isWordToken(trimmedText)) {
           // TODO: do not allow words when the rest of the witnesses only have punctuation
           return returnObject
       }

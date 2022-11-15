@@ -26,7 +26,9 @@ import { CustomApparatusQuillDeltaConverter } from './QuillDelta/CustomApparatus
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import Superscript from './QuillBlots/Superscript'
 import { FmtText } from '../FmtText/FmtText.mjs'
-import { removeExtraWhiteSpace, removeWhiteSpace } from '../toolbox/Util.mjs'
+import { isRtl, removeExtraWhiteSpace, removeWhiteSpace } from '../toolbox/Util.mjs'
+
+const toolbarSeparator = '<span class="mte-tb-sep">&nbsp;</span>'
 
 const simpleFormats = [ 'bold', 'italic', 'small', 'superscript']
 
@@ -35,6 +37,42 @@ const buttons = {
   italic: { icon: '<i class="bi bi-type-italic"></i>' , title: 'Italic'},
   small: { icon: '<small class="fte-icon">S</small>', title: 'Small Font'},
   superscript: { icon: '<small class="fte-icon">x<sup>2</sup>', title: 'Superscript'}
+}
+
+const characterButtons = {
+  la: {
+    leftDQM: { character: '“', title: 'Left Double Quotation Mark'},
+    rightDQM: { character: '”', title: 'Right Double Quotation Mark'},
+    leftSQM: { character: '‘', title: 'Left Single Quotation Mark'},
+    rightSQM: { character: '’', title: 'Right Single Quotation Mark'},
+    enDash: { character: '\u2013', title: 'En Dash'},
+    emDash: { character: '\u2014', title: 'Em dash'},
+    guillemetSt: { character: '«', title: 'Opening Guillemet'},
+    guillemetEnd: { character: '»', title: 'Closing Guillemet'}
+  },
+  ar: {
+    rightDQM: { character: '”', title: 'Right Double Quotation Mark'},
+    leftDQM: { character: '“', title: 'Left Double Quotation Mark'},
+    rightSQM: { character: '’', title: 'Right Single Quotation Mark'},
+    leftSQM: { character: '‘', title: 'Left Single Quotation Mark'},
+    enDash: { character: '\u2013', title: 'En Dash'},
+    emDash: { character: '\u2014', title: 'Em dash'},
+    leftBracket: { character: '[', title: 'Opening Bracket'},
+    rightBracket: { character: ']', title: 'Closing Bracket'},
+    guillemetSt: { character: '«', title: 'Opening Guillemet'},
+    guillemetEnd: { character: '»', title: 'Closing Guillemet'}
+  },
+  he: {
+    rightDQM: { character: '”', title: 'Right Double Quotation Mark'},
+    leftDQM: { character: '“', title: 'Left Double Quotation Mark'},
+    rightSQM: { character: '’', title: 'Right Single Quotation Mark'},
+    leftSQM: { character: '‘', title: 'Left Single Quotation Mark'},
+    enDash: { character: '\u2013', title: 'En Dash'},
+    emDash: { character: '\u2014', title: 'Em dash'},
+    guillemetSt: { character: '«', title: 'Opening Guillemet'},
+    guillemetEnd: { character: '»', title: 'Closing Guillemet'},
+    gershayim: { character: '\u05f4', title: 'Gershayim'}
+  }
 }
 
 
@@ -79,6 +117,11 @@ export class ApparatusEntryTextEditor {
     simpleFormats.forEach( (fmt) => {
       let btnSelector = this._getBtnSelector(fmt)
       $(btnSelector).on('click', this._genOnClickFormat(fmt, this.quillEditor, btnSelector))
+    })
+
+    Object.keys(characterButtons[this.lang]).forEach( (key) => {
+      let btnSelector = this._getBtnSelectorCharacter(key)
+      $(btnSelector).on('click', this._genOnClickCharacterButton(key, this.quillEditor))
     })
 
     this.quillEditor.on('selection-change', (range, oldRange, source) => {
@@ -132,6 +175,23 @@ export class ApparatusEntryTextEditor {
     return `${this.containerSelector} .${format}-btn`
   }
 
+  _getBtnSelectorCharacter(characterKey) {
+    return `${this.containerSelector} .${characterKey}-btn`
+  }
+
+
+  _genOnClickCharacterButton(key, quill) {
+    return (ev) => {
+      ev.preventDefault()
+      let range = quill.getSelection()
+      if (range === null) {
+        return
+      }
+      quill.deleteText(range.index, range.length)
+      quill.insertText(range.index, characterButtons[this.lang][key].character)
+    }
+  }
+
   _genOnClickFormat(format, quill, buttonSelector) {
     return (ev) => {
       ev.preventDefault()
@@ -152,7 +212,13 @@ export class ApparatusEntryTextEditor {
         return `<button class="${fmt}-btn" title="${buttons[fmt].title}">${buttons[fmt].icon}</button>`
       })
       .join('')
-    return `<div class="fte-toolbar text-${this.lang}">${buttonsHtml}</div>
+
+    let characterButtonsHtml = Object.keys(characterButtons[this.lang]).map( (key) => {
+      let btnDef = characterButtons[this.lang][key]
+      let char = isRtl(this.lang) && btnDef['rtlVersion'] !== undefined ? btnDef['rtlVersion'] : btnDef.character
+      return `<button class="${key}-btn" title="${btnDef.title}">${char}</button>`
+    }).join('')
+    return `<div class="fte-toolbar text-${this.lang}">${buttonsHtml}${toolbarSeparator}${characterButtonsHtml}</div>
 <div class="fte-editor text-${this.lang}"></div>`
   }
 }

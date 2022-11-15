@@ -81,6 +81,8 @@ const characterButtons = {
     leftSQM: { character: '‘', title: 'Left Single Quotation Mark'},
     enDash: { character: '\u2013', title: 'En Dash'},
     emDash: { character: '\u2014', title: 'Em dash'},
+    leftBracket: { character: '[', title: 'Opening Bracket'},
+    rightBracket: { character: ']', title: 'Closing Bracket'},
     guillemetSt: { character: '«', title: 'Opening Guillemet'},
     guillemetEnd: { character: '»', title: 'Closing Guillemet'}
   },

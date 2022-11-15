@@ -117,7 +117,11 @@ def print_text_box(context, x, y, text_box):
         tb_width = px2pt(get_value(text_box, 'width', 0))
         debug_msg("Shifting " + str(tb_width) + " pts to the left")
         shift_x -= tb_width
-        text_to_render = '\u202e' + text_to_render + '\u202c'
+        # Insert RLM (Right to Left Mark) and LRM characters so that the text is laid out properly
+        # text_to_render = '\u200f' + text_to_render + '\u200e'
+        # Insert RLI (Right to Left Isolate) and PDI (Pop Directional Isolate) characters so that the text is laid
+        # out properly
+        text_to_render = '\u2067' + text_to_render + '\u2069'
 
     desc = Pango.FontDescription()
     desc.set_family(text_box['fontFamily'])

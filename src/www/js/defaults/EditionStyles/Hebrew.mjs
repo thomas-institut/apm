@@ -5,7 +5,10 @@ export const defaultHebrewEditionStyle = {
     omission: 'חסר',
     addition: 'נוסף',
     ante: 'לפני',
-    post: 'אחרי'
+    post: 'אחרי',
+    defaultLemmaSeparator: ']',
+    lineRangeSeparator: '\u2016',  // double vertical line
+    entrySeparator:  '\u007c' // single vertical line
   },
   formattingStyles: {
     default: {
@@ -81,15 +84,10 @@ export const defaultHebrewEditionStyle = {
         fontSize: '0.9 em',
       }
     },
-    lineRangeSeparator: {
+    postLineRangeSeparator: {
       text: {
         fontWeight: 'bold',
       }
-    },
-    entrySeparator: {
-      // text: {
-      //   fontWeight: 'bold',
-      // }
     },
     afterLineRange: {
       glue: {
@@ -98,11 +96,23 @@ export const defaultHebrewEditionStyle = {
         shrink: '0.5 sp'
       }
     },
-    interEntry: {
+    preEntrySeparator : {
       glue: {
-        width: '1.5 sp',
+        width: '1 sp',
         stretch: '0.5 sp',
-        shrink: '0.25 sp'
+        shrink: '0.1 sp'
+      }
+    },
+    entrySeparator: {
+      // text: {
+      //   fontWeight: 'bold',
+      // }
+    },
+    postEntrySeparator: {
+      glue: {
+        width: '2.5 sp',
+        stretch: '1.5 sp',
+        shrink: '0.5 sp'
       }
     },
     apparatusLineNumbers: {

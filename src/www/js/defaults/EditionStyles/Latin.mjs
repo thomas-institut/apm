@@ -22,7 +22,10 @@ export const defaultLatinEditionStyle =  {
     omission: 'om.',
     addition: 'add.',
     ante: 'ante',
-    post: 'post'
+    post: 'post',
+    defaultLemmaSeparator: ']',
+    lineRangeSeparator: '\u2016',  // double vertical line
+    entrySeparator:  '\u007c' // single vertical line
   },
   formattingStyles: {
     normal: {
@@ -75,25 +78,33 @@ export const defaultLatinEditionStyle =  {
         fontWeight: 'bold',
       }
     },
-    entrySeparator: {
-      // text: {
-      //   fontWeight: 'bold',
-      // }
-    },
-    afterLineRange: {
+    postLineRangeSeparator: {
       glue: {
         width: '4 sp',
         stretch: '2.5 sp',
         shrink: '0.5 sp'
       }
     },
-    interEntry: {
+    preEntrySeparator : {
+      glue: {
+        width: '1 sp',
+        stretch: '0.5 sp',
+        shrink: '0.1 sp'
+      }
+    },
+    entrySeparator: {
+      // text: {
+      //   fontWeight: 'bold',
+      // }
+    },
+    postEntrySeparator: {
       glue: {
         width: '2.5 sp',
         stretch: '1.5 sp',
         shrink: '0.5 sp'
       }
     },
+
     apparatusLineNumbers: {
       text: {
         fontWeight: 'bold',

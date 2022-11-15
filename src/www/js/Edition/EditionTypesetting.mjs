@@ -29,7 +29,7 @@ import { TextBoxFactory } from '../Typesetter2/TextBoxFactory.mjs'
 import { SiglaGroup } from './SiglaGroup.mjs'
 import { ApparatusEntry } from './ApparatusEntry.mjs'
 import { FmtText } from '../FmtText/FmtText.mjs'
-import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
+// import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
 
 let defaultEditionStyles = {
   la: defaultLatinEditionStyle,
@@ -37,9 +37,6 @@ let defaultEditionStyles = {
   he: defaultHebrewEditionStyle
 }
 
-const defaultLemmaSeparator = ']'
-const doubleVerticalLine = String.fromCodePoint(0x2016)
-const verticalLine = String.fromCodePoint(0x007c)
 
 export const MAX_LINE_COUNT = 10000
 
@@ -230,6 +227,9 @@ export class EditionTypesetting {
         return
       }
 
+      let lineRangeSeparatorCharacter = this.editionStyle.strings['lineRangeSeparator']
+      let entrySeparatorCharacter = this.editionStyle.strings['entrySeparator']
+
       if (this.appEntries[apparatus.type] === undefined) {
         // this.debug && console.log(`Apparatus '${apparatus.type}' with ${apparatus.entries.length} entries in total.`)
         let minMainTextIndex = this.extractedMetadataInfo[0].mainTextIndex
@@ -311,14 +311,14 @@ export class EditionTypesetting {
               }
             }
             if (entryIndex !== lineRange.entries.length -1) {
-              items.push((await this.__createNormalSpaceGlue('apparatus interEntry')).setTextDirection(textDirection))
-              pushArray(items, await this._getTsItemsFromStr(verticalLine, 'apparatus entrySeparator', textDirection))
-              items.push((await this.__createNormalSpaceGlue('apparatus interEntry')).setTextDirection(textDirection))
+              items.push((await this.__createNormalSpaceGlue('apparatus preEntrySeparator')).setTextDirection(textDirection))
+              pushArray(items, await this._getTsItemsFromStr(entrySeparatorCharacter, 'apparatus entrySeparator', textDirection))
+              items.push((await this.__createNormalSpaceGlue('apparatus postEntrySeparator')).setTextDirection(textDirection))
             }
           }
           items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
-          pushArray(items, await this._getTsItemsFromStr(doubleVerticalLine, 'apparatus lineRangeSeparator', textDirection))
-          items.push((await this.__createNormalSpaceGlue('apparatus afterLineRange')).setTextDirection(textDirection))
+          pushArray(items, await this._getTsItemsFromStr(lineRangeSeparatorCharacter, 'apparatus lineRangeSeparator', textDirection))
+          items.push((await this.__createNormalSpaceGlue('apparatus postLineRangeSeparator')).setTextDirection(textDirection))
           lineRange.tsItemsExportObjects = items.map( (item) => { return item.getExportObject()})
         }
         // profiler.lap('line ranges typeset')
@@ -357,6 +357,7 @@ export class EditionTypesetting {
   }
 
   _getTsItemsForSeparator(entry) {
+    let defaultLemmaSeparator = this.editionStyle.strings['defaultLemmaSeparator']
     return new Promise( async (resolve) => {
       let items = []
       switch(entry.separator) {

@@ -24,7 +24,10 @@ export const defaultArabicEditionStyle = {
     omission: 'نقص',
     addition: 'ز',
     ante: 'قبل',
-    post: 'بعد'
+    post: 'بعد',
+    defaultLemmaSeparator: ']',
+    lineRangeSeparator: '\u2016',  // double vertical line
+    entrySeparator:  '\u007c' // single vertical line
   },
   formattingStyles: {
     default: {
@@ -105,23 +108,30 @@ export const defaultArabicEditionStyle = {
         fontWeight: 'bold',
       }
     },
-    entrySeparator: {
-      // text: {
-      //   fontWeight: 'bold',
-      // }
-    },
-    afterLineRange: {
+    postLineRangeSeparator: {
       glue: {
         width: '2.5 sp',
         stretch: '1 sp',
         shrink: '0.5 sp'
       }
     },
-    interEntry: {
+    preEntrySeparator : {
       glue: {
-        width: '1.5 sp',
+        width: '1 sp',
         stretch: '0.5 sp',
-        shrink: '0.25 sp'
+        shrink: '0.1 sp'
+      }
+    },
+    entrySeparator: {
+      // text: {
+      //   fontWeight: 'bold',
+      // }
+    },
+    postEntrySeparator: {
+      glue: {
+        width: '2.5 sp',
+        stretch: '1.5 sp',
+        shrink: '0.5 sp'
       }
     },
     apparatusLineNumbers: {

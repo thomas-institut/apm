@@ -18,6 +18,7 @@
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { doNothing } from '../toolbox/FunctionUtil.mjs'
+import { toolbarCharacters} from '../defaults/ToolbarCharacters'
 
 import Quill from '../QuillLoader'
 import Small from './QuillBlots/Small'
@@ -61,43 +62,6 @@ const headingIcons = [
   '<span class="mte-icon">H<sub>2</sub></span>',
   '<span class="mte-icon">H<sub>3</sub></span>'
 ]
-
-
-const characterButtons = {
-  la: {
-    leftDQM: { character: '“', title: 'Left Double Quotation Mark'},
-    rightDQM: { character: '”', title: 'Right Double Quotation Mark'},
-    leftSQM: { character: '‘', title: 'Left Single Quotation Mark'},
-    rightSQM: { character: '’', title: 'Right Single Quotation Mark'},
-    enDash: { character: '\u2013', title: 'En Dash'},
-    emDash: { character: '\u2014', title: 'Em dash'},
-    guillemetSt: { character: '«', title: 'Opening Guillemet'},
-    guillemetEnd: { character: '»', title: 'Closing Guillemet'}
-  },
-  ar: {
-    rightDQM: { character: '”', title: 'Right Double Quotation Mark'},
-    leftDQM: { character: '“', title: 'Left Double Quotation Mark'},
-    rightSQM: { character: '’', title: 'Right Single Quotation Mark'},
-    leftSQM: { character: '‘', title: 'Left Single Quotation Mark'},
-    enDash: { character: '\u2013', title: 'En Dash'},
-    emDash: { character: '\u2014', title: 'Em dash'},
-    leftBracket: { character: '[', title: 'Opening Bracket'},
-    rightBracket: { character: ']', title: 'Closing Bracket'},
-    guillemetSt: { character: '«', title: 'Opening Guillemet'},
-    guillemetEnd: { character: '»', title: 'Closing Guillemet'}
-  },
-  he: {
-    rightDQM: { character: '”', title: 'Right Double Quotation Mark'},
-    leftDQM: { character: '“', title: 'Left Double Quotation Mark'},
-    rightSQM: { character: '’', title: 'Right Single Quotation Mark'},
-    leftSQM: { character: '‘', title: 'Left Single Quotation Mark'},
-    enDash: { character: '\u2013', title: 'En Dash'},
-    emDash: { character: '\u2014', title: 'Em dash'},
-    guillemetSt: { character: '«', title: 'Opening Guillemet'},
-    guillemetEnd: { character: '»', title: 'Closing Guillemet'},
-    gershayim: { character: '\u05f4', title: 'Gershayim'}
-  }
-}
 
 const toolbarSeparator = '<span class="mte-tb-sep">&nbsp;</span>'
 
@@ -167,7 +131,7 @@ export class EditionMainTextEditor {
       $(this._getBtnSelectorHeading(i+1)).on('click', this._genOnClickHeadingButton(i+1, this.quillEditor))
     }
 
-    Object.keys(characterButtons[this.lang]).forEach( (key) => {
+    Object.keys(toolbarCharacters[this.lang]).forEach( (key) => {
       let btnSelector = this._getBtnSelectorCharacter(key)
       $(btnSelector).on('click', this._genOnClickCharacter(key, this.quillEditor))
     })
@@ -259,7 +223,7 @@ export class EditionMainTextEditor {
         return
       }
       quill.deleteText(range.index, range.length)
-      quill.insertText(range.index, characterButtons[this.lang][characterKey].character)
+      quill.insertText(range.index, toolbarCharacters[this.lang][characterKey].character)
     }
    }
 
@@ -297,8 +261,8 @@ export class EditionMainTextEditor {
       headingButtonsHtml += `<button class="heading${i+1}-btn" title="Heading ${i+1}">${headingIcons[i+1]}</button>`
     }
 
-    let characterButtonsHtml = Object.keys(characterButtons[this.lang]).map( (key) => {
-      let btnDef = characterButtons[this.lang][key]
+    let characterButtonsHtml = Object.keys(toolbarCharacters[this.lang]).map( (key) => {
+      let btnDef = toolbarCharacters[this.lang][key]
       let char = isRtl(this.lang) && btnDef['rtlVersion'] !== undefined ? btnDef['rtlVersion'] : btnDef.character
       return `<button class="${key}-btn" title="${btnDef.title}">${char}</button>`
     }).join('')

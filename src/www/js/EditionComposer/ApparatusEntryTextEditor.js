@@ -18,6 +18,7 @@
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { doNothing } from '../toolbox/FunctionUtil.mjs'
+import {toolbarCharacters} from '../defaults/ToolbarCharacters'
 
 import Quill from '../QuillLoader'
 import Small from './QuillBlots/Small'
@@ -26,7 +27,7 @@ import { CustomApparatusQuillDeltaConverter } from './QuillDelta/CustomApparatus
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import Superscript from './QuillBlots/Superscript'
 import { FmtText } from '../FmtText/FmtText.mjs'
-import { isRtl, removeExtraWhiteSpace, removeWhiteSpace } from '../toolbox/Util.mjs'
+import { isRtl, removeWhiteSpace } from '../toolbox/Util.mjs'
 
 const toolbarSeparator = '<span class="mte-tb-sep">&nbsp;</span>'
 
@@ -38,43 +39,6 @@ const buttons = {
   small: { icon: '<small class="fte-icon">S</small>', title: 'Small Font'},
   superscript: { icon: '<small class="fte-icon">x<sup>2</sup>', title: 'Superscript'}
 }
-
-const characterButtons = {
-  la: {
-    leftDQM: { character: '“', title: 'Left Double Quotation Mark'},
-    rightDQM: { character: '”', title: 'Right Double Quotation Mark'},
-    leftSQM: { character: '‘', title: 'Left Single Quotation Mark'},
-    rightSQM: { character: '’', title: 'Right Single Quotation Mark'},
-    enDash: { character: '\u2013', title: 'En Dash'},
-    emDash: { character: '\u2014', title: 'Em dash'},
-    guillemetSt: { character: '«', title: 'Opening Guillemet'},
-    guillemetEnd: { character: '»', title: 'Closing Guillemet'}
-  },
-  ar: {
-    rightDQM: { character: '”', title: 'Right Double Quotation Mark'},
-    leftDQM: { character: '“', title: 'Left Double Quotation Mark'},
-    rightSQM: { character: '’', title: 'Right Single Quotation Mark'},
-    leftSQM: { character: '‘', title: 'Left Single Quotation Mark'},
-    enDash: { character: '\u2013', title: 'En Dash'},
-    emDash: { character: '\u2014', title: 'Em dash'},
-    leftBracket: { character: '[', title: 'Opening Bracket'},
-    rightBracket: { character: ']', title: 'Closing Bracket'},
-    guillemetSt: { character: '«', title: 'Opening Guillemet'},
-    guillemetEnd: { character: '»', title: 'Closing Guillemet'}
-  },
-  he: {
-    rightDQM: { character: '”', title: 'Right Double Quotation Mark'},
-    leftDQM: { character: '“', title: 'Left Double Quotation Mark'},
-    rightSQM: { character: '’', title: 'Right Single Quotation Mark'},
-    leftSQM: { character: '‘', title: 'Left Single Quotation Mark'},
-    enDash: { character: '\u2013', title: 'En Dash'},
-    emDash: { character: '\u2014', title: 'Em dash'},
-    guillemetSt: { character: '«', title: 'Opening Guillemet'},
-    guillemetEnd: { character: '»', title: 'Closing Guillemet'},
-    gershayim: { character: '\u05f4', title: 'Gershayim'}
-  }
-}
-
 
 /**
  * A one-line editor for free text
@@ -119,7 +83,7 @@ export class ApparatusEntryTextEditor {
       $(btnSelector).on('click', this._genOnClickFormat(fmt, this.quillEditor, btnSelector))
     })
 
-    Object.keys(characterButtons[this.lang]).forEach( (key) => {
+    Object.keys(toolbarCharacters[this.lang]).forEach( (key) => {
       let btnSelector = this._getBtnSelectorCharacter(key)
       $(btnSelector).on('click', this._genOnClickCharacterButton(key, this.quillEditor))
     })
@@ -188,7 +152,7 @@ export class ApparatusEntryTextEditor {
         return
       }
       quill.deleteText(range.index, range.length)
-      quill.insertText(range.index, characterButtons[this.lang][key].character)
+      quill.insertText(range.index, toolbarCharacters[this.lang][key].character)
     }
   }
 
@@ -213,8 +177,8 @@ export class ApparatusEntryTextEditor {
       })
       .join('')
 
-    let characterButtonsHtml = Object.keys(characterButtons[this.lang]).map( (key) => {
-      let btnDef = characterButtons[this.lang][key]
+    let characterButtonsHtml = Object.keys(toolbarCharacters[this.lang]).map( (key) => {
+      let btnDef = toolbarCharacters[this.lang][key]
       let char = isRtl(this.lang) && btnDef['rtlVersion'] !== undefined ? btnDef['rtlVersion'] : btnDef.character
       return `<button class="${key}-btn" title="${btnDef.title}">${char}</button>`
     }).join('')

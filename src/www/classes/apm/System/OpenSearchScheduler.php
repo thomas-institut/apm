@@ -1,11 +1,11 @@
 <?php
-
 namespace APM\System;
 
 use ThomasInstitut\DataTable\MySqlDataTable;
 use PDO;
 use PDOException;
 use ThomasInstitut\TimeString\TimeString;
+
 
 class OpenSearchScheduler extends ApmSystemManager
 {
@@ -52,3 +52,6 @@ class OpenSearchScheduler extends ApmSystemManager
         return true;
     }
 }
+
+$scheduler = new OpenSearchScheduler();
+$scheduler->main('23', '404', '1');

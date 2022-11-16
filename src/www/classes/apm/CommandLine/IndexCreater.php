@@ -124,7 +124,7 @@ class IndexCreater extends CommandLineUtility {
                     $id = $id + 1;
 
                     $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
-                    print("$id: Doc $doc_id ($title) page $page seq $seq foliation $foliation col $col lang $lang\n");
+                    print("Indexed Document – OpenSearch ID: $id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Lang: $lang\n");
                 }
             }
         }
@@ -209,7 +209,6 @@ class IndexCreater extends CommandLineUtility {
         // Tokenization and lemmatization
         // Test existence of transcript and tokenize/lemmatize existing transcripts in python
         if (strlen($transcript_clean) > 3) {
-                echo ("Lemmatizing in Python...");
                 exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_clean", $tokens_and_lemmata);
 
                 // Get tokenized and lemmatized transcript
@@ -223,9 +222,6 @@ class IndexCreater extends CommandLineUtility {
             }
             if (count($transcript_tokenized) !== count($transcript_lemmatized)) {
                 print("Error! Array of tokens and lemmata do not have the same length!\n");
-            }
-            else {
-                print_r("finished!\n");
             }
 
             // Data to be stored on the OpenSearch index

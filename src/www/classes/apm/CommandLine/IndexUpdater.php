@@ -52,40 +52,35 @@ class IndexUpdater extends IndexCreater
 
         // Download hebrew language model for lemmatization
         exec("python3 ../../python/download_model_he.py", $model_status);
-        print($model_status[0]);
 
-        print("\nStart updating index...\n");
-
-        // TEST DATA FOR NEW ENTRY - SHOULD BE RECEIVED FROM SCHEDULER
-        $doc_id = "23";
-        $page = "404";
+        // TEST DATA FOR NEW ENTRY - SHOULD BE RECEIVED FROM SCHEDULER SQL DATABASE
+        $doc_id = "15432";
+        $page = "402";
         $col = "2";
 
         // Get all indexing-relevant data from the SQL database
-        $title = $this->getTitle($doc_id);
+        /*$title = $this->getTitle($doc_id);
         $seq = $this->getSeq($doc_id, $page);
         $foliation = $this->getFoliation($doc_id, $page);
         $transcriber = $this->getTranscriber($doc_id, $page, $col);
         $page_id = $this->getPageID($doc_id, $page);
         $lang = $this->getLang($doc_id, $page);
-        $transcript = $this->getTranscript ($doc_id, $page, $col);
+        $transcript = $this->getTranscript ($doc_id, $page, $col);*/
 
         // FOR TESTING
-        /*$title = "Hallo";
+        $title = "Hallo";
         $seq = "67";
         $foliation = "50b";
         $transcriber = "Brad Pitt";
         $page_id = "34";
         $lang = "la";
-        $transcript = "Hic philosophum est et homo non potest dicere et non habitat in curia curiosum curiositate.";*/
+        $transcript = "Hic philosophum est et homo non potest dicere et non habitat in curia curiosum curiositate.";
 
         // Check if a new transcription was made or an existing one was changed
         $transcription_status = $this->transcriptionStatus($this->client, $this->indexName, $doc_id, $page, $col);
 
         // FIRST CASE – Completely new transcription was created
         if ($transcription_status['exists'] === 0) {
-
-            print("Indexing new document...\n");
 
             // Generate unique ID for new entry
             $id_list = $this->getIDs($this->client, $this->indexName);
@@ -94,20 +89,16 @@ class IndexUpdater extends IndexCreater
 
             // Add new transcription to index
             $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
-            print("$id: Doc $doc_id ($title) page $page seq $seq foliation $foliation col $col lang $lang\n");
+            print("Indexed Document – OpenSearch ID: $id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Lang: $lang\n");
         }
         else { // SECOND CASE – Existing transcription was changed
-
-            print ("Updating document...");
 
             // Get OpenSearch ID of changed column
             $id = $transcription_status['id'];
 
             // Tokenize and lemmatize new transcription
-            echo("lemmatizing in Python...");
             $transcript_clean = $this->encode($transcript);
             exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_clean", $tokens_and_lemmata);
-            echo("lemmatized...");
 
             // Get tokenized and lemmatized transcript
             $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
@@ -135,7 +126,7 @@ class IndexUpdater extends IndexCreater
                 ]
             ]);
 
-            echo("updated!\n");
+            print("Updated Document – OpenSearch ID: $id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Lang: $lang\n");
         }
         return true;
     }

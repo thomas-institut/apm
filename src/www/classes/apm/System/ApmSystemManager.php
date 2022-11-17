@@ -74,7 +74,9 @@ class ApmSystemManager extends SystemManager {
     const ERROR_CONFIG_ARRAY_IS_NOT_VALID = 1007;
     const ERROR_BAD_DEFAULT_TIMEZONE = 1008;
     const ERROR_NO_LOGFILENAME_GIVEN = 1009;
-    
+    const ERROR_CANNOT_READ_SCHEDULE_FROM_DB = 1010;
+
+
     // Database version
     const DB_VERSION = 26;
 
@@ -171,6 +173,8 @@ class ApmSystemManager extends SystemManager {
 
     private ?ApmNormalizerManager $normalizerManager;
 
+    private OpenSearchScheduler $openSearchScheduler;
+
 
     public function __construct(array $configArray) {
 
@@ -229,7 +233,22 @@ class ApmSystemManager extends SystemManager {
                     "Database is not initialized");
             return;
         }
-        
+
+        // Set up OpenSearchScheduler
+        try {
+            $schedulerTable = new MySqlDataTable($this->dbConn,
+                $this->tableNames[ApmMySqlTableName::TABLE_SCHEDULER]);
+        } catch (Exception $e) {
+            // Cannot replicate this in testing, yet
+            // @codeCoverageIgnoreStart
+            $this->logAndSetError(self::ERROR_CANNOT_READ_SCHEDULE_FROM_DB,
+                "Cannot read schedule from database: [ " . $e->getCode() . '] ' . $e->getMessage());
+            return;
+            // @codeCoverageIgnoreEnd
+        }
+
+        $this->openSearchScheduler=new OpenSearchScheduler($schedulerTable);
+
         // Set up SettingsManager
         try {
             $settingsTable = new MySqlDataTable($this->dbConn,
@@ -322,6 +341,7 @@ class ApmSystemManager extends SystemManager {
     protected function createTableNames(string $prefix) : array {
         
         $tableKeys = [
+            ApmMySqlTableName::TABLE_SCHEDULER,
             ApmMySqlTableName::TABLE_SETTINGS,
             ApmMySqlTableName::TABLE_EDNOTES,
             ApmMySqlTableName::TABLE_ELEMENTS,

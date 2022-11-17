@@ -19,7 +19,7 @@ class OpenSearchScheduler
         $this->schedulerTable = $sqlTable;
     }
 
-    public function main($doc_id, $page, $col) {
+    public function create($doc_id, $page, $col) {
 
         $now = TimeString::now();
 
@@ -54,11 +54,14 @@ class OpenSearchScheduler
             'page' => $page,
             'column' => $col,
             'time_scheduled' => $now,
-            'time_updated' => '00:00:00']);
+            'status' => 'waiting', // will be changed to 'processing' and 'indexed' in the process-method
+            'time_indexed' => '00:00:00']);
+
+        return true;
+    }
+
+    public function process() {
 
         return true;
     }
 }
-
-$scheduler = new OpenSearchScheduler();
-$scheduler->main('23', '404', '1');

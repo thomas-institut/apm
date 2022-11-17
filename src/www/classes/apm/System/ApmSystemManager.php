@@ -728,4 +728,8 @@ class ApmSystemManager extends SystemManager {
         return $this->router;
     }
 
+    public function getOpenSearchScheduler(): OpenSearchScheduler
+    {
+        return $this->openSearchScheduler;
+    }
 }

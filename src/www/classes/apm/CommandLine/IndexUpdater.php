@@ -40,6 +40,7 @@ class IndexUpdater extends IndexCreater
 
     public function main($argc, $argv): bool
     {
+        $oss = $this->systemManager->getOpenSearchScheduler();
         // Instantiate OpenSearch client
         $this->client = (new ClientBuilder())
             ->setHosts($this->config[ApmConfigParameter::OPENSEARCH_HOSTS])

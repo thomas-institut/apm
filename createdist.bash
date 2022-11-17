@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #
-#  Copyright (C) 2019 Universität zu Köln
+#  Copyright (C) 2019-2022 Universität zu Köln
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -48,10 +48,10 @@ fi
 
 mkdir "$TMP_DIR" || exit
 
+
 cp -R src/node "$TMP_DIR"
 cp -R src/python "$TMP_DIR"
 cp -R src/db "$TMP_DIR"
-
 mkdir "$TMP_DIR"/www || exit
 cp -R src/www/classes "$TMP_DIR"/www
 cp -R src/www/collatex "$TMP_DIR"/www

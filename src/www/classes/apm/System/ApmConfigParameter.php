@@ -65,4 +65,8 @@ class ApmConfigParameter
 
     const CONFIG_FILE_PATH = 'configFilePath';
 
+    const OPENSEARCH_HOSTS = 'opensearch_hosts';
+    const OPENSEARCH_USER = 'opensearch_user';
+    const OPENSEARCH_PASSWORD = 'opensearch_password';
+
 }

@@ -54,6 +54,7 @@ use APM\Site\SitePageViewer;
 use APM\Site\SiteChunkPage;
 use APM\Site\SiteCollationTable;
 use APM\Site\SiteDocuments;
+use APM\Site\SiteSearch;
 
 use APM\System\Auth\Authenticator;
 
@@ -67,6 +68,8 @@ use APM\Api\ApiElements;
 use APM\Api\ApiCollationTableConversion;
 use APM\Api\ApiTypesetPdf;
 use APM\Api\ApiWitness;
+use APM\Api\ApiSearch;
+
 use ThomasInstitut\Container\MinimalContainer;
 
 require 'vendor/autoload.php';
@@ -167,6 +170,11 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
         })
         ->setName('home');
 
+    // Search Page
+
+    $group->get('/search',
+        SiteSearch::class . ':searchPage')
+        ->setName('search');
 
     // DASHBOARD
 
@@ -308,6 +316,19 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
 
 $app->group('/api', function (RouteCollectorProxy $group) use ($container){
     // ADMIN
+
+    // Search API
+     $group->post('/search/keyword',
+        ApiSearch::class . ':search')
+        ->setName('search.keyword');
+
+    $group->post('/search/titles',
+        ApiSearch::class . ':getTitles')
+        ->setName('search.titles');
+
+    $group->post('/search/transcribers',
+        ApiSearch::class . ':getTranscribers')
+        ->setName('search.transcribers');
 
     // API -> log message from front end
     $group->post('/admin/log',

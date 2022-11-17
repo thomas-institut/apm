@@ -30,7 +30,8 @@ use OpenSearch\ClientBuilder;
 /**
  * Description of UpdateIndex
  *
- * Commandline utility to update the index of all transcripts in OpenSearch
+ * Commandline utility to update the index of all transcripts in OpenSearch. The program has to be triggered from cron.
+ * Therefore add the following line to the crontab: * * * * * cd /home/lukas/apm/src/www/utilities; ./updateindex >> update_history.log
  *
  * @author Lukas Reichert
  */

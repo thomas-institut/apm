@@ -57,79 +57,87 @@ class IndexUpdater extends IndexCreater
         exec("python3 ../../python/download_model_he.py", $model_status);
 
         // TEST DATA FOR NEW ENTRY - SHOULD BE RECEIVED FROM SCHEDULER SQL DATABASE
-        $doc_id = "15432";
-        $page = "402";
-        $col = "2";
+        $rows_waiting = $scheduler->read();
 
-        // Get all indexing-relevant data from the SQL database
-        /*$title = $this->getTitle($doc_id);
-        $seq = $this->getSeq($doc_id, $page);
-        $foliation = $this->getFoliation($doc_id, $page);
-        $transcriber = $this->getTranscriber($doc_id, $page, $col);
-        $page_id = $this->getPageID($doc_id, $page);
-        $lang = $this->getLang($doc_id, $page);
-        $transcript = $this->getTranscript ($doc_id, $page, $col);*/
+        // Iterate over all rows
+        foreach ($rows_waiting as $row) {
 
-        // FOR TESTING
-        $title = "Hallo";
-        $seq = "67";
-        $foliation = "50b";
-        $transcriber = "Brad Pitt";
-        $page_id = "34";
-        $lang = "la";
-        $transcript = "Hic philosophum est et homo non potest dicere et non habitat in curia curiosum curiositate.";
+            $schedule_id = $row['id'];
+            $doc_id = $row['doc_id'];
+            $page = $row['page'];
+            $col = $row['col'];
 
-        // Check if a new transcription was made or an existing one was changed
-        $transcription_status = $this->transcriptionStatus($this->client, $this->indexName, $doc_id, $page, $col);
+            // Get all indexing-relevant data from the SQL database
+            /*$title = $this->getTitle($doc_id);
+            $seq = $this->getSeq($doc_id, $page);
+            $foliation = $this->getFoliation($doc_id, $page);
+            $transcriber = $this->getTranscriber($doc_id, $page, $col);
+            $page_id = $this->getPageID($doc_id, $page);
+            $lang = $this->getLang($doc_id, $page);
+            $transcript = $this->getTranscript ($doc_id, $page, $col);*/
 
-        // FIRST CASE – Completely new transcription was created
-        if ($transcription_status['exists'] === 0) {
+            // FOR TESTING
+            $title = "Hallo";
+            $seq = "67";
+            $foliation = "50b";
+            $transcriber = "Brad Pitt";
+            $page_id = "34";
+            $lang = "la";
+            $transcript = "Hic philosophum est et homo non potest dicere et non habitat in curia curiosum curiositate.";
 
-            // Generate unique ID for new entry
-            $id_list = $this->getIDs($this->client, $this->indexName);
-            $max_id = max($id_list);
-            $id = $max_id + 1;
+            // Check if a new transcription was made or an existing one was changed
+            $transcription_status = $this->transcriptionStatus($this->client, $this->indexName, $doc_id, $page, $col);
 
-            // Add new transcription to index
-            $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
-            print("Indexed Document – OpenSearch ID: $id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Lang: $lang\n");
-        }
-        else { // SECOND CASE – Existing transcription was changed
+            // FIRST CASE – Completely new transcription was created
+            if ($transcription_status['exists'] === 0) {
 
-            // Get OpenSearch ID of changed column
-            $id = $transcription_status['id'];
+                // Generate unique ID for new entry
+                $id_list = $this->getIDs($this->client, $this->indexName);
+                $max_id = max($id_list);
+                $id = $max_id + 1;
 
-            // Tokenize and lemmatize new transcription
-            $transcript_clean = $this->encode($transcript);
-            exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_clean", $tokens_and_lemmata);
+                // Add new transcription to index
+                $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+                print("Indexed Document – OpenSearch ID: $id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Lang: $lang\n");
+            } else { // SECOND CASE – Existing transcription was changed
 
-            // Get tokenized and lemmatized transcript
-            $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
-            $transcript_lemmatized = explode("#", $tokens_and_lemmata[1]);
+                // Get OpenSearch ID of changed column
+                $id = $transcription_status['id'];
 
-            // Update index
-            $this->client->update([
-                'index' => $this->indexName,
-                'id' => $id,
-                'body' => [
-                    'doc' => [
-                        'title' => $title,
-                        'page' => $page,
-                        'seq' => $seq,
-                        'foliation' => $foliation,
-                        'column' => $col,
-                        'pageID' => $page_id,
-                        'docID' => $doc_id,
-                        'lang' => $lang,
-                        'transcriber' => $transcriber,
-                        'transcript' => $transcript,
-                        'transcript_tokens' => $transcript_tokenized,
-                        'transcript_lemmata' => $transcript_lemmatized
+                // Tokenize and lemmatize new transcription
+                $transcript_clean = $this->encode($transcript);
+                exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_clean", $tokens_and_lemmata);
+
+                // Get tokenized and lemmatized transcript
+                $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
+                $transcript_lemmatized = explode("#", $tokens_and_lemmata[1]);
+
+                // Update index
+                $this->client->update([
+                    'index' => $this->indexName,
+                    'id' => $id,
+                    'body' => [
+                        'doc' => [
+                            'title' => $title,
+                            'page' => $page,
+                            'seq' => $seq,
+                            'foliation' => $foliation,
+                            'column' => $col,
+                            'pageID' => $page_id,
+                            'docID' => $doc_id,
+                            'lang' => $lang,
+                            'transcriber' => $transcriber,
+                            'transcript' => $transcript,
+                            'transcript_tokens' => $transcript_tokenized,
+                            'transcript_lemmata' => $transcript_lemmatized
+                        ]
                     ]
-                ]
-            ]);
+                ]);
 
-            print("Updated Document – OpenSearch ID: $id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Lang: $lang\n");
+                // Log,  that procssing is  finished
+                $scheduler->update($schedule_id);
+                print("Updated Document – OpenSearch ID: $id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Lang: $lang\n");
+            }
         }
         return true;
     }

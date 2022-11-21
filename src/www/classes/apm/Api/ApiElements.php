@@ -21,7 +21,6 @@
 namespace APM\Api;
 
 use APM\FullTranscription\ColumnVersionInfo;
-use APM\System\OpenSearchScheduler;
 use APM\System\SystemManager;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\Data\DataManager;
@@ -75,8 +74,8 @@ class ApiElements extends ApiController
         $inputDataObject = null;
         
         // EXECUTE SCHEDULER
-        $scheduler = new OpenSearchScheduler();
-        $scheduler->main($docId, $pageNumber, $columnNumber);
+        $scheduler = $this->systemManager->getOpenSearchScheduler();
+        $scheduler->write($docId, $pageNumber, $columnNumber);
 
         if (isset($postData['data'])) {
             $inputDataObject = json_decode($postData['data'], true);

@@ -19,7 +19,7 @@
  *  
  */
 
-// This script should be executed i. e. in the moment someone open the transcription editor / saves a transcription for the first time (?)
+// This script should be executed i. e. in the moment someone opens the transcription editor / saves a transcription for the first time (?)
 
 namespace APM;
 

@@ -42,7 +42,8 @@ class IndexUpdater extends IndexCreater
     public function main($argc, $argv): bool
     {
         $scheduler = $this->systemManager->getOpenSearchScheduler();
-        $scheduler->write(23000, 118, 1);
+        // ONLY FOR TESTING (Updates an existing doc, this method will be called in ApiElements, when someone saves his or her transcription
+        $scheduler->write(23, 404, 2);
 
         // Instantiate OpenSearch client
         $this->client = (new ClientBuilder())
@@ -69,22 +70,22 @@ class IndexUpdater extends IndexCreater
             $col = $row['Col'];
 
             // Get all indexing-relevant data from the SQL database
-            /*$title = $this->getTitle($doc_id);
+            $title = $this->getTitle($doc_id);
             $seq = $this->getSeq($doc_id, $page);
             $foliation = $this->getFoliation($doc_id, $page);
             $transcriber = $this->getTranscriber($doc_id, $page, $col);
             $page_id = $this->getPageID($doc_id, $page);
             $lang = $this->getLang($doc_id, $page);
-            $transcript = $this->getTranscript ($doc_id, $page, $col);*/
+            $transcript = $this->getTranscript ($doc_id, $page, $col);
 
             // FOR TESTING
-            $title = "Hallo";
+            /*$title = "Hallo";
             $seq = "67";
             $foliation = "50b";
             $transcriber = "Brad Pitt";
             $page_id = "34";
             $lang = "la";
-            $transcript = "Hic philosophum est et homo non potest dicere et non habitat in curia curiosum curiositate.";
+            $transcript = "Hic philosophum est et homo non potest dicere et non habitat in curia curiosum curiositate.";*/
 
             // Check if a new transcription was made or an existing one was changed
             $transcription_status = $this->transcriptionStatus($this->client, $this->indexName, $doc_id, $page, $col);

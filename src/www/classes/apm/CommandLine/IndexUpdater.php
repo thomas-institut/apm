@@ -42,6 +42,7 @@ class IndexUpdater extends IndexCreater
     public function main($argc, $argv): bool
     {
         $scheduler = $this->systemManager->getOpenSearchScheduler();
+        $scheduler->write(23000, 118, 1);
 
         // Instantiate OpenSearch client
         $this->client = (new ClientBuilder())
@@ -63,9 +64,9 @@ class IndexUpdater extends IndexCreater
         foreach ($rows_waiting as $row) {
 
             $schedule_id = $row['id'];
-            $doc_id = $row['doc_id'];
-            $page = $row['page'];
-            $col = $row['col'];
+            $doc_id = $row['Doc_ID'];
+            $page = $row['Page'];
+            $col = $row['Col'];
 
             // Get all indexing-relevant data from the SQL database
             /*$title = $this->getTitle($doc_id);
@@ -92,17 +93,18 @@ class IndexUpdater extends IndexCreater
             if ($transcription_status['exists'] === 0) {
 
                 // Generate unique ID for new entry
-                $id_list = $this->getIDs($this->client, $this->indexName);
-                $max_id = max($id_list);
-                $id = $max_id + 1;
+                $opensearch_id_list = $this->getIDs($this->client, $this->indexName);
+                $max_id = max($opensearch_id_list);
+                $opensearch_id = $max_id + 1;
 
                 // Add new transcription to index
-                $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
-                print("Indexed Document – OpenSearch ID: $id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Lang: $lang\n");
+                $this->indexCol($opensearch_id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+                $scheduler->log($schedule_id, $opensearch_id, 'CREATED');
+                print("Indexed Document – OpenSearch ID: $opensearch_id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Lang: $lang\n");
             } else { // SECOND CASE – Existing transcription was changed
 
                 // Get OpenSearch ID of changed column
-                $id = $transcription_status['id'];
+                $opensearch_id = $transcription_status['id'];
 
                 // Tokenize and lemmatize new transcription
                 $transcript_clean = $this->encode($transcript);
@@ -115,7 +117,7 @@ class IndexUpdater extends IndexCreater
                 // Update index
                 $this->client->update([
                     'index' => $this->indexName,
-                    'id' => $id,
+                    'id' => $opensearch_id,
                     'body' => [
                         'doc' => [
                             'title' => $title,
@@ -134,9 +136,9 @@ class IndexUpdater extends IndexCreater
                     ]
                 ]);
 
-                // Log,  that procssing is  finished
-                $scheduler->update($schedule_id);
-                print("Updated Document – OpenSearch ID: $id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Lang: $lang\n");
+                // Log,  that processing is  finished
+                $scheduler->log($schedule_id, $opensearch_id, 'UPDATED');
+                print("Updated Document – OpenSearch ID: $opensearch_id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Lang: $lang\n");
             }
         }
         return true;
@@ -146,7 +148,7 @@ class IndexUpdater extends IndexCreater
     private function getIDs ($client, $index_name) {
 
         // Array to return
-        $ids = [];
+        $opensearch_ids = [];
 
         // Make a match_all query
         $query = $client->search([
@@ -161,13 +163,13 @@ class IndexUpdater extends IndexCreater
             ]
         ]);
 
-        // Append every id to the $ids-array
+        // Append every id to the $opensearch_ids-array
         foreach ($query['hits']['hits'] as $column) {
-            $id = $column['_id'];
-            $ids[] = $id;
+            $opensearch_id = $column['_id'];
+            $opensearch_ids[] = $opensearch_id;
         }
 
-        return $ids;
+        return $opensearch_ids;
     }
 
     // Function to query a given OpenSearch-index
@@ -210,11 +212,11 @@ class IndexUpdater extends IndexCreater
 
             // Get id, if there is already an existing transcription
             if ($exists === 1) {
-                $id = $query['hits']['hits'][0]['_id'];
+                $opensearch_id = $query['hits']['hits'][0]['_id'];
             } else {
-                $id = 'None';
+                $opensearch_id = 'None';
             }
 
-            return ['exists' => $exists, 'id' => $id];
+            return ['exists' => $exists, 'id' => $opensearch_id];
     }
 }

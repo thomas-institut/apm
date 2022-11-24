@@ -9,9 +9,6 @@ use ThomasInstitut\TimeString\TimeString;
 
 class OpenSearchScheduler
 {
-    //private PDO $dbConn;
-    //private $table_name = ApmMySqlTableName::TABLE_SCHEDULER;
-
     private $schedulerTable;
 
     public function __construct($sqlTable)
@@ -19,49 +16,51 @@ class OpenSearchScheduler
         $this->schedulerTable = $sqlTable;
     }
 
+    // Function to write the metadata of saved transcriptions to the sql-table ,scheduler'
     public function write($doc_id, $page, $col) {
 
         $now = TimeString::now();
-        $schedule_id = 0; // Will raise by one automatically
+        $table_id = 0; // Will raise by one automatically
 
         // Create new row in scheduler-table
         $this->schedulerTable->createRow([
-            'id' => $schedule_id,
-            'doc_id' => $doc_id,
-            'page' => $page,
-            'col' => $col,
-            'time_scheduled' => $now,
-            'time_processed' => '00:00:00',
-            'status' => 'waiting']); // will be changed to 'processing' and 'indexed' in the process-method
+            'id' => $table_id,
+            'Doc_ID' => $doc_id,
+            'Page' => $page,
+            'Col' => $col,
+            'Time_Scheduled' => $now,
+            'Status' => 'WAITING']);
 
         return true;
     }
 
+    // Function to read all waiting (unprocessed) data from the sql-table ,scheduler' for processing
     public function read() {
 
-        $rows = $this->schedulerTable->findRows(['status' => 'waiting']);
+        $rows = $this->schedulerTable->findRows(['Status' => 'WAITING']);
 
         foreach ($rows as $row) {
 
-            $schedule_id = $row['id'];
+            $table_id = $row['id'];
+            $now = TimeString::now();
 
             $this->schedulerTable->updateRow([
-                'id' => $schedule_id,
-                'status' => 'processing'
+                'id' => $table_id,
+                'Time_Processed' => $now,
+                'Status' => 'PROCESSING'
             ]);
         }
 
         return $rows;
     }
 
-    public function update($schedule_id) {
-
-        $now = TimeString::now();
+    // Function to log that a transcription was created/updated in the OpenSearch index
+    public function log($table_id, $opensearch_id, $status) {
 
         $this->schedulerTable->updateRow([
-            'id' => $schedule_id,
-            'time_processed' => $now,
-            'status' => 'processed'
+            'id' => $table_id,
+            'OpenSearch_ID' => $opensearch_id,
+            'Status' => $status
         ]);
 
         return true;

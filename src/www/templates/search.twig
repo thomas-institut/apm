@@ -16,6 +16,10 @@
         // Variable for previous keywords to avoid repetition of identical queries
         let oldKeywords = "gdfgwer"
 
+        // Get actual datalists for transcript and transcriber forms
+        getInput ('titles')
+        getInput ('transcribers')
+
         // KEY-UP FUNCTIONS FOR ALL BOXES
 
         // Start query, if new keywords are given - delay the function to avoid unintended queries
@@ -26,11 +30,6 @@
           }
           oldKeywords = userText
         }, 2000))
-
-        // Get the doc-titles of the indexed columns
-        transcriptBox.on("click", () => {
-          getInput ('titles')
-        })
 
         // Start query, if a transcript is chosen - delay the function to avoid unintended queries
         transcriptBox.on("input", delay(function () {
@@ -51,10 +50,6 @@
           })
         }}, 50))
 
-        // Get the transcribers of the indexed columns
-        transcriberBox.on("click", () => {
-          getInput ('transcribers')
-        })
 
         // Same as above (transcriptBox)
         transcriberBox.on("input", delay(function () {
@@ -432,7 +427,7 @@
         <td>
             <div id="doc_form">
                 <label for="transcriptBox"></label>
-                <input list="titleList" id="transcriptBox" placeholder="">
+                <input list="titleList" id="transcriptBox" placeholder="" autocomplete="off">
                 <datalist id="titleList">
                 </datalist>
             </div>
@@ -440,7 +435,7 @@
         <td>
             <div id="transcriber_form">
                 <label for="transcriberBox"></label>
-                <input list="transcriberList" id="transcriberBox" placeholder="">
+                <input list="transcriberList" id="transcriberBox" placeholder="" autocomplete="off">
                 <datalist id="transcriberList">
                 </datalist>
             </div>

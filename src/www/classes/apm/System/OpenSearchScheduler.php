@@ -1,13 +1,9 @@
 <?php
 namespace APM\System;
 
-use ThomasInstitut\DataTable\MySqlDataTable;
-use PDO;
-use PDOException;
 use ThomasInstitut\TimeString\TimeString;
-use APM\System\SystemManager;
 
-class OpenSearchScheduler
+class OpenSearchScheduler extends ApmSystemManager
 {
     private $schedulerTable;
 
@@ -39,6 +35,10 @@ class OpenSearchScheduler
             'Time_Scheduled' => $now,
             'Status' => 'WAITING']);
 
+        // Log action
+        //$logger = $this->getLogger();
+        //$logger->debug("Transcription (Doc ID: $doc_id, Page: $page, Column: $col) has been scheduled.");
+
         return true;
     }
 
@@ -59,6 +59,10 @@ class OpenSearchScheduler
             ]);
         }
 
+        // Log action
+        //$logger = $this->getLogger();
+        //$logger->debug("Waiting transcriptions have been read and processed.");
+
         return $rows;
     }
 
@@ -70,6 +74,10 @@ class OpenSearchScheduler
             'OpenSearch_ID' => $opensearch_id,
             'Status' => $status
         ]);
+
+        // Log action
+        //$logger = $this->getLogger();
+        //$logger->debug("Transcription (OpenSearch ID: $opensearch_id) has been created or updated.");
 
         return true;
     }

@@ -5,7 +5,7 @@ use ThomasInstitut\DataTable\MySqlDataTable;
 use PDO;
 use PDOException;
 use ThomasInstitut\TimeString\TimeString;
-
+use APM\System\SystemManager;
 
 class OpenSearchScheduler
 {
@@ -21,6 +21,14 @@ class OpenSearchScheduler
 
         $now = TimeString::now();
         $table_id = 0; // Will raise by one automatically
+
+        // Avoid duplicates in the schedule (for example, if someone saves a transcription multiple times in a minute)
+        $rows = $this->schedulerTable->findRows(['Status' => 'WAITING']);
+        foreach ($rows as $row) {
+            if ($row['Doc_ID'] == $doc_id && $row['Page'] == $page && $row['Col'] == $col) {
+                return true;
+            }
+        }
 
         // Create new row in scheduler-table
         $this->schedulerTable->createRow([

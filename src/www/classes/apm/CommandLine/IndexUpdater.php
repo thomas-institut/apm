@@ -42,8 +42,6 @@ class IndexUpdater extends IndexCreater
     public function main($argc, $argv): bool
     {
         $scheduler = $this->systemManager->getOpenSearchScheduler();
-        // ONLY FOR TESTING (Updates an existing doc, this method will be called in ApiElements, when someone saves his or her transcription
-        $scheduler->write(23, 404, 2);
 
         // Instantiate OpenSearch client
         $this->client = (new ClientBuilder())
@@ -101,7 +99,6 @@ class IndexUpdater extends IndexCreater
                 // Add new transcription to index
                 $this->indexCol($opensearch_id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
                 $scheduler->log($schedule_id, $opensearch_id, 'CREATED');
-                print("Indexed Document – OpenSearch ID: $opensearch_id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Lang: $lang\n");
             } else { // SECOND CASE – Existing transcription was changed
 
                 // Get OpenSearch ID of changed column
@@ -139,7 +136,6 @@ class IndexUpdater extends IndexCreater
 
                 // Log,  that processing is  finished
                 $scheduler->log($schedule_id, $opensearch_id, 'UPDATED');
-                print("Updated Document – OpenSearch ID: $opensearch_id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Lang: $lang\n");
             }
         }
         return true;

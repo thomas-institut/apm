@@ -36,8 +36,8 @@ class OpenSearchScheduler extends ApmSystemManager
             'Status' => 'WAITING']);
 
         // Log action
-        //$logger = $this->getLogger();
-        //$logger->debug("Transcription (Doc ID: $doc_id, Page: $page, Column: $col) has been scheduled.");
+        //$log = $this->getLogger();
+        //$log->debug("Transcription (Doc ID: $doc_id, Page: $page, Column: $col) has been scheduled.");
 
         return true;
     }

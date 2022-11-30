@@ -22,16 +22,16 @@
 namespace APM\CommandLine;
 
 use APM\System\ApmConfigParameter;
-use AverroesProject\ColumnElement\Element;
-use AverroesProject\TxText\Item;
-use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
 
 /**
  * Description of UpdateIndex
  *
  * Commandline utility to update the index of all transcripts in OpenSearch. The program has to be triggered from cron.
- * Therefore add the following line to the crontab: * * * * * cd /home/lukas/apm/src/www/utilities; ./updateindex >> update_history.log
+ * Therefore add the following line to crontab (replace ASTERISK with *):
+
+ * * * * * p=$(find /home -path "ASTERISK/apm/src/www/utilities"); cd "${p}"; ./updateindex
+
  *
  * @author Lukas Reichert
  */

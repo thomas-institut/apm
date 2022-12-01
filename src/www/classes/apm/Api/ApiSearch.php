@@ -25,7 +25,7 @@ class ApiSearch extends ApiController
         $now = TimeString::now();
 
         // Get all user input!
-        $searched_phrase = $this->removeBlanks(strtolower($_POST['searchText'])); // Lower-case and without additional blanks
+        $searched_phrase = $this->removeBlanks(strtolower($_POST['searched_phrase'])); // Lower-case and without additional blanks
         $doc_title = $_POST['title'];
         $transcriber = $_POST['transcriber'];
         $radius = $_POST['radius'];

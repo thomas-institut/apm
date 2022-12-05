@@ -247,7 +247,7 @@ class ApmSystemManager extends SystemManager {
             // @codeCoverageIgnoreEnd
         }
 
-        $this->openSearchScheduler=new OpenSearchScheduler($schedulerTable);
+        $this->openSearchScheduler=new OpenSearchScheduler($schedulerTable, $this->logger);
 
         // Set up SettingsManager
         try {

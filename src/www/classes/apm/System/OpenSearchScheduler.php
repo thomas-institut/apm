@@ -1,15 +1,18 @@
 <?php
 namespace APM\System;
 
+use Psr\Log\LoggerInterface;
 use ThomasInstitut\TimeString\TimeString;
 
-class OpenSearchScheduler extends ApmSystemManager
+class OpenSearchScheduler
 {
     private $schedulerTable;
+    private $logger;
 
-    public function __construct($sqlTable)
+    public function __construct($sqlTable, LoggerInterface $logger)
     {
         $this->schedulerTable = $sqlTable;
+        $this->logger = $logger;
     }
 
     // Function to write the metadata of saved transcriptions to the sql-table ,scheduler'
@@ -36,8 +39,7 @@ class OpenSearchScheduler extends ApmSystemManager
             'Status' => 'WAITING']);
 
         // Log action
-        //$log = $this->getLogger();
-        //$log->debug("Transcription (Doc ID: $doc_id, Page: $page, Column: $col) has been scheduled.");
+        $this->logger->debug("Transcription (Doc ID: $doc_id, Page: $page, Column: $col) has been scheduled.");
 
         return true;
     }
@@ -60,8 +62,7 @@ class OpenSearchScheduler extends ApmSystemManager
         }
 
         // Log action
-        //$logger = $this->getLogger();
-        //$logger->debug("Waiting transcriptions have been read and processed.");
+        $this->logger->debug("Waiting transcriptions have been read and processed.");
 
         return $rows;
     }
@@ -76,8 +77,7 @@ class OpenSearchScheduler extends ApmSystemManager
         ]);
 
         // Log action
-        //$logger = $this->getLogger();
-        //$logger->debug("Transcription (OpenSearch ID: $opensearch_id) has been created or updated.");
+        $this->logger->debug("Transcription (OpenSearch ID: $opensearch_id) has been created or updated.");
 
         return true;
     }

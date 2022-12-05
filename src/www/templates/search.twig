@@ -12,18 +12,20 @@
         let transcriber_box = $("#transcriberBox")
         let radius_slider = $("#radiusSlider")
         let lemmatization_box = $("#lemmatize")
+        let doc = $(document)
 
         // Get lists for transcript and transcriber forms
         getListFromOpenSearch ('titles')
         getListFromOpenSearch ('transcribers')
 
-        // SETUP FUNCTIONALITY FOR ALL BOXES
-        let all_boxes = [keywords_box, transcript_box, transcriber_box, radius_slider, lemmatization_box]
+        // SETUP FUNCTIONALITY FOR ALL BOXES AND THE DOCUMENT ITSELF
+        let all_boxes = [keywords_box, transcript_box, transcriber_box, radius_slider, lemmatization_box, doc]
 
         // Start query, if enter key is pressed while having selected one of the boxes
         all_boxes.forEach(function (box) {
           box.on("keyup", function (event) {
-            if ( event.which == 13 ) {
+            let user_input = keywords_box.val()
+            if ( event.which == 13 && user_input !== "") {
               search()
             }
           })

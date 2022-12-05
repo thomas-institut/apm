@@ -14,19 +14,25 @@
         let lemmatization_box = $("#lemmatize")
         let doc = $(document)
 
+        // Get selector for signaling errors to user
+        let error_message = $("#error_message")
+
         // Get lists for transcript and transcriber forms
         getListFromOpenSearch ('titles')
         getListFromOpenSearch ('transcribers')
 
         // SETUP FUNCTIONALITY FOR ALL BOXES AND THE DOCUMENT ITSELF
-        let all_boxes = [keywords_box, transcript_box, transcriber_box, radius_slider, lemmatization_box, doc]
+        let event_boxes = [keywords_box, transcript_box, transcriber_box, radius_slider, lemmatization_box, doc]
 
         // Start query, if enter key is pressed while having selected one of the boxes
-        all_boxes.forEach(function (box) {
+        event_boxes.forEach(function (box) {
           box.on("keyup", function (event) {
             let user_input = keywords_box.val()
             if ( event.which == 13 && user_input !== "") {
               search()
+            }
+            else if (event.which == 13 && user_input == "") {
+              error_message.html(`<br>Please type in a keyword!<br><br>`)
             }
           })
         })
@@ -115,9 +121,10 @@
         let radius = radius_slider.val()
         let lemmatize = lemmatization_box.prop('checked')
 
-        // Empty the results-table and signalize search process
+        // Empty the results-table/error-box and signalize search process
         results_body.empty()
         results_head.empty()
+        error_message.empty()
         spinner.html(`<div class="spinner-border" role="status"></div>`)
 
         // Send all user input to ApiSearch (via routing in index.php) and print returned matches
@@ -157,6 +164,7 @@
         // Get selectors for displaying results
         let results_body = $("#resultsTable tbody")
         let results_head = $("#resultsTable thead")
+        let error_message = $("#error_message")
 
         // Get instance of ApmUrlGenerator to create links to matched doc pages
         let url_generator = new ApmUrlGenerator('{{baseurl}}')
@@ -174,6 +182,7 @@
         if (num_columns === 0) {
           results_head.empty()
           results_body.empty()
+          error_message.html(`<br>Nothing found!<br><br>`)
         }
 
         // If there is exactly one matched passage, display it with exact information
@@ -351,7 +360,8 @@
 
 {% block content %}
     <h1> Search </h1>
-<table class="dataTable" id="searchTable">
+
+  <table class="dataTable" id="searchTable">
     <tr><td><b>Keywords</b></td><td><b>Transcript</b></td><td><b>Transcriber</b></td><td><b>Radius</b></td><td align="center"><b>Lemmatization</b></td></tr>
 
     <tr>
@@ -391,13 +401,12 @@
     </tr>
 </table>
 
-  <div id="spinner" class="text-muted" style="margin: 20px; text-align: center;">
-    <br><br><br>
+  <div id="error_message">
   </div>
 
-    <div id="error_message"></div>
+  <div id="spinner" class="text-muted" style="margin: 20px; text-align: center;">
+  </div>
 
-  <br>
     <div id="noMatchesDiv">
     </div>
 

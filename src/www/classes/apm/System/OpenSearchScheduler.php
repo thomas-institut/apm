@@ -19,7 +19,7 @@ class OpenSearchScheduler
     public function write($doc_id, $page, $col) {
 
         $now = TimeString::now();
-        $table_id = 0; // Will raise by one automatically
+        $table_id = 0; // Will be raised by one automatically
 
         // Avoid duplicates in the schedule (for example, if someone saves a transcription multiple times in a minute)
         $rows = $this->schedulerTable->findRows(['Status' => 'WAITING']);

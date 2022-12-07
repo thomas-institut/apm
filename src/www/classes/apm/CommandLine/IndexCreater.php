@@ -58,7 +58,7 @@ class IndexCreater extends CommandLineUtility {
             $this->client->indices()->delete([
                 'index' => $this->indexName
             ]);
-            print("Existing index *$this->indexName* was deleted!\n");
+            $this->logger->debug("Existing index *$this->indexName* was deleted!\n");
         };
 
        $this->client->indices()->create([
@@ -72,7 +72,7 @@ class IndexCreater extends CommandLineUtility {
             ]
         ]);
 
-        print("New index *$this->indexName* was created!\n");
+        $this->logger->debug("New index *$this->indexName* was created!\n");
 
         // Get a list of all docIDs in the sql-database
         $doc_list = $this->dm->getDocIdList('title');
@@ -82,9 +82,9 @@ class IndexCreater extends CommandLineUtility {
 
         // Download hebrew language model for lemmatization
         exec("python3 ../../python/download_model_he.py", $model_status);
-        print($model_status[0]);
+        $this->logger->debug($model_status[0]);
 
-        print("\nStart indexing...\n");
+        $this->logger->debug("Start indexing...\n");
 
         // Iterate over all docIDs
         foreach ($doc_list as $doc_id) {
@@ -124,7 +124,7 @@ class IndexCreater extends CommandLineUtility {
                     $id = $id + 1;
 
                     $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
-                    print("Indexed Document – OpenSearch ID: $id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Lang: $lang\n");
+                    $this->logger->debug("Indexed Document – OpenSearch ID: $id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Lang: $lang\n");
                 }
             }
         }
@@ -218,10 +218,10 @@ class IndexCreater extends CommandLineUtility {
             else {
                 $transcript_tokenized = [];
                 $transcript_lemmatized = [];
-                echo ("Transcript is too short for lemmatization...");
+                $this->logger->debug("Transcript is too short for lemmatization...");
             }
             if (count($transcript_tokenized) !== count($transcript_lemmatized)) {
-                print("Error! Array of tokens and lemmata do not have the same length!\n");
+                $this->logger->debug("Error! Array of tokens and lemmata do not have the same length!\n");
             }
 
             // Data to be stored on the OpenSearch index

@@ -76,15 +76,6 @@ class IndexUpdater extends IndexCreater
             $lang = $this->getLang($doc_id, $page);
             $transcript = $this->getTranscript ($doc_id, $page, $col);
 
-            // FOR TESTING
-            /*$title = "Hallo";
-            $seq = "67";
-            $foliation = "50b";
-            $transcriber = "Brad Pitt";
-            $page_id = "34";
-            $lang = "la";
-            $transcript = "Hic philosophum est et homo non potest dicere et non habitat in curia curiosum curiositate.";*/
-
             // Check if a new transcription was made or an existing one was changed
             $transcription_status = $this->transcriptionStatus($this->client, $this->indexName, $doc_id, $page, $col);
 
@@ -134,7 +125,7 @@ class IndexUpdater extends IndexCreater
                     ]
                 ]);
 
-                // Log,  that processing is  finished
+                // Log in SQL, that processing is  finished
                 $scheduler->log($schedule_id, $opensearch_id, 'UPDATED');
             }
         }

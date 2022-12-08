@@ -355,16 +355,14 @@ export class FirstFitLineBreaker extends LineBreaker {
 
       newItem.addMetadata(MetadataKey.MERGED_ITEM, true)
       newItem.setTextDirection(item.getTextDirection())
-
-      // if (item.getTextDirection() === 'rtl') {
-      //   newItem.setText( nextItem.getText() + item.getText())
-      //   newItem.addMetadata(MetadataKey.SOURCE_ITEMS_EXPORT, [
-      //     nextItem.getExportObject(),
-      //     item.getExportObject()
-      //   ])
-      // } else {
-        newItem.setText(item.getText() + nextItem.getText())
-        newItem.addMetadata(MetadataKey.SOURCE_ITEMS_EXPORT, [
+      newItem.setText(item.getText() + nextItem.getText())
+      // Save source items in metadata:
+      // Note that this will create a deep tree of source items when more
+      // than two items end up being merged. When a source, unmerged item
+      // is merged with merged item, the resulting MetadataKey.SOURCE_ITEMS_EXPORT metadata
+      // will still be an array of two objects, the first one will
+      // in turn have an array of two objects in its MetadataKey.SOURCE_ITEMS_EXPORT metadata
+      newItem.addMetadata(MetadataKey.SOURCE_ITEMS_EXPORT, [
           item.getExportObject(),
           nextItem.getExportObject()
         ])

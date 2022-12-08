@@ -113,13 +113,15 @@ export class StyleSheet {
         if (item instanceof Glue) {
           [item, baseTextBox] = await this.applyStyleToGlue(item, styleDef, baseTextBox)
         } else if (item instanceof TextBox) {
-          if (item.getText() === 'scripts') {
-            console.log(`Applying style to TB: ${stylesToApply[i]}`)
-            console.log(styleDef)
-          }
-          // debug && console.log(`Applying style to TB`)
-          // debug && console.log(styleDef)
+          // if (item.getText() === 'scripts') {
+          //   console.log(`Applying style to TB: ${stylesToApply[i]}`)
+          //   console.log(styleDef)
+          // }
+          // console.log(`Applying style to TB`)
+          // console.log(styleDef)
           item = await this.applyStyleToTextBox(item, styleDef)
+          // console.log('Item after applying style to text box')
+          // console.log(item)
         }
       }
       resolve(item)
@@ -159,8 +161,9 @@ export class StyleSheet {
 
   /**
    *
-   * @param textBox
-   * @param styleDef
+   * @param {TextBox}textBox
+   * @param {{}}styleDef
+   * @return {Promise<TextBox>}
    */
   applyStyleToTextBox(textBox, styleDef) {
     return new Promise( async (resolve) => {
@@ -264,7 +267,7 @@ export class StyleSheet {
       if (!styleExists) {
         console.warn(`Style '${styleName}' does not exist`)
       }
-      return this.styleExists(styleName)})
+      return styleExists})
     let stylesToApply = []
     styleArray.forEach( (styleName) => {
       stylesToApply = stylesToApply.concat(this.__getStyleAncestryLine(styleName))

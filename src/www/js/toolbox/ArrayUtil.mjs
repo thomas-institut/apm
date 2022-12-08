@@ -143,6 +143,11 @@ export function stringFieldSort(theArray, fieldName, asc = true) {
   })
 }
 
+/**
+ * Pushes all the elements of an array into another one
+ * @param theArray
+ * @param arrayToPush
+ */
 export function pushArray(theArray, arrayToPush) {
   arrayToPush.forEach( (e) => {
     theArray.push(e)

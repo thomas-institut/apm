@@ -76,6 +76,10 @@ export class HtmlRenderer extends FmtTextRenderer{
             spanStart = `<span class="${classes.join(' ')}">`
             spanEnd = '</span>'
           }
+          if (t.classList !== undefined && t.classList.indexOf('sigla') !== -1) {
+            // TODO: don't use this hack. Implement a generic solution for different FmtTextToken classes
+            return `<b class="sigla">${t.text}</b>`
+          }
           let textWrappers = []
           if (t.fontStyle === FontStyle.ITALIC) {
             textWrappers.push('i')

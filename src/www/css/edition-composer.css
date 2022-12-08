@@ -387,7 +387,24 @@ b.blot-numbering-label, span.main-text-token.numbering-label, span.numbering-lab
     color: #3280e7;
 }
 
+b.blot-sigla {
+    font-weight: bold;
+    background-color: #e7e7e7;
+    color: #8a6d3b;
+}
 
+.text-he b.blot-sigla, .text-he b.sigla {
+    font-weight: bold;
+    background-color: #e7e7e7;
+    color: #8a6d3b;
+    direction: rtl;
+    unicode-bidi: isolate;
+}
+
+.text-la b.sigla {
+    font-weight: normal;
+    background-color: #f1f1f1;
+}
 /* Collation Table Panel */
 
 #collation-table .panel-content {

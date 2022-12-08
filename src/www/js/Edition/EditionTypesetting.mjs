@@ -73,6 +73,7 @@ export class EditionTypesetting {
     // this.debug && console.log(this.ss.getStyleDefinitions())
     this.tokenRenderer = new Typesetter2StyleSheetTokenRenderer({
       styleSheet: this.ss.getStyleDefinitions(),
+      defaultTextDirection: this.textDirection,
       textBoxMeasurer: this.textBoxMeasurer
     })
     this.isSetup = true
@@ -456,12 +457,15 @@ export class EditionTypesetting {
       let siglaData = ApparatusUtil.getSiglaData(subEntry.witnessData, this.sigla, this.siglaGroups)
       for (let i = 0; i < siglaData.length; i++) {
         let siglumData = siglaData[i]
-        let siglumItem = await this.ss.apply(TextBoxFactory.simpleText(siglumData.siglum), 'apparatus')
-        this.__detectAndSetTextBoxTextDirection(siglumItem)
+        let siglumItem = await this.ss.apply(TextBoxFactory.simpleText(siglumData.siglum), 'apparatus sigla')
+        siglumItem.setTextDirection(this.textDirection)
+
+        //this.__detectAndSetTextBoxTextDirection(siglumItem)
         items.push(siglumItem)
         if (siglumData.hand !== 0) {
-          let handItem = await this.ss.apply(TextBoxFactory.simpleText(this.getNumberString(siglumData.hand, this.edition.lang)), 'apparatus superscript')
-          this.__detectAndSetTextBoxTextDirection(handItem)
+          let handItem = await this.ss.apply(TextBoxFactory.simpleText(this.getNumberString(siglumData.hand, this.edition.lang)), 'apparatus hand')
+          handItem.setTextDirection(this.textDirection)
+          //this.__detectAndSetTextBoxTextDirection(handItem)
           items.push(handItem)
         }
       }
@@ -514,6 +518,7 @@ export class EditionTypesetting {
     let infoIndex = this.mainTextIndices.indexOf(mainTextIndex)
     if (infoIndex === -1) {
       console.warn(`No occurrence in line info found for main text index ${mainTextIndex}`)
+      // console.log(this.mainTextIndices)
       return [1, 1]
     }
     return [this.extractedMetadataInfo[infoIndex].occurrenceInLine, this.extractedMetadataInfo[infoIndex].totalOccurrencesInLine ]
@@ -571,8 +576,17 @@ export class EditionTypesetting {
           break
 
         case 'fullCustom': {
-          // this.debug && console.log(`Adding full custom sub entry: '${FmtText.getPlainText(subEntry.fmtText)}'`)
-          let fullCustomItems  = this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect')
+          // first, make sure that sigla class fmt text does not have bold or italic formatting
+          let fmtText = []
+          for (let i=0; i < subEntry.fmtText.length; i++) {
+            let token = subEntry.fmtText[i]
+            if (token.classList === 'sigla') {
+              token.fontWeight = ''
+              token.fontStyle = ''
+            }
+            fmtText.push(token)
+          }
+          let fullCustomItems  = this.__setTextDirection(await this.tokenRenderer.renderWithStyle(fmtText, 'apparatus'), 'detect')
           // this.debug && console.log(fullCustomItems)
 
           pushArray(items, fullCustomItems)
@@ -581,8 +595,10 @@ export class EditionTypesetting {
       }
       resolve(items)
     })
-
   }
+
+
+
   __getLineStringFromRange(from, to) {
     if (from === to) {
       return this.getNumberString(from, this.edition.lang)
@@ -624,7 +640,9 @@ export class EditionTypesetting {
    * @private
    */
   __extractLineInfoFromMetadata(typesetMainTextVerticalList) {
-    let outputInfo = []
+    let lineInfoArray = []
+    // this.debug && console.log(`Extracting line info from metadata in typeset vertical list`)
+    // this.debug && console.log(typesetMainTextVerticalList)
     typesetMainTextVerticalList.getList().forEach( (horizontalList) => {
       if (!horizontalList.hasMetadata(MetadataKey.LIST_TYPE)) {
         return
@@ -639,58 +657,77 @@ export class EditionTypesetting {
       let lineNumber = horizontalList.getMetadata(MetadataKey.LINE_NUMBER)
       if (horizontalList instanceof ItemList) {
         horizontalList.getList().forEach( (item) => {
-          if (!item.hasMetadata(MetadataKey.MERGED_ITEM || item.getMetadata(MetadataKey.MERGED_ITEM) === false)) {
-            // normal, single item
-            let info = this.__getInfoFromItem(item, lineNumber)
-            if (info !== undefined) {
-              outputInfo.push(info)
-            }
-          } else {
-            // merged item
-            if (!item.hasMetadata(MetadataKey.SOURCE_ITEMS_EXPORT)) {
-              // no data from source items, warn and return
-              console.warn(`Found merged item without source items info`)
-              console.warn(item)
-              return
-            }
-            item.getMetadata(MetadataKey.SOURCE_ITEMS_EXPORT).forEach( (sourceItemExport) => {
-              let sourceItem = ObjectFactory.fromObject(sourceItemExport)
-              let info = this.__getInfoFromItem(sourceItem, lineNumber)
-              if (info !== undefined) {
-                outputInfo.push(info)
-              }
-            })
-          }
-
+          let itemInfoArray = this.__getLineInfoArrayFromItem(item, lineNumber)
+          pushArray(lineInfoArray, itemInfoArray)
         })
       }
     })
     // sort the array by mainTextIndex
-    outputInfo.sort( (a, b) => { return a.mainTextIndex - b.mainTextIndex})
+    lineInfoArray.sort( (a, b) => { return a.mainTextIndex - b.mainTextIndex})
 
-    return outputInfo
+    return lineInfoArray
   }
 
   /**
-   *
+   * Returns an array of objects with line information
+   * for main text tokens stored in a TypesetterItem's metadata
+   * Recursively extracts info from merged items
+   * @param {TypesetterItem}item
+   * @param {number}lineNumber
+   * @return {[{}]}
+   * @private
+   */
+  __getLineInfoArrayFromItem(item, lineNumber) {
+    if (!item.hasMetadata(MetadataKey.MERGED_ITEM || item.getMetadata(MetadataKey.MERGED_ITEM) === false)) {
+      // normal, single item, just get the info if it exists and return
+      let infoObject = this.__constructLineInfoObjectFromNonMergedItem(item, lineNumber)
+      if (infoObject === undefined) {
+        return []
+      }
+      return [ infoObject ]
+    }
+
+    // merged item
+    if (!item.hasMetadata(MetadataKey.SOURCE_ITEMS_EXPORT)) {
+      // no data from source items, warn and return an empty array
+      console.warn(`Found merged item without source items info`)
+      console.warn(item)
+      return []
+    }
+    let outputInfoArray = []
+    // get the data from each item
+    item.getMetadata(MetadataKey.SOURCE_ITEMS_EXPORT).forEach( (sourceItemExport) => {
+      let sourceItem = ObjectFactory.fromObject(sourceItemExport)
+      let itemInfoArray = this.__getLineInfoArrayFromItem(sourceItem, lineNumber)
+      pushArray(outputInfoArray, itemInfoArray)
+    })
+    return outputInfoArray
+
+  }
+
+  /**
+   * Returns an object with line information stored in a Typesetter's item metadata
    * @param {TypesetterItem}item
    * @param {number}lineNumber
    * @private
    */
-  __getInfoFromItem(item, lineNumber) {
+  __constructLineInfoObjectFromNonMergedItem(item, lineNumber) {
+    if (!item.hasMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX)) {
+      // the item does not correspond to a main text token
+      return undefined
+    }
+
     let info = {
       lineNumber: lineNumber,
       occurrenceInLine: 1,
       totalOccurrencesInLine: 1,
-      text: ''
+      text: '',
+      mainTextIndex: item.getMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX)
     }
     if (item instanceof TextBox) {
       info.text = item.getText()
     }
-    if (!item.hasMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX)) {
-      return undefined
-    }
-    info.mainTextIndex = item.getMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX)
+
     if (item.hasMetadata(MetadataKey.TOKEN_OCCURRENCE_IN_LINE)) {
       info.occurrenceInLine = item.getMetadata(MetadataKey.TOKEN_OCCURRENCE_IN_LINE)
     }

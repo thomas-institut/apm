@@ -143,6 +143,12 @@ export const defaultArabicEditionStyle = {
       text: {
         fontSize: '0.8 em',
       }
+    },
+    sigla: {
+      // no special format in Arabic
+    },
+    hand: {
+      parent: 'superscript'
     }
   }
 }

@@ -458,7 +458,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
       containerSelector: `${formSelector} div.free-text-entry-div`,
       lang: this.edition.lang,
       onChange: this._genOnChangeFreeTextEditor(),
-      debug: false
+      debug: true
     })
 
     // preLemma

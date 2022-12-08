@@ -84,6 +84,11 @@ export const defaultHebrewEditionStyle = {
         fontSize: '0.9 em',
       }
     },
+    lineRangeSeparator: {
+      text: {
+        fontWeight: 'bold',
+      }
+    },
     postLineRangeSeparator: {
       text: {
         fontWeight: 'bold',
@@ -124,6 +129,14 @@ export const defaultHebrewEditionStyle = {
       text: {
         fontSize: '0.8 em',
       }
+    },
+    sigla: {
+      text: {
+        fontWeight: 'bold',
+      }
+    },
+    hand: {
+      parent: 'superscript'
     }
   }
 }

@@ -114,6 +114,12 @@ export const defaultLatinEditionStyle =  {
       text: {
         fontStyle: 'italic',
       }
+    },
+    sigla: {
+      // nothing in Latin
+    },
+    hand: {
+      parent: 'superscript'
     }
   }
 }

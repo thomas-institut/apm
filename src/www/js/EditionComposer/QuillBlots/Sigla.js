@@ -1,10 +1,10 @@
 import Inline from 'quill/blots/inline'
 
-const blotClassName = 'blot-numbering-label'
+const blotClassName = 'blot-sigla'
 
-class NumberingLabel extends Inline {
+class Sigla extends Inline {
   static create(value) {
-    // console.log(`Creating numbering label with value ${value}`)
+    console.log(`Creating sigla string with value=${value}`)
     let node = super.create()
     if (value) {
       if (node.className !== '') {
@@ -45,7 +45,7 @@ class NumberingLabel extends Inline {
   }
 }
 
-NumberingLabel.blotName = 'numberingLabel';
-NumberingLabel.tagName = ['b'];
+Sigla.blotName = 'sigla';
+Sigla.tagName = ['b'];
 
-export default NumberingLabel;
+export default Sigla;

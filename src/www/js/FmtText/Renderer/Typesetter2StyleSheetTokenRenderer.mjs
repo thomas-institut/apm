@@ -29,6 +29,7 @@ import { AsyncFmtTextRenderer} from './AsyncFmtTextRenderer.mjs'
 import * as FontStyle from '../FontStyle.mjs'
 import * as FontWeight from '../FontWeight.mjs'
 import { TextBox } from '../../Typesetter2/TextBox.mjs'
+import { FmtTextClassProcessor } from './FmtTextClassProcessor.mjs'
 
 
 export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
@@ -38,12 +39,18 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
     let optionsSpec = {
       styleSheet: { type: 'object', default: DefaultStyleSheet.defaultStyleSheet},
       textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
+      defaultTextDirection: { type: 'string'},
+      classProcessors: { type: 'array', default: [], elementDefinition: {
+        type: 'object', objectClass: FmtTextClassProcessor
+        }},
       debug: { type: 'boolean', default: true}
     }
 
     let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'FmtText Typesetter2 Renderer'})
 
     this.options = oc.getCleanOptions(options)
+    this.classProcessors = this.options.classProcessors
+    this.classProcessorsClassNames = this.classProcessors.map( (p) => { return p.getClassName()} )
     this.debug = this.options.debug
 
     /**
@@ -86,8 +93,9 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
             break
 
           case FmtTokenType.TEXT:
+            /**@var {TextBox}textBox*/
             let textBox = await this.ss.apply( (new TextBox().setText(token.text)), styleNames)
-            /**@var {TextBox} textBox*/
+
             if (token.fontStyle === FontStyle.ITALIC) {
               textBox.setFontStyle('italic')
             }
@@ -107,11 +115,34 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
             if (token.verticalAlign === VerticalAlign.SUBSCRIPT) {
               textBox = await this.ss.apply(textBox, 'subscript')
             }
+            // apply classes
+            // TODO: make this generic, for now this will take care of sigla
+            if (token.classList !== undefined && token.classList !== '') {
+              let classes = token.classList.split(' ')
+              if (classes.indexOf('sigla') !== -1) {
+                // SIGLA class
+                textBox = await this.ss.apply( textBox, 'sigla')
+                textBox.setTextDirection(this.options.defaultTextDirection)
+              }
+            }
             items.push(textBox)
         }
       }
       resolve(items)
     })
+  }
+
+  /**
+   *
+   * @param {string}className
+   * @private
+   */
+  __getClassProcessor(className) {
+    let processorIndex = this.classProcessorsClassNames.indexOf(className)
+    if (processorIndex === -1) {
+      return undefined
+    }
+    return this.classProcessors[processorIndex]
   }
 
   /**

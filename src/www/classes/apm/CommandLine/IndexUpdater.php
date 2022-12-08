@@ -28,8 +28,11 @@ use OpenSearch\ClientBuilder;
  * Description of UpdateIndex
  *
  * Commandline utility to update the OpenSearch-index with all transcripts that are scheduled in the SQL-table ,scheduler'.
- * The SQL table has to exist and needs to have the right structure. (see OpenSearchScheduler-class)
- * The program has to be triggered via cron. Therefore open the roots crontab (sudo crontab -e) and add the following line (replace ASTERISK with *):
+ *
+ * REQUIREMENTS
+ * 1. There has to exist an index in OpenSearch called ,transcripts'. There fore execute ./createindex in the utilities-direcory.
+ * 2. The SQL table ap_scheduler has to be created before with the right structure. (see OpenSearchScheduler-class)
+ * 3. Because ./updateindex will be triggerd via cron, add the following line to your root crontab (sudo crontab -e). Replace 'ASTERISK' with '*':
 
  * * * * * p=$(find /home -path "ASTERISK/apm/src/www/utilities"); cd "${p}"; ./updateindex
 

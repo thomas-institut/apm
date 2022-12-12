@@ -4,7 +4,7 @@ bcrypt==3.1.7
 beautifulsoup4==4.8.2
 blinker==1.4
 Brlapi==0.7.0
-certifi==2019.11.28
+certifi==2022.12.07
 chardet==3.0.4
 chrome-gnome-shell==0.0.0
 Click==7.0
@@ -53,7 +53,7 @@ olefile==0.46
 packaging==20.3
 paramiko==2.10.1
 pexpect==4.6.0
-Pillow==9.0.1
+Pillow==9.2.1
 protobuf==3.18.3
 pycairo==1.16.2
 pychm==0.8.6

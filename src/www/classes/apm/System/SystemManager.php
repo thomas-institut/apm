@@ -48,7 +48,7 @@ use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
  * ideally, only depend on this class. This makes it possible to implement specific managers
  * for different contexts: full web application, testing, etc.
  *
- *
+ *Tab
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAware, CacheTrackerAware {

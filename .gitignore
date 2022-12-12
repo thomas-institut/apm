@@ -6,6 +6,7 @@ testconfig.php
 *.js.map
 *.bundle.js
 *.log
+*.swp
 /src/www/test/.*
 /src/www/test/php/.phpunit.result.cache
 /src/www/package-lock.json

@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2019 Universität zu Köln
+ *  Copyright (C) 2019-2022 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,11 +17,29 @@
  */
 
 
+import { CollapsePanel } from '../widgets/CollapsePanel'
+import { UserDocDataCommon } from './common/UserDocDataCommon'
+
 export class UserProfilePage {
   
   constructor(profileUserInfo, urlGenerator) {
     this.profileUserInfo = profileUserInfo
     this.pathFor = urlGenerator
+    this.userId = profileUserInfo['id']
+
+
+    this.infoArea = $('#new-info-area')
+
+    this.infoArea.html(this.genInfoSectionHtml())
+    this.mcEditionsCollapse = this.constructCollapse('#multi-chunk-editions', 'Multi-Chunk Editions', [ 'first'])
+    this.chunkEditionsCollapse = this.constructCollapse('#chunk-editions', 'Chunk Editions')
+    this.collationTablesCollapse = this.constructCollapse('#collation-tables', 'Collation Tables')
+    this.transcriptionsCollapse = this.constructCollapse('#transcriptions', 'Transcriptions')
+
+    this.fetchMultiChunkEditions()
+    this.fetchCollationTablesAndEditions()
+    this.fetchTranscriptions()
+
     let thisObject = this
     
     let userId = profileUserInfo['id']
@@ -74,7 +92,7 @@ export class UserProfilePage {
         thisObject.pathFor.apiUpdateProfile(userId),
         $('#theEditProfileForm').serialize(),
         function (data, text, jqXHR) {
-          thisObject.getProfileInfoFromBackEnd(userId)
+          thisObject.fetchProfileInfo(userId)
           $('#editProfileForm').collapse('hide')
           ApmUtil.reportSuccess('User profile updated', $('#reportarea'), true)
         })
@@ -112,7 +130,7 @@ export class UserProfilePage {
         thisObject.pathFor.apiUserMakeRoot(userId),
         $('#theMakeRootForm').serialize(),
         function () {
-          thisObject.getProfileInfoFromBackEnd(userId)
+          thisObject.fetchProfileInfo(userId)
           $('#makeRootForm').collapse('hide')
           $('#makerootbutton').hide()
           ApmUtil.reportSuccess('User given root status', $('#reportarea'), true)
@@ -122,8 +140,52 @@ export class UserProfilePage {
       })
     })
   }
+
+  constructCollapse(selector, title, headerClasses = []) {
+    return new CollapsePanel({
+      containerSelector: selector,
+      title: title,
+      content: this.genLoadingMessageHtml(),
+      contentClasses: [ 'info-section-content'],
+      headerClasses: headerClasses,
+      iconWhenHidden: '<small><i class="bi bi-caret-right-fill"></i></small>',
+      iconWhenShown: '<small><i class="bi bi-caret-down-fill"></i></small>',
+      iconAtEnd: true,
+      headerElement: 'h1',
+      initiallyShown: true,
+      debug: false
+    })
+  }
+
+  fetchMultiChunkEditions() {
+    $.get(this.pathFor.apiUserGetMultiChunkEditionInfo(this.userId)).then( (data) => {
+      this.mcEditionsCollapse.setContent(UserDocDataCommon.generateMultiChunkEditionsListHtml(data, this.pathFor))
+    })
+  }
+
+
+  fetchTranscriptions() {
+    $.get(this.pathFor.apiUserGetTranscribedPages(this.userId)).then( (data) => {
+      this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data, this.pathFor))
+    })
+  }
+
+  fetchCollationTablesAndEditions() {
+    $.get(this.pathFor.apiUserGetCollationTableInfo(this.userId)).then( (data) => {
+      let expandedApiData = UserDocDataCommon.expandChunkIdsInApiData(data)
+      UserDocDataCommon.fetchWorkInfoFromExpandedApiData(expandedApiData, this.pathFor).then( (workInfoObject) => {
+        let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data, this.pathFor, workInfoObject)
+        this.chunkEditionsCollapse.setContent(listHtml.editions)
+        this.collationTablesCollapse.setContent(listHtml.cTables)
+      })
+    })
+  }
+
+  genLoadingMessageHtml() {
+    return `Loading data  <span class="spinner-border spinner-border-sm" role="status"></span>`
+  }
   
-  userProfileHtml (userInfo) {
+  genUserProfileHtml (userInfo) {
     let str = '<img src="https://www.gravatar.com/avatar/' + userInfo['emailhash'] + '?d=mm&s=200" alt="User Gravatar">'
     str += '<h1>' + userInfo['fullname'] + '</h1>'
     str += '<p>Username: ' + userInfo['username'] + '</p>'
@@ -138,15 +200,24 @@ export class UserProfilePage {
     return str
   }
 
-  getProfileInfoFromBackEnd (id) {
+  fetchProfileInfo (id) {
     let thisObject = this
     $.getJSON(
       thisObject.pathFor.apiUserGetInfo(id),
       function (resp) {
         thisObject.profileUserInfo = resp
-        $('#userprofile').html(thisObject.userProfileHtml(thisObject.profileUserInfo))
+        $('#userprofile').html(thisObject.genUserProfileHtml(thisObject.profileUserInfo))
       }
     )
+  }
+
+  genInfoSectionHtml() {
+    return `<div id="multi-chunk-editions" class="info-section"></div>
+        <div id="chunk-editions" class="info-section"></div>
+        <div id="collation-tables" class="info-section"></div>
+        <div id="transcriptions" class="info-section"></div>
+        <div id="admin" class="info-section"></div>
+`
   }
   
 }

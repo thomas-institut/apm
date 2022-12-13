@@ -18,10 +18,11 @@
 
 import { Box } from './Box.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
+import { Typesetter2 } from './Typesetter2.mjs'
 
-const defaultFontFamily = 'serif'
-const defaultFontSize = 14
-const defaultTextDirection = 'ltr'
+const defaultFontFamily = 'FreeSerif'
+const defaultFontSize = Typesetter2.pt2px(12)
+
 
 /**
  * A text to be rendered with a given font family, size, style and weight
@@ -54,17 +55,11 @@ export class TextBox extends Box {
      */
     this.fontStyle = ''
     /**
-     * The font weight: normal (''), bold, semibold
+     * The font weight: normal (''), bold, semi-bold
      * @type {string}
      */
     this.fontWeight = ''
-    /**
-     * The text's writing direction: ltr or rtl
-     * A correct value here might be necessary for
-     * correct rendering in some contexts.
-     * @type {string}
-     */
-    this.textDirection = defaultTextDirection
+
 
     /**
      * Width and height start as undefined.
@@ -88,19 +83,6 @@ export class TextBox extends Box {
     return this.text
   }
 
-  setLeftToRight() {
-    this.textDirection = 'ltr'
-    return this
-  }
-
-  setRightToLeft() {
-    this.textDirection = 'rtl'
-    return this
-  }
-
-  getTextDirection() {
-    return this.textDirection
-  }
 
   /**
    *
@@ -109,7 +91,7 @@ export class TextBox extends Box {
   setText(text) {
     // TODO: detect and reject newlines, control characters, etc
     if (this.text === text) {
-      return
+      return this
     }
     this.text = text
     this.resetMeasurements()
@@ -179,9 +161,7 @@ export class TextBox extends Box {
     if (this.fontWeight !== '') {
       obj.fontWeight = this.fontWeight
     }
-    if (this.textDirection !== defaultTextDirection) {
-      obj.textDirection = this.textDirection
-    }
+
     return obj
   }
 
@@ -193,7 +173,7 @@ export class TextBox extends Box {
       fontSize: defaultFontSize,
       fontStyle: '',
       fontWeight: '',
-      textDirection: defaultTextDirection
+
     }
     this._copyValues(template, object, mergeValues)
     return this

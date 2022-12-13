@@ -35,9 +35,9 @@ export class Typesetter2 {
   }
 
   /**
-   * Converts a horizontal list of typesetter items into a vertical list
-   * consisting of a series of lines of a certain width given previously
-   * to the typesetter and inter-line glue
+   * Converts a horizontal list into a vertical list
+   * consisting of a series of lines of a certain width (given previously
+   * to the typesetter) and inter-line glue
    *
    * In essence, splits a horizontal list into lines.
    *
@@ -46,7 +46,7 @@ export class Typesetter2 {
    * be rendered correctly.
    *
    * @param {ItemList}list
-   * @return {Promise}
+   * @return {Promise<ItemList>}
    */
   typesetHorizontalList(list) {
     // performs type checks and returns the input list if there's no problem
@@ -61,13 +61,13 @@ export class Typesetter2 {
   }
 
   /**
-   * Converts a vertical list into a horizontal lists consisting of vertical lists
+   * Converts a vertical list into a horizontal list consisting of vertical lists
    * where each one fits into a given height (previously given to the typesetter).
    *
    * In essence, splits a vertical list into pages
    *
    * @param {ItemList}list
-   * @return {Promise}
+   * @return {Promise<ItemList>}
    */
   typesetVerticalList(list) {
     // performs type checks and returns the input list if there's no problem
@@ -82,17 +82,21 @@ export class Typesetter2 {
   }
 
   /**
-   * Typesets a list of typesetter items returning a typeset document
+   * Typesets an ItemList returning a TypesetterDocument
    *
    * Each concrete typesetter may impose constraints on the type
    * of list and items that are allowed as input. Normally,
    * the input list will be a vertical list with the paragraphs of the
    * main text block.
    *
+   * The optional data parameter can be used to provide additional guiding
+   * information to the typesetter
+   *
    * @param {ItemList}list
-   * @return {Promise}
+   * @param {any} data
+   * @return {Promise<TypesetterDocument>}
    */
-  typeset(list) {
+  typeset(list, data = null) {
     return resolvedPromise(new TypesetterDocument())
   }
 

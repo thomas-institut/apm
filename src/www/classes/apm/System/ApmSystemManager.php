@@ -32,6 +32,8 @@ use APM\Core\Token\Normalizer\IgnoreShaddaNormalizer;
 use APM\Core\Token\Normalizer\IgnoreTatwilNormalizer;
 use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
 use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
+use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
+use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\FullTranscription\TranscriptionManager;
 use APM\Plugin\Plugin;
 use APM\Presets\DataTablePresetManager;
@@ -44,7 +46,6 @@ use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\DataTableDataCache;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use Exception;
-use InvalidArgumentException;
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
@@ -53,11 +54,10 @@ use PDO;
 use PDOException;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use Twig\Error\LoaderError;
-use function GuzzleHttp\debug_resource;
 
 
 /**
- * This is the "production" implementation of SystemManager, with a full blown MySql database
+ * This is the "production" implementation of SystemManager, with a full-blown MySql database
  * and fully working sub-managers
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
@@ -78,7 +78,7 @@ class ApmSystemManager extends SystemManager {
 
 
     // Database version
-    const DB_VERSION = 26;
+    const DB_VERSION = 27;
 
     const DEFAULT_LOG_APPNAME = 'APM';
     const DEFAULT_LOG_DEBUG = false;
@@ -160,6 +160,11 @@ class ApmSystemManager extends SystemManager {
      * @var ApmCollationTableManager
      */
     private ApmCollationTableManager $collationTableManager;
+
+    /**
+     * @var ApmMultiChunkEditionManager|null
+     */
+    private ?ApmMultiChunkEditionManager $multiChunkEditionManager;
 
     /**
      * @var ?Twig
@@ -265,7 +270,7 @@ class ApmSystemManager extends SystemManager {
         $this->settingsMgr = new SettingsManager($settingsTable);
         $this->settingsMgr->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
         
-        // Check that the database is up to date
+        // Check that the database is up-to-date
         if (!$this->isDatabaseUpToDate()) {
             $this->logAndSetError(self::ERROR_DATABASE_SCHEMA_NOT_UP_TO_DATE, 
                     "Database schema not up to date");
@@ -313,6 +318,7 @@ class ApmSystemManager extends SystemManager {
         $this->collationTableManager = new ApmCollationTableManager($ctTable, $ctVersionManager, $this->logger);
         $this->collationTableManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
 
+
         // Load plugins
         foreach($this->config[ApmConfigParameter::PLUGINS] as $pluginName) {
             $pluginPhpFile = $this->config[ApmConfigParameter::PLUGIN_DIR] . '/' .
@@ -330,11 +336,9 @@ class ApmSystemManager extends SystemManager {
             }
         }
 
-        // Twig
-
         $this->twig = null;
-
         $this->normalizerManager = null;
+        $this->multiChunkEditionManager = null;
     }
     
     
@@ -358,7 +362,8 @@ class ApmSystemManager extends SystemManager {
             ApmMySqlTableName::TABLE_VERSIONS_TX,
             ApmMySqlTableName::TABLE_SYSTEM_CACHE,
             ApmMySqlTableName::TABLE_COLLATION_TABLE,
-            ApmMySqlTableName::TABLE_VERSIONS_CT
+            ApmMySqlTableName::TABLE_VERSIONS_CT,
+            ApmMySqlTableName::TABLE_MULTI_CHUNK_EDITIONS
         ];
         
         $tables = [];
@@ -615,35 +620,6 @@ class ApmSystemManager extends SystemManager {
      */
     public function getBaseUrlSubDir() : string {
         return $this->config[ApmConfigParameter::SUB_DIR];
-//
-//        $baseUrl = $this->getBaseUrl();
-//
-//        $fields = explode('/', $baseUrl);
-//
-//        /// must have at least 3 fields
-//        if (count($fields) < 3) {
-//            $this->logger->debug("Fields", $fields);
-//            throw new InvalidArgumentException('Badly formed url: ' . $baseUrl);
-//        }
-//
-//        // $field[0] must be  http:  or https:
-//        if ($fields[0] !== 'http:' && $fields[0] !== 'https:') {
-//            throw new InvalidArgumentException('Expected http:  or https: in base Url ' . $baseUrl);
-//        }
-//
-//        // $field[1] must be empty
-//        if ($fields[1] !== '') {
-//            throw new InvalidArgumentException('Expected // after http:');
-//        }
-//
-//        // $field[2] is the website, not checking anything there
-//
-//        // everything after $field[2] is the subdir
-//        if (!isset($fields[3])) {
-//            return '';
-//        }
-//
-//        return '/' . implode('/', array_slice($fields, 3));
     }
 
     public function getTranscriptionManager(): TranscriptionManager
@@ -751,5 +727,15 @@ class ApmSystemManager extends SystemManager {
     public function getOpenSearchScheduler(): OpenSearchScheduler
     {
         return $this->openSearchScheduler;
+    }
+
+    public function getMultiChunkEditionManager(): MultiChunkEditionManager
+    {
+        if ($this->multiChunkEditionManager === null) {
+            $mceTable = new MySqlUnitemporalDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_MULTI_CHUNK_EDITIONS]);
+            $this->multiChunkEditionManager = new ApmMultiChunkEditionManager($mceTable, $this->logger);
+            $this->multiChunkEditionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
+        }
+        return $this->multiChunkEditionManager;
     }
 }

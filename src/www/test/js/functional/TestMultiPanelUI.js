@@ -1,5 +1,5 @@
-import { MultiPanelUI}  from '../../../js/multi-panel-ui/MultiPanelUI'
-import * as GetLorem from 'getlorem'
+import { MultiPanelUI}  from '../../../js/MultiPanelUI/MultiPanelUI'
+// import * as GetLorem from 'getlorem'
 import { EditableTextField } from '../../../js/widgets/EditableTextField'
 
 let currentPanelOneSize = 'N/A'
@@ -9,8 +9,8 @@ const infoTabId = 'info'
 const loremOneTabId = 'lorem-1'
 const loremTwoTabId = 'lorem-2'
 
-let loremIpsum1 = GetLorem.paragraphs(3, 'p', true)
-let loremIpsum2 =  GetLorem.paragraphs(3, 'p')
+let loremIpsum1 = `Faking it for now`
+let loremIpsum2 =  `Still faking it`
 
 function genPanelOneOnResizeAndRender() {
   return (id, mode) => {

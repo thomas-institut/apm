@@ -28,6 +28,7 @@ namespace APM\Site;
 
 use APM\DareInterface\DareMssMetadataSource;
 use APM\FullTranscription\ApmChunkSegmentLocation;
+use APM\System\DataRetrieveHelper;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -80,7 +81,9 @@ class SiteDocuments extends SiteController
         if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'docs-create-new')) {
             $canManageDocuments = true;
         }
-        $peopleInfoArray = $this->getAuthorInfoArrayFromList($usersMentioned, $dataManager->userManager);
+        $helper = new DataRetrieveHelper();
+        $helper->setLogger($this->logger);
+        $peopleInfoArray = $helper->getAuthorInfoArrayFromList($usersMentioned, $dataManager->userManager);
         $this->profiler->stop();
         $this->logProfilerData('documentsPage');
 

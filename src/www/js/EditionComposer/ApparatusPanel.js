@@ -17,22 +17,23 @@
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { Edition } from '../Edition/Edition'
-import { ApparatusCommon } from './ApparatusCommon'
-import { PanelWithToolbar } from './PanelWithToolbar'
+import { Edition } from '../Edition/Edition.mjs'
+import { ApparatusCommon } from './ApparatusCommon.js'
+import { PanelWithToolbar } from '../MultiPanelUI/PanelWithToolbar'
 import { getIntArrayIdFromClasses } from '../toolbox/UserInterfaceUtil'
 import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import { CtData } from '../CtData/CtData'
 import { onClickAndDoubleClick } from '../toolbox/DoubleClick'
-import { FmtText } from '../FmtText/FmtText'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory'
+import { FmtText } from '../FmtText/FmtText.mjs'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { ApparatusEntryTextEditor } from './ApparatusEntryTextEditor'
 import { capitalizeFirstLetter, deepCopy, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { varsAreEqual } from '../toolbox/ArrayUtil.mjs'
-import * as SubEntryType from '../Edition/SubEntryType'
+import * as SubEntryType from '../Edition/SubEntryType.mjs'
 import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry'
 import { MultiToggle } from '../widgets/MultiToggle'
-import { SiglaGroup }  from '../Edition/SiglaGroup'
+import { SiglaGroup }  from '../Edition/SiglaGroup.mjs'
+import { ApparatusUtil } from '../Edition/ApparatusUtil.mjs'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
@@ -457,7 +458,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
       containerSelector: `${formSelector} div.free-text-entry-div`,
       lang: this.edition.lang,
       onChange: this._genOnChangeFreeTextEditor(),
-      debug: false
+      debug: true
     })
 
     // preLemma
@@ -915,7 +916,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
   _getLemmaHtml(apparatusEntry, typesettingInfo) {
 
-    let lemmaComponents = ApparatusCommon.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText)
+    let lemmaComponents = ApparatusUtil.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText)
 
     switch(lemmaComponents.type) {
       case 'custom':

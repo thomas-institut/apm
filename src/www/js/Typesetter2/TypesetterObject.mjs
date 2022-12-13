@@ -16,6 +16,8 @@
  *
  */
 
+
+
 export class TypesetterObject {
 
   constructor () {
@@ -50,9 +52,9 @@ export class TypesetterObject {
     if (!mergeValues) {
       this.metadata = {}
     }
-    if (object['metadata'] !== undefined && typeof object === 'object' && !Array.isArray(object)) {
-      Object.keys(object).forEach( (key) => {
-        this.addMetadata(key, object[key])
+    if (object['metadata'] !== undefined && typeof object['metadata'] === 'object' && !Array.isArray(object['metadata'])) {
+      Object.keys(object['metadata']).forEach( (key) => {
+        this.addMetadata(key, object['metadata'][key])
       })
     }
     return this
@@ -108,8 +110,6 @@ export class TypesetterObject {
       this[key] = inputObject[key] !== undefined ? inputObject[key] : defaultValue
     })
   }
-
-
 
 
 }

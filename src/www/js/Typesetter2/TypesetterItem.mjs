@@ -19,6 +19,7 @@
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 import { TypesetterObject } from './TypesetterObject.mjs'
 
+
 /**
  * The base class for all typesetter items.
  *
@@ -42,6 +43,14 @@ export class TypesetterItem extends TypesetterObject {
      * @type {number}
      */
     this.direction = direction
+
+    /**
+     * The text's writing direction: undefined (''), 'ltr' or 'rtl'
+     * A correct value here might be necessary for
+     * correct rendering in some contexts.
+     * @type {string}
+     */
+    this.textDirection = ''
 
     /**
      * The width of the item in pixels.
@@ -105,6 +114,30 @@ export class TypesetterItem extends TypesetterObject {
     return this.direction
   }
 
+
+  getTextDirection() {
+    return this.textDirection
+  }
+
+  /**
+   *
+   * @param {string} textDirection
+   */
+  setTextDirection(textDirection) {
+    this.textDirection = textDirection
+    return this
+  }
+
+  setLeftToRight() {
+    this.textDirection = 'ltr'
+    return this
+  }
+
+  setRightToLeft() {
+    this.textDirection = 'rtl'
+    return this
+  }
+
   /**
    *
    * @return {number}
@@ -132,9 +165,13 @@ export class TypesetterItem extends TypesetterObject {
 
   /**
    *
-   * @param height
+   * @param {number}height
    */
   setHeight(height) {
+    if (typeof height !== 'number') {
+      console.warn(`Trying to set height non-number ${height}`)
+      console.warn(this)
+    }
     this.height = height
     return this
   }
@@ -169,6 +206,11 @@ export class TypesetterItem extends TypesetterObject {
    * @param {number}y
    */
   setShiftY(y) {
+    // if (y !== 0) {
+    //   console.log(`Setting non-zero shift Y: ${y}`)
+    //   console.trace()
+    //   console.log(this)
+    // }
     this.shiftY = y
     return this
   }
@@ -191,12 +233,22 @@ export class TypesetterItem extends TypesetterObject {
     if (this.direction !== TypesetterItemDirection.UNDEFINED) {
       obj.direction = this.direction
     }
+    if (this.textDirection !== '') {
+      obj.textDirection = this.textDirection
+    }
     return obj
   }
 
   setFromObject (object, mergeValues) {
     super.setFromObject(object, mergeValues)
-    const template = {  width: -1, height: -1, shiftX: 0, shiftY: 0, direction: TypesetterItemDirection.UNDEFINED}
+    const template = {
+      width: -1,
+      height: -1,
+      shiftX: 0,
+      shiftY: 0,
+      direction: TypesetterItemDirection.UNDEFINED,
+      textDirection: ''
+    }
     this._copyValues(template, object, mergeValues)
     return this
   }

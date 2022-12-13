@@ -22,16 +22,18 @@
 
 import { TypesetterTokenFactory } from '../Typesetter/TypesetterTokenFactory'
 import * as WitnessTokenType from '../Witness/WitnessTokenType'
-import * as ApparatusSubEntryType from '../Edition/SubEntryType'
-import { NumeralStyles } from '../toolbox/NumeralStyles'
-import { FmtText } from '../FmtText/FmtText'
+import * as ApparatusSubEntryType from '../Edition/SubEntryType.mjs'
+import { NumeralStyles } from '../toolbox/NumeralStyles.mjs'
+import { FmtText } from '../FmtText/FmtText.mjs'
 import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
 import { CtData } from '../CtData/CtData'
-import { FmtTextFactory} from '../FmtText/FmtTextFactory'
-import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
-import { deepCopy, escapeHtml } from '../toolbox/Util.mjs'
+import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
+import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser'
+import { escapeHtml } from '../toolbox/Util.mjs'
+import { ApparatusUtil } from '../Edition/ApparatusUtil.mjs'
+import { Punctuation} from '../defaults/Punctuation.mjs'
 
 // const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
@@ -307,7 +309,7 @@ export class ApparatusCommon {
   static _getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, lang) {
     // TODO: use witnessData instead of witnessIndices, like in the html version
     let witnessData = witnessIndices.map ( (i) => { return { witnessIndex: i, hand: 0}})
-    let filledUpWitnessData = this._fillUpSigla(witnessData, sigla, siglaGroups)
+    let filledUpWitnessData = ApparatusUtil.getSiglaData(witnessData, sigla, siglaGroups)
 
     // TODO: support hands:
     let siglaString = filledUpWitnessData.map( (w) => { return w.siglum}).join('')
@@ -417,7 +419,8 @@ export class ApparatusCommon {
       .filter( (t, i) => { return i>=group.from && i<=group.to}) // get group main text columns
       .map( (t) => {   // get text for each column
         if (t.tokenType === WitnessTokenType.EMPTY) { return ''}
-        if (WitnessTokenStringParser.strIsPunctuation(t.text, lang)) { return  ''}
+        if (t.tokenType === WitnessTokenType.NUMBERING_LABEL) { return ''}
+        if (Punctuation.stringIsAllPunctuation(t.text, lang)) { return  ''}
         if (normalized) {
           if (t.normalizedText !== undefined && t.normalizedText !== '') {
             return t.normalizedText
@@ -432,44 +435,13 @@ export class ApparatusCommon {
   static findNonEmptyMainTextToken(ctIndex, ctToMainTextMap, mainTextTokens, forward, lang = '') {
     while (ctIndex >= 0 && ctIndex < ctToMainTextMap.length && (
       ctToMainTextMap[ctIndex] === -1 ||
-      WitnessTokenStringParser.strIsPunctuation(mainTextTokens[ctToMainTextMap[ctIndex]]['text'], lang)) ) {
+      Punctuation.stringIsAllPunctuation(mainTextTokens[ctToMainTextMap[ctIndex]]['text'], lang)) ) {
       ctIndex = forward ? ctIndex + 1 : ctIndex -1
     }
     if (ctIndex < 0 || ctIndex >= ctToMainTextMap.length) {
       return -1
     }
     return ctToMainTextMap[ctIndex]
-  }
-
-
-  static _fillUpSigla(witnessData, sigla, siglaGroups) {
-    let wData = deepCopy(witnessData)
-    let wDataArray = wData.map ( (w) => {
-      w.siglum = sigla[w.witnessIndex]
-      return w
-    })
-
-    siglaGroups.forEach ( (sg) => {
-      let siglaIndexes = wDataArray.map ( (w) => {
-        // turn non-zero hands to -1 so that they are not matched by the sigla group
-        return w.hand === 0 ? w.witnessIndex : -1
-      })
-      let matchedIndexes = sg.matchWitnesses(siglaIndexes)
-      if (matchedIndexes.length !== 0) {
-        // change the first matched witness to the group siglum
-        let firstMatchedWitnessPosition = siglaIndexes.indexOf(matchedIndexes[0])
-        //console.log(`First matched witness position in array: ${firstMatchedWitnessPosition}`)
-        wDataArray[firstMatchedWitnessPosition].siglum = sg.siglum
-        wDataArray[firstMatchedWitnessPosition].hand = 0
-        wDataArray[firstMatchedWitnessPosition].witnessIndex = -1
-        // filter out matched witnesses
-        wDataArray = wDataArray.filter( (w) => {
-          return matchedIndexes.indexOf(w.witnessIndex) === -1
-        })
-      }
-    })
-
-    return wDataArray
   }
 
   static __getSiglaHtmlFromFilledUpWitnessData(witnessData, numberStyle) {
@@ -490,9 +462,9 @@ export class ApparatusCommon {
    */
   static _genSiglaHtmlFromWitnessData(subEntry, sigla, numberStyle, siglaGroups, fullSiglaInBrackets = false) {
 
-    let fullSiglumDataArray = this._fillUpSigla(subEntry.witnessData, sigla, [])
+    let fullSiglumDataArray = ApparatusUtil.getSiglaData(subEntry.witnessData, sigla, [])
     let fullSiglaHtml = this.__getSiglaHtmlFromFilledUpWitnessData(fullSiglumDataArray, numberStyle)
-    let matchedSiglumDataArray = this._fillUpSigla(subEntry.witnessData, sigla, siglaGroups)
+    let matchedSiglumDataArray = ApparatusUtil.getSiglaData(subEntry.witnessData, sigla, siglaGroups)
     let matchedSiglaHtml = this.__getSiglaHtmlFromFilledUpWitnessData(matchedSiglumDataArray, numberStyle)
 
     if (matchedSiglaHtml === fullSiglaHtml) {
@@ -631,45 +603,4 @@ export class ApparatusCommon {
 
     return  `${lemmaTextWords[0]}${separator}${lemmaTextWords[lemmaTextWords.length-1]}`
   }
-
-  static getLemmaComponents(apparatusEntryLemma, lemmaText) {
-    let separator = ''
-    let custom = false
-    switch(apparatusEntryLemma) {
-      case '':
-      case 'dash':
-        separator = `${enDash}`
-        break
-
-      case 'ellipsis':
-        separator = '...'
-        break
-
-      default:
-        custom = true
-    }
-    if (custom) {
-      return { type: 'custom', text:  FmtText.getPlainText(apparatusEntryLemma) }
-    }
-    if (lemmaText === '') {
-      lemmaText = 'pre'
-    }
-    let lemmaTextWords = lemmaText.split(' ')
-    // if lemmaText is short,
-    if (lemmaTextWords.length <= 3) {
-      return {
-        type: 'full',
-        text:  lemmaText,
-        numWords: lemmaTextWords.length
-      }
-    }
-    return {
-      type: 'shortened',
-      from: lemmaTextWords[0],
-      separator: separator,
-      to:lemmaTextWords[lemmaTextWords.length-1],
-    }
-  }
-
-
 }

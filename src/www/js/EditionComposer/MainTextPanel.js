@@ -18,7 +18,7 @@
 
 
 /**
- * Edition  Panel.
+ * Main Text Panel
  *
  *  - Edition text and apparatus manipulation in a printed edition type user interface
  */
@@ -28,29 +28,29 @@ import { getSingleIntIdFromAncestor, getSingleIntIdFromClasses } from '../toolbo
 import { getTypesettingInfo } from '../Typesetter/BrowserTypesettingCalculations'
 import { doNothing, wait } from '../toolbox/FunctionUtil.mjs'
 import { MultiToggle } from '../widgets/MultiToggle'
-import { ApparatusCommon } from './ApparatusCommon'
-import * as EditionMainTextTokenType from '../Edition/MainTextTokenType'
-import { Edition } from '../Edition/Edition'
+import { ApparatusCommon } from './ApparatusCommon.js'
+import * as EditionMainTextTokenType from '../Edition/MainTextTokenType.mjs'
+import { Edition } from '../Edition/Edition.mjs'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
-import { PanelWithToolbar } from './PanelWithToolbar'
+import { PanelWithToolbar } from '../MultiPanelUI/PanelWithToolbar'
 import { arraysAreEqual, prettyPrintArray, pushArray, varsAreEqual } from '../toolbox/ArrayUtil.mjs'
 import { CtData } from '../CtData/CtData'
 
-import { FmtTextFactory } from '../FmtText/FmtTextFactory'
-import { FmtTextTokenFactory } from '../FmtText/FmtTextTokenFactory'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
+import { FmtTextTokenFactory } from '../FmtText/FmtTextTokenFactory.mjs'
 import { capitalizeFirstLetter, deepCopy } from '../toolbox/Util.mjs'
 import { EditionMainTextEditor } from './EditionMainTextEditor'
-import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
+import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser'
 import * as MyersDiff from '../toolbox/MyersDiff.mjs'
 import * as WitnessTokenType from '../Witness/WitnessTokenType'
 import * as EditionWitnessFormatMarkType from '../Witness/EditionWitnessFormatMark'
 import * as EditionWitnessParagraphStyle from '../Witness/EditionWitnessParagraphStyle'
-import * as FmtTexTokenType from "../FmtText/FmtTextTokenType"
+import * as FmtTexTokenType from "../FmtText/FmtTextTokenType.mjs"
 import { WitnessToken } from '../Witness/WitnessToken'
-import { FmtText } from '../FmtText/FmtText'
+import { FmtText } from '../FmtText/FmtText.mjs'
 import { CollapsePanel } from '../widgets/CollapsePanel'
 import { EditionWitnessToken } from '../Witness/EditionWitnessToken'
-import { MainText } from '../Edition/MainText'
+import { MainText } from '../Edition/MainText.mjs'
 import { TokenMatchScorer } from '../Edition/TokenMatchScorer'
 
 const EDIT_MODE_OFF = 'off'
@@ -67,6 +67,8 @@ const icons = {
   commitEdit: '<i class="bi bi-check-lg"></i>',
   revertEdit: '<i class="bi bi-arrow-counterclockwise"></i>'
 }
+
+const numberingLabelFmtTextClass = 'numberingLabel'
 
 export class MainTextPanel extends PanelWithToolbar {
 
@@ -395,7 +397,7 @@ export class MainTextPanel extends PanelWithToolbar {
     this.commitedFreeText = deepCopy(this.freeTextEditor.getFmtText())
     $(`${this.containerSelector} a.text-edit-revert-btn`).on('click', this._genOnClickTextEditRevertChanges())
     $(`${this.containerSelector} a.text-edit-commit-btn`).on('click', this._genOnClickTextEditCommitChanges())
-    this.verbose && console.log(`Now in beta mode`)
+    // this.verbose && console.log(`Now in text mode`)
   }
 
   __getWitnessTokenHtml(token, full = true) {
@@ -418,6 +420,10 @@ export class MainTextPanel extends PanelWithToolbar {
         }
         return html
       }
+    }
+
+    if (token.tokenType === WitnessTokenType.NUMBERING_LABEL) {
+      return `<span class='numbering-label'>${token.text}</span>`
     }
 
 
@@ -603,8 +609,11 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   updateEditionWitness(newWitnessTokens) {
+    
     let currentWitnessTokens = this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens
     let changes = this._getChangesInTextEditor(currentWitnessTokens, newWitnessTokens)
+    console.log(`Changes`)
+    console.log(changes)
 
     let columnsAdded = 0
     changes.forEach( (change, changeIndex) => {
@@ -829,7 +838,7 @@ export class MainTextPanel extends PanelWithToolbar {
         }
         return arraysAreEqual(a.formats, b.formats);
       }
-      // other types: word, space, punctuation
+      // other types: word, space, punctuation, numbering label
       if (a.text !== b.text) {
         return false
       }
@@ -908,7 +917,12 @@ export class MainTextPanel extends PanelWithToolbar {
         }
         return
       }
-      let tmpWitnessTokens = WitnessTokenStringParser.parse(fmtTextToken.text).map( (witnessToken) => {
+      // text
+      if (fmtTextToken.classList === 'numberingLabel') {
+        witnessTokens.push( (new EditionWitnessToken()).setNumberingLabel(fmtTextToken.text))
+        return
+      }
+      let tmpWitnessTokens = EditionWitnessTokenStringParser.parse(fmtTextToken.text, this.edition.lang).map( (witnessToken) => {
         witnessToken.fmtText = FmtTextFactory.fromString(witnessToken.text).map((token) => {
               attributesToCopy.forEach((attribute) => {
                 if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute] !== '') {
@@ -921,6 +935,8 @@ export class MainTextPanel extends PanelWithToolbar {
       })
       pushArray(witnessTokens, tmpWitnessTokens)
     })
+    console.log(`Intermediate tokens, before consolidation`)
+    console.log(witnessTokens)
     // consolidate text tokens
     let consolidatedWitnessTokens = []
     let tokensToConsolidate = []
@@ -1328,8 +1344,12 @@ export class MainTextPanel extends PanelWithToolbar {
         case EditionMainTextTokenType.GLUE:
           return FmtTextTokenFactory.normalSpace()
 
+        case EditionMainTextTokenType.NUMBERING_LABEL:
+          return token.fmtText[0].setClass(numberingLabelFmtTextClass)
+
         case EditionMainTextTokenType.TEXT:
           return token.fmtText
+
 
         case EditionMainTextTokenType.PARAGRAPH_END:
           return FmtTextTokenFactory.paragraphMark(token.style)
@@ -1361,8 +1381,10 @@ export class MainTextPanel extends PanelWithToolbar {
             return `<span class="${tokenClasses.join(' ')}"> </span>`
 
           case EditionMainTextTokenType.TEXT:
+          case EditionMainTextTokenType.NUMBERING_LABEL:
             let ctIndex = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, token.editionWitnessTokenIndex)
-            tokenClasses = [ 'main-text-token', `main-text-token-${token.originalIndex}`, `ct-index-${ctIndex}`]
+            let typeClass = token.type === EditionMainTextTokenType.TEXT ? 'edition-text' : 'numbering-label'
+            tokenClasses = [ 'main-text-token', `main-text-token-${token.originalIndex}`, `ct-index-${ctIndex}`, typeClass]
             return `<span class="${tokenClasses.join(' ')} ">${fmtTextRenderer.render(token.fmtText)}</span>`
 
           default:

@@ -745,7 +745,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         
         $docIds = [];
         while ($row = $res->fetch(PDO::FETCH_ASSOC)){
-            $docIds[] = $row['id'];
+            $docIds[] = intval($row['id']);
         }
         return $docIds;
     }
@@ -781,7 +781,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         
         $pageIds = [];
         while ($row = $res->fetch(PDO::FETCH_ASSOC)){
-            $pageIds[] = $row['id'];
+            $pageIds[] = intval($row['id']);
         }
         return $pageIds;
     }

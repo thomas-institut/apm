@@ -62,14 +62,14 @@
  */
 import * as TypesetterTokenType from './TypesetterTokenType'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { NumeralStyles } from '../toolbox/NumeralStyles'
+import { NumeralStyles } from '../toolbox/NumeralStyles.mjs'
 import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
 import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
 import { isRtl } from '../toolbox/Util.mjs'
 
-import * as VerticalAlign from '../FmtText/VerticalAlign'
+import * as VerticalAlign from '../FmtText/VerticalAlign.mjs'
 import * as HorizontalAlign from './HorizontalAlign'
-import { StringCounter } from '../toolbox/StringCounter'
+import { StringCounter } from '../toolbox/StringCounter.mjs'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
 
 export class Typesetter {

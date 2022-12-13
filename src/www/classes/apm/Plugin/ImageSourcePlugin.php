@@ -142,7 +142,7 @@ abstract class ImageSourcePlugin extends Plugin
         return $this->realGetOpenSeaDragonConfig($param['imageSourceData'], $param['imageNumber']);
     }
     
-    public function getImageSource($param) 
+    public function getImageSource($param): array
     {
         if (!is_array($param)) {
             return $param;
@@ -153,7 +153,7 @@ abstract class ImageSourcePlugin extends Plugin
         return $newArray;
     }
     
-    abstract public function realGetImageUrl($imageSourceData, $imageNumber);
-    abstract public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber);
-    abstract public function realGetDocInfoHtml($imageSourceData);
+    abstract public function realGetImageUrl($imageSourceData, $imageNumber) : string;
+    abstract public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber) : string;
+    abstract public function realGetDocInfoHtml($imageSourceData) : string;
 }

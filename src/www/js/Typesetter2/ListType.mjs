@@ -21,6 +21,8 @@
  */
 
 
-export const MAIN_TEXT = 'MainText'
+export const MAIN_TEXT_BLOCK = 'MainTextBlock'
+export const LINE_NUMBERS = 'LineNumbers'
 export const LINE = 'line'
+
 

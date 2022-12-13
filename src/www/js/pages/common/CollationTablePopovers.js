@@ -103,6 +103,11 @@ export function getPopoverHtml(witnessIndex, tokenIndex, witness, postNotes, peo
       popoverHtml += getNotesHtml(postNotes, peopleInfo, 'Additional Notes')
     }
   }
+  if (token['tokenClass'] === EDITION) {
+    if (token['tokenType'] === 'numberingLabel') {
+      popoverHtml += `<div class='${itemInfoClass}'>Numbering label</div>`
+    }
+  }
 
   popoverHtml += '</div>'
 

@@ -27,27 +27,51 @@ use APM\Plugin\ImageSourcePlugin;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class DareDeepZoomImageSource extends ImageSourcePlugin {
-    
-   
+
+    const IMAGE_URL_SCHEME = "%s/%s/%d/DeepZoom";
+    const IMAGE_URL_OLD_SCHEME = "%s/iipsrv/iipsrv.fcgi?DeepZoom=books/%s/pyratiff/%s-%04d.tif.dzi";
+    const OSD_CONFIG_SCHEME = "tileSources: {type: 'image', url:  '%s', buildPyramid: false,homeFillsViewer: true}";
+    const BILDERBERG_DOC_URL_OLD_SCHEME = "%s/cgi-bin/berg.pas?page=book&book=%s";
+    const BILDERBERG_DOC_URL_SCHEME = "%s/%s";
+    const DARE_DOC_URL_SCHEME = "https://dare.uni-koeln.de/app/manuscripts/%s";
+
+    /**
+     * @var bool
+     */
+    private bool $useNewStylePaths;
+    /**
+     * @var string
+     */
+    private string $bilderBergBaseUrl;
     
    public function __construct($systemManager) {
         parent::__construct($systemManager, 'dare-deepzoom');
+
+       $config = $systemManager->getConfig()['DareDeepZoomImageSource'] ?? [];
+       $this->bilderBergBaseUrl = $config['BilderbergBaseUrl'] ?? 'https://bilderberg.uni-koeln.de';
+       $this->useNewStylePaths = $config['NewStylePaths'] ?? false;
     }
-       
-    public function realGetImageUrl($imageSourceData, $imageNumber) 
-    {
-        return sprintf("https://bilderberg.uni-koeln.de/iipsrv/iipsrv.fcgi?DeepZoom=books/%s/pyratiff/%s-%04d.tif.dzi", 
-                    $imageSourceData, 
-                    $imageSourceData, 
-                    $imageNumber);
-    }
+
+   public function realGetImageUrl($imageSourceData, $imageNumber) : string {
+       if ($this->useNewStylePaths) {
+           return sprintf(self::IMAGE_URL_SCHEME,
+               $this->bilderBergBaseUrl,
+               $imageSourceData,
+               $imageNumber);
+       }
+       return sprintf(self::IMAGE_URL_OLD_SCHEME,
+           $this->bilderBergBaseUrl,
+           $imageSourceData,
+           $imageSourceData,
+           $imageNumber);
+   }
     
-   public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber) {
+   public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber) : string {
         return sprintf("tileSources: '%s'", 
                 $this->realGetImageUrl($imageSourceData, $imageNumber));
     }
     
-    public function realGetDocInfoHtml($imageSourceData) {
+    public function realGetDocInfoHtml($imageSourceData) : string{
 
         $html = "= <em>$imageSourceData</em> (Bilderberg DeepZoom) ";
         $html .= self::HTML_INFO_SEPARATOR;
@@ -75,11 +99,14 @@ class DareDeepZoomImageSource extends ImageSourcePlugin {
 
 
     private function getDareDocumentUrl(string $dareId) : string {
-        return "https://dare.uni-koeln.de/app/manuscripts/$dareId";
+        return sprintf(self::DARE_DOC_URL_SCHEME, $dareId);
     }
 
     private function getBilderbergDocumentUrl(string $dareId) : string {
-        return "https://bilderberg.uni-koeln.de/cgi-bin/berg.pas?page=book&book=$dareId";
+        if ($this->useNewStylePaths) {
+            return sprintf(self::BILDERBERG_DOC_URL_SCHEME, $this->bilderBergBaseUrl, $dareId);
+        }
+        return sprintf(self::BILDERBERG_DOC_URL_OLD_SCHEME, $this->bilderBergBaseUrl, $dareId);
     }
 
 }

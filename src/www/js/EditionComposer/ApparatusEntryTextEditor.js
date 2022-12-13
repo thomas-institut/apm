@@ -18,25 +18,36 @@
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { doNothing } from '../toolbox/FunctionUtil.mjs'
+import {toolbarCharacters} from '../defaults/ToolbarCharacters'
 
 import Quill from '../QuillLoader'
 import Small from './QuillBlots/Small'
+import Superscript from './QuillBlots/Superscript'
+import Sigla from './QuillBlots/Sigla'
 import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
 import { CustomApparatusQuillDeltaConverter } from './QuillDelta/CustomApparatusQuillDeltaConverter'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory'
-import Superscript from './QuillBlots/Superscript'
-import { FmtText } from '../FmtText/FmtText'
-import { removeExtraWhiteSpace, removeWhiteSpace } from '../toolbox/Util.mjs'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
+import { FmtText } from '../FmtText/FmtText.mjs'
+import { isRtl, removeWhiteSpace } from '../toolbox/Util.mjs'
 
-const simpleFormats = [ 'bold', 'italic', 'small', 'superscript']
+const toolbarSeparator = '<span class="mte-tb-sep">&nbsp;</span>'
+
+const simpleFormats = [
+  'bold',
+  'italic',
+  'small',
+  'superscript',
+//  'sigla'
+]
+
 
 const buttons = {
   bold: { icon: '<i class="bi bi-type-bold"></i>' , title: 'Bold'},
   italic: { icon: '<i class="bi bi-type-italic"></i>' , title: 'Italic'},
   small: { icon: '<small class="fte-icon">S</small>', title: 'Small Font'},
-  superscript: { icon: '<small class="fte-icon">x<sup>2</sup>', title: 'Superscript'}
+  superscript: { icon: '<small class="fte-icon">x<sup>2</sup>', title: 'Superscript'},
+  //sigla: { icon: '<span class="fte-icon">Sig</span>', title: 'Sigla'},
 }
-
 
 /**
  * A one-line editor for free text
@@ -69,7 +80,11 @@ export class ApparatusEntryTextEditor {
     this.container.html(this._getHtml())
     this.quillEditor = new Quill(`${this.containerSelector} .fte-editor`,{})
     this.onChange = cleanOptions.onChange
-    this.quillDeltaRenderer = new QuillDeltaRenderer()
+    this.quillDeltaRenderer = new QuillDeltaRenderer({
+      classToAttrTranslators: {
+        sigla: (attr) => { attr.sigla = true; return attr}
+      }
+    })
 
     this.setText(cleanOptions.initialText)
     this.quillEditor.on('text-change', () => {
@@ -79,6 +94,11 @@ export class ApparatusEntryTextEditor {
     simpleFormats.forEach( (fmt) => {
       let btnSelector = this._getBtnSelector(fmt)
       $(btnSelector).on('click', this._genOnClickFormat(fmt, this.quillEditor, btnSelector))
+    })
+
+    Object.keys(toolbarCharacters[this.lang]).forEach( (key) => {
+      let btnSelector = this._getBtnSelectorCharacter(key)
+      $(btnSelector).on('click', this._genOnClickCharacterButton(key, this.quillEditor))
     })
 
     this.quillEditor.on('selection-change', (range, oldRange, source) => {
@@ -91,6 +111,8 @@ export class ApparatusEntryTextEditor {
       }
       this.debug && console.log(`Selection change from ${oldRange.index}:${oldRange.length} to ${range.index}:${range.length}, source ${source}`)
       let currentFormat = this.quillEditor.getFormat()
+      this.debug && console.log(`Current format`)
+      this.debug && console.log(currentFormat)
       simpleFormats.forEach( (fmt) => {
         setButtonState($(this._getBtnSelector(fmt)), currentFormat[fmt])
       })
@@ -132,12 +154,33 @@ export class ApparatusEntryTextEditor {
     return `${this.containerSelector} .${format}-btn`
   }
 
+  _getBtnSelectorCharacter(characterKey) {
+    return `${this.containerSelector} .${characterKey}-btn`
+  }
+
+
+  _genOnClickCharacterButton(key, quill) {
+    return (ev) => {
+      ev.preventDefault()
+      let range = quill.getSelection()
+      if (range === null) {
+        return
+      }
+      quill.deleteText(range.index, range.length)
+      quill.insertText(range.index, toolbarCharacters[this.lang][key].character)
+    }
+  }
+
   _genOnClickFormat(format, quill, buttonSelector) {
     return (ev) => {
       ev.preventDefault()
+      this.debug && console.log(`Click on '${format}' button`)
       let currentFormat = quill.getFormat()
-      // console.log(currentFormat)
       let currentState = currentFormat[format]
+      if (currentState === undefined) {
+        currentState = false
+      }
+      this.debug && console.log(`Current format state: ${currentState}`)
       let btn = $(buttonSelector)
       quill.format(format, !currentState)
       currentState = !currentState
@@ -152,7 +195,13 @@ export class ApparatusEntryTextEditor {
         return `<button class="${fmt}-btn" title="${buttons[fmt].title}">${buttons[fmt].icon}</button>`
       })
       .join('')
-    return `<div class="fte-toolbar text-${this.lang}">${buttonsHtml}</div>
+
+    let characterButtonsHtml = Object.keys(toolbarCharacters[this.lang]).map( (key) => {
+      let btnDef = toolbarCharacters[this.lang][key]
+      let char = isRtl(this.lang) && btnDef['rtlVersion'] !== undefined ? btnDef['rtlVersion'] : btnDef.character
+      return `<button class="${key}-btn" title="${btnDef.title}">${char}</button>`
+    }).join('')
+    return `<div class="fte-toolbar text-${this.lang}">${buttonsHtml}${toolbarSeparator}${characterButtonsHtml}</div>
 <div class="fte-editor text-${this.lang}"></div>`
   }
 }
@@ -166,8 +215,9 @@ function setButtonState(btn, state) {
   }
 }
 
-// Initialization
+// Initialize Quill extra blots
 Quill.register({
   'formats/small' : Small,
-  'formats/superscript' : Superscript
+  'formats/superscript' : Superscript,
+  'formats/sigla': Sigla
 }, true)

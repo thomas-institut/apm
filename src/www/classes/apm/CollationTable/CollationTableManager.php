@@ -74,7 +74,7 @@ abstract class CollationTableManager implements ErrorReporter
     abstract public function getCollationTableIdsForChunk(string $chunkId, string $timeString) : array;
 
     /**
-     * Get the collation table data array for the given table Id at the given time
+     * Get the collation table data array for the given table id at the given time
      *
      * if $timeStamp is '', returns the latest version of the collation table
      *
@@ -213,5 +213,7 @@ abstract class CollationTableManager implements ErrorReporter
 
         return $newData;
     }
+
+    abstract public function getActiveEditionTableInfo(): array;
 
 }

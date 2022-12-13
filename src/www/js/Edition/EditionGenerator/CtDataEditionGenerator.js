@@ -24,14 +24,14 @@ import { CtData } from '../../CtData/CtData'
 import { CriticalApparatusGenerator } from '../CriticalApparatusGenerator'
 import { EditionWitnessInfo } from '../EditionWitnessInfo'
 import { Apparatus } from '../Apparatus'
-import { ApparatusEntry } from '../ApparatusEntry'
+import { ApparatusEntry } from '../ApparatusEntry.mjs'
 import { ApparatusSubEntry } from '../ApparatusSubEntry'
 import * as ApparatusType from '../ApparatusType'
-import * as SubEntryType from '../SubEntryType'
+import * as SubEntryType from '../SubEntryType.mjs'
 import * as SubEntrySource from '../SubEntrySource'
 import { pushArray } from '../../toolbox/ArrayUtil.mjs'
-import { ApparatusCommon } from '../../EditionComposer/ApparatusCommon'
-import { SiglaGroup } from '../SiglaGroup'
+import { ApparatusCommon } from '../../EditionComposer/ApparatusCommon.js'
+import { SiglaGroup } from '../SiglaGroup.mjs'
 import { deepCopy } from '../../toolbox/Util.mjs'
 
 export class CtDataEditionGenerator extends EditionGenerator{
@@ -69,10 +69,10 @@ export class CtDataEditionGenerator extends EditionGenerator{
     let apparatusGenerator = new CriticalApparatusGenerator()
     let generatedCriticalApparatus = apparatusGenerator.generateCriticalApparatusFromCtData(this.ctData, baseWitnessIndex, edition.mainText)
     let theMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens.length, edition.mainText)
-    console.log(`Generated critical apparatus`)
-    console.log(generatedCriticalApparatus)
-    console.log(`CtIndexToMainTextMap`)
-    console.log(theMap)
+    // console.log(`Generated critical apparatus`)
+    // console.log(generatedCriticalApparatus)
+    // console.log(`CtIndexToMainTextMap`)
+    // console.log(theMap)
     generatedCriticalApparatus = this._mergeCustomApparatusCriticusEntries(generatedCriticalApparatus, baseWitnessTokens, theMap, apparatusGenerator)
     edition.apparatuses = [
       generatedCriticalApparatus

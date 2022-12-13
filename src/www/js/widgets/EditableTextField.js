@@ -187,7 +187,7 @@ export class EditableTextField {
     if (size > this.options.maxTextFormSize) {
       size = this.options.maxTextFormSize
     }
-    console.log(`Edit container size: ${size}`)
+    // console.log(`Edit container size: ${size}`)
     let html = ''
     html += `<input type="text" class="${textInputClass}" value="${escapeHtml(this.currentText)}" size="${size}" style="width: ${size+1}ch">`
     html += '&nbsp;'

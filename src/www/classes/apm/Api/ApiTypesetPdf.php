@@ -46,7 +46,6 @@ class ApiTypesetPdf extends ApiController
         $requiredFields = [
             'jsonData',
         ];
-
         // jsonData should parse into an object with two fields: options and mainTextList,
         // but it's no use checking it here when the nodejs app will do it and
         // generate an error if there's any problem
@@ -61,10 +60,11 @@ class ApiTypesetPdf extends ApiController
 
         $jsonDataHash = hash('sha256', $inputData['jsonData']);
         $tempDir = $this->systemManager->getConfig()[ApmConfigParameter::PDF_RENDERER_TEMP_DIR];
-        $tempTypesetterInputFileName = "$tempDir/temp-input-$jsonDataHash.json";
-        $tempTypesetterOutputFileName = "$tempDir/temp-output-$jsonDataHash.json";
+        $tempTypesetterInputFileName = "$tempDir/$jsonDataHash-ts-input.json";
+        $tempTypesetterOutputFileName = "$tempDir/$jsonDataHash-ts-output.json";
+        $tempTypesetterCmdLineOutputFileName = "$tempDir/$jsonDataHash-ts-cmd_output.txt";
 
-        if (! $this->saveDataToTempFile($tempTypesetterInputFileName, $inputData['jsonData'])) {
+        if (! $this->saveStringToFile($tempTypesetterInputFileName, $inputData['jsonData'])) {
             return [ 'status' => 'Error', 'error' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE];
         }
 
@@ -79,8 +79,12 @@ class ApiTypesetPdf extends ApiController
 
         // run typesetter
         exec($commandLine, $returnArray, $returnValue);
+        $cmdLineReturn =  implode("\n", $returnArray);
+        $this->logger->debug("Typesetter returned " . strlen($cmdLineReturn) . " bytes in cmd line, saving in $tempTypesetterCmdLineOutputFileName");
 
-        $this->logger->debug('Typesetter return', $returnArray);
+        if (! $this->saveStringToFile($tempTypesetterCmdLineOutputFileName,$cmdLineReturn)) {
+            $this->logger->error("Could not save typesetter cmd line output to $tempTypesetterCmdLineOutputFileName");
+        }
 
         if ($returnValue !== 1) {
             $this->logger->debug('Typesetter error', [ 'array' => $returnArray, 'value' => $returnValue]);
@@ -99,7 +103,7 @@ class ApiTypesetPdf extends ApiController
 
         $typesetData = file_get_contents($tempTypesetterOutputFileName);
 
-        $result = $this->renderPdfFromJsonData($typesetData, 'ts', false);
+        $result = $this->renderPdfFromJsonData($typesetData, $jsonDataHash, false);
         $this->profiler->stop();
         $totalProcessingTime = $this->getProfilerTotalTime() * 1000;
         $this->logProfilerData($apiCall);
@@ -117,14 +121,12 @@ class ApiTypesetPdf extends ApiController
         ]);
     }
 
-    private function saveDataToTempFile(string $tempFileName, string $data) : bool {
-        $tempDir = $this->systemManager->getConfig()[ApmConfigParameter::PDF_RENDERER_TEMP_DIR];
-
+    private function saveStringToFile(string $tempFileName, string $data) : bool {
         $handle = fopen($tempFileName, "w");
         if ($handle === false) {
             // Cannot reproduce this condition in testing
             // @codeCoverageIgnoreStart
-            $this->logger->error("Cannot create temporary file",
+            $this->logger->error("Cannot create file $tempFileName",
                 [ 'apiUserId' => $this->apiUserId,
                     'apiError' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE,
                     'data' => $data ]);
@@ -140,8 +142,11 @@ class ApiTypesetPdf extends ApiController
     private function renderPdfFromJsonData($jsonData, $pdfId = '', $useCache = true): array
     {
         $jsonDataHash = hash('sha256', $jsonData);
+        if ($pdfId === '') {
+            $pdfId = $jsonDataHash;
+        }
 
-        $fileToDownload = self::PDF_DOWNLOAD_SUBDIR . '/' . self::PDF_FILE_PREFIX . $pdfId . '-'. $jsonDataHash . '.pdf';
+        $fileToDownload = self::PDF_DOWNLOAD_SUBDIR . '/' . self::PDF_FILE_PREFIX . $pdfId . '.pdf';
         $baseUrl = $this->systemManager->getBaseUrl();
 
 
@@ -154,8 +159,11 @@ class ApiTypesetPdf extends ApiController
         // File is not there, do the conversion
         // 1. Create a temporary file and put the typesetter data in it
         $tempDir = $this->systemManager->getConfig()[ApmConfigParameter::PDF_RENDERER_TEMP_DIR];
-        $tmpInputFileName =  $tempDir . '/' . self::TEMP_TYPESETTER_DATA_FILE_PREFIX .  $jsonDataHash . '.json';
-        if (!$this->saveDataToTempFile($tmpInputFileName, $jsonData)) {
+
+        $tmpInputFileName = "$tempDir/$pdfId-renderer-input.json";
+        $rendererCmdOutputFileName = "$tempDir/$pdfId-renderer-cmd_output.txt";
+
+        if (!$this->saveStringToFile($tmpInputFileName, $jsonData)) {
             return [ 'status' => 'error', 'errorCode' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE];
         }
 
@@ -172,8 +180,14 @@ class ApiTypesetPdf extends ApiController
         // run renderer
         exec($commandLine, $returnArray, $returnValue);
 
-
-        $this->logger->debug('PDF renderer return', $returnArray);
+        $cmdLineReturn =  implode("\n", $returnArray);
+        $this->logger->debug("PDF renderer returned " . strlen($cmdLineReturn) . " bytes in cmd line, saving in $rendererCmdOutputFileName");
+        if (strlen($cmdLineReturn) > 0) {
+            if (! $this->saveStringToFile($rendererCmdOutputFileName,$cmdLineReturn)) {
+                $this->logger->error("Could not save typesetter cmd line output to $rendererCmdOutputFileName");
+            }
+        }
+        //$this->logger->debug('PDF renderer return', $returnArray);
 
         if ($returnValue !== 1) {
             $this->logger->debug('PDF renderer error', [ 'array' => $returnArray, 'value' => $returnValue]);

@@ -64,15 +64,29 @@
         div.row-label {
             font-size: 1.1em;
         }
+
+        ul.help {
+            font-size: 0.8em;
+        }
+
+        .rtl {
+            direction: rtl;
+        }
     </style>
 </head>
 <body>
     <h1>Typesetter2 Playground</h1>
-    <p>Seeing the (new) typesetter in action!</p>
     <div id="mainRow" class="row">
         <div id="dataInput" class="col-4">
             <div class="form-group">
                 <label for="textToTypesetTextArea">Text To Typeset:</label>
+
+                    <ul class="help">
+                        <li>Formatting: {fmt text}, where fmt can be b,i, bi, large, x-large, small,
+                    sub, sup.</li>
+                        <li>Line breaking penalties: {pen number}</li>
+                        <li>Optional hyphen: {h}</li>
+                    </ul>
                 <textarea class="form-control" id="textToTypesetTextArea" rows="10"></textarea>
 
             </div>
@@ -82,10 +96,17 @@
 
             <div class="form-row">
                 <div class="row-label col-3">
-                    Font<br/>
+                    Text<br/>
                 </div>
-                <div class="col-6">
-                    <label for="fontFamily">Family</label>
+                <div class="col-2">
+                <label for="textDirection">Direction</label>
+                <select class="form-control" id="textDirection">
+                    <option value="ltr">LTR</option>
+                    <option value="rtl">RTL</option>
+                </select>
+                </div>
+                <div class="col-4">
+                    <label for="fontFamily">Font</label>
                     <select class="form-control" id="fontFamily">
                         <option>Times New Roman</option>
                         <option>Arial</option>

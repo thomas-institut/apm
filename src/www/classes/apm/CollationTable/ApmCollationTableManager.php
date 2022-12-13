@@ -51,12 +51,10 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
 
     public function __construct(UnitemporalDataTable $ctTable, CollationTableVersionManager $versionManager, LoggerInterface $logger)
     {
-
         $this->ctTable = $ctTable;
         $this->versionManager = $versionManager;
         $this->setLogger($logger);
     }
-
 
 
     public function getCollationTableVersionManager(): CollationTableVersionManager
@@ -104,6 +102,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         $time = TimeString::now();
         $dbRow = $this->getDbRowFromCollationData($collationTableData, true, true);
         $collationTableId = $this->ctTable->createRowWithTime($dbRow, $time);
+        $this->logger->debug("New id: $collationTableId");
         $versionInfo->timeFrom = $time;
         $versionInfo->collationTableId = $collationTableId;
         if ($versionInfo->description === '') {
@@ -188,6 +187,27 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
 
     }
 
+
+    public function getActiveEditionTableInfo(): array {
+        $rows = $this->ctTable->findRowsWithTime(['archived' => 0, 'type' =>'edition'], 0,  TimeString::now());
+        $results = [];
+        foreach($rows as $row) {
+            $id = intval($row['id']);
+            $versionInfoArray = $this->getCollationTableVersionManager()->getCollationTableVersionInfo($id, 1);
+            if (count($versionInfoArray) === 0) {
+                $this->logger->warning("No versions found for supposedly active edition with id $id");
+                continue;
+            }
+            $results[] = [
+                'id' => $id,
+                'title' => $row['title'],
+                'chunkId' => $row['chunk_id'],
+                'lastVersion' => $versionInfoArray[0]
+                ];
+        }
+        return $results;
+    }
+
     public function getCollationTableIdsForChunk(string $chunkId, string $timeString): array
     {
 
@@ -230,7 +250,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             /** @var MySqlUnitemporalDataTable $ctTable */
             $ctTable = $this->ctTable;
 
-            $result = $ctTable->select('id, title, type, archived',
+            $result = $ctTable->select('id, title, type, archived, valid_from, valid_until',
                 "id='$id' AND valid_from <='$timeStamp' and valid_until>'$timeStamp'",
                 0,
                 '',
@@ -244,16 +264,10 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         if (count($rows)=== 0) {
             throw new InvalidArgumentException("Table does not exist");
         }
+//        $this->logger->debug('dbrows', $rows);
 
         return CollationTableInfo::createFromDbRow($rows[0]);
     }
-
-//    public function getCollationTableType(int $id, string $timeStamp = ''): string
-//    {
-//        // TODO: Implement getCollationTableType() method.
-//        return '';
-//    }
-
 
     public function getCollationTableStoredVersionsInfo(int $id): array
     {

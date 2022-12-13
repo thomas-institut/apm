@@ -17,16 +17,49 @@
  */
 
 import { FmtTextRenderer } from './FmtTextRenderer'
-import * as FmtTextTokenType from '../FmtTextTokenType'
-import * as FontStyle from '../FontStyle'
-import * as FontSize from '../FontSize'
-import * as FontWeight from '../FontWeight'
-import * as VerticalAlign from '../VerticalAlign'
-import * as MarkType from '../MarkType'
-import * as ParagraphStyle from '../ParagraphStyle'
+import * as FmtTextTokenType from '../FmtTextTokenType.mjs'
+import * as FontStyle from '../FontStyle.mjs'
+import * as FontSize from '../FontSize.mjs'
+import * as FontWeight from '../FontWeight.mjs'
+import * as VerticalAlign from '../VerticalAlign.mjs'
+import * as MarkType from '../MarkType.mjs'
+import * as ParagraphStyle from '../ParagraphStyle.mjs'
+import { OptionsChecker } from '@thomas-inst/optionschecker'
+import { doNothing } from '../../toolbox/FunctionUtil.mjs'
 
 export class QuillDeltaRenderer extends FmtTextRenderer {
 
+  constructor(options) {
+    super()
+    let oc = new OptionsChecker({
+      context: 'QuillDeltaRenderer',
+      optionsDefinition: {
+        // an object containing class translators
+        // e.g.
+        // {
+        //    someClassName: (attr) => {  ...modify attr in some way... return modifiedAttr },
+        //    otherClass: (attr) => {  ...modify attr in some way... return modifiedAttr }
+        // }
+        classToAttrTranslators: {
+          type: 'object',
+          default: { }
+        }
+      }
+    })
+
+    let cleanOptions = oc.getCleanOptions(options)
+    this.translators = cleanOptions.classToAttrTranslators
+    this.translatorsAvailable = Object.keys(this.translators)
+
+  }
+
+  /**
+   * Returns a Quill delta object representing the
+   * given fmtText in the given language
+   * @param fmtText
+   * @param lang
+   * @return {{ops: unknown[]}}
+   */
   render (fmtText, lang = '') {
     let deltaOps = fmtText.map( (fmtTextToken) => {
       if (fmtTextToken.type === FmtTextTokenType.GLUE) {
@@ -79,6 +112,18 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
             attr.small = true
         }
       }
+      // translate classList
+      let classArray = fmtTextToken.classList.split(' ')
+      for (let i = 0; i < classArray.length; i++) {
+        let className = classArray[i]
+        if (this.translatorsAvailable.indexOf(className) !== -1) {
+          // console.log(`Translating class ${className}`)
+          attr = this.translators[className](attr)
+          // console.log(`New attr`)
+          // console.log(attr)
+        }
+      }
+
       return  {
         insert: fmtTextToken.text,
         attributes: attr

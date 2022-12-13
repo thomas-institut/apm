@@ -17,11 +17,11 @@
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import * as FmtTextTokenType from '../FmtTextTokenType'
-import * as FontStyle from '../FontStyle'
-import * as FontWeight from '../FontWeight'
-import * as FontSize from '../FontSize'
-import * as VerticalAlign from '../VerticalAlign'
+import * as FmtTextTokenType from '../FmtTextTokenType.mjs'
+import * as FontStyle from '../FontStyle.mjs'
+import * as FontWeight from '../FontWeight.mjs'
+import * as FontSize from '../FontSize.mjs'
+import * as VerticalAlign from '../VerticalAlign.mjs'
 import { FmtTextRenderer } from './FmtTextRenderer'
 
 
@@ -75,6 +75,10 @@ export class HtmlRenderer extends FmtTextRenderer{
           if (classes.length !== 0) {
             spanStart = `<span class="${classes.join(' ')}">`
             spanEnd = '</span>'
+          }
+          if (t.classList !== undefined && t.classList.indexOf('sigla') !== -1) {
+            // TODO: don't use this hack. Implement a generic solution for different FmtTextToken classes
+            return `<b class="sigla">${t.text}</b>`
           }
           let textWrappers = []
           if (t.fontStyle === FontStyle.ITALIC) {

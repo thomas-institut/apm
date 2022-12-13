@@ -21,15 +21,16 @@ import { SequenceWithGroups } from '../Edition/SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
 import * as CollationTableType from '../constants/CollationTableType'
 import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry'
-import * as SubEntryType from '../Edition/SubEntryType'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory'
-import { ApparatusEntry } from '../Edition/ApparatusEntry'
-import { FmtText } from '../FmtText/FmtText'
-import {FmtTextToken} from '../FmtText/FmtTextToken'
+import * as SubEntryType from '../Edition/SubEntryType.mjs'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
+import { ApparatusEntry } from '../Edition/ApparatusEntry.mjs'
+import { FmtText } from '../FmtText/FmtText.mjs'
+import {FmtTextToken} from '../FmtText/FmtTextToken.mjs'
 import { deepCopy } from '../toolbox/Util.mjs'
 import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
 import * as NormalizationSource from '../constants/NormalizationSource'
 import * as WitnessType from '../Witness/WitnessTokenClass'
+import { pushArray, uniq } from '../toolbox/ArrayUtil.mjs'
 
 // cleaners
 import { CleanerZero } from './CtDataCleaner/CleanerZero'
@@ -38,7 +39,7 @@ import { CleanerOnePointOne } from './CtDataCleaner/CleanerOnePointOne'
 // updaters
 import { UpdaterToOnePointZero } from './CtDataUpdater/UpdaterToOnePointZero'
 import { UpdaterToOnePointOne } from './CtDataUpdater/UpdaterToOnePointOne'
-import { pushArray, uniq } from '../toolbox/ArrayUtil.mjs'
+
 
 
 

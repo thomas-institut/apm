@@ -19,18 +19,19 @@
 import * as TokenType from '../Witness/WitnessTokenType'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
-import {ApparatusCommon} from '../EditionComposer/ApparatusCommon'
-import * as ApparatusEntryType from './SubEntryType'
+import {ApparatusCommon} from '../EditionComposer/ApparatusCommon.js'
+import * as ApparatusEntryType from './SubEntryType.mjs'
 import * as ApparatusType from './ApparatusType'
 import * as WitnessTokenType from '../Witness/WitnessTokenType'
 import * as SubEntrySource from './SubEntrySource'
 import { CtData } from '../CtData/CtData'
 import { Apparatus } from './Apparatus'
 import { ApparatusSubEntry } from './ApparatusSubEntry'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory'
-import { ApparatusEntry } from './ApparatusEntry'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
+import { ApparatusEntry } from './ApparatusEntry.mjs'
 
-import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
+import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser'
+import { Punctuation} from '../defaults/Punctuation.mjs'
 
 
 export class CriticalApparatusGenerator {
@@ -52,8 +53,8 @@ export class CriticalApparatusGenerator {
     //    table exchanging the references for the actual tokens and filling the null references with empty tokens
     let baseWitnessTokens = CtData.getCtWitnessTokens(ctData, baseWitnessIndex)
     let ctIndexToMainTextMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens.length, mainText)
-    console.log(`ctIndexToMainTextMap`)
-    console.log(ctIndexToMainTextMap)
+    // console.log(`ctIndexToMainTextMap`)
+    // console.log(ctIndexToMainTextMap)
 
     let lang = ctData['lang']
 
@@ -88,7 +89,7 @@ export class CriticalApparatusGenerator {
         let ctIndex = columnGroup.from
 
         while (ctIndex >= 0 && (baseWitnessTokens[ctIndex].type === WitnessTokenType.EMPTY ||
-          WitnessTokenStringParser.strIsPunctuation(baseWitnessTokens[ctIndex].text, lang))) {
+          Punctuation.stringIsAllPunctuation(baseWitnessTokens[ctIndex].text, lang))) {
           ctIndex--
         }
 
@@ -141,6 +142,11 @@ export class CriticalApparatusGenerator {
         // ignore empty string (normally main text consisting only of punctuation)
         return
       }
+      // Check for main text that should not be processed
+      // if (WitnessTokenStringParser.isNumberingLabel(normalizedGroupMainText)) {
+      //   console.log(`Main text ${normalizedGroupMainText} is a numbering label`)
+      //   return
+      // }
       let groupVariants = []
       let groupOmissions = []
 
@@ -226,7 +232,7 @@ export class CriticalApparatusGenerator {
   _findNonEmptyMainTextToken (ctIndex, ctIndexToMainTextMap, baseWitnessTokens, forward, lang = '') {
     while (ctIndex >= 0 && ctIndex < ctIndexToMainTextMap.length && (
       ctIndexToMainTextMap[ctIndex] === -1 ||
-      WitnessTokenStringParser.strIsPunctuation(baseWitnessTokens[ctIndex]['text'], lang))) {
+      Punctuation.stringIsAllPunctuation(baseWitnessTokens[ctIndex]['text'], lang))) {
       ctIndex = forward ? ctIndex + 1 : ctIndex - 1
     }
     if (ctIndex < 0 || ctIndex >= ctIndexToMainTextMap.length) {
@@ -301,7 +307,7 @@ export class CriticalApparatusGenerator {
           return ''
         }
         let theText = normalized ? ApparatusCommon.getNormalizedTextFromInputToken(token) : token['text']
-        if (WitnessTokenStringParser.strIsPunctuation(theText, lang)) {
+        if (Punctuation.stringIsAllPunctuation(theText, lang)) {
           return ''
         }
         return theText

@@ -1,0 +1,161 @@
+.panel-toolbar {
+    padding: 10px 5px;
+    margin: 0 0;
+    background: #fbfbfb;
+    color: grey;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    /*border-bottom: solid 1px #e0e0e0;*/
+}
+
+.panel-toolbar-group {
+    display: flex;
+    align-items: baseline;
+    flex-direction: row;
+    margin-right: 1.5rem;
+}
+
+.panel-toolbar-group.leftmost {
+    margin-right: 0;
+}
+
+.panel-toolbar-item {
+    margin-right: 0.25rem;
+}
+
+a.tb-button {
+    text-decoration: none;
+    padding: 2px;
+}
+
+a.tb-button:hover {
+    text-decoration: none;
+}
+
+.panel-toolbar-item a.multitoggle-on {
+    border: 1px solid silver;
+    border-radius: 3px;
+}
+
+
+a.tb-button {
+    color: grey;
+}
+
+div.tab-pane {
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+div.tab-pane.panel-with-toolbar {
+    overflow: hidden;
+}
+
+div.panel-content {
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+
+#preview-panel div.panel-content {
+    overflow: auto;
+    background: #fcfaf7;
+}
+
+
+div.chunks-info {
+    padding: 1rem;
+}
+
+div.chunk-search {
+    padding: 1rem;
+}
+
+div.empty-chunks-info {
+    padding: 3rem;
+}
+
+div#edition-panel {
+    padding: 1rem;
+}
+
+div#edition-panel h4 {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.edition-panel-table td, .edition-panel-table th{
+    padding: 0.5em;
+}
+
+.active-editions td, .active-editions th {
+    padding: 0.5em;
+}
+
+table.sigla-table {
+    margin-left: 3em;
+}
+
+button.chunk-table-btn {
+    border: none;
+    color: gray;
+    background: none;
+}
+
+.chunk-table-btn:disabled {
+    color: #e8e8e8;
+}
+
+button.zoom-btn, button.tb-button {
+    border: none;
+    background-color: transparent;
+    color: grey;
+}
+
+span.zoom-label {
+    display: inline-block;
+    width: 3em;
+}
+
+div.sigla-table {
+    margin-top: 4em;
+}
+
+div.sigla-groups {
+    margin-top: 4em;
+}
+
+div.sigla-groups-table {
+    margin: 1em;
+}
+
+.sigla-groups-table td, .sigla-groups-table th{
+    padding: 0.5em;
+}
+
+div.quick-add {
+    margin-top: 4em;
+}
+
+.multitoggle-btn {
+    margin-right: 0.5em;
+}
+
+a.multitoggle-btn {
+    padding: 2px;
+    border: 1px solid #e8e8e8;
+    border-radius: 2px;
+    color: silver;
+    font-size: 0.9em;
+}
+a.multitoggle-btn:hover {
+    text-decoration: none;
+    color: gray;
+}
+
+
+a.multitoggle-btn.multitoggle-on {
+    border-color: gray;
+    color: gray;
+}

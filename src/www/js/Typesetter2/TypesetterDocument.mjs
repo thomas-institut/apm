@@ -76,11 +76,12 @@ export class TypesetterDocument extends TypesetterObject {
     if (this.getPageCount() === 0) {
       this.width = 0
       this.height = 0
+    } else {
+      // for the moment, just copy from the first page
+      let firstPage = this.getPage(0)
+      this.width = firstPage.width
+      this.height = firstPage.height
     }
-    // for the moment, just copy from the first page
-    let firstPage = this.getPage(0)
-    this.width = firstPage.width
-    this.height = firstPage.height
   }
 
   getExportObject () {

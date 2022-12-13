@@ -62,6 +62,18 @@ class ApmUrlGenerator {
     apiUserGetInfo(id) {
         return this.base + '/api/user/' + id + '/info';
     }
+
+    apiUserGetTranscribedPages(id) {
+        return this.base + '/api/user/' + id + '/transcribedPages';
+    }
+
+    apiUserGetCollationTableInfo(id) {
+        return this.base + '/api/user/' + id + '/collationTables';
+    }
+    apiUserGetMultiChunkEditionInfo(id) {
+        return this.base + '/api/user/' + id + '/multiChunkEditions';
+    }
+
     apiUserPasswordChange(id) {
         return this.base + '/api/user/' + id + '/changepassword';
     }
@@ -93,8 +105,34 @@ class ApmUrlGenerator {
         return `${this.base}/api/collation/convert/${tableId}`;
     }
 
+    apiGetCollationTable(tableId, compactEncodedTimeString = '') {
+        if (compactEncodedTimeString !== '') {
+            return `${this.base}/api/collation/get/${tableId}/${compactEncodedTimeString}`
+        }
+        return `${this.base}/api/collation/get/${tableId}`
+    }
+
+    apiGetActiveEditionInfo() {
+        return `${this.base}/api/collation/info/edition/active`
+    }
+
+    apiGetMultiChunkEdition(editionId, timeStamp = '') {
+        if (timeStamp !== '') {
+            return `${this.base}/api/edition/multi/get/${editionId}/${timeStamp}`
+        }
+        return `${this.base}/api/edition/multi/get/${editionId}`
+    }
+
+    apiSaveMultiChunkEdition() {
+        return `${this.base}/api/edition/multi/save`
+    }
+
     apiWitnessToEdition(witnessId) {
         return `${this.base}/api/witness/${witnessId}/to/edition`;
+    }
+
+    apiWorkGetInfo(workId) {
+        return `${this.base}/api/work/${workId}/info`;
     }
 
     apiNewDoc() {
@@ -184,5 +222,13 @@ class ApmUrlGenerator {
 
     images() {
         return this.base + '/images'
+    }
+
+    siteEditMultiChunkEdition(editionId) {
+        return `${this.base}/edition/multi/edit/${editionId}`
+    }
+
+    siteMultiChunkEditionNew() {
+        return `${this.base}/edition/multi/new`
     }
 }

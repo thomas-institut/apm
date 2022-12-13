@@ -17,7 +17,7 @@
  */
 
 
-import { TextBoxMeasurer } from '../www/js/Typesetter2/TextBoxMeasurer.mjs'
+import { TextBoxMeasurer } from '../www/js/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.mjs'
 import {resolvedPromise} from '../www/js/toolbox/FunctionUtil.mjs'
 import {exec} from 'node:child_process'
 

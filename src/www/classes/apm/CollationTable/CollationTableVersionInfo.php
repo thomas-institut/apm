@@ -28,15 +28,15 @@ use ThomasInstitut\TimeString\TimeString;
 class CollationTableVersionInfo
 {
     /**
-     * The version Id
+     * The version id
      * @var int
      */
-    public $id;
+    public int $id;
     /**
-     * Collation table Id
-     * @var string
+     * Collation table id
+     * @var int
      */
-    public $collationTableId;
+    public int $collationTableId;
 //    /**
 //     * @var int
 //     */
@@ -44,32 +44,32 @@ class CollationTableVersionInfo
     /**
      * @var string
      */
-    public $timeFrom;
+    public string $timeFrom;
     /**
      * @var string
      */
-    public $timeUntil;
+    public string $timeUntil;
     /**
      * @var int
      */
-    public $authorId;
+    public int $authorId;
     /**
      * @var string
      */
-    public $description;
+    public string $description;
     /**
      * @var bool
      */
-    public $isMinor;
+    public bool $isMinor;
     /**
      * @var bool
      */
-    public $isReview;
+    public bool $isReview;
 
     public function __construct()
     {
         $this->id = 0;
-        $this->collationTableId = 'AW00-0';
+        $this->collationTableId = 0;
         $this->timeFrom = TimeString::TIME_ZERO;
         $this->timeUntil = TimeString::TIME_ZERO;
         $this->authorId = 0;
@@ -89,7 +89,8 @@ class CollationTableVersionInfo
         $this->isReview = intval($row['review']) !== 0;
     }
 
-    public static function createFromDbRow(array $row) {
+    public static function createFromDbRow(array $row): CollationTableVersionInfo
+    {
         $ci = new CollationTableVersionInfo();
         $ci->setFromDbRow($row);
         return $ci;

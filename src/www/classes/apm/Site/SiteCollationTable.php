@@ -27,15 +27,15 @@
 namespace APM\Site;
 
 use APM\CollationTable\CollationTableVersionInfo;
+use APM\CollationTable\CtData;
 use APM\FullTranscription\DocInfo;
-use APM\FullTranscription\PageInfo;
+use APM\System\DataRetrieveHelper;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use InvalidArgumentException;
-use phpDocumentor\Reflection\Types\This;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 
 
 /**
@@ -105,10 +105,14 @@ class SiteCollationTable extends SiteController
         $people[] = $workInfo['authorId'];
         $people = array_merge($people, $this->getMentionedAuthorsFromCtData($ctData));
         $people = array_merge($people, $this->getMentionedPeopleFromVersionArray($versionInfo));
-        $peopleInfo = $this->getAuthorInfoArrayFromList($people, $dm->userManager);
+        $helper = new DataRetrieveHelper();
+        $helper->setLogger($this->logger);
+        $peopleInfo = $helper->getAuthorInfoArrayFromList($people, $dm->userManager);
 
         $docs = $this->getMentionedDocsFromCtData($ctData);
-        $docInfo = $this->getDocInfoArrayFromList($docs, $this->systemManager->getTranscriptionManager()->getDocManager());
+        $helper = new DataRetrieveHelper();
+        $helper->setLogger($this->logger);
+        $docInfo = $helper->getDocInfoArrayFromList($docs, $this->systemManager->getTranscriptionManager()->getDocManager());
 
         $this->profiler->stop();
         $this->logProfilerData("Edit Collation Table");
@@ -165,13 +169,14 @@ class SiteCollationTable extends SiteController
     }
 
     protected function getMentionedDocsFromCtData(array $ctData) : array {
-        $docs = [];
-        foreach($ctData['witnesses'] as $witness) {
-            if ($witness['witnessType'] === WitnessType::FULL_TRANSCRIPTION) {
-                $docs[] = $witness['docId'];
-            }
-        }
-        return $docs;
+        return CtData::getMentionedDocsFromCtData($ctData);
+//        $docs = [];
+//        foreach($ctData['witnesses'] as $witness) {
+//            if ($witness['witnessType'] === WitnessType::FULL_TRANSCRIPTION) {
+//                $docs[] = $witness['docId'];
+//            }
+//        }
+//        return $docs;
     }
 
     /**
@@ -210,7 +215,7 @@ class SiteCollationTable extends SiteController
                 }
                 if (ctype_digit($argWitnessSpec)) {
                     // for compatibility with existing API calls, if the argWitnessSpec is just a number,
-                    // it defaults to a full transcription with local witness Id 'A'
+                    // it defaults to a full transcription with local witness id 'A'
                     $docId = intval($argWitnessSpec);
                     if ($docId !== 0) {
                         $collationPageOptions['witnesses'][] = [
@@ -498,7 +503,7 @@ class SiteCollationTable extends SiteController
         // put titles in fullTx witnesses that don't have one
 
         // TODO: Check this default
-        $supressTimestampsInApiCalls = true;
+        $suppressTimestampsInApiCalls = true;
 
         for($i = 0; $i < count($apiCallOptions['witnesses']); $i++) {
             if ($apiCallOptions['witnesses'][$i]['type'] === WitnessType::FULL_TRANSCRIPTION) {
@@ -519,7 +524,7 @@ class SiteCollationTable extends SiteController
                         // here would be a place to fix the timeStamp, but it's better to leave it blank
                         // so that the system automatically gets the current version
 //                        if ($validWitnessFullTxInfo['timeStamp'] === '') {
-//                            $supressTimestampsInApiCalls = true;
+//                            $suppressTimestampsInApiCalls = true;
 //                        }
                         $found = true;
                         break;
@@ -554,7 +559,7 @@ class SiteCollationTable extends SiteController
             'num_docs' => $partialCollation ? count($apiCallOptions['witnesses']) : count($validWitnesses),
             'total_num_docs' => count($validWitnesses),
             'availableWitnesses' => $validWitnesses,
-            'suppressTimestampsInApiCalls' => $supressTimestampsInApiCalls,
+            'suppressTimestampsInApiCalls' => $suppressTimestampsInApiCalls,
             'normalizerData' => $this->getNormalizerData($language, 'standard'),
             'warnings' => $warnings
         ];

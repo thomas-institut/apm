@@ -17,7 +17,7 @@
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { Edition } from '../Edition'
+import { Edition } from '../Edition.mjs'
 
 export class EditionGenerator {
 

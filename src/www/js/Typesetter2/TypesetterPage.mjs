@@ -17,7 +17,6 @@
  */
 
 import { TypesetterObject } from './TypesetterObject.mjs'
-import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 import { ObjectFactory } from './ObjectFactory.mjs'
 import { TypesetterItem } from './TypesetterItem.mjs'
 
@@ -44,6 +43,14 @@ export class TypesetterPage extends TypesetterObject {
     this.width = pageWidth
     this.height = pageHeight
     this.items = items
+  }
+
+  /**
+   *
+   * @param {TypesetterItem}item
+   */
+  addItem(item) {
+    this.items.push(item)
   }
 
   getWidth() {

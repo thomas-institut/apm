@@ -18,27 +18,40 @@
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { doNothing } from '../toolbox/FunctionUtil.mjs'
+import { toolbarCharacters} from '../defaults/ToolbarCharacters'
 
 import Quill from '../QuillLoader'
 import Small from './QuillBlots/Small'
 import Superscript from './QuillBlots/Superscript'
+import NumberingLabel from './QuillBlots/NumberingLabel'
 
 import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { GenericQuillDeltaConverter } from './QuillDelta/GenericQuillDeltaConverter'
+import Inline from 'quill/blots/inline'
+import { isRtl } from '../toolbox/Util.mjs'
 
 const simpleFormats = [
   'bold',
   'italic',
+  'numberingLabel'
   // 'small',
   // 'superscript'
 ]
 
+
+Inline.order = [
+  'cursor', 'inline',   // Must be lower
+  'underline', 'strike', 'italic', 'bold', 'numberingLabel', 'script',
+  'link', 'code'        // Must be higher
+];
+
 const headingDepth = 3
 
-const buttons = {
+const formatButtons = {
   bold: { icon: '<i class="bi bi-type-bold"></i>' , title: 'Bold'},
   italic: { icon: '<i class="bi bi-type-italic"></i>' , title: 'Italic'},
+  numberingLabel:  { icon: '<small class="fte-icon">x.y</small>' , title: 'Numbering Label'}
   // small: { icon: '<small class="fte-icon">S</small>', title: 'Small Font'},
   // superscript: { icon: '<small class="fte-icon">x<sup>2</sup>', title: 'Superscript'}
 }
@@ -49,7 +62,6 @@ const headingIcons = [
   '<span class="mte-icon">H<sub>2</sub></span>',
   '<span class="mte-icon">H<sub>3</sub></span>'
 ]
-
 
 const toolbarSeparator = '<span class="mte-tb-sep">&nbsp;</span>'
 
@@ -84,11 +96,23 @@ export class EditionMainTextEditor {
     this.container.html(this._getHtml())
     this.quillEditor = new Quill(`${this.containerSelector} .fte-editor`,{})
     this.onChange = cleanOptions.onChange
-    this.quillDeltaRenderer = new QuillDeltaRenderer()
+    this.quillDeltaRenderer = new QuillDeltaRenderer({
+      classToAttrTranslators: {
+        numberingLabel: (attr) => { attr.numberingLabel = true; return attr}
+      }
+    })
     this.quillDeltaConverter = new GenericQuillDeltaConverter({
       verbose: this.verbose,
       debug: false,
-      ignoreParagraphs: false
+      ignoreParagraphs: false,
+      attrToClassTranslators: {
+        numberingLabel: (value, classList) => {
+          if (value) {
+            classList = 'numberingLabel'
+          }
+          return classList
+        }
+      }
     })
 
 
@@ -107,6 +131,11 @@ export class EditionMainTextEditor {
       $(this._getBtnSelectorHeading(i+1)).on('click', this._genOnClickHeadingButton(i+1, this.quillEditor))
     }
 
+    Object.keys(toolbarCharacters[this.lang]).forEach( (key) => {
+      let btnSelector = this._getBtnSelectorCharacter(key)
+      $(btnSelector).on('click', this._genOnClickCharacter(key, this.quillEditor))
+    })
+
     this.quillEditor.on('selection-change', (range, oldRange, source) => {
       if (range === null) {
         this.debug && console.log(`Editor out of focus`)
@@ -115,7 +144,7 @@ export class EditionMainTextEditor {
       if (oldRange === null) {
         oldRange = { index: -1, length: -1}
       }
-      this.debug && console.log(`Selection change from ${oldRange.index}:${oldRange.length} to ${range.index}:${range.length}, source ${source}`)
+      // this.debug && console.log(`Selection change from ${oldRange.index}:${oldRange.length} to ${range.index}:${range.length}, source ${source}`)
       let currentFormat = this.quillEditor.getFormat()
       simpleFormats.forEach( (fmt) => {
         setButtonState($(this._getBtnSelectorFormat(fmt)), currentFormat[fmt])
@@ -146,6 +175,8 @@ export class EditionMainTextEditor {
    * @param {boolean} silent
    */
   setText(newText, silent = false) {
+    this.debug && console.log(`Setting text`)
+    this.debug && console.log(newText)
     let newDelta = this.quillDeltaRenderer.render(FmtTextFactory.fromAnything(newText))
     this.debug && console.log(`Setting text with new delta`)
     this.debug && console.log(newDelta)
@@ -157,6 +188,12 @@ export class EditionMainTextEditor {
     return `${this.containerSelector} .${format}-btn`
   }
 
+  _getBtnSelectorCharacter(characterKey) {
+    return `${this.containerSelector} .${characterKey}-btn`
+  }
+
+
+
   _getBtnSelectorHeading(headingNumber) {
     return `${this.containerSelector} .heading${headingNumber}-btn`
   }
@@ -165,14 +202,30 @@ export class EditionMainTextEditor {
     return (ev) => {
       ev.preventDefault()
       let currentFormat = quill.getFormat()
-      // console.log(currentFormat)
-      let currentState = currentFormat[format]
+      let currentState = false
+      if (currentFormat[format] !== undefined) {
+        currentState = currentFormat[format]
+      }
+      // console.log(`Click on format ${format}`)
+      // console.log(`Current state: ${currentState}`)
       let btn = $(buttonSelector)
       quill.format(format, !currentState)
       currentState = !currentState
       setButtonState(btn, currentState)
     }
   }
+
+  _genOnClickCharacter(characterKey, quill) {
+    return (ev) => {
+      ev.preventDefault()
+      let range = quill.getSelection()
+      if (range === null) {
+        return
+      }
+      quill.deleteText(range.index, range.length)
+      quill.insertText(range.index, toolbarCharacters[this.lang][characterKey].character)
+    }
+   }
 
   _genOnClickHeadingButton(headingNumber, quill) {
     return (ev) => {
@@ -200,14 +253,20 @@ export class EditionMainTextEditor {
 
     let buttonsHtml = simpleFormats
       .map( (fmt) => {
-        return `<button class="${fmt}-btn" title="${buttons[fmt].title}">${buttons[fmt].icon}</button>`
+        return `<button class="${fmt}-btn" title="${formatButtons[fmt].title}">${formatButtons[fmt].icon}</button>`
       })
       .join('')
     let headingButtonsHtml = ''
     for (let i=0;i < headingDepth; i++) {
       headingButtonsHtml += `<button class="heading${i+1}-btn" title="Heading ${i+1}">${headingIcons[i+1]}</button>`
     }
-    return `<div class="fte-toolbar text-${this.lang}">${buttonsHtml}${toolbarSeparator}${headingButtonsHtml}</div>
+
+    let characterButtonsHtml = Object.keys(toolbarCharacters[this.lang]).map( (key) => {
+      let btnDef = toolbarCharacters[this.lang][key]
+      let char = isRtl(this.lang) && btnDef['rtlVersion'] !== undefined ? btnDef['rtlVersion'] : btnDef.character
+      return `<button class="${key}-btn" title="${btnDef.title}">${char}</button>`
+    }).join('')
+    return `<div class="fte-toolbar text-${this.lang}">${buttonsHtml}${toolbarSeparator}${headingButtonsHtml}${toolbarSeparator}${characterButtonsHtml}</div>
 <div class="fte-editor text-${this.lang}"></div>`
   }
 }
@@ -224,5 +283,6 @@ function setButtonState(btn, state) {
 // Initialization
 Quill.register({
   'formats/small' : Small,
-  'formats/superscript' : Superscript
+  'formats/superscript' : Superscript,
+  'formats/numberingLabel': NumberingLabel
 }, true)

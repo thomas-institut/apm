@@ -3,38 +3,20 @@
 
 {% block title %}{{theuser.fullname}} | Collaborator in the Averroes Project{% endblock %}
 
+{% block extraCSS %}
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/user-profile.css"/>
+{% endblock %}
+
+
 {% block extraJS %}
     <script type="text/javascript" src="{{baseurl}}/node_modules/bootstrap-validator/dist/validator.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/dist/UserProfilePage.bundle.js"></script>
 <script>
+
   $(function() {
         let profileUserInfo = JSON.parse('{{theuser|json_encode|e('js')}}');
         let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
         let up = new UserProfilePage(profileUserInfo, urlGenerator)
-    let  tableInfo = JSON.parse("{{tableInfo|json_encode|e('js')}}")
-
-
-    function genCollationTableInfoHtml(tableInfo, urlGen, type) {
-      let html = ''
-
-      let tables = tableInfo.filter( info => info.type===type)
-      if (tables.length === 0) {
-        return '<p><i>None</i></p>'
-      }
-      html += '<ul class="ctlist">'
-      for(const info of tables) {
-        let url =  urlGen.siteEditCollationTable(info['id'])
-        if (type === 'edition') {
-          url = urlGen.siteChunkEdition(info['id'])
-        }
-        html += '<li><a target="_blank" href="' +  url + '">' + info['chunkId'] + ': ' + info['title'] + '</a></li>'
-      }
-      html += '</ul>'
-      return html
-    }
-
-    $('#ctables').html(genCollationTableInfoHtml(tableInfo, urlGenerator, 'ctable'))
-    $('#editions').html(genCollationTableInfoHtml(tableInfo, urlGenerator, 'edition'))
 
 
     })
@@ -233,16 +215,7 @@ Make Root
     </div> <!-- Row -->
 </div> <!-- Collapse -->
 {% endif %}
-
-<div id="reportarea"  class="with-top-margin">
-    <h3>Manuscripts / Prints</h3>
-        <ul class="doc-list">{{doclist|raw}}</ul>
-<div id="documents"></div>
-    <h3>Collation Tables</h3>
-    <div id="ctables"></div>
-
-    <h3>Editions</h3>
-    <div id="editions"></div>
-</div>
+    </div>
+    <div id="new-info-area"  class="with-top-margin">
 </div>
 {% endblock %}

@@ -19,14 +19,14 @@
 import { QuillDeltaConverter } from './QuillDeltaConverter'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { pushArray, varsAreEqual } from '../../toolbox/ArrayUtil.mjs'
-import { FmtTextFactory } from '../../FmtText/FmtTextFactory'
-import { FmtTextTokenFactory} from '../../FmtText/FmtTextTokenFactory'
-import * as FmtTextTokenType from '../../Edition/MainTextTokenType'
-import * as FontWeight from '../../FmtText/FontWeight'
-import * as FontStyle from '../../FmtText/FontStyle'
-import * as FontSize from '../../FmtText/FontSize'
-import * as VerticalAlign from '../../FmtText/VerticalAlign'
-import * as ParagraphStyle from '../../FmtText/ParagraphStyle'
+import { FmtTextFactory } from '../../FmtText/FmtTextFactory.mjs'
+import { FmtTextTokenFactory} from '../../FmtText/FmtTextTokenFactory.mjs'
+import * as FmtTextTokenType from '../../Edition/MainTextTokenType.mjs'
+import * as FontWeight from '../../FmtText/FontWeight.mjs'
+import * as FontStyle from '../../FmtText/FontStyle.mjs'
+import * as FontSize from '../../FmtText/FontSize.mjs'
+import * as VerticalAlign from '../../FmtText/VerticalAlign.mjs'
+import * as ParagraphStyle from '../../FmtText/ParagraphStyle.mjs'
 import { rTrimNewlineCharacters } from '../../toolbox/Util.mjs'
 
 export class GenericQuillDeltaConverter extends QuillDeltaConverter {
@@ -35,10 +35,16 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
     super(options)
 
     let optionsSpec = {
-      ignoreParagraphs: { type: 'boolean', default: true}
+      ignoreParagraphs: { type: 'boolean', default: true},
+      // an object containing attribute to class translators.
+      // e.g.
+      // {  someAttribute:  (attributeValue, currentClassList) => { ... return newClassList} }
+      attrToClassTranslators: { type: 'object', default: {}}
     }
     let oc= new OptionsChecker({optionsDefinition: optionsSpec, context:  'Generic QD Converter'})
     this.options = oc.getCleanOptions(options)
+    this.translators = this.options.attrToClassTranslators
+    this.translatorsAvailable = Object.keys(this.translators)
 
   }
 
@@ -116,6 +122,19 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
               theFmtText[i].fontSize = FontSize.SUPERSCRIPT
               theFmtText[i].verticalAlign = VerticalAlign.SUPERSCRIPT
             }
+            let attributesToIgnore = [ 'bold', 'italic', 'small', 'superscript']
+            let attrKeys =  Object.keys(ops.attributes)
+            let classList = ''
+            for (let j = 0; j <attrKeys.length; j++) {
+              let key = attrKeys[j]
+              if (attributesToIgnore.indexOf(key) !== -1) {
+                continue
+              }
+              if (this.translatorsAvailable.indexOf(key) !== -1) {
+                classList = this.translators[key](ops.attributes[key], classList)
+              }
+            }
+            theFmtText[i].classList = classList
           }
         }
         return theFmtText

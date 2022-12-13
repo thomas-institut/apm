@@ -60,6 +60,18 @@ a.tb-button {
     color: grey;
 }
 
+button.zoom-btn, button.tb-button {
+    border: none;
+    background-color: transparent;
+    color: grey;
+}
+
+span.zoom-label {
+    display: inline-block;
+    width: 3em;
+}
+
+
 div.tab-pane {
     overflow-y: auto;
     overflow-x: auto;
@@ -93,6 +105,15 @@ svg.edition-svg {
     overflow-x: visible;
 }
 
+
+#edition-preview-new div.panel-content {
+    overflow: auto;
+    background: #fcfaf7;
+}
+
+/*#edition-preview-canvas-new {*/
+/*    overflow: visible;*/
+/*}*/
 
 /* Admin panel */
 #admin {
@@ -361,7 +382,29 @@ div#text-editor-info h4 {
     font-family: var(--default-font-family);
 }
 
+b.blot-numbering-label, span.main-text-token.numbering-label, span.numbering-label  {
+    font-weight: normal;
+    color: #3280e7;
+}
 
+b.blot-sigla {
+    font-weight: bold;
+    background-color: #e7e7e7;
+    color: #8a6d3b;
+}
+
+.text-he b.blot-sigla, .text-he b.sigla {
+    font-weight: bold;
+    background-color: #e7e7e7;
+    color: #8a6d3b;
+    direction: rtl;
+    unicode-bidi: isolate;
+}
+
+.text-la b.sigla {
+    font-weight: normal;
+    background-color: #f1f1f1;
+}
 /* Collation Table Panel */
 
 #collation-table .panel-content {

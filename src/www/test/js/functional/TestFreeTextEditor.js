@@ -1,7 +1,7 @@
 import { ApparatusEntryTextEditor } from '../../../js/EditionComposer/ApparatusEntryTextEditor'
-import { FmtTextFactory } from '../../../js/FmtText/FmtTextFactory'
+import { FmtTextFactory } from '../../../js/FmtText/FmtTextFactory.mjs'
 import { HtmlRenderer } from '../../../js/FmtText/Renderer/HtmlRenderer'
-import { FmtTextTokenFactory } from '../../../js/FmtText/FmtTextTokenFactory'
+import { FmtTextTokenFactory } from '../../../js/FmtText/FmtTextTokenFactory.mjs'
 
 $( () => {
 

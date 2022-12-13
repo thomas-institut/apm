@@ -6,32 +6,27 @@
 
 import { TextBoxFactory } from '../../../js/Typesetter2/TextBoxFactory.mjs'
 import { BrowserUtilities } from '../../../js/toolbox/BrowserUtilities.mjs'
-import { CanvasTextBoxMeasurer } from '../../../js/Typesetter2/CanvasTextBoxMeasurer.mjs'
+import { CanvasTextBoxMeasurer } from '../../../js/Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer.mjs'
 import { isRtl, removeExtraWhiteSpace, trimWhiteSpace } from '../../../js/toolbox/Util.mjs'
-
 import { Typesetter2 } from '../../../js/Typesetter2/Typesetter2.mjs'
 import { BasicTypesetter } from '../../../js/Typesetter2/BasicTypesetter.mjs'
 import { ItemList } from '../../../js/Typesetter2/ItemList.mjs'
 import * as TypesetterItemDirection from '../../../js/Typesetter2/TypesetterItemDirection.mjs'
-import { CanvasRenderer } from '../../../js/Typesetter2/CanvasRenderer.mjs'
-// import * as PDFLib from 'pdf-lib'
-// import fontkit from '@pdf-lib/fontkit'
-// import { PdfRenderer } from '../../../js/Typesetter2/PdfRenderer.mjs'
+import { CanvasRenderer } from '../../../js/Typesetter2/Renderer/CanvasRenderer.mjs'
 import { TypesetterDocument } from '../../../js/Typesetter2/TypesetterDocument.mjs'
 import { TextBox } from '../../../js/Typesetter2/TextBox.mjs'
 import { Box } from '../../../js/Typesetter2/Box.mjs'
 import { Glue} from '../../../js/Typesetter2/Glue.mjs'
 import { Penalty } from '../../../js/Typesetter2/Penalty.mjs'
 import { LanguageDetector } from '../../../js/toolbox/LanguageDetector.mjs'
-import text from 'quill/blots/text'
 
-const defaultPageWidth = Typesetter2.cm2px(14.8)
-const defaultPageHeight  = Typesetter2.cm2px(21)
+const defaultPageWidth = Typesetter2.cm2px(21)
+const defaultPageHeight  = Typesetter2.cm2px(29.7)
 
-const defaultMarginTop = Typesetter2.cm2px(1)
-const defaultMarginLeft = Typesetter2.cm2px(1)
-const defaultMarginBottom = Typesetter2.cm2px(1)
-const defaultMarginRight = Typesetter2.cm2px(1)
+const defaultMarginTop = Typesetter2.cm2px(2)
+const defaultMarginLeft = Typesetter2.cm2px(2)
+const defaultMarginBottom = Typesetter2.cm2px(2)
+const defaultMarginRight = Typesetter2.cm2px(2)
 
 const sampleText = `This is a test.
 
@@ -54,12 +49,6 @@ const defaultZoomStep = 3
 
 const defaultCanvasPageMargin = 20
 
-// const freeSerifFontUrl = 'https://averroes.uni-koeln.de/fonts/freefont/FreeSerif.ttf'
-// let freeSerifFontBytes = null
-//
-// const linuxLibertineFontUrl = 'https://averroes.uni-koeln.de/fonts/LinuxLibertine/LinLibertine_Rah.ttf'
-// let linuxLibertineFontBytes = null
-
 $( () => {
   new Playground()
 })
@@ -77,6 +66,7 @@ class Playground {
     this.marginBottomInput = $('#marginBottom')
     this.marginLeftInput = $('#marginLeft')
     this.marginRightInput = $('#marginRight')
+    this.textDirectionInput = $('#textDirection')
     this.fontFamilyInput = $('#fontFamily')
     this._setupFontFamilyInput(this.fontFamilyInput, defaultFonts)
     this.fontSizeInput = $('#fontSize')
@@ -108,6 +98,7 @@ class Playground {
     this.marginLeft = defaultMarginLeft
     this.lineSkip = defaultLineSkip
     this.parSkip = defaultParSkip
+    this.textDirection = 'ltr'
     this._setFont(defaultFonts[0], defaultFontSize).then( () => {
       this._setInputFieldsFromCurrentValues()
       this.lastText = this.inputTextArea.val()
@@ -121,6 +112,7 @@ class Playground {
     this.marginRightInput.on('change', this.getOnChangeInputField())
     this.pageWidthInput.on('change', this.getOnChangeInputField())
     this.pageHeightInput.on('change', this.getOnChangeInputField())
+    this.textDirectionInput.on('change', this.getOnChangeInputField())
     this.fontFamilyInput.on('change', this.getOnChangeInputField())
     this.fontSizeInput.on('change', this.getOnChangeInputField())
     this.lineSkipInput.on('change', this.getOnChangeInputField())
@@ -158,6 +150,7 @@ class Playground {
     this.currentTypesetDocument = await this._typesetPlainText(text)
     let typesetEndTime = window.performance.now()
     console.log(`Text typeset in ${typesetEndTime - startTime} ms`)
+    console.log(this.currentTypesetDocument)
     await this._render(this.currentTypesetDocument)
     let renderEndTime = window.performance.now()
     console.log(`Rendered in ${renderEndTime - typesetEndTime} ms`)
@@ -224,6 +217,15 @@ class Playground {
     this.fontSizeInput.val(Typesetter2.px2pt(this.fontSize))
     this.lineSkipInput.val(Typesetter2.px2pt(this.lineSkip))
     this.parSkipInput.val(Typesetter2.px2pt(this.parSkip))
+    this.textDirectionInput.val(this.textDirection)
+  }
+
+  __changeTextDirectionInBrowser() {
+    if (this.textDirection === 'ltr') {
+      this.inputTextArea.removeClass('rtl')
+    } else {
+      this.inputTextArea.addClass('rtl')
+    }
   }
 
   _getDataFromInputFields() {
@@ -235,6 +237,9 @@ class Playground {
     this.marginRight = this.__getPxDimensionFromInputField('cm',this.marginRightInput, 0, this.pageWidth/2, defaultMarginRight)
     this.lineSkip = this.__getPxDimensionFromInputField('pt', this.lineSkipInput, 12, 72, 24)
     this.parSkip = this.__getPxDimensionFromInputField('pt', this.parSkipInput, 0, 72, 0)
+    this.textDirection = this.textDirectionInput.val()
+    this.__changeTextDirectionInBrowser()
+
     return this._setFont(
       defaultFonts[this.fontFamilyInput.val()],
       this.__getPxDimensionFromInputField('pt', this.fontSizeInput, 8, 48, 12)
@@ -387,11 +392,14 @@ class Playground {
     console.log(ptt)
     let verticalListToTypeset = new ItemList(TypesetterItemDirection.VERTICAL)
     ptt.forEach( (parToTypeset) => {
+      parToTypeset.setTextDirection(this.textDirection)
       verticalListToTypeset.pushItem(parToTypeset)
       if (this.parSkip > 0) {
         verticalListToTypeset.pushItem( (new Glue(TypesetterItemDirection.VERTICAL)).setHeight(this.parSkip))
       }
     })
+    console.log('Vertical list to typeset')
+    console.log(verticalListToTypeset)
     return verticalListToTypeset
   }
 
@@ -547,7 +555,20 @@ class Playground {
       marginBottom: this.marginBottom,
       marginLeft: this.marginLeft,
       marginRight: this.marginRight,
+      defaultFontFamily: this.fontFamily,
+      defaultFontSize: this.fontSize,
       lineSkip: this.lineSkip,
+      showPageNumbers: true,
+      pageNumbersOptions: {
+        fontFamily: this.fontFamily,
+        fontSize: this.fontSize*0.8,
+      },
+      showLineNumbers: true,
+      lineNumbersOptions: {
+        fontFamily: this.fontFamily,
+        fontSize: this.fontSize*0.6,
+        frequency: 5
+      },
       debug: true
     }
     this.currentRawDataToTypeset = JSON.stringify({
@@ -592,53 +613,10 @@ class Playground {
    * @param {TypesetterDocument}doc
    */
   async _render(doc) {
-
-    // let pages = doc.getPages()
     console.log(`Rendering document, ${doc.getPageCount()} pages`)
-
     let jsonData = JSON.stringify(doc.getExportObject())
-
     $('#docJson').html(jsonData)
-
     this.__renderCanvas(doc)
-
-    // let startTime = window.performance.now()
-    // let pdfUrl = await  this.__getPdfDownloadURLFromServer(jsonData)
-    // let endTime = window.performance.now()
-    // console.log(`PDF rendered in server in ${endTime-startTime}ms`)
-    // console.log(pdfUrl)
-
-
-    // PDF render
-    // const pdfDoc = await PDFLib.PDFDocument.create();
-    // pdfDoc.registerFontkit(fontkit)
-    // if (freeSerifFontBytes === null) {
-    //   console.log(`Fetching FreeSerif font`)
-    //   freeSerifFontBytes = await fetch(freeSerifFontUrl).then( res => res.arrayBuffer())
-    // }
-    // if (linuxLibertineFontBytes === null) {
-    //   console.log(`Fetching LinuxLibertine font`)
-    //   linuxLibertineFontBytes = await fetch(linuxLibertineFontUrl).then( res => res.arrayBuffer())
-    // }
-    //
-    // const freeSerifFont = await pdfDoc.embedFont(freeSerifFontBytes, {
-    //   subset: true
-    // })
-    // const linuxLibertineFont = await pdfDoc.embedFont(linuxLibertineFontBytes, {
-    //   subset: true
-    // })
-    //
-    // let fonts = {  'FreeSerif': freeSerifFont, 'Linux Libertine': linuxLibertineFont}
-    //
-    // let pdfRenderer = new PdfRenderer( {
-    //   pdfDocument: pdfDoc,
-    //   fonts: fonts,
-    //   defaultPageHeight: this.pageHeight
-    // })
-    //
-    // pdfRenderer.renderDocument(this.currentTypesetDocument)
-    // document.getElementById('pdfFrame').src = await pdfDoc.saveAsBase64({ dataUri: true });
-
   }
 
   __getPdfDownloadURLFromServer(rawTypesetDataJson) {

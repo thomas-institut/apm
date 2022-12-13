@@ -16,18 +16,33 @@
  *
  */
 
+// defaults
 import { defaultLanguageDefinition } from '../defaults/languages'
-
-import * as WitnessTokenType from '../Witness/WitnessTokenType'
-import * as WitnessTokenClass from '../Witness/WitnessTokenClass'
-
-// widgets
-import { EditableTextField } from '../widgets/EditableTextField'
 
 // utilities
 import * as Util from '../toolbox/Util.mjs'
 import { capitalizeFirstLetter, deepCopy } from '../toolbox/Util.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
+import { pushArray } from '../toolbox/ArrayUtil.mjs'
+import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
+import { KeyCache } from '../toolbox/KeyCache'
+import { ServerLogger } from '../Server/ServerLogger'
+
+// MultiPanel UI
+import { MultiPanelUI } from '../MultiPanelUI/MultiPanelUI'
+import { TabConfig } from '../MultiPanelUI/TabConfig'
+
+// Panels
+import { WitnessInfoPanel } from './WitnessInfoPanel'
+import { CollationTablePanel } from './CollationTablePanel'
+import { AdminPanel } from './AdminPanel'
+import { MainTextPanel } from './MainTextPanel'
+import { ApparatusPanel } from './ApparatusPanel'
+import { EditionPreviewPanelNew } from './EditionPreviewPanelNew'
+import { TechSupportPanel } from './TechSupportPanel'
+
+// Widgets
+import { EditableTextField } from '../widgets/EditableTextField'
 
 // Normalizations
 import { NormalizerRegister } from '../pages/common/NormalizerRegister'
@@ -37,35 +52,31 @@ import { IgnoreShaddaNormalizer } from '../normalizers/IgnoreShaddaNormalizer'
 import { RemoveHamzahMaddahFromAlifWawYahNormalizer } from '../normalizers/RemoveHamzahMaddahFromAlifWawYahNormalizer'
 import { IgnoreTatwilNormalizer } from '../normalizers/IgnoreTatwilNormalizer'
 import { IgnoreIsolatedHamzaNormalizer } from '../normalizers/IgnoreIsolatedHamzaNormalizer'
-import { MultiPanelUI } from '../multi-panel-ui/MultiPanelUI'
-import { WitnessInfoPanel } from './WitnessInfoPanel'
-import { CollationTablePanel } from './CollationTablePanel'
-import { AdminPanel } from './AdminPanel'
-import { EditionPreviewPanel } from './EditionPreviewPanel'
-import { MainTextPanel } from './MainTextPanel'
-import { ApparatusPanel } from './ApparatusPanel'
-import { Edition } from '../Edition/Edition'
-import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
-import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
-import * as CollationTableType from '../constants/CollationTableType'
-import * as NormalizationSource from '../constants/NormalizationSource'
+
+
+// CtData and Edition core
 import { CtData } from '../CtData/CtData'
-import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
+import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
+import * as CollationTableType from '../constants/CollationTableType'
+import { Edition } from '../Edition/Edition.mjs'
+import * as NormalizationSource from '../constants/NormalizationSource'
+import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser'
 import { EditionWitnessReferencesCleaner } from '../CtData/CtDataCleaner/EditionWitnessReferencesCleaner'
 import { CollationTableConsistencyCleaner } from '../CtData/CtDataCleaner/CollationTableConsistencyCleaner'
-import { ServerLogger } from '../Server/ServerLogger'
-import { KeyCache } from '../toolbox/KeyCache'
-import { pushArray } from '../toolbox/ArrayUtil.mjs'
-import { TechSupportPanel } from './TechSupportPanel'
-import { FmtText } from '../FmtText/FmtText'
+import * as WitnessTokenType from '../Witness/WitnessTokenType'
+import * as WitnessTokenClass from '../Witness/WitnessTokenClass'
+import { FmtText } from '../FmtText/FmtText.mjs'
+import { PdfDownloadUrl } from './PdfDownloadUrl'
 
+import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS
 
 // tab ids
 const editionTitleId = 'edition-title'
 const collationTableTabId = 'collation-table'
 const mainTextTabId = 'main-text-panel'
-const editionPreviewTabId = 'edition-preview'
+// const editionPreviewTabId = 'edition-preview'
+const editionPreviewNewTabId = 'edition-preview-new'
 const witnessInfoTabId = 'witness-info'
 const adminPanelTabId = 'admin'
 const techSupportTabId = 'tech'
@@ -208,13 +219,22 @@ export class EditionComposer {
       onConfirmArchive: this.genOnConfirmArchive()
     })
 
-    this.editionPreviewPanel = new EditionPreviewPanel({
-      containerSelector: `#${editionPreviewTabId}`,
-      ctData: this.ctData,
+    // this.editionPreviewPanel = new EditionPreviewPanel({
+    //   containerSelector: `#${editionPreviewTabId}`,
+    //   ctData: this.ctData,
+    //   edition: this.edition,
+    //   langDef: this.options.langDef,
+    //   onPdfExport: this.genOnExportPdf(),
+    //   verbose: false
+    // })
+
+    this.editionPreviewPanelNew = new EditionPreviewPanelNew({
+      containerSelector: `#${editionPreviewNewTabId}`,
+      // ctData: this.ctData,
       edition: this.edition,
       langDef: this.options.langDef,
-      onPdfExport: this.genOnExportPdf(),
-      verbose: false
+      getPdfDownloadUrl: this.genGetPdfDownloadUrlForPreviewPanel(),
+      debug: true
     })
 
     this.apparatusPanels = this.edition.apparatuses
@@ -254,14 +274,14 @@ export class EditionComposer {
 
     // tab arrays
     let panelOneTabs = [
-      createTabConfig(mainTextTabId, 'Main Text', this.mainTextPanel),
-      createTabConfig(collationTableTabId, 'Collation Table', this.collationTablePanel),
-      createTabConfig(witnessInfoTabId, 'Witness Info', this.witnessInfoPanel)
+      TabConfig.createTabConfig(mainTextTabId, 'Main Text', this.mainTextPanel),
+      TabConfig.createTabConfig(collationTableTabId, 'Collation Table', this.collationTablePanel),
+      TabConfig.createTabConfig(witnessInfoTabId, 'Witness Info', this.witnessInfoPanel)
     ]
 
     let panelTwoTabs = this.edition.apparatuses
       .map( (apparatus, index) => {
-        return createTabConfig(
+        return TabConfig.createTabConfig(
           `apparatus-${index}`,
           this._getTitleForApparatusType(apparatus.type),
           this.apparatusPanels[index],
@@ -269,14 +289,15 @@ export class EditionComposer {
          )
       })
       .concat([
-        createTabConfig(editionPreviewTabId, 'Edition Preview', this.editionPreviewPanel),
-        createTabConfig(adminPanelTabId, 'Admin', this.adminPanel),
+        // TabConfig.createTabConfig(editionPreviewTabId, 'Edition Preview', this.editionPreviewPanel),
+        TabConfig.createTabConfig(editionPreviewNewTabId, 'Edition Preview', this.editionPreviewPanelNew),
+        TabConfig.createTabConfig(adminPanelTabId, 'Admin', this.adminPanel),
     ])
 
     if (this.options.isTechSupport) {
       console.log(`Adding tech support panel`)
       this.techSupportPanel.setActive(true)
-      panelTwoTabs.push( createTabConfig(techSupportTabId, 'Tech', this.techSupportPanel))
+      panelTwoTabs.push( TabConfig.createTabConfig(techSupportTabId, 'Tech', this.techSupportPanel))
     }
 
     this.multiPanelUI = new MultiPanelUI({
@@ -514,7 +535,8 @@ export class EditionComposer {
 
     this.mainTextPanel.updateData(this.ctData, this.edition)  // mainTextPanel takes care of updating the apparatus panels
     this.collationTablePanel.updateCtData(this.ctData, 'EditionComposer')
-    this.editionPreviewPanel.updateData(this.ctData, this.edition)
+    // this.editionPreviewPanel.updateData(this.ctData, this.edition)
+    this.editionPreviewPanelNew.updateData(this.edition)
     this.witnessInfoPanel.updateCtData(this.ctData, updateWitnessInfo)
   }
 
@@ -554,7 +576,7 @@ export class EditionComposer {
     let thisObject = this
 
     function replaceEditionWitnessToken(ctRow, tokenIndex, newText, lang) {
-      let tokenType = WitnessTokenStringParser.strIsPunctuation(newText, lang) ? WitnessTokenType.PUNCTUATION : WitnessTokenType.WORD
+      let tokenType = Punctuation.stringIsAllPunctuation(newText, lang) ? WitnessTokenType.PUNCTUATION : WitnessTokenType.WORD
       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['tokenClass'] = WitnessTokenClass.EDITION
       if (thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'] === undefined) {
         // no formatting, just copy the text
@@ -608,7 +630,7 @@ export class EditionComposer {
     }
 
     // parse new text into witness tokens
-    let parsedText = WitnessTokenStringParser.parse(newText, this.lang).filter ( (t) => {
+    let parsedText = EditionWitnessTokenStringParser.parse(newText, this.lang).filter ( (t) => {
       return t.tokenType === WitnessTokenType.WORD || t.tokenType === WitnessTokenType.PUNCTUATION
     })
     console.log(`Parsed new text`)
@@ -709,37 +731,71 @@ export class EditionComposer {
      this._updateSaveArea()
   }
 
-
-  genOnExportPdf() {
-    let thisObject = this
-    return (svg) => {
-      return new Promise( (resolve, reject) => {
-        let apiUrl = thisObject.options.urlGenerator.apiConvertSvg()
-        if (svg === '') {
-          console.log('No SVG for PDF export')
-          resolve('')
-        }
-        console.log(`Calling export PDF API`)
-        $.post(
-          apiUrl,
-          {data: JSON.stringify({
-              pdfId: `ct-${thisObject.options.tableId}`,
-              svg: svg
-            })}
-        ).done(
-          apiResponse => {
-            resolve(apiResponse.url)
-          }
-        ).fail (
-          error => {
-            console.error('PDF API error')
-            console.log(error)
-            reject()
-          }
-        )
-      })
-    }
+  genGetPdfDownloadUrlForPreviewPanel() {
+    return PdfDownloadUrl.genGetPdfDownloadUrlForPreviewPanel(this.options.urlGenerator)
+    // return (rawData) => {
+    //   return new Promise( (resolve, reject) => {
+    //     let apiUrl = this.options.urlGenerator.apiTypesetRaw()
+    //     let dataJson = JSON.stringify(rawData)
+    //     console.log(`About to make API call for PDF download url, data size is ${dataJson.length}`)
+    //     console.log(`Calling typeset API at ${apiUrl}`)
+    //     $.post(
+    //       apiUrl,
+    //       {data: JSON.stringify({
+    //           jsonData: dataJson
+    //         })}
+    //     ).done(
+    //       apiResponse => {
+    //         console.log(`Got response from the server:`)
+    //         console.log(apiResponse)
+    //         if (apiResponse.url === undefined) {
+    //           console.error('No url given by server')
+    //           reject()
+    //         }
+    //         resolve(apiResponse.url)
+    //       }
+    //     ).fail (
+    //       error => {
+    //         console.error('PDF API error')
+    //         console.log(error)
+    //         reject()
+    //       }
+    //     )
+    //   })
+    // }
   }
+
+
+  // genOnExportPdf() {
+  //   let thisObject = this
+  //   return (svg) => {
+  //     return new Promise( (resolve, reject) => {
+  //       let apiUrl = thisObject.options.urlGenerator.apiConvertSvg()
+  //       if (svg === '') {
+  //         console.log('No SVG for PDF export')
+  //         resolve('')
+  //       }
+  //       console.log(`Calling export PDF API`)
+  //       $.post(
+  //         apiUrl,
+  //         {data: JSON.stringify({
+  //             pdfId: `ct-${thisObject.options.tableId}`,
+  //             svg: svg
+  //           })}
+  //       ).done(
+  //         apiResponse => {
+  //           resolve(apiResponse.url)
+  //         }
+  //       ).fail (
+  //         error => {
+  //           console.error('PDF API error')
+  //           console.log(error)
+  //           reject()
+  //         }
+  //       )
+  //     })
+  //   }
+  // }
 
   /**
    * Changes the 'text-xxx' class to the new class, removing all others
@@ -1088,7 +1144,8 @@ export class EditionComposer {
       if (source !== 'collationTablePanel') {
         this.collationTablePanel.updateCtData(newCtData, 'EditionComposer')
       }
-      this.editionPreviewPanel.updateData(this.ctData, this.edition)
+      // this.editionPreviewPanel.updateData(this.ctData, this.edition)
+      this.editionPreviewPanelNew.updateData(this.edition)
       this.witnessInfoPanel.updateCtData(this.ctData, true)
       this._updateSaveArea()
     }
@@ -1242,31 +1299,7 @@ export class EditionComposer {
   _getLinkTitleForApparatusType(type){
     return `Click to show the Apparatus ${capitalizeFirstLetter(type)}`
   }
-
 }
-
-/**
- *
- * @param id
- * @param {string}title
- * @param panelObject
- * @param {string}linkTitle
- * @return {{onResize: function, postRender: function, contentClasses: ([]|*), onShown: function, onHidden: function, id, title, content: (function(*=, *=, *=): *)}}
- */
-function createTabConfig(id, title,  panelObject, linkTitle = '') {
-  return {
-    id: id,
-    title: title,
-    linkTitle: linkTitle,
-    content: (tabId, mode, visible) => { return panelObject.generateHtml(tabId, mode, visible) },
-    contentClasses: panelObject.getContentClasses(),
-    onResize: (id, visible) => {  panelObject.onResize(visible)},
-    postRender: (id, mode, visible) => { panelObject.postRender(id, mode, visible) },
-    onShown: (id) => { panelObject.onShown(id)},
-    onHidden: (id) => { panelObject.onHidden(id)}
-  }
-}
-
 
 // Load as global variable so that it can be referenced in the Twig template
 window.EditionComposer = EditionComposer

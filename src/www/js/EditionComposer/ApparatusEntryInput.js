@@ -23,13 +23,13 @@
 import { ConfirmDialog, DIALOG, INLINE, EXTRA_LARGE_DIALOG } from '../pages/common/ConfirmDialog'
 import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { ApparatusCommon } from './ApparatusCommon'
+import { ApparatusCommon } from './ApparatusCommon.js'
 import { ApparatusEntryTextEditor } from './ApparatusEntryTextEditor'
 import { varsAreEqual } from '../toolbox/ArrayUtil.mjs'
-import { FmtTextFactory} from '../FmtText/FmtTextFactory'
+import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
 import { MultiToggle } from '../widgets/MultiToggle'
 import { deepCopy } from '../toolbox/Util.mjs'
-import { FmtText } from '../FmtText/FmtText'
+import { FmtText } from '../FmtText/FmtText.mjs'
 
 const updateEntryLabel = 'Update Apparatus'
 const maxEntryTextWordsToShow = 10

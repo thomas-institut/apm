@@ -28,20 +28,46 @@ use APM\Plugin\ImageSourcePlugin;
  */
 class DareImageSource extends ImageSourcePlugin {
 
-   public function __construct($systemManager) {
+    const IMAGE_URL_SCHEME = "%s/%s/%d/jpg";
+    const IMAGE_URL_OLD_SCHEME = "%s/images/books/%s/bigjpg/%s-%04d.jpg";
+    const OSD_CONFIG_SCHEME = "tileSources: {type: 'image', url:  '%s', buildPyramid: false,homeFillsViewer: true}";
+    const BILDERBERG_DOC_URL_OLD_SCHEME = "%s/cgi-bin/berg.pas?page=book&book=%s";
+    const BILDERBERG_DOC_URL_SCHEME = "%s/%s";
+    const DARE_DOC_URL_SCHEME = "https://dare.uni-koeln.de/app/manuscripts/%s";
+    /**
+     * @var bool
+     */
+    private bool $useNewStylePaths;
+    /**
+     * @var string
+     */
+    private string $bilderBergBaseUrl;
+
+    public function __construct($systemManager) {
         parent::__construct($systemManager, 'dare');
+
+        $config = $systemManager->getConfig()['DareImageSource'] ?? [];
+        $this->bilderBergBaseUrl = $config['BilderbergBaseUrl'] ?? 'https://bilderberg.uni-koeln.de';
+        $this->useNewStylePaths = $config['NewStylePaths'] ?? false;
     }
        
-    public function realGetImageUrl($imageSourceData, $imageNumber) 
+    public function realGetImageUrl($imageSourceData, $imageNumber): string
     {
-        return sprintf("https://bilderberg.uni-koeln.de/images/books/%s/bigjpg/%s-%04d.jpg", 
-                    $imageSourceData, 
-                    $imageSourceData, 
-                    $imageNumber);
+        if ($this->useNewStylePaths) {
+            return sprintf(self::IMAGE_URL_SCHEME,
+                $this->bilderBergBaseUrl,
+                $imageSourceData,
+                $imageNumber);
+        }
+        return sprintf(self::IMAGE_URL_OLD_SCHEME,
+            $this->bilderBergBaseUrl,
+            $imageSourceData,
+            $imageSourceData,
+            $imageNumber);
     }
     
-    public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber) {
-        return sprintf("tileSources: {type: 'image', url:  '%s', buildPyramid: false,homeFillsViewer: true}", 
+    public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber) : string {
+        return sprintf(self::OSD_CONFIG_SCHEME,
                 $this->realGetImageUrl($imageSourceData, $imageNumber));
     }
 
@@ -57,7 +83,7 @@ class DareImageSource extends ImageSourcePlugin {
         return array_merge($data, $metadata);
     }
 
-    public function realGetDocInfoHtml($imageSourceData) {
+    public function realGetDocInfoHtml($imageSourceData) : string {
 
         $html = "= <em>$imageSourceData</em>";
         $html .= self::HTML_INFO_SEPARATOR;
@@ -73,11 +99,14 @@ class DareImageSource extends ImageSourcePlugin {
     }
 
     private function getDareDocumentUrl(string $dareId) : string {
-       return "https://dare.uni-koeln.de/app/manuscripts/$dareId";
+       return sprintf(self::DARE_DOC_URL_SCHEME, $dareId);
     }
 
     private function getBilderbergDocumentUrl(string $dareId) : string {
-       return "https://bilderberg.uni-koeln.de/cgi-bin/berg.pas?page=book&book=$dareId";
+        if ($this->useNewStylePaths) {
+            return sprintf(self::BILDERBERG_DOC_URL_SCHEME, $this->bilderBergBaseUrl, $dareId);
+        }
+       return sprintf(self::BILDERBERG_DOC_URL_OLD_SCHEME, $this->bilderBergBaseUrl, $dareId);
     }
 
 

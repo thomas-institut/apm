@@ -112,7 +112,15 @@ class PageViewer {
   
   getViewerLayoutFromCookie() {
     
-    let layout = Cookies.getJSON(this.cookieName)
+    let layout
+
+    try {
+      layout = JSON.parse(Cookies.get(this.cookieName))
+    } catch (e) {
+      console.log(`Error parsing cookie ${this.cookieName}, resetting`)
+      layout = undefined
+    }
+
     if (layout === undefined) {
       console.log('No layout cookie present, using defaults')
       layout = { 
@@ -129,7 +137,9 @@ class PageViewer {
   }
   
   storeViewerLayoutInCookie(layout) {
-    Cookies.set(this.cookieName, layout)
+    // console.log(`Storing layout in cookie`)
+    // console.log(layout)
+    Cookies.set(this.cookieName, JSON.stringify(layout))
   }
   
   genOnClickRealAddColumnButton() {

@@ -73,9 +73,7 @@ class ApiElements extends ApiController
         parse_str($rawData, $postData);
         $inputDataObject = null;
         
-        // EXECUTE SCHEDULER
-        $scheduler = $this->systemManager->getOpenSearchScheduler();
-        $scheduler->write($docId, $pageNumber, $columnNumber);
+
 
         if (isset($postData['data'])) {
             $inputDataObject = json_decode($postData['data'], true);
@@ -340,11 +338,10 @@ class ApiElements extends ApiController
         } catch (Exception $e) {
             $this->logger->error("Cannot register version: " . $e->getMessage());
         }
-//        $versionId = $dataManager->registerTranscriptionVersion($pageId, $columnNumber, $updateTime,
-//            $this->apiUserId, $versionDescr, $versionIsMinor, $versionIsReview);
-//        if ($versionId === false) {
-//            $this->logger->error('Cannot register version');
-//        }
+
+        // schedule OpenSearch index update
+        $this->systemManager->getOpenSearchScheduler()->schedule($docId, $pageNumber, $columnNumber);;
+
 
         $this->profiler->stop();
         $this->logProfilerData('updateElements');

@@ -22,6 +22,7 @@
 namespace APM\CommandLine;
 
 use APM\System\ApmConfigParameter;
+use APM\System\OpenSearchScheduler;
 use OpenSearch\ClientBuilder;
 
 /**
@@ -30,9 +31,9 @@ use OpenSearch\ClientBuilder;
  * Commandline utility to update the OpenSearch-index with all transcripts that are scheduled in the SQL-table ,scheduler'.
  *
  * REQUIREMENTS
- * 1. There has to exist an index in OpenSearch called ,transcripts'. There fore execute ./createindex in the utilities-direcory.
+ * 1. There has to exist an index in OpenSearch called ,transcripts'. There fore execute ./createindex in the utilities-directory.
  * 2. The SQL table ap_scheduler has to be created before with the right structure. (see OpenSearchScheduler-class)
- * 3. Because ./updateindex will be triggerd via cron, add the following line to your root crontab (sudo crontab -e). Replace 'ASTERISK' with '*':
+ * 3. Because ./updateindex will be triggered via cron, add the following line to your root crontab (sudo crontab -e). Replace 'ASTERISK' with '*':
 
  * * * * * p=$(find /home -path "ASTERISK/apm/src/www/utilities"); cd "${p}"; ./updateindex
 
@@ -67,9 +68,13 @@ class IndexUpdater extends IndexCreator
         foreach ($rows_waiting as $row) {
 
             $schedule_id = $row['id'];
-            $doc_id = $row['Doc_ID'];
-            $page = $row['Page'];
-            $col = $row['Col'];
+            $doc_id = $row['doc_id'];
+            $page = $row['page'];
+            $col = $row['col'];
+
+            $this->logger->debug("Processing scheduler row $schedule_id: docID $doc_id page $page col $col");
+            // TODO:
+            //  Here is where we should mark that the row is actually being processed
 
             // Get all indexing-relevant data from the SQL database
             $title = $this->getTitle($doc_id);
@@ -82,6 +87,13 @@ class IndexUpdater extends IndexCreator
 
             // Check if a new transcription was made or an existing one was changed
             $transcription_status = $this->transcriptionStatus($this->client, $this->indexName, $doc_id, $page, $col);
+
+
+            // TODO: add error processing
+            //  With the current code, if there's an error while indexing (for example, if OpenSearch is not running, the row
+            //  will just stay in the PROCESSING state. It should rather be marked as being in an
+            //  ERROR state; the scheduler might just want to attempt to index the next time it runs
+            //  Also: we should be able to detect and report that OpenSearch is not running
 
             // FIRST CASE – Completely new transcription was created
             if ($transcription_status['exists'] === 0) {
@@ -129,15 +141,20 @@ class IndexUpdater extends IndexCreator
                     ]
                 ]);
 
+                // TODO: check this
+                //  This is when we must mark the row as processed with the current time
                 // Log in SQL, that processing is  finished
-                $scheduler->log($schedule_id, $opensearch_id, 'UPDATED');
+                $scheduler->log($schedule_id, $opensearch_id, OpenSearchScheduler::STATE_PROCESSED);
             }
         }
         return true;
     }
 
+
+    // TODO: add types to parameters
     // Function to get a full list of OpenSearch-IDs in the index
-    private function getIDs ($client, $index_name) {
+    private function getIDs ($client, $index_name): array
+    {
 
         // Array to return
         $opensearch_ids = [];
@@ -165,7 +182,8 @@ class IndexUpdater extends IndexCreator
     }
 
     // Function to query a given OpenSearch-index
-    private function transcriptionStatus ($client, $index_name, $doc_id, $page, $col) {
+    private function transcriptionStatus ($client, $index_name, $doc_id, $page, $col): array
+    {
 
             $query = $client->search([
                 'index' => $index_name,

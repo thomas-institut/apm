@@ -25,6 +25,7 @@ use AverroesProject\Data\UserManager;
 use AverroesProject\Data\DataManager;
 use Monolog\Logger;
 use PDO;
+use Psr\Log\LoggerInterface;
 
 /**
  * Description of CommandLineUtility
@@ -37,33 +38,33 @@ abstract class CommandLineUtility {
      *
      * @var PDO
      */
-    protected $dbConn;
+    protected PDO $dbConn;
     
     /**
      *
      * @var UserManager 
      */
-    protected $um;
+    protected UserManager $um;
     
     /**
      *
      * @var Logger 
      */
-    protected $logger;
+    protected LoggerInterface $logger;
 
     /**
      * @var array
      */
-    protected $config;
+    protected array $config;
 
     /**
      * @var ApmSystemManager
      */
-    protected  $systemManager;
+    protected ApmSystemManager $systemManager;
     /**
      * @var DataManager
      */
-    protected $dm;
+    protected DataManager $dm;
 
     /**
      * @var int
@@ -72,11 +73,11 @@ abstract class CommandLineUtility {
     /**
      * @var int
      */
-    protected $argc;
+    protected int $argc;
     /**
      * @var array
      */
-    protected $argv;
+    protected array $argv;
 
 
     public function __construct(array $config, int $argc, array $argv) {

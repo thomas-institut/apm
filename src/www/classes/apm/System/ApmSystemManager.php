@@ -78,7 +78,7 @@ class ApmSystemManager extends SystemManager {
 
 
     // Database version
-    const DB_VERSION = 27;
+    const DB_VERSION = 28;
 
     const DEFAULT_LOG_APPNAME = 'APM';
     const DEFAULT_LOG_DEBUG = false;

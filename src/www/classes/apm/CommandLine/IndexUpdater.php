@@ -40,7 +40,7 @@ use OpenSearch\ClientBuilder;
  * @author Lukas Reichert
  */
 
-class IndexUpdater extends IndexCreater
+class IndexUpdater extends IndexCreator
 {
 
     public function main($argc, $argv): bool

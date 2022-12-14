@@ -5,7 +5,7 @@ namespace APM\CommandLine;
 use APM\System\ApmConfigParameter;
 use OpenSearch\ClientBuilder;
 
-class IndexedDocumentDeleter extends IndexCreater
+class IndexedDocumentDeleter extends IndexCreator
 {
     public function main($argc, $argv): bool
     {

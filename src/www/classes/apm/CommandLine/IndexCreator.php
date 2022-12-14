@@ -35,7 +35,7 @@ use OpenSearch\ClientBuilder;
  * @author Lukas Reichert
  */
 
-class IndexCreater extends CommandLineUtility {
+class IndexCreator extends CommandLineUtility {
 
     // Variables for OpenSearch client and the name of the index to create
     protected Client $client;
@@ -59,7 +59,7 @@ class IndexCreater extends CommandLineUtility {
                 'index' => $this->indexName
             ]);
             $this->logger->debug("Existing index *$this->indexName* was deleted!\n");
-        };
+        }
 
        $this->client->indices()->create([
             'index' => $this->indexName,
@@ -177,11 +177,11 @@ class IndexCreater extends CommandLineUtility {
         return $page_info['seq'];
     }
 
-    protected function getTranscript($doc_id, $page, $col) {
+    protected function getTranscript($doc_id, $page, $col): string
+    {
         $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
         $elements = $this->dm->getColumnElementsBypageID($page_id, $col);
-        $transcript = $this->getPlainTextFromElements($elements);
-        return $transcript;
+        return $this->getPlainTextFromElements($elements);
     }
 
     protected function getTranscriber($doc_id, $page, $col) {
@@ -195,7 +195,8 @@ class IndexCreater extends CommandLineUtility {
         return $this->dm->getPageInfoByDocSeq($doc_id, $seq)['lang'];
     }
 
-    protected function getFoliation($doc_id, $page) {
+    protected function getFoliation($doc_id, $page): string
+    {
         $seq = $this->getSeq($doc_id, $page);
         return $this->dm->getPageFoliationByDocSeq($doc_id,  $seq);
     }
@@ -274,7 +275,7 @@ class IndexCreater extends CommandLineUtility {
 
         // Remove numbers
         for ($i=0; $i<10; $i++) {
-            $transcript_clean = str_replace("${i}", '', $transcript_clean);
+            $transcript_clean = str_replace("$i", '', $transcript_clean);
         }
 
         // Remove repetitions of hashtags

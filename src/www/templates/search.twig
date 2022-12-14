@@ -8,38 +8,38 @@
 
         // Get selectors for catching user input
         let keywords_box = $("#keywordBox")
-        let transcript_box = $("#transcriptBox")
-        let transcriber_box = $("#transcriberBox")
-        let radius_slider = $("#radiusSlider")
-        let lemmatization_box = $("#lemmatize")
+        // let transcript_box = $("#transcriptBox")
+        // let transcriber_box = $("#transcriberBox")
+        // let radius_slider = $("#radiusSlider")
+        // let lemmatization_box = $("#lemmatize")
         let doc = $(document)
 
         // Get selector for signaling errors to user
-        let error_message = $("#error_message")
+        let errorMessageDiv = $("#error_message")
 
         // Get lists for transcript and transcriber forms
-        getListFromOpenSearch ('titles')
-        getListFromOpenSearch ('transcribers')
+        getListFromOpenSearch ('titles', errorMessageDiv)
+        getListFromOpenSearch ('transcribers', errorMessageDiv)
 
         // SETUP FUNCTIONALITY FOR ALL BOXES AND THE DOCUMENT ITSELF
-        let event_boxes = [keywords_box, transcript_box, transcriber_box, radius_slider, lemmatization_box, doc]
+        // let event_boxes = [keywords_box, transcript_box, transcriber_box, radius_slider, lemmatization_box, doc]
 
-        // Start query, if enter key is pressed while having selected one of the boxes
-        event_boxes.forEach(function (box) {
-          box.on("keyup", function (event) {
+        // Start query when the 'Enter' key is pressed
+        // event_boxes.forEach(function (box) {
+          doc.on("keyup", function (event) {
             let user_input = keywords_box.val()
-            if ( event.which == 13 && user_input !== "") {
+            if ( event.key === 'Enter' && user_input !== "") {
               search()
             }
-            else if (event.which == 13 && user_input == "") {
-              error_message.html(`<br>Please type in a keyword!<br><br>`)
+            else if (event.key === 'Enter' && user_input === "") {
+              errorMessageDiv.html(`<br>Please type in a keyword!<br><br>`)
             }
           })
-        })
+        // })
       })
 
-      // Function to get list of indexed values, i. e. titles or transcribers, via an API call
-      function getListFromOpenSearch (category) {
+      // Function to get list of indexed values, i.e. titles or transcribers, via an API call
+      function getListFromOpenSearch (category, errorMessageDiv) {
 
         // Get queried category
         if (category === 'titles') {
@@ -57,8 +57,7 @@
               if (apiResponse.errorData !== undefined) {
                 console.log(apiResponse.errorData)
               }
-              error_message
-                .html('Error while getting doc list, please report to technical administrators.')
+              errorMessageDiv.html('Error while getting doc list, please report to technical administrators.')
                 .removeClass('text-error')
               return
             }
@@ -85,7 +84,7 @@
               if (apiResponse.errorData !== undefined) {
                 console.log(apiResponse.errorData)
               }
-              error_message
+              errorMessageDiv
                 .html('Error while getting transcribers list, please report to technical administrators.')
                 .removeClass('text-error')
               return
@@ -217,15 +216,15 @@
             results_body.empty()
             if (lang==='la') {
               results_body.append(
-                      `<tr><td align="justify">${passages_string}</td><td>${title}</td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                      `<tr><td class="text-justify">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
             }
             else if (lang==='he') {
               results_body.append(
-                      `<tr><td align="justify" class="text-he">${passages_string}</td><td>${title}</td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                      `<tr><td class="text-justify" class="text-he">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
             }
             else if (lang==='ar') {
               results_body.append(
-                      `<tr><td align="justify" class="text-ar">${passages_string}</td><td>${title}</td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                      `<tr><td class="text-justify" class="text-ar">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
             }
           }
         }
@@ -238,7 +237,7 @@
           results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th>Document (${num_docs})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
           results_body.empty()
 
-          // Make variable for storing title of preceeding column in the dataset to display only ONE title,
+          // Make variable for storing title of preceding column in the dataset to display only ONE title,
           // if there are plenty matched columns/passages of the same document
           let prec_title = " "
 
@@ -271,29 +270,29 @@
               if (title === prec_title) {
                 if (lang==='la') {
                   results_body.append(
-                          `<tr><td align="justify">${passages_string}</td><td></td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                          `<tr><td class="text-justify">${passages_string}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
                 }
                 else if (lang==='he') {
                   results_body.append(
-                          `<tr><td align="justify" class="text-he">${passages_string}</td><td></td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                          `<tr><td class="text-justify" class="text-he">${passages_string}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
                 }
                 else if (lang==='ar') {
                   results_body.append(
-                          `<tr><td align="justify" class="text-ar">${passages_string}</td><td></td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                          `<tr><td class="text-justify" class="text-ar">${passages_string}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
                 }
               }
               else {
                 if (lang==='la') {
                   results_body.append(
-                          `<tr><td align="justify">${passages_string}</td><td>${title}</td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                          `<tr><td class="text-justify">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
                 }
                 else if (lang==='he') {
                   results_body.append(
-                          `<tr><td align="justify" class="text-he">${passages_string}</td><td>${title}</td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                          `<tr><td class="text-justify" class="text-he">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
                 }
                 else if (lang==='ar') {
                   results_body.append(
-                          `<tr><td align="justify" class="text-ar">${passages_string}</td><td>${title}</td><td align="center">${foliation}</td><td>${transcriber}</td><td align="center">${link}</td></tr>`)
+                          `<tr><td class="text-justify" class="text-ar">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
                 }
                 prec_title = title
               }
@@ -313,7 +312,7 @@
         let num_docs = 0
         let prev_title = ""
 
-        for (i=0; i<numColumns; i++) {
+        for (let i=0; i<numColumns; i++) {
           let title = data[i]['title']
           if (title !== prev_title) {
             num_docs = num_docs + 1
@@ -329,11 +328,11 @@
         // String to return – contains passages with highlighted words in it
         let passage_highlighted = ""
 
-        // Convert array to string with boldened tokens_matched
-        for (i=0; i<passage.length; i++) {
+        // Convert array to string with bold tokens_matched
+        for (let i=0; i<passage.length; i++) {
           // Get current word of passage-array
           let token = passage[i]
-          // Bolden token, if it is one of the tokens_matched
+          // Bold token, if it is one of the tokens_matched
           if (tokens_matched.indexOf(token) !== -1) {
             token = token.bold()
           }
@@ -360,9 +359,10 @@
 
 {% block content %}
     <h1> Search </h1>
+  <p>Type in a keyword and press 'Enter' to search</p>
 
   <table class="dataTable" id="searchTable">
-    <tr><td><b>Keywords</b></td><td><b>Transcript</b></td><td><b>Transcriber</b></td><td><b>Radius</b></td><td align="center"><b>Lemmatization</b></td></tr>
+    <tr><td><b>Keywords</b></td><td><b>Transcript</b></td><td><b>Transcriber</b></td><td><b>Radius</b></td><td class="text-center"><b>Lemmatization</b></td></tr>
 
     <tr>
         <td>
@@ -393,7 +393,7 @@
                 <input type="range" id="radiusSlider" name="radiusSlider" min="10" max="60" value="18">
             </form>
         </td>
-      <td align="center">
+      <td class="text-center">
         <div>
           <input type="checkbox" id="lemmatize" name="lemmatize">
         </div>

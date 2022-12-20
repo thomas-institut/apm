@@ -98,12 +98,27 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.selectNewEntry = false
     this.newEntryMainTextFrom = -1
     this.newEntryMainTextTo = -1
+    this.debug = this.options.debug
   }
 
   _buildWorkingCtData(ctData) {
     let workingCtData = CtData.copyFromObject(ctData)
     workingCtData['siglaGroups'] = ctData['siglaGroups'].map( (sg) => { return SiglaGroup.fromObject(sg)})
     return workingCtData
+  }
+
+  onResize (visible) {
+    super.onResize(visible)
+    this.debug && console.log(`Resizing apparatus panel`)
+    let apparatusDiv = $(this.getApparatusDivSelector())
+    if (this.apparatusEntryFormIsVisible) {
+      this.debug && console.log(`Apparatus entry form is visible`)
+      this.debug && console.log(`Form height: ${$(this.getApparatusEntryFormSelector()).outerHeight()}`)
+    } else {
+      this.debug && console.log(`Apparatus entry form is NOT visible`)
+    }
+    this.debug && console.log(`Apparatus div height: ${apparatusDiv.outerHeight()}`)
+
   }
 
   editApparatusEntry(mainTextFrom, mainTextTo) {

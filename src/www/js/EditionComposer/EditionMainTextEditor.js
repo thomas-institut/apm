@@ -99,7 +99,9 @@ export class EditionMainTextEditor {
     this.quillDeltaRenderer = new QuillDeltaRenderer({
       classToAttrTranslators: {
         numberingLabel: (attr) => { attr.numberingLabel = true; return attr}
-      }
+      },
+      defaultTextAttrObject: { numberingLabel: false},
+      defaultGlueAttrObject: { numberingLabel: false}
     })
     this.quillDeltaConverter = new GenericQuillDeltaConverter({
       verbose: this.verbose,
@@ -107,6 +109,7 @@ export class EditionMainTextEditor {
       ignoreParagraphs: false,
       attrToClassTranslators: {
         numberingLabel: (value, classList) => {
+          // console.log(`Attr to class `)
           if (value) {
             classList = 'numberingLabel'
           }

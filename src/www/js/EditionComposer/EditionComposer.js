@@ -60,15 +60,15 @@ import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditio
 import * as CollationTableType from '../constants/CollationTableType'
 import { Edition } from '../Edition/Edition.mjs'
 import * as NormalizationSource from '../constants/NormalizationSource'
-import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser'
+// import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser'
 import { EditionWitnessReferencesCleaner } from '../CtData/CtDataCleaner/EditionWitnessReferencesCleaner'
 import { CollationTableConsistencyCleaner } from '../CtData/CtDataCleaner/CollationTableConsistencyCleaner'
 import * as WitnessTokenType from '../Witness/WitnessTokenType'
-import * as WitnessTokenClass from '../Witness/WitnessTokenClass'
-import { FmtText } from '../FmtText/FmtText.mjs'
+// import * as WitnessTokenClass from '../Witness/WitnessTokenClass'
+// import { FmtText } from '../FmtText/FmtText.mjs'
 import { PdfDownloadUrl } from './PdfDownloadUrl'
 
-import { Punctuation} from '../defaults/Punctuation.mjs'
+// import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS
 
 // tab ids
@@ -260,7 +260,6 @@ export class EditionComposer {
       apparatusPanels: this.apparatusPanels,
       debug: true,
       onError: (msg) => { this._setError(`${msg} (Main Text Panel)`)},
-      onConfirmMainTextEdit: this.genOnConfirmMainTextEdit(),
       onCtDataChange: this.genOnCtDataChange('mainTextPanel'),
       editApparatusEntry: (apparatusIndex, mainTextFrom, mainTextTo) => { this.editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo)},
       editionWitnessTokenNormalizer: this.genEditionWitnessTokenNormalizer()
@@ -498,34 +497,34 @@ export class EditionComposer {
     }
   }
 
-  _getMainTextWitnessIndex() {
-    return this.ctData['editionWitnessIndex'] !== undefined ? this.ctData['editionWitnessIndex'] :
-      this.ctData['witnessOrder'][0]
+  // _getMainTextWitnessIndex() {
+  //   return this.ctData['editionWitnessIndex'] !== undefined ? this.ctData['editionWitnessIndex'] :
+  //     this.ctData['witnessOrder'][0]
+  //
+  // }
 
-  }
-
-  genOnConfirmMainTextEdit() {
-    return (tokenIndex, newText) => {
-      console.log(`Confirming edit of main text token ${tokenIndex}  with new text '${newText}'`)
-      let token = this.edition.getMainTextToken( tokenIndex)
-      if (token.isEmpty()) {
-        console.warn(`Trying to confirm edit of nonexistent main text token`)
-        return false
-      }
-      let ctIndex = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, token.editionWitnessTokenIndex)
-      if (ctIndex === -1) {
-        console.warn(`Trying to confirm edit of token that does not have a reference in the collation table`)
-        return false
-      }
-      let changesInCt = this._editMainText(ctIndex, newText)
-      if (changesInCt) {
-        this._updateSaveArea()
-        this._reGenerateEdition(`Main text edit`)
-        this._updateDataInPanels()
-      }
-      return changesInCt
-    }
-  }
+  // genOnConfirmMainTextEdit() {
+  //   return (tokenIndex, newText) => {
+  //     console.log(`Confirming edit of main text token ${tokenIndex}  with new text '${newText}'`)
+  //     let token = this.edition.getMainTextToken( tokenIndex)
+  //     if (token.isEmpty()) {
+  //       console.warn(`Trying to confirm edit of nonexistent main text token`)
+  //       return false
+  //     }
+  //     let ctIndex = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, token.editionWitnessTokenIndex)
+  //     if (ctIndex === -1) {
+  //       console.warn(`Trying to confirm edit of token that does not have a reference in the collation table`)
+  //       return false
+  //     }
+  //     let changesInCt = this._editMainText(ctIndex, newText)
+  //     if (changesInCt) {
+  //       this._updateSaveArea()
+  //       this._reGenerateEdition(`Main text edit`)
+  //       this._updateDataInPanels()
+  //     }
+  //     return changesInCt
+  //   }
+  // }
 
   _updateDataInPanels(updateWitnessInfo = false) {
     if (this.errorDetected) {
@@ -563,110 +562,110 @@ export class EditionComposer {
 
 
 
-  /**
-   * Changes the text in the main text witness for the given index
-   * Returns true if there was an actual change in the collation table.
-   *
-   * @param {number} ctIndex
-   * @param {string} newText
-   * @return {boolean}
-   * @private
-   */
-  _editMainText(ctIndex, newText) {
-    let thisObject = this
-
-    function replaceEditionWitnessToken(ctRow, tokenIndex, newText, lang) {
-      let tokenType = Punctuation.stringIsAllPunctuation(newText, lang) ? WitnessTokenType.PUNCTUATION : WitnessTokenType.WORD
-      thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['tokenClass'] = WitnessTokenClass.EDITION
-      if (thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'] === undefined) {
-        // no formatting, just copy the text
-        thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['text'] = newText
-      } else {
-        //there is some formatting
-        console.log(`Replacing edition witness token that contains formatting`)
-        console.log(`newText: ${newText}`)
-        console.log(`current fmtText: `)
-        console.log(thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'])
-        let newFmtText = FmtText.withPlainText(thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'], newText)
-        thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'] = newFmtText
-        thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['text'] = FmtText.getPlainText(newFmtText)
-        console.log(`new fmtText: `)
-        console.log(thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'])
-      }
-
-      thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['tokenType'] = tokenType
-      thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['normalizedText'] = ''
-      thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['normalizationSource'] = ''
-
-      if (tokenType === WitnessTokenType.WORD) {
-        if (thisObject.ctData['automaticNormalizationsApplied'].length !== 0) {
-          // apply normalizations for this token
-          let norm = thisObject.normalizerRegister.applyNormalizerList(thisObject.ctData['automaticNormalizationsApplied'], newText)
-          if (norm !== newText) {
-            console.log(`New text normalized:  ${newText} => ${norm}`)
-            thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['normalizedText'] = norm
-            thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
-          }
-        }
-      }
-    }
-    let witnessIndex = this._getMainTextWitnessIndex()
-    let editionWitnessRef = this.ctData['collationMatrix'][witnessIndex][ctIndex]
-    //console.log(`Editing witness token: row ${ctRow}, col ${ctIndex}, ref ${editionWitnessRef}`)
-    if (editionWitnessRef === -1) {
-      console.warn(`Null reference found editing witness token: row ${witnessIndex}, col ${ctIndex}, ref ${editionWitnessRef}`)
-      return false
-    }
-    let witnessToken = this.ctData['witnesses'][witnessIndex]['tokens'][editionWitnessRef]
-    if (witnessToken === undefined) {
-      console.warn(`Undefined witness token editing witness token: row ${witnessIndex}, col ${ctIndex}, ref ${editionWitnessRef}`)
-      return false
-    }
-    //console.log(witnessToken)
-    newText = Util.trimWhiteSpace(newText)
-    if (witnessToken.text === newText) {
-      //console.log(`No change in text`)
-      return false
-    }
-
-    // parse new text into witness tokens
-    let parsedText = EditionWitnessTokenStringParser.parse(newText, this.lang).filter ( (t) => {
-      return t.tokenType === WitnessTokenType.WORD || t.tokenType === WitnessTokenType.PUNCTUATION
-    })
-    console.log(`Parsed new text`)
-    console.log(parsedText)
-    if (parsedText.length === 0) {
-      // empty text
-      console.log(`Empty text `)
-      // TODO: delete the column in the CT if there is nothing in the witnesses?
-      this.ctData = CtData.emptyWitnessToken(this.ctData, witnessIndex, editionWitnessRef)
-      return true
-    }
-    if (parsedText.length === 1) {
-      // single word
-      console.log(`Single token in new text: ${parsedText[0].text}`)
-      replaceEditionWitnessToken(witnessIndex, editionWitnessRef, newText, this.lang)
-      return true
-    }
-    // more than one word
-    // first determine if the current token text is in the new text
-    console.log(`Finding old text in the new text`)
-    let currentTokenIndex = parsedText.map( (t) => { return t.text}).indexOf(witnessToken.text)
-    if (currentTokenIndex !== -1) {
-      console.log(`The old text is in position ${currentTokenIndex+1} of ${parsedText.length}`)
-      this.ctData = CtData.insertColumnsAfter(this.ctData, ctIndex-1, currentTokenIndex)
-      this.ctData = CtData.insertColumnsAfter(this.ctData, ctIndex+currentTokenIndex, parsedText.length-1-currentTokenIndex)
-    } else {
-      console.log(`The old text is not in the new text`)
-      this.ctData = CtData.insertColumnsAfter(this.ctData, ctIndex, parsedText.length-1)
-    }
-    for (let col = 0; col < parsedText.length; col++ ) {
-      replaceEditionWitnessToken(witnessIndex, editionWitnessRef + col, parsedText[col].text, this.lang)
-    }
-    console.log(`New ct Data after multiple word edit`)
-    console.log(this.ctData)
-    return true
-  }
+  // /**
+  //  * Changes the text in the main text witness for the given index
+  //  * Returns true if there was an actual change in the collation table.
+  //  *
+  //  * @param {number} ctIndex
+  //  * @param {string} newText
+  //  * @return {boolean}
+  //  * @private
+  //  */
+  // _editMainText(ctIndex, newText) {
+  //   let thisObject = this
+  //
+  //   function replaceEditionWitnessToken(ctRow, tokenIndex, newText, lang) {
+  //     let tokenType = Punctuation.stringIsAllPunctuation(newText, lang) ? WitnessTokenType.PUNCTUATION : WitnessTokenType.WORD
+  //     thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['tokenClass'] = WitnessTokenClass.EDITION
+  //     if (thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'] === undefined) {
+  //       // no formatting, just copy the text
+  //       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['text'] = newText
+  //     } else {
+  //       //there is some formatting
+  //       console.log(`Replacing edition witness token that contains formatting`)
+  //       console.log(`newText: ${newText}`)
+  //       console.log(`current fmtText: `)
+  //       console.log(thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'])
+  //       let newFmtText = FmtText.withPlainText(thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'], newText)
+  //       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'] = newFmtText
+  //       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['text'] = FmtText.getPlainText(newFmtText)
+  //       console.log(`new fmtText: `)
+  //       console.log(thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'])
+  //     }
+  //
+  //     thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['tokenType'] = tokenType
+  //     thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['normalizedText'] = ''
+  //     thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['normalizationSource'] = ''
+  //
+  //     if (tokenType === WitnessTokenType.WORD) {
+  //       if (thisObject.ctData['automaticNormalizationsApplied'].length !== 0) {
+  //         // apply normalizations for this token
+  //         let norm = thisObject.normalizerRegister.applyNormalizerList(thisObject.ctData['automaticNormalizationsApplied'], newText)
+  //         if (norm !== newText) {
+  //           console.log(`New text normalized:  ${newText} => ${norm}`)
+  //           thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['normalizedText'] = norm
+  //           thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
+  //         }
+  //       }
+  //     }
+  //   }
+  //   let witnessIndex = this._getMainTextWitnessIndex()
+  //   let editionWitnessRef = this.ctData['collationMatrix'][witnessIndex][ctIndex]
+  //   //console.log(`Editing witness token: row ${ctRow}, col ${ctIndex}, ref ${editionWitnessRef}`)
+  //   if (editionWitnessRef === -1) {
+  //     console.warn(`Null reference found editing witness token: row ${witnessIndex}, col ${ctIndex}, ref ${editionWitnessRef}`)
+  //     return false
+  //   }
+  //   let witnessToken = this.ctData['witnesses'][witnessIndex]['tokens'][editionWitnessRef]
+  //   if (witnessToken === undefined) {
+  //     console.warn(`Undefined witness token editing witness token: row ${witnessIndex}, col ${ctIndex}, ref ${editionWitnessRef}`)
+  //     return false
+  //   }
+  //   //console.log(witnessToken)
+  //   newText = Util.trimWhiteSpace(newText)
+  //   if (witnessToken.text === newText) {
+  //     //console.log(`No change in text`)
+  //     return false
+  //   }
+  //
+  //   // parse new text into witness tokens
+  //   let parsedText = EditionWitnessTokenStringParser.parse(newText, this.lang).filter ( (t) => {
+  //     return t.tokenType === WitnessTokenType.WORD || t.tokenType === WitnessTokenType.PUNCTUATION
+  //   })
+  //   console.log(`Parsed new text`)
+  //   console.log(parsedText)
+  //   if (parsedText.length === 0) {
+  //     // empty text
+  //     console.log(`Empty text `)
+  //     // TODO: delete the column in the CT if there is nothing in the witnesses?
+  //     this.ctData = CtData.emptyWitnessToken(this.ctData, witnessIndex, editionWitnessRef)
+  //     return true
+  //   }
+  //   if (parsedText.length === 1) {
+  //     // single word
+  //     console.log(`Single token in new text: ${parsedText[0].text}`)
+  //     replaceEditionWitnessToken(witnessIndex, editionWitnessRef, newText, this.lang)
+  //     return true
+  //   }
+  //   // more than one word
+  //   // first determine if the current token text is in the new text
+  //   console.log(`Finding old text in the new text`)
+  //   let currentTokenIndex = parsedText.map( (t) => { return t.text}).indexOf(witnessToken.text)
+  //   if (currentTokenIndex !== -1) {
+  //     console.log(`The old text is in position ${currentTokenIndex+1} of ${parsedText.length}`)
+  //     this.ctData = CtData.insertColumnsAfter(this.ctData, ctIndex-1, currentTokenIndex)
+  //     this.ctData = CtData.insertColumnsAfter(this.ctData, ctIndex+currentTokenIndex, parsedText.length-1-currentTokenIndex)
+  //   } else {
+  //     console.log(`The old text is not in the new text`)
+  //     this.ctData = CtData.insertColumnsAfter(this.ctData, ctIndex, parsedText.length-1)
+  //   }
+  //   for (let col = 0; col < parsedText.length; col++ ) {
+  //     replaceEditionWitnessToken(witnessIndex, editionWitnessRef + col, parsedText[col].text, this.lang)
+  //   }
+  //   console.log(`New ct Data after multiple word edit`)
+  //   console.log(this.ctData)
+  //   return true
+  // }
 
   genOnConfirmArchive() {
     let thisObject = this

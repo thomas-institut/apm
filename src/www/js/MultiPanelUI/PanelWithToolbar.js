@@ -76,6 +76,10 @@ export class PanelWithToolbar extends Panel {
 
   postRender (id, mode, visible) {
     super.postRender(id, mode, visible)
+    if (this.maximizeContentArea) {
+      //console.log(`Resizing content area for '${this.containerSelector}'`)
+      maximizeElementHeightInParent($(this.getContentAreaSelector()), $(this.containerSelector), $(this.getToolbarSelector()).outerHeight())
+    }
   }
 
   replaceContent(newHtml) {

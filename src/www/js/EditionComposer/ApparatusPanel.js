@@ -39,6 +39,10 @@ const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
 
 
+const shortPanelThreshold = 400
+const minApparatusHeight = 250
+const apparatusPercentageHeight = 20
+
 const icons = {
   edit: '<small><i class="fas fa-pen"></i></small>',
   cancelEdit: '<i class="bi bi-x-circle"></i>',
@@ -98,7 +102,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.selectNewEntry = false
     this.newEntryMainTextFrom = -1
     this.newEntryMainTextTo = -1
-    this.debug = this.options.debug
+    //this.debug = this.options.debug
+    this.debug = true
   }
 
   _buildWorkingCtData(ctData) {
@@ -109,16 +114,54 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
   onResize (visible) {
     super.onResize(visible)
-    this.debug && console.log(`Resizing apparatus panel`)
+    this.__fitDivs()
+  }
+
+  __fitDivs() {
+    this.debug && console.log(`Fitting divs for apparatus ${this.options.apparatusIndex}`)
+    let currentContentHeight = $(this.getContentAreaSelector()).outerHeight()
+    // first, reset apparatus css height so that we can measure its actual height
     let apparatusDiv = $(this.getApparatusDivSelector())
+    apparatusDiv.css('height', '')
     if (this.apparatusEntryFormIsVisible) {
+      apparatusDiv.css('border-top', '2px solid var(--panel-border-color)')
       this.debug && console.log(`Apparatus entry form is visible`)
-      this.debug && console.log(`Form height: ${$(this.getApparatusEntryFormSelector()).outerHeight()}`)
+      let formDiv =  $(this.getApparatusEntryFormSelector())
+      formDiv.css('height', '')
+      let currentApparatusHeight = apparatusDiv.outerHeight()
+      this.debug && console.log(`Current container height: ${currentContentHeight}`)
+      let currentFormHeight = formDiv.outerHeight()
+      this.debug && console.log(`Current Form height: ${currentFormHeight}`)
+      this.debug && console.log(`Current apparatus height: ${currentApparatusHeight}`)
+
+      if (currentContentHeight < shortPanelThreshold) {
+        // this is just too short for any meaningful fitting
+        this.debug && console.log(`Panel is too short, not doing any fitting`)
+        // formDiv.css('height', '')
+        // apparatusDiv.css('height', '')
+        return
+      }
+      if (currentContentHeight > (currentApparatusHeight + currentFormHeight)) {
+        // everything fits all right
+        this.debug && console.log(`Panel is larger than current content, no fitting is necessary`)
+        // formDiv.css('height', '')
+        // apparatusDiv.css('height', '')
+        return
+      }
+
+      let newApparatusHeight = Math.max(minApparatusHeight, currentContentHeight * apparatusPercentageHeight / 100)
+      this.debug && console.log(`Setting apparatus height to ${newApparatusHeight}`)
+      apparatusDiv.css('height', newApparatusHeight)
+      apparatusDiv.css('overflow-y', 'auto')
+      formDiv.css('height', currentContentHeight - newApparatusHeight - 25)
+      formDiv.css('overflow-y', 'auto')
+      $(this.getContentAreaSelector()).css('overflow-y', 'clip')
     } else {
       this.debug && console.log(`Apparatus entry form is NOT visible`)
+      this.debug && console.log(`Current apparatus height: ${apparatusDiv.outerHeight()}`)
+      apparatusDiv.css('border-top', '')
+      $(this.getContentAreaSelector()).css('overflow-y', 'auto')
     }
-    this.debug && console.log(`Apparatus div height: ${apparatusDiv.outerHeight()}`)
-
   }
 
   editApparatusEntry(mainTextFrom, mainTextTo) {
@@ -671,6 +714,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
     this._loadEntryIntoEntryForm(this.currentSelectedEntryIndex)
     this._showApparatusEntryForm()
+    $(`.lemma-${this.options.apparatusIndex}-${this.currentSelectedEntryIndex}`).get(0).scrollIntoView()
   }
 
   _genOnClickEditEntryButton() {
@@ -728,6 +772,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     }
     this.options.highlightCollationTableRange(-1, -1)
     this.apparatusEntryFormIsVisible = false
+    this.__fitDivs()
   }
 
   _showApparatusEntryForm() {
@@ -736,6 +781,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this._getEditEntryButtonElement().html(icons.cancelEdit).attr('title', cancelEditButtonTitle).removeClass('hidden')
     this.options.highlightCollationTableRange(this.entryInEditor.ctIndexFrom, this.entryInEditor.ctIndexTo)
     this.apparatusEntryFormIsVisible = true
+    this.__fitDivs()
   }
 
   updateApparatus(mainTextTokensWithTypesettingInfo) {

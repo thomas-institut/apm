@@ -33,7 +33,7 @@ import * as EditionMainTextTokenType from '../Edition/MainTextTokenType.mjs'
 import { Edition } from '../Edition/Edition.mjs'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
 import { PanelWithToolbar } from '../MultiPanelUI/PanelWithToolbar'
-import { arraysAreEqual, prettyPrintArray, pushArray, varsAreEqual } from '../toolbox/ArrayUtil.mjs'
+import { arraysAreEqual, pushArray, varsAreEqual } from '../toolbox/ArrayUtil.mjs'
 import { CtData } from '../CtData/CtData'
 
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
@@ -45,13 +45,14 @@ import * as MyersDiff from '../toolbox/MyersDiff.mjs'
 import * as WitnessTokenType from '../Witness/WitnessTokenType'
 import * as EditionWitnessFormatMarkType from '../Witness/EditionWitnessFormatMark'
 import * as EditionWitnessParagraphStyle from '../Witness/EditionWitnessParagraphStyle'
-import * as FmtTexTokenType from "../FmtText/FmtTextTokenType.mjs"
+import * as FmtTexTokenType from '../FmtText/FmtTextTokenType.mjs'
 import { WitnessToken } from '../Witness/WitnessToken'
 import { FmtText } from '../FmtText/FmtText.mjs'
 import { CollapsePanel } from '../widgets/CollapsePanel'
 import { EditionWitnessToken } from '../Witness/EditionWitnessToken'
 import { MainText } from '../Edition/MainText.mjs'
 import { TokenMatchScorer } from '../Edition/TokenMatchScorer'
+import { NiceToggle, toggleEvent } from '../widgets/NiceToggle'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_APPARATUS = 'apparatus'
@@ -79,15 +80,6 @@ export class MainTextPanel extends PanelWithToolbar {
       edition: { type: 'object', objectClass: Edition },
       apparatusPanels: { type: 'array' },
       onError: { type: 'function', default: doNothing},
-      onConfirmMainTextEdit: {
-        // function to call when the user edits a main text token
-        //  (mainTextTokenIndex, newText) => boolean,  if false, no changes are made to the displayed text
-        type: 'function',
-        default: (section, tokenIndex, newText) => {
-          console.log(`Confirming edit of main text token ${tokenIndex} in section ${prettyPrintArray(section)} with new text '${newText}'`)
-          return true
-        }
-      },
       onCtDataChange: { type: 'function', default: doNothing},
       editionWitnessTokenNormalizer: { type: 'function', default: (token) => { return token}},
       editApparatusEntry : {
@@ -114,6 +106,7 @@ export class MainTextPanel extends PanelWithToolbar {
     this.tokenIndexOne = -1
     this.tokenIndexTwo = -1
     this.lastTypesetinfo = null
+    this.detectNumberingLabels = true
 
     this.changesInfoDivConstructed = false
 
@@ -175,11 +168,16 @@ export class MainTextPanel extends PanelWithToolbar {
                </div>
             </div>
             <div class="panel-toolbar-group text-edit-toolbar">
-                <div class="panel-toolbar-item text-edit-revert">
-                    <a class="btn tb-button text-edit-revert-btn" title="Revert Changes">${icons.revertEdit}</a>
+                <div class="panel-toolbar-group">
+                    <div class="panel-toolbar-item numbering-labels-toggle"></div>
                 </div>
-                <div class="panel-toolbar-item text-edit-commit">
-                    <a class="btn tb-button text-edit-commit-btn" title="Commit Changes">${icons.commitEdit}</a>
+                <div class="panel-toolbar-group">
+                    <div class="panel-toolbar-item text-edit-revert">
+                        <a class="btn tb-button text-edit-revert-btn" title="Revert Changes">${icons.revertEdit}</a>
+                    </div>
+                    <div class="panel-toolbar-item text-edit-commit">
+                        <a class="btn tb-button text-edit-commit-btn" title="Commit Changes">${icons.commitEdit}</a>
+                    </div>
                 </div>
             </div>
         </div>`
@@ -366,6 +364,8 @@ export class MainTextPanel extends PanelWithToolbar {
           $(this.getContentAreaSelector()).html(this._getMainTextHtmlVersion())
           this._setupMainTextDivEventHandlers()
           this._updateLineNumbersAndApparatuses().then( () => { this.verbose && console.log(`Finished switching mode to ${this.currentEditMode}`)})
+          delete this.numberingLabelsToggle
+          $('div.numbering-labels-toggle').html('')
           this.textEditRevertDiv.addClass('hidden')
           this.textEditCommitDiv.addClass('hidden')
         }
@@ -389,6 +389,20 @@ export class MainTextPanel extends PanelWithToolbar {
       lang: this.lang,
       onChange: this._genOnChangeMainTextFreeTextEditor(),
       debug: true
+    })
+
+    this.numberingLabelsToggle = new NiceToggle({
+      containerSelector: 'div.numbering-labels-toggle',
+      title: 'Auto NL: ',
+      onIcon: '<i class="fas fa-toggle-on"></i>',
+      onPopoverText: 'Click to disable automatic detection of Numbering Labels',
+      offIcon: '<i class="fas fa-toggle-off"></i>',
+      offPopoverText: 'Click to enable automatic detection of Numbering Labels'
+    })
+
+    this.numberingLabelsToggle.on(toggleEvent,  (ev) => {
+      this.detectNumberingLabels = !!ev.detail.toggleStatus;
+      this.__detectAndReportChangesInEditedMainText()
     })
 
     this.freeTextEditor.setText( this._convertMainTextToFmtText(), true)
@@ -484,79 +498,83 @@ export class MainTextPanel extends PanelWithToolbar {
     return html
   }
 
+  __detectAndReportChangesInEditedMainText() {
+    if (!varsAreEqual(this.commitedFreeText, this.freeTextEditor.getFmtText())) {
+      this.textEditRevertDiv.removeClass('hidden')
+      this.textEditCommitDiv.removeClass('hidden')
+      this.debug && console.log(`Changes in editor`)
+
+      let currentWitnessTokens = this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens
+      this.debug && console.log(`Current witness tokens`)
+      this.debug && console.log(currentWitnessTokens)
+
+      let newFmtText = this.freeTextEditor.getFmtText()
+      this.debug && console.log(`fmtText from editor`)
+      this.debug && console.log(newFmtText)
+
+
+      let witnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText)
+      this.debug && console.log(`Witness tokens from editor`)
+      this.debug && console.log(witnessTokens)
+
+      let changes = this._getChangesInTextEditor(currentWitnessTokens, witnessTokens)
+      this.debug && console.log(`Changes`)
+      this.debug && console.log(changes)
+      let changeListHtml = changes.map( (change) => {
+        switch( change.change) {
+          case 'replace':
+            return `${change.index+1}: ${this.__getWitnessTokenHtml(change.currentToken)} &rarr; ${this.__getWitnessTokenHtml(change.newToken)}`
+
+          case 'add':
+            if (change.index === -1) {
+              return `0: <em>add</em> ${this.__getWitnessTokenHtml(change.newToken)}`
+            }
+            return ` ${change.index+1}: ${this.__getWitnessTokenHtml(change.currentToken)} <em>add</em> ${this.__getWitnessTokenHtml(change.newToken)}`
+
+          case 'delete':
+            return `${change.index+1}: ${this.__getWitnessTokenHtml(change.currentToken)} &rarr; <em>empty</em>`
+        }
+      }).map( (changeHtml) => { return `<li>${changeHtml}</li>`}).join('')
+      let mainTextWithChangesHtml = this._genMainTextWithChanges(currentWitnessTokens, changes)
+      if (!this.changesInfoDivConstructed) {
+        this.betaEditorInfoDiv.html(`<p id="num-changes"> </p>
+                <div id="revisions"></div><div id="ct-changes"></div>`)
+        this.numChangesPar = $('#num-changes')
+        this.revisionsPanel =  new CollapsePanel({
+          containerSelector: '#revisions',
+          title: 'Revisions',
+          contentClasses: ['main-text-with-changes'],
+          iconWhenShown: '<i class="bi bi-caret-down"></i>',
+          iconWhenHidden: '<i class="bi bi-caret-right"></i>',
+          initiallyShown: false
+        })
+        this.ctChangesPanel = new CollapsePanel({
+          containerSelector: '#ct-changes',
+          title: 'Collation Table Changes',
+          iconWhenShown: '<i class="bi bi-caret-down"></i>',
+          iconWhenHidden: '<i class="bi bi-caret-right"></i>',
+          initiallyShown: false
+        })
+        this.changesInfoDivConstructed = true
+      }
+
+      this.numChangesPar.html(changes.length === 1 ? 'There is 1 change:' : `There are ${changes.length} changes:`)
+      this.revisionsPanel.setContent(mainTextWithChangesHtml)
+      this.ctChangesPanel.setContent(`<ul>${changeListHtml}</ul>`)
+      this.betaEditorInfoDiv.removeClass('hidden')
+
+
+    } else {
+      this.textEditRevertDiv.addClass('hidden')
+      this.textEditCommitDiv.addClass('hidden')
+      this.betaEditorInfoDiv.html('No changes')
+      this.changesInfoDivConstructed = false
+    }
+  }
+
   _genOnChangeMainTextFreeTextEditor() {
     return () => {
-      if (!varsAreEqual(this.commitedFreeText, this.freeTextEditor.getFmtText())) {
-        this.textEditRevertDiv.removeClass('hidden')
-        this.textEditCommitDiv.removeClass('hidden')
-        this.debug && console.log(`Changes in editor`)
-
-        let currentWitnessTokens = this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens
-        this.debug && console.log(`Current witness tokens`)
-        this.debug && console.log(currentWitnessTokens)
-
-        let newFmtText = this.freeTextEditor.getFmtText()
-        this.debug && console.log(`fmtText from editor`)
-        this.debug && console.log(newFmtText)
-
-
-        let witnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText)
-        this.debug && console.log(`Witness tokens from editor`)
-        this.debug && console.log(witnessTokens)
-
-        let changes = this._getChangesInTextEditor(currentWitnessTokens, witnessTokens)
-        this.debug && console.log(`Changes`)
-        this.debug && console.log(changes)
-        let changeListHtml = changes.map( (change) => {
-          switch( change.change) {
-            case 'replace':
-              return `${change.index+1}: ${this.__getWitnessTokenHtml(change.currentToken)} &rarr; ${this.__getWitnessTokenHtml(change.newToken)}`
-
-            case 'add':
-              if (change.index === -1) {
-                return `0: <em>add</em> ${this.__getWitnessTokenHtml(change.newToken)}`
-              }
-              return ` ${change.index+1}: ${this.__getWitnessTokenHtml(change.currentToken)} <em>add</em> ${this.__getWitnessTokenHtml(change.newToken)}`
-
-            case 'delete':
-              return `${change.index+1}: ${this.__getWitnessTokenHtml(change.currentToken)} &rarr; <em>empty</em>`
-          }
-        }).map( (changeHtml) => { return `<li>${changeHtml}</li>`}).join('')
-        let mainTextWithChangesHtml = this._genMainTextWithChanges(currentWitnessTokens, changes)
-        if (!this.changesInfoDivConstructed) {
-          this.betaEditorInfoDiv.html(`<p id="num-changes"> </p>
-                <div id="revisions"></div><div id="ct-changes"></div>`)
-          this.numChangesPar = $('#num-changes')
-          this.revisionsPanel =  new CollapsePanel({
-            containerSelector: '#revisions',
-            title: 'Revisions',
-            contentClasses: ['main-text-with-changes'],
-            iconWhenShown: '<i class="bi bi-caret-down"></i>',
-            iconWhenHidden: '<i class="bi bi-caret-right"></i>',
-            initiallyShown: false
-          })
-          this.ctChangesPanel = new CollapsePanel({
-            containerSelector: '#ct-changes',
-            title: 'Collation Table Changes',
-            iconWhenShown: '<i class="bi bi-caret-down"></i>',
-            iconWhenHidden: '<i class="bi bi-caret-right"></i>',
-            initiallyShown: false
-          })
-          this.changesInfoDivConstructed = true
-        }
-
-        this.numChangesPar.html(changes.length === 1 ? 'There is 1 change:' : `There are ${changes.length} changes:`)
-        this.revisionsPanel.setContent(mainTextWithChangesHtml)
-        this.ctChangesPanel.setContent(`<ul>${changeListHtml}</ul>`)
-        this.betaEditorInfoDiv.removeClass('hidden')
-
-
-      } else {
-        this.textEditRevertDiv.addClass('hidden')
-        this.textEditCommitDiv.addClass('hidden')
-        this.betaEditorInfoDiv.html('No changes')
-        this.changesInfoDivConstructed = false
-      }
+        this.__detectAndReportChangesInEditedMainText()
     }
   }
 
@@ -922,7 +940,7 @@ export class MainTextPanel extends PanelWithToolbar {
         witnessTokens.push( (new EditionWitnessToken()).setNumberingLabel(fmtTextToken.text))
         return
       }
-      let tmpWitnessTokens = EditionWitnessTokenStringParser.parse(fmtTextToken.text, this.edition.lang).map( (witnessToken) => {
+      let tmpWitnessTokens = EditionWitnessTokenStringParser.parse(fmtTextToken.text, this.edition.lang, this.detectNumberingLabels).map( (witnessToken) => {
         witnessToken.fmtText = FmtTextFactory.fromString(witnessToken.text).map((token) => {
               attributesToCopy.forEach((attribute) => {
                 if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute] !== '') {
@@ -1098,48 +1116,6 @@ export class MainTextPanel extends PanelWithToolbar {
         return
       }
       switch(this.currentEditMode) {
-        // case EDIT_MODE_TEXT_OLD:
-        //   this.verbose && console.log(`Click on main text token ${tokenIndex} in main text edit mode`)
-        //   if (tokenIndex === -1) {
-        //     console.warn(`Bad token index, cannot edit`)
-        //     break
-        //   }
-        //   let tokenSelector = `.main-text-token-${tokenIndex}`
-        //   this.originalTokenText = $(tokenSelector).text()
-        //   this.verbose && console.log(`Text to edit: '${this.originalTokenText}'`)
-        //   this.tokenBeingEdited = tokenIndex
-        //   this.textTokenEditor = new EditableTextField({
-        //     containerSelector:  tokenSelector,
-        //     initialText: this.originalTokenText,
-        //     minTextFormSize: 2,
-        //     startInEditMode: true
-        //   })
-        //   this.textTokenEditor.on('confirm', (ev) => {
-        //     let newText = ev.detail.newText
-        //     // It should be assumed that newText is a valid edit (cell validation should have taken care of wrong edits).
-        //     // Even if newText would simply replace the current main text token, it can be the case that there is a change
-        //     // in the lines, so there should always be a regeneration of the edition, a redrawing of the main text
-        //     // and an update to the apparatuses.
-        //     if (this.options.onConfirmMainTextEdit(tokenIndex, newText)) {
-        //       this.verbose && console.log(`Confirming editing, new text = '${newText}'`)
-        //       this._stopEditingMainText(newText)
-        //       this._redrawMainText()
-        //       this._setupMainTextDivEventHandlers()
-        //       this._updateLineNumbersAndApparatuses().then( () => {
-        //         this.verbose && console.log(`Main text redrawn`)
-        //       })
-        //     } else {
-        //       this.verbose && console.log(`Change to main text not accepted`)
-        //       // TODO: indicate this error in some way in the UI, although it should NEVER happen
-        //       this._stopEditingMainText(this.originalTokenText)
-        //     }
-        //   }).on('cancel', () => {
-        //     this.verbose && console.log(`Canceling edit`)
-        //     this._stopEditingMainText(this.originalTokenText)
-        //   })
-        //   this.editingTextToken = true
-        //   break
-
         case EDIT_MODE_APPARATUS:
           // this.verbose && console.log(`Mouse down on main text ${tokenIndex} token in apparatus edit mode`)
           this._setSelection(tokenIndex, tokenIndex)
@@ -1358,10 +1334,7 @@ export class MainTextPanel extends PanelWithToolbar {
           return []
       }
     })
-    let theFmtText =  FmtTextFactory.fromAnything(tokens)
-    // this.debug && console.log(`Fmt Text:`)
-    // this.debug && console.log(theFmtText)
-    return theFmtText
+    return FmtTextFactory.fromAnything(tokens)
   }
 
   _getMainTextBetaEditor() {

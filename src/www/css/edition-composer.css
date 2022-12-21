@@ -472,7 +472,7 @@ div.aei-form .col-form-label {
 /* Custom Entry Editor */
 
 div.aei-form {
-    margin: 1rem 1rem 1rem 10px;
+    padding: 1rem 1rem 1rem 10px;
 }
 
 div.aei-form div.form-footer {
@@ -493,8 +493,13 @@ div.aei-form div.form-footer {
     font-size: 1rem;
 }
 
+.aei-form .ql-editor {
+    padding: 0;
+}
+
 .ql-editor p {
-    margin-bottom: 1rem;
+    padding: 0;
+    margin-bottom: 0.1rem;
 }
 
 .text-la .ql-editor {

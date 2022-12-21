@@ -25,7 +25,7 @@ import * as VerticalAlign from '../VerticalAlign.mjs'
 import * as MarkType from '../MarkType.mjs'
 import * as ParagraphStyle from '../ParagraphStyle.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { doNothing } from '../../toolbox/FunctionUtil.mjs'
+import { deepCopy } from '../../toolbox/Util.mjs'
 
 export class QuillDeltaRenderer extends FmtTextRenderer {
 
@@ -43,13 +43,16 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
         classToAttrTranslators: {
           type: 'object',
           default: { }
-        }
+        },
+        defaultTextAttrObject: { type: 'object', default: {}},
+        defaultGlueAttrObject: { type: 'object', default: {}}
       }
     })
 
     let cleanOptions = oc.getCleanOptions(options)
     this.translators = cleanOptions.classToAttrTranslators
     this.translatorsAvailable = Object.keys(this.translators)
+    this.options = cleanOptions
 
   }
 
@@ -63,7 +66,8 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
   render (fmtText, lang = '') {
     let deltaOps = fmtText.map( (fmtTextToken) => {
       if (fmtTextToken.type === FmtTextTokenType.GLUE) {
-        return { insert: ' '}
+        let attr =  deepCopy(this.options.defaultTextAttrObject)
+        return { insert: ' ', attr: attr}
       }
 
       if (fmtTextToken.type === FmtTextTokenType.MARK) {
@@ -94,7 +98,9 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
         }
       }
 
-      let attr = {}
+      let attr =  deepCopy(this.options.defaultTextAttrObject)
+      // console.log(`Using default text attr object`)
+      // console.log(attr)
       if (fmtTextToken.fontStyle === FontStyle.ITALIC) {
         attr.italic = true
       }
@@ -117,10 +123,7 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
       for (let i = 0; i < classArray.length; i++) {
         let className = classArray[i]
         if (this.translatorsAvailable.indexOf(className) !== -1) {
-          // console.log(`Translating class ${className}`)
           attr = this.translators[className](attr)
-          // console.log(`New attr`)
-          // console.log(attr)
         }
       }
 

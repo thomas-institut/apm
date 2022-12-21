@@ -28,9 +28,10 @@ export class EditionWitnessTokenStringParser {
    * Parses a string into an array of WitnessToken
    * @param {string}str
    * @param {string}lang
+   * @param detectNumberingLabels
    * @return {WitnessToken[]}
    */
-  static parse (str, lang) {
+  static parse (str, lang, detectNumberingLabels = true) {
     // console.log(`Parsing string '${str}', lang='${lang}'`)
     let state = 0
     let tokenArray = []
@@ -56,7 +57,7 @@ export class EditionWitnessTokenStringParser {
         case 1:
           if (this.hasWhiteSpace(ch)) {
             if (currentWordCharacters.length !== 0) {
-              let wordTokens = this.parseNonWhiteSpaceCharacters(currentWordCharacters, lang)
+              let wordTokens = this.parseNonWhiteSpaceCharacters(currentWordCharacters, lang, detectNumberingLabels)
               pushArray(tokenArray, wordTokens)
               currentWordCharacters = []
               state = 0
@@ -67,7 +68,7 @@ export class EditionWitnessTokenStringParser {
       }
     }
     if (currentWordCharacters.length !== 0) {
-      let wordTokens = this.parseNonWhiteSpaceCharacters(currentWordCharacters, lang)
+      let wordTokens = this.parseNonWhiteSpaceCharacters(currentWordCharacters, lang, detectNumberingLabels)
       pushArray(tokenArray, wordTokens)
     }
     return tokenArray
@@ -78,10 +79,11 @@ export class EditionWitnessTokenStringParser {
    * array of WitnessToken
    * @param {string[]}chars
    * @param {string}lang
+   * @param {boolean}detectNumberingLabels
    * @return WitnessToken[]
    * @private
    */
-  static parseNonWhiteSpaceCharacters(chars, lang) {
+  static parseNonWhiteSpaceCharacters(chars, lang, detectNumberingLabels = true) {
     let length = chars.length
     // console.log(`Parsing ${length} non-WS characters `)
     if (length === 0) {
@@ -95,7 +97,7 @@ export class EditionWitnessTokenStringParser {
       console.log(`Word '${word}' is all punctuation`)
       return [ (new WitnessToken()).setPunctuation(word)]
     }
-    if (this.isNumberingLabel(word)) {
+    if (detectNumberingLabels && this.isNumberingLabel(word)) {
       console.log(`Word '${word}' is a numbering label`)
       return [ (new EditionWitnessToken()).setNumberingLabel(word)]
     }
@@ -151,7 +153,6 @@ export class EditionWitnessTokenStringParser {
    * @param str
    */
   static isNumberingLabel(str) {
-    //console.log(`Testing if '${str}' is a numbering label`)
     let strLength = str.length
     if (strLength < 3) {
       return false

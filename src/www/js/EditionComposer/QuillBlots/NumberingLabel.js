@@ -4,8 +4,9 @@ const blotClassName = 'blot-numbering-label'
 
 class NumberingLabel extends Inline {
   static create(value) {
-    // console.log(`Creating numbering label with value ${value}`)
+     // console.log(`Creating numbering label with value ${value}`)
     let node = super.create()
+    // console.log(node)
     if (value) {
       if (node.className !== '') {
         node.className += ' '
@@ -14,7 +15,7 @@ class NumberingLabel extends Inline {
     } else {
       node.className = this.removeClassFromString(node.className, blotClassName)
     }
-    // console.log(`Node class name is now '${node.className}'`)
+     // console.log(`Node class name is now '${node.className}'`)
     return node
   }
 
@@ -23,6 +24,8 @@ class NumberingLabel extends Inline {
   }
 
   optimize(context) {
+    // console.log(`Optimizing numbering label`)
+    // console.log(context)
     super.optimize(context);
     if (this.domNode.tagName !== this.statics.tagName[0]) {
       this.replaceWith(this.statics.blotName);
@@ -30,6 +33,7 @@ class NumberingLabel extends Inline {
   }
 
   static removeClassFromString(originalClassString, classToRemove) {
+    console.log(`Removing class '${classToRemove}' from class string '${originalClassString}'`)
     let classArray = originalClassString.split(' ')
     let newClassArray = []
     classArray.forEach( (className) => {

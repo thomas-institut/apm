@@ -252,7 +252,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
   }
 
   /**
-   * Reset the apparatus entry form and loads it with the given entry
+   * Resets the apparatus entry form and loads it with the given entry
    * @param {number} entryIndex
    * @param {number} from
    * @param {number} to
@@ -267,6 +267,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.entryInEditor = this._buildEntryToEdit(entryIndex, from, to)
     if (entryIndex !== -1) {
       formTitleElement.html('Apparatus Entry')
+      console.log(this.edition.apparatuses[apparatusIndex].entries[entryIndex])
     } else {
       formTitleElement.html('Apparatus Entry (new)')
     }

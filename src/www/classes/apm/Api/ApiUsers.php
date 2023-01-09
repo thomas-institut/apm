@@ -409,6 +409,7 @@ class ApiUsers extends ApiController
         $ctManager = $this->systemManager->getCollationTableManager();
         $tableIds = $ctManager->getCollationTableVersionManager()->getActiveCollationTableIdsForUserId($userId);
         $tableInfo = [];
+        //$this->debug("Getting collation table info for user $userId", [ 'tableIds' => $tableIds]);
         foreach($tableIds as $tableId) {
             try {
                 $ctData = $ctManager->getCollationTableById($tableId);
@@ -419,6 +420,7 @@ class ApiUsers extends ApiController
             if ($ctData['archived']) {
                 continue;
             }
+            //$this->debug("Processing table id $tableId", ['ctData' => $ctData]);
             $chunkId = $ctData['chunkId'] ?? $ctData['witnesses'][0]['chunkId'];
 
             $tableInfo[] = [

@@ -65,6 +65,8 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
 
     public function getCollationTableById(int $collationTableId, string $timeStamp = '') : array
     {
+
+        //$this->logger->debug("Getting ctable $collationTableId at time '$timeStamp'");
         if ($timeStamp === '') {
             $timeStamp = TimeString::now();
         }
@@ -75,7 +77,8 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         }
 
         $dbData = $rows[0];
-        $isCompressed = $dbData['compressed'] === '1';
+        $isCompressed = intval($dbData['compressed']) === 1;
+        //$this->logger->debug("CT data is compressed: $isCompressed", [ 'dbData' => $dbData]);
 
         if ($isCompressed) {
             $dataJson = gzuncompress($dbData['data']);
@@ -91,7 +94,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         }
 
         // Handle archived tables
-        $ctData['archived'] = $dbData['archived'] === '1';
+        $ctData['archived'] = intval($dbData['archived']) === 1;
 
         return $ctData;
 

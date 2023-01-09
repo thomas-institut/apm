@@ -1,5 +1,5 @@
 :root {
-    --latin-apparatus-font-family: "Times New Roman", Times, serif;
+    --latin-apparatus-font-family: FreeSerif, serif;
     --dimmed-apparatus-text-color: #646464;
 }
 
@@ -245,7 +245,7 @@ div.apparatus {
 }
 
 .main-text.text-la, .apparatus.text-la, .line-number.text-la{
-    font-family: "Times New Roman", Times, serif;
+    font-family: var(--latin-apparatus-font-family);
 }
 
 .main-text.text-la {

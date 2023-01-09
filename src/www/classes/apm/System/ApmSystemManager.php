@@ -645,7 +645,7 @@ class ApmSystemManager extends SystemManager {
     public function getTwig(): Twig
     {
         if (is_null($this->twig)) {
-            $this->twig = new Twig($this->config[ApmConfigParameter::TWIG_TEMPLATE_DIR],
+            $this->twig = Twig::create($this->config[ApmConfigParameter::TWIG_TEMPLATE_DIR],
                 ['cache' => $this->config[ApmConfigParameter::TWIG_USE_CACHE]]);
         }
         return $this->twig;

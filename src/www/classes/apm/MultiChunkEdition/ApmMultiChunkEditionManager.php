@@ -67,7 +67,7 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
         }
 
         $dbData = $rows[0];
-        $isCompressed = $dbData['compressed'] === '1';
+        $isCompressed = intval($dbData['compressed']) === 1;
 
         if ($isCompressed) {
             $dataJson = gzuncompress($dbData['mce_data']);
@@ -78,7 +78,7 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
         $mceData = json_decode($dataJson, true);
 
         // Handle archived editions
-        $mceData['archived'] = $dbData['archived'] === '1';
+        $mceData['archived'] = intval($dbData['archived']) === 1;
 
         return [
             'authorId' => $dbData['author_id'],

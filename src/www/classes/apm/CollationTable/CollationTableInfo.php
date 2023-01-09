@@ -49,7 +49,7 @@ class CollationTableInfo
     public function setFromDbRow(array $row) {
         $this->title = $row['title'];
         $this->type = $row['type'];
-        $this->archived = $row['archived'] === '1';
+        $this->archived = intval($row['archived']) === 1;
         $this->timeFrom = $row['valid_from'] ?? TimeString::TIME_ZERO;
         $this->timeUntil = $row['valid_until'] ?? TimeString::END_OF_TIMES;
     }

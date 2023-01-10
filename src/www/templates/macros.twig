@@ -1,7 +1,7 @@
 {# Some useful macros #}
 
 {% macro pageviewtable(doc, pages, navByPage) %}
-{% spaceless %}
+{% apply spaceless %}
     {% set pagesPerRow = 10 %}
     {% if pages|length > 200 %}
         {% set pagesPerRow = 25 %}
@@ -33,11 +33,11 @@
     {% endfor %}
     </tr>    
 </table>
-{% endspaceless %}
+{% endapply %}
 {% endmacro %}
 
 {% macro pageviewtablepv(doc, pages, navByPage) %}
-{% spaceless %}
+{% apply spaceless %}
     {% set pagesPerRow = 20 %}
     {% set n=0 %}
 <table class="pagetable" style="font-size: 0.9em">
@@ -68,11 +68,11 @@
     {% endfor %}
     </tr>    
 </table>
-{% endspaceless %}
+{% endapply %}
 {% endmacro %}
 
 {% macro pageviewtable2(doc, pages) %}
-{% spaceless %}
+{% apply spaceless %}
     {% set pagesPerRow = 25 %}
     {% set n=0 %}
 <table class="pagetable">
@@ -93,20 +93,20 @@
     {% endfor %}
     </tr>    
 </table>
-{% endspaceless %}
+{% endapply %}
 {% endmacro %}
 
 
 {% macro langName(lang) %}
-{% spaceless %}
+{% apply spaceless %}
 {% set names = { 'la' : 'Latin', 'he' : 'Hebrew', 'ar': 'Arabic', 'en' : 'English', 'jrb': 'Judeo Arabic' } %}
 {{names[lang]}}
-{% endspaceless %}
+{% endapply %}
 {% endmacro %}
 
 {% macro docTypeName(type) %}
-{% spaceless %}
+{% apply spaceless %}
 {% set names = { 'mss' : 'Manuscript', 'print' : 'Print' } %}
 {{names[type]}}
-{% endspaceless %}
+{% endapply %}
 {% endmacro %}

@@ -2,15 +2,15 @@
 This is the web app running at http://averroes.uni-koeln.de/apm
 
 It requires 
-* PHP 7.4 with the following extensions enabled: xml, gd, mbstring, mysql, intl and zip
+* PHP 8.1 with the following extensions enabled: xml, gd, mbstring, mysql, intl and zip
 * a running MySQL Server 5.7+ configured with a database 
 and a user with access to that database.
-* Java running environment, e.g., Open JDK, which is required by Collatex  (Note: Open JDK11 should not be used; it emits 
+* Open JDK 8 (which is required by Collatex)  (Note: Open JDK11 should not be used; it emits 
 a deprecation warning that breaks Collatex normal output)
-* NodeJS 14+ 
+* NodeJS 16 
 * Python3
 
-It has been developed and tested in an Ubuntu 20.04.3 server with standard packages.
+It has been developed and tested in an Ubuntu 22.04 server with standard packages.
 
 ## Development
 
@@ -20,7 +20,6 @@ Besides the general requirements given above, development requires:
 * an empty test database and a test user with access to it in MySQL
 * PHP xdebug extension (for code coverage)
 * PHP Composer 1.6.5+
-* npm 6.4.1+
 * jasmine 3.2.1+ (included in source code)
 
 Clone the repository from Github. 

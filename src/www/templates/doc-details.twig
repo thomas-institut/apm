@@ -56,11 +56,11 @@
         {{doc.numTranscribedPages}} of {{doc.numPages}} pages transcribed
 {% if doc.numLines %}
         by
-        {% spaceless %}
+        {% apply spaceless %}
         {% for editor in doc.editors %}
             <a href="{{url_for('user.profile', {'username' : editor.username})}}" title="View profile">{{editor.fullname}}</a>{% if not loop.last %}, {% endif %}
         {% endfor %}
-        {% endspaceless %}{% endif %}</p>
+        {% endapply %}{% endif %}</p>
     <p class="docinfo">{{doc.docInfoHtml|raw}}</p>
     <h3 class="docinfo">Pages</h3>
 <div id="pagetablediv">

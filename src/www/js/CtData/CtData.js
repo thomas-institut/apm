@@ -39,6 +39,8 @@ import { CleanerOnePointOne } from './CtDataCleaner/CleanerOnePointOne'
 // updaters
 import { UpdaterToOnePointZero } from './CtDataUpdater/UpdaterToOnePointZero'
 import { UpdaterToOnePointOne } from './CtDataUpdater/UpdaterToOnePointOne'
+import { UpdaterToOnePointTwo } from './CtDataUpdater/UpdaterToOnePointTwo'
+import { CleanerOnePointTwo } from './CtDataCleaner/CleanerOnePointTwo'
 
 
 
@@ -50,7 +52,7 @@ import { UpdaterToOnePointOne } from './CtDataUpdater/UpdaterToOnePointOne'
 
 
 
-const schemaVersions = [ '0', '1.0', '1.1']
+const schemaVersions = [ '0', '1.0', '1.1', '1.2']
 
 
 export class CtData  {
@@ -100,6 +102,10 @@ export class CtData  {
            return new CleanerOnePointZero({ verbose: verbose, debug: debug})
         case '1.1':
           return new CleanerOnePointOne({ verbose: verbose, debug: debug})
+
+        case '1.2':
+          return new CleanerOnePointTwo({ verbose: verbose, debug: debug})
+
         default:
           throw new Error(`Invalid source schema ${sourceSchemaVersion} requested`)
       }
@@ -112,6 +118,9 @@ export class CtData  {
 
         case '1.1':
           return new UpdaterToOnePointOne({verbose: verbose, debug: debug})
+
+        case '1.2':
+          return new UpdaterToOnePointTwo({verbose: verbose, debug: debug})
 
         default:
           throw new Error(`Invalid target schema ${targetSchemaVersion} requested`)

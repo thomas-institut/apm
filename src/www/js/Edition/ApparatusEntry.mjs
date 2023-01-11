@@ -1,5 +1,6 @@
 
 import * as SubEntryType from './SubEntryType.mjs'
+import { numericFieldSort, pushArray } from '../toolbox/ArrayUtil.mjs'
 
 
 export class ApparatusEntry {
@@ -17,6 +18,29 @@ export class ApparatusEntry {
      * @type {ApparatusSubEntry[]}
      */
     this.subEntries = []
+  }
+
+  /**
+   * Order the entry's sub-entries according to their current position
+   * values and update those to reflect the new order
+   */
+  orderSubEntries() {
+
+    let nonPositionedAutoSubEntries = this.subEntries
+      .filter( (subEntry) => { return subEntry.type === SubEntryType.AUTO && subEntry.position === -1})
+    let positionedEntries = numericFieldSort(this.subEntries
+      .filter( (subEntry) => { return subEntry.position !== -1}), 'position', true)
+    let nonPositionedCustomSubEntries = this.subEntries
+      .filter( (subEntry) => { return subEntry.type !== SubEntryType.AUTO && subEntry.position === -1})
+
+    let orderedSubEntries = nonPositionedAutoSubEntries
+    pushArray(orderedSubEntries, positionedEntries)
+    pushArray(orderedSubEntries, nonPositionedCustomSubEntries)
+    this.subEntries = orderedSubEntries.map ( (subEntry,
+      index) => {
+        subEntry.position = index
+        return subEntry
+    })
   }
 
   /**

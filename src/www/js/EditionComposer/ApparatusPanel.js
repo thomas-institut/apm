@@ -194,6 +194,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     let theEntry
 
     if (entryIndex !== -1) {
+      // an existing entry
       theEntry = deepCopy(this.edition.apparatuses[apparatusIndex].entries[entryIndex])
       theEntry.autoEntries = theEntry.subEntries.filter( (e) => { return e.source === 'auto'})
       theEntry.customEntryFmtText = FmtTextFactory.empty()
@@ -207,6 +208,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     } else {
       // new entry
       if (from === -1 || to === -1) {
+        // need valid from and to indexes to create a new entry
         throw new Error(`Loading new entry with invalid 'from' and 'to' indexes: ${from} - ${to}`)
       }
       theEntry = {

@@ -109,7 +109,7 @@ export function numericSort(theArray, asc = true) {
 }
 
 /**
- *
+ * Sorts an array based on the numeric value of a field in its elements
  * @param {*[]}theArray
  * @param {string}fieldName
  * @param {boolean}asc

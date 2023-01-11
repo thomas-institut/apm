@@ -38,6 +38,12 @@ export class ApparatusSubEntry {
      * @member {SubEntryWitnessInfo[]}
      */
     this.witnessData = []
+
+    /**
+     *
+     * @member {number}
+     */
+    this.position = -1
   }
 
 

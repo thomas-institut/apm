@@ -68,7 +68,7 @@ class ApiSearch extends ApiController
         try {
             $query = $this->queryIndex($client, $index_name, $doc_title, $transcriber, $token_for_query, $query_algorithm, $lemmatize);
         } catch (\Exception $e) {
-            $status = "Opensearch query problem";
+            $status = "OpenSearch query problem";
             return $this->responseWithJson($response,
                 [
                     'searched_phrase' => $searched_phrase,

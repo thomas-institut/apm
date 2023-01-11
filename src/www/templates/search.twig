@@ -8,11 +8,9 @@
 
         // Get selectors for catching user input
         let keywords_box = $("#keywordBox")
-        // let transcript_box = $("#transcriptBox")
-        // let transcriber_box = $("#transcriberBox")
-        // let radius_slider = $("#radiusSlider")
-        // let lemmatization_box = $("#lemmatize")
         let doc = $(document)
+        let edition_mode = $("#edition_mode")
+        let search_table = $("#searchTable")
 
         // Get selector for signaling errors to user
         let errorMessageDiv = $("#error_message")
@@ -21,11 +19,7 @@
         getListFromOpenSearch ('titles', errorMessageDiv)
         getListFromOpenSearch ('transcribers', errorMessageDiv)
 
-        // SETUP FUNCTIONALITY FOR ALL BOXES AND THE DOCUMENT ITSELF
-        // let event_boxes = [keywords_box, transcript_box, transcriber_box, radius_slider, lemmatization_box, doc]
-
         // Start query when the 'Enter' key is pressed
-        // event_boxes.forEach(function (box) {
           doc.on("keyup", function (event) {
             let user_input = keywords_box.val()
             if ( event.key === 'Enter' && user_input !== "") {
@@ -35,7 +29,40 @@
               errorMessageDiv.html(`<br>Please type in a keyword!<br><br>`)
             }
           })
-        // })
+
+        edition_mode.on('click', function () {
+          search_table.empty()
+          search_table.html(`
+          <tr><td><b>Keywords</b></td><td><b>Text</b></td><td><b>Radius</b></td><td class="text-center"><b>Lemmatization</b></td></tr>
+
+    <tr>
+        <td>
+            <div id="search_form">
+            <label for="keywordBox"></label>
+            <input type="text" id="keywordBox" placeholder="">
+            </div>
+        </td>
+        <td>
+            <div id="doc_form">
+                <label for="transcriptBox"></label>
+                <input list="titleList" id="transcriptBox" placeholder="" autocomplete="off">
+                <datalist id="titleList">
+                </datalist>
+            </div>
+        </td>
+        <td>
+            <form>
+                <label for="radiusSlider"></label>
+                <input type="range" id="radiusSlider" name="radiusSlider" min="10" max="60" value="18">
+            </form>
+        </td>
+      <td class="text-center">
+        <div>
+          <input type="checkbox" id="lemmatize" name="lemmatize">
+        </div>
+      </td>
+    </tr>`)
+        })
       })
 
       // Function to get list of indexed values, i.e. titles or transcribers, via an API call
@@ -359,7 +386,13 @@
 
 {% block content %}
     <h1> Search </h1>
-  <p>Type in a keyword and press 'Enter' to search</p>
+  <p>
+    Type in a keyword and press 'Enter' to search.
+  <div>
+  <b>Edition Mode</b>
+    <input type="checkbox" id="edition_mode" name="edition_mode">
+  </div>
+  </p>
 
   <table class="dataTable" id="searchTable">
     <tr><td><b>Keywords</b></td><td><b>Transcript</b></td><td><b>Transcriber</b></td><td><b>Radius</b></td><td class="text-center"><b>Lemmatization</b></td></tr>

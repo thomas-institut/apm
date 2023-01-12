@@ -267,17 +267,40 @@ export class ApparatusPanel extends  PanelWithToolbar {
     console.log(`Loading entry: apparatus ${apparatusIndex}, entry ${entryIndex}`)
     let sigla = this.edition.getSigla()
     this.entryInEditor = this._buildEntryToEdit(entryIndex, from, to)
+    console.log(this.entryInEditor)
+
+    // Form title
     if (entryIndex !== -1) {
       formTitleElement.html('Apparatus Entry')
-      console.log(this.edition.apparatuses[apparatusIndex].entries[entryIndex])
+
     } else {
       formTitleElement.html('Apparatus Entry (new)')
     }
-
-    $(`${formSelector} .ct-table-cols`).html(this._getCtColumnsText(this.entryInEditor.ctIndexFrom, this.entryInEditor.ctIndexTo))
-
-    console.log(this.entryInEditor)
+    // Edition text
     $(`${formSelector} div.entry-text`).html(this.entryInEditor.lemmaText)
+    // Collation table columns
+    $(`${formSelector} .ct-table-cols`).html(this._getCtColumnsText(this.entryInEditor.ctIndexFrom, this.entryInEditor.ctIndexTo))
+    // Lemma and separator section
+    this._loadLemmaGroupVariableInForm('preLemma', this.entryInEditor, this.preLemmaToggle, this.customPreLemmaTextInput)
+    this._loadLemmaGroupVariableInForm('lemma', this.entryInEditor, this.lemmaToggle, this.customLemmaTextInput)
+    this._loadLemmaGroupVariableInForm('postLemma', this.entryInEditor, this.postLemmaToggle, this.customPostLemmaTextInput)
+    this._loadLemmaGroupVariableInForm('separator', this.entryInEditor, this.separatorToggle, this.customSeparatorTextInput)
+
+    // Sub-entries
+    let subEntriesHtml = this.entryInEditor.subEntries.map( (subEntry, index) => {
+      switch(subEntry.type) {
+        case SubEntryType.AUTO:
+          let checkedString = subEntry.enabled ? 'checked' : ''
+          return `<div class="form-check sub-entry-app-${apparatusIndex}">
+                <input class="form-check-input text-${this.edition.lang} aei-sub-entry-${apparatusIndex}-${sei}" type="checkbox" value="entry-${apparatusIndex}-${sei}" ${checkedString}>
+                <label class="form-check-label" for="aei-subentry-${apparatusIndex}-${sei}"> 
+                        ${ApparatusCommon.genSubEntryHtmlContent(this.edition.lang, subEntry, sigla, this.edition.siglaGroups, true)}
+                 </label>
+                </div>`
+
+      }
+    }).join('')
+
     let autoEntriesHtml = this.entryInEditor.autoEntries.map( (subEntry, sei) => {
       let checkedString = subEntry.enabled ? 'checked' : ''
       return `<div class="form-check sub-entry-app-${apparatusIndex}">
@@ -297,10 +320,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     })
     this.freeTextEditor.setText(this.entryInEditor.customEntryFmtText)
 
-    this._loadLemmaGroupVariableInForm('preLemma', this.entryInEditor, this.preLemmaToggle, this.customPreLemmaTextInput)
-    this._loadLemmaGroupVariableInForm('lemma', this.entryInEditor, this.lemmaToggle, this.customLemmaTextInput)
-    this._loadLemmaGroupVariableInForm('postLemma', this.entryInEditor, this.postLemmaToggle, this.customPostLemmaTextInput)
-    this._loadLemmaGroupVariableInForm('separator', this.entryInEditor, this.separatorToggle, this.customSeparatorTextInput)
+
 
     this.editedEntry = deepCopy(this.entryInEditor)
 
@@ -445,6 +465,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
                         <div class="separator-toggle aei-multitoggle"> </div>
                         <div><input type="text" class="custom-separator-input" size="${customSeparatorTextSize}"></div>
                     </div>
+                </div>
+                <div class="sub-entries">
+                
                 </div>
                 <div class="form-group row">
                     <label class="col-sm-${shortCol} col-form-label">Automatic Entries:</label>

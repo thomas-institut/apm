@@ -9,8 +9,8 @@
         // Get selectors for catching user input
         let keywords_box = $("#keywordBox")
         let doc = $(document)
-        let edition_mode = $("#edition_mode")
-        let search_table = $("#searchTable")
+        // let edition_mode = $("#edition_mode")
+        // let search_table = $("#searchTable")
 
         // Get selector for signaling errors to user
         let errorMessageDiv = $("#error_message")
@@ -30,39 +30,39 @@
             }
           })
 
-        edition_mode.on('click', function () {
-          search_table.empty()
-          search_table.html(`
-          <tr><td><b>Keywords</b></td><td><b>Text</b></td><td><b>Radius</b></td><td class="text-center"><b>Lemmatization</b></td></tr>
-
-    <tr>
-        <td>
-            <div id="search_form">
-            <label for="keywordBox"></label>
-            <input type="text" id="keywordBox" placeholder="">
-            </div>
-        </td>
-        <td>
-            <div id="doc_form">
-                <label for="transcriptBox"></label>
-                <input list="titleList" id="transcriptBox" placeholder="" autocomplete="off">
-                <datalist id="titleList">
-                </datalist>
-            </div>
-        </td>
-        <td>
-            <form>
-                <label for="radiusSlider"></label>
-                <input type="range" id="radiusSlider" name="radiusSlider" min="10" max="60" value="18">
-            </form>
-        </td>
-      <td class="text-center">
-        <div>
-          <input type="checkbox" id="lemmatize" name="lemmatize">
-        </div>
-      </td>
-    </tr>`)
-        })
+    //     edition_mode.on('click', function () {
+    //       search_table.empty()
+    //       search_table.html(`
+    //       <tr><td><b>Keywords</b></td><td><b>Text</b></td><td><b>Radius</b></td><td class="text-center"><b>Lemmatization</b></td></tr>
+    //
+    // <tr>
+    //     <td>
+    //         <div id="search_form">
+    //         <label for="keywordBox"></label>
+    //         <input type="text" id="keywordBox" placeholder="">
+    //         </div>
+    //     </td>
+    //     <td>
+    //         <div id="doc_form">
+    //             <label for="transcriptBox"></label>
+    //             <input list="titleList" id="transcriptBox" placeholder="" autocomplete="off">
+    //             <datalist id="titleList">
+    //             </datalist>
+    //         </div>
+    //     </td>
+    //     <td>
+    //         <form>
+    //             <label for="radiusSlider"></label>
+    //             <input type="range" id="radiusSlider" name="radiusSlider" min="10" max="60" value="18">
+    //         </form>
+    //     </td>
+    //   <td class="text-center">
+    //     <div>
+    //       <input type="checkbox" id="lemmatize" name="lemmatize">
+    //     </div>
+    //   </td>
+    // </tr>`)
+    //     })
       })
 
       // Function to get list of indexed values, i.e. titles or transcribers, via an API call
@@ -361,7 +361,8 @@
           let token = passage[i]
           // Bold token, if it is one of the tokens_matched
           if (tokens_matched.indexOf(token) !== -1) {
-            token = token.bold()
+            // token = token.bold()
+            token = "<mark>" + token + "</mark>"
           }
           // Append token to returned string
           passage_highlighted = passage_highlighted + token + " "
@@ -388,10 +389,10 @@
     <h1> Search </h1>
   <p>
     Type in a keyword and press 'Enter' to search.
-  <div>
-  <b>Edition Mode</b>
-    <input type="checkbox" id="edition_mode" name="edition_mode">
-  </div>
+{#  <div>#}
+{#  <b>Edition Mode</b>#}
+{#    <input type="checkbox" id="edition_mode" name="edition_mode">#}
+{#  </div>#}
   </p>
 
   <table class="dataTable" id="searchTable">

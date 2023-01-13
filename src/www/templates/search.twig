@@ -33,7 +33,7 @@
     //     edition_mode.on('click', function () {
     //       search_table.empty()
     //       search_table.html(`
-    //       <tr><td><b>Keywords</b></td><td><b>Text</b></td><td><b>Radius</b></td><td class="text-center"><b>Lemmatization</b></td></tr>
+    //       <tr><td><b>Keywords</b></td><td class="text-center"><b>Exact Search</b></td><td><b>Text</b></td><td><b>Radius</b></td><td class="text-center"><b>Lemmatization</b></td></tr>
     //
     // <tr>
     //     <td>
@@ -134,6 +134,7 @@
         let transcript_box = $("#transcriptBox")
         let transcriber_box = $("#transcriberBox")
         let radius_slider = $("#radiusSlider")
+        let exact_box = $("#exact")
         let lemmatization_box = $("#lemmatize")
         let spinner = $("#spinner")
         let results_body = $("#resultsTable tbody")
@@ -145,6 +146,7 @@
         let title = transcript_box.val();
         let transcriber = transcriber_box.val();
         let radius = radius_slider.val()
+        let exact = exact_box.prop('checked')
         let lemmatize = lemmatization_box.prop('checked')
 
         // Empty the results-table/error-box and signalize search process
@@ -154,7 +156,7 @@
         spinner.html(`<div class="spinner-border" role="status"></div>`)
 
         // Send all user input to ApiSearch (via routing in index.php) and print returned matches
-        $.post("{{ url_for('search.keyword') }}", { searched_phrase: searched_phrase, radius: radius, title: title, transcriber: transcriber, lemmatize: lemmatize })
+        $.post("{{ url_for('search.keyword') }}", { searched_phrase: searched_phrase, radius: radius, title: title, transcriber: transcriber, exact: exact, lemmatize: lemmatize })
           .done((apiResponse) => {
 
             // Catch errors
@@ -396,7 +398,7 @@
   </p>
 
   <table class="dataTable" id="searchTable">
-    <tr><td><b>Keywords</b></td><td><b>Transcript</b></td><td><b>Transcriber</b></td><td><b>Radius</b></td><td class="text-center"><b>Lemmatization</b></td></tr>
+    <tr><td><b>Keywords</b></td><td><b>Transcript</b></td><td><b>Transcriber</b></td><td><b>Radius</b></td><td class="text-center"><b>Exact Search</b></td><td class="text-center"><b>Lemmatization</b></td></tr>
 
     <tr>
         <td>
@@ -427,6 +429,11 @@
                 <input type="range" id="radiusSlider" name="radiusSlider" min="1" max="60" value="18">
             </form>
         </td>
+      <td class="text-center">
+        <div>
+          <input type="checkbox" id="exact" name="Exact Search" checked>
+        </div>
+      </td>
       <td class="text-center">
         <div>
           <input type="checkbox" id="lemmatize" name="lemmatize">

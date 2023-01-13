@@ -218,6 +218,6 @@ ul.ctlist li {
 }
 
 mark {
-    background-color: #ffff86;
+    background-color: rgba(255, 219, 75, 0.7);
     color: black;
 }

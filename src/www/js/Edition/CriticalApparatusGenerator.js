@@ -87,11 +87,26 @@ export class CriticalApparatusGenerator {
         // First find the previous index for which there is a word in the base witness,
         // the  sub-entries, one or more additions, will be associated with it
         let ctIndex = columnGroup.from
-
-        while (ctIndex >= 0 && (baseWitnessTokens[ctIndex].type === WitnessTokenType.EMPTY ||
-          Punctuation.stringIsAllPunctuation(baseWitnessTokens[ctIndex].text, lang))) {
-          ctIndex--
+        let foundIndex = false
+        while (!foundIndex) {
+          if (ctIndex < 0) {
+            foundIndex = true
+            continue
+          }
+          if (baseWitnessTokens[ctIndex.type] === WitnessTokenType.EMPTY) {
+            ctIndex--
+            continue
+          }
+          if (baseWitnessTokens[ctIndex].text !== undefined && Punctuation.stringIsAllPunctuation(baseWitnessTokens[ctIndex].text, lang)){
+            ctIndex--
+            continue
+          }
+          foundIndex = true
         }
+        // while (ctIndex >= 0 && (baseWitnessTokens[ctIndex].type === WitnessTokenType.EMPTY ||
+        //   Punctuation.stringIsAllPunctuation(baseWitnessTokens[ctIndex].text, lang))) {
+        //   ctIndex--
+        // }
 
         // a ctIndex of -1 means that the apparatus entry comes before the text
         let mainTextIndex = ctIndex < 0 ? -1 : ctIndexToMainTextMap[ctIndex]

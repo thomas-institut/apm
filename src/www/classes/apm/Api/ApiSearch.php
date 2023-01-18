@@ -8,6 +8,11 @@ use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\TimeString\TimeString;
 
+// Can this function be moved to another place?
+function sortByLength ($a, $b) {
+    return strlen($b)-strlen($a);
+}
+
 class ApiSearch extends ApiController
 {
     /**
@@ -29,8 +34,15 @@ class ApiSearch extends ApiController
         $doc_title = $_POST['title'];
         $transcriber = $_POST['transcriber'];
         $radius = $_POST['radius'];
-        $exact = filter_var($_POST['exact'], FILTER_VALIDATE_BOOLEAN);
         $lemmatize = filter_var($_POST['lemmatize'], FILTER_VALIDATE_BOOLEAN);
+
+        // SKETCHY
+        $exact = false;
+
+        // Sort searched phrase by length of keywords - longest will be queried via OpenSearch
+        $keywords = explode(" ", $searched_phrase);
+        usort($keywords, "APM\\Api\\sortByLength");
+        $searched_phrase = implode(" ", $keywords);
 
         // Instantiate OpenSearch client
         try {
@@ -63,7 +75,7 @@ class ApiSearch extends ApiController
         // Get either lemmatized or unlemmatized token for the query, depending on the user's choice – set query algorithm
         if ($lemmatize) {
             $token_for_query = $lemmata[0];
-            $query_algorithm = 'match';
+            $query_algorithm = 'query_string';
         }
         else {
             $token_for_query = $tokens_queried[0];
@@ -121,7 +133,7 @@ class ApiSearch extends ApiController
     private function removeBlanks ($searched_phrase) {
 
         // Reduce multiple blanks following each other anywhere in the keyword to one single blank
-        $string = preg_replace('!\s+!', ' ', $searched_phrase);
+        $searched_phrase = preg_replace('!\s+!', ' ', $searched_phrase);
 
         // Remove blank at the end of the keyword
         if (substr($searched_phrase, -1) == " ") {
@@ -405,14 +417,13 @@ class ApiSearch extends ApiController
                                 }
                                 elseif ($filter === 'match_body') {
                                     if (strpos($word, $token) !== false and strpos($word, $token) != 0
-                                        and $word[strlen($word)-1] != $token[strlen($token)-1]
-                                        and $word[strlen($word)-2] != $token[strlen($token)-2]
-                                        and $word[strlen($word)-3] != $token[strlen($token)-3]) {
+                                        and strpos($word, $token) != strlen($word)-strlen($token)) {
                                         $tokens_matched[$counter][] = $word;
                                     }
                                 }
                                 elseif ($filter === 'match_suffix') {
-                                    if (strpos($word, $token) !== false and strpos($word, $token) != 0) {
+                                    if (strpos($word, $token) !== false and strpos($word, $token) == strlen($word)-strlen($token)) {
+                                        $this->logger->debug($word . " " . $token);
                                         $tokens_matched[$counter][] = $word;
                                     }
                                 }
@@ -550,15 +561,13 @@ class ApiSearch extends ApiController
                         }
                         elseif ($filter === 'match_body') {
                             if (strpos($token, $token_unlemmatized) !== false and strpos($token, $token_unlemmatized) != 0
-                                and $token[strlen($token)-1] != $token_unlemmatized[strlen($token_unlemmatized)-1]
-                                and $token[strlen($token)-2] != $token_unlemmatized[strlen($token_unlemmatized)-2]
-                                and $token[strlen($token)-3] != $token_unlemmatized[strlen($token_unlemmatized)-3]) {
+                                and strpos($token, $token_unlemmatized) !== strlen($token)-strlen($token_unlemmatized)) {
                                 $data[$i]['tokens_matched'][$j][] = $passage_tokenized[$k];
                                 $data[$i]['tokens_matched'][$j] = array_unique($data[$i]['tokens_matched'][$j]);
                             }
                         }
                         elseif ($filter === 'match_suffix') {
-                            if (strpos($token, $token_unlemmatized) !== false and strpos($token, $token_unlemmatized) != 0) {
+                            if (strpos($token, $token_unlemmatized) !== false and strpos($token, $token_unlemmatized) == strlen($token)-strlen($token_unlemmatized)) {
                                 $data[$i]['tokens_matched'][$j][] = $passage_tokenized[$k];
                                 $data[$i]['tokens_matched'][$j] = array_unique($data[$i]['tokens_matched'][$j]);
                             }
@@ -579,7 +588,8 @@ class ApiSearch extends ApiController
                     else {
                         if ($filter === 'match_word') {
                             $token_full = " " . $token_unlemmatized . " ";
-                            if (strpos($passage_string, $token_full) === false && strpos($passage_string, ucfirst($token_full)) === false) {
+                            $token_full_uc = " " . ucfirst($token_unlemmatized) . " ";
+                            if (strpos($passage_string, $token_full) === false && strpos($passage_string, $token_full_uc) === false) {
                                 unset($data[$i]['passage_tokenized'][$j]);
                                 unset($data[$i]['passage_lemmatized'][$j]);
                                 unset($data[$i]['tokens_matched'][$j]);
@@ -596,9 +606,9 @@ class ApiSearch extends ApiController
                                 $data[$i]['num_passages'] = $data[$i]['num_passages'] - 1;
                             }
                         }
-                        elseif ($filter === 'match_prefix') {
+                        elseif ($filter === 'match_body') {
                             $pos = strpos($passage_string, $token_unlemmatized);
-                            if ($pos === false or $passage_string[$pos-1] === " " or $passage_string[$pos+1] === " ") {
+                            if ($pos === false or ($passage_string[$pos-1] === " " or $passage_string[$pos+1] === " ")) {
                                 unset($data[$i]['passage_tokenized'][$j]);
                                 unset($data[$i]['passage_lemmatized'][$j]);
                                 unset($data[$i]['tokens_matched'][$j]);
@@ -658,14 +668,12 @@ class ApiSearch extends ApiController
             }
             elseif ($filter === 'match_body') {
                 if (strpos($current_token, $token) !== false and strpos($current_token, $token) != 0
-                    and $current_token[strlen($current_token)-1] != $token[strlen($token)-1]
-                    and $current_token[strlen($current_token)-2] != $token[strlen($token)-2]
-                    and $current_token[strlen($current_token)-3] != $token[strlen($token)-3]) {
+                    and strpos($current_token, $token) !== strlen($current_token)-strlen($token)) {
                     $positions[] = $i;
                 }
             }
             elseif ($filter === 'match_suffix') {
-                if (strpos($current_token, $token) !== false and strpos($current_token, $token) != 0) {
+                if (strpos($current_token, $token) !== false and strpos($current_token, $token) == strlen($current_token)-strlen($token)) {
                     $positions[] = $i;
                 }
             }

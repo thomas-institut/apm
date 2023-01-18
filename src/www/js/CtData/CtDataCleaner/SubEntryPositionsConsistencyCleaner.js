@@ -6,6 +6,10 @@ export class SubEntryPositionsConsistencyCleaner extends CtDataCleaner {
 
 
   getCleanCtData (ctData) {
+    if (ctData['customApparatuses'] === undefined) {
+      // not apparatuses to fix!
+      return ctData
+    }
     this.verbose && console.log(`Checking consistency in sub entry positions`)
     let errorsFound = false
     let errorsFixed = false

@@ -48,10 +48,11 @@ export class CtDataEditionGenerator extends EditionGenerator{
   }
 
   generateEdition () {
-    // console.log(`Generating edition from ctData`)
+    console.log(`Generating edition from ctData`)
     // CtData.reportCustomEntries(this.ctData)
     let edition = super.generateEdition()
     let baseWitnessIndex = this.ctData['editionWitnessIndex'] !== undefined ? this.ctData['editionWitnessIndex'] : this.ctData['witnessOrder'][0]
+    console.log(`Base witness index is ${baseWitnessIndex}`)
     edition.setLang(this.ctData['lang'])
     edition.siglaGroups = this.ctData['siglaGroups'].map ( (sg) => { return SiglaGroup.fromObject(sg)})
     edition.infoText = `Edition from ctData, chunkId ${this.ctData['chunkId']}, baseWitnessIndex: ${baseWitnessIndex}`

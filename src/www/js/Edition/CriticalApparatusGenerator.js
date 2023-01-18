@@ -52,6 +52,8 @@ export class CriticalApparatusGenerator {
     // 1. Construct an array with main text tokens: a map of the base witness' row in the collation
     //    table exchanging the references for the actual tokens and filling the null references with empty tokens
     let baseWitnessTokens = CtData.getCtWitnessTokens(ctData, baseWitnessIndex)
+    console.log(`Base witness tokens`)
+    console.log(baseWitnessTokens)
     let ctIndexToMainTextMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens.length, mainText)
     // console.log(`ctIndexToMainTextMap`)
     // console.log(ctIndexToMainTextMap)
@@ -83,15 +85,32 @@ export class CriticalApparatusGenerator {
       // this means that a groupMatrix column is a row in the CT
       // if (mainTextIndices.every( i => i === -1)) {
       if (this._isCtRowEmpty(ctColumns, baseWitnessIndex)) {
-        // this.verbose && console.log(`No base witness text for group ${columnGroup.from}-${columnGroup.to}`)
+         this.verbose && console.log(`No base witness text for group ${columnGroup.from}-${columnGroup.to}`)
         // First find the previous index for which there is a word in the base witness,
         // the  sub-entries, one or more additions, will be associated with it
         let ctIndex = columnGroup.from
-
-        while (ctIndex >= 0 && (baseWitnessTokens[ctIndex].type === WitnessTokenType.EMPTY ||
-          Punctuation.stringIsAllPunctuation(baseWitnessTokens[ctIndex].text, lang))) {
-          ctIndex--
+        this.verbose && console.log(`Finding previous index with a word, initial index = ${ctIndex}`)
+        let foundIndex = false
+        while (!foundIndex) {
+           if (ctIndex < 0) {
+             foundIndex = true
+             continue
+           }
+           if (baseWitnessTokens[ctIndex.type] === WitnessTokenType.EMPTY) {
+             ctIndex--
+             continue
+           }
+           if (baseWitnessTokens[ctIndex].text !== undefined && Punctuation.stringIsAllPunctuation(baseWitnessTokens[ctIndex].text, lang)){
+            ctIndex--
+            continue
+          }
+          foundIndex = true
         }
+        // while (ctIndex >= 0 && (baseWitnessTokens[ctIndex].type === WitnessTokenType.EMPTY ||
+        //   Punctuation.stringIsAllPunctuation(baseWitnessTokens[ctIndex].text, lang))) {
+        //    this.verbose && console.log(`No luck with index ${ctIndex}, will try ${ctIndex-1} next`)
+        //   ctIndex--
+        // }
 
         // a ctIndex of -1 means that the apparatus entry comes before the text
         let mainTextIndex = ctIndex < 0 ? -1 : ctIndexToMainTextMap[ctIndex]

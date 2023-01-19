@@ -387,6 +387,7 @@ class ApiSearch extends ApiController
                 // Arrays to store matched passages and tokens in them
                 $passage_tokenized = [];
                 $passage_lemmatized = [];
+                $passage_coordinates = [];
                 $tokens_matched = [];
 
                 // Variable to store previous position of matched token in it – used in the foreach-loop
@@ -395,11 +396,16 @@ class ApiSearch extends ApiController
                 // Get all passages, which contain the matched token, as a list of tokens (and lemmata)
                 $counter = 0;
                 foreach ($pos_all as $pos) {
-                    if ($counter === 0 or ($pos-$prev_pos)>$radius) { // This checks, if the token at the actual position is not already contained in the previous passage
-                        $passage_tokenized[] = $this->getPassage($transcript_tokenized, $pos, $radius);
+                    //if ($counter === 0 or ($pos-$prev_pos)>$radius) { // This checks, if the token at the actual position is not already contained in the previous passage
+                    if ($counter === 0 or true) {
+                        $passage_info = $this->getPassage($transcript_tokenized, $pos, $radius);
+                        $passage_tokenized[] = $passage_info[0];
                         if ($lemmatize) {
-                            $passage_lemmatized[] = $this->getPassage($transcript_lemmatized, $pos, $radius);
+                            $passage_info = $this->getPassage($transcript_lemmatized, $pos, $radius);
+                            $passage_lemmatized[] = $passage_info[0];
                         }
+                        $passage_coordinates[] = [$passage_info[1], $passage_info[2]];
+
                         // Create an array of all matched tokens in the current passage - used for highlighting keywords in js
                         $tokens_matched[] = [$transcript_tokenized[$pos]];
                         foreach ($passage_tokenized[$counter] as $word) {
@@ -433,9 +439,6 @@ class ApiSearch extends ApiController
                                         $tokens_matched[$counter][] = $word;
                                     }
                                 }
-//                                if (strpos($word, $token) !== false or strpos($word, ucfirst($token)) !== false) {
-//                                    $tokens_matched[$counter][] = $word;
-//                                }
                             }
                         }
 
@@ -448,10 +451,38 @@ class ApiSearch extends ApiController
                     }
                 }
 
-                // Get number of matched passages in the matched column
+                // Merge overlapping passages
                 $num_passages = count($passage_tokenized);
 
-                // Collect data
+                if ($num_passages>1) {
+
+                    for ($j=0; $j<($num_passages-1); $j++) {
+
+                        if ($passage_coordinates[$j][1] > $passage_coordinates[$j+1][0]) {
+
+                            $offset = $passage_coordinates[$j][1] - $passage_coordinates[$j+1][0] + 1;
+                            $passage_coordinates[$j] = [$passage_coordinates[$j][0], $passage_coordinates[$j+1][1]];
+                            $passage_tokenized[$j] = array_merge($passage_tokenized[$j], array_slice($passage_tokenized[$j+1], $offset));
+                            $tokens_matched[$j] = array_unique(array_merge($tokens_matched[$j], $tokens_matched[$j+1]));
+
+                            unset($passage_coordinates[$j+1]);
+                            unset($tokens_matched[$j+1]);
+                            unset($passage_tokenized[$j+1]);
+                            $passage_coordinates = array_values($passage_coordinates);
+                            $tokens_matched = array_values($tokens_matched);
+                            $passage_tokenized = array_values($passage_tokenized);
+
+                            $num_passages = count($passage_tokenized);
+                        }
+                    }
+                }
+
+                // Get number of matched passages in the matched column
+                $num_passages = count($passage_tokenized);
+                // $this->logger->debug($num_passages);
+
+
+            // Collect data
                 $data[] = [
                     'title' => $title,
                     'page' => $page,
@@ -469,6 +500,7 @@ class ApiSearch extends ApiController
                     'lemmata' => $lemmata,
                     'tokens_matched' => $tokens_matched,
                     'num_passages' => $num_passages,
+                    'passage_coordinates' => $passage_coordinates,
                     'passage_tokenized' => $passage_tokenized,
                     'passage_lemmatized' => $passage_lemmatized,
                     'lemmatize' => $lemmatize
@@ -700,17 +732,21 @@ class ApiSearch extends ApiController
         $num_prec_tokens = count($prec_tokens);
         $num_suc_tokens = count($suc_tokens);
 
-        // Get the matched token at the given position into an array and use this array in the next step to add the context to it
+        // Get the matched token at the given position into an array and use this array in the next step to collect the passage in it
         $passage = [$transcript_tokenized[$pos]];
+        $passage_start = 0;
+        $passage_end = 0;
 
         // Add as many preceding tokens to the passage-array, as the total number of preceding tokens and the desired context size allows
         for ($i=0; ($i<$radius) and ($i<$num_prec_tokens); $i++) {
             array_unshift($passage, array_reverse($prec_tokens)[$i]);
+            $passage_start = $pos - $i - 1;
         }
 
         // Add as many succeeding words to the keywordInContext-array, as the total number of succeeding words and the desired context size allows
         for ($i=0; ($i<$radius) and ($i<$num_suc_tokens); $i++) {
             $passage[] = $suc_tokens[$i];
+            $passage_end = $pos + $i + 1;
         }
 
         // If first token of the passage is punctuation, remove it
@@ -718,7 +754,7 @@ class ApiSearch extends ApiController
             array_shift($passage);
         }
 
-        return $passage;
+        return [$passage, $passage_start, $passage_end];
     }
 
     // Function to get a full list of i. e. titles or transcribers values in the index

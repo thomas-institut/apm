@@ -55,34 +55,25 @@ class ApiSearch extends ApiController
         // Log output from exec-function
         $this->logger->debug('output', [$tokens_and_lemmata, $retval]);
 
-        // Tokens and lemmata from searched phrase
+        // Tokens, lemmata and language of the searched phrase
         $lang = $tokens_and_lemmata[1];
         $lemmata = explode("#", $tokens_and_lemmata[3]);
 
         if ($lemmatize) {
             $tokens_queried = explode("#", $tokens_and_lemmata[2]);
+            $token_for_query = $lemmata[0];
         }
         else {
             $tokens_queried = explode(" ", $searched_phrase);
+            $token_for_query = $tokens_queried[0];
         }
 
         // Count tokens
         $num_tokens = count($tokens_queried);
 
-        // Get either lemmatized or unlemmatized token for the query, depending on the user's choice – set query algorithm
-        if ($lemmatize) {
-            $token_for_query = $lemmata[0];
-        }
-        else {
-            $token_for_query = $tokens_queried[0];
-        }
-
-        $query_algorithm = 'query_string';
-
-
         // Query index for the first token in searched_phrase – additional tokens will be handled below
         try {
-            $query = $this->queryIndex($client, $index_name, $doc_title, $transcriber, $token_for_query, $query_algorithm, $lemmatize);
+            $query = $this->queryIndex($client, $index_name, $doc_title, $transcriber, $token_for_query, $lemmatize);
         } catch (\Exception $e) {
             $status = "OpenSearch query problem";
             return $this->responseWithJson($response,
@@ -97,7 +88,7 @@ class ApiSearch extends ApiController
         }
 
         // Get all information about the matched columns, including passages with the matched token as lists of tokens
-        $data = $this->evaluateData($query, $tokens_queried, $lemmata, $query_algorithm, $radius, $lemmatize);
+        $data = $this->evaluateData($query, $tokens_queried, $lemmata, $radius, $lemmatize);
 
         // If there is more than one token in the searched phrase, extract all columns, which do match all the other tokens
         if ($num_tokens !== 1) {
@@ -156,7 +147,7 @@ class ApiSearch extends ApiController
     }
 
     // Function to query a given OpenSearch-index
-    private function queryIndex ($client, $index_name, $doc_title, $transcriber, $token_for_query, $query_algorithm, $lemmatize) {
+    private function queryIndex ($client, $index_name, $doc_title, $transcriber, $token_for_query, $lemmatize) {
 
         // Check lemmatize (boolean) to determine the area of the query
         if ($lemmatize) {
@@ -174,7 +165,7 @@ class ApiSearch extends ApiController
                 'body' => [
                     'size' => 20000,
                     'query' => [
-                        $query_algorithm => [
+                        'query_string' => [
                                 "query" => $token_for_query,
                                 "default_field" => $area_of_query,
                                 "analyze_wildcard" => true,
@@ -185,7 +176,7 @@ class ApiSearch extends ApiController
             ]);
         }
 
-        // Search only in the specific columns, specified by transcriber or title
+        // Search only in specific columns, specified by transcriber or title
         elseif ($transcriber === "") {
 
             $query = $client->search([
@@ -202,10 +193,11 @@ class ApiSearch extends ApiController
                                 ]
                             ],
                             'must' => [
-                                $query_algorithm => [
-                                    $area_of_query => [
-                                        "query" => $token_for_query
-                                    ]
+                                'query_string' => [
+                                    "query" => $token_for_query,
+                                    "default_field" => $area_of_query,
+                                    "analyze_wildcard" => true,
+                                    "allow_leading_wildcard" => true
                                 ]
                             ]
                         ]
@@ -230,10 +222,11 @@ class ApiSearch extends ApiController
                                 ]
                             ],
                             'must' => [
-                                $query_algorithm => [
-                                    $area_of_query => [
-                                        "query" => $token_for_query
-                                    ]
+                                'query_string' => [
+                                    "query" => $token_for_query,
+                                    "default_field" => $area_of_query,
+                                    "analyze_wildcard" => true,
+                                    "allow_leading_wildcard" => true
                                 ]
                             ]
                         ]
@@ -266,10 +259,11 @@ class ApiSearch extends ApiController
                             ],
                             "minimum_should_match" => 1,
                             'must' => [
-                                $query_algorithm => [
-                                    $area_of_query => [
-                                        "query" => $token_for_query
-                                    ]
+                                'query_string' => [
+                                    "query" => $token_for_query,
+                                    "default_field" => $area_of_query,
+                                    "analyze_wildcard" => true,
+                                    "allow_leading_wildcard" => true
                                 ]
                             ]
                         ]
@@ -282,8 +276,9 @@ class ApiSearch extends ApiController
     }
 
     // Get all information about matches, specified for a single document or all documents
-    private function evaluateData ($query, $tokens_queried, $lemmata, $query_algorithm, $radius, $lemmatize) {
+    private function evaluateData ($query, $tokens_queried, $lemmata, $radius, $lemmatize) {
 
+        // Choose filter algorithm based on asterisks in the queried token - remove asterisks for further processing
         if (substr_count($tokens_queried[0], '*') !== 0) {
             $num_chars = strlen($tokens_queried[0]);
             if (($tokens_queried[0][0] === '*') and $tokens_queried[0][$num_chars-1] !== '*') {
@@ -300,10 +295,9 @@ class ApiSearch extends ApiController
             }
         }
         else {
-            $filter = 'match_word';
+            $filter = 'match_exact';
             $token = $tokens_queried[0];
         }
-
 
         // Variable to collect all relevant data in
         $data = [];
@@ -330,22 +324,17 @@ class ApiSearch extends ApiController
 
                 // Get all lower-case and upper-case token positions (lemmatized or unlemmatized) in the current column (measured in words)
                 if ($lemmatize) {
-                    $pos_lower = $this->getPositions($transcript_lemmatized, $lemmata[0], $query_algorithm);
-                    $pos_upper = $this->getPositions($transcript_lemmatized, ucfirst($lemmata[0]), $query_algorithm);
+                    $pos_lower = $this->getPositions($transcript_lemmatized, $lemmata[0], $filter);
+                    $pos_upper = $this->getPositions($transcript_lemmatized, ucfirst($lemmata[0]), $filter);
                 } else {
                     $pos_lower = $this->getPositions($transcript_tokenized, $token, $filter);
                     $pos_upper = $this->getPositions($transcript_tokenized, ucfirst($token), $filter);
                 }
 
-                // First, check if the positions in the arrays are the same (this is the case in hebrew and arabic
-                // because there are no upper-case letters) - if so, just take pos_lower as full array of positions, if not merge pos_lower and pos_upper
-                if ($pos_lower === $pos_upper) {
-                    $pos_all = $pos_lower;
-                }
-                else {
-                    $pos_all = array_merge($pos_lower, $pos_upper);
-                    sort($pos_all);
-                }
+                // Merge positions to one array without duplicates
+                $pos_all = array_unique(array_merge($pos_lower, $pos_upper));
+                sort($pos_all);
+
 
                 // FUTURE TASK - Remove positions which are very close to other positions to display them in ONE passage
 //                for ($k=0; $k<(count($pos_all)-1); $k++) {
@@ -360,7 +349,7 @@ class ApiSearch extends ApiController
 //                        $pos_all = array_values($pos_all);
 //                }
 
-                // Arrays to store matched passages and tokens in them
+                // Arrays to store matched passages and tokens in them as well as passage-coordinates and matched tokens
                 $passage_tokenized = [];
                 $passage_lemmatized = [];
                 $passage_coordinates = [];
@@ -372,8 +361,7 @@ class ApiSearch extends ApiController
                 // Get all passages, which contain the matched token, as a list of tokens (and lemmata)
                 $counter = 0;
                 foreach ($pos_all as $pos) {
-                    //if ($counter === 0 or ($pos-$prev_pos)>$radius) { // This checks, if the token at the actual position is not already contained in the previous passage
-                    if ($counter === 0 or true) {
+                    if ($counter === 0 or ($pos-$prev_pos)>$radius) { // This checks, if the token at the actual position is not already contained in the previous passage
                         $passage_info = $this->getPassage($transcript_tokenized, $pos, $radius);
                         $passage_tokenized[] = $passage_info[0];
                         if ($lemmatize) {
@@ -404,7 +392,7 @@ class ApiSearch extends ApiController
                                     }
                                 }
                                 // If query algorithm is match, add a position to the positions-array, if the token in transcript is identical to the argument-token
-                                elseif ($filter = 'match_word') {
+                                elseif ($filter = 'match_exact') {
                                     if ($word == $token) {
                                         $tokens_matched[$counter][] = $word;
                                     }
@@ -535,7 +523,7 @@ class ApiSearch extends ApiController
                 }
             }
             else {
-                $filter = 'match_word';
+                $filter = 'match_exact';
             }
 
             // First, remove all passage_tokenized from $data, which do not match the token
@@ -548,7 +536,7 @@ class ApiSearch extends ApiController
                         $passage_string = $passage_string . $token . " ";
 
                         // Add matched tokens to data-array and make the tokens_matched-slot unique (no doubles)
-                        if ($filter === 'match_word') {
+                        if ($filter === 'match_exact') {
                             if ($token === $token_unlemmatized or $token === ucfirst($token_unlemmatized)) {
                                 $data[$i]['tokens_matched'][$j][] = $passage_tokenized[$k];
                                 $data[$i]['tokens_matched'][$j] = array_unique($data[$i]['tokens_matched'][$j]);
@@ -577,7 +565,7 @@ class ApiSearch extends ApiController
 
                     // If the token is not in the passage, remove passage_tokenized, passage_lemmatized and tokens_matched from $data
                     // Also adjust the num_passages in $data
-                        if ($filter === 'match_word') {
+                        if ($filter === 'match_exact') {
                             $token_full = " " . $token_unlemmatized . " ";
                             $token_full_uc = " " . ucfirst($token_unlemmatized) . " ";
                             if (strpos($passage_string, $token_full) === false && strpos($passage_string, $token_full_uc) === false) {
@@ -674,7 +662,7 @@ class ApiSearch extends ApiController
                 }
             }
             // If query algorithm is match, add a position to the positions-array, if the token in transcript is identical to the argument-token
-            elseif ($filter = 'match_word') {
+            elseif ($filter = 'match_exact') {
                 if ($current_token == $token) {
                     $positions[] = $i;
                 }

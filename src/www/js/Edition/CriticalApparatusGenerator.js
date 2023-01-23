@@ -89,18 +89,18 @@ export class CriticalApparatusGenerator {
         // First find the previous index for which there is a word in the base witness,
         // the  sub-entries, one or more additions, will be associated with it
         let ctIndex = columnGroup.from
-        this.verbose && console.log(`Finding previous index with a word, initial index = ${ctIndex}`)
+
         let foundIndex = false
         while (!foundIndex) {
-           if (ctIndex < 0) {
-             foundIndex = true
-             continue
-           }
-           if (baseWitnessTokens[ctIndex.type] === WitnessTokenType.EMPTY) {
-             ctIndex--
-             continue
-           }
-           if (baseWitnessTokens[ctIndex].text !== undefined && Punctuation.stringIsAllPunctuation(baseWitnessTokens[ctIndex].text, lang)){
+          if (ctIndex < 0) {
+            foundIndex = true
+            continue
+          }
+          if (baseWitnessTokens[ctIndex.type] === WitnessTokenType.EMPTY) {
+            ctIndex--
+            continue
+          }
+          if (baseWitnessTokens[ctIndex].text !== undefined && Punctuation.stringIsAllPunctuation(baseWitnessTokens[ctIndex].text, lang)){
             ctIndex--
             continue
           }

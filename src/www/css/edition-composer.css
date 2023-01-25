@@ -584,6 +584,40 @@ div.entry-header {
     border-color: gray;
 }
 
+td.sub-entry-label {
+    padding-left: 5px;
+    padding-right: 10px;
+}
+
+span.sub-entry-type-label {
+    font-size: 0.8em;
+    color: gray;
+}
+
+span.sub-entry-btn {
+    margin-left: 1em;
+    font-size: 0.8em;
+    padding: 1px;
+}
+
+span.sub-entry-edit-btn {
+    margin-left: 1em;
+    font-size: 0.8em;
+    border: 1px solid gray;
+    border-radius: 3px;
+    padding: 1px;
+}
+
+span.add-sub-entry-btn {
+    margin-top: 0.5em;
+    font-size: 0.9em;
+    margin-left: 1em;
+    color: #0c5460;
+    border: 1px solid gray;
+    border-radius: 3px;
+    padding: 3px;
+}
+
 /* Witness Info panel */
 
 #witness-info h4 {

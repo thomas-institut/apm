@@ -221,12 +221,11 @@ export class CtData  {
       postLemma: editedEntry.postLemma,
       separator: editedEntry.separator
     }
-    // new entry, first get the auto subEntries that disable something
-    newEntry.subEntries = editedEntry.subEntries.filter( (subEntry) => { return subEntry.type === 'auto' && subEntry.enabled === false})
+    // new entry, first get the auto subEntries
+    newEntry.subEntries = editedEntry.subEntries.filter( (subEntry) => { return subEntry.type === 'auto'})
     // add fullCustom subEntries with some text in it
-
     pushArray(newEntry.subEntries, editedEntry.subEntries.filter( (subEntry) => {
-      return subEntry.type === 'fullCustom' && subEntry.enabled === true && subEntry.fmtText.length !== 0}))
+      return subEntry.type === 'fullCustom' && subEntry.fmtText.length !== 0}))
 
     console.log(`New Entry`)
     console.log(newEntry)

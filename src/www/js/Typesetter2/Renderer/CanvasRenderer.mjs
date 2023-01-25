@@ -28,7 +28,7 @@ export class CanvasRenderer extends TypesetterRenderer {
     this.scale = 1
     this.pageMargin = 20
     if (textDirection !== '') {
-      console.log(`Setting canvas text direction to '${textDirection}'`)
+      // console.log(`Setting canvas text direction to '${textDirection}'`)
       //this.ctx.direction = textDirection
     }
   }

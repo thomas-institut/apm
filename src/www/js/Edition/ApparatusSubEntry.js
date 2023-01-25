@@ -33,6 +33,12 @@ export class ApparatusSubEntry {
      * @member {FmtTextToken[]}
      */
     this.fmtText = FmtTextFactory.empty()
+
+    /**
+     *
+     * @member {SubEntryPart[]}
+     */
+    this.parts = []
     /**
      *
      * @member {SubEntryWitnessInfo[]}

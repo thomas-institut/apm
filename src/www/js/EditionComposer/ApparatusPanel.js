@@ -291,7 +291,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
     this.entryFormState = entryFormStateDisplaying
     this._drawAndSetupSubEntryTableInForm()
-    this._updateAcceptButton()
+    this._updateUpdateApparatusButton()
   }
 
   _drawAndSetupSubEntryTableInForm() {
@@ -308,12 +308,24 @@ export class ApparatusPanel extends  PanelWithToolbar {
     // setup checkbox and arrow events
     $(`${formSelector} form-check-input`).off()
 
+    this.freeTextEditors = []
     this.editedEntry.subEntries.forEach( (subEntry, i) => {
       $(this._getCheckboxSelector(i)).on('change', this._genOnChangeSubEntryEnabledCheckBox(i))
       $(this._getMoveUpDownButtonSelector(i, true)).on('click', this._genOnClickMoveUpDownButton(i, true, numSubEntries))
       $(this._getMoveUpDownButtonSelector(i, false)).on('click', this._genOnClickMoveUpDownButton(i, false, numSubEntries))
+      this.freeTextEditors[i] = null
       if (subEntry.source !== 'auto') {
         // custom entry
+        // Init free text editor
+        this.freeTextEditors[i] = new ApparatusEntryTextEditor({
+          containerSelector: this._getSubEntryTextEditorDivSelector(i),
+          lang: this.edition.lang,
+          onChange: this._genOnChangeFreeTextEditor(i),
+          debug: true
+        })
+
+        this.freeTextEditors[i].setText(subEntry.fmtText)
+
         $(this._getSubEntryEditButtonSelector(i)).on('click', this._genOnClickSubEntryEditButton(i))
         $(this._getSubEntryDeleteButtonSelector(i)).on('click', this._genOnClickSubEntryDeleteButton(i))
         $(this._getSubEntrySaveButtonSelector(i)).on('click', this._genOnClickSubEntrySaveButton(i))
@@ -328,9 +340,11 @@ export class ApparatusPanel extends  PanelWithToolbar {
       if (this.entryFormState === entryFormStateDisplaying) {
         this.subEntryIndexBeingEdited = subEntryIndex
         this.entryFormState = entryFormStateEditing
-        // setup editor
-
+        this.originalSubEntry = deepCopy(this.editedEntry.subEntries[subEntryIndex])
+        this.freeTextEditors[subEntryIndex].setText(this.editedEntry.subEntries[subEntryIndex].fmtText)
+        $(`${this.getApparatusEntryFormSelector()} .sub-entry-btn`).addClass('hidden')
         $(this._getSubEntryEditDivSelector(subEntryIndex)).removeClass('hidden')
+        this._updateUpdateApparatusButton()
       }
     }
   }
@@ -349,9 +363,18 @@ export class ApparatusPanel extends  PanelWithToolbar {
     return () => {
       if (this.entryFormState === entryFormStateEditing) {
         this.debug && console.log(`Click on save button for subEntry ${subEntryIndex}`)
+        let subEntry = this.editedEntry.subEntries[subEntryIndex]
+        if (subEntry.type === SubEntryType.FULL_CUSTOM) {
+          // update sub entry preview
+          $(this._getSubEntryPreviewSelector(subEntryIndex)).html(
+            ApparatusCommon.genSubEntryHtmlContent(this.edition.lang,
+              subEntry, this.edition.getSigla(), this.edition.siglaGroups, true))
+        }
 
+        $(`${this.getApparatusEntryFormSelector()} .sub-entry-btn`).removeClass('hidden')
         $(this._getSubEntryEditDivSelector(subEntryIndex)).addClass('hidden')
         this.entryFormState = entryFormStateDisplaying
+        this._updateUpdateApparatusButton()
       }
     }
   }
@@ -360,8 +383,11 @@ export class ApparatusPanel extends  PanelWithToolbar {
     return () => {
       if (this.entryFormState === entryFormStateEditing) {
         this.debug && console.log(`Click on cancel button for subEntry ${subEntryIndex}`)
+        this.editedEntry.subEntries[subEntryIndex] = this.originalSubEntry
         $(this._getSubEntryEditDivSelector(subEntryIndex)).addClass('hidden')
+        $(`${this.getApparatusEntryFormSelector()} .sub-entry-btn`).removeClass('hidden')
         this.entryFormState = entryFormStateDisplaying
+        this._updateUpdateApparatusButton()
       }
     }
   }
@@ -408,7 +434,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
       // redraw subEntry table
       this._drawAndSetupSubEntryTableInForm()
-      this._updateAcceptButton()
+      this._updateUpdateApparatusButton()
 
     }
   }
@@ -452,7 +478,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
              subEntryButtons = `<span class="btn sub-entry-btn sub-entry-edit-btn-${sei}" title="Edit">${icons.edit}</span>
                 <span class="btn sub-entry-btn sub-entry-delete-btn-${sei}" title="Delete">${icons.delete}</span>`
              editDiv = `<div class="hidden sub-entry-edit-div sub-entry-edit-div-${sei}">
-                    <div class="sub-entry-edit-container">Editor coming up....</div>
+                    <div class="sub-entry-edit-container-${sei}">
+                        <div class="sub-entry-text-editor-${sei}"></div>    
+                    </div>
                     <span class="btn sub-entry-edit-btn sub-entry-save-btn-${sei}" title="Save">Save</span>
                     <span class="btn sub-entry-edit-btn sub-entry-cancel-btn-${sei}" title="Cancel">Cancel</span>
                 </div>`
@@ -472,7 +500,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
             <td>
                 <div class="form-check sub-entry-app-${apparatusIndex}">
                     <input class="form-check-input text-${this.edition.lang} aei-sub-entry-${apparatusIndex}-${sei}" type="checkbox" value="entry-${apparatusIndex}-${sei}" ${checkedString}>
-                    <label class="form-check-label apparatus text-${this.edition.lang}" for="aei-subentry-${apparatusIndex}-${sei}"> 
+                    <label class="form-check-label apparatus text-${this.edition.lang} aei-sub-entry-preview-${sei}" for="aei-subentry-${apparatusIndex}-${sei}"> 
                     ${ApparatusCommon.genSubEntryHtmlContent(this.edition.lang, subEntry, sigla, this.edition.siglaGroups, true)}
                     </label>
                     ${subEntryButtons}
@@ -523,7 +551,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
       } else {
         textInput.addClass('hidden')
       }
-      this._updateAcceptButton()
+      this._updateUpdateApparatusButton()
     }
   }
 
@@ -552,7 +580,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
   _genOnChangeSubEntryEnabledCheckBox(index) {
     return () => {
       this.editedEntry.subEntries[index].enabled = $(this._getCheckboxSelector(index)).prop('checked')
-      this._updateAcceptButton()
+      this._updateUpdateApparatusButton()
     }
   }
 
@@ -687,13 +715,6 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.updateButton.on('click', this._genOnClickUpdateApparatusButton())
     this.cancelButton = $(`${formSelector} .cancel-btn`)
     this.cancelButton.on('click', this._genOnClickApparatusEntryCancelButton())
-    // Init free text editor
-    // this.freeTextEditor = new ApparatusEntryTextEditor({
-    //   containerSelector: `${formSelector} div.free-text-entry-div`,
-    //   lang: this.edition.lang,
-    //   onChange: this._genOnChangeFreeTextEditor(),
-    //   debug: true
-    // })
 
     // preLemma
     let anteKeyword = ApparatusCommon.getKeywordString('ante', this.edition.lang)
@@ -775,7 +796,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
   _genOnKeyUpLemmaGroupCustomTextInput(variable, toggle, textInput) {
     return () => {
       this.editedEntry[variable] = this._getLemmaGroupVariableFromToggle(toggle, textInput)
-      this._updateAcceptButton()
+      this._updateUpdateApparatusButton()
     }
   }
 
@@ -892,18 +913,26 @@ export class ApparatusPanel extends  PanelWithToolbar {
     return `${this.getApparatusEntryFormSelector()} div.sub-entry-edit-div-${subEntryIndex}`
   }
 
-  // _genOnChangeFreeTextEditor() {
-  //   return () => {
-  //     if (this.apparatusEntryFormIsVisible) {
-  //       this.editedEntry.customEntryFmtText = this.freeTextEditor.getFmtText()
-  //       // console.log(`New text in free text editor`)
-  //       // console.log(this.editedEntry.customEntryFmtText)
-  //       this._updateAcceptButton()
-  //     }
-  //   }
-  // }
+  _getSubEntryTextEditorDivSelector(subEntryIndex) {
+    return `${this.getApparatusEntryFormSelector()} div.sub-entry-text-editor-${subEntryIndex}`
+  }
+  _getSubEntryPreviewSelector(subEntryIndex) {
+    return `${this.getApparatusEntryFormSelector()} .aei-sub-entry-preview-${subEntryIndex}`
+  }
 
-  _updateAcceptButton() {
+
+  _genOnChangeFreeTextEditor(subEntryIndex) {
+    return () => {
+      if (this.entryFormState !== entryFormStateEditing) {
+        return
+      }
+      this.editedEntry.subEntries[subEntryIndex].fmtText = this.freeTextEditors[subEntryIndex].getFmtText()
+      this._updateUpdateApparatusButton()
+      }
+    }
+
+
+  _updateUpdateApparatusButton() {
     if (!varsAreEqual(this.entryInEditor, this.editedEntry)) {
       this.updateButton.removeClass('hidden')
     } else {

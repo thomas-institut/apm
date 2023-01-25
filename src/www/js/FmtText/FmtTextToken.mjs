@@ -83,6 +83,7 @@ export class FmtTextToken {
         this.verticalAlign = VerticalAlign.BASELINE
         this.fontSize = FontSize.NORMAL
         this.classList = ''  // a space-separated list of arbitrary text labels
+        this.textDirection = '' // if empty, inferred from text, otherwise it can be 'rtl' or 'ltr'
         break
 
       case FmtTextTokenType.GLUE:
@@ -184,6 +185,11 @@ export class FmtTextToken {
 
   setStyle(style) {
     this.style = style
+    return this
+  }
+
+  setTextDirection(textDirection) {
+    this.textDirection = textDirection
     return this
   }
 

@@ -49,16 +49,16 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
   }
 
   toFmtText(quillDelta) {
-    this.debug && console.log(`Converting quill Delta`)
+    // this.debug && console.log(`Converting quill Delta`)
     if (varsAreEqual(quillDelta.ops, [ {insert: "\n"}])) {
       // empty editor
-      this.debug && console.log(`Empty editor, returning []`)
+      // this.debug && console.log(`Empty editor, returning []`)
       return []
     }
-    this.debug && console.log(`There are ${quillDelta.ops.length} ops in delta`)
+    // this.debug && console.log(`There are ${quillDelta.ops.length} ops in delta`)
     let opsMap = quillDelta.ops.map ( (ops, i) => {
-      this.debug && console.log(`Processing ops ${i}`)
-      this.debug && console.log(ops)
+      // this.debug && console.log(`Processing ops ${i}`)
+      // this.debug && console.log(ops)
       if (ops.insert === "\n") {
         // single paragraph mark
         if (this.options.ignoreParagraphs) {
@@ -92,8 +92,8 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
       let paragraphs
       if (this.options.ignoreParagraphs) {
         insertText = insertText.replace("\n", ' ')
-        this.debug && console.log(`Ignoring paragraphs, ops.insert changed to: `)
-        this.debug && console.log(insertText)
+        // this.debug && console.log(`Ignoring paragraphs, ops.insert changed to: `)
+        // this.debug && console.log(insertText)
         paragraphs = [ insertText ]
       } else {
         paragraphs = insertText.split("\n")
@@ -161,8 +161,8 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
         fmtText.push(token)
       })
     })
-    this.debug && console.log(`Final FmtText array`)
-    this.debug && console.log(fmtText)
+    // this.debug && console.log(`Final FmtText array`)
+    // this.debug && console.log(fmtText)
     return fmtText
   }
 

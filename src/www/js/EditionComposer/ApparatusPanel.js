@@ -27,7 +27,7 @@ import { onClickAndDoubleClick } from '../toolbox/DoubleClick'
 import { FmtText } from '../FmtText/FmtText.mjs'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { ApparatusEntryTextEditor } from './ApparatusEntryTextEditor'
-import { capitalizeFirstLetter, deepCopy, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
+import { capitalizeFirstLetter, deepCopy, getTextDirectionForLang, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { varsAreEqual } from '../toolbox/ArrayUtil.mjs'
 import * as SubEntryType from '../Edition/SubEntryType.mjs'
 import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry'
@@ -35,6 +35,7 @@ import { MultiToggle } from '../widgets/MultiToggle'
 import { SiglaGroup }  from '../Edition/SiglaGroup.mjs'
 import { ApparatusUtil } from '../Edition/ApparatusUtil.mjs'
 import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
+import { ConfirmDialog } from '../pages/common/ConfirmDialog'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
@@ -50,7 +51,8 @@ const icons = {
   edit: '<small><i class="fas fa-pen"></i></small>',
   delete: '<i class="bi bi-trash"></i>',
   cancelEdit: '<i class="bi bi-x-circle"></i>',
-  addEntry: '<i class="bi bi-plus-lg"></i>'
+  addEntry: '<i class="bi bi-plus-lg"></i>',
+  deletePreviewBullet: '&bull;'
 }
 
 const editEntryButtonTitle = 'Click to edit selected apparatus entry'
@@ -103,6 +105,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
     this.apparatus = this.edition.apparatuses[this.options.apparatusIndex]
     this.lang = this.edition.getLang()
+    this.defaultTextDirection = getTextDirectionForLang(this.lang)
     this.cachedHtml = 'Apparatus coming soon...'
     this.currentSelectedEntryIndex = -1
     this._hideApparatusEntryForm()
@@ -332,6 +335,24 @@ export class ApparatusPanel extends  PanelWithToolbar {
         $(this._getSubEntryCancelButtonSelector(i)).on('click', this._genOnClickSubEntryCancelButton(i))
       }
     })
+    $(this._getSubEntryAddButtonSelector()).on('click', this._genOnClickAddSubEntryButton())
+  }
+
+  _genOnClickAddSubEntryButton() {
+    return () => {
+      if (this.entryFormState !== entryFormStateDisplaying) {
+        return
+      }
+      this.debug && console.log(`Click on add custom sub entry button`)
+      let newSubEntry = new ApparatusSubEntry()
+      newSubEntry.type = SubEntryType.FULL_CUSTOM
+      newSubEntry.source = 'user'
+      newSubEntry.position = this.editedEntry.subEntries.length
+      this.editedEntry.subEntries.push(newSubEntry)
+      // redraw subEntry table
+      this._drawAndSetupSubEntryTableInForm()
+      this._updateUpdateApparatusButton()
+    }
   }
 
   _genOnClickSubEntryEditButton(subEntryIndex) {
@@ -354,6 +375,32 @@ export class ApparatusPanel extends  PanelWithToolbar {
       this.debug && console.log(`Click on delete button for subEntry ${subEntryIndex}`)
       if (this.entryFormState === entryFormStateDisplaying) {
         this.debug && console.log(`About to delete subEntry ${subEntryIndex}`)
+        let previewHtml =  $(this._getSubEntryPreviewSelector(subEntryIndex)).html()
+
+        let confirmDialog = new ConfirmDialog({
+          body: `<p>Are you sure you want to delete this custom entry?</p>
+            <p class="sub-entry-delete-preview">${icons.deletePreviewBullet} ${previewHtml}</p>
+            <p>You can just disable it in case you change your mind about displaying it in the apparatus</p>
+`,
+          acceptButtonLabel: 'Delete',
+          cancelButtonLabel: 'Cancel',
+          size: 'sm',
+          acceptFunction: () => {
+            this.editedEntry.subEntries = this.editedEntry.subEntries.filter( (subEntry, i) => {
+              return i !== subEntryIndex
+            }).map( (subEntry, i) => {
+              subEntry.position = i
+              return subEntry
+            })
+            // redraw subEntry table
+            this._drawAndSetupSubEntryTableInForm()
+            this._updateUpdateApparatusButton()
+          }
+        })
+        confirmDialog.show()
+
+
+
       }
     }
   }
@@ -920,6 +967,10 @@ export class ApparatusPanel extends  PanelWithToolbar {
     return `${this.getApparatusEntryFormSelector()} .aei-sub-entry-preview-${subEntryIndex}`
   }
 
+  _getSubEntryAddButtonSelector() {
+    return `${this.getApparatusEntryFormSelector()} span.add-sub-entry-btn`
+  }
+
 
   _genOnChangeFreeTextEditor(subEntryIndex) {
     return () => {
@@ -1343,7 +1394,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
         }
         html+= `<span class="${classes.join(' ')}">
                             ${ApparatusCommon.genSubEntryHtmlContent(this.lang, subEntry, sigla, this.edition.siglaGroups)}
-         </span>&nbsp;&nbsp;&nbsp;`
+         </span>`
+        html += `<span style="direction: ${this.defaultTextDirection}; unicode-bidi: embed">&nbsp;</span>`
       })
       html += '</span>'
     })

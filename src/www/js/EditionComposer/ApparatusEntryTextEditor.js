@@ -144,8 +144,8 @@ export class ApparatusEntryTextEditor {
    */
   setText(newText, silent = false) {
     let newDelta = this.quillDeltaRenderer.render(FmtTextFactory.fromAnything(newText))
-    this.debug && console.log(`Setting text with new delta`)
-    this.debug && console.log(newDelta)
+    // this.debug && console.log(`Setting text with new delta`)
+    // this.debug && console.log(newDelta)
     let source = silent ? 'silent' : 'api'
     this.quillEditor.setContents(newDelta, source)
   }

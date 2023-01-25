@@ -618,6 +618,10 @@ span.add-sub-entry-btn {
     padding: 3px;
 }
 
+p.sub-entry-delete-preview {
+    margin: 1em;
+}
+
 /* Witness Info panel */
 
 #witness-info h4 {

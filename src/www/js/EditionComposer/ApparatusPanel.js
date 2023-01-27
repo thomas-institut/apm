@@ -27,15 +27,23 @@ import { onClickAndDoubleClick } from '../toolbox/DoubleClick'
 import { FmtText } from '../FmtText/FmtText.mjs'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { ApparatusEntryTextEditor } from './ApparatusEntryTextEditor'
-import { capitalizeFirstLetter, deepCopy, getTextDirectionForLang, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
+import {
+  capitalizeFirstLetter,
+  deepCopy,
+  getTextDirectionForLang,
+  removeExtraWhiteSpace,
+  trimWhiteSpace
+} from '../toolbox/Util.mjs'
 import { varsAreEqual } from '../toolbox/ArrayUtil.mjs'
 import * as SubEntryType from '../Edition/SubEntryType.mjs'
-import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry'
+import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry.mjs'
 import { MultiToggle } from '../widgets/MultiToggle'
 import { SiglaGroup }  from '../Edition/SiglaGroup.mjs'
 import { ApparatusUtil } from '../Edition/ApparatusUtil.mjs'
 import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
 import { ConfirmDialog } from '../pages/common/ConfirmDialog'
+import { WitnessDataEditor } from './WitnessDataEditor'
+import { ApparatusEntry } from '../Edition/ApparatusEntry.mjs'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
@@ -209,7 +217,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
     if (entryIndex !== -1) {
       // an existing entry
-      theEntry = deepCopy(this.edition.apparatuses[apparatusIndex].entries[entryIndex])
+      theEntry = ApparatusEntry.clone(this.edition.apparatuses[apparatusIndex].entries[entryIndex])
       from = theEntry.from
       to = theEntry.to
     } else {
@@ -218,22 +226,26 @@ export class ApparatusPanel extends  PanelWithToolbar {
         // need valid from and to indexes to create a new entry
         throw new Error(`Loading new entry with invalid 'from' and 'to' indexes: ${from} - ${to}`)
       }
-      theEntry = {
-        mainTextFrom: from,
-        mainTextTo: to,
-        preLemma: '',
-        lemma: '',
-        postLemma: '',
-        separator: '',
-        lemmaText:  this.edition.getPlainTextForRange(from, to),
-        subEntries: []
-      }
+      theEntry = new ApparatusEntry()
+      theEntry.from = from
+      theEntry.to = to
+      theEntry.lemmaText = this.edition.getPlainTextForRange(from, to)
+      // theEntry = {
+      //   mainTextFrom: from,
+      //   mainTextTo: to,
+      //   preLemma: '',
+      //   lemma: '',
+      //   postLemma: '',
+      //   separator: '',
+      //   lemmaText:  this.edition.getPlainTextForRange(from, to),
+      //   subEntries: []
+      // }
     }
     let ctIndexFrom = -1
     let ctIndexTo = -1
     if (from === -1) {
-      if (theEntry.ctGroup !== undefined) {
-        ctIndexFrom = theEntry.ctGroup.from
+      if (theEntry.metadata.has('ctGroup')) {
+        ctIndexFrom = theEntry.metadata.get('ctGroup').from
       } else {
         console.warn(`Undefined collation table indexes for existing apparatus entry`)
         console.log(theEntry)
@@ -242,8 +254,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
       ctIndexFrom = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex)
     }
     if (to === -1) {
-      if (theEntry.ctGroup !== undefined) {
-        ctIndexTo = theEntry.ctGroup.to
+      if (theEntry.metadata.has('ctGroup')) {
+        ctIndexTo = theEntry.metadata.get('ctGroup').from
       } else {
         console.warn(`Undefined collation table indexes for existing apparatus entry`)
         console.log(theEntry)
@@ -251,9 +263,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
     } else {
       ctIndexTo = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex)
     }
-    theEntry.ctIndexFrom = ctIndexFrom
-    theEntry.ctIndexTo = ctIndexTo
-    delete theEntry.ctGroup
+    theEntry.metadata.delete('ctGroup')
+    theEntry.metadata.add('ctGroup', { from: ctIndexFrom, to: ctIndexTo})
     return theEntry
   }
 
@@ -283,15 +294,14 @@ export class ApparatusPanel extends  PanelWithToolbar {
     // Edition text
     $(`${formSelector} div.entry-text`).html(this.entryInEditor.lemmaText)
     // Collation table columns
-    $(`${formSelector} .ct-table-cols`).html(this._getCtColumnsText(this.entryInEditor.ctIndexFrom, this.entryInEditor.ctIndexTo))
+    $(`${formSelector} .ct-table-cols`).html(this._getCtColumnsText(this.entryInEditor.metadata.get('ctGroup').from, this.entryInEditor.metadata.get('ctGroup').to))
     // Lemma and separator section
     this._loadLemmaGroupVariableInForm('preLemma', this.entryInEditor, this.preLemmaToggle, this.customPreLemmaTextInput)
     this._loadLemmaGroupVariableInForm('lemma', this.entryInEditor, this.lemmaToggle, this.customLemmaTextInput)
     this._loadLemmaGroupVariableInForm('postLemma', this.entryInEditor, this.postLemmaToggle, this.customPostLemmaTextInput)
     this._loadLemmaGroupVariableInForm('separator', this.entryInEditor, this.separatorToggle, this.customSeparatorTextInput)
 
-    this.editedEntry = deepCopy(this.entryInEditor)
-
+    this.editedEntry = ApparatusEntry.clone(this.entryInEditor)
     this.entryFormState = entryFormStateDisplaying
     this._drawAndSetupSubEntryTableInForm()
     this._updateUpdateApparatusButton()
@@ -312,22 +322,38 @@ export class ApparatusPanel extends  PanelWithToolbar {
     $(`${formSelector} form-check-input`).off()
 
     this.freeTextEditors = []
+    this.witnessEditors = []
     this.editedEntry.subEntries.forEach( (subEntry, i) => {
       $(this._getCheckboxSelector(i)).on('change', this._genOnChangeSubEntryEnabledCheckBox(i))
       $(this._getMoveUpDownButtonSelector(i, true)).on('click', this._genOnClickMoveUpDownButton(i, true, numSubEntries))
       $(this._getMoveUpDownButtonSelector(i, false)).on('click', this._genOnClickMoveUpDownButton(i, false, numSubEntries))
       this.freeTextEditors[i] = null
-      if (subEntry.source !== 'auto') {
+      this.witnessEditors[i] = null
+      if (subEntry.source === 'user') {
         // custom entry
-        // Init free text editor
-        this.freeTextEditors[i] = new ApparatusEntryTextEditor({
-          containerSelector: this._getSubEntryTextEditorDivSelector(i),
-          lang: this.edition.lang,
-          onChange: this._genOnChangeFreeTextEditor(i),
-          debug: true
-        })
+        this.debug && console.log(`Custom entry ${i}`)
+        this.debug && console.log(subEntry)
 
-        this.freeTextEditors[i].setText(subEntry.fmtText)
+        if (subEntry.type === SubEntryType.FULL_CUSTOM || subEntry.type === SubEntryType.ADDITION || subEntry.type === SubEntryType.VARIANT) {
+          this.freeTextEditors[i] = new ApparatusEntryTextEditor({
+            containerSelector: this._getSubEntryTextEditorDivSelector(i),
+            lang: this.edition.lang,
+            onChange: this._genOnChangeFreeTextEditor(i),
+            debug: true
+          })
+          this.freeTextEditors[i].setText(subEntry.fmtText)
+        }
+        if (subEntry.type !== SubEntryType.FULL_CUSTOM) {
+          // i.e. addition, omission, variant
+          this.witnessEditors[i] = new WitnessDataEditor({
+            containerSelector: this._getSubEntryWitnessEditorDivSelector(i),
+            sigla: this.ctData['sigla'].filter( (s, i) => {
+              return (i !== this.ctData['editionWitnessIndex'])
+            }),
+            witnessData: subEntry.witnessData,
+            onChange: this._genOnChangeWitnessDataEditor(i)
+          })
+        }
 
         $(this._getSubEntryEditButtonSelector(i)).on('click', this._genOnClickSubEntryEditButton(i))
         $(this._getSubEntryDeleteButtonSelector(i)).on('click', this._genOnClickSubEntryDeleteButton(i))
@@ -335,10 +361,46 @@ export class ApparatusPanel extends  PanelWithToolbar {
         $(this._getSubEntryCancelButtonSelector(i)).on('click', this._genOnClickSubEntryCancelButton(i))
       }
     })
-    $(this._getSubEntryAddButtonSelector()).on('click', this._genOnClickAddSubEntryButton())
+    $(this._getSubEntryAddCustomButtonSelector()).on('click', this._genOnClickAddCustomSubEntryButton())
+    $(this._getSubEntryAddVariantButtonSelector()).on('click', this._genOnClickAddVariantSubEntryButton())
   }
 
-  _genOnClickAddSubEntryButton() {
+  _getSubEntryHtmlForEntryForm(subEntry, sigla) {
+    let subEntryHtml = trimWhiteSpace(ApparatusCommon.genSubEntryHtmlContent(this.edition.lang, subEntry, sigla, this.edition.siglaGroups, true))
+    if (subEntryHtml === '') {
+      subEntryHtml = '<span class="empty-sub-entry">--empty--</span>'
+    }
+    return subEntryHtml
+  }
+
+  _genOnChangeWitnessDataEditor(subEntryIndex) {
+    return (newData) => {
+      this.editedEntry.subEntries[subEntryIndex].witnessData = newData
+      // update sub entry preview
+      this.updateSubEntryPreview(subEntryIndex)
+      this._updateUpdateApparatusButton()
+    }
+  }
+
+  _genOnClickAddVariantSubEntryButton() {
+    return () => {
+      if (this.entryFormState !== entryFormStateDisplaying) {
+        return
+      }
+      this.debug && console.log(`Click on add custom variant sub entry button`)
+      let newSubEntry = new ApparatusSubEntry()
+      newSubEntry.type = SubEntryType.VARIANT
+      newSubEntry.source = 'user'
+      newSubEntry.witnessData = []
+      newSubEntry.position = this.editedEntry.subEntries.length
+      this.editedEntry.subEntries.push(newSubEntry)
+      // redraw subEntry table
+      this._drawAndSetupSubEntryTableInForm()
+      this._updateUpdateApparatusButton()
+    }
+  }
+
+  _genOnClickAddCustomSubEntryButton() {
     return () => {
       if (this.entryFormState !== entryFormStateDisplaying) {
         return
@@ -411,11 +473,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
       if (this.entryFormState === entryFormStateEditing) {
         this.debug && console.log(`Click on save button for subEntry ${subEntryIndex}`)
         let subEntry = this.editedEntry.subEntries[subEntryIndex]
-        if (subEntry.type === SubEntryType.FULL_CUSTOM) {
+        if (subEntry.source === 'user') {
           // update sub entry preview
-          $(this._getSubEntryPreviewSelector(subEntryIndex)).html(
-            ApparatusCommon.genSubEntryHtmlContent(this.edition.lang,
-              subEntry, this.edition.getSigla(), this.edition.siglaGroups, true))
+         this.updateSubEntryPreview(subEntryIndex)
         }
 
         $(`${this.getApparatusEntryFormSelector()} .sub-entry-btn`).removeClass('hidden')
@@ -431,6 +491,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
       if (this.entryFormState === entryFormStateEditing) {
         this.debug && console.log(`Click on cancel button for subEntry ${subEntryIndex}`)
         this.editedEntry.subEntries[subEntryIndex] = this.originalSubEntry
+        this.updateSubEntryPreview(subEntryIndex)
         $(this._getSubEntryEditDivSelector(subEntryIndex)).addClass('hidden')
         $(`${this.getApparatusEntryFormSelector()} .sub-entry-btn`).removeClass('hidden')
         this.entryFormState = entryFormStateDisplaying
@@ -498,46 +559,45 @@ export class ApparatusPanel extends  PanelWithToolbar {
          let typeLabel = ''
          let subEntryButtons = ''
          let editDiv = ''
-         switch(subEntry.type) {
+         let sourceLabel = subEntry.source === 'auto' ? 'AUTO' : 'CUSTOM'
+          switch(subEntry.type) {
            case SubEntryType.ADDITION:
              typeLabel = 'ADDITION'
-             if (subEntry.source === 'auto') {
-               typeLabel = 'AUTO ' + typeLabel
-             }
              break
 
            case SubEntryType.OMISSION:
              typeLabel = 'OMISSION'
-             if (subEntry.source === 'auto') {
-               typeLabel = 'AUTO ' + typeLabel
-             }
              break
 
            case SubEntryType.VARIANT:
              typeLabel = 'VARIANT'
-             if (subEntry.source === 'auto') {
-               typeLabel = 'AUTO ' + typeLabel
-             }
-              break
+             break
 
            case SubEntryType.FULL_CUSTOM:
-             typeLabel = 'CUSTOM'
-             subEntryButtons = `<span class="btn sub-entry-btn sub-entry-edit-btn-${sei}" title="Edit">${icons.edit}</span>
-                <span class="btn sub-entry-btn sub-entry-delete-btn-${sei}" title="Delete">${icons.delete}</span>`
-             editDiv = `<div class="hidden sub-entry-edit-div sub-entry-edit-div-${sei}">
-                    <div class="sub-entry-edit-container-${sei}">
-                        <div class="sub-entry-text-editor-${sei}"></div>    
-                    </div>
-                    <span class="btn sub-entry-edit-btn sub-entry-save-btn-${sei}" title="Save">Save</span>
-                    <span class="btn sub-entry-edit-btn sub-entry-cancel-btn-${sei}" title="Cancel">Cancel</span>
-                </div>`
+             typeLabel = ''
              break
 
            default:
-             typeLabel= 'Other'
+             typeLabel= 'UNKNOWN'
              break
          }
+
+         if (subEntry.source === 'user') {
+           subEntryButtons = `<span class="btn sub-entry-btn sub-entry-edit-btn-${sei}" title="Edit">${icons.edit}</span>
+                <span class="btn sub-entry-btn sub-entry-delete-btn-${sei}" title="Delete">${icons.delete}</span>`
+           editDiv = `<div class="hidden sub-entry-edit-div sub-entry-edit-div-${sei}">
+                    <div class="sub-entry-edit-container-${sei}">
+                        <div class="sub-entry-text-editor-${sei}"></div>    
+                        <div class="sub-entry-witness-editor-${sei}"></div>
+                    </div>
+                    <span class="btn sub-entry-edit-btn sub-entry-save-btn-${sei}" title="Save">Close</span>
+                    <!-- <span class="btn sub-entry-edit-btn sub-entry-cancel-btn-${sei}" title="Cancel">Cancel</span> -->
+                </div>`
+         }
+         typeLabel = [ sourceLabel, typeLabel].join(' ')
          let checkedString = subEntry.enabled ? 'checked' : ''
+         let subEntryHtml = this._getSubEntryHtmlForEntryForm(subEntry, sigla)
+
          return `<tr>
             <td class="order-buttons">
                <span class="btn btn-sm move-up-btn-${sei}" title="Move up">${icons.moveUp}</span>
@@ -548,7 +608,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
                 <div class="form-check sub-entry-app-${apparatusIndex}">
                     <input class="form-check-input text-${this.edition.lang} aei-sub-entry-${apparatusIndex}-${sei}" type="checkbox" value="entry-${apparatusIndex}-${sei}" ${checkedString}>
                     <label class="form-check-label apparatus text-${this.edition.lang} aei-sub-entry-preview-${sei}" for="aei-subentry-${apparatusIndex}-${sei}"> 
-                    ${ApparatusCommon.genSubEntryHtmlContent(this.edition.lang, subEntry, sigla, this.edition.siglaGroups, true)}
+                        ${subEntryHtml}
                     </label>
                     ${subEntryButtons}
                 </div>
@@ -559,7 +619,11 @@ export class ApparatusPanel extends  PanelWithToolbar {
       subEntriesHtml += tableRowsHtml
       subEntriesHtml += `</table>`
     }
-    subEntriesHtml += `<span class="btn add-sub-entry-btn">Add Custom</span>`
+    subEntriesHtml += `<span class="btn add-sub-entry-btn add-variant-sub-entry-btn">Add Variant</span>`
+    subEntriesHtml += `<span class="btn add-sub-entry-btn add-addition-sub-entry-btn">Addition</span>`
+    subEntriesHtml += `<span class="btn add-sub-entry-btn add-omission-sub-entry-btn">Omission</span>`
+    subEntriesHtml += `<span class="btn add-sub-entry-btn add-custom-sub-entry-btn">Custom</span>`
+
     return subEntriesHtml
   }
 
@@ -867,14 +931,16 @@ export class ApparatusPanel extends  PanelWithToolbar {
         // nothing to do
         return
       }
+      console.log(`About to update apparatus, edited entry: `)
+      console.log(this.editedEntry)
       // so, there are changes
       this.updateButton.addClass('hidden')
       this.cancelButton.addClass('hidden')
       let infoDiv =$(`${this.getApparatusEntryFormSelector()} div.info-div`)
       infoDiv.html(`Updating edition...`)
       let entryForCtData = {
-        from: this.editedEntry.ctIndexFrom,
-        to: this.editedEntry.ctIndexTo,
+        from: this.editedEntry.metadata.get('ctGroup').from,
+        to: this.editedEntry.metadata.get('ctGroup').to,
         preLemma:  this.editedEntry.preLemma,
         lemma: this.editedEntry.lemma,
         postLemma: this.editedEntry.postLemma,
@@ -906,6 +972,14 @@ export class ApparatusPanel extends  PanelWithToolbar {
             enabled: subEntry.enabled,
             position: subEntry.position,
             fmtText: subEntry.fmtText
+          }
+        } else {
+          return {
+            type: subEntry.type,
+            enabled: subEntry.enabled,
+            position: subEntry.position,
+            fmtText: subEntry.fmtText,
+            witnessData: subEntry.witnessData
           }
         }
       })
@@ -963,12 +1037,20 @@ export class ApparatusPanel extends  PanelWithToolbar {
   _getSubEntryTextEditorDivSelector(subEntryIndex) {
     return `${this.getApparatusEntryFormSelector()} div.sub-entry-text-editor-${subEntryIndex}`
   }
+
+  _getSubEntryWitnessEditorDivSelector(subEntryIndex) {
+    return `${this.getApparatusEntryFormSelector()} div.sub-entry-witness-editor-${subEntryIndex}`
+  }
   _getSubEntryPreviewSelector(subEntryIndex) {
     return `${this.getApparatusEntryFormSelector()} .aei-sub-entry-preview-${subEntryIndex}`
   }
 
-  _getSubEntryAddButtonSelector() {
-    return `${this.getApparatusEntryFormSelector()} span.add-sub-entry-btn`
+  _getSubEntryAddCustomButtonSelector() {
+    return `${this.getApparatusEntryFormSelector()} span.add-custom-sub-entry-btn`
+  }
+
+  _getSubEntryAddVariantButtonSelector() {
+    return `${this.getApparatusEntryFormSelector()} span.add-variant-sub-entry-btn`
   }
 
 
@@ -978,8 +1060,16 @@ export class ApparatusPanel extends  PanelWithToolbar {
         return
       }
       this.editedEntry.subEntries[subEntryIndex].fmtText = this.freeTextEditors[subEntryIndex].getFmtText()
+      // update sub entry preview
+      this.updateSubEntryPreview(subEntryIndex)
       this._updateUpdateApparatusButton()
       }
+    }
+
+
+    updateSubEntryPreview(subEntryIndex) {
+      $(this._getSubEntryPreviewSelector(subEntryIndex)).html(
+        this._getSubEntryHtmlForEntryForm(this.editedEntry.subEntries[subEntryIndex], this.edition.getSigla()))
     }
 
 
@@ -1073,7 +1163,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.verbose && console.log(`Showing apparatus entry form`)
     $(this.getApparatusEntryFormSelector()).removeClass('hidden')
     this._getEditEntryButtonElement().html(icons.cancelEdit).attr('title', cancelEditButtonTitle).removeClass('hidden')
-    this.options.highlightCollationTableRange(this.entryInEditor.ctIndexFrom, this.entryInEditor.ctIndexTo)
+    this.options.highlightCollationTableRange(this.entryInEditor.metadata.get('ctGroup').from, this.entryInEditor.metadata.get('ctGroup').to)
     this.apparatusEntryFormIsVisible = true
     this.__fitDivs()
   }
@@ -1217,13 +1307,13 @@ export class ApparatusPanel extends  PanelWithToolbar {
     if(this.currentSelectedEntryIndex !== -1) {
       this.options.onHighlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], true)
       if (this.apparatusEntryFormIsVisible) {
-        this.options.highlightCollationTableRange(this.entryInEditor.ctIndexFrom, this.entryInEditor.ctIndexTo)
+        this.options.highlightCollationTableRange(this.entryInEditor.metadata.get('ctGroup').from, this.entryInEditor.metadata.get('ctGroup').to)
       } else {
         this.options.highlightCollationTableRange(-1, -1)
       }
     } else {
       if (this.apparatusEntryFormIsVisible) {
-        this.options.highlightCollationTableRange(this.entryInEditor.ctIndexFrom, this.entryInEditor.ctIndexTo)
+        this.options.highlightCollationTableRange(this.entryInEditor.metadata.get('ctGroup').from, this.entryInEditor.metadata.get('ctGroup').to)
       } else {
         this.options.highlightCollationTableRange(-1, -1)
       }

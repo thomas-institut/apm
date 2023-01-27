@@ -38,12 +38,12 @@ import { MainTextTokenFactory } from '../Edition/MainTextTokenFactory.mjs'
 import { pushArray, varsAreEqual } from '../toolbox/ArrayUtil.mjs'
 import { Apparatus } from '../Edition/Apparatus'
 import { ApparatusEntry } from '../Edition/ApparatusEntry.mjs'
-import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry'
-import { SubEntryWitnessInfo } from '../Edition/SubEntryWitnessInfo'
+import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry.mjs'
 import { EditableTextField } from '../widgets/EditableTextField'
 import { TimeString } from '../toolbox/TimeString.mjs'
 import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
 import { CtData } from '../CtData/CtData'
+import { WitnessDataItem } from '../Edition/WitnessDataItem.mjs'
 
 const defaultIcons = {
   moveUp: '&uarr;',
@@ -833,7 +833,7 @@ export class MceComposer {
               newSubEntry.source = subEntry.source
               newSubEntry.type = subEntry.type
               newSubEntry.witnessData = subEntry.witnessData.map ( (wd) => {
-                let newWd = new SubEntryWitnessInfo()
+                let newWd = new WitnessDataItem()
                 newWd.setHand(wd.hand)
                 newWd.setWitnessIndex(this.mceData.chunks[chunkIndex].witnessIndices[wd.witnessIndex])
                 return newWd

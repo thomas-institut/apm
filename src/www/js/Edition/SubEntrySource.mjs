@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021 Universität zu Köln
+ *  Copyright (C) 2022 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,11 +16,8 @@
  *
  */
 
-export const EMPTY = 'empty'
-export const ADDITION = 'addition'
-export const OMISSION = 'omission'
-export const VARIANT = 'variant'
 
 
-export const FULL_CUSTOM = 'fullCustom'
+export const UNKNOWN = 'unknown'
+export const USER = 'user'
 export const AUTO = 'auto'

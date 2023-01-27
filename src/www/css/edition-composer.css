@@ -622,6 +622,19 @@ p.sub-entry-delete-preview {
     margin: 1em;
 }
 
+select.hand-select {
+    border: none;
+    background: white;
+    font-size: 0.7em;
+    appearance: none;
+}
+
+span.empty-sub-entry {
+    color: silver;
+    font-family: var(--default-font-family);
+    font-variant-caps: small-caps;
+}
+
 /* Witness Info panel */
 
 #witness-info h4 {

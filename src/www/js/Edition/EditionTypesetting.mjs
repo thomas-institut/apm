@@ -29,7 +29,6 @@ import { TextBoxFactory } from '../Typesetter2/TextBoxFactory.mjs'
 import { SiglaGroup } from './SiglaGroup.mjs'
 import { ApparatusEntry } from './ApparatusEntry.mjs'
 import { FmtText } from '../FmtText/FmtText.mjs'
-// import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
 
 let defaultEditionStyles = {
   la: defaultLatinEditionStyle,
@@ -457,13 +456,13 @@ export class EditionTypesetting {
       let siglaData = ApparatusUtil.getSiglaData(subEntry.witnessData, this.sigla, this.siglaGroups)
       for (let i = 0; i < siglaData.length; i++) {
         let siglumData = siglaData[i]
+        // the siglum
         let siglumItem = await this.ss.apply(TextBoxFactory.simpleText(siglumData.siglum), 'apparatus sigla')
         siglumItem.setTextDirection(this.textDirection)
-
-        //this.__detectAndSetTextBoxTextDirection(siglumItem)
         items.push(siglumItem)
-        if (siglumData.hand !== 0) {
-          let handItem = await this.ss.apply(TextBoxFactory.simpleText(this.getNumberString(siglumData.hand, this.edition.lang)), 'apparatus hand')
+        // the hand
+        if (siglumData.hand !== 0 || siglumData.forceHandDisplay) {
+          let handItem = await this.ss.apply(TextBoxFactory.simpleText(this.getNumberString(siglumData.hand+1, this.edition.lang)), 'apparatus hand')
           handItem.setTextDirection(this.textDirection)
           //this.__detectAndSetTextBoxTextDirection(handItem)
           items.push(handItem)

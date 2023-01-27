@@ -25,14 +25,15 @@ import { CriticalApparatusGenerator } from '../CriticalApparatusGenerator'
 import { EditionWitnessInfo } from '../EditionWitnessInfo'
 import { Apparatus } from '../Apparatus'
 import { ApparatusEntry } from '../ApparatusEntry.mjs'
-import { ApparatusSubEntry } from '../ApparatusSubEntry'
+import { ApparatusSubEntry } from '../ApparatusSubEntry.mjs'
 import * as ApparatusType from '../ApparatusType'
 import * as SubEntryType from '../SubEntryType.mjs'
-import * as SubEntrySource from '../SubEntrySource'
+import * as SubEntrySource from '../SubEntrySource.mjs'
 import { pushArray } from '../../toolbox/ArrayUtil.mjs'
 import { ApparatusCommon } from '../../EditionComposer/ApparatusCommon.js'
 import { SiglaGroup } from '../SiglaGroup.mjs'
 import { deepCopy } from '../../toolbox/Util.mjs'
+import { WitnessDataItem } from '../WitnessDataItem.mjs'
 
 export class CtDataEditionGenerator extends EditionGenerator{
   constructor (options) {
@@ -154,8 +155,8 @@ export class CtDataEditionGenerator extends EditionGenerator{
         }
       }
 
-      let fullCustomSubEntries = ctDataCustomEntry['subEntries'].filter ( (e) => { return e.type === SubEntryType.FULL_CUSTOM})
-      let customAutoSubEntries = ctDataCustomEntry['subEntries'].filter ( (e) => { return e.type === SubEntryType.AUTO})
+      let customSubEntries = ctDataCustomEntry['subEntries'].filter ( (e) => { return e.type !== 'auto'})
+      let customAutoSubEntries = ctDataCustomEntry['subEntries'].filter ( (e) => { return e.type === 'auto'})
       if (customAutoSubEntries.length !== 0) {
         this.verbose && console.log(`There are custom auto entries: ${mainTextFrom} -> ${mainTextTo}`)
         this.verbose && console.log(customAutoSubEntries)
@@ -163,8 +164,8 @@ export class CtDataEditionGenerator extends EditionGenerator{
 
       let currentEntryIndex = generatedApparatusCriticus.findEntryIndex( mainTextFrom, mainTextTo)
       if (currentEntryIndex === -1) {
-        this.debug && console.log(`Found custom entry not belonging to any automatic apparatus entry`)
-        if (this.hasLemmaCustomizations(ctDataCustomEntry) || fullCustomSubEntries.length !== 0) {
+        // this.debug && console.log(`Found custom entry not belonging to any automatic apparatus entry`)
+        if (this.hasLemmaCustomizations(ctDataCustomEntry) || customSubEntries.length !== 0) {
           this.debug && console.log(`Adding new apparatus entry for lemma ${ctDataCustomEntry['lemma']}`)
           let newEntry = new ApparatusEntry()
           newEntry.from = mainTextFrom
@@ -176,7 +177,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
           newEntry.lemmaText = ApparatusCommon.getMainTextForGroup({ from: ctDataCustomEntry['from'], to: ctDataCustomEntry['to'] },
               baseWitnessTokens, false, this.ctData['lang'])
 
-          newEntry.subEntries = this._buildSubEntryArrayFromCustomSubEntries(fullCustomSubEntries)
+          newEntry.subEntries = this._buildSubEntryArrayFromCustomSubEntries(customSubEntries)
           generatedApparatusCriticus.entries.push(newEntry)
         }
         else {
@@ -184,12 +185,12 @@ export class CtDataEditionGenerator extends EditionGenerator{
         }
       } else {
         // this.debug && console.log(`Entry belongs to automatic apparatus entry index ${currentEntryIndex}`)
-        if (this.hasLemmaCustomizations(ctDataCustomEntry) || fullCustomSubEntries.length !== 0) {
+        if (this.hasLemmaCustomizations(ctDataCustomEntry) || customSubEntries.length !== 0) {
           generatedApparatusCriticus.entries[currentEntryIndex].preLemma = ctDataCustomEntry['preLemma']
           generatedApparatusCriticus.entries[currentEntryIndex].lemma = ctDataCustomEntry['lemma']
           generatedApparatusCriticus.entries[currentEntryIndex].postLemma = ctDataCustomEntry['postLemma']
           generatedApparatusCriticus.entries[currentEntryIndex].separator = ctDataCustomEntry['separator']
-          let subEntryArray = this._buildSubEntryArrayFromCustomSubEntries(fullCustomSubEntries)
+          let subEntryArray = this._buildSubEntryArrayFromCustomSubEntries(customSubEntries)
           // this.debug && console.log(`Full custom sub entries`)
           // this.debug && console.log(deepCopy(subEntryArray))
           generatedApparatusCriticus.entries[currentEntryIndex].subEntries = this.__mergeCustomSubEntries(
@@ -214,19 +215,18 @@ export class CtDataEditionGenerator extends EditionGenerator{
 
   /**
    * Merges custom sub entries
-   * For now, this enforces a single custom sub entry per array, later on this restriction should be removed
    * @private
    * @param {ApparatusSubEntry[]}currentSubEntries
    * @param {ApparatusSubEntry[]}newSubEntries
    */
   __mergeCustomSubEntries(currentSubEntries, newSubEntries) {
-    // 1. include all sub-entries that are not full custom
-    let mergedArray = currentSubEntries.filter( (se) => { return se.type !== SubEntryType.FULL_CUSTOM })
-    pushArray(mergedArray, newSubEntries.filter( (se) => { return se.type !== SubEntryType.FULL_CUSTOM }) )
+    // 1. include all automatic subentries
+    let mergedArray = currentSubEntries.filter( (se) => { return se.source === 'auto' })
+    pushArray(mergedArray, newSubEntries.filter( (se) => { return se.source === 'auto' }) )
 
-    // 2. get all full custom sub entries
-    let fullCustomSubEntries = currentSubEntries.filter( (se) => { return se.type === SubEntryType.FULL_CUSTOM })
-    pushArray(fullCustomSubEntries, newSubEntries.filter( (se) => { return se.type === SubEntryType.FULL_CUSTOM }) )
+    // 2. get all custom sub entries
+    let fullCustomSubEntries = currentSubEntries.filter( (se) => { return se.source !== 'auto' })
+    pushArray(fullCustomSubEntries, newSubEntries.filter( (se) => {  return se.source !== 'auto' }) )
     pushArray(mergedArray, fullCustomSubEntries)
     return mergedArray
   }
@@ -244,6 +244,8 @@ export class CtDataEditionGenerator extends EditionGenerator{
   _applyCustomAutoSubEntriesToGeneratedSubEntries(generatedSubEntries, customAutoSubEntries) {
     // this.debug && console.log(`Applying custom auto sub entries`)
     return generatedSubEntries.map ( (subEntry) => {
+      // this.debug && console.log(`subEntry`)
+      // this.debug && console.log(subEntry)
       let generatedSubEntryHash = subEntry.hashString()
       let enabled = subEntry.enabled
       let position = subEntry.position
@@ -281,7 +283,19 @@ export class CtDataEditionGenerator extends EditionGenerator{
       theSubEntry.source = SubEntrySource.USER
       theSubEntry.enabled = subEntry['enabled']
       theSubEntry.position = subEntry['position']
-      // TODO: support other sub entry types
+      if (subEntry['witnessData'] === undefined) {
+        theSubEntry.witnessData = []
+      } else {
+        theSubEntry.witnessData = subEntry['witnessData'].map( (ctDataWitnessDataItem) => {
+          let dataItem = new WitnessDataItem()
+          dataItem.witnessIndex = ctDataWitnessDataItem['witnessIndex']
+          dataItem.hand = ctDataWitnessDataItem['hand'] ?? 0
+          dataItem.location = ctDataWitnessDataItem['location'] ?? ''
+          dataItem.forceHandDisplay = ctDataWitnessDataItem['forceHandDisplay'] ?? false
+          return dataItem
+        })
+      }
+
       return theSubEntry
     })
   }

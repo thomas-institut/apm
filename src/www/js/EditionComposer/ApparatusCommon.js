@@ -41,6 +41,7 @@ const INPUT_TOKEN_FIELD_NORMALIZED_TEXT = 'normalizedText'
 const INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE = 'normalizationSource'
 
 
+
 // const thinSpace = String.fromCodePoint(0x2009)
 
 const enDash = String.fromCodePoint(0x2013)
@@ -101,7 +102,6 @@ export class ApparatusCommon {
         return '---'
     }
   }
-
 
   static typesetSubEntryHebrew(subEntryType, theText, witnessIndices, sigla, siglaGroups) {
     // TODO: use witnessData instead of witnessIndices, like in the html version
@@ -208,6 +208,10 @@ export class ApparatusCommon {
     }
   }
 
+  static getForcedTextDirectionSpace(textDirection) {
+    return `<span style="direction: ${textDirection}; unicode-bidi: embed">&nbsp;</span>`
+  }
+
   /**
    *
    * @param subEntry
@@ -220,15 +224,16 @@ export class ApparatusCommon {
     let entryType = subEntry.type
     let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText)
     let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla, 'he', siglaGroups, fullSiglaInBrackets)
+    let textDirection = 'rtl'
     switch(entryType) {
       case ApparatusSubEntryType.VARIANT:
-        return `${theText} <b>${siglaString}</b>`
+        return `${theText} ${this.getForcedTextDirectionSpace(textDirection)}<b>${siglaString}</b>`
 
       case ApparatusSubEntryType.OMISSION:
         return `${this.getKeywordHtml('omission', 'he')} <b>${siglaString}</b>`
 
       case ApparatusSubEntryType.ADDITION:
-        return `${this.getKeywordHtml('addition', 'he')} ${theText} <b>${siglaString}</b>`
+        return `${this.getKeywordHtml('addition', 'he')} ${theText}${this.getForcedTextDirectionSpace(textDirection)}<b>${siglaString}</b>`
 
       case ApparatusSubEntryType.FULL_CUSTOM:
         return theText
@@ -446,7 +451,10 @@ export class ApparatusCommon {
 
   static __getSiglaHtmlFromFilledUpWitnessData(witnessData, numberStyle) {
     return witnessData.map ( (w) => {
-      return  w.hand === 0 ? w.siglum : `${w.siglum}<sup>${this.getNumberString(w.hand+1, numberStyle)}</sup>`
+      if (w.hand === 0 && !w.forceHandDisplay) {
+        return w.siglum
+      }
+      return `${w.siglum}<sup>${this.getNumberString(w.hand+1, numberStyle)}</sup>`
     }).join('')
   }
 

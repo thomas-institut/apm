@@ -1,6 +1,8 @@
 
 import * as SubEntryType from './SubEntryType.mjs'
 import { numericFieldSort, pushArray } from '../toolbox/ArrayUtil.mjs'
+import { ApparatusSubEntry } from './ApparatusSubEntry.mjs'
+import { KeyStore } from '../toolbox/KeyStore.mjs'
 
 
 export class ApparatusEntry {
@@ -18,6 +20,33 @@ export class ApparatusEntry {
      * @type {ApparatusSubEntry[]}
      */
     this.subEntries = []
+
+    /**
+     * Extra information that may be added by an edition generator
+     * @type {{}}
+     */
+    this.metadata = new KeyStore()
+  }
+
+  /**
+   *
+   * @param {ApparatusEntry}entry
+   * @return{ApparatusEntry}
+   */
+  static clone(entry) {
+    let copy = new ApparatusEntry()
+    copy.from = entry.from
+    copy.to = entry.to
+    copy.preLemma = entry.preLemma
+    copy.lemma = entry.lemma
+    copy.lemmaText = entry.lemmaText
+    copy.postLemma = entry.postLemma
+    copy.separator = entry.separator
+    copy.metadata = KeyStore.clone(entry.metadata)
+    copy.subEntries = entry.subEntries.map( (subEntry) => {
+      return ApparatusSubEntry.clone(subEntry)
+    })
+    return copy
   }
 
   /**

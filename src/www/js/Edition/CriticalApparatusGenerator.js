@@ -23,16 +23,17 @@ import {ApparatusCommon} from '../EditionComposer/ApparatusCommon.js'
 import * as ApparatusEntryType from './SubEntryType.mjs'
 import * as ApparatusType from './ApparatusType'
 import * as WitnessTokenType from '../Witness/WitnessTokenType'
-import * as SubEntrySource from './SubEntrySource'
+import * as SubEntrySource from './SubEntrySource.mjs'
 import { CtData } from '../CtData/CtData'
 import { Apparatus } from './Apparatus'
-import { ApparatusSubEntry } from './ApparatusSubEntry'
+import { ApparatusSubEntry } from './ApparatusSubEntry.mjs'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { ApparatusEntry } from './ApparatusEntry.mjs'
 
-import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser'
+
 import { Punctuation} from '../defaults/Punctuation.mjs'
 
+import {WitnessDataItem} from './WitnessDataItem.mjs'
 
 export class CriticalApparatusGenerator {
 
@@ -148,7 +149,7 @@ export class CriticalApparatusGenerator {
           entry.lemmaText = mainTextIndex !== -1 ? baseWitnessTokens[ctIndex]['text'] : 'pre'
           entry.subEntries = subEntries
           // other info
-          entry.ctGroup = columnGroup
+          entry.metadata.add('ctGroup', columnGroup)
           entries.push(entry)
           //console.log(`Adding entry, there are now ${entries.length} in the critical apparatus`)
         }
@@ -220,7 +221,7 @@ export class CriticalApparatusGenerator {
         entry.lemmaText = ApparatusCommon.getMainTextForGroup(columnGroup, baseWitnessTokens, false, lang)
         entry.subEntries = subEntries
         // other info
-        entry.ctGroup = columnGroup
+        entry.metadata.add('ctGroup', columnGroup)
         entries.push(entry)
         //console.log(`Adding entry, there are now ${entries.length} in the critical apparatus`)
       }
@@ -354,7 +355,11 @@ export class CriticalApparatusGenerator {
    * @returns {{witnessIndex, location: string, hand: number}}
    */
   createWitnessData (witnessIndex, hand = 0, location = '') {
-    return { witnessIndex: witnessIndex, hand: hand, location: location }
+    let data = new WitnessDataItem()
+    data.setWitnessIndex(witnessIndex).setHand(hand)
+    data.location = location
+    data.forceHandDisplay = false
+    return data
   }
 
   /**

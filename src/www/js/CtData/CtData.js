@@ -20,7 +20,7 @@ import * as WitnessTokenType from '../Witness/WitnessTokenType'
 import { SequenceWithGroups } from '../Edition/SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
 import * as CollationTableType from '../constants/CollationTableType'
-import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry'
+import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry.mjs'
 import * as SubEntryType from '../Edition/SubEntryType.mjs'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { ApparatusEntry } from '../Edition/ApparatusEntry.mjs'
@@ -226,6 +226,10 @@ export class CtData  {
     // add fullCustom subEntries with some text in it
     pushArray(newEntry.subEntries, editedEntry.subEntries.filter( (subEntry) => {
       return subEntry.type === 'fullCustom' && subEntry.fmtText.length !== 0}))
+    // add other custom entries
+    pushArray(newEntry.subEntries, editedEntry.subEntries.filter( (subEntry) => {
+      return subEntry.type !== 'auto' && subEntry.type !== 'fullCustom'
+    }))
 
     console.log(`New Entry`)
     console.log(newEntry)

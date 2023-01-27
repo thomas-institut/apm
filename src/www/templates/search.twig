@@ -22,7 +22,11 @@
         // Start query when the 'Enter' key is pressed
           doc.on("keyup", function (event) {
             let user_input = keywords_box.val()
+            let num_keywords = user_input.split(" ").length - 1;
             if ( event.key === 'Enter' && user_input !== "") {
+
+              $("#radiusSlider").prop({'min': num_keywords})
+
               search()
             }
             else if (event.key === 'Enter' && user_input === "") {
@@ -205,7 +209,7 @@
         let num_docs = getNumDocs(data, num_columns)
 
         // If there are no matches, display this to the user and empty the results table
-        if (num_columns === 0) {
+        if (num_passages === 0) {
           results_head.empty()
           results_body.empty()
           error_message.html(`<br>Nothing found!<br><br>`)
@@ -388,7 +392,7 @@
 {% block content %}
     <h1> Search </h1>
   <p>
-    Type in a keyword and press 'Enter' to search.
+    Type in a keyword and press 'Enter' to search. Set the radius to 0 to search for coherent phrases.
 {#  <div>#}
 {#  <b>Edition Mode</b>#}
 {#    <input type="checkbox" id="edition_mode" name="edition_mode">#}

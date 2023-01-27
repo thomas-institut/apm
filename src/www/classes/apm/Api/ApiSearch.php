@@ -411,6 +411,7 @@ class ApiSearch extends ApiController
                     'transcript_lemmatized' => $transcript_lemmatized,
                     'tokens_queried' => $tokens_queried,
                     'lemmata' => $lemmata,
+                    'filters' => [$filter],
                     'tokens_matched' => $tokens_matched,
                     'num_passages' => $num_passages,
                     'passage_coordinates' => $passage_coordinates,
@@ -463,8 +464,13 @@ class ApiSearch extends ApiController
             $filter = $this->getFilterType($token_unlemmatized);
             $token_unlemmatized= str_replace("*", "", $token_unlemmatized);
 
+            // CAN THE FOLLOWING CODE BECOME SHORTER!?
+
             // First, remove all passage_tokenized from $data, which do not match the token
             foreach ($data as $i => $column) {
+
+                // Write filter type into data
+                $data[$i]['filters'][] = $filter;
 
                 foreach ($column['passage_tokenized'] as $j => $passage_tokenized) {
                     $passage_string = " ";   // Creates a string, which stores full context in it – needed for checking for keyword
@@ -527,7 +533,8 @@ class ApiSearch extends ApiController
                         }
                         elseif ($filter === 'match_body') {
                             $pos = strpos($passage_string, $token_unlemmatized);
-                            if ($pos === false or $passage_string[$pos-1] === " " or $passage_string[$pos+1] === " ") {
+                            $token_length = strlen($token_unlemmatized);
+                            if ($pos === false or $passage_string[$pos-1] === " " or $passage_string[$pos+$token_length] === " ") {
                                 unset($data[$i]['passage_tokenized'][$j]);
                                 unset($data[$i]['passage_lemmatized'][$j]);
                                 unset($data[$i]['tokens_matched'][$j]);

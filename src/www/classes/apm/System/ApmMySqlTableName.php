@@ -41,4 +41,6 @@ class ApmMySqlTableName
     const TABLE_COLLATION_TABLE = 'ctables';
     const TABLE_VERSIONS_CT = 'versions_ct';
     const TABLE_MULTI_CHUNK_EDITIONS = 'mc_editions';
+
+    const TABLE_EDITION_SOURCES = 'edition_sources';
 }

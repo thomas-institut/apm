@@ -230,16 +230,6 @@ export class ApparatusPanel extends  PanelWithToolbar {
       theEntry.from = from
       theEntry.to = to
       theEntry.lemmaText = this.edition.getPlainTextForRange(from, to)
-      // theEntry = {
-      //   mainTextFrom: from,
-      //   mainTextTo: to,
-      //   preLemma: '',
-      //   lemma: '',
-      //   postLemma: '',
-      //   separator: '',
-      //   lemmaText:  this.edition.getPlainTextForRange(from, to),
-      //   subEntries: []
-      // }
     }
     let ctIndexFrom = -1
     let ctIndexTo = -1

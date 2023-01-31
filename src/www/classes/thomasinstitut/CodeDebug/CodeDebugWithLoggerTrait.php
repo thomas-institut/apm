@@ -30,9 +30,9 @@ trait CodeDebugWithLoggerTrait
 {
 
     /**
-     * @var LoggerInterface
+     * @var LoggerInterface|null
      */
-    protected $logger;
+    protected ?LoggerInterface $logger;
 
     public function codeDebug(string $msg, array $data = [], $fileNameDepth = 3) : void
     {

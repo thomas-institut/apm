@@ -1,9 +1,10 @@
+DROP IF EXISTS TABLE `ap_edition_sources` ;
 CREATE TABLE `ap_edition_sources` (
     `id` int NOT NULL,
     `title` varchar(256) NOT NULL,
     `description` varchar(1024) NOT NULL,
     `default_siglum` varchar (8) NOT NULL,
-    `entity` varchar(64)
+    `uuid` binary(16) not null default (uuid_to_bin(uuid()))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 ALTER TABLE `ap_edition_sources`

@@ -25,6 +25,7 @@
 namespace APM;
 
 
+use APM\Api\ApiEditionSources;
 use APM\Api\ApiLog;
 use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiTranscription;
@@ -493,6 +494,21 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         return $apiC->getActiveEditions($request, $response, $args);
     })->setName('api.collation.info.edition.active');
 
+
+    // EDITION SOURCES
+
+    $group->get('/edition/sources/all',
+        function(Request $request, Response $response, array $args) use ($container){
+            $apiC = new ApiEditionSources($container);
+            return $apiC->getAllSources($request, $response, $args);
+        })->setName('api.edition_sources.get_all');
+
+
+    $group->get('/edition/source/get/{uuid}',
+        function(Request $request, Response $response, array $args) use ($container){
+            $apiC = new ApiEditionSources($container);
+            return $apiC->getSourceByUuid($request, $response, $args);
+        })->setName('api.edition_sources.get');
 
     // MULTI CHUNK EDITION
 

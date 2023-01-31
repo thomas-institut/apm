@@ -180,6 +180,8 @@ class ApmSystemManager extends SystemManager {
 
     private OpenSearchScheduler $openSearchScheduler;
 
+    private ?ApmEditionSourceManager $editionSourceManager;
+
 
     public function __construct(array $configArray) {
 
@@ -339,6 +341,7 @@ class ApmSystemManager extends SystemManager {
         $this->twig = null;
         $this->normalizerManager = null;
         $this->multiChunkEditionManager = null;
+        $this->editionSourceManager = null;
     }
     
     
@@ -363,7 +366,8 @@ class ApmSystemManager extends SystemManager {
             ApmMySqlTableName::TABLE_SYSTEM_CACHE,
             ApmMySqlTableName::TABLE_COLLATION_TABLE,
             ApmMySqlTableName::TABLE_VERSIONS_CT,
-            ApmMySqlTableName::TABLE_MULTI_CHUNK_EDITIONS
+            ApmMySqlTableName::TABLE_MULTI_CHUNK_EDITIONS,
+            ApmMySqlTableName::TABLE_EDITION_SOURCES
         ];
         
         $tables = [];
@@ -737,5 +741,15 @@ class ApmSystemManager extends SystemManager {
             $this->multiChunkEditionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
         }
         return $this->multiChunkEditionManager;
+    }
+
+    public function getEditionSourceManager(): EditionSourceManager
+    {
+        if (is_null($this->editionSourceManager)) {
+            $table = new MySqlDataTable($this->dbConn,
+                $this->tableNames[ApmMySqlTableName::TABLE_EDITION_SOURCES]);
+            $this->editionSourceManager = new ApmEditionSourceManager($table);
+        }
+        return $this->editionSourceManager;
     }
 }

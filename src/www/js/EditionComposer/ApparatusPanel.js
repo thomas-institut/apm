@@ -337,9 +337,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
           // i.e. addition, omission, variant
           this.witnessEditors[i] = new WitnessDataEditor({
             containerSelector: this._getSubEntryWitnessEditorDivSelector(i),
-            sigla: this.ctData['sigla'].filter( (s, i) => {
-              return (i !== this.ctData['editionWitnessIndex'])
-            }),
+            sigla: this.ctData['sigla'],
             witnessData: subEntry.witnessData,
             onChange: this._genOnChangeWitnessDataEditor(i)
           })

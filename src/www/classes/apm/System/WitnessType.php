@@ -29,14 +29,17 @@ class WitnessType
     const TEXT_TRANSCRIPTION_FULL = 'textTxRich';
     const CHUNK_EDITION = 'edition';
 
+    const SOURCE = 'source';
+
     static public function isValid(string $type) : bool {
         $validTypes = [
             self::FULL_TRANSCRIPTION,
             self::PARTIAL_TRANSCRIPTION,
             self::TEXT_TRANSCRIPTION_PLAIN,
-            self::CHUNK_EDITION
+            self::CHUNK_EDITION,
+            self::SOURCE
         ];
 
-        return array_search($type, $validTypes) !== false;
+        return in_array($type, $validTypes);
     }
 }

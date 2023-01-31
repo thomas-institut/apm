@@ -39,6 +39,7 @@ import { CtData } from '../CtData/CtData'
 import { flatten } from '../toolbox/ArrayUtil.mjs'
 import { trimWhiteSpace } from '../toolbox/Util.mjs'
 import { SiglaGroupsUI } from './SiglaGroupsUI'
+import { ConfirmDialog, LARGE_DIALOG, MEDIUM_DIALOG } from '../pages/common/ConfirmDialog'
 
 const icons = {
   moveUp: '<i class="bi bi-arrow-up-short"></i>',
@@ -100,6 +101,19 @@ export class WitnessInfoPanel extends Panel{
         type: 'function',
         required: true
       },
+      fetchSources: {
+        // a function that fetches available sources
+        // () => { return Promise()}
+        type: 'function',
+        required: true,
+      },
+      addEditionSources: {
+        // a function that adds source from a given array
+        // (sourceDataArray) => { ...do something... }
+        type: 'function',
+        required: true
+      },
+
       saveSiglaPreset: {
         // a function to save a sigla preset
         // TODO: document apiCallData
@@ -145,10 +159,13 @@ export class WitnessInfoPanel extends Panel{
 
   generateHtml() {
     return `<div class="witnessinfotable">${this._genWitnessTableHtml()}</div>
-<div class="witness-update-div">
+        <div class="witness-update-div">
             <span class="witness-update-info"></span>
             <button class="btn  btn-outline-secondary btn-sm check-witness-update-btn"  title="Click to check for updates to witness transcriptions">Check Now</button>
        </div>
+       <div class="witness-add-div">
+            <button class="btn  btn-secondary btn-sm add-source-btn"  title="Click to add source ">Add Source</button>
+        </div>
        <div class="sigla-groups-div">
            <h4>Sigla Groups</h4>
            <div class="sigla-groups-table">${this._genSiglaGroupsTable()}</div>
@@ -223,6 +240,7 @@ export class WitnessInfoPanel extends Panel{
     })
     this.convertToEditionDiv = $('#convert-to-edition-div')
     this.convertToEditionButton = $('#convert-to-edition-btn')
+    $(`${this.containerSelector} .add-source-btn`).on('click', this._genOnClickAddSourceButton())
     if (this.ctData.type === CollationTableType.COLLATION_TABLE) {
       this.convertToEditionDiv.removeClass('hidden')
       this.convertToEditionButton.on('click', this.genOnClickConvertToEditionButton())
@@ -237,6 +255,58 @@ export class WitnessInfoPanel extends Panel{
       $(`${this.containerSelector} .delete-sigla-group-btn-${i}`).on('click', this._genOnClickDeleteSiglaGroup(i))
     })
 
+  }
+
+  _genOnClickAddSourceButton() {
+    return () => {
+      let dialogBody = `<p>The following sources are available:</p>
+        <div class="source-list-div"><em>Loading data...</em></div>
+`
+      let dialog = new ConfirmDialog({
+        title: 'Add Sources',
+        size: LARGE_DIALOG,
+        acceptButtonLabel:  'Add Checked Sources',
+        body: dialogBody,
+        hideOnAccept: false,
+        cancelFunction: () => {
+          console.log(`Canceled add/edit sigla group`)
+        }
+      })
+      dialog.show()
+      let dialogSelector = dialog.getSelector()
+      this.options.fetchSources().then( (sourceArray) => {
+        console.log(`Got sources`)
+        console.log(sourceArray)
+        let tableHtml = '<table class="source-table">'
+        tableHtml += '<tr><th></th><th>Title</th><th>Description</th><th>Default Siglum</th>'
+        tableHtml += sourceArray.map( (sourceData, index) => {
+          return (`<tr>
+                <td><input class="source-checkbox-${index}" type="checkbox" value="${index}"></td>
+                <td>${sourceData.title}</td>
+                <td>${sourceData.description}</td>
+                <td>${sourceData.defaultSiglum}</td></tr>`)
+        }).join('')
+        tableHtml += '</table>'
+        $(`${dialogSelector} div.source-list-div`).html(tableHtml)
+        dialog.setAcceptFunction( () => {
+          let sourcesToAdd = []
+          sourceArray.forEach( (sourceData, index) => {
+            if ($(`${dialogSelector} .source-checkbox-${index}`).prop('checked')) {
+              sourcesToAdd.push(sourceData)
+            }
+          })
+          if (sourcesToAdd.length !== 0) {
+            this.options.addEditionSources(sourcesToAdd)
+          }
+          dialog.hide()
+          dialog.destroy()
+        })
+      }).catch( (e) => {
+        console.warn(`Error getting sources`)
+        console.log(e)
+      })
+
+    }
   }
 
   _genOnClickEditSiglaGroupButton(i) {
@@ -783,8 +853,26 @@ export class WitnessInfoPanel extends Panel{
       let numWitnesses = this.ctData['witnesses'].length
       // console.log('Click move ' + direction + ' button on witness ' + index + ', position ' + position)
 
+      // TODO: change this to proper handling of source witnesses
+      // the problem is that the collation table panel assumes that the collated witnesses are
+      // in the first positions, so for the time being don't allow them to move further down the table
+
+
       let firstPos = this.ctData['type'] === CollationTableType.COLLATION_TABLE ? 0 : 1
-      let lastPos = numWitnesses - 1
+      let lastPos = firstPos
+      for(let i = lastPos; i < numWitnesses -1; i++) {
+        lastPos = i
+        if (this.ctData['witnesses'][i]['witnessType'] === WitnessType.EDITION ||
+          this.ctData['witnesses'][i]['witnessType'] === WitnessType.SOURCE) {
+          break
+        }
+      }
+
+      if (position > lastPos) {
+        console.log(`Attempting to move a witness in position ${position}, past lastPost = ${lastPos}`)
+        return false
+      }
+      //let lastPos = numWitnesses - 1
 
       if (direction === 'down' && position === lastPos) {
         // at the last position, cannot move up
@@ -833,38 +921,50 @@ export class WitnessInfoPanel extends Panel{
   _genWitnessTableHtml() {
     let witnessRows = this.ctData['witnessOrder']
       .map ( (witnessIndex, position) => {
-        if (this.ctData['witnesses'][witnessIndex]['witnessType'] === WitnessType.EDITION) {
-          return ''
-        }
         let witness = this.ctData['witnesses'][witnessIndex]
         let siglum = this.ctData['sigla'][witnessIndex]
         let witnessTitle = this.ctData['witnessTitles'][witnessIndex]
-
-        if (witness['witnessType'] === WitnessType.FULL_TX) {
-          let docLink = this.options.getDocUrl(witness['docId'])
-          if (docLink !== '') {
-            witnessTitle = `<a href="${docLink}" target="_blank" title="Click to open document page in a new tab">
-               ${this.ctData['witnessTitles'][witnessIndex]}</a>`
-          }
-        }
-
         let witnessClasses = [
           'witness-' + witnessIndex,
           'witness-type-' + witness['witnessType'],
           'witness-pos-' + position
         ]
-        return  `<tr>
-            <td class="${witnessClasses.join(' ')} cte-witness-move-td">
-               <span class="btn move-up-btn" title="Move up">${icons.moveUp}</span>
-               <span class="btn move-down-btn" title="Move down">${icons.moveDown}</span>
-            </td>
-            <td>${witnessTitle}</td>
-            <td class="info-td-${witnessIndex}"></td>
-            <td class="timestamp-td-${witnessIndex}">${Util.formatVersionTime(witness['timeStamp'])}</td>
-            <td class="siglum-${witnessIndex}">${siglum}</td>
-            <td class="warning-td-${witnessIndex}"></td>
-            <td class="outofdate-td-${witnessIndex}"></td>
-        </tr>`
+
+        switch(this.ctData['witnesses'][witnessIndex]['witnessType'] ) {
+          case WitnessType.EDITION:
+            return ''
+
+          case WitnessType.SOURCE:
+            return  `<tr>
+                <td class="${witnessClasses.join(' ')} cte-witness-move-td">
+                </td>
+                <td>${witnessTitle}</td>
+                <td class="info-td-${witnessIndex}"></td>
+                <td class="timestamp-td-${witnessIndex}"></td>
+                <td class="siglum-${witnessIndex}">${siglum}</td>
+                <td class="warning-td-${witnessIndex}"></td>
+                <td class="outofdate-td-${witnessIndex}"></td>
+            </tr>`
+
+          case WitnessType.FULL_TX:
+              let docLink = this.options.getDocUrl(witness['docId'])
+              if (docLink !== '') {
+                witnessTitle = `<a href="${docLink}" target="_blank" title="Click to open document page in a new tab">
+               ${this.ctData['witnessTitles'][witnessIndex]}</a>`
+              }
+            return  `<tr>
+                <td class="${witnessClasses.join(' ')} cte-witness-move-td">
+                    <span class="btn move-up-btn" title="Move up">${icons.moveUp}</span>
+                    <span class="btn move-down-btn" title="Move down">${icons.moveDown}</span>
+                </td>
+                <td>${witnessTitle}</td>
+                <td class="info-td-${witnessIndex}"></td>
+                <td class="timestamp-td-${witnessIndex}">${Util.formatVersionTime(witness['timeStamp'])}</td>
+                <td class="siglum-${witnessIndex}">${siglum}</td>
+                <td class="warning-td-${witnessIndex}"></td>
+                <td class="outofdate-td-${witnessIndex}"></td>
+            </tr>`
+        }
       }).join('')
 
    return `<table class="witnesstable">

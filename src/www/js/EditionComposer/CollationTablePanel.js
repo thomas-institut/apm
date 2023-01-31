@@ -561,6 +561,9 @@ export class CollationTablePanel extends PanelWithToolbar {
     let columnsPerRow
     for (let i = 0; i < collationTable['witnessOrder'].length; i++) {
       let wIndex = collationTable['witnessOrder'][i]
+      if (collationTable['witnesses'][wIndex]['witnessType'] === WitnessType.SOURCE) {
+        continue
+      }
       let title = ''
 
       if (this.viewSettings.showWitnessTitles) {
@@ -710,6 +713,9 @@ export class CollationTablePanel extends PanelWithToolbar {
 
     let output = ''
     for (let i=0; i < numWitnesses; i++) {
+      if (collationTable['witnesses'][i]['witnessType'] === WitnessType.SOURCE) {
+        continue;
+      }
       let witnessIndex = order[i]
       let title = titles[witnessIndex]
       output += title + sep

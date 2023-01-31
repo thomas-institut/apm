@@ -64,6 +64,11 @@ class WitnessSystemId
     }
 
     static public function getType(string $witnessSystemId) : string {
+        $colonFields = explode(':', $witnessSystemId);
+        if (count($colonFields) === 2) {
+            // this is a new id with UUID
+            return $colonFields[0];
+        }
         $fields = explode('-', $witnessSystemId);
         if (count($fields) < 3) {
             return '';

@@ -52,6 +52,10 @@ export class CollationTableConsistencyCleaner extends CtDataCleaner {
         this.debug && console.log(`... edition witness, skipping`)
         continue
       }
+      if (ctData['witnesses'][wIndex]['witnessType'] === 'source') {
+        this.debug && console.log(`... source witness, skipping`)
+        continue
+      }
       let ctMatrix = new Matrix(0,0,-1)
       ctMatrix.setFromArray(ctData['collationMatrix'])
       let row = ctMatrix.getRow(wIndex);

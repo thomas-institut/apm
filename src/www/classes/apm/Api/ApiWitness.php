@@ -111,15 +111,14 @@ class ApiWitness extends ApiController
             $witnessType = WitnessSystemId::getType($witnessId);
             switch ($witnessType) {
                 case WitnessType::CHUNK_EDITION:
-                    // just say that chunk edition is up to date
+                case WitnessType::SOURCE:
+                    // just say that chunk edition / source is up-to-date
                     $responseData['witnesses'][] = [
                         'id' => $witnessId,
                         'upToDate' => true,
                     ];
                     break;
-//                    $this->profiler->stop();
-//                    $this->logProfilerData($apiCall);
-//                    return $this->responseWithJson($response, [ 'status' => 'Not Applicable'], 200);
+
 
                 case WitnessType::FULL_TRANSCRIPTION:
                     $witnessInfo = WitnessSystemId::getFullTxInfo($witnessId);
@@ -181,6 +180,9 @@ class ApiWitness extends ApiController
                     $this->profiler->stop();
                     $this->logProfilerData($apiCall . '-error');
                     return $this->responseWithJson($response, [ 'error' => $msg ], 409);
+
+
+
 
                 default:
                     $msg = "Unknown witness type $witnessType";

@@ -640,3 +640,15 @@ span.empty-sub-entry {
 #witness-info h4 {
     font-size: 1.2em;
 }
+
+div.witness-add-div {
+    margin-left: 2em;
+}
+
+div.sigla-groups-div {
+    margin-top: 2em;
+}
+
+table.source-table td {
+    padding: 5px;
+}

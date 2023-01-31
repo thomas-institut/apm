@@ -127,24 +127,14 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
 
     protected function getDbRowFromCollationData(array $collationTableData, $compress = false, $allowSingleWitness = false): array
     {
-        if (!isset($collationTableData['witnesses'])) {
-            throw new InvalidArgumentException("No witnesses in collation table");
+
+        $problems = CtData::checkCollationTableConsistency($collationTableData);
+        if (count($problems) > 0) {
+            $this->logger->error("Inconsistent CtData", ['problems' => $problems]);
+            throw new InvalidArgumentException("Inconsistent CtData");
         }
 
-        $numWitnesses = count($collationTableData['witnesses']);
-        if ( !$allowSingleWitness &&  $numWitnesses < 2) {
-            throw new InvalidArgumentException("Not enough witnesses in collation table");
-        }
-
-        if (!isset($collationTableData['collationMatrix'])) {
-            throw new InvalidArgumentException("No collation table matrix  in data");
-        }
-
-        if (count($collationTableData['collationMatrix']) !== $numWitnesses) {
-            throw new InvalidArgumentException("Invalid collation table matrix");
-        }
-
-        $chunkId = $collationTableData['witnesses'][0]['chunkId'];
+        $chunkId = $collationTableData['chunkId'] ?? $collationTableData['witnesses'][0]['chunkId'];
 
         // generate witness array
         $witnessArray = [];
@@ -153,7 +143,8 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
                 throw new InvalidArgumentException("No witness id in witness $i");
             }
             $witnessArray[] = $witness['ApmWitnessId'];
-            if ($witness['chunkId'] !== $chunkId) {
+
+            if ($witness['witnessType'] !== 'source' && $witness['chunkId'] !== $chunkId) {
                 throw new InvalidArgumentException("Invalid chunk Id found in witness $i");
             }
         }

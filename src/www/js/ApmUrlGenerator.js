@@ -127,6 +127,10 @@ class ApmUrlGenerator {
         return `${this.base}/api/edition/multi/save`
     }
 
+    apiEditionSourcesGetAll() {
+        return `${this.base}/api/edition/sources/all`
+    }
+
     apiWitnessToEdition(witnessId) {
         return `${this.base}/api/witness/${witnessId}/to/edition`;
     }

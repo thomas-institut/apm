@@ -56,6 +56,10 @@ export class WitnessDataEditor {
   readWitnessDataFromCheckboxes() {
     let newData = []
     this.sigla.forEach( (siglum, i) => {
+      if (siglum === '-') {
+        // hack so that the edition witness does not show up in the list!
+        return
+      }
       if ($(`${this.containerSelector} .siglum-checkbox-${i}`).prop('checked')) {
         let dataItem = new WitnessDataItem()
         dataItem.setWitnessIndex(i)
@@ -84,6 +88,10 @@ export class WitnessDataEditor {
   _getHtml() {
     let html = `<div class="form-inline">`
     let siglaCheckboxesHtml = this.sigla.map( (siglum, index) => {
+      if (siglum === '-') {
+        // hack so that the edition witness does not show up in the list!
+        return ''
+      }
       let checkedString = this.isSiglumSelectedInWitnessData(index) ? 'checked' : ''
       let hand = this.getSiglumHandInWitnessData(index)
       let forced = this.isHandDisplayForcedInWitnessData(index)

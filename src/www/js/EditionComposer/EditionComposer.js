@@ -60,6 +60,7 @@ import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditio
 import * as CollationTableType from '../constants/CollationTableType'
 import { Edition } from '../Edition/Edition.mjs'
 import * as NormalizationSource from '../constants/NormalizationSource'
+import * as WitnessType from '../Witness/WitnessType'
 // import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser'
 import { EditionWitnessReferencesCleaner } from '../CtData/CtDataCleaner/EditionWitnessReferencesCleaner'
 import { CollationTableConsistencyCleaner } from '../CtData/CtDataCleaner/CollationTableConsistencyCleaner'
@@ -170,6 +171,7 @@ export class EditionComposer {
 
     this.convertingToEdition = false
     this.witnessUpdates = []
+    this.editionSources = null
 
     $(window).on('beforeunload', function() {
       if (thisObject.unsavedChanges || thisObject.convertingToEdition) {
@@ -202,6 +204,8 @@ export class EditionComposer {
       updateWitness: this.genUpdateWitness(),
       getWitnessData: this.genGetWitnessData(),
       fetchSiglaPresets: this.genFetchSiglaPresets(),
+      fetchSources: this.genFetchSources(),
+      addEditionSources: this.genAddEditionSources(),
       saveSiglaPreset: this.genSaveSiglaPreset(),
       getPageInfo: this.genGetPageInfo(),
       getDocUrl: this.genGetDocUrl(),
@@ -218,15 +222,6 @@ export class EditionComposer {
       canArchive: true,
       onConfirmArchive: this.genOnConfirmArchive()
     })
-
-    // this.editionPreviewPanel = new EditionPreviewPanel({
-    //   containerSelector: `#${editionPreviewTabId}`,
-    //   ctData: this.ctData,
-    //   edition: this.edition,
-    //   langDef: this.options.langDef,
-    //   onPdfExport: this.genOnExportPdf(),
-    //   verbose: false
-    // })
 
     this.editionPreviewPanelNew = new EditionPreviewPanelNew({
       containerSelector: `#${editionPreviewNewTabId}`,
@@ -1025,6 +1020,47 @@ export class EditionComposer {
             console.error('Error getting page info')
             console.log(resp)
             reject()
+          })
+      })
+    }
+  }
+
+  genAddEditionSources() {
+    return (sourceDataArray) => {
+      console.log(`Adding sources`)
+      console.log(sourceDataArray)
+      let currentNumWitnesses = this.ctData.witnesses.length
+      sourceDataArray.forEach( (sourceData, index) => {
+        this.ctData.witnesses.push( {
+          witnessType: WitnessType.SOURCE,
+          title: sourceData.title,
+          ApmWitnessId: 'source:' + sourceData.uuid
+        })
+        this.ctData.witnessTitles.push(sourceData.title)
+        this.ctData.witnessOrder.push(currentNumWitnesses + index)
+        this.ctData.sigla.push(sourceData.defaultSiglum)
+      })
+      console.log(`New CT data after adding sources`)
+      console.log(this.ctData)
+      this._updateSaveArea()
+      this._reGenerateEdition(`Source added`)
+      this._updateDataInPanels(true)
+    }
+  }
+
+  genFetchSources() {
+    return () => {
+      return new Promise( (resolve, reject) => {
+        if (this.editionSources !== null) {
+          resolve(this.editionSources)
+        }
+        $.get(this.options.urlGenerator.apiEditionSourcesGetAll())
+          .done( (apiResponse) => {
+            this.editionSources = apiResponse
+            resolve(apiResponse)
+          })
+          .fail ( (resp) => {
+            reject(resp)
           })
       })
     }

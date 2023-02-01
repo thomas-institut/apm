@@ -1,4 +1,3 @@
-DROP IF EXISTS TABLE `ap_edition_sources` ;
 CREATE TABLE `ap_edition_sources` (
     `id` int NOT NULL,
     `title` varchar(256) NOT NULL,

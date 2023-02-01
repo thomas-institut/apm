@@ -1,6 +1,7 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import { WitnessDataItem } from '../Edition/WitnessDataItem.mjs'
+import { NumeralStyles } from '../toolbox/NumeralStyles.mjs'
 
 
 const forceHandOneDisplaySelectValue = 'forceZero'
@@ -11,7 +12,7 @@ export class WitnessDataEditor {
       optionsDefinition: {
         containerSelector: { type: 'string', required: true},
         sigla: { type: 'array', required: true},
-        lang: { type: 'string', default: 'la'},
+        lang: { type: 'string', required: true},
         maxHand: { type: 'integer', default: 4},
         witnessData: {
           type: 'array',
@@ -39,6 +40,7 @@ export class WitnessDataEditor {
     this.witnessData = cleanOptions.witnessData
     this.onChange = cleanOptions.onChange
     this.maxHand = cleanOptions.maxHand
+    this.lang = cleanOptions.lang
     if (this.maxHand < 2) {
       // support at least two hands!
       this.maxHand = 2
@@ -117,10 +119,10 @@ export class WitnessDataEditor {
     // option 0 :  first hand without forced Display
     html +=  `<option value="0" ${hand === 0 && !forcedDisplay ? 'selected' : ''}>-</option>`
     // option forced0:  first hand with forced Display
-    html +=  `<option value="${forceHandOneDisplaySelectValue}" ${hand === 0 && forcedDisplay ? 'selected' : ''}>1</option>`
+    html +=  `<option value="${forceHandOneDisplaySelectValue}" ${hand === 0 && forcedDisplay ? 'selected' : ''}>${this.getNumberString(1)}</option>`
     // the rest
     for(let i = 1; i < this.maxHand; i++) {
-      html += `<option value="${i}" ${hand===i ? 'selected' : ''}>${i+1}</option>`
+      html += `<option value="${i}" ${hand===i ? 'selected' : ''}>${this.getNumberString(i+1)}</option>`
     }
     return html
   }
@@ -148,5 +150,16 @@ export class WitnessDataEditor {
     }
     let siglumData = this.witnessData.filter( (data) => { return data.witnessIndex === index})
     return siglumData.length === 0 ? false : siglumData[0].forceHandDisplay
+  }
+
+  /**
+   *
+   * @param {number}n
+   */
+  getNumberString(n) {
+    if (this.lang === 'ar') {
+      return NumeralStyles.toDecimalArabic(n)
+    }
+    return NumeralStyles.toDecimalWestern(n)
   }
 }

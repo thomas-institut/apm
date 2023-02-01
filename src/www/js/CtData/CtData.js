@@ -25,7 +25,6 @@ import * as SubEntryType from '../Edition/SubEntryType.mjs'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { ApparatusEntry } from '../Edition/ApparatusEntry.mjs'
 import { FmtText } from '../FmtText/FmtText.mjs'
-import {FmtTextToken} from '../FmtText/FmtTextToken.mjs'
 import { deepCopy } from '../toolbox/Util.mjs'
 import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
 import * as NormalizationSource from '../constants/NormalizationSource'
@@ -223,16 +222,10 @@ export class CtData  {
     }
     // new entry, first get the auto subEntries
     newEntry.subEntries = editedEntry.subEntries.filter( (subEntry) => { return subEntry.type === 'auto'})
-    // add fullCustom subEntries with some text in it
-    pushArray(newEntry.subEntries, editedEntry.subEntries.filter( (subEntry) => {
-      return subEntry.type === 'fullCustom' && subEntry.fmtText.length !== 0}))
-    // add other custom entries
-    pushArray(newEntry.subEntries, editedEntry.subEntries.filter( (subEntry) => {
-      return subEntry.type !== 'auto' && subEntry.type !== 'fullCustom'
-    }))
-
+    // add all other subEntries
+    pushArray(newEntry.subEntries, editedEntry.subEntries.filter( (subEntry) => {return subEntry.type !== 'auto'}))
     console.log(`New Entry`)
-    console.log(newEntry)
+    console.log(deepCopy(newEntry))
 
     // Does the entry exist already?
     let entryIndex = customApparatus.entries.map( (entry) => {return `${entry.from}-${entry.to}`}).indexOf(`${editedEntry.from}-${editedEntry.to}`)
@@ -272,39 +265,6 @@ export class CtData  {
     }
     return true
   }
-
-
-  static reportCustomEntries(ctData) {
-    let noProblems = true
-    for (let i = 0; i < ctData['customApparatuses'].length; i++) {
-      // console.log(`Custom apparatus ${i}`)
-      for (let entryN = 0; entryN < ctData['customApparatuses'][i]['entries'].length; entryN++) {
-        // console.log(`Entry ${entryN}`)
-        for (let subEntryN = 0; subEntryN < ctData['customApparatuses'][i]['entries'][entryN]['subEntries'].length ; subEntryN++) {
-          // console.log(`Sub entry ${subEntryN}`)
-          if (ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText !== undefined) {
-            // this is a custom entry, other types do not have a fmtText
-            if (!Array.isArray(ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText) ) {
-              console.log(`Custom apparatus ${i}, entry ${entryN}, sub entry ${subEntryN}: fmtText is not an array `)
-              noProblems = false
-            } else {
-              for (let k = 0; k < ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText.length; k++) {
-                if (!ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText[k] instanceof FmtTextToken) {
-                  console.log(`Custom apparatus ${i}, entry ${entryN}, sub entry ${subEntryN}, fmtText[${k}] is not a FmtTextToken `)
-                  console.log(ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText[k])
-                  noProblems = false
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    if (noProblems) {
-      console.log(`All custom entries in ctData have proper FmtText type`)
-    }
-  }
-
   /**
    * Empties a token in a witness
    * @param ctData

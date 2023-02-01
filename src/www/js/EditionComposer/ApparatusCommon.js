@@ -209,7 +209,7 @@ export class ApparatusCommon {
   }
 
   static getForcedTextDirectionSpace(textDirection) {
-    return `<span style="direction: ${textDirection}; unicode-bidi: embed">&nbsp;</span>`
+    return `<span class="force-${textDirection}">&nbsp;</span>`
   }
 
   /**
@@ -227,16 +227,26 @@ export class ApparatusCommon {
     let textDirection = 'rtl'
     switch(entryType) {
       case ApparatusSubEntryType.VARIANT:
-        return `${theText} ${this.getForcedTextDirectionSpace(textDirection)}<b>${siglaString}</b>`
+        return `${theText}${this.getForcedTextDirectionSpace(textDirection)}<b>${siglaString}</b>`
 
       case ApparatusSubEntryType.OMISSION:
-        return `${this.getKeywordHtml('omission', 'he')} <b>${siglaString}</b>`
+        return `${this.getKeywordHtml('omission', 'he')}${this.getForcedTextDirectionSpace(textDirection)}<b>${siglaString}</b>`
 
       case ApparatusSubEntryType.ADDITION:
         return `${this.getKeywordHtml('addition', 'he')} ${theText}${this.getForcedTextDirectionSpace(textDirection)}<b>${siglaString}</b>`
 
       case ApparatusSubEntryType.FULL_CUSTOM:
-        return theText
+        let keywordHtml = ''
+        switch (subEntry.keyword) {
+          case 'omission':
+          case 'addition':
+            keywordHtml= `<i>${hebrewStyle.strings[subEntry.keyword]}</i> `
+        }
+        let siglaHtml = ''
+        if (siglaString !== '') {
+          siglaHtml = `${this.getForcedTextDirectionSpace(textDirection)}<span class="force-rtl"><b>${siglaString}</b></span>`
+        }
+        return `${keywordHtml}${theText}${siglaHtml}`
 
       default:
         console.warn(`Unsupported apparatus entry type: ${entryType}`)
@@ -292,6 +302,7 @@ export class ApparatusCommon {
     let entryType = subEntry.type
     let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText)
     let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla,  'ar', siglaGroups, fullSiglaInBrackets)
+    let textDirection = 'rtl'
     switch(entryType) {
       case ApparatusSubEntryType.VARIANT:
         return `${theText} ${siglaString}`
@@ -303,7 +314,17 @@ export class ApparatusCommon {
         return `<small>${arabicStyle.strings.addition}</small> ${theText} ${siglaString}`
 
       case ApparatusSubEntryType.FULL_CUSTOM:
-        return theText
+        let keywordHtml = ''
+        switch (subEntry.keyword) {
+          case 'omission':
+          case 'addition':
+            keywordHtml= `<i>${arabicStyle.strings[subEntry.keyword]}</i> `
+        }
+        let siglaHtml = ''
+        if (siglaString !== '') {
+          siglaHtml = `${this.getForcedTextDirectionSpace(textDirection)}<span class="force-rtl">${siglaString}</span>`
+        }
+        return `${keywordHtml}${theText}${siglaHtml}`
 
       default:
         console.warn(`Unsupported apparatus entry type: ${entryType}`)
@@ -378,7 +399,13 @@ export class ApparatusCommon {
         return `<i>${latinStyle.strings.addition}</i> ${theText} ${siglaString}`
 
       case ApparatusSubEntryType.FULL_CUSTOM:
-        return theText
+        let keywordHtml = ''
+        switch (subEntry.keyword) {
+          case 'omission':
+          case 'addition':
+            keywordHtml= `<i>${latinStyle.strings[subEntry.keyword]}</i> `
+        }
+        return `${keywordHtml}${theText} ${siglaString}`
 
       default:
         console.warn(`Unsupported apparatus entry type: ${entryType}`)

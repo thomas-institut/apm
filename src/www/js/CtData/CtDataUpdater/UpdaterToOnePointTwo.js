@@ -27,11 +27,10 @@ export  class UpdaterToOnePointTwo extends CtDataUpdater {
         app['entries'] = app['entries'].map ( (entry, entryIndex) => {
           entry['subEntries'] = entry['subEntries'].map( (subEntry, subEntryIndex) => {
             subEntry['position'] = -1
-            // if (subEntry.type === 'fullCustom') {
-            //   // add an empty parts array
-            //   // subEntry['fmtText'] is kept for now
-            //   subEntry['parts'] = []
-            // }
+            if (subEntry.type === 'fullCustom') {
+              // add keyword component
+              subEntry['keyword'] = ''
+            }
             return subEntry
           })
           return entry

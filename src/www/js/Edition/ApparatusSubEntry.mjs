@@ -63,6 +63,9 @@ export class ApparatusSubEntry {
      */
     this.witnessData = []
 
+
+    this.keyword = ''
+
     /**
      *
      * @member {number}
@@ -82,6 +85,7 @@ export class ApparatusSubEntry {
     copy.source = subEntry.source
     copy.fmtText = FmtTextFactory.fromAnything(subEntry.fmtText)
     copy.position = subEntry.position
+    copy.keyword = subEntry.keyword
     copy.witnessData = subEntry.witnessData.map( (dataItem) => {
       return WitnessDataItem.clone(dataItem)
     })

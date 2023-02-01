@@ -494,7 +494,7 @@ div.aei-form div.form-footer {
 }
 
 .aei-form .ql-editor {
-    padding: 0;
+    padding: 3px;
 }
 
 .ql-editor p {
@@ -633,6 +633,26 @@ span.empty-sub-entry {
     color: silver;
     font-family: var(--default-font-family);
     font-variant-caps: small-caps;
+}
+
+div.sub-entry-edit-div {
+   margin-left: 1em;
+    margin-bottom: 0.5em;
+    margin-top: 0.5em;
+}
+
+div.sub-entry-keyword-edit {
+    margin-bottom: 0.35em;
+}
+
+.force-rtl {
+    direction: rtl;
+    unicode-bidi: isolate;
+}
+
+.force-ltr {
+    direction: ltr;
+    unicode-bidi: isolate;
 }
 
 /* Witness Info panel */

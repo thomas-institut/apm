@@ -283,6 +283,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
       theSubEntry.source = SubEntrySource.USER
       theSubEntry.enabled = subEntry['enabled']
       theSubEntry.position = subEntry['position']
+      theSubEntry.keyword = subEntry['keyword']
       if (subEntry['witnessData'] === undefined) {
         theSubEntry.witnessData = []
       } else {

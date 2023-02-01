@@ -555,8 +555,6 @@ export class EditionTypesetting {
           pushArray(items, this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect'))
           items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           pushArray(items, await this._getTsItemsForSigla(subEntry))
-          // let siglaTextBox = await this.ss.apply((new TextBox()).setText(this.__getSiglaString(subEntry.witnessData)), 'apparatus')
-          // items.push(siglaTextBox.setTextDirection(this.textDirection))
           break
 
         case 'omission':
@@ -570,25 +568,33 @@ export class EditionTypesetting {
             items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           }
           pushArray(items, await this._getTsItemsForSigla(subEntry))
-          // let siglaTextBox2 = await this.ss.apply((new TextBox()).setText(this.__getSiglaString(subEntry.witnessData)), 'apparatus')
-          // items.push(siglaTextBox2.setTextDirection(this.textDirection))
           break
 
         case 'fullCustom': {
-          // first, make sure that sigla class fmt text does not have bold or italic formatting
-          let fmtText = []
-          for (let i=0; i < subEntry.fmtText.length; i++) {
-            let token = subEntry.fmtText[i]
-            if (token.classList === 'sigla') {
-              token.fontWeight = ''
-              token.fontStyle = ''
-            }
-            fmtText.push(token)
+          let keyword = subEntry['keyword']
+          if (keyword !== '') {
+            keyword = this.editionStyle.strings[keyword]
+            let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
+            items.push(keywordTextBox)
+            items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           }
-          let fullCustomItems  = this.__setTextDirection(await this.tokenRenderer.renderWithStyle(fmtText, 'apparatus'), 'detect')
-          // this.debug && console.log(fullCustomItems)
 
+          // first, make sure that sigla class fmt text does not have bold or italic formatting
+          // let fmtText = []
+          // for (let i=0; i < subEntry.fmtText.length; i++) {
+          //   let token = subEntry.fmtText[i]
+          //   if (token.classList === 'sigla') {
+          //     token.fontWeight = ''
+          //     token.fontStyle = ''
+          //   }
+          //   fmtText.push(token)
+          // }
+          let fullCustomItems  = this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect')
           pushArray(items, fullCustomItems)
+          if (subEntry.witnessData.length !== 0) {
+            items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+            pushArray(items, await this._getTsItemsForSigla(subEntry))
+          }
           break
         }
       }

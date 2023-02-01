@@ -124,7 +124,6 @@ class IndexCreator extends CommandLineUtility {
                     $id = $id + 1;
 
                     $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
-                    $this->logger->debug("Indexed Document – OpenSearch ID: $id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Transcriber: $transcriber Lang: $lang\n");
                 }
             }
         }
@@ -191,9 +190,14 @@ class IndexCreator extends CommandLineUtility {
     protected function getTranscriber($doc_id, $page, $col) {
         $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
         $versions = $this->dm->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
-        $latest_version = count($versions)-1;
-        $transcriber = $versions[$latest_version]['author_name'];
-        return $transcriber;
+        if ($versions === []) {
+            return '';
+        }
+        else {
+            $latest_version = count($versions) - 1;
+            $transcriber = $versions[$latest_version]['author_name'];
+            return $transcriber;
+        }
     }
 
     // TODO: add types to parameters
@@ -254,6 +258,7 @@ class IndexCreator extends CommandLineUtility {
             ]
         ]);
 
+        $this->logger->debug("Indexed Document – OpenSearch ID: $id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Transcriber: $transcriber Lang: $lang\n");
         return true;
     }
 

@@ -153,7 +153,7 @@ class IndexUpdater extends IndexCreator
 
     // TODO: add types to parameters
     // Function to get a full list of OpenSearch-IDs in the index
-    private function getIDs ($client, $index_name): array
+    protected function getIDs ($client, $index_name): array
     {
 
         // Array to return
@@ -182,7 +182,7 @@ class IndexUpdater extends IndexCreator
     }
 
     // Function to query a given OpenSearch-index
-    private function transcriptionStatus ($client, $index_name, $doc_id, $page, $col): array
+    protected function transcriptionStatus ($client, $index_name, $doc_id, $page, $col): array
     {
 
             $query = $client->search([

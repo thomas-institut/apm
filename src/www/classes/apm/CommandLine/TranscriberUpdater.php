@@ -68,12 +68,19 @@ class TranscriberUpdater extends IndexUpdater
             // Iterate over transcribed pages
             foreach ($pages_transcribed as $page) {
 
-                // Get pageID, number of columns and sequence number of the page
+                // Get pageID and number of columns of the page
                 $page_id = $this->getPageID($doc_id, $page);
                 $page_info = $this->dm->getPageInfo($page_id);
                 $num_cols = $page_info['num_cols'];
 
                 for ($col = 1; $col <= $num_cols; $col++) {
+
+                    // Check if there really is a transcription in the column
+                    $versions = $this->dm->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
+                    if (count($versions) === 0) {
+                        // no transcription in this column
+                        continue;
+                    }
 
                     // Check if a new transcription was made or an existing one was changed
                     $transcription_status = $this->transcriptionStatus($this->client, $this->indexName, $doc_id, $page, $col);
@@ -115,7 +122,7 @@ class TranscriberUpdater extends IndexUpdater
                             ]
                         ]);
 
-                        $this->logger->debug("Column with OpenSearch-ID $opensearch_id was updated with value $transcriber!");
+                        $this->logger->debug("Index 'transcripts' – OpenSearch-ID $opensearch_id – 'transcriber' was updated with value $transcriber!");
                     }
                 }
             }

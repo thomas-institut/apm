@@ -4,6 +4,9 @@
 
 {% block finalBodyJS %}
     <script>
+
+      let results_backup = []
+
       $(() => {
 
         // Get selectors for catching user input
@@ -33,6 +36,17 @@
               errorMessageDiv.html(`<br>Please type in a keyword!<br><br>`)
             }
           })
+
+        // Start query when the 'Enter' key is pressed
+        doc.on("keyup", function (event) {
+          let user_input = keywords_box.val()
+          let num_keywords = user_input.split(" ").length - 1;
+          if ( event.key === 'ArrowLeft') {
+
+            displayResults(results_backup, 20) // ZOOM
+
+          }
+        })
 
     //     edition_mode.on('click', function () {
     //       search_table.empty()
@@ -177,6 +191,7 @@
 
             // Call displayResults-function
             spinner.empty()
+            results_backup = apiResponse
             displayResults(apiResponse)
 
       }).fail((status) => {
@@ -189,7 +204,7 @@
       }
 
       // Function to collect and display the search results in a readable form
-      function displayResults (results) {
+      function displayResults (results, zoom) {
 
         // Get selectors for displaying results
         let results_body = $("#resultsTable tbody")
@@ -240,7 +255,7 @@
           let passages_string = ""
 
           for (let j = 0; j < passages.length; j++) {
-            passages_string = highlight(passages[j], tokens_matched[j])
+            passages_string = highlight(passages[j], tokens_matched[j], zoom)
             passages_string = removeBlanks(passages_string)
 
             // Fill table with results - layout depends slightly on the language of the transcripts
@@ -284,6 +299,7 @@
             let tokens_matched = data[i]['tokens_matched']
             let passages = data[i]['passage_tokenized']
             let docID = data[i]['docID']
+            let transcript_tokenzied = data[i]['transcript_tokenized']
 
             // Get link for matched column
             let url = url_generator.sitePageView(docID, seq, column)
@@ -294,7 +310,7 @@
 
             for (let j = 0; j < passages.length; j++) {
 
-              passages_string = highlight(passages[j], tokens_matched[j])
+              passages_string = highlight(transcript_tokenzied, tokens_matched[j]) // ORIGINAL: passages[j]
               passages_string = removeBlanks(passages_string)
 
               // Fill table with results - layout depends slightly on the language of the transcripts
@@ -354,7 +370,7 @@
       }
 
       // Function to highlight the searched keywords in their context
-      function highlight (passage, tokens_matched) {
+      function highlight (passage, tokens_matched, zoom) {
 
         // String to return – contains passages with highlighted words in it
         let passage_highlighted = ""

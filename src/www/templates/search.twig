@@ -5,7 +5,7 @@
 {% block finalBodyJS %}
     <script>
 
-      let results_backup = []
+      let data_backup = []
 
       $(() => {
 
@@ -37,18 +37,29 @@
             }
           })
 
-        // Start query when the 'Enter' key is pressed
-        doc.on("keyup", function (event) {
-          let user_input = keywords_box.val()
-          let num_keywords = user_input.split(" ").length - 1;
-          if ( event.key === 'ArrowLeft') {
+        $("#zoomSlider").on("click", function (event) {
+          let zoom_slider = $("#zoomSlider")
+          let radius_slider = $("#radiusSlider")
+          let zoom = zoom_slider.val()
+          let radius = radius_slider.val()
+          if (radius>zoom) {
+            radius_slider.prop("value", zoom)
+          }
+          displayResults(data_backup[0], data_backup[1], data_backup[2], zoom, radius) // ZOOM
+        })
 
-            displayResults(results_backup, 20) // ZOOM
 
+
+        $("#radiusSlider").on("change", function (event) {
+          let zoom_slider = $("#zoomSlider")
+          let zoom = zoom_slider.val()
+          let radius = $("#radiusSlider").val()
+          if (radius>zoom) {
+            zoom_slider.prop("value", radius)
           }
         })
 
-    //     edition_mode.on('click', function () {
+        //     edition_mode.on('click', function () {
     //       search_table.empty()
     //       search_table.html(`
     //       <tr><td><b>Keywords</b></td><td class="text-center"><b>Exact Search</b></td><td><b>Text</b></td><td><b>Radius</b></td><td class="text-center"><b>Lemmatization</b></td></tr>
@@ -152,6 +163,7 @@
         let transcript_box = $("#transcriptBox")
         let transcriber_box = $("#transcriberBox")
         let radius_slider = $("#radiusSlider")
+        let zoom_slider = $("#zoomSlider")
         let lemmatization_box = $("#lemmatize")
         let spinner = $("#spinner")
         let results_body = $("#resultsTable tbody")
@@ -164,6 +176,7 @@
         let transcriber = transcriber_box.val();
         let radius = radius_slider.val()
         let lemmatize = lemmatization_box.prop('checked')
+        let zoom = zoom_slider.val()
 
         // Empty the results-table/error-box and signalize search process
         results_body.empty()
@@ -191,8 +204,10 @@
 
             // Call displayResults-function
             spinner.empty()
-            results_backup = apiResponse
-            displayResults(apiResponse)
+            //displayResults(apiResponse, 20)
+
+            displayResults(apiResponse['data'], apiResponse['lang'], apiResponse['num_passages_total'], zoom, radius)
+            data_backup = [apiResponse['data'], apiResponse['lang'], apiResponse['num_passages_total']]
 
       }).fail((status) => {
         console.log(status)
@@ -204,7 +219,7 @@
       }
 
       // Function to collect and display the search results in a readable form
-      function displayResults (results, zoom) {
+      function displayResults (data, lang, num_passages, zoom, radius) {
 
         // Get selectors for displaying results
         let results_body = $("#resultsTable tbody")
@@ -215,12 +230,12 @@
         let url_generator = new ApmUrlGenerator('{{baseurl}}')
 
         // Get column data of search results and language of matched passages
-        let data = results['data']
-        let lang = results['lang']
+        //let data = results['data']
+        //let lang = results['lang']
 
         // Count matches
         let num_columns = data.length
-        let num_passages = results['num_passages_total']
+        //let num_passages = results['num_passages_total']
         let num_docs = getNumDocs(data, num_columns)
 
         // If there are no matches, display this to the user and empty the results table
@@ -246,6 +261,8 @@
           let passages = data[0]['passage_tokenized']
           let tokens_matched = data[0]['tokens_matched']
           let docID = data[0]['docID']
+          let transcript_tokenized = data[0]['transcript_tokenized']
+          let positions = data[0]['positions']
 
           // Get link for matched page (sequence number)
           let url = url_generator.sitePageView(docID, seq, column)
@@ -255,7 +272,20 @@
           let passages_string = ""
 
           for (let j = 0; j < passages.length; j++) {
-            passages_string = highlight(passages[j], tokens_matched[j], zoom)
+
+            let transcript_len = transcript_tokenized.length
+            let passage_start = positions[j]-zoom
+            let passage_end = parseInt(positions[j])+parseInt(zoom)+1
+
+            if (passage_start < 0) {
+              passage_start = 0
+            }
+
+            if (passage_end > (transcript_len-1)) {
+              passage_end = transcript_len
+            }
+
+            passages_string = highlight(transcript_tokenized.slice(passage_start, passage_end), tokens_matched[j], positions[j], radius)
             passages_string = removeBlanks(passages_string)
 
             // Fill table with results - layout depends slightly on the language of the transcripts
@@ -299,7 +329,8 @@
             let tokens_matched = data[i]['tokens_matched']
             let passages = data[i]['passage_tokenized']
             let docID = data[i]['docID']
-            let transcript_tokenzied = data[i]['transcript_tokenized']
+            let transcript_tokenized = data[i]['transcript_tokenized']
+            let positions = data[i]['positions']
 
             // Get link for matched column
             let url = url_generator.sitePageView(docID, seq, column)
@@ -310,7 +341,19 @@
 
             for (let j = 0; j < passages.length; j++) {
 
-              passages_string = highlight(transcript_tokenzied, tokens_matched[j]) // ORIGINAL: passages[j]
+              let transcript_len = transcript_tokenized.length
+              let passage_start = positions[j]-zoom
+              let passage_end = parseInt(positions[j])+parseInt(zoom)+1
+
+              if (passage_start < 0) {
+                passage_start = 0
+              }
+
+              if (passage_end > (transcript_len-1)) {
+                passage_end = transcript_len
+              }
+
+              passages_string = highlight(transcript_tokenized.slice(passage_start, passage_end), tokens_matched[j], positions[j], radius) // ORIGINAL: passages[j]
               passages_string = removeBlanks(passages_string)
 
               // Fill table with results - layout depends slightly on the language of the transcripts
@@ -370,7 +413,7 @@
       }
 
       // Function to highlight the searched keywords in their context
-      function highlight (passage, tokens_matched, zoom) {
+      function highlight (passage, tokens_matched, position, radius) {
 
         // String to return – contains passages with highlighted words in it
         let passage_highlighted = ""
@@ -379,7 +422,8 @@
         for (let i=0; i<passage.length; i++) {
           // Get current word of passage-array
           let token = passage[i]
-          // Bold token, if it is one of the tokens_matched
+          // Bold token, if it is one of the tokens_matched and inside the search radius
+          //let close = checkCloseness(i, position, radius)
           if (tokens_matched.indexOf(token) !== -1) {
             // token = token.bold()
             token = "<mark>" + token + "</mark>"
@@ -389,6 +433,20 @@
         }
 
         return passage_highlighted
+      }
+
+      // Function to if a matched keyword is inside the search radius
+      function checkCloseness (index, position, radius) {
+
+        let distance = Math.abs(index-position)
+        $("#error_message").html(`${distance}`)
+
+        if (distance>radius) {
+            return false
+          }
+          else {
+            return true
+          }
       }
 
       // Function to remove inadequate blanks from transcript
@@ -408,7 +466,7 @@
 {% block content %}
     <h1> Search </h1>
   <p>
-    Type in a keyword and press 'Enter' to search. Set the radius to 0 to search for coherent phrases.
+    Type in a keyword and press 'Enter' to search.
 {#  <div>#}
 {#  <b>Edition Mode</b>#}
 {#    <input type="checkbox" id="edition_mode" name="edition_mode">#}
@@ -416,7 +474,7 @@
   </p>
 
   <table class="dataTable" id="searchTable">
-    <tr><td><b>Keywords</b></td><td><b>Transcript</b></td><td><b>Transcriber</b></td><td><b>Radius</b></td><td class="text-center"><b>Lemmatization</b></td></tr>
+    <tr><td><b>Keywords</b></td><td><b>Lemmatization</b></td><td><b>Closeness</b></td></tr>
 
     <tr>
         <td>
@@ -426,31 +484,40 @@
             </div>
         </td>
         <td>
-            <div id="doc_form">
-                <label for="transcriptBox"></label>
-                <input list="titleList" id="transcriptBox" placeholder="" autocomplete="off">
-                <datalist id="titleList">
-                </datalist>
-            </div>
+          <div>
+            <input type="checkbox" label="lemmatize" id="lemmatize" name="lemmatize">
+          </div>
         </td>
         <td>
-            <div id="transcriber_form">
-                <label for="transcriberBox"></label>
-                <input list="transcriberList" id="transcriberBox" placeholder="" autocomplete="off">
-                <datalist id="transcriberList">
-                </datalist>
-            </div>
+          <form>
+            <label for="radiusSlider"></label>
+            <input type="range" id="radiusSlider" name="radiusSlider" min="1" max="60" value="20">
+          </form>
         </td>
+    </tr>
+      <tr><td><b>Transcript</b></td><td><b>Transcriber</b></td><td><b>Zoom</b></td></tr>
+      <tr>
         <td>
-            <form>
-                <label for="radiusSlider"></label>
-                <input type="range" id="radiusSlider" name="radiusSlider" min="1" max="60" value="18">
-            </form>
+          <div id="doc_form">
+            <label for="transcriptBox"></label>
+            <input list="titleList" id="transcriptBox" placeholder="" autocomplete="off">
+            <datalist id="titleList">
+            </datalist>
+          </div>
         </td>
-      <td class="text-center">
-        <div>
-          <input type="checkbox" id="lemmatize" name="lemmatize">
+      <td>
+        <div id="transcriber_form">
+          <label for="transcriberBox"></label>
+          <input list="transcriberList" id="transcriberBox" placeholder="" autocomplete="off">
+          <datalist id="transcriberList">
+          </datalist>
         </div>
+      </td>
+      <td>
+        <form>
+          <label for="zoomSlider"></label>
+          <input type="range" id="zoomSlider" name="radiusSlider" min="1" max="60" value="30">
+        </form>
       </td>
     </tr>
 </table>

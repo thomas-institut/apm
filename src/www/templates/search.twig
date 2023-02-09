@@ -12,6 +12,7 @@
         // Get selectors for catching user input
         let keywords_box = $("#keywordBox")
         let doc = $(document)
+        let lemmatization_box = $("#lemmatize")
         // let edition_mode = $("#edition_mode")
         // let search_table = $("#searchTable")
 
@@ -25,10 +26,19 @@
         // Start query when the 'Enter' key is pressed
           doc.on("keyup", function (event) {
             let user_input = keywords_box.val()
-            let num_keywords = user_input.split(" ").length - 1;
+            let num_keywords = user_input.split(" ").length;
+            let zoom_slider = $("#zoomSlider")
+            let zoom = zoom_slider.val()
+            let radius = $("#radiusSlider").val()
             if ( event.key === 'Enter' && user_input !== "") {
 
-              $("#radiusSlider").prop({'min': num_keywords})
+              if (radius == num_keywords) {
+                $("#radiusSlider").prop("value", num_keywords-1)
+              }
+
+              $("#radiusSlider").prop({'min': num_keywords-1})
+              zoom_slider.prop({'min': num_keywords-1})
+              zoom_slider.prop("value", radius)
 
               search()
             }
@@ -37,25 +47,30 @@
             }
           })
 
-        $("#zoomSlider").on("click", function (event) {
+        $("#zoomSlider").on("change", function (event) {
           let zoom_slider = $("#zoomSlider")
           let radius_slider = $("#radiusSlider")
           let zoom = zoom_slider.val()
           let radius = radius_slider.val()
-          if (radius>zoom) {
-            radius_slider.prop("value", zoom)
-          }
           displayResults(data_backup[0], data_backup[1], data_backup[2], zoom, radius) // ZOOM
         })
 
 
 
-        $("#radiusSlider").on("change", function (event) {
-          let zoom_slider = $("#zoomSlider")
-          let zoom = zoom_slider.val()
-          let radius = $("#radiusSlider").val()
-          if (radius>zoom) {
-            zoom_slider.prop("value", radius)
+        // $("#radiusSlider").on("change", function (event) {
+        //   let zoom_slider = $("#zoomSlider")
+        //   let zoom = zoom_slider.val()
+        //   let radius = $("#radiusSlider").val()
+        //   if (radius>zoom) {
+        //     zoom_slider.prop("value", radius)
+        //   }
+        // })
+
+        lemmatization_box.on("click",  function (event) {
+          let checked = lemmatization_box.prop("checked")
+          let user_input = keywords_box.val()
+          if (checked && user_input.includes("*")) {
+            errorMessageDiv.html(`Until now you cannot use wildcards combined with lemmatization! This will maybe be possible in the future.`)
           }
         })
 
@@ -474,7 +489,7 @@
   </p>
 
   <table class="dataTable" id="searchTable">
-    <tr><td><b>Keywords</b></td><td><b>Lemmatization</b></td><td><b>Closeness</b></td></tr>
+    <tr><td><b>Keywords</b></td><td><b>Lemmatization</b></td><td><b>Radius</b></td></tr>
 
     <tr>
         <td>
@@ -491,7 +506,7 @@
         <td>
           <form>
             <label for="radiusSlider"></label>
-            <input type="range" id="radiusSlider" name="radiusSlider" min="1" max="60" value="20">
+            <input type="range" id="radiusSlider" name="radiusSlider" min="0" max="80" value="30">
           </form>
         </td>
     </tr>
@@ -516,7 +531,7 @@
       <td>
         <form>
           <label for="zoomSlider"></label>
-          <input type="range" id="zoomSlider" name="radiusSlider" min="1" max="60" value="30">
+          <input type="range" id="zoomSlider" name="radiusSlider" min="0" max="80" value="30">
         </form>
       </td>
     </tr>

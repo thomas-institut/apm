@@ -433,7 +433,7 @@ class ApiSearch extends ApiController
 
         if ($lemmatize) {
 
-            // First, remove all passage_tokenized from $data, which do not match the additional keyword
+            // First, remove all passage_lemmatized from $data, which do not match the additional keyword
             foreach ($data as $i => $column) {
 
                 foreach ($column['passage_lemmatized'] as $j => $passage_lemmatized) {
@@ -453,6 +453,8 @@ class ApiSearch extends ApiController
                         unset($data[$i]['passage_tokenized'][$j]);
                         unset($data[$i]['passage_lemmatized'][$j]);
                         unset($data[$i]['tokens_matched'][$j]);
+                        unset($data[$i]['passage_coordinates'][$j]);
+                        unset($data[$i]['positions'][$j]);
                         $data[$i]['num_passages'] = $data[$i]['num_passages'] - 1;
                     }
                 }
@@ -517,6 +519,7 @@ class ApiSearch extends ApiController
                                 unset($data[$i]['passage_lemmatized'][$j]);
                                 unset($data[$i]['tokens_matched'][$j]);
                                 unset($data[$i]['passage_coordinates'][$j]);
+                                unset($data[$i]['positions'][$j]);
                                 $data[$i]['num_passages'] = $data[$i]['num_passages'] - 1;
                             }
                         }
@@ -528,6 +531,7 @@ class ApiSearch extends ApiController
                                 unset($data[$i]['passage_lemmatized'][$j]);
                                 unset($data[$i]['tokens_matched'][$j]);
                                 unset($data[$i]['passage_coordinates'][$j]);
+                                unset($data[$i]['positions'][$j]);
                                 $data[$i]['num_passages'] = $data[$i]['num_passages'] - 1;
                             }
                         }
@@ -539,6 +543,7 @@ class ApiSearch extends ApiController
                                 unset($data[$i]['passage_lemmatized'][$j]);
                                 unset($data[$i]['tokens_matched'][$j]);
                                 unset($data[$i]['passage_coordinates'][$j]);
+                                unset($data[$i]['positions'][$j]);
                                 $data[$i]['num_passages'] = $data[$i]['num_passages'] - 1;
                             }
                         }
@@ -549,6 +554,7 @@ class ApiSearch extends ApiController
                                 unset($data[$i]['passage_lemmatized'][$j]);
                                 unset($data[$i]['tokens_matched'][$j]);
                                 unset($data[$i]['passage_coordinates'][$j]);
+                                unset($data[$i]['positions'][$j]);
                                 $data[$i]['num_passages'] = $data[$i]['num_passages'] - 1;
                             }
                         }
@@ -568,6 +574,8 @@ class ApiSearch extends ApiController
                 $data[$i]['passage_lemmatized'] = array_values($column['passage_lemmatized']);
                 $data[$i]['tokens_matched'] = array_values($column['tokens_matched']);
                 $data[$i]['passage_coordinates'] = array_values($column['passage_coordinates']);
+                $data[$i]['positions'] = array_values($column['positions']);
+
 
             }
         }

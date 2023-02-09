@@ -32,10 +32,6 @@
             let radius = $("#radiusSlider").val()
             if ( event.key === 'Enter' && user_input !== "") {
 
-              if (radius == num_keywords) {
-                $("#radiusSlider").prop("value", num_keywords-1)
-              }
-
               $("#radiusSlider").prop({'min': num_keywords-1})
               zoom_slider.prop({'min': num_keywords-1})
               zoom_slider.prop("value", radius)

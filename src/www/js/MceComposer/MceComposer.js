@@ -77,8 +77,7 @@ const defaultChunkBreak = 'paragraph'
 const saveButtonTextClassNoChanges = 'text-muted'
 const saveButtonTextClassChanges = 'text-primary'
 const saveButtonTextClassSaving = 'text-warning'
-// const saveButtonTextClassError = 'text-danger'
-
+const saveButtonTextClassError = 'text-danger'
 
 
 export class MceComposer {
@@ -109,6 +108,8 @@ export class MceComposer {
     this.changes = []
     this.chunksToUpdateStatuses = []
     this.unsavedChanges = false
+    this.saving = false
+    this.saveErrors = false
 
     $(window).on('beforeunload', () => {
       if (this.unsavedChanges) {
@@ -351,15 +352,23 @@ export class MceComposer {
 
  _genOnClickSaveButton() {
     return () => {
+      if (this.saving) {
+        console.log(`Click on save button while saving!`)
+        return
+      }
       let changes = this.detectChanges()
       if (changes.length === 0) {
         console.log(`Click on save button without changes to save`)
         return
       }
+
+      this.saving = true
       let url = this.options.urlGenerator.apiSaveMultiChunkEdition()
       let description = changes.join('. ')
       this.saveButton.popover('hide')
       this.saveButton.html(this.icons.busy)
+      this.saveButtonPopoverContent = 'Saving...'
+      this.saveButtonPopoverTitle = ''
       this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassSaving)
       console.log(`Saving edition with id ${this.editionId} with API call to ${url}`)
       let apiCallOptions = {
@@ -383,7 +392,16 @@ export class MceComposer {
           this.lastSave = apiResponse['saveTimeStamp']
           this.unsavedChanges = false
           this.updateSaveUI()
+          this.saving = false
+          this.saveErrors = false
         }
+      }).fail((resp) => {
+        this.saveErrors = true
+        this.saving = false
+        this.saveButton.html(this.icons.saveEdition)
+        console.error("Could not save table")
+        console.log(resp)
+        this.updateSaveUI()
       })
     }
  }
@@ -445,9 +463,15 @@ export class MceComposer {
    } else {
      this.unsavedChanges = true
      this.saveButtonPopoverTitle = '<p>Click to save changes</p>'
-     this.saveButtonPopoverContent = '<ul>' + this.changes.map( (change) => { return `<li>${change}</li>`}).join('') + '</ul>'
-     this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassChanges)
-     this.__setButtonEnableStatus(this.saveButton, true)
+     if (this.saveErrors) {
+       this.saveButtonPopoverContent += `<p class="text-danger">Edition could not be saved, please try again</p>`
+       this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassError)
+       this.__setButtonEnableStatus(this.saveButton, true)
+     } else {
+       this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassChanges)
+       this.saveButtonPopoverContent = '<ul>' + this.changes.map( (change) => { return `<li>${change}</li>`}).join('') + '</ul>'
+       this.__setButtonEnableStatus(this.saveButton, true)
+     }
    }
  }
 
@@ -471,6 +495,11 @@ export class MceComposer {
    // sigla groups changes
    if (!varsAreEqual(this.lastSavedMceData.siglaGroups, this.mceData.siglaGroups)) {
      changes.push(`Changes in sigla groups`)
+   }
+
+   // change in chunk order
+   if (!varsAreEqual(this.lastSavedMceData.chunkOrder, this.mceData.chunkOrder)) {
+     changes.push(`Chunk order changed`)
    }
 
    // changes in chunks

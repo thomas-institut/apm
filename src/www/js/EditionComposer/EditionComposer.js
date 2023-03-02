@@ -170,6 +170,7 @@ export class EditionComposer {
     let thisObject = this
 
     this.convertingToEdition = false
+    this.saving = false
     this.witnessUpdates = []
     this.editionSources = null
 
@@ -804,11 +805,18 @@ export class EditionComposer {
 
   genOnClickSaveButton() {
     return () => {
+      if (this.saving) {
+        console.warn(`Click on save button while saving`)
+        return
+      }
       let changes = this.getChangesInCtData()
       if (changes.length !== 0) {
+        this.saving = true
         this.unsavedChanges = true
         this.saveButton.popover('hide')
         this.saveButton.html(this.icons.busy)
+        this.saveButtonPopoverContent = 'Saving...'
+        this.saveButtonPopoverTitle = ''
         this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassSaving)
         console.log('Saving table via API call to ' + this.apiSaveCollationUrl)
         let description = ''
@@ -836,9 +844,11 @@ export class EditionComposer {
           this.witnessInfoPanel.onDataSave()
           this.unsavedChanges = false
           this.saveErrors = false
+          this.saving = false
           this._updateSaveArea()
         }).fail((resp) => {
           this.saveErrors = true
+          this.saving = false
           this.saveButton.html(this.icons.saveEdition)
           console.error("Could not save table")
           console.log(resp)

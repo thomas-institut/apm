@@ -32,6 +32,8 @@ class ApiMultiChunkEdition extends ApiController
 
     public function saveEdition(Request $request, Response $response, array $args): Response
     {
+
+        sleep(5);
         $apiCall = 'saveEdition';
         $requiredFields = [ 'editionId', 'mceData', 'description'];
         $inputDataObject = $this->checkAndGetInputData($request, $response, $apiCall, $requiredFields);

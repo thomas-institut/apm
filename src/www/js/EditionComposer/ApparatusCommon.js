@@ -240,7 +240,7 @@ export class ApparatusCommon {
         switch (subEntry.keyword) {
           case 'omission':
           case 'addition':
-            keywordHtml= `<i>${hebrewStyle.strings[subEntry.keyword]}</i> `
+            keywordHtml= `${this.getKeywordHtml(subEntry.keyword, 'he')} `
         }
         let siglaHtml = ''
         if (siglaString !== '') {
@@ -318,7 +318,7 @@ export class ApparatusCommon {
         switch (subEntry.keyword) {
           case 'omission':
           case 'addition':
-            keywordHtml= `<i>${arabicStyle.strings[subEntry.keyword]}</i> `
+            keywordHtml= `${this.getKeywordHtml(subEntry.keyword, 'ar')} `
         }
         let siglaHtml = ''
         if (siglaString !== '') {

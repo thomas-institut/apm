@@ -560,6 +560,9 @@ div.aei-form div.form-footer {
     direction: rtl;
 }
 
+small {
+    font-size: 0.8em;
+}
 
 div.entry-header {
     margin-bottom: 2rem;

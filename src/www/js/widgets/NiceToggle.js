@@ -71,9 +71,9 @@ export class NiceToggle {
     $(this.getButtonSelector()).on('mouseenter', this.genOnMouseEnterButton())
     $(this.getButtonSelector()).on('mouseleave', this.genOnMouseLeaveButton())
     if(this.isOn) {
-      this.toggleOn()
+      this.toggleOn(true)
     } else {
-      this.toggleOff()
+      this.toggleOff(true)
     }
 
 
@@ -113,22 +113,27 @@ export class NiceToggle {
     return html
   }
 
-  toggleOn() {
+  toggleOn(silent = false) {
     $(this.getButtonSelector()).attr('title', this.options.onPopoverText)
       .removeClass(this.options.offClass)
       .addClass(this.options.onClass)
       .html(this.options.onIcon)
     this.isOn = true
-    this.dispatchEvent(toggleEvent, { toggleStatus: this.getToggleStatus()})
+    if (!silent) {
+      this.dispatchEvent(toggleEvent, { toggleStatus: this.getToggleStatus()})
+    }
+
   }
 
-  toggleOff() {
+  toggleOff(silent = false) {
     $(this.getButtonSelector()).attr('title', this.options.offPopoverText)
       .removeClass(this.options.onClass)
       .addClass(this.options.offClass)
       .html(this.options.offIcon)
     this.isOn = false
-    this.dispatchEvent(toggleEvent, { toggleStatus: this.getToggleStatus()})
+    if (!silent) {
+      this.dispatchEvent(toggleEvent, { toggleStatus: this.getToggleStatus()})
+    }
   }
 
   getToggleStatus() {

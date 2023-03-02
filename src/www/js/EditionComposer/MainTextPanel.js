@@ -383,6 +383,7 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   _setupTextEditMode() {
+    console.log(`--- Setting up text edit mode ---`)
     $(this.getContentAreaSelector()).html(this._getMainTextBetaEditor())
     this.freeTextEditor = new EditionMainTextEditor({
       containerSelector: `#${betaEditorDivId}`,
@@ -401,17 +402,20 @@ export class MainTextPanel extends PanelWithToolbar {
     })
 
     this.numberingLabelsToggle.on(toggleEvent,  (ev) => {
+      console.log(`Numbering labels toggles: ${ev.detail.toggleStatus}`)
       this.detectNumberingLabels = !!ev.detail.toggleStatus;
       this.__detectAndReportChangesInEditedMainText()
     })
 
+    console.log(` - Setting text in free text editor -`)
     this.freeTextEditor.setText( this._convertMainTextToFmtText(), true)
+    console.log(` - updating no changes label - `)
     this.betaEditorInfoDiv = $(`#${betaEditorInfoDiv}`).html('No changes')
     this.changesInfoDivConstructed = false
     this.commitedFreeText = deepCopy(this.freeTextEditor.getFmtText())
     $(`${this.containerSelector} a.text-edit-revert-btn`).on('click', this._genOnClickTextEditRevertChanges())
     $(`${this.containerSelector} a.text-edit-commit-btn`).on('click', this._genOnClickTextEditCommitChanges())
-    // this.verbose && console.log(`Now in text mode`)
+    console.log(`--- Now in text mode ---`)
   }
 
   __getWitnessTokenHtml(token, full = true) {
@@ -574,6 +578,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
   _genOnChangeMainTextFreeTextEditor() {
     return () => {
+        console.log(`On Change main text free text editor!`)
         this.__detectAndReportChangesInEditedMainText()
     }
   }
@@ -665,7 +670,7 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   __getChangeList(oldTokens, newTokens, editScript) {
-    const debugStateMachine = true
+    const debugStateMachine = false
     debugStateMachine && console.log(`Get change list state machine`)
 
     let state = 0

@@ -2,6 +2,9 @@
 
 namespace APM\CommandLine;
 
+use APM\System\ApmMySqlTableName;
+use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
+
 class CtVersionCheckTool extends CommandLineUtility
 {
 
@@ -14,8 +17,9 @@ class CtVersionCheckTool extends CommandLineUtility
             return false;
         }
 
+        $fix = false;
         if ($argv[1] === 'fix') {
-            print "Fix tool not implemented yet, just checking for now\n";
+            $fix = true;
         }
 
         $ctManager = $this->systemManager->getCollationTableManager();
@@ -37,9 +41,10 @@ class CtVersionCheckTool extends CommandLineUtility
         foreach($ctIds as $ctId) {
             $versions = $versionManager->getCollationTableVersionInfo($ctId);
             $storedVersions = $ctManager->getCollationTableStoredVersionsInfo($ctId);
+
             if ($reportEveryId) {
                 print "CtId $ctId:\n";
-                print "   Versions:\n";
+                print "   Version:\n";
                 for($i=0; $i<count($versions); $i++) {
                     printf("      %2d | %4d | %s | %s\n", $i, $versions[$i]->id, $versions[$i]->timeFrom, $versions[$i]->timeUntil);
                 }
@@ -48,26 +53,70 @@ class CtVersionCheckTool extends CommandLineUtility
                     printf("      %2d | %s | %s\n", $i, $storedVersions[$i]->timeFrom, $storedVersions[$i]->timeUntil);
                 }
             }
-            $issues = $versionManager->checkVersionSequenceConsistency($versions);
-            if (count($versions) !== count($storedVersions)) {
-                $issues[] = "Mismatch between stored versions and version info: " . count($storedVersions) . " stored, " . count($versions) . " info";
-            } else {
-                // check consistency between versions
-                for ($i = 0; $i < count($versions); $i++) {
-                    if ($versions[$i]->timeFrom !== $storedVersions[$i]->timeFrom) {
-                        $issues[] = "Version timeFrom mismatch, index $i: " . $storedVersions[$i]->timeFrom . " !== " . $versions[$i]->timeFrom;
-                    }
-                    if ($versions[$i]->timeUntil !== $storedVersions[$i]->timeUntil) {
-                        $issues[] = "Version timeUntil mismatch, index $i: " . $storedVersions[$i]->timeUntil . " !== " . $versions[$i]->timeUntil;
+            $tableIssues = $ctManager->checkDataConsistency([ $ctId]);
+
+            $issues = [];
+            foreach($tableIssues as $tableIssue) {
+                $issues[] = "Data table " . $tableIssue['type'] . " : " . $tableIssue['description'];
+            }
+            $dataTableFixes = false;
+
+            if (count($issues) !== 0) {
+                if ($fix) {
+                    $dataTableFixes = true;
+                }
+
+            }
+            else {
+                // only check the rest when there's no data table issues
+                $issues = $versionManager->checkVersionSequenceConsistency($versions);
+                if (count($versions) !== count($storedVersions)) {
+                    $issues[] = "Mismatch between stored versions and version info: " . count($storedVersions) . " stored, " . count($versions) . " info";
+                } else {
+                    // check consistency between versions
+                    for ($i = 0; $i < count($versions); $i++) {
+                        $issue = '';
+                        $issueFrom = '';
+                        $issueUntil = '';
+                        if ($versions[$i]->timeFrom !== $storedVersions[$i]->timeFrom) {
+                            $issueFrom = "timeFrom " . $storedVersions[$i]->timeFrom . " !== " . $versions[$i]->timeFrom;
+                        }
+                        if ($versions[$i]->timeUntil !== $storedVersions[$i]->timeUntil) {
+                            $issueUntil = "timeUntil " . $storedVersions[$i]->timeUntil . " !== " . $versions[$i]->timeUntil;
+                        }
+
+                        if ($issueFrom !== '' || $issueUntil !== '') {
+                            $issue = "Time mismatch index $i: $issueFrom $issueUntil";
+                            if ($fix) {
+                                $fixed =true;
+                                try {
+                                    $versionManager->updateTimesForVersion($versions[$i]->id, $storedVersions[$i]->timeFrom, $storedVersions[$i]->timeUntil);
+                                } catch(\Exception $e) {
+                                    $fixed = false;
+                                    $issue .= ".... Sorry, could not fix this problem! ";
+                                }
+                                if ($fixed) {
+                                    $issue .= ".... FIXED";
+                                }
+                            } else {
+                                $issue .= ".... can be fixed automatically";
+                            }
+                            $issues[] = $issue;
+                        }
                     }
                 }
             }
+
 
             if (count($issues) !== 0) {
                 print("Issues found for ctId $ctId\n");
                 $issuesFound = true;
                 foreach($issues as $issue) {
                     print(" - $issue\n");
+                }
+                if ($dataTableFixes) {
+                    print ("Data table issues must be fixed manually, here's some SQL that will do the trick:\n\n");
+                    $this->bruteForceDataTableConsistencyFix($ctId);
                 }
             } else {
                 if ($reportEveryId) {
@@ -80,6 +129,24 @@ class CtVersionCheckTool extends CommandLineUtility
         }
 
         return true;
+
+    }
+
+
+    private function bruteForceDataTableConsistencyFix($ctId) {
+        $tableName = $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_COLLATION_TABLE];
+        $dataTable = new MySqlUnitemporalDataTable($this->systemManager->getDbConnection(), $tableName);
+        $versions = $dataTable->getRowHistory($ctId);
+        if (count($versions) < 2) {
+            return;
+        }
+
+        for ($i = 1; $i < count($versions); $i++) {
+            $currentValidFrom = $versions[$i]['valid_from'];
+            $previousValidFrom = $versions[$i-1]['valid_from'];
+            print "UPDATE `$tableName` SET `valid_until`='$currentValidFrom' WHERE `id`=$ctId AND `valid_from`='$previousValidFrom';\n";
+        }
+
 
     }
 

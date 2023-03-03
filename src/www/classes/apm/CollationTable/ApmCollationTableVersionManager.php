@@ -74,6 +74,13 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
         return array_slice($versions, -1 * $numVersions);
     }
 
+    public function updateTimesForVersion(int $versionId, string $timeFrom, string $timeUntil) : void {
+        $versionInfo = CollationTableVersionInfo::createFromDbRow($this->dataTable->getRow($versionId));
+        $versionInfo->timeFrom = $timeFrom;
+        $versionInfo->timeUntil = $timeUntil;
+        $this->rawUpdateVersion($versionInfo);
+    }
+
     /**
      * @inheritDoc
      */

@@ -263,6 +263,14 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         return CollationTableInfo::createFromDbRow($rows[0]);
     }
 
+
+    public function checkDataConsistency($ids = []) : array {
+        if (!is_a($this->ctTable, MySqlUnitemporalDataTable::class)) {
+            return [];
+        }
+        return $this->ctTable->checkConsistency($ids);
+    }
+
     public function getCollationTableStoredVersionsInfo(int $id): array
     {
         $returnArray = [];

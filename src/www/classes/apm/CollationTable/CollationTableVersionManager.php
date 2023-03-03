@@ -70,6 +70,14 @@ abstract class CollationTableVersionManager
      */
     abstract public function fixVersionSequence(int $ctId) : array;
 
+    /**
+     * @param int $versionId
+     * @param string $timeFrom
+     * @param string $timeUntil
+     * @return void
+     */
+    abstract public function updateTimesForVersion(int $versionId, string $timeFrom, string $timeUntil) : void;
+
 
     /**
      * Checks that the given version sequence is coherent

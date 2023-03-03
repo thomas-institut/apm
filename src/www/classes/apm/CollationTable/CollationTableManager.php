@@ -216,4 +216,7 @@ abstract class CollationTableManager implements ErrorReporter
 
     abstract public function getActiveEditionTableInfo(): array;
 
+
+    abstract public function checkDataConsistency($ids = []) : array;
+
 }

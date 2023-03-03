@@ -39,17 +39,19 @@
 {#                {% if userinfo.manageUsers %}#}
                 <li class="nav-item"><a class="nav-link"href="{{url_for('user.manager')}}" title="Users">Users</a></li>
 {#                {% endif %}#}
+                <li class="nav-item"><a class="nav-link" href="{{url_for('search')}}" title="Search">Search</a></li>
+                <li class="nav-item">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</li>
                 <li class="nav-item dropdown">
-                   <a href="/" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Project Info</a>
+                   <a href="/" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Useful Links</a>
                    <ul class="dropdown-menu">
-                       <li><a class="nav-link" href="https://thomas-institut.github.io/averroes-workflow-guidelines/">Worflow Guidelines &nbsp;<i class="fas fa-external-link-alt"></i></a></li>
-                       <li><a class="nav-link" href="https://thomas-institut.github.io/averroes-tei/averroes-guidelines.html">TEI Guidelines &nbsp;<i class="fas fa-external-link-alt"></i></a></li>
+                       <li class="nav-item"><a class="nav-link" href="https://averroes.uni-koeln.de/apm/wiki">Wiki <i class="fas fa-external-link-alt"></i></a></li>
+{#                       <li><a class="nav-link" href="https://thomas-institut.github.io/averroes-workflow-guidelines/">Worflow Guidelines &nbsp;<i class="fas fa-external-link-alt"></i></a></li>#}
+{#                       <li><a class="nav-link" href="https://thomas-institut.github.io/averroes-tei/averroes-guidelines.html">TEI Guidelines &nbsp;<i class="fas fa-external-link-alt"></i></a></li>#}
 {#                       <li><a class="nav-link" href="https://wiki.uni-koeln.de/averroes_project/">Wiki &nbsp;<i class="fas fa-external-link-alt"></i></a></li>#}
                        <li><a class="nav-link" href="https://averroes.uni-koeln.de/legacy/">Legacy Files (e.g., old XML) &nbsp;<i class="fas fa-external-link-alt"></i></a></li>
                        <li><a class="nav-link" href="https://averroes.uni-koeln.de/">Public Website &nbsp;<i class="fas fa-external-link-alt"></i></a></li>
                     </ul>
                 </li>
-                <li class="nav-item"><a class="nav-link" href="{{url_for('search')}}" title="Search">Search</a></li>
             </ul>
                 
             <ul class="navbar-nav">

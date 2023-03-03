@@ -216,3 +216,8 @@ ul.ctlist li {
         opacity: 1;
     }
 }
+
+mark {
+    background-color: rgba(255, 219, 75, 0.7);
+    color: black;
+}

@@ -6,6 +6,8 @@ setuptools
 wheel
 spacy
 spacy-udpipe
+spacy-loggers>=1.0.3
+clearml>=1.9.0
 langdetect
 
 # Requirements for Qalsadi

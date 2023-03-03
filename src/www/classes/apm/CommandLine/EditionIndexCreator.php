@@ -6,7 +6,7 @@ use APM\System\ApmConfigParameter;
 use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
 
-class EditionIndexCreater extends CommandLineUtility
+class EditionIndexCreator extends IndexCreator
 {
     // Variables for OpenSearch client and the name of the index to create
     protected Client $client;
@@ -56,7 +56,8 @@ class EditionIndexCreater extends CommandLineUtility
             try {
                 $editions[] = $this->getEditionData($id);
             } catch (\Exception $e) {
-                $this->logger->debug("No table entry with ID $id. Process finished.");
+                $num_editions = $id-1;
+                $this->logger->debug("Found $num_editions potential editions.");
                 break;
             }
         }
@@ -69,8 +70,20 @@ class EditionIndexCreater extends CommandLineUtility
         }
 
         $editions = array_values($editions);
+        $num_editions = count($editions);
+        $this->logger->debug("Found $num_editions actual editions.");
 
-        print_r ($editions);
+
+        foreach ($editions as $id => $edition) {
+            $text = $edition['text'];
+            $title = $edition['title'];
+            $chunk = $edition['chunk_id'];
+            $lang = $edition['lang'];
+
+            $this->indexEdition ($id, $text, $title, $chunk, $lang);
+            $this->logger->debug("Indexed Edition – OpenSearch ID: $id, Title: $title, Chunk: $chunk, Lang: $lang\n");
+
+        }
 
         return true;
     }
@@ -95,10 +108,52 @@ class EditionIndexCreater extends CommandLineUtility
             }
 
             $edition_data['text'] = $edition_text;
+            $edition_data['title'] = $data['title'];
             $edition_data['chunk_id'] = $data['chunkId'];
-            $edition_data['fields'] = array_keys($data);
+            $edition_data['lang'] = $data['lang'];
+
         }
 
         return $edition_data;
     }
+
+    protected function indexEdition (int $id, string $text, string $title, string $chunk, string $lang): bool
+    {
+        // Encode text for avoiding errors in exec shell command because of characters like "(", ")" or " "
+        $text_clean = $this->encode($text);
+
+        // Tokenization and lemmatization
+        // Test existence of text and tokenize/lemmatize existing texts in python
+        if (strlen($text_clean) > 3) {
+            exec("python3 ../../python/Lemmatizer_Indexing.py $lang $text_clean", $tokens_and_lemmata);
+
+            // Get tokenized and lemmatized transcript
+            $text_tokenized = explode("#", $tokens_and_lemmata[0]);
+            $text_lemmatized = explode("#", $tokens_and_lemmata[1]);
+        }
+        else {
+            $text_tokenized = [];
+            $text_lemmatized = [];
+            $this->logger->debug("Text is too short for lemmatization...");
+        }
+        if (count($text_tokenized) !== count($text_lemmatized)) {
+            $this->logger->debug("Error! Array of tokens and lemmata do not have the same length!\n");
+        }
+
+        // Data to be stored on the OpenSearch index
+        $this->client->create([
+            'index' => $this->indexName,
+            'id' => $id,
+            'body' => [
+                'title' => $title,
+                'chunk'=> $chunk,
+                'lang' => $lang,
+                'text_tokens' => $text_tokenized,
+                'text_lemmata' => $text_lemmatized
+            ]
+        ]);
+
+        return true;
+    }
+    
 }

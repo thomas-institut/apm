@@ -32,7 +32,7 @@ trait CodeDebugWithLoggerTrait
     /**
      * @var LoggerInterface|null
      */
-    protected ?LoggerInterface $logger;
+    protected $logger;
 
     public function codeDebug(string $msg, array $data = [], $fileNameDepth = 3) : void
     {

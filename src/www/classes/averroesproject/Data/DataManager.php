@@ -63,7 +63,7 @@ use Exception;
 use Monolog\Logger;
 
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
-use \PDO;
+use PDO;
 
 /**
  * @class AverroesProjectData
@@ -91,12 +91,12 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @var array
      * Array of table names
      */
-    private $tNames;
+    private array $tNames;
     /**
      *
      * @var PDO
      */
-    private $dbConn;
+    private PDO $dbConn;
     /**
      *
      * @var Logger
@@ -107,25 +107,25 @@ class DataManager implements  SqlQueryCounterTrackerAware
      *
      * @var MySqlHelper
      */
-    private $databaseHelper;
+    private MySqlHelper $databaseHelper;
     
     /**
      *
      * @var EdNoteManager 
      */
-    public $edNoteManager;
+    public EdNoteManager $edNoteManager;
 
     /**
      *
      * @var MySqlUnitemporalDataTable
      */
-    private $pagesDataTable;
+    private MySqlUnitemporalDataTable $pagesDataTable;
     
     /**
      *
      * @var UserManager
      */
-    public $userManager;
+    public UserManager $userManager;
     
     
      /**
@@ -138,50 +138,50 @@ class DataManager implements  SqlQueryCounterTrackerAware
      *
      * @var MySqlUnitemporalDataTable
      */
-    private $elementsDataTable;
+    private MySqlUnitemporalDataTable $elementsDataTable;
     
     /**
      *
      * @var MySqlUnitemporalDataTable
      */
-    private $itemsDataTable;
+    private MySqlUnitemporalDataTable $itemsDataTable;
     
     
     /**
      *
      * @var MySqlDataTable
      */
-    private $pageTypesTable;
+    private MySqlDataTable $pageTypesTable;
     
     /**
      *
      * @var MySqlDataTable
      */
-    private $worksTable;
+    private MySqlDataTable $worksTable;
 
     /**
      * @var MySqlDataTable
      */
-    private $txVersionsTable;
+    private MySqlDataTable $txVersionsTable;
 
 
     /**
      *
      * @var HookManager
      */
-    public $hookManager;
+    public HookManager $hookManager;
 
     /**
      * @var array
      */
-    private $langCodes;
+    private array $langCodes;
 
-   /**
+    /**
      * Tries to initialize and connect to the MySQL database.
      *
      * Throws an error if there's no connection
      * or if the database is not setup properly.
-     * @param $dbConn
+     * @param PDO $dbConn
      * @param array $tableNames
      * @param Logger $logger
      * @param HookManager $hm
@@ -238,7 +238,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param bool $asc
      * @return array
      */
-    public function getDocIdList($order = '', $asc=true)
+    public function getDocIdList($order = '', $asc=true): array
     {
         switch ($order){
             case 'title':
@@ -1651,7 +1651,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         }
         // Now just create the new element
         $newId = $this->createNewElementInDB($newElement, $time);
-        $this->logger->debug("New element Id = $newId, type = " . $newElement->type);
+//        $this->logger->debug("New element Id = $newId, type = " . $newElement->type);
         if ($newId === false) {
             // This means a database error
             // Can't reproduce in testing for now
@@ -1677,7 +1677,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
                 if (!isset($itemIds[$item->target])) {
                     $this->logger->warning("Creating an Addition item with target Id not yet defined", get_object_vars($item));
                 }
-                $this->logger->debug("Setting addition target for new item: $item->target => " . $itemIds[$item->target]);
+//                $this->logger->debug("Setting addition target for new item: $item->target => " . $itemIds[$item->target]);
                 $item->target = $itemIds[$item->target];
             }
             $newItemId = $this->createNewItemInDB($item, $time);
@@ -2142,7 +2142,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      */
     public function updateColumnElements($pageId, $columnNumber, array $newElements, $time = false)
     {
-        $this->logger->debug("Updating column elements, pageId=$pageId, col=$columnNumber");
+//        $this->logger->debug("Updating column elements, pageId=$pageId, col=$columnNumber");
         // force pageId and columnNumber in the elements in $newElements
         foreach($newElements as $element ) {
             $element->pageId = $pageId;
@@ -2165,24 +2165,24 @@ class DataManager implements  SqlQueryCounterTrackerAware
             list ($index, $cmd, $newSeq) = $editInstruction;
             switch ($cmd) {
                 case MyersDiff::KEEP:
-                    $this->logger->debug("KEEPING element @ pos " . $index . ", id=" . $oldElements[$index]->id);
+//                    $this->logger->debug("KEEPING element @ pos " . $index . ", id=" . $oldElements[$index]->id);
                     if ($oldElements[$index]->seq 
                             !== $newSeq) {
-                        $this->logger->debug("... with new seq $newSeq");
-                        $this->logger->debug("... seq was " . $oldElements[$index]->seq );
+//                        $this->logger->debug("... with new seq $newSeq");
+//                        $this->logger->debug("... seq was " . $oldElements[$index]->seq );
                         $newElements[$newElementsIndex]->seq =
                                 $newSeq;
                     }
                     if ($oldElements[$index]->type === Element::SUBSTITUTION || $oldElements[$index]->type === Element::ADDITION) {
-                        $this->logger->debug("Keeping substitution/addition element");
+//                        $this->logger->debug("Keeping substitution/addition element");
                         if ($oldElements[$index]->reference !== 0) {
                             if (!isset($newItemsIds[$oldElements[$index]->reference])) {
                                 $this->logger->warning('Found element without a valid target reference', get_object_vars($oldElements[$index]));
                             }
                             else {
                                 if ($oldElements[$index]->reference !== $newItemsIds[$oldElements[$index]->reference]) {
-                                    $this->logger->debug("... with new reference", 
-                                            [ 'oldref' => $oldElements[$index]->reference, 'newref'=> $newItemsIds[$oldElements[$index]->reference] ]);
+//                                    $this->logger->debug("... with new reference",
+//                                            [ 'oldref' => $oldElements[$index]->reference, 'newref'=> $newItemsIds[$oldElements[$index]->reference] ]);
                                     $newElements[$index]->reference = $newItemsIds[$oldElements[$index]->reference];
                                 }
                             }
@@ -2196,17 +2196,17 @@ class DataManager implements  SqlQueryCounterTrackerAware
                     break;
                     
                 case MyersDiff::DELETE:
-                    $this->logger->debug("DELETING element @ " . $index . ", id=" . $oldElements[$index]->id);
-                    $this->logger->debug("... .... time=" . $time);
+//                    $this->logger->debug("DELETING element @ " . $index . ", id=" . $oldElements[$index]->id);
+//                    $this->logger->debug("... .... time=" . $time);
                     $this->deleteElement($oldElements[$index]->id, $time);
                     break;
                 
                 case MyersDiff::INSERT:
-                    $this->logger->debug("INSERTING element @ " . $index);
-                    $this->logger->debug("...New Seq: " . $newSeq);
+//                    $this->logger->debug("INSERTING element @ " . $index);
+//                    $this->logger->debug("...New Seq: " . $newSeq);
                     $newElements[$newElementsIndex]->seq = $newSeq;
                     if ($newElements[$index]->type === Element::SUBSTITUTION || $newElements[$index]->type === Element::ADDITION) {
-                        $this->logger->debug("...Inserting substitution/addition element");
+//                        $this->logger->debug("...Inserting substitution/addition element");
                         if ($newElements[$index]->reference !== 0) {
                             if (!isset($newItemsIds[$newElements[$index]->reference])) {
                                 $this->logger->warning('Found element without a valid target reference', get_object_vars($newElements[$index]));
@@ -2219,10 +2219,11 @@ class DataManager implements  SqlQueryCounterTrackerAware
                                 }
                             }
                         } else {
-                            $this->logger->debug("...with reference === 0");
+                            // nothing to do really!
+//                            $this->logger->debug("...with reference === 0");
                         }
                     }
-                    $this->logger->debug("... .... time=" . $time);
+//                    $this->logger->debug("... .... time=" . $time);
                     $element = $this->insertNewElement($newElements[$newElementsIndex], false, $newItemsIds, $time);
                     if ($element === false) {
                         $this->logger->error("Can't insert new element in DB", get_object_vars($newElements[$newElementsIndex]));
@@ -2232,7 +2233,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
                         $givenId = $newElements[$newElementsIndex]->items[$j]->id;
                         $newItemsIds[$givenId] = $element->items[$j]->id;
                     }
-                    $this->logger->debug("...element id = " . $element->id);
+//                    $this->logger->debug("...element id = " . $element->id);
                     $newElementsIndex++;
                     break;
             }
@@ -2284,7 +2285,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
             list ($index, $cmd, $newSeq) = $editInstruction;
             switch ($cmd) {
                 case MyersDiff::KEEP:
-                    $this->logger->debug("Keeping item $index");
+//                    $this->logger->debug("Keeping item $index");
                     if ($oldElement->items[$index]->seq 
                             !== $newSeq) {
                         //print "... with new seq $newSeq\n";
@@ -2297,17 +2298,17 @@ class DataManager implements  SqlQueryCounterTrackerAware
                     }
                     
                     if ($oldElement->items[$index]->type === Item::ADDITION) {
-                        $this->logger->debug("Keeping an addition",get_object_vars($oldElement->items[$index]));
+//                        $this->logger->debug("Keeping an addition",get_object_vars($oldElement->items[$index]));
                         if ($oldElement->items[$index]->target !== 0) {
-                            $this->logger->debug("...with non-zero target", [ 'target'=>$oldElement->items[$index]->target]);
+//                            $this->logger->debug("...with non-zero target", [ 'target'=>$oldElement->items[$index]->target]);
                             if (!isset($itemIds[$oldElement->items[$index]->target])) {
                                 $this->logger->warning("Addition without valid target @ pos $index", get_object_vars($oldElement->items[$index]));
                             } 
                             else {
                                 if ($oldElement->items[$index]->target !== $itemIds[$oldElement->items[$index]->target]) {
                                     $oldElement->items[$index]->target = $itemIds[$oldElement->items[$index]->target];
-                                    $this->logger->debug("...with new target", [ 'target'=>$oldElement->items[$index]->target]);
-                                    $this->logger->debug("... .... time=" . $time);
+//                                    $this->logger->debug("...with new target", [ 'target'=>$oldElement->items[$index]->target]);
+//                                    $this->logger->debug("... .... time=" . $time);
                                     $this->updateItemInDB(
                                         $oldElement->items[$index],
                                         $time
@@ -2321,9 +2322,9 @@ class DataManager implements  SqlQueryCounterTrackerAware
                     break;
                     
                 case MyersDiff::DELETE:
-                    $this->logger->debug("...deleting item @ pos $index");
+//                    $this->logger->debug("...deleting item @ pos $index");
                     $this->getSqlQueryCounterTracker()->incrementDelete();
-                    $this->logger->debug("... .... time=" . $time);
+//                    $this->logger->debug("... .... time=" . $time);
                     $this->itemsDataTable->deleteRowWithTime(
                         $oldElement->items[$index]->id,
                         $time
@@ -2332,7 +2333,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
                     break;
                 
                 case MyersDiff::INSERT:
-                    $this->logger->debug("...inserting item with seq $newSeq");
+//                    $this->logger->debug("...inserting item with seq $newSeq");
                     // This takes care of new addition with targets that
                     // come earlier in the item sequence in the same element,
                     // which is the most usual case
@@ -2341,16 +2342,16 @@ class DataManager implements  SqlQueryCounterTrackerAware
                         if (!isset($itemIds[$newElement->items[$index]->target])) {
                             $this->logger->warning("Addition without valid target @ pos $index", get_object_vars($newElement->items[$index]));
                         } else {
-                            $this->logger->debug("Setting addition target " . 
-                                $newElement->items[$index]->target . 
-                                " => " . 
-                                $itemIds[$newElement->items[$index]->target]);
+//                            $this->logger->debug("Setting addition target " .
+//                                $newElement->items[$index]->target .
+//                                " => " .
+//                                $itemIds[$newElement->items[$index]->target]);
                             $newElement->items[$index]->target = 
                                 $itemIds[$newElement->items[$index]->target];
                         }
                         
                     }
-                    $this->logger->debug("... .... time=" . $time);
+//                    $this->logger->debug("... .... time=" . $time);
                     $newItemId = $this->createNewItemInDB(
                         $newElement->items[$index], 
                         $time
@@ -2364,11 +2365,11 @@ class DataManager implements  SqlQueryCounterTrackerAware
             }
         }
         if (!$ignoreNewEditor && $newElement->editorId !== $oldElement->editorId) {
-            $this->logger->debug('...changes by new editor!');
+//            $this->logger->debug('...changes by new editor!');
         }
         if (!Element::isElementDataEqual($newElement, $oldElement, true, $ignoreNewEditor, false)) {
-            $this->logger->debug("...updating element in DB");
-            $this->logger->debug("... .... time=" . $time);
+//            $this->logger->debug("...updating element in DB");
+//            $this->logger->debug("... .... time=" . $time);
             $this->updateElementInDB($newElement, $time);
         }
         

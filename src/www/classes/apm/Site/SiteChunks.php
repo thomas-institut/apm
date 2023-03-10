@@ -27,11 +27,14 @@
 namespace APM\Site;
 
 use APM\FullTranscription\ApmChunkSegmentLocation;
+use AverroesProject\Data\DataManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
 
 use AverroesProject\ItemStream\ItemStream;
+use ThomasInstitut\DataCache\DataCache;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -44,6 +47,7 @@ use Twig\Error\SyntaxError;
 class SiteChunks extends SiteController
 {
 
+    const WORK_DATA_CACHE_KEY = 'SiteChunks-WorkData';
     const TEMPLATE_CHUNKS = 'chunks.twig';
     const TEMPLATE_CHUNK_MAP = 'chunks-map.twig';
     /**
@@ -53,13 +57,29 @@ class SiteChunks extends SiteController
      */
     public function chunksPage(Request $request, Response $response): Response
     {
-       
         $dataManager = $this->dataManager;
         $this->profiler->start();
-        $workIds = $dataManager->getWorksWithTranscriptions();
-        $this->profiler->lap('After getWorksWithTranscription');
-        
+        $cache = $this->systemManager->getSystemDataCache();
+        try {
+            $works = unserialize($cache->get(self::WORK_DATA_CACHE_KEY));
+        } catch (KeyNotInCacheException $e) {
+            // not in cache
+            $this->logger->debug("Cache miss for SiteChunks work data");
+            $works = self::buildWorkData($dataManager);
+            $cache->set(self::WORK_DATA_CACHE_KEY, serialize($works));
+        }
+
+        $this->profiler->stop();
+        $this->logProfilerData('chunksPage');
+        return $this->renderPage($response, self::TEMPLATE_CHUNKS, [
+            'works' => $works
+        ]);
+    }
+
+    public static function buildWorkData(DataManager $dataManager) : array {
+
         $works = [];
+        $workIds = $dataManager->getWorksWithTranscriptions();
         foreach($workIds as $workId) {
             $work = ['work_id' => $workId, 'is_valid' => true];
             $workInfo = $dataManager->getWorkInfo($workId);
@@ -73,12 +93,17 @@ class SiteChunks extends SiteController
             $work['chunks'] = $chunks;
             $works[] = $work;
         }
-        $this->profiler->stop();
-        $this->logProfilerData('chunksPage');
-        return $this->renderPage($response, self::TEMPLATE_CHUNKS, [
-            'works' => $works
-        ]);
+        return $works;
     }
+
+    public static function invalidateCache(DataCache $cache) {
+        try {
+            $cache->delete(self::WORK_DATA_CACHE_KEY);
+        } catch (KeyNotInCacheException $e) {
+            // no problem!!
+        }
+    }
+
 
     /**
      * @param Request $request

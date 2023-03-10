@@ -133,6 +133,7 @@ class ApiDocuments extends ApiController
                       'docId' => $docId]);
             return $this->responseWithJson($response,['error' => ApiController::API_ERROR_DB_UPDATE_ERROR, 'msg' => 'Database error'], 409);
         }
+        $this->systemManager->onDocumentDeleted($docId);
         $this->profiler->stop();
         $this->logProfilerData("DeleteDoc-$docId");
         return $response->withStatus(200);
@@ -209,6 +210,8 @@ class ApiDocuments extends ApiController
             }
         }
 
+        $this->systemManager->onDocumentUpdated($docId);
+
         $this->profiler->stop();
         $this->logProfilerData('addPages');
         return $response->withStatus(200);
@@ -267,6 +270,7 @@ class ApiDocuments extends ApiController
                       'docSettings' => $docSettings]);
             return $this->responseWithJson($response,['error' => ApiController::API_ERROR_DB_UPDATE_ERROR], 409);
         }
+        $this->systemManager->onDocumentAdded($docId);
         $this->profiler->stop();
         $this->logProfilerData('NewDocument');
         return  $this->responseWithJson($response, ['newDocId' => $docId], 200);
@@ -326,6 +330,7 @@ class ApiDocuments extends ApiController
             'newSettings' => $newSettings
             ]);
 
+        $this->systemManager->onDocumentUpdated($docId);
         $this->profiler->stop();
         $this->logProfilerData("updateDocSettings-$docId");
         return $response->withStatus(200);

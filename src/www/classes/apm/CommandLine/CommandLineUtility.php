@@ -114,6 +114,7 @@ abstract class CommandLineUtility {
 
         // Data Manager (will be replaced completely by SystemManager at some point
         $this->dm = new DataManager($dbConn, $systemManager->getTableNames(), $this->logger, $hm, $config['langCodes']);
+        $this->systemManager->setDataManager($this->dm);
         
         $this->um = $this->dm->userManager;
     }

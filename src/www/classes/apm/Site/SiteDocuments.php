@@ -29,8 +29,11 @@ namespace APM\Site;
 use APM\DareInterface\DareMssMetadataSource;
 use APM\FullTranscription\ApmChunkSegmentLocation;
 use APM\System\DataRetrieveHelper;
+use AverroesProject\Data\DataManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+use ThomasInstitut\DataCache\DataCache;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
 
 /**
  * SiteDocuments class
@@ -38,6 +41,8 @@ use \Psr\Http\Message\ResponseInterface as Response;
  */
 class SiteDocuments extends SiteController
 {
+
+    const DOCUMENT_DATA_CACHE_KEY = 'SiteDocuments-DocumentData';
 
     const TEMPLATE_DOCS_PAGE = 'documents.twig';
     const TEMPLATE_SHOW_DOCS_PAGE = 'doc-details.twig';
@@ -54,11 +59,40 @@ class SiteDocuments extends SiteController
 
         $dataManager = $this->dataManager;
         $this->profiler->start();
-        $docIds = $dataManager->getDocIdList('title');
-        $this->profiler->lap('Doc Id List');
+
+        $cache = $this->systemManager->getSystemDataCache();
+        try {
+            $data = unserialize($cache->get(self::DOCUMENT_DATA_CACHE_KEY));
+        } catch (KeyNotInCacheException $e) {
+            // not in cache
+            $this->logger->debug("Cache miss for SiteDocuments document data");
+            $data = self::buildDocumentData($dataManager);
+            $cache->set(self::DOCUMENT_DATA_CACHE_KEY, serialize($data));
+        }
+        $docs = $data['docs'];
+        $peopleInfo = $data['peopleInfo'];
+
+        $canManageDocuments = false;
+        if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'docs-create-new')) {
+            $canManageDocuments = true;
+        }
+
+        $this->profiler->stop();
+        $this->logProfilerData('documentsPage');
+
+        return $this->renderPage($response, self::TEMPLATE_DOCS_PAGE, [
+            'docs' => $docs,
+            'peopleInfo' => $peopleInfo,
+            'canManageDocuments' => $canManageDocuments
+        ]);
+    }
+
+    static public function buildDocumentData(DataManager $dataManager): array
+    {
         $docs = [];
         $usersMentioned = [];
 
+        $docIds = $dataManager->getDocIdList('title');
         foreach ($docIds as $docId){
             //$profiler->lap("Doc $docId - START");
             $doc = array();
@@ -69,29 +103,25 @@ class SiteDocuments extends SiteController
             $doc['editors'] = [];
             foreach ($editorsIds as $edId){
                 $usersMentioned[] = $edId;
-                $doc['editors'][] = 
-                        $this->dataManager->userManager->getUserInfoByUserId($edId);
+                $doc['editors'][] =
+                    $dataManager->userManager->getUserInfoByUserId($edId);
             }
             $doc['docInfo'] = $dataManager->getDocById($docId);
             $doc['tableId'] = "doc-$docId-table";
-            array_push($docs, $doc);
-                    }
-        
-        $canManageDocuments = false;
-        if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'docs-create-new')) {
-            $canManageDocuments = true;
+            $docs[] = $doc;
         }
-        $helper = new DataRetrieveHelper();
-        $helper->setLogger($this->logger);
-        $peopleInfoArray = $helper->getAuthorInfoArrayFromList($usersMentioned, $dataManager->userManager);
-        $this->profiler->stop();
-        $this->logProfilerData('documentsPage');
 
-        return $this->renderPage($response, self::TEMPLATE_DOCS_PAGE, [
-            'docs' => $docs,
-            'peopleInfo' => $peopleInfoArray,
-            'canManageDocuments' => $canManageDocuments
-        ]);
+        $helper = new DataRetrieveHelper();
+        $peopleInfoArray = $helper->getAuthorInfoArrayFromList($usersMentioned, $dataManager->userManager);
+        return [ 'docs' => $docs, 'peopleInfo' => $peopleInfoArray];
+    }
+
+    public static function invalidateCache(DataCache $cache) {
+        try {
+            $cache->delete(self::DOCUMENT_DATA_CACHE_KEY);
+        } catch (KeyNotInCacheException $e) {
+            // no problem!!
+        }
     }
 
     /**

@@ -40,6 +40,8 @@ use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
 use APM\Plugin\HookManager;
 
+use APM\Site\SiteChunks;
+use APM\Site\SiteDocuments;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
@@ -751,5 +753,40 @@ class ApmSystemManager extends SystemManager {
             $this->editionSourceManager = new ApmEditionSourceManager($table);
         }
         return $this->editionSourceManager;
+    }
+
+    public function onTranscriptionUpdated(int $docId, int $pageNumber, int $columnNumber): void
+    {
+        parent::onTranscriptionUpdated($docId, $pageNumber, $columnNumber);
+        $this->getOpenSearchScheduler()->schedule($docId, $pageNumber, $columnNumber);
+
+        $this->logger->debug("Invalidating SiteChunks cache");
+        SiteChunks::invalidateCache($this->getSystemDataCache());
+
+        $this->logger->debug("Invalidating SiteDocuments cache");
+        SiteDocuments::invalidateCache($this->getSystemDataCache());
+    }
+
+    public function onDocumentDeleted(int $docId): void
+    {
+        parent::onDocumentDeleted($docId);
+
+        $this->logger->debug("Invalidating SiteDocuments cache");
+        SiteDocuments::invalidateCache($this->getSystemDataCache());
+
+    }
+
+    public function onDocumentUpdated(int $docId): void
+    {
+        parent::onDocumentUpdated($docId);
+        $this->logger->debug("Invalidating SiteDocuments cache");
+        SiteDocuments::invalidateCache($this->getSystemDataCache());
+    }
+
+    public function onDocumentAdded(int $docId): void
+    {
+        parent::onDocumentAdded($docId);
+        $this->logger->debug("Invalidating SiteDocuments cache");
+        SiteDocuments::invalidateCache($this->getSystemDataCache());
     }
 }

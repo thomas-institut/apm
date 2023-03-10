@@ -49,7 +49,6 @@ use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
  * ideally, only depend on this class. This makes it possible to implement specific managers
  * for different contexts: full web application, testing, etc.
  *
- *Tab
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAware, CacheTrackerAware {
@@ -59,7 +58,6 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     use SimpleCacheTrackerAware;
 
     const ERROR_NO_ERROR = 0;
-    const MSG_ERROR_NO_ERROR = 'No Error';
 
     // User roles
     const ROLE_READ_ONLY = 'readOnly';
@@ -72,19 +70,19 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
 
     const VALID_TOOL_IDS = [ self::TOOL_AUTOMATIC_COLLATION];
     
-    /** @var int */
-    private $errorCode;
-    
-    /** @var string */
-    private $errorMsg;
+//    /** @var int */
+//    private int $errorCode;
+//
+//    /** @var string */
+//    private string $errorMsg;
     
     /** @var array */
-    protected $config;
+    protected array $config;
 
     /**
      * @var DataManager
      */
-    private $dataManager;
+    private DataManager $dataManager;
 
     public function __construct(array $config) {
         $this->resetError();
@@ -102,7 +100,7 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     }
 
     public function isToolValid(string $tool) : bool {
-        return array_search($tool, self::VALID_TOOL_IDS) !== false;
+        return in_array($tool, self::VALID_TOOL_IDS);
     }
 
     /**
@@ -161,4 +159,21 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
         );
     }
 
+
+    // Events
+
+    public function onTranscriptionUpdated(int $docId, int $pageNumber, int $columnNumber) : void {
+        // don't do anything by default
+    }
+
+    public function onDocumentAdded(int $docId) : void {
+
+    }
+    public function onDocumentDeleted(int $docId) : void {
+
+    }
+
+    public function onDocumentUpdated(int $docId) : void {
+
+    }
 }

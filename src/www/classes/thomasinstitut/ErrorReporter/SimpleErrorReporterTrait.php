@@ -29,13 +29,13 @@ trait SimpleErrorReporterTrait
      *
      * @var string
      */
-    private $errorMessage;
+    private string $errorMessage;
 
     /**
      *
      * @var int
      */
-    private $errorCode;
+    private int $errorCode;
 
     /**
      * @param string $message

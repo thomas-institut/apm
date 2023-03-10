@@ -320,7 +320,7 @@ class ApiElements extends ApiController
                 $this->logger->error('Editorial note without valid target Id: ' . $targetId, get_object_vars($edNotes[$i]));
             }
         }
-        $this->debug("Updating ednotes", $edNotes);
+//        $this->debug("Updating ednotes", $edNotes);
         $dataManager->edNoteManager->updateNotesFromArray($edNotes);
 
         // Register version
@@ -339,9 +339,7 @@ class ApiElements extends ApiController
             $this->logger->error("Cannot register version: " . $e->getMessage());
         }
 
-        // schedule OpenSearch index update
-        $this->systemManager->getOpenSearchScheduler()->schedule($docId, $pageNumber, $columnNumber);;
-
+        $this->systemManager->onTranscriptionUpdated($docId, $pageNumber, $columnNumber);
 
         $this->profiler->stop();
         $this->logProfilerData('updateElements');

@@ -33,28 +33,30 @@ use APM\Core\Token\Normalizer\IgnoreShaddaNormalizer;
 use APM\Core\Token\Normalizer\IgnoreTatwilNormalizer;
 use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
 use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
+use APM\FullTranscription\TranscriptionManager;
 use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
-use APM\FullTranscription\TranscriptionManager;
+use APM\Plugin\HookManager;
 use APM\Plugin\Plugin;
 use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
-use APM\Plugin\HookManager;
-
 use APM\Site\SiteChunks;
 use APM\Site\SiteDocuments;
+use APM\System\Job\ApmJobQueueManager;
+use APM\System\Job\JobQueueManager;
+use APM\System\Job\NullJobHandler;
+use Exception;
+use Monolog\Handler\ErrorLogHandler;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
+use Monolog\Processor\WebProcessor;
+use PDO;
+use PDOException;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\DataTableDataCache;
 use ThomasInstitut\DataTable\MySqlDataTable;
-use Exception;
-use Monolog\Handler\ErrorLogHandler;
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
-use Monolog\Processor\WebProcessor;
-use PDO;
-use PDOException;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use Twig\Error\LoaderError;
 
@@ -184,6 +186,7 @@ class ApmSystemManager extends SystemManager {
     private OpenSearchScheduler $openSearchScheduler;
 
     private ?ApmEditionSourceManager $editionSourceManager;
+    private ApmJobQueueManager $jobManager;
 
 
     public function __construct(array $configArray) {
@@ -301,6 +304,12 @@ class ApmSystemManager extends SystemManager {
                 break;
         }
 
+        $this->jobManager = new ApmJobQueueManager($this,
+            new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_JOBS], true));
+        $this->jobManager->setLogger($this->logger->withName('JOBS'));
+
+        $this->registerSystemJobs();
+
        
         // Set up PresetsManager
         $presetsManagerDataTable = new MySqlDataTable($this->dbConn,
@@ -371,6 +380,7 @@ class ApmSystemManager extends SystemManager {
             ApmMySqlTableName::TABLE_PRESETS,
             ApmMySqlTableName::TABLE_VERSIONS_TX,
             ApmMySqlTableName::TABLE_SYSTEM_CACHE,
+            ApmMySqlTableName::TABLE_JOBS,
             ApmMySqlTableName::TABLE_COLLATION_TABLE,
             ApmMySqlTableName::TABLE_VERSIONS_CT,
             ApmMySqlTableName::TABLE_MULTI_CHUNK_EDITIONS,
@@ -803,5 +813,15 @@ class ApmSystemManager extends SystemManager {
         parent::onDocumentAdded($docId);
         $this->logger->debug("Invalidating SiteDocuments cache");
         SiteDocuments::invalidateCache($this->getSystemDataCache());
+    }
+
+    public function getJobManager(): JobQueueManager
+    {
+        return $this->jobManager;
+    }
+
+    private function registerSystemJobs()
+    {
+        $this->jobManager->registerJob('NullJob', new NullJobHandler());
     }
 }

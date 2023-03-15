@@ -27,7 +27,9 @@
 namespace APM\Site;
 
 use APM\FullTranscription\ApmChunkSegmentLocation;
+use APM\System\SystemManager;
 use AverroesProject\Data\DataManager;
+use Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -60,13 +62,20 @@ class SiteChunks extends SiteController
         $dataManager = $this->dataManager;
         $this->profiler->start();
         $cache = $this->systemManager->getSystemDataCache();
+        $cacheHit = true;
+        $this->systemManager->getSqlQueryCounterTracker()->incrementSelect();
         try {
             $works = unserialize($cache->get(self::WORK_DATA_CACHE_KEY));
         } catch (KeyNotInCacheException $e) {
             // not in cache
-            $this->logger->debug("Cache miss for SiteChunks work data");
+            $cacheHit = false;
             $works = self::buildWorkData($dataManager);
             $cache->set(self::WORK_DATA_CACHE_KEY, serialize($works));
+        }
+        if ($cacheHit) {
+            $this->systemManager->getCacheTracker()->incrementHits();
+        } else {
+            $this->systemManager->getCacheTracker()->incrementMisses();
         }
 
         $this->profiler->stop();
@@ -94,6 +103,22 @@ class SiteChunks extends SiteController
             $works[] = $work;
         }
         return $works;
+    }
+
+    public static function updateDataCache(SystemManager $systemManager): bool
+    {
+        try {
+            $works = self::buildWorkData( $systemManager->getDataManager());
+        } catch(Exception $e) {
+            $systemManager->getLogger()->error("Exception while building ChunkData",
+                [
+                    'code' => $e->getCode(),
+                    'msg' => $e->getMessage()
+                ]);
+            return false;
+        }
+        $systemManager->getSystemDataCache()->set(self::WORK_DATA_CACHE_KEY, serialize($works));
+        return true;
     }
 
     public static function invalidateCache(DataCache $cache) {

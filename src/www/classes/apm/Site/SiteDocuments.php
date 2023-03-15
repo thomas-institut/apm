@@ -26,12 +26,13 @@
 
 namespace APM\Site;
 
-use APM\DareInterface\DareMssMetadataSource;
 use APM\FullTranscription\ApmChunkSegmentLocation;
 use APM\System\DataRetrieveHelper;
+use APM\System\SystemManager;
 use AverroesProject\Data\DataManager;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
+use Exception;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 
@@ -116,13 +117,30 @@ class SiteDocuments extends SiteController
         return [ 'docs' => $docs, 'peopleInfo' => $peopleInfoArray];
     }
 
-    public static function invalidateCache(DataCache $cache) {
+
+    public static function updateDataCache(SystemManager $systemManager): bool
+    {
         try {
-            $cache->delete(self::DOCUMENT_DATA_CACHE_KEY);
-        } catch (KeyNotInCacheException $e) {
-            // no problem!!
+            $data = self::buildDocumentData($systemManager->getDataManager());
+        } catch(Exception $e) {
+            $systemManager->getLogger()->error("Exception while building DocumentData",
+                [
+                    'code' => $e->getCode(),
+                    'msg' => $e->getMessage()
+                ]);
+            return false;
         }
+        $systemManager->getSystemDataCache()->set(self::DOCUMENT_DATA_CACHE_KEY, serialize($data));
+        return true;
     }
+
+//    public static function invalidateCache(DataCache $cache) {
+//        try {
+//            $cache->delete(self::DOCUMENT_DATA_CACHE_KEY);
+//        } catch (KeyNotInCacheException $e) {
+//            // no problem!!
+//        }
+//    }
 
     /**
      * @param Request $request

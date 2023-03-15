@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS `ap_jobs`;
 CREATE TABLE `ap_jobs` (
    `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
    `name` varchar(512) NOT NULL,
+   `description` varchar(512) DEFAULT '',
    `payload` longblob,
    `state` varchar(32) default 'waiting',
    `scheduled_at` datetime(6)  NOT NULL,

@@ -3,6 +3,7 @@
 namespace APM\System\Job;
 
 use APM\System\SystemManager;
+use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\DataTable\DataTable;
@@ -29,14 +30,23 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
     public function registerJob(string $name, JobHandlerInterface $job): bool
     {
         if ($name === '') {
-            throw new \InvalidArgumentException("Empty name given");
+            throw new InvalidArgumentException("Empty name given");
         }
 
         $this->registeredJobs[$name] = [ 'handler' => $job];
         return true;
     }
 
-    public function scheduleJob(string $name, array $payload, int $secondsToWait = 0, int $maxAttempts = 1, int $secondBetweenRetries = 5): int
+    private function getScheduledJobSignature(string $name, string $description) : string {
+        if ($description === '') {
+            return $name;
+        }
+
+        return "$name $description";
+
+    }
+
+    public function scheduleJob(string $name, string $description, array $payload, int $secondsToWait = 0, int $maxAttempts = 1, int $secondBetweenRetries = 5): int
     {
         if (!$this->isRegistered($name)) {
             $this->logger->error("Attempt to schedule non-registered job '$name'");
@@ -45,6 +55,7 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         $timeStampNow = microtime(true);
         $row = [
             'name' => $name,
+            'description' => $description,
             'payload' => serialize($payload),
             'state'=> ScheduledJobState::WAITING,
             'next_retry_at' => TimeString::fromTimeStamp($timeStampNow + $secondsToWait),
@@ -54,7 +65,7 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
             'completed_runs' => 0
         ];
         $rowId = $this->dataTable->createRow($row);
-        $this->logger->info("Job '$name' scheduled with id $rowId", $row);
+        $this->logger->info(sprintf("Job '%s' scheduled with id %d", $this->getScheduledJobSignature($name, $description), $rowId));
         return $rowId;
     }
 
@@ -71,8 +82,6 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
             [ 'column' => 'next_retry_at', 'condition' => GenericDataTable::COND_LESS_THAN, 'value' => $now]
         ]);
 
-        $this->logger->debug("Processing " . count($scheduledJobs) . " jobs due");
-
         foreach($scheduledJobs as $jobRow) {
             $this->doJob($jobRow);
         }
@@ -87,10 +96,10 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         }
         $jobId = $jobRow['id'];
         $jobName = $jobRow['name'];
+        $jobDescription = $jobRow['description'];
+        $jobSignature = $this->getScheduledJobSignature($jobName, $jobDescription);
         $completedRuns = intval($jobRow['completed_runs']) + 1;
         $maxRetries = intval($jobRow['max_attempts']);
-
-        $this->logger->debug("Running due job $jobId: '$jobName', run $completedRuns of max $maxRetries");
 
         $this->dataTable->updateRow([
             'id' => $jobRow['id'],
@@ -99,9 +108,11 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         ]);
         $handler = $this->registeredJobs[$jobRow['name']]['handler'];
         $payload = unserialize($jobRow['payload']);
-
         $secondsBetweenRetries = intval($jobRow['secs_between_retries']);
-        if ($handler->run($this->systemManager, $payload)){
+        $start = microtime(true);
+        $result = $handler->run($this->systemManager, $payload);
+        $runTimeInMs = intval((microtime(true) - $start)*1000);
+        if ($result){
             // success
             $this->dataTable->updateRow([
                 'id' => $jobRow['id'],
@@ -110,13 +121,13 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
                 'last_run_at' => TimeString::now(),
                 'next_retry_at' => null
             ]);
-            $this->logger->debug("Job $jobId finished successfully");
+            $this->logger->info("Job '$jobSignature' (id $jobId) finished successfully in $runTimeInMs ms");
             return;
         }
 
         if ($completedRuns < $maxRetries) {
             // schedule next retry
-            $this->logger->debug("Job $jobId finished with error, next attempt due $secondsBetweenRetries sec from now");
+            $this->logger->info("Job '$jobSignature' (id $jobId) finished with error, next attempt due $secondsBetweenRetries sec from now");
             $timeStampNow = microtime(true);
             $this->dataTable->updateRow([
                 'id' => $jobRow['id'],
@@ -128,7 +139,7 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
             return;
         }
         // fail
-        $this->logger->debug("Job $jobId finished with error, no more retries left");
+        $this->logger->error("Job '$jobSignature' (id $jobId) finished with error, no more retries left");
         $this->dataTable->updateRow([
             'id' => $jobRow['id'],
             'completed_runs' => $completedRuns,
@@ -137,7 +148,6 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
             'next_retry_at' => null
         ]);
     }
-
 
     public function cleanQueue()
     {

@@ -2,6 +2,7 @@
 
 namespace APM\CommandLine;
 
+use APM\Jobs\ApmJobName;
 use APM\System\Job\NullJobHandler;
 
 
@@ -46,7 +47,7 @@ class JobQueueTool extends CommandLineUtility
         $jm = $this->systemManager->getJobManager();
 
         for ($i = 0; $i< self::NUM_TEST_JOBS; $i++) {
-            $jm->scheduleJob('NullJob', [ 'returnValue' => ($i % 2) === 0 ], $i, $i+1, $i);
+            $jm->scheduleJob(ApmJobName::NULL_JOB, "No. $i", [ 'returnValue' => ($i % 2) === 0 ], $i, $i+1, $i);
         }
     }
 

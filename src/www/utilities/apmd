@@ -36,4 +36,4 @@ include_once __DIR__ . '/../version.php';
 
 global $config;
 
-(new CommandLine\CacheWarmer($config, $argc, $argv))->run();
+(new CommandLine\ApmDaemon($config, $argc, $argv))->run();

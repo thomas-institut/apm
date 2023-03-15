@@ -34,14 +34,17 @@ use APM\Core\Token\Normalizer\IgnoreTatwilNormalizer;
 use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
 use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
 use APM\FullTranscription\TranscriptionManager;
+use APM\Jobs\ApiUsersUpdateCtDataForUser;
+use APM\Jobs\ApiUsersUpdateTranscribedPagesData;
+use APM\Jobs\ApmJobName;
+use APM\Jobs\SiteChunksUpdateDataCache;
+use APM\Jobs\SiteDocumentsUpdateDataCache;
 use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\Plugin\HookManager;
 use APM\Plugin\Plugin;
 use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
-use APM\Site\SiteChunks;
-use APM\Site\SiteDocuments;
 use APM\System\Job\ApmJobQueueManager;
 use APM\System\Job\JobQueueManager;
 use APM\System\Job\NullJobHandler;
@@ -306,7 +309,7 @@ class ApmSystemManager extends SystemManager {
 
         $this->jobManager = new ApmJobQueueManager($this,
             new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_JOBS], true));
-        $this->jobManager->setLogger($this->logger->withName('JOBS'));
+        $this->jobManager->setLogger($this->logger->withName('JOB_QUEUE'));
 
         $this->registerSystemJobs();
 
@@ -775,44 +778,51 @@ class ApmSystemManager extends SystemManager {
         parent::onTranscriptionUpdated($userId, $docId, $pageNumber, $columnNumber);
         $this->getOpenSearchScheduler()->schedule($docId, $pageNumber, $columnNumber);
 
-        $this->logger->debug("Invalidating SiteChunks cache");
-        SiteChunks::invalidateCache($this->getSystemDataCache());
+        $this->logger->debug("Scheduling update of SiteChunks cache");
+        $this->jobManager->scheduleJob(ApmJobName::SITE_CHUNKS_UPDATE_DATA_CACHE,
+            '', [],0, 3, 20);
 
-        $this->logger->debug("Invalidating SiteDocuments cache");
-        SiteDocuments::invalidateCache($this->getSystemDataCache());
+        $this->logger->debug("Scheduling update of SiteDocuments cache");
+        $this->jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
+            '',[],0, 3, 20);
 
-        $this->logger->debug("Invalidating TranscribedPages cache for user $userId");
-        ApiUsers::invalidateTranscribedPagesData($this->getSystemDataCache(), $userId);
+        $this->logger->debug("Scheduling update of TranscribedPages cache for user $userId");
+        $this->jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE,
+            "User $userId", ['userId' => $userId],0, 3, 20);
     }
 
     public function onCollationTableSaved(int $userId, int $ctId): void
     {
         parent::onCollationTableSaved($userId, $ctId);
         $this->logger->debug("Invalidating CollationTablesInfo cache for user $userId");
-        ApiUsers::invalidateCollationTablesInfoData($this->getSystemDataCache(), $userId);
+        $this->jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE,
+            "User $userId", ['userId' => $userId],0, 3, 20);
     }
 
     public function onDocumentDeleted(int $docId): void
     {
         parent::onDocumentDeleted($docId);
 
-        $this->logger->debug("Invalidating SiteDocuments cache");
-        SiteDocuments::invalidateCache($this->getSystemDataCache());
+        $this->logger->debug("Scheduling update of SiteDocuments cache");
+        $this->jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
+            '', [],0, 3, 20);
 
     }
 
     public function onDocumentUpdated(int $docId): void
     {
         parent::onDocumentUpdated($docId);
-        $this->logger->debug("Invalidating SiteDocuments cache");
-        SiteDocuments::invalidateCache($this->getSystemDataCache());
+        $this->logger->debug("Scheduling update of SiteDocuments cache");
+        $this->jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
+            '', [],0, 3, 20);
     }
 
     public function onDocumentAdded(int $docId): void
     {
         parent::onDocumentAdded($docId);
-        $this->logger->debug("Invalidating SiteDocuments cache");
-        SiteDocuments::invalidateCache($this->getSystemDataCache());
+        $this->logger->debug("Scheduling update of SiteDocuments cache");
+        $this->jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
+            '', [],0, 3, 20);
     }
 
     public function getJobManager(): JobQueueManager
@@ -822,6 +832,10 @@ class ApmSystemManager extends SystemManager {
 
     private function registerSystemJobs()
     {
-        $this->jobManager->registerJob('NullJob', new NullJobHandler());
+        $this->jobManager->registerJob(ApmJobName::NULL_JOB, new NullJobHandler());
+        $this->jobManager->registerJob(ApmJobName::SITE_CHUNKS_UPDATE_DATA_CACHE, new SiteChunksUpdateDataCache());
+        $this->jobManager->registerJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE, new SiteDocumentsUpdateDataCache());
+        $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE, new ApiUsersUpdateTranscribedPagesData());
+        $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE, new ApiUsersUpdateCtDataForUser());
     }
 }

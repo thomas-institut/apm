@@ -393,17 +393,33 @@ class ApiUsers extends ApiController
         return $this->responseWithJson($response, $data);
     }
 
-    static public function invalidateTranscribedPagesData(DataCache $dataCache, $userId) {
-        $dataCache->delete(self::CACHE_KEY_PREFIX_TRANSCRIBED_PAGES . $userId);
+    static public function updateTranscribedPagesData(SystemManager $systemManager, int $userId): bool {
+        try {
+            $data = self::buildTranscribedPagesData($systemManager, $userId);
+        } catch(\Exception $e) {
+            $systemManager->getLogger()->error("Exception while building TranscribedPages Data for user $userId",
+                [
+                    'code' => $e->getCode(),
+                    'msg' => $e->getMessage()
+                ]);
+            return false;
+        }
+        $systemManager->getSystemDataCache()->set(self::CACHE_KEY_PREFIX_TRANSCRIBED_PAGES . $userId,
+            serialize($data), self::CACHE_TTL_TRANSCRIBED_PAGES);
+        return true;
     }
 
-    static public function buildTranscribedPagesData(SystemManager $systemManager, int $userId, LoggerInterface $logger) : array {
+//    static public function invalidateTranscribedPagesData(DataCache $dataCache, $userId) {
+//        $dataCache->delete(self::CACHE_KEY_PREFIX_TRANSCRIBED_PAGES . $userId);
+//    }
+
+    static public function buildTranscribedPagesData(SystemManager $systemManager, int $userId) : array {
         $dm = $systemManager->getDataManager();
         $docManager = $systemManager->getTranscriptionManager()->getDocManager();
         $pageManager = $systemManager->getTranscriptionManager()->getPageManager();
 
         $helper = new DataRetrieveHelper();
-        $helper->setLogger($logger);
+        $helper->setLogger($systemManager->getLogger());
         $docIds = $dm->getDocIdsTranscribedByUser($userId);
         $docInfoArray = $helper->getDocInfoArrayFromList($docIds, $docManager);
         $allPageIds = [];
@@ -440,7 +456,7 @@ class ApiUsers extends ApiController
             $data = unserialize($dataCache->get($cacheKey));
         } catch (KeyNotInCacheException) {
             $cacheHit = false;
-            $data = self::buildCollationTableInfoForUser($this->systemManager, $userId, $this->logger);
+            $data = self::buildCollationTableInfoForUser($this->systemManager, $userId);
             $dataCache->set($cacheKey, serialize($data), self::CACHE_TTL_CT_INFO);
         }
 
@@ -456,9 +472,10 @@ class ApiUsers extends ApiController
         return $this->responseWithJson($response, $data);
     }
 
-    static public function buildCollationTableInfoForUser(SystemManager $systemManager, int $userId, LoggerInterface $logger) : array {
+    static public function buildCollationTableInfoForUser(SystemManager $systemManager, int $userId) : array {
         $ctManager = $systemManager->getCollationTableManager();
         $tableIds = $ctManager->getCollationTableVersionManager()->getActiveCollationTableIdsForUserId($userId);
+        $logger = $systemManager->getLogger();
         $tableInfo = [];
         $worksCited = [];
         //$this->debug("Getting collation table info for user $userId", [ 'tableIds' => $tableIds]);
@@ -494,9 +511,25 @@ class ApiUsers extends ApiController
         return ['tableInfo' => $tableInfo, 'workInfo' => $workInfo];
     }
 
-    static public function invalidateCollationTablesInfoData(DataCache $dataCache, $userId) {
-        $dataCache->delete(self::CACHE_KEY_PREFIX_CT_INFO . $userId);
+    static public function updateCtInfoData(SystemManager $systemManager, int $userId) : bool {
+        try {
+            $data = self::buildCollationTableInfoForUser($systemManager, $userId);
+        } catch(\Exception $e) {
+            $systemManager->getLogger()->error("Exception while building CollationTable Data for user $userId",
+                [
+                    'code' => $e->getCode(),
+                    'msg' => $e->getMessage()
+                ]);
+            return false;
+        }
+        $systemManager->getSystemDataCache()->set(self::CACHE_KEY_PREFIX_CT_INFO . $userId,
+            serialize($data), self::CACHE_TTL_CT_INFO);
+        return true;
     }
+
+//    static public function invalidateCollationTablesInfoData(DataCache $dataCache, $userId) {
+//        $dataCache->delete(self::CACHE_KEY_PREFIX_CT_INFO . $userId);
+//    }
 
 
     public function getMultiChunkEditionInfo(Request $request, Response $response) : Response {

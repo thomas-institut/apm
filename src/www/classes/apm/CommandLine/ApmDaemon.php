@@ -6,7 +6,7 @@ use APM\Site\SiteChunks;
 use APM\Site\SiteDocuments;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 
-class CacheWarmer extends CommandLineUtility
+class ApmDaemon extends CommandLineUtility
 {
 
     protected function main($argc, $argv)
@@ -30,7 +30,7 @@ class CacheWarmer extends CommandLineUtility
         ];
 
         if ($daemon) {
-            $this->logger = $this->logger->withName('CACHE_WARMER');
+            $this->logger = $this->logger->withName('APM_D');
             $this->logger->info("Starting as a (pseudo) daemon");
             $keepRunning = true;
             pcntl_async_signals(true);
@@ -49,11 +49,13 @@ class CacheWarmer extends CommandLineUtility
                     exit();
                 }
                 $this->reestablishCacheItems($cacheItemsToReestablish);
+                $this->systemManager->getJobManager()->process();
                 sleep($secondsToSleep);
             }
 
         } else {
             if(!$this->reestablishCacheItems($cacheItemsToReestablish)){
+                $this->systemManager->getJobManager()->process();
                 $this->logger->info("Cache is up to date");
             };
         }

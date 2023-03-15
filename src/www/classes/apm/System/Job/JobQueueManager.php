@@ -12,7 +12,7 @@ abstract class JobQueueManager
 
     abstract public function registerJob(string $name, JobHandlerInterface $job): bool;
 
-    abstract public function scheduleJob(string $name, array $payload, int $secondsToWait = 0, int $maxAttempts = 1, int $secondBetweenRetries = 5) : int;
+    abstract public function scheduleJob(string $name, string $description, array $payload, int $secondsToWait = 0, int $maxAttempts = 1, int $secondBetweenRetries = 5) : int;
 
     abstract public function process();
 

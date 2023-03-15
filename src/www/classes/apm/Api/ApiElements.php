@@ -339,7 +339,7 @@ class ApiElements extends ApiController
             $this->logger->error("Cannot register version: " . $e->getMessage());
         }
 
-        $this->systemManager->onTranscriptionUpdated($docId, $pageNumber, $columnNumber);
+        $this->systemManager->onTranscriptionUpdated($this->apiUserId, $docId, $pageNumber, $columnNumber);
 
         $this->profiler->stop();
         $this->logProfilerData('updateElements');

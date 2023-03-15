@@ -20,6 +20,7 @@
 
 namespace APM\System;
 
+use APM\Api\ApiUsers;
 use APM\CollationEngine\Collatex;
 use APM\CollationEngine\CollationEngine;
 use APM\CollationEngine\DoNothingCollationEngine;
@@ -283,7 +284,7 @@ class ApmSystemManager extends SystemManager {
 
         // set up system data cache
         $this->systemDataCache = new DataTableDataCache(new MySqlDataTable($this->dbConn,
-            $this->tableNames[ApmMySqlTableName::TABLE_SYSTEM_CACHE]));
+            $this->tableNames[ApmMySqlTableName::TABLE_SYSTEM_CACHE], true));
         
         // Set up Collation Engine
         switch($this->config[ApmConfigParameter::COLLATION_ENGINE]) {
@@ -755,9 +756,9 @@ class ApmSystemManager extends SystemManager {
         return $this->editionSourceManager;
     }
 
-    public function onTranscriptionUpdated(int $docId, int $pageNumber, int $columnNumber): void
+    public function onTranscriptionUpdated(int $userId, int $docId, int $pageNumber, int $columnNumber): void
     {
-        parent::onTranscriptionUpdated($docId, $pageNumber, $columnNumber);
+        parent::onTranscriptionUpdated($userId, $docId, $pageNumber, $columnNumber);
         $this->getOpenSearchScheduler()->schedule($docId, $pageNumber, $columnNumber);
 
         $this->logger->debug("Invalidating SiteChunks cache");
@@ -765,6 +766,16 @@ class ApmSystemManager extends SystemManager {
 
         $this->logger->debug("Invalidating SiteDocuments cache");
         SiteDocuments::invalidateCache($this->getSystemDataCache());
+
+        $this->logger->debug("Invalidating TranscribedPages cache for user $userId");
+        ApiUsers::invalidateTranscribedPagesData($this->getSystemDataCache(), $userId);
+    }
+
+    public function onCollationTableSaved(int $userId, int $ctId): void
+    {
+        parent::onCollationTableSaved($userId, $ctId);
+        $this->logger->debug("Invalidating CollationTablesInfo cache for user $userId");
+        ApiUsers::invalidateCollationTablesInfoData($this->getSystemDataCache(), $userId);
     }
 
     public function onDocumentDeleted(int $docId): void

@@ -31,7 +31,7 @@ class DataTableDataCacheTest extends TestCase
      */
     public function testStandardTests() {
 
-        $tester = new DataCacheTest();
+        $tester = new DataCacheTest('DataTable');
 
         $tester->runAllTests(new DataTableDataCache(new InMemoryDataTable()), 'DataTableDataCache');
     }

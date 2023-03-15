@@ -162,7 +162,7 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
 
     // Events
 
-    public function onTranscriptionUpdated(int $docId, int $pageNumber, int $columnNumber) : void {
+    public function onTranscriptionUpdated(int $userId, int $docId, int $pageNumber, int $columnNumber) : void {
         // don't do anything by default
     }
 
@@ -174,6 +174,10 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     }
 
     public function onDocumentUpdated(int $docId) : void {
+
+    }
+
+    public function onCollationTableSaved(int $userId, int $ctId) : void {
 
     }
 }

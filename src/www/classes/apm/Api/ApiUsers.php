@@ -21,12 +21,13 @@
 namespace APM\Api;
 
 use APM\System\DataRetrieveHelper;
-use DI\DependencyException;
-use DI\NotFoundException;
+use APM\System\SystemManager;
 use InvalidArgumentException;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
-use AverroesProject\Profiler\ApmProfiler;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Log\LoggerInterface;
+use ThomasInstitut\DataCache\DataCache;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
 
 /**
  * API Controller class
@@ -34,6 +35,15 @@ use AverroesProject\Profiler\ApmProfiler;
  */
 class ApiUsers extends ApiController
 {
+
+    const CACHE_KEY_PREFIX_TRANSCRIBED_PAGES = 'ApiUsers-TranscribedPagesData-';
+
+    const CACHE_TTL_TRANSCRIBED_PAGES = 7 * 24 * 3600;  // 7 days
+
+    const CACHE_KEY_PREFIX_CT_INFO = 'ApiUsers-CollationTableInfoData-';
+
+    const CACHE_TTL_CT_INFO = 7 * 24 * 3600;  // 7 days
+
     /**
      * @param Request $request
      * @param Response $response
@@ -64,10 +74,8 @@ class ApiUsers extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      */
-    public function updateUserProfile(Request $request, Response $response)
+    public function updateUserProfile(Request $request, Response $response): Response
     {
         $um = $this->getDataManager()->userManager;
         $profileUserId =  (int) $request->getAttribute('userId');
@@ -135,10 +143,8 @@ class ApiUsers extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      */
-    public function changeUserPassword(Request $request, Response $response)
+    public function changeUserPassword(Request $request, Response $response): Response
     {
         $um = $this->getDataManager()->userManager;
         $this->profiler->start();
@@ -207,10 +213,8 @@ class ApiUsers extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      */
-    public function makeUserRoot(Request $request, Response $response)
+    public function makeUserRoot(Request $request, Response $response): Response
     {
         $um = $this->getDataManager()->userManager;
         $profileUserId =  (int) $request->getAttribute('userId');
@@ -260,10 +264,8 @@ class ApiUsers extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      */
-    public function createNewUser(Request $request, Response $response)
+    public function createNewUser(Request $request, Response $response): Response
     {
         $um = $this->getDataManager()->userManager;
         $postData = $request->getParsedBody();
@@ -365,15 +367,35 @@ class ApiUsers extends ApiController
     {
         $apiCall = 'getTranscribedPages';
         $this->profiler->start();
+        $userId =  (int) $request->getAttribute('userId');
 
-        $dm = $this->getDataManager();
-        $docManager = $this->systemManager->getTranscriptionManager()->getDocManager();
-        $pageManager = $this->systemManager->getTranscriptionManager()->getPageManager();
+        $cacheKey = self::CACHE_KEY_PREFIX_TRANSCRIBED_PAGES . $userId;
+
+        $dataCache = $this->systemManager->getSystemDataCache();
+        try {
+            $data = unserialize($dataCache->get($cacheKey));
+        } catch (KeyNotInCacheException) {
+            $this->logger->info("Cache miss for $cacheKey");
+            $data = self::buildTranscribedPagesData($this->systemManager, $userId, $this->logger);
+            $dataCache->set($cacheKey, serialize($data), self::CACHE_TTL_TRANSCRIBED_PAGES);
+        }
+
+        $this->profiler->stop();
+        $this->logProfilerData($apiCall);
+        return $this->responseWithJson($response, $data);
+    }
+
+    static public function invalidateTranscribedPagesData(DataCache $dataCache, $userId) {
+        $dataCache->delete(self::CACHE_KEY_PREFIX_TRANSCRIBED_PAGES . $userId);
+    }
+
+    static public function buildTranscribedPagesData(SystemManager $systemManager, int $userId, LoggerInterface $logger) : array {
+        $dm = $systemManager->getDataManager();
+        $docManager = $systemManager->getTranscriptionManager()->getDocManager();
+        $pageManager = $systemManager->getTranscriptionManager()->getPageManager();
 
         $helper = new DataRetrieveHelper();
-        $helper->setLogger($this->logger);
-
-        $userId =  (int) $request->getAttribute('userId');
+        $helper->setLogger($logger);
         $docIds = $dm->getDocIdsTranscribedByUser($userId);
         $docInfoArray = $helper->getDocInfoArrayFromList($docIds, $docManager);
         $allPageIds = [];
@@ -387,17 +409,11 @@ class ApiUsers extends ApiController
         }
 
         $pageInfoArray = $helper->getPageInfoArrayFromList($allPageIds, $pageManager);
-
-
-        $data = [
+        return [
             'docIds' => $docIds,
             'docInfoArray' => $docInfoArray,
             'pageInfoArray' => $pageInfoArray
         ];
-
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
-        return $this->responseWithJson($response, $data);
     }
 
 
@@ -406,15 +422,33 @@ class ApiUsers extends ApiController
         $this->profiler->start();
         $userId =  (int) $request->getAttribute('userId');
 
-        $ctManager = $this->systemManager->getCollationTableManager();
+        $cacheKey = self::CACHE_KEY_PREFIX_CT_INFO . $userId;
+
+        $dataCache = $this->systemManager->getSystemDataCache();
+        try {
+            $data = unserialize($dataCache->get($cacheKey));
+        } catch (KeyNotInCacheException) {
+            $this->logger->info("Cache miss for $cacheKey");
+            $data = self::buildCollationTableInfoForUser($this->systemManager, $userId, $this->logger);
+            $dataCache->set($cacheKey, serialize($data), self::CACHE_TTL_CT_INFO);
+        }
+
+
+        $this->profiler->stop();
+        $this->logProfilerData($apiCall);
+        return $this->responseWithJson($response, $data);
+    }
+
+    static public function buildCollationTableInfoForUser(SystemManager $systemManager, int $userId, LoggerInterface $logger) : array {
+        $ctManager = $systemManager->getCollationTableManager();
         $tableIds = $ctManager->getCollationTableVersionManager()->getActiveCollationTableIdsForUserId($userId);
         $tableInfo = [];
         //$this->debug("Getting collation table info for user $userId", [ 'tableIds' => $tableIds]);
         foreach($tableIds as $tableId) {
             try {
                 $ctData = $ctManager->getCollationTableById($tableId);
-            } catch(InvalidArgumentException $e) {
-                $this->logger->error("Table $tableId reported as being active does not exist. Is version table consistent?");
+            } catch(InvalidArgumentException) {
+                $logger->error("Table $tableId reported as being active does not exist. Is version table consistent?");
                 continue;
             }
             if ($ctData['archived']) {
@@ -430,9 +464,11 @@ class ApiUsers extends ApiController
                 'chunkId' => $chunkId,
             ];
         }
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
-        return $this->responseWithJson($response, $tableInfo);
+        return $tableInfo;
+    }
+
+    static public function invalidateCollationTablesInfoData(DataCache $dataCache, $userId) {
+        $dataCache->delete(self::CACHE_KEY_PREFIX_CT_INFO . $userId);
     }
 
 

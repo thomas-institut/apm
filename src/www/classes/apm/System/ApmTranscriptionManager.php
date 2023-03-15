@@ -85,6 +85,9 @@ class ApmTranscriptionManager extends TranscriptionManager
 
     const DEFAULT_CACHE_KEY_PREFIX = 'ApmTM-';
 
+
+    const CACHE_TTL = 30 * 24 * 3600;  // 30 days
+
     /**
      * @var PDO
      */
@@ -345,7 +348,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             $dataToSave = gzcompress($serialized);
             //$this->codeDebug("Size of compressed witness data: " . strlen($dataToSave));
             try {
-                $this->dataCache->set($cacheKey, $dataToSave);
+                $this->dataCache->set($cacheKey, $dataToSave,self::CACHE_TTL);
             } catch(Exception $e) {
                 $this->setError( "Cannot set cache for key $cacheKey : " . $e->getMessage(), self::ERROR_CACHE_ERROR);
                 throw $e;

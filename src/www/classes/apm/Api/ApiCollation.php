@@ -493,6 +493,7 @@ class ApiCollation extends ApiController
                 'versionInfo' => $ctManager->getCollationTableVersions($collationTableId)
             ];
 
+            $this->systemManager->onCollationTableSaved($this->apiUserId, $collationTableId);
             $this->profiler->stop();
             $this->info("Collation Table $collationTableId saved");
             $this->logProfilerData('Api.SaveCollationTable');

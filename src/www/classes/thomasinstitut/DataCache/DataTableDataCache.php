@@ -21,28 +21,45 @@ namespace ThomasInstitut\DataCache;
 
 
 use ThomasInstitut\DataTable\DataTable;
+use ThomasInstitut\TimeString\TimeString;
 
 class DataTableDataCache implements DataCache
 {
-    const COLUMN_KEY = 'cachekey';
+    const COLUMN_KEY = 'cache_key';
     const COLUMN_VALUE = 'value';
+
+    const COLUMN_EXPIRES = 'expires';
+
+    const COLUMN_SET = 'set_at';
+
     /**
      * @var DataTable
      */
-    private $dataTable;
+    private DataTable $dataTable;
     /**
      * @var string
      */
-    private $keyColumn;
+    private string $keyColumn;
     /**
      * @var string
      */
-    private $valueColumn;
+    private string $valueColumn;
 
-    public function __construct(DataTable $dt, string $keyColumn = self::COLUMN_KEY, string $valueColumn = self::COLUMN_VALUE) {
+    private string $expiresColumn;
+
+    private string $setColumn;
+
+    public function __construct(DataTable $dt,
+                                string $keyColumn = self::COLUMN_KEY,
+                                string $valueColumn = self::COLUMN_VALUE,
+                                string $expiresColumn = self::COLUMN_EXPIRES,
+                                string $setColumn = self::COLUMN_SET
+    ) {
         $this->dataTable = $dt;
         $this->keyColumn = $keyColumn;
         $this->valueColumn = $valueColumn;
+        $this->expiresColumn = $expiresColumn;
+        $this->setColumn = $setColumn;
     }
 
     /**
@@ -54,22 +71,47 @@ class DataTableDataCache implements DataCache
         if ($rows === []) {
             throw new KeyNotInCacheException();
         }
-        return $rows[0][$this->valueColumn];
+        $row = $rows[0];
+        $now = TimeString::now();
+        if ($row[$this->expiresColumn] !== TimeString::END_OF_TIMES && $row[$this->expiresColumn] < $now) {
+            // expired!
+            $this->delete($key);
+            throw new KeyNotInCacheException("Key '$key' not in cache");
+        }
+        return $row[$this->valueColumn];
     }
 
     /**
      * @inheritDoc
      */
-    public function set(string $key, string $value): void
+    public function set(string $key, string $value, int $ttl = 0): void
     {
 
         $rows = $this->getRowsForKey($key);
+
+        $now = microtime(true);
+        $expires = TimeString::END_OF_TIMES;
+        if ($ttl > 0) {
+            $expires = TimeString::fromTimeStamp($now + $ttl);
+        }
+
         if ($rows === []) {
-            $this->dataTable->createRow([ $this->keyColumn => $key, $this->valueColumn => $value]);
+            $this->dataTable->createRow([
+                $this->keyColumn => $key,
+                $this->valueColumn => $value,
+                $this->setColumn => TimeString::fromTimeStamp($now),
+                $this->expiresColumn => $expires
+            ]);
             return;
         }
         $rowId = $rows[0]['id'];
-        $this->dataTable->updateRow([ 'id' => $rowId, $this->keyColumn => $key, $this->valueColumn => $value]);
+        $this->dataTable->updateRow([
+            'id' => $rowId,
+            $this->keyColumn => $key,
+            $this->valueColumn => $value,
+            $this->setColumn => TimeString::fromTimeStamp($now),
+            $this->expiresColumn => $expires
+        ]);
     }
 
     /**
@@ -79,7 +121,7 @@ class DataTableDataCache implements DataCache
     {
         $rows = $this->getRowsForKey($key);
         if ($rows === []) {
-            throw new KeyNotInCacheException();
+            return;
         }
         $rowId = $rows[0]['id'];
         $this->dataTable->deleteRow($rowId);
@@ -88,5 +130,45 @@ class DataTableDataCache implements DataCache
 
     private function getRowsForKey(string $key) : array {
         return $this->dataTable->findRows([ $this->keyColumn => $key]);
+    }
+
+    public function isInCache(string $key): bool
+    {
+        return count($this->getRowsForKey($key))!==0;
+    }
+
+    public function clear(): void
+    {
+        // TODO: make this better!
+        $ids = $this->dataTable->getUniqueIds();
+        foreach ($ids as $id) {
+            $this->dataTable->deleteRow($id);
+        }
+    }
+
+    public function clean(): void
+    {
+        $uniqueRowIds  = $this->dataTable->getUniqueIds();
+
+        $idsToDelete = [];
+        $now = TimeString::now();
+
+        foreach ($uniqueRowIds as $id) {
+            try {
+                $row = $this->dataTable->getRow($id);
+            } catch (\InvalidArgumentException) {
+                // the row was probably deleted since we got all unique IDs,
+                // that's fine, just ignore and continue with next
+                continue;
+            }
+            if ($row[$this->expiresColumn] !== TimeString::END_OF_TIMES && $row[$this->expiresColumn] < $now) {
+                // expired!
+                $idsToDelete[] = $id;
+            }
+        }
+
+        foreach ($idsToDelete as $id) {
+            $this->dataTable->deleteRow($id);
+        }
     }
 }

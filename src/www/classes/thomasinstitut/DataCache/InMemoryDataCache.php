@@ -26,7 +26,7 @@ class InMemoryDataCache implements DataCache
     /**
      * @var array
      */
-    private $theCache;
+    private array $theCache;
 
     public function __construct()
     {
@@ -38,8 +38,14 @@ class InMemoryDataCache implements DataCache
      */
     public function get(string $key): string
     {
-        if (isset($this->theCache[$key])) {
-            return $this->theCache[$key];
+        $now = time();
+        if ($this->isInCache($key)) {
+            if ($this->theCache[$key]['expires'] !== -1 && $this->theCache[$key]['expires'] < $now) {
+                // expired!
+                $this->delete($key);
+                throw new KeyNotInCacheException("Key '$key' not in cache");
+            }
+            return $this->theCache[$key]['value'];
         }
         throw new KeyNotInCacheException();
     }
@@ -47,9 +53,13 @@ class InMemoryDataCache implements DataCache
     /**
      * @inheritDoc
      */
-    public function set(string $key, string $value): void
+    public function set(string $key, string $value, int $ttl = 0): void
     {
-        $this->theCache[$key] = $value;
+        $expires = -1;
+        if ($ttl > 0) {
+            $expires = time() + $ttl;
+        }
+        $this->theCache[$key] = [ 'value' => $value, 'expires' => $expires];
     }
 
     /**
@@ -57,10 +67,32 @@ class InMemoryDataCache implements DataCache
      */
     public function delete(string $key): void
     {
-        if (isset($this->theCache[$key])) {
+        if ($this->isInCache($key)) {
             unset($this->theCache[$key]);
-            return;
         }
-        throw new KeyNotInCacheException();
+    }
+
+    public function isInCache(string $key): bool
+    {
+        return isset($this->theCache[$key]);
+    }
+
+    public function clear(): void
+    {
+       $this->theCache = [];
+    }
+
+    public function clean(): void
+    {
+        $keysToDelete = [];
+        $now = time();
+        foreach (array_keys($this->theCache) as $key) {
+            if ($this->theCache[$key]['expires'] < $now) {
+                $keysToDelete[] = $key;
+            }
+        }
+        foreach ($keysToDelete as $key) {
+            $this->delete($key);
+        }
     }
 }

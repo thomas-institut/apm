@@ -30,7 +30,7 @@ class InMemoryDataCacheTest extends TestCase
      */
     public function testStandardTests() {
 
-        $tester = new DataCacheTest();
+        $tester = new DataCacheTest('InMemory');
 
         $tester->runAllTests(new InMemoryDataCache(), 'InMemoryDataCache');
     }

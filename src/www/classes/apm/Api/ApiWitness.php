@@ -43,8 +43,10 @@ class ApiWitness extends ApiController
     const ERROR_UNKNOWN_WITNESS_TYPE = 1002;
     const ERROR_SYSTEM_ID_ERROR = 1003;
 
-    const WITNESS_DATA_CACHE_KEY_PREFIX = 'ApiWitness-witnessdata-';
+    const WITNESS_DATA_CACHE_KEY_PREFIX = 'ApiWitness-WitnessData-';
     const WITNESS_HTML_CACHE_KEY_POSTFIX = '-html';
+
+    const WITNESS_DATA_CACHE_TTL = 30 * 24 * 3600; // 30 days
 
     public function getWitness(Request $request, Response $response): Response
     {
@@ -312,7 +314,7 @@ class ApiWitness extends ApiController
             $dataToSave = gzcompress($serializedReturnData);
             $this->codeDebug("Size of compressed witness data: " . strlen($dataToSave));
             try {
-                $systemCache->set($cacheKey, $dataToSave);
+                $systemCache->set($cacheKey, $dataToSave, self::WITNESS_DATA_CACHE_TTL);
             } catch (Exception $e) {
                 $this->codeDebug("Error saving data to cache: " . substr($e->getMessage(), 1, 1000) . '...' );
             }
@@ -321,7 +323,7 @@ class ApiWitness extends ApiController
             $this->codeDebug("Saving html data to cache with key '$cacheKeyHtmlOutput'");
             $this->codeDebug("Size of html data: " . strlen($html));
             try {
-                $systemCache->set($cacheKeyHtmlOutput, $html);
+                $systemCache->set($cacheKeyHtmlOutput, $html, self::WITNESS_DATA_CACHE_TTL);
             } catch(Exception $e) {
                 $this->codeDebug("Error saving data to cache: " . substr($e->getMessage(), 1, 1000) . '...' );
             }

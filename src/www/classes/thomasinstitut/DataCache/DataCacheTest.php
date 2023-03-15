@@ -41,15 +41,15 @@ class DataCacheTest extends TestCase
     /**
      * @var DataCache
      */
-    private $dataCache;
+    private DataCache $dataCache;
     /**
      * @var string
      */
-    private $testClassName;
+    private string $testClassName;
     /**
      * @var string
      */
-    private $keyPrefix;
+    private string $keyPrefix;
 
     /**
      * @param DataCache $dc
@@ -71,6 +71,7 @@ class DataCacheTest extends TestCase
     public function runAllTests(DataCache $dc, string $testClassName){
         $this->setDataCache($dc, $testClassName);
         $this->basicTest();
+        $this->expirationTest();
     }
 
     /**
@@ -83,7 +84,7 @@ class DataCacheTest extends TestCase
         $exceptionCaught= false;
         try {
             $this->dataCache->get($this->keyPrefix . 'somekey');
-        } catch (KeyNotInCacheException $e) {
+        } catch (KeyNotInCacheException) {
             $exceptionCaught = true;
         }
         $this->assertTrue($exceptionCaught, $this->testClassName);
@@ -92,68 +93,86 @@ class DataCacheTest extends TestCase
         $exceptionCaught= false;
         try {
             $this->dataCache->delete($this->keyPrefix . 'somekey');
-        } catch (KeyNotInCacheException $e) {
+        } catch (KeyNotInCacheException) {
             $exceptionCaught = true;
         }
-        $this->assertTrue($exceptionCaught);
+        $this->assertFalse($exceptionCaught);
 
         // build the test set
-        $valuesTestSet = [];
-        for($i = 0; $i < self::NUM_KEYS_TO_TEST; $i++) {
-            $valuesTestSet[] = [
-                'key' => $this->keyPrefix . 'testSet1-' . $i . '-' . random_int(1,10000),
-                'value' => 'value-' . random_int(1, 1000000)
-            ];
-        }
+        $valuesTestSet = $this->buildTestSet('basic', 'value', self::NUM_KEYS_TO_TEST);
 
         // fill the cache
         foreach($valuesTestSet as $testCase) {
             $this->dataCache->set($testCase['key'], $testCase['value']);
         }
 
-        // read the cache randomly
-        for($i = 0; $i < self::READ_ITERATIONS; $i++){
-            $testCase = $valuesTestSet[random_int(0, self::NUM_KEYS_TO_TEST-1)];
-            $cachedValue = $this->dataCache->get($testCase['key']);
-            $this->assertEquals($testCase['value'], $cachedValue, $this->testClassName . ", cache read, iteration $i");
-        }
+        $this->randomRead($valuesTestSet, self::NUM_KEYS_TO_TEST);
 
-        //prepare new values
-        $newValuesTestSet = [];
-        for($i = 0; $i < self::NUM_KEYS_TO_TEST; $i++) {
-            $newValuesTestSet[] = [
-                'key' => $valuesTestSet[$i]['key'],
-                'value' => 'newvalue-' . random_int(1, 1000000)
-            ];
-        }
-
-        // rewrite keys with new values
+        // New values
+        $newValuesTestSet =$this->buildTestSet('basic', 'newValue', self::NUM_KEYS_TO_TEST);
         foreach($newValuesTestSet as $testCase) {
             $this->dataCache->set($testCase['key'], $testCase['value']);
         }
+        $this->randomRead($newValuesTestSet, self::NUM_KEYS_TO_TEST);
 
-        // read the cache randomly
-        for($i = 0; $i < self::READ_ITERATIONS; $i++){
-            $testCase = $newValuesTestSet[random_int(0, self::NUM_KEYS_TO_TEST-1)];
-            $cachedValue = $this->dataCache->get($testCase['key']);
-            $this->assertEquals($testCase['value'], $cachedValue, $this->testClassName . ", cache read, iteration $i");
-        }
-
-        // delete the cache
-        foreach($valuesTestSet as $testCase) {
-            $this->dataCache->delete($testCase['key']);
-        }
+        // empty cache
+        $this->dataCache->clear();
 
         // read the cache randomly again
         for($i = 0; $i < self::READ_ITERATIONS; $i++){
             $testCase = $valuesTestSet[random_int(0, self::NUM_KEYS_TO_TEST-1)];
             $exceptionCaught = false;
             try {
-                $cachedValue = $this->dataCache->get($testCase['key']);
-            } catch(KeyNotInCacheException $e) {
+                $this->dataCache->get($testCase['key']);
+            } catch(KeyNotInCacheException) {
                 $exceptionCaught = true;
             }
             $this->assertTrue($exceptionCaught, $this->testClassName . ", cache read after delete, iteration $i");
+        }
+    }
+
+    public function expirationTest() {
+
+        $ttl = 1;
+        $waitTime = 2;
+
+        $testSet = $this->buildTestSet('exp', 'value', self::NUM_KEYS_TO_TEST);
+        // fill the cache
+        foreach($testSet as $testCase) {
+            $this->dataCache->set($testCase['key'], $testCase['value'], $ttl);
+        }
+
+        sleep($waitTime);
+        for($i = 0; $i < self::READ_ITERATIONS; $i++){
+            $testCase = $testSet[random_int(0, self::NUM_KEYS_TO_TEST-1)];
+            $exceptionCaught = false;
+            try {
+                $this->dataCache->get($testCase['key']);
+            } catch(KeyNotInCacheException) {
+                $exceptionCaught = true;
+            }
+            $this->assertTrue($exceptionCaught, $this->testClassName . ", cache read after delete, iteration $i");
+        }
+    }
+
+
+    protected function buildTestSet(string $keyPrefix, string $valuePrefix, int $numKeys) : array {
+        $valuesTestSet = [];
+        for($i = 0; $i < $numKeys; $i++) {
+            $valuesTestSet[] = [
+                'key' => $keyPrefix . '_' . $i . '_' . random_int(1,10000),
+                'value' => $valuePrefix . '_' . random_int(1, 1000000)
+            ];
+        }
+        return $valuesTestSet;
+    }
+
+    protected function randomRead(array $valuesTestSet, $numKeys) {
+        // read the cache randomly
+        for($i = 0; $i < self::READ_ITERATIONS; $i++){
+            $testCase = $valuesTestSet[random_int(0, $numKeys-1)];
+            $cachedValue = $this->dataCache->get($testCase['key']);
+            $this->assertEquals($testCase['value'], $cachedValue, $this->testClassName . ", cache read, iteration $i");
         }
     }
 

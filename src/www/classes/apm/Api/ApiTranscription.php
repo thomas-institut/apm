@@ -36,7 +36,8 @@ class ApiTranscription extends ApiController
         parent::__construct($ci);
     }
 
-    public function getList(Request $request, Response $response) {
+    public function getList(Request $request, Response $response): Response
+    {
         $publishedVersions = $this->systemManager->getTranscriptionManager()->getColumnVersionManager()->getPublishedVersions();
 
         $docs = $this->getDocsFromVersions($publishedVersions);
@@ -87,7 +88,8 @@ class ApiTranscription extends ApiController
 
     }
 
-    public function getTranscription(Request $request, Response $response) {
+    public function getTranscription(Request $request, Response $response): Response
+    {
         $docId = intval($request->getAttribute('docId'));
         $pageNumber = intval($request->getAttribute('page'));
 

@@ -32,15 +32,25 @@ trait CodeDebugWithLoggerTrait
     /**
      * @var LoggerInterface|null
      */
-    protected $logger;
+    protected ?LoggerInterface $logger = null;
+
+    protected bool $debugCode = false;
 
     public function codeDebug(string $msg, array $data = [], $fileNameDepth = 3) : void
     {
-        $backTraceData = CodeDebug::getBackTraceData($fileNameDepth);
-        $data['backtrace'] = [ 'sourceFile' => $backTraceData->sourceCodeFilename, 'lineNumber' => $backTraceData->lineNumber];
+        if ($this->debugCode && !is_null($this->logger)) {
+            $backTraceData = CodeDebug::getBackTraceData($fileNameDepth);
+            $data['backtrace'] = [ 'sourceFile' => $backTraceData->sourceCodeFilename, 'lineNumber' => $backTraceData->lineNumber];
+            $this->logger->debug( "CODE $msg", $data);
+        }
+    }
 
+    public function startCodeDebug() : void {
+        $this->debugCode = true;
+    }
 
-        $this->logger->debug( "CODE $msg", $data);
+    public function stopCodeDebug() : void {
+        $this->debugCode = false;
     }
 
 }

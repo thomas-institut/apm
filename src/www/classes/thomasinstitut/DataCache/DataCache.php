@@ -37,20 +37,44 @@ interface DataCache
      */
     public function get(string $key) : string;
 
+
     /**
-     * Sets the value for the given key
+     * Returns true if the given key is stored in the cache
+     * @param string $key
+     * @return bool
+     */
+    public function isInCache(string $key) : bool;
+
+    /**
+     * Sets the value for the given key with the given TTL
+     * If $ttl === 0, the cache item never expires
      * @param string $key
      * @param string $value
-     * @return mixed
+     * @param int $ttl
+     * @return void
      */
-    public function set(string $key, string $value) : void;
+    public function set(string $key, string $value, int $ttl = 0) : void;
 
     /**
      * Deletes the cache entry for the given key
      * If the key is not the cache, throws a KeyNotInCacheException
      * @param string $key
-     * @throws KeyNotInCacheException
      */
     public function delete(string $key) : void;
+
+
+    /**
+     * Deletes all entries in the cache
+     * @return void
+     */
+    public function clear() : void;
+
+
+    /**
+     * Deletes all expired entries
+     * @return void
+     */
+    public function clean() : void;
+
 
 }

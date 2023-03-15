@@ -23,17 +23,20 @@ namespace ThomasInstitut\DataCache;
 trait SimpleCacheAware
 {
 
-    protected $cacheOn = false;
-    protected $dataCache;
+    protected bool $cacheOn = false;
+    protected ?DataCache $dataCache = null;
 
-    public function useCache() {
+    public function useCache(): void
+    {
         $this->cacheOn = true;
     }
-    public function doNotUseCache() {
+    public function doNotUseCache(): void
+    {
         $this->cacheOn = false;
     }
 
-    public function setCache(DataCache $dataCache) {
+    public function setCache(DataCache $dataCache): void
+    {
         $this->dataCache = $dataCache;
     }
     public function isCacheInUse() : bool {

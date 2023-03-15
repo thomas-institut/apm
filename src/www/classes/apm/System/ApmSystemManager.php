@@ -69,19 +69,19 @@ class ApmSystemManager extends SystemManager {
 
     // Error codes
     const ERROR_DATABASE_CONNECTION_FAILED = 1001;
-    const ERROR_DATABASE_CANNOT_READ_SETTINGS = 1002;
+//    const ERROR_DATABASE_CANNOT_READ_SETTINGS = 1002;
     const ERROR_DATABASE_IS_NOT_INITIALIZED = 1003;
     const ERROR_DATABASE_SCHEMA_NOT_UP_TO_DATE  = 1004;
     const ERROR_CANNOT_READ_SETTINGS_FROM_DB = 1005;
     const ERROR_CANNOT_LOAD_PLUGIN = 1006;
     const ERROR_CONFIG_ARRAY_IS_NOT_VALID = 1007;
-    const ERROR_BAD_DEFAULT_TIMEZONE = 1008;
-    const ERROR_NO_LOGFILENAME_GIVEN = 1009;
+//    const ERROR_BAD_DEFAULT_TIMEZONE = 1008;
+//    const ERROR_NO_LOGFILENAME_GIVEN = 1009;
     const ERROR_CANNOT_READ_SCHEDULE_FROM_DB = 1010;
 
 
     // Database version
-    const DB_VERSION = 29;
+    const DB_VERSION = 30;
 
     const DEFAULT_LOG_APPNAME = 'APM';
     const DEFAULT_LOG_DEBUG = false;
@@ -119,7 +119,7 @@ class ApmSystemManager extends SystemManager {
         'forwarded_port' => 'HTTP_X_FORWARDED_PORT'
     ];
     
-    /** @var array */
+    /** @var string[] */
     private array $tableNames;
 
     /**
@@ -138,9 +138,9 @@ class ApmSystemManager extends SystemManager {
     private HookManager $hookManager;
 
     /**
-     * @var Collatex
+     * @var CollationEngine
      */
-    private $collationEngine;
+    private CollationEngine $collationEngine;
 
     /**
      * @var PDO
@@ -285,6 +285,7 @@ class ApmSystemManager extends SystemManager {
         // set up system data cache
         $this->systemDataCache = new DataTableDataCache(new MySqlDataTable($this->dbConn,
             $this->tableNames[ApmMySqlTableName::TABLE_SYSTEM_CACHE], true));
+        $this->systemDataCache->setLogger($this->getLogger()->withName('CACHE'));
         
         // Set up Collation Engine
         switch($this->config[ApmConfigParameter::COLLATION_ENGINE]) {
@@ -346,8 +347,11 @@ class ApmSystemManager extends SystemManager {
         $this->multiChunkEditionManager = null;
         $this->editionSourceManager = null;
     }
-    
-    
+
+    /**
+     * @param string $prefix
+     * @return string[]
+     */
     protected function  createTableNames(string $prefix) : array {
         
         $tableKeys = [
@@ -469,7 +473,7 @@ class ApmSystemManager extends SystemManager {
         try {
             $logStream = new StreamHandler($this->config[ApmConfigParameter::LOG_FILENAME],
                 $loggerLevel);
-        } catch (Exception $e) { // @codeCoverageIgnore
+        } catch (Exception) { // @codeCoverageIgnore
             // TODO: Handle errors properly!
             return $logger;  // @codeCoverageIgnore
         }

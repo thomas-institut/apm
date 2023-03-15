@@ -229,8 +229,8 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     protected function getCopyrightNotice() : string {
         return $this->config['app_name'] . " v" . 
                $this->config['version'] . " &bull; &copy; " . 
-               $this->config['copyright_notice'] . " &bull; " .  
-               strftime("%d %b %Y, %H:%M:%S %Z");
+               $this->config['copyright_notice'] . " &bull; " .
+              date("Y-M-d, H:i:s T");
     }
     
     protected function getBaseUrl() : string {

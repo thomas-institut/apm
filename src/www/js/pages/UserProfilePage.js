@@ -172,12 +172,9 @@ export class UserProfilePage {
 
   fetchCollationTablesAndEditions() {
     $.get(this.pathFor.apiUserGetCollationTableInfo(this.userId)).then( (data) => {
-      let expandedApiData = UserDocDataCommon.expandChunkIdsInApiData(data)
-      UserDocDataCommon.fetchWorkInfoFromExpandedApiData(expandedApiData, this.pathFor).then( (workInfoObject) => {
-        let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data, this.pathFor, workInfoObject)
-        this.chunkEditionsCollapse.setContent(listHtml.editions)
-        this.collationTablesCollapse.setContent(listHtml.cTables)
-      })
+      let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], this.pathFor, data['workInfo'])
+      this.chunkEditionsCollapse.setContent(listHtml.editions)
+      this.collationTablesCollapse.setContent(listHtml.cTables)
     })
   }
 

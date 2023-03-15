@@ -12,7 +12,7 @@ class CacheTool extends  CommandLineUtility
 
     const USAGE = "cache <option>\n\nOptions:\n  info: print cache size, length, etc\n  flush: erases all cache entries\n";
     const FLUSH_SAFE_WORD = 'IKnowWhatImDoing';
-    private $cacheTable;
+    private string $cacheTable;
 
     public function __construct(array $config, int $argc, array $argv)
     {
@@ -37,6 +37,9 @@ class CacheTool extends  CommandLineUtility
                $this->flushCache();
                break;
 
+           case 'clean':
+               $this->cleanCache();
+               break;
 
            default:
                print "Unrecognized option: "  . $argv[1] ."\n";
@@ -46,8 +49,8 @@ class CacheTool extends  CommandLineUtility
 
     private function printCacheInfo() {
 
-        $cacheSizeQuery = "SELECT sum(length(value)) AS size from $this->cacheTable";
-        $cacheLengthQuery = "SELECT count(*) as length FROM $this->cacheTable";
+        $cacheSizeQuery = "SELECT sum(length(`value`)) AS size from `$this->cacheTable`";
+        $cacheLengthQuery = "SELECT count(*) as length FROM `$this->cacheTable`";
 
         $cacheSize = $this->getSingleValue($cacheSizeQuery, 'size');
         $cacheLength = $this->getSingleValue($cacheLengthQuery, 'length');
@@ -57,19 +60,20 @@ class CacheTool extends  CommandLineUtility
 
     }
 
-    private function flushCache() {
+    private function flushCache(): void
+    {
         if ($this->argc < 3) {
             print "Please use 'cache flush <theSafeWord>' to actually flush the cache\n";
-            return false;
+            return;
         }
 
         if ($this->argv[2] !== self::FLUSH_SAFE_WORD) {
             print "Sorry, you don't seem to know what you're doing\n";
-            return false;
+            return;
         }
 
         $query = 'TRUNCATE ' . $this->cacheTable;
-        $r = $this->dbConn->query($query);
+        $this->dbConn->query($query);
 
         $this->logger->info("Cache flushed");
 
@@ -89,5 +93,11 @@ class CacheTool extends  CommandLineUtility
 
         return $rows[0][$name];
 
+    }
+
+    private function cleanCache() : void
+    {
+        $this->systemManager->getSystemDataCache()->clean();
+        $this->logger->info('Cache cleaned');
     }
 }

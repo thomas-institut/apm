@@ -20,11 +20,17 @@
 namespace ThomasInstitut\DataCache;
 
 
+use InvalidArgumentException;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\NullLogger;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\TimeString\TimeString;
 
-class DataTableDataCache implements DataCache
+class DataTableDataCache implements DataCache, LoggerAwareInterface
 {
+
+    use LoggerAwareTrait;
     const COLUMN_KEY = 'cache_key';
     const COLUMN_VALUE = 'value';
 
@@ -60,6 +66,7 @@ class DataTableDataCache implements DataCache
         $this->valueColumn = $valueColumn;
         $this->expiresColumn = $expiresColumn;
         $this->setColumn = $setColumn;
+        $this->logger = new NullLogger();
     }
 
     /**
@@ -139,7 +146,8 @@ class DataTableDataCache implements DataCache
 
     public function clear(): void
     {
-        // TODO: make this better!
+        // TODO: make a special version for MySqlDataTable
+        //  need a truncate option in DataTable!
         $ids = $this->dataTable->getUniqueIds();
         foreach ($ids as $id) {
             $this->dataTable->deleteRow($id);
@@ -156,7 +164,7 @@ class DataTableDataCache implements DataCache
         foreach ($uniqueRowIds as $id) {
             try {
                 $row = $this->dataTable->getRow($id);
-            } catch (\InvalidArgumentException) {
+            } catch (InvalidArgumentException) {
                 // the row was probably deleted since we got all unique IDs,
                 // that's fine, just ignore and continue with next
                 continue;
@@ -165,6 +173,10 @@ class DataTableDataCache implements DataCache
                 // expired!
                 $idsToDelete[] = $id;
             }
+        }
+        $numIdsToDelete = count($idsToDelete);
+        if ($numIdsToDelete !== 0) {
+            $this->logger->info("Deleting $numIdsToDelete expired item(s) from cache");
         }
 
         foreach ($idsToDelete as $id) {

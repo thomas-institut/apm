@@ -66,13 +66,14 @@ export class DashboardPage {
   }
 
   fetchCollationTablesAndEditions() {
+    let p = new SimpleProfiler('fetchCT_Info')
     $.get(this.options.urlGenerator.apiUserGetCollationTableInfo(this.userId)).then( (data) => {
-      let expandedApiData = UserDocDataCommon.expandChunkIdsInApiData(data)
-      UserDocDataCommon.fetchWorkInfoFromExpandedApiData(expandedApiData, this.options.urlGenerator).then( (workInfoObject) => {
-        let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data, this.options.urlGenerator, workInfoObject)
-        this.chunkEditionsCollapse.setContent(listHtml.editions)
-        this.collationTablesCollapse.setContent(listHtml.cTables)
-      })
+      p.lap('Got data from server')
+      let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], this.options.urlGenerator, data['workInfo'])
+      p.lap('Generated HTML')
+      this.chunkEditionsCollapse.setContent(listHtml.editions)
+      this.collationTablesCollapse.setContent(listHtml.cTables)
+      p.stop('Finished')
     })
   }
 

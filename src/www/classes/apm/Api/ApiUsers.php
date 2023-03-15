@@ -365,19 +365,27 @@ class ApiUsers extends ApiController
      */
     public function getTranscribedPages(Request $request, Response $response) : Response
     {
-        $apiCall = 'getTranscribedPages';
         $this->profiler->start();
         $userId =  (int) $request->getAttribute('userId');
+        $apiCall = "getTranscribedPages $userId";
+
 
         $cacheKey = self::CACHE_KEY_PREFIX_TRANSCRIBED_PAGES . $userId;
-
+        $cacheHit = true;
         $dataCache = $this->systemManager->getSystemDataCache();
+        $this->systemManager->getSqlQueryCounterTracker()->incrementSelect();
         try {
             $data = unserialize($dataCache->get($cacheKey));
         } catch (KeyNotInCacheException) {
-            $this->logger->info("Cache miss for $cacheKey");
+            $cacheHit = false;
             $data = self::buildTranscribedPagesData($this->systemManager, $userId, $this->logger);
             $dataCache->set($cacheKey, serialize($data), self::CACHE_TTL_TRANSCRIBED_PAGES);
+        }
+
+        if ($cacheHit) {
+            $this->systemManager->getCacheTracker()->incrementHits();
+        } else {
+            $this->systemManager->getCacheTracker()->incrementMisses();
         }
 
         $this->profiler->stop();
@@ -418,19 +426,28 @@ class ApiUsers extends ApiController
 
 
     public function getCollationTableInfo(Request $request, Response $response) : Response {
-        $apiCall = 'getCollationTableInfo';
+
         $this->profiler->start();
         $userId =  (int) $request->getAttribute('userId');
+        $apiCall = "getCollationTableInfo $userId";
 
         $cacheKey = self::CACHE_KEY_PREFIX_CT_INFO . $userId;
 
+        $cacheHit = true;
         $dataCache = $this->systemManager->getSystemDataCache();
+        $this->systemManager->getSqlQueryCounterTracker()->incrementSelect();
         try {
             $data = unserialize($dataCache->get($cacheKey));
         } catch (KeyNotInCacheException) {
-            $this->logger->info("Cache miss for $cacheKey");
+            $cacheHit = false;
             $data = self::buildCollationTableInfoForUser($this->systemManager, $userId, $this->logger);
             $dataCache->set($cacheKey, serialize($data), self::CACHE_TTL_CT_INFO);
+        }
+
+        if ($cacheHit) {
+            $this->systemManager->getCacheTracker()->incrementHits();
+        } else {
+            $this->systemManager->getCacheTracker()->incrementMisses();
         }
 
 
@@ -443,6 +460,7 @@ class ApiUsers extends ApiController
         $ctManager = $systemManager->getCollationTableManager();
         $tableIds = $ctManager->getCollationTableVersionManager()->getActiveCollationTableIdsForUserId($userId);
         $tableInfo = [];
+        $worksCited = [];
         //$this->debug("Getting collation table info for user $userId", [ 'tableIds' => $tableIds]);
         foreach($tableIds as $tableId) {
             try {
@@ -456,15 +474,24 @@ class ApiUsers extends ApiController
             }
             //$this->debug("Processing table id $tableId", ['ctData' => $ctData]);
             $chunkId = $ctData['chunkId'] ?? $ctData['witnesses'][0]['chunkId'];
+            [ $work, $chunk] = explode('-', $chunkId);
+            $worksCited[$work] = true;
 
             $tableInfo[] = [
                 'id' => $tableId,
                 'title' => $ctData['title'],
                 'type' => $ctData['type'],
                 'chunkId' => $chunkId,
+                'work' => $work,
+                'chunk' => $chunk
             ];
         }
-        return $tableInfo;
+        $workInfo = [];
+        foreach (array_keys($worksCited) as $work) {
+            $workInfo[$work] = $systemManager->getDataManager()->getWorkInfo($work);
+        }
+
+        return ['tableInfo' => $tableInfo, 'workInfo' => $workInfo];
     }
 
     static public function invalidateCollationTablesInfoData(DataCache $dataCache, $userId) {
@@ -473,9 +500,9 @@ class ApiUsers extends ApiController
 
 
     public function getMultiChunkEditionInfo(Request $request, Response $response) : Response {
-        $apiCall = 'getMultiChunkEditionInfo';
         $this->profiler->start();
         $userId =  (int) $request->getAttribute('userId');
+        $apiCall = "getMultiChunkEditionInfo $userId";
 
         $editionInfo = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionInfoForUserId($userId);
 

@@ -380,7 +380,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         foreach ($rows as $i => $row) {
             //$this->codeDebug("Row $i", $row);
             if (intval($row['e.type']) === Element::LINE) {
-                $nNewLines = substr_count($row['text'], "\n");
+                $nNewLines = isset($row['text']) ? substr_count($row['text'], "\n") : 0;
                 //$this->codeDebug("Got $nNewLines new lines in line element, index $i");
                 $lineNumber +=  $nNewLines;
 

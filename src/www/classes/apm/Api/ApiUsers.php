@@ -22,11 +22,10 @@ namespace APM\Api;
 
 use APM\System\DataRetrieveHelper;
 use APM\System\SystemManager;
+use Exception;
 use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
-use Psr\Log\LoggerInterface;
-use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 
 /**
@@ -378,7 +377,7 @@ class ApiUsers extends ApiController
             $data = unserialize($dataCache->get($cacheKey));
         } catch (KeyNotInCacheException) {
             $cacheHit = false;
-            $data = self::buildTranscribedPagesData($this->systemManager, $userId, $this->logger);
+            $data = self::buildTranscribedPagesData($this->systemManager, $userId);
             $dataCache->set($cacheKey, serialize($data), self::CACHE_TTL_TRANSCRIBED_PAGES);
         }
 
@@ -396,7 +395,7 @@ class ApiUsers extends ApiController
     static public function updateTranscribedPagesData(SystemManager $systemManager, int $userId): bool {
         try {
             $data = self::buildTranscribedPagesData($systemManager, $userId);
-        } catch(\Exception $e) {
+        } catch(Exception $e) {
             $systemManager->getLogger()->error("Exception while building TranscribedPages Data for user $userId",
                 [
                     'code' => $e->getCode(),
@@ -514,7 +513,7 @@ class ApiUsers extends ApiController
     static public function updateCtInfoData(SystemManager $systemManager, int $userId) : bool {
         try {
             $data = self::buildCollationTableInfoForUser($systemManager, $userId);
-        } catch(\Exception $e) {
+        } catch(Exception $e) {
             $systemManager->getLogger()->error("Exception while building CollationTable Data for user $userId",
                 [
                     'code' => $e->getCode(),

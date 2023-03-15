@@ -4,6 +4,7 @@ namespace APM\CommandLine;
 
 use APM\Site\SiteChunks;
 use APM\Site\SiteDocuments;
+use Exception;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 
 class ApmDaemon extends CommandLineUtility
@@ -57,7 +58,7 @@ class ApmDaemon extends CommandLineUtility
             if(!$this->reestablishCacheItems($cacheItemsToReestablish)){
                 $this->systemManager->getJobManager()->process();
                 $this->logger->info("Cache is up to date");
-            };
+            }
         }
     }
 
@@ -67,14 +68,14 @@ class ApmDaemon extends CommandLineUtility
         foreach ($cacheItemInfo as $item) {
             try {
                 $cache->get($item['cacheKey']);
-            } catch (KeyNotInCacheException $e) {
+            } catch (KeyNotInCacheException) {
                 // not in cache
                 $key = $item['cacheKey'];
                 $this->logger->info("$key not in cache, re-building data");
                 $start = microtime(true);
                 try {
                     $data = ($item['builder'])();
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->logger->error("Exception trying to build data for $key", [ 'code'=> $e->getCode(), 'msg' => $e->getMessage()]);
                     continue;
                 }

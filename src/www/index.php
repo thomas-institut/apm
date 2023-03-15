@@ -33,6 +33,7 @@ use APM\Api\ApiWorks;
 use APM\Site\SiteApmLog;
 use APM\Site\SiteMultiChunkEdition;
 use APM\System\ConfigLoader;
+use JetBrains\PhpStorm\NoReturn;
 use Slim\App;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Routing\RouteCollectorProxy;
@@ -79,7 +80,8 @@ require 'vendor/autoload.php';
  * Exits with an error message
  * @param string $msg
  */
-function exitWithErrorMessage(string $msg) {
+#[NoReturn] function exitWithErrorMessage(string $msg): void
+{
     http_response_code(503);
     print "<pre>ERROR: $msg";
     exit();
@@ -114,7 +116,7 @@ $systemManager->setDataManager($dataManager);
 
 $container = new MinimalContainer();
 $container->set(ApmContainerKey::SYSTEM_MANAGER, $systemManager);
-$container->set(ApmContainerKey::USER_ID, 0);  // The authentication module will update this with the correct Id
+$container->set(ApmContainerKey::USER_ID, 0);  // The authentication module will update this with the correct ID
 
 $responseFactory = new ResponseFactory();
 $app = new App($responseFactory, $container);
@@ -622,7 +624,7 @@ $app->group('/api/data', function(RouteCollectorProxy $group){
 
     // get the transcription for a given document and page
     $group->get('/transcription/get/{docId}/{page}', ApiTranscription::class . ':getTranscription');
-})->add(Authenticator::class . ':authenticateDataApiRequest');;
+})->add(Authenticator::class . ':authenticateDataApiRequest');
 
 // PUBLIC API
 

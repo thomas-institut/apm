@@ -3,9 +3,6 @@
 namespace APM\CommandLine;
 
 use APM\Jobs\ApmJobName;
-use APM\System\Job\NullJobHandler;
-
-
 
 
 class JobQueueTool extends CommandLineUtility
@@ -15,7 +12,7 @@ class JobQueueTool extends CommandLineUtility
 
     const NUM_TEST_JOBS = 5;
 
-    protected function main($argc, $argv)
+    protected function main($argc, $argv): bool
     {
         if ($argc === 1) {
             print self::USAGE . "\n";
@@ -40,6 +37,7 @@ class JobQueueTool extends CommandLineUtility
                 print "Unrecognized option: "  . $argv[1] ."\n";
                 return false;
         }
+        return true;
     }
 
     private function test()

@@ -23,6 +23,7 @@ namespace APM\CommandLine;
 use APM\System\ApmSystemManager;
 use AverroesProject\Data\UserManager;
 use AverroesProject\Data\DataManager;
+use JetBrains\PhpStorm\NoReturn;
 use Monolog\Logger;
 use PDO;
 use Psr\Log\LoggerInterface;
@@ -67,9 +68,9 @@ abstract class CommandLineUtility {
     protected DataManager $dm;
 
     /**
-     * @var int
+     * @var array|int|false
      */
-    private $processUser;
+    private array|int|false $processUser;
     /**
      * @var int
      */
@@ -119,23 +120,25 @@ abstract class CommandLineUtility {
         $this->um = $this->dm->userManager;
     }
     
-    public function run() {
+    #[NoReturn] public function run(): void
+    {
         $result = $this->main($this->argc, $this->argv);
         $status = $result ? 0 : 1;
         exit($status);
     }
     
-    protected function printErrorMsg($msg) 
+    protected function printErrorMsg($msg): void
     {
         $this->printStdErr("ERROR: $msg \n");
     }
     
-    protected function printWarningMsg($msg) 
+    protected function printWarningMsg($msg): void
     {
         $this->printStdErr("WARNING: $msg \n");
     }
 
-    protected function printStdErr($str) {
+    protected function printStdErr($str): void
+    {
         fwrite(STDERR, $str);
     }
 

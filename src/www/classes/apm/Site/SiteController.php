@@ -27,6 +27,7 @@
 namespace APM\Site;
 
 use APM\FullTranscription\PageInfo;
+use APM\SystemProfiler;
 use APM\Plugin\HookManager;
 use APM\System\ApmContainerKey;
 use Psr\Container\ContainerExceptionInterface;
@@ -183,7 +184,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
      * @return Response
      */
     protected function renderPage(Response $response, string $template, array $data, $withBaseData = true) {
-        
+
         if ($withBaseData) {
             $data['copyright']  = $this->getCopyrightNotice();
             $data['baseurl'] = $this->getBaseUrl();
@@ -214,7 +215,8 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             $this->logger->error("Error rendering page: " . $errorMessage);
             return $this->getBasicErrorPage($response, 'APM Error', 'Page rendering error, please report to APM developers.')->withStatus(409);
         }
-
+        SystemProfiler::lap('Response ready');
+        $this->logger->debug("GLOBAL PROFILER", SystemProfiler::getLaps());
         return $responseToReturn;
     }
 

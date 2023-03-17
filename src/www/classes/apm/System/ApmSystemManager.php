@@ -114,13 +114,13 @@ class ApmSystemManager extends SystemManager {
     const REQUIRED_CONFIG_VARIABLES_DB = [ 'host', 'db', 'user', 'pwd'];
 
     protected array $serverLoggerFields = [
+        'method' => 'REQUEST_METHOD',
         'url'         => 'REQUEST_URI',
         'ip'          => 'REMOTE_ADDR',
-        'http_method' => 'REQUEST_METHOD',
-        'server'      => 'SERVER_NAME',
+//        'server'      => 'SERVER_NAME',
         'referrer'    => 'HTTP_REFERER',
-        'forwarded_host' => 'HTTP_X_FORWARDED_HOST',
-        'forwarded_port' => 'HTTP_X_FORWARDED_PORT'
+//        'forwarded_host' => 'HTTP_X_FORWARDED_HOST',
+//        'forwarded_port' => 'HTTP_X_FORWARDED_PORT'
     ];
     
     /** @var string[] */
@@ -192,7 +192,7 @@ class ApmSystemManager extends SystemManager {
 
 
     public function __construct(array $configArray) {
-
+//        global $globalProfiler;
         $config = $this->getSanitizedConfigArray($configArray);
         
         if ($config[ApmConfigParameter::ERROR]) {
@@ -214,6 +214,8 @@ class ApmSystemManager extends SystemManager {
 
         // Create logger
         $this->logger = $this->createLogger();
+
+//        $globalProfiler->lap('Logger created');
 
 //        $this->logger->info("Config file path: '" . $config[ApmConfigParameter::CONFIG_FILE_PATH] . "'");
 
@@ -241,13 +243,18 @@ class ApmSystemManager extends SystemManager {
                     "Database connection failed: " . $e->getMessage());
             return;
         }
+
+//        $globalProfiler->lap("Database ready");
         
-         // Check that the database is initialized 
+         // Check that the database is initialized
+        // TODO: Is this check necessary?
         if (!$this->isDatabaseInitialized()) {
-            $this->logAndSetError(self::ERROR_DATABASE_IS_NOT_INITIALIZED, 
+            $this->logAndSetError(self::ERROR_DATABASE_IS_NOT_INITIALIZED,
                     "Database is not initialized");
             return;
         }
+
+//        $globalProfiler->lap("Database checked");
 
         // Set up OpenSearchScheduler
         try {
@@ -263,6 +270,8 @@ class ApmSystemManager extends SystemManager {
         }
 
         $this->openSearchScheduler=new OpenSearchScheduler($schedulerTable, $this->logger);
+
+//        $globalProfiler->lap("Opensearch scheduler ready");
 
         // Set up SettingsManager
         try {
@@ -312,6 +321,7 @@ class ApmSystemManager extends SystemManager {
 
         $this->registerSystemJobs();
 
+//        $globalProfiler->lap("System jobs registered");
        
         // Set up PresetsManager
         $presetsManagerDataTable = new MySqlDataTable($this->dbConn,
@@ -326,6 +336,8 @@ class ApmSystemManager extends SystemManager {
         $this->transcriptionManager->setCacheTracker($this->getCacheTracker());
         $this->transcriptionManager->setCache($this->getSystemDataCache());
 
+//        $globalProfiler->lap("Transcription Manager ready");
+
         // Set up collation table manager
         $ctTable = new MySqlUnitemporalDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_COLLATION_TABLE]);
         $ctVersionsTable = new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_VERSIONS_CT]);
@@ -335,6 +347,8 @@ class ApmSystemManager extends SystemManager {
         $this->collationTableManager = new ApmCollationTableManager($ctTable, $ctVersionManager, $this->logger);
         $this->collationTableManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
 
+
+//        $globalProfiler->lap("Collation Table Manager ready");
 
         // Load plugins
         foreach($this->config[ApmConfigParameter::PLUGINS] as $pluginName) {
@@ -352,6 +366,8 @@ class ApmSystemManager extends SystemManager {
                 $pluginObject->init();
             }
         }
+
+//        $globalProfiler->lap("Plugins loaded");
 
         $this->twig = null;
         $this->normalizerManager = null;

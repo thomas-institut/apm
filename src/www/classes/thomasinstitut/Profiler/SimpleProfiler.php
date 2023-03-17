@@ -145,9 +145,9 @@ class SimpleProfiler implements Profiler, ErrorReporter
     {
         $this->resetError();
 
-        if ($this->isRunning()) {
-            $this->throwRunTimeException("getLaps() called when still running", self::ERROR_GET_LAPS_CALLED_WHEN_RUNNING);
-        }
+//        if ($this->isRunning()) {
+//            $this->throwRunTimeException("getLaps() called when still running", self::ERROR_GET_LAPS_CALLED_WHEN_RUNNING);
+//        }
 
         if ($this->calculatedLaps === []) {
             $this->calculateLaps();

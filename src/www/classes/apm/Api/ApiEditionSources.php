@@ -9,8 +9,11 @@ use ThomasInstitut\UUID\Uuid;
 class ApiEditionSources extends ApiController
 {
 
+    const CLASS_NAME = 'EditionSources';
+
     public function getAllSources(Request $request, Response $response): Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $mgr = $this->systemManager->getEditionSourceManager();
         $data = $mgr->getAllSources();
         return $this->responseWithJson($response, $data);
@@ -18,6 +21,7 @@ class ApiEditionSources extends ApiController
 
     public function getSourceByUuid(Request $request, Response $response): Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $uuid = $request->getAttribute('uuid');
 
         if (!Uuid::isValidUuidString($uuid)) {

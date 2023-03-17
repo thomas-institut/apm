@@ -10,9 +10,11 @@ class ApiMultiChunkEdition extends ApiController
 {
 
 
+    const CLASS_NAME = 'MultiChunkEditions';
+
     public function  getEdition(Request $request, Response $response, array $args): Response
     {
-
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $editionId = intval($request->getAttribute('editionId'));
         $timeStamp = $request->getAttribute('timestamp',  TimeString::now());
         try {
@@ -33,10 +35,9 @@ class ApiMultiChunkEdition extends ApiController
     public function saveEdition(Request $request, Response $response, array $args): Response
     {
 
-        sleep(5);
-        $apiCall = 'saveEdition';
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $requiredFields = [ 'editionId', 'mceData', 'description'];
-        $inputDataObject = $this->checkAndGetInputData($request, $response, $apiCall, $requiredFields);
+        $inputDataObject = $this->checkAndGetInputData($request, $response, $requiredFields);
         if (!is_array($inputDataObject)) {
             return $inputDataObject;
         }

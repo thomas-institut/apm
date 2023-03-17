@@ -21,9 +21,10 @@
 namespace APM\Api;
 
 use AverroesProject\Image\EditorImages;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 
+// TODO: Get rid of this class!
 
 /**
  * Class ApiIcons
@@ -32,9 +33,11 @@ use \Psr\Http\Message\ResponseInterface as Response;
  */
 class ApiIcons extends ApiController
 {
+    const CLASS_NAME = 'Icons';
 
-    public function generateMarkIcon(Request $request, Response $response)
+    public function generateMarkIcon(Request $request, Response $response) : Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $size = $request->getAttribute('size');
         
         $imageData = EditorImages::markIcon($size);
@@ -43,8 +46,9 @@ class ApiIcons extends ApiController
         return $response->withHeader('Content-Type', 'image/png');
     }
     
-     public function generateNoWordBreakIcon(Request $request, Response $response)
+     public function generateNoWordBreakIcon(Request $request, Response $response) : Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $size = $request->getAttribute('size');
         
         $imageData = EditorImages::noWordBreakIcon($size);
@@ -53,8 +57,9 @@ class ApiIcons extends ApiController
         return $response->withHeader('Content-Type', 'image/png');
     }
     
-    public function generateIllegibleIcon(Request $request, Response $response)
+    public function generateIllegibleIcon(Request $request, Response $response) : Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $size = $request->getAttribute('size');
         $length = $request->getAttribute('length');
         
@@ -65,8 +70,9 @@ class ApiIcons extends ApiController
         //return $response;
     }
     
-    public function generateChunkMarkIcon(Request $request, Response $response)
+    public function generateChunkMarkIcon(Request $request, Response $response) :Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $dareId = $request->getAttribute('dareid');
         $chunkNumber = $request->getAttribute('chunkno');
         $type = $request->getAttribute('type');
@@ -81,8 +87,9 @@ class ApiIcons extends ApiController
         return $response->withHeader('Content-Type', 'image/png');
     }
 
-    public function generateChapterMarkIcon(Request $request, Response $response)
+    public function generateChapterMarkIcon(Request $request, Response $response) :Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $work = $request->getAttribute('work');
         $level = intval($request->getAttribute('level'));
         $chapterNumber = intval($request->getAttribute('number'));
@@ -96,8 +103,9 @@ class ApiIcons extends ApiController
         return $response->withHeader('Content-Type', 'image/png');
     }
     
-    public function generateLineGapImage(Request $request, Response $response)
+    public function generateLineGapImage(Request $request, Response $response) :Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $count = $request->getAttribute('count');
         $size = $request->getAttribute('size');
         
@@ -107,8 +115,9 @@ class ApiIcons extends ApiController
         return $response->withHeader('Content-Type', 'image/png');
     }
     
-    public function generateCharacterGapImage(Request $request,  Response $response)
+    public function generateCharacterGapImage(Request $request,  Response $response) : Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $size = $request->getAttribute('size');
         $length = $request->getAttribute('length');
         
@@ -118,8 +127,9 @@ class ApiIcons extends ApiController
         return $response->withHeader('Content-Type', 'image/png');
     }
     
-    public function generateParagraphMarkIcon(Request $request, Response $response)
+    public function generateParagraphMarkIcon(Request $request, Response $response) : Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $size = $request->getAttribute('size');
         
         $imageData = EditorImages::paragraphMarkIcon($size);

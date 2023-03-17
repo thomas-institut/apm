@@ -25,6 +25,9 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 
 class ApiTypesetPdf extends ApiController
 {
+
+    const CLASS_NAME = 'PDF_Typesetting';
+
     const API_ERROR_CANNOT_CREATE_TEMP_FILE = 5001;
     const API_ERROR_PDF_RENDERER_ERROR = 5002;
     const API_TYPESETTER_ERROR = 5003;
@@ -41,8 +44,8 @@ class ApiTypesetPdf extends ApiController
      * @param Response $response
      * @return array|Response
      */
-    public function typesetRawData(Request  $request, Response $response) {
-        $apiCall = 'typesetRawData';
+    public function typesetRawData(Request  $request, Response $response) : Response {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $requiredFields = [
             'jsonData',
         ];
@@ -50,11 +53,10 @@ class ApiTypesetPdf extends ApiController
         // but it's no use checking it here when the nodejs app will do it and
         // generate an error if there's any problem
 
-        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, $requiredFields);
+        $inputData = $this->checkAndGetInputData($request, $response, $requiredFields);
         if (!is_array($inputData)) {
             return $inputData;
         }
-        $this->profiler->start();
 
         $this->codeDebug('Json data', [ 'length' => strlen($inputData['jsonData']) ]);
 
@@ -106,7 +108,6 @@ class ApiTypesetPdf extends ApiController
         $result = $this->renderPdfFromJsonData($typesetData, $jsonDataHash, false);
         $this->profiler->stop();
         $totalProcessingTime = $this->getProfilerTotalTime() * 1000;
-        $this->logProfilerData($apiCall);
         if ($result['status'] === 'error') {
             return $this->responseWithJson($response, ['error' => $result['error']], 409);
         }
@@ -203,7 +204,7 @@ class ApiTypesetPdf extends ApiController
             'typesetterData',
         ];
 
-        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, $requiredFields);
+        $inputData = $this->checkAndGetInputData($request, $response, $requiredFields);
         if (!is_array($inputData)) {
             return $inputData;
         }
@@ -222,8 +223,6 @@ class ApiTypesetPdf extends ApiController
         }
 
         $result = $this->renderPdfFromJsonData($inputData['typesetterData'], $pdfId, $useCache);
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
         if ($result['status'] === 'error') {
             return $this->responseWithJson($response, ['error' => $result['errorCode']], 409);
         }
@@ -236,13 +235,13 @@ class ApiTypesetPdf extends ApiController
 
     public function convertSVGtoPDF(Request $request,  Response $response): Response
     {
-
-        $apiCall = 'ConvertSVGtoPDF';
+        // TODO: Check if this is actually used right now
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $requiredFields = [
             'svg',
         ];
 
-        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, $requiredFields);
+        $inputData = $this->checkAndGetInputData($request, $response, $requiredFields);
         if (!is_array($inputData)) {
             return $inputData;
         }
@@ -261,8 +260,6 @@ class ApiTypesetPdf extends ApiController
         $baseUrl = $this->systemManager->getBaseUrl();
         if (file_exists($fileToDownload)) {
             $this->codeDebug('Serving already converted file');
-            $this->profiler->stop();
-            $this->logProfilerData($apiCall);
             return $this->responseWithJson($response, [ 'status' => 'OK (Cached)', 'url' => $baseUrl . '/' . $fileToDownload]);
         }
 
@@ -322,10 +319,6 @@ class ApiTypesetPdf extends ApiController
             $this->logger->debug('Inkscape error', [ 'array' => $returnArray, 'value' => $returnValue]);
             return $this->responseWithJson($response, ['status' => 'Errors'], 409);
         }
-
-
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
 
         return $this->responseWithJson($response, [ 'status' => 'OK', 'url' => $baseUrl . '/' . $fileToDownload]);
 

@@ -157,13 +157,13 @@ class ApmTranscriptionManager extends TranscriptionManager
 
     public function __construct(PDO $dbConn, array $tableNames, LoggerInterface $logger)
     {
-
         $this->resetError();
         $this->dbConn = $dbConn;
         $this->databaseHelper = new MySqlHelper($dbConn, $logger);
         $this->edNoteManager = new EdNoteManager($dbConn, $this->databaseHelper, $tableNames,
             $logger);
         $this->tNames  = $tableNames;
+
 
         $this->docsDataTable = new MySqlDataTable($this->dbConn,
             $tableNames[ApmMySqlTableName::TABLE_DOCS]);
@@ -264,6 +264,8 @@ class ApmTranscriptionManager extends TranscriptionManager
     public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : ApmTranscriptionWitness
     {
 
+        $this->debugCode = false;
+
         if ($timeStamp === '') {
             $timeStamp = $this->getLastChangeTimestampForWitness($workId, $chunkNumber, $docId, $localWitnessId);
         }
@@ -271,7 +273,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         if ($this->cacheOn) {
             // first, check if it's in the cache
             $cacheKey = $this->getCacheKeyForWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
-            //$this->codeDebug("Getting witness from cache (key='$cacheKey')");
+            $this->codeDebug("Getting witness from cache (key='$cacheKey')");
             $cacheValue = '';
             $inCache = true;
             try {
@@ -301,7 +303,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             $this->setError( "No locations found for $workId-$chunkNumber, doc $docId - $localWitnessId", self::ERROR_NO_LOCATIONS);
             throw new InvalidArgumentException($this->getErrorMessage(), $this->getErrorCode());
         }
-        //$this->codeDebug('Locations', $locations);
+        $this->codeDebug(count($locations) . " locations");
         $apStreams = [];
         $itemIds = [];
         try {
@@ -319,13 +321,16 @@ class ApmTranscriptionManager extends TranscriptionManager
         foreach($segmentNumbers as $segmentNumber) {
             $segLocation = $locations[$segmentNumber];
             /** @var ApmChunkSegmentLocation $segLocation */
-            //$this->codeDebug("Processing segment Number $segmentNumber");
+            $this->codeDebug(sprintf("Processing segment Number %d, %d -> %d",
+                $segmentNumber,$this->calcSeqNumber($segLocation->start), $this->calcSeqNumber($segLocation->end) ));
             if ($segLocation->isValid()) {
                 $apItemStream = $this->getItemStreamForSegmentLocation($segLocation, $timeStamp);
                 foreach($apItemStream as $row) {
                     $itemIds[] = (int) $row['id'];
                 }
+                $this->codeDebug(sprintf("Adding %d items to itemStream", count($apItemStream)));
                 $apStreams[] = $apItemStream;
+                $this->codeDebug(sprintf("Total stream has now  %d items", count($apStreams)));
             }
         }
 
@@ -378,10 +383,10 @@ class ApmTranscriptionManager extends TranscriptionManager
         $this->codeDebug("Got " . count($rows) . " rows");
         $lineNumber = 1;
         foreach ($rows as $i => $row) {
-            //$this->codeDebug("Row $i", $row);
+            $this->codeDebug("Row $i", $row);
             if (intval($row['e.type']) === Element::LINE) {
                 $nNewLines = isset($row['text']) ? substr_count($row['text'], "\n") : 0;
-                //$this->codeDebug("Got $nNewLines new lines in line element, index $i");
+                $this->codeDebug("Got $nNewLines new lines in line element, index $i");
                 $lineNumber +=  $nNewLines;
 
             } else {
@@ -742,7 +747,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             if (is_null($row['segment_number'])) {
                 $location->segmentNumber = 1;  // very old items in the db did not have a segment number!
             } else {
-                $location->segmentNumber = (int) $row['segment_number'];
+                $location->segmentNumber = intval($row['segment_number']);
             }
             $location->type = $row['type'];
 

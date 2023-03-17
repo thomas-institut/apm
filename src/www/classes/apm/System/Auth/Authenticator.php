@@ -48,8 +48,10 @@ use \Dflydev\FigCookies\FigRequestCookies;
 use \Dflydev\FigCookies\SetCookie;
 use \Dflydev\FigCookies\FigResponseCookies;
 use Psr\Http\Server\RequestHandlerInterface;
+use Slim\Interfaces\RouteParserInterface;
 use Slim\Routing\RouteParser;
 use Slim\Views\Twig;
+use ThomasInstitut\Profiler\SimpleProfiler;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
@@ -70,12 +72,14 @@ class Authenticator {
     /**
      * @var Logger
      */
-    private $logger, $apiLogger, $siteLogger;
+    private Logger $apiLogger;
+    private Logger $siteLogger;
+    private Logger $logger;
 
     /**
-     * @var RouteParser
+     * @var RouteParser|RouteParserInterface
      */
-    protected $router;
+    protected RouteParserInterface|RouteParser $router;
 
    
     private string $cookieName = 'rme';
@@ -87,20 +91,21 @@ class Authenticator {
     /**
      * @var UserManager
      */
-    private $userManager;
+    private UserManager $userManager;
     /**
      * @var Twig
      */
-    private $view;
+    private Twig $view;
 
     /**
      * @var array
      */
-    private $config;
+//    private $config;
     /**
      * @var SystemManager
      */
-    private $systemManager;
+    private SystemManager $systemManager;
+    private SimpleProfiler $profiler;
 
     /**
      * Authenticator constructor.
@@ -110,13 +115,14 @@ class Authenticator {
     {
         $this->container = $ci;
         $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
-        $this->config = $this->systemManager->getConfig();
+//        $this->config = $this->systemManager->getConfig();
         $this->router = $this->systemManager->getRouter();
         $this->userManager = $this->systemManager->getDataManager()->userManager;
         $this->logger = $this->systemManager->getLogger()->withName('AUTH');
         $this->view = $this->systemManager->getTwig();
         $this->apiLogger = $this->logger->withName('AUTH-API');
         $this->siteLogger = $this->logger->withName('AUTH-SITE');
+        $this->profiler = new SimpleProfiler();
 
         $this->debugMode = false;
     }
@@ -155,7 +161,7 @@ class Authenticator {
      * @param string $msg
      * @param array $data
      */
-    private function debug(string $msg, array $data=[])
+    private function debug(string $msg, array $data=[]): void
     {
         if ($this->debugMode){
             $this->logger->debug($msg, $data);
@@ -164,6 +170,11 @@ class Authenticator {
 
     public function authenticate(Request $request, RequestHandlerInterface $handler): Response
     {
+        if ($this->debugMode) {
+            $this->profiler->start();
+        }
+
+
         session_start();
 
         $this->debug('Starting authenticator middleware');
@@ -201,6 +212,10 @@ class Authenticator {
             }
 
             $this->container->set(ApmContainerKey::USER_INFO, $ui);
+            if ($this->debugMode) {
+                $this->profiler->stop();
+                $this->debug("Profiler", $this->profiler->getLaps());
+            }
             return $handler->handle($request);
         } else {
             $this->debug("SITE : Authentication fail, logging out "
@@ -326,6 +341,9 @@ class Authenticator {
     
     public function authenticateApiRequest (Request $request, RequestHandlerInterface $handler)
     {
+        if ($this->debugMode) {
+            $this->profiler->start();
+        }
         $userId = $this->getUserIdFromLongTermCookie($request);
         if ($userId === false){
             $this->apiLogger->notice("Authentication fail");
@@ -334,6 +352,10 @@ class Authenticator {
         }
         $this->debug('API : Success, go ahead!');
         $this->container->set(ApmContainerKey::API_USER_ID, $userId);
+        if ($this->debugMode) {
+            $this->profiler->stop();
+            $this->debug("Profiler", $this->profiler->getLaps());
+        }
         return $handler->handle($request);
     }
     

@@ -10,22 +10,23 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 class ApiEditionEngine extends ApiController
 {
 
-    const API_ERROR_ENGINE_ERROR = 4001;
+    const CLASS_NAME = 'EditionEngine';
+
+//    const API_ERROR_ENGINE_ERROR = 4001;
 
     /**
      * @param Request $request
      * @param Response $response
-     * @return array|Response
      */
-    public function automaticEditionEngine(Request $request,  Response $response)
+    public function automaticEditionEngine(Request $request,  Response $response) : Response
     {
 
-        $apiCall = 'EditionEngine';
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $requiredFields = [
             'collationTable',
         ];
 
-        $inputDataObject = $this->checkAndGetInputData($request, $response, $apiCall, $requiredFields);
+        $inputDataObject = $this->checkAndGetInputData($request, $response, $requiredFields);
         if (!is_array($inputDataObject)) {
             return $inputDataObject;
         }
@@ -36,9 +37,6 @@ class ApiEditionEngine extends ApiController
         $responseData = $editionEngine->generateEdition($inputDataObject);
 
         $responseData['engineRunDetails'] = $editionEngine->getRunDetails();
-
-        $this->profiler->stop();
-        $this->logProfilerData('editionEngine');
 
         return $this->responseWithJson($response, $responseData);
     }

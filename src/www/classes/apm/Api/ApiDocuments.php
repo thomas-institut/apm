@@ -38,6 +38,8 @@ use Psr\Http\Message\ResponseInterface as Response;
 class ApiDocuments extends ApiController
 {
 
+    const CLASS_NAME = 'Documents';
+
     /**
      * @param Request $request
      * @param Response $response
@@ -45,6 +47,7 @@ class ApiDocuments extends ApiController
      */
     public function updatePageSettings(Request $request, Response $response) : Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $dataManager = $this->getDataManager();
         $this->profiler->start();
         
@@ -76,24 +79,20 @@ class ApiDocuments extends ApiController
             $this->systemManager->getTranscriptionManager()->updatePageSettings($pageId, $pageInfo, $this->apiUserId);
         } catch (Exception $e) {
             $this->logger->error("Can't update page settings for page $pageId: " . $e->getMessage(), $pageInfo->getDatabaseRow());
-            return $response->withStatus(409);
+            return $this->responseWithStatus($response, 409);
         }
-
-        $this->profiler->stop();
-        $this->logProfilerData("UpdatePageSettings-$pageId");
-        return $response->withStatus(200);
+        return $this->responseWithStatus($response, 200);
     }
 
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      * @throws Exception
      */
-    public function deleteDocument(Request $request, Response $response)
+    public function deleteDocument(Request $request, Response $response) : Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $dataManager = $this->getDataManager();
         $this->profiler->start();
         $docId = (int) $request->getAttribute('id');
@@ -102,7 +101,7 @@ class ApiDocuments extends ApiController
             $this->logger->warning("deleteDocument: unauthorized request", 
                     [ 'apiUserId' => $this->apiUserId, 'docId' => $docId]
                 );
-            return $response->withStatus(403);
+            return $this->responseWithStatus($response, 403);
         }
         
         $docSettings = $dataManager->getDocById($docId);
@@ -134,20 +133,17 @@ class ApiDocuments extends ApiController
             return $this->responseWithJson($response,['error' => ApiController::API_ERROR_DB_UPDATE_ERROR, 'msg' => 'Database error'], 409);
         }
         $this->systemManager->onDocumentDeleted($docId);
-        $this->profiler->stop();
-        $this->logProfilerData("DeleteDoc-$docId");
-        return $response->withStatus(200);
+        return $this->responseWithStatus($response, 200);
     }
 
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      */
     public function addPages(Request $request, Response $response): Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $dataManager = $this->getDataManager();
         $this->profiler->start();
         
@@ -155,7 +151,7 @@ class ApiDocuments extends ApiController
             $this->logger->warning("addPages: unauthorized request", 
                     [ 'apiUserId' => $this->apiUserId]
                 );
-            return $response->withStatus(403);
+            return $this->responseWithStatus($response, 403);
         }
         
         $docId = (int) $request->getAttribute('id');
@@ -186,9 +182,7 @@ class ApiDocuments extends ApiController
         if ($numPages === 0) {
             // nothing to do!
             $this->debug("addPages: request for 0 pages, nothing to do");
-            $this->profiler->stop();
-            $this->logProfilerData('addPages');
-            return $response->withStatus(200);
+            return $this->responseWithStatus($response, 200);
         }
         
         
@@ -211,10 +205,7 @@ class ApiDocuments extends ApiController
         }
 
         $this->systemManager->onDocumentUpdated($docId);
-
-        $this->profiler->stop();
-        $this->logProfilerData('addPages');
-        return $response->withStatus(200);
+        return $this->responseWithStatus($response, 200);
     }
 
     /**
@@ -224,6 +215,7 @@ class ApiDocuments extends ApiController
      */
     public function newDocument(Request $request, Response $response): Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $dataManager = $this->getDataManager();
         $this->profiler->start();
         
@@ -231,7 +223,7 @@ class ApiDocuments extends ApiController
             $this->logger->warning("New Doc: unauthorized request", 
                     [ 'apiUserId' => $this->apiUserId]
                 );
-            return $response->withStatus(403);
+            return $this->responseWithStatus($response, 403);
         }
         
         $rawData = $request->getBody()->getContents();
@@ -271,9 +263,7 @@ class ApiDocuments extends ApiController
             return $this->responseWithJson($response,['error' => ApiController::API_ERROR_DB_UPDATE_ERROR], 409);
         }
         $this->systemManager->onDocumentAdded($docId);
-        $this->profiler->stop();
-        $this->logProfilerData('NewDocument');
-        return  $this->responseWithJson($response, ['newDocId' => $docId], 200);
+        return  $this->responseWithJson($response, ['newDocId' => $docId]);
         
     }
 
@@ -285,14 +275,15 @@ class ApiDocuments extends ApiController
     public function updateDocSettings(Request $request, Response $response): Response
     {
 
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $dataManager = $this->getDataManager();
-        $this->profiler->start();
+//        $this->profiler->start();
 
         if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'update-doc-settings')){
             $this->logger->warning("updateDocSettings: unauthorized request", 
                     [ 'apiUserId' => $this->apiUserId]
                 );
-            return $response->withStatus(403);
+            return $this->responseWithStatus($response, 403);
         }
         $docId = (int) $request->getAttribute('id');
         
@@ -331,9 +322,7 @@ class ApiDocuments extends ApiController
             ]);
 
         $this->systemManager->onDocumentUpdated($docId);
-        $this->profiler->stop();
-        $this->logProfilerData("updateDocSettings-$docId");
-        return $response->withStatus(200);
+        return $this->responseWithStatus($response, 200);
         
     }
 
@@ -341,22 +330,21 @@ class ApiDocuments extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      */
-    public function updatePageSettingsBulk(Request $request, Response $response)
+    public function updatePageSettingsBulk(Request $request, Response $response) : Response
     {
 
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $dataManager = $this->getDataManager();
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
-        $this->profiler->start();
+//        $this->profiler->start();
         
         if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'update-page-settings-bulk')){
             
             $this->logger->warning("updatePageSettingsBulk: unauthorized request", 
                     [ 'apiUserId' => $this->apiUserId]
                 );
-            return $response->withStatus(403);
+            return $this->responseWithStatus($response, 403);
         }
         $rawData = $request->getBody()->getContents();
         $postData = [];
@@ -464,20 +452,17 @@ class ApiDocuments extends ApiController
         if (count($errors) > 0) {
             $this->logger->notice("Bulk page settings update with errors", $errors);
         }
-        $this->profiler->stop();
-        $this->logProfilerData("updatePageSettingsBulk-$pageId");
-        return $response->withStatus(200);
+        return $this->responseWithStatus($response, 200);
     }
 
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      */
-    public function getNumColumns(Request $request, Response $response)
+    public function getNumColumns(Request $request, Response $response) : Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');
         
@@ -491,11 +476,10 @@ class ApiDocuments extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      */
-    public function addNewColumn(Request $request, Response $response)
+    public function addNewColumn(Request $request, Response $response) : Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');
 
@@ -534,9 +518,10 @@ class ApiDocuments extends ApiController
      * @return Response
      */
     public function getPageInfo(Request $request, Response $response) : Response {
-        $apiCall = 'getPageInfo';
-        $this->profiler->start();
-        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['pages']);
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+
+//        $this->profiler->start();
+        $inputData = $this->checkAndGetInputData($request, $response, ['pages']);
         if (!is_array($inputData)) {
             return $inputData;
         }
@@ -560,19 +545,16 @@ class ApiDocuments extends ApiController
                 return $this->responseWithText($response, "Server error", 500);
             }
 
-            $pageIds[] = $pageId;
-            array_push($returnData, [
+//            $pageIds[] = $pageId;
+            $returnData[] = [
                 'id' => $pageId,
                 'docId' => $pageInfo->docId,
                 'pageNumber' => $pageInfo->pageNumber,
                 'seq' => $pageInfo->sequence,
                 'numCols' => $pageInfo->numCols,
                 'foliation' => $pageInfo->foliation
-            ]);
+            ];
         }
-
-
-        $this->info("$apiCall successful", [ 'pageIds' => $pageIds]);
         return $this->responseWithJson($response, $returnData, 200);
 
     }

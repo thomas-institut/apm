@@ -38,6 +38,9 @@ use \Psr\Http\Message\ResponseInterface as Response;
  */
 class ApiElements extends ApiController
 {
+
+    const CLASS_NAME = 'TranscriptionElements';
+
     const API_ERROR_INVALID_VERSION_REQUESTED = 5001;
 
     /**
@@ -46,9 +49,9 @@ class ApiElements extends ApiController
      * @return Response
      * @throws Exception
      */
-    public function updateElementsByDocPageCol(Request $request, 
-            Response $response): Response
+    public function updateElementsByDocPageCol(Request $request, Response $response): Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $dataManager = $this->getDataManager();
         $this->profiler->start();
 
@@ -340,10 +343,7 @@ class ApiElements extends ApiController
         }
 
         $this->systemManager->onTranscriptionUpdated($this->apiUserId, $docId, $pageNumber, $columnNumber);
-
-        $this->profiler->stop();
-        $this->logProfilerData('updateElements');
-        return $response->withStatus(200);
+        return $this->responseWithStatus($response, 200);
     }
 
 
@@ -351,11 +351,10 @@ class ApiElements extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      */
     public function getElementsByDocPageCol(Request $request, Response $response): Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');
         $columnNumber = $request->getAttribute('column');
@@ -372,7 +371,7 @@ class ApiElements extends ApiController
             $thisVersion = -1;
         } else {
             if (is_null($versionId)) {
-                // no version Id in request means get the latest version
+                // no version ID in request means get the latest version
                 $thisVersion = intval($versions[count($versions) - 1]['id']);
                 $this->debug('No version requested, defaulting to last version, id = ' . $thisVersion);
             } else {

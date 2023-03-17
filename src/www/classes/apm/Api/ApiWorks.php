@@ -8,6 +8,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 class ApiWorks extends ApiController
 {
 
+    const CLASS_NAME = 'Works';
     /**
      * @param Request $request
      * @param Response $response
@@ -15,8 +16,7 @@ class ApiWorks extends ApiController
      */
     public function getWorkInfo(Request $request, Response $response): Response
     {
-        $apiCall = 'getWorkInfo';
-        $this->profiler->start();
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $workId =  $request->getAttribute('workId');
         $dataManager = $this->systemManager->getDataManager();
 
@@ -26,10 +26,8 @@ class ApiWorks extends ApiController
             $this->logger->error("Work '$workId' not found",
                 [ 'apiUserId' => $this->apiUserId,
                     'workId' => $workId]);
-            return $response->withStatus(409);
+            return $this->responseWithStatus($response, 409);
         }
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
         return $this->responseWithJson($response,$workInfo);
     }
 }

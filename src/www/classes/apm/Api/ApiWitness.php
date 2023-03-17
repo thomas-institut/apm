@@ -39,6 +39,8 @@ use ThomasInstitut\TimeString\TimeString;
 class ApiWitness extends ApiController
 {
 
+    const CLASS_NAME = 'Witnesses';
+
     const ERROR_WITNESS_TYPE_NOT_IMPLEMENTED = 1001;
     const ERROR_UNKNOWN_WITNESS_TYPE = 1002;
     const ERROR_SYSTEM_ID_ERROR = 1003;
@@ -52,6 +54,7 @@ class ApiWitness extends ApiController
     {
 
         $witnessId = $request->getAttribute('witnessId');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $witnessId);
         $this->profiler->start();
         $outputType = $request->getAttribute('outputType', 'full');
         $useCache = $request->getAttribute('cache',  'usecache') === 'usecache';
@@ -60,10 +63,7 @@ class ApiWitness extends ApiController
 
         switch ($witnessType) {
             case WitnessType::FULL_TRANSCRIPTION:
-                $newResponse =  $this->getFullTxWitness($witnessId, $outputType, $response, $useCache);
-                $this->profiler->stop();
-                $this->logProfilerData('API-getWitness ' . $witnessId . ' output ' . $outputType);
-                return $newResponse;
+                return $this->getFullTxWitness($witnessId, $outputType, $response, $useCache);
 
             case WitnessType::PARTIAL_TRANSCRIPTION:
                 $msg = 'Witness type ' . WitnessType::PARTIAL_TRANSCRIPTION . ' not implemented yet';
@@ -83,10 +83,11 @@ class ApiWitness extends ApiController
         }
     }
 
-    public function checkWitnessUpdates(Request $request, Response $response) {
-        $apiCall = 'checkWitnessUpdates';
+    public function checkWitnessUpdates(Request $request, Response $response): Response
+    {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $this->profiler->start();
-        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['witnesses']);
+        $inputData = $this->checkAndGetInputData($request, $response, ['witnesses']);
         //$this->debug('Input data', [ $inputData ]);
         if (!is_array($inputData)) {
             return $inputData;
@@ -94,7 +95,7 @@ class ApiWitness extends ApiController
 
         $witnessArray = $inputData['witnesses'];
         if ($witnessArray === []) {
-            $this->logger->warning("$apiCall: no witnesses in request");
+            $this->logger->warning("$this->apiCallName: no witnesses in request");
         }
         $responseData = [];
         $responseData['status'] = 'OK';
@@ -120,7 +121,6 @@ class ApiWitness extends ApiController
                         'upToDate' => true,
                     ];
                     break;
-
 
                 case WitnessType::FULL_TRANSCRIPTION:
                     $witnessInfo = WitnessSystemId::getFullTxInfo($witnessId);
@@ -169,8 +169,6 @@ class ApiWitness extends ApiController
                         ];
                         $this->debug("Witness $witnessId no longer defined in the system");
                     }
-
-
                     break;
 
                 case WitnessType::PARTIAL_TRANSCRIPTION:
@@ -179,8 +177,6 @@ class ApiWitness extends ApiController
                         'apiUserId' => $this->apiUserId,
                         'apiError' => self::ERROR_WITNESS_TYPE_NOT_IMPLEMENTED
                     ]);
-                    $this->profiler->stop();
-                    $this->logProfilerData($apiCall . '-error');
                     return $this->responseWithJson($response, [ 'error' => $msg ], 409);
 
 
@@ -192,17 +188,14 @@ class ApiWitness extends ApiController
                         'apiUserId' => $this->apiUserId,
                         'apiError' => self::ERROR_UNKNOWN_WITNESS_TYPE
                     ]);
-                    $this->profiler->stop();
-                    $this->logProfilerData($apiCall . '-error');
                     return $this->responseWithJson($response, [ 'error' => $msg ], 409);
             }
         }
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
         return $this->responseWithJson($response, $responseData, 200);
     }
 
     private function getFullTxWitness(string $requestedWitnessId, string $outputType, Response $response, bool $useCache) : Response {
+        $this->debugCode = false;
         try {
             $witnessInfo = WitnessSystemId::getFullTxInfo($requestedWitnessId);
         } catch (InvalidArgumentException $e) {
@@ -403,7 +396,7 @@ class ApiWitness extends ApiController
             return $this->responseWithJson($response, $theTokens);
         }
 
-        return $this->responseWithJson($response, $returnData, 200);
+        return $this->responseWithJson($response, $returnData);
     }
 
 

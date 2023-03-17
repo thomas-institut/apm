@@ -20,33 +20,32 @@
 namespace APM\Api;
 
 
+use Exception;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use ThomasInstitut\TimeString\TimeString;
 
 class ApiCollationTableConversion extends  ApiController
 {
+    const CLASS_NAME = 'CollationTableConversion';
     const ERROR_CANNOT_CONVERT = 6001;
 
     public function __invoke(Request $request, Response $response): Response
     {
-        $apiCall = 'convertToEdition';
-        $this->profiler->start();
-        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['tableId', 'initStrategy']);
+        $this->setApiCallName(self::CLASS_NAME . ':convert');
+//        $this->profiler->start();
+        $inputData = $this->checkAndGetInputData($request, $response, ['tableId', 'initStrategy']);
         $this->debug('Input data', [ $inputData ]);
         if (!is_array($inputData)) {
             return $inputData;
         }
-
         $tableId = intval($inputData['tableId']);
         $initStrategy = $inputData['initStrategy'];
-
-
         $ctManager = $this->systemManager->getCollationTableManager();
         try {
-            $ctManager->convertToEdition($tableId, $inputData['initStrategy'], $this->apiUserId, TimeString::now());
-        } catch (\Exception $e) {
-            // table Id does not exist!
+            $ctManager->convertToEdition($tableId, $initStrategy, $this->apiUserId, TimeString::now());
+        } catch (Exception $e) {
+            // table ID does not exist!
             $msg = "Error converting table to edition: '" . $e->getMessage() . "', error " . $e->getCode();
             $this->logger->error($msg,
                 [ 'apiUserId' => $this->apiUserId,
@@ -55,9 +54,6 @@ class ApiCollationTableConversion extends  ApiController
                 ]);
             return $this->responseWithJson($response, ['error' => self::ERROR_CANNOT_CONVERT], 409);
         }
-
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
         return $this->responseWithJson($response, ['status' => 'OK', 'url' => $this->router->urlFor('chunkedition.edit', ['tableId' => $tableId])]);
 
     }

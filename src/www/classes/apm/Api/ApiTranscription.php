@@ -31,19 +31,15 @@ use ThomasInstitut\TimeString\TimeString;
 class ApiTranscription extends ApiController
 {
 
-    public function __construct(ContainerInterface $ci)
-    {
-        parent::__construct($ci);
-    }
-
+    const CLASS_NAME = 'Transcriptions';
     public function getList(Request $request, Response $response): Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $publishedVersions = $this->systemManager->getTranscriptionManager()->getColumnVersionManager()->getPublishedVersions();
 
         $docs = $this->getDocsFromVersions($publishedVersions);
         $list = [];
         foreach($docs as $docId => $pageNumbers) {
-
             $docInfo = $this->getDataManager()->getDocById($docId);
             $this->debug('Doc Info', $docInfo);
             $listEntry = [ 'docId' => $docId, 'pages' => $pageNumbers];
@@ -54,11 +50,9 @@ class ApiTranscription extends ApiController
             } else {
                 $listEntry['source'] = 'APM';
             }
-
             $list[] = $listEntry;
 
         }
-
         return $this->responseWithJson($response, [
             'list' => $list,
             'apiCallDateTime' => date(DATE_ATOM) ]);
@@ -90,10 +84,9 @@ class ApiTranscription extends ApiController
 
     public function getTranscription(Request $request, Response $response): Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $docId = intval($request->getAttribute('docId'));
         $pageNumber = intval($request->getAttribute('page'));
-
-
 
         $dm = $this->getDataManager();
         $pageId = $dm->getPageIdByDocPage($docId, $pageNumber);

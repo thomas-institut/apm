@@ -16,6 +16,8 @@ function sortByLength ($a, $b) {
 
 class ApiSearch extends ApiController
 {
+
+    const CLASS_NAME = 'Search';
     /**
      * @param Request $request
      * @param Response $response
@@ -25,6 +27,7 @@ class ApiSearch extends ApiController
     // Function to search in an OpenSearch-Index – returns an api response to js
     public function search(Request $request, Response $response): Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         // Name of the index, that should be queried and informative variables for the API response
         $index_name = 'transcripts';
         $status = 'OK';
@@ -717,16 +720,17 @@ class ApiSearch extends ApiController
     // ApiCall – Function to get all doc titles
     public function getTitles (Request $request, Response $response): Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $status = 'OK';
         $now = TimeString::now();
         $index_name = 'transcripts';
 
-        // Instantiae OpenSearch client
+        // Instantiate OpenSearch client
         try {
             $client = $this->instantiateClient();
         } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
             $status = 'Connecting to OpenSearch server failed.';
-            return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
+            return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status], 503);
         }
 
         // Get a list of all titles
@@ -742,6 +746,7 @@ class ApiSearch extends ApiController
     // API Call – Function to get all transcribers
     public function getTranscribers (Request $request, Response $response): Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $status = 'OK';
         $now = TimeString::now();
         $index_name = 'transcripts';
@@ -751,7 +756,7 @@ class ApiSearch extends ApiController
             $client = $this->instantiateClient();
         } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
             $status = 'Connecting to OpenSearch server failed.';
-            return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
+            return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status, 503]);
         }
 
         // Get a list of all transcribers

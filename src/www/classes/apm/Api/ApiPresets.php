@@ -41,6 +41,8 @@ use APM\System\PresetFactory;
  */
 class ApiPresets extends ApiController
 {
+
+    const CLASS_NAME = 'Presets';
     const API_ERROR_UNRECOGNIZED_TOOL = 4001;
     const API_ERROR_NOT_ENOUGH_WITNESSES = 4002;
     const API_ERROR_UNKNOWN_COMMAND = 4003;
@@ -72,11 +74,11 @@ class ApiPresets extends ApiController
      * @param Response $response
      * @return Response
      */
-    public function  getPresets(Request $request,  Response $response) {
-        
-        $apiCall = 'getPresets';
+    public function  getPresets(Request $request,  Response $response) : Response{
+
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $this->profiler->start();
-        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['tool','userId', 'keyArrayToMatch']);
+        $inputData = $this->checkAndGetInputData($request, $response, ['tool', 'userId', 'keyArrayToMatch']);
         if (!is_array($inputData)) {
             return $inputData;
         }
@@ -110,9 +112,6 @@ class ApiPresets extends ApiController
                       'data' => $inputData ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_WRONG_TYPE], 409);
         }
-        
-        //$this->debug('Getting presets', [ 'tool' => $tool, 'userId' => $userId, 'keyArrayToMatch' => $keyArrayToMatch]);
-        // let's get those presets!
 
         $presetManager = $this->systemManager->getPresetsManager();
         
@@ -133,12 +132,9 @@ class ApiPresets extends ApiController
             ];
         }
 
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
-
         return $this->responseWithJson($response,[
             'presets' => $presetsInArrayForm,
-            'runTime' => $this->getProfilerTotalTime()
+//            'runTime' => $this->getProfilerTotalTime()
             ]);
     }
 
@@ -163,10 +159,10 @@ class ApiPresets extends ApiController
     public function  getAutomaticCollationPresets(Request $request, Response $response): Response
     {
 
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $dataManager = $this->getDataManager();
-        $apiCall = 'getAutomaticCollationPresets';
         $this->profiler->start();
-        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['userId', 'lang', 'witnesses']);
+        $inputData = $this->checkAndGetInputData($request, $response, ['userId', 'lang', 'witnesses']);
         if (!is_array($inputData)) {
             return $inputData;
         }
@@ -239,13 +235,9 @@ class ApiPresets extends ApiController
             ];
         }
 
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
-
-        
         return $this->responseWithJson($response,[
             'presets' => $presetsInArrayForm,
-            'runTime' => $this->getProfilerTotalTime()
+//            'runTime' => $this->getProfilerTotalTime()
             ]);
     }
 
@@ -268,10 +260,10 @@ class ApiPresets extends ApiController
     public function  getSiglaPresets(Request $request, Response $response): Response
     {
 
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $dataManager = $this->getDataManager();
-        $apiCall = 'getSiglaPresets';
         $this->profiler->start();
-        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['lang', 'witnesses']);
+        $inputData = $this->checkAndGetInputData($request, $response, ['lang', 'witnesses']);
         if (!is_array($inputData)) {
             return $inputData;
         }
@@ -340,14 +332,9 @@ class ApiPresets extends ApiController
                 'data' => $preset->getData()
             ];
         }
-
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
-
-
         return $this->responseWithJson($response,[
             'presets' => $presetsInArrayForm,
-            'runTime' => $this->getProfilerTotalTime()
+//            'runTime' => $this->getProfilerTotalTime()
         ]);
     }
 
@@ -380,9 +367,9 @@ class ApiPresets extends ApiController
      * @return array|Response
      */
     public function saveSiglaPreset(Request $request, Response $response) {
-        $apiCall = 'saveSiglaPreset';
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $this->profiler->start();
-        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['command', 'lang', 'witnesses']);
+        $inputData = $this->checkAndGetInputData($request, $response, ['command', 'lang', 'witnesses']);
         if (!is_array($inputData)) {
             return $inputData;
         }
@@ -440,8 +427,6 @@ class ApiPresets extends ApiController
                 }
                 // success
                 $newId = $pm->getPreset(SystemManager::TOOL_SIGLA, $apiUserId, $title)->getId();
-                $this->profiler->stop();
-                $this->logProfilerData($apiCall);
                 return $this->responseWithJson($response, ['presetId' => $newId], 200);
 
             case self::COMMAND_UPDATE:
@@ -486,11 +471,7 @@ class ApiPresets extends ApiController
                 }
 
                 // success
-                $this->profiler->stop();
-                $this->logProfilerData($apiCall);
-                return $this->responseWithJson($response, ['presetId' => $presetId], 200);
-
-                break;
+                return $this->responseWithJson($response, ['presetId' => $presetId]);
 
             default:
                 $this->logger->error("Unknown command " . $inputData['command'],
@@ -502,17 +483,15 @@ class ApiPresets extends ApiController
     }
 
     
-    public function  savePreset(Request $request, Response $response) {
-        
-        $apiCall = 'savePreset';
+    public function  savePreset(Request $request, Response $response) : Response {
+
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $this->profiler->start();
-        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['command', 'tool',  'userId', 'title', 'presetId', 'presetData']);
+        $inputData = $this->checkAndGetInputData($request, $response, ['command', 'tool', 'userId', 'title', 'presetId', 'presetData']);
         if (!is_array($inputData)) {
             return $inputData;
         }
-        
         $command = $inputData['command'];
-        
         // check that command is valid
         if ($command !== self::COMMAND_NEW && $command !== self::COMMAND_UPDATE) {
             $this->logger->error("Unknown command " . $command,
@@ -573,8 +552,6 @@ class ApiPresets extends ApiController
             }
             // success
             $newId = $pm->getPreset($tool, $apiUserId, $title)->getId();
-            $this->profiler->stop();
-            $this->logProfilerData($apiCall);
             return $this->responseWithJson($response, ['presetId' => $newId], 200);
         }
         
@@ -611,13 +588,11 @@ class ApiPresets extends ApiController
         }
         
         // success
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
         return $this->responseWithJson($response, ['presetId' => $presetId], 200);
     }
     
-     public function deletePreset(Request $request, Response $response) {
-        $apiCall = 'deletePreset';
+     public function deletePreset(Request $request, Response $response) : Response {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $this->profiler->start();
         $presetId = intval($request->getAttribute('id'));
         
@@ -656,8 +631,6 @@ class ApiPresets extends ApiController
             // @codeCoverageIgnoreEnd
         }
         // success
-         $this->profiler->stop();
-         $this->logProfilerData($apiCall);
         return $this->responseWithJson($response, ['presetId' => $presetId], 200);
     }
     

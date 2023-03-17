@@ -21,6 +21,7 @@
 namespace APM\Api;
 
 use APM\CollationEngine\CollationEngine;
+use APM\SystemProfiler;
 use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
 use Exception;
@@ -51,26 +52,14 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     use LoggerAwareTrait;
     use CodeDebugWithLoggerTrait;
 
-    /**
-     *
-     * @var SystemManager 
-     */
-    protected $systemManager;
-
 
     /**
-     * @var int
+     * Class Name for reporting purposes
      */
-    protected $apiUserId;
+    const CLASS_NAME = 'Api';
 
-    /**
-     * @var SimpleProfiler
-     */
-    protected SimpleProfiler $profiler;
-    
     // Error codes
     const API_ERROR_RUNTIME_ERROR = 1;
-
     const API_ERROR_NO_DATA = 1000;
     const API_ERROR_NO_ELEMENT_ARRAY = 1001;
     const API_ERROR_NO_EDNOTES = 1002;
@@ -89,37 +78,20 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     const API_ERROR_DOC_CANNOT_BE_SAFELY_DELETED = 1015;
     const API_ERROR_COLLATION_ENGINE_ERROR = 1016;
     const API_ERROR_MISSING_REQUIRED_FIELD = 1017;
-    
     const API_ERROR_NOT_AUTHORIZED  = 1100;
-    
     const API_ERROR_DB_UPDATE_ERROR = 1200;
-    
     const API_ERROR_WRONG_TYPE = 1300;
 
-    /**
-     * @var array
-     */
-    protected $languages;
+    protected SystemManager $systemManager;
+    protected int $apiUserId;
+    protected SimpleProfiler $profiler;
+    protected array $languages;
+    protected RouteParser $router;
 
-
-    /**
-     * @var ContainerInterface
-     */
     private ContainerInterface $container;
-
-    /**
-     * @var bool
-     */
     private bool $debugMode;
-    /**
-     * @var string
-     */
-    private $dataManager;
-
-    /**
-     * @var RouteParser
-     */
-    protected $router;
+    private DataManager $dataManager;
+    protected string $apiCallName;
 
 
     /**
@@ -131,7 +103,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     public function __construct(ContainerInterface $ci)
     {
        $this->container = $ci;
-       $this->debugMode = true;
+       $this->debugMode = false;
 
        $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
        $this->apiUserId = $ci->get(ApmContainerKey::API_USER_ID); // this should be set by the authenticator!
@@ -139,10 +111,15 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
        $this->logger = $this->systemManager->getLogger()->withName('API');
        $this->dataManager = $this->systemManager->getDataManager();
        $this->router = $this->systemManager->getRouter();
+       $this->apiCallName = self::CLASS_NAME . ":generic";
        $this->profiler = new SimpleProfiler();
        $this->profiler->registerProperty('time', new TimeTracker());
        $this->profiler->registerProperty('mysql-queries', $this->systemManager->getSqlQueryCounterTracker());
        $this->profiler->registerProperty('cache', $this->systemManager->getCacheTracker());
+    }
+    
+    protected function setApiCallName(string $name) : void {
+        $this->apiCallName  = $name;
     }
 
     public function setApiUserId(int $userId=0) {
@@ -197,12 +174,12 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
      * 
      * @param Request $request
      * @param Response $response
-     * @param string $apiCall
      * @param array $requiredFields
      * @return Response|array
      */
-    protected function checkAndGetInputData(Request $request, 
-            Response $response, string $apiCall, array $requiredFields) {
+    protected function checkAndGetInputData(Request  $request,
+                                            Response $response, array $requiredFields): array|Response
+    {
         $rawData = $request->getBody()->getContents();
         parse_str($rawData, $postData);
         $inputData = null;
@@ -213,7 +190,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
         
         // Some checks
         if (is_null($inputData) ) {
-            $this->logger->error("$apiCall: no data in input",
+            $this->logger->error("$this->apiCallName: no data in input",
                     [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_NO_DATA,
                       'rawdata' => $postData]);
@@ -222,7 +199,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
         
         foreach ($requiredFields as $requiredField) {
             if (!isset($inputData[$requiredField])) {
-                $this->logger->error("$apiCall: missing required field '$requiredField' in input data",
+                $this->logger->error("$this->apiCallName: missing required field '$requiredField' in input data",
                     [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_MISSING_REQUIRED_FIELD,
                       'rawdata' => $postData]);
@@ -239,49 +216,82 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
      * @param int $status
      * @return Response
      */
-    protected function responseWithJson(ResponseInterface $response, $data, int $status = 200) : ResponseInterface {
+    protected function responseWithJson(ResponseInterface $response, mixed $data, int $status = 200) : ResponseInterface {
         $payload = json_encode($data);
-        return $this->responseWithJsonRaw($response, $payload, $status);
+        return $this->responseWithRawJson($response, $payload, $status);
     }
 
     /**
      * @param Response $response
-     * @param $json
+     * @param string $json
      * @param int $status
      * @return Response
      */
-    protected function responseWithJsonRaw(ResponseInterface $response, $json, int $status = 200) : ResponseInterface {
-        $response->getBody()->write($json);
+    protected function responseWithRawJson(ResponseInterface $response, string $json, int $status = 200) : ResponseInterface {
 
+        $this->logProfilers("Response with JSON ready");
+        $response->getBody()->write($json);
         return $response
             ->withHeader('Content-Type', 'application/json')
             ->withStatus($status);
     }
 
-    protected function logException(Exception $e, $msg) {
-        $this->logger->error("Exception caught: $msg", [ 'errorMsg' => $e->getMessage(), 'erroCode' => $e->getCode(), 'trace' => $e->getTraceAsString()]);
+    protected function responseWithText(Response $response, string $text, int $status=200) : Response {
+        $lapName = $text === '' ? 'Response ready' : 'Response with text ready';
+        $this->logProfilers($lapName);
+        if ($text !== '') {
+            $response->getBody()->write($text);
+        }
+        return $response->withStatus($status);
     }
 
-    protected function logProfilerData(string $pageTitle, $fullLapInfo = false) : void
+    protected function responseWithStatus(Response $response, int $status) : Response{
+        return $this->responseWithText($response, '', $status);
+    }
+
+    protected function logProfilers(string $endLapName) {
+        if ($this->profiler->isRunning()) {
+            $this->profiler->stop();
+            $this->logMethodProfilerData();
+        }
+        SystemProfiler::lap($endLapName);
+        $this->logger->debug(
+            sprintf("SYSTEM PROFILER %s Finished in %.3f ms", $this->apiCallName, SystemProfiler::getTotalTimeInMs()),
+            SystemProfiler::getLaps());
+    }
+
+    protected function logException(Exception $e, $msg) {
+        $this->logger->error("Exception caught: $msg", [
+            'errorMsg' => $e->getMessage(),
+            'errorCode' => $e->getCode(),
+            'trace' => $e->getTraceAsString()]);
+    }
+
+    private function logMethodProfilerData($fullLapInfo = false) : void
     {
         $lapInfo = $this->profiler->getLaps();
+        if (count($lapInfo) === 0) {
+            $this->logger->warning("No laps to log for method $this->apiCallName");
+            return;
+        }
         $totalTimeInMs = $this->getProfilerTotalTime() * 1000;
-        $totalQueries = $lapInfo[count($lapInfo)-1]['mysql-queries']['cumulative']['Total'];
-        $cacheHits = $lapInfo[count($lapInfo)-1]['cache']['cumulative']['hits'];
-        $cacheMisses = $lapInfo[count($lapInfo)-1]['cache']['cumulative']['misses'];
+        if ($totalTimeInMs == 0) {
+            $this->logger->warning("Total time is zero for $this->apiCallName, check code");
+            return;
+        }
+        $totalQueries = $lapInfo[count($lapInfo)-1]['mysql-queries']['cumulative']['Total'] ?? 0;
+        $cacheHits = $lapInfo[count($lapInfo)-1]['cache']['cumulative']['hits'] ?? 0;
+        $cacheMisses = $lapInfo[count($lapInfo)-1]['cache']['cumulative']['misses'] ?? 0;
         $info = $fullLapInfo ? $lapInfo :[];
-        $this->logger->debug(sprintf("PROFILER %s, finished in %0.2f ms, %d MySql queries, %d cache hits, %d misses",
-            $pageTitle, $totalTimeInMs, $totalQueries, $cacheHits, $cacheMisses), $info);
+        $this->logger->debug(sprintf("API method %s ran in %0.3f ms, %d MySql queries, %d cache hits, %d misses",
+            $this->apiCallName, $totalTimeInMs, $totalQueries, $cacheHits, $cacheMisses), $info);
     }
 
     protected function getProfilerTotalTime() : float
     {
         $lapInfo = $this->profiler->getLaps();
-        return $lapInfo[count($lapInfo)-1]['time']['cumulative'];
+        return $lapInfo[count($lapInfo)-1]['time']['cumulative'] ?? 0;
     }
 
-    protected function responseWithText(Response $response, string $text, int $status=200) : Response {
-        $response->getBody()->write($text);
-        return $response->withStatus($status);
-    }
+
 }

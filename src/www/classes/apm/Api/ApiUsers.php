@@ -35,6 +35,7 @@ use ThomasInstitut\DataCache\KeyNotInCacheException;
 class ApiUsers extends ApiController
 {
 
+    const CLASS_NAME = 'Users';
     const CACHE_KEY_PREFIX_TRANSCRIBED_PAGES = 'ApiUsers-TranscribedPagesData-';
 
     const CACHE_TTL_TRANSCRIBED_PAGES = 7 * 24 * 3600;  // 7 days
@@ -50,22 +51,19 @@ class ApiUsers extends ApiController
      */
     public function getUserProfileInfo(Request $request, Response $response): Response
     {
-        $um = $this->getDataManager()->userManager;
-        $apiCall = 'getUserProfileInfo';
         $this->profiler->start();
-
         $profileUserId =  (int) $request->getAttribute('userId');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $profileUserId);
+
+        $um = $this->getDataManager()->userManager;
         $userProfileInfo = $um->getUserInfoByUserId($profileUserId);
         if ($userProfileInfo === false ) {
             $this->logger->error("Error getting info from user ID",
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-            return $response->withStatus(409);
+            return $this->responseWithStatus($response, 409);
         }
-        
         $userProfileInfo['isroot'] = $um->isRoot($profileUserId);
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
         return $this->responseWithJson($response,$userProfileInfo);
     }
 
@@ -76,28 +74,27 @@ class ApiUsers extends ApiController
      */
     public function updateUserProfile(Request $request, Response $response): Response
     {
-        $um = $this->getDataManager()->userManager;
         $profileUserId =  (int) $request->getAttribute('userId');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $profileUserId);
+
+        $um = $this->getDataManager()->userManager;
         $postData = $request->getParsedBody();
         $fullname = $postData['fullname'];
         $email = $postData['email'];
         $profileUserInfo = $um->getUserInfoByUserId($profileUserId);
 
-        $apiCall = 'updateUserProfile' . $profileUserId;
-        $this->profiler->start();
-        
         if ($profileUserInfo === false ) {
             $this->logger->error("Error getting info from user ID",
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-            return $response->withStatus(409);
+            return $this->responseWithStatus($response, 409);
         }
        
         if ($fullname == '') {
             $this->logger->warning("No fullname given", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-            return $response->withStatus(409);
+            return $this->responseWithStatus($response, 409);
         }
         
         $profileUserName = $profileUserInfo['username'];
@@ -109,7 +106,7 @@ class ApiUsers extends ApiController
                     . "$profileUserName's profile but she/he is not allowed", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-            return $response->withStatus(403);
+            return  $this->responseWithStatus($response, 403);
         }
         if ($fullname === $profileUserInfo['fullname'] && 
                 $email === $profileUserInfo['email']) {
@@ -117,7 +114,7 @@ class ApiUsers extends ApiController
                     . "$profileUserName's profile, but without new information", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-            return $response->withStatus(200);
+            return  $this->responseWithStatus($response, 200);
         }
         
         if ($um->updateUserInfo($profileUserId, $fullname, $email) !== false) {
@@ -126,16 +123,14 @@ class ApiUsers extends ApiController
                     . "profile with fullname '$fullname', email '$email'", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-            return $response->withStatus(200);
+            return $this->responseWithStatus($response, 200);
         }
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
-        
+
         $this->logger->error("Could not update user $profileUserId with "
                 . "fullname '$fullname', email '$email'", 
                 [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-        return $response->withStatus(409);       
+        return $this->responseWithStatus($response, 409);
     }
 
     /**
@@ -145,11 +140,11 @@ class ApiUsers extends ApiController
      */
     public function changeUserPassword(Request $request, Response $response): Response
     {
-        $um = $this->getDataManager()->userManager;
         $this->profiler->start();
-
         $profileUserId =  (int) $request->getAttribute('userId');
-        $apiCall = 'ChangeUserPassword-' . $profileUserId;
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $profileUserId);
+
+        $um = $this->getDataManager()->userManager;
         $postData = $request->getParsedBody();
         $password1 = $postData['password1'];
         $password2 = $postData['password2'];
@@ -159,7 +154,7 @@ class ApiUsers extends ApiController
             $this->logger->error("Error getting info for user ID", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-            return $response->withStatus(409);
+            return $this->responseWithStatus($response, 409);
         }
         $profileUserName = $profileUserInfo['username'];
 
@@ -172,40 +167,36 @@ class ApiUsers extends ApiController
                     . "$profileUserName's password but she/he is not allowed", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-            return $response->withStatus(403);
+            return $this->responseWithStatus($response, 403);
         }
         if ($password1 == '') {
              $this->logger->warning("Empty password for user "
                      . "$profileUserName, change attempted by $updater", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-            return $response->withStatus(409);
+            return $this->responseWithStatus($response, 409);
         }
         if ($password1 !== $password2) {
             $this->logger->warning("Passwords do not match for user "
                     . "$profileUserName, change attempted by $updater", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-            return $response->withStatus(409);
+            return $this->responseWithStatus($response, 409);
         }
 
         if ($um->storeUserPassword($profileUserName, $password1)) {
-            $this->profiler->stop();
-            $this->logProfilerData($apiCall);
             $this->logger->info("$updater changed "
                     . "$profileUserName's password", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-            return $response->withStatus(200);
+            return $this->responseWithStatus($response, 200);
         }
 
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
         $this->logger->error("Error storing new password for "
                 . "$profileUserName, change attempted by $updater", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-        return $response->withStatus(409);
+        return $this->responseWithStatus($response, 409);
     }
 
     /**
@@ -215,24 +206,25 @@ class ApiUsers extends ApiController
      */
     public function makeUserRoot(Request $request, Response $response): Response
     {
-        $um = $this->getDataManager()->userManager;
         $profileUserId =  (int) $request->getAttribute('userId');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $profileUserId);
+
         $postData = $request->getParsedBody();
         $confirmroot = $postData['confirmroot'];
-
         if ($confirmroot !== 'on') {
             $this->logger->warning("No confirmation in make root request", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-            return $response->withStatus(409);
+            return $this->responseWithStatus($response, 409);
         }
+        $um = $this->getDataManager()->userManager;
         
         $profileUserInfo = $um->getUserInfoByUserId($profileUserId);
         if ($profileUserInfo === false ) {
             $this->logger->error("Error getting info for user ID", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-            return $response->withStatus(409);
+            return $this->responseWithStatus($response, 409);
         }
         $profileUserName = $profileUserInfo['username'];
         $updaterInfo = $um->getUserInfoByUserId($this->apiUserId);
@@ -242,21 +234,21 @@ class ApiUsers extends ApiController
                     . "root but she/he is not allowed", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-            return $response->withStatus(403);
+            return $this->responseWithStatus($response, 403);
         }
         
        if ($um->makeRoot($profileUserId)) {
             $this->logger->info("$updater gave root status to $profileUserName", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-            return $response->withStatus(200);
+            return $this->responseWithStatus($response, 200);
         }
         
         $this->logger->error("Error making $profileUserName root, change "
                 . "attempted by $updater", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
-        return $response->withStatus(409);
+        return $this->responseWithStatus($response, 409);
     }
 
     /**
@@ -266,6 +258,7 @@ class ApiUsers extends ApiController
      */
     public function createNewUser(Request $request, Response $response): Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $um = $this->getDataManager()->userManager;
         $postData = $request->getParsedBody();
         $username = $postData['username'];
@@ -278,7 +271,7 @@ class ApiUsers extends ApiController
         if ($updaterInfo === false) {
             $this->logger->error("Can't read updater info from DB", 
                     ['apiUserId' => $this->apiUserId]);
-            return $response->withStatus(404);
+            return $this->responseWithStatus($response, 404);
         }
         $updater = $updaterInfo['username'];
         
@@ -286,33 +279,33 @@ class ApiUsers extends ApiController
             $this->logger->warning("$updater tried to create a user, "
                     . "but she/he is not allowed", 
                     ['apiUserId' => $this->apiUserId]);
-            return $response->withStatus(401);
+            return $this->responseWithStatus($response, 401);
         }
         
         if ($username == '') {
             $this->logger->warning("No username given for user creation, "
                     . "change attempted by $updater", 
                     ['apiUserId' => $this->apiUserId]);
-            return $response->withStatus(409);
+            return $this->responseWithStatus($response, 409);
         }
         if ($fullname == '') {
             $this->logger->warning("No fullname given for user creation, "
                     . "change attempted by $updater", 
                     ['apiUserId' => $this->apiUserId]);
-            return $response->withStatus(409);
+            return $this->responseWithStatus($response, 409);
         }
         
         if ($password1 == '') {
             $this->logger->warning("No password given for user creation, "
                     . "change attempted by $updater", 
                     ['apiUserId' => $this->apiUserId]);
-            return $response->withStatus(409);
+            return $this->responseWithStatus($response, 409);
         }
         if ($password1 !== $password2) {
             $this->logger->warning("Passwords do not match for user creation, "
                     . "change attempted by $updater", 
                     ['apiUserId' => $this->apiUserId]);
-            return $response->withStatus(409);
+            return $this->responseWithStatus($response, 409);
         }
         
         // Create the user
@@ -320,14 +313,14 @@ class ApiUsers extends ApiController
              $this->logger->error("$username already exists, "
                      . "creation attempted by $updater", 
                     ['apiUserId' => $this->apiUserId]);
-            return $response->withStatus(409);
+            return $this->responseWithStatus($response, 409);
         }
         $newUserId = $um->createUserByUserName($username);
         if ($newUserId === false) {
             $this->logger->error("Can't create user $username, "
                     . "creation attempted by $updater", 
                     ['apiUserId' => $this->apiUserId]);
-            return $response->withStatus(409);
+            return $this->responseWithStatus($response, 409);
         }
         
         // Try to update info, will not return an error to the user, but 
@@ -339,7 +332,7 @@ class ApiUsers extends ApiController
                     . "change attempted by $updater", 
                     ['apiUserId' => $this->apiUserId ,
                      'userId' => $newUserId]);
-            return $response->withStatus(200);
+            return $this->responseWithStatus($response, 200);
         }
         
         // Update password
@@ -348,13 +341,13 @@ class ApiUsers extends ApiController
                     . "change attempted by $updater", 
                     ['apiUserId' => $this->apiUserId ,
                      'userId' => $newUserId]);
-            return $response->withStatus(200);
+            return $this->responseWithStatus($response, 200);
         }
         
         $this->logger->info("$username successfully created by $updater", 
                     ['apiUserId' => $this->apiUserId ,
                      'userId' => $newUserId]);
-        return $response->withStatus(200);
+        return $this->responseWithStatus($response, 200);
     }
 
     /**
@@ -366,8 +359,7 @@ class ApiUsers extends ApiController
     {
         $this->profiler->start();
         $userId =  (int) $request->getAttribute('userId');
-        $apiCall = "getTranscribedPages $userId";
-
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $userId);
 
         $cacheKey = self::CACHE_KEY_PREFIX_TRANSCRIBED_PAGES . $userId;
         $cacheHit = true;
@@ -387,8 +379,6 @@ class ApiUsers extends ApiController
             $this->systemManager->getCacheTracker()->incrementMisses();
         }
 
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
         return $this->responseWithJson($response, $data);
     }
 
@@ -407,10 +397,6 @@ class ApiUsers extends ApiController
             serialize($data), self::CACHE_TTL_TRANSCRIBED_PAGES);
         return true;
     }
-
-//    static public function invalidateTranscribedPagesData(DataCache $dataCache, $userId) {
-//        $dataCache->delete(self::CACHE_KEY_PREFIX_TRANSCRIBED_PAGES . $userId);
-//    }
 
     static public function buildTranscribedPagesData(SystemManager $systemManager, int $userId) : array {
         $dm = $systemManager->getDataManager();
@@ -440,11 +426,11 @@ class ApiUsers extends ApiController
     }
 
 
-    public function getCollationTableInfo(Request $request, Response $response) : Response {
-
+    public function getCollationTableInfo(Request $request, Response $response) : Response
+    {
         $this->profiler->start();
         $userId =  (int) $request->getAttribute('userId');
-        $apiCall = "getCollationTableInfo $userId";
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $userId);
 
         $cacheKey = self::CACHE_KEY_PREFIX_CT_INFO . $userId;
 
@@ -464,10 +450,6 @@ class ApiUsers extends ApiController
         } else {
             $this->systemManager->getCacheTracker()->incrementMisses();
         }
-
-
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
         return $this->responseWithJson($response, $data);
     }
 
@@ -526,20 +508,10 @@ class ApiUsers extends ApiController
         return true;
     }
 
-//    static public function invalidateCollationTablesInfoData(DataCache $dataCache, $userId) {
-//        $dataCache->delete(self::CACHE_KEY_PREFIX_CT_INFO . $userId);
-//    }
-
-
     public function getMultiChunkEditionInfo(Request $request, Response $response) : Response {
-        $this->profiler->start();
         $userId =  (int) $request->getAttribute('userId');
-        $apiCall = "getMultiChunkEditionInfo $userId";
-
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $userId);
         $editionInfo = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionInfoForUserId($userId);
-
-        $this->profiler->stop();
-        $this->logProfilerData($apiCall);
         return $this->responseWithJson($response, $editionInfo);
     }
 }

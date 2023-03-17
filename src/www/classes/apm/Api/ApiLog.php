@@ -10,29 +10,29 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 
 class ApiLog extends ApiController
 {
+    const CLASS_NAME = 'Log';
     public const SEVERITY_ERROR = 'error';
     public const SEVERITY_INFO = 'info';
     public const SEVERITY_DEBUG = 'debug';
     public const SEVERITY_WARNING = 'warning';
 
-    private $frontEndLogger;
+    private Logger $frontEndLogger;
 
 
     public function __construct(ContainerInterface $ci)
     {
         parent::__construct($ci);
-        $this->frontEndLogger = $this->logger->withName('FRONT_END');
+        $this->frontEndLogger = $this->systemManager->getLogger()->withName('FRONT_END');
     }
 
     /**
      * @param Request $request
      * @param Response $response
-     * @return array|Response
+     * @return Response
      */
-    public function frontEndLog(Request $request,  Response $response)
+    public function frontEndLog(Request $request,  Response $response) : Response
     {
-
-        $apiCall = 'frontEndLog';
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $requiredFields = [
             'module',
             'subModule',
@@ -41,7 +41,7 @@ class ApiLog extends ApiController
             'data'
         ];
 
-        $inputDataObject = $this->checkAndGetInputData($request, $response, $apiCall, $requiredFields);
+        $inputDataObject = $this->checkAndGetInputData($request, $response, $requiredFields);
         if (!is_array($inputDataObject)) {
             return $inputDataObject;
         }
@@ -66,11 +66,8 @@ class ApiLog extends ApiController
         }
 
         $inputDataObject['data']['apiUserId'] = $this->apiUserId;
-
         $logMessage = sprintf("%s:%s : %s", $inputDataObject['module'], $inputDataObject['subModule'], $inputDataObject['description']);
-
         $this->frontEndLogger->log($logLevel, $logMessage, $inputDataObject['data']);
         return $this->responseWithText($response, 'OK');
     }
-
 }

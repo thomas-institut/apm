@@ -45,25 +45,32 @@ use ThomasInstitut\TimeString\TimeString;
  */
 class ApiCollation extends ApiController
 {
-    const ERROR_NO_WITNESSES = 2000;
+
+    /**
+     * Class Name for reporting purposes
+     */
+    const CLASS_NAME = 'CollationTables';
+//    const ERROR_NO_WITNESSES = 2000;
     const ERROR_NOT_ENOUGH_WITNESSES = 2001;
     const ERROR_BAD_WITNESS = 2002;
     const ERROR_FAILED_COLLATION_ENGINE_PROCESSING = 2003;
     const ERROR_INVALID_LANGUAGE = 2004;
     const ERROR_INVALID_COLLATION_TABLE_ID = 2005;
     const ERROR_COLLATION_TABLE_DOES_NOT_EXIST = 2006;
-    const ERROR_MISSING_VERSION_INFO = 2007;
+//    const ERROR_MISSING_VERSION_INFO = 2007;
 
 
     public function  getActiveEditions(Request $request, Response $response, array $args): Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $infoArray = $this->systemManager->getCollationTableManager()->getActiveEditionTableInfo();
         return $this->responseWithJson($response, $infoArray);
     }
 
 
-    public function  getTable(Request $request, Response $response, array $args): Response
+    public function  getTable(Request $request, Response $response): Response
     {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
         $tableId = intval($request->getAttribute('tableId'));
         $timeStamp = '';
@@ -75,7 +82,6 @@ class ApiCollation extends ApiController
             $timeStamp = TimeString::now();
         }
 
-        $this->profiler->start();
         $this->logger->debug("Get collation table id $tableId at $timeStamp");
 
         $ctManager = $this->systemManager->getCollationTableManager();
@@ -146,28 +152,23 @@ class ApiCollation extends ApiController
      */
     public function automaticCollation(Request $request, Response $response): Response
     {
-        //$this->codeDebug('Starting automaticCollation');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        $this->profiler->start();
         $dataManager = $this->getDataManager();
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
-        $apiCall = 'Collation';
         $requiredFields = [ 'work', 'chunk', 'lang', 'witnesses'];
 
-        $inputDataObject = $this->checkAndGetInputData($request, $response, $apiCall, $requiredFields);
+        $inputDataObject = $this->checkAndGetInputData($request, $response, $requiredFields);
         if (!is_array($inputDataObject)) {
             return $inputDataObject;
         }
-        //$this->codeDebug('inputDataObject', $inputDataObject);
-        
+
         $workId = $inputDataObject['work'];
         $chunkNumber = intval($inputDataObject['chunk']);
         $language = $inputDataObject['lang'];
         $requestedWitnesses = $inputDataObject['witnesses'];
-        //$this->codeDebug('Requested witnesses', $requestedWitnesses);
-        $ignorePunctuation = isset($inputDataObject['ignorePunctuation']) ?
-                $inputDataObject['ignorePunctuation'] : false;
+        $ignorePunctuation = $inputDataObject['ignorePunctuation'] ?? false;
 
-
-        $this->profiler->start();
 
         // Check that language is valid
         $languages = $this->languages;
@@ -270,8 +271,6 @@ class ApiCollation extends ApiController
 
         
         $this->profiler->lap('Collation table built');
-//        $this->codeDebug('Collation table built', $collationTable->getData());
-
         $collationTableCacheId = implode(':', $witnessIds) . '-' . implode(':', $normalizerNames);
         $this->codeDebug('Collation table ID: ' . $collationTableCacheId);
 
@@ -310,7 +309,6 @@ class ApiCollation extends ApiController
                     $this->profiler->stop();
                     $responseData['collationEngineDetails']['cachedRunTime'] = $this->getProfilerTotalTime();
                     $responseData['collationEngineDetails']['cachedTimestamp'] = time();
-                    $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language (cached)");
                     return $this->responseWithJson($response, $responseData);
                 }
             }
@@ -393,9 +391,6 @@ class ApiCollation extends ApiController
                 ];
         }
 
-        $this->profiler->stop();
-        $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language");
-
         $collationEngineDetails = $collationEngine->getRunDetails();
         $collationEngineDetails['cached'] = false;
 
@@ -411,7 +406,6 @@ class ApiCollation extends ApiController
         ];
 
         // let's cache it!
-        $this->profiler->start();
         $jsonToCache = json_encode($responseData, JSON_UNESCAPED_UNICODE);
         // gzip it, just for fun
         $zipped = gzcompress($jsonToCache);
@@ -421,20 +415,17 @@ class ApiCollation extends ApiController
         $this->profiler->stop();
         $this->info("Automatic Collation Table generated", ['workId'=>$workId, 'chunk' => $chunkNumber, 'lang' => $lang]);
 
-        $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language, encoding and storing in cache");
-
-        return $this->responseWithJsonRaw($response, $jsonToCache);
+        return $this->responseWithRawJson($response, $jsonToCache);
     }
 
     public function saveCollationTable(Request $request, Response $response): Response
     {
-
-        $apiCall = 'CollationSave';
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $requiredFields = [ 'collationTable'];
 
         $this->profiler->start();
 
-        $inputDataObject = $this->checkAndGetInputData($request, $response, $apiCall, $requiredFields);
+        $inputDataObject = $this->checkAndGetInputData($request, $response, $requiredFields);
         if (!is_array($inputDataObject)) {
             return $inputDataObject;
         }
@@ -496,7 +487,6 @@ class ApiCollation extends ApiController
             $this->systemManager->onCollationTableSaved($this->apiUserId, $collationTableId);
             $this->profiler->stop();
             $this->info("Collation Table $collationTableId saved");
-            $this->logProfilerData('Api.SaveCollationTable');
             return $this->responseWithJson($response, $responseData);
         }
 
@@ -511,14 +501,13 @@ class ApiCollation extends ApiController
 
         $this->profiler->stop();
         $this->info("Collation Table $collationTableId saved (new table)");
-        $this->logProfilerData('Api.SaveCollationTable (new table');
         return $this->responseWithJson($response, $responseData);
     }
 
     public function convertWitnessToEdition(Request $request, Response $response): Response
     {
-        $apiCall = 'WitnessToEdition';
 
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
         $this->profiler->start();
         $witnessId = $request->getAttribute('witnessId');
@@ -621,8 +610,6 @@ class ApiCollation extends ApiController
             'tableId' => $collationTableId
         ];
 
-        $this->profiler->stop();
-        $this->logProfilerData('Witness to Edition conversion');
         return $this->responseWithJson($response, $responseData);
     }
 

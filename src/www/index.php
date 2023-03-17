@@ -74,6 +74,11 @@ use APM\Api\ApiSearch;
 
 use ThomasInstitut\Container\MinimalContainer;
 
+
+require 'SystemProfiler.php';
+
+SystemProfiler::start();
+
 require 'vendor/autoload.php';
 
 /**
@@ -91,17 +96,19 @@ if (!ConfigLoader::loadConfig()) {
     exitWithErrorMessage('Config file not found');
 }
 
+
 require 'setup.php';
 require 'version.php';
 
 global $config;
 
-// System Manager 
+// System Manager
 $systemManager = new ApmSystemManager($config);
 
 if ($systemManager->fatalErrorOccurred()) {
     exitWithErrorMessage($systemManager->getErrorMessage());
 }
+
 
 $logger = $systemManager->getLogger();
 $hm = $systemManager->getHookManager();
@@ -131,8 +138,12 @@ $router = $app->getRouteCollector()->getRouteParser();
 
 $systemManager->setRouter($router);
 
+
+
 // Add Twig middleware
 $app->add(new TwigMiddleware($systemManager->getTwig(), $router, $app->getBasePath()));
+
+
 
 // -----------------------------------------------------------------------------
 //  SITE ROUTES
@@ -335,7 +346,10 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
 
     // API -> log message from front end
     $group->post('/admin/log',
-        ApiLog::class . ':frontEndLog')
+        function(Request $request, Response $response) use ($container){
+            $ac = new ApiLog($container);
+            return $ac->frontEndLog($request, $response);
+        })
         ->setName('api.admin.log');
 
     // ELEMENTS
@@ -403,9 +417,9 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
 
     // API -> work : get work info
     $group->get('/work/{workId}/info',
-        function(Request $request, Response $response, array $args) use ($container){
+        function(Request $request, Response $response) use ($container){
             $apiWorks = new ApiWorks($container);
-            return $apiWorks->getWorkInfo($request, $response, $args);
+            return $apiWorks->getWorkInfo($request, $response);
         })
         ->setName('api.work.info');
 
@@ -488,7 +502,7 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
 
     $group->get('/collation/get/{tableId}[/{timestamp}]',  function(Request $request, Response $response, array $args) use ($container){
         $apiC = new ApiCollation($container);
-        return $apiC->getTable($request, $response, $args);
+        return $apiC->getTable($request, $response);
     })->setName('api.collation.get');
 
     $group->get('/collation/info/edition/active',  function(Request $request, Response $response, array $args) use ($container){
@@ -631,5 +645,8 @@ $app->group('/api/data', function(RouteCollectorProxy $group){
 // -----------------------------------------------------------------------------
 //  RUN!
 // -----------------------------------------------------------------------------
+
+
+SystemProfiler::lap('Ready to run');
 
 $app->run();

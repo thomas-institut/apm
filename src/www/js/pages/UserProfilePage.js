@@ -165,7 +165,7 @@ export class UserProfilePage {
 
 
   fetchTranscriptions() {
-    $.get(this.pathFor.apiUserGetTranscribedPages(this.userId)).then( (data) => {
+    $.get(this.pathFor.apiTranscriptionsByUserDocPageData(this.userId)).then( (data) => {
       this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data, this.pathFor))
     })
   }

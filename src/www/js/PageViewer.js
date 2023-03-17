@@ -183,7 +183,7 @@ class PageViewer {
         $('#tabsUl').append(theUl)
       }
       for (let col = 1; col <= numColumns; col++) {
-        let apiGetColumnDataUrl = pathFor.apiGetColumnData(thisObject.options.docId, thePageNumber, col)
+        let apiGetColumnDataUrl = pathFor.apiTranscriptionsGetData(thisObject.options.docId, thePageNumber, col)
         $.getJSON(
           apiGetColumnDataUrl, 
           function (respColData) {
@@ -231,7 +231,7 @@ class PageViewer {
             console.log('API data uploaded to server:')
             console.log(currentData)
             $.post(
-              pathFor.apiUpdateColumnData(thisObject.options.docId, thePageNumber, col), 
+              pathFor.apiTranscriptionsUpdateData(thisObject.options.docId, thePageNumber, col),
               { data: JSON.stringify(currentData) }
             )
             .done(function () { 
@@ -259,7 +259,7 @@ class PageViewer {
             te.on('version-request', function(ev){
               let versionId = ev.originalEvent.detail.versionId
               console.log('Version request from editor, version ID = ' + versionId)
-              let apiGetColumnDataUrl = pathFor.apiGetColumnDataWithVersion(thisObject.options.docId, thePageNumber, col, versionId)
+              let apiGetColumnDataUrl = pathFor.apiTranscriptionsGetDataWithVersion(thisObject.options.docId, thePageNumber, col, versionId)
               $.getJSON(apiGetColumnDataUrl, function (newColumnData){
                 console.log('API data received from server:')
                 console.log(newColumnData)

@@ -78,7 +78,7 @@ export class DashboardPage {
   }
 
   fetchTranscriptions() {
-    $.get(this.options.urlGenerator.apiUserGetTranscribedPages(this.userId)).then( (data) => {
+    $.get(this.options.urlGenerator.apiTranscriptionsByUserDocPageData(this.userId)).then( (data) => {
       this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data, this.options.urlGenerator))
     })
   }

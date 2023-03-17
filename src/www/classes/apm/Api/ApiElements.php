@@ -27,10 +27,8 @@ use AverroesProject\Data\DataManager;
 use AverroesProject\Data\EdNoteManager;
 use Exception;
 use ThomasInstitut\TimeString\TimeString;
-use DI\DependencyException;
-use DI\NotFoundException;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 
 /**
  * API Controller class
@@ -133,7 +131,7 @@ class ApiElements extends ApiController
 
         }
 
-        // Check elements and force hand Id on items
+        // Check elements and force hand ID on items
         $pageId = $dataManager->getPageIdByDocPage($docId, $pageNumber);
         $newElementsArray = $inputDataObject['elements'];
         $edNotes = $inputDataObject['ednotes'];
@@ -160,7 +158,7 @@ class ApiElements extends ApiController
                 }
             }
             
-            // check page Id
+            // check page ID
             if ($newElementsArray[$i]['pageId'] !== $pageId) {
                 $this->logger->error("Element with wrong pageId in input array",
                     [ 'apiUserId' => $this->apiUserId,
@@ -282,7 +280,7 @@ class ApiElements extends ApiController
                 return $this->responseWithJson($response,['error' => ApiController::API_ERROR_WRONG_TARGET_FOR_EDNOTE], 409);
             }
             if (!$dataManager->userManager->userExistsById($edNotes[$i]['authorId'])) {
-                $this->logger->error("Inexistent author Id for editorial note: " . $edNotes[$i]['authorId'],
+                $this->logger->error("Nonexistent author Id for editorial note: " . $edNotes[$i]['authorId'],
                     [ 'apiUserId' => $this->apiUserId,
                       'apiError' => ApiController::API_ERROR_WRONG_AUTHOR_ID,
                       'docId' => $docId,

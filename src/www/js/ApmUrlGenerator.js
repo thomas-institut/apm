@@ -16,15 +16,29 @@
  *
  */
 class ApmUrlGenerator {
+
+    /**
+     *
+     * @param {string }baseUrl
+     */
     constructor(baseUrl) {
         this.base = baseUrl;
     }
 
-    home() {
+    // -------------------------------
+    //  SITE
+    // -------------------------------
+
+    siteHome() {
         return this.base
     }
 
-    apiLog() {
+    // -------------------------------
+    // API
+    // -------------------------------
+
+    // ADMIN
+    apiAdminLog() {
         return `${this.base}/api/admin/log`
     }
 
@@ -32,18 +46,27 @@ class ApmUrlGenerator {
         return `${this.base}/api/pages/info`
     }
 
+
+    // TRANSCRIPTIONS
+
+    apiTranscriptionsGetData(docId, pageNumber, col) {
+        return `${this.base}/api/transcriptions/${docId}/${pageNumber}/${col}/get`
+    }
+    apiTranscriptionsGetDataWithVersion(docId, pageNumber, col, versionID) {
+        return `${this.base}/api/transcriptions/${docId}/${pageNumber}/${col}/get/version/${versionID}`
+    }
+    apiTranscriptionsUpdateData(docId, pageNumber, col) {
+        return `${this.base}/api/transcriptions/${docId}/${pageNumber}/${col}/update`
+    }
+
+    apiTranscriptionsByUserDocPageData(userId) {
+        return `${this.base}/api/transcriptions/byUser/${userId}/docPageData`
+    }
+
     apiGetNumColumns(docId, pageNumber) {
         return this.base + '/api/' + docId + '/' + pageNumber + '/numcolumns';
     }
-    apiGetColumnData(docId, pageNumber, col) {
-        return this.base + '/api/' + docId + '/' + pageNumber + '/' + col + '/elements';
-    }
-    apiGetColumnDataWithVersion(docId, pageNumber, col, versionID) {
-        return this.base + '/api/' + docId + '/' + pageNumber + '/' + col + '/elements/version/' + versionID;
-    }
-    apiUpdateColumnData(docId, pageNumber, col) {
-        return this.apiGetColumnData(docId, pageNumber, col) + '/update';
-    }
+
     apiAddColumn(docId, pageNumber) {
         return this.base + '/api/' + docId + '/' + pageNumber + '/newcolumn';
     }
@@ -63,9 +86,7 @@ class ApmUrlGenerator {
         return this.base + '/api/user/' + id + '/info';
     }
 
-    apiUserGetTranscribedPages(id) {
-        return this.base + '/api/user/' + id + '/transcribedPages';
-    }
+
 
     apiUserGetCollationTableInfo(id) {
         return this.base + '/api/user/' + id + '/collationTables';

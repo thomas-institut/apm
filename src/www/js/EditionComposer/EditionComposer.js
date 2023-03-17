@@ -139,7 +139,7 @@ export class EditionComposer {
     this.apiSaveCollationUrl = this.options.urlGenerator.apiSaveCollation()
 
     this.serverLogger = new ServerLogger({
-      apiCallUrl: this.options.urlGenerator.apiLog(),
+      apiCallUrl: this.options.urlGenerator.apiAdminLog(),
       module: 'EditionComposer'
     })
 
@@ -296,7 +296,7 @@ export class EditionComposer {
     }
 
     this.multiPanelUI = new MultiPanelUI({
-        logo: `<a href="${this.options.urlGenerator.home()}" title="Home">
+        logo: `<a href="${this.options.urlGenerator.siteHome()}" title="Home">
 <img src="${this.options.urlGenerator.images()}/apm-logo-plain.svg" height="40px" alt="logo"/></a>`,
         topBarContent: () => {
           return `<div class="top-bar-item top-bar-title" id="${editionTitleId}">Multi-panel User Interface</div>${thisObject.genCtInfoDiv()}`

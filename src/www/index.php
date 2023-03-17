@@ -30,7 +30,7 @@ use APM\Api\ApiLog;
 use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiTranscription;
 use APM\Api\ApiWorks;
-use APM\Site\SiteApmLog;
+
 use APM\Site\SiteMultiChunkEdition;
 use APM\System\ConfigLoader;
 use JetBrains\PhpStorm\NoReturn;
@@ -71,60 +71,44 @@ use APM\Api\ApiCollationTableConversion;
 use APM\Api\ApiTypesetPdf;
 use APM\Api\ApiWitness;
 use APM\Api\ApiSearch;
-
 use ThomasInstitut\Container\MinimalContainer;
+use Twig\Error\LoaderError;
 
-
+// Load system profiler first
 require 'SystemProfiler.php';
-
 SystemProfiler::start();
 
+// autoload
 require 'vendor/autoload.php';
 
-/**
- * Exits with an error message
- * @param string $msg
- */
-#[NoReturn] function exitWithErrorMessage(string $msg): void
-{
-    http_response_code(503);
-    print "<pre>ERROR: $msg";
-    exit();
-}
-
+// load and setup configuration file
 if (!ConfigLoader::loadConfig()) {
     exitWithErrorMessage('Config file not found');
 }
-
-
 require 'setup.php';
 require 'version.php';
 
+// Build System Manager
 global $config;
-
-// System Manager
 $systemManager = new ApmSystemManager($config);
 
 if ($systemManager->fatalErrorOccurred()) {
     exitWithErrorMessage($systemManager->getErrorMessage());
 }
 
-
-$logger = $systemManager->getLogger();
-$hm = $systemManager->getHookManager();
-$dbh = $systemManager->getDbConnection();
-
-
-// Data Manager (will be replaced completely by SystemManager at some point
-$dataManager = new DataManager($dbh, $systemManager->getTableNames(), $logger, $hm, $config[ApmConfigParameter::LANG_CODES]);
+// Build DataManager (will be replaced completely by SystemManager at some point
+$dataManager = new DataManager($systemManager->getDbConnection(), $systemManager->getTableNames(),
+    $systemManager->getLogger(), $systemManager->getHookManager(), $config[ApmConfigParameter::LANG_CODES]);
 $dataManager->setSqlQueryCounterTracker($systemManager->getSqlQueryCounterTracker());
 $dataManager->userManager->setSqlQueryCounterTracker($systemManager->getSqlQueryCounterTracker());
 $systemManager->setDataManager($dataManager);
 
+// Build container for Slim
 $container = new MinimalContainer();
 $container->set(ApmContainerKey::SYSTEM_MANAGER, $systemManager);
 $container->set(ApmContainerKey::USER_ID, 0);  // The authentication module will update this with the correct ID
 
+// Setup Slim App
 $responseFactory = new ResponseFactory();
 $app = new App($responseFactory, $container);
 
@@ -132,17 +116,16 @@ $subDir = $systemManager->getBaseUrlSubDir();
 if ($subDir !== '') {
     $app->setBasePath("/$subDir");
 }
-
 $app->addErrorMiddleware(true, true, true);
 $router = $app->getRouteCollector()->getRouteParser();
-
 $systemManager->setRouter($router);
 
-
-
-// Add Twig middleware
-$app->add(new TwigMiddleware($systemManager->getTwig(), $router, $app->getBasePath()));
-
+try {
+    $app->add(new TwigMiddleware($systemManager->getTwig(), $router, $app->getBasePath()));
+} catch (LoaderError $e) {
+    $systemManager->getLogger()->error("Loader error exception, aborting", [ 'msg' => $e->getMessage()]);
+    exitWithErrorMessage("Could not set up application, please report to administrators");
+}
 
 
 // -----------------------------------------------------------------------------
@@ -314,24 +297,17 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
         SitePageViewer::class . ':pageViewerPageByDocSeq')
         ->setName('pageviewer.docseq');
 
-
-    // ADMIN
-    $group->get('/admin/log', SiteApmLog::class . ':apmLogPage')->setName('admin.log');
-
-
-
 })->add(Authenticator::class . ':authenticate');
 
 // -----------------------------------------------------------------------------
 //  API ROUTES
 // -----------------------------------------------------------------------------
 
-// USER AUTHENTICATED API
+// USER AUTHENTICATED API, i.e., calls from JS apps
 
 $app->group('/api', function (RouteCollectorProxy $group) use ($container){
-    // ADMIN
 
-    // Search API
+    // SEARCH
      $group->post('/search/keyword',
         ApiSearch::class . ':search')
         ->setName('search.keyword');
@@ -344,7 +320,7 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         ApiSearch::class . ':getTranscribers')
         ->setName('search.transcribers');
 
-    // API -> log message from front end
+    // LOG
     $group->post('/admin/log',
         function(Request $request, Response $response) use ($container){
             $ac = new ApiLog($container);
@@ -352,22 +328,39 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         })
         ->setName('api.admin.log');
 
-    // ELEMENTS
+    // TRANSCRIPTIONS
 
-    // API -> getElements
-    $group->get('/{document}/{page}/{column}/elements',
-        ApiElements::class .  ':getElementsByDocPageCol')
-        ->setName('api.getelements');
+    // get pages transcribed by user
+    $group->get('/transcriptions/byUser/{userId}/docPageData', function(Request $request, Response $response) use ($container){
+        $apiUsers = new ApiUsers($container);
+        return $apiUsers->getTranscribedPages($request, $response);
+    } )->setName('api.transcriptions.byUser.docPageData');
 
-    //  API -> getElements (with version Id)
-    $group->get('/{document}/{page}/{column}/elements/version/{version}',
-        ApiElements::class . ':getElementsByDocPageCol')
-        ->setName('api.getelements.withversion');
+    //  getElements
+    $group->get('/transcriptions/{document}/{page}/{column}/get',
+        function(Request $request, Response $response) use ($container){
+            $ac = new ApiElements($container);
+            return $ac->getElementsByDocPageCol($request, $response);
+        })
+        ->setName('api.transcriptions.getData');
 
-    // API -> updateColumnElements
-    $group->post('/{document}/{page}/{column}/elements/update',
-        ApiElements::class . ':updateElementsByDocPageCol')
-        ->setName('api.updateelements');
+    //   getElements (with version Id)
+    // TODO: merge this with previous
+    $group->get('/transcriptions/{document}/{page}/{column}/get/version/{version}',
+        function(Request $request, Response $response) use ($container){
+            $ac = new ApiElements($container);
+            return $ac->getElementsByDocPageCol($request, $response);
+        })
+        ->setName('api.transcriptions.getData.withVersion');
+
+    // updateColumnElements
+    $group->post('/transcriptions/{document}/{page}/{column}/update',
+        function(Request $request, Response $response) use ($container){
+            $ac = new ApiElements($container);
+            return $ac->updateElementsByDocPageCol($request, $response);
+        })
+        ->setName('api.transcriptions.update');
+
 
     // DOCUMENTS
 
@@ -453,11 +446,7 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         ApiUsers::class . ':createNewUser')
         ->setName('api.user.new');
 
-    // API -> user : get pages transcribed by user
-    $group->get('/user/{userId}/transcribedPages', function(Request $request, Response $response, array $args) use ($container){
-        $apiUsers = new ApiUsers($container);
-        return $apiUsers->getTranscribedPages($request, $response, $args);
-    } )->setName('api.user.transcribedPages');
+
 
     // API -> user : get collation tables (and chunk edition) by user
     $group->get('/user/{userId}/collationTables', function(Request $request, Response $response, array $args) use ($container){
@@ -650,3 +639,17 @@ $app->group('/api/data', function(RouteCollectorProxy $group){
 SystemProfiler::lap('Ready to run');
 
 $app->run();
+
+
+
+
+/**
+ * Exits with an error message
+ * @param string $msg
+ */
+#[NoReturn] function exitWithErrorMessage(string $msg): void
+{
+    http_response_code(503);
+    print "<pre>ERROR: $msg";
+    exit();
+}

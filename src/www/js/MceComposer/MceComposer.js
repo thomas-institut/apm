@@ -228,7 +228,7 @@ export class MceComposer {
    ]
 
    this.multiPanelUI = new MultiPanelUI({
-       logo: `<a href="${this.options.urlGenerator.home()}" title="Home">
+       logo: `<a href="${this.options.urlGenerator.siteHome()}" title="Home">
 <img src="${this.options.urlGenerator.images()}/apm-logo-plain.svg" height="40px" alt="logo"/></a>`,
        topBarContent: () => {
          return `<div class="top-bar-item top-bar-title" id="${editionTitleId}">${this.mceData.title}</div>`

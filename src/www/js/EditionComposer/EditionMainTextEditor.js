@@ -167,8 +167,8 @@ export class EditionMainTextEditor {
   }
 
   getFmtText() {
-    this.debug && console.log(`Current Quill Delta`)
-    this.debug && console.log(this.getQuillDelta())
+    // this.debug && console.log(`Current Quill Delta`)
+    // this.debug && console.log(this.getQuillDelta())
     return this.quillDeltaConverter.toFmtText(this.getQuillDelta())
   }
 

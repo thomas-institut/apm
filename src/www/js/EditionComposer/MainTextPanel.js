@@ -41,7 +41,7 @@ import { FmtTextTokenFactory } from '../FmtText/FmtTextTokenFactory.mjs'
 import { capitalizeFirstLetter, deepCopy } from '../toolbox/Util.mjs'
 import { EditionMainTextEditor } from './EditionMainTextEditor'
 import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser'
-import * as MyersDiff from '../toolbox/MyersDiff.mjs'
+import * as AsyncMyersDiff from '../toolbox/AysncMyersDiff.mjs'
 import * as WitnessTokenType from '../Witness/WitnessTokenType'
 import * as EditionWitnessFormatMarkType from '../Witness/EditionWitnessFormatMark'
 import * as EditionWitnessParagraphStyle from '../Witness/EditionWitnessParagraphStyle'
@@ -53,6 +53,7 @@ import { EditionWitnessToken } from '../Witness/EditionWitnessToken'
 import { MainText } from '../Edition/MainText.mjs'
 import { TokenMatchScorer } from '../Edition/TokenMatchScorer'
 import { NiceToggle, toggleEvent } from '../widgets/NiceToggle'
+import { EventThrottle } from '../toolbox/EventThrottle'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_APPARATUS = 'apparatus'
@@ -107,6 +108,8 @@ export class MainTextPanel extends PanelWithToolbar {
     this.tokenIndexTwo = -1
     this.lastTypesetinfo = null
     this.detectNumberingLabels = true
+    this.diffEngine = new AsyncMyersDiff.AsyncMyersDiff()
+    this.onchangeMainTextFreeTextEditorWaiting = false
 
     this.changesInfoDivConstructed = false
 
@@ -505,70 +508,92 @@ export class MainTextPanel extends PanelWithToolbar {
   __detectAndReportChangesInEditedMainText() {
     if (!varsAreEqual(this.commitedFreeText, this.freeTextEditor.getFmtText())) {
       this.textEditRevertDiv.removeClass('hidden')
-      this.textEditCommitDiv.removeClass('hidden')
+      this.textEditCommitDiv.addClass('hidden')
       this.debug && console.log(`Changes in editor`)
 
       let currentWitnessTokens = this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens
-      this.debug && console.log(`Current witness tokens`)
-      this.debug && console.log(currentWitnessTokens)
+      // this.debug && console.log(`Current witness tokens`)
+      // this.debug && console.log(currentWitnessTokens)
 
       let newFmtText = this.freeTextEditor.getFmtText()
-      this.debug && console.log(`fmtText from editor`)
-      this.debug && console.log(newFmtText)
-
+      // this.debug && console.log(`fmtText from editor`)
+      // this.debug && console.log(newFmtText)
 
       let witnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText)
-      this.debug && console.log(`Witness tokens from editor`)
-      this.debug && console.log(witnessTokens)
+      // this.debug && console.log(`Witness tokens from editor`)
+      // this.debug && console.log(witnessTokens)
 
-      let changes = this._getChangesInTextEditor(currentWitnessTokens, witnessTokens)
-      this.debug && console.log(`Changes`)
-      this.debug && console.log(changes)
-      let changeListHtml = changes.map( (change) => {
-        switch( change.change) {
-          case 'replace':
-            return `${change.index+1}: ${this.__getWitnessTokenHtml(change.currentToken)} &rarr; ${this.__getWitnessTokenHtml(change.newToken)}`
-
-          case 'add':
-            if (change.index === -1) {
-              return `0: <em>add</em> ${this.__getWitnessTokenHtml(change.newToken)}`
+      this.betaEditorInfoDiv.html(`Calculating changes... <span class="spinner-border spinner-border-sm" role="status"></span>`)
+      this.changesInfoDivConstructed = false
+      wait(1000).then( () => {
+        if (this.diffEngine.isRunning()) {
+          // need to report completion so that the user does not get scared
+          let interval = setInterval( () => {
+            if (this.diffEngine.isRunning()) {
+              this.betaEditorInfoDiv.html(`Calculating changes... ${this.diffEngine.getIterations()} calculations of max. ${this.diffEngine.getMaxIterations()}`)
+            } else {
+              clearInterval(interval)
             }
-            return ` ${change.index+1}: ${this.__getWitnessTokenHtml(change.currentToken)} <em>add</em> ${this.__getWitnessTokenHtml(change.newToken)}`
-
-          case 'delete':
-            return `${change.index+1}: ${this.__getWitnessTokenHtml(change.currentToken)} &rarr; <em>empty</em>`
+          }, 250)
         }
-      }).map( (changeHtml) => { return `<li>${changeHtml}</li>`}).join('')
-      let mainTextWithChangesHtml = this._genMainTextWithChanges(currentWitnessTokens, changes)
-      if (!this.changesInfoDivConstructed) {
-        this.betaEditorInfoDiv.html(`<p id="num-changes"> </p>
+      })
+      this._getChangesInTextEditor(currentWitnessTokens, witnessTokens).then( (changes) => {
+        if (changes === null) {
+          // aborted operation
+          return
+        }
+        this.changes = changes
+        // this.debug && console.log(`Changes`)
+        // this.debug && console.log(changes)
+        let changeListHtml = changes.map( (change) => {
+          switch( change.change) {
+            case 'replace':
+              return `${change.index+1}: ${this.__getWitnessTokenHtml(change.currentToken)} &rarr; ${this.__getWitnessTokenHtml(change.newToken)}`
+
+            case 'add':
+              if (change.index === -1) {
+                return `0: <em>add</em> ${this.__getWitnessTokenHtml(change.newToken)}`
+              }
+              return ` ${change.index+1}: ${this.__getWitnessTokenHtml(change.currentToken)} <em>add</em> ${this.__getWitnessTokenHtml(change.newToken)}`
+
+            case 'delete':
+              return `${change.index+1}: ${this.__getWitnessTokenHtml(change.currentToken)} &rarr; <em>empty</em>`
+          }
+        }).map( (changeHtml) => { return `<li>${changeHtml}</li>`}).join('')
+        let mainTextWithChangesHtml = this._genMainTextWithChanges(currentWitnessTokens, changes)
+        if (!this.changesInfoDivConstructed) {
+          this.done = true
+          this.betaEditorInfoDiv.html(`<p id="num-changes"> </p>
                 <div id="revisions"></div><div id="ct-changes"></div>`)
-        this.numChangesPar = $('#num-changes')
-        this.revisionsPanel =  new CollapsePanel({
-          containerSelector: '#revisions',
-          title: 'Revisions',
-          contentClasses: ['main-text-with-changes'],
-          iconWhenShown: '<i class="bi bi-caret-down"></i>',
-          iconWhenHidden: '<i class="bi bi-caret-right"></i>',
-          initiallyShown: false
-        })
-        this.ctChangesPanel = new CollapsePanel({
-          containerSelector: '#ct-changes',
-          title: 'Collation Table Changes',
-          iconWhenShown: '<i class="bi bi-caret-down"></i>',
-          iconWhenHidden: '<i class="bi bi-caret-right"></i>',
-          initiallyShown: false
-        })
-        this.changesInfoDivConstructed = true
-      }
+          this.numChangesPar = $('#num-changes')
+          this.revisionsPanel =  new CollapsePanel({
+            containerSelector: '#revisions',
+            title: 'Revisions',
+            contentClasses: ['main-text-with-changes'],
+            iconWhenShown: '<i class="bi bi-caret-down"></i>',
+            iconWhenHidden: '<i class="bi bi-caret-right"></i>',
+            initiallyShown: false
+          })
+          this.ctChangesPanel = new CollapsePanel({
+            containerSelector: '#ct-changes',
+            title: 'Collation Table Changes',
+            iconWhenShown: '<i class="bi bi-caret-down"></i>',
+            iconWhenHidden: '<i class="bi bi-caret-right"></i>',
+            initiallyShown: false
+          })
+          this.changesInfoDivConstructed = true
+        }
 
-      this.numChangesPar.html(changes.length === 1 ? 'There is 1 change:' : `There are ${changes.length} changes:`)
-      this.revisionsPanel.setContent(mainTextWithChangesHtml)
-      this.ctChangesPanel.setContent(`<ul>${changeListHtml}</ul>`)
-      this.betaEditorInfoDiv.removeClass('hidden')
-
-
+        this.numChangesPar.html(changes.length === 1 ? 'There is 1 change:' : `There are ${changes.length} changes:`)
+        this.revisionsPanel.setContent(mainTextWithChangesHtml)
+        this.ctChangesPanel.setContent(`<ul>${changeListHtml}</ul>`)
+        this.betaEditorInfoDiv.removeClass('hidden')
+        if (changes.length !== 0) {
+          this.textEditCommitDiv.removeClass('hidden')
+        }
+      })
     } else {
+      this.changes = []
       this.textEditRevertDiv.addClass('hidden')
       this.textEditCommitDiv.addClass('hidden')
       this.betaEditorInfoDiv.html('No changes')
@@ -577,15 +602,18 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   _genOnChangeMainTextFreeTextEditor() {
-    return () => {
-        console.log(`On Change main text free text editor!`)
-        this.__detectAndReportChangesInEditedMainText()
-    }
+    let throttle = new EventThrottle( () => {
+      this.__detectAndReportChangesInEditedMainText()
+    }, 'OnChangeMainTextFreeTextEditor', 500)
+    return throttle.getHandler()
   }
 
   _genOnClickTextEditRevertChanges() {
-    return () => {
+    return async () => {
       this.verbose && console.log(`Reverting changes in text editor`)
+      this.diffEngine.abort()
+      await wait(50) // wait some time for the diff engine to actually abort
+      this.changes = []
       this.freeTextEditor.setText( this.commitedFreeText, true)
       this.textEditRevertDiv.addClass('hidden')
       this.textEditCommitDiv.addClass('hidden')
@@ -595,24 +623,38 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   _getChangesInTextEditor(currentWitnessTokens, newWitnessTokens) {
-    let workingCurrentWitnessTokens = deepCopy(currentWitnessTokens)
 
-    workingCurrentWitnessTokens = workingCurrentWitnessTokens
-      .map( (token, index) => {
-        // keep the original index
-        token['originalIndex'] = index
-        return token
-      })
-      .filter ( (token) => {
-        return token.tokenType !== 'empty'
-      })
+    return new Promise( async (resolve) => {
+      await wait(1)
+      let workingCurrentWitnessTokens = deepCopy(currentWitnessTokens)
+      workingCurrentWitnessTokens = workingCurrentWitnessTokens
+        .map( (token, index) => {
+          // keep the original index
+          token['originalIndex'] = index
+          return token
+        })
+        .filter ( (token) => {
+          return token.tokenType !== 'empty'
+        })
+      let editScript = await this.__getEditScript(workingCurrentWitnessTokens, newWitnessTokens)
+      if (editScript === null) {
+        // aborted operation
+        console.log('Aborted getEditScript')
+        resolve(null)
+        return
+      }
+      let changeList =this.__getChangeList(workingCurrentWitnessTokens, newWitnessTokens, editScript)
+      resolve(changeList)
+    })
 
-    let editScript = this.__getEditScript(workingCurrentWitnessTokens, newWitnessTokens)
-    return this.__getChangeList(workingCurrentWitnessTokens, newWitnessTokens, editScript)
   }
 
   _genOnClickTextEditCommitChanges() {
     return () => {
+      if (this.diffEngine.isRunning()) {
+        // need to wait until the engine is done
+        return
+      }
       this.verbose && console.log(`Committing changes`)
       let newFmtText = this.freeTextEditor.getFmtText()
       if (varsAreEqual(this.commitedFreeText, newFmtText)) {
@@ -622,7 +664,7 @@ export class MainTextPanel extends PanelWithToolbar {
         return
       }
       this.verbose && console.log(`There are changes, now it's almost for real`)
-
+      this.textEditRevertDiv.addClass('hidden')
       let newWitnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText)
       this.verbose && console.log('New witness tokens')
       this.verbose && console.log(newWitnessTokens)
@@ -632,12 +674,13 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   updateEditionWitness(newWitnessTokens) {
-    
+
+    let p = new SimpleProfiler('>>>> updateEditionWitness')
     let currentWitnessTokens = this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens
-    let changes = this._getChangesInTextEditor(currentWitnessTokens, newWitnessTokens)
+    // let changes = this._getChangesInTextEditor(currentWitnessTokens, newWitnessTokens)
+    let changes = this.changes
     console.log(`Changes`)
     console.log(changes)
-
     let columnsAdded = 0
     changes.forEach( (change, changeIndex) => {
       switch(change.change) {
@@ -662,11 +705,13 @@ export class MainTextPanel extends PanelWithToolbar {
           throw new Error(`Unknown change type '${change.change}', changeIndex: ${changeIndex}`)
       }
     })
-
+    p.lap(`changes processed`)
     this.lastTypesetinfo = null
     this.modeToggle.setOptionByName(EDIT_MODE_OFF, false)
     this._changeEditMode(EDIT_MODE_OFF, EDIT_MODE_TEXT)
+    p.lap(`edit mode changed to OFF`)
     this.options.onCtDataChange(this.ctData)
+    p.stop(`onCtDataChange finished`)
   }
 
   __getChangeList(oldTokens, newTokens, editScript) {
@@ -686,13 +731,13 @@ export class MainTextPanel extends PanelWithToolbar {
       switch (state) {
         case 0:
           switch (editScriptItem.command) {
-            case MyersDiff.KEEP:
+            case AsyncMyersDiff.KEEP:
               // nothing to do
               // debugStateMachine && console.log(`KEEP command in edit script (state = 0)`)
               lastKeptOrReplaced = editScriptItem.index
               break
 
-            case MyersDiff.ADD:
+            case AsyncMyersDiff.ADD:
               debugStateMachine && console.log(`INPUT editScriptItem ${i}:  command ${editScriptItem.command}, index ${editScriptItem.index}, seq ${editScriptItem.seq}`)
               debugStateMachine && console.log(`ADD command in edit script (state = 0), pushing an ADD to change list`)
               changeList.push({
@@ -704,7 +749,7 @@ export class MainTextPanel extends PanelWithToolbar {
               })
               break
 
-            case MyersDiff.DEL:
+            case AsyncMyersDiff.DEL:
               // need to wait for further ADDs and DELs
               debugStateMachine && console.log(`INPUT editScriptItem ${i}:  command ${editScriptItem.command}, index ${editScriptItem.index}, seq ${editScriptItem.seq}`)
               debugStateMachine && console.log(`DEL command in edit script (state = 0)`)
@@ -718,7 +763,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
         case 1:
           switch (editScriptItem.command) {
-            case MyersDiff.KEEP:
+            case AsyncMyersDiff.KEEP:
               debugStateMachine && console.log(`INPUT editScriptItem ${i}:  command ${editScriptItem.command}, index ${editScriptItem.index}, seq ${editScriptItem.seq}`)
               debugStateMachine && console.log(`KEEP command in edit script (state = 1)`)
               debugStateMachine && console.log(`-- processing deleteStack (${deleteStack.length} items) and addStack (${addStack.length} items)`)
@@ -756,7 +801,7 @@ export class MainTextPanel extends PanelWithToolbar {
                       newToken: newTokens[addIndex]
                     })
                   }
-                  // push a REPLACE
+                  // push a REPLACE command
                   let addIndex = addStack.shift()
                   debugStateMachine && console.log(`------ pushing REPLACE to change list, deleteIndex ${deleteIndex}, addIndex ${addIndex}`)
                   changeList.push({
@@ -790,7 +835,7 @@ export class MainTextPanel extends PanelWithToolbar {
               state = 0
               break
 
-            case MyersDiff.DEL:
+            case AsyncMyersDiff.DEL:
               // push it to deleteStack
               debugStateMachine && console.log(`INPUT editScriptItem ${i}:  command ${editScriptItem.command}, index ${editScriptItem.index}, seq ${editScriptItem.seq}`)
               debugStateMachine && console.log(`DEL command in edit script (state = 1)`)
@@ -798,7 +843,7 @@ export class MainTextPanel extends PanelWithToolbar {
               debugStateMachine && console.log(`-- adding index to the deleteStack, which now has ${deleteStack.length} items`)
               break
 
-            case MyersDiff.ADD:
+            case AsyncMyersDiff.ADD:
               // push it to addStack
               debugStateMachine && console.log(`ADD command in edit script (state = 1)`)
               addStack.push(editScriptItem.seq)
@@ -845,9 +890,28 @@ export class MainTextPanel extends PanelWithToolbar {
     return changeList
   }
 
-  __getEditScript(oldTokens, newTokens) {
+  async __getEditScript(oldTokens, newTokens) {
     const attributesToCompare = [ 'fontWeight', 'fontStyle']
-    return MyersDiff.calculate(oldTokens, newTokens, function(a,b) {
+    this.diffEngine.setDebugMode(true)
+    let waitForEngine = false
+    if (this.diffEngine.isRunning()) {
+      console.log(`Aborting diff engine`)
+      this.diffEngine.abort()
+      waitForEngine = true
+    }
+    // wait a bit until the engine stops
+    if (waitForEngine) {
+      let tickTime = 5
+      for (let attempts = 0; attempts < 100; attempts++) {
+        if (!this.diffEngine.isRunning()) {
+          console.log(`Diff engine free to run again, waited ${attempts} ticks of ${tickTime} ms each`)
+          break
+        }
+        await wait(tickTime)
+      }
+    }
+
+    return await this.diffEngine.calculate(oldTokens, newTokens, function(a,b) {
       if (a.tokenType !== b.tokenType) {
         return false
       }
@@ -958,8 +1022,8 @@ export class MainTextPanel extends PanelWithToolbar {
       })
       pushArray(witnessTokens, tmpWitnessTokens)
     })
-    console.log(`Intermediate tokens, before consolidation`)
-    console.log(witnessTokens)
+    // console.log(`Intermediate tokens, before consolidation`)
+    // console.log(witnessTokens)
     // consolidate text tokens
     let consolidatedWitnessTokens = []
     let tokensToConsolidate = []

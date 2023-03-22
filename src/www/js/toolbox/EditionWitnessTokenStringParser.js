@@ -107,7 +107,7 @@ export class EditionWitnessTokenStringParser {
       // start a little state machine
       // TODO: detect matching square brackets and don't generate punctuation for the closing one
       //  e.g:  'Roma[m]' should be a single word
-      console.log(`Word '${word}' is a mix of punctuation a non-punctuation`)
+      // console.log(`Word '${word}' is a mix of punctuation a non-punctuation`)
       let state = 0
       let tokenArray = []
       let curWord = ''

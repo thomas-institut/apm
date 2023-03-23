@@ -1,35 +1,23 @@
-<template>
-  <h1>Users</h1>
-  <ul>
-    <li v-for="user in userList">
-      {{user}}
-    </li>
-  </ul>
-</template>
-
 <script setup>
-import { onMounted, ref } from 'vue'
-
- let userList = ref([])
- let loaded = ref(false)
-
- onMounted(() =>{
-   getUsers()
- })
-
- async function getUsers() {
-  console.log(`Executing getUsers, loaded= ${loaded.value}`)
-   if (!loaded.value) {
-     console.log('Getting users')
-     setTimeout( () => {
-       console.log("Got users")
-       userList.value = [ 'Peter', 'Paul', 'Mary']
-       loaded.value = true
-     }, 2000)
-   }
- }
+import { inject } from 'vue'
+import { STATE_LOADED } from '@/helpers/DataLoader'
+import LoadingState from '@/components/LoadingState.vue'
+let userDataLoader = inject('userDataLoader')
 
 </script>
+
+<template>
+  <h1>Users</h1>
+    <template v-if="userDataLoader.state===STATE_LOADED">
+      <ul v-if="userDataLoader.data.length!==0">
+      <li v-for="user in userDataLoader.data" :key="user.id">
+        {{user.name}}
+      </li>
+      </ul>
+      <p v-else>No users</p>
+    </template>
+  <LoadingState :state="userDataLoader.state" data-name="User Data" v-else/>
+</template>
 
 <style scoped>
 

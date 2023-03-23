@@ -4,7 +4,11 @@
 </template>
 
 <script setup>
+import { onBeforeRouteUpdate } from 'vue-router'
+
 document.title = 'Documents'
+
+
 </script>
 
 <style scoped>

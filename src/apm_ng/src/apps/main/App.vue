@@ -1,5 +1,32 @@
 <script setup>
   import {RouterLink, RouterView} from 'vue-router'
+  import router from '@/router/index.js'
+  import { provide, reactive } from 'vue'
+  import { DataLoader, STATE_ERROR, STATE_NOT_LOADED } from '@/helpers/DataLoader.js'
+  import { FakeFetch } from '@/helpers/FakeFetch.js'
+
+  let userDataLoader = reactive(new DataLoader(FakeFetch.generateFakeFetcher(2000,[
+    { id: 1, name: 'Peter'},
+    { id: 2, name: 'Paul'},
+    { id: 3, name: 'Mary'}
+  ] )))
+
+
+  provide('userDataLoader', userDataLoader)
+
+  router.beforeEach( (to, from) => {
+    console.log(`Navigating from ${from.name} to ${to.name}`)
+    if (to.name === 'users') {
+      let currentState = userDataLoader.state
+      if (currentState === STATE_NOT_LOADED || currentState === STATE_ERROR) {
+        userDataLoader.doFetch().then( (state) => {
+          console.log(`User data loader now in state '${state}'`)
+        })
+      }
+    }
+  })
+
+
 </script>
 
 <template>

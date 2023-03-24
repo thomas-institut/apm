@@ -426,6 +426,14 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         })
         ->setName('api.user.info');
 
+
+    $group->get('/users/all',
+        function(Request $request, Response $response) use ($container){
+            $apiUsers = new ApiUsers($container);
+            return $apiUsers->getAllUsers($request, $response);
+        })
+        ->setName('api.users.all');
+
     // API -> user : update profile
     $group->post('/user/{userId}/update',
         ApiUsers::class . ':updateUserProfile')
@@ -629,7 +637,16 @@ $app->group('/api/data', function(RouteCollectorProxy $group){
     $group->get('/transcription/get/{docId}/{page}', ApiTranscription::class . ':getTranscription');
 })->add(Authenticator::class . ':authenticateDataApiRequest');
 
-// PUBLIC API
+// App authentication
+
+$app->group('/api/app', function(RouteCollectorProxy $group) use ($container) {
+
+    $group->any('/login', function(Request $request, Response $response) use ($container){
+        $apiC = new Authenticator($container);
+        return $apiC->apiLogin($request, $response);
+    })->setName('api.app.authenticate');
+
+});
 
 // -----------------------------------------------------------------------------
 //  RUN!

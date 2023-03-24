@@ -3,7 +3,7 @@
     {{dataName}} not loaded
   </p>
   <p v-else-if="state===STATE_LOADING">
-    Loading {{ dataName }}  <WheelSpinner size="20"/>
+    Loading {{ dataName }}  <WheelSpinner :size="16"/>
   </p>
   <p class="error" v-else-if="state===STATE_ERROR">
     Error loading {{ dataName }}
@@ -16,7 +16,10 @@
 <script setup>
 import {STATE_ERROR, STATE_LOADING, STATE_NOT_LOADED} from '@/helpers/DataLoader'
 import WheelSpinner from '@/components/WheelSpinner.vue'
-defineProps(['state', 'dataName'])
+defineProps({
+      state: { type: String, default: STATE_NOT_LOADED },
+      dataName: { type: String, default: 'Data' }
+    })
 </script>
 
 <style scoped>

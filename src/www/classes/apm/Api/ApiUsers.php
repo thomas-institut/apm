@@ -44,6 +44,19 @@ class ApiUsers extends ApiController
 
     const CACHE_TTL_CT_INFO = 7 * 24 * 3600;  // 7 days
 
+
+    public function getAllUsers(Request $request, Response $response) : Response {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
+        $um = $this->getDataManager()->userManager;
+
+        $users = $um->getUserInfoForAllUsers();
+        $origin = $request->getHeaders()["Origin"];
+        // TODO: check origin against list of valid origins
+        $response = $response->withHeader("Access-Control-Allow-Origin", $origin)->withHeader("Access-Control-Allow-Credentials", "true");
+        return $this->responseWithJson($response, $users);
+    }
+
+
     /**
      * @param Request $request
      * @param Response $response

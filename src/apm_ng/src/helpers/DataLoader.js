@@ -6,7 +6,7 @@ export const STATE_ERROR = 'error'
 export class DataLoader {
   /**
    *
-   * @param {function(Promise<Object>)}fetchData
+   * @param {function()}fetchData
    */
   constructor (fetchData) {
 

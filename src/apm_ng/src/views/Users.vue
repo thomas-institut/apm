@@ -11,7 +11,7 @@ let userDataLoader = inject('userDataLoader')
     <template v-if="userDataLoader.state===STATE_LOADED">
       <ul v-if="userDataLoader.data.length!==0">
       <li v-for="user in userDataLoader.data" :key="user.id">
-        {{user.name}}
+        {{user.fullname}}
       </li>
       </ul>
       <p v-else>No users</p>

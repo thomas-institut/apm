@@ -37,11 +37,15 @@ use APM\System\SystemManager;
 use AverroesProject\Data\UserManager;
 use DateInterval;
 use DateTime;
+use Dflydev\FigCookies\Cookies;
 use DI\DependencyException;
 use DI\NotFoundException;
 use Exception;
 use Monolog\Logger;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use Psr\Http\Message\ResponseInterface;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use \Dflydev\FigCookies\FigRequestCookies;
@@ -64,6 +68,8 @@ class Authenticator {
 
 
     const LOGIN_PAGE_SIGNATURE = 'Login-8gRSSm23HPdStrEid5Wi';
+
+
     /**
      * @var ContainerInterface
      */
@@ -98,10 +104,6 @@ class Authenticator {
     private Twig $view;
 
     /**
-     * @var array
-     */
-//    private $config;
-    /**
      * @var SystemManager
      */
     private SystemManager $systemManager;
@@ -110,12 +112,13 @@ class Authenticator {
     /**
      * Authenticator constructor.
      * @param ContainerInterface $ci
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function __construct(ContainerInterface $ci)
     {
         $this->container = $ci;
         $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
-//        $this->config = $this->systemManager->getConfig();
         $this->router = $this->systemManager->getRouter();
         $this->userManager = $this->systemManager->getDataManager()->userManager;
         $this->logger = $this->systemManager->getLogger()->withName('AUTH');
@@ -232,6 +235,104 @@ class Authenticator {
         }
     }
 
+    protected function responseWithJson(ResponseInterface $response, array $data,int $status = 200) : ResponseInterface {
+        $response->getBody()->write(json_encode($data));
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus($status);
+    }
+
+
+    /**
+     * Authenticates a user for API usage
+     *   If the request includes cookies  it will use it to try to authenticate the
+     *   user that way. Otherwise, it will look of user/pwd in data.
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws Exception
+     */
+    public function apiLogin(Request $request, Response $response): Response {
+        $this->debugMode = false;
+        $this->debug('API Login request');
+        $this->debug("Login headers", $request->getHeaders());
+        $this->debug('Request method is ' . $request->getMethod());
+        $origin = $request->getHeaders()["Origin"];
+        // TODO: check origin against list of valid origins
+        $response = $response->withHeader("Access-Control-Allow-Origin", $origin)->withHeader("Access-Control-Allow-Credentials", "true");
+
+        $cookies = Cookies::fromRequest($request);
+        if ($cookies->has($this->cookieName)) {
+            $userId = $this->getUserIdFromLongTermCookie($request);
+            if ($userId === false){
+                $this->apiLogger->notice("Authentication fail: no user Id in cookie");
+                return $response->withStatus(401);
+            }
+            $this->apiLogger->info("User $userId authenticated with long term cookie");
+            $userData = $this->userManager->getUserInfoByUserId($userId);
+            return $this->responseWithJson($response, ['userId' => $userId, 'userData' => $userData]);
+        }
+        if ($request->getMethod() === 'POST') {
+            $data = $request->getParsedBody();
+            // DON'T DO THIS:    $this->debug('Got POST data', $data);
+            // ... it will show the user password in the log!
+            if (isset($data['user']) && isset($data['pwd'])){
+                $this->debug('Got data for login');
+                $user = filter_var($data['user'], FILTER_SANITIZE_STRING);
+                $pwd = filter_var($data['pwd'], FILTER_SANITIZE_STRING);
+                $redirectUrl = $data['redirect'];
+                $this->debug('Trying to log in user ' . $user);
+                if ($this->userManager->verifyUserPassword($user, $pwd)){
+                    $userAgent = $request->getHeader('User-Agent')[0];
+                    $ipAddress = $request->getServerParams()['REMOTE_ADDR'];
+                    $this->apiLogger->info("API Login", ['user' => $user, 'user_agent' => $userAgent, 'ip_address' => $ipAddress ]);
+                    // Success!
+                    $userId = $this->userManager->getUserIdFromUsername($user);
+                    $this->debug('Generating token cookie');
+                    $token = $this->generateRandomToken();
+                    $this->userManager->storeUserToken(
+                        $userId,
+                        $userAgent,
+                        $ipAddress,
+                        $token
+                    );
+                    $cookieValue = $this->generateLongTermCookieValue($token,
+                        $userId);
+                    $now = new DateTime();
+                    $cookie = SetCookie::create($this->cookieName)
+                        ->withValue($cookieValue)
+                        ->withExpires($now->add(
+                        new DateInterval('P14D')));
+                    $response = FigResponseCookies::set($response, $cookie);
+                    if ($this->isValidRedirectUrl($redirectUrl)) {
+                        return $response->withHeader('Location',
+                            $redirectUrl);
+                    }
+                    $this->apiLogger->info("User $userId authenticated with user/pwd data");
+                    $userData = $this->userManager->getUserInfoByUserId($userId);
+                    return $this->responseWithJson($response, ['userId' => $userId, 'userData' => $userData]);
+                }
+                else {
+                    $this->apiLogger->notice('Wrong user/password',
+                        ['user' => $user]);
+                }
+            } else {
+                $this->debug("No user or password in data");
+            }
+        }
+
+        // Authentication fail
+        return $response->withStatus(401);
+    }
+
+    private function isValidRedirectUrl($url) : bool {
+        if (is_null($url) || $url === '') {
+            return false;
+        }
+        // TODO: check against a list of valid urls
+        return true;
+    }
+
     /**
      * @param Request $request
      * @param Response $response
@@ -241,10 +342,10 @@ class Authenticator {
      * @throws SyntaxError
      * @throws Exception
      */
-    public function login(Request $request, Response $response)
+    public function login(Request $request, Response $response): Response
     {
         session_start();
-        $this->debug('Login request');
+        $this->debug('Site Login request');
         $this->debug("Login headers", $request->getHeaders());
         $this->debug('Request method is ' . $request->getMethod());
         $msg = '';
@@ -299,6 +400,8 @@ class Authenticator {
                 }
             }
         }
+        // not authenticated
+
         $this->debug('Showing login page');
 
         return $this->view->render($response, 'login.twig',
@@ -339,8 +442,9 @@ class Authenticator {
     }
     
     
-    public function authenticateApiRequest (Request $request, RequestHandlerInterface $handler)
+    public function authenticateApiRequest (Request $request, RequestHandlerInterface $handler): \Slim\Psr7\Response|Response
     {
+        $this->debugMode = true;
         if ($this->debugMode) {
             $this->profiler->start();
         }
@@ -363,7 +467,7 @@ class Authenticator {
     {
         //$this->debug('Checking long term cookie');
         $longTermCookie = FigRequestCookies::get($request, $this->cookieName);
-        if ($longTermCookie !== NULL and $longTermCookie->getValue()){
+        if (!is_null($longTermCookie) and $longTermCookie->getValue()){
             $cookieValue = $longTermCookie->getValue();
             list($userId, $token, $mac) = explode(':', $cookieValue);
             if (hash_equals($this->generateMac($userId . ':' . $token), $mac)) {

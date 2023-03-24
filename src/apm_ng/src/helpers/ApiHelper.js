@@ -30,7 +30,8 @@ export class ApiHelper {
 
   async __post(url, data, withCredentials = true, postWithJson = false) {
     const contentType =  postWithJson ? "application/json" : 'application/x-www-form-urlencoded'
-    const body = postWithJson ? JSON.stringify(data) : new URLSearchParams(data)
+    const body = postWithJson ? JSON.stringify(data) : (new URLSearchParams(data)).toString()
+
     let fetchInit = {
       method: "POST",
       headers: {

@@ -9,7 +9,7 @@
   const AUTH_NOT_AUTHENTICATED = 1
   const AUTH_AUTHENTICATED = 2
 
-  let apiHelper = new ApiHelper('http://localhost:8888', '')
+  let apiHelper = new ApiHelper(appConfig.apmBaseurl, '')
 
   let userInfo = reactive({
     userId: -1,
@@ -25,14 +25,12 @@
       console.log(response.status)
       if (response.status === 200) {
         console.log(`User is authenticated`)
-        let data = await  response.json()
+        let data = await response.json()
         userInfo.userId = data['userId']
         userInfo.userName = data['userData'].username
         userInfo.fullName = data['userData'].fullname
         userInfo.authenticationStatus = AUTH_AUTHENTICATED
-        if (response.headers.has('Set-Cookie')) {
-          document.cookie = response.headers.get('Set-Cookie')
-        }
+        document.cookie = data['authCookie']
       } else {
         userInfo.authenticationStatus = AUTH_NOT_AUTHENTICATED
       }
@@ -89,7 +87,7 @@
       <table class="login-table">
         <tr><td>Username:</td><td><input id="user-input" type="text"></td></tr>
         <tr><td>Password:</td><td><input id="password-input" type="password"></td></tr>
-        <tr><td></td><td><input class="logininput" type="submit" value="Login"></td></tr>
+        <tr><td></td><td><button @click="onClickLoginButton()">Login</button></td></tr>
       </table>
       </form>
 

@@ -405,14 +405,13 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
      * if there's no token, returns an empty string
      * if the user does not exist returns false
      * @param int $userId
-     * @param $userAgent
-     * @param $ipAddress
-     * @return string
+     * @param string $userAgent
+     * @return string|bool
      */
-    public function getUserToken(int $userId, string $userAgent, string $ipAddress)
+    public function getUserToken(int $userId, string $userAgent): bool|string
     {
         if ($this->userExistsById($userId)){
-            $tokenRows = $this->getUserTokenRows($userId, $userAgent, $ipAddress);
+            $tokenRows = $this->getUserTokenRows($userId, $userAgent);
             if ($tokenRows === false) {
                 return '';
             }
@@ -427,15 +426,14 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         return false;
     }
     
-    public function getUserTokenRows(int $userId, string $userAgent, string $ipAddress) : array
+    public function getUserTokenRows(int $userId, string $userAgent) : array
     {
         // ignoring IP address to see if that gets rid of unwanted logouts for
-        // people on unstable wifi
+        // people on unstable Wi-Fi
         $this->getSqlQueryCounterTracker()->incrementSelect();
         return $this->tokensTable->findRows( [
             'user_id' => $userId, 
             'user_agent' => $userAgent
-            //'ip_address' => $ipAddress
         ]);
     }
     public function storeUserToken(int $userId, string $userAgent, string $ipAddress, string $token)
@@ -443,7 +441,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         //$this->logger->debug("Storing user token");
         if ($this->userExistsById($userId)){
             // Get the current token
-            $tokenRows = $this->getUserTokenRows($userId, $userAgent, $ipAddress);
+            $tokenRows = $this->getUserTokenRows($userId, $userAgent);
             //$this->logger->debug("Token rows: " . print_r($tokenRows, true));
             if ($tokenRows !== false) {
                 // Delete current token

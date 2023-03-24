@@ -637,14 +637,14 @@ $app->group('/api/data', function(RouteCollectorProxy $group){
     $group->get('/transcription/get/{docId}/{page}', ApiTranscription::class . ':getTranscription');
 })->add(Authenticator::class . ':authenticateDataApiRequest');
 
-// App authentication
+// SPA Login
 
 $app->group('/api/app', function(RouteCollectorProxy $group) use ($container) {
 
     $group->any('/login', function(Request $request, Response $response) use ($container){
         $apiC = new Authenticator($container);
         return $apiC->apiLogin($request, $response);
-    })->setName('api.app.authenticate');
+    })->setName('api.app.login');
 
 });
 

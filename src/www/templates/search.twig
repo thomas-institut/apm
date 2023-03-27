@@ -342,6 +342,7 @@
             let docID = data[i]['docID']
             let transcript_tokenized = data[i]['transcript_tokenized']
             let positions = data[i]['positions']
+            let passage_coordinates = data[i]['passage_coordinates']
 
             // Get link for matched column
             let url = url_generator.sitePageView(docID, seq, column)

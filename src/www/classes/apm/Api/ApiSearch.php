@@ -89,7 +89,7 @@ class ApiSearch extends ApiController
         }
 
         // Get all information about the matched columns, including passages with the matched token as lists of tokens
-        $data = $this->getStructuredData($query, $longest_token_for_query, $tokens_for_query, $lemmata, $radius, $lemmatize);
+        $data = $this->getData($query, $longest_token_for_query, $tokens_for_query, $lemmata, $radius, $lemmatize);
 
         // Until now, only the longest token in the searched phrase was handled
         // So, if there is more than one token in the searched phrase, now filter out all columns and passages, which do not match all tokens
@@ -278,7 +278,7 @@ class ApiSearch extends ApiController
     }
 
     // Get all information about matches, specified for a single document or all documents
-    private function getStructuredData (array $query, string $token, array $tokens_for_query, array $lemmata, int $radius, bool $lemmatize): array {
+    private function getData (array $query, string $token, array $tokens_for_query, array $lemmata, int $radius, bool $lemmatize): array {
 
         // Choose filter algorithm based on asterisks in the queried token - remove asterisks for further processing
         $filter = $this->getFilterType($token);
@@ -358,29 +358,13 @@ class ApiSearch extends ApiController
 
                         // Collect all matched tokens contained in the current passage in an array – will be used for highlighting keywords in js
                         $tokens_matched[] = [$transcript_tokenized[$pos]];
+
                         foreach ($passage_tokenized[$counter] as $word) {
-                                if ($filter === 'match_prefix') {
-                                    if (strpos($word, $token) === 0 or strpos($word, ucfirst($token)) === 0) {
-                                        $tokens_matched[$counter][] = $word;
-                                    }
-                                }
-                                elseif ($filter === 'match_body') {
-                                    if (strpos($word, $token) !== false and strpos($word, $token) != 0
-                                        and strpos($word, $token) != strlen($word)-strlen($token)) {
-                                        $tokens_matched[$counter][] = $word;
-                                    }
-                                }
-                                elseif ($filter === 'match_suffix') {
-                                    if (strpos($word, $token) !== false and strpos($word, $token) == strlen($word)-strlen($token)) {
-                                        $tokens_matched[$counter][] = $word;
-                                    }
-                                }
-                                elseif ($filter = 'match_exact') {
-                                    if ($word == $token) {
-                                        $tokens_matched[$counter][] = $word;
-                                    }
-                                }
+
+                            if ($this->isMatching($word, $token, $filter)) {
+                                $tokens_matched[$counter][] = $word;
                             }
+                        }
 
                         // Remove duplicates from the tokens_matched array and adjust the keys of the array
                         $tokens_matched[$counter] = array_values(array_unique($tokens_matched[$counter]));
@@ -463,103 +447,38 @@ class ApiSearch extends ApiController
             $filter = $this->getFilterType($token_plain);
             $token_plain= str_replace("*", "", $token_plain);
 
-            // CAN THE FOLLOWING CODE BECOME SHORTER!? HIER WEITER KÜRZEN
-
-            // First, remove all passage_tokenized from $data, which do not match the token
+            // Add matching tokens (depending on filter type) to the tokens_matched array in data
             foreach ($data as $i => $column) {
 
-                // Write filter type into data
                 $data[$i]['filters'][] = $filter;
 
-                foreach ($column['passage_tokenized'] as $j => $passage_tokenized) {
-                    $passage_string = " ";   // Creates a string, which stores full context in it – needed for checking for keyword
+                foreach ($column['passage_tokenized'] as $j => $passage) {
 
-                    foreach ($passage_tokenized as $k => $token) {
+                    $num_matched_tokens =  count($data[$i]['tokens_matched'][$j]);
 
-                        $passage_string = $passage_string . $token . " "; // Append token to passage-string for later checks
+                        foreach ($passage as $k => $token) {
 
-                        // Add matched tokens to data-array and make the tokens_matched-slot unique (no doubles)
-                        if ($filter === 'match_exact') {
-                            if ($token === $token_plain or $token === ucfirst($token_plain)) {
-                                $data[$i]['tokens_matched'][$j][] = $passage_tokenized[$k];
+                            if ($this->isMatching($token, $token_plain, $filter)) {
+                                $data[$i]['tokens_matched'][$j][] = $passage[$k];
                                 $data[$i]['tokens_matched'][$j] = array_unique($data[$i]['tokens_matched'][$j]);
                             }
                         }
-                        elseif ($filter === 'match_prefix') {
-                            if (strpos($token, $token_plain) === 0 or strpos($token, ucfirst($token_plain)) === 0) {
-                                $data[$i]['tokens_matched'][$j][] = $passage_tokenized[$k];
-                                $data[$i]['tokens_matched'][$j] = array_unique($data[$i]['tokens_matched'][$j]);
-                            }
-                        }
-                        elseif ($filter === 'match_body') {
-                            if (strpos($token, $token_plain) !== false and strpos($token, $token_plain) != 0
-                                and strpos($token, $token_plain) !== strlen($token)-strlen($token_plain)) {
-                                $data[$i]['tokens_matched'][$j][] = $passage_tokenized[$k];
-                                $data[$i]['tokens_matched'][$j] = array_unique($data[$i]['tokens_matched'][$j]);
-                            }
-                        }
-                        elseif ($filter === 'match_suffix') {
-                            if (strpos($token, $token_plain) !== false and strpos($token, $token_plain) == strlen($token)-strlen($token_plain)) {
-                                $data[$i]['tokens_matched'][$j][] = $passage_tokenized[$k];
-                                $data[$i]['tokens_matched'][$j] = array_unique($data[$i]['tokens_matched'][$j]);
-                            }
-                        }
+
+                        // If there was no matching token in a passage, remove it
+                    if ($num_matched_tokens === count($data[$i]['tokens_matched'][$j])) {
+
+                        unset($data[$i]['passage_tokenized'][$j]);
+                        unset($data[$i]['passage_lemmatized'][$j]);
+                        unset($data[$i]['tokens_matched'][$j]);
+                        unset($data[$i]['passage_coordinates'][$j]);
+                        unset($data[$i]['positions'][$j]);
+                        $data[$i]['num_passages'] = $data[$i]['num_passages'] - 1;
                     }
-
-                    // If the token is not in the passage, remove passage_tokenized, passage_lemmatized and tokens_matched from $data
-                    // Also adjust the num_passages in $data
-                        if ($filter === 'match_exact') {
-                            $token_full = " " . $token_plain . " ";
-                            $token_full_uc = " " . ucfirst($token_plain) . " ";
-                            if (strpos($passage_string, $token_full) === false && strpos($passage_string, $token_full_uc) === false) {
-                                unset($data[$i]['passage_tokenized'][$j]);
-                                unset($data[$i]['passage_lemmatized'][$j]);
-                                unset($data[$i]['tokens_matched'][$j]);
-                                unset($data[$i]['passage_coordinates'][$j]);
-                                unset($data[$i]['positions'][$j]);
-                                $data[$i]['num_passages'] = $data[$i]['num_passages'] - 1;
-                            }
-                        }
-                        elseif ($filter === 'match_prefix') {
-                            $token_prefix = " " . $token_plain;
-                            $token_prefix_uc = " " . ucfirst($token_plain);
-                            if (strpos($passage_string, $token_prefix) === false && strpos($passage_string, $token_prefix_uc) === false) {
-                                unset($data[$i]['passage_tokenized'][$j]);
-                                unset($data[$i]['passage_lemmatized'][$j]);
-                                unset($data[$i]['tokens_matched'][$j]);
-                                unset($data[$i]['passage_coordinates'][$j]);
-                                unset($data[$i]['positions'][$j]);
-                                $data[$i]['num_passages'] = $data[$i]['num_passages'] - 1;
-                            }
-                        }
-                        elseif ($filter === 'match_body') {
-                            $pos = strpos($passage_string, $token_plain);
-                            $token_length = strlen($token_plain);
-                            if ($pos === false or $passage_string[$pos-1] === " " or $passage_string[$pos+$token_length] === " ") {
-                                unset($data[$i]['passage_tokenized'][$j]);
-                                unset($data[$i]['passage_lemmatized'][$j]);
-                                unset($data[$i]['tokens_matched'][$j]);
-                                unset($data[$i]['passage_coordinates'][$j]);
-                                unset($data[$i]['positions'][$j]);
-                                $data[$i]['num_passages'] = $data[$i]['num_passages'] - 1;
-                            }
-                        }
-                        elseif ($filter === 'match_suffix') {
-                            $token_suffix = $token_plain . " ";
-                            if (strpos($passage_string, $token_suffix) === false) {
-                                unset($data[$i]['passage_tokenized'][$j]);
-                                unset($data[$i]['passage_lemmatized'][$j]);
-                                unset($data[$i]['tokens_matched'][$j]);
-                                unset($data[$i]['passage_coordinates'][$j]);
-                                unset($data[$i]['positions'][$j]);
-                                $data[$i]['num_passages'] = $data[$i]['num_passages'] - 1;
-                            }
-                        }
                 }
             }
         }
 
-        // Second, unset all columns, which do not anymore have any passage_tokenized
+        // Unset all columns, which do not anymore have any passage_tokenized
         foreach ($data as $i=>$column) {
             if ($column['passage_tokenized'] === []) {
                 unset ($data[$i]);
@@ -572,13 +491,56 @@ class ApiSearch extends ApiController
                 $data[$i]['tokens_matched'] = array_values($column['tokens_matched']);
                 $data[$i]['passage_coordinates'] = array_values($column['passage_coordinates']);
                 $data[$i]['positions'] = array_values($column['positions']);
-
-
             }
         }
 
         // Reset keys of $data and return the array
         return array_values($data);
+    }
+
+    // Function, to check if $needle is matching $token in one of four different modes
+    private function isMatching (string $token, string $needle, string $filter): bool {
+
+        if ($filter === 'match_full') {
+
+                if ($token === $needle or $token === ucfirst($needle)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+        }
+        elseif ($filter === 'match_prefix') {
+
+            if (strpos($token, $needle) === 0 or strpos($token, ucfirst($needle)) === 0) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        elseif ($filter === 'match_suffix') {
+
+            if (strpos($token, $needle) !== false and strpos($token, $needle) == strlen($token)-strlen($needle)) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        elseif ($filter === 'match_body') {
+
+            if (strpos($token, $needle) !== false and strpos($token, $needle) != 0
+                and strpos($token, $needle) !== strlen($token)-strlen($needle)) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        else {
+            return false;
+        }
     }
 
     // Function to return needed search algorithm based on the asterisks contained in the queried token
@@ -597,7 +559,7 @@ class ApiSearch extends ApiController
             }
         }
         else {
-            $filter = 'match_exact';
+            $filter = 'match_full';
         }
 
         return $filter;
@@ -615,26 +577,8 @@ class ApiSearch extends ApiController
             $current_token = $transcript[$i];
 
             // Depending on the filter algorithm, append all positions of the queried token in the transcript to the positions array
-            if ($filter === 'match_prefix') {
-                if (strpos($current_token, $token) === 0 or strpos($current_token, ucfirst($token)) === 0) {
-                    $positions[] = $i;
-                }
-            }
-            elseif ($filter === 'match_body') {
-                if (strpos($current_token, $token) !== false and strpos($current_token, $token) != 0
-                    and strpos($current_token, $token) !== strlen($current_token)-strlen($token)) {
-                    $positions[] = $i;
-                }
-            }
-            elseif ($filter === 'match_suffix') {
-                if (strpos($current_token, $token) !== false and strpos($current_token, $token) == strlen($current_token)-strlen($token)) {
-                    $positions[] = $i;
-                }
-            }
-            elseif ($filter = 'match_exact') {
-                if ($current_token == $token) {
-                    $positions[] = $i;
-                }
+            if ($this->isMatching($current_token, $token, $filter)) {
+                $positions[] = $i;
             }
         }
 

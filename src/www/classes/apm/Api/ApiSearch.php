@@ -343,6 +343,7 @@ class ApiSearch extends ApiController
                 $prev_pos = 0;
                 $counter = 0;
 
+                // DO THIS FROM NEW TO FIX STRANGE ERRORS
                 // Get all passages, which contain the matched token, as a list of tokens (and lemmata)
                 foreach ($pos_all as $pos) {
                     if ($counter === 0 or ($pos-$prev_pos)>$radius) { // This checks, if the token at the actual position is not already contained in the previous passage
@@ -350,15 +351,23 @@ class ApiSearch extends ApiController
                         // Get tokenized and lemmatized passage and passage coordinates (measured in tokens, relative to the column)
                         $passage_data = $this->getPassage($transcript_tokenized, $pos, $radius);
                         $passage_tokenized[] = $passage_data['passage'];
+
                         if ($lemmatize) {
                             $passage_data = $this->getPassage($transcript_lemmatized, $pos, $radius);
                             $passage_lemmatized[] = $passage_data['passage'];
                         }
+
                         $passage_coordinates[] = [$passage_data['start'], $passage_data['end']];
 
                         // Collect all matched tokens contained in the current passage in an array – will be used for highlighting keywords in js
-                        $tokens_matched[] = [$transcript_tokenized[$pos]];
+                        if (($pos-$prev_pos)>$radius) {
+                            $tokens_matched[] = [$transcript_tokenized[$pos], $transcript_tokenized[$prev_pos]];
+                        }
+                        else {
+                            $tokens_matched[] = [$transcript_tokenized[$pos]];
+                        }
 
+                        // Why is this necessary?
                         foreach ($passage_tokenized[$counter] as $word) {
 
                             if ($this->isMatching($word, $token, $filter)) {
@@ -366,13 +375,24 @@ class ApiSearch extends ApiController
                             }
                         }
 
-                        // Remove duplicates from the tokens_matched array and adjust the keys of the array
+                        // Remove duplicates from the arrays in the tokens_matched array – also adjust the keys
                         $tokens_matched[$counter] = array_values(array_unique($tokens_matched[$counter]));
 
                         // Refresh variables
                         $prev_pos = $pos;
                         $counter++;
                     }
+//                    else {
+//                        $tokens_matched[$counter][] = $transcript_tokenized[$pos];
+//
+//                        // Remove duplicates from the arrays in the tokens_matched array – also adjust the keys
+//                        $tokens_matched[$counter] = array_values(array_unique($tokens_matched[$counter]));
+//
+//                        // Refresh variables
+//                        $prev_pos = $pos;
+//                        $counter++;
+//                    }
+//                }
                 }
 
                 // Get number of matched passages in the matched column

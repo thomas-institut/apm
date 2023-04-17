@@ -5,8 +5,10 @@
 {% block finalBodyJS %}
     <script>
 
+      // Array to save search results in to have them available for zooming without make a new query
       let data_backup = []
 
+      // Setup event listeners
       $(() => {
 
         // Get selectors for catching user input
@@ -25,14 +27,20 @@
 
         // Start query when the 'Enter' key is pressed
           doc.on("keyup", function (event) {
+
+            // Get all relevant information for the query
             let user_input = keywords_box.val()
             let num_keywords = user_input.split(" ").length;
             let zoom_slider = $("#zoomSlider")
-            let zoom = zoom_slider.val()
             let radius = $("#radiusSlider").val()
-            if ( event.key === 'Enter' && user_input !== "") {
 
+            // Query only if there is a given user input in the keywords field
+            if (event.key === 'Enter' && user_input !== "") {
+
+              // Set minimum of radius slider relative to number of given keywords – otherwise a query for multiple very close keywords could fail
               $("#radiusSlider").prop({'min': num_keywords-1})
+
+              // Set minimum and value of zoom_slider to the values of the radius slider
               zoom_slider.prop({'min': num_keywords-1})
               zoom_slider.prop("value", radius)
 
@@ -43,32 +51,33 @@
             }
           })
 
+        // Zoom event
         $("#zoomSlider").on("change", function (event) {
           let zoom_slider = $("#zoomSlider")
           let radius_slider = $("#radiusSlider")
           let zoom = zoom_slider.val()
           let radius = radius_slider.val()
-          displayResults(data_backup[0], data_backup[1], data_backup[2], zoom, radius) // ZOOM
+          displayResults(data_backup[0], data_backup[1], data_backup[2], zoom, radius)
         })
 
-
-
-        // $("#radiusSlider").on("change", function (event) {
-        //   let zoom_slider = $("#zoomSlider")
-        //   let zoom = zoom_slider.val()
-        //   let radius = $("#radiusSlider").val()
-        //   if (radius>zoom) {
-        //     zoom_slider.prop("value", radius)
-        //   }
-        // })
-
+        // Error message if wildcards are combined with lemmatization
         lemmatization_box.on("click",  function (event) {
           let checked = lemmatization_box.prop("checked")
           let user_input = keywords_box.val()
           if (checked && user_input.includes("*")) {
-            errorMessageDiv.html(`Until now you cannot use wildcards combined with lemmatization! This will maybe be possible in the future.`)
+            errorMessageDiv.html(`You cannot use wildcards (*) combined with lemmatization. Maybe it will be possible in the future.`)
           }
         })
+
+        keywords_box.on("keyup",  function (event) {
+          let checked = lemmatization_box.prop("checked")
+          let user_input = keywords_box.val()
+          if (checked && user_input.includes("*")) {
+            errorMessageDiv.html(`You cannot use wildcards (*) combined with lemmatization. Maybe it will be possible in the future.`)
+          }
+        })
+
+        // SCRATCHED CODE FOR QUERYING EDITIONS
 
         //     edition_mode.on('click', function () {
     //       search_table.empty()
@@ -106,128 +115,95 @@
       })
 
       // Function to get list of indexed values, i.e. titles or transcribers, via an API call
-      function getListFromOpenSearch (category, errorMessageDiv) {
+      function getListFromOpenSearch(category, errorMessageDiv) {
+        let apiUrl = category === 'titles' ? '{{ url_for('search.titles') }}' : '{{ url_for('search.transcribers') }}';
+        let listSelector = category === 'titles' ? '#titleList' : '#transcriberList';
 
-        // Get queried category
-        if (category === 'titles') {
+        // Make API request
+        $.post(apiUrl).done((apiResponse) => {
+          // Get list selector and clear the list
+          let list = $(listSelector);
+          list.empty();
 
-          // Make API request
-          $.post("{{ url_for('search.titles') }}").done((apiResponse) => {
-
-            // Get titleList selector and clear the list
-            let title_list = $("#titleList")
-            title_list.empty()
-
-            // Catch errors
-            if (apiResponse.status !== 'OK') {
-              console.log(`Error in query for titles!`)
-              if (apiResponse.errorData !== undefined) {
-                console.log(apiResponse.errorData)
-              }
-              errorMessageDiv.html('Error while getting doc list, please report to technical administrators.')
-                .removeClass('text-error')
-              return
+          // Catch errors
+          if (apiResponse.status !== 'OK') {
+            console.log(`Error in query for ${category}!`);
+            if (apiResponse.errorData !== undefined) {
+              console.log(apiResponse.errorData);
             }
-            console.log(apiResponse)
+            errorMessageDiv.html(`Error while getting ${category} list, please report to technical administrators.`)
+                    .removeClass('text-error');
+            return;
+          }
 
-            // Get titles from apiResponse
-            let titles = apiResponse[category]
+          console.log(apiResponse);
 
-            // Fill datatable with title names
-            titles.forEach(function (title) {title_list.append(`<option>${title}</option>`)})
+          // Get items from apiResponse
+          let items = apiResponse[category];
 
-          })
-        }
-        else if (category === 'transcribers') {
-
-          // Do exactly the same as before, but with transcribers instead of titles - by time this could be merged into one general function
-          $.post("{{ url_for('search.transcribers') }}").done((apiResponse) => {
-
-            let transcriber_list = $("#transcriberList")
-            transcriber_list.empty()
-
-            if (apiResponse.status !== 'OK') {
-              console.log(`Error in query for transcribers!`)
-              if (apiResponse.errorData !== undefined) {
-                console.log(apiResponse.errorData)
-              }
-              errorMessageDiv
-                .html('Error while getting transcribers list, please report to technical administrators.')
-                .removeClass('text-error')
-              return
-            }
-            console.log(apiResponse)
-
-            let transcribers = apiResponse[category]
-
-            transcribers.forEach(function (transcriber) {transcriber_list.append(`<option>${transcriber}</option>`)})
-
-          })
-        }
+          // Fill list with item names
+          items.forEach((item) => { list.append(`<option>${item}</option>`); });
+        });
       }
 
-      // Function to start search process via API call
-      function search () {
+      // Function to query the OpenSearch index
+      function search() {
 
-        // Get selectors for user input and get input
-        let keywords_box = $("#keywordBox")
-        let transcript_box = $("#transcriptBox")
-        let transcriber_box = $("#transcriberBox")
-        let radius_slider = $("#radiusSlider")
-        let zoom_slider = $("#zoomSlider")
-        let lemmatization_box = $("#lemmatize")
-        let spinner = $("#spinner")
-        let results_body = $("#resultsTable tbody")
-        let results_head = $("#resultsTable thead")
-        let error_message = $("#error_message")
+        // User inputs
+        const inputs = {
+          searched_phrase: $("#keywordBox").val(),
+          title: $("#transcriptBox").val(),
+          transcriber: $("#transcriberBox").val(),
+          radius: $("#radiusSlider").val(),
+          zoom: $("#zoomSlider").val(),
+          lemmatize: $("#lemmatize").prop("checked")
+        };
 
-        // Get values of all boxes/fields
-        let searched_phrase = keywords_box.val()
-        let title = transcript_box.val();
-        let transcriber = transcriber_box.val();
-        let radius = radius_slider.val()
-        let lemmatize = lemmatization_box.prop('checked')
-        let zoom = zoom_slider.val()
+        // Selectors
+        const spinner = $("#spinner");
+        const resultsBody = $("#resultsTable tbody");
+        const resultsHead = $("#resultsTable thead");
+        const errorMessage = $("#error_message");
 
-        // Empty the results-table/error-box and signalize search process
-        results_body.empty()
-        results_head.empty()
-        error_message.empty()
-        spinner.html(`<div class="spinner-border" role="status"></div>`)
+        // Clear the results table and error message
+        resultsBody.empty();
+        resultsHead.empty();
+        errorMessage.empty();
 
-        // Send all user input to ApiSearch (via routing in index.php) and print returned matches
-        $.post("{{ url_for('search.keyword') }}", { searched_phrase: searched_phrase, radius: radius, title: title, transcriber: transcriber, lemmatize: lemmatize })
-          .done((apiResponse) => {
+        // Show spinner
+        spinner.html('<div class="spinner-border" role="status"></div>');
 
-            // Catch errors
-            if (apiResponse.status !== 'OK') {
-              console.log(`Error in query`)
-              if (apiResponse.errorData !== undefined) {
-                console.log(apiResponse.errorData)
-              }
-              error_message
-                .html('Error while searching, please report to technical administrators.')
-                .removeClass('text-error')
-              return
-            }
+        // Make API Call
+        $.post("{{ url_for('search.keyword') }}", inputs)
+                .done((apiResponse) => {
 
-            console.log(apiResponse)
+                  // Catch Error
+                  if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query`);
+                    if (apiResponse.errorData !== undefined) {
+                      console.log(apiResponse.errorData);
+                    }
+                    errorMessage.html('Error while searching, please report to technical administrators.').removeClass('text-error');
+                    return;
+                  }
 
-            // Call displayResults-function
-            spinner.empty()
-            //displayResults(apiResponse, 20)
+                  // Log API response
+                  console.log(apiResponse);
 
-            displayResults(apiResponse['data'], apiResponse['lang'], apiResponse['num_passages_total'], zoom, radius)
-            data_backup = [apiResponse['data'], apiResponse['lang'], apiResponse['num_passages_total']]
+                  // Remove spinner
+                  spinner.empty();
 
-      }).fail((status) => {
-        console.log(status)
-        spinner.empty()
-          error_message
-          .html('Search is currently not available. Please try again later.')
-          .removeClass('text-error')
-      })
+                  // Call displayResults-function and save backup of data for zoom handling
+                  displayResults(apiResponse.data, apiResponse.lang, apiResponse.num_passages_total, inputs.zoom, inputs.radius);
+                  data_backup = [apiResponse.data, apiResponse.lang, apiResponse.num_passages_total];
+                })
+                .fail((status) => {
+                  console.log(status);
+                  spinner.empty();
+                  errorMessage.html('Search is currently not available. Please try again later.').removeClass('text-error');
+                });
       }
+
 
       // Function to collect and display the search results in a readable form
       function displayResults (data, lang, num_passages, zoom, radius) {

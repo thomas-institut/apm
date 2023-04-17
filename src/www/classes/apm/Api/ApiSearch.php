@@ -320,33 +320,20 @@ class ApiSearch extends ApiController
                 $pos_all = array_unique(array_merge($pos_lower, $pos_upper));
                 sort($pos_all);
 
-                // FUTURE TASK - Remove positions which are very close to other positions to display them in ONE passage
-//                for ($k=0; $k<(count($pos_all)-1); $k++) {
-//                    if (($pos_all[$k+1]-$pos_all[$k])<$radius) {
-//                        unset($pos_all[$k]);
-//                        $pos_all = array_values($pos_all);
-//                    }
-//                }
-//
-//                if (count($pos_all) == 2 && ($pos_all[1]-$pos_all[0])<$radius) {
-//                        unset($pos_all[0]);
-//                        $pos_all = array_values($pos_all);
-//                }
+
+                if (count($pos_all) == 2 && ($pos_all[1]-$pos_all[0])<$radius) {
+                        unset($pos_all[0]);
+                        $pos_all = array_values($pos_all);
+                }
 
                 // Arrays to store matched passages and tokens in them as well as passage-coordinates and matched tokens
                 $passage_tokenized = [];
                 $passage_lemmatized = [];
                 $passage_coordinates = [];
                 $tokens_matched = [];
-                
-                // Counter and variable to store previous position of matched token in it – used in the foreach-loop
-                $prev_pos = 0;
-                $counter = 0;
 
-                // DO THIS FROM NEW TO FIX STRANGE ERRORS
                 // Get all passages, which contain the matched token, as a list of tokens (and lemmata)
                 foreach ($pos_all as $pos) {
-                    if ($counter === 0 or ($pos-$prev_pos)>$radius) { // This checks, if the token at the actual position is not already contained in the previous passage
 
                         // Get tokenized and lemmatized passage and passage coordinates (measured in tokens, relative to the column)
                         $passage_data = $this->getPassage($transcript_tokenized, $pos, $radius);
@@ -360,40 +347,11 @@ class ApiSearch extends ApiController
                         $passage_coordinates[] = [$passage_data['start'], $passage_data['end']];
 
                         // Collect all matched tokens contained in the current passage in an array – will be used for highlighting keywords in js
-                        if (($pos-$prev_pos)>$radius) {
-                            $tokens_matched[] = [$transcript_tokenized[$pos], $transcript_tokenized[$prev_pos]];
-                        }
-                        else {
-                            $tokens_matched[] = [$transcript_tokenized[$pos]];
-                        }
-
-                        // Why is this necessary?
-                        foreach ($passage_tokenized[$counter] as $word) {
-
-                            if ($this->isMatching($word, $token, $filter)) {
-                                $tokens_matched[$counter][] = $word;
-                            }
-                        }
-
-                        // Remove duplicates from the arrays in the tokens_matched array – also adjust the keys
-                        $tokens_matched[$counter] = array_values(array_unique($tokens_matched[$counter]));
-
-                        // Refresh variables
-                        $prev_pos = $pos;
-                        $counter++;
-                    }
-//                    else {
-//                        $tokens_matched[$counter][] = $transcript_tokenized[$pos];
-//
-//                        // Remove duplicates from the arrays in the tokens_matched array – also adjust the keys
-//                        $tokens_matched[$counter] = array_values(array_unique($tokens_matched[$counter]));
-//
-//                        // Refresh variables
-//                        $prev_pos = $pos;
-//                        $counter++;
-//                    }
-//                }
+                        $tokens_matched[] = $transcript_tokenized[$pos];
                 }
+
+                // Remove duplicates from the tokens_matched array – also adjust the keys
+                $tokens_matched = array_values(array_unique($tokens_matched));
 
                 // Get number of matched passages in the matched column
                 $num_passages = count($passage_tokenized);
@@ -443,8 +401,8 @@ class ApiSearch extends ApiController
 
                         // Add matched tokens to tokens_matched array and make it unique
                         if ($token === $lemma) {
-                            $data[$i]['tokens_matched'][$j][] = $column['passage_tokenized'][$j][$k];
-                            $data[$i]['tokens_matched'][$j] = array_unique($data[$i]['tokens_matched'][$j]);
+                            $data[$i]['tokens_matched'][] = $column['passage_tokenized'][$j][$k];
+                            $data[$i]['tokens_matched'] = array_unique($data[$i]['tokens_matched']);
                         }
                     }
 
@@ -452,7 +410,6 @@ class ApiSearch extends ApiController
                     if (in_array($lemma, $passage) === false) {
                         unset($data[$i]['passage_tokenized'][$j]);
                         unset($data[$i]['passage_lemmatized'][$j]);
-                        unset($data[$i]['tokens_matched'][$j]);
                         unset($data[$i]['passage_coordinates'][$j]);
                         unset($data[$i]['positions'][$j]);
                         $data[$i]['num_passages'] = $data[$i]['num_passages'] - 1;
@@ -474,25 +431,26 @@ class ApiSearch extends ApiController
 
                 foreach ($column['passage_tokenized'] as $j => $passage) {
 
-                    $num_matched_tokens =  count($data[$i]['tokens_matched'][$j]);
+                    $num_matched_tokens =  count($data[$i]['tokens_matched']);
 
                         foreach ($passage as $k => $token) {
 
                             if ($this->isMatching($token, $token_plain, $filter)) {
-                                $data[$i]['tokens_matched'][$j][] = $passage[$k];
-                                $data[$i]['tokens_matched'][$j] = array_unique($data[$i]['tokens_matched'][$j]);
+                                $data[$i]['tokens_matched'][] = $passage[$k];
                             }
                         }
 
                         // If there was no matching token in a passage, remove it
-                    if ($num_matched_tokens === count($data[$i]['tokens_matched'][$j])) {
+                    if ($num_matched_tokens === count($data[$i]['tokens_matched'])) {
 
                         unset($data[$i]['passage_tokenized'][$j]);
                         unset($data[$i]['passage_lemmatized'][$j]);
-                        unset($data[$i]['tokens_matched'][$j]);
                         unset($data[$i]['passage_coordinates'][$j]);
                         unset($data[$i]['positions'][$j]);
                         $data[$i]['num_passages'] = $data[$i]['num_passages'] - 1;
+                    }
+                    else { // Make tokens_matched array unique
+                        $data[$i]['tokens_matched'] = array_unique($data[$i]['tokens_matched']);
                     }
                 }
             }

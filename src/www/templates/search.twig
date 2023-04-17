@@ -296,7 +296,7 @@
               passage_end = transcript_len
             }
 
-            passages_string = highlight(transcript_tokenized.slice(passage_start, passage_end), tokens_matched[j], positions[j], radius)
+            passages_string = highlight(transcript_tokenized.slice(passage_start, passage_end), tokens_matched, positions[j], radius)
             passages_string = removeBlanks(passages_string)
 
             // Fill table with results - layout depends slightly on the language of the transcripts
@@ -365,7 +365,7 @@
                 passage_end = transcript_len
               }
 
-              passages_string = highlight(transcript_tokenized.slice(passage_start, passage_end), tokens_matched[j], positions[j], radius) // ORIGINAL: passages[j]
+              passages_string = highlight(transcript_tokenized.slice(passage_start, passage_end), tokens_matched, positions[j], radius) // ORIGINAL: passages[j]
               passages_string = removeBlanks(passages_string)
 
               // Fill table with results - layout depends slightly on the language of the transcripts

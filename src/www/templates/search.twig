@@ -365,7 +365,7 @@
                 passage_end = transcript_len
               }
 
-              passages_string = highlight(transcript_tokenized.slice(passage_start, passage_end), tokens_matched, positions[j], radius) // ORIGINAL: passages[j]
+              passages_string = highlight(transcript_tokenized.slice(passage_start, passage_end), tokens_matched, positions[j], radius, passage_start, passage_end) // ORIGINAL: passages[j]
               passages_string = removeBlanks(passages_string)
 
               // Fill table with results - layout depends slightly on the language of the transcripts
@@ -425,7 +425,7 @@
       }
 
       // Function to highlight the searched keywords in their context
-      function highlight (passage, tokens_matched, position, radius) {
+      function highlight (passage, tokens_matched, position, radius, passage_start, passage_end) {
 
         // String to return – contains passages with highlighted words in it
         let passage_highlighted = ""
@@ -434,10 +434,9 @@
         for (let i=0; i<passage.length; i++) {
           // Get current word of passage-array
           let token = passage[i]
-          // Bold token, if it is one of the tokens_matched and inside the search radius
-          //let close = checkCloseness(i, position, radius)
-          if (tokens_matched.indexOf(token) !== -1) {
-            // token = token.bold()
+          // Highlight token, if it is one of the tokens_matched and inside the search radius, not the zoom (!) radius
+          let close = checkCloseness(i+passage_start, position, radius)
+          if (tokens_matched.indexOf(token) !== -1 && close) {
             token = "<mark>" + token + "</mark>"
           }
           // Append token to returned string
@@ -447,11 +446,10 @@
         return passage_highlighted
       }
 
-      // Function to if a matched keyword is inside the search radius
+      // Function to check if a matched keyword is inside the search radius
       function checkCloseness (index, position, radius) {
 
         let distance = Math.abs(index-position)
-        $("#error_message").html(`${distance}`)
 
         if (distance>radius) {
             return false

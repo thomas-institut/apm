@@ -32,14 +32,14 @@ export const defaultArabicEditionStyle = {
   formattingStyles: {
     default: {
       text: {
-        fontFamily: 'Noto Naskh Arabic',
-        fontSize: Typesetter2.pt2px(12),
+        fontFamily: 'AdobeArabic',
+        fontSize: Typesetter2.pt2px(16),
         fontStyle: '',
         fontWeight: '',
         shiftY: 0
       },
       paragraph: {
-        lineSkip: '1.25 em',
+        lineSkip: '1.4 em',
         indent: 0,
         align: 'justified',
         spaceBefore: 0,
@@ -61,7 +61,7 @@ export const defaultArabicEditionStyle = {
     normal: {
       parent: 'default',
       paragraph: {
-        indent: '1 em'
+        indent: '1 em',
       }
     },
     h1: {

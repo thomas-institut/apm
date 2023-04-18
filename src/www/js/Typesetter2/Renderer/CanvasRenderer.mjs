@@ -61,6 +61,14 @@ export class CanvasRenderer extends TypesetterRenderer {
 
 
   renderTextBox (textBoxItem, x, y) {
+    let debug = false
+    let text = textBoxItem.getText()
+    // hack to work around Firefox's bug with single RTL brackets
+    let brackets = [ '[', ']', '(', ')', '{', '}', '«', '»']
+    if (brackets.indexOf(text) !== -1  && textBoxItem.getTextDirection() === 'rtl') {
+      // insert a RTL marker before the text to force correct display
+      text = String.fromCodePoint(0x202B) + text
+    }
     let [shiftX, shiftY] = this.getDeviceCoordinates(textBoxItem.getShiftX(), textBoxItem.getShiftY())
     let [,textBoxHeight] = this.getDeviceCoordinates(0, textBoxItem.getHeight())
     let [, fontSize] = this.getDeviceCoordinates(0, textBoxItem.getFontSize())
@@ -70,13 +78,13 @@ export class CanvasRenderer extends TypesetterRenderer {
     let currentCanvasDirection = this.ctx.direction
     if (textBoxItem.getTextDirection() !== '') {
       this.ctx.direction = textBoxItem.getTextDirection()
-      // console.log(`Setting canvas direction to ${this.ctx.direction}, default is ${currentCanvasDirection}`)
-      // console.log(textBoxItem)
+      // debug && console.log(`Setting canvas direction to ${this.ctx.direction}, default is ${currentCanvasDirection}`)
+      // debug && console.log(textBoxItem)
     }
 
     this.ctx.font = `${fontStyle} ${fontVariant} ${fontWeight} ${fontSize}px ${textBoxItem.getFontFamily()} `
     this.ctx.fillStyle = '#000000'
-    this.ctx.fillText(textBoxItem.getText(), x + shiftX,
+    this.ctx.fillText(text, x + shiftX,
       y +shiftY + textBoxHeight)
     this.ctx.direction = currentCanvasDirection
   }

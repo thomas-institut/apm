@@ -106,7 +106,7 @@ class ApiTypesetPdf extends ApiController
         $typesetData = file_get_contents($tempTypesetterOutputFileName);
 
         $result = $this->renderPdfFromJsonData($typesetData, $jsonDataHash, false);
-        $this->profiler->stop();
+//        $this->profiler->stop();
         $totalProcessingTime = $this->getProfilerTotalTime() * 1000;
         if ($result['status'] === 'error') {
             return $this->responseWithJson($response, ['error' => $result['error']], 409);

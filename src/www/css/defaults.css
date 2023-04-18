@@ -42,8 +42,8 @@
     --latin-hand2-font-size: 100%;
 
     /* ARABIC FONTS */
-    --arabic-font-family: AdobeArabic, serif;
-    --arabic-font-size: 180%;
+    --arabic-font-family: "Noto Naskh Arabic", serif;
+    --arabic-font-size: 130%;
 
     --arabic-hand1-font-family: "Noto Sans", sans-serif;
     --arabic-hand1-font-size: 130%;

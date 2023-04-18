@@ -32,8 +32,8 @@ export const defaultArabicEditionStyle = {
   formattingStyles: {
     default: {
       text: {
-        fontFamily: 'AdobeArabic',
-        fontSize: Typesetter2.pt2px(16),
+        fontFamily: 'Noto Naskh Arabic',
+        fontSize: Typesetter2.pt2px(12),
         fontStyle: '',
         fontWeight: '',
         shiftY: 0

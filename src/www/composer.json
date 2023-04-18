@@ -17,7 +17,7 @@
         "ext-posix": "*",
         "psr/log": "^3.0",
         "slim/slim": "^4.3",
-        "slim/psr7": "1.6",
+        "slim/psr7": "1.6.1",
         "slim/twig-view": "3.3.0",
         "php-di/slim-bridge" : "3.2.0",
         "dflydev/fig-cookies": "^v3.0.0",

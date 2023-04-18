@@ -298,7 +298,12 @@ export class EditionTypesetting {
             // post lemma
             pushArray(items, await this._getTsItemsForPostLemma(entry))
             // separator
-            pushArray(items, await this._getTsItemsForSeparator(entry))
+            let separatorItems = await this._getTsItemsForSeparator(entry)
+            // if (separatorItems.length !== 0) {
+            //   console.log(`Added separator items`)
+            //   console.log(separatorItems)
+            // }
+            pushArray(items, separatorItems)
             // typeset sub entries
             for (let subEntryIndex = 0; subEntryIndex < entry.subEntries.length; subEntryIndex++) {
               let subEntry = entry.subEntries[subEntryIndex]

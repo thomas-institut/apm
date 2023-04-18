@@ -28,22 +28,22 @@
     --text-icon-font-family: FreeSans;
 
     /* DEFAULT SERIF FONT*/
-    --default-serif-font: FreeSerif, serif;
+    --default-serif-font: APM_FreeSerif, serif;
 
     /* LATIN FONTS */
     /*--latin-font-family: FreeSans, sans-serif;*/
     --latin-font-family: Arial, sans-serif;
     --latin-font-size: 110%;
 
-    --latin-hand1-font-family: FreeSerif, serif;
+    --latin-hand1-font-family: APM_FreeSerif, serif;
     --latin-hand1-font-size: 100%;
 
     --latin-hand2-font-family: "Noto Sans", sans-serif;
     --latin-hand2-font-size: 100%;
 
     /* ARABIC FONTS */
-    --arabic-font-family: "Noto Naskh Arabic", serif;
-    --arabic-font-size: 130%;
+    --arabic-font-family: AdobeArabic, serif;
+    --arabic-font-size: 180%;
 
     --arabic-hand1-font-family: "Noto Sans", sans-serif;
     --arabic-hand1-font-size: 130%;

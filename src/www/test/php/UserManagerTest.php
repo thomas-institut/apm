@@ -212,10 +212,10 @@ class UserManagerTest extends TestCase {
         //foreach($ipAddresses as $ipAddress) {
         $ipAddress = 'anything';   // ignoring ip address for now
             foreach($userAgents as $userAgent) {
-                $this->assertEquals('', $um->getUserToken($userId, $userAgent, $ipAddress));
+                $this->assertEquals('', $um->getUserToken($userId, $userAgent));
                 $token1 = 'token1-' . $ipAddress . '-' . $userAgent;
                 $this->assertTrue($um->storeUserToken($userId, $userAgent, $ipAddress, $token1));
-                $this->assertEquals($token1, $um->getUserToken($userId, $userAgent, $ipAddress));
+                $this->assertEquals($token1, $um->getUserToken($userId, $userAgent));
             }
         //}
         

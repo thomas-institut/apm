@@ -10,11 +10,14 @@ export default defineConfig({
             '@': fileURLToPath(new URL('./src', import.meta.url))
         }
     },
-    // build: {
-    //     manifest: true,
-    //     minify: true,
-    //     rollupOptions: {
-    //         input: './index.html',
-    //     },
-    // },
+    server: {
+        port: 6888
+    },
+    build: {
+        manifest: true,
+        minify: true,
+        rollupOptions: {
+            input: './index.html',
+        },
+    },
 })

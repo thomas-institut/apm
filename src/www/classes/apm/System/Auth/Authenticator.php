@@ -38,6 +38,7 @@ use AverroesProject\Data\UserManager;
 use DateInterval;
 use DateTime;
 use Dflydev\FigCookies\Cookies;
+use Dflydev\FigCookies\Modifier\SameSite;
 use DI\DependencyException;
 use DI\NotFoundException;
 use Exception;
@@ -181,8 +182,7 @@ class Authenticator {
         session_start();
 
         $this->debug('Starting authenticator middleware');
-        //$this->debug("Login headers", $request->getHeaders());
-        //$this->debug('Request method is ' . $request->getMethod());
+
 
         $success = false;
         if (!isset($_SESSION['userid'])){
@@ -244,16 +244,18 @@ class Authenticator {
 
 
     /**
-     * Authenticates a user for API usage
-     *   If the request includes cookies  it will use it to try to authenticate the
-     *   user that way. Otherwise, it will look of user/pwd in data.
+     * Authenticates a user via API call
+     *   If the request includes cookies, it will use them to try to authenticate the
+     *   user that way. Otherwise, it will look for user/pwd in data.
+     *   Will send a cookie with the authentication token both in the Set-Cookie
+     *   header and as part of the response data (together with user information)
      * @param Request $request
      * @param Response $response
      * @return Response
      * @throws Exception
      */
     public function apiLogin(Request $request, Response $response): Response {
-        $this->debugMode = false;
+        $this->debugMode = true;
         $this->debug('API Login request');
         $this->debug("Login headers", $request->getHeaders());
         $this->debug('Request method is ' . $request->getMethod());
@@ -261,26 +263,27 @@ class Authenticator {
         // TODO: check origin against list of valid origins
         $response = $response->withHeader("Access-Control-Allow-Origin", $origin)->withHeader("Access-Control-Allow-Credentials", "true");
 
+        // first try the authentication cookie
         $cookies = Cookies::fromRequest($request);
         if ($cookies->has($this->cookieName)) {
             $userId = $this->getUserIdFromLongTermCookie($request);
-            if ($userId === false){
-                $this->apiLogger->notice("Authentication fail: no user Id in cookie");
-                return $response->withStatus(401);
-            }
-            $this->apiLogger->info("User $userId authenticated with long term cookie");
-            $userData = $this->userManager->getUserInfoByUserId($userId);
-            return $this->responseWithJson($response, ['userId' => $userId, 'userData' => $userData]);
+            if ($userId !== false){
+                $this->apiLogger->info("User $userId authenticated with long term cookie");
+                $userData = $this->userManager->getUserInfoByUserId($userId);
+                return $this->responseWithJson($response, ['userId' => $userId, 'userData' => $userData]);
+           }
+            $this->debug("Cookie is no good, will try user/pwd");
         }
+        // no luck, try user/pwd in post
         if ($request->getMethod() === 'POST') {
             $data = $request->getParsedBody();
             // DON'T DO THIS:    $this->debug('Got POST data', $data);
             // ... it will show the user password in the log!
             if (isset($data['user']) && isset($data['pwd'])){
                 $this->debug('Got data for login');
-                $user = filter_var($data['user'], FILTER_SANITIZE_STRING);
-                $pwd = filter_var($data['pwd'], FILTER_SANITIZE_STRING);
-                $redirectUrl = $data['redirect'];
+                $user = htmlspecialchars($data['user']);
+                $pwd = htmlspecialchars($data['pwd']);
+                $redirectUrl = $data['redirect'] ?? '';
                 $this->debug('Trying to log in user ' . $user);
                 if ($this->userManager->verifyUserPassword($user, $pwd)){
                     $userAgent = $request->getHeader('User-Agent')[0];
@@ -300,17 +303,22 @@ class Authenticator {
                         $userId);
                     $now = new DateTime();
                     $cookie = SetCookie::create($this->cookieName)
-                        ->withValue($cookieValue)
+                        ->withValue($cookieValue)->withSameSite(SameSite::none())->withSecure(true)
                         ->withExpires($now->add(
                         new DateInterval('P14D')));
                     $response = FigResponseCookies::set($response, $cookie);
+                    $this->debug("Redirect URL '$redirectUrl'");
                     if ($this->isValidRedirectUrl($redirectUrl)) {
                         return $response->withHeader('Location',
                             $redirectUrl);
                     }
                     $this->apiLogger->info("User $userId authenticated with user/pwd data");
                     $userData = $this->userManager->getUserInfoByUserId($userId);
-                    return $this->responseWithJson($response, ['userId' => $userId, 'userData' => $userData]);
+                    return $this->responseWithJson($response, [
+                        'userId' => $userId,
+                        'userData' => $userData,
+                        'authCookie' => $cookie->__toString()
+                    ]);
                 }
                 else {
                     $this->apiLogger->notice('Wrong user/password',
@@ -355,10 +363,9 @@ class Authenticator {
             // ... it will show the user password in the log!
             if (isset($data['user']) && isset($data['pwd'])){
                 $this->debug('Got data for login');
-                $user = filter_var($data['user'], FILTER_SANITIZE_STRING);
-                $pwd = filter_var($data['pwd'], FILTER_SANITIZE_STRING);
-                $rememberme = 
-                        isset($data['rememberme']) ? $data['rememberme'] : '';
+                $user = htmlspecialchars($data['user']);
+                $pwd = htmlspecialchars($data['pwd']);
+                $rememberMe = $data['rememberme'] ?? '';
                 $this->debug('Trying to log in user ' . $user);
                 if ($this->userManager->verifyUserPassword($user, $pwd)){
                     $userAgent = $request->getHeader('User-Agent')[0];
@@ -377,7 +384,7 @@ class Authenticator {
                     );
                     $cookieValue = $this->generateLongTermCookieValue($token, 
                             $userId);
-                    if ($rememberme === 'on'){
+                    if ($rememberMe === 'on'){
                         $this->debug('User wants to be remembered');
                         $now = new DateTime();
                         $cookie = SetCookie::create($this->cookieName)
@@ -435,7 +442,8 @@ class Authenticator {
             ->withStatus(302);
     }
 
-    public function authenticateDataApiRequest(Request $request, RequestHandlerInterface $handler) {
+    public function authenticateDataApiRequest(Request $request, RequestHandlerInterface $handler): Response
+    {
         $this->container->set(ApmContainerKey::API_USER_ID, 0);
         //$this->logger->debug("DataApi headers", $request->getHeaders());
         return $handler->handle($request);
@@ -472,9 +480,8 @@ class Authenticator {
             list($userId, $token, $mac) = explode(':', $cookieValue);
             if (hash_equals($this->generateMac($userId . ':' . $token), $mac)) {
                 $userToken = $this->userManager->getUserToken(
-                        $userId, 
-                        $request->getHeader('User-Agent')[0], 
-                        $request->getServerParams()['REMOTE_ADDR']
+                    $userId,
+                    $request->getHeader('User-Agent')[0]
                 );
                 if (hash_equals($userToken, $token)){
                     //$this->debug('Cookie looks good, user = ' . $userId);

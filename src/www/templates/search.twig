@@ -41,7 +41,6 @@
               $("#radiusSlider").prop({'min': num_keywords-1})
 
               // Set minimum and value of zoom_slider to the values of the radius slider
-              zoom_slider.prop({'min': num_keywords-1})
               zoom_slider.prop("value", radius)
 
               search()
@@ -216,13 +215,8 @@
         // Get instance of ApmUrlGenerator to create links to matched doc pages
         let url_generator = new ApmUrlGenerator('{{baseurl}}')
 
-        // Get column data of search results and language of matched passages
-        //let data = results['data']
-        //let lang = results['lang']
-
-        // Count matches
+        // Count matched columns and docs
         let num_columns = data.length
-        //let num_passages = results['num_passages_total']
         let num_docs = getNumDocs(data, num_columns)
 
         // If there are no matches, display this to the user and empty the results table
@@ -250,45 +244,19 @@
           let docID = data[0]['docID']
           let transcript_tokenized = data[0]['transcript_tokenized']
           let positions = data[0]['positions']
-
+          
           // Get link for matched page (sequence number)
-          let url = url_generator.sitePageView(docID, seq, column)
-          let link = getLink(url)
+          let link = getLink(url_generator.sitePageView(docID, seq, column))
 
-          // Convert the tokens_matched in their context into a single string and highlight the matched tokens
-          let passages_string = ""
-
+          // Slice and highlight passage
           for (let j = 0; j < passages.length; j++) {
 
-            let transcript_len = transcript_tokenized.length
-            let passage_start = positions[j]-zoom
-            let passage_end = parseInt(positions[j])+parseInt(zoom)+1
+            let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, positions[j], radius, zoom)
 
-            if (passage_start < 0) {
-              passage_start = 0
-            }
-
-            if (passage_end > (transcript_len-1)) {
-              passage_end = transcript_len
-            }
-
-            passages_string = highlight(transcript_tokenized.slice(passage_start, passage_end), tokens_matched, positions[j], radius)
-            passages_string = removeBlanks(passages_string)
 
             // Fill table with results - layout depends slightly on the language of the transcripts
             results_body.empty()
-            if (lang==='la') {
-              results_body.append(
-                      `<tr><td class="text-justify">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-            }
-            else if (lang==='he') {
-              results_body.append(
-                      `<tr><td class="text-justify" class="text-he">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-            }
-            else if (lang==='ar') {
-              results_body.append(
-                      `<tr><td class="text-justify" class="text-ar">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-            }
+            fillResultsTableBody(passage, title, foliation, transcriber, link, lang)
           }
         }
 
@@ -300,9 +268,9 @@
           results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th>Document (${num_docs})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
           results_body.empty()
 
-          // Make variable for storing title of preceding column in the dataset to display only ONE title,
-          // if there are plenty matched columns/passages of the same document
-          let prec_title = " "
+          // Make variable for storing title of previous column in the dataset to display only the title only once,
+          // if there are plenty matched columns/passages in the same work
+          let prev_title = " "
 
           // Write all matches into the results table
           for (let i = 0; i < num_columns; i++) {
@@ -318,62 +286,18 @@
             let docID = data[i]['docID']
             let transcript_tokenized = data[i]['transcript_tokenized']
             let positions = data[i]['positions']
-            let passage_coordinates = data[i]['passage_coordinates']
 
             // Get link for matched column
-            let url = url_generator.sitePageView(docID, seq, column)
-            let link = getLink(url)
+            let link = getLink(url_generator.sitePageView(docID, seq, column))
 
-            // Convert all occurrences of the keyword in their contexts into a single string and highlight the tokens_matched
-            let passages_string = ""
-
+            // Slice and highlight passage
             for (let j = 0; j < passages.length; j++) {
 
-              let transcript_len = transcript_tokenized.length
-              let passage_start = positions[j]-zoom
-              let passage_end = parseInt(positions[j])+parseInt(zoom)+1
-
-              if (passage_start < 0) {
-                passage_start = 0
-              }
-
-              if (passage_end > (transcript_len-1)) {
-                passage_end = transcript_len
-              }
-
-              passages_string = highlight(transcript_tokenized.slice(passage_start, passage_end), tokens_matched, positions[j], radius, passage_start, passage_end) // ORIGINAL: passages[j]
-              passages_string = removeBlanks(passages_string)
+              let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, positions[j], radius, zoom)
 
               // Fill table with results - layout depends slightly on the language of the transcripts
-              if (title === prec_title) {
-                if (lang==='la') {
-                  results_body.append(
-                          `<tr><td class="text-justify">${passages_string}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-                }
-                else if (lang==='he') {
-                  results_body.append(
-                          `<tr><td class="text-justify" class="text-he">${passages_string}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-                }
-                else if (lang==='ar') {
-                  results_body.append(
-                          `<tr><td class="text-justify" class="text-ar">${passages_string}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-                }
-              }
-              else {
-                if (lang==='la') {
-                  results_body.append(
-                          `<tr><td class="text-justify">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-                }
-                else if (lang==='he') {
-                  results_body.append(
-                          `<tr><td class="text-justify" class="text-he">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-                }
-                else if (lang==='ar') {
-                  results_body.append(
-                          `<tr><td class="text-justify" class="text-ar">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-                }
-                prec_title = title
-              }
+              fillResultsTableBody(passage, title, foliation, transcriber, link, lang, prev_title)
+              prev_title = title
             }
           }
         }
@@ -397,13 +321,30 @@
           }
           prev_title = title
         }
+
         return num_docs
       }
 
-      // Function to highlight the searched keywords in their context
-      function highlight (passage, tokens_matched, position, radius, passage_start, passage_end) {
+      // Function to slice passages out of a transcript depending on zoom value
+      // and highlight the searched keywords in the passages depending on radius value
+      function sliceAndHighlight (transcript, tokens_matched, position, radius, zoom) {
+        
+        // SLICE
+        let transcript_len = transcript.length
+        let passage_start = position-zoom
+        let passage_end = parseInt(position)+parseInt(zoom)+1
 
-        // String to return – contains passages with highlighted words in it
+        if (passage_start < 0) {
+          passage_start = 0
+        }
+
+        if (passage_end > (transcript_len-1)) {
+          passage_end = transcript_len
+        }
+
+        let passage = transcript.slice(passage_start, passage_end)
+
+        // HIGHLIGHT
         let passage_highlighted = ""
 
         // Convert array to string with bold tokens_matched
@@ -411,19 +352,18 @@
           // Get current word of passage-array
           let token = passage[i]
           // Highlight token, if it is one of the tokens_matched and inside the search radius, not the zoom (!) radius
-          let close = checkCloseness(i+passage_start, position, radius)
-          if (tokens_matched.indexOf(token) !== -1 && close) {
+          if (tokens_matched.indexOf(token) !== -1 && insideRadius(i+passage_start, position, radius)) {
             token = "<mark>" + token + "</mark>"
           }
           // Append token to returned string
           passage_highlighted = passage_highlighted + token + " "
         }
 
-        return passage_highlighted
+        return removeBlanks(passage_highlighted)
       }
 
       // Function to check if a matched keyword is inside the search radius
-      function checkCloseness (index, position, radius) {
+      function insideRadius (index, position, radius) {
 
         let distance = Math.abs(index-position)
 
@@ -435,7 +375,7 @@
           }
       }
 
-      // Function to remove inadequate blanks from transcript
+      // Function to remove inadequate blanks from passage
       function removeBlanks (text) {
         text = text.replaceAll(" .", ".")
         text = text.replaceAll(" ,", ",")
@@ -445,8 +385,47 @@
 
         return text
       }
+      
+      function fillResultsTableBody(passage, title, foliation, transcriber, link, lang, prev_title='') {
+
+        // Get selector
+        let results_body = $("#resultsTable tbody")
+
+        // Don't write title into the results table, if it is identical to the title of the previous passage
+        if (title === prev_title) {
+
+          if (lang==='la') {
+            results_body.append(
+                    `<tr><td class="text-justify">${passage}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+          }
+          else if (lang==='he') {
+            results_body.append(
+                    `<tr><td class="text-justify" class="text-he">${passage}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+          }
+          else if (lang==='ar') {
+            results_body.append(
+                    `<tr><td class="text-justify" class="text-ar">${passage}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+          }
+        }
+
+        else {
+          if (lang === 'la') {
+            results_body.append(
+                    `<tr><td class="text-justify">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+          } else if (lang === 'he') {
+            results_body.append(
+                    `<tr><td class="text-justify" class="text-he">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+          } else if (lang === 'ar') {
+            results_body.append(
+                    `<tr><td class="text-justify" class="text-ar">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+          }
+        }
+
+        return true
+      }
 
     </script>
+
 {%  endblock %}
 
 {% block content %}

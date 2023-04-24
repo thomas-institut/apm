@@ -193,7 +193,7 @@
                   spinner.empty();
 
                   // Call displayResults-function and save backup of data for zoom handling
-                  displayResults(apiResponse.data, apiResponse.lang, apiResponse.num_passages_total, inputs.zoom, inputs.radius);
+                  displayResults(apiResponse.data, apiResponse.lang, apiResponse.num_passages_total, inputs.radius, inputs.radius);
                   data_backup = [apiResponse.data, apiResponse.lang, apiResponse.num_passages_total];
                 })
                 .fail((status) => {
@@ -256,7 +256,7 @@
 
             // Fill table with results - layout depends slightly on the language of the transcripts
             results_body.empty()
-            fillResultsTableBody(passage, title, foliation, transcriber, link, lang)
+            fillResultsTableBody(passage, title, foliation, transcriber, link, lang, zoom)
           }
         }
 
@@ -265,12 +265,13 @@
 
           // Make table head
           results_head.empty()
-          results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th>Document (${num_docs})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
+          results_head.append(`<tr><th>Zoom</th><th>Matched Passage (${num_passages})
+                                </th><th>Document (${num_docs})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
           results_body.empty()
 
           // Make variable for storing title of previous column in the dataset to display only the title only once,
           // if there are plenty matched columns/passages in the same work
-          let prev_title = " "
+          let prev_title = ' '
 
           // Write all matches into the results table
           for (let i = 0; i < num_columns; i++) {
@@ -296,7 +297,7 @@
               let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, positions[j], radius, zoom)
 
               // Fill table with results - layout depends slightly on the language of the transcripts
-              fillResultsTableBody(passage, title, foliation, transcriber, link, lang, prev_title)
+              fillResultsTableBody(passage, title, foliation, transcriber, link, lang, zoom, prev_title)
               prev_title = title
             }
           }
@@ -386,7 +387,7 @@
         return text
       }
       
-      function fillResultsTableBody(passage, title, foliation, transcriber, link, lang, prev_title='') {
+      function fillResultsTableBody(passage, title, foliation, transcriber, link, lang, zoom, prev_title=' ') {
 
         // Get selector
         let results_body = $("#resultsTable tbody")
@@ -396,30 +397,55 @@
 
           if (lang==='la') {
             results_body.append(
-                    `<tr><td class="text-justify">${passage}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td></td><td class="text-justify">${passage}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           }
           else if (lang==='he') {
             results_body.append(
-                    `<tr><td class="text-justify" class="text-he">${passage}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td></td><td class="text-justify" class="text-he">${passage}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           }
           else if (lang==='ar') {
             results_body.append(
-                    `<tr><td class="text-justify" class="text-ar">${passage}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td></td><td class="text-justify" class="text-ar">${passage}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           }
         }
 
-        else {
+      else if (prev_title === ' ') {
+        if (lang === 'la') {
+          results_body.append(
+                  `<tr><td><label for="zoomSlider"></label>
+          <input type="range" id="zoomSlider" name="radiusSlider" min="0" max="80" value=${zoom}></td><td class="text-justify">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+        } else if (lang === 'he') {
+          results_body.append(
+                  `<tr><td><label for="zoomSlider"></label>
+          <input type="range" id="zoomSlider" name="radiusSlider" min="0" max="80" value=${zoom}></td><td class="text-justify" class="text-he">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+        } else if (lang === 'ar') {
+          results_body.append(
+                  `<tr><td><label for="zoomSlider"></label>
+          <input type="range" id="zoomSlider" name="radiusSlider" min="0" max="80" value=${zoom}></td><td class="text-justify" class="text-ar">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+        }
+      }
+
+      else {
           if (lang === 'la') {
             results_body.append(
-                    `<tr><td class="text-justify">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td></td><td class="text-justify">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           } else if (lang === 'he') {
             results_body.append(
-                    `<tr><td class="text-justify" class="text-he">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td></td><td class="text-justify" class="text-he">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           } else if (lang === 'ar') {
             results_body.append(
-                    `<tr><td class="text-justify" class="text-ar">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td></td><td class="text-justify" class="text-ar">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           }
         }
+
+        // Zoom event
+        $("#zoomSlider").on("change", function (event) {
+          let zoom_slider = $("#zoomSlider")
+          let radius_slider = $("#radiusSlider")
+          let zoom = zoom_slider.val()
+          let radius = radius_slider.val()
+          displayResults(data_backup[0], data_backup[1], data_backup[2], zoom, radius)
+        })
 
         return true
       }
@@ -460,7 +486,7 @@
           </form>
         </td>
     </tr>
-      <tr><td><b>Transcript</b></td><td><b>Transcriber</b></td><td><b>Zoom</b></td></tr>
+      <tr><td><b>Transcript</b></td><td><b>Transcriber</b></td></tr>
       <tr>
         <td>
           <div id="doc_form">
@@ -479,10 +505,6 @@
         </div>
       </td>
       <td>
-        <form>
-          <label for="zoomSlider"></label>
-          <input type="range" id="zoomSlider" name="radiusSlider" min="0" max="80" value="30">
-        </form>
       </td>
     </tr>
 </table>

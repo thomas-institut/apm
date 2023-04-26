@@ -20,6 +20,7 @@ import { ItemList } from './ItemList.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { TypesetterDocument } from './TypesetterDocument.mjs'
+import { trimWhiteSpace } from '../toolbox/Util.mjs'
 
 /**
  * The new typesetter class
@@ -117,5 +118,6 @@ export class Typesetter2 {
   static px2pt(px) {
     return px * 3 / 4
   }
+
 
 }

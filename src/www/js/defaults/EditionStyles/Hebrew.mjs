@@ -1,142 +1,174 @@
-import { Typesetter2 } from '../../Typesetter2/Typesetter2.mjs'
-
 export const defaultHebrewEditionStyle = {
-  strings : {
-    omission: 'חסר',
-    addition: 'נוסף',
-    ante: 'לפני',
-    post: 'אחרי',
-    defaultLemmaSeparator: ']',
-    lineRangeSeparator: '\u2016',  // double vertical line
-    entrySeparator:  '\u007c' // single vertical line
+  _metaData: {
+    name: 'Default',
+    description: 'A4 paper, Linux Libertine'
   },
-  formattingStyles: {
-    default: {
-      text: {
-        fontFamily: 'Linux Libertine',
-        fontSize: Typesetter2.pt2px(12),
-        fontStyle: '',
-        fontWeight: '',
-        shiftY: 0
-      },
-      paragraph: {
-        lineSkip: '1.25 em',
-        indent: 0,
-        align: 'justified',
-        spaceBefore: 0,
-        spaceAfter: 0
-      },
-      glue: {
-        width: '1 sp',
-        shrink: '0.16667 sp',
-        stretch: '0.33333 sp'
-      }
+  default: {
+    strings : {
+      omission: 'חסר',
+      addition: 'נוסף',
+      ante: 'לפני',
+      post: 'אחרי',
+      defaultLemmaSeparator: ']',
+      lineRangeSeparator: '\u2016',  // double vertical line
+      entrySeparator:  '\u007c' // single vertical line
     },
-    hebrewText: {
+    page: {
+      width: "21 cm",
+      height: "29.7 cm",
+      marginTop: "2 cm",
+      marginLeft: "3 cm",
+      marginBottom: "2 cm",
+      marginRight: "3 cm",
+      minDistanceFromApparatusToText: "1.5 cm",
+      minInterApparatusDistance: "0.5 cm",
+      lineNumbers: "western",   //  "western", "arabic", "none"
+      lineNumbersToTextDistance: "0.5 cm",
+      lineNumbersFontSize: "0.8 em",
+      lineNumbersPosition: "left"
     },
-    latinText: {
-      text: {
-        fontFamily: 'FreeSerif'
-      }
+    paragraph: {
+      lineSkip: "1.25 em",
+      indent: 0,
+      align: 'justified',
+      spaceBefore: 0,
+      spaceAfter: 0
     },
-    normal: {
-      parent: 'default',
-      paragraph: {
-        indent: '1 em'
-      }
+    text: {
+      fontFamily: 'Linux Libertine',
+      fontSize: "12 pt",
+      fontStyle: '',
+      fontWeight: '',
+      shiftY: "0"
     },
-    h1: {
-      parent: 'default',
-      text: {
-        fontSize: '1.5 em',
-        fontWeight: 'bold',
-      },
-      paragraph: {
-        align: 'center',
-        spaceBefore: '2 em',
-        spaceAfter: '1 em'
-      }
+    glue: {
+      width: "0.25 em",
+      shrink: "0.03 em",
+      stretch: "0.08 em"
     },
-    h2: {
-      parent: 'default',
-      text: {
-        fontSize: '1.2 em',
-        fontWeight: 'bold',
-      },
-      paragraph: {
-        spaceBefore: '1 em',
-        spaceAfter: '0.5 em'
-      }
-    },
-    h3: {
-      parent: 'default',
-      text: {
-        fontWeight: 'bold',
-      },
-      paragraph: {
-        spaceBefore: '0.5 em',
-        spaceAfter: '0.25 em'
-      }
-    },
-    apparatus: {
-      parent: 'default',
-      text: {
-        fontSize: '0.9 em',
-      }
-    },
-    lineRangeSeparator: {
-      text: {
-        fontWeight: 'bold',
-      }
-    },
-    postLineRangeSeparator: {
-      text: {
-        fontWeight: 'bold',
-      }
-    },
-    afterLineRange: {
-      glue: {
-        width: '2.5 sp',
-        stretch: '1 sp',
-        shrink: '0.5 sp'
-      }
-    },
-    preEntrySeparator : {
-      glue: {
-        width: '1 sp',
-        stretch: '0.5 sp',
-        shrink: '0.1 sp'
-      }
-    },
-    entrySeparator: {
-      // text: {
-      //   fontWeight: 'bold',
-      // }
-    },
-    postEntrySeparator: {
-      glue: {
-        width: '2.5 sp',
-        stretch: '1.5 sp',
-        shrink: '0.5 sp'
-      }
-    },
-    apparatusLineNumbers: {
-      text: {
-        fontWeight: 'bold',
-      }
-    },
-    apparatusKeyword: {
-      text: {
-        fontSize: '0.8 em',
-      }
-    },
-    sigla: {
-      text: {
-        fontWeight: 'bold',
-      }
-    },
-    hand: {
-      parent: 'superscript'
+  },
+  small:  {
+    parent: "",
+    text: {
+      fontSize: "0.8 em"
     }
+  },
+  superscript: {
+    parent: "",
+    text: {
+      fontSize: "0.7 em",
+      shiftY: "-0.6 em"
+    }
+  },
+  subscript:  {
+    parent: "",
+    text: {
+      fontSize: "0.7 em",
+      shiftY: "0.6 em"
+    }
+  },
+  hebrewText: {
+  },
+  latinText: {
+    text: {
+      fontFamily: 'FreeSerif'
+    }
+  },
+  normal: {
+    parent: 'default',
+    paragraph: {
+      indent: '1 em'
+    }
+  },
+  h1: {
+    parent: 'default',
+    text: {
+      fontSize: '1.5 em',
+      fontWeight: 'bold',
+    },
+    paragraph: {
+      align: 'center',
+      spaceBefore: '2 em',
+      spaceAfter: '1 em'
+    }
+  },
+  h2: {
+    parent: 'default',
+    text: {
+      fontSize: '1.2 em',
+      fontWeight: 'bold',
+    },
+    paragraph: {
+      spaceBefore: '1 em',
+      spaceAfter: '0.5 em'
+    }
+  },
+  h3: {
+    parent: 'default',
+    text: {
+      fontWeight: 'bold',
+    },
+    paragraph: {
+      spaceBefore: '0.5 em',
+      spaceAfter: '0.25 em'
+    }
+  },
+  apparatus: {
+    parent: "default",
+    text: {
+      fontSize: "11 pt",
+    },
+    paragraph: {
+      lineSkip: "14 pt"
+    }
+  },
+  lineRangeSeparator: {
+    text: {
+      fontWeight: 'bold',
+    }
+  },
+  postLineRangeSeparator: {
+    glue: {
+      width: "1.25 em",
+      stretch: "0.5 em",
+      shrink: "0.25 em"
+    }
+  },
+  preEntrySeparator : {
+    glue: {
+      width: "0.5 em",
+      stretch: "0.25 em",
+      shrink: "0.05 em"
+    }
+  },
+  entrySeparator: {
+    // text: {
+    //   fontWeight: 'bold',
+    // }
+  },
+  postEntrySeparator: {
+    glue: {
+      width: "1.25 em",
+      stretch: "0.5 em",
+      shrink: "0.25 em"
+    }
+  },
+  apparatusLineNumbers: {
+    text: {
+      fontWeight: 'bold',
+    }
+  },
+  apparatusKeyword: {
+    text: {
+      fontSize: "0.8 em",
+    }
+  },
+  sigla: {
+    text: {
+      fontWeight: "bold"
+    }
+  },
+  hand: {
+    parent: 'superscript'
   }
 }

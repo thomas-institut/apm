@@ -27,6 +27,9 @@ import { ZoomController } from '../toolbox/ZoomController'
 import { EditionViewerCanvas } from '../Edition/EditionViewerCanvas'
 import { resolvedPromise, wait } from '../toolbox/FunctionUtil.mjs'
 import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
+import { CanvasTextBoxMeasurer } from '../Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer.mjs'
+import { Dimension } from '../Typesetter2/Dimension.mjs'
+import { SystemStyleSheet } from '../Typesetter2/Style/SystemStyleSheet.mjs'
 
 const defaultIcons = {
   busy: '<i class="fas fa-circle-notch fa-spin"></i>',
@@ -47,7 +50,6 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       automaticUpdate: { type: 'boolean', default: false},
       outDatedLabel: { type: 'string', default: '<i class="bi bi-exclamation-triangle-fill"></i> Out-of-date '},
       icons: { type: 'object', default: defaultIcons},
-      //
       getPdfDownloadUrl: {
         type: 'function',
         default: (data) => {
@@ -60,12 +62,20 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
     this.options = oc.getCleanOptions(options)
     // this.ctData = this.options.ctData
     this.edition = this.options.edition
+    this.measurer = new CanvasTextBoxMeasurer()
+    this.__reloadStyleSheets()
+  }
 
+  __reloadStyleSheets() {
+    this.styleSheets = SystemStyleSheet.getStyleSheetsForLanguage(this.edition.lang)
+    this.styleSheetIds = Object.keys(this.styleSheets)
+    this.currentStyleSheetId = this.styleSheetIds[0]
+    this.currentStyleSheet = SystemStyleSheet.getStyleSheet(this.edition.lang, this.currentStyleSheetId)
   }
 
   generateToolbarHtml (tabId, mode, visible) {
-    return `<div class="zoom-controller">
-        </div>
+    return `<div class="styles-div"></div>
+        <div class="zoom-controller"></div>
         <div>
             <button class="tb-button update-preview-btn" title="Not showing latest version, click to update">${this.options.outDatedLabel} ${this.options.icons.updatePreview}</button>
         </div>
@@ -98,23 +108,84 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
         this.updatePreview()
     })
 
-    this.viewer = new EditionViewerCanvas({
-          edition: this.edition,
-          fontFamily:  this.options.langDef[this.edition.lang].editionFont,
-          scale: 1,
-          canvasElement: document.getElementById(`${canvasId}`),
-          debug: true
-    })
-
-
+    this.viewer = new EditionViewerCanvas(this.__getViewerOptions())
     this.zoomController = new ZoomController({
       containerSelector: `${this.containerSelector} div.zoom-controller`,
       onZoom: this.__genOnZoom(),
       debug: false
     })
-
+    this.setupStyleSelector()
     if (this.options.automaticUpdate) {
       this.updatePreview()
+    }
+  }
+
+
+  setupStyleSelector(){
+    $(`${this.containerSelector} div.styles-div`).html(this.__genStyleDropdownHtml())
+    this.styleSelect = $('#style-select')
+    this.styleSelect.on("change", () => {
+      console.log(`Current option: '${this.styleSelect.val()}'`)
+      this.currentStyleSheetId = this.styleSelect.val()
+      this.currentStyleSheet = SystemStyleSheet.getStyleSheet(this.edition.lang, this.currentStyleSheetId)
+      this.updatePreviewButton.removeClass('hidden')
+    })
+  }
+
+  __genStyleDropdownHtml() {
+    let optionsHtml = this.styleSheetIds.map( (styleId) => {
+      return `<option value="${styleId}">${this.styleSheets[styleId]['_metaData']['name']}`
+    }).join('')
+
+    return `<label for="style-select">Style:</label><select name="style" id="style-select">
+        ${optionsHtml}
+    </select>`
+  }
+
+  __getViewerOptions() {
+    // for now, just use the first stylesheet
+    let strings = this.currentStyleSheet.getStrings()
+    let defaultStyleDef = this.currentStyleSheet.getStyleDef('default')
+    let apparatusStyleDef = this.currentStyleSheet.getStyleDef('apparatus')
+    let defaultFontSize = Dimension.str2px(defaultStyleDef.text.fontSize)
+    if (defaultFontSize === 0) {
+      console.warn(`Default font size is not well defined in stylesheet: '${defaultStyleDef.text.fontSize}'`)
+      defaultFontSize = 16
+    }
+    let apparatusFontSize =  Dimension.str2px(apparatusStyleDef.text.fontSize, defaultFontSize)
+    if (apparatusFontSize === 0) {
+      console.warn(`Apparatus font size is not well defined in stylesheet: '${this.currentStyleSheet.getStyleDef('apparatus').text.fontSize}'`)
+      apparatusFontSize = 14
+    }
+    this.debug && console.log(`Main text font size: ${defaultFontSize}; apparatus font size: ${apparatusFontSize}`)
+    console.log('Default Style def')
+    console.log(defaultStyleDef)
+    return {
+      edition: this.edition,
+      editionStyleSheet: this.currentStyleSheet,
+      canvasElement: document.getElementById(`${canvasId}`),
+      fontFamily:  defaultStyleDef.text.fontFamily,
+      scale: 1,
+      entrySeparator: strings['entrySeparator'],
+      apparatusLineSeparator: strings['lineRangeSeparator'],
+      pageWidthInCm: Dimension.str2cm(defaultStyleDef.page.width, defaultFontSize),
+      pageHeightInCm:  Dimension.str2cm(defaultStyleDef.page.height,defaultFontSize),
+      marginInCm: {
+        top: Dimension.str2cm(defaultStyleDef.page.marginTop,defaultFontSize),
+        left: Dimension.str2cm(defaultStyleDef.page.marginLeft,defaultFontSize),
+        bottom: Dimension.str2cm(defaultStyleDef.page.marginBottom,defaultFontSize),
+        right: Dimension.str2cm(defaultStyleDef.page.marginRight,defaultFontSize),
+      },
+      mainTextFontSizeInPts: Dimension.px2pt(defaultFontSize),
+      lineNumbersFontSizeInPts: Dimension.str2pt(defaultStyleDef.page.lineNumbersFontSize, defaultFontSize),
+      apparatusFontSizeInPts: Dimension.px2pt(apparatusFontSize),
+      mainTextLineHeightInPts: Dimension.str2pt(defaultStyleDef.paragraph.lineSkip, defaultFontSize),
+      apparatusLineHeightInPts: Dimension.str2pt(apparatusStyleDef.paragraph.lineSkip, apparatusFontSize),
+      normalSpaceWidthInEms: 0.25,  // TODO: Check usages and change to glue
+      textToLineNumbersInCm: Dimension.str2cm(defaultStyleDef.page.lineNumbersToTextDistance, defaultFontSize),
+      textToApparatusInCm: Dimension.str2cm(defaultStyleDef.page.minDistanceFromApparatusToText),
+      interApparatusInCm: Dimension.str2cm(defaultStyleDef.page.minInterApparatusDistance),
+      debug: true
     }
   }
 
@@ -131,6 +202,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       typesettingParameters.typesetterOptions.getApparatusListToTypeset = undefined
       typesettingParameters.typesetterOptions.preTypesetApparatuses = undefined
       typesettingParameters.helperOptions.textBoxMeasurer = undefined
+      typesettingParameters.helperOptions.styleId = this.currentStyleSheetId
 
       let data = {
         options: typesettingParameters.typesetterOptions,
@@ -157,6 +229,8 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
     this.verbose && console.log(`Updating data`)
     // this.ctData = ctData
     this.edition = edition
+    this.__reloadStyleSheets()
+    this.setupStyleSelector()
     if (this.options.automaticUpdate) {
       this.updatePreview()
     } else {
@@ -171,13 +245,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
     wait(100).then( () => {
       let profiler = new BasicProfiler('Update preview')
       profiler.start()
-      this.viewer = new EditionViewerCanvas({
-        edition: this.edition,
-        fontFamily:  this.options.langDef[this.edition.lang].editionFont,
-        scale: 1,
-        canvasElement: document.getElementById(`${canvasId}`),
-        debug: true
-      })
+      this.viewer = new EditionViewerCanvas(this.__getViewerOptions())
       this.viewer.render().then( () => {
         profiler.stop()
         this.updatePreviewButton.html(currentButtonHtml).addClass('hidden')

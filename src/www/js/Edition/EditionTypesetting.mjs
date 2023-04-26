@@ -16,11 +16,11 @@ import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
 import { ObjectFactory } from '../Typesetter2/ObjectFactory.mjs'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
 
-import { defaultLatinEditionStyle} from '../defaults/EditionStyles/Latin.mjs'
-import { defaultArabicEditionStyle} from '../defaults/EditionStyles/Arabic.mjs'
-import {defaultHebrewEditionStyle} from '../defaults/EditionStyles/Hebrew.mjs'
-import {defaultStyleSheet} from '../Typesetter2/Style/DefaultStyleSheet.mjs'
-import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
+// import { defaultLatinEditionStyle} from '../defaults/EditionStyles/Latin.mjs'
+// import { defaultArabicEditionStyle} from '../defaults/EditionStyles/Arabic.mjs'
+// import {defaultHebrewEditionStyle} from '../defaults/EditionStyles/Hebrew.mjs'
+// import {defaultStyleSheet} from '../Typesetter2/Style/DefaultStyleSheet.mjs'
+// import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { Typesetter2StyleSheetTokenRenderer } from '../FmtText/Renderer/Typesetter2StyleSheetTokenRenderer.mjs'
 import { ApparatusUtil } from './ApparatusUtil.mjs'
@@ -29,12 +29,14 @@ import { TextBoxFactory } from '../Typesetter2/TextBoxFactory.mjs'
 import { SiglaGroup } from './SiglaGroup.mjs'
 import { ApparatusEntry } from './ApparatusEntry.mjs'
 import { FmtText } from '../FmtText/FmtText.mjs'
+import { SystemStyleSheet } from '../Typesetter2/Style/SystemStyleSheet.mjs'
+import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
 
-let defaultEditionStyles = {
-  la: defaultLatinEditionStyle,
-  ar: defaultArabicEditionStyle,
-  he: defaultHebrewEditionStyle
-}
+// let defaultEditionStyles = {
+//   la: defaultLatinEditionStyle,
+//   ar: defaultArabicEditionStyle,
+//   he: defaultHebrewEditionStyle
+// }
 
 
 export const MAX_LINE_COUNT = 10000
@@ -47,7 +49,7 @@ export class EditionTypesetting {
       context: 'EditionTypesetting',
       optionsDefinition: {
         edition: { type: 'object'},
-        editionStyleName: { type: 'string', default: ''},
+        editionStyleSheet: { type: 'object', objectClass: StyleSheet},
         textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
         debug: { type: 'boolean',  default: false}
       }
@@ -65,13 +67,16 @@ export class EditionTypesetting {
 
     this.textDirection = getTextDirectionForLang(this.edition.lang)
     this.textBoxMeasurer = this.options.textBoxMeasurer
-    this.ss = new StyleSheet(defaultStyleSheet, this.textBoxMeasurer)
-    this.editionStyle = defaultEditionStyles[this.options.editionStyleName]
-    this.ss.merge(this.editionStyle.formattingStyles)
+
+    this.ss = this.options.editionStyleSheet
+    // this.ss = new StyleSheet(defaultStyleSheet, this.textBoxMeasurer)
+    // this.editionStyle = defaultEditionStyles[this.options.editionStyleName]
+    // this.ss.merge(this.editionStyle.formattingStyles)
     // this.debug && console.log(`Stylesheet`)
     // this.debug && console.log(this.ss.getStyleDefinitions())
+    this.editionStyle = this.ss.getStyleDefinitions()
     this.tokenRenderer = new Typesetter2StyleSheetTokenRenderer({
-      styleSheet: this.ss.getStyleDefinitions(),
+      styleSheet: this.editionStyle,
       defaultTextDirection: this.textDirection,
       textBoxMeasurer: this.textBoxMeasurer
     })
@@ -227,8 +232,9 @@ export class EditionTypesetting {
         return
       }
 
-      let lineRangeSeparatorCharacter = this.editionStyle.strings['lineRangeSeparator']
-      let entrySeparatorCharacter = this.editionStyle.strings['entrySeparator']
+      let strings = this.ss.getStrings()
+      let lineRangeSeparatorCharacter = strings['lineRangeSeparator']
+      let entrySeparatorCharacter = strings['entrySeparator']
 
       if (this.appEntries[apparatus.type] === undefined) {
         // this.debug && console.log(`Apparatus '${apparatus.type}' with ${apparatus.entries.length} entries in total.`)
@@ -362,7 +368,7 @@ export class EditionTypesetting {
   }
 
   _getTsItemsForSeparator(entry) {
-    let defaultLemmaSeparator = this.editionStyle.strings['defaultLemmaSeparator']
+    let defaultLemmaSeparator = this.ss.getStrings()['defaultLemmaSeparator']
     return new Promise( async (resolve) => {
       let items = []
       switch(entry.separator) {
@@ -432,7 +438,7 @@ export class EditionTypesetting {
 
         case 'ante':
         case 'post':
-          let keyword = this.editionStyle.strings[entry.preLemma]
+          let keyword = this.ss.getStrings()[entry.preLemma]
           let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
           items.push(keywordTextBox)
           items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
@@ -564,7 +570,7 @@ export class EditionTypesetting {
 
         case 'omission':
         case 'addition':
-          let keyword = this.editionStyle.strings[subEntry.type]
+          let keyword = this.ss.getStrings()[subEntry.type]
           let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
           items.push(keywordTextBox)
           items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
@@ -578,7 +584,7 @@ export class EditionTypesetting {
         case 'fullCustom': {
           let keyword = subEntry['keyword']
           if (keyword !== '') {
-            keyword = this.editionStyle.strings[keyword]
+            keyword = this.ss.getStrings()[keyword]
             let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
             items.push(keywordTextBox)
             items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))

@@ -18,32 +18,64 @@
 
 import { Glue } from '../Glue.mjs'
 import { TextBox } from '../TextBox.mjs'
-import { DimensionString } from '../DimensionString.mjs'
+import { Dimension } from '../Dimension.mjs'
 
 /**
- * A collection of styles
+ * A stylesheet is a tree of style definition
  *
- * A style is, in essence, a set of parameters that can be applied to different
- * typesetting structures.  Each style has a unique name within the collection.
+ * A style definition is a collection of attribute/value pairs
+ * arranged in a number of categories:
+ *   strings: a set of named strings
+ *   page: width (D), height (D), marginTop, marginBottom,... (D),
+ *        lineNumbers (E), lineNumbersToTextDistance (D)
+ *        minDistanceFromApparatusToText (D), minInterApparatusDistance (D)
+ *   paragraph: lineSkip (D), indent (D), align (S), spaceBefore (D), spaceAfter (D)
+ *   text: fontFamily (S), fontSize (D), fontStyle (E), fontWeight (E),  shiftY (D)
+ *   glue: width (D), shrink (D), stretch (D)
+ *
+ *   Attributes marked with (E) only allow specific values given in the enums object below
+ *   (D) denotes an attribute whose value is taken to be a dimension string (e.g. "12 pt") that can
+ *   be translated to a number of pixels.
+ *
+ *   Any dimension expressed in em assumes that the style in which it appears has or inherits
+ *   a definite value for the attribute text.fontSize, which will be used to calculate its pixel
+ *   value.
  *
  */
+
+const enums = {
+  lineNumbers: [ 'none', 'arabic', 'western'],
+  fontStyle: [ '', 'italic'],
+  fontWeight: [ '', 'bold'],
+}
+
+const categories = [ 'strings', 'page', 'paragraph', 'text', 'glue']
+
+
 export class StyleSheet {
 
   /**
    *
-   * @param styleSheetDef
-   * @param {TextBoxMeasurer}textBoxMeasurer
+   * @param {Object}styleSheetDef
    */
-  constructor (styleSheetDef, textBoxMeasurer) {
+  constructor (styleSheetDef) {
     this.styles = styleSheetDef
+    if (this.styles === undefined) {
+      console.error('Undefined styles!!!')
+    }
     this.names = this.__getNameArray(this.styles)
-    this.textBoxMeasurer = textBoxMeasurer
     this.debug = true
+  }
+
+
+  getStrings(style = 'default'){
+    let defaultStrings = this.getStyleDef(style).strings
+    return defaultStrings === undefined ? {} : defaultStrings
   }
 
   merge(anotherStyleSheetDef) {
     Object.keys(anotherStyleSheetDef).forEach( (styleName) => {
-      this.updateStyle(styleName, anotherStyleSheetDef[styleName])
+      this.__updateStyle(styleName, anotherStyleSheetDef[styleName])
     })
     this.names = this.__getNameArray(this.styles)
   }
@@ -52,16 +84,17 @@ export class StyleSheet {
     return this.styles
   }
 
-  updateStyle(styleName, styleDef) {
+
+  __updateStyle(styleName, styleDef) {
     if (this.styleExists(styleName)) {
       // merge
       let currentDef = this.getStyleDef(styleName)
       if (styleDef.parent !== undefined) {
         currentDef.parent = styleDef.parent
       }
-      ['text', 'paragraph','glue'].forEach( (key) => {
-        if (currentDef[key] !== undefined || styleDef[key] !== undefined) {
-          currentDef[key] = this.__mergeObjects(currentDef[key], styleDef[key])
+      categories.forEach( (category) => {
+        if (currentDef[category] !== undefined || styleDef[category] !== undefined) {
+          currentDef[category] = this.__mergeObjects(currentDef[category], styleDef[category])
         }
       })
     } else {
@@ -72,11 +105,13 @@ export class StyleSheet {
 
   __mergeObjects(objA, objB) {
     let newObject = {}
+    // first, copy all keys defined in objA
     if (objA !== undefined) {
       Object.keys(objA).forEach( (key) => {
         newObject[key] = objA[key]
       })
     }
+    // then, overwrite all those defined in objB
     if (objB !== undefined) {
       Object.keys(objB).forEach( (key) => {
         newObject[key] = objB[key]
@@ -209,7 +244,7 @@ export class StyleSheet {
    */
   getPixelValue(someString, textBox) {
     return new Promise( async (resolve) => {
-      let [value, unit] = DimensionString.parse(someString)
+      let [value, unit] = Dimension.parse(someString)
       switch(unit) {
         case 'em':
           // assume the box's current fontSize is equal to 1em and apply
@@ -218,33 +253,14 @@ export class StyleSheet {
           break
 
         case 'sp':
-          let spaceWidth = await this.__getSpaceWidth(textBox)
+          let spaceWidth = 0.25 * textBox.getFontSize()
+          console.warn(`Found deprecated 'sp' unit when getting pixel value for '${someString}', using 0.25 em as normal space`)
           resolve(spaceWidth*value)
           break
 
         default:
-          resolve(DimensionString.valueUnit2px(value, unit))
+          resolve(Dimension.valueUnit2px(value, unit))
       }
-    })
-  }
-
-  /**
-   *
-   * @param {TextBox}textBox
-   * @return {Promise<number>}
-   * @private
-   */
-  __getSpaceWidth(textBox) {
-    let spaceTextBox = (new TextBox())
-      .setText(' ')
-      .setFontFamily(textBox.getFontFamily())
-      .setFontSize(textBox.getFontSize())
-      .setFontStyle(textBox.getFontStyle())
-      .setFontWeight(textBox.getFontWeight())
-    return new Promise( (resolve) => {
-      this.textBoxMeasurer.getBoxWidth(spaceTextBox).then( (width) => {
-        resolve(width)
-      })
     })
   }
 
@@ -254,7 +270,7 @@ export class StyleSheet {
    * @private
    */
   __getStylesToApply(styles) {
-    let styleString = ''
+    let styleString
     if (Array.isArray(styles)) {
       styleString = styles.join(' ')
     } else {
@@ -299,6 +315,24 @@ export class StyleSheet {
   getStyleDef(styleName) {
     return this.styles[styleName]
   }
+
+  /**
+   *
+   * @param {string[]}styleList
+   */
+  // getCompiledStyle(styleList) {
+  //
+  //   let styleDefs = this.__getStylesToApply(styleList).map( (styleName) => {
+  //     return this.getStyleDef(styleName)
+  //   })
+  //   let compiledStyle = {}
+  //   styleDefs.forEach( (styleDef) => {
+  //
+  //   })
+  //
+  //
+  //
+  // }
 
   /**
    *

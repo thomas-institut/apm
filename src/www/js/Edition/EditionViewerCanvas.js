@@ -26,6 +26,8 @@ import { BasicTypesetter } from '../Typesetter2/BasicTypesetter.mjs'
 import { isRtl } from '../toolbox/Util.mjs'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
+import { Dimension } from '../Typesetter2/Dimension.mjs'
+import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
 
 const pageMarginInCanvas = 20
 
@@ -42,6 +44,7 @@ export class EditionViewerCanvas {
       context: 'EditionViewerCanvas',
       optionsDefinition: {
         edition: { type: 'object', objectClass: Edition, required: true },
+        editionStyleSheet: { type: 'object', objectClass: StyleSheet},
         canvasElement: { type: 'object', required: true},
         fontFamily:  { type: 'NonEmptyString', required: true},
         scale: { type: 'number', default: 1},
@@ -56,7 +59,7 @@ export class EditionViewerCanvas {
             right: 3
           }},
         mainTextFontSizeInPts: { type: 'NumberGreaterThanZero', default: 12},
-        lineNumbersFontSizeMultiplier: { type: 'NumberGreaterThanZero', default: 0.8},
+        lineNumbersFontSizeInPts: { type: 'Number', default: 10},
         apparatusFontSizeInPts: { type: 'NumberGreaterThanZero', default: 10},
         mainTextLineHeightInPts: { type: 'NumberGreaterThanZero', default: 15},
         apparatusLineHeightInPts: { type: 'NumberGreaterThanZero', default: 12},
@@ -68,6 +71,9 @@ export class EditionViewerCanvas {
       }
     })
     this.options = oc.getCleanOptions(options)
+
+    console.log('Viewer clean options')
+    console.log(this.options)
 
     this.geometry = {
       pageWidth: Typesetter2.cm2px(this.options.pageWidthInCm),
@@ -89,6 +95,9 @@ export class EditionViewerCanvas {
       interApparatus: Typesetter2.cm2px(this.options.interApparatusInCm),
       normalSpaceWidthInEms: this.options.normalSpaceWidthInEms
     }
+
+    console.log('Viewer geometry')
+    console.log(this.geometry)
 
     this.edition = this.options.edition
     this.canvas = this.options.canvasElement
@@ -166,6 +175,7 @@ export class EditionViewerCanvas {
       this.typesettingParameters = undefined
       let helperOptions = {
         edition: this.edition,
+        editionStyleSheet: this.options.editionStyleSheet,
         defaultFontFamily: this.options.fontFamily,
         defaultFontSize: Typesetter2.pt2px(this.options.mainTextFontSizeInPts),
         textBoxMeasurer: this.canvasMeasurer,
@@ -196,6 +206,7 @@ export class EditionViewerCanvas {
             defaultFontFamily: this.options.fontFamily,
             defaultFontSize:  this.geometry.mainTextFontSize,
             lineSkip: this.geometry.mainTextLineHeight,
+            apparatusLineSkip: Dimension.pt2px(this.options.apparatusLineHeightInPts),
             showPageNumbers: true,
             pageNumbersOptions: {
               fontFamily: this.options.fontFamily,
@@ -205,7 +216,7 @@ export class EditionViewerCanvas {
             showLineNumbers: true,
             lineNumbersOptions: {
               fontFamily: this.options.fontFamily,
-              fontSize: this.geometry.mainTextFontSize*this.options.lineNumbersFontSizeMultiplier,
+              fontSize: Typesetter2.pt2px(this.options.lineNumbersFontSizeInPts),
               frequency: 5,
               numberStyle: this.edition.lang,
               align: lineNumbersAlign,

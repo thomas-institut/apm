@@ -17,10 +17,10 @@
  */
 
 
-export const defaultLatinEditionStyle =  {
+export const latinLibertine =  {
   _metaData: {
-    name: 'Default',
-    description: 'A4 paper, FreeSerif'
+    name: 'Libertine',
+    description: 'A4 paper, Linux Libertine'
   },
   default: {
     strings: {
@@ -54,7 +54,7 @@ export const defaultLatinEditionStyle =  {
       spaceAfter: "0"
     },
     text: {
-      fontFamily: "FreeSerif",
+      fontFamily: "Linux Libertine",
       fontSize: "12 pt",
       fontStyle: "",
       fontWeight: "",

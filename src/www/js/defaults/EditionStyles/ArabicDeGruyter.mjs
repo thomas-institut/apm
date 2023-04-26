@@ -16,10 +16,10 @@
  *
  */
 
-export const defaultArabicEditionStyle = {
+export const arabicDeGruyter = {
   _metaData: {
-    name: 'Default',
-    description: 'A4 paper, Noto Naskh'
+    name: 'De Gruyter',
+    description: 'De Gruyter format'
   },
     default: {
       strings : {
@@ -32,17 +32,17 @@ export const defaultArabicEditionStyle = {
         entrySeparator:  "\u007c" // single vertical line
       },
       page: {
-        width: "21 cm",
-        height: "29.7 cm",
-        marginTop: "2 cm",
-        marginLeft: "3 cm",
-        marginBottom: "2 cm",
-        marginRight: "3 cm",
+        width: "17 cm",
+        height: "24 cm",
+        marginTop: "2.5 cm",
+        marginLeft: "2.5 cm",
+        marginBottom: "2.5 cm",
+        marginRight: "2.5 cm",
         minDistanceFromApparatusToText: "1.5 cm",
         minInterApparatusDistance: "0.5 cm",
         lineNumbers: "arabic",   //  "western", "arabic", "none"
-        lineNumbersToTextDistance: "0.5 cm",
-        lineNumbersFontSize: "0.9 em",
+        lineNumbersToTextDistance: "0.8 cm",
+        lineNumbersFontSize: "1 em",
         lineNumbersPosition: "right"
       },
       paragraph: {
@@ -53,8 +53,8 @@ export const defaultArabicEditionStyle = {
         spaceAfter: "0"
       },
       text: {
-        fontFamily: "Noto Naskh Arabic",
-        fontSize: "12 pt",
+        fontFamily: "AdobeArabic",
+        fontSize: "14 pt",
         fontStyle: "",
         fontWeight: "",
         shiftY: "0"
@@ -103,8 +103,7 @@ export const defaultArabicEditionStyle = {
     h1: {
       parent: "default",
       text: {
-        fontSize: "1.5 em",
-        fontWeight: "bold",
+        fontSize: "1.25 em",
       },
       paragraph: {
         align: "center",
@@ -115,8 +114,7 @@ export const defaultArabicEditionStyle = {
     h2: {
       parent: "default",
       text: {
-        fontSize: "1.2 em",
-        fontWeight: "bold",
+        fontSize: "1.1 em",
       },
       paragraph: {
         spaceBefore: "1 em",
@@ -149,15 +147,15 @@ export const defaultArabicEditionStyle = {
     },
     postLineRangeSeparator: {
       glue: {
-        width: "1.25 em",
-        stretch: "0.5 em",
-        shrink: "0.25 em"
+        width: "1 em",
+        stretch: "0.4 em",
+        shrink: "0.3 em"
       }
     },
     preEntrySeparator : {
       glue: {
-        width: "0.5 em",
-        stretch: "0.25 em",
+        width: "0.25 em",
+        stretch: "0.1 em",
         shrink: "0.05 em"
       }
     },
@@ -168,9 +166,9 @@ export const defaultArabicEditionStyle = {
     },
     postEntrySeparator: {
       glue: {
-        width: "1.25 em",
-        stretch: "0.5 em",
-        shrink: "0.25 em"
+        width: "0.5 em",
+        stretch: "0.3 em",
+        shrink: "0.1 em"
       }
     },
     apparatusLineNumbers: {

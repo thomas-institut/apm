@@ -1,7 +1,9 @@
 import { trimWhiteSpace } from '../toolbox/Util.mjs'
 import { Typesetter2 } from './Typesetter2.mjs'
 
-export class DimensionString {
+
+
+export class Dimension {
 
   /**
    * Parse
@@ -26,19 +28,28 @@ export class DimensionString {
       console.warn(`Invalid number: ${fields[0]}`)
       value = 0
     }
-    return [ value, unit]
+    return [value, unit]
   }
 
   /**
    *
-   * @param someVariable
-   * @param emSize
-   * @param spaceSize
+   * @param {any}someVariable
+   * @param {number}emSize
+   * @param {number}spaceSize
    */
-  static any2px(someVariable, emSize = 0, spaceSize = 0) {
+  static str2px(someVariable, emSize = 0, spaceSize =0) {
     let [value, unit] = this.parse(someVariable)
     return this.valueUnit2px(value, unit, emSize, spaceSize )
   }
+
+  static str2pt(someVariable, emSize = 0, spaceSize =0) {
+    return Typesetter2.px2pt(this.str2px(someVariable, emSize,spaceSize))
+  }
+
+  static str2cm(someVariable, emSize = 0, spaceSize =0) {
+    return Typesetter2.px2cm(this.str2px(someVariable, emSize,spaceSize))
+  }
+
 
   /**
    *
@@ -55,27 +66,45 @@ export class DimensionString {
 
       case 'pt':
       case 'pts':
-        return Typesetter2.pt2px(value)
+        return this.pt2px(value)
 
       case 'cm':
       case 'cms':
-        return Typesetter2.cm2px(value)
+        return this.cm2px(value)
 
       case 'mm':
       case 'mms':
-        return Typesetter2.cm2px(value/10)
+        return this.cm2px(value/10)
 
       case 'em':
       case 'ems':
         return emSize*value
 
       case 'sp':
+        if (spaceSize === 0) {
+          console.warn(`Space size is zero when converting value to pixel dimension: ${value}`)
+        }
         return spaceSize*value
 
       default:
         console.warn(`Invalid unit '${unit}'`)
         return -1
     }
+  }
+
+  static cm2px(cm) {
+    return cm * 37.795275590551184 //   = mm * 96 [px/in] / 2.54 [cm/in]
+  }
+  static px2cm(px) {
+    return px / 37.795275590551184 //   = px * 1/96 [in/px] * 2.54 [cm/in]
+  }
+
+  static pt2px(pt) {
+    return pt * 4 / 3  // = pt * 72 [pt/in] *  1/96 [in/px]
+  }
+
+  static px2pt(px) {
+    return px * 3 / 4
   }
 
 }

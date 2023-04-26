@@ -44,6 +44,7 @@ import { TimeString } from '../toolbox/TimeString.mjs'
 import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
 import { CtData } from '../CtData/CtData'
 import { WitnessDataItem } from '../Edition/WitnessDataItem.mjs'
+import { SystemStyleSheet } from '../Typesetter2/Style/SystemStyleSheet.mjs'
 
 const defaultIcons = {
   moveUp: '&uarr;',

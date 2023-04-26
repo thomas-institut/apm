@@ -60,6 +60,7 @@ export class BasicTypesetter extends Typesetter2 {
         marginLeft: { type: 'number', default: 50},
         marginRight: { type: 'number', default: 50},
         lineSkip: { type: 'number', default: 24},
+        apparatusLineSkip: { type: 'number', default: 20},
         minLineSkip: { type: 'number', default: 0},
         defaultFontFamily: { type: 'string', default: defaultFontFamily},
         defaultFontSize: { type: 'number', default: defaultFontSize},
@@ -103,6 +104,8 @@ export class BasicTypesetter extends Typesetter2 {
       }
     })
     this.options = oc.getCleanOptions(options)
+    console.log('Basic typesetter clean options')
+    console.log(this.options)
     this.lineWidth = this.options.pageWidth - this.options.marginLeft - this.options.marginRight
     this.textAreaHeight = this.options.pageHeight - this.options.marginTop - this.options.marginBottom
     this.lineSkip = this.options.lineSkip
@@ -133,7 +136,7 @@ export class BasicTypesetter extends Typesetter2 {
           xPosition: { type: 'number', default: this.options.marginLeft - Typesetter2.cm2px(0.5)},
           align: {type: 'string', default: 'right'},
           fontFamily: { type: 'string', default: defaultFontFamily},
-          fontSize: { type: 'number', default: defaultFontSize*0.6},
+          fontSize: { type: 'number', default: defaultFontSize},
           numberStyle: { type: 'string', default: ''},
           showLineOne: {type: 'boolean', default: true},
           lineNumberShift: { type: 'number', default: 0},
@@ -141,6 +144,8 @@ export class BasicTypesetter extends Typesetter2 {
         }
       })
       let lnOptions = lnOc.getCleanOptions(this.options.lineNumbersOptions)
+      // console.log(`Line Number clean options`)
+      // console.log(lnOptions)
       this.addPageOutputProcessor(this.__constructAddLineNumbersProcessor(lnOptions))
     }
 
@@ -684,7 +689,10 @@ export class BasicTypesetter extends Typesetter2 {
         let apparatusListToTypeset = await this.options.getApparatusListToTypeset(typesetMainTextVerticalList, apparatuses[i], lineFrom, lineTo)
         if (apparatusListToTypeset.getDirection() === TypesetterItemDirection.HORIZONTAL) {
           // this.debug && console.log(`Typesetting apparatus ${i}`)
+          let currentLineSkip = this.lineSkip
+          this.lineSkip = this.options.apparatusLineSkip
           outputArray.push(await this.typesetHorizontalList(apparatusListToTypeset))
+          this.lineSkip = currentLineSkip
           // this.debug && console.log(`Finished typesetting apparatus ${i}`)
         } else {
           console.warn(`Apparatus ${i} list to typeset is vertical, this is not implemented yet`)

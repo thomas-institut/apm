@@ -15,6 +15,11 @@
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collation.edit.css" />
 
     <link href='{{baseurl}}/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
+    <link
+    rel="preload"
+    href="https://averroes.uni-koeln.de/fonts/AdobeArabic/AdobeArabic.otf" type="font/opentype"
+    crossorigin />
+
 
     <title></title>
 
@@ -42,9 +47,11 @@
     let versionInfo = JSON.parse("{{versionInfo|json_encode|e('js')}}")
     let userId = {{ userId }} ;
     let isTechSupport = '{{isTechSupport }}' === 'yes';
+    let lastVersion = '{{lastVersion }}' === 'yes';
 
     let te = new EditionComposer({
       userId: userId,
+      lastVersion: lastVersion,
       isTechSupport: isTechSupport,
       collationTableData : ctData,
       workId: '{{ workId }}',

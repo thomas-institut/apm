@@ -40,6 +40,8 @@ export class AdminPanel extends  Panel {
   constructor (options = {}) {
     super(options)
     let optionsSpec = {
+      urlGen: { type: 'object'},
+      tableId: { type: 'number'},
       ctType: { type: 'string', required: true},
       archived: { type: 'boolean', required: true},
       versionInfo: { type: 'array', default: []},
@@ -52,6 +54,7 @@ export class AdminPanel extends  Panel {
     this.options = oc.getCleanOptions(options)
     this.rendered = false
     this.versionInfo = this.options.versionInfo
+    this.urlGen = this.options.urlGen
   }
 
   updateVersionInfo(newVersionInfo) {
@@ -162,7 +165,7 @@ export class AdminPanel extends  Panel {
       }
       html += '<tr>'
       html += '<td>' + (i+1) + '</td>'
-      html += '<td>' + version['id'] + '</td>'
+      html += `<td><a href="${this.urlGen.siteEditCollationTable(this.options.tableId, version['id'])}">${version['id']}</a></td>`
       html += '<td class="author">' + authorName + '</td>'
       html += '<td class="time">' + Util.formatVersionTime(version['timeFrom']) + '</td>'
       html += '<td>' + version['description'] + '</td>'

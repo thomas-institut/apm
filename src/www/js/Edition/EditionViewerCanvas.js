@@ -170,7 +170,7 @@ export class EditionViewerCanvas {
 
 
   __typesetEdition() {
-    return new Promise( (resolve) => {
+    return new Promise( async (resolve) => {
       // reset typesetting data
       this.typesettingParameters = undefined
       let helperOptions = {
@@ -181,6 +181,11 @@ export class EditionViewerCanvas {
         textBoxMeasurer: this.canvasMeasurer,
         debug: true
       }
+      // Load fonts
+      await document.fonts.load(`1em ${this.options.fontFamily}`)
+      await document.fonts.load(`bold 1em ${this.options.fontFamily}`)
+      await document.fonts.load(`italic 1em ${this.options.fontFamily}`)
+      await document.fonts.load(`bold italic 1em ${this.options.fontFamily}`)
       let editionTypesettingHelper = new EditionTypesetting(helperOptions)
       editionTypesettingHelper.setup().then( async () => {
         let verticalListToTypeset = await editionTypesettingHelper.generateListToTypesetFromMainText()

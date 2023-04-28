@@ -36,6 +36,7 @@ use APM\System\WitnessType;
 use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use ThomasInstitut\TimeString\TimeString;
 
 
 /**
@@ -75,13 +76,39 @@ class SiteCollationTable extends SiteController
      */
     public function editCollationTable(Request $request, Response $response) {
         $tableId = intval($request->getAttribute('tableId'));
+        $versionId = intval($request->getAttribute('versionId'));
 
         $this->profiler->start();
-        $this->logger->debug("Edit collation table id $tableId");
-
+        $this->logger->debug("Edit collation table id $tableId, version $versionId");
         $ctManager = $this->systemManager->getCollationTableManager();
+        $versionInfoArray = $ctManager->getCollationTableVersions($tableId);
+
+        if (count($versionInfoArray) === 0) {
+            $this->logger->info("No version info found, table probably does not exist");
+            $versionId = 0;
+        }
+        $timeStamp = TimeString::now();
+        $lastVersion = true;
+        if ($versionId !== 0) {
+            // find timestamp for given versionId
+            $found = false;
+            foreach ( $versionInfoArray as $versionInfo) {
+                if ($versionInfo->id == $versionId) {
+                    $timeStamp = $versionInfo->timeFrom;
+                    if ($versionInfo->timeUntil !== TimeString::END_OF_TIMES) {
+                        $lastVersion = false;
+                    }
+                    $found = true;
+                    $this->logger->debug("Version timestamp: $timeStamp");
+                    break;
+                }
+            }
+            if (!$found) {
+                $this->logger->info("Version ID does exist or does not correspond to given table, defaulting to latest version");
+            }
+        }
         try {
-            $ctData = $ctManager->getCollationTableById($tableId);
+            $ctData = $ctManager->getCollationTableById($tableId, $timeStamp);
         } catch (InvalidArgumentException $e) {
             $this->logger->info("Table $tableId requested for editing not found");
             return $this->renderPage($response,self::TEMPLATE_EDIT_COLLATION_TABLE_ERROR, [
@@ -90,7 +117,7 @@ class SiteCollationTable extends SiteController
             ]);
         }
 
-        $versionInfo = $ctManager->getCollationTableVersions($tableId);
+        $versionInfoArray = $ctManager->getCollationTableVersions($tableId);
         $chunkId = $ctData['chunkId'] ?? $ctData['witnesses'][0]['chunkId'];
         [ $workId, $chunkNumber] = explode('-', $chunkId);
 
@@ -104,7 +131,7 @@ class SiteCollationTable extends SiteController
         $people = [];
         $people[] = $workInfo['authorId'];
         $people = array_merge($people, $this->getMentionedAuthorsFromCtData($ctData));
-        $people = array_merge($people, $this->getMentionedPeopleFromVersionArray($versionInfo));
+        $people = array_merge($people, $this->getMentionedPeopleFromVersionArray($versionInfoArray));
         $helper = new DataRetrieveHelper();
         $helper->setLogger($this->logger);
         $peopleInfo = $helper->getAuthorInfoArrayFromList($people, $dm->userManager);
@@ -137,7 +164,8 @@ class SiteCollationTable extends SiteController
             'workInfo' => $workInfo,
             'peopleInfo' => $peopleInfo,
             'docInfo' => $docInfo,
-            'versionInfo' => $versionInfo,
+            'versionInfo' => $versionInfoArray,
+            'lastVersion' => $lastVersion ? 'yes' : 'no'
         ]);
     }
 

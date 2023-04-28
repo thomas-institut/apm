@@ -762,6 +762,8 @@ export class MceComposer {
         this.errorDetail = `Error generating edition for table id ${chunk.chunkEditionTableId}, chunk ${chunk.chunkId}`
         return
       }
+      console.log(`Edition for edition id ${chunk.chunkEditionTableId}`)
+      console.log(edition)
       this.editions.push(edition)
     }
   }
@@ -862,6 +864,7 @@ export class MceComposer {
               newSubEntry.fmtText = subEntry.fmtText
               newSubEntry.source = subEntry.source
               newSubEntry.type = subEntry.type
+              newSubEntry.keyword = subEntry.keyword
               newSubEntry.witnessData = subEntry.witnessData.map ( (wd) => {
                 let newWd = new WitnessDataItem()
                 newWd.setHand(wd.hand)
@@ -976,8 +979,8 @@ export class MceComposer {
       this.errorDetail = `Error generating edition for table id ${tableId}, chunk ${ctData.chunkId}`
       return
     }
-    console.log(`Generated edition for table ${tableId}, chunk ${ctData.chunkId}`)
-    console.log(edition)
+    // console.log(`Generated edition for table ${tableId}, chunk ${ctData.chunkId}`)
+    // console.log(edition)
     this.editions.push(edition)
     this.editionPanel.updateData(this.mceData)
     this.chunkSearchPanel.updateData(this.mceData)

@@ -171,8 +171,12 @@ class ApmUrlGenerator {
         }
         return this.base + '/collation/auto/' + work + '/' + chunkno + '/' + lang + extra;
     }
-    siteEditCollationTable(tableId) {
-        return this.base + '/collation/edit/' + tableId;
+    siteEditCollationTable(tableId, version = 0) {
+        let postfix = ''
+        if (version !== 0) {
+            postfix = `/${version}`
+        }
+        return `${this.base}/collation/edit/${tableId}${postfix}`
     }
 
     siteEditCollationTableBeta(tableId) {

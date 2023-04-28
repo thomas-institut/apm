@@ -61,14 +61,11 @@ import * as CollationTableType from '../constants/CollationTableType'
 import { Edition } from '../Edition/Edition.mjs'
 import * as NormalizationSource from '../constants/NormalizationSource'
 import * as WitnessType from '../Witness/WitnessType'
-// import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser'
 import { EditionWitnessReferencesCleaner } from '../CtData/CtDataCleaner/EditionWitnessReferencesCleaner'
 import { CollationTableConsistencyCleaner } from '../CtData/CtDataCleaner/CollationTableConsistencyCleaner'
 import * as WitnessTokenType from '../Witness/WitnessTokenType'
-// import * as WitnessTokenClass from '../Witness/WitnessTokenClass'
-// import { FmtText } from '../FmtText/FmtText.mjs'
+
 import { PdfDownloadUrl } from './PdfDownloadUrl'
-import { SystemStyleSheet } from '../Typesetter2/Style/SystemStyleSheet.mjs'
 
 // import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS
@@ -95,9 +92,20 @@ export class EditionComposer {
   constructor(options) {
     console.log(`Initializing Edition Composer`)
 
+    // first load the fonts!
+
+    // let fontsToLoad = [  '14pt AdobeArabic', 'bold 14pt AdobeArabic', '1em Apm_FreeSerif', '1em Noto Sans']
+    //
+    // fontsToLoad.forEach( (fontName) => {
+    //   document.fonts.load(fontName).then( () => { console.log(`Font '${fontName}' loaded`)}).catch( (e) => {
+    //     console.log(`Error loading font '${fontName}'`)
+    //   })
+    // })
+
     let optionsDefinition = {
       userId: { type:'NonZeroNumber', required: true},
       isTechSupport: { type: 'boolean', default: false},
+      lastVersion: { type: 'boolean'},
       collationTableData : { type: 'object', required: true},
       workId : { type: 'string', required: true},
       chunkNumber: {type: 'NonZeroNumber', required: true},
@@ -160,6 +168,11 @@ export class EditionComposer {
     this.tableId = this.options['tableId']
     this.ctData['tableId'] = this.tableId
     this.versionInfo = this.options.versionInfo
+    this.lastVersion= this.options.lastVersion
+
+    if (!this.lastVersion) {
+      console.warn('Working on an older version of the Edition/CollationTable')
+    }
 
     this.cache = new KeyCache()
 
@@ -215,6 +228,8 @@ export class EditionComposer {
     })
 
     this.adminPanel = new AdminPanel({
+      urlGen: this.options.urlGenerator,
+      tableId: this.tableId,
       verbose: false,
       containerSelector: `#${adminPanelTabId}`,
       versionInfo: this.versionInfo,
@@ -300,7 +315,11 @@ export class EditionComposer {
         logo: `<a href="${this.options.urlGenerator.siteHome()}" title="Home">
 <img src="${this.options.urlGenerator.images()}/apm-logo-plain.svg" height="40px" alt="logo"/></a>`,
         topBarContent: () => {
-          return `<div class="top-bar-item top-bar-title" id="${editionTitleId}">Multi-panel User Interface</div>${thisObject.genCtInfoDiv()}`
+          let warningSign = ''
+          if (!this.lastVersion) {
+            warningSign = `<a href="" class="text-danger" title="WARNING: working on an older version">${this.icons.alert}</a>&nbsp;`
+          }
+          return `<div class="top-bar-item top-bar-title" >${warningSign}<span id="${editionTitleId}">Multi-panel User Interface</span></div>${thisObject.genCtInfoDiv()}`
         },
         topBarRightAreaContent: () => {
           return `<div class="toolbar-group"><button class="top-bar-button text-danger" id="error-button">${this.icons.error}</button>
@@ -1323,6 +1342,7 @@ export class EditionComposer {
     let workTitle = this.options.workInfo['title']
     let workAuthorId = this.options.workInfo['authorId']
     let workAuthorName = this.options.peopleInfo[workAuthorId]['fullname']
+    let warningSign = ''
     return `<div id="ct-info" title="${workAuthorName}, ${workTitle}; table ID: ${this.tableId}">${this.options.workId}-${this.options.chunkNumber}</div>`
   }
 

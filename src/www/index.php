@@ -239,7 +239,7 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
         ->setName('chunk.collationtable.custom');
 
     // edit collation table
-    $group->get('/collation/edit/{tableId}[/{type}]',
+    $group->get('/collation/edit/{tableId}[/{versionId}]',
         SiteCollationTable::class . ':editCollationTable')
         ->setName('collationtable.edit');
 

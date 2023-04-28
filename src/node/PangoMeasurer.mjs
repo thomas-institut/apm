@@ -20,6 +20,7 @@
 import { TextBoxMeasurer } from '../www/js/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.mjs'
 import {resolvedPromise} from '../www/js/toolbox/FunctionUtil.mjs'
 import {exec} from 'node:child_process'
+import { FontBaselineInfo } from '../www/js/Typesetter2/FontBaselineInfo.mjs'
 
 const pythonMeasurer =  '../python/text-measurer.py'
 
@@ -48,24 +49,25 @@ export class PangoMeasurer extends TextBoxMeasurer {
   }
 
   getBoxHeight (textBox) {
-    let cacheKey = this.__getCacheKeyForTextBox(textBox)
-    if (this.heightCache.has(cacheKey)) {
-      this.debug && console.log(`Getting height from cache`)
-      this.cacheHits++
-      return resolvedPromise(this.heightCache.get(cacheKey))
-    }
-    this.realMeasurements++
-    return new Promise ( (resolve) => {
-      this.__getPangoMeasurements(textBox).then ( (measurements) => {
-        this.debug && console.log(`Saving w=${measurements.width}, h=${ measurements.baseline} in cache with key '${cacheKey}'`)
-        this.debug && console.log(`baseline / fontsize = ${measurements.baseline / textBox.getFontSize()}`)
-        this.debug && console.log(`height / fontsize = ${measurements.height / textBox.getFontSize()}`)
-        this.widthCache.set(cacheKey, measurements.width)
-        this.heightCache.set(cacheKey, measurements.baseline)
-
-        resolve(measurements.baseline)
-      })
-    })
+    // let cacheKey = this.__getCacheKeyForTextBox(textBox)
+    // if (this.heightCache.has(cacheKey)) {
+    //   this.debug && console.log(`Getting height from cache`)
+    //   this.cacheHits++
+    //   return resolvedPromise(this.heightCache.get(cacheKey))
+    // }
+    // this.realMeasurements++
+    return resolvedPromise(FontBaselineInfo.getBaseline(textBox.getFontFamily(), textBox.getFontSize()))
+    // return new Promise ( (resolve) => {
+    //   this.__getPangoMeasurements(textBox).then ( (measurements) => {
+    //     this.debug && console.log(`Saving w=${measurements.width}, h=${ measurements.baseline} in cache with key '${cacheKey}'`)
+    //     this.debug && console.log(`baseline / fontsize = ${measurements.baseline / textBox.getFontSize()}`)
+    //     this.debug && console.log(`height / fontsize = ${measurements.height / textBox.getFontSize()}`)
+    //     this.widthCache.set(cacheKey, measurements.width)
+    //     this.heightCache.set(cacheKey, measurements.baseline)
+    //
+    //     resolve(measurements.baseline)
+    //   })
+    // })
   }
 
   getBoxWidth (textBox) {

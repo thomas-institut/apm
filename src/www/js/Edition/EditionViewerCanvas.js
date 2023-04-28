@@ -182,6 +182,7 @@ export class EditionViewerCanvas {
         debug: true
       }
       // Load fonts
+      // TODO: make this better by getting a list of used fonts in the stylesheet
       await document.fonts.load(`1em ${this.options.fontFamily}`)
       await document.fonts.load(`bold 1em ${this.options.fontFamily}`)
       await document.fonts.load(`italic 1em ${this.options.fontFamily}`)

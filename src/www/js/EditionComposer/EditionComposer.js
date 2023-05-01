@@ -317,7 +317,7 @@ export class EditionComposer {
         topBarContent: () => {
           let warningSign = ''
           if (!this.lastVersion) {
-            warningSign = `<a href="" class="text-danger" title="WARNING: working on an older version">${this.icons.alert}</a>&nbsp;`
+            warningSign = `<a href="" class="text-danger" title="WARNING: showing an older version of this edition">${this.icons.alert}</a>&nbsp;`
           }
           return `<div class="top-bar-item top-bar-title" >${warningSign}<span id="${editionTitleId}">Multi-panel User Interface</span></div>${thisObject.genCtInfoDiv()}`
         },

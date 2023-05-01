@@ -107,7 +107,7 @@ export class MainTextPanel extends PanelWithToolbar {
     this.tokenIndexOne = -1
     this.tokenIndexTwo = -1
     this.lastTypesetinfo = null
-    this.detectNumberingLabels = true
+    this.detectNumberingLabels = false
     this.diffEngine = new AsyncMyersDiff.AsyncMyersDiff()
     this.onchangeMainTextFreeTextEditorWaiting = false
 
@@ -398,6 +398,7 @@ export class MainTextPanel extends PanelWithToolbar {
     this.numberingLabelsToggle = new NiceToggle({
       containerSelector: 'div.numbering-labels-toggle',
       title: 'Auto NL: ',
+      initialValue: this.detectNumberingLabels,
       onIcon: '<i class="fas fa-toggle-on"></i>',
       onPopoverText: 'Click to disable automatic detection of Numbering Labels',
       offIcon: '<i class="fas fa-toggle-off"></i>',

@@ -149,7 +149,7 @@ export const defaultArabicEditionStyle = {
     },
     postLineRangeSeparator: {
       glue: {
-        width: "1.25 em",
+        width: "1 em",
         stretch: "0.5 em",
         shrink: "0.25 em"
       }
@@ -168,9 +168,9 @@ export const defaultArabicEditionStyle = {
     },
     postEntrySeparator: {
       glue: {
-        width: "1.25 em",
-        stretch: "0.5 em",
-        shrink: "0.25 em"
+        width: "0.75 em",
+        stretch: "0.3 em",
+        shrink: "0.1 em"
       }
     },
     apparatusLineNumbers: {

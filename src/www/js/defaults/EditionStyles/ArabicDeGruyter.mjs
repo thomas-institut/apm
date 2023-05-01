@@ -145,32 +145,32 @@ export const arabicDeGruyter = {
         fontWeight: "bold",
       }
     },
-    postLineRangeSeparator: {
-      glue: {
-        width: "1 em",
-        stretch: "0.4 em",
-        shrink: "0.3 em"
-      }
-    },
-    preEntrySeparator : {
-      glue: {
-        width: "0.25 em",
-        stretch: "0.1 em",
-        shrink: "0.05 em"
-      }
-    },
-    entrySeparator: {
-      // text: {
-      //   fontWeight: "bold",
-      // }
-    },
-    postEntrySeparator: {
-      glue: {
-        width: "0.5 em",
-        stretch: "0.3 em",
-        shrink: "0.1 em"
-      }
-    },
+  postLineRangeSeparator: {
+    glue: {
+      width: "0.75 em",
+      stretch: "0.5 em",
+      shrink: "0.2 em"
+    }
+  },
+  preEntrySeparator : {
+    glue: {
+      width: "0.4 em",
+      stretch: "0.25 em",
+      shrink: "0.05 em"
+    }
+  },
+  entrySeparator: {
+    // text: {
+    //   fontWeight: "bold",
+    // }
+  },
+  postEntrySeparator: {
+    glue: {
+      width: "0.5 em",
+      stretch: "0.3 em",
+      shrink: "0.05 em"
+    }
+  },
     apparatusLineNumbers: {
       text: {
         fontWeight: "bold",

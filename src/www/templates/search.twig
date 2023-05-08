@@ -50,15 +50,6 @@
             }
           })
 
-        // Zoom event
-        $("#zoomSlider").on("change", function (event) {
-          let zoom_slider = $("#zoomSlider")
-          let radius_slider = $("#radiusSlider")
-          let zoom = zoom_slider.val()
-          let radius = radius_slider.val()
-          displayResults(data_backup[0], data_backup[1], data_backup[2], zoom, radius)
-        })
-
         // Error message if wildcards are combined with lemmatization
         lemmatization_box.on("click",  function (event) {
           let checked = lemmatization_box.prop("checked")
@@ -164,7 +155,7 @@
         const resultsHead = $("#resultsTable thead");
         const errorMessage = $("#error_message");
 
-        // Clear the results table and error message
+        // Clear results table and error message
         resultsBody.empty();
         resultsHead.empty();
         errorMessage.empty();
@@ -192,8 +183,10 @@
                   // Remove spinner
                   spinner.empty();
 
+                  let zoom = new Array(4000).fill(inputs.radius)
+
                   // Call displayResults-function and save backup of data for zoom handling
-                  displayResults(apiResponse.data, apiResponse.lang, apiResponse.num_passages_total, inputs.radius, inputs.radius);
+                  displayResults(apiResponse.data, apiResponse.lang, apiResponse.num_passages_total, zoom, inputs.radius);
                   data_backup = [apiResponse.data, apiResponse.lang, apiResponse.num_passages_total];
                 })
                 .fail((status) => {
@@ -251,7 +244,7 @@
           // Slice and highlight passage
           for (let j = 0; j < passages.length; j++) {
 
-            let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, positions[j], radius, zoom)
+            let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, positions[j], radius, zoom[k])
 
 
             // Fill table with results - layout depends slightly on the language of the transcripts
@@ -265,13 +258,14 @@
 
           // Make table head
           results_head.empty()
-          results_head.append(`<tr><th>Zoom</th><th>Matched Passage (${num_passages})
+          results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th>Zoom
                                 </th><th>Document (${num_docs})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
           results_body.empty()
 
           // Make variable for storing title of previous column in the dataset to display only the title only once,
           // if there are plenty matched columns/passages in the same work
           let prev_title = ' '
+          let k=0
 
           // Write all matches into the results table
           for (let i = 0; i < num_columns; i++) {
@@ -293,11 +287,12 @@
 
             // Slice and highlight passage
             for (let j = 0; j < passages.length; j++) {
+              k=k+1
 
-              let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, positions[j], radius, zoom)
+              let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, positions[j], radius, zoom[k])
 
               // Fill table with results - layout depends slightly on the language of the transcripts
-              fillResultsTableBody(passage, title, foliation, transcriber, link, lang, zoom, prev_title)
+              fillResultsTableBody(passage, title, foliation, transcriber, link, lang, zoom, prev_title, k)
               prev_title = title
             }
           }
@@ -387,7 +382,7 @@
         return text
       }
       
-      function fillResultsTableBody(passage, title, foliation, transcriber, link, lang, zoom, prev_title=' ') {
+      function fillResultsTableBody(passage, title, foliation, transcriber, link, lang, zoom, prev_title=' ', k) {
 
         // Get selector
         let results_body = $("#resultsTable tbody")
@@ -397,55 +392,59 @@
 
           if (lang==='la') {
             results_body.append(
-                    `<tr><td></td><td class="text-justify">${passage}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           }
           else if (lang==='he') {
             results_body.append(
-                    `<tr><td></td><td class="text-justify" class="text-he">${passage}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify" class="text-he">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           }
           else if (lang==='ar') {
             results_body.append(
-                    `<tr><td></td><td class="text-justify" class="text-ar">${passage}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify" class="text-ar">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           }
         }
 
-      else if (prev_title === ' ') {
-        if (lang === 'la') {
-          results_body.append(
-                  `<tr><td><label for="zoomSlider"></label>
-          <input type="range" id="zoomSlider" name="radiusSlider" min="0" max="80" value=${zoom}></td><td class="text-justify">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-        } else if (lang === 'he') {
-          results_body.append(
-                  `<tr><td><label for="zoomSlider"></label>
-          <input type="range" id="zoomSlider" name="radiusSlider" min="0" max="80" value=${zoom}></td><td class="text-justify" class="text-he">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-        } else if (lang === 'ar') {
-          results_body.append(
-                  `<tr><td><label for="zoomSlider"></label>
-          <input type="range" id="zoomSlider" name="radiusSlider" min="0" max="80" value=${zoom}></td><td class="text-justify" class="text-ar">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-        }
-      }
+      // else if (prev_title === ' ') {
+      //   if (lang === 'la') {
+      //     results_body.append(
+      //             `<tr><td><label for="zoomSlider"></label>
+      //     <input type="range" id="zoomSlider" name="radiusSlider" min="0" max="80" value=${zoom}></td><td class="text-justify">${passage}</td><td><label for="zoomSlider"></label><input type="number" id="zoomSlider" name="zoomSlider" min="0" max="80" value=${zoom} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+      //   } else if (lang === 'he') {
+      //     results_body.append(
+      //             `<tr><td><label for="zoomSlider"></label>
+      //     <input type="range" id="zoomSlider" name="radiusSlider" min="0" max="80" value=${zoom}></td><td class="text-justify" class="text-he">${passage}</td><td><label for="zoomSlider"></label><input type="number" id="zoomSlider" name="zoomSlider" min="0" max="80" value=${zoom} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+      //   } else if (lang === 'ar') {
+      //     results_body.append(
+      //             `<tr><td><label for="zoomSlider"></label>
+      //     <input type="range" id="zoomSlider" name="radiusSlider" min="0" max="80" value=${zoom}></td><td class="text-justify" class="text-ar">${passage}</td><td><label for="zoomSlider"></label><input type="number" id="zoomSlider" name="zoomSlider" min="0" max="80" value=${zoom} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+      //   }
+      // }
 
       else {
           if (lang === 'la') {
             results_body.append(
-                    `<tr><td></td><td class="text-justify">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           } else if (lang === 'he') {
             results_body.append(
-                    `<tr><td></td><td class="text-justify" class="text-he">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify" class="text-he">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           } else if (lang === 'ar') {
             results_body.append(
-                    `<tr><td></td><td class="text-justify" class="text-ar">${passage}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify" class="text-ar">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           }
         }
 
-        // Zoom event
-        $("#zoomSlider").on("change", function (event) {
-          let zoom_slider = $("#zoomSlider")
-          let radius_slider = $("#radiusSlider")
-          let zoom = zoom_slider.val()
-          let radius = radius_slider.val()
-          displayResults(data_backup[0], data_backup[1], data_backup[2], zoom, radius)
-        })
+        // Zoom events
+        for (i=1; i<(k+1); i++) {
+          let name = "#zoomSlider" + i
+          $(name).on("change", function (event) {
+            let zoom_slider = $(name)
+            let radius_slider = $("#radiusSlider")
+            let index = name.length-1
+            zoom[name[index]] = zoom_slider.val()
+            let radius = radius_slider.val()
+            displayResults(data_backup[0], data_backup[1], data_backup[2], zoom, radius)
+          })
+      }
 
         return true
       }
@@ -464,9 +463,8 @@
 {#  </div>#}
   </p>
 
-  <table class="dataTable" id="searchTable">
-    <tr><td><b>Keywords</b></td><td><b>Lemmatization</b></td><td><b>Radius</b></td></tr>
-
+  <table class="docTable dataTable" id="searchTable">
+    <tr><th>Keywords</th><th>Transcript</th><th>Transcriber</th><th>Radius</th><th class="text-center">Lemmatization</th></tr>
     <tr>
         <td>
             <div id="search_form">
@@ -475,20 +473,6 @@
             </div>
         </td>
         <td>
-          <div>
-            <input type="checkbox" label="lemmatize" id="lemmatize" name="lemmatize">
-          </div>
-        </td>
-        <td>
-          <form>
-            <label for="radiusSlider"></label>
-            <input type="range" id="radiusSlider" name="radiusSlider" min="0" max="80" value="30">
-          </form>
-        </td>
-    </tr>
-      <tr><td><b>Transcript</b></td><td><b>Transcriber</b></td></tr>
-      <tr>
-        <td>
           <div id="doc_form">
             <label for="transcriptBox"></label>
             <input list="titleList" id="transcriptBox" placeholder="" autocomplete="off">
@@ -496,15 +480,24 @@
             </datalist>
           </div>
         </td>
+        <td>
+          <div id="transcriber_form">
+            <label for="transcriberBox"></label>
+            <input list="transcriberList" id="transcriberBox" placeholder="" autocomplete="off">
+            <datalist id="transcriberList">
+            </datalist>
+          </div>
+        </td>
       <td>
-        <div id="transcriber_form">
-          <label for="transcriberBox"></label>
-          <input list="transcriberList" id="transcriberBox" placeholder="" autocomplete="off">
-          <datalist id="transcriberList">
-          </datalist>
-        </div>
+        <form>
+          <label for="radiusSlider"></label>
+          <input type="number" id="radiusSlider" name="radiusSlider" min="0" max="80" value="30">
+        </form>
       </td>
       <td>
+        <div class="text-center">
+          <input type="checkbox" label="lemmatize" id="lemmatize" name="lemmatize">
+        </div>
       </td>
     </tr>
 </table>

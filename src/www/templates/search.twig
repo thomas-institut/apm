@@ -7,6 +7,7 @@
 
       // Array to save search results in to have them available for zooming without make a new query
       let data_backup = []
+      let data_flat = []
 
       // Setup event listeners
       $(() => {
@@ -26,7 +27,7 @@
         getListFromOpenSearch ('transcribers', errorMessageDiv)
 
         // Start query when the 'Enter' key is pressed
-          doc.on("keyup", function (event) {
+          $("#searchTable").on("keyup", function (event) {
 
             // Get all relevant information for the query
             let user_input = keywords_box.val()
@@ -139,6 +140,9 @@
       // Function to query the OpenSearch index
       function search() {
 
+        // Clear data_flat
+        data_flat = []
+
         // User inputs
         const inputs = {
           searched_phrase: $("#keywordBox").val(),
@@ -219,46 +223,11 @@
           error_message.html(`<br>Nothing found!<br><br>`)
         }
 
-        // If there is exactly one matched passage, display it with exact information
-        else if (num_columns === 1 && num_passages === 1) {
-
-          // Make table head
-          results_head.empty()
-          results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th>Document (${num_docs})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
-
-          // Collect relevant data from API response
-          let title = data[0]['title']
-          let seq = data[0]['seq']
-          let foliation = data[0]['foliation']
-          let column = data[0]['column']
-          let transcriber = data[0]['transcriber']
-          let passages = data[0]['passage_tokenized']
-          let tokens_matched = data[0]['tokens_matched']
-          let docID = data[0]['docID']
-          let transcript_tokenized = data[0]['transcript_tokenized']
-          let positions = data[0]['positions']
-          
-          // Get link for matched page (sequence number)
-          let link = getLink(url_generator.sitePageView(docID, seq, column))
-
-          // Slice and highlight passage
-          for (let j = 0; j < passages.length; j++) {
-
-            let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, positions[j], radius, zoom[k])
-
-
-            // Fill table with results - layout depends slightly on the language of the transcripts
-            results_body.empty()
-            fillResultsTableBody(passage, title, foliation, transcriber, link, lang, zoom)
-          }
-        }
-
-        // If there is more than one matched passage, display them all with exact information
         else {
 
           // Make table head
           results_head.empty()
-          results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th>Zoom
+          results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${radius}
                                 </th><th>Document (${num_docs})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
           results_body.empty()
 
@@ -289,6 +258,11 @@
             for (let j = 0; j < passages.length; j++) {
               k=k+1
 
+              data_flat.push({
+                'transcript_tokenized': transcript_tokenized,
+                'tokens_matched': tokens_matched,
+                'position': positions[j]})
+
               let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, positions[j], radius, zoom[k])
 
               // Fill table with results - layout depends slightly on the language of the transcripts
@@ -297,6 +271,26 @@
             }
           }
         }
+      }
+
+      // Function to update search results when user is zooming
+      function updateResults (data, zoom, radius, index) {
+
+        // Get selector for updating results
+        let results_body = document.getElementById("resultsTable")
+
+        // Get the relevant data
+        let tokens_matched = data[index-1]['tokens_matched']
+        // let passages = data[index-1]['passage_tokenized']
+        let transcript_tokenized = data[index-1]['transcript_tokenized']
+        let position = data[index-1]['position']
+
+        // Slice and highlight passage
+        //for (let j = 0; j < passages.length; j++) {
+
+          let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, position, radius, zoom[index])
+          results_body.rows[index].cells[0].innerHTML = passage;
+        //}
       }
 
       // Function to add a link to a string in html
@@ -392,15 +386,15 @@
 
           if (lang==='la') {
             results_body.append(
-                    `<tr><td class="text-justify">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify" style="width: 50em">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           }
           else if (lang==='he') {
             results_body.append(
-                    `<tr><td class="text-justify" class="text-he">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify" class="text-he" style="width: 50em">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           }
           else if (lang==='ar') {
             results_body.append(
-                    `<tr><td class="text-justify" class="text-ar">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify" class="text-ar" style="width: 50em">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           }
         }
 
@@ -423,26 +417,46 @@
       else {
           if (lang === 'la') {
             results_body.append(
-                    `<tr><td class="text-justify">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify" style="width: 50em">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           } else if (lang === 'he') {
             results_body.append(
-                    `<tr><td class="text-justify" class="text-he">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify" class="text-he" style="width: 50em">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           } else if (lang === 'ar') {
             results_body.append(
-                    `<tr><td class="text-justify" class="text-ar">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify" class="text-ar" style="width: 50em">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           }
         }
 
         // Zoom events
+        let zoom_global = $("#zoomGlobal")
+        $(zoom_global).on("change", function (event) {
+          for (i=1; i<(k+1); i++) {
+            let name = "#zoomSlider" + i
+            let value = zoom_global.val()
+            $(name).prop("value", value)
+            let zoom_slider = $(name)
+            let radius_slider = $("#radiusSlider")
+            let index = name.match(/\d/g);
+            index = index.join("");
+            zoom[index] = zoom_slider.val()
+            let radius = radius_slider.val()
+            //updateResults(data_backup[0], zoom, radius, index)
+            updateResults(data_flat, zoom, radius, index)
+          }
+          })
+
+
         for (i=1; i<(k+1); i++) {
           let name = "#zoomSlider" + i
           $(name).on("change", function (event) {
             let zoom_slider = $(name)
             let radius_slider = $("#radiusSlider")
-            let index = name.length-1
-            zoom[name[index]] = zoom_slider.val()
+            let index = name.match(/\d/g);
+            index = index.join("");
+            zoom[index] = zoom_slider.val()
             let radius = radius_slider.val()
-            displayResults(data_backup[0], data_backup[1], data_backup[2], zoom, radius)
+            // updateResults(data_backup[0], zoom, radius, index)
+            updateResults(data_flat, zoom, radius, index)
           })
       }
 
@@ -464,7 +478,7 @@
   </p>
 
   <table class="docTable dataTable" id="searchTable">
-    <tr><th>Keywords</th><th>Transcript</th><th>Transcriber</th><th>Radius</th><th class="text-center">Lemmatization</th></tr>
+    <tr><th>Keywords</th><th>Transcript</th><th>Transcriber</th><th style="text-align: center">Maximal Number of Words between Keywords</th><th class="text-center">Lemmatization</th></tr>
     <tr>
         <td>
             <div id="search_form">
@@ -488,7 +502,7 @@
             </datalist>
           </div>
         </td>
-      <td>
+      <td style="text-align: center">
         <form>
           <label for="radiusSlider"></label>
           <input type="number" id="radiusSlider" name="radiusSlider" min="0" max="80" value="30">

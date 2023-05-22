@@ -6,7 +6,6 @@
     <script>
 
       // Array to save search results in to have them available for zooming without make a new query
-      let data_backup = []
       let data_flat = []
 
       // Setup event listeners
@@ -26,8 +25,8 @@
         getListFromOpenSearch ('titles', errorMessageDiv)
         getListFromOpenSearch ('transcribers', errorMessageDiv)
 
-        // Start query when the 'Enter' key is pressed
-          $("#searchTable").on("keyup", function (event) {
+        // Start query when the search button is pressed
+          $("#searchButton").on("click", function () {
 
             // Get all relevant information for the query
             let user_input = keywords_box.val()
@@ -35,7 +34,7 @@
             let radius = parseInt($("#radiusSlider").val())
 
             // Query only if there is a given user input in the keywords field
-            if (event.key === 'Enter' && user_input !== "") {
+            if (user_input !== "") {
 
               // Set minimum of radius slider relative to number of given keywords – otherwise a query for multiple very close keywords could fail
               //$("#radiusSlider").prop({'min': num_keywords-1})
@@ -45,7 +44,7 @@
 
               search()
             }
-            else if (event.key === 'Enter' && user_input === "") {
+            else {
               errorMessageDiv.html(`<br>Please type in a keyword!<br><br>`)
             }
           })
@@ -190,7 +189,6 @@
 
                   // Call displayResults-function and save backup of data for zoom handling
                   displayResults(apiResponse.data, apiResponse.lang, apiResponse.num_passages_total, zoom, inputs.radius);
-                  data_backup = [apiResponse.data, apiResponse.lang, apiResponse.num_passages_total];
                 })
                 .fail((status) => {
                   console.log(status);
@@ -438,7 +436,6 @@
             index = index.join("");
             zoom[index] = zoom_slider.val()
             let radius = parseInt(radius_slider.val()) + 1
-            //updateResults(data_backup[0], zoom, radius, index)
             updateResults(data_flat, zoom, radius, index)
           }
           })
@@ -453,7 +450,6 @@
             index = index.join("");
             zoom[index] = zoom_slider.val()
             let radius = parseInt(radius_slider.val()) + 1
-            // updateResults(data_backup[0], zoom, radius, index)
             updateResults(data_flat, zoom, radius, index)
           })
       }
@@ -467,16 +463,10 @@
 
 {% block content %}
     <h1> Search </h1>
-  <p>
-    Type in a keyword and press 'Enter' to search.
-{#  <div>#}
-{#  <b>Edition Mode</b>#}
-{#    <input type="checkbox" id="edition_mode" name="edition_mode">#}
-{#  </div>#}
-  </p>
 
+  <br>
   <table class="docTable dataTable" id="searchTable">
-    <tr><th>Keywords</th><th>Transcript</th><th>Transcriber</th><th style="text-align: center">Max. Tokens between First and Following Keywords</th><th class="text-center">Lemmatization</th></tr>
+    <tr><th><span title="You can use the wildcard '*' to search for words with a specific part, like 'philosoph*', '*losophus' or '*soph*'.">Keywords</span></th><th style="text-align: center"><span title="This value specifies how many tokens (words or punctuation marks) are permitted to occur between your first keyword and all the others. A value of 0 meant that only the occurrence of directly consecutive keywords would count as a match.">Distance</span></th><th class="text-center"><span title="If checked, all conjugated or declined forms of your keywords also will be matched.">Lemmatization</span></th><th>Transcript</th><th>Transcriber</th></tr>
     <tr>
         <td>
             <div id="search_form">
@@ -484,6 +474,17 @@
             <input type="text" id="keywordBox" placeholder="">
             </div>
         </td>
+      <td style="text-align: center">
+        <form>
+          <label for="radiusSlider"></label>
+          <input type="number" id="radiusSlider" name="radiusSlider" min="0" max="80" value="10">
+        </form>
+      </td>
+      <td>
+        <div class="text-center">
+          <input type="checkbox" label="lemmatize" id="lemmatize" name="lemmatize">
+        </div>
+      </td>
         <td>
           <div id="doc_form">
             <label for="transcriptBox"></label>
@@ -500,16 +501,10 @@
             </datalist>
           </div>
         </td>
-      <td style="text-align: center">
-        <form>
-          <label for="radiusSlider"></label>
-          <input type="number" id="radiusSlider" name="radiusSlider" min="0" max="80" value="10">
-        </form>
-      </td>
+    </tr>
+    <tr>
       <td>
-        <div class="text-center">
-          <input type="checkbox" label="lemmatize" id="lemmatize" name="lemmatize">
-        </div>
+        <button type="button" label="Search" id="searchButton" name="Search" style="background-color: white">Search!</button>
       </td>
     </tr>
 </table>

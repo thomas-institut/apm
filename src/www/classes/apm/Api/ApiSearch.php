@@ -37,9 +37,10 @@ class ApiSearch extends ApiController
             return strlen($b)-strlen($a);
         }
 
-        $keywords = explode(" ", $searched_phrase);
-        usort($keywords, "APM\\Api\\sortByLength");
-        $searched_phrase = implode(" ", $keywords);
+        //$keywords = explode(" ", $searched_phrase);
+        //usort($keywords, "APM\\Api\\sortByLength");
+        //$searched_phrase = implode(" ", $keywords);
+
 
         // Instantiate OpenSearch client
         try {
@@ -61,11 +62,11 @@ class ApiSearch extends ApiController
 
         if ($lemmatize) {
             $tokens_for_query = explode("#", $tokens_and_lemmata[2]);
-            $longest_token_for_query = $lemmata[0];
+            $first_token_for_query = $lemmata[0];
         }
         else {
             $tokens_for_query = explode(" ", $searched_phrase);
-            $longest_token_for_query = $tokens_for_query[0];
+            $first_token_for_query = $tokens_for_query[0];
         }
 
         // Count tokens
@@ -73,13 +74,13 @@ class ApiSearch extends ApiController
 
         // Query index for the longest token in tokens_for_query – additional tokens will be handled below
         try {
-            $query = $this->makeOpenSearchQuery($client, $index_name, $doc_title, $transcriber, $longest_token_for_query, $lemmatize);
+            $query = $this->makeOpenSearchQuery($client, $index_name, $doc_title, $transcriber, $first_token_for_query, $lemmatize);
         } catch (\Exception $e) {
             $status = "OpenSearch query problem";
             return $this->responseWithJson($response,
                 [
                     'searched_phrase' => $searched_phrase,
-                    'queried_token' => $longest_token_for_query,
+                    'queried_token' => $first_token_for_query,
                     'matches' => [],
                     'serverTime' => $now,
                     'status' => $status,
@@ -89,7 +90,7 @@ class ApiSearch extends ApiController
         }
 
         // Get all information about the matched columns, including passages with the matched token as lists of tokens
-        $data = $this->getData($query, $longest_token_for_query, $tokens_for_query, $lemmata, $radius, $lemmatize);
+        $data = $this->getData($query, $first_token_for_query, $tokens_for_query, $lemmata, $radius, $lemmatize);
 
         // Until now, only the longest token in the searched phrase was handled
         // So, if there is more than one token in the searched phrase, now filter out all columns and passages, which do not match all tokens
@@ -149,7 +150,7 @@ class ApiSearch extends ApiController
     }
 
     // Function to query a given OpenSearch-index
-    private function makeOpenSearchQuery ($client, $index_name, $doc_title, $transcriber, $longest_token_for_query, $lemmatize) {
+    private function makeOpenSearchQuery ($client, $index_name, $doc_title, $transcriber, $first_token_for_query, $lemmatize) {
 
         // Check lemmatize (boolean) to determine the area of the query
         if ($lemmatize) {
@@ -168,7 +169,7 @@ class ApiSearch extends ApiController
                     'size' => 20000,
                     'query' => [
                         'query_string' => [
-                                "query" => $longest_token_for_query,
+                                "query" => $first_token_for_query,
                                 "default_field" => $area_of_query,
                                 "analyze_wildcard" => true,
                                 "allow_leading_wildcard" => true
@@ -196,7 +197,7 @@ class ApiSearch extends ApiController
                             ],
                             'must' => [
                                 'query_string' => [
-                                    "query" => $longest_token_for_query,
+                                    "query" => $first_token_for_query,
                                     "default_field" => $area_of_query,
                                     "analyze_wildcard" => true,
                                     "allow_leading_wildcard" => true
@@ -225,7 +226,7 @@ class ApiSearch extends ApiController
                             ],
                             'must' => [
                                 'query_string' => [
-                                    "query" => $longest_token_for_query,
+                                    "query" => $first_token_for_query,
                                     "default_field" => $area_of_query,
                                     "analyze_wildcard" => true,
                                     "allow_leading_wildcard" => true
@@ -262,7 +263,7 @@ class ApiSearch extends ApiController
                             "minimum_should_match" => 1,
                             'must' => [
                                 'query_string' => [
-                                    "query" => $longest_token_for_query,
+                                    "query" => $first_token_for_query,
                                     "default_field" => $area_of_query,
                                     "analyze_wildcard" => true,
                                     "allow_leading_wildcard" => true

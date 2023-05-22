@@ -31,18 +31,17 @@
 
             // Get all relevant information for the query
             let user_input = keywords_box.val()
-            let num_keywords = user_input.split(" ").length;
             let zoom_slider = $("#zoomSlider")
-            let radius = $("#radiusSlider").val()
+            let radius = parseInt($("#radiusSlider").val())
 
             // Query only if there is a given user input in the keywords field
             if (event.key === 'Enter' && user_input !== "") {
 
               // Set minimum of radius slider relative to number of given keywords – otherwise a query for multiple very close keywords could fail
-              $("#radiusSlider").prop({'min': num_keywords-1})
+              //$("#radiusSlider").prop({'min': num_keywords-1})
 
-              // Set minimum and value of zoom_slider to the values of the radius slider
-              zoom_slider.prop("value", radius)
+              // Set value of zoom_slider to the value of the radius slider
+              //zoom_slider.prop("value", radius)
 
               search()
             }
@@ -148,7 +147,7 @@
           searched_phrase: $("#keywordBox").val(),
           title: $("#transcriptBox").val(),
           transcriber: $("#transcriberBox").val(),
-          radius: $("#radiusSlider").val(),
+          radius: parseInt($("#radiusSlider").val()) + 1,
           zoom: $("#zoomSlider").val(),
           lemmatize: $("#lemmatize").prop("checked")
         };
@@ -227,7 +226,7 @@
 
           // Make table head
           results_head.empty()
-          results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${radius}
+          results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}
                                 </th><th>Document (${num_docs})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
           results_body.empty()
 
@@ -356,7 +355,6 @@
       function insideRadius (index, position, radius) {
 
         let distance = Math.abs(index-position)
-
         if (distance>radius) {
             return false
           }
@@ -386,15 +384,15 @@
 
           if (lang==='la') {
             results_body.append(
-                    `<tr><td class="text-justify" style="width: 50em">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           }
           else if (lang==='he') {
             results_body.append(
-                    `<tr><td class="text-justify" class="text-he" style="width: 50em">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify" class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           }
           else if (lang==='ar') {
             results_body.append(
-                    `<tr><td class="text-justify" class="text-ar" style="width: 50em">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify" class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           }
         }
 
@@ -417,13 +415,13 @@
       else {
           if (lang === 'la') {
             results_body.append(
-                    `<tr><td class="text-justify" style="width: 50em">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           } else if (lang === 'he') {
             results_body.append(
-                    `<tr><td class="text-justify" class="text-he" style="width: 50em">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify" class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           } else if (lang === 'ar') {
             results_body.append(
-                    `<tr><td class="text-justify" class="text-ar" style="width: 50em">${passage}</td><td><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+                    `<tr><td class="text-justify" class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
           }
         }
 
@@ -439,7 +437,7 @@
             let index = name.match(/\d/g);
             index = index.join("");
             zoom[index] = zoom_slider.val()
-            let radius = radius_slider.val()
+            let radius = parseInt(radius_slider.val()) + 1
             //updateResults(data_backup[0], zoom, radius, index)
             updateResults(data_flat, zoom, radius, index)
           }
@@ -454,7 +452,7 @@
             let index = name.match(/\d/g);
             index = index.join("");
             zoom[index] = zoom_slider.val()
-            let radius = radius_slider.val()
+            let radius = parseInt(radius_slider.val()) + 1
             // updateResults(data_backup[0], zoom, radius, index)
             updateResults(data_flat, zoom, radius, index)
           })
@@ -478,7 +476,7 @@
   </p>
 
   <table class="docTable dataTable" id="searchTable">
-    <tr><th>Keywords</th><th>Transcript</th><th>Transcriber</th><th style="text-align: center">Maximal Number of Words between Keywords</th><th class="text-center">Lemmatization</th></tr>
+    <tr><th>Keywords</th><th>Transcript</th><th>Transcriber</th><th style="text-align: center">Max. Tokens between First and Following Keywords</th><th class="text-center">Lemmatization</th></tr>
     <tr>
         <td>
             <div id="search_form">
@@ -505,7 +503,7 @@
       <td style="text-align: center">
         <form>
           <label for="radiusSlider"></label>
-          <input type="number" id="radiusSlider" name="radiusSlider" min="0" max="80" value="30">
+          <input type="number" id="radiusSlider" name="radiusSlider" min="0" max="80" value="10">
         </form>
       </td>
       <td>

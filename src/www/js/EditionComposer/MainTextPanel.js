@@ -417,8 +417,8 @@ export class MainTextPanel extends PanelWithToolbar {
     this.betaEditorInfoDiv = $(`#${betaEditorInfoDiv}`).html('No changes')
     this.changesInfoDivConstructed = false
     this.commitedFreeText = deepCopy(this.freeTextEditor.getFmtText())
-    $(`${this.containerSelector} a.text-edit-revert-btn`).on('click', this._genOnClickTextEditRevertChanges())
-    $(`${this.containerSelector} a.text-edit-commit-btn`).on('click', this._genOnClickTextEditCommitChanges())
+    $(`${this.containerSelector} a.text-edit-revert-btn`).off('click').on('click', this._genOnClickTextEditRevertChanges())
+    $(`${this.containerSelector} a.text-edit-commit-btn`).off('click').on('click', this._genOnClickTextEditCommitChanges())
     console.log(`--- Now in text mode ---`)
   }
 
@@ -652,6 +652,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
   _genOnClickTextEditCommitChanges() {
     return () => {
+      console.log(`Click on TextEditCommitChanges`)
       if (this.diffEngine.isRunning()) {
         // need to wait until the engine is done
         return
@@ -671,6 +672,7 @@ export class MainTextPanel extends PanelWithToolbar {
       this.verbose && console.log(newWitnessTokens)
       // TODO: show something if there are more than, say, 5 affected columns
       this.updateEditionWitness(newWitnessTokens)
+      console.log(`:::::: Finished processing on click TextEditCommitChanges`)
     }
   }
 
@@ -680,10 +682,11 @@ export class MainTextPanel extends PanelWithToolbar {
     let currentWitnessTokens = this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens
     // let changes = this._getChangesInTextEditor(currentWitnessTokens, newWitnessTokens)
     let changes = this.changes
-    console.log(`Changes`)
-    console.log(changes)
+    // console.log(`Changes`)
+    // console.log(changes)
     let columnsAdded = 0
     changes.forEach( (change, changeIndex) => {
+      // console.log(`About to process change ${changeIndex}, ${columnsAdded} column(s) added`)
       switch(change.change) {
         case 'replace':
           this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens[change.index+columnsAdded] = change.newToken
@@ -696,10 +699,13 @@ export class MainTextPanel extends PanelWithToolbar {
           break
 
         case 'add':
+          // console.log(`Change is ADD at index ${change.index}`)
           // this is the problem case, it should be left to the CtData class
           this.ctData = CtData.insertColumnsAfter(this.ctData, change.index+columnsAdded, 1 )
+          // console.log(`CtData after inserting 1 column`)
+          // console.log(deepCopy(this.ctData))
           columnsAdded = columnsAdded+1
-          this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens[change.index+columnsAdded] = change.newToken
+          this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens[change.index+columnsAdded] = deepCopy(change.newToken)
           break
 
         default:
@@ -707,11 +713,16 @@ export class MainTextPanel extends PanelWithToolbar {
       }
     })
     p.lap(`changes processed`)
+    this.changes = []
     this.lastTypesetinfo = null
     this.modeToggle.setOptionByName(EDIT_MODE_OFF, false)
     this._changeEditMode(EDIT_MODE_OFF, EDIT_MODE_TEXT)
     p.lap(`edit mode changed to OFF`)
+    // console.log(`About to trigger onCtDataChange`)
+    // console.log(`CtData before`)
+    // console.log(deepCopy(this.ctData))
     this.options.onCtDataChange(this.ctData)
+    // console.log(`onCtDataChange finished`)
     p.stop(`onCtDataChange finished`)
   }
 

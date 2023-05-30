@@ -2,6 +2,7 @@
 namespace APM\Api;
 
 use APM\System\ApmConfigParameter;
+use APM\System\SystemManager;
 use OpenSearch\ClientBuilder;
 use PHPUnit\Util\Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
@@ -625,6 +626,29 @@ class ApiSearch extends ApiController
         return $values;
     }
 
+    public function updateDataCache (SystemManager $systemManager) {
+
+        $cache = $systemManager->getSystemDataCache();
+        $index_name = 'transcripts';
+
+        // Instantiate OpenSearch client
+        try {
+            $client = $this->instantiateClient();
+        } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
+            return false;
+        }
+
+        // Get a list of all titles
+        $titles = $this->getListFromIndex($client, $index_name, 'title');
+        $transcribers = $this->getListFromIndex($client, $index_name, 'transcriber');
+
+        // Set cache
+        $cache->set('titles', serialize($titles));
+        $cache->set('transcribers', serialize($transcribers));
+
+        return true;
+    }
+
     // ApiCall – Function to get all doc titles
     public function getTitles (Request $request, Response $response): Response
     {
@@ -641,7 +665,7 @@ class ApiSearch extends ApiController
 
             $index_name = 'transcripts';
 
-            // Instantiae OpenSearch client
+            // Instantiate OpenSearch client
             try {
                 $client = $this->instantiateClient();
             } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js

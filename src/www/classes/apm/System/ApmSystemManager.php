@@ -38,6 +38,8 @@ use APM\Jobs\ApiUsersUpdateTranscribedPagesData;
 use APM\Jobs\ApmJobName;
 use APM\Jobs\SiteChunksUpdateDataCache;
 use APM\Jobs\SiteDocumentsUpdateDataCache;
+use APM\Jobs\UpdateOpenSearchIndex;
+use APM\Jobs\UpdateTranscribersAndTitlesCache;
 use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\Plugin\HookManager;
@@ -775,7 +777,12 @@ class ApmSystemManager extends SystemManager {
     public function onTranscriptionUpdated(int $userId, int $docId, int $pageNumber, int $columnNumber): void
     {
         parent::onTranscriptionUpdated($userId, $docId, $pageNumber, $columnNumber);
-        $this->getOpenSearchScheduler()->schedule($docId, $pageNumber, $columnNumber);
+
+        //$this->getOpenSearchScheduler()->schedule($docId, $pageNumber, $columnNumber);
+
+        $this->logger->debug("Scheduling update of open search index");
+        $this->jobManager->scheduleJob(ApmJobName::UPDATE_OPENSEARCH_INDEX,
+            '', ['doc_id' => $docId, 'page' => $pageNumber, 'col' => $columnNumber],0, 3, 20);
 
         $this->logger->debug("Scheduling update of SiteChunks cache");
         $this->jobManager->scheduleJob(ApmJobName::SITE_CHUNKS_UPDATE_DATA_CACHE,
@@ -788,6 +795,10 @@ class ApmSystemManager extends SystemManager {
         $this->logger->debug("Scheduling update of TranscribedPages cache for user $userId");
         $this->jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE,
             "User $userId", ['userId' => $userId],0, 3, 20);
+
+        $this->logger->debug("Scheduling update of transcribers and titles cache");
+        $this->jobManager->scheduleJob(ApmJobName::SEARCH_PAGE_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE,
+            '', [], 10, 3, 20);
     }
 
     public function onCollationTableSaved(int $userId, int $ctId): void
@@ -836,5 +847,7 @@ class ApmSystemManager extends SystemManager {
         $this->jobManager->registerJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE, new SiteDocumentsUpdateDataCache());
         $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE, new ApiUsersUpdateTranscribedPagesData());
         $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE, new ApiUsersUpdateCtDataForUser());
+        $this->jobManager->registerJob(ApmJobName::SEARCH_PAGE_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE, new UpdateTranscribersAndTitlesCache());
+        $this->jobManager->registerJob(ApmJobName::UPDATE_OPENSEARCH_INDEX, new UpdateOpenSearchIndex());
     }
 }

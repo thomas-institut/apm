@@ -38,8 +38,8 @@ use OpenSearch\ClientBuilder;
 class IndexCreator extends CommandLineUtility {
 
     // Variables for OpenSearch client and the name of the index to create
-    protected Client $client;
-    protected string $indexName;
+    public Client $client;
+    public string $indexName;
 
     public function main($argc, $argv): bool
     {
@@ -161,29 +161,29 @@ class IndexCreator extends CommandLineUtility {
         return $text;
     }
 
-    protected function getPageID (string $doc_id, string $page): string {
+    public function getPageID (string $doc_id, string $page): string {
         return $this->dm->getpageIDByDocPage($doc_id, $page);
     }
 
-    protected function getTitle(string $doc_id): string {
+    public function getTitle(string $doc_id): string {
         $doc_info = $this->dm->getDocById($doc_id);
         return $doc_info['title'];
     }
 
-    protected function getSeq(string $doc_id, string $page): string {
+    public function getSeq(string $doc_id, string $page): string {
         $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
         $page_info = $this->dm->getPageInfo($page_id);
         return $page_info['seq'];
     }
 
 
-    protected function getTranscript(string $doc_id, string $page, string $col): string {
+    public function getTranscript(string $doc_id, string $page, string $col): string {
         $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
         $elements = $this->dm->getColumnElementsBypageID($page_id, $col);
         return $this->getPlainTextFromElements($elements);
     }
 
-    protected function getTranscriber(string $doc_id, string $page, string $col): string {
+    public function getTranscriber(string $doc_id, string $page, string $col): string {
         $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
         $versions = $this->dm->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
         if ($versions === []) {
@@ -196,19 +196,19 @@ class IndexCreator extends CommandLineUtility {
         }
     }
 
-    protected function getLang(string $doc_id, string $page): string {
+    public function getLang(string $doc_id, string $page): string {
         $seq = $this->getSeq($doc_id, $page);
         return $this->dm->getPageInfoByDocSeq($doc_id, $seq)['lang'];
     }
 
-    protected function getFoliation(string $doc_id, string $page): string
+    public function getFoliation(string $doc_id, string $page): string
     {
         $seq = $this->getSeq($doc_id, $page);
         return $this->dm->getPageFoliationByDocSeq($doc_id,  $seq);
     }
 
     // Function to add pages to the OpenSearch index
-    protected function indexCol (string $id, string $title, string $page, string $seq, string $foliation, string $col, string $transcriber,
+    public function indexCol (string $id, string $title, string $page, string $seq, string $foliation, string $col, string $transcriber,
                                  string $page_id, string $doc_id, string $transcript, string $lang): bool {
 
         // Encode transcript for avoiding errors in exec shell command because of characters like "(", ")" or " "
@@ -257,7 +257,7 @@ class IndexCreator extends CommandLineUtility {
     }
 
     // Function to encode the transcript – makes it suitable for the exec-command
-    protected function encode(string $transcript): string {
+    public function encode(string $transcript): string {
 
         // Replace line breaks, blanks, brackets...these character can provoke errors in the exec-command
         $transcript_clean = str_replace("\n", "#", $transcript);

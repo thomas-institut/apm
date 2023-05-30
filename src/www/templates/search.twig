@@ -6,14 +6,13 @@
     <script>
 
       // Array to save search results in to have them available for zooming without make a new query
-      let data_flat = []
+      let data_for_zooming = []
 
       // Setup event listeners
       $(() => {
 
         // Get selectors for catching user input
         let keywords_box = $("#keywordBox")
-        let doc = $(document)
         let lemmatization_box = $("#lemmatize")
         // let edition_mode = $("#edition_mode")
         // let search_table = $("#searchTable")
@@ -30,18 +29,9 @@
 
             // Get all relevant information for the query
             let user_input = keywords_box.val()
-            let zoom_slider = $("#zoomSlider")
-            let radius = parseInt($("#radiusSlider").val())
 
             // Query only if there is a given user input in the keywords field
             if (user_input !== "") {
-
-              // Set minimum of radius slider relative to number of given keywords – otherwise a query for multiple very close keywords could fail
-              //$("#radiusSlider").prop({'min': num_keywords-1})
-
-              // Set value of zoom_slider to the value of the radius slider
-              //zoom_slider.prop("value", radius)
-
               search()
             }
             else {
@@ -138,8 +128,8 @@
       // Function to query the OpenSearch index
       function search() {
 
-        // Clear data_flat
-        data_flat = []
+        // Clear data_for_zooming
+        data_for_zooming = []
 
         // User inputs
         const inputs = {
@@ -185,8 +175,8 @@
                   // Remove spinner
                   spinner.empty();
 
-                  let zoom = new Array(4000).fill(inputs.radius)
-
+                  let zoom = new Array(apiResponse.num_passages_total+1).fill(inputs.radius)
+                  
                   // Call displayResults-function and save backup of data for zoom handling
                   displayResults(apiResponse.data, apiResponse.lang, apiResponse.num_passages_total, zoom, inputs.radius);
                 })
@@ -224,7 +214,7 @@
 
           // Make table head
           results_head.empty()
-          results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}
+          results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th><span title="Number of tokens, i. e. words or punctuation marks, to display before and after your first keyword. A value of 0 means that only the tokens matching your first keyword are displayed."><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}></span>
                                 </th><th>Document (${num_docs})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
           results_body.empty()
 
@@ -255,7 +245,7 @@
             for (let j = 0; j < passages.length; j++) {
               k=k+1
 
-              data_flat.push({
+              data_for_zooming.push({
                 'transcript_tokenized': transcript_tokenized,
                 'tokens_matched': tokens_matched,
                 'position': positions[j]})
@@ -283,11 +273,8 @@
         let position = data[index-1]['position']
 
         // Slice and highlight passage
-        //for (let j = 0; j < passages.length; j++) {
-
-          let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, position, radius, zoom[index])
-          results_body.rows[index].cells[0].innerHTML = passage;
-        //}
+        let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, position, radius, zoom[index])
+        results_body.rows[index].cells[0].innerHTML = passage;
       }
 
       // Function to add a link to a string in html
@@ -394,22 +381,6 @@
           }
         }
 
-      // else if (prev_title === ' ') {
-      //   if (lang === 'la') {
-      //     results_body.append(
-      //             `<tr><td><label for="zoomSlider"></label>
-      //     <input type="range" id="zoomSlider" name="radiusSlider" min="0" max="80" value=${zoom}></td><td class="text-justify">${passage}</td><td><label for="zoomSlider"></label><input type="number" id="zoomSlider" name="zoomSlider" min="0" max="80" value=${zoom} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-      //   } else if (lang === 'he') {
-      //     results_body.append(
-      //             `<tr><td><label for="zoomSlider"></label>
-      //     <input type="range" id="zoomSlider" name="radiusSlider" min="0" max="80" value=${zoom}></td><td class="text-justify" class="text-he">${passage}</td><td><label for="zoomSlider"></label><input type="number" id="zoomSlider" name="zoomSlider" min="0" max="80" value=${zoom} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-      //   } else if (lang === 'ar') {
-      //     results_body.append(
-      //             `<tr><td><label for="zoomSlider"></label>
-      //     <input type="range" id="zoomSlider" name="radiusSlider" min="0" max="80" value=${zoom}></td><td class="text-justify" class="text-ar">${passage}</td><td><label for="zoomSlider"></label><input type="number" id="zoomSlider" name="zoomSlider" min="0" max="80" value=${zoom} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-      //   }
-      // }
-
       else {
           if (lang === 'la') {
             results_body.append(
@@ -436,7 +407,7 @@
             index = index.join("");
             zoom[index] = zoom_slider.val()
             let radius = parseInt(radius_slider.val()) + 1
-            updateResults(data_flat, zoom, radius, index)
+            updateResults(data_for_zooming, zoom, radius, index)
           }
           })
 
@@ -450,7 +421,7 @@
             index = index.join("");
             zoom[index] = zoom_slider.val()
             let radius = parseInt(radius_slider.val()) + 1
-            updateResults(data_flat, zoom, radius, index)
+            updateResults(data_for_zooming, zoom, radius, index)
           })
       }
 
@@ -466,7 +437,7 @@
 
   <br>
   <table class="docTable dataTable" id="searchTable">
-    <tr><th><span title="You can use the wildcard '*' to search for words with a specific part, like 'philosoph*', '*losophus' or '*soph*'.">Keywords</span></th><th style="text-align: center"><span title="This value specifies how many tokens (words or punctuation marks) are permitted to occur between your first keyword and all the others. A value of 0 meant that only the occurrence of directly consecutive keywords would count as a match.">Distance</span></th><th class="text-center"><span title="If checked, all conjugated or declined forms of your keywords also will be matched.">Lemmatization</span></th><th>Transcript</th><th>Transcriber</th></tr>
+    <tr><th><span title="You can use the wildcard '*' to search for words with a specific part, like 'philosoph*', '*losophus' or '*soph*'.">Keywords</span></th><th><span title="Here you can choose a specific transcript to search in.">Transcript</span></th><th><span title="Here you can limit your search to transcripts by a specific transcriber.">Transcriber</span></th><th style="text-align: center"><span title="Here you can specify how many tokens, i. e. words or punctuation marks, are allowed to occur between your first keyword and the following ones. A value of 0 means that only the occurrence of directly consecutive keywords counts as a match.">Keyword Distance</span></th><th class="text-center"><span title="If checked, all conjugated or declined forms of your keywords will count as matches.">Lemmatization</span></th></tr>
     <tr>
         <td>
             <div id="search_form">
@@ -474,17 +445,6 @@
             <input type="text" id="keywordBox" placeholder="">
             </div>
         </td>
-      <td style="text-align: center">
-        <form>
-          <label for="radiusSlider"></label>
-          <input type="number" id="radiusSlider" name="radiusSlider" min="0" max="80" value="10">
-        </form>
-      </td>
-      <td>
-        <div class="text-center">
-          <input type="checkbox" label="lemmatize" id="lemmatize" name="lemmatize">
-        </div>
-      </td>
         <td>
           <div id="doc_form">
             <label for="transcriptBox"></label>
@@ -501,6 +461,17 @@
             </datalist>
           </div>
         </td>
+      <td style="text-align: center">
+        <form>
+          <label for="radiusSlider"></label>
+          <input type="number" id="radiusSlider" name="radiusSlider" min="0" max="80" value="10">
+        </form>
+      </td>
+      <td>
+        <div class="text-center">
+          <input type="checkbox" label="lemmatize" id="lemmatize" name="lemmatize">
+        </div>
+      </td>
     </tr>
     <tr>
       <td>

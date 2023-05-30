@@ -32,16 +32,6 @@ class ApiSearch extends ApiController
         $radius = $_POST['radius'];
         $lemmatize = filter_var($_POST['lemmatize'], FILTER_VALIDATE_BOOLEAN);
 
-        // Sort searched phrase by length of keywords - longest will be queried via OpenSearch
-        function sortByLength ($a, $b) {
-            return strlen($b)-strlen($a);
-        }
-
-        //$keywords = explode(" ", $searched_phrase);
-        //usort($keywords, "APM\\Api\\sortByLength");
-        //$searched_phrase = implode(" ", $keywords);
-
-
         // Instantiate OpenSearch client
         try {
             $client = $this->instantiateClient();

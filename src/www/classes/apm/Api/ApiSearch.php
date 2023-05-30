@@ -6,6 +6,7 @@ use OpenSearch\ClientBuilder;
 use PHPUnit\Util\Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
 use function DI\string;
 
@@ -627,20 +628,34 @@ class ApiSearch extends ApiController
     // ApiCall – Function to get all doc titles
     public function getTitles (Request $request, Response $response): Response
     {
+        $cache = $this->systemManager->getSystemDataCache();
         $status = 'OK';
         $now = TimeString::now();
-        $index_name = 'transcripts';
 
-        // Instantiae OpenSearch client
+        // Get data from cache, if data is not cached, get data from open search index and set the cache
         try {
-            $client = $this->instantiateClient();
-        } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
-            $status = 'Connecting to OpenSearch server failed.';
-            return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
-        }
 
-        // Get a list of all titles
-        $titles =  $this->getListFromIndex($client, $index_name, 'title');
+            $titles = unserialize($cache->get('titles'));
+
+        } catch (KeyNotInCacheException $e) {
+
+            $index_name = 'transcripts';
+
+            // Instantiae OpenSearch client
+            try {
+                $client = $this->instantiateClient();
+            } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
+                $status = 'Connecting to OpenSearch server failed.';
+                return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
+            }
+
+            // Get a list of all titles
+            $titles = $this->getListFromIndex($client, $index_name, 'title');
+
+            // Set cache
+            $cache->set('titles', serialize($titles));
+
+        }
 
         // Api Response
         return $this->responseWithJson($response, [
@@ -652,21 +667,35 @@ class ApiSearch extends ApiController
     // API Call – Function to get all transcribers
     public function getTranscribers (Request $request, Response $response): Response
     {
+        $cache = $this->systemManager->getSystemDataCache();
         $status = 'OK';
         $now = TimeString::now();
-        $index_name = 'transcripts';
 
-        // Instantiate OpenSearch client
+        // Get data from cache, if data is not cached, get data from open search index and set the cache
         try {
-            $client = $this->instantiateClient();
-        } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
-            $status = 'Connecting to OpenSearch server failed.';
-            return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
-        }
 
-        // Get a list of all transcribers
-        $transcribers =  $this->getListFromIndex($client, $index_name, 'transcriber');
+            $transcribers = unserialize($cache->get('transcribers'));
 
+        } catch (KeyNotInCacheException $e) {
+
+            $this->logger->debug('FAIL');
+            $index_name = 'transcripts';
+
+            // Instantiate OpenSearch client
+            try {
+                $client = $this->instantiateClient();
+            } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
+                $status = 'Connecting to OpenSearch server failed.';
+                return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
+            }
+
+            // Get a list of all transcribers
+            $transcribers = $this->getListFromIndex($client, $index_name, 'transcriber');
+
+            // Set cache
+            $cache->set('transcribers', serialize($transcribers));
+
+    }
         // Api Response
         return $this->responseWithJson($response, [
             'transcribers' => $transcribers,

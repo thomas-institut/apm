@@ -36,7 +36,7 @@ class ApiSearch extends ApiController
 
         // Instantiate OpenSearch client
         try {
-            $client = $this->instantiateClient();
+            $client = $this->instantiateClient($this->systemManager);
         } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
             $status = 'Connecting to OpenSearch server failed.';
             return $this->responseWithJson($response, ['searched_phrase' => $searched_phrase,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
@@ -127,10 +127,10 @@ class ApiSearch extends ApiController
     }
 
     // Function, which instantiates OpenSearch client
-    private function instantiateClient ()
+    static private function instantiateClient ($systemManager)
     {
         // Load authentication data from config-file
-        $config = $this->systemManager->getConfig();
+        $config = $systemManager->getConfig();
 
         $client = (new ClientBuilder())
             ->setHosts($config[ApmConfigParameter::OPENSEARCH_HOSTS])
@@ -597,7 +597,7 @@ class ApiSearch extends ApiController
     }
 
     // Function to get a full list of i. e. titles or transcribers values in the index
-    private function getListFromIndex ($client, $index_name, $category) { // $category can be 'title' or 'transcriber'
+    static private function getListFromIndex ($client, $index_name, $category) { // $category can be 'title' or 'transcriber'
 
         // Array to return
         $values = [];
@@ -626,25 +626,25 @@ class ApiSearch extends ApiController
         return $values;
     }
 
-    public function updateDataCache (SystemManager $systemManager) {
+    static public function updateDataCache (SystemManager $systemManager) {
 
         $cache = $systemManager->getSystemDataCache();
         $index_name = 'transcripts';
 
         // Instantiate OpenSearch client
         try {
-            $client = $this->instantiateClient();
+            $client = self::instantiateClient($systemManager);
         } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
             return false;
         }
 
         // Get a list of all titles
-        $titles = $this->getListFromIndex($client, $index_name, 'title');
-        $transcribers = $this->getListFromIndex($client, $index_name, 'transcriber');
+        $titles = self::getListFromIndex($client, $index_name, 'title');
+        $transcribers = self::getListFromIndex($client, $index_name, 'transcriber');
 
         // Set cache
-        $cache->set('titles', serialize($titles));
-        $cache->set('transcribers', serialize($transcribers));
+        $cache->set('Titles', serialize($titles));
+        $cache->set('Transcribers', serialize($transcribers));
 
         return true;
     }
@@ -659,7 +659,7 @@ class ApiSearch extends ApiController
         // Get data from cache, if data is not cached, get data from open search index and set the cache
         try {
 
-            $titles = unserialize($cache->get('titles'));
+            $titles = unserialize($cache->get('Titles'));
 
         } catch (KeyNotInCacheException $e) {
 
@@ -667,7 +667,7 @@ class ApiSearch extends ApiController
 
             // Instantiate OpenSearch client
             try {
-                $client = $this->instantiateClient();
+                $client = $this->instantiateClient($this->systemManager);
             } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
                 $status = 'Connecting to OpenSearch server failed.';
                 return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
@@ -677,7 +677,7 @@ class ApiSearch extends ApiController
             $titles = $this->getListFromIndex($client, $index_name, 'title');
 
             // Set cache
-            $cache->set('titles', serialize($titles));
+            $cache->set('Titles', serialize($titles));
 
         }
 
@@ -698,16 +698,15 @@ class ApiSearch extends ApiController
         // Get data from cache, if data is not cached, get data from open search index and set the cache
         try {
 
-            $transcribers = unserialize($cache->get('transcribers'));
+            $transcribers = unserialize($cache->get('Transcribers'));
 
         } catch (KeyNotInCacheException $e) {
 
-            $this->logger->debug('FAIL');
             $index_name = 'transcripts';
 
             // Instantiate OpenSearch client
             try {
-                $client = $this->instantiateClient();
+                $client = $this->instantiateClient($this->systemManager);
             } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
                 $status = 'Connecting to OpenSearch server failed.';
                 return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
@@ -717,7 +716,7 @@ class ApiSearch extends ApiController
             $transcribers = $this->getListFromIndex($client, $index_name, 'transcriber');
 
             // Set cache
-            $cache->set('transcribers', serialize($transcribers));
+            $cache->set('Transcribers', serialize($transcribers));
 
     }
         // Api Response

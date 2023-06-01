@@ -59,7 +59,7 @@ class IndexUpdater extends IndexCreator
         $this->indexName = 'transcripts';
 
         // Download hebrew language model for lemmatization
-        exec("python3 ../../python/download_model_he.py", $model_status);
+        exec("python3 ../../../../python/download_model_he.py", $model_status);
 
         // TEST DATA FOR NEW ENTRY - SHOULD BE RECEIVED FROM SCHEDULER SQL DATABASE
         $rows_waiting = $scheduler->read();
@@ -113,7 +113,7 @@ class IndexUpdater extends IndexCreator
 
                 // Tokenize and lemmatize new transcription
                 $transcript_clean = $this->encode($transcript);
-                exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_clean", $tokens_and_lemmata);
+                exec("python3 ../../../../python/Lemmatizer_Indexing.py $lang $transcript_clean", $tokens_and_lemmata);
 
                 // Get tokenized and lemmatized transcript
                 $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);

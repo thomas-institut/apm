@@ -157,9 +157,9 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       console.warn(`Apparatus font size is not well defined in stylesheet: '${this.currentStyleSheet.getStyleDef('apparatus').text.fontSize}'`)
       apparatusFontSize = 14
     }
-    this.debug && console.log(`Main text font size: ${defaultFontSize}; apparatus font size: ${apparatusFontSize}`)
-    console.log('Default Style def')
-    console.log(defaultStyleDef)
+    // this.debug && console.log(`Main text font size: ${defaultFontSize}; apparatus font size: ${apparatusFontSize}`)
+    // console.log('Default Style def')
+    // console.log(defaultStyleDef)
     return {
       edition: this.edition,
       editionStyleSheet: this.currentStyleSheet,

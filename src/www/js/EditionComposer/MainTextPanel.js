@@ -219,9 +219,11 @@ export class MainTextPanel extends PanelWithToolbar {
       case EDIT_MODE_OFF:
       // case EDIT_MODE_TEXT_OLD:
       case EDIT_MODE_APPARATUS:
-        this.verbose && console.log(`Resize: about to update apparatuses`)
+        // this.verbose && console.log(`Resize: about to update apparatuses`)
         this._updateLineNumbersAndApparatuses()
-          .then( () => { this.verbose && console.log(`Done resizing`)})
+          .then( () => {
+            // this.verbose && console.log(`Done resizing`)
+          })
         break
 
       case EDIT_MODE_TEXT:
@@ -300,7 +302,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
 
   postRender (id, mode, visible) {
-    this.verbose && console.log(`Post render main text panel, visible = ${visible}`)
+    // this.verbose && console.log(`Post render main text panel, visible = ${visible}`)
     this.onResize(visible)
     this.modeToggle = new MultiToggle({
       containerSelector: '#edition-panel-mode-toggle',
@@ -386,7 +388,7 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   _setupTextEditMode() {
-    console.log(`--- Setting up text edit mode ---`)
+    // console.log(`--- Setting up text edit mode ---`)
     $(this.getContentAreaSelector()).html(this._getMainTextBetaEditor())
     this.freeTextEditor = new EditionMainTextEditor({
       containerSelector: `#${betaEditorDivId}`,
@@ -411,15 +413,15 @@ export class MainTextPanel extends PanelWithToolbar {
       this.__detectAndReportChangesInEditedMainText()
     })
 
-    console.log(` - Setting text in free text editor -`)
+    // console.log(` - Setting text in free text editor -`)
     this.freeTextEditor.setText( this._convertMainTextToFmtText(), true)
-    console.log(` - updating no changes label - `)
+    // console.log(` - updating no changes label - `)
     this.betaEditorInfoDiv = $(`#${betaEditorInfoDiv}`).html('No changes')
     this.changesInfoDivConstructed = false
     this.commitedFreeText = deepCopy(this.freeTextEditor.getFmtText())
     $(`${this.containerSelector} a.text-edit-revert-btn`).off('click').on('click', this._genOnClickTextEditRevertChanges())
     $(`${this.containerSelector} a.text-edit-commit-btn`).off('click').on('click', this._genOnClickTextEditCommitChanges())
-    console.log(`--- Now in text mode ---`)
+    // console.log(`--- Now in text mode ---`)
   }
 
   __getWitnessTokenHtml(token, full = true) {
@@ -1362,7 +1364,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
   _updateLineNumbersAndApparatuses() {
     return wait(typesetInfoDelay).then( () => {
-      this.verbose && console.log(`Updating apparatuses div`)
+      // this.verbose && console.log(`Updating apparatuses div`)
       this.lastTypesetinfo = getTypesettingInfo(this.containerSelector, 'main-text-token-', this.edition.mainText)
       this._drawLineNumbers(this.lastTypesetinfo)
       this.options.apparatusPanels.forEach( (p) => { p.updateApparatus(this.lastTypesetinfo)})

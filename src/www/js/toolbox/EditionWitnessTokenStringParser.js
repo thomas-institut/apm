@@ -106,7 +106,7 @@ export class EditionWitnessTokenStringParser {
     let norm = new IgnoreIntraWordQuotationMark()
 
     if (norm.isApplicable(word, lang)) {
-      console.log(`Applying IgnoreIntraWordQuotationMark to '${word}'`)
+      // console.log(`Applying IgnoreIntraWordQuotationMark to '${word}'`)
       return norm.normalizeString(word, lang)
     }
 

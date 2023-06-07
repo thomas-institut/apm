@@ -72,8 +72,8 @@ export class EditionViewerCanvas {
     })
     this.options = oc.getCleanOptions(options)
 
-    console.log('Viewer clean options')
-    console.log(this.options)
+    // console.log('Viewer clean options')
+    // console.log(this.options)
 
     this.geometry = {
       pageWidth: Typesetter2.cm2px(this.options.pageWidthInCm),
@@ -96,8 +96,8 @@ export class EditionViewerCanvas {
       normalSpaceWidthInEms: this.options.normalSpaceWidthInEms
     }
 
-    console.log('Viewer geometry')
-    console.log(this.geometry)
+    // console.log('Viewer geometry')
+    // console.log(this.geometry)
 
     this.edition = this.options.edition
     this.canvas = this.options.canvasElement

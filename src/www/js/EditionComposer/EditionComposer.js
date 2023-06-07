@@ -306,7 +306,7 @@ export class EditionComposer {
     ])
 
     if (this.options.isTechSupport) {
-      console.log(`Adding tech support panel`)
+      // console.log(`Adding tech support panel`)
       this.techSupportPanel.setActive(true)
       panelTwoTabs.push( TabConfig.createTabConfig(techSupportTabId, 'Tech', this.techSupportPanel))
     }
@@ -1110,7 +1110,7 @@ export class EditionComposer {
 
   _updateSaveArea() {
 
-    console.log(`Updating save area`)
+    // console.log(`Updating save area`)
 
     if (this.errorDetected) {
       this.saveButtonPopoverTitle = 'Saving is disabled'
@@ -1153,7 +1153,7 @@ export class EditionComposer {
         this.saveButton.prop('disabled', false)
       }
     } else {
-      console.log(`No changes`)
+      // console.log(`No changes`)
       this.unsavedChanges = false
       this.adminPanel.allowArchiving()
       let lastVersion = this.versionInfo[this.versionInfo.length-1]

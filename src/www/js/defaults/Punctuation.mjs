@@ -261,8 +261,8 @@ function getPunctuationDefinition(lang = '') {
     return punctuationDefinitionsPerLanguage[langKey]
   }
   punctuationDefinitionsPerLanguage[langKey] = buildPunctuationDefinitionForLanguage(lang)
-  console.log(`Punctuation definition created for lang ${lang}`)
-  console.log(punctuationDefinitionsPerLanguage[langKey])
+  // console.log(`Punctuation definition created for lang ${lang}`)
+  // console.log(punctuationDefinitionsPerLanguage[langKey])
   return punctuationDefinitionsPerLanguage[langKey]
 }
 

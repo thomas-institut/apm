@@ -527,6 +527,12 @@ div#collationtablediv.rtltext.table-edit-mode-group
     color: var(--dimmed-text-color);
 }
 
+.ctPopover .normalizer-warning {
+    font-size: 0.6em;
+    color: #ea9586;
+    font-family: var(--default-font-family);
+}
+
 
 ul.normalization-list {
     list-style: none;

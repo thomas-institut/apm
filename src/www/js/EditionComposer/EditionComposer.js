@@ -534,6 +534,10 @@ export class EditionComposer {
     if (token.tokenType !== WitnessTokenType.WORD) {
       return token
     }
+    if (token['normalizedText'] !== '') {
+      // token has been normalized already by the parser
+      return token
+    }
     let newToken = deepCopy(token)
     if (this.ctData['automaticNormalizationsApplied'].length !== 0) {
       // apply normalizations for this token

@@ -54,6 +54,7 @@ import { MainText } from '../Edition/MainText.mjs'
 import { TokenMatchScorer } from '../Edition/TokenMatchScorer'
 import { NiceToggle, toggleEvent } from '../widgets/NiceToggle'
 import { EventThrottle } from '../toolbox/EventThrottle'
+import { PARSER_NORMALIZER } from '../constants/NormalizationSource'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_APPARATUS = 'apparatus'
@@ -108,12 +109,15 @@ export class MainTextPanel extends PanelWithToolbar {
     this.tokenIndexTwo = -1
     this.lastTypesetinfo = null
     this.detectNumberingLabels = false
+    this.detectIntraWordQuotationMarks = (this.lang === 'he')
     this.diffEngine = new AsyncMyersDiff.AsyncMyersDiff()
     this.onchangeMainTextFreeTextEditorWaiting = false
 
     this.changesInfoDivConstructed = false
 
     this.htmlRenderer = new HtmlRenderer({})
+
+    this.debug = true
   }
 
   /**
@@ -173,6 +177,8 @@ export class MainTextPanel extends PanelWithToolbar {
             <div class="panel-toolbar-group text-edit-toolbar">
                 <div class="panel-toolbar-group">
                     <div class="panel-toolbar-item numbering-labels-toggle"></div>
+                    <div class="panel-toolbar-item">&nbsp;&nbsp;</div>
+                    <div class="panel-toolbar-item intra-word-quotes-toggle"></div>
                 </div>
                 <div class="panel-toolbar-group">
                     <div class="panel-toolbar-item text-edit-revert">
@@ -370,7 +376,9 @@ export class MainTextPanel extends PanelWithToolbar {
           this._setupMainTextDivEventHandlers()
           this._updateLineNumbersAndApparatuses().then( () => { this.verbose && console.log(`Finished switching mode to ${this.currentEditMode}`)})
           delete this.numberingLabelsToggle
+          delete this.ignoreIntraWordQuotesToggle
           $('div.numbering-labels-toggle').html('')
+          $('div.intra-word-quotes-toggle').html('')
           this.textEditRevertDiv.addClass('hidden')
           this.textEditCommitDiv.addClass('hidden')
         }
@@ -402,16 +410,33 @@ export class MainTextPanel extends PanelWithToolbar {
       title: 'Auto NL: ',
       initialValue: this.detectNumberingLabels,
       onIcon: '<i class="fas fa-toggle-on"></i>',
-      onPopoverText: 'Click to disable automatic detection of Numbering Labels',
+      onPopoverText: 'Click to disable automatic detection of Numbering Labels (e.g. [1], [1.2])',
       offIcon: '<i class="fas fa-toggle-off"></i>',
-      offPopoverText: 'Click to enable automatic detection of Numbering Labels'
+      offPopoverText: 'Click to enable automatic detection of Numbering Labels (e.g. [1], [1.2])'
     })
 
     this.numberingLabelsToggle.on(toggleEvent,  (ev) => {
       console.log(`Numbering labels toggles: ${ev.detail.toggleStatus}`)
       this.detectNumberingLabels = !!ev.detail.toggleStatus;
-      this.__detectAndReportChangesInEditedMainText()
+      this.__detectAndReportChangesInEditedMainText(true)
     })
+    if (this.lang === 'he') {
+      this.ignoreIntraWordQuotesToggle = new NiceToggle( {
+        containerSelector: 'div.intra-word-quotes-toggle',
+        title: 'Smart QM: ',
+        initialValue: this.detectIntraWordQuotationMarks,
+        onIcon: '<i class="fas fa-toggle-on"></i>',
+        onPopoverText: 'Click to disable detecting starting quotation marks after a letter inside a word (e.g. הספר== ה”ספר)',
+        offIcon: '<i class="fas fa-toggle-off"></i>',
+        offPopoverText: 'Click to enable detecting starting quotation marks after a letter inside a word (e.g. הספר== ה”ספר)'
+      })
+
+      this.ignoreIntraWordQuotesToggle.on( toggleEvent, (ev) => {
+        console.log(`Intra word quotation detection  toggles: ${ev.detail.toggleStatus}`)
+        this.detectIntraWordQuotationMarks = !!ev.detail.toggleStatus;
+        this.__detectAndReportChangesInEditedMainText(true)
+      })
+    }
 
     // console.log(` - Setting text in free text editor -`)
     this.freeTextEditor.setText( this._convertMainTextToFmtText(), true)
@@ -508,8 +533,8 @@ export class MainTextPanel extends PanelWithToolbar {
     return html
   }
 
-  __detectAndReportChangesInEditedMainText() {
-    if (!varsAreEqual(this.commitedFreeText, this.freeTextEditor.getFmtText())) {
+  __detectAndReportChangesInEditedMainText(forceParsing = false) {
+    if (forceParsing || !varsAreEqual(this.commitedFreeText, this.freeTextEditor.getFmtText())) {
       this.textEditRevertDiv.removeClass('hidden')
       this.textEditCommitDiv.addClass('hidden')
       this.debug && console.log(`Changes in editor`)
@@ -670,8 +695,8 @@ export class MainTextPanel extends PanelWithToolbar {
       this.verbose && console.log(`There are changes, now it's almost for real`)
       this.textEditRevertDiv.addClass('hidden')
       let newWitnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText)
-      this.verbose && console.log('New witness tokens')
-      this.verbose && console.log(newWitnessTokens)
+      this.debug && console.log('New witness tokens')
+      this.debug && console.log(newWitnessTokens)
       // TODO: show something if there are more than, say, 5 affected columns
       this.updateEditionWitness(newWitnessTokens)
       console.log(`:::::: Finished processing on click TextEditCommitChanges`)
@@ -992,6 +1017,7 @@ export class MainTextPanel extends PanelWithToolbar {
     theToken.tokenType = type
     theToken.fmtText = newText
     theToken.text = FmtText.getPlainText(theToken.fmtText)
+
     return theToken
   }
 
@@ -1023,7 +1049,9 @@ export class MainTextPanel extends PanelWithToolbar {
         witnessTokens.push( (new EditionWitnessToken()).setNumberingLabel(fmtTextToken.text))
         return
       }
-      let tmpWitnessTokens = EditionWitnessTokenStringParser.parse(fmtTextToken.text, this.edition.lang, this.detectNumberingLabels).map( (witnessToken) => {
+      let tmpWitnessTokens =
+        EditionWitnessTokenStringParser.parse(fmtTextToken.text, this.edition.lang, this.detectNumberingLabels, this.detectIntraWordQuotationMarks)
+        .map( (witnessToken) => {
         witnessToken.fmtText = FmtTextFactory.fromString(witnessToken.text).map((token) => {
               attributesToCopy.forEach((attribute) => {
                 if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute] !== '') {
@@ -1038,11 +1066,11 @@ export class MainTextPanel extends PanelWithToolbar {
     })
     // console.log(`Intermediate tokens, before consolidation`)
     // console.log(witnessTokens)
-    // consolidate text tokens
+    // consolidate text tokens: change sequences of identically formatted word token into single tokens
     let consolidatedWitnessTokens = []
     let tokensToConsolidate = []
     witnessTokens.forEach( (token) => {
-      if (token.tokenType === WitnessTokenType.WORD) {
+      if (token.tokenType === WitnessTokenType.WORD && token.normalizationSource !== PARSER_NORMALIZER) {
         tokensToConsolidate.push(token)
       } else {
         if (tokensToConsolidate.length > 0) {
@@ -1064,8 +1092,14 @@ export class MainTextPanel extends PanelWithToolbar {
     }).map( (token) => {
       // make it an edition witness token
       token.tokenClass = 'edition'
-      // apply normalizations
-      token = this.options.editionWitnessTokenNormalizer(token)
+      if (token.normalizationSource !== PARSER_NORMALIZER) {
+        // apply normalizations if the token has not been normalized by the parser already
+        token = this.options.editionWitnessTokenNormalizer(token)
+      } else {
+        // token is normalized already
+        // console.log(`Token normalized by parser`)
+        // console.log(token)
+      }
 
       // simplify text: only include fmtText if there are formats
       if (token.fmtText !== undefined && token.fmtText.length === 1) {

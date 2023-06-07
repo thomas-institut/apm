@@ -71,12 +71,22 @@ export function getPopoverHtml(witnessIndex, tokenIndex, witness, postNotes, peo
   // the text
   popoverHtml += `<p class="${[headingClass, langClass].join(' ')}">${token.text}`
   if (token['normalizedText'] !== undefined && token['normalizedText'] !== '') {
-    if (token['normalizationSource'] ===  NormalizationSource.AUTOMATIC_COLLATION ||
-      token['normalizationSource'] === NormalizationSource.COLLATION_EDITOR_AUTOMATIC ) {
-      popoverHtml += `<br/><span class="standard-norm">${equivalentIcon} ${token['normalizedText']}</span><br/>`
-    } else {
-      popoverHtml += `<br/>${equivalentIcon} ${token['normalizedText']}<br/>`
+    switch(token['normalizationSource']) {
+      case NormalizationSource.AUTOMATIC_COLLATION:
+      case NormalizationSource.COLLATION_EDITOR_AUTOMATIC:
+        popoverHtml += `<br/><span class="standard-norm">${equivalentIcon} ${token['normalizedText']}</span><br/>`
+        break
+
+      case NormalizationSource.PARSER_NORMALIZER:
+        popoverHtml += `<br/><span class="standard-norm">${equivalentIcon} ${token['normalizedText']}</span><br/>`
+        popoverHtml += `<br/><span class="normalizer-warning text-la">Normalized by parser</span>`
+        popoverHtml += `<br/><span class="normalizer-warning text-la">Edit in Main Text panel</span>`
+        break
+
+      default:
+        popoverHtml += `<br/>${equivalentIcon} ${token['normalizedText']}<br/>`
     }
+
   }
   popoverHtml += '</p>'
 

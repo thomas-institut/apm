@@ -30,9 +30,10 @@ export class EditionWitnessTokenStringParser {
    * @param {string}str
    * @param {string}lang
    * @param detectNumberingLabels
+   * @param detectIntraWordQuotationMarks
    * @return {WitnessToken[]}
    */
-  static parse (str, lang, detectNumberingLabels = true) {
+  static parse (str, lang, detectNumberingLabels = true, detectIntraWordQuotationMarks = false) {
     // console.log(`Parsing string '${str}', lang='${lang}'`)
     let state = 0
     let tokenArray = []
@@ -69,7 +70,7 @@ export class EditionWitnessTokenStringParser {
       }
     }
     if (currentWordCharacters.length !== 0) {
-      let wordTokens = this.parseNonWhiteSpaceCharacters(currentWordCharacters, lang, detectNumberingLabels)
+      let wordTokens = this.parseNonWhiteSpaceCharacters(currentWordCharacters, lang, detectNumberingLabels, detectIntraWordQuotationMarks)
       pushArray(tokenArray, wordTokens)
     }
     return tokenArray
@@ -84,7 +85,7 @@ export class EditionWitnessTokenStringParser {
    * @return WitnessToken[]
    * @private
    */
-  static parseNonWhiteSpaceCharacters(chars, lang, detectNumberingLabels = true) {
+  static parseNonWhiteSpaceCharacters(chars, lang, detectNumberingLabels = true, detectIntraWordQuotationMarks = false) {
     let length = chars.length
     // console.log(`Parsing ${length} non-WS characters `)
     if (length === 0) {
@@ -102,14 +103,14 @@ export class EditionWitnessTokenStringParser {
       console.log(`Word '${word}' is a numbering label`)
       return [ (new EditionWitnessToken()).setNumberingLabel(word)]
     }
+    if (detectIntraWordQuotationMarks) {
+      let norm = new IgnoreIntraWordQuotationMark()
 
-    let norm = new IgnoreIntraWordQuotationMark()
-
-    if (norm.isApplicable(word, lang)) {
-      // console.log(`Applying IgnoreIntraWordQuotationMark to '${word}'`)
-      return norm.normalizeString(word, lang)
+      if (norm.isApplicable(word, lang)) {
+        // console.log(`Applying IgnoreIntraWordQuotationMark to '${word}'`)
+        return norm.normalizeString(word, lang)
+      }
     }
-
     if (Punctuation.stringHasPunctuation(word, lang)) {
       // a mix of punctuation and non-punctuation
       // start a little state machine

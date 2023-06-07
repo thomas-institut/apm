@@ -46,12 +46,12 @@ import { EditableTextField } from '../widgets/EditableTextField'
 
 // Normalizations
 import { NormalizerRegister } from '../pages/common/NormalizerRegister'
-import { ToLowerCaseNormalizer } from '../normalizers/ToLowerCaseNormalizer'
-import { IgnoreArabicVocalizationNormalizer } from '../normalizers/IgnoreArabicVocalizationNormalizer'
-import { IgnoreShaddaNormalizer } from '../normalizers/IgnoreShaddaNormalizer'
-import { RemoveHamzahMaddahFromAlifWawYahNormalizer } from '../normalizers/RemoveHamzahMaddahFromAlifWawYahNormalizer'
-import { IgnoreTatwilNormalizer } from '../normalizers/IgnoreTatwilNormalizer'
-import { IgnoreIsolatedHamzaNormalizer } from '../normalizers/IgnoreIsolatedHamzaNormalizer'
+import { ToLowerCaseNormalizer } from '../normalizers/TokenNormalizer/ToLowerCaseNormalizer'
+import { IgnoreArabicVocalizationNormalizer } from '../normalizers/TokenNormalizer/IgnoreArabicVocalizationNormalizer'
+import { IgnoreShaddaNormalizer } from '../normalizers/TokenNormalizer/IgnoreShaddaNormalizer'
+import { RemoveHamzahMaddahFromAlifWawYahNormalizer } from '../normalizers/TokenNormalizer/RemoveHamzahMaddahFromAlifWawYahNormalizer'
+import { IgnoreTatwilNormalizer } from '../normalizers/TokenNormalizer/IgnoreTatwilNormalizer'
+import { IgnoreIsolatedHamzaNormalizer } from '../normalizers/TokenNormalizer/IgnoreIsolatedHamzaNormalizer'
 
 
 // CtData and Edition core
@@ -512,35 +512,6 @@ export class EditionComposer {
         break
     }
   }
-
-  // _getMainTextWitnessIndex() {
-  //   return this.ctData['editionWitnessIndex'] !== undefined ? this.ctData['editionWitnessIndex'] :
-  //     this.ctData['witnessOrder'][0]
-  //
-  // }
-
-  // genOnConfirmMainTextEdit() {
-  //   return (tokenIndex, newText) => {
-  //     console.log(`Confirming edit of main text token ${tokenIndex}  with new text '${newText}'`)
-  //     let token = this.edition.getMainTextToken( tokenIndex)
-  //     if (token.isEmpty()) {
-  //       console.warn(`Trying to confirm edit of nonexistent main text token`)
-  //       return false
-  //     }
-  //     let ctIndex = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, token.editionWitnessTokenIndex)
-  //     if (ctIndex === -1) {
-  //       console.warn(`Trying to confirm edit of token that does not have a reference in the collation table`)
-  //       return false
-  //     }
-  //     let changesInCt = this._editMainText(ctIndex, newText)
-  //     if (changesInCt) {
-  //       this._updateSaveArea()
-  //       this._reGenerateEdition(`Main text edit`)
-  //       this._updateDataInPanels()
-  //     }
-  //     return changesInCt
-  //   }
-  // }
 
   _updateDataInPanels(updateWitnessInfo = false) {
     if (this.errorDetected) {

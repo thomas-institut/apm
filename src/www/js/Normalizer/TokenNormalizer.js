@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021 Universität zu Köln
+ *  Copyright (C) 2023 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,16 +15,17 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
+/**
+ * A normalizer that is meant to be used for a single token
+ * The method normalizeString should normally return a single word
+ * When a normalizations may result in more than one word or token, each one of them
+ * meant to be in its own column in collation table, a ParserNormalizer should
+ * be used instead
+ */
+export class TokenNormalizer {
 
-export class IgnoreIsolatedHamzaNormalizer {
-
-  /**
-   *
-   * @returns string
-   * @param  str string
-   */
   normalizeString(str) {
-    return str.replace(String.fromCodePoint(0x621), '')
+    return str
   }
 
 }

@@ -16,7 +16,9 @@
  *
  */
 
-export class IgnoreShaddaNormalizer {
+import { TokenNormalizer } from '../../Normalizer/TokenNormalizer'
+
+export class IgnoreIsolatedHamzaNormalizer extends TokenNormalizer {
 
   /**
    *
@@ -24,7 +26,7 @@ export class IgnoreShaddaNormalizer {
    * @param  str string
    */
   normalizeString(str) {
-    return str.replace(String.fromCodePoint(0x651), '')
+    return str.replace(String.fromCodePoint(0x621), '')
   }
 
 }

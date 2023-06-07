@@ -16,21 +16,9 @@
  *
  */
 
-import * as Util from '../toolbox/Util.mjs'
+import { TokenNormalizer } from '../../Normalizer/TokenNormalizer'
 
-export class IgnoreArabicVocalizationNormalizer {
-  
-  constructor () {
-    this.arabicVowelDiacritics = [
-      String.fromCodePoint(0x64B),
-      String.fromCodePoint(0x64C),
-      String.fromCodePoint(0x64D),
-      String.fromCodePoint(0x64E),
-      String.fromCodePoint(0x64F),
-      String.fromCodePoint(0x650),
-      String.fromCodePoint(0x652)
-    ];
-  }
+export class ToLowerCaseNormalizer extends TokenNormalizer {
 
   /**
    *
@@ -38,7 +26,7 @@ export class IgnoreArabicVocalizationNormalizer {
    * @param  str string
    */
   normalizeString(str) {
-    return Util.stringReplaceArray(str, this.arabicVowelDiacritics, '')
+    return str.toLowerCase()
   }
 
 }

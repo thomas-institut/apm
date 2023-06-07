@@ -16,7 +16,9 @@
  *
  */
 
-export class IgnoreTatwilNormalizer {
+import { TokenNormalizer } from '../../Normalizer/TokenNormalizer'
+
+export class IgnoreShaddaNormalizer extends TokenNormalizer {
 
   /**
    *
@@ -24,7 +26,7 @@ export class IgnoreTatwilNormalizer {
    * @param  str string
    */
   normalizeString(str) {
-    return str.replace(String.fromCodePoint(0x640), '')
+    return str.replace(String.fromCodePoint(0x651), '')
   }
 
 }

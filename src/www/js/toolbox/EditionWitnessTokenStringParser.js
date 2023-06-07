@@ -21,6 +21,7 @@ import { WitnessToken } from '../Witness/WitnessToken'
 import { pushArray } from './ArrayUtil.mjs'
 import { NumeralStyles } from './NumeralStyles.mjs'
 import { EditionWitnessToken } from '../Witness/EditionWitnessToken'
+import { IgnoreIntraWordQuotationMark } from '../normalizers/ParserNormalizer/IgnoreIntraWordQuotationMark'
 
 export class EditionWitnessTokenStringParser {
 
@@ -41,7 +42,7 @@ export class EditionWitnessTokenStringParser {
       let ch = str.charAt(i)
       //console.log(`Processing '${ch}', state = ${state}`)
       switch (state) {
-        case 0:
+        case 0: // accumulating whitespace
           if (this.hasWhiteSpace(ch)) {
             currentWhiteSpace += ch
           } else {
@@ -54,7 +55,7 @@ export class EditionWitnessTokenStringParser {
           }
           break
 
-        case 1:
+        case 1: // accumulating other characters
           if (this.hasWhiteSpace(ch)) {
             if (currentWordCharacters.length !== 0) {
               let wordTokens = this.parseNonWhiteSpaceCharacters(currentWordCharacters, lang, detectNumberingLabels)
@@ -100,6 +101,13 @@ export class EditionWitnessTokenStringParser {
     if (detectNumberingLabels && this.isNumberingLabel(word)) {
       console.log(`Word '${word}' is a numbering label`)
       return [ (new EditionWitnessToken()).setNumberingLabel(word)]
+    }
+
+    let norm = new IgnoreIntraWordQuotationMark()
+
+    if (norm.isApplicable(word, lang)) {
+      console.log(`Applying IgnoreIntraWordQuotationMark to '${word}'`)
+      return norm.normalizeString(word, lang)
     }
 
     if (Punctuation.stringHasPunctuation(word, lang)) {

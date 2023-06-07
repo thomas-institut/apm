@@ -17,11 +17,13 @@
  */
 
 
-import * as Util from '../toolbox/Util.mjs'
+import * as Util from '../../toolbox/Util.mjs'
+import { TokenNormalizer } from '../../Normalizer/TokenNormalizer'
 
-export class RemoveHamzahMaddahFromAlifWawYahNormalizer {
+export class RemoveHamzahMaddahFromAlifWawYahNormalizer extends TokenNormalizer {
 
   constructor () {
+    super()
     this.complexAlifs = [
       String.fromCodePoint(0x622), // Alif with maddah above
       String.fromCodePoint(0x623), // Alif with hamzah above

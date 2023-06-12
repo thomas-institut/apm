@@ -26,14 +26,14 @@ export const punctuationDefinition = [
   { char: '.', // period
     default: {
       isPunctuation: true,
-      isPunctuationInsideWord: false, // to allow for decimal period
+      isPunctuationInsideWord: false, // should be irrelevant, periods inside a word should be handled by a parser
       sticksToPrevious: true,
       sticksToNext: false }
   },
   { char: ',',  // comma
     default: {
       isPunctuation: true,
-      isPunctuationInsideWord: false,  // to allow for decimal comma
+      isPunctuationInsideWord: false,  // to allow for decimal comma (but, a parser is needed to properly support it)
       sticksToPrevious: true,
       sticksToNext: false }
   },

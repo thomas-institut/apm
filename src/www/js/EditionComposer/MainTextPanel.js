@@ -548,8 +548,8 @@ export class MainTextPanel extends PanelWithToolbar {
       // this.debug && console.log(newFmtText)
 
       let witnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText)
-      // this.debug && console.log(`Witness tokens from editor`)
-      // this.debug && console.log(witnessTokens)
+      this.debug && console.log(`Witness tokens from editor`)
+      this.debug && console.log(witnessTokens)
 
       this.betaEditorInfoDiv.html(`Calculating changes... <span class="spinner-border spinner-border-sm" role="status"></span>`)
       this.changesInfoDivConstructed = false
@@ -631,6 +631,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
   _genOnChangeMainTextFreeTextEditor() {
     let throttle = new EventThrottle( () => {
+      console.log(`Handling change in main text free text editor`)
       this.__detectAndReportChangesInEditedMainText()
     }, 'OnChangeMainTextFreeTextEditor', 500)
     return throttle.getHandler()
@@ -1024,6 +1025,8 @@ export class MainTextPanel extends PanelWithToolbar {
   __fmtTextToEditionWitnessTokens(fmtText) {
     const attributesToCopy = [ 'fontWeight', 'fontStyle']
     let witnessTokens = []
+    // console.log(`Processing fmtText`)
+    // console.log(fmtText)
 
     // Get all tokens
     fmtText.forEach( (fmtTextToken) => {
@@ -1049,6 +1052,13 @@ export class MainTextPanel extends PanelWithToolbar {
         witnessTokens.push( (new EditionWitnessToken()).setNumberingLabel(fmtTextToken.text))
         return
       }
+      let methodDebug = false
+      // if (/^mytest/.test(fmtTextToken.text)) {
+      //   console.log(`Processing fmtText token with text`)
+      //   console.log(fmtTextToken)
+      //   methodDebug = true
+      // }
+
       let tmpWitnessTokens =
         EditionWitnessTokenStringParser.parse(fmtTextToken.text, this.edition.lang, this.detectNumberingLabels, this.detectIntraWordQuotationMarks)
         .map( (witnessToken) => {
@@ -1062,6 +1072,10 @@ export class MainTextPanel extends PanelWithToolbar {
             })
             return witnessToken
       })
+      if (methodDebug && tmpWitnessTokens.length > 1) {
+        console.log(`Parser returned ${tmpWitnessTokens.length} tokens`)
+        console.log(tmpWitnessTokens)
+      }
       pushArray(witnessTokens, tmpWitnessTokens)
     })
     // console.log(`Intermediate tokens, before consolidation`)
@@ -1085,8 +1099,7 @@ export class MainTextPanel extends PanelWithToolbar {
       // flush token heap
       consolidatedWitnessTokens.push(this.__consolidateTokens(tokensToConsolidate))
     }
-
-    return consolidatedWitnessTokens.filter((token) => {
+    let tokensToReturn = consolidatedWitnessTokens.filter((token) => {
       // filter out empty and whitespace tokens
       return token.tokenType!== WitnessTokenType.EMPTY && token.tokenType !== WitnessTokenType.WHITESPACE
     }).map( (token) => {
@@ -1116,6 +1129,8 @@ export class MainTextPanel extends PanelWithToolbar {
       }
       return token
     })
+    console.log(`Done`)
+    return tokensToReturn
   }
 
 

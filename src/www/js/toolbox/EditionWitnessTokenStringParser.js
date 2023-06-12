@@ -34,14 +34,19 @@ export class EditionWitnessTokenStringParser {
    * @return {WitnessToken[]}
    */
   static parse (str, lang, detectNumberingLabels = true, detectIntraWordQuotationMarks = false) {
-    // console.log(`Parsing string '${str}', lang='${lang}'`)
+    let debug = false
+    if (/^mytest/.test(str)) {
+      debug = true
+    }
+    debug && console.log(`Parsing string '${str}', lang='${lang}'`)
+    // debug && console.trace()
     let state = 0
     let tokenArray = []
     let currentWhiteSpace = ''
     let currentWordCharacters = []
     for (let i = 0; i < str.length; i++) {
       let ch = str.charAt(i)
-      //console.log(`Processing '${ch}', state = ${state}`)
+      debug && console.log(` - Processing '${ch}', state = ${state}, currentWord =' ${currentWordCharacters.join('')}'`)
       switch (state) {
         case 0: // accumulating whitespace
           if (this.hasWhiteSpace(ch)) {
@@ -69,6 +74,7 @@ export class EditionWitnessTokenStringParser {
           }
       }
     }
+    debug && console.log(`End of input, state = ${state}, currentWord = '${currentWordCharacters.join('')}'`)
     if (currentWordCharacters.length !== 0) {
       let wordTokens = this.parseNonWhiteSpaceCharacters(currentWordCharacters, lang, detectNumberingLabels, detectIntraWordQuotationMarks)
       pushArray(tokenArray, wordTokens)
@@ -82,6 +88,7 @@ export class EditionWitnessTokenStringParser {
    * @param {string[]}chars
    * @param {string}lang
    * @param {boolean}detectNumberingLabels
+   * @param detectIntraWordQuotationMarks
    * @return WitnessToken[]
    * @private
    */
@@ -93,6 +100,7 @@ export class EditionWitnessTokenStringParser {
     }
 
     let word = chars.join('')
+    let methodDebug = false
 
     if (Punctuation.stringIsAllPunctuation(word, lang)) {
       // all punctuation
@@ -116,38 +124,126 @@ export class EditionWitnessTokenStringParser {
       // start a little state machine
       // TODO: detect matching square brackets and don't generate punctuation for the closing one
       //  e.g:  'Roma[m]' should be a single word
-      // console.log(`Word '${word}' is a mix of punctuation a non-punctuation`)
+      methodDebug && console.log(`Word '${word}' is a mix of punctuation a non-punctuation`)
       let state = 0
       let tokenArray = []
       let curWord = ''
+      let nDots = 0
       for (let i = 0; i < chars.length; i++) {
         let char = chars[i]
         let insideWord = i>0 && i < chars.length-1
+        methodDebug && console.log(`Processing char ${i}: '${char}', insideWord = ${insideWord}, state = ${state}`)
         switch(state) {
-          case 0:
+          case 0: // start
+            if (char === '.') {
+              nDots = 1
+              state = 2
+              break
+            }
             if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
+              // emit punctuation
               tokenArray.push( (new WitnessToken()).setPunctuation(char))
             } else {
+              // accumulate word
               curWord += char
               state = 1
             }
             break
 
-          case 1:
+          case 1: // accumulating word
+            if (char === '.') {
+              state = 3
+              break
+            }
             if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
+              // emit word
               tokenArray.push( (new WitnessToken()).setWord(curWord))
               curWord = ''
+              // emit punctuation
               tokenArray.push( (new WitnessToken()).setPunctuation(char))
               state = 0
             } else {
               curWord += char
             }
             break
+
+          case 2: // accumulating dots
+            if (char === '.') {
+              nDots++
+              break
+            }
+            if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
+              // emit dots
+              let dotString = '.'
+              tokenArray.push( (new WitnessToken()).setPunctuation(dotString.repeat(nDots)))
+              nDots = 0
+              // emit punctuation
+              tokenArray.push( (new WitnessToken()).setPunctuation(char))
+              state = 0
+            } else { // word character
+              // emit dots
+              let dotString = '.'
+              tokenArray.push( (new WitnessToken()).setPunctuation(dotString.repeat(nDots)))
+              nDots = 0
+              // accumulate
+              curWord += char
+              state = 1
+            }
+            break
+
+          case 3: // dot inside a word
+            if (char === '.') { // a second dot
+              // emit word
+              tokenArray.push( (new WitnessToken()).setWord(curWord))
+              curWord = ''
+              // go to state 2, where dots will continue to be accumulated
+              nDots = 2
+              state = 2
+              break
+            }
+            if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
+              // emit word
+              tokenArray.push( (new WitnessToken()).setWord(curWord))
+              curWord = ''
+              // emit single dot
+              tokenArray.push( (new WitnessToken()).setPunctuation('.'))
+              nDots = 0
+              // emit punctuation
+              tokenArray.push( (new WitnessToken()).setPunctuation(char))
+              state = 0
+            } else { // word character
+              // accumulate dot
+              curWord += '.'
+              // accumulate char
+              curWord += char
+              state = 1
+            }
+            break
         }
       }
-      if (state === 1) {
-        tokenArray.push( (new WitnessToken()).setWord(curWord))
+      // END
+      switch(state) {
+        case 0:
+          break
+
+        case 1:
+          // emit word
+          tokenArray.push( (new WitnessToken()).setWord(curWord))
+          break
+
+        case 2:
+          // emit dots
+          let dotString = '.'
+          tokenArray.push( (new WitnessToken()).setPunctuation(dotString.repeat(nDots)))
+          break
+
+        case 3:
+          // emit word and single dot
+          tokenArray.push( (new WitnessToken()).setWord(curWord))
+          tokenArray.push( (new WitnessToken()).setPunctuation('.'))
+          break
       }
+
       return tokenArray
     } else {
       // no punctuation at all

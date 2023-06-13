@@ -35,9 +35,6 @@ export class EditionWitnessTokenStringParser {
    */
   static parse (str, lang, detectNumberingLabels = true, detectIntraWordQuotationMarks = false) {
     let debug = false
-    if (/^mytest/.test(str)) {
-      debug = true
-    }
     debug && console.log(`Parsing string '${str}', lang='${lang}'`)
     // debug && console.trace()
     let state = 0
@@ -93,12 +90,9 @@ export class EditionWitnessTokenStringParser {
    * @private
    */
   static parseNonWhiteSpaceCharacters(chars, lang, detectNumberingLabels = true, detectIntraWordQuotationMarks = false) {
-    let length = chars.length
-    // console.log(`Parsing ${length} non-WS characters `)
-    if (length === 0) {
+      if (chars.length === 0) {
       return []
     }
-
     let word = chars.join('')
     let methodDebug = false
 
@@ -113,7 +107,6 @@ export class EditionWitnessTokenStringParser {
     }
     if (detectIntraWordQuotationMarks) {
       let norm = new IgnoreIntraWordQuotationMark()
-
       if (norm.isApplicable(word, lang)) {
         // console.log(`Applying IgnoreIntraWordQuotationMark to '${word}'`)
         return norm.normalizeString(word, lang)
@@ -128,7 +121,7 @@ export class EditionWitnessTokenStringParser {
       let state = 0
       let tokenArray = []
       let curWord = ''
-      let nDots = 0
+      let nPeriods = 0
       for (let i = 0; i < chars.length; i++) {
         let char = chars[i]
         let insideWord = i>0 && i < chars.length-1
@@ -136,7 +129,7 @@ export class EditionWitnessTokenStringParser {
         switch(state) {
           case 0: // start
             if (char === '.') {
-              nDots = 1
+              nPeriods = 1
               state = 2
               break
             }
@@ -167,37 +160,37 @@ export class EditionWitnessTokenStringParser {
             }
             break
 
-          case 2: // accumulating dots
+          case 2: // accumulating periods
             if (char === '.') {
-              nDots++
+              nPeriods++
               break
             }
             if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
               // emit dots
-              let dotString = '.'
-              tokenArray.push( (new WitnessToken()).setPunctuation(dotString.repeat(nDots)))
-              nDots = 0
+              let periodString = '.'
+              tokenArray.push( (new WitnessToken()).setPunctuation(periodString.repeat(nPeriods)))
+              nPeriods = 0
               // emit punctuation
               tokenArray.push( (new WitnessToken()).setPunctuation(char))
               state = 0
             } else { // word character
               // emit dots
-              let dotString = '.'
-              tokenArray.push( (new WitnessToken()).setPunctuation(dotString.repeat(nDots)))
-              nDots = 0
+              let periodString = '.'
+              tokenArray.push( (new WitnessToken()).setPunctuation(periodString.repeat(nPeriods)))
+              nPeriods = 0
               // accumulate
               curWord += char
               state = 1
             }
             break
 
-          case 3: // dot inside a word
+          case 3: // period inside a word
             if (char === '.') { // a second dot
               // emit word
               tokenArray.push( (new WitnessToken()).setWord(curWord))
               curWord = ''
               // go to state 2, where dots will continue to be accumulated
-              nDots = 2
+              nPeriods = 2
               state = 2
               break
             }
@@ -207,7 +200,7 @@ export class EditionWitnessTokenStringParser {
               curWord = ''
               // emit single dot
               tokenArray.push( (new WitnessToken()).setPunctuation('.'))
-              nDots = 0
+              nPeriods = 0
               // emit punctuation
               tokenArray.push( (new WitnessToken()).setPunctuation(char))
               state = 0
@@ -234,7 +227,7 @@ export class EditionWitnessTokenStringParser {
         case 2:
           // emit dots
           let dotString = '.'
-          tokenArray.push( (new WitnessToken()).setPunctuation(dotString.repeat(nDots)))
+          tokenArray.push( (new WitnessToken()).setPunctuation(dotString.repeat(nPeriods)))
           break
 
         case 3:

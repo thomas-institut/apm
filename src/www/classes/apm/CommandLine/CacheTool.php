@@ -10,7 +10,7 @@ use PDO;
 class CacheTool extends  CommandLineUtility
 {
 
-    const USAGE = "cache <option>\n\nOptions:\n  info: print cache size, length, etc\n  flush: erases all cache entries\n";
+    const USAGE = "cache <option>\n\nOptions:\n  info: print cache size, length, etc\n  flush: erases all cache entries\n   clean: removes all expired entries\n";
     const FLUSH_SAFE_WORD = 'IKnowWhatImDoing';
     private string $cacheTable;
 

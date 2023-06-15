@@ -47,6 +47,8 @@ class ApmConfigParameter
     const LANGUAGES = 'languages';
     const LANG_CODES = 'langCodes';
 
+    const SHOW_LANG_SELECTOR = 'showLanguageSelector';
+
     const TWIG_TEMPLATE_DIR = 'twigTemplateDir';
     const TWIG_USE_CACHE = 'twigUseCache';
 

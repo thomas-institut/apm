@@ -12,27 +12,15 @@
 
 
 {% block finalBodyJS %}
-
 <script>
 
   $(() => {
-    let urlGenerator = new ApmUrlGenerator('{{ baseurl }}')
-    let userId = parseInt('{{ userId }}')
-    let userInfo = JSON.parse("{{userInfo|json_encode|e('js')}}")
-
     new DashboardPage(( {
-      urlGenerator: urlGenerator,
-      userId: userId,
-      userInfo: userInfo
+      baseUrl: '{{ baseurl }}',
+      userId: parseInt('{{ userId }}'),
+      userInfo: JSON.parse("{{userInfo|json_encode|e('js')}}"),
+      showLanguageSelector: parseInt('{{ showLanguageSelector }}') === 1
     }))
-
   })
 </script>
 {%  endblock %}
-
-{% block content %}
-<div id="dashboard" class="dashboard">
-    New Dashboard coming up...
-</div>
-
-{% endblock %}

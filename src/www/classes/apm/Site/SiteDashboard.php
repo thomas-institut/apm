@@ -19,6 +19,7 @@
 
 namespace APM\Site;
 
+use APM\System\ApmConfigParameter;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 
@@ -46,6 +47,7 @@ class SiteDashboard extends SiteController
         return $this->renderPage($response, self::TEMPLATE_DASHBOARD, [
             'userId' => $userId,
             'userInfo' => $this->userInfo,
+            'showLanguageSelector' => $this->config[ApmConfigParameter::SHOW_LANG_SELECTOR] ? '1' : 0
         ]);
     }
 }

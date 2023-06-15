@@ -35,6 +35,11 @@ export function removeExtraWhiteSpace(someString) {
   return trimWhiteSpace(someString).replace(/\s+/g, ' ')
 }
 
+/**
+ * Trims whitespace from the start and end of a string
+ * @param {string}someString
+ * @return {string}
+ */
 export function trimWhiteSpace(someString) {
   return someString.replace(/^\s+/, '').replace(/\s+$/, '')
 }

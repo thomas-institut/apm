@@ -43,6 +43,9 @@ body, .popover {
 .navbar {
     margin-bottom: 20px;  /* To make it the same as bs3, in bs4 it's 0 */
 }
+.dd-menu-item {
+    font-size: 0.85em;
+}
 
 .breadcrumb {
     background: white; /* to make it the same as bs3, in bs4 it's some sort of gray */

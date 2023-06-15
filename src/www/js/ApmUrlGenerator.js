@@ -25,12 +25,98 @@ class ApmUrlGenerator {
         this.base = baseUrl;
     }
 
+    /**
+     *
+     * @param {string}url
+     */
+    setBase(url) {
+        this.base = url
+    }
+
     // -------------------------------
     //  SITE
     // -------------------------------
 
     siteHome() {
         return this.base
+    }
+
+    siteDashboard() {
+        return `${this.base}/dashboard`
+    }
+
+    siteLogout() {
+        return `${this.base}/logout`
+    }
+
+    siteCollationTableCustom(work, chunkno, lang) {
+        return this.base + '/collation/auto/' + work + '/' + chunkno + '/' + lang + '/custom';
+    }
+    siteCollationTablePreset(work, chunkno, presetId) {
+        return this.base + '/collation/auto/' + work + '/' + chunkno + '/preset/' + presetId;
+    }
+    sitePageView(docId, pageSequence, col = 0) {
+        let url = this.base + '/doc/' + docId + '/page/' + pageSequence + '/view';
+        if (col > 0) {
+            url += '/c/' + col;
+        }
+        return url;
+    }
+    sitePageViewRealPage(docId, pageNumber) {
+        return this.base + '/doc/' + docId + '/realpage/' + pageNumber + '/view'
+    }
+    siteChunkPage(work, chunk) {
+        return this.base + '/chunk/' + work + '/' + chunk
+    }
+    siteUserProfile(userName) {
+        return this.base + '/user/' + userName
+    }
+    siteDocPage(docId) {
+        return this.base + '/doc/' + docId + '/details'
+    }
+
+    siteDocs() {
+        return this.base + '/documents'
+    }
+
+    siteChunks() {
+        return this.base + '/chunks'
+    }
+
+    siteUsers() {
+        return this.base + '/users'
+    }
+
+    siteSearch() {
+        return this.base + '/search'
+    }
+
+    siteEditMultiChunkEdition(editionId) {
+        return `${this.base}/edition/multi/edit/${editionId}`
+    }
+
+    siteMultiChunkEditionNew() {
+        return `${this.base}/edition/multi/new`
+    }
+
+    siteCollationTable(work, chunkno, lang, ids = []) {
+        let extra = '';
+        if (ids.length > 0) {
+            extra += '/';
+            extra += ids.join('/');
+        }
+        return this.base + '/collation/auto/' + work + '/' + chunkno + '/' + lang + extra;
+    }
+    siteEditCollationTable(tableId, version = 0) {
+        let postfix = ''
+        if (version !== 0) {
+            postfix = `/${version}`
+        }
+        return `${this.base}/collation/edit/${tableId}${postfix}`
+    }
+
+    siteEditCollationTableBeta(tableId) {
+        return this.base + '/collation/edit/' + tableId + '/beta'
     }
 
     // -------------------------------
@@ -163,25 +249,7 @@ class ApmUrlGenerator {
     apiNewDoc() {
         return `${this.base}/api/doc/new`
     }
-    siteCollationTable(work, chunkno, lang, ids = []) {
-        let extra = '';
-        if (ids.length > 0) {
-            extra += '/';
-            extra += ids.join('/');
-        }
-        return this.base + '/collation/auto/' + work + '/' + chunkno + '/' + lang + extra;
-    }
-    siteEditCollationTable(tableId, version = 0) {
-        let postfix = ''
-        if (version !== 0) {
-            postfix = `/${version}`
-        }
-        return `${this.base}/collation/edit/${tableId}${postfix}`
-    }
 
-    siteEditCollationTableBeta(tableId) {
-        return this.base + '/collation/edit/' + tableId + '/beta'
-    }
 
     siteChunkEdition(tableId) {
         return this.base + '/edition/chunk/edit/' + tableId;
@@ -219,45 +287,11 @@ class ApmUrlGenerator {
     apiWitnessCheckUpdates() {
         return this.base + '/api/witness/check/updates';
     }
-    siteCollationTableCustom(work, chunkno, lang) {
-        return this.base + '/collation/auto/' + work + '/' + chunkno + '/' + lang + '/custom';
-    }
-    siteCollationTablePreset(work, chunkno, presetId) {
-        return this.base + '/collation/auto/' + work + '/' + chunkno + '/preset/' + presetId;
-    }
-    sitePageView(docId, pageSequence, col = 0) {
-        let url = this.base + '/doc/' + docId + '/page/' + pageSequence + '/view';
-        if (col > 0) {
-            url += '/c/' + col;
-        }
-        return url;
-    }
-    sitePageViewRealPage(docId, pageNumber) {
-        return this.base + '/doc/' + docId + '/realpage/' + pageNumber + '/view'
-    }
-    siteChunkPage(work, chunk) {
-        return this.base + '/chunk/' + work + '/' + chunk
-    }
-    siteUserProfile(userName) {
-        return this.base + '/user/' + userName
-    }
-    siteDocPage(docId) {
-        return this.base + '/doc/' + docId + '/details'
-    }
 
-    siteDocs() {
-        return this.base + '/documents'
-    }
 
     images() {
         return this.base + '/images'
     }
 
-    siteEditMultiChunkEdition(editionId) {
-        return `${this.base}/edition/multi/edit/${editionId}`
-    }
 
-    siteMultiChunkEditionNew() {
-        return `${this.base}/edition/multi/new`
-    }
 }

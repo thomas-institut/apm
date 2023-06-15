@@ -159,20 +159,20 @@ export class UserProfilePage {
 
   fetchMultiChunkEditions() {
     $.get(this.pathFor.apiUserGetMultiChunkEditionInfo(this.userId)).then( (data) => {
-      this.mcEditionsCollapse.setContent(UserDocDataCommon.generateMultiChunkEditionsListHtml(data, this.pathFor))
+      this.mcEditionsCollapse.setContent(UserDocDataCommon.generateMultiChunkEditionsListHtml(data))
     })
   }
 
 
   fetchTranscriptions() {
     $.get(this.pathFor.apiTranscriptionsByUserDocPageData(this.userId)).then( (data) => {
-      this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data, this.pathFor))
+      this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data))
     })
   }
 
   fetchCollationTablesAndEditions() {
     $.get(this.pathFor.apiUserGetCollationTableInfo(this.userId)).then( (data) => {
-      let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], this.pathFor, data['workInfo'])
+      let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo'])
       this.chunkEditionsCollapse.setContent(listHtml.editions)
       this.collationTablesCollapse.setContent(listHtml.cTables)
     })

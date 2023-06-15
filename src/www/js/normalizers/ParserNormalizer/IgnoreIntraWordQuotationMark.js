@@ -23,9 +23,17 @@ export class IgnoreIntraWordQuotationMark extends ParserNormalizer {
     if (lang !== 'he') {
       return false
     }
+    if (str.length < 2) {
+      return false
+    }
+    let isApplicable = false
 
-    let re = /^[\u0590-\u05FF]\u2019|\u201d/
-    return re.test(str)
+    if (str.charAt(1) === '\u2019' || str.charAt(1) === '\u201d') {
+      isApplicable = true
+      // console.log(`IIWQM for '${str}': ${isApplicable}`)
+    }
+
+    return isApplicable
   }
 
 

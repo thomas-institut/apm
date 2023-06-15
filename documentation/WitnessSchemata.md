@@ -66,7 +66,7 @@ A  __collation table__ consists of:
   a non-empty array of tokens (see description below).  
   * If the witness data includes a chunk ID, it must match the collation table's
     chunk ID.
-* sigla: an array of *m* strings corresponding to each of the witnesses in the
+* sigla: an array of *m* templates corresponding to each of the witnesses in the
   collation table:  *sigla[i]* ==> siglum for the witness *witnesses[i]*
     * Sigla could be stored within the witness' data, but it must not. 
       The siglum is actually metadata for a witness that only makes sense

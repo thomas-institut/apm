@@ -21,7 +21,13 @@ export const arabicDeGruyter = {
     name: 'De Gruyter',
     description: 'De Gruyter format'
   },
-    default: {
+  fontConversions : [
+    {
+      from: { fontFamily: 'AdobeArabic', fontWeight: 'bold'},
+      to: { fontFamily: 'AdobeArabicBold', fontWeight: ''}
+    },
+  ],
+  default: {
       strings : {
         omission: "نقص",
         addition: "ز",
@@ -31,6 +37,7 @@ export const arabicDeGruyter = {
         lineRangeSeparator: "\u2016",  // double vertical line
         entrySeparator:  "\u007c" // single vertical line
       },
+
       page: {
         width: "17 cm",
         height: "24 cm",
@@ -54,7 +61,7 @@ export const arabicDeGruyter = {
       },
       text: {
         fontFamily: "AdobeArabic",
-        fontSize: "14 pt",
+        fontSize: "12 pt",
         fontStyle: "",
         fontWeight: "",
         shiftY: "0"
@@ -65,42 +72,42 @@ export const arabicDeGruyter = {
         stretch: "0.08 em"
       },
     },
-    small:  {
+  small:  {
       parent: "",
       text: {
         fontSize: "0.8 em"
       }
     },
-    superscript: {
+  superscript: {
       parent: "",
       text: {
         fontSize: "0.7 em",
         shiftY: "-0.6 em"
       }
     },
-    subscript:  {
+  subscript:  {
       parent: "",
       text: {
         fontSize: "0.7 em",
         shiftY: "0.6 em"
       }
     },
-    arabicText: {
+  arabicText: {
       parent: "",
     },
-    latinText: {
+  latinText: {
       parent: "",
       text: {
         fontFamily: "FreeSerif"
       }
     },
-    normal: {
+  normal: {
       parent: "default",
       paragraph: {
         indent: "1 em"
       }
     },
-    h1: {
+  h1: {
       parent: "default",
       text: {
         fontSize: "1.25 em",

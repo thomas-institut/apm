@@ -15,12 +15,6 @@ import { getTextDirectionForLang, isRtl, removeExtraWhiteSpace } from '../toolbo
 import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
 import { ObjectFactory } from '../Typesetter2/ObjectFactory.mjs'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
-
-// import { defaultLatinEditionStyle} from '../defaults/EditionStyles/Latin.mjs'
-// import { defaultArabicEditionStyle} from '../defaults/EditionStyles/Arabic.mjs'
-// import {defaultHebrewEditionStyle} from '../defaults/EditionStyles/Hebrew.mjs'
-// import {defaultStyleSheet} from '../Typesetter2/Style/DefaultStyleSheet.mjs'
-// import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { Typesetter2StyleSheetTokenRenderer } from '../FmtText/Renderer/Typesetter2StyleSheetTokenRenderer.mjs'
 import { ApparatusUtil } from './ApparatusUtil.mjs'
@@ -29,18 +23,15 @@ import { TextBoxFactory } from '../Typesetter2/TextBoxFactory.mjs'
 import { SiglaGroup } from './SiglaGroup.mjs'
 import { ApparatusEntry } from './ApparatusEntry.mjs'
 import { FmtText } from '../FmtText/FmtText.mjs'
-import { SystemStyleSheet } from '../Typesetter2/Style/SystemStyleSheet.mjs'
 import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
+import { FontConversions } from '../Typesetter2/FontConversions.mjs'
 
-// let defaultEditionStyles = {
-//   la: defaultLatinEditionStyle,
-//   ar: defaultArabicEditionStyle,
-//   he: defaultHebrewEditionStyle
-// }
+
 
 
 export const MAX_LINE_COUNT = 10000
 
+const enDash = '\u2013'
 
 export class EditionTypesetting {
 
@@ -69,12 +60,19 @@ export class EditionTypesetting {
     this.textBoxMeasurer = this.options.textBoxMeasurer
 
     this.ss = this.options.editionStyleSheet
+    // console.log(`Stylesheet`)
+    // console.log(this.ss)
     // this.ss = new StyleSheet(defaultStyleSheet, this.textBoxMeasurer)
     // this.editionStyle = defaultEditionStyles[this.options.editionStyleName]
     // this.ss.merge(this.editionStyle.formattingStyles)
     // this.debug && console.log(`Stylesheet`)
     // this.debug && console.log(this.ss.getStyleDefinitions())
     this.editionStyle = this.ss.getStyleDefinitions()
+    this.fontConversionDefinitions = this.ss.getFontConversionDefinitions()
+    // if (this.fontConversionDefinitions.length !== 0) {
+    //   console.log(`Using font conversions`)
+    //   console.log(this.fontConversionDefinitions)
+    // }
     this.tokenRenderer = new Typesetter2StyleSheetTokenRenderer({
       styleSheet: this.editionStyle,
       defaultTextDirection: this.textDirection,
@@ -181,9 +179,7 @@ export class EditionTypesetting {
       }
       let verticalListToTypeset = new ItemList(TypesetterItemDirection.VERTICAL)
       verticalListToTypeset.setList(verticalItems)
-
-      resolve(verticalListToTypeset)
-
+      resolve(FontConversions.applyFontConversions(verticalListToTypeset, this.fontConversionDefinitions))
     })
   }
 
@@ -353,7 +349,7 @@ export class EditionTypesetting {
       // this.debug && console.log(` => Output`)
       // this.debug && console.log(outputList)
       // profiler.stop('output list prepared')
-      resolve(outputList)
+      resolve(FontConversions.applyFontConversions(outputList, this.fontConversionDefinitions))
     })
   }
 
@@ -619,7 +615,7 @@ export class EditionTypesetting {
     if (from === to) {
       return this.getNumberString(from, this.edition.lang)
     }
-    return `${this.getNumberString(from, this.edition.lang)}-${this.getNumberString(to, this.edition.lang)}`
+    return `${this.getNumberString(from, this.edition.lang)}${enDash}${this.getNumberString(to, this.edition.lang)}`
   }
 
   /**

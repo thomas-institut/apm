@@ -64,6 +64,7 @@ export class StyleSheet {
       console.error('Undefined styles!!!')
     }
     this.names = this.__getNameArray(this.styles)
+    this.fontConversionDefinitions = this.styles.fontConversions !== undefined ? this.styles.fontConversions : []
     this.debug = true
   }
 
@@ -82,6 +83,10 @@ export class StyleSheet {
 
   getStyleDefinitions() {
     return this.styles
+  }
+
+  getFontConversionDefinitions() {
+    return this.fontConversionDefinitions
   }
 
 

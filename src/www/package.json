@@ -6,7 +6,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Use make test in js directory\"",
+    "test": "node test/js/simple/*.test.mjs",
     "run": "echo \"Use make run in js directory\"",
     "build": "cd js; webpack"
   },
@@ -37,6 +37,7 @@
     "html-loader": "^4.2.0",
     "html-webpack-plugin": "^5.5.0",
     "jasmine": "^4.5.0",
+    "jest": "^29.5.0",
     "standard": "^17.0.0",
     "style-loader": "^3.3.1",
     "webpack": "^5.76.1",

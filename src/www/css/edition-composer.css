@@ -60,7 +60,17 @@ a.tb-button {
     color: grey;
 }
 
-button.zoom-btn, button.tb-button {
+a.dv-button {
+    color: grey;
+    padding: 2px
+}
+
+a.dv-button.multitoggle-on {
+    background: silver;
+    color: black
+}
+
+button.zoom-btn, button.tb-button, button.dv-button {
     border: none;
     background-color: transparent;
     color: grey;

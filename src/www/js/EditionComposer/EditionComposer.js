@@ -281,6 +281,7 @@ export class EditionComposer {
       containerSelector: `#${techSupportTabId}`,
       active: false,
       ctData: this.ctData,
+      edition: this.edition
     })
 
     // tab arrays
@@ -524,6 +525,7 @@ export class EditionComposer {
     // this.editionPreviewPanel.updateData(this.ctData, this.edition)
     this.editionPreviewPanelNew.updateData(this.edition)
     this.witnessInfoPanel.updateCtData(this.ctData, updateWitnessInfo)
+    this.techSupportPanel.updateData(this.ctData, this.edition)
   }
 
   genEditionWitnessTokenNormalizer() {

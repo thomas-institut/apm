@@ -17,9 +17,10 @@
  */
 
 import { Panel } from '../MultiPanelUI/Panel'
-import { doNothingPromise } from '../toolbox/FunctionUtil.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { deepCopy } from '../toolbox/Util.mjs'
+import { JSONEditor } from 'vanilla-jsoneditor'
+import { MultiToggle } from '../widgets/MultiToggle'
 
 /**
  * A panel with tech support tools
@@ -34,36 +35,80 @@ export class TechSupportPanel extends Panel {
     let optionsSpec = {
       active: { type: 'boolean', default:false},
       ctData: { type: 'object' },
-
+      edition: { type: 'object'}
     }
     let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'Admin Panel'})
     this.options = oc.getCleanOptions(options)
     this.active = this.options.active
     this.ctData = deepCopy(this.options.ctData)
+    this.edition = deepCopy(this.options.edition)
+    this.jsonEditor = null
 
   }
 
 
   generateHtml(tabId, mode, visible) {
     return `<h3>Tech Support</h3>
-       <h4>CT Data</h4>
-       <p>Custom Apparatuses</p>
-       <p><textarea class="ct-data" rows="30" cols="80">${this.__getCustomApparatusesJson()}</textarea></p>
-`
+       <div class="panel-toolbar"><div class="panel-toolbar-group data-view-toggle"></div></div>
+       <div id="json-editor-div"></div>`
   }
 
-  __getCustomApparatusesJson() {
-    return JSON.stringify(this.ctData['customApparatuses'], null, 2)
+  postRender (id, mode, visible) {
+    super.postRender(id, mode, visible)
+    this.jsonEditor = new JSONEditor({
+      target: document.getElementById('json-editor-div'),
+      props: {
+        content: { text: JSON.stringify(this.ctData)},
+        readOnly: true
+      }
+    })
+    this.dataViewToggle = new MultiToggle({
+      containerSelector: 'div.data-view-toggle',
+      title: '',
+      buttonClass: 'dv-button',
+      initialOption: 'ctData',
+      wrapButtonsInDiv: true,
+      buttonsDivClass: 'panel-toolbar-item',
+      buttonDef: [
+        { label: 'CT Data', name: 'ctData', helpText: 'CT Data' },
+        { label: 'Edition', name: 'edition', helpText: 'Generated edition' },
+        // { label: 'Text', name: EDIT_MODE_TEXT, helpText: 'Edit main text' }
+      ]
+    })
+    this.dataViewToggle.on('toggle', ()=>{
+      this.loadEditor(this.dataViewToggle.getOption())
+    })
   }
+
 
   setActive(active) {
     this.active = active
   }
 
+  /**
+   * Loads standard data into the JSON editor
+   * @param {string}dataName
+   * @private
+   */
+  loadEditor(dataName) {
+    switch(dataName) {
+      case 'ctData':
+        this.jsonEditor.set( { text: JSON.stringify(this.ctData)})
+        break
 
-  updateData(ctData) {
+      case 'edition':
+        this.jsonEditor.set( { text: JSON.stringify(this.edition)})
+    }
+  }
+
+
+  updateData(ctData, edition) {
     if (this.active) {
       this.ctData = deepCopy(ctData)
+      this.edition = deepCopy(edition)
+      if (this.jsonEditor !== null) {
+        this.loadEditor(this.dataViewToggle.getOption())
+      }
     }
   }
 

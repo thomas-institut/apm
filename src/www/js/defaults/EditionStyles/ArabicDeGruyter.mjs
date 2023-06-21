@@ -26,6 +26,7 @@ export const arabicDeGruyter = {
       from: { fontFamily: 'AdobeArabic', fontWeight: 'bold'},
       to: { fontFamily: 'AdobeArabicBold', fontWeight: ''}
     },
+    // { from: { script: 'la'}, to: { fontFamily: 'FreeSerif'}}
   ],
   default: {
       strings : {

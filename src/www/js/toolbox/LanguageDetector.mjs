@@ -1,5 +1,17 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 
+
+
+const regexes = {
+  'la': /[\u0000-\u007F]/gi,
+  'el':/[\u0370-\u03ff\u1f00-\u1fff]/gi,
+  // 'zh': /[\u3000\u3400-\u4DBF\u4E00-\u9FFF]/gi,
+  // 'hi': /[\u0900-\u097F]/gi,
+  'ar': /[\u0600-\u06ff]/gi,
+  // 'bn': /[\u0995-\u09B9\u09CE\u09DC-\u09DF\u0985-\u0994\u09BE-\u09CC\u09D7\u09BC]/gi,
+  'he': /[\u0590-\u05FF]/gi,
+}
+
 export class LanguageDetector {
 
 
@@ -17,7 +29,29 @@ export class LanguageDetector {
     this.options = oc.getCleanOptions(options)
   }
 
+  detectScript(text, ignorePunctuation = true) {
+    let stringLength = text.length
+    for(const [ lang, regex] of Object.entries(regexes)) {
+      let matches = text.match(regex) || []
+      let numMatches = matches.length
+      if (ignorePunctuation) {
+        // TODO: make this more accurate!
+        const punctuationRegex = /[.,;\]\[()]/gi
+        let punctuationMatches = text.match(punctuationRegex) || []
+        numMatches += punctuationMatches.length
+      }
+      if (numMatches === stringLength) {
+        return lang
+      }
+    }
+    // no match, so it should latin script
+    return 'la'
+  }
+
   /**
+   * Tries to detect the language of the given string by analyzing its characters
+   * In non-strict mode, the string is considered to be of a given language
+   * if the majority of its characters are in the language's character range
    *
    * @param {string}text
    * @return {string}
@@ -25,16 +59,6 @@ export class LanguageDetector {
   detectLang(text) {
 
     const scores = {}
-
-    const regexes = {
-      'la': /[\u0000-\u007F]/gi,
-      'el':/[\u0370-\u03ff\u1f00-\u1fff]/gi,
-     // 'zh': /[\u3000\u3400-\u4DBF\u4E00-\u9FFF]/gi,
-     // 'hi': /[\u0900-\u097F]/gi,
-      'ar': /[\u0600-\u06ff]/gi,
-     // 'bn': /[\u0995-\u09B9\u09CE\u09DC-\u09DF\u0985-\u0994\u09BE-\u09CC\u09D7\u09BC]/gi,
-      'he': /[\u0590-\u05FF]/gi,
-    }
 
     const punctuationRegex = /[.,;\]\[()]/gi
     const numbersRegex = /[0-9]/gi

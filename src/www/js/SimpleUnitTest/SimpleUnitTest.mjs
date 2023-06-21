@@ -98,8 +98,8 @@ export function test(testTitle, testFunction) {
 export function testSuite(suiteTitle, suiteFunction) {
   unitTestSingleton.testSuite(suiteTitle, suiteFunction)
 }
-export function expect(value) {
-  return new Asserter(value)
+export function expect(value, context = '') {
+  return new Asserter(value, context)
 }
 
 

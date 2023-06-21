@@ -35,7 +35,14 @@ export class TextBoxFactory {
       item.setFontSize(fontSpec.fontSize)
     }
 
-    // TODO: fontWeight, fontStyle, baselineShift
+    if (fontSpec.fontWeight !== undefined) {
+      item.setFontWeight(fontSpec.fontWeight)
+    }
+
+    if (fontSpec.fontStyle !== undefined) {
+      item.setFontStyle(fontSpec.fontStyle)
+    }
+    // TODO: baselineShift
 
     if (textDirection!=='') {
       item.setTextDirection(textDirection)

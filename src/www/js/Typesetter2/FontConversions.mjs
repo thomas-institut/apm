@@ -1,5 +1,6 @@
 import { ItemList } from './ItemList.mjs'
 import { TextBox } from './TextBox.mjs'
+import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
 
 export class FontConversions {
 
@@ -10,8 +11,9 @@ export class FontConversions {
    *    {  from:  { fontFamily: 'FreeSerif', fontStyle: 'italic'}, to: {fontFamily: 'FancyFreeSerifFont'} }
    * @param {TypesetterItem}item
    * @param {[]}fontConversionDefinitions
+   * @param {string}defaultScript  Default script when script cannot be detected
    */
-  static applyFontConversions(item, fontConversionDefinitions) {
+  static applyFontConversions(item, fontConversionDefinitions, defaultScript = 'la') {
     if (fontConversionDefinitions.length === 0) {
       // shortcut to avoid further comparisons
       return item
@@ -21,7 +23,7 @@ export class FontConversions {
       return item
     }
     if (item instanceof TextBox) {
-      let match = this.findMatch(item, fontConversionDefinitions)
+      let match = this.findMatch(item, fontConversionDefinitions, defaultScript)
       if (match !== null) {
         Object.keys(match.to).forEach((prop) => {
           item[prop] = match.to[prop]
@@ -38,9 +40,10 @@ export class FontConversions {
    *
    * @param {TextBox}textBoxItem
    * @param {[]}fontConversionDefinitions
+   * @param defaultScript
    * @private
    */
-  static findMatch(textBoxItem, fontConversionDefinitions) {
+  static findMatch(textBoxItem, fontConversionDefinitions, defaultScript) {
     let match = null
     for (let i=0; match === null && i < fontConversionDefinitions.length; i++) {
       let def = fontConversionDefinitions[i]
@@ -51,17 +54,32 @@ export class FontConversions {
       let matchFound = true
       for (let j = 0; j < attributesToMatch.length; j++) {
         let attr = attributesToMatch[j]
-        if (def[attr] === undefined) {
+        if (def.from[attr] === undefined) {
           continue
         }
-        if (textBoxItem[attr] !== def[attr]) {
+        if (textBoxItem[attr] !== def.from[attr]) {
+          // console.log(`Mismatch`)
           matchFound = false
           break
         }
       }
-      if (matchFound) {
+      if (!matchFound) {
+        match  = null
+        continue
+      }
+      // style attributes match, check the script
+      if (def.from.script !== undefined) {
+        let ld = new LanguageDetector({defaultLang: defaultScript})
+        let textScript = ld.detectScript(textBoxItem.getText())
+        if (textScript === def.from.script) {
+          match = def
+        } else {
+          match = null
+        }
+      } else {
         match = def
       }
+
     }
     return match
   }

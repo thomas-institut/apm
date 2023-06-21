@@ -179,7 +179,7 @@ export class EditionTypesetting {
       }
       let verticalListToTypeset = new ItemList(TypesetterItemDirection.VERTICAL)
       verticalListToTypeset.setList(verticalItems)
-      resolve(FontConversions.applyFontConversions(verticalListToTypeset, this.fontConversionDefinitions))
+      resolve(FontConversions.applyFontConversions(verticalListToTypeset, this.fontConversionDefinitions, this.edition.lang))
     })
   }
 
@@ -349,7 +349,7 @@ export class EditionTypesetting {
       // this.debug && console.log(` => Output`)
       // this.debug && console.log(outputList)
       // profiler.stop('output list prepared')
-      resolve(FontConversions.applyFontConversions(outputList, this.fontConversionDefinitions))
+      resolve(FontConversions.applyFontConversions(outputList, this.fontConversionDefinitions, this.edition.lang))
     })
   }
 

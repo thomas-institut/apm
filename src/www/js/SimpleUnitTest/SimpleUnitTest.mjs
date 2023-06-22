@@ -1,6 +1,10 @@
 
 import { performance } from "perf_hooks"
 
+const ANSI_RED = '\u001b[31m'
+const ANSI_GREEN = '\u001b[32m'
+const ANSI_RESET = '\u001b[0m'
+
 class SimpleUnitTest {
 
   constructor () {
@@ -37,7 +41,8 @@ class SimpleUnitTest {
       return
     }
     let start = performance.now()
-    this.currentTest = { title: title, asserts: [], duration: 0}
+    this.currentTest = { title: title, asserts: [], duration: 0, messages: []}
+    process.stdout.write(`  ${title}: `)
     testFunction()
     this.currentTest.duration = performance.now() - start
     this.testReport(this.currentTest)
@@ -58,14 +63,24 @@ class SimpleUnitTest {
       console.log(`  ${test.title}: No expects in test`)
       return
     }
-    let result = 'PASS'
+    let result = this.genGreenMessage('PASS')
     let numPasses = test.asserts.filter( (r) => { return r}).length
     if (numPasses !== test.asserts.length) {
-      result = 'FAIL'
+      result = this.genRedMessage('FAIL')
     }
     test.result = result
-    let dotReport = test.asserts.map( (r)=> { return r ? '.' : 'X'}).join('')
-    console.log(`  ${test.title}: ${dotReport} ${numPasses}/${test.asserts.length} ${result} (${test.duration.toFixed(2)}ms)`)
+    process.stdout.write(`  ${numPasses}/${test.asserts.length} ${result} (${test.duration.toFixed(2)}ms)\n`)
+    test.messages.forEach( (msg) => {
+      console.log(`    ${msg}`)
+    })
+  }
+
+  genRedMessage(msg) {
+    return `${ANSI_RED}${msg}${ANSI_RESET}`
+  }
+
+  genGreenMessage(msg) {
+    return `${ANSI_GREEN}${msg}${ANSI_RESET}`
   }
 
 
@@ -81,8 +96,11 @@ class SimpleUnitTest {
       return
     }
     this.currentTest.asserts.push(result)
-    if (!result) {
-      console.log(`${this.currentTest.title}: FAIL ${expectation}`)
+    if (result) {
+      process.stdout.write('.')
+    } else {
+      process.stdout.write(this.genRedMessage('E'))
+      this.currentTest.messages.push(`Error:  ${expectation}`)
     }
   }
 }

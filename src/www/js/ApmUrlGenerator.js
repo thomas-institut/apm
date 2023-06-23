@@ -33,6 +33,10 @@ class ApmUrlGenerator {
         this.base = url
     }
 
+    getBaseUrl() {
+        return this.base
+    }
+
     // -------------------------------
     //  SITE
     // -------------------------------

@@ -19,6 +19,7 @@
 
 import { CollapsePanel } from '../widgets/CollapsePanel'
 import { UserDocDataCommon } from './common/UserDocDataCommon'
+import { setBaseUrl } from './common/SiteUrlGen'
 
 export class UserProfilePage {
   
@@ -26,7 +27,7 @@ export class UserProfilePage {
     this.profileUserInfo = profileUserInfo
     this.pathFor = urlGenerator
     this.userId = profileUserInfo['id']
-
+    setBaseUrl(this.pathFor.getBaseUrl())
 
     this.infoArea = $('#new-info-area')
 

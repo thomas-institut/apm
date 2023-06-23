@@ -1,6 +1,6 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { setSiteLanguage, SiteLang, tr } from './common/SiteLang'
-import { urlGen } from './common/SiteUrlGen'
+import { setBaseUrl, urlFor } from './common/SiteUrlGen'
 import { KeyCache } from '../toolbox/KeyCache'
 import { CachedFetcher } from '../toolbox/CachedFetcher'
 
@@ -21,7 +21,7 @@ export class NormalPage {
       }
     })
     this.normalPageOptions = optionsChecker.getCleanOptions(options)
-    urlGen.setBase(this.normalPageOptions.baseUrl)
+    setBaseUrl(this.normalPageOptions.baseUrl)
     this.userId = this.normalPageOptions.userId
     this.userName = this.normalPageOptions.userInfo.username
     this.cache = new KeyCache()
@@ -80,7 +80,6 @@ export class NormalPage {
   }
 
   genTopNavBarHtml() {
-
     let languageSelectorHtml = ''
     if (this.showLanguageSelector) {
       languageSelectorHtml = ` <ul class="navbar-nav">
@@ -95,14 +94,14 @@ export class NormalPage {
             </ul>`
     }
     return `<div class="container">
-        <a class="navbar-brand" style="padding:0;" href="${urlGen.siteHome()}"><img src="${urlGen.images()}/apm-logo-plain.svg" alt="APM" height="50" ></a>
+        <a class="navbar-brand" style="padding:0;" href="${urlFor('siteHome')}"><img src="${urlFor('images')}/apm-logo-plain.svg" alt="APM" height="50" ></a>
         <div id="navbar" class="collapse navbar-collapse">
             <ul class="navbar-nav mr-auto">
-                <li class="nav-item"><a class="nav-link" href="${urlGen.siteDashboard()}" title="${tr('Dashboard')}">${tr('Dashboard')}</a></li>
-                <li class="nav-item"><a class="nav-link" href="${urlGen.siteDocs()}" title="${tr('Documents')}">${tr('Documents')}</a></li>
-                <li class="nav-item"><a class="nav-link" href="${urlGen.siteChunks()}" title="${tr('Chunks')}">${tr('Chunks')}</a></li>
-                <li class="nav-item"><a class="nav-link" href="${urlGen.siteUsers()}" title="${tr('Users')}">${tr('Users')}</a></li>
-                <li class="nav-item"><a class="nav-link" href="${urlGen.siteSearch()}" title="${tr('Search')}">${tr('Search')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlFor('siteDashboard')}" title="${tr('Dashboard')}">${tr('Dashboard')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlFor('siteDocs')}" title="${tr('Documents')}">${tr('Documents')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlFor('siteChunks')}" title="${tr('Chunks')}">${tr('Chunks')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlFor('siteUsers')}" title="${tr('Users')}">${tr('Users')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlFor('siteSearch')}" title="${tr('Search')}">${tr('Search')}</a></li>
                 <li class="nav-item">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</li>
                 <li class="nav-item dropdown">
                    <a href="/" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">${tr('Useful Links')}</a>
@@ -119,10 +118,10 @@ export class NormalPage {
                     <a class="nav-link dropdown-toggle" href="#"  data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                     <i class="fas fa-user"></i>&nbsp;${this.normalPageOptions.userInfo.fullname}</a>
                     <ul class="dropdown-menu">
-                        <li><a class="nav-link dd-menu-item" href="${urlGen.siteUserProfile(this.userName)}">${tr('My Profile')}</a></li>
-                        <li><a class="nav-link dd-menu-item"  href="${urlGen.siteUserProfile(this.userName)}">${tr('My Settings')}</a></li>
+                        <li><a class="nav-link dd-menu-item" href="${urlFor('siteUserProfile', this.userName)}">${tr('My Profile')}</a></li>
+                        <li><a class="nav-link dd-menu-item"  href="${urlFor('siteUserProfile', this.userName)}">${tr('My Settings')}</a></li>
                         <li role="separator" class="divider"></li>
-                        <li><a class="nav-link dd-menu-item" href="${urlGen.siteLogout()}" title="${tr('Logout')}">${tr('Logout')}</a></li>
+                        <li><a class="nav-link dd-menu-item" href="${urlFor('siteLogout')}" title="${tr('Logout')}">${tr('Logout')}</a></li>
                     </ul>
                 </li>
             </ul>

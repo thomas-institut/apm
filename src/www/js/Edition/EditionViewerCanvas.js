@@ -138,6 +138,10 @@ export class EditionViewerCanvas {
     })
   }
 
+  getTypesetEdition(){
+    return this.editionDoc
+  }
+
   setScale(newScale) {
     return new Promise ( (resolve) => {
       this.canvasRenderer.setScale(newScale)

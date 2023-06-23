@@ -50,6 +50,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       automaticUpdate: { type: 'boolean', default: false},
       outDatedLabel: { type: 'string', default: '<i class="bi bi-exclamation-triangle-fill"></i> Out-of-date '},
       icons: { type: 'object', default: defaultIcons},
+      onEditionTypeset: {type: 'function', default: () => {console.log(`Event triggered: onEditionTypeset`)}},
       getPdfDownloadUrl: {
         type: 'function',
         default: (data) => {
@@ -251,6 +252,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
         this.updatePreviewButton.html(currentButtonHtml).addClass('hidden')
         this.downloadPdfButton.removeClass('hidden')
         console.log(`Edition rendered`)
+        this.options.onEditionTypeset(this.viewer.getTypesetEdition())
         this.onResize(true)
       })
     })

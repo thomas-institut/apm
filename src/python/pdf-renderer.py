@@ -113,9 +113,9 @@ def print_text_box(context, x, y, text_box):
     text_to_render = text_box['text']
 
     if tb_text_direction == 'rtl':
-        debug_msg("RTL text box: " + text_box['text'])
+#         debug_msg("RTL text box: " + text_box['text'])
         tb_width = px2pt(get_value(text_box, 'width', 0))
-        debug_msg("Shifting " + str(tb_width) + " pts to the left")
+#         debug_msg("Shifting " + str(tb_width) + " pts to the left")
         shift_x -= tb_width
         # Insert RLM (Right to Left Mark) and LRM characters so that the text is laid out properly
         # text_to_render = '\u200f' + text_to_render + '\u200e'

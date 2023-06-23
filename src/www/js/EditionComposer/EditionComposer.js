@@ -240,14 +240,7 @@ export class EditionComposer {
       onConfirmArchive: this.genOnConfirmArchive()
     })
 
-    this.editionPreviewPanelNew = new EditionPreviewPanelNew({
-      containerSelector: `#${editionPreviewNewTabId}`,
-      // ctData: this.ctData,
-      edition: this.edition,
-      langDef: this.options.langDef,
-      getPdfDownloadUrl: this.genGetPdfDownloadUrlForPreviewPanel(),
-      debug: true
-    })
+
 
     this.apparatusPanels = this.edition.apparatuses
       .map( (apparatus, index) => {
@@ -282,6 +275,16 @@ export class EditionComposer {
       active: false,
       ctData: this.ctData,
       edition: this.edition
+    })
+
+    this.editionPreviewPanelNew = new EditionPreviewPanelNew({
+      containerSelector: `#${editionPreviewNewTabId}`,
+      // ctData: this.ctData,
+      edition: this.edition,
+      langDef: this.options.langDef,
+      onEditionTypeset: (typesetEdition) => { this.techSupportPanel.updateTypesetEdition(typesetEdition)},
+      getPdfDownloadUrl: this.genGetPdfDownloadUrlForPreviewPanel(),
+      debug: true
     })
 
     // tab arrays

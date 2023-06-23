@@ -42,6 +42,7 @@ export class TechSupportPanel extends Panel {
     this.active = this.options.active
     this.ctData = deepCopy(this.options.ctData)
     this.edition = deepCopy(this.options.edition)
+    this.typesetEdition = null
     this.jsonEditor = null
 
   }
@@ -72,7 +73,7 @@ export class TechSupportPanel extends Panel {
       buttonDef: [
         { label: 'CT Data', name: 'ctData', helpText: 'CT Data' },
         { label: 'Edition', name: 'edition', helpText: 'Generated edition' },
-        // { label: 'Text', name: EDIT_MODE_TEXT, helpText: 'Edit main text' }
+        { label: 'Typeset Edition', name: 'typesetEdition', helpText: 'Typeset edition' }
       ]
     })
     this.dataViewToggle.on('toggle', ()=>{
@@ -98,6 +99,18 @@ export class TechSupportPanel extends Panel {
 
       case 'edition':
         this.jsonEditor.set( { text: JSON.stringify(this.edition)})
+        break
+
+      case 'typesetEdition':
+        this.jsonEditor.set( { text: JSON.stringify(this.typesetEdition)})
+        break
+    }
+  }
+
+  updateTypesetEdition(typesetEdition) {
+    this.typesetEdition = deepCopy(typesetEdition)
+    if (this.jsonEditor !== null) {
+      this.loadEditor(this.dataViewToggle.getOption())
     }
   }
 

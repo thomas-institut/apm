@@ -21,7 +21,7 @@
  */
 
 const fontData = [
-  { family: 'FreeSerif', multiplier: 0.9},
+  // { family: 'FreeSerif', multiplier: 0.9},
   { family: 'Arial', multiplier: 0.9052736842105263},
   { family: 'Linux Libertine', multiplier: 0.8940447368421053}
 ]

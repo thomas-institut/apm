@@ -136,6 +136,19 @@ class Asserter {
   toBe(expectedResult) {
     assert(`${this._getContextMessage()}expecting ${this.value} to be ${expectedResult}`, this.value === expectedResult)
   }
+
+  toBeOfLength(length) {
+    assert(`${this._getContextMessage()}expecting ${this.value} to be of length ${length}, but length is ${this.value.length}`, this.value.length === length)
+  }
+
+  toContain(value) {
+    if (!Array.isArray(this.value)) {
+      assert(`${this._getContextMessage()}expecting ${this.value} to contain ${value}, but ${this.value} is not an array`, false)
+      return
+    }
+    assert(`${this._getContextMessage()}expecting ${this.value} to contain ${value}`, this.value.indexOf(value) !== -1)
+  }
+
   toBeInstanceOf(someClass) {
     assert(`${this._getContextMessage()}expecting ${this.value} to be an instance of '${someClass}'`, this.value instanceof someClass)
   }

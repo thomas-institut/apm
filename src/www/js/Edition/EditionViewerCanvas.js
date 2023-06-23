@@ -187,10 +187,19 @@ export class EditionViewerCanvas {
       }
       // Load fonts
       // TODO: make this better by getting a list of used fonts in the stylesheet
-      await document.fonts.load(`1em ${this.options.fontFamily}`)
-      await document.fonts.load(`bold 1em ${this.options.fontFamily}`)
-      await document.fonts.load(`italic 1em ${this.options.fontFamily}`)
-      await document.fonts.load(`bold italic 1em ${this.options.fontFamily}`)
+      console.log(`Loading fonts`)
+      let fontsToLoad = []
+      this.options.editionStyleSheet.getFontFamilies().forEach( (fontFamily) => {
+        fontsToLoad.push(`1em ${fontFamily}`,
+          `bold 1em ${fontFamily}`,
+          `italic 1em ${fontFamily}`,
+          `bold italic 1em ${fontFamily}` )
+      })
+
+      for (let i = 0; i < fontsToLoad.length; i++) {
+        await document.fonts.load(fontsToLoad[i])
+        console.log(` Loaded ${fontsToLoad[i]} `)
+      }
       let editionTypesettingHelper = new EditionTypesetting(helperOptions)
       editionTypesettingHelper.setup().then( async () => {
         let verticalListToTypeset = await editionTypesettingHelper.generateListToTypesetFromMainText()

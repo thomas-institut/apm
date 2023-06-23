@@ -19,6 +19,8 @@
 import { Glue } from '../Glue.mjs'
 import { TextBox } from '../TextBox.mjs'
 import { Dimension } from '../Dimension.mjs'
+import { ObjectUtil } from '../../toolbox/ObjectUtil.mjs'
+import { uniq } from '../../toolbox/ArrayUtil.mjs'
 
 /**
  * A stylesheet is a tree of style definition
@@ -72,6 +74,16 @@ export class StyleSheet {
   getStrings(style = 'default'){
     let defaultStrings = this.getStyleDef(style).strings
     return defaultStrings === undefined ? {} : defaultStrings
+  }
+
+  /**
+   * Returns an array with all the font families mentioned in the
+   * stylesheet
+   */
+  getFontFamilies() {
+    return uniq(ObjectUtil.deepGetValuesForKey(this.styles, 'fontFamily').filter( (family) => {
+      return family !== ''
+    }))
   }
 
   merge(anotherStyleSheetDef) {

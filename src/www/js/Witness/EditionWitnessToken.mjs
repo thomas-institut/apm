@@ -16,13 +16,13 @@
  *
  */
 
-import { WitnessToken } from './WitnessToken'
-import * as WitnessTokenType from './WitnessTokenType'
-import * as WitnessTokenClass from './WitnessTokenClass'
-import * as SpaceType from '../Typesetter/SpaceType'
-import * as WitnessFormat from './EditionWitnessFormatMark'
-import * as EditionWitnessParagraphStyle from './EditionWitnessParagraphStyle'
-import * as NormalizationSource from '../constants/NormalizationSource'
+import { WitnessToken } from './WitnessToken.mjs'
+import * as WitnessTokenType from './WitnessTokenType.mjs'
+import * as WitnessTokenClass from './WitnessTokenClass.mjs'
+import * as SpaceType from '../Typesetter/SpaceType.mjs'
+import * as WitnessFormat from './EditionWitnessFormatMark.mjs'
+import * as EditionWitnessParagraphStyle from './EditionWitnessParagraphStyle.mjs'
+import * as NormalizationSource from '../constants/NormalizationSource.mjs'
 
 /**
  * A token that can appear in an edition witness

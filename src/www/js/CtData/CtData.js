@@ -16,7 +16,7 @@
  *
  */
 
-import * as WitnessTokenType from '../Witness/WitnessTokenType'
+import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
 import { SequenceWithGroups } from '../Edition/SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
 import * as CollationTableType from '../constants/CollationTableType'
@@ -26,9 +26,9 @@ import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { ApparatusEntry } from '../Edition/ApparatusEntry.mjs'
 import { FmtText } from '../FmtText/FmtText.mjs'
 import { deepCopy } from '../toolbox/Util.mjs'
-import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
-import * as NormalizationSource from '../constants/NormalizationSource'
-import * as WitnessType from '../Witness/WitnessTokenClass'
+import * as TranscriptionTokenType from '../Witness/WitnessTokenType.mjs'
+import * as NormalizationSource from '../constants/NormalizationSource.mjs'
+import * as WitnessType from '../Witness/WitnessTokenClass.mjs'
 import { pushArray, uniq } from '../toolbox/ArrayUtil.mjs'
 
 // cleaners

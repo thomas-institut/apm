@@ -26,7 +26,7 @@ const defaultApparatus = [
 
 import { CtDataCleaner } from './CtDataCleaner'
 import { deepCopy } from '../../toolbox/Util.mjs'
-import * as CollationTableType from '../../Witness/WitnessTokenClass'
+import * as CollationTableType from '../../Witness/WitnessTokenClass.mjs'
 
 export class DefaultApparatusesCleaner extends CtDataCleaner {
 

@@ -18,7 +18,7 @@
 
 import { CtDataCleaner } from './CtDataCleaner'
 import * as TokenClass from '../../constants/CollationTableType'
-import * as TranscriptionTokenType from '../../Witness/WitnessTokenType'
+import * as TranscriptionTokenType from '../../Witness/WitnessTokenType.mjs'
 import { deepCopy } from '../../toolbox/Util.mjs'
 
 export class EditionWitnessReferencesCleaner extends CtDataCleaner {

@@ -16,8 +16,8 @@
  *
  */
 
-import * as WitnessTokenType from './WitnessTokenType'
-import * as NormalizationSource from '../constants/NormalizationSource'
+import * as WitnessTokenType from './WitnessTokenType.mjs'
+import * as NormalizationSource from '../constants/NormalizationSource.mjs'
 
 /**
  * A token that can appear in a witness

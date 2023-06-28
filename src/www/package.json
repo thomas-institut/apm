@@ -6,7 +6,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "node test/js/simple/*.test.mjs",
+    "test": "node ../node/simple_unit_test.mjs test/js/simple/*.test.mjs",
     "run": "echo \"Use make run in js directory\"",
     "build": "cd js; webpack"
   },

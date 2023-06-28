@@ -16,7 +16,7 @@
  *
  */
 
-import * as WitnessTokenType from '../../Witness/WitnessTokenType.js'
+import * as WitnessTokenType from '../../Witness/WitnessTokenType.mjs'
 import { MainTextTokenFactory } from '../MainTextTokenFactory.mjs'
 import * as MainTextTokenType from '../MainTextTokenType.mjs'
 import { Punctuation } from '../../defaults/Punctuation.mjs'

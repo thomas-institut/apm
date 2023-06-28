@@ -17,8 +17,8 @@
  */
 
 import * as Util from '../../toolbox/Util.mjs'
-import { EDITION, FULL_TX } from '../../Witness/WitnessTokenClass'
-import * as NormalizationSource from '../../constants/NormalizationSource'
+import { EDITION, FULL_TX } from '../../Witness/WitnessTokenClass.mjs'
+import * as NormalizationSource from '../../constants/NormalizationSource.mjs'
 
 // Classes
 const popoverDivClass = 'ctPopover'

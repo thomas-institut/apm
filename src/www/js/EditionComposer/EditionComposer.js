@@ -59,11 +59,11 @@ import { CtData } from '../CtData/CtData'
 import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
 import * as CollationTableType from '../constants/CollationTableType'
 import { Edition } from '../Edition/Edition.mjs'
-import * as NormalizationSource from '../constants/NormalizationSource'
+import * as NormalizationSource from '../constants/NormalizationSource.mjs'
 import * as WitnessType from '../Witness/WitnessType'
 import { EditionWitnessReferencesCleaner } from '../CtData/CtDataCleaner/EditionWitnessReferencesCleaner'
 import { CollationTableConsistencyCleaner } from '../CtData/CtDataCleaner/CollationTableConsistencyCleaner'
-import * as WitnessTokenType from '../Witness/WitnessTokenType'
+import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
 
 import { PdfDownloadUrl } from './PdfDownloadUrl'
 

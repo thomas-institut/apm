@@ -16,7 +16,6 @@ const multipleFontConvDef =[
    }
   ]
 
-
 testSuite('FontConversion', () =>{
    test('Non TextBox', () => {
       let items = [ new Glue(), new Penalty(), new ItemList()]

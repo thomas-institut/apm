@@ -21,7 +21,7 @@ import { CtDataCleaner } from './CtDataCleaner'
 import { deepCopy } from '../../toolbox/Util.mjs'
 import * as CollationTableType from '../../constants/CollationTableType'
 import { Matrix } from '@thomas-inst/matrix'
-import * as TranscriptionTokenType from '../../Witness/WitnessTokenType'
+import * as TranscriptionTokenType from '../../Witness/WitnessTokenType.mjs'
 
 export class CollationTableConsistencyCleaner extends CtDataCleaner {
 

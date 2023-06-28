@@ -134,14 +134,26 @@ class Asserter {
   }
 
   toBe(expectedResult) {
+    if (this.value === undefined) {
+      assert(`${this._getContextMessage()}: test value is undefined`)
+      return
+    }
     assert(`${this._getContextMessage()}expecting ${this.value} to be ${expectedResult}`, this.value === expectedResult)
   }
 
   toBeOfLength(length) {
+    if (this.value === undefined) {
+      assert(`${this._getContextMessage()}: test value is undefined`)
+      return
+    }
     assert(`${this._getContextMessage()}expecting ${this.value} to be of length ${length}, but length is ${this.value.length}`, this.value.length === length)
   }
 
   toContain(value) {
+    if (this.value === undefined) {
+      assert(`${this._getContextMessage()}: test value is undefined`)
+      return
+    }
     if (!Array.isArray(this.value)) {
       assert(`${this._getContextMessage()}expecting ${this.value} to contain ${value}, but ${this.value} is not an array`, false)
       return
@@ -150,6 +162,10 @@ class Asserter {
   }
 
   toBeInstanceOf(someClass) {
+    if (this.value === undefined) {
+      assert(`${this._getContextMessage()}: test value is undefined`)
+      return
+    }
     assert(`${this._getContextMessage()}expecting ${this.value} to be an instance of '${someClass}'`, this.value instanceof someClass)
   }
 
@@ -158,6 +174,10 @@ class Asserter {
    * @param {string}expectedString
    */
   toBeAStringEqualTo(expectedString) {
+    if (this.value === undefined) {
+      assert(`${this._getContextMessage()}: test value is undefined`)
+      return
+    }
     if (typeof this.value !== 'string') {
       assert(`${this._getContextMessage()}expecting ${this.value} to be a string, got a ${typeof this.value}`, false)
       return
@@ -166,6 +186,10 @@ class Asserter {
   }
 
   toBeTrue() {
+    if (this.value === undefined) {
+      assert(`${this._getContextMessage()}: test value is undefined`)
+      return
+    }
     if (typeof this.value !== 'boolean') {
       assert(`${this._getContextMessage()}expecting ${this.value} to be boolean and true, got a ${typeof this.value}`, false)
       return
@@ -174,6 +198,10 @@ class Asserter {
   }
 
   toBeFalse() {
+    if (this.value === undefined) {
+      assert(`${this._getContextMessage()}: test value is undefined`)
+      return
+    }
     if (typeof this.value !== 'boolean') {
       assert(`${this._getContextMessage()}expecting ${this.value} to be boolean and false, got a ${typeof this.value}`, false)
       return

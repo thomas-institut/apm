@@ -16,13 +16,13 @@
  *
  */
 
-import * as TokenType from '../Witness/WitnessTokenType'
+import * as TokenType from '../Witness/WitnessTokenType.mjs'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
 import {ApparatusCommon} from '../EditionComposer/ApparatusCommon.js'
 import * as ApparatusEntryType from './SubEntryType.mjs'
 import * as ApparatusType from './ApparatusType'
-import * as WitnessTokenType from '../Witness/WitnessTokenType'
+import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
 import * as SubEntrySource from './SubEntrySource.mjs'
 import { CtData } from '../CtData/CtData'
 import { Apparatus } from './Apparatus'

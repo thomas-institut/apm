@@ -1,4 +1,4 @@
-import * as WitnessTokenType from '../Witness/WitnessTokenType'
+import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
 import { arraysAreEqual } from '../toolbox/ArrayUtil.mjs'
 import text from 'quill/blots/text'
 

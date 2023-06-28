@@ -20,9 +20,9 @@ import { defaultLanguageDefinition } from '../defaults/languages'
 import * as CollationTableType from '../constants/CollationTableType'
 import * as CollationTableInitStrategy from '../constants/CollationTableConversionInitStrategy'
 import * as WitnessType from '../Witness/WitnessType'
-import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
-import * as TokenClass from '../Witness/WitnessTokenClass'
-import * as NormalizationSource from '../constants/NormalizationSource'
+import * as TranscriptionTokenType from '../Witness/WitnessTokenType.mjs'
+import * as TokenClass from '../Witness/WitnessTokenClass.mjs'
+import * as NormalizationSource from '../constants/NormalizationSource.mjs'
 
 
 import { editModeOff, columnGroupEvent, columnUngroupEvent, TableEditor } from './common/TableEditor'
@@ -44,7 +44,7 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Matrix } from '@thomas-inst/matrix'
 import { ConfirmDialog } from './common/ConfirmDialog'
 import { VERBOSITY_DEBUG_PLUS, WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
-import { FULL_TX } from '../Witness/WitnessTokenClass'
+import { FULL_TX } from '../Witness/WitnessTokenClass.mjs'
 
 // Normalizations
 
@@ -57,7 +57,7 @@ import { IgnoreTatwilNormalizer } from '../normalizers/TokenNormalizer/IgnoreTat
 import { IgnoreIsolatedHamzaNormalizer } from '../normalizers/TokenNormalizer/IgnoreIsolatedHamzaNormalizer'
 import { deepCopy } from '../toolbox/Util.mjs'
 import { CtData } from '../CtData/CtData'
-import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser'
+import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser.mjs'
 import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
 import { EditionViewerSvg } from '../Edition/EditionViewerSvg'
 

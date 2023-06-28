@@ -17,11 +17,11 @@
  */
 
 import { Punctuation} from '../defaults/Punctuation.mjs'
-import { WitnessToken } from '../Witness/WitnessToken'
+import { WitnessToken } from '../Witness/WitnessToken.mjs'
 import { pushArray } from './ArrayUtil.mjs'
 import { NumeralStyles } from './NumeralStyles.mjs'
-import { EditionWitnessToken } from '../Witness/EditionWitnessToken'
-import { IgnoreIntraWordQuotationMark } from '../normalizers/ParserNormalizer/IgnoreIntraWordQuotationMark'
+import { EditionWitnessToken } from '../Witness/EditionWitnessToken.mjs'
+import { IgnoreIntraWordQuotationMark } from '../normalizers/ParserNormalizer/IgnoreIntraWordQuotationMark.mjs'
 
 export class EditionWitnessTokenStringParser {
 
@@ -114,135 +114,138 @@ export class EditionWitnessTokenStringParser {
     }
     if (Punctuation.stringHasPunctuation(word, lang)) {
       // a mix of punctuation and non-punctuation
-      // start a little state machine
-      // TODO: detect matching square brackets and don't generate punctuation for the closing one
-      //  e.g:  'Roma[m]' should be a single word
       methodDebug && console.log(`Word '${word}' is a mix of punctuation a non-punctuation`)
-      let state = 0
-      let tokenArray = []
-      let curWord = ''
-      let nPeriods = 0
-      for (let i = 0; i < chars.length; i++) {
-        let char = chars[i]
-        let insideWord = i>0 && i < chars.length-1
-        methodDebug && console.log(`Processing char ${i}: '${char}', insideWord = ${insideWord}, state = ${state}`)
-        switch(state) {
-          case 0: // start
-            if (char === '.') {
-              nPeriods = 1
-              state = 2
-              break
-            }
-            if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
-              // emit punctuation
-              tokenArray.push( (new WitnessToken()).setPunctuation(char))
-            } else {
-              // accumulate word
-              curWord += char
-              state = 1
-            }
-            break
-
-          case 1: // accumulating word
-            if (char === '.') {
-              state = 3
-              break
-            }
-            if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
-              // emit word
-              tokenArray.push( (new WitnessToken()).setWord(curWord))
-              curWord = ''
-              // emit punctuation
-              tokenArray.push( (new WitnessToken()).setPunctuation(char))
-              state = 0
-            } else {
-              curWord += char
-            }
-            break
-
-          case 2: // accumulating periods
-            if (char === '.') {
-              nPeriods++
-              break
-            }
-            if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
-              // emit dots
-              let periodString = '.'
-              tokenArray.push( (new WitnessToken()).setPunctuation(periodString.repeat(nPeriods)))
-              nPeriods = 0
-              // emit punctuation
-              tokenArray.push( (new WitnessToken()).setPunctuation(char))
-              state = 0
-            } else { // word character
-              // emit dots
-              let periodString = '.'
-              tokenArray.push( (new WitnessToken()).setPunctuation(periodString.repeat(nPeriods)))
-              nPeriods = 0
-              // accumulate
-              curWord += char
-              state = 1
-            }
-            break
-
-          case 3: // period inside a word
-            if (char === '.') { // a second dot
-              // emit word
-              tokenArray.push( (new WitnessToken()).setWord(curWord))
-              curWord = ''
-              // go to state 2, where dots will continue to be accumulated
-              nPeriods = 2
-              state = 2
-              break
-            }
-            if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
-              // emit word
-              tokenArray.push( (new WitnessToken()).setWord(curWord))
-              curWord = ''
-              // emit single dot
-              tokenArray.push( (new WitnessToken()).setPunctuation('.'))
-              nPeriods = 0
-              // emit punctuation
-              tokenArray.push( (new WitnessToken()).setPunctuation(char))
-              state = 0
-            } else { // word character
-              // accumulate dot
-              curWord += '.'
-              // accumulate char
-              curWord += char
-              state = 1
-            }
-            break
-        }
-      }
-      // END
-      switch(state) {
-        case 0:
-          break
-
-        case 1:
-          // emit word
-          tokenArray.push( (new WitnessToken()).setWord(curWord))
-          break
-
-        case 2:
-          // emit dots
-          let dotString = '.'
-          tokenArray.push( (new WitnessToken()).setPunctuation(dotString.repeat(nPeriods)))
-          break
-
-        case 3:
-          // emit word and single dot
-          tokenArray.push( (new WitnessToken()).setWord(curWord))
-          tokenArray.push( (new WitnessToken()).setPunctuation('.'))
-          break
-      }
-
-      return tokenArray
+      return this.parseStringWithPunctuation(word, lang)
     } else {
       // no punctuation at all
       // console.log(`Word '${word}' has no punctuation at all`
       return [ (new WitnessToken()).setWord(word)]
     }
+  }
+
+  static parseStringWithPunctuation(theString, lang, debug = false) {
+    // TODO: detect matching square brackets and don't generate punctuation for the closing one
+    //  e.g:  'Roma[m]' should be a single word
+    let chars = theString.split('')
+    let state = 0
+    let tokenArray = []
+    let curWord = ''
+    let nPeriods = 0
+    for (let i = 0; i < chars.length; i++) {
+      let char = chars[i]
+      let insideWord = i>0 && i < chars.length-1
+      switch(state) {
+        case 0: // start
+          if (char === '.') {
+            nPeriods = 1
+            state = 2
+            break
+          }
+          if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
+            // emit punctuation
+            tokenArray.push( (new WitnessToken()).setPunctuation(char))
+          } else {
+            // accumulate word
+            curWord += char
+            state = 1
+          }
+          break
+
+        case 1: // accumulating word
+          if (char === '.') {
+            state = 3
+            break
+          }
+          if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
+            // emit word
+            tokenArray.push( (new WitnessToken()).setWord(curWord))
+            curWord = ''
+            // emit punctuation
+            tokenArray.push( (new WitnessToken()).setPunctuation(char))
+            state = 0
+          } else {
+            curWord += char
+          }
+          break
+
+        case 2: // accumulating periods
+          if (char === '.') {
+            nPeriods++
+            break
+          }
+          if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
+            // emit dots
+            let periodString = '.'
+            tokenArray.push( (new WitnessToken()).setPunctuation(periodString.repeat(nPeriods)))
+            nPeriods = 0
+            // emit punctuation
+            tokenArray.push( (new WitnessToken()).setPunctuation(char))
+            state = 0
+          } else { // word character
+            // emit dots
+            let periodString = '.'
+            tokenArray.push( (new WitnessToken()).setPunctuation(periodString.repeat(nPeriods)))
+            nPeriods = 0
+            // accumulate
+            curWord += char
+            state = 1
+          }
+          break
+
+        case 3: // period inside a word
+          if (char === '.') { // a second period
+            // emit word
+            tokenArray.push( (new WitnessToken()).setWord(curWord))
+            curWord = ''
+            // go to state 2, where dots will continue to be accumulated
+            nPeriods = 2
+            state = 2
+            break
+          }
+          if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
+            // emit word
+            tokenArray.push( (new WitnessToken()).setWord(curWord))
+            curWord = ''
+            // emit single dot
+            tokenArray.push( (new WitnessToken()).setPunctuation('.'))
+            nPeriods = 0
+            // emit punctuation
+            tokenArray.push( (new WitnessToken()).setPunctuation(char))
+            state = 0
+          } else { // word character
+            // accumulate dot
+            curWord += '.'
+            // accumulate char
+            curWord += char
+            state = 1
+          }
+          break
+      }
+    }
+    // END
+    switch(state) {
+      case 0:
+        break
+
+      case 1:
+        // emit word
+        tokenArray.push( (new WitnessToken()).setWord(curWord))
+        break
+
+      case 2:
+        // emit dots
+        let dotString = '.'
+        tokenArray.push( (new WitnessToken()).setPunctuation(dotString.repeat(nPeriods)))
+        break
+
+      case 3:
+        // emit word and single dot
+        tokenArray.push( (new WitnessToken()).setWord(curWord))
+        tokenArray.push( (new WitnessToken()).setPunctuation('.'))
+        break
+    }
+
+    return tokenArray
   }
 
   /**

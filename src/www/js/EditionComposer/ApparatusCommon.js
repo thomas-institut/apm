@@ -21,7 +21,7 @@
 
 
 import { TypesetterTokenFactory } from '../Typesetter/TypesetterTokenFactory'
-import * as WitnessTokenType from '../Witness/WitnessTokenType'
+import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
 import * as ApparatusSubEntryType from '../Edition/SubEntryType.mjs'
 import { NumeralStyles } from '../toolbox/NumeralStyles.mjs'
 import { FmtText } from '../FmtText/FmtText.mjs'

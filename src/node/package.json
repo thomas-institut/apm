@@ -5,6 +5,7 @@
   "dependencies": {
     "glob": "^10.3.0",
     "node-fetch": "^3.3.0",
-    "node-gtk": "0.10.0"
+    "node-gtk": "0.10.0",
+    "semver": ">=7.5.2"
   }
 }

@@ -57,21 +57,26 @@ export class LanguageDetector {
    * @return {string}
    */
   detectLang(text) {
-
     const scores = {}
 
-    const punctuationRegex = /[.,;\]\[()]/gi
-    const numbersRegex = /[0-9]/gi
+    const punctuationRegex = /[.,;\]\[()-]/gi
+    const latinScriptNumberRegex = /[0-9]/gi
+
+    let punctuationMatches = text.match(punctuationRegex) || []
+    let latinScriptNumberMatches =  text.match(latinScriptNumberRegex) || []
 
     for (const [lang, regex] of Object.entries(regexes)) {
       // detect occurrences of lang in a word
       let matches = text.match(regex) || []
       let numMatches = matches.length
 
+      if (lang === 'la') {
+        // do not include numbers in the total for latin
+        numMatches = matches - latinScriptNumberMatches.length
+      }
+
       if (lang === this.options.defaultLang) {
-        let punctuationMatches = text.match(punctuationRegex) || []
-        let numberMatches = text.match(numbersRegex) || []
-        numMatches = numMatches + punctuationMatches.length + numberMatches.length
+        numMatches = numMatches + punctuationMatches.length + latinScriptNumberMatches.length
       }
 
       let score =numMatches / text.length

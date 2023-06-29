@@ -72,7 +72,7 @@ export class LanguageDetector {
 
       if (lang === 'la') {
         // do not include numbers in the total for latin
-        numMatches = matches - latinScriptNumberMatches.length
+        numMatches -= latinScriptNumberMatches.length
       }
 
       if (lang === this.options.defaultLang) {

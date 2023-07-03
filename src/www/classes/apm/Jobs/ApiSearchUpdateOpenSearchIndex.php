@@ -8,97 +8,91 @@ use APM\System\SystemManager;
 use OpenSearch\ClientBuilder;
 use APM\CommandLine\IndexCreator;
 
-
 class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
 {
     public function run(SystemManager $sm, array $payload): bool
     {
 
-        // FIRST TRY - HOW TO PASS THE PAYLOAD? IndexUpdater would have to be adjusted.
+        $config = $sm->getConfig();
 
-        // exec("./../../../utilities/updateindex");
+        // Instantiate OpenSearch client
+        $this->client = (new ClientBuilder())
+            ->setHosts($config[ApmConfigParameter::OPENSEARCH_HOSTS])
+            ->setBasicAuthentication($config[ApmConfigParameter::OPENSEARCH_USER], $config[ApmConfigParameter::OPENSEARCH_PASSWORD])
+            ->setSSLVerification(false) // For testing only. Use certificate for validation
+            ->build();
 
-        // SECOND TRY – HOW TO REFER TO THE METHODS OF IndexCreator properly?
+        // Name of the index in OpenSearch
+        $this->indexName = 'transcripts';
 
-//        $config = $sm->getConfig();
-//
-//        // Instantiate OpenSearch client
-//        $this->client = (new ClientBuilder())
-//            ->setHosts($config[ApmConfigParameter::OPENSEARCH_HOSTS])
-//            ->setBasicAuthentication($config[ApmConfigParameter::OPENSEARCH_USER], $config[ApmConfigParameter::OPENSEARCH_PASSWORD])
-//            ->setSSLVerification(false) // For testing only. Use certificate for validation
-//            ->build();
-//
-//        // Name of the index in OpenSearch
-//        $this->indexName = 'transcripts';
-//
-//        // Download hebrew language model for lemmatization
-//        exec("python3 ../../../../python/download_model_he.py", $model_status);
-//
-//        // Get data from payload
-//        $doc_id = $payload['doc_id'];
-//        $page = $payload['page'];
-//        $col = $payload['col'];
-//
-//        // Get all indexing-relevant data from the SQL database
-//        $title = IndexCreator::getTitle($doc_id);
-//        $seq = IndexCreator::getSeq($doc_id, $page);
-//        $foliation = IndexCreator::getFoliation($doc_id, $page);
-//        $transcriber = IndexCreator::getTranscriber($doc_id, $page, $col);
-//        $page_id = IndexCreator::getPageID($doc_id, $page);
-//        $lang = IndexCreator::getLang($doc_id, $page);
-//        $transcript = IndexCreator::getTranscript ($doc_id, $page, $col);
-//
-//        // Check if a new transcription was made or an existing one was changed
-//        $transcription_status = $this->transcriptionStatus($this->client, $this->indexName, $doc_id, $page, $col);
-//
-//        // FIRST CASE – Completely new transcription was created
-//        if ($transcription_status['exists'] === 0) {
-//
-//            // Generate unique ID for new entry
-//            $opensearch_id_list = $this->getIDs($this->client, $this->indexName);
-//            $max_id = max($opensearch_id_list);
-//            $opensearch_id = $max_id + 1;
-//
-//            // Add new transcription to index
-//            IndexCreator::indexCol($opensearch_id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
-//
-//        } else { // SECOND CASE – Existing transcription was changed
-//
-//            // Get OpenSearch ID of changed column
-//            $opensearch_id = $transcription_status['id'];
-//
-//            // Tokenize and lemmatize new transcription
-//            $transcript_clean = IndexCreator::encode($transcript);
-//            exec("python3 ../../../../python/Lemmatizer_Indexing.py $lang $transcript_clean", $tokens_and_lemmata);
-//
-//            // Get tokenized and lemmatized transcript
-//            $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
-//            $transcript_lemmatized = explode("#", $tokens_and_lemmata[1]);
-//
-//            // Update index
-//            $this->client->update([
-//                'index' => $this->indexName,
-//                'id' => $opensearch_id,
-//                'body' => [
-//                    'doc' => [
-//                        'title' => $title,
-//                        'page' => $page,
-//                        'seq' => $seq,
-//                        'foliation' => $foliation,
-//                        'column' => $col,
-//                        'pageID' => $page_id,
-//                        'docID' => $doc_id,
-//                        'lang' => $lang,
-//                        'transcriber' => $transcriber,
-//                        'transcript' => $transcript,
-//                        'transcript_tokens' => $transcript_tokenized,
-//                        'transcript_lemmata' => $transcript_lemmatized
-//                    ]
-//                ]
-//            ]);
-//
-//        }
+        // Download hebrew language model for lemmatization
+        exec("python3 ../../python/download_model_he.py", $model_status);
+
+        // Get data from payload
+        $doc_id = $payload['doc_id'];
+        $page = $payload['page'];
+        $col = $payload['col'];
+
+        // Get instance of IndexCreator and all indexing-relevant data from the SQL database
+        $indexcreator = new IndexCreator($config, 0, [0]);
+        $title = $indexcreator->getTitle($doc_id);
+        $seq = $indexcreator->getSeq($doc_id, $page);
+        $foliation = $indexcreator->getFoliation($doc_id, $page);
+        $transcriber = $indexcreator->getTranscriber($doc_id, $page, $col);
+        $page_id = $indexcreator->getPageID($doc_id, $page);
+        $lang = $indexcreator->getLang($doc_id, $page);
+        $transcript = $indexcreator->getTranscript ($doc_id, $page, $col);
+
+        // Check if a new transcription was made or an existing one was changed
+        $transcription_status = $this->transcriptionStatus($this->client, $this->indexName, $doc_id, $page, $col);
+
+        // FIRST CASE – Completely new transcription was created
+        if ($transcription_status['exists'] === 0) {
+
+            // Generate unique ID for new entry
+            $opensearch_id_list = $this->getIDs($this->client, $this->indexName);
+            $max_id = max($opensearch_id_list);
+            $opensearch_id = $max_id + 1;
+
+            // Add new transcription to index
+            $indexcreator->indexCol($this->client, $this->indexName, $opensearch_id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+
+        } else { // SECOND CASE – Existing transcription was changed
+
+            // Get OpenSearch ID of changed column
+            $opensearch_id = $transcription_status['id'];
+
+            // Tokenize and lemmatize new transcription
+            $transcript_clean = $indexcreator->encode($transcript);
+            exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_clean", $tokens_and_lemmata);
+
+            // Get tokenized and lemmatized transcript
+            $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
+            $transcript_lemmatized = explode("#", $tokens_and_lemmata[1]);
+
+            // Update index
+            $this->client->update([
+                'index' => $this->indexName,
+                'id' => $opensearch_id,
+                'body' => [
+                    'doc' => [
+                        'title' => $title,
+                        'page' => $page,
+                        'seq' => $seq,
+                        'foliation' => $foliation,
+                        'column' => $col,
+                        'pageID' => $page_id,
+                        'docID' => $doc_id,
+                        'lang' => $lang,
+                        'transcriber' => $transcriber,
+                        'transcript' => $transcript,
+                        'transcript_tokens' => $transcript_tokenized,
+                        'transcript_lemmata' => $transcript_lemmatized
+                    ]
+                ]
+            ]);
+
+        }
             return true;
     }
 
@@ -174,7 +168,7 @@ class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
         if ($exists === 1) {
             $opensearch_id = $query['hits']['hits'][0]['_id'];
         } else {
-            $opensearch_id = 'None';
+            $opensearch_id = 'null';
         }
 
         return ['exists' => $exists, 'id' => $opensearch_id];

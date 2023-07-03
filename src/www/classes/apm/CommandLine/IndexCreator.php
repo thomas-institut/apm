@@ -123,7 +123,7 @@ class IndexCreator extends CommandLineUtility {
                     // Add data to the OpenSearch index with a unique id
                     $id = $id + 1;
 
-                    $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+                    $this->indexCol($this->client, $this->indexName, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
                 }
             }
         }
@@ -208,7 +208,7 @@ class IndexCreator extends CommandLineUtility {
     }
 
     // Function to add pages to the OpenSearch index
-    public function indexCol (string $id, string $title, string $page, string $seq, string $foliation, string $col, string $transcriber,
+    public function indexCol ($client, string $indexName, string $id, string $title, string $page, string $seq, string $foliation, string $col, string $transcriber,
                                  string $page_id, string $doc_id, string $transcript, string $lang): bool {
 
         // Encode transcript for avoiding errors in exec shell command because of characters like "(", ")" or " "
@@ -233,8 +233,8 @@ class IndexCreator extends CommandLineUtility {
             }
 
             // Data to be stored on the OpenSearch index
-        $this->client->create([
-            'index' => $this->indexName,
+        $client->create([
+            'index' => $indexName,
             'id' => $id,
             'body' => [
                 'title' => $title,

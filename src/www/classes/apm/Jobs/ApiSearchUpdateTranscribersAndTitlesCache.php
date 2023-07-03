@@ -5,7 +5,6 @@ namespace APM\Jobs;
 use APM\Api\ApiSearch;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
-use Psr\Container\ContainerInterface;
 
 class ApiSearchUpdateTranscribersAndTitlesCache implements JobHandlerInterface
 

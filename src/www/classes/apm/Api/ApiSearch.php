@@ -64,7 +64,7 @@ class ApiSearch extends ApiController
         // Count tokens
         $num_tokens = count($tokens_for_query);
 
-        // Query index for the longest token in tokens_for_query – additional tokens will be handled below
+        // Query index for the first token in tokens_for_query – additional tokens will be handled below
         try {
             $query = $this->makeOpenSearchQuery($client, $index_name, $doc_title, $transcriber, $first_token_for_query, $lemmatize);
         } catch (\Exception $e) {
@@ -84,7 +84,7 @@ class ApiSearch extends ApiController
         // Get all information about the matched columns, including passages with the matched token as lists of tokens
         $data = $this->getData($query, $first_token_for_query, $tokens_for_query, $lemmata, $radius, $lemmatize);
 
-        // Until now, only the longest token in the searched phrase was handled
+        // Until now, only the first token in the searched phrase was handled
         // So, if there is more than one token in the searched phrase, now filter out all columns and passages, which do not match all tokens
         if ($num_tokens !== 1) {
             for ($i=1; $i<$num_tokens; $i++) {
@@ -634,7 +634,7 @@ class ApiSearch extends ApiController
         // Instantiate OpenSearch client
         try {
             $client = self::instantiateClient($systemManager);
-        } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
+        } catch (Exception $e) {
             return false;
         }
 

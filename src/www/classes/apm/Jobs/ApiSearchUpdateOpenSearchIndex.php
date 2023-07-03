@@ -7,20 +7,28 @@ use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
 use OpenSearch\ClientBuilder;
 use APM\CommandLine\IndexCreator;
+use PHPUnit\Util\Exception;
 
 class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
 {
     public function run(SystemManager $sm, array $payload): bool
     {
 
+        // Get logger and config data
+        $logger = $sm->getLogger();
         $config = $sm->getConfig();
 
         // Instantiate OpenSearch client
-        $this->client = (new ClientBuilder())
-            ->setHosts($config[ApmConfigParameter::OPENSEARCH_HOSTS])
-            ->setBasicAuthentication($config[ApmConfigParameter::OPENSEARCH_USER], $config[ApmConfigParameter::OPENSEARCH_PASSWORD])
-            ->setSSLVerification(false) // For testing only. Use certificate for validation
-            ->build();
+        try {
+            $this->client = (new ClientBuilder())
+                ->setHosts($config[ApmConfigParameter::OPENSEARCH_HOSTS])
+                ->setBasicAuthentication($config[ApmConfigParameter::OPENSEARCH_USER], $config[ApmConfigParameter::OPENSEARCH_PASSWORD])
+                ->setSSLVerification(false) // For testing only. Use certificate for validation
+                ->build();
+        } catch (Exception $e) {
+            $logger->debug('Connecting to OpenSearch server failed.');
+            return false;
+        }
 
         // Name of the index in OpenSearch
         $this->indexName = 'transcripts';
@@ -34,7 +42,7 @@ class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
         $col = $payload['col'];
 
         // Get instance of IndexCreator and all indexing-relevant data from the SQL database
-        $indexcreator = new IndexCreator($config, 0, [0]);
+        $indexcreator = new IndexCreator($config, 0, [0]); // HERE I AM UNSURE | The arguments are necessary, because IndexCreator is designed to be executed as a command line function, but not used here.
         $title = $indexcreator->getTitle($doc_id);
         $seq = $indexcreator->getSeq($doc_id, $page);
         $foliation = $indexcreator->getFoliation($doc_id, $page);
@@ -63,8 +71,8 @@ class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
             $opensearch_id = $transcription_status['id'];
 
             // Tokenize and lemmatize new transcription
-            $transcript_clean = $indexcreator->encode($transcript);
-            exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_clean", $tokens_and_lemmata);
+            $transcript_encoded = $indexcreator->encode($transcript);
+            exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_encoded", $tokens_and_lemmata);
 
             // Get tokenized and lemmatized transcript
             $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
@@ -96,7 +104,7 @@ class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
             return true;
     }
 
-    // Function to get a full list of OpenSearch-IDs in the index
+    // Function to get a full list of all OpenSearch-IDs in the index
     protected function getIDs ($client, string $index_name): array
     {
 
@@ -125,7 +133,7 @@ class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
         return $opensearch_ids;
     }
 
-    // Function to query a given OpenSearch-index
+    // Function to check if a transcript already exists in a given OpenSearch-index – if yes, returns also its OpenSearch-ID
     protected function transcriptionStatus ($client, string $index_name, string $doc_id, string $page, string $col): array
     {
 

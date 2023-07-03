@@ -27,7 +27,7 @@ use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
 
 /**
- * Description of IndexDocs
+ * Description of IndexCreator
  *
  * Commandline utility to create an index of all transcripts in OpenSearch based on a sql-database
  * Transcript will be lemmatized before indexing. All relevant data and metadata will be indexed.
@@ -212,12 +212,12 @@ class IndexCreator extends CommandLineUtility {
                                  string $page_id, string $doc_id, string $transcript, string $lang): bool {
 
         // Encode transcript for avoiding errors in exec shell command because of characters like "(", ")" or " "
-        $transcript_clean = $this->encode($transcript);
+        $transcript_encoded = $this->encode($transcript);
 
         // Tokenization and lemmatization
         // Test existence of transcript and tokenize/lemmatize existing transcripts in python
-        if (strlen($transcript_clean) > 3) {
-                exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_clean", $tokens_and_lemmata);
+        if (strlen($transcript_encoded) > 3) {
+                exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_encoded", $tokens_and_lemmata);
 
                 // Get tokenized and lemmatized transcript
                 $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
@@ -260,60 +260,60 @@ class IndexCreator extends CommandLineUtility {
     public function encode(string $transcript): string {
 
         // Replace line breaks, blanks, brackets...these character can provoke errors in the exec-command
-        $transcript_clean = str_replace("\n", "#", $transcript);
-        $transcript_clean = str_replace(".", " .", $transcript_clean);
-        $transcript_clean = str_replace(",", " ,", $transcript_clean);
-        $transcript_clean = str_replace(" ", "#", $transcript_clean);
-        $transcript_clean = str_replace("(", "%", $transcript_clean);
-        $transcript_clean = str_replace(")", "§", $transcript_clean);
-        $transcript_clean = str_replace("׳", "€", $transcript_clean);
-        $transcript_clean = str_replace("'", "\'", $transcript_clean);
-        $transcript_clean = str_replace("\"", "\\\"", $transcript_clean);
-        $transcript_clean = str_replace(' ', '#', $transcript_clean);
-        $transcript_clean = str_replace(' ', '#', $transcript_clean);
-        $transcript_clean = str_replace('T.', '', $transcript_clean);
-        $transcript_clean = str_replace('|', '+', $transcript_clean);
-        $transcript_clean = str_replace('<', '°', $transcript_clean);
-        $transcript_clean = str_replace('>', '^', $transcript_clean);
-        $transcript_clean = str_replace(';', 'ß', $transcript_clean);
-        $transcript_clean = str_replace('`', '~', $transcript_clean);
-        $transcript_clean = str_replace('[', '', $transcript_clean);
-        $transcript_clean = str_replace(']', '', $transcript_clean);
+        $transcript_encoded = str_replace("\n", "#", $transcript);
+        $transcript_encoded = str_replace(".", " .", $transcript_encoded);
+        $transcript_encoded = str_replace(",", " ,", $transcript_encoded);
+        $transcript_encoded = str_replace(" ", "#", $transcript_encoded);
+        $transcript_encoded = str_replace("(", "%", $transcript_encoded);
+        $transcript_encoded = str_replace(")", "§", $transcript_encoded);
+        $transcript_encoded = str_replace("׳", "€", $transcript_encoded);
+        $transcript_encoded = str_replace("'", "\'", $transcript_encoded);
+        $transcript_encoded = str_replace("\"", "\\\"", $transcript_encoded);
+        $transcript_encoded = str_replace(' ', '#', $transcript_encoded);
+        $transcript_encoded = str_replace(' ', '#', $transcript_encoded);
+        $transcript_encoded = str_replace('T.', '', $transcript_encoded);
+        $transcript_encoded = str_replace('|', '+', $transcript_encoded);
+        $transcript_encoded = str_replace('<', '°', $transcript_encoded);
+        $transcript_encoded = str_replace('>', '^', $transcript_encoded);
+        $transcript_encoded = str_replace(';', 'ß', $transcript_encoded);
+        $transcript_encoded = str_replace('`', '~', $transcript_encoded);
+        $transcript_encoded = str_replace('[', '', $transcript_encoded);
+        $transcript_encoded = str_replace(']', '', $transcript_encoded);
 
 
         // Remove numbers
         for ($i=0; $i<10; $i++) {
-            $transcript_clean = str_replace("$i", '', $transcript_clean);
+            $transcript_encoded = str_replace("$i", '', $transcript_encoded);
         }
 
         // Remove repetitions of hashtags
-        while (strpos($transcript_clean, '##') !== false) {
-            $transcript_clean = str_replace('##', '#', $transcript_clean);
+        while (strpos($transcript_encoded, '##') !== false) {
+            $transcript_encoded = str_replace('##', '#', $transcript_encoded);
         }
 
         // Remove repetitions of periods
-        while (strpos($transcript_clean, '.#.') !== false) {
-            $transcript_clean = str_replace('.#.', '', $transcript_clean);
+        while (strpos($transcript_encoded, '.#.') !== false) {
+            $transcript_encoded = str_replace('.#.', '', $transcript_encoded);
         }
 
-        while (strpos($transcript_clean, '..') !== false) {
-            $transcript_clean = str_replace('..', '', $transcript_clean);
+        while (strpos($transcript_encoded, '..') !== false) {
+            $transcript_encoded = str_replace('..', '', $transcript_encoded);
         }
 
         // Remove repetitions of hashtags again (in the foregoing steps could be originated new ones..)
-        while (strpos($transcript_clean, '##') !== false) {
-            $transcript_clean = str_replace('##', '#', $transcript_clean);
+        while (strpos($transcript_encoded, '##') !== false) {
+            $transcript_encoded = str_replace('##', '#', $transcript_encoded);
         }
 
         // Transcript should not begin or end with hashtag
-        if (substr($transcript_clean, 0, 1) === '#') {
-                $transcript_clean = substr($transcript_clean, 1);
+        if (substr($transcript_encoded, 0, 1) === '#') {
+                $transcript_encoded = substr($transcript_encoded, 1);
             }
 
-        if (substr($transcript_clean, -1, 1) === '#') {
-            $transcript_clean = substr($transcript_clean, 0, -1);
+        if (substr($transcript_encoded, -1, 1) === '#') {
+            $transcript_encoded = substr($transcript_encoded, 0, -1);
             }
 
-        return $transcript_clean;
+        return $transcript_encoded;
     }
 }

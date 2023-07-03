@@ -5,7 +5,7 @@
 {% block finalBodyJS %}
     <script>
 
-      // Array to save search results in to have them available for zooming without make a new query
+      // Array to save search results in for having them available for users' zoom actions without making a new query
       let data_for_zooming = []
 
       // Setup event listeners
@@ -15,7 +15,6 @@
         let keywords_box = $("#keywordBox")
         let lemmatization_box = $("#lemmatize")
         // let edition_mode = $("#edition_mode")
-        // let search_table = $("#searchTable")
 
         // Get selector for signaling errors to user
         let errorMessageDiv = $("#error_message")
@@ -253,7 +252,7 @@
               let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, positions[j], radius, zoom[k])
 
               // Fill table with results - layout depends slightly on the language of the transcripts
-              fillResultsTableBody(passage, title, foliation, transcriber, link, lang, zoom, prev_title, k)
+              fillResultsTable(passage, title, foliation, transcriber, link, lang, zoom, prev_title, k)
               prev_title = title
             }
           }
@@ -268,7 +267,6 @@
 
         // Get the relevant data
         let tokens_matched = data[index-1]['tokens_matched']
-        // let passages = data[index-1]['passage_tokenized']
         let transcript_tokenized = data[index-1]['transcript_tokenized']
         let position = data[index-1]['position']
 
@@ -359,7 +357,7 @@
         return text
       }
       
-      function fillResultsTableBody(passage, title, foliation, transcriber, link, lang, zoom, prev_title=' ', k) {
+      function fillResultsTable(passage, title, foliation, transcriber, link, lang, zoom, prev_title=' ', k) {
 
         // Get selector
         let results_body = $("#resultsTable tbody")

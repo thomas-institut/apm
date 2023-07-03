@@ -837,9 +837,10 @@ export class EditionTypesetting {
 
       case 'detect':
         items.forEach((item) => {
-          if (item instanceof TextBox ) {
-            return this.__detectAndSetTextBoxTextDirection(item)
-          }
+          // if (item instanceof TextBox ) {
+          //   return this.__detectAndSetTextBoxTextDirection(item)
+          // }
+          item.setTextDirection('')  // the typesetter will set the right text direction later
           return item
         })
         break

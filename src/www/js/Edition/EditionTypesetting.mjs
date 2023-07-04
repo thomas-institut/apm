@@ -9,7 +9,13 @@ import * as ListType from '../Typesetter2/ListType.mjs'
 import { Glue } from '../Typesetter2/Glue.mjs'
 import * as MainTextTokenType from './MainTextTokenType.mjs'
 import { TextBox } from '../Typesetter2/TextBox.mjs'
-import { Penalty } from '../Typesetter2/Penalty.mjs'
+import {
+  BAD_POINT_FOR_A_BREAK,
+  GOOD_POINT_FOR_A_BREAK, INFINITE_PENALTY,
+  MINUS_INFINITE_PENALTY,
+  Penalty,
+  REALLY_BAD_POINT_FOR_A_BREAK
+} from '../Typesetter2/Penalty.mjs'
 import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
 import { getTextDirectionForLang, isRtl, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
@@ -60,19 +66,8 @@ export class EditionTypesetting {
     this.textBoxMeasurer = this.options.textBoxMeasurer
 
     this.ss = this.options.editionStyleSheet
-    // console.log(`Stylesheet`)
-    // console.log(this.ss)
-    // this.ss = new StyleSheet(defaultStyleSheet, this.textBoxMeasurer)
-    // this.editionStyle = defaultEditionStyles[this.options.editionStyleName]
-    // this.ss.merge(this.editionStyle.formattingStyles)
-    // this.debug && console.log(`Stylesheet`)
-    // this.debug && console.log(this.ss.getStyleDefinitions())
     this.editionStyle = this.ss.getStyleDefinitions()
     this.fontConversionDefinitions = this.ss.getFontConversionDefinitions()
-    // if (this.fontConversionDefinitions.length !== 0) {
-    //   console.log(`Using font conversions`)
-    //   console.log(this.fontConversionDefinitions)
-    // }
     this.tokenRenderer = new Typesetter2StyleSheetTokenRenderer({
       styleSheet: this.editionStyle,
       defaultTextDirection: this.textDirection,
@@ -197,7 +192,6 @@ export class EditionTypesetting {
    */
   generateApparatusVerticalListToTypeset(typesetMainTextVerticalList, apparatus, firstLine = 1, lastLine= MAX_LINE_COUNT) {
     return new Promise( async (resolve) => {
-      // this.debug && console.log(`Getting vertical list for apparatus '${apparatus.type}, line ${firstLine} to ${lastLine === MAX_LINE_COUNT ? 'end' : lastLine}`)
 
       let textDirection = getTextDirectionForLang(this.edition.lang)
       let outputList = new ItemList(TypesetterItemDirection.HORIZONTAL)
@@ -206,21 +200,15 @@ export class EditionTypesetting {
         resolve(outputList)
         return
       }
-      // let profiler = new BasicProfiler('ApparatusTypesetting')
-      // profiler.start()
-      if (this.extractedMetadataInfo === undefined) {
 
+      if (this.extractedMetadataInfo === undefined) {
         // Generate apparatus information for this and future apparatus typesetting requests
         this.extractedMetadataInfo = this.__extractLineInfoFromMetadata(typesetMainTextVerticalList)
-        // this.debug && console.log(`Line info from metadata`)
-        // this.debug && console.log(this.extractedMetadataInfo)
         this.mainTextIndices = this.extractedMetadataInfo.map((info) => { return info.mainTextIndex})
         // reset apparatus data
         this.appEntries = {}
         this.lineRanges = {}
-        // profiler.lap('extracted metadata info')
       }
-
 
       if (this.extractedMetadataInfo.length === 0) {
         this.debug && console.log(`No line info in metadata, nothing to typeset for apparatus ${apparatus.type}`)
@@ -233,10 +221,8 @@ export class EditionTypesetting {
       let entrySeparatorCharacter = strings['entrySeparator']
 
       if (this.appEntries[apparatus.type] === undefined) {
-        // this.debug && console.log(`Apparatus '${apparatus.type}' with ${apparatus.entries.length} entries in total.`)
         let minMainTextIndex = this.extractedMetadataInfo[0].mainTextIndex
         let maxMainTextIndex = this.extractedMetadataInfo[this.extractedMetadataInfo.length - 1].mainTextIndex
-        // this.debug && console.log(` - MainText from index ${minMainTextIndex} to index ${maxMainTextIndex}`)
 
         this.appEntries[apparatus.type] = apparatus.entries.filter( (entry) => {
           return (entry.from >= minMainTextIndex && entry.from <= maxMainTextIndex)
@@ -250,7 +236,6 @@ export class EditionTypesetting {
           }
           return thereAreEnabledSubEntries
         })
-        // this.debug && console.log(` - ${this.appEntries[apparatus.type].length} apparatus entries to typeset in total`)
         // get lines for each entry
         let entriesWithLineInfo = this.appEntries[apparatus.type].map ( (entry) => {
           let lineFrom = this.__getLineForMainTextIndex(entry.from)
@@ -276,10 +261,6 @@ export class EditionTypesetting {
           this.lineRanges[apparatus.type][entryWithLineInfo.key].entries.push(entryWithLineInfo.entry)
         })
 
-        // this.debug && console.log(`Line Ranges for apparatus '${apparatus.type}'`)
-        // this.debug && console.log(this.lineRanges[apparatus.type])
-        // profiler.lap('line ranges calculated')
-
         // build items list for every line range
         let lineRangesKeys = Object.keys(this.lineRanges[apparatus.type])
         for (let lineRangeKeyIndex = 0; lineRangeKeyIndex < lineRangesKeys.length; lineRangeKeyIndex++) {
@@ -287,9 +268,8 @@ export class EditionTypesetting {
           let items = []
           // line number
           pushArray(items, await this._getTsItemsFromStr(this.__getLineStringFromRange(lineRange.lineFrom, lineRange.lineTo), 'apparatus apparatusLineNumbers', textDirection))
-          // TODO: change this to a penalty
-          let glue = await this.__createNormalSpaceGlue('apparatus')
-          items.push( (new Box()).setWidth(glue.getWidth()))
+          items.push(this.__createPenalty(INFINITE_PENALTY))
+          items.push(await this.__createNormalSpaceGlue('apparatus'))
 
           for (let entryIndex = 0; entryIndex<lineRange.entries.length; entryIndex++) {
             let entry = lineRange.entries[entryIndex]
@@ -301,10 +281,7 @@ export class EditionTypesetting {
             pushArray(items, await this._getTsItemsForPostLemma(entry))
             // separator
             let separatorItems = await this._getTsItemsForSeparator(entry)
-            // if (separatorItems.length !== 0) {
-            //   console.log(`Added separator items`)
-            //   console.log(separatorItems)
-            // }
+
             pushArray(items, separatorItems)
             // typeset sub entries
             for (let subEntryIndex = 0; subEntryIndex < entry.subEntries.length; subEntryIndex++) {
@@ -318,17 +295,22 @@ export class EditionTypesetting {
               }
             }
             if (entryIndex !== lineRange.entries.length -1) {
+              items.push(this.__createPenalty(INFINITE_PENALTY))  // do not break just before the entry separator
               items.push((await this.__createNormalSpaceGlue('apparatus preEntrySeparator')).setTextDirection(textDirection))
               pushArray(items, await this._getTsItemsFromStr(entrySeparatorCharacter, 'apparatus entrySeparator', textDirection))
+              items.push(this.__createPenalty(GOOD_POINT_FOR_A_BREAK))
               items.push((await this.__createNormalSpaceGlue('apparatus postEntrySeparator')).setTextDirection(textDirection))
             }
           }
+
+          items.push(this.__createPenalty(INFINITE_PENALTY))  // do not break just before the lineRange separator
           items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
           pushArray(items, await this._getTsItemsFromStr(lineRangeSeparatorCharacter, 'apparatus lineRangeSeparator', textDirection))
+
+          items.push(this.__createPenalty(GOOD_POINT_FOR_A_BREAK)) // right after the line separator is a good place to break the line
           items.push((await this.__createNormalSpaceGlue('apparatus postLineRangeSeparator')).setTextDirection(textDirection))
           lineRange.tsItemsExportObjects = items.map( (item) => { return item.getExportObject()})
         }
-        // profiler.lap('line ranges typeset')
       }
 
 
@@ -560,6 +542,7 @@ export class EditionTypesetting {
       switch(subEntry.type) {
         case 'variant':
           pushArray(items, this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect'))
+          items.push(this.__createPenalty(BAD_POINT_FOR_A_BREAK))
           items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           pushArray(items, await this._getTsItemsForSigla(subEntry))
           break
@@ -572,6 +555,7 @@ export class EditionTypesetting {
           items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           if (subEntry.type === 'addition') {
             pushArray(items, this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect'))
+            items.push(this.__createPenalty(BAD_POINT_FOR_A_BREAK))
             items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           }
           pushArray(items, await this._getTsItemsForSigla(subEntry))
@@ -586,19 +570,10 @@ export class EditionTypesetting {
             items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           }
 
-          // first, make sure that sigla class fmt text does not have bold or italic formatting
-          // let fmtText = []
-          // for (let i=0; i < subEntry.fmtText.length; i++) {
-          //   let token = subEntry.fmtText[i]
-          //   if (token.classList === 'sigla') {
-          //     token.fontWeight = ''
-          //     token.fontStyle = ''
-          //   }
-          //   fmtText.push(token)
-          // }
           let fullCustomItems  = this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect')
           pushArray(items, fullCustomItems)
           if (subEntry.witnessData.length !== 0) {
+            items.push(this.__createPenalty(BAD_POINT_FOR_A_BREAK))
             items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
             pushArray(items, await this._getTsItemsForSigla(subEntry))
           }
@@ -766,6 +741,10 @@ export class EditionTypesetting {
     return (new Box()).setWidth(styleDef.indent).setTextDirection(textDirection)
   }
 
+   __createPenalty(value) {
+    return (new Penalty()).setPenalty(value)
+   }
+
    __createNormalSpaceGlue(style) {
     return new Promise( (resolve) => {
       this.ss.apply( new Glue(), style).then( (glue) => {
@@ -837,9 +816,10 @@ export class EditionTypesetting {
 
       case 'detect':
         items.forEach((item) => {
-          if (item instanceof TextBox ) {
-            return this.__detectAndSetTextBoxTextDirection(item)
-          }
+          // if (item instanceof TextBox ) {
+          //   return this.__detectAndSetTextBoxTextDirection(item)
+          // }
+          item.setTextDirection('')  // the typesetter will set the right text direction later
           return item
         })
         break

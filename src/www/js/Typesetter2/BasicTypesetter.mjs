@@ -38,6 +38,8 @@ import { StringCounter } from '../toolbox/StringCounter.mjs'
 import { trimPunctuation } from '../defaults/Punctuation.mjs'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { MAX_LINE_COUNT } from '../Edition/EditionTypesetting.mjs'
+import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
+import { BidiDisplayOrder } from './BidiDisplayOrder.mjs'
 
 const signature = 'BasicTypesetter 0.1'
 
@@ -208,7 +210,7 @@ export class BasicTypesetter extends Typesetter2 {
           return item
         }))
 
-        // adjust glue
+        // adjust glue  (i.e., justify the text within the line
         let adjRatio = LineBreaker.calculateAdjustmentRatio(line.getList(), this.lineWidth)
         line.addMetadata(MetadataKey.ADJUSTMENT_RATIO, adjRatio)
         let unadjustedLineWidth = line.getWidth()
@@ -227,8 +229,10 @@ export class BasicTypesetter extends Typesetter2 {
         }
         line.addMetadata(MetadataKey.LINE_RATIO, toFixedPrecision(line.getWidth() / unadjustedLineWidth, 3))
 
-        // take care of rtl text
-        line = this.__reorderReversedDirectionText(line)
+        // At this point the line contains a list of items in textual order, independently of their text direction
+        // Renderers, however, need to the items in display order, so they can simply iterate on the list, display
+        // an item, move the current position to the right (or left for RTL text) and process the next.
+        line = this.arrangeItemsInDisplayOrderNew(line)
         return line
       })
 
@@ -762,14 +766,59 @@ export class BasicTypesetter extends Typesetter2 {
      return trimPunctuation(text.toLowerCase())
   }
 
+
+  getItemIntrinsicTextDirection(item) {
+    if (item instanceof TextBox) {
+      if (item.getTextDirection() === '') {
+        // text direction not set, let's calculate it!
+        let ld = new LanguageDetector()
+        return ld.detectTextDirection(item.getText())
+      } else {
+        return  item.getTextDirection
+      }
+    }
+    // not a TextBox
+    return item.getTextDirection()
+  }
+
+  arrangeItemsInDisplayOrderNew(line) {
+    let originalLineItems = line.getList()
+    let lineTextDirection = line.getTextDirection()
+    let newOrderInfoArray = BidiDisplayOrder.getDisplayOrder(originalLineItems, lineTextDirection, (item) => {
+      return this.getItemIntrinsicTextDirection(item)
+    })
+    let hasReorderedItems = false
+    let newItems = []
+    let originalOrder = newOrderInfoArray.map( () => { return -1})
+    for (let i = 0; i < newOrderInfoArray.length; i++ ) {
+      let newOrderInfo = newOrderInfoArray[i]
+      if (newOrderInfo.inputIndex !== i) {
+        hasReorderedItems = true
+      }
+      let item = originalLineItems[newOrderInfo.inputIndex]
+      item.setTextDirection(newOrderInfo.textDirection)
+      if (hasReorderedItems) {
+        item.addMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX, i)
+      }
+      originalOrder[i] = newOrderInfo.inputIndex
+      newItems.push(item)
+    }
+    line.setList(newItems)
+    if (hasReorderedItems) {
+      line.addMetadata(MetadataKey.HAS_REVERSE_TEXT, true)
+      line.addMetadata(MetadataKey.HAS_REORDERED_ITEMS, true)
+      line.addMetadata(MetadataKey.ORIGINAL_ITEM_ORDER, originalOrder)
+    }
+    return line
+  }
+
   /**
    *
    * @param {ItemList}line
    * @return {ItemList}
    * @private
    */
-  __reorderReversedDirectionText(line) {
-
+  arrangeItemsInDisplayOrder(line) {
     let state = 0
     let orderedTokenIndices = []
     let reverseStack = []

@@ -168,7 +168,7 @@ export function capitalizeFirstLetter(string) {
 }
 
 
-export function getTextDirectionForLang(lang) {
+export function  getTextDirectionForLang(lang) {
   switch(lang) {
     case 'ar':
     case 'he':
@@ -200,6 +200,19 @@ export function hashCodeInt32(str){
 export function toFixedPrecision(someNumber, decimals) {
   let factor = Math.pow(10, decimals)
   return Math.floor(someNumber*factor) / factor
+}
+
+
+export function isWhiteSpace(str) {
+  return trimWhiteSpace(str) === ''
+}
+
+export function isAllUpperCase(str) {
+  return str === str.toUpperCase()
+}
+
+export function isNumeric(someString) {
+  return (/^[0-9]/.test(someString))
 }
 
 

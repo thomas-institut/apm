@@ -1,6 +1,11 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
+import { isNumeric } from './Util.mjs'
 
+const punctuationRegex = /[.,;\]\[()]/gi
+const latinScriptNumberRegex = /[0-9]/gi
 
+// Based on http://www.unicode.org/Public/UNIDATA/extracted/DerivedBidiClass.txt
+const ltrRegex = /[\u0041-\u005a\u0061-\u007a\u00aa\u00b5\u00ba\u00c0-\u00d6\u00d8-\u00f6\u00f8-\u02b8\u02bb-\u02c1]/gi
 
 const regexes = {
   'la': /[\u0000-\u007F]/gi,
@@ -26,7 +31,41 @@ export class LanguageDetector {
     }
 
     let oc = new OptionsChecker({ optionsDefinition: optionsSpec, context: 'LanguageDetector'})
-    this.options = oc.getCleanOptions(options)
+    let cleanOptions = oc.getCleanOptions(options)
+    this.defaultLang = cleanOptions.defaultLang
+  }
+
+  setDefaultLang(lang) {
+    this.defaultLang = lang
+  }
+
+  /**
+   * Detects the intrinsic text direction of the given string
+   * If the string is direction-neutral, e.g., punctuation or latin numbers,
+   * returns '', otherwise  returns 'rtl', 'ltr' or 'en'
+   * @param word
+   */
+  detectTextDirection(word) {
+    // common neutral characters
+    const neutralCharacters = [ '[', ']', '(', ')', '{', '}', '«', '»', '.', ',', ';', '...', '"', ' ']
+    if (neutralCharacters.indexOf(word) !== -1) {
+      return ''
+    }
+    if (isNumeric(word)) {
+      return 'en'
+    }
+
+    let lang = this.detectLang(word)
+    if (lang === 'ar' || lang === 'he') {
+      return 'rtl'
+    }
+    return 'ltr'
+  }
+
+  getIntrinsicDirectionForChar(char) {
+    // only deal with first character in the string
+    let ch = char.charAt(0)
+
   }
 
   detectScript(text, ignorePunctuation = true) {
@@ -35,8 +74,6 @@ export class LanguageDetector {
       let matches = text.match(regex) || []
       let numMatches = matches.length
       if (ignorePunctuation) {
-        // TODO: make this more accurate!
-        const punctuationRegex = /[.,;\]\[()]/gi
         let punctuationMatches = text.match(punctuationRegex) || []
         numMatches += punctuationMatches.length
       }
@@ -59,8 +96,7 @@ export class LanguageDetector {
   detectLang(text) {
     const scores = {}
 
-    const punctuationRegex = /[.,;\]\[()-]/gi
-    const latinScriptNumberRegex = /[0-9]/gi
+
 
     let punctuationMatches = text.match(punctuationRegex) || []
     let latinScriptNumberMatches =  text.match(latinScriptNumberRegex) || []
@@ -75,7 +111,7 @@ export class LanguageDetector {
         numMatches -= latinScriptNumberMatches.length
       }
 
-      if (lang === this.options.defaultLang) {
+      if (lang === this.defaultLang) {
         numMatches = numMatches + punctuationMatches.length + latinScriptNumberMatches.length
       }
 
@@ -92,7 +128,7 @@ export class LanguageDetector {
 
     // not detected
     if (Object.keys(scores).length === 0)
-      return this.options.defaultLang
+      return this.defaultLang
 
     // pick lang with the highest percentage
     return Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b)

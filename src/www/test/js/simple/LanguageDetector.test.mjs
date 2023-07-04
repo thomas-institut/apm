@@ -1,6 +1,51 @@
 import { expect, test, testSuite } from '../../../js/SimpleUnitTest/SimpleUnitTest.mjs'
+import { LanguageDetector } from '../../../js/toolbox/LanguageDetector.mjs'
 
 
 testSuite('Language Detector', () => {
 
+  test('Simple Strings', () => {
+    let ld = new LanguageDetector({defaultLang: 'la'})
+
+    expect( ld.detectLang('Roma')).toBeAStringEqualTo('la')
+    expect( ld.detectLang('1971')).toBeAStringEqualTo('la')
+    expect( ld.detectLang('1971.')).toBeAStringEqualTo('la')
+    expect( ld.detectLang('גשגכש')).toBeAStringEqualTo('he')
+    expect( ld.detectLang('גשגכש.')).toBeAStringEqualTo('he')
+    expect( ld.detectLang('شيبشسيب')).toBeAStringEqualTo('ar')
+    expect( ld.detectLang('شيبشسيب.')).toBeAStringEqualTo('ar')
+
+    ld.setDefaultLang('he')
+    expect( ld.detectLang('Roma')).toBeAStringEqualTo('la')
+    expect( ld.detectLang('1971')).toBeAStringEqualTo('he')
+    expect( ld.detectLang('1971.')).toBeAStringEqualTo('he')
+    expect( ld.detectLang('גשגכש')).toBeAStringEqualTo('he')
+    expect( ld.detectLang('גשגכש.')).toBeAStringEqualTo('he')
+    expect( ld.detectLang('شيبشسيب')).toBeAStringEqualTo('ar')
+    expect( ld.detectLang('شيبشسيب.')).toBeAStringEqualTo('ar')
+
+    ld.setDefaultLang('ar')
+    expect( ld.detectLang('Roma')).toBeAStringEqualTo('la')
+    expect( ld.detectLang('1971')).toBeAStringEqualTo('ar')
+    expect( ld.detectLang('1971.')).toBeAStringEqualTo('ar')
+    expect( ld.detectLang('גשגכש')).toBeAStringEqualTo('he')
+    expect( ld.detectLang('גשגכש.')).toBeAStringEqualTo('he')
+    expect( ld.detectLang('شيبشسيب')).toBeAStringEqualTo('ar')
+    expect( ld.detectLang('شيبشسيب.')).toBeAStringEqualTo('ar')
+  })
+
+  test('Direction Detection', () => {
+    let ld = new LanguageDetector({defaultLang: 'la'})
+
+    expect( ld.detectTextDirection('Roma')).toBeAStringEqualTo('ltr')
+    expect( ld.detectTextDirection('1971')).toBeAStringEqualTo('en')
+    expect( ld.detectTextDirection('1971.')).toBeAStringEqualTo('en')
+    expect( ld.detectTextDirection('65,')).toBeAStringEqualTo('en')
+    expect( ld.detectTextDirection('5:')).toBeAStringEqualTo('en')
+    expect( ld.detectTextDirection('גשגכש')).toBeAStringEqualTo('rtl')
+    expect( ld.detectTextDirection('גשגכש.')).toBeAStringEqualTo('rtl')
+    expect( ld.detectTextDirection('شيبشسيب')).toBeAStringEqualTo('rtl')
+    expect( ld.detectTextDirection('شيبشسيب.')).toBeAStringEqualTo('rtl')
+
+  })
 })

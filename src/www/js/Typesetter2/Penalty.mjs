@@ -21,8 +21,13 @@ import { TypesetterItem } from './TypesetterItem.mjs'
 import { ObjectFactory } from './ObjectFactory.mjs'
 
 export const INFINITE_PENALTY = 1000
+export const BAD_POINT_FOR_A_BREAK = 200
+export const REALLY_BAD_POINT_FOR_A_BREAK = 800
+
 export const MINUS_INFINITE_PENALTY = -1000
 
+export const GOOD_POINT_FOR_A_BREAK = -20
+export const REALLY_GOOD_POINT_FOR_A_BREAK = -800
 /**
  * A penalty value that helps typesetters decide whether the
  * item's position in a list is a desirable or undesirable place

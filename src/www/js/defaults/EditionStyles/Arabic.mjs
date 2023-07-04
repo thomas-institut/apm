@@ -140,7 +140,12 @@ export const defaultArabicEditionStyle = {
       },
       paragraph: {
         lineSkip: "16 pt"
-      }
+      },
+      glue: {
+        width: "0.25 em",
+        shrink: "0.03 em",
+        stretch: "0.08 em"
+      },
     },
     lineRangeSeparator: {
       text: {
@@ -149,16 +154,16 @@ export const defaultArabicEditionStyle = {
     },
     postLineRangeSeparator: {
       glue: {
-        width: "1 em",
-        stretch: "0.5 em",
-        shrink: "0.25 em"
+        width: "0.5 em",
+        stretch: "0.25 em",
+        shrink: "0.1 em"
       }
     },
     preEntrySeparator : {
       glue: {
         width: "0.5 em",
         stretch: "0.25 em",
-        shrink: "0.05 em"
+        shrink: "0.1 em"
       }
     },
     entrySeparator: {
@@ -168,8 +173,8 @@ export const defaultArabicEditionStyle = {
     },
     postEntrySeparator: {
       glue: {
-        width: "0.75 em",
-        stretch: "0.3 em",
+        width: "0.5 em",
+        stretch: "0.25 em",
         shrink: "0.1 em"
       }
     },

@@ -138,7 +138,12 @@ export const defaultLatinEditionStyle =  {
     },
     paragraph: {
       lineSkip: "15 pt"
-    }
+    },
+    glue: {
+      width: "0.25 em",
+      shrink: "0.03 em",
+      stretch: "0.08 em"
+    },
   },
   lineRangeSeparator: {
     text: {
@@ -147,16 +152,16 @@ export const defaultLatinEditionStyle =  {
   },
   postLineRangeSeparator: {
     glue: {
-      width: "1.25 em",
-      stretch: "0.5 em",
-      shrink: "0.25 em"
+      width: "0.5 em",
+      stretch: "0.25 em",
+      shrink: "0.1 em"
     }
   },
   preEntrySeparator : {
     glue: {
       width: "0.5 em",
       stretch: "0.25 em",
-      shrink: "0.05 em"
+      shrink: "0.1 em"
     }
   },
   entrySeparator: {
@@ -166,9 +171,9 @@ export const defaultLatinEditionStyle =  {
   },
   postEntrySeparator: {
     glue: {
-      width: "1.25 em",
-      stretch: "0.5 em",
-      shrink: "0.25 em"
+      width: "0.5 em",
+      stretch: "0.25 em",
+      shrink: "0.1 em"
     }
   },
   apparatusLineNumbers: {

@@ -26,7 +26,7 @@ export const arabicDeGruyter = {
       from: { fontFamily: 'AdobeArabic', fontWeight: 'bold'},
       to: { fontFamily: 'AdobeArabicBold', fontWeight: ''}
     },
-    // { from: { script: 'la'}, to: { fontFamily: 'Noto Sans'}}
+    // { from: { script: 'la'}, to: { fontFamily: 'FreeSerif'}}
   ],
   default: {
       strings : {
@@ -36,7 +36,8 @@ export const arabicDeGruyter = {
         post: "بعد",
         defaultLemmaSeparator: "]",
         lineRangeSeparator: "\u2016",  // double vertical line
-        entrySeparator:  "\u007c" // single vertical line
+        // entrySeparator:  "\u007c" // single vertical line
+        entrySeparator: "\u2016",  // double vertical line
       },
 
       page: {
@@ -45,12 +46,12 @@ export const arabicDeGruyter = {
         marginTop: "2.5 cm",
         marginLeft: "2.5 cm",
         marginBottom: "2.5 cm",
-        marginRight: "2.5 cm",
+        marginRight: "2 cm",
         minDistanceFromApparatusToText: "1.5 cm",
         minInterApparatusDistance: "0.5 cm",
         lineNumbers: "arabic",   //  "western", "arabic", "none"
-        lineNumbersToTextDistance: "0.8 cm",
-        lineNumbersFontSize: "1 em",
+        lineNumbersToTextDistance: "0.7 cm",
+        lineNumbersFontSize: "0.9 em",
         lineNumbersPosition: "right"
       },
       paragraph: {
@@ -62,7 +63,7 @@ export const arabicDeGruyter = {
       },
       text: {
         fontFamily: "AdobeArabic",
-        fontSize: "12 pt",
+        fontSize: "16 pt",
         fontStyle: "",
         fontWeight: "",
         shiftY: "0"
@@ -142,41 +143,46 @@ export const arabicDeGruyter = {
     apparatus: {
       parent: "default",
       text: {
-        fontSize: "0.9 em",
+        fontSize: "12 pt",
       },
       paragraph: {
-        lineSkip: "16 pt"
-      }
+        lineSkip: "14 pt"
+      },
+      glue: {
+        width: "0.25 em",
+        shrink: "0.03 em",
+        stretch: "0.08 em"
+      },
     },
     lineRangeSeparator: {
       text: {
-        fontWeight: "bold",
+        fontFamily: 'FreeSerif'
       }
     },
   postLineRangeSeparator: {
     glue: {
-      width: "0.75 em",
-      stretch: "0.5 em",
-      shrink: "0.2 em"
+      width: "0.25 em",
+      shrink: "0.03 em",
+      stretch: "0.18 em"
     }
   },
   preEntrySeparator : {
     glue: {
-      width: "0.4 em",
-      stretch: "0.25 em",
-      shrink: "0.05 em"
+      width: "0.25 em",
+      shrink: "0.03 em",
+      stretch: "0.15 em"
     }
   },
   entrySeparator: {
-    // text: {
-    //   fontWeight: "bold",
-    // }
+    text: {
+      fontFamily: 'FreeSerif'
+    }
   },
   postEntrySeparator: {
     glue: {
-      width: "0.5 em",
-      stretch: "0.3 em",
-      shrink: "0.05 em"
+      width: "0.25 em",
+      shrink: "0.03 em",
+      stretch: "0.15 em"
     }
   },
     apparatusLineNumbers: {

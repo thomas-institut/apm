@@ -1,5 +1,5 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { isNumeric } from './Util.mjs'
+import { isNumeric, isWhiteSpace } from './Util.mjs'
 
 const punctuationRegex = /[.,;\]\[()]/gi
 const latinScriptNumberRegex = /[0-9]/gi
@@ -46,19 +46,66 @@ export class LanguageDetector {
    * @param word
    */
   detectTextDirection(word) {
-    // common neutral characters
-    const neutralCharacters = [ '[', ']', '(', ')', '{', '}', '«', '»', '.', ',', ';', '...', '"', ' ']
-    if (neutralCharacters.indexOf(word) !== -1) {
+    // 1. Is it whitespace?
+    if (isWhiteSpace(word)) {
       return ''
     }
-    if (isNumeric(word)) {
+    // 2. Is it all (common) neutral characters?
+    // TODO: make a better list of neutrals
+    const neutralCharacters = [ '[', ']', '(', ')', '{', '}', '«', '»', '.', ',', ';', ':', '"', ' ']
+    let allNeutrals = true
+    for(let i = 0; i < word.length; i++) {
+      if (neutralCharacters.indexOf(word.charAt(i)) === -1) {
+        allNeutrals = false
+        break
+      }
+    }
+    if (allNeutrals) {
+      return ''
+    }
+
+    // 2. Is it a numeric string possibly surrounded by brackets or other neutrals?
+    let firstNonStartingNeutral = -1
+    const startingNeutrals = [ '[', ']', '(', ')', '{', '}', '«', '»', '"', ' ']
+    for(let i = 0; i < word.length; i++) {
+      if (startingNeutrals.indexOf(word.charAt(i)) === -1) {
+        firstNonStartingNeutral = i
+        break
+      }
+    }
+    if (firstNonStartingNeutral === -1) {
+      // this should not happen because starting neutrals is a subset of neutralCharacters
+      console.warn(`Neutral string found while testing for a numeric one!`)
+      // but, it's still a neutral, so it's not an error
+      return ''
+    }
+
+    let lastNonNeutral = -1
+    for(let i= word.length -1; i >= 0; i--) {
+      if (neutralCharacters.indexOf(word.charAt(i)) === -1) {
+        lastNonNeutral = i
+        break
+      }
+    }
+    if (lastNonNeutral === -1) {
+      // again, this should not happen
+      console.warn(`Neutral string found while testing for a numeric one!`)
+      // but, it's still a neutral, so it's not an error
+      return ''
+    }
+    let stringToTest = word.substring(firstNonStartingNeutral, lastNonNeutral+1)
+    // console.log(`Testing for numeric string: '${stringToTest}'`)
+    if (isNumeric(stringToTest)) {
       return 'en'
     }
 
+    // 3. Is it Arabic or Hebrew?
     let lang = this.detectLang(word)
     if (lang === 'ar' || lang === 'he') {
       return 'rtl'
     }
+
+    // 4. It should be LTR then
     return 'ltr'
   }
 

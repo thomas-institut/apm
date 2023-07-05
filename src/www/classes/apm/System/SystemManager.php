@@ -166,16 +166,21 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     public function onTranscriptionUpdated(int $userId, int $docId, int $pageNumber, int $columnNumber) : void {
     }
 
-    public function onDocumentAdded(int $docId) : void {
+    public function onDocumentAdded(int $userId, int $docId) : void {
 
     }
-    public function onDocumentDeleted(int $docId) : void {
+    public function onDocumentDeleted(int $userId, int $docId) : void {
 
     }
 
-    public function onDocumentUpdated(int $docId) : void {
+    public function onDocumentUpdated(int $userId, int $docId) : void {
+    }
+
+    public function onUpdatePageSettings(int $userId, int $pageId) : void {
 
     }
+
+
 
     public function onCollationTableSaved(int $userId, int $ctId) : void {
 

@@ -81,6 +81,7 @@ class ApiDocuments extends ApiController
             $this->logger->error("Can't update page settings for page $pageId: " . $e->getMessage(), $pageInfo->getDatabaseRow());
             return $this->responseWithStatus($response, 409);
         }
+        $this->systemManager->onUpdatePageSettings($this->apiUserId, $pageId);
         return $this->responseWithStatus($response, 200);
     }
 
@@ -132,7 +133,7 @@ class ApiDocuments extends ApiController
                       'docId' => $docId]);
             return $this->responseWithJson($response,['error' => ApiController::API_ERROR_DB_UPDATE_ERROR, 'msg' => 'Database error'], 409);
         }
-        $this->systemManager->onDocumentDeleted($docId);
+        $this->systemManager->onDocumentDeleted($this->apiUserId, $docId);
         return $this->responseWithStatus($response, 200);
     }
 
@@ -204,7 +205,7 @@ class ApiDocuments extends ApiController
             }
         }
 
-        $this->systemManager->onDocumentUpdated($docId);
+        $this->systemManager->onDocumentUpdated($this->apiUserId, $docId);
         return $this->responseWithStatus($response, 200);
     }
 
@@ -262,7 +263,7 @@ class ApiDocuments extends ApiController
                       'docSettings' => $docSettings]);
             return $this->responseWithJson($response,['error' => ApiController::API_ERROR_DB_UPDATE_ERROR], 409);
         }
-        $this->systemManager->onDocumentAdded($docId);
+        $this->systemManager->onDocumentAdded($this->apiUserId, $docId);
         return  $this->responseWithJson($response, ['newDocId' => $docId]);
         
     }
@@ -321,7 +322,7 @@ class ApiDocuments extends ApiController
             'newSettings' => $newSettings
             ]);
 
-        $this->systemManager->onDocumentUpdated($docId);
+        $this->systemManager->onDocumentUpdated($this->apiUserId, $docId);
         return $this->responseWithStatus($response, 200);
         
     }
@@ -452,6 +453,7 @@ class ApiDocuments extends ApiController
         if (count($errors) > 0) {
             $this->logger->notice("Bulk page settings update with errors", $errors);
         }
+
         return $this->responseWithStatus($response, 200);
     }
 

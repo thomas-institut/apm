@@ -806,6 +806,13 @@ class ApmSystemManager extends SystemManager {
             "User $userId", ['userId' => $userId],0, 3, 20);
     }
 
+    public function onUpdatePageSettings(int $userId, int $pageId) : void {
+        parent::onUpdatePageSettings($userId, $pageId);
+        $this->logger->debug("Scheduling update of TranscribedPages cache for user $userId after update of page $pageId");
+        $this->jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE,
+            "User $userId", ['userId' => $userId],0, 3, 20);
+    }
+
     public function onCollationTableSaved(int $userId, int $ctId): void
     {
         parent::onCollationTableSaved($userId, $ctId);
@@ -814,9 +821,9 @@ class ApmSystemManager extends SystemManager {
             "User $userId", ['userId' => $userId],0, 3, 20);
     }
 
-    public function onDocumentDeleted(int $docId): void
+    public function onDocumentDeleted(int $userId, int $docId): void
     {
-        parent::onDocumentDeleted($docId);
+        parent::onDocumentDeleted($userId, $docId);
 
         $this->logger->debug("Scheduling update of SiteDocuments cache");
         $this->jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
@@ -824,17 +831,17 @@ class ApmSystemManager extends SystemManager {
 
     }
 
-    public function onDocumentUpdated(int $docId): void
+    public function onDocumentUpdated(int $userId, int $docId): void
     {
-        parent::onDocumentUpdated($docId);
+        parent::onDocumentUpdated($userId, $docId);
         $this->logger->debug("Scheduling update of SiteDocuments cache");
         $this->jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '', [],0, 3, 20);
     }
 
-    public function onDocumentAdded(int $docId): void
+    public function onDocumentAdded(int $userId, int $docId): void
     {
-        parent::onDocumentAdded($docId);
+        parent::onDocumentAdded($userId, $docId);
         $this->logger->debug("Scheduling update of SiteDocuments cache");
         $this->jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '', [],0, 3, 20);
@@ -845,7 +852,7 @@ class ApmSystemManager extends SystemManager {
         return $this->jobManager;
     }
 
-    private function registerSystemJobs()
+    private function registerSystemJobs() : void
     {
         $this->jobManager->registerJob(ApmJobName::NULL_JOB, new NullJobHandler());
         $this->jobManager->registerJob(ApmJobName::SITE_CHUNKS_UPDATE_DATA_CACHE, new SiteChunksUpdateDataCache());

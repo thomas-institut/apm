@@ -10,7 +10,7 @@ use ThomasInstitut\DataCache\KeyNotInCacheException;
 class ApmDaemon extends CommandLineUtility
 {
 
-    protected function main($argc, $argv)
+    protected function main($argc, $argv): void
     {
         $dataManager = $this->systemManager->getDataManager();
 

@@ -135,15 +135,15 @@ export const defaultHebrewEditionStyle = {
   postLineRangeSeparator: {
     glue: {
       width: "0.25 em",
-      shrink: "0.03 em",
-      stretch: "0.5 em"
+      shrink: "0.02 em",
+      stretch: "0.75 em"
     }
   },
   preEntrySeparator : {
     glue: {
       width: "0.25 em",
-      shrink: "0.03 em",
-      stretch: "0.25 em"
+      shrink: "0.05 em",
+      stretch: "0.5 em"
     }
   },
   entrySeparator: {
@@ -154,8 +154,8 @@ export const defaultHebrewEditionStyle = {
   postEntrySeparator: {
     glue: {
       width: "0.25 em",
-      shrink: "0.03 em",
-      stretch: "0.25 em"
+      shrink: "0.05 em",
+      stretch: "0.5 em"
     }
   },
   apparatusLineNumbers: {

@@ -542,7 +542,7 @@ export class EditionTypesetting {
       switch(subEntry.type) {
         case 'variant':
           pushArray(items, this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect'))
-          items.push(this.__createPenalty(BAD_POINT_FOR_A_BREAK))
+          items.push(this.__createPenalty(INFINITE_PENALTY))
           items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           pushArray(items, await this._getTsItemsForSigla(subEntry))
           break
@@ -552,10 +552,13 @@ export class EditionTypesetting {
           let keyword = this.ss.getStrings()[subEntry.type]
           let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
           items.push(keywordTextBox)
+          if (subEntry.type === 'omission') {
+            items.push(this.__createPenalty(INFINITE_PENALTY))
+          }
           items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           if (subEntry.type === 'addition') {
             pushArray(items, this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect'))
-            items.push(this.__createPenalty(BAD_POINT_FOR_A_BREAK))
+            items.push(this.__createPenalty(INFINITE_PENALTY))
             items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           }
           pushArray(items, await this._getTsItemsForSigla(subEntry))
@@ -573,7 +576,7 @@ export class EditionTypesetting {
           let fullCustomItems  = this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect')
           pushArray(items, fullCustomItems)
           if (subEntry.witnessData.length !== 0) {
-            items.push(this.__createPenalty(BAD_POINT_FOR_A_BREAK))
+            items.push(this.__createPenalty(INFINITE_PENALTY))
             items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
             pushArray(items, await this._getTsItemsForSigla(subEntry))
           }

@@ -2,7 +2,6 @@ import { PageProcessor } from './PageProcessor.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import * as MetadataKey from '../MetadataKey.mjs'
 import * as ListType from '../ListType.mjs'
-import * as LineType from '../LineType.mjs'
 import { ItemList } from '../ItemList.mjs'
 import * as TypesetterItemDirection from '../TypesetterItemDirection.mjs'
 import { TextBoxFactory } from '../TextBoxFactory.mjs'
@@ -23,6 +22,7 @@ export class AddLineNumbers extends PageProcessor {
        numberStyle: { type: 'string', default: ''},
        showLineOne: {type: 'boolean', default: true},
        lineNumberShift: { type: 'number', default: 0},
+       resetEachPage: { type: 'boolean', default: true},
        frequency: { type: 'number', default: 5},
        xPosition: { type: 'number', default: 20},
        align: { type: 'string', default: 'right'},
@@ -56,6 +56,7 @@ export class AddLineNumbers extends PageProcessor {
        return item.hasMetadata(MetadataKey.LIST_TYPE) ? item.getMetadata(MetadataKey.LIST_TYPE) : 'undefined'
      }).indexOf(ListType.MAIN_TEXT_BLOCK)
      if (mainTextIndex === -1) {
+       // no main text block, nothing to do
        resolve(page)
        return
      }
@@ -84,34 +85,56 @@ export class AddLineNumbers extends PageProcessor {
          // a line of the right type
          let lineNumber = item.getMetadata(MetadataKey.LINE_NUMBER)
          if (lineNumber !== undefined) {
-           if (lineNumber === 1 && this.options.showLineOne) {
-            linesWithNumberIndices.push(itemIndex)
-           } else {
-             if ((lineNumber % this.options.frequency)=== 0){
-               linesWithNumberIndices.push(itemIndex)
-             }
-           }
+           linesWithNumberIndices.push(itemIndex)
+           // if (lineNumber === 1 && this.options.showLineOne) {
+           //  linesWithNumberIndices.push(itemIndex)
+           // } else {
+           //   if ((lineNumber % this.options.frequency)=== 0){
+           //     linesWithNumberIndices.push(itemIndex)
+           //   }
+           // }
          }
        })
 
        this.debug && console.log(`linesWithNumberIndices`)
        this.debug && console.log(linesWithNumberIndices)
 
+
        let yPositions = this._getYPositions(mainTextListItems)
 
        let data = []
        linesWithNumberIndices.forEach( (index) => {
-         data.push({
-           listIndex: index,
-           lineNumber: mainTextListItems[index].getMetadata(MetadataKey.LINE_NUMBER),
-           y: yPositions[index]
-         })
+         let lineNumber = mainTextListItems[index].getMetadata(MetadataKey.LINE_NUMBER)
+           data.push({
+             listIndex: index,
+             lineNumber: lineNumber,
+             lineNumberToShow: lineNumber,
+             y: yPositions[index]
+           })
        })
+
+       // determine lineNumberShift, a number that will be ADDED to
+       // the line number to determine the actual line number to show
+       let lineNumberShift = this.options.lineNumberShift
+       if (this.options.resetEachPage) {
+         lineNumberShift -= (data[0].lineNumber -1)
+       }
+       data = data.map( (dataItem) => {
+         dataItem.lineNumberToShow = dataItem.lineNumber + lineNumberShift
+         return dataItem
+       }).filter( (dataItem) => {
+         if (this.options.showLineOne && dataItem.lineNumberToShow === 1) {
+           return true
+         }
+         return (dataItem.lineNumberToShow % this.options.frequency) === 0;
+       })
+
 
        this.debug && console.log(`Line Number data`)
        this.debug && console.log(data)
 
        if (data.length ===0 ) {
+         // no lines with line number metadata, nothing to do
          resolve(page)
          return
        }
@@ -136,7 +159,7 @@ export class AddLineNumbers extends PageProcessor {
          }
 
 
-         let lineNumberTextBox = TextBoxFactory.simpleText(this._getLineNumberString(dataItem.lineNumber), {
+         let lineNumberTextBox = TextBoxFactory.simpleText(this._getLineNumberString(dataItem.lineNumberToShow), {
            fontFamily: this.options.fontFamily,
            fontSize: this.options.fontSize
          })

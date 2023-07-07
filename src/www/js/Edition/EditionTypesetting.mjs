@@ -31,6 +31,8 @@ import { ApparatusEntry } from './ApparatusEntry.mjs'
 import { FmtText } from '../FmtText/FmtText.mjs'
 import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
 import { FontConversions } from '../Typesetter2/FontConversions.mjs'
+import { KeyCache } from '../toolbox/KeyCache.js'
+import { KeyStore } from '../toolbox/KeyStore.mjs'
 
 
 
@@ -75,6 +77,11 @@ export class EditionTypesetting {
     })
     this.isSetup = true
     this.languageDetector = new LanguageDetector({ defaultLang: this.options.edition.lang})
+    this.cache = new KeyStore()
+  }
+
+  resetCache() {
+    this.cache.reset()
   }
 
   setup() {
@@ -87,7 +94,6 @@ export class EditionTypesetting {
    * @return {Promise<ItemList>}
    */
   generateListToTypesetFromMainText() {
-
     return new Promise( async (resolve, reject) => {
       if (!this.isSetup) {
         reject('EditionTypesetting not set up yet')
@@ -116,7 +122,7 @@ export class EditionTypesetting {
           verticalItems.push( (new Glue(TypesetterItemDirection.VERTICAL)).setHeight(paragraphStyleDef.spaceBefore))
         }
         if (paragraphStyleDef.indent !== 0 ) {
-          paragraphToTypeset.pushItem(this.__createIndentBox(paragraphStyleDef, textDirection))
+          paragraphToTypeset.pushItem(this.createIndentBox(paragraphStyleDef, textDirection))
         }
         if (paragraphStyleDef.align === 'center') {
           paragraphToTypeset.pushItem( (new Box().setWidth(0)))
@@ -127,7 +133,7 @@ export class EditionTypesetting {
           let textItems
           switch(mainTextToken.type) {
             case MainTextTokenType.GLUE:
-              let glue = await this.__createNormalSpaceGlue(paragraphStyle)
+              let glue = await this.createNormalSpaceGlue(paragraphStyle)
               glue.addMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX, mainTextToken.originalIndex)
               paragraphToTypeset.pushItem(glue)
               break
@@ -188,14 +194,16 @@ export class EditionTypesetting {
    * @param apparatus
    * @param {number}firstLine
    * @param {number}lastLine
+   * @param {boolean}resetFirstLineNumber if true, line numbers will be shown as starting from 1
    * @return {Promise<ItemList>}
    */
-  generateApparatusVerticalListToTypeset(typesetMainTextVerticalList, apparatus, firstLine = 1, lastLine= MAX_LINE_COUNT) {
+  generateApparatusVerticalListToTypeset(typesetMainTextVerticalList, apparatus, firstLine = 1, lastLine= MAX_LINE_COUNT, resetFirstLineNumber = false) {
     return new Promise( async (resolve) => {
-
+      //console.log(`generateApparatusVerticalListToTypeset: ${apparatus.type}, from ${firstLine} to ${lastLine}, reset = ${resetFirstLineNumber}`)
       let textDirection = getTextDirectionForLang(this.edition.lang)
       let outputList = new ItemList(TypesetterItemDirection.HORIZONTAL)
       outputList.setTextDirection(textDirection)
+
       if (apparatus.entries.length === 0) {
         resolve(outputList)
         return
@@ -220,10 +228,12 @@ export class EditionTypesetting {
       let lineRangeSeparatorCharacter = strings['lineRangeSeparator']
       let entrySeparatorCharacter = strings['entrySeparator']
 
+
       if (this.appEntries[apparatus.type] === undefined) {
+        // no cached data for the current apparatus, let's build it
         let minMainTextIndex = this.extractedMetadataInfo[0].mainTextIndex
         let maxMainTextIndex = this.extractedMetadataInfo[this.extractedMetadataInfo.length - 1].mainTextIndex
-
+        // get the entries
         this.appEntries[apparatus.type] = apparatus.entries.filter( (entry) => {
           return (entry.from >= minMainTextIndex && entry.from <= maxMainTextIndex)
         }).filter( (entry) => {
@@ -236,7 +246,7 @@ export class EditionTypesetting {
           }
           return thereAreEnabledSubEntries
         })
-        // get lines for each entry
+        // get line info to each entry
         let entriesWithLineInfo = this.appEntries[apparatus.type].map ( (entry) => {
           let lineFrom = this.__getLineForMainTextIndex(entry.from)
           let lineTo = this.__getLineForMainTextIndex(entry.to)
@@ -247,30 +257,29 @@ export class EditionTypesetting {
             entry: entry
           }
         })
+        // save a list of line ranges and their entries for the apparatus
         this.lineRanges[apparatus.type] = {}
-
         entriesWithLineInfo.forEach( (entryWithLineInfo) => {
           if (this.lineRanges[apparatus.type][entryWithLineInfo.key] === undefined ) {
             this.lineRanges[apparatus.type][entryWithLineInfo.key] = {
               key: entryWithLineInfo.key,
               lineFrom: entryWithLineInfo.lineFrom,
               lineTo: entryWithLineInfo.lineTo,
-              entries: []
+              entries: [],
+              itemsToTypeset: [],
+              tsItemsExportObjects: []
             }
           }
           this.lineRanges[apparatus.type][entryWithLineInfo.key].entries.push(entryWithLineInfo.entry)
         })
 
-        // build items list for every line range
+        // build itemsToTypeset array for every line range
         let lineRangesKeys = Object.keys(this.lineRanges[apparatus.type])
         for (let lineRangeKeyIndex = 0; lineRangeKeyIndex < lineRangesKeys.length; lineRangeKeyIndex++) {
           let lineRange = this.lineRanges[apparatus.type][lineRangesKeys[lineRangeKeyIndex]]
           let items = []
-          // line number
-          pushArray(items, await this._getTsItemsFromStr(this.__getLineStringFromRange(lineRange.lineFrom, lineRange.lineTo), 'apparatus apparatusLineNumbers', textDirection))
-          items.push(this.__createPenalty(INFINITE_PENALTY))
-          items.push(await this.__createNormalSpaceGlue('apparatus'))
-
+          // include everything except the initial line number string for the range, since this will change
+          // depending on lineFrom, lineTo and the resetLineNumbers flag, so it should not be cached
           for (let entryIndex = 0; entryIndex<lineRange.entries.length; entryIndex++) {
             let entry = lineRange.entries[entryIndex]
             // pre-lemma
@@ -291,58 +300,76 @@ export class EditionTypesetting {
               }
               pushArray(items, await this._getSubEntryTsItems(subEntry))
               if (subEntryIndex !== entry.subEntries.length -1) {
-                items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
+                items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
               }
             }
             if (entryIndex !== lineRange.entries.length -1) {
-              items.push(this.__createPenalty(INFINITE_PENALTY))  // do not break just before the entry separator
-              items.push((await this.__createNormalSpaceGlue('apparatus preEntrySeparator')).setTextDirection(textDirection))
+              items.push(this.createPenalty(INFINITE_PENALTY))  // do not break just before the entry separator
+              items.push((await this.createNormalSpaceGlue('apparatus preEntrySeparator')).setTextDirection(textDirection))
               pushArray(items, await this._getTsItemsFromStr(entrySeparatorCharacter, 'apparatus entrySeparator', textDirection))
-              items.push(this.__createPenalty(GOOD_POINT_FOR_A_BREAK))
-              items.push((await this.__createNormalSpaceGlue('apparatus postEntrySeparator')).setTextDirection(textDirection))
+              items.push(this.createPenalty(GOOD_POINT_FOR_A_BREAK))
+              items.push((await this.createNormalSpaceGlue('apparatus postEntrySeparator')).setTextDirection(textDirection))
             }
           }
-
-          items.push(this.__createPenalty(INFINITE_PENALTY))  // do not break just before the lineRange separator
-          items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
-          pushArray(items, await this._getTsItemsFromStr(lineRangeSeparatorCharacter, 'apparatus lineRangeSeparator', textDirection))
-
-          items.push(this.__createPenalty(GOOD_POINT_FOR_A_BREAK)) // right after the line separator is a good place to break the line
-          items.push((await this.__createNormalSpaceGlue('apparatus postLineRangeSeparator')).setTextDirection(textDirection))
-          lineRange.tsItemsExportObjects = items.map( (item) => { return item.getExportObject()})
+          items.push(this.createPenalty(INFINITE_PENALTY))  // do not break just before the lineRange separator
+          items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
+          items.push(...await this._getTsItemsFromStr(lineRangeSeparatorCharacter, 'apparatus lineRangeSeparator', textDirection))
+          items.push(this.createPenalty(GOOD_POINT_FOR_A_BREAK)) // right after the line separator is a good place to break the line
+          items.push((await this.createNormalSpaceGlue('apparatus postLineRangeSeparator')).setTextDirection(textDirection))
+          lineRange.itemsToTypeset = items
+          // save the export objects, which will be used to create copies of the typesetter items when adding
+          // them to the output horizontal list
+          lineRange.tsItemsExportObjects = this.getItemExportObjectsArray(items)
         }
       }
 
-
+      // At this point all the line ranges in the apparatus should be completely built, we just need
+      // to assemble them for the desired line range and resetLineNumbers flag
       let lineRangesKeysToTypeset = Object.keys(this.lineRanges[apparatus.type]).filter( (lineRangeKey) => {
         return this.lineRanges[apparatus.type][lineRangeKey].lineFrom  >= firstLine && this.lineRanges[apparatus.type][lineRangeKey].lineFrom <= lastLine
       })
       lineRangesKeysToTypeset.sort()
-      // this.debug && console.log(`Line ranges to typeset`)
-      // this.debug && console.log(lineRangesKeysToTypeset)
       for (let lineRangeKeyIndex = 0; lineRangeKeyIndex < lineRangesKeysToTypeset.length; lineRangeKeyIndex++) {
         let lineRange = this.lineRanges[apparatus.type][lineRangesKeysToTypeset[lineRangeKeyIndex]]
-        outputList.pushItemArray(this.__getTsItemsFromExportObjectArray(lineRange.tsItemsExportObjects))
+        let lineNumberItems = []
+        // line number items
+        lineNumberItems.push(...await this._getTsItemsFromStr(
+          this.getLineStringFromRange(lineRange.lineFrom, lineRange.lineTo, resetFirstLineNumber, firstLine, lastLine),
+          'apparatus apparatusLineNumbers', textDirection))
+        lineNumberItems.push(this.createPenalty(INFINITE_PENALTY))
+        lineNumberItems.push(await this.createNormalSpaceGlue('apparatus'))
+        outputList.pushItemArray(this.getTsItemsFromExportObjectsArray(this.getItemExportObjectsArray(lineNumberItems)))
+        outputList.pushItemArray(this.getTsItemsFromExportObjectsArray(lineRange.tsItemsExportObjects))
       }
       if (outputList.getList().length !== 0) {
         outputList.pushItem(Glue.createLineFillerGlue().setTextDirection(textDirection))
         outputList.pushItem(Penalty.createForcedBreakPenalty())
       }
-      // this.debug && console.log(` => Output`)
-      // this.debug && console.log(outputList)
-      // profiler.stop('output list prepared')
+
       resolve(FontConversions.applyFontConversions(outputList, this.fontConversionDefinitions, this.edition.lang))
     })
   }
 
   /**
    *
-   * @param {Object[]}exportObjects
+   * @param exportObjects
+   * @return {*}
+   * @private
    */
-  __getTsItemsFromExportObjectArray(exportObjects) {
+  getTsItemsFromExportObjectsArray(exportObjects) {
     return exportObjects.map ( (exportObject) => {
       return ObjectFactory.fromObject(exportObject)
     })
+  }
+
+  /**
+   *
+   * @param items
+   * @return {*}
+   * @private
+   */
+  getItemExportObjectsArray(items) {
+    return items.map( (item) => { return item.getExportObject()})
   }
 
   _getTsItemsForSeparator(entry) {
@@ -370,10 +397,12 @@ export class EditionTypesetting {
           pushArray(items, await this._getTsItemsFromStr(removeExtraWhiteSpace(FmtText.getPlainText(entry.separator)), 'apparatus', this.textDirection))
           break
       }
-      items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+      items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
       resolve(items)
     })
   }
+
+
 
   _getTsItemsForPostLemma(entry) {
     return new Promise( async (resolve) => {
@@ -390,16 +419,16 @@ export class EditionTypesetting {
         //   let keyword = this.editionStyle.strings[entry.preLemma]
         //   let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
         //   items.push(keywordTextBox)
-        //   items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+        //   items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
         //   break
 
         default:
           // a custom post lemma
-          items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+          items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           // TODO: check formatting here
           let customPostLemmaBox = await this.ss.apply((new TextBox()).setText(FmtText.getPlainText(entry.postLemma)).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
           items.push(customPostLemmaBox)
-          // items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+          // items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
       }
 
       resolve(items)
@@ -419,7 +448,7 @@ export class EditionTypesetting {
           let keyword = this.ss.getStrings()[entry.preLemma]
           let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
           items.push(keywordTextBox)
-          items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+          items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           break
 
         default:
@@ -432,7 +461,7 @@ export class EditionTypesetting {
               .setTextDirection(this.textDirection),
             'apparatus apparatusKeyword')
           items.push(customPreLemmaBox)
-          items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+          items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
       }
 
       resolve(items)
@@ -530,6 +559,13 @@ export class EditionTypesetting {
     })
   }
 
+  /**
+   *
+   * @param {number}n
+   * @param {string}lang
+   * @return {string}
+   * @private
+   */
   getNumberString(n, lang) {
     if (lang === 'ar') {
       return NumeralStyles.toDecimalArabic(n)
@@ -542,8 +578,8 @@ export class EditionTypesetting {
       switch(subEntry.type) {
         case 'variant':
           pushArray(items, this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect'))
-          items.push(this.__createPenalty(INFINITE_PENALTY))
-          items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+          items.push(this.createPenalty(INFINITE_PENALTY))
+          items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           pushArray(items, await this._getTsItemsForSigla(subEntry))
           break
 
@@ -553,13 +589,13 @@ export class EditionTypesetting {
           let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
           items.push(keywordTextBox)
           if (subEntry.type === 'omission') {
-            items.push(this.__createPenalty(INFINITE_PENALTY))
+            items.push(this.createPenalty(INFINITE_PENALTY))
           }
-          items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+          items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           if (subEntry.type === 'addition') {
             pushArray(items, this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect'))
-            items.push(this.__createPenalty(INFINITE_PENALTY))
-            items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+            items.push(this.createPenalty(INFINITE_PENALTY))
+            items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           }
           pushArray(items, await this._getTsItemsForSigla(subEntry))
           break
@@ -570,14 +606,14 @@ export class EditionTypesetting {
             keyword = this.ss.getStrings()[keyword]
             let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
             items.push(keywordTextBox)
-            items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+            items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
           }
 
           let fullCustomItems  = this.__setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, 'apparatus'), 'detect')
           pushArray(items, fullCustomItems)
           if (subEntry.witnessData.length !== 0) {
-            items.push(this.__createPenalty(INFINITE_PENALTY))
-            items.push((await this.__createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+            items.push(this.createPenalty(INFINITE_PENALTY))
+            items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
             pushArray(items, await this._getTsItemsForSigla(subEntry))
           }
           break
@@ -587,13 +623,35 @@ export class EditionTypesetting {
     })
   }
 
-
-
-  __getLineStringFromRange(from, to) {
-    if (from === to) {
-      return this.getNumberString(from, this.edition.lang)
+  /**
+   * Returns a string representing a given line range
+   * @param {number}from
+   * @param {number}to
+   * @param resetFirstLine
+   * @param firstLine
+   * @param lastLine
+   * @return {string}
+   */
+  getLineStringFromRange(from, to, resetFirstLine = false, firstLine = 1, lastLine = MAX_LINE_COUNT ) {
+    //console.log(`getLineStringFromRange: ${from}-${to}, resetFirstLine ${resetFirstLine},  firstLine ${firstLine}, lastLine ${lastLine}`)
+    let pageLineNumberFrom = from
+    let pageLineNumberTo = to
+    let toAndFromInSamePage = true
+    if (resetFirstLine) {
+      pageLineNumberFrom = from - firstLine + 1
+      pageLineNumberTo = to - firstLine + 1
+      //console.log(`Adjusting line numbers: ${from} => ${pageLineNumberFrom}, ${to} => ${pageLineNumberTo}`)
+      if (pageLineNumberTo > lastLine) {
+        toAndFromInSamePage = false
+        pageLineNumberTo -= lastLine
+      }
     }
-    return `${this.getNumberString(from, this.edition.lang)}${enDash}${this.getNumberString(to, this.edition.lang)}`
+    if (toAndFromInSamePage && pageLineNumberFrom === pageLineNumberTo ) {
+      return this.getNumberString(pageLineNumberFrom, this.edition.lang)
+    }
+    // TODO: deal with the case where pageLineNumberFrom and pageLineNumberFrom are equal, but on
+    //  different pages; in this version the number is just repeated.
+    return `${this.getNumberString(pageLineNumberFrom, this.edition.lang)}${enDash}${this.getNumberString(pageLineNumberTo, this.edition.lang)}`
   }
 
   /**
@@ -740,15 +798,27 @@ export class EditionTypesetting {
    * @return {Box}
    * @private
    */
-  __createIndentBox(styleDef, textDirection) {
+  createIndentBox(styleDef, textDirection) {
     return (new Box()).setWidth(styleDef.indent).setTextDirection(textDirection)
   }
 
-   __createPenalty(value) {
+  /**
+   * Creates a Penalty Item of the given value
+   * @param value
+   * @return {Penalty}
+   * @private
+   */
+   createPenalty(value) {
     return (new Penalty()).setPenalty(value)
    }
 
-   __createNormalSpaceGlue(style) {
+  /**
+   *
+   * @param style
+   * @return {Promise<unknown>}
+   * @private
+   */
+   createNormalSpaceGlue(style) {
     return new Promise( (resolve) => {
       this.ss.apply( new Glue(), style).then( (glue) => {
         resolve(glue)

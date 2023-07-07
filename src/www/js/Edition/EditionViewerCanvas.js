@@ -239,11 +239,12 @@ export class EditionViewerCanvas {
               frequency: 5,
               numberStyle: this.edition.lang,
               align: lineNumbersAlign,
+              resetEachPage: true,
               xPosition: lineNumbersX
             },
             textBoxMeasurer: this.canvasMeasurer,
-            getApparatusListToTypeset: (mainTextVerticalList, apparatus, lineFrom, lineTo) => {
-              return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo)
+            getApparatusListToTypeset: (mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine) => {
+              return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine)
             },
             preTypesetApparatuses: () => {
               editionTypesettingHelper.resetExtractedMetadataInfo()

@@ -6,6 +6,10 @@ export class KeyStore {
     this.storage = {}
   }
 
+  reset() {
+    this.storage = {}
+  }
+
   static clone(keyStore) {
     let copy = new KeyStore()
     copy.storage = deepCopy(keyStore.storage)

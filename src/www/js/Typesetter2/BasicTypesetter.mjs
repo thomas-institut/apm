@@ -74,7 +74,7 @@ export class BasicTypesetter extends Typesetter2 {
         textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
         // a function to typeset an apparatus for the given line range must return a Promise
         // for a horizontal ItemList that will then be typeset and added to the document/page
-        getApparatusListToTypeset: { type: 'function', default: (mainTextVerticalList, apparatus, lineFrom, lineTo) => {
+        getApparatusListToTypeset: { type: 'function', default: (mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine) => {
           console.log(`Default typeset apparatus called`)
           return resolvedPromise(new ItemList())
         }},
@@ -106,8 +106,7 @@ export class BasicTypesetter extends Typesetter2 {
       }
     })
     this.options = oc.getCleanOptions(options)
-    console.log('Basic typesetter clean options')
-    console.log(this.options)
+
     this.lineWidth = this.options.pageWidth - this.options.marginLeft - this.options.marginRight
     this.textAreaHeight = this.options.pageHeight - this.options.marginTop - this.options.marginBottom
     this.lineSkip = this.options.lineSkip
@@ -142,14 +141,18 @@ export class BasicTypesetter extends Typesetter2 {
           numberStyle: { type: 'string', default: ''},
           showLineOne: {type: 'boolean', default: true},
           lineNumberShift: { type: 'number', default: 0},
+          resetEachPage: { type: 'boolean', default: true},
           frequency: { type: 'number', default: 5},
         }
       })
       let lnOptions = lnOc.getCleanOptions(this.options.lineNumbersOptions)
+      this.options.lineNumbersOptions = lnOptions
       // console.log(`Line Number clean options`)
       // console.log(lnOptions)
       this.addPageOutputProcessor(this.__constructAddLineNumbersProcessor(lnOptions))
     }
+    console.log('Basic typesetter clean options')
+    console.log(this.options)
 
   }
 
@@ -343,8 +346,10 @@ export class BasicTypesetter extends Typesetter2 {
     return new Promise ( async (resolve) => {
       // Generate a vertical list to be typeset
       let verticalListToTypeset = new ItemList(TypesetterItemDirection.VERTICAL)
+      //
+      // Typeset the main text
+      //
       let paragraphNumber = 0
-      // Go over each vertical item in the input list
       for (const verticalItem of mainTextList.getList()) {
         if (verticalItem instanceof Glue) {
           if (verticalItem.getDirection() === TypesetterItemDirection.VERTICAL) {
@@ -382,20 +387,21 @@ export class BasicTypesetter extends Typesetter2 {
       verticalListToTypeset = this.__addAbsoluteLineNumbers(verticalListToTypeset)
       verticalListToTypeset.addMetadata(MetadataKey.LIST_TYPE, ListType.MAIN_TEXT_BLOCK)
 
-      // this.debug && console.log(`Main text Vertical list with typeset paragraphs`)
-      // this.debug && console.log(verticalListToTypeset)
-      //
-      // this.debug && console.log(`Extra data`)
-      // this.debug && console.log(extraData)
 
-      // build the document
+      //
+      // Build the typeset document
+      //
       let thePages = []
       let doc = new TypesetterDocument()
       doc.addMetadata('typesetter', signature)
+      let resetLineNumbersEachPage = this.options.lineNumbersOptions.resetEachPage
 
+        // typeset apparatuses if present
       if (extraData.apparatuses !== undefined) {
+
         await this.options.preTypesetApparatuses()
         if (this.options.apparatusesAtEndOfDocument) {
+          // Apparatuses at the end of document, the easiest but rarest case
           let apparatuses = await this.__typesetApparatuses(verticalListToTypeset, extraData.apparatuses)
           this.debug && console.log(`Typeset apparatuses`)
           this.debug && console.log(apparatuses)
@@ -419,7 +425,8 @@ export class BasicTypesetter extends Typesetter2 {
               }
             }
           }
-          // simple page break:
+          // simple page breaks
+          // TODO: implement line numbers starting from 1 each page
           let pageList = await this.typesetVerticalList(verticalListToTypeset)
           thePages = pageList.getList().map((pageItemList) => {
             pageItemList.setShiftX(this.options.marginLeft).setShiftY(this.options.marginTop)
@@ -437,10 +444,10 @@ export class BasicTypesetter extends Typesetter2 {
           // apparatuses should go at the foot of each page
           // go over the typeset text list determining the line ranges that fill up a page
           let [firstLine, lastLine ] = this.__getTotalLineNumberRange(verticalListToTypeset)
-          // this.debug && console.log(`Main text has lines from ${firstLine} to ${lastLine}`)
 
           // this.debug && console.log(`Typesetting apparatuses in the whole line range to fill up the appropriate apparatus data`)
           await this.__typesetApparatuses(verticalListToTypeset, extraData.apparatuses)
+
           let currentPageFirstLine = firstLine
           let bestCurrentPageLastLine = firstLine-1
           let bestCurrentPageBadness = INFINITE_VERTICAL_BADNESS
@@ -448,12 +455,10 @@ export class BasicTypesetter extends Typesetter2 {
           let currentPageNumber = 1
           while(bestCurrentPageLastLine < lastLine) {
             let verticalListToTest = new ItemList(TypesetterItemDirection.VERTICAL)
-            // this.debug && console.log(`*** Testing page from line ${currentPageFirstLine} to ${bestCurrentPageLastLine+1}`)
-            verticalListToTest.setList(this.__getVerticalListForLineRange(verticalListToTypeset, currentPageFirstLine, bestCurrentPageLastLine+1))
-            // this.debug && console.log(`vertical list to test`)
-            // this.debug && console.log(verticalListToTest)
+             verticalListToTest.setList(this.__getVerticalListForLineRange(verticalListToTypeset, currentPageFirstLine, bestCurrentPageLastLine+1))
+
             // typeset and add the apparatuses to the list to test
-            let apparatuses = await this.__typesetApparatuses(verticalListToTypeset, extraData.apparatuses, currentPageFirstLine,bestCurrentPageLastLine+1 )
+            let apparatuses = await this.__typesetApparatuses(verticalListToTypeset, extraData.apparatuses, currentPageFirstLine,bestCurrentPageLastLine+1, resetLineNumbersEachPage)
             apparatuses = apparatuses.filter ( (app) => {
               return app.getList().length !== 0
             })
@@ -676,21 +681,32 @@ export class BasicTypesetter extends Typesetter2 {
   }
 
   /**
-   * Returns a typeset vertical list for each apparatus
+   * Returns a Promise that resolves into an array of typeset horizontal lists, one for each apparatus.
+   * Only the apparatus entries corresponding to the main text lines lineFrom to lineTo are
+   * typeset.
+   *
+   * If resetLineNumbersEachPage is true, lineFrom will be shown as 1 in the apparatuses,
+   * lineFrom+1 will be shown as 2, and so on.
+   *
+   * Relies on the external function this.options.getApparatusListToTypeset that puts together the
+   * actual items for each apparatus.
+   *
    * @param {ItemList}typesetMainTextVerticalList
-   * @param {Object[]}apparatuses
+   * @param {Object[]}apparatuses The apparatus objects passed to the typesetter in the extraData parameter
    * @param {number}lineFrom
    * @param {number}lineTo
+   * @param {boolean}resetLineNumbersEachPage
    * @return {Promise<ItemList[]>}
    * @private
    */
-  __typesetApparatuses(typesetMainTextVerticalList, apparatuses, lineFrom = 1, lineTo = MAX_LINE_COUNT) {
+  __typesetApparatuses(typesetMainTextVerticalList, apparatuses, lineFrom = 1,
+        lineTo = MAX_LINE_COUNT, resetLineNumbersEachPage = false) {
     return new Promise( async (resolve) => {
-      // this.debug && console.log(`Typesetting ${apparatuses.length} apparatuses from lines ${lineFrom} to ${lineTo === MAX_LINE_COUNT ? 'end' : lineTo}`)
+      // this.debug && console.log(`Typesetting ${apparatuses.length} apparatuses from lines ${lineFrom} to ${lineTo === MAX_LINE_COUNT ? 'end' : lineTo}, resetLineNumbers = ${resetLineNumbersEachPage}`)
       let outputArray = []
       for (let i = 0; i < apparatuses.length; i++) {
         // this.debug && console.log(`Typesetting apparatus ${i}`)
-        let apparatusListToTypeset = await this.options.getApparatusListToTypeset(typesetMainTextVerticalList, apparatuses[i], lineFrom, lineTo)
+        let apparatusListToTypeset = await this.options.getApparatusListToTypeset(typesetMainTextVerticalList, apparatuses[i], lineFrom, lineTo, resetLineNumbersEachPage)
         if (apparatusListToTypeset.getDirection() === TypesetterItemDirection.HORIZONTAL) {
           // this.debug && console.log(`Typesetting apparatus ${i}`)
           let currentLineSkip = this.lineSkip
@@ -812,93 +828,93 @@ export class BasicTypesetter extends Typesetter2 {
     return line
   }
 
-  /**
-   *
-   * @param {ItemList}line
-   * @return {ItemList}
-   * @private
-   */
-  arrangeItemsInDisplayOrder(line) {
-    let state = 0
-    let orderedTokenIndices = []
-    let reverseStack = []
-    let hangingGlueArray = []
-    let hasReverseText = false
-    let lineTextDirection = line.getTextDirection()
-    let reverseDirection = lineTextDirection === 'ltr' ? 'rtl' : 'ltr'
-    line.getList().forEach( (item, i) => {
-      switch (state) {
-        case 0:   // processing items in the same text direction as the line
-          if (item.getTextDirection() === reverseDirection) {
-            reverseStack.push(i)
-            hasReverseText = true
-            state = 1
-          } else {
-            orderedTokenIndices.push(i)
-          }
-          break
-
-        case 1:  // processing item with reverse direction
-          if (item.getTextDirection() === lineTextDirection) {
-            // back to LTR
-            while (reverseStack.length > 0) {
-              orderedTokenIndices.push(reverseStack.pop())
-            }
-            // push hanging glue items
-            for (let j = 0; j < hangingGlueArray.length; j++) {
-              orderedTokenIndices.push(hangingGlueArray[j])
-            }
-            hangingGlueArray = []
-            orderedTokenIndices.push(i)
-            state = 0
-            break
-          }
-          // still reverse direction
-          // put hanging glue in reverse stack
-          while(hangingGlueArray.length > 0) {
-            reverseStack.push(hangingGlueArray.pop())
-          }
-          if (item instanceof Glue && item.getTextDirection() === '') {
-            // put glue of undefined text direction in hanging glue array
-            hangingGlueArray.push(i)
-          } else {
-            reverseStack.push(i)
-          }
-          break
-      }
-    })
-    // dump whatever is on the reverse stack
-    // this.debug && console.log(`Finished processing items, reverse stack has ${reverseStack.length} items`)
-    // this.debug && console.log(reverseStack)
-    while(reverseStack.length > 0) {
-      orderedTokenIndices.push(reverseStack.pop())
-    }
-    // empty the hanging glue array
-    for (let j = 0; j < hangingGlueArray.length; j++) {
-      orderedTokenIndices.push(hangingGlueArray[j])
-    }
-    // some sanity checks
-    if (orderedTokenIndices.length !== line.getItemCount()) {
-      console.error(`Ordered token indices and tokensWithInitial glue are not the same length: 
-        ${orderedTokenIndices.length} !== ${line.getItemCount()}`)
-    }
-    // if there was some reverse text, reorder items
-    if (hasReverseText) {
-      // this.debug && console.log(`Line with ${lineTextDirection} direction has ${reverseDirection} text`)
-      line.addMetadata(MetadataKey.HAS_REVERSE_TEXT, true)
-      line.addMetadata(MetadataKey.HAS_REORDERED_ITEMS, true)
-      let originalItemArray = line.getList()
-      let originalOrder = orderedTokenIndices.map( () => { return -1})
-      line.setList(orderedTokenIndices.map( (index, newIndex) => {
-        originalOrder[index] = newIndex
-        return originalItemArray[index].addMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX, index)
-      }))
-      line.addMetadata(MetadataKey.ORIGINAL_ITEM_ORDER, originalOrder)
-      // this.debug && console.log(`Processed line`)
-      // this.debug && console.log(line)
-    }
-    return line
-  }
+  // /**
+  //  *
+  //  * @param {ItemList}line
+  //  * @return {ItemList}
+  //  * @private
+  //  */
+  // arrangeItemsInDisplayOrder(line) {
+  //   let state = 0
+  //   let orderedTokenIndices = []
+  //   let reverseStack = []
+  //   let hangingGlueArray = []
+  //   let hasReverseText = false
+  //   let lineTextDirection = line.getTextDirection()
+  //   let reverseDirection = lineTextDirection === 'ltr' ? 'rtl' : 'ltr'
+  //   line.getList().forEach( (item, i) => {
+  //     switch (state) {
+  //       case 0:   // processing items in the same text direction as the line
+  //         if (item.getTextDirection() === reverseDirection) {
+  //           reverseStack.push(i)
+  //           hasReverseText = true
+  //           state = 1
+  //         } else {
+  //           orderedTokenIndices.push(i)
+  //         }
+  //         break
+  //
+  //       case 1:  // processing item with reverse direction
+  //         if (item.getTextDirection() === lineTextDirection) {
+  //           // back to LTR
+  //           while (reverseStack.length > 0) {
+  //             orderedTokenIndices.push(reverseStack.pop())
+  //           }
+  //           // push hanging glue items
+  //           for (let j = 0; j < hangingGlueArray.length; j++) {
+  //             orderedTokenIndices.push(hangingGlueArray[j])
+  //           }
+  //           hangingGlueArray = []
+  //           orderedTokenIndices.push(i)
+  //           state = 0
+  //           break
+  //         }
+  //         // still reverse direction
+  //         // put hanging glue in reverse stack
+  //         while(hangingGlueArray.length > 0) {
+  //           reverseStack.push(hangingGlueArray.pop())
+  //         }
+  //         if (item instanceof Glue && item.getTextDirection() === '') {
+  //           // put glue of undefined text direction in hanging glue array
+  //           hangingGlueArray.push(i)
+  //         } else {
+  //           reverseStack.push(i)
+  //         }
+  //         break
+  //     }
+  //   })
+  //   // dump whatever is on the reverse stack
+  //   // this.debug && console.log(`Finished processing items, reverse stack has ${reverseStack.length} items`)
+  //   // this.debug && console.log(reverseStack)
+  //   while(reverseStack.length > 0) {
+  //     orderedTokenIndices.push(reverseStack.pop())
+  //   }
+  //   // empty the hanging glue array
+  //   for (let j = 0; j < hangingGlueArray.length; j++) {
+  //     orderedTokenIndices.push(hangingGlueArray[j])
+  //   }
+  //   // some sanity checks
+  //   if (orderedTokenIndices.length !== line.getItemCount()) {
+  //     console.error(`Ordered token indices and tokensWithInitial glue are not the same length:
+  //       ${orderedTokenIndices.length} !== ${line.getItemCount()}`)
+  //   }
+  //   // if there was some reverse text, reorder items
+  //   if (hasReverseText) {
+  //     // this.debug && console.log(`Line with ${lineTextDirection} direction has ${reverseDirection} text`)
+  //     line.addMetadata(MetadataKey.HAS_REVERSE_TEXT, true)
+  //     line.addMetadata(MetadataKey.HAS_REORDERED_ITEMS, true)
+  //     let originalItemArray = line.getList()
+  //     let originalOrder = orderedTokenIndices.map( () => { return -1})
+  //     line.setList(orderedTokenIndices.map( (index, newIndex) => {
+  //       originalOrder[index] = newIndex
+  //       return originalItemArray[index].addMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX, index)
+  //     }))
+  //     line.addMetadata(MetadataKey.ORIGINAL_ITEM_ORDER, originalOrder)
+  //     // this.debug && console.log(`Processed line`)
+  //     // this.debug && console.log(line)
+  //   }
+  //   return line
+  // }
 
   __addAbsoluteLineNumbers(verticalList) {
     let outputList = new ItemList(TypesetterItemDirection.VERTICAL)
@@ -1004,6 +1020,7 @@ export class BasicTypesetter extends Typesetter2 {
    * @private
    */
   __constructAddLineNumbersProcessor(options) {
+    // options.debug = this.debug
     options.textBoxMeasurer = this.options.textBoxMeasurer
     options.listTypeToNumber = ListType.MAIN_TEXT_BLOCK
     options.lineTypeToNumber = LineType.MAIN_TEXT_LINE

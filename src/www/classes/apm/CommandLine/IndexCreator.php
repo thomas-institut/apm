@@ -27,7 +27,7 @@ use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
 
 /**
- * Description of IndexDocs
+ * Description of IndexCreator
  *
  * Commandline utility to create an index of all transcripts in OpenSearch based on a sql-database
  * Transcript will be lemmatized before indexing. All relevant data and metadata will be indexed.
@@ -38,8 +38,8 @@ use OpenSearch\ClientBuilder;
 class IndexCreator extends CommandLineUtility {
 
     // Variables for OpenSearch client and the name of the index to create
-    protected Client $client;
-    protected string $indexName;
+    public Client $client;
+    public string $indexName;
 
     public function main($argc, $argv): bool
     {
@@ -123,7 +123,7 @@ class IndexCreator extends CommandLineUtility {
                     // Add data to the OpenSearch index with a unique id
                     $id = $id + 1;
 
-                    $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+                    $this->indexCol($this->client, $this->indexName, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
                 }
             }
         }
@@ -161,33 +161,29 @@ class IndexCreator extends CommandLineUtility {
         return $text;
     }
 
-    protected function getPageID ($doc_id, $page) {
+    public function getPageID (string $doc_id, string $page): string {
         return $this->dm->getpageIDByDocPage($doc_id, $page);
     }
 
-    protected function getTitle($doc_id) {
+    public function getTitle(string $doc_id): string {
         $doc_info = $this->dm->getDocById($doc_id);
         return $doc_info['title'];
     }
 
-    protected function getSeq($doc_id, $page) {
+    public function getSeq(string $doc_id, string $page): string {
         $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
         $page_info = $this->dm->getPageInfo($page_id);
         return $page_info['seq'];
     }
 
 
-    // TODO: add types to parameters
-
-    protected function getTranscript($doc_id, $page, $col): string
-    {
+    public function getTranscript(string $doc_id, string $page, string $col): string {
         $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
         $elements = $this->dm->getColumnElementsBypageID($page_id, $col);
         return $this->getPlainTextFromElements($elements);
     }
 
-    // TODO: add types to parameters
-    protected function getTranscriber($doc_id, $page, $col) {
+    public function getTranscriber(string $doc_id, string $page, string $col): string {
         $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
         $versions = $this->dm->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
         if ($versions === []) {
@@ -200,30 +196,28 @@ class IndexCreator extends CommandLineUtility {
         }
     }
 
-    // TODO: add types to parameters
-    protected function getLang($doc_id, $page) {
+    public function getLang(string $doc_id, string $page): string {
         $seq = $this->getSeq($doc_id, $page);
         return $this->dm->getPageInfoByDocSeq($doc_id, $seq)['lang'];
     }
 
-    // TODO: add types to parameters
-    protected function getFoliation($doc_id, $page): string
+    public function getFoliation(string $doc_id, string $page): string
     {
         $seq = $this->getSeq($doc_id, $page);
         return $this->dm->getPageFoliationByDocSeq($doc_id,  $seq);
     }
 
     // Function to add pages to the OpenSearch index
-    // TODO: add types to parameters
-    protected function indexCol ($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang): bool
-    {
+    public function indexCol ($client, string $indexName, string $id, string $title, string $page, string $seq, string $foliation, string $col, string $transcriber,
+                                 string $page_id, string $doc_id, string $transcript, string $lang): bool {
+
         // Encode transcript for avoiding errors in exec shell command because of characters like "(", ")" or " "
-        $transcript_clean = $this->encode($transcript);
+        $transcript_encoded = $this->encode($transcript);
 
         // Tokenization and lemmatization
         // Test existence of transcript and tokenize/lemmatize existing transcripts in python
-        if (strlen($transcript_clean) > 3) {
-                exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_clean", $tokens_and_lemmata);
+        if (strlen($transcript_encoded) > 3) {
+                exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_encoded", $tokens_and_lemmata);
 
                 // Get tokenized and lemmatized transcript
                 $transcript_tokenized = explode("#", $tokens_and_lemmata[0]);
@@ -239,8 +233,8 @@ class IndexCreator extends CommandLineUtility {
             }
 
             // Data to be stored on the OpenSearch index
-        $this->client->create([
-            'index' => $this->indexName,
+        $client->create([
+            'index' => $indexName,
             'id' => $id,
             'body' => [
                 'title' => $title,
@@ -263,63 +257,63 @@ class IndexCreator extends CommandLineUtility {
     }
 
     // Function to encode the transcript – makes it suitable for the exec-command
-    protected function encode($transcript) {
+    public function encode(string $transcript): string {
 
         // Replace line breaks, blanks, brackets...these character can provoke errors in the exec-command
-        $transcript_clean = str_replace("\n", "#", $transcript);
-        $transcript_clean = str_replace(".", " .", $transcript_clean);
-        $transcript_clean = str_replace(",", " ,", $transcript_clean);
-        $transcript_clean = str_replace(" ", "#", $transcript_clean);
-        $transcript_clean = str_replace("(", "%", $transcript_clean);
-        $transcript_clean = str_replace(")", "§", $transcript_clean);
-        $transcript_clean = str_replace("׳", "€", $transcript_clean);
-        $transcript_clean = str_replace("'", "\'", $transcript_clean);
-        $transcript_clean = str_replace("\"", "\\\"", $transcript_clean);
-        $transcript_clean = str_replace(' ', '#', $transcript_clean);
-        $transcript_clean = str_replace(' ', '#', $transcript_clean);
-        $transcript_clean = str_replace('T.', '', $transcript_clean);
-        $transcript_clean = str_replace('|', '+', $transcript_clean);
-        $transcript_clean = str_replace('<', '°', $transcript_clean);
-        $transcript_clean = str_replace('>', '^', $transcript_clean);
-        $transcript_clean = str_replace(';', 'ß', $transcript_clean);
-        $transcript_clean = str_replace('`', '~', $transcript_clean);
-        $transcript_clean = str_replace('[', '', $transcript_clean);
-        $transcript_clean = str_replace(']', '', $transcript_clean);
+        $transcript_encoded = str_replace("\n", "#", $transcript);
+        $transcript_encoded = str_replace(".", " .", $transcript_encoded);
+        $transcript_encoded = str_replace(",", " ,", $transcript_encoded);
+        $transcript_encoded = str_replace(" ", "#", $transcript_encoded);
+        $transcript_encoded = str_replace("(", "%", $transcript_encoded);
+        $transcript_encoded = str_replace(")", "§", $transcript_encoded);
+        $transcript_encoded = str_replace("׳", "€", $transcript_encoded);
+        $transcript_encoded = str_replace("'", "\'", $transcript_encoded);
+        $transcript_encoded = str_replace("\"", "\\\"", $transcript_encoded);
+        $transcript_encoded = str_replace(' ', '#', $transcript_encoded);
+        $transcript_encoded = str_replace(' ', '#', $transcript_encoded);
+        $transcript_encoded = str_replace('T.', '', $transcript_encoded);
+        $transcript_encoded = str_replace('|', '+', $transcript_encoded);
+        $transcript_encoded = str_replace('<', '°', $transcript_encoded);
+        $transcript_encoded = str_replace('>', '^', $transcript_encoded);
+        $transcript_encoded = str_replace(';', 'ß', $transcript_encoded);
+        $transcript_encoded = str_replace('`', '~', $transcript_encoded);
+        $transcript_encoded = str_replace('[', '', $transcript_encoded);
+        $transcript_encoded = str_replace(']', '', $transcript_encoded);
 
 
         // Remove numbers
         for ($i=0; $i<10; $i++) {
-            $transcript_clean = str_replace("$i", '', $transcript_clean);
+            $transcript_encoded = str_replace("$i", '', $transcript_encoded);
         }
 
         // Remove repetitions of hashtags
-        while (strpos($transcript_clean, '##') !== false) {
-            $transcript_clean = str_replace('##', '#', $transcript_clean);
+        while (strpos($transcript_encoded, '##') !== false) {
+            $transcript_encoded = str_replace('##', '#', $transcript_encoded);
         }
 
         // Remove repetitions of periods
-        while (strpos($transcript_clean, '.#.') !== false) {
-            $transcript_clean = str_replace('.#.', '', $transcript_clean);
+        while (strpos($transcript_encoded, '.#.') !== false) {
+            $transcript_encoded = str_replace('.#.', '', $transcript_encoded);
         }
 
-        while (strpos($transcript_clean, '..') !== false) {
-            $transcript_clean = str_replace('..', '', $transcript_clean);
+        while (strpos($transcript_encoded, '..') !== false) {
+            $transcript_encoded = str_replace('..', '', $transcript_encoded);
         }
 
         // Remove repetitions of hashtags again (in the foregoing steps could be originated new ones..)
-        while (strpos($transcript_clean, '##') !== false) {
-            $transcript_clean = str_replace('##', '#', $transcript_clean);
+        while (strpos($transcript_encoded, '##') !== false) {
+            $transcript_encoded = str_replace('##', '#', $transcript_encoded);
         }
 
         // Transcript should not begin or end with hashtag
-        if (substr($transcript_clean, 0, 1) === '#') {
-                $transcript_clean = substr($transcript_clean, 1);
+        if (substr($transcript_encoded, 0, 1) === '#') {
+                $transcript_encoded = substr($transcript_encoded, 1);
             }
 
-        if (substr($transcript_clean, -1, 1) === '#') {
-            $transcript_clean = substr($transcript_clean, 0, -1);
+        if (substr($transcript_encoded, -1, 1) === '#') {
+            $transcript_encoded = substr($transcript_encoded, 0, -1);
             }
 
-        return $transcript_clean;
+        return $transcript_encoded;
     }
 }

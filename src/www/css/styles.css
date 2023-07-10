@@ -224,3 +224,11 @@ mark {
     background-color: rgba(255, 219, 75, 0.7);
     color: black;
 }
+
+input[type=number] {
+    background-color: white;
+    border: none;
+    padding: 1px;
+    font-size: 14px;
+    width: 42px
+}

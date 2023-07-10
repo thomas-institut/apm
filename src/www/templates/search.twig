@@ -5,16 +5,16 @@
 {% block finalBodyJS %}
     <script>
 
-      let data_backup = []
+      // Array to save search results in for having them available for users' zoom actions without making a new query
+      let data_for_zooming = []
 
+      // Setup event listeners
       $(() => {
 
         // Get selectors for catching user input
         let keywords_box = $("#keywordBox")
-        let doc = $(document)
         let lemmatization_box = $("#lemmatize")
         // let edition_mode = $("#edition_mode")
-        // let search_table = $("#searchTable")
 
         // Get selector for signaling errors to user
         let errorMessageDiv = $("#error_message")
@@ -23,52 +23,39 @@
         getListFromOpenSearch ('titles', errorMessageDiv)
         getListFromOpenSearch ('transcribers', errorMessageDiv)
 
-        // Start query when the 'Enter' key is pressed
-          doc.on("keyup", function (event) {
+        // Start query when the search button is pressed
+          $("#searchButton").on("click", function () {
+
+            // Get all relevant information for the query
             let user_input = keywords_box.val()
-            let num_keywords = user_input.split(" ").length;
-            let zoom_slider = $("#zoomSlider")
-            let zoom = zoom_slider.val()
-            let radius = $("#radiusSlider").val()
-            if ( event.key === 'Enter' && user_input !== "") {
 
-              $("#radiusSlider").prop({'min': num_keywords-1})
-              zoom_slider.prop({'min': num_keywords-1})
-              zoom_slider.prop("value", radius)
-
+            // Query only if there is a given user input in the keywords field
+            if (user_input !== "") {
               search()
             }
-            else if (event.key === 'Enter' && user_input === "") {
+            else {
               errorMessageDiv.html(`<br>Please type in a keyword!<br><br>`)
             }
           })
 
-        $("#zoomSlider").on("change", function (event) {
-          let zoom_slider = $("#zoomSlider")
-          let radius_slider = $("#radiusSlider")
-          let zoom = zoom_slider.val()
-          let radius = radius_slider.val()
-          displayResults(data_backup[0], data_backup[1], data_backup[2], zoom, radius) // ZOOM
-        })
-
-
-
-        // $("#radiusSlider").on("change", function (event) {
-        //   let zoom_slider = $("#zoomSlider")
-        //   let zoom = zoom_slider.val()
-        //   let radius = $("#radiusSlider").val()
-        //   if (radius>zoom) {
-        //     zoom_slider.prop("value", radius)
-        //   }
-        // })
-
+        // Error message if wildcards are combined with lemmatization
         lemmatization_box.on("click",  function (event) {
           let checked = lemmatization_box.prop("checked")
           let user_input = keywords_box.val()
           if (checked && user_input.includes("*")) {
-            errorMessageDiv.html(`Until now you cannot use wildcards combined with lemmatization! This will maybe be possible in the future.`)
+            errorMessageDiv.html(`You cannot use wildcards (*) combined with lemmatization. Maybe it will be possible in the future.`)
           }
         })
+
+        keywords_box.on("keyup",  function (event) {
+          let checked = lemmatization_box.prop("checked")
+          let user_input = keywords_box.val()
+          if (checked && user_input.includes("*")) {
+            errorMessageDiv.html(`You cannot use wildcards (*) combined with lemmatization. Maybe it will be possible in the future.`)
+          }
+        })
+
+        // SCRATCHED CODE FOR QUERYING EDITIONS
 
         //     edition_mode.on('click', function () {
     //       search_table.empty()
@@ -106,128 +93,99 @@
       })
 
       // Function to get list of indexed values, i.e. titles or transcribers, via an API call
-      function getListFromOpenSearch (category, errorMessageDiv) {
+      function getListFromOpenSearch(category, errorMessageDiv) {
+        let apiUrl = category === 'titles' ? '{{ url_for('search.titles') }}' : '{{ url_for('search.transcribers') }}';
+        let listSelector = category === 'titles' ? '#titleList' : '#transcriberList';
 
-        // Get queried category
-        if (category === 'titles') {
+        // Make API request
+        $.post(apiUrl).done((apiResponse) => {
+          // Get list selector and clear the list
+          let list = $(listSelector);
+          list.empty();
 
-          // Make API request
-          $.post("{{ url_for('search.titles') }}").done((apiResponse) => {
-
-            // Get titleList selector and clear the list
-            let title_list = $("#titleList")
-            title_list.empty()
-
-            // Catch errors
-            if (apiResponse.status !== 'OK') {
-              console.log(`Error in query for titles!`)
-              if (apiResponse.errorData !== undefined) {
-                console.log(apiResponse.errorData)
-              }
-              errorMessageDiv.html('Error while getting doc list, please report to technical administrators.')
-                .removeClass('text-error')
-              return
+          // Catch errors
+          if (apiResponse.status !== 'OK') {
+            console.log(`Error in query for ${category}!`);
+            if (apiResponse.errorData !== undefined) {
+              console.log(apiResponse.errorData);
             }
-            console.log(apiResponse)
+            errorMessageDiv.html(`Error while getting ${category} list, please report to technical administrators.`)
+                    .removeClass('text-error');
+            return;
+          }
 
-            // Get titles from apiResponse
-            let titles = apiResponse[category]
+          console.log(apiResponse);
 
-            // Fill datatable with title names
-            titles.forEach(function (title) {title_list.append(`<option>${title}</option>`)})
+          // Get items from apiResponse
+          let items = apiResponse[category];
 
-          })
-        }
-        else if (category === 'transcribers') {
-
-          // Do exactly the same as before, but with transcribers instead of titles - by time this could be merged into one general function
-          $.post("{{ url_for('search.transcribers') }}").done((apiResponse) => {
-
-            let transcriber_list = $("#transcriberList")
-            transcriber_list.empty()
-
-            if (apiResponse.status !== 'OK') {
-              console.log(`Error in query for transcribers!`)
-              if (apiResponse.errorData !== undefined) {
-                console.log(apiResponse.errorData)
-              }
-              errorMessageDiv
-                .html('Error while getting transcribers list, please report to technical administrators.')
-                .removeClass('text-error')
-              return
-            }
-            console.log(apiResponse)
-
-            let transcribers = apiResponse[category]
-
-            transcribers.forEach(function (transcriber) {transcriber_list.append(`<option>${transcriber}</option>`)})
-
-          })
-        }
+          // Fill list with item names
+          items.forEach((item) => { list.append(`<option>${item}</option>`); });
+        });
       }
 
-      // Function to start search process via API call
-      function search () {
+      // Function to query the OpenSearch index
+      function search() {
 
-        // Get selectors for user input and get input
-        let keywords_box = $("#keywordBox")
-        let transcript_box = $("#transcriptBox")
-        let transcriber_box = $("#transcriberBox")
-        let radius_slider = $("#radiusSlider")
-        let zoom_slider = $("#zoomSlider")
-        let lemmatization_box = $("#lemmatize")
-        let spinner = $("#spinner")
-        let results_body = $("#resultsTable tbody")
-        let results_head = $("#resultsTable thead")
-        let error_message = $("#error_message")
+        // Clear data_for_zooming
+        data_for_zooming = []
 
-        // Get values of all boxes/fields
-        let searched_phrase = keywords_box.val()
-        let title = transcript_box.val();
-        let transcriber = transcriber_box.val();
-        let radius = radius_slider.val()
-        let lemmatize = lemmatization_box.prop('checked')
-        let zoom = zoom_slider.val()
+        // User inputs
+        const inputs = {
+          searched_phrase: $("#keywordBox").val(),
+          title: $("#transcriptBox").val(),
+          transcriber: $("#transcriberBox").val(),
+          radius: parseInt($("#radiusSlider").val()) + 1,
+          zoom: $("#zoomSlider").val(),
+          lemmatize: $("#lemmatize").prop("checked")
+        };
 
-        // Empty the results-table/error-box and signalize search process
-        results_body.empty()
-        results_head.empty()
-        error_message.empty()
-        spinner.html(`<div class="spinner-border" role="status"></div>`)
+        // Selectors
+        const spinner = $("#spinner");
+        const resultsBody = $("#resultsTable tbody");
+        const resultsHead = $("#resultsTable thead");
+        const errorMessage = $("#error_message");
 
-        // Send all user input to ApiSearch (via routing in index.php) and print returned matches
-        $.post("{{ url_for('search.keyword') }}", { searched_phrase: searched_phrase, radius: radius, title: title, transcriber: transcriber, lemmatize: lemmatize })
-          .done((apiResponse) => {
+        // Clear results table and error message
+        resultsBody.empty();
+        resultsHead.empty();
+        errorMessage.empty();
 
-            // Catch errors
-            if (apiResponse.status !== 'OK') {
-              console.log(`Error in query`)
-              if (apiResponse.errorData !== undefined) {
-                console.log(apiResponse.errorData)
-              }
-              error_message
-                .html('Error while searching, please report to technical administrators.')
-                .removeClass('text-error')
-              return
-            }
+        // Show spinner
+        spinner.html('<div class="spinner-border" role="status"></div>');
 
-            console.log(apiResponse)
+        // Make API Call
+        $.post("{{ url_for('search.keyword') }}", inputs)
+                .done((apiResponse) => {
 
-            // Call displayResults-function
-            spinner.empty()
-            //displayResults(apiResponse, 20)
+                  // Catch Error
+                  if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query`);
+                    if (apiResponse.errorData !== undefined) {
+                      console.log(apiResponse.errorData);
+                    }
+                    errorMessage.html('Error while searching, please report to technical administrators.').removeClass('text-error');
+                    return;
+                  }
 
-            displayResults(apiResponse['data'], apiResponse['lang'], apiResponse['num_passages_total'], zoom, radius)
-            data_backup = [apiResponse['data'], apiResponse['lang'], apiResponse['num_passages_total']]
+                  // Log API response
+                  console.log(apiResponse);
 
-      }).fail((status) => {
-        console.log(status)
-        spinner.empty()
-          error_message
-          .html('Search is currently not available. Please try again later.')
-          .removeClass('text-error')
-      })
+                  // Remove spinner
+                  spinner.empty();
+
+                  let zoom = new Array(apiResponse.num_passages_total+1).fill(inputs.radius)
+                  
+                  // Call displayResults-function and save backup of data for zoom handling
+                  displayResults(apiResponse.data, apiResponse.lang, apiResponse.num_passages_total, zoom, inputs.radius);
+                })
+                .fail((status) => {
+                  console.log(status);
+                  spinner.empty();
+                  errorMessage.html('Search is currently not available. Please try again later.').removeClass('text-error');
+                });
       }
+
 
       // Function to collect and display the search results in a readable form
       function displayResults (data, lang, num_passages, zoom, radius) {
@@ -240,13 +198,8 @@
         // Get instance of ApmUrlGenerator to create links to matched doc pages
         let url_generator = new ApmUrlGenerator('{{baseurl}}')
 
-        // Get column data of search results and language of matched passages
-        //let data = results['data']
-        //let lang = results['lang']
-
-        // Count matches
+        // Count matched columns and docs
         let num_columns = data.length
-        //let num_passages = results['num_passages_total']
         let num_docs = getNumDocs(data, num_columns)
 
         // If there are no matches, display this to the user and empty the results table
@@ -256,77 +209,18 @@
           error_message.html(`<br>Nothing found!<br><br>`)
         }
 
-        // If there is exactly one matched passage, display it with exact information
-        else if (num_columns === 1 && num_passages === 1) {
-
-          // Make table head
-          results_head.empty()
-          results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th>Document (${num_docs})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
-
-          // Collect relevant data from API response
-          let title = data[0]['title']
-          let seq = data[0]['seq']
-          let foliation = data[0]['foliation']
-          let column = data[0]['column']
-          let transcriber = data[0]['transcriber']
-          let passages = data[0]['passage_tokenized']
-          let tokens_matched = data[0]['tokens_matched']
-          let docID = data[0]['docID']
-          let transcript_tokenized = data[0]['transcript_tokenized']
-          let positions = data[0]['positions']
-
-          // Get link for matched page (sequence number)
-          let url = url_generator.sitePageView(docID, seq, column)
-          let link = getLink(url)
-
-          // Convert the tokens_matched in their context into a single string and highlight the matched tokens
-          let passages_string = ""
-
-          for (let j = 0; j < passages.length; j++) {
-
-            let transcript_len = transcript_tokenized.length
-            let passage_start = positions[j]-zoom
-            let passage_end = parseInt(positions[j])+parseInt(zoom)+1
-
-            if (passage_start < 0) {
-              passage_start = 0
-            }
-
-            if (passage_end > (transcript_len-1)) {
-              passage_end = transcript_len
-            }
-
-            passages_string = highlight(transcript_tokenized.slice(passage_start, passage_end), tokens_matched[j], positions[j], radius)
-            passages_string = removeBlanks(passages_string)
-
-            // Fill table with results - layout depends slightly on the language of the transcripts
-            results_body.empty()
-            if (lang==='la') {
-              results_body.append(
-                      `<tr><td class="text-justify">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-            }
-            else if (lang==='he') {
-              results_body.append(
-                      `<tr><td class="text-justify" class="text-he">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-            }
-            else if (lang==='ar') {
-              results_body.append(
-                      `<tr><td class="text-justify" class="text-ar">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-            }
-          }
-        }
-
-        // If there is more than one matched passage, display them all with exact information
         else {
 
           // Make table head
           results_head.empty()
-          results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th>Document (${num_docs})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
+          results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th><span title="Number of tokens, i. e. words or punctuation marks, to display before and after your first keyword. A value of 0 means that only the tokens matching your first keyword are displayed."><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}></span>
+                                </th><th>Document (${num_docs})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
           results_body.empty()
 
-          // Make variable for storing title of preceding column in the dataset to display only ONE title,
-          // if there are plenty matched columns/passages of the same document
-          let prec_title = " "
+          // Make variable for storing title of previous column in the dataset to display only the title only once,
+          // if there are plenty matched columns/passages in the same work
+          let prev_title = ' '
+          let k=0
 
           // Write all matches into the results table
           for (let i = 0; i < num_columns; i++) {
@@ -344,62 +238,41 @@
             let positions = data[i]['positions']
 
             // Get link for matched column
-            let url = url_generator.sitePageView(docID, seq, column)
-            let link = getLink(url)
+            let link = getLink(url_generator.sitePageView(docID, seq, column))
 
-            // Convert all occurrences of the keyword in their contexts into a single string and highlight the tokens_matched
-            let passages_string = ""
-
+            // Slice and highlight passage
             for (let j = 0; j < passages.length; j++) {
+              k=k+1
 
-              let transcript_len = transcript_tokenized.length
-              let passage_start = positions[j]-zoom
-              let passage_end = parseInt(positions[j])+parseInt(zoom)+1
+              data_for_zooming.push({
+                'transcript_tokenized': transcript_tokenized,
+                'tokens_matched': tokens_matched,
+                'position': positions[j]})
 
-              if (passage_start < 0) {
-                passage_start = 0
-              }
-
-              if (passage_end > (transcript_len-1)) {
-                passage_end = transcript_len
-              }
-
-              passages_string = highlight(transcript_tokenized.slice(passage_start, passage_end), tokens_matched[j], positions[j], radius) // ORIGINAL: passages[j]
-              passages_string = removeBlanks(passages_string)
+              let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, positions[j], radius, zoom[k])
 
               // Fill table with results - layout depends slightly on the language of the transcripts
-              if (title === prec_title) {
-                if (lang==='la') {
-                  results_body.append(
-                          `<tr><td class="text-justify">${passages_string}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-                }
-                else if (lang==='he') {
-                  results_body.append(
-                          `<tr><td class="text-justify" class="text-he">${passages_string}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-                }
-                else if (lang==='ar') {
-                  results_body.append(
-                          `<tr><td class="text-justify" class="text-ar">${passages_string}</td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-                }
-              }
-              else {
-                if (lang==='la') {
-                  results_body.append(
-                          `<tr><td class="text-justify">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-                }
-                else if (lang==='he') {
-                  results_body.append(
-                          `<tr><td class="text-justify" class="text-he">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-                }
-                else if (lang==='ar') {
-                  results_body.append(
-                          `<tr><td class="text-justify" class="text-ar">${passages_string}</td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-                }
-                prec_title = title
-              }
+              fillResultsTable(passage, title, foliation, transcriber, link, lang, zoom, prev_title, k)
+              prev_title = title
             }
           }
         }
+      }
+
+      // Function to update search results when user is zooming
+      function updateResults (data, zoom, radius, index) {
+
+        // Get selector for updating results
+        let results_body = document.getElementById("resultsTable")
+
+        // Get the relevant data
+        let tokens_matched = data[index-1]['tokens_matched']
+        let transcript_tokenized = data[index-1]['transcript_tokenized']
+        let position = data[index-1]['position']
+
+        // Slice and highlight passage
+        let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, position, radius, zoom[index])
+        results_body.rows[index].cells[0].innerHTML = passage;
       }
 
       // Function to add a link to a string in html
@@ -420,38 +293,51 @@
           }
           prev_title = title
         }
+
         return num_docs
       }
 
-      // Function to highlight the searched keywords in their context
-      function highlight (passage, tokens_matched, position, radius) {
+      // Function to slice passages out of a transcript depending on zoom value
+      // and highlight the searched keywords in the passages depending on radius value
+      function sliceAndHighlight (transcript, tokens_matched, position, radius, zoom) {
+        
+        // SLICE
+        let transcript_len = transcript.length
+        let passage_start = position-zoom
+        let passage_end = parseInt(position)+parseInt(zoom)+1
 
-        // String to return – contains passages with highlighted words in it
+        if (passage_start < 0) {
+          passage_start = 0
+        }
+
+        if (passage_end > (transcript_len-1)) {
+          passage_end = transcript_len
+        }
+
+        let passage = transcript.slice(passage_start, passage_end)
+
+        // HIGHLIGHT
         let passage_highlighted = ""
 
         // Convert array to string with bold tokens_matched
         for (let i=0; i<passage.length; i++) {
           // Get current word of passage-array
           let token = passage[i]
-          // Bold token, if it is one of the tokens_matched and inside the search radius
-          //let close = checkCloseness(i, position, radius)
-          if (tokens_matched.indexOf(token) !== -1) {
-            // token = token.bold()
+          // Highlight token, if it is one of the tokens_matched and inside the search radius, not the zoom (!) radius
+          if (tokens_matched.indexOf(token) !== -1 && insideRadius(i+passage_start, position, radius)) {
             token = "<mark>" + token + "</mark>"
           }
           // Append token to returned string
           passage_highlighted = passage_highlighted + token + " "
         }
 
-        return passage_highlighted
+        return removeBlanks(passage_highlighted)
       }
 
-      // Function to if a matched keyword is inside the search radius
-      function checkCloseness (index, position, radius) {
+      // Function to check if a matched keyword is inside the search radius
+      function insideRadius (index, position, radius) {
 
         let distance = Math.abs(index-position)
-        $("#error_message").html(`${distance}`)
-
         if (distance>radius) {
             return false
           }
@@ -460,7 +346,7 @@
           }
       }
 
-      // Function to remove inadequate blanks from transcript
+      // Function to remove inadequate blanks from passage
       function removeBlanks (text) {
         text = text.replaceAll(" .", ".")
         text = text.replaceAll(" ,", ",")
@@ -470,23 +356,86 @@
 
         return text
       }
+      
+      function fillResultsTable(passage, title, foliation, transcriber, link, lang, zoom, prev_title=' ', k) {
+
+        // Get selector
+        let results_body = $("#resultsTable tbody")
+
+        // Don't write title into the results table, if it is identical to the title of the previous passage
+        if (title === prev_title) {
+
+          if (lang==='la') {
+            results_body.append(
+                    `<tr><td class="text-justify" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+          }
+          else if (lang==='he') {
+            results_body.append(
+                    `<tr><td class="text-justify" class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+          }
+          else if (lang==='ar') {
+            results_body.append(
+                    `<tr><td class="text-justify" class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+          }
+        }
+
+      else {
+          if (lang === 'la') {
+            results_body.append(
+                    `<tr><td class="text-justify" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+          } else if (lang === 'he') {
+            results_body.append(
+                    `<tr><td class="text-justify" class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+          } else if (lang === 'ar') {
+            results_body.append(
+                    `<tr><td class="text-justify" class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+          }
+        }
+
+        // Zoom events
+        let zoom_global = $("#zoomGlobal")
+        $(zoom_global).on("change", function (event) {
+          for (i=1; i<(k+1); i++) {
+            let name = "#zoomSlider" + i
+            let value = zoom_global.val()
+            $(name).prop("value", value)
+            let zoom_slider = $(name)
+            let radius_slider = $("#radiusSlider")
+            let index = name.match(/\d/g);
+            index = index.join("");
+            zoom[index] = zoom_slider.val()
+            let radius = parseInt(radius_slider.val()) + 1
+            updateResults(data_for_zooming, zoom, radius, index)
+          }
+          })
+
+
+        for (i=1; i<(k+1); i++) {
+          let name = "#zoomSlider" + i
+          $(name).on("change", function (event) {
+            let zoom_slider = $(name)
+            let radius_slider = $("#radiusSlider")
+            let index = name.match(/\d/g);
+            index = index.join("");
+            zoom[index] = zoom_slider.val()
+            let radius = parseInt(radius_slider.val()) + 1
+            updateResults(data_for_zooming, zoom, radius, index)
+          })
+      }
+
+        return true
+      }
 
     </script>
+
 {%  endblock %}
 
 {% block content %}
     <h1> Search </h1>
-  <p>
-    Type in a keyword and press 'Enter' to search.
-{#  <div>#}
-{#  <b>Edition Mode</b>#}
-{#    <input type="checkbox" id="edition_mode" name="edition_mode">#}
-{#  </div>#}
-  </p>
 
-  <table class="dataTable" id="searchTable">
-    <tr><td><b>Keywords</b></td><td><b>Lemmatization</b></td><td><b>Radius</b></td></tr>
-
+  <br>
+  <table class="docTable dataTable" id="searchTable">
+    <tr><th><span title="You can use the wildcard '*' to search for words with a specific part, like 'philosoph*', '*losophus' or '*soph*'.">Keywords</span></th><th><span title="Here you can choose a specific transcript to search in.">Transcript</span></th><th><span title="Here you can limit your search to transcripts by a specific transcriber.">Transcriber</span></th><th style="text-align: center"><span title="Here you can specify how many tokens, i. e. words or punctuation marks, are allowed to occur between your first keyword and the following ones. A value of 0 means that only the occurrence of directly consecutive keywords counts as a match.">Keyword Distance</span></th><th class="text-center"><span title="If checked, all conjugated or declined forms of your keywords will count as matches.">Lemmatization</span></th></tr>
     <tr>
         <td>
             <div id="search_form">
@@ -495,20 +444,6 @@
             </div>
         </td>
         <td>
-          <div>
-            <input type="checkbox" label="lemmatize" id="lemmatize" name="lemmatize">
-          </div>
-        </td>
-        <td>
-          <form>
-            <label for="radiusSlider"></label>
-            <input type="range" id="radiusSlider" name="radiusSlider" min="0" max="80" value="30">
-          </form>
-        </td>
-    </tr>
-      <tr><td><b>Transcript</b></td><td><b>Transcriber</b></td><td><b>Zoom</b></td></tr>
-      <tr>
-        <td>
           <div id="doc_form">
             <label for="transcriptBox"></label>
             <input list="titleList" id="transcriptBox" placeholder="" autocomplete="off">
@@ -516,19 +451,27 @@
             </datalist>
           </div>
         </td>
+        <td>
+          <div id="transcriber_form">
+            <label for="transcriberBox"></label>
+            <input list="transcriberList" id="transcriberBox" placeholder="" autocomplete="off">
+            <datalist id="transcriberList">
+            </datalist>
+          </div>
+        </td>
+      <td style="text-align: center">
+        <form>
+          <label for="radiusSlider"></label>
+          <input type="number" id="radiusSlider" name="radiusSlider" min="0" max="80" value="10">
+        </form>
+      </td>
       <td>
-        <div id="transcriber_form">
-          <label for="transcriberBox"></label>
-          <input list="transcriberList" id="transcriberBox" placeholder="" autocomplete="off">
-          <datalist id="transcriberList">
-          </datalist>
+        <div class="text-center">
+          <input type="checkbox" label="lemmatize" id="lemmatize" name="lemmatize">
         </div>
       </td>
       <td>
-        <form>
-          <label for="zoomSlider"></label>
-          <input type="range" id="zoomSlider" name="radiusSlider" min="0" max="80" value="30">
-        </form>
+        <button type="button" label="Search" id="searchButton" name="Search" style="background-color: white">Search!</button>
       </td>
     </tr>
 </table>

@@ -9,8 +9,8 @@ use OpenSearch\ClientBuilder;
 class EditionIndexCreator extends IndexCreator
 {
     // Variables for OpenSearch client and the name of the index to create
-    protected Client $client;
-    protected string $indexName;
+    public Client $client;
+    public string $indexName;
     protected $ctable;
 
     public function main($argc, $argv): bool

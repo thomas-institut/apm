@@ -31,7 +31,7 @@ use OpenSearch\ClientBuilder;
  * Commandline utility to update the OpenSearch-index with all transcripts that are scheduled in the SQL-table ,scheduler'.
  *
  * REQUIREMENTS
- * 1. There has to exist an index in OpenSearch called ,transcripts'. There fore execute ./createindex in the utilities-directory.
+ * 1. There has to exist an index in OpenSearch called ,transcripts'. Therefore execute ./createindex in the utilities-directory.
  * 2. The SQL table ap_scheduler has to be created before with the right structure. (see OpenSearchScheduler-class)
  * 3. Because ./updateindex will be triggered via cron, add the following line to your root crontab (sudo crontab -e). Replace 'ASTERISK' with '*':
 
@@ -150,10 +150,8 @@ class IndexUpdater extends IndexCreator
         return true;
     }
 
-
-    // TODO: add types to parameters
     // Function to get a full list of OpenSearch-IDs in the index
-    protected function getIDs ($client, $index_name): array
+    protected function getIDs ($client, string $index_name): array
     {
 
         // Array to return
@@ -182,7 +180,7 @@ class IndexUpdater extends IndexCreator
     }
 
     // Function to query a given OpenSearch-index
-    protected function transcriptionStatus ($client, $index_name, $doc_id, $page, $col): array
+    protected function transcriptionStatus ($client, string $index_name, string $doc_id, string $page, string $col): array
     {
 
             $query = $client->search([

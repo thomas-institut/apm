@@ -72,9 +72,6 @@ export class EditionViewerCanvas {
     })
     this.options = oc.getCleanOptions(options)
 
-    // console.log('Viewer clean options')
-    // console.log(this.options)
-
     this.geometry = {
       pageWidth: Typesetter2.cm2px(this.options.pageWidthInCm),
       pageHeight: Typesetter2.cm2px(this.options.pageHeightInCm),
@@ -96,19 +93,11 @@ export class EditionViewerCanvas {
       normalSpaceWidthInEms: this.options.normalSpaceWidthInEms
     }
 
-    // console.log('Viewer geometry')
-    // console.log(this.geometry)
 
     this.edition = this.options.edition
     this.canvas = this.options.canvasElement
     this.debug = this.options.debug
     this.canvasRenderer = new CanvasRenderer(this.canvas, this.edition.lang === 'la' ? 'ltr' : 'rtl')
-
-    // this.debug && console.log(`Options`)
-    // this.debug && console.log(this.options)
-    // this.debug && console.log(`Geometry`)
-    // this.debug && console.log(this.geometry)
-
     BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(this.geometry.pageWidth), Math.round(this.geometry.pageHeight))
     this.canvasRenderer.setScale(this.options.scale).setPageMargin(pageMarginInCanvas)
     this.canvasMeasurer = new CanvasTextBoxMeasurer()
@@ -186,7 +175,6 @@ export class EditionViewerCanvas {
         debug: true
       }
       // Load fonts
-      // TODO: make this better by getting a list of used fonts in the stylesheet
       console.log(`Loading fonts`)
       let fontsToLoad = []
       this.options.editionStyleSheet.getFontFamilies().forEach( (fontFamily) => {

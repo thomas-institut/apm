@@ -31,7 +31,6 @@ import { ApparatusEntry } from './ApparatusEntry.mjs'
 import { FmtText } from '../FmtText/FmtText.mjs'
 import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
 import { FontConversions } from '../Typesetter2/FontConversions.mjs'
-import { KeyCache } from '../toolbox/KeyCache.js'
 import { KeyStore } from '../toolbox/KeyStore.mjs'
 
 

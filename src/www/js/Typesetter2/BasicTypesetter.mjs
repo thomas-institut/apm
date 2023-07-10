@@ -75,7 +75,7 @@ export class BasicTypesetter extends Typesetter2 {
         // a function to typeset an apparatus for the given line range must return a Promise
         // for a horizontal ItemList that will then be typeset and added to the document/page
         getApparatusListToTypeset: { type: 'function', default: (mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine) => {
-          console.log(`Default typeset apparatus called`)
+          console.log(`Default typeset apparatus called `)
           return resolvedPromise(new ItemList())
         }},
         // a function that will be called before typesetting the apparatuses
@@ -147,8 +147,8 @@ export class BasicTypesetter extends Typesetter2 {
       })
       let lnOptions = lnOc.getCleanOptions(this.options.lineNumbersOptions)
       this.options.lineNumbersOptions = lnOptions
-      // console.log(`Line Number clean options`)
-      // console.log(lnOptions)
+      console.log(`Line Number clean options`)
+      console.log(lnOptions)
       this.addPageOutputProcessor(this.__constructAddLineNumbersProcessor(lnOptions))
     }
     console.log('Basic typesetter clean options')

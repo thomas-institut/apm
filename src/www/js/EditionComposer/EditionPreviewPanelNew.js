@@ -211,6 +211,8 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
         mainTextList: typesettingParameters.mainTextVerticalListToTypeset.getExportObject(),
         extraData: typesettingParameters.extraData
       }
+      console.log(`About to call PDF API with the following data:`)
+      console.log(data)
       let currentButtonHtml = this.downloadPdfButton.html()
       this.downloadPdfButton.html(`Waiting for server's PDF... ${this.options.icons.busy}`)
       this.options.getPdfDownloadUrl(data).then( (url) => {

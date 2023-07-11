@@ -292,6 +292,18 @@ class ApmUrlGenerator {
         return this.base + '/api/witness/check/updates';
     }
 
+    apiSearchKeyword() {
+        return `${this.base}/api/search/keyword`
+    }
+
+    apiSearchTranscribers() {
+        return `${this.base}/api/search/transcribers`
+    }
+
+    apiSearchTitles() {
+        return `${this.base}/api/search/titles`
+    }
+
 
     images() {
         return this.base + '/images'

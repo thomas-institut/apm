@@ -43,6 +43,7 @@ module.exports = {
     ChunkPage: './pages/ChunkPage.js',
     ApmLogPage: './pages/ApmLogPage.js',
     DashboardPage: './pages/DashboardPage.js',
+    SearchPage: './pages/SearchPage.js',
     UserManager: {
       import: './pages/UserManagerPage.js',
       filename: 'UserManagerPage.bundle.js'

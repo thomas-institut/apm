@@ -52,7 +52,8 @@ export const arabicDeGruyter = {
         lineNumbers: "arabic",   //  "western", "arabic", "none"
         lineNumbersToTextDistance: "0.7 cm",
         lineNumbersFontSize: "0.9 em",
-        lineNumbersPosition: "right"
+        lineNumbersPosition: "right",
+        resetLineNumbersEachPage: true
       },
       paragraph: {
         lineSkip: "18 pt",

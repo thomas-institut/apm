@@ -43,7 +43,8 @@ export const defaultArabicEditionStyle = {
         lineNumbers: "arabic",   //  "western", "arabic", "none"
         lineNumbersToTextDistance: "0.5 cm",
         lineNumbersFontSize: "0.9 em",
-        lineNumbersPosition: "right"
+        lineNumbersPosition: "right",
+        resetLineNumbersEachPage: false
       },
       paragraph: {
         lineSkip: "18 pt",

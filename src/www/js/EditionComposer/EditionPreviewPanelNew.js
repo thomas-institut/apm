@@ -179,6 +179,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       },
       mainTextFontSizeInPts: Dimension.px2pt(defaultFontSize),
       lineNumbersFontSizeInPts: Dimension.str2pt(defaultStyleDef.page.lineNumbersFontSize, defaultFontSize),
+      resetLineNumbersEachPage: defaultStyleDef.page.resetLineNumbersEachPage,
       apparatusFontSizeInPts: Dimension.px2pt(apparatusFontSize),
       mainTextLineHeightInPts: Dimension.str2pt(defaultStyleDef.paragraph.lineSkip, defaultFontSize),
       apparatusLineHeightInPts: Dimension.str2pt(apparatusStyleDef.paragraph.lineSkip, apparatusFontSize),

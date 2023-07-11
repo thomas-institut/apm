@@ -60,6 +60,7 @@ export class EditionViewerCanvas {
           }},
         mainTextFontSizeInPts: { type: 'NumberGreaterThanZero', default: 12},
         lineNumbersFontSizeInPts: { type: 'Number', default: 10},
+        resetLineNumbersEachPage: { type: 'boolean', default: false},
         apparatusFontSizeInPts: { type: 'NumberGreaterThanZero', default: 10},
         mainTextLineHeightInPts: { type: 'NumberGreaterThanZero', default: 15},
         apparatusLineHeightInPts: { type: 'NumberGreaterThanZero', default: 12},
@@ -227,7 +228,7 @@ export class EditionViewerCanvas {
               frequency: 5,
               numberStyle: this.edition.lang,
               align: lineNumbersAlign,
-              resetEachPage: true,
+              resetEachPage: this.options.resetLineNumbersEachPage,
               xPosition: lineNumbersX
             },
             textBoxMeasurer: this.canvasMeasurer,

@@ -44,7 +44,8 @@ export const defaultLatinEditionStyle =  {
       lineNumbers: "western",   //  "western", "arabic", "none"
       lineNumbersToTextDistance: "0.5 cm",
       lineNumbersFontSize: "0.8 em",
-      lineNumbersPosition: "left"
+      lineNumbersPosition: "left",
+      resetLineNumbersEachPage: false
     },
     paragraph: {
       lineSkip: "18 pt",

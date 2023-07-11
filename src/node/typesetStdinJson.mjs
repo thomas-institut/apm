@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 Universität zu Köln
+ *  Copyright (C) 2022-23 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@ import {PangoMeasurerNodeGTK} from './PangoMeasurerNodeGTK.mjs'
 import {BasicTypesetter} from '../www/js/Typesetter2/BasicTypesetter.mjs'
 import {EditionTypesetting} from '../www/js/Edition/EditionTypesetting.mjs'
 import {resolvedPromise} from '../www/js/toolbox/FunctionUtil.mjs'
-import { StyleSheet } from '../www/js/Typesetter2/Style/StyleSheet.mjs'
 import { SystemStyleSheet } from '../www/js/Typesetter2/Style/SystemStyleSheet.mjs'
 
 const debug = true
@@ -74,13 +73,12 @@ if (data.helperOptions !== undefined) {
   // debug && console.log(`Extra data`)
   // debug && console.log(data.extraData)
   data.helperOptions.textBoxMeasurer = data.options.textBoxMeasurer
-  // debug && console.log('Helper options')
   // debug && console.log(data.helperOptions, data.helperOptions.styleId)
   debug && console.log(`Edition lang: '${data.helperOptions.edition.lang}', style Id = ${data.helperOptions.styleId}`)
   data.helperOptions.editionStyleSheet = SystemStyleSheet.getStyleSheet(data.helperOptions.edition.lang, data.helperOptions.styleId)
   let editionTypesettingHelper = new EditionTypesetting(data.helperOptions)
-  data.options.getApparatusListToTypeset = (mainTextVerticalList, apparatus, lineFrom, lineTo) => {
-    return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo)
+  data.options.getApparatusListToTypeset = (mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine) => {
+    return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine)
   }
     data.options.preTypesetApparatuses = () => {
     editionTypesettingHelper.resetExtractedMetadataInfo()

@@ -53,7 +53,7 @@ export function setupSearchPage(baseUrl) {
     let checked = lemmatization_box.prop("checked")
     let user_input = keywords_box.val()
     if (checked && user_input.includes("*")) {
-      errorMessageDiv.html(`You cannot use wildcards (*) combined with lemmatization. Maybe it will be possible in the future.`)
+      errorMessageDiv.html(`You cannot use wildcards (*) combined with lemmatization`)
     } else {
       errorMessageDiv.html('')
     }
@@ -63,7 +63,7 @@ export function setupSearchPage(baseUrl) {
     let checked = lemmatization_box.prop("checked")
     let user_input = keywords_box.val()
     if (checked && user_input.includes("*")) {
-      errorMessageDiv.html(`You cannot use wildcards (*) combined with lemmatization. Maybe it will be possible in the future.`)
+      errorMessageDiv.html(`You cannot use wildcards (*) combined with lemmatization`)
     } else {
       errorMessageDiv.html('')
     }

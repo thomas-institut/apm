@@ -31,12 +31,17 @@ class ApiSearch extends ApiController
         $status = 'OK';
         $now = TimeString::now();
 
+        $this->profiler->start();
         // Get all user input!
         $searched_phrase = $this->removeBlanks(strtolower($_POST['searched_phrase'])); // Lower-case and without additional blanks
         $doc_title = $_POST['title'];
         $transcriber = $_POST['transcriber'];
         $radius = $_POST['radius'];
         $lemmatize = filter_var($_POST['lemmatize'], FILTER_VALIDATE_BOOLEAN);
+        $lang = $_POST['lang'] ?? 'detect';
+
+        $this->logger->debug("Input parameters", [ 'text' => $searched_phrase, 'radius' => $radius, 'lang' => $lang, 'lemmatize' => $lemmatize]);
+
 
         // Instantiate OpenSearch client
         try {
@@ -45,28 +50,34 @@ class ApiSearch extends ApiController
             $status = 'Connecting to OpenSearch server failed.';
             return $this->responseWithJson($response, ['searched_phrase' => $searched_phrase,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
-        
-        // Tokenization and lemmatization of searched phrase with python
-        exec("python3 ../python/Lemmatizer_Query.py $searched_phrase", $tokens_and_lemmata, $retval);
 
-        // Log output from exec-function
-        $this->logger->debug('output', [$tokens_and_lemmata, $retval]);
+        $this->profiler->lap("Setup");
 
-        // Tokens, lemmata and language of the searched phrase
-        $lang = $tokens_and_lemmata[1];
-        $lemmata = explode("#", $tokens_and_lemmata[3]);
+
 
         if ($lemmatize) {
+            // Tokenization and lemmatization of searched phrase with python
+            exec("python3 ../python/Lemmatizer_Query.py $lang $searched_phrase", $tokens_and_lemmata, $retval);
+
+            // Log output from exec-function
+            $this->logger->debug('output', [$tokens_and_lemmata, $retval]);
+
+            // Tokens, lemmata and language of the searched phrase
+            $lang = $tokens_and_lemmata[0];
+            $lemmata = explode("#", $tokens_and_lemmata[2]);
             $tokens_for_query = explode("#", $tokens_and_lemmata[2]);
             $first_token_for_query = $lemmata[0];
         }
         else {
             $tokens_for_query = explode(" ", $searched_phrase);
+            $lemmata = $tokens_for_query;
             $first_token_for_query = $tokens_for_query[0];
         }
 
         // Count tokens
         $num_tokens = count($tokens_for_query);
+
+        $this->profiler->lap("Lemmatization");
 
         // Query index for the first token in tokens_for_query – additional tokens will be handled below
         try {
@@ -85,8 +96,12 @@ class ApiSearch extends ApiController
                 ]);
         }
 
+        $this->profiler->lap("Opensearch query");
+
         // Get all information about the matched columns, including passages with the matched token as lists of tokens
         $data = $this->getData($query, $first_token_for_query, $tokens_for_query, $lemmata, $radius, $lemmatize);
+
+        $this->profiler->lap("getData");
 
         // Until now, only the first token in the searched phrase was handled
         // So, if there is more than one token in the searched phrase, now filter out all columns and passages, which do not match all tokens
@@ -101,6 +116,9 @@ class ApiSearch extends ApiController
         foreach ($data as $matched_column) {
             $num_passages_total = $num_passages_total + $matched_column['num_passages'];
         }
+
+        $this->profiler->stop();
+        $this->logTimeProfile();
 
         // ApiResponse
         return $this->responseWithJson($response, [
@@ -158,7 +176,7 @@ class ApiSearch extends ApiController
 
         // Search in all indexed columns
         if ($doc_title === "" and $transcriber === "") {
-
+            $start = microtime(true);
             $query = $client->search([
                 'index' => $index_name,
                 'body' => [
@@ -173,6 +191,8 @@ class ApiSearch extends ApiController
                         ]
                     ]
             ]);
+            $end = microtime(true);
+            $this->logger->debug("Opensearch query executed in " . $end - $start);
         }
 
         // Search only in specific columns, specified by transcriber or title

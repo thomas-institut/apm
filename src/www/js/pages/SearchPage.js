@@ -1,4 +1,5 @@
 import { wait } from '../toolbox/FunctionUtil.mjs'
+import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
 
 let urlGen = new ApmUrlGenerator('')
 let data_for_zooming = []
@@ -147,9 +148,17 @@ function search() {
   // Clear data_for_zooming
   data_for_zooming = []
 
+  let ld = new LanguageDetector({ defaultLang: 'la'})
+  let searchText = $("#keywordBox").val()
+  let detectedLang = ld.detectLang(searchText)
+
+  console.log(`Detected language for '${searchText}' is '${detectedLang}'`)
+
+
   // User inputs
   const inputs = {
-    searched_phrase: $("#keywordBox").val(),
+    searched_phrase: searchText,
+    lang: detectedLang,
     title: $("#transcriptBox").val(),
     transcriber: $("#transcriberBox").val(),
     radius: parseInt($("#radiusSlider").val()) + 1,

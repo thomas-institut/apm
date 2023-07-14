@@ -267,7 +267,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
             'trace' => $e->getTraceAsString()]);
     }
 
-    private function logMethodProfilerData($fullLapInfo = false) : void
+    protected function logMethodProfilerData($fullLapInfo = false) : void
     {
         $lapInfo = $this->profiler->getLaps();
         if (count($lapInfo) === 0) {
@@ -285,6 +285,22 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
         $info = $fullLapInfo ? $lapInfo :[];
         $this->logger->debug(sprintf("API method %s ran in %0.3f ms, %d MySql queries, %d cache hits, %d misses",
             $this->apiCallName, $totalTimeInMs, $totalQueries, $cacheHits, $cacheMisses), $info);
+    }
+
+    protected function logTimeProfile() : void{
+        $lapInfoArray = $this->profiler->getLaps();
+        if (count($lapInfoArray) === 0) {
+            $this->logger->warning("No laps to log for method $this->apiCallName");
+            return;
+        }
+        $totalTimeInMs = $this->getProfilerTotalTime() * 1000;
+        $info = [];
+        foreach ($lapInfoArray as $i => $lapInfo) {
+            $info[] =  sprintf("(%d) %s : %.3f ms", $i+1, $lapInfo["LapName"], $lapInfo["time"]["delta"]*1000);
+        }
+
+        $this->logger->debug(sprintf("API method %s ran in %0.3f ms",
+            $this->apiCallName, $totalTimeInMs), $info);
     }
 
     protected function getProfilerTotalTime() : float

@@ -5,19 +5,20 @@ from langdetect import detect
 import sys
 
 # Get phrase from php exec-command
-phrase = sys.argv[1:]
-phrase = " ".join(phrase)
+tokens = sys.argv[2:]
+phrase = " ".join(tokens)
 
 # Detect language
-lang = detect(phrase)
-
-# Download model for hebrew lemmatization
-spacy_udpipe.download("he")
+lang = sys.argv[1]
+if lang == 'detect':
+    lang = detect(phrase)
 
 # Tokenization and lemmatization in three languages
 if (lang=='he'):
+    # Download model for hebrew lemmatization
+    spacy_udpipe.download("he")
     nlp = spacy_udpipe.load('he')
-    tokens = phrase.split(" ")
+#     tokens = phrase.split(" ")
     lemmata = []
     for t in tokens:
         annotations = nlp(t)
@@ -25,7 +26,7 @@ if (lang=='he'):
         lemmata.append(lemma)
 elif (lang=='ar' or lang=='fa'):
     lang='ar'
-    tokens = phrase.split(" ")
+#     tokens = phrase.split(" ")
     lemmatizer = qalsadi.lemmatizer.Lemmatizer()
     lemmata = [lemmatizer.lemmatize(t) for t in tokens]
 else:

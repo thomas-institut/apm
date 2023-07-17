@@ -3,22 +3,24 @@ namespace APM\Api;
 
 use APM\System\ApmConfigParameter;
 use APM\System\SystemManager;
+use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
 use PHPUnit\Util\Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
-use function DI\string;
 
 class ApiSearch extends ApiController
 {
 
+    const LEMMATA_CACHE_PREFIX = 'SearchLemma_';
     const CLASS_NAME = 'Search';
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws KeyNotInCacheException
      */
 
     // Function to search in an OpenSearch-Index – returns an api response to js
@@ -52,42 +54,55 @@ class ApiSearch extends ApiController
         }
 
         $this->profiler->lap("Setup");
-
-
+        $tokensForQuery = [];
 
         if ($lemmatize) {
-            // Tokenization and lemmatization of searched phrase with python
-            exec("python3 ../python/Lemmatizer_Query.py $lang $searched_phrase", $tokens_and_lemmata, $retval);
+            // Lemmatization in python is very slow, so we need to cache it as much as possible
+            $cache = $this->systemManager->getSystemDataCache();
+            $searchTokens = explode(' ', $searched_phrase);
+            $tokensToLemmatizeWithPython = [];
 
-            // Log output from exec-function
-            $this->logger->debug('output', [$tokens_and_lemmata, $retval]);
-
-            // Tokens, lemmata and language of the searched phrase
-            $lang = $tokens_and_lemmata[0];
-            $lemmata = explode("#", $tokens_and_lemmata[2]);
-            $tokens_for_query = explode("#", $tokens_and_lemmata[2]);
-            $first_token_for_query = $lemmata[0];
+            foreach($searchTokens as $token) {
+                $cacheKey = $this->getLemmaCacheKey($token);
+                if ($cache->isInCache($cacheKey)) {
+                    $tokensForQuery[] = $cache->get($cacheKey);
+                } else {
+                    $tokensToLemmatizeWithPython[] = $token;
+                }
+            }
+            if (count($tokensToLemmatizeWithPython) > 0) {
+                $this->logger->debug(count($tokensToLemmatizeWithPython) . " tokens not in cache, need to run python lemmatizer", $tokensToLemmatizeWithPython);
+                $phrase = implode(' ', $tokensToLemmatizeWithPython);
+                exec("python3 ../python/Lemmatizer_Query.py $lang $phrase", $tokens_and_lemmata, $returnValue);
+                // Log output from exec-function
+                $this->logger->debug('output', [$tokens_and_lemmata, $returnValue]);
+                $lang = $tokens_and_lemmata[0];
+                $lemmata = explode("#", $tokens_and_lemmata[2]);
+                foreach ($lemmata as $i => $lemma) {
+                    $tokensForQuery[] = $lemma;
+                    $cache->set($this->getLemmaCacheKey($tokensToLemmatizeWithPython[$i]), $lemma);
+                }
+            }
         }
         else {
-            $tokens_for_query = explode(" ", $searched_phrase);
-            $lemmata = $tokens_for_query;
-            $first_token_for_query = $tokens_for_query[0];
+            $tokensForQuery = explode(" ", $searched_phrase);
         }
+        $lemmata = $tokensForQuery;
 
         // Count tokens
-        $num_tokens = count($tokens_for_query);
+        $numTokens = count($tokensForQuery);
 
         $this->profiler->lap("Lemmatization");
 
         // Query index for the first token in tokens_for_query – additional tokens will be handled below
         try {
-            $query = $this->makeOpenSearchQuery($client, $index_name, $doc_title, $transcriber, $first_token_for_query, $lemmatize);
+            $query = $this->makeOpenSearchQuery($client, $index_name, $lang,  $doc_title, $transcriber, $tokensForQuery, $lemmatize);
         } catch (\Exception $e) {
             $status = "OpenSearch query problem";
             return $this->responseWithJson($response,
                 [
                     'searched_phrase' => $searched_phrase,
-                    'queried_token' => $first_token_for_query,
+                    'queried_token' => $tokensForQuery,
                     'matches' => [],
                     'serverTime' => $now,
                     'status' => $status,
@@ -99,15 +114,15 @@ class ApiSearch extends ApiController
         $this->profiler->lap("Opensearch query");
 
         // Get all information about the matched columns, including passages with the matched token as lists of tokens
-        $data = $this->getData($query, $first_token_for_query, $tokens_for_query, $lemmata, $radius, $lemmatize);
+        $data = $this->getData($query, $tokensForQuery[0], $tokensForQuery, $lemmata, $radius, $lemmatize);
 
         $this->profiler->lap("getData");
 
         // Until now, only the first token in the searched phrase was handled
         // So, if there is more than one token in the searched phrase, now filter out all columns and passages, which do not match all tokens
-        if ($num_tokens !== 1) {
-            for ($i=1; $i<$num_tokens; $i++) {
-                $data = $this->filterData($data, $tokens_for_query[$i], $lemmata[$i], $lemmatize);
+        if ($numTokens !== 1) {
+            for ($i=1; $i<$numTokens; $i++) {
+                $data = $this->filterData($data, $tokensForQuery[$i], $lemmata[$i], $lemmatize);
             }
         }
 
@@ -130,7 +145,13 @@ class ApiSearch extends ApiController
             'status' => $status]);
     }
 
-    private function removeBlanks ($searched_phrase) {
+    private  function getLemmaCacheKey($word): string
+    {
+        return self::LEMMATA_CACHE_PREFIX . $word;
+    }
+
+    private function removeBlanks ($searched_phrase): array|string|null
+    {
 
         // Reduce multiple blanks following each other anywhere in the keyword to one single blank
         $searched_phrase = preg_replace('!\s+!', ' ', $searched_phrase);
@@ -149,23 +170,23 @@ class ApiSearch extends ApiController
     }
 
     // Function, which instantiates OpenSearch client
-    static private function instantiateClient ($systemManager)
+    static private function instantiateClient ($systemManager): Client
     {
         // Load authentication data from config-file
         $config = $systemManager->getConfig();
 
-        $client = (new ClientBuilder())
+        return (new ClientBuilder())
             ->setHosts($config[ApmConfigParameter::OPENSEARCH_HOSTS])
             ->setBasicAuthentication($config[ApmConfigParameter::OPENSEARCH_USER], $config[ApmConfigParameter::OPENSEARCH_PASSWORD])
             ->setSSLVerification(false) // For testing only. Use certificate for validation
             ->build();
-
-        return $client;
     }
 
     // Function to query a given OpenSearch-index
-    private function makeOpenSearchQuery ($client, $index_name, $doc_title, $transcriber, $first_token_for_query, $lemmatize) {
+    private function makeOpenSearchQuery ($client, $index_name, $lang, $doc_title, $transcriber, $tokens, $lemmatize) {
 
+        $this->logger->debug("Making opensearch query", [ 'index' => $index_name, 'tokens' => $tokens, 'doc' => $doc_title, 'transcriber' => $transcriber]);
+//        $first_token_for_query = $tokens[0];
         // Check lemmatize (boolean) to determine the area of the query
         if ($lemmatize) {
             $area_of_query = 'transcript_lemmata';
@@ -174,124 +195,162 @@ class ApiSearch extends ApiController
             $area_of_query = 'transcript_tokens';
         }
 
+        $mustConditions = [];
+
+        $mustConditions[] = [ 'match' => ['lang' => $lang]];
+        foreach ($tokens as $token) {
+            $mustConditions[] = [ 'wildcard' => [
+                $area_of_query => $token
+            ]];
+        }
+
+        if ($transcriber !== '') {
+            $mustConditions[] = [ 'match_phrase_prefix' => [
+                'transcriber' => [
+                    "query" => $transcriber
+                ]
+            ]];
+        }
+
+        if ($doc_title !== '') {
+            $mustConditions[] = [ 'match_phrase_prefix' => [
+                'title' => [
+                    "query" => $doc_title
+                ]
+            ]];
+        }
+
         // Search in all indexed columns
-        if ($doc_title === "" and $transcriber === "") {
-            $start = microtime(true);
-            $query = $client->search([
-                'index' => $index_name,
-                'body' => [
-                    'size' => 20000,
-                    'query' => [
-                        'query_string' => [
-                                "query" => $first_token_for_query,
-                                "default_field" => $area_of_query,
-                                "analyze_wildcard" => true,
-                                "allow_leading_wildcard" => true
-                            ]
-                        ]
-                    ]
-            ]);
-            $end = microtime(true);
-            $this->logger->debug("Opensearch query executed in " . $end - $start);
-        }
+//        if ($doc_title === "" and $transcriber === "") {
+//            $query = $client->search([
+//                'index' => $index_name,
+//                'body' => [
+//                    'from' => 0,
+//                    'size' => 20000,
+//                    'query' => [
+//                        'bool' => [
+//                            'must' => $mustConditions
+////                            'must' => [
+////                                'query_string' => [
+////                                    "query" => $first_token_for_query,
+////                                    "default_field" => $area_of_query,
+////                                    "analyze_wildcard" => true,
+////                                    "allow_leading_wildcard" => true
+////                                ]
+////                            ]
+//                        ]
+//                    ]
+//                ]
+//            ]);
+//        }
+//
+//        // Search only in specific columns, specified by transcriber or title
+//        elseif ($transcriber === "") {
+//
+//            $query = $client->search([
+//                'index' => $index_name,
+//                'body' => [
+//                    'size' => 20000,
+//                    'query' => [
+//                        'bool' => [
+//                            'filter' => [
+//                                'match_phrase_prefix' => [
+//                                    'title' => [
+//                                        "query" => $doc_title
+//                                    ]
+//                                ]
+//                            ],
+//                            'must' => [
+//                                'query_string' => [
+//                                    "query" => $first_token_for_query,
+//                                    "default_field" => $area_of_query,
+//                                    "analyze_wildcard" => true,
+//                                    "allow_leading_wildcard" => true
+//                                ]
+//                            ]
+//                        ]
+//                    ]
+//                ]
+//            ]);
+//        }
+//
+//        elseif ($doc_title === "") {
+//
+//            $query = $client->search([
+//                'index' => $index_name,
+//                'body' => [
+//                    'size' => 20000,
+//                    'query' => [
+//                        'bool' => [
+//                            'filter' => [
+//                                'match_phrase_prefix' => [
+//                                    'transcriber' => [
+//                                        "query" => $transcriber
+//                                    ]
+//                                ]
+//                            ],
+//                            'must' => [
+//                                'query_string' => [
+//                                    "query" => $first_token_for_query,
+//                                    "default_field" => $area_of_query,
+//                                    "analyze_wildcard" => true,
+//                                    "allow_leading_wildcard" => true
+//                                ]
+//                            ]
+//                        ]
+//                    ]
+//                ]
+//            ]);
+//        }
+//        // Transcriber AND title are given
+//        else {
+//
+//            $query = $client->search([
+//                'index' => $index_name,
+//                'body' => [
+//                    'size' => 20000,
+//                    'query' => [
+//                        'bool' => [
+//                            'filter' => [
+//                                'match_phrase_prefix' => [
+//                                    'title' => [
+//                                        "query" => $doc_title
+//                                    ]
+//                                ]
+//                            ],
+//                            'should' => [
+//                                'match_phrase_prefix' => [
+//                                    'transcriber' => [
+//                                        "query" => $transcriber,
+//                                    ]
+//                                ]
+//                            ],
+//                            "minimum_should_match" => 1,
+//                            'must' => [
+//                                'query_string' => [
+//                                    "query" => $first_token_for_query,
+//                                    "default_field" => $area_of_query,
+//                                    "analyze_wildcard" => true,
+//                                    "allow_leading_wildcard" => true
+//                                ]
+//                            ]
+//                        ]
+//                    ]
+//                ]
+//            ]);
+//        }
 
-        // Search only in specific columns, specified by transcriber or title
-        elseif ($transcriber === "") {
-
-            $query = $client->search([
-                'index' => $index_name,
-                'body' => [
-                    'size' => 20000,
-                    'query' => [
-                        'bool' => [
-                            'filter' => [
-                                'match_phrase_prefix' => [
-                                    'title' => [
-                                        "query" => $doc_title
-                                    ]
-                                ]
-                            ],
-                            'must' => [
-                                'query_string' => [
-                                    "query" => $first_token_for_query,
-                                    "default_field" => $area_of_query,
-                                    "analyze_wildcard" => true,
-                                    "allow_leading_wildcard" => true
-                                ]
-                            ]
-                        ]
+        return $client->search([
+            'index' => $index_name,
+            'body' => [
+                'size' => 20000,
+                'query' => [
+                    'bool' => [
+                        'must' => $mustConditions
                     ]
                 ]
-            ]);
-        }
-
-        elseif ($doc_title === "") {
-
-            $query = $client->search([
-                'index' => $index_name,
-                'body' => [
-                    'size' => 20000,
-                    'query' => [
-                        'bool' => [
-                            'filter' => [
-                                'match_phrase_prefix' => [
-                                    'transcriber' => [
-                                        "query" => $transcriber
-                                    ]
-                                ]
-                            ],
-                            'must' => [
-                                'query_string' => [
-                                    "query" => $first_token_for_query,
-                                    "default_field" => $area_of_query,
-                                    "analyze_wildcard" => true,
-                                    "allow_leading_wildcard" => true
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ]);
-        }
-        // Transcriber AND title are given
-        else {
-
-            $query = $client->search([
-                'index' => $index_name,
-                'body' => [
-                    'size' => 20000,
-                    'query' => [
-                        'bool' => [
-                            'filter' => [
-                                'match_phrase_prefix' => [
-                                    'title' => [
-                                        "query" => $doc_title
-                                    ]
-                                ]
-                            ],
-                            'should' => [
-                                'match_phrase_prefix' => [
-                                    'transcriber' => [
-                                        "query" => $transcriber,
-                                    ]
-                                ]
-                            ],
-                            "minimum_should_match" => 1,
-                            'must' => [
-                                'query_string' => [
-                                    "query" => $first_token_for_query,
-                                    "default_field" => $area_of_query,
-                                    "analyze_wildcard" => true,
-                                    "allow_leading_wildcard" => true
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ]);
-        }
-
-        return $query;
+            ]
+        ]);
     }
 
     // Get all information about matches, specified for a single document or all documents
@@ -306,6 +365,8 @@ class ApiSearch extends ApiController
 
         // Get number of matched columns
         $num_columns = $query['hits']['total']['value'];
+
+//        $num_columns = count($query['hits']['hits']);
 
         // If there are any matched columns, collect them all in an ordered and nested array of columns
         if ($num_columns !== 0) {
@@ -323,6 +384,7 @@ class ApiSearch extends ApiController
                 $pageID = $query['hits']['hits'][$i]['_id'];
                 $transcript_tokenized = $query['hits']['hits'][$i]['_source']['transcript_tokens'];
                 $transcript_lemmatized = $query['hits']['hits'][$i]['_source']['transcript_lemmata'];
+                $score = $query['hits']['hits'][$i]['_score'];
 
                 // Get all lower-case and upper-case token positions (lemmatized or unlemmatized) in the current column (measured in words)
                 if ($lemmatize) {
@@ -395,7 +457,8 @@ class ApiSearch extends ApiController
                     'passage_coordinates' => $passage_coordinates,
                     'passage_tokenized' => $passage_tokenized,
                     'passage_lemmatized' => $passage_lemmatized,
-                    'lemmatize' => $lemmatize
+                    'lemmatize' => $lemmatize,
+                    'score' => $score
                 ];
             }
 
@@ -406,7 +469,7 @@ class ApiSearch extends ApiController
         return $data;
     }
 
-    // Function to filter out data, which do not match additonal tokens in the searched phrase
+    // Function to filter out data, which do not match additional tokens in the searched phrase
     private function filterData (array $data, string $token_plain, string $lemma, bool $lemmatize): array {
 
         if ($lemmatize) { // Lemmatization requested

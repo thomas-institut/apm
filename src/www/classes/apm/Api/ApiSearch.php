@@ -28,8 +28,7 @@ class ApiSearch extends ApiController
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         // Name of the index, that should be queried and informative variables for the API response
-        // Name of the index to search in – informative variables for the API response
-        $index_name = 'transcripts';
+        // Informative variables for the API response
         $status = 'OK';
         $now = TimeString::now();
 
@@ -41,6 +40,9 @@ class ApiSearch extends ApiController
         $radius = $_POST['radius'];
         $lemmatize = filter_var($_POST['lemmatize'], FILTER_VALIDATE_BOOLEAN);
         $lang = $_POST['lang'] ?? 'detect';
+
+        // Name of the index to query
+        $index_name = 'transcriptions_' . $lang;
 
         $this->logger->debug("Input parameters", [ 'text' => $searched_phrase, 'radius' => $radius, 'lang' => $lang, 'lemmatize' => $lemmatize]);
 
@@ -684,29 +686,35 @@ class ApiSearch extends ApiController
     }
 
     // Function to get a full list of i. e. titles or transcribers values in the index
-    static private function getListFromIndex ($client, $index_name, $category) { // $category can be 'title' or 'transcriber'
+    static private function getListFromIndex ($client, $category) { // $category can be 'title' or 'transcriber'
+
+        $index_names = ['transcriptions_la', 'transcriptions_ar', 'transcriptions_he'];
 
         // Array to return
         $values = [];
 
         // Make a match_all query
-        $query = $client->search([
-            'index' => $index_name,
-            'size' => 20000,
-            'body' => [
-                "query" => [
-                    "match_all" => [
-                        "boost" => 1.0
-                    ]
-                ],
-            ]
-        ]);
+        foreach ($index_names as $index_name) {
 
-        // Append every value of the queried field to the $values-array, if not already done before (no duplicates)
-        foreach ($query['hits']['hits'] as $column) {
-            $value = $column['_source'][$category];
-            if (in_array($value, $values) === false) {
-                $values[] = $value;
+            $query = $client->search([
+                'index' => $index_name,
+                'size' => 20000,
+                'body' => [
+                    "query" => [
+                        "match_all" => [
+                            "boost" => 1.0
+                        ]
+                    ],
+                ]
+            ]);
+
+
+            // Append every value of the queried field to the $values-array, if not already done before (no duplicates)
+            foreach ($query['hits']['hits'] as $column) {
+                $value = $column['_source'][$category];
+                if (in_array($value, $values) === false) {
+                    $values[] = $value;
+                }
             }
         }
 
@@ -716,7 +724,6 @@ class ApiSearch extends ApiController
     static public function updateDataCache (SystemManager $systemManager) {
 
         $cache = $systemManager->getSystemDataCache();
-        $index_name = 'transcripts';
 
         // Instantiate OpenSearch client
         try {
@@ -726,8 +733,8 @@ class ApiSearch extends ApiController
         }
 
         // Get a list of all titles
-        $titles = self::getListFromIndex($client, $index_name, 'title');
-        $transcribers = self::getListFromIndex($client, $index_name, 'transcriber');
+        $titles = self::getListFromIndex($client, 'title');
+        $transcribers = self::getListFromIndex($client, 'transcriber');
 
         // Set cache
         $cache->set('Titles', serialize($titles));
@@ -751,8 +758,6 @@ class ApiSearch extends ApiController
 
         } catch (KeyNotInCacheException $e) {
 
-            $index_name = 'transcripts';
-
             // Instantiate OpenSearch client
             try {
                 $client = $this->instantiateClient($this->systemManager);
@@ -762,7 +767,7 @@ class ApiSearch extends ApiController
             }
 
             // Get a list of all titles
-            $titles = $this->getListFromIndex($client, $index_name, 'title');
+            $titles = $this->getListFromIndex($client, 'title');
 
             // Set cache
             $cache->set('Titles', serialize($titles));
@@ -791,8 +796,6 @@ class ApiSearch extends ApiController
 
         } catch (KeyNotInCacheException $e) {
 
-            $index_name = 'transcripts';
-
             // Instantiate OpenSearch client
             try {
                 $client = $this->instantiateClient($this->systemManager);
@@ -802,7 +805,7 @@ class ApiSearch extends ApiController
             }
 
             // Get a list of all transcribers
-            $transcribers = $this->getListFromIndex($client, $index_name, 'transcriber');
+            $transcribers = $this->getListFromIndex($client, 'transcriber');
 
             // Set cache
             $cache->set('Transcribers', serialize($transcribers));

@@ -15,8 +15,6 @@ if lang == 'detect':
 
 # Tokenization and lemmatization in three languages
 if (lang=='he'):
-    # Download model for hebrew lemmatization
-    spacy_udpipe.download("he")
     nlp = spacy_udpipe.load('he')
 #     tokens = phrase.split(" ")
     lemmata = []

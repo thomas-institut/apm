@@ -32,12 +32,12 @@ class ItemStats extends CommandLineUtility
     /**
      * @var MySqlHelper
      */
-    private $dbHelper;
+    private MySqlHelper $dbHelper;
 
     /**
      * @var string
      */
-    private $ti;
+    private string $itemsTableName;
 
 
     public function __construct(array $config, int $argc, array $argv)
@@ -45,22 +45,39 @@ class ItemStats extends CommandLineUtility
         parent::__construct($config, $argc, $argv);
 
         $this->dbHelper = new MySqlHelper($this->dbConn, $this->logger);
-        $this->ti = $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_ITEMS];
+        $this->itemsTableName = $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_ITEMS];
     }
 
     protected function main($argc, $argv)
     {
 
         $doCharMap = false;
+        $doWordMap = false;
         if (isset($argv[1]) && $argv[1] === 'charmap') {
             $doCharMap = true;
+        }
+
+        if (isset($argv[1])) {
+            switch ($argv[1]) {
+                case 'charmap':
+                    $doCharMap = true;
+                    break;
+
+                case 'words':
+                    $doWordMap = true;
+                    break;
+            }
         }
 
         if ($doCharMap) {
             print "Doing system charmap, this may take some time...\n";
         }
+
+        if ($doWordMap) {
+            print "Analyzing words, this may take some time....\n";
+        }
         $charMap = [];
-        $query = 'SELECT * FROM ' . $this->ti;
+        $query = 'SELECT * FROM ' . $this->itemsTableName;
 
         $r = $this->dbHelper->query($query);
         if ($r === false) {
@@ -75,10 +92,36 @@ class ItemStats extends CommandLineUtility
             'longest' => 0,
             'withBOMs' => 0
         ];
+
+        $perLang = [];
+
+        $words = [  ];
         $n = 0;
         while ($item = $r->fetch(\PDO::FETCH_ASSOC)) {
+            $n++;
+            if ($n % 500 === 0) {
+                if ($doWordMap) {
+                    $msg = "Processing $n, ";
+                    foreach ($words as $lang => $wordArray) {
+                        $msg .= "$lang: " . count($wordArray) . "   ";
+                    }
+                    print "$msg\r";
+                } else {
+                    print "Processing $n\r";
+                }
 
+            }
             $stats['count']++;
+            $itemLang = $item['lang'];
+            if (!isset($perLang[$itemLang])) {
+                $perLang[$itemLang] = [
+                    'count' => 0,
+                    'current' => 0
+                    ];
+
+                $words[$itemLang] = [];
+            }
+            $perLang[$itemLang]['count']++;
             if (is_null($item['text'])) {
                 continue;
             }
@@ -94,11 +137,8 @@ class ItemStats extends CommandLineUtility
             }
             if ($item['valid_until'] === TimeString::END_OF_TIMES) {
                 $stats['current']++;
+                $perLang[$itemLang]['current']++;
                 if ($doCharMap) {
-                    $n++;
-                    if ($n % 10000 === 0) {
-                        print "Processing $n\r";
-                    }
                     for ($i = 0; $i < $textLengthMb; $i++) {
                         $char = mb_substr($item['text'], $i, 1);
                         $unicodePoint = IntlChar::ord($char);
@@ -106,6 +146,13 @@ class ItemStats extends CommandLineUtility
                             $charMap[$unicodePoint] = 0;
                         }
                         $charMap[$unicodePoint]++;
+                    }
+                }
+
+                if ($doWordMap) {
+                    $itemWords = explode(' ', $item['text']);
+                    foreach ($itemWords as $word) {
+                        $this->accumulateWord($words[$itemLang], $word);
                     }
                 }
             }
@@ -121,9 +168,23 @@ class ItemStats extends CommandLineUtility
         $stats['averageTextLength'] = round($stats['totalLength']/ $stats['withText'], 1) . ' characters';
         $stats['mbstringsPerc'] = round($stats['mbstrings']*100 / $stats['withText'], 1) . '%';
 
+        if ($doWordMap) {
+            foreach ($words as $lang => $wordArray) {
+                $perLang[$lang]['uniqueWordCount']= count($wordArray);
+            }
+        }
         $stats['totalLength'] = $stats['totalLength'] . ' (' . round($stats['totalLength']/1024/1024, 1) . ' MB)';
         foreach($stats as $key => $value) {
             print "$key: $value\n";
+        }
+
+        print "Per language: \n";
+
+        foreach ($perLang as $lang => $langStats) {
+            print "  $lang: \n";
+            foreach($langStats as $key => $value) {
+                print "    $key: $value\n";
+            }
         }
 
 
@@ -138,11 +199,28 @@ class ItemStats extends CommandLineUtility
             foreach($unicodePoints as $unicodePoint) {
                 print $this->getUnicodePointString($unicodePoint) . "\t" . $charMap[$unicodePoint] . "\n";
             }
-
         }
 
+    }
 
+    private function accumulateWord(array &$wordArray, string $word) : void {
 
+        if (!in_array($word, $wordArray)) {
+            $wordArray[] = $word;
+        }
+//        $wordFound = false;
+//
+//        for($i = 0; $i< count($wordArray); $i++) {
+//            $wordDataItem = $wordArray[$i];
+//            if ($wordDataItem['word'] === $word) {
+//                $wordDataItem['count']++;
+//                $wordFound = true;
+//                break;
+//            }
+//        }
+//        if (!$wordFound) {
+//            $wordArray[] = [ 'word' => $word, 'count' => 1];
+//        }
     }
 
     private function getUnicodePointString(int $unicodePoint) : string {

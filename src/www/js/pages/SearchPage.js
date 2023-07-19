@@ -206,12 +206,12 @@ function search() {
       // Remove spinner
       spinner.empty();
 
-      let zoom = new Array(apiResponse.num_passages_total+1).fill(inputs.radius)
+      let zoom = new Array(apiResponse.num_passages_cropped+1).fill(inputs.radius)
 
       // Call displayResults-function and save backup of data for zoom handling
 
       state = STATE_DISPLAYING_RESULTS
-      displayResults(apiResponse.data, apiResponse.lang, apiResponse.num_passages_total, zoom, inputs.radius).then( () => {
+      displayResults(apiResponse.data, apiResponse.lang, apiResponse.num_passages_cropped, zoom, inputs.radius, apiResponse.num_passages_total, apiResponse.cropped).then( () => {
         p.stop('Results displayed')
         state = STATE_INIT
       })
@@ -226,8 +226,7 @@ function search() {
 
 
 // Function to collect and display the search results in a readable form
-async function displayResults (data, lang, num_passages, zoom, radius) {
-
+async function displayResults (data, lang, num_passages, zoom, radius, num_passages_total, cropped) {
 
   // Get selectors for displaying results
   let results_body = $("#resultsTable tbody")
@@ -288,7 +287,6 @@ async function displayResults (data, lang, num_passages, zoom, radius) {
           await wait(1)
         }
 
-
         data_for_zooming.push({
           'transcript_tokenized': transcript_tokenized,
           'tokens_matched': tokens_matched,
@@ -302,6 +300,11 @@ async function displayResults (data, lang, num_passages, zoom, radius) {
         // await wait(1)
       }
     }
+
+    if (cropped) {
+      error_message.html(`<br>Too many matches! Showing only ${num_passages} of ${num_passages_total} matched passages! Specify your query or contact the administrator!<br><br>`)
+    }
+
     // Zoom events
     let zoom_global = $("#zoomGlobal")
     let cancelled = false

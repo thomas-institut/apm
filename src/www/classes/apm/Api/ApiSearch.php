@@ -134,6 +134,22 @@ class ApiSearch extends ApiController
             $num_passages_total = $num_passages_total + $matched_column['num_passages'];
         }
 
+        // Crop data to max. 500 columns
+        $cropped = false;
+        $num_passages_cropped = 0;
+
+        if (sizeof($data) > 200) {
+            $data = array_slice($data, 0, 200);
+            $cropped = true;
+            // Get total number of matched passages in cropped data
+            foreach ($data as $matched_column) {
+                $num_passages_cropped = $num_passages_cropped + $matched_column['num_passages'];
+            }
+        }
+        else {
+            $num_passages_cropped = $num_passages_total;
+        }
+
         $this->profiler->stop();
         $this->logTimeProfile();
 
@@ -142,6 +158,8 @@ class ApiSearch extends ApiController
             'searched_phrase' => $searched_phrase,
             'lang' => $lang,
             'num_passages_total' => $num_passages_total,
+            'cropped' => $cropped,
+            'num_passages_cropped' => $num_passages_cropped,
             'data' => $data,
             'serverTime' => $now,
             'status' => $status]);

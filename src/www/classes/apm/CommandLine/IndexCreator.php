@@ -127,7 +127,7 @@ class IndexCreator extends CommandLineUtility {
                     // Add data to the OpenSearch index with a unique id
                     $id = $id + 1;
 
-                    $this->indexCol($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+                    $this->indexCol($this->client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
                 }
             }
         }
@@ -165,16 +165,16 @@ class IndexCreator extends CommandLineUtility {
         return $text;
     }
 
-    protected function getPageID ($doc_id, $page) {
+    public function getPageID ($doc_id, $page) {
         return $this->dm->getpageIDByDocPage($doc_id, $page);
     }
 
-    protected function getTitle($doc_id) {
+    public function getTitle($doc_id) {
         $doc_info = $this->dm->getDocById($doc_id);
         return $doc_info['title'];
     }
 
-    protected function getSeq($doc_id, $page) {
+    public function getSeq($doc_id, $page) {
         $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
         $page_info = $this->dm->getPageInfo($page_id);
         return $page_info['seq'];
@@ -183,7 +183,7 @@ class IndexCreator extends CommandLineUtility {
 
     // TODO: add types to parameters
 
-    protected function getTranscript($doc_id, $page, $col): string
+    public function getTranscript($doc_id, $page, $col): string
     {
         $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
         $elements = $this->dm->getColumnElementsBypageID($page_id, $col);
@@ -191,7 +191,7 @@ class IndexCreator extends CommandLineUtility {
     }
 
     // TODO: add types to parameters
-    protected function getTranscriber($doc_id, $page, $col) {
+    public function getTranscriber($doc_id, $page, $col) {
         $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
         $versions = $this->dm->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
         if ($versions === []) {
@@ -205,13 +205,13 @@ class IndexCreator extends CommandLineUtility {
     }
 
     // TODO: add types to parameters
-    protected function getLang($doc_id, $page) {
+    public function getLang($doc_id, $page) {
         $seq = $this->getSeq($doc_id, $page);
         return $this->dm->getPageInfoByDocSeq($doc_id, $seq)['lang'];
     }
 
     // TODO: add types to parameters
-    protected function getFoliation($doc_id, $page): string
+    public function getFoliation($doc_id, $page): string
     {
         $seq = $this->getSeq($doc_id, $page);
         return $this->dm->getPageFoliationByDocSeq($doc_id,  $seq);
@@ -219,7 +219,7 @@ class IndexCreator extends CommandLineUtility {
 
     // Function to add pages to the OpenSearch index
     // TODO: add types to parameters
-    protected function indexCol ($id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang): bool
+    public function indexCol ($client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang): bool
     {
 
         $indexName = 'transcriptions_' . $lang;
@@ -246,7 +246,7 @@ class IndexCreator extends CommandLineUtility {
         }
 
         // Data to be stored on the OpenSearch index
-        $this->client->create([
+        $client->create([
             'index' => $indexName,
             'id' => $id,
             'body' => [
@@ -270,7 +270,7 @@ class IndexCreator extends CommandLineUtility {
     }
 
     // Function to encode the transcript – makes it suitable for the exec-command
-    protected function encode($transcript) {
+    public function encode($transcript) {
 
         // Replace line breaks, blanks, brackets...these character can provoke errors in the exec-command
         $transcript_clean = str_replace("\n", "#", $transcript);

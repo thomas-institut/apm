@@ -30,9 +30,6 @@ class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
             return false;
         }
 
-        // Name of the index in OpenSearch
-        $this->indexName = 'transcripts';
-
         // Download hebrew language model for lemmatization
         exec("python3 ../../python/download_model_he.py", $model_status);
 
@@ -52,18 +49,18 @@ class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
         $transcript = $indexcreator->getTranscript ($doc_id, $page, $col);
 
         // Check if a new transcription was made or an existing one was changed
-        $transcription_status = $this->transcriptionStatus($this->client, $this->indexName, $doc_id, $page, $col);
+        $transcription_status = $this->transcriptionStatus($this->client, $doc_id, $page, $col, $lang);
 
         // FIRST CASE – Completely new transcription was created
         if ($transcription_status['exists'] === 0) {
 
             // Generate unique ID for new entry
-            $opensearch_id_list = $this->getIDs($this->client, $this->indexName);
+            $opensearch_id_list = $this->getIDs($this->client, $transcription_status['indexname']);
             $max_id = max($opensearch_id_list);
             $opensearch_id = $max_id + 1;
 
             // Add new transcription to index
-            $indexcreator->indexCol($this->client, $this->indexName, $opensearch_id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+            $indexcreator->indexCol($this->client, $opensearch_id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
 
         } else { // SECOND CASE – Existing transcription was changed
 
@@ -80,7 +77,7 @@ class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
 
             // Update index
             $this->client->update([
-                'index' => $this->indexName,
+                'index' => $transcription_status['indexname'],
                 'id' => $opensearch_id,
                 'body' => [
                     'doc' => [
@@ -134,52 +131,53 @@ class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
     }
 
     // Function to check if a transcript already exists in a given OpenSearch-index – if yes, returns also its OpenSearch-ID
-    protected function transcriptionStatus ($client, string $index_name, string $doc_id, string $page, string $col): array
+    protected function transcriptionStatus ($client, string $doc_id, string $page, string $col, string $lang): array
     {
+        $index_name = 'transcriptions_' . $lang;
 
-        $query = $client->search([
-            'index' => $index_name,
-            'body' => [
-                'size' => 20000,
-                'query' => [
-                    'bool' => [
-                        'filter' => [
-                            'match' => [
-                                'docID' => [
-                                    "query" => $doc_id
+            $query = $client->search([
+                'index' => $index_name,
+                'body' => [
+                    'size' => 20000,
+                    'query' => [
+                        'bool' => [
+                            'filter' => [
+                                'match' => [
+                                    'docID' => [
+                                        "query" => $doc_id
+                                    ]
                                 ]
-                            ]
-                        ],
-                        'should' => [
-                            'match' => [
-                                'page' => [
-                                    "query" => $page,
+                            ],
+                            'should' => [
+                                'match' => [
+                                    'page' => [
+                                        "query" => $page,
+                                    ]
                                 ]
-                            ]
-                        ],
-                        "minimum_should_match" => 1,
-                        'must' => [
-                            'match' => [
-                                'column' => [
-                                    "query" => $col
+                            ],
+                            "minimum_should_match" => 1,
+                            'must' => [
+                                'match' => [
+                                    'column' => [
+                                        "query" => $col
+                                    ]
                                 ]
                             ]
                         ]
                     ]
                 ]
-            ]
-        ]);
+            ]);
 
-        $exists = $query['hits']['total']['value'];
+            $exists = $query['hits']['total']['value'];
 
-        // Get id, if there is already an existing transcription
-        if ($exists === 1) {
-            $opensearch_id = $query['hits']['hits'][0]['_id'];
-        } else {
-            $opensearch_id = 'null';
-        }
+            // Get id, if there is already an existing transcription
+            if ($exists === 1) {
+                $opensearch_id = $query['hits']['hits'][0]['_id'];
+            } else {
+                $opensearch_id = 'null';
+            }
 
-        return ['exists' => $exists, 'id' => $opensearch_id];
+        return ['exists' => $exists, 'id' => $opensearch_id, 'indexname' => $index_name];
     }
 
 public function mustBeUnique(): bool

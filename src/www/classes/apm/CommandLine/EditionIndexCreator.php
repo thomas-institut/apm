@@ -5,13 +5,15 @@ namespace APM\CommandLine;
 use APM\System\ApmConfigParameter;
 use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
+use function DI\string;
 
 class EditionIndexCreator extends IndexCreator
 {
     // Variables for OpenSearch client and the name of the index to create
     public Client $client;
-    public string $indexName;
+    public array $index_names;
     protected $ctable;
+
 
     public function main($argc, $argv): bool
     {
@@ -25,32 +27,35 @@ class EditionIndexCreator extends IndexCreator
             ->setSSLVerification(false) // For testing only. Use certificate for validation
             ->build();
 
-        // Name of the index in OpenSearch
-        $this->indexName = 'editions';
+        // Name of the indices in OpenSearch
+        $this->index_names = ['editions_la', 'editions_ar', 'editions_he'];
 
-        // Delete existing and create new index
-        if ($this->client->indices()->exists(['index' => $this->indexName])) {
-            $this->client->indices()->delete([
-                'index' => $this->indexName
-            ]);
-            $this->logger->debug("Existing index *$this->indexName* was deleted!\n");
-        };
+        // Delete existing and create new indices
+        foreach ($this->index_names as $index_name) {
+            if ($this->client->indices()->exists(['index' => $index_name])) {
+                $this->client->indices()->delete([
+                    'index' => $index_name
+                ]);
+                $this->logger->debug("Existing index *$index_name* was deleted!\n");
+            };
 
-        $this->client->indices()->create([
-            'index' => $this->indexName,
-            'body' => [
-                'settings' => [
-                    'index' => [
-                        'max_result_window' => 50000
+            $this->client->indices()->create([
+                'index' => $index_name,
+                'body' => [
+                    'settings' => [
+                        'index' => [
+                            'max_result_window' => 50000
+                        ]
                     ]
                 ]
-            ]
-        ]);
+            ]);
 
-        $this->logger->debug("New index *$this->indexName* was created!\n");
+            $this->logger->debug("New index *$index_name* was created!\n");
+        }
 
         $editions = [];
 
+        // Get the data of up to 20000 editions
         for ($id=1; $id<20000; $id++) {
 
             try {
@@ -62,26 +67,37 @@ class EditionIndexCreator extends IndexCreator
             }
         }
 
-        // Clean data
+        // CLEAN DATA
+        // Remove empty editions
         foreach ($editions as $i=>$edition) {
             if (count($edition) === 0) {
                 unset ($editions[$i]);
             }
         }
 
+        // Assign proper keys to editions and get number of non-empty editions
         $editions = array_values($editions);
         $num_editions = count($editions);
         $this->logger->debug("Found $num_editions actual editions.");
 
 
+        // Get edition data for indexing
         foreach ($editions as $id => $edition) {
+            $editor = $edition['editor'];
             $text = $edition['text'];
             $title = $edition['title'];
             $chunk = $edition['chunk_id'];
             $lang = $edition['lang'];
+            
+            if ($lang != 'jrb') {
+                $index_name = 'editions_' . $lang;
+            }
+            else {
+                $index_name = 'editions_he';
+            }
 
-            $this->indexEdition ($id, $text, $title, $chunk, $lang);
-            $this->logger->debug("Indexed Edition – OpenSearch ID: $id, Title: $title, Chunk: $chunk, Lang: $lang\n");
+            $this->indexEdition ($index_name, $id, $editor, $text, $title, $chunk, $lang);
+            $this->logger->debug("Indexed Edition in $index_name – OpenSearch ID: $id, Editor: $editor, Title: $title, Chunk: $chunk, Lang: $lang\n");
 
         }
 
@@ -99,6 +115,9 @@ class EditionIndexCreator extends IndexCreator
 
             $edition_json = $data['witnesses'][$edition_data['edition_witness_index']];
             $tokens = $edition_json['tokens'];
+            $editor_id = $this->ctable->getCollationTableVersionManager()->getCollationTableVersionInfo($id, 1)[0]->authorId;
+            $editor = $this->um->getUserInfoByUserId($editor_id)['fullname'];
+
             $edition_text = "";
 
             foreach ($tokens as $token) {
@@ -107,6 +126,7 @@ class EditionIndexCreator extends IndexCreator
                 }
             }
 
+            $edition_data['editor'] = $editor;
             $edition_data['text'] = $edition_text;
             $edition_data['title'] = $data['title'];
             $edition_data['chunk_id'] = $data['chunkId'];
@@ -117,7 +137,7 @@ class EditionIndexCreator extends IndexCreator
         return $edition_data;
     }
 
-    protected function indexEdition (int $id, string $text, string $title, string $chunk, string $lang): bool
+    protected function indexEdition (string $index_name, int $id, string $editor, string $text, string $title, string $chunk, string $lang): bool
     {
         // Encode text for avoiding errors in exec shell command because of characters like "(", ")" or " "
         $text_clean = $this->encode($text);
@@ -142,9 +162,10 @@ class EditionIndexCreator extends IndexCreator
 
         // Data to be stored on the OpenSearch index
         $this->client->create([
-            'index' => $this->indexName,
+            'index' => $index_name,
             'id' => $id,
             'body' => [
+                'editor' => $editor,
                 'title' => $title,
                 'chunk'=> $chunk,
                 'lang' => $lang,

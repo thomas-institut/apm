@@ -222,9 +222,14 @@ class IndexCreator extends CommandLineUtility {
     public function indexCol ($client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang): bool
     {
 
-        $indexName = 'transcriptions_' . $lang;
+        if ($lang != 'jrb') {
+            $indexName = 'transcriptions_' . $lang;
+        }
+        else {
+            $indexName = 'transcriptions_he';
+        }
 
-        // Encode transcript for avoiding errors in exec shell command because of characters like "(", ")" or " "
+            // Encode transcript for avoiding errors in exec shell command because of characters like "(", ")" or " "
         $transcript_clean = $this->encode($transcript);
 
         // Tokenization and lemmatization

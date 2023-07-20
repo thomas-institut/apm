@@ -34,6 +34,7 @@ class ApiSearch extends ApiController
 
         $this->profiler->start();
         // Get all user input!
+        $corpus = $_POST['corpus'];
         $searched_phrase = $this->removeBlanks(strtolower($_POST['searched_phrase'])); // Lower-case and without additional blanks
         $doc_title = $_POST['title'];
         $transcriber = $_POST['transcriber'];
@@ -42,10 +43,14 @@ class ApiSearch extends ApiController
         $lang = $_POST['lang'] ?? 'detect';
 
         // Name of the index to query
-        $index_name = 'transcriptions_' . $lang;
+        if ($lang != 'jrb') {
+            $index_name = $corpus . '_' . $lang;
+        }
+        else {
+            $index_name = $corpus . '_he';
+        }
 
         $this->logger->debug("Input parameters", [ 'text' => $searched_phrase, 'radius' => $radius, 'lang' => $lang, 'lemmatize' => $lemmatize]);
-
 
         // Instantiate OpenSearch client
         try {
@@ -128,21 +133,23 @@ class ApiSearch extends ApiController
             }
         }
 
-        // Get total number of matched passages
+        // Get total and cropped number of matched passages
         $num_passages_total = 0;
+        $max_results = 999;
+        $cropped = false;
+
         foreach ($data as $matched_column) {
             $num_passages_total = $num_passages_total + $matched_column['num_passages'];
         }
 
-        // Crop data to max. 500 columns
-        $cropped = false;
-        $num_passages_cropped = 0;
-
-        if (sizeof($data) > 200) {
-            $data = array_slice($data, 0, 200);
-            $cropped = true;
-            // Get total number of matched passages in cropped data
-            foreach ($data as $matched_column) {
+        if ($num_passages_total > $max_results) {
+            $num_passages_cropped = 0;
+            foreach ($data as $i=>$matched_column) {
+                if ($num_passages_cropped > $max_results) {
+                    $data = array_slice($data,0, $i);
+                    $cropped = true;
+                    break;
+                }
                 $num_passages_cropped = $num_passages_cropped + $matched_column['num_passages'];
             }
         }
@@ -150,11 +157,24 @@ class ApiSearch extends ApiController
             $num_passages_cropped = $num_passages_total;
         }
 
+//        if (sizeof($data) > 200) {
+//            $data = array_slice($data, 0, 200);
+//            $cropped = true;
+//            // Get total number of matched passages in cropped data
+//            foreach ($data as $matched_column) {
+//                $num_passages_cropped = $num_passages_cropped + $matched_column['num_passages'];
+//            }
+//        }
+//        else {
+//            $num_passages_cropped = $num_passages_total;
+//        }
+
         $this->profiler->stop();
         $this->logTimeProfile();
 
         // ApiResponse
         return $this->responseWithJson($response, [
+            'index' => $index_name,
             'searched_phrase' => $searched_phrase,
             'lang' => $lang,
             'num_passages_total' => $num_passages_total,

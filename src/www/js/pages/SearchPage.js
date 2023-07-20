@@ -21,7 +21,7 @@ export function setupSearchPage(baseUrl) {
   // Get selectors for catching user input
   let keywords_box = $("#keywordBox")
   let lemmatization_box = $("#lemmatize")
-  // let edition_mode = $("#edition_mode")
+  let corpus_selector = $("#corpus-select")
 
   // Get selector for signaling errors to user
   let errorMessageDiv = $("#error_message")
@@ -70,41 +70,29 @@ export function setupSearchPage(baseUrl) {
     }
   })
 
-  // SCRATCHED CODE FOR QUERYING EDITIONS
+  corpus_selector.on("change",function (){
+    let doc_or_edition = $("#doc-or-edition")
+    let trans_or_editor = $("#transcriber-or-editor")
 
-  //     edition_mode.on('click', function () {
-  //       search_table.empty()
-  //       search_table.html(`
-  //       <tr><td><b>Keywords</b></td><td class="text-center"><b>Exact Search</b></td><td><b>Text</b></td><td><b>Radius</b></td><td class="text-center"><b>Lemmatization</b></td></tr>
-  //
-  // <tr>
-  //     <td>
-  //         <div id="search_form">
-  //         <label for="keywordBox"></label>
-  //         <input type="text" id="keywordBox" placeholder="">
-  //         </div>
-  //     </td>
-  //     <td>
-  //         <div id="doc_form">
-  //             <label for="transcriptBox"></label>
-  //             <input list="titleList" id="transcriptBox" placeholder="" autocomplete="off">
-  //             <datalist id="titleList">
-  //             </datalist>
-  //         </div>
-  //     </td>
-  //     <td>
-  //         <form>
-  //             <label for="radiusSlider"></label>
-  //             <input type="range" id="radiusSlider" name="radiusSlider" min="10" max="60" value="18">
-  //         </form>
-  //     </td>
-  //   <td class="text-center">
-  //     <div>
-  //       <input type="checkbox" id="lemmatize" name="lemmatize">
-  //     </div>
-  //   </td>
-  // </tr>`)
-  //     })
+    console.log(`corpus of the query was changed to ${$(this).find(":selected").val()}`)
+
+    if ($(this).find(":selected").val() === 'transcriptions') {
+      doc_or_edition.text("Document")
+      trans_or_editor.text("Transcriber")
+
+      // Get lists for transcript and transcriber forms
+      getListFromOpenSearch ('titles', errorMessageDiv)
+      getListFromOpenSearch ('transcribers', errorMessageDiv)
+    }
+    else {
+      doc_or_edition.text("Edition")
+      trans_or_editor.text("Editor")
+
+      // Get lists for edition and editor forms
+      //getListFromOpenSearch ('editions', errorMessageDiv)
+      //getListFromOpenSearch ('editors', errorMessageDiv)
+    }
+  })
 }
 
 window.setupSearchPage = setupSearchPage
@@ -151,12 +139,14 @@ function search() {
   let ld = new LanguageDetector({ defaultLang: 'la'})
   let searchText = $("#keywordBox").val()
   let detectedLang = ld.detectLang(searchText)
+  let corpus = $("#corpus-select").find(":selected").val()
 
   console.log(`Detected language for '${searchText}' is '${detectedLang}'`)
 
 
   // User inputs
   const inputs = {
+    corpus: corpus,
     searched_phrase: searchText,
     lang: detectedLang,
     title: $("#transcriptBox").val(),
@@ -302,7 +292,7 @@ async function displayResults (data, lang, num_passages, zoom, radius, num_passa
     }
 
     if (cropped) {
-      error_message.html(`<br>Too many matches! Showing only ${num_passages} of ${num_passages_total} matched passages! Specify your query or contact the administrator!<br><br>`)
+      error_message.html(`<br>Too many matches! <br>Showing only ${num_passages} of ${num_passages_total} matched passages. <br>Specify your query or contact the administrators.<br><br>`)
     }
 
     // Zoom events
@@ -363,7 +353,7 @@ function updateResults (data, zoom, radius, index) {
 
 // Function to add a link to a string in html
 function getLink (url) {
-  return `<a class="fas fa-external-link-alt" target="_blank" href=${url} </a>`;
+  return `<a class="fas fa-external-link-alt" corpus="_blank" href=${url} </a>`;
 }
 
 // Function to calculate total number of matched documents

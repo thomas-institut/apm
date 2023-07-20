@@ -215,6 +215,16 @@ export class EditionViewerCanvas {
             defaultFontSize:  this.geometry.mainTextFontSize,
             lineSkip: this.geometry.mainTextLineHeight,
             apparatusLineSkip: Dimension.pt2px(this.options.apparatusLineHeightInPts),
+            textToApparatusGlue:  {
+              height: this.geometry.textToApparatus,
+              shrink: 0,
+              stretch: Dimension.cm2px(50)
+            },
+            interApparatusGlue: {
+              height: this.geometry.interApparatus,
+              shrink: 0,
+              stretch: Dimension.pt2px(3)
+            },
             showPageNumbers: true,
             pageNumbersOptions: {
               fontFamily: this.options.fontFamily,

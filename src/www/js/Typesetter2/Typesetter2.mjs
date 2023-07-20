@@ -36,15 +36,9 @@ export class Typesetter2 {
   }
 
   /**
-   * Converts a horizontal list into a vertical list
+   * Splits a horizontal list into line: converts a horizontal list into a vertical list
    * consisting of a series of lines of a certain width (given previously
-   * to the typesetter) and inter-line glue
-   *
-   * In essence, splits a horizontal list into lines.
-   *
-   * Normally it is in this method that text boxes are measured so that
-   * line widths are respected and later on the text boxes can
-   * be rendered correctly.
+   * to the typesetter) and inter-line glue.
    *
    * @param {ItemList}list
    * @return {Promise<ItemList>}

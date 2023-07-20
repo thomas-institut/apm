@@ -16,9 +16,19 @@
  *
  */
 
+
+const maxCanvasDimension = 20000
+
 export class BrowserUtilities {
 
   static setCanvasHiPDI(canvasElement, width, height) {
+    console.log(`Setting canvas to ${width} x ${height} pixels`)
+    width = width > maxCanvasDimension ? maxCanvasDimension : width
+    height = height > maxCanvasDimension ? maxCanvasDimension : height
+    if (width === maxCanvasDimension || height === maxCanvasDimension) {
+      console.warn(`Oversized canvas cropped to ${width} x ${height} pixels`)
+    }
+
     let ratio = window.devicePixelRatio;
     canvasElement.width = width * ratio;
     canvasElement.height = height * ratio;

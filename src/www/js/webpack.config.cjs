@@ -83,13 +83,6 @@ module.exports = {
       dependOn: 'QuillPack',
       filename: '../../test/js/functional/dist/TestFreeTextEditor.bundle.js'
     },
-
-    TypesetterPlayground: {
-      import: '../test/js/functional/TypesetterPlayground.js',
-      //dependOn: 'QuillPack',
-      filename: '../../test/js/functional/dist/TypesetterPlayground.bundle.js'
-    }
-
   },
   externals: {
     jquery: 'jQuery'

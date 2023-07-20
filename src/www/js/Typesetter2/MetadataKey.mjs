@@ -24,6 +24,7 @@
 
 export const PARAGRAPH_NUMBER = 'paragraphNumber'
 export const LINE_NUMBER_IN_PARAGRAPH = 'lineNumberInParagraph'
+export const PARAGRAPH_LINE_COUNT = 'paragraphLineCount'
 export const LINE_NUMBER = 'lineNumber'
 export const LINE_RATIO = 'lineRatio'
 export const ADJUSTMENT_RATIO = 'adjustmentRatio'

@@ -47,8 +47,8 @@ export const arabicDeGruyter = {
         marginLeft: "2.5 cm",
         marginBottom: "2.5 cm",
         marginRight: "2 cm",
-        minDistanceFromApparatusToText: "1.5 cm",
-        minInterApparatusDistance: "0.5 cm",
+        minDistanceFromApparatusToText: "12 pt",
+        minInterApparatusDistance: "12 pt",
         lineNumbers: "arabic",   //  "western", "arabic", "none"
         lineNumbersToTextDistance: "0.7 cm",
         lineNumbersFontSize: "0.9 em",

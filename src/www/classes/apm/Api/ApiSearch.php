@@ -419,7 +419,6 @@ class ApiSearch extends ApiController
                 $foliation = $query['hits']['hits'][$i]['_source']['foliation'];
                 $column = $query['hits']['hits'][$i]['_source']['column'];
                 $transcriber = $query['hits']['hits'][$i]['_source']['transcriber'];
-                $transcript = $query['hits']['hits'][$i]['_source']['transcript'];
                 $docID = $query['hits']['hits'][$i]['_source']['docID'];
                 $pageID = $query['hits']['hits'][$i]['_id'];
                 $transcript_tokenized = $query['hits']['hits'][$i]['_source']['transcript_tokens'];
@@ -486,7 +485,6 @@ class ApiSearch extends ApiController
                     'transcriber' => $transcriber,
                     'pageID' => $pageID,
                     'docID' => $docID,
-                    'transcript' => $transcript,
                     'transcript_tokenized' => $transcript_tokenized,
                     'transcript_lemmatized' => $transcript_lemmatized,
                     'tokens_for_query' => $tokens_for_query,
@@ -724,9 +722,20 @@ class ApiSearch extends ApiController
     }
 
     // Function to get a full list of i. e. titles or transcribers values in the index
-    static private function getListFromIndex ($client, $category) { // $category can be 'title' or 'transcriber'
+    static private function getListFromIndex ($client, $category) { // $category can be 'title' or 'transcriber' or 'editor' or 'edition'
 
-        $index_names = ['transcriptions_la', 'transcriptions_ar', 'transcriptions_he'];
+        if ($category === 'title' or $category === 'transcriber') {
+            $index_names = ['transcriptions_la', 'transcriptions_ar', 'transcriptions_he'];
+        }
+        else {
+            $index_names = ['editions_la', 'editions_ar', 'editions_he'];
+            if ($category === 'editor') {
+                $category = 'transcriber';
+            }
+            else {
+                $category = 'title';
+            }
+        }
 
         // Array to return
         $values = [];
@@ -773,10 +782,14 @@ class ApiSearch extends ApiController
         // Get a list of all titles
         $titles = self::getListFromIndex($client, 'title');
         $transcribers = self::getListFromIndex($client, 'transcriber');
+        $editions = self::getListFromIndex($client, 'edition');
+        $editors = self::getListFromIndex($client, 'editor');
 
         // Set cache
         $cache->set('Titles', serialize($titles));
         $cache->set('Transcribers', serialize($transcribers));
+        $cache->set('Editions', serialize($editions));
+        $cache->set('Editors', serialize($editors));
 
         return true;
     }
@@ -805,7 +818,7 @@ class ApiSearch extends ApiController
             }
 
             // Get a list of all titles
-            $titles = $this->getListFromIndex($client, 'title');
+            $titles = self::getListFromIndex($client, 'title');
 
             // Set cache
             $cache->set('Titles', serialize($titles));
@@ -843,7 +856,7 @@ class ApiSearch extends ApiController
             }
 
             // Get a list of all transcribers
-            $transcribers = $this->getListFromIndex($client, 'transcriber');
+            $transcribers = self::getListFromIndex($client, 'transcriber');
 
             // Set cache
             $cache->set('Transcribers', serialize($transcribers));
@@ -855,4 +868,80 @@ class ApiSearch extends ApiController
             'serverTime' => $now,
             'status' => $status]);
     }
+
+    // ApiCall – Function to get all edition titles
+    public function getEditionTitles (Request $request, Response $response): Response
+    {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        $cache = $this->systemManager->getSystemDataCache();
+        $status = 'OK';
+        $now = TimeString::now();
+
+        // Get data from cache, if data is not cached, get data from open search index and set the cache
+        try {
+
+            $editions = unserialize($cache->get('Editions'));
+
+        } catch (KeyNotInCacheException $e) {
+
+            // Instantiate OpenSearch client
+            try {
+                $client = $this->instantiateClient($this->systemManager);
+            } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
+                $status = 'Connecting to OpenSearch server failed.';
+                return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
+            }
+
+            // Get a list of all titles
+            $editions = self::getListFromIndex($client, 'edition');
+
+            // Set cache
+            $cache->set('Editions', serialize($editions));
+
+        }
+
+        // Api Response
+        return $this->responseWithJson($response, [
+            'editions' => $editions,
+            'serverTime' => $now,
+            'status' => $status]);
+    }
+
+    // API Call – Function to get all editors
+    public function getEditors (Request $request, Response $response): Response
+    {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        $cache = $this->systemManager->getSystemDataCache();
+        $status = 'OK';
+        $now = TimeString::now();
+
+        // Get data from cache, if data is not cached, get data from open search index and set the cache
+        try {
+
+            $editors = unserialize($cache->get('Editors'));
+
+        } catch (KeyNotInCacheException $e) {
+
+            // Instantiate OpenSearch client
+            try {
+                $client = $this->instantiateClient($this->systemManager);
+            } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
+                $status = 'Connecting to OpenSearch server failed.';
+                return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
+            }
+
+            // Get a list of all transcribers
+            $editors = self::getListFromIndex($client, 'editor');
+
+            // Set cache
+            $cache->set('Editors', serialize($editors));
+
+        }
+        // Api Response
+        return $this->responseWithJson($response, [
+            'editors' => $editors,
+            'serverTime' => $now,
+            'status' => $status]);
+    }
+
 }

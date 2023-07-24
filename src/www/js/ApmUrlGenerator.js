@@ -304,6 +304,14 @@ class ApmUrlGenerator {
         return `${this.base}/api/search/titles`
     }
 
+    apiSearchEditors() {
+        return `${this.base}/api/search/editors`
+    }
+
+    apiSearchEditionTitles() {
+        return `${this.base}/api/search/editions`
+    }
+
 
     images() {
         return this.base + '/images'

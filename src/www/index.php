@@ -320,6 +320,14 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         ApiSearch::class . ':getTranscribers')
         ->setName('search.transcribers');
 
+    $group->post('/search/editions',
+        ApiSearch::class . ':getEditionTitles')
+        ->setName('search.editions');
+
+    $group->post('/search/editors',
+        ApiSearch::class . ':getEditors')
+        ->setName('search.editors');
+
     // LOG
     $group->post('/admin/log',
         function(Request $request, Response $response) use ($container){

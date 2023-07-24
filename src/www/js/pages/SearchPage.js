@@ -89,8 +89,8 @@ export function setupSearchPage(baseUrl) {
       trans_or_editor.text("Editor")
 
       // Get lists for edition and editor forms
-      //getListFromOpenSearch ('editions', errorMessageDiv)
-      //getListFromOpenSearch ('editors', errorMessageDiv)
+      getListFromOpenSearch ('editions', errorMessageDiv)
+      getListFromOpenSearch ('editors', errorMessageDiv)
     }
   })
 }
@@ -99,8 +99,25 @@ window.setupSearchPage = setupSearchPage
 
 // Function to get list of indexed values, i.e. titles or transcribers, via an API call
 function getListFromOpenSearch(category, errorMessageDiv) {
-  let apiUrl = category === 'titles' ? urlGen.apiSearchTitles(): urlGen.apiSearchTranscribers();
-  let listSelector = category === 'titles' ? '#titleList' : '#transcriberList';
+  // let apiUrl = category === 'titles' ? urlGen.apiSearchTitles(): urlGen.apiSearchTranscribers();
+  // let listSelector = category === 'titles' ? '#titleList' : '#transcriberList';
+
+  if (category === 'titles') {
+    var apiUrl = urlGen.apiSearchTitles()
+    var listSelector = '#titleList'
+  }
+  else if (category === 'transcribers') {
+    var apiUrl = urlGen.apiSearchTranscribers()
+    var listSelector = '#transcriberList'
+  }
+  else if (category === 'editors') {
+    var apiUrl = urlGen.apiSearchEditors()
+    var listSelector = '#transcriberList'
+  }
+  else if (category === 'editions') {
+    var apiUrl = urlGen.apiSearchEditionTitles()
+    var listSelector = '#titleList'
+  }
 
   // Make API request
   $.post(apiUrl).done((apiResponse) => {
@@ -201,7 +218,7 @@ function search() {
       // Call displayResults-function and save backup of data for zoom handling
 
       state = STATE_DISPLAYING_RESULTS
-      displayResults(apiResponse.data, apiResponse.lang, apiResponse.num_passages_cropped, zoom, inputs.radius, apiResponse.num_passages_total, apiResponse.cropped).then( () => {
+      displayResults(apiResponse.data, apiResponse.lang, apiResponse.num_passages_cropped, zoom, inputs.radius, apiResponse.num_passages_total, apiResponse.cropped, corpus).then( () => {
         p.stop('Results displayed')
         state = STATE_INIT
       })
@@ -216,7 +233,7 @@ function search() {
 
 
 // Function to collect and display the search results in a readable form
-async function displayResults (data, lang, num_passages, zoom, radius, num_passages_total, cropped) {
+async function displayResults (data, lang, num_passages, zoom, radius, num_passages_total, cropped, corpus) {
 
   // Get selectors for displaying results
   let results_body = $("#resultsTable tbody")
@@ -238,9 +255,16 @@ async function displayResults (data, lang, num_passages, zoom, radius, num_passa
   else {
 
     // Make table head
-    results_head.empty()
-    results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th><span title="Number of tokens, i. e. words or punctuation marks, to display before and after your first keyword. A value of 0 means that only the tokens matching your first keyword are displayed."><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}></span>
+    if (corpus === 'transcriptions') {
+      results_head.empty()
+      results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th><span title="Number of tokens, i. e. words or punctuation marks, to display before and after your first keyword. A value of 0 means that only the tokens matching your first keyword are displayed."><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}></span>
                                 </th><th>Document (${num_docs})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
+    }
+    else {
+      results_head.empty()
+      results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th><span title="Number of tokens, i. e. words or punctuation marks, to display before and after your first keyword. A value of 0 means that only the tokens matching your first keyword are displayed."><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}></span>
+                                </th><th>Edition (${num_docs})</th><th>Chunk</th><th>Editor</th><th>Link</th></tr>`)
+    }
     results_body.empty()
 
     // Make variable for storing title of previous column in the dataset to display only the title only once,
@@ -267,7 +291,12 @@ async function displayResults (data, lang, num_passages, zoom, radius, num_passa
       let positions = data[i]['positions']
 
       // Get link for matched column
-      let link = getLink(urlGen.sitePageView(docID, seq, column))
+      if (corpus === 'transcriptions') {
+        var link = getLink(urlGen.sitePageView(docID, seq, column))
+      }
+      else {
+        var link = getLink(urlGen.siteEditCollationTable(seq))
+      }
 
       // Slice and highlight passage
       for (let j = 0; j < passages.length; j++) {

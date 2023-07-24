@@ -38,8 +38,8 @@ export const defaultArabicEditionStyle = {
         marginLeft: "3 cm",
         marginBottom: "2 cm",
         marginRight: "3 cm",
-        minDistanceFromApparatusToText: "12 pt",
-        minInterApparatusDistance: "12 pt",
+        minDistanceFromApparatusToText: "15 pt",
+        minInterApparatusDistance: "15 pt",
         lineNumbers: "arabic",   //  "western", "arabic", "none"
         lineNumbersToTextDistance: "0.5 cm",
         lineNumbersFontSize: "0.9 em",

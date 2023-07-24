@@ -31,7 +31,6 @@ import * as LineType from './LineType.mjs'
 import * as GlueType from './GlueType.mjs'
 import { toFixedPrecision } from '../toolbox/Util.mjs'
 import { FirstFitLineBreaker } from './LineBreaker/FirstFitLineBreaker.mjs'
-import { LineBreaker } from './LineBreaker/LineBreaker.mjs'
 import { AddPageNumbers } from './PageProcessor/AddPageNumbers.mjs'
 import { AddLineNumbers } from './PageProcessor/AddLineNumbers.mjs'
 import { StringCounter } from '../toolbox/StringCounter.mjs'
@@ -40,6 +39,8 @@ import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { MAX_LINE_COUNT } from '../Edition/EditionTypesetting.mjs'
 import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
 import { BidiDisplayOrder } from './BidiDisplayOrder.mjs'
+import { AdjustmentRatio } from './AdjustmentRatio.mjs'
+import { MINUS_INFINITE_PENALTY, Penalty } from './Penalty.mjs'
 
 const signature = 'BasicTypesetter 0.1'
 
@@ -47,7 +48,7 @@ const signature = 'BasicTypesetter 0.1'
 const INFINITE_VERTICAL_BADNESS = 100000000
 
 // number of lines to look ahead when breaking lines into pages
-const MAX_LINES_TO_LOOK_AHEAD = 4
+const MAX_LINES_TO_LOOK_AHEAD = 30
 const ACCEPTABLE_ORPHAN_COUNT = 3
 const ACCEPTABLE_WIDOW_COUNT = 3
 const ORPHAN_PENALTY = 3
@@ -229,8 +230,8 @@ export class BasicTypesetter extends Typesetter2 {
           return item
         }))
 
-        // adjust glue  (i.e., justify the text within the line
-        let adjRatio = LineBreaker.calculateAdjustmentRatio(line.getList(), this.lineWidth)
+        // adjust glue  (i.e., justify the text within the line)
+        let adjRatio = AdjustmentRatio.calculateHorizontalAdjustmentRatio(line.getList(), this.lineWidth)
         line.addMetadata(MetadataKey.ADJUSTMENT_RATIO, adjRatio)
         let unadjustedLineWidth = line.getWidth()
         line.addMetadata(MetadataKey.UNADJUSTED_LINE_WIDTH, toFixedPrecision(unadjustedLineWidth, 3))
@@ -359,7 +360,7 @@ export class BasicTypesetter extends Typesetter2 {
       let verticalListToTest = new ItemList(TypesetterItemDirection.VERTICAL)
       verticalListToTest.setList(items)
       // typeset and add the apparatuses to the list to test
-      let apparatuses = await this.__typesetApparatuses(verticalListToTypeset, apparatusData, firstLine,lastLine, resetLineNumbersEachPage)
+      let apparatuses = await this.typesetApparatuses(verticalListToTypeset, apparatusData, firstLine,lastLine, resetLineNumbersEachPage)
       apparatuses = apparatuses.filter ( (app) => {
         return app.getList().length !== 0
       })
@@ -385,7 +386,7 @@ export class BasicTypesetter extends Typesetter2 {
         // no apparatuses, add glue to fill up the page
         verticalListToTest.pushItem( (new Glue(TypesetterItemDirection.VERTICAL))
           .setHeight(0)
-          .setStretch(Typesetter2.cm2px(10))
+          .setStretch(this.options.textToApparatusGlue.stretch)
           .setShrink(0)
         )
       }
@@ -480,7 +481,7 @@ export class BasicTypesetter extends Typesetter2 {
         await this.options.preTypesetApparatuses()
         if (this.options.apparatusesAtEndOfDocument) {
           // Apparatuses at the end of document, the easiest but rarest case
-          let apparatuses = await this.__typesetApparatuses(verticalListToTypeset, extraData.apparatuses)
+          let apparatuses = await this.typesetApparatuses(verticalListToTypeset, extraData.apparatuses)
           this.debug && console.log(`Typeset apparatuses`)
           this.debug && console.log(apparatuses)
           if (apparatuses.length > 0) {
@@ -521,90 +522,120 @@ export class BasicTypesetter extends Typesetter2 {
         } else {
           // apparatuses should go at the foot of each page
           // go over the typeset text list determining the line ranges that fill up a page
-          let [firstLine, lastLine ] = this.__getTotalLineNumberRange(verticalListToTypeset)
+          let [firstLine, lastLine ] = this.getTotalLineNumberRange(verticalListToTypeset)
           this.debug && console.log(`Main text lines go from ${firstLine} to ${lastLine}`)
 
           // typeset the apparatus for the whole line range to fill up and cache apparatus data.
-          await this.__typesetApparatuses(verticalListToTypeset, extraData.apparatuses)
+          await this.typesetApparatuses(verticalListToTypeset, extraData.apparatuses)
 
-          // break lines into pages
-          let currentPageFirstLine = firstLine
-          let bestCurrentPageLastLine = firstLine-1
-          let bestCurrentPageBadness = INFINITE_VERTICAL_BADNESS
-          let bestCurrentPageList = null
-          let currentPageNumber = 1
+          // Break lines into pages
+
+          let currentPage = {
+            firstLine: firstLine,
+            pageNumber: 1
+          }
+          let bestPage = { firstLine: firstLine, lastLine: firstLine-1, badness: INFINITE_VERTICAL_BADNESS, list: null}
           let lastLookedAheadList = null
-
           let linesLookedAhead = 0
-          let lastLineTested = 0
-          while(lastLineTested < lastLine) {
-            this.debug && console.log(`Testing line range ${currentPageFirstLine} to ${lastLineTested+1}`)
-            let lineRangeData = this.getItemsAndInfoForLineRange(verticalListToTypeset, currentPageFirstLine, lastLineTested+1)
-            this.debug && console.log(`   - Widows: ${lineRangeData.widows}, orphans: ${lineRangeData.orphans}`)
+          let maxLinesLookedAhead = 0
+          let pageTypesettingData = []
+          for (let currentLine = firstLine; currentLine <= lastLine; currentLine++) {
+            this.debug && console.log(`Current line is ${currentLine}`)
+            this.debug && console.log(`Testing line range ${currentPage.firstLine} to ${currentLine}`)
+            let lineRangeData = this.getItemsAndInfoForLineRange(verticalListToTypeset, currentPage.firstLine, currentLine)
+            this.debug && console.log(`   - Widows: ${lineRangeData.widows}, orphans: ${lineRangeData.orphans}, penalty: ${lineRangeData.penalty}`)
             let verticalListToTest = await
               this.prepareVerticalListToTest(verticalListToTypeset, lineRangeData.items, extraData.apparatuses,
-                currentPageFirstLine, bestCurrentPageLastLine+1, resetLineNumbersEachPage)
+                currentPage.firstLine, currentLine, resetLineNumbersEachPage)
 
+            let badness = this.calculateVerticalListBadness(verticalListToTest, this.textAreaHeight, lineRangeData.widows, lineRangeData.orphans, lineRangeData.penalty)
             // assess the tested page
-            let badness = this.calculateVerticalListBadness(verticalListToTest, this.textAreaHeight, lineRangeData.widows, lineRangeData.orphans)
+            if (lineRangeData.penalty === MINUS_INFINITE_PENALTY) {
+              // insert a page break!
+              this.debug && console.log(`EJECTING Page ${currentPage.pageNumber} due to forced page break`)
+              this.debug && console.log(`===================`)
+              thePages.push (this.ejectPage(verticalListToTest, currentPage.pageNumber))
+              pageTypesettingData.push({ firstLine: currentPage.firstLine, lastLine: currentLine, badness: badness, linesLookedAhead: linesLookedAhead})
+              // update current page
+              currentPage.pageNumber++
+              currentPage.firstLine = currentLine
+              // reset best page
+              bestPage = { firstLine: currentLine+1, lastLine: currentLine, badness: INFINITE_VERTICAL_BADNESS, list: null}
+              // reset look ahead info
+              lastLookedAheadList = null
+              linesLookedAhead = 0
+              continue
+            }
+
             this.debug && console.log(`   - Badness: ${badness}`)
-            if (badness <= bestCurrentPageBadness) {
+            if (badness <= bestPage.badness) {
               this.debug && console.log(`   => new best badness ${linesLookedAhead !== 0 ?  'found after ' + linesLookedAhead + ' line(s) looked ahead' : ''}`)
-              bestCurrentPageBadness = badness
-              bestCurrentPageList = verticalListToTest
-              lastLineTested++
-              bestCurrentPageLastLine = lastLineTested
+              bestPage.badness = badness
+              bestPage.list = verticalListToTest
+              bestPage.lastLine = currentLine
+              // reset look ahead info
               linesLookedAhead = 0
               lastLookedAheadList = null
             }
-            if (badness > bestCurrentPageBadness) {
-              this.debug && console.log(`   Tested page is worse than current best ${currentPageFirstLine} to ${bestCurrentPageLastLine}`)
+            else {
+              this.debug && console.log(`   Tested page is worse than current best ${bestPage.firstLine} to ${bestPage.lastLine}`)
               if (badness === INFINITE_VERTICAL_BADNESS || linesLookedAhead >= MAX_LINES_TO_LOOK_AHEAD) {
                 // we have either reached infinite badness (i.e., there's absolutely no more room for lines) or we have
-                // look enough ahead looking for a better page.
-                if (bestCurrentPageList === null) {
+                // looked enough ahead looking for a better page.
+                if (bestPage.list === null) {
                   console.warn(`Found null best current page!!`)
                 } else {
-                  this.debug && console.log(`EJECTING Page ${currentPageNumber}`)
+                  // Eject the best page we have found
+                  this.debug && console.log(`EJECTING Page ${currentPage.pageNumber}`)
                   this.debug && console.log(`===================`)
-                  thePages.push (this.ejectPage(bestCurrentPageList, currentPageNumber))
-                  currentPageNumber++
-                  // reset last line tested to the last line in the page we're ejecting
-                  lastLineTested = bestCurrentPageLastLine
-                  currentPageFirstLine = bestCurrentPageLastLine + 1
-                  bestCurrentPageLastLine = currentPageFirstLine -1 // so that the next cycle tests from currentPageFirstLine
-                  bestCurrentPageBadness = INFINITE_VERTICAL_BADNESS
-                  bestCurrentPageList = null
+                  thePages.push(this.ejectPage(bestPage.list, currentPage.pageNumber))
+                  pageTypesettingData.push({ firstLine: bestPage.firstLine, lastLine: bestPage.lastLine, badness: bestPage.badness, linesLookedAhead: linesLookedAhead})
+                  // backtrack the current line to the best page's last line
+                  // the for loop will increment it by 1, so the next line tested will be the one after
+                  currentLine = bestPage.lastLine
+                  // update current page
+                  currentPage.firstLine = currentLine+1
+                  currentPage.pageNumber++
+                  // reset best page
+                  bestPage = { firstLine: currentLine+1, lastLine: currentLine, badness: INFINITE_VERTICAL_BADNESS, list: null}
+                  // reset look ahead info
                   lastLookedAheadList = null
                   linesLookedAhead = 0
                 }
               } else {
                 // just keep looking ahead
-                lastLineTested++
                 linesLookedAhead++
+                maxLinesLookedAhead = Math.max(linesLookedAhead, maxLinesLookedAhead)
                 this.debug && console.log(`   ...but we have only looked ${linesLookedAhead} line(s) ahead`)
                 lastLookedAheadList = verticalListToTest
               }
             }
-         }
+          }
+
           // reached the end, if there's  best page, eject it
           this.debug && console.log(`Reached the end`)
-          if(bestCurrentPageList !== null) {
-            this.debug && console.log(`EJECTING page ${currentPageNumber}, lines ${currentPageFirstLine} to ${bestCurrentPageLastLine}`)
+          if(bestPage.list !== null) {
+            this.debug && console.log(`EJECTING page ${currentPage.pageNumber}, lines ${currentPage.firstLine} to ${bestPage.lastLine}`)
             this.debug && console.log(`===================`)
-            thePages.push ( this.ejectPage(bestCurrentPageList, currentPageNumber))
+            thePages.push ( this.ejectPage(bestPage.list, currentPage.pageNumber))
+            pageTypesettingData.push({ firstLine: bestPage.firstLine, lastLine: bestPage.lastLine, badness: bestPage.badness, linesLookedAhead: linesLookedAhead})
+            currentPage.pageNumber++
           }
           if (lastLookedAheadList !== null) {
             // There are hanging lines!
-            currentPageNumber++
-            let lineRangeData = this.getItemsAndInfoForLineRange(verticalListToTypeset, bestCurrentPageLastLine+1, lastLine)
+            let lineRangeData = this.getItemsAndInfoForLineRange(verticalListToTypeset, bestPage.lastLine+1, lastLine)
             let verticalListWithLastHangingLines = await
               this.prepareVerticalListToTest(verticalListToTypeset, lineRangeData.items, extraData.apparatuses,
-                bestCurrentPageLastLine+1, lastLine, resetLineNumbersEachPage)
-            this.debug && console.log(`EJECTING page ${currentPageNumber}, lines ${bestCurrentPageLastLine+1} to ${lastLine}`)
+                bestPage.lastLine+1, lastLine, resetLineNumbersEachPage)
+            this.debug && console.log(`EJECTING page ${currentPage.pageNumber}, hanging lines ${bestPage.lastLine+1} to ${lastLine}`)
             this.debug && console.log(`===================`)
-            thePages.push(this.ejectPage(verticalListWithLastHangingLines, currentPageNumber))
+            thePages.push(this.ejectPage(verticalListWithLastHangingLines, currentPage.pageNumber))
+            pageTypesettingData.push({ firstLine: bestPage.lastLine+1, lastLine: lastLine, badness: -1, linesLookedAhead: 0})
           }
+          this.debug && console.log(`Max lines looked ahead: ${maxLinesLookedAhead}`)
+          this.debug && console.log(`Page Typesetting Data`)
+          this.debug && console.log(pageTypesettingData)
+
         }
       }
 
@@ -630,7 +661,7 @@ export class BasicTypesetter extends Typesetter2 {
       .setShiftY(this.options.marginTop)
       .addMetadata(MetadataKey.LIST_TYPE, ListType.MAIN_TEXT_BLOCK)
 
-    let adjRatio = this.calculateVerticalAdjustmentRatio(verticalList.getList(), this.textAreaHeight)
+    let adjRatio = AdjustmentRatio.calculateVerticalAdjustmentRatio(verticalList.getList(), this.textAreaHeight)
     if (adjRatio !== null) {
       let adjustedItems = verticalList.getList().map( (item) => {
         if (item instanceof Glue) {
@@ -657,66 +688,38 @@ export class BasicTypesetter extends Typesetter2 {
    * @param {number}desiredHeight
    * @param {number}widows
    * @param {number}orphans
+   * @param {number}penaltyValue
    */
-  calculateVerticalListBadness(verticalList, desiredHeight, widows, orphans) {
-    // TODO: take penalties into account
-    let adjRatio = this.calculateVerticalAdjustmentRatio(verticalList.getList(), desiredHeight)
-    if (adjRatio === null || adjRatio < -1) {
+  calculateVerticalListBadness(verticalList, desiredHeight, widows, orphans, penaltyValue = 0) {
+    let adjRatio = AdjustmentRatio.calculateVerticalAdjustmentRatio(verticalList.getList(), desiredHeight)
+
+    if (adjRatio === null) {
+      // no glue available to adjust the page. Terrible.
+      return INFINITE_VERTICAL_BADNESS
+    }
+    if (adjRatio < -1) {
+      // No shrinking past the maximum, so any adjustment ratio of -1 or less is infinitely bad
       return INFINITE_VERTICAL_BADNESS
     }
     let badness = 100*Math.pow( Math.abs(adjRatio), 3)
-    if (badness < 0.1 && orphans !==0 && orphans < ACCEPTABLE_ORPHAN_COUNT) {
+    // TODO: what is the orphan penalty that would force the typesetter to produce a
+    //  page break before a single line paragraph at the end of a document?
+    if ( orphans !==0 && orphans < ACCEPTABLE_ORPHAN_COUNT) {
       badness += (ORPHAN_PENALTY / orphans)
     }
-    if (badness < 0.1 && widows!==0 && widows < ACCEPTABLE_WIDOW_COUNT) {
+    if (widows!==0 && widows < ACCEPTABLE_WIDOW_COUNT) {
       badness += (WIDOW_PENALTY / widows)
     }
-
-    return badness > INFINITE_VERTICAL_BADNESS ? INFINITE_VERTICAL_BADNESS : badness
+    return badness > INFINITE_VERTICAL_BADNESS ? INFINITE_VERTICAL_BADNESS : badness + penaltyValue
   }
-
-
-  calculateVerticalAdjustmentRatio(itemArray, desiredHeight) {
-    // this.debug && console.log(`Calculation adj ratio, desired height = ${desiredHeight}`)
-    // this.debug && console.log( `on ${itemArray.length} items`)
-    let totalHeightWithoutAdjustments = itemArray.map( (item) => {
-      return item.getHeight()
-    }).reduce( (total, x) => { return total+x}, 0)
-    // this.debug && console.log(`Total height: ${totalHeight}`)
-    if (desiredHeight === totalHeightWithoutAdjustments) {
-      // right on target!
-      return 0
-    }
-    if (totalHeightWithoutAdjustments < desiredHeight) {
-      // A short list, get glue stretch
-      let totalGlueStretch = itemArray.map( (item) => {
-        if (item instanceof Glue) {
-          return item.getStretch()
-        }
-        return 0
-      }).reduce( (total, x) => { return total+x}, 0)
-      // this.debug && console.log(`total glue stretch = ${totalGlueStretch}`)
-      if (totalGlueStretch <=0) {
-        return null
-      }
-      return (desiredHeight - totalHeightWithoutAdjustments)/totalGlueStretch
-    }
-    // A tall list, get glue shrink
-    let totalGlueShrink = itemArray.map ( (item) => {
-      if (item instanceof Glue) {
-        return item.getShrink()
-      }
-      return 0
-    }).reduce( (total, x) => { return total+x}, 0)
-    // this.debug && console.log(`total glue shrink = ${totalGlueShrink}`)
-    if (totalGlueShrink <=0) {
-      return null
-    }
-    return (desiredHeight - totalHeightWithoutAdjustments)/totalGlueShrink
-  }
-
-
-  __getTotalLineNumberRange(mainTextVerticalList) {
+  /**
+   * Determines the first and last line in a vertical list from the
+   * metadata attached to horizontal lists.
+   * @param mainTextVerticalList
+   * @return {(number)[]}
+   * @private
+   */
+  getTotalLineNumberRange(mainTextVerticalList) {
     let minLine = MAX_LINE_COUNT
     let maxLine = -1
     mainTextVerticalList.getList().forEach( (item) => {
@@ -728,7 +731,6 @@ export class BasicTypesetter extends Typesetter2 {
         maxLine = Math.max(maxLine, lineNumber)
       }
     })
-
     return [minLine, maxLine]
   }
 
@@ -744,18 +746,20 @@ export class BasicTypesetter extends Typesetter2 {
    * @param {ItemList}mainTextVerticalList
    * @param {number}lineFrom
    * @param {number}lineTo
-   * @return {{orphans: number, items: *[], widows: number}}}
+   * @return {{orphans: number, items: *[], widows: number, penalty: number}}}
    * @private
    */
   getItemsAndInfoForLineRange(mainTextVerticalList, lineFrom, lineTo) {
-    // this.debug && console.log(`Getting  vertical list for line range ${lineFrom} to ${lineTo}`)
     let itemsInRange = []
     let addingItems = false
     let widows = 0
     let orphans = 0
+    let penalty = 0
+    let index
+    let itemList = mainTextVerticalList.getList()
 
-    for (let i = 0; i < mainTextVerticalList.getList().length; i++) {
-      let item = mainTextVerticalList.getList()[i]
+    for (index = 0; index < itemList.length; index++) {
+      let item = itemList[index]
       if (item instanceof ItemList && item.hasMetadata(MetadataKey.LIST_TYPE) && item.getMetadata(MetadataKey.LIST_TYPE) === ListType.LINE) {
         if (item.hasMetadata(MetadataKey.LINE_NUMBER)) {
           let lineNumber = item.getMetadata(MetadataKey.LINE_NUMBER)
@@ -777,6 +781,13 @@ export class BasicTypesetter extends Typesetter2 {
               widows = lastParagraphLineCount - orphans
             }
             itemsInRange.push(item)
+            // if the next item is a penalty, that's the range's penalty
+            if (itemList[index+1] !== undefined) {
+              let nextItem = itemList[index+1]
+              if (nextItem instanceof Penalty) {
+                penalty = nextItem.getPenalty()
+              }
+            }
             break
           }
         }
@@ -786,21 +797,16 @@ export class BasicTypesetter extends Typesetter2 {
       }
     }
 
+
+
     return {
       items: itemsInRange,
       widows: widows,
-      orphans: orphans
+      orphans: orphans,
+      penalty: penalty
     }
   }
 
-  /**
-   * Returns the number of lines in the paragraph to which the item at the given index belongs
-   * @param {TypesetterItem}itemList
-   * @param {number}index
-   */
-  getParagraphLineCountForIndex(itemList, index) {
-    // the number we're looking for is the highest line number
-  }
 
   /**
    * Returns a Promise that resolves into an array of typeset horizontal lists, one for each apparatus.
@@ -821,27 +827,22 @@ export class BasicTypesetter extends Typesetter2 {
    * @return {Promise<ItemList[]>}
    * @private
    */
-  __typesetApparatuses(typesetMainTextVerticalList, apparatuses, lineFrom = 1,
+  typesetApparatuses(typesetMainTextVerticalList, apparatuses, lineFrom = 1,
         lineTo = MAX_LINE_COUNT, resetLineNumbersEachPage = false) {
     return new Promise( async (resolve) => {
-      // this.debug && console.log(`Typesetting ${apparatuses.length} apparatuses from lines ${lineFrom} to ${lineTo === MAX_LINE_COUNT ? 'end' : lineTo}, resetLineNumbers = ${resetLineNumbersEachPage}`)
       let outputArray = []
       for (let i = 0; i < apparatuses.length; i++) {
-        // this.debug && console.log(`Typesetting apparatus ${i}`)
-        let apparatusListToTypeset = await this.options.getApparatusListToTypeset(typesetMainTextVerticalList, apparatuses[i], lineFrom, lineTo, resetLineNumbersEachPage)
+        let apparatusListToTypeset = await
+          this.options.getApparatusListToTypeset(typesetMainTextVerticalList, apparatuses[i], lineFrom, lineTo, resetLineNumbersEachPage)
         if (apparatusListToTypeset.getDirection() === TypesetterItemDirection.HORIZONTAL) {
-          // this.debug && console.log(`Typesetting apparatus ${i}`)
           let currentLineSkip = this.lineSkip
           this.lineSkip = this.options.apparatusLineSkip
           outputArray.push(await this.typesetHorizontalList(apparatusListToTypeset))
           this.lineSkip = currentLineSkip
-          // this.debug && console.log(`Finished typesetting apparatus ${i}`)
         } else {
           console.warn(`Apparatus ${i} list to typeset is vertical, this is not implemented yet`)
         }
       }
-      // this.debug && console.log(`Finished typesetting all apparatuses`)
-      // this.debug && console.log(outputArray)
       resolve(outputArray)
     })
   }

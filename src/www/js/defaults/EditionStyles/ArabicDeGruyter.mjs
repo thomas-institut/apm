@@ -36,8 +36,8 @@ export const arabicDeGruyter = {
         post: "بعد",
         defaultLemmaSeparator: "]",
         lineRangeSeparator: "\u2016",  // double vertical line
-        // entrySeparator:  "\u007c" // single vertical line
-        entrySeparator: "\u2016",  // double vertical line
+        entrySeparator:  "\u007c" // single vertical line
+        // entrySeparator: "\u2016",  // double vertical line
       },
 
       page: {

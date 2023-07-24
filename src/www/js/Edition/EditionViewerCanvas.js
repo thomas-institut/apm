@@ -217,13 +217,13 @@ export class EditionViewerCanvas {
             apparatusLineSkip: Dimension.pt2px(this.options.apparatusLineHeightInPts),
             textToApparatusGlue:  {
               height: this.geometry.textToApparatus,
-              shrink: 0,
-              stretch: Dimension.cm2px(50)
+              shrink: this.geometry.textToApparatus*0.1,
+              stretch: this.geometry.pageHeight - this.geometry.margin.bottom - this.geometry.margin.top
             },
             interApparatusGlue: {
               height: this.geometry.interApparatus,
               shrink: 0,
-              stretch: Dimension.pt2px(3)
+              stretch: 0
             },
             showPageNumbers: true,
             pageNumbersOptions: {

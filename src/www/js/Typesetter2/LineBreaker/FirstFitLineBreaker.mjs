@@ -7,6 +7,8 @@ import { ItemList } from '../ItemList.mjs'
 import * as TypesetterItemDirection from '../TypesetterItemDirection.mjs'
 import * as MetadataKey from '../MetadataKey.mjs'
 import { ObjectFactory } from '../ObjectFactory.mjs'
+import { Glue } from '../Glue.mjs'
+import { AdjustmentRatio } from '../AdjustmentRatio.mjs'
 
 
 const INFINITE_BADNESS = 100000000
@@ -18,14 +20,14 @@ export class FirstFitLineBreaker extends LineBreaker {
 
   static breakIntoLines(itemArray, lineWidth, textBoxMeasurer) {
     return new Promise(async (resolve) => {
-      let lineBreaks = await this._getBreakPoints(itemArray, lineWidth, textBoxMeasurer)
+      let lineBreaks = await this.getBreakPoints(itemArray, lineWidth, textBoxMeasurer)
       // add a break at the end if there isn't one
       if (lineBreaks[lineBreaks.length-1] !== itemArray.length -1) {
         lineBreaks.push(itemArray.length -1)
       }
       debug && console.log(`Break points:`)
       debug && console.log(lineBreaks)
-      let lines = this._getLinesFromBreakpoints(itemArray, lineBreaks)
+      let lines = this.getLinesFromBreakpoints(itemArray, lineBreaks)
       debug && console.log(`Lines:`)
       debug && console.log(lines.map( (line) => {
         return { text: line.getText(), data: line.metadata}
@@ -33,20 +35,21 @@ export class FirstFitLineBreaker extends LineBreaker {
       // final line measurement
       // should be very quick since all possible merged combinations have been measured before
       for (let i = 0; i < lines.length; i++) {
-        await this._measureTextBoxes(lines[i].getList(), textBoxMeasurer)
+        await this.measureTextBoxes(lines[i].getList(), textBoxMeasurer)
       }
       resolve(lines)
     })
   }
 
   /**
+   * Measures all text boxes not already measured in the given item array.
    *
    * @param {TypesetterItem[]}itemArray
    * @param {TextBoxMeasurer}textBoxMeasurer
    * @return {Promise<void>}
    * @private
    */
-  static _measureTextBoxes(itemArray, textBoxMeasurer) {
+  static measureTextBoxes(itemArray, textBoxMeasurer) {
     return new Promise ( async (resolve) => {
       for (let i = 0; i < itemArray.length; i++) {
         let item = itemArray[i]
@@ -56,21 +59,21 @@ export class FirstFitLineBreaker extends LineBreaker {
             let measuredWidth = await textBoxMeasurer.getBoxWidth(item)
             item.setWidth(measuredWidth)
           }
-          if (itemArray[i].getHeight() === -1) {
+          if (item.getHeight() === -1) {
             let measuredHeight = await textBoxMeasurer.getBoxHeight(item)
-            itemArray[i].setHeight(measuredHeight)
+            item.setHeight(measuredHeight)
           }
         }
-        if (itemArray[i] instanceof Penalty) {
-          if (itemArray[i].hasItemToInsert() && itemArray[i].getItemToInsert() instanceof TextBox) {
-            let item = itemArray[i].getItemToInsert()
-            if (item.getWidth() === -1){
-              let measuredWidth = await textBoxMeasurer.getBoxWidth(item)
-              item.setWidth(measuredWidth)
+        if (item instanceof Penalty) {
+          if (item.hasItemToInsert() && item.getItemToInsert() instanceof TextBox) {
+            let itemToInsert = item.getItemToInsert()
+            if (itemToInsert.getWidth() === -1){
+              let measuredWidth = await textBoxMeasurer.getBoxWidth(itemToInsert)
+              itemToInsert.setWidth(measuredWidth)
             }
-            if (item.getHeight() === -1){
-              let measureHeight = await textBoxMeasurer.getBoxHeight(item)
-              item.setHeight(measureHeight)
+            if (itemToInsert.getHeight() === -1){
+              let measureHeight = await textBoxMeasurer.getBoxHeight(itemToInsert)
+              itemToInsert.setHeight(measureHeight)
             }
           }
         }
@@ -88,7 +91,7 @@ export class FirstFitLineBreaker extends LineBreaker {
    * @return {Promise<number[]>}
    * @private
    */
-  static _getBreakPoints(itemArray, lineWidth, textBoxMeasurer) {
+  static getBreakPoints(itemArray, lineWidth, textBoxMeasurer) {
     return new Promise( async (resolve) => {
       debug && console.log(`Getting break points of a paragraph with ${itemArray.length} items`)
       let breaks = []
@@ -100,16 +103,15 @@ export class FirstFitLineBreaker extends LineBreaker {
         let item = itemArray[i]
         if (item instanceof Box) {
           // item is a BOX
-          // debug && console.log(`Item ${i} is a Box, pushing it`)
+          // just add it to current line
           currentLine.push(item)
           continue
         }
         if (item instanceof Penalty) {
           // item is a PENALTY
-          debug && console.log(`Item ${i} is a Penalty`)
           let penaltyValue = item.getPenalty()
           if (penaltyValue === MINUS_INFINITE_PENALTY) {
-            debug && console.log(`Infinite penalty, so add a break at ${i}`)
+            // minus infinite penalty, add a break
             breaks.push(i)
             flagsInARow = 0
             currentLine=[]
@@ -117,34 +119,14 @@ export class FirstFitLineBreaker extends LineBreaker {
           }
           if (currentLine.length !== 0 && penaltyValue < INFINITE_PENALTY) {
             // tentative breaking point
-            let breakBadness = await this._calculateBadness(currentLine, lineWidth, textBoxMeasurer, item, flagsInARow)
+            let breakBadness = await this.calculateHorizontalBadness(currentLine, lineWidth, textBoxMeasurer, item, flagsInARow)
             debug && console.log(`Badness breaking at ${i} is ${breakBadness}`)
             if (breakBadness > currentBadness) {
               // we found a minimum, eject line
               debug && console.log(`...which is more than current badness (${currentBadness}), so insert a break at ${currentBestBreakPoint} `)
               breaks.push(currentBestBreakPoint)
-              let itemAtBreak = itemArray[currentBestBreakPoint]
-              if (itemAtBreak instanceof Penalty) {
-                if (itemAtBreak.isFlagged()) {
-                  flagsInARow++
-                  debug && console.log(`Break point is a flagged penalty, flags in a row = ${flagsInARow}`)
-                }
-              } else {
-                debug && console.log(`Break point is not a flagged penalty, flag in a row is now 0`)
-                flagsInARow = 0
-              }
-              currentLine=[]
-              // debug && console.log(`Initializing next line`)
-              let j = currentBestBreakPoint
-              while (j <= i && !(itemArray[j] instanceof Box) ) {
-                // debug && console.log(`... skipping item ${j}, not a box`)
-                j++
-              }
-              while (j <=i) {
-                // debug && console.log(`...adding item ${j}`)
-                currentLine.push(itemArray[j])
-                j++
-              }
+              flagsInARow = this.getUpdatedFlagsInARow(itemArray[currentBestBreakPoint], flagsInARow)
+              currentLine = this.initializeLine(currentBestBreakPoint, i, itemArray)
               currentBadness = INFINITE_BADNESS
               currentBestBreakPoint = -1
             } else {
@@ -154,63 +136,87 @@ export class FirstFitLineBreaker extends LineBreaker {
           }
           continue
         }
-        // debug && console.log(`Item ${i} is Glue`)
-        // item is GLUE
-        if (itemArray[i-1] instanceof Box) {
-          // debug && console.log(`Previous item was a Box, so this is a tentative break point`)
-          // tentative break point
-          let breakBadness = await this._calculateBadness(currentLine, lineWidth, textBoxMeasurer)
-          // debug && console.log(`Badness breaking at ${i} is ${breakBadness}`)
-
-          if (breakBadness > currentBadness) {
-            // we found a minimum, eject line
-            debug && console.log(`...which is more than current badness (${currentBadness}), so insert a break at ${currentBestBreakPoint} `)
-            breaks.push(currentBestBreakPoint)
-            let itemAtBreak = itemArray[currentBestBreakPoint]
-            if (itemAtBreak instanceof Penalty) {
-              if (itemAtBreak.isFlagged()) {
-                flagsInARow++
-                debug && console.log(`Break point is a flagged penalty, flags in a row = ${flagsInARow}`)
-              }
+        if (item instanceof Glue) {
+          if (i > 0 && itemArray[i-1] instanceof Box) {
+            // Since the previous item was a box, this is tentative break point
+            let breakBadness = await this.calculateHorizontalBadness(currentLine, lineWidth, textBoxMeasurer)
+            if (breakBadness > currentBadness) {
+              // we found a minimum, eject line
+              debug && console.log(`...which is more than current badness (${currentBadness}), so insert a break at ${currentBestBreakPoint} `)
+              breaks.push(currentBestBreakPoint)
+              flagsInARow = this.getUpdatedFlagsInARow(itemArray[currentBestBreakPoint], flagsInARow)
+              currentLine = this.initializeLine(currentBestBreakPoint, i, itemArray)
+              currentBadness = INFINITE_BADNESS
+              currentBestBreakPoint = -1
             } else {
-              debug && console.log(`Break point is not a flagged penalty, flag in a row is now 0`)
-              flagsInARow = 0
+              // debug && console.log(`...which is less or equal than current badness (${currentBadness}), so ${i} is the current best break point `)
+              currentBadness = breakBadness
+              currentBestBreakPoint = i
+              currentLine.push(item)
             }
-            currentLine=[]
-            // debug && console.log(`Initializing next line`)
-            let j = currentBestBreakPoint
-            while (j <= i && !(itemArray[j] instanceof Box) ) {
-              // debug && console.log(`... skipping item ${j}, not a box`)
-              j++
-            }
-            while (j <=i) {
-              // debug && console.log(`...adding item ${j}`)
-              currentLine.push(itemArray[j])
-              j++
-            }
-
-            currentBadness = INFINITE_BADNESS
-            currentBestBreakPoint = -1
           } else {
-            // debug && console.log(`...which is less or equal than current badness (${currentBadness}), so ${i} is the current best break point `)
-            currentBadness = breakBadness
-            currentBestBreakPoint = i
-            currentLine.push(item)
+            if (currentLine.length !== 0) {
+              // add the glue item only if the current is not empty
+              currentLine.push(item)
+            }
           }
-        } else {
-          if (currentLine.length !== 0) {
-            // debug && console.log(`Pushing it to currentLine`)
-            currentLine.push(item)
-          }
+          continue
         }
+        console.warn(`Unknown TypesetterItem, we should NEVER get here!`)
       }
       resolve(breaks)
     })
   }
 
+  /**
+   * Increases or reset the given flagsInARow based on the item at a break
+   * @param {TypesetterItem}itemAtBreak
+   * @param {number}flagsInARow
+   * @return {number}
+   * @private
+   */
+  static getUpdatedFlagsInARow(itemAtBreak, flagsInARow) {
+    if (itemAtBreak instanceof Penalty) {
+      if (itemAtBreak.isFlagged()) {
+        flagsInARow++
+        debug && console.log(`Break point is a flagged penalty, flags in a row = ${flagsInARow}`)
+      }
+    } else {
+      debug && console.log(`Break point is not a flagged penalty, flag in a row is now 0`)
+      flagsInARow = 0
+    }
+    return flagsInARow
+  }
 
   /**
-   * Calculates the badness of an item array based on a lineWidth of the given line width
+   * Initializes a line with the items from the previous break point to
+   * the current index, skipping all the non-box items at the start
+   * of the range.
+   * @param {number}breakPoint
+   * @param {number}currentItemIndex
+   * @param {TypesetterItem[]}itemArray
+   * @return {TypesetterItem[]}
+   * @private
+   */
+  static initializeLine(breakPoint, currentItemIndex, itemArray) {
+    let line=[]
+
+    // Skip initial non-box items
+    let j = breakPoint
+    while (j <= currentItemIndex && !(itemArray[j] instanceof Box) ) {
+      j++
+    }
+    // Add the rest
+    while (j <=currentItemIndex) {
+      line.push(itemArray[j])
+      j++
+    }
+    return line
+  }
+
+  /**
+   * Calculates the horizontal badness of an item array based on the given line width
+   *
    * (This is where text boxes are measured)
    * @param {TypesetterItem[]}itemArray
    * @param {number}lineWidth
@@ -220,7 +226,7 @@ export class FirstFitLineBreaker extends LineBreaker {
    * @return {Promise<number>}
    * @private
    */
-  static _calculateBadness(itemArray, lineWidth, textBoxMeasurer, penalty= null, flagsInARow = 0) {
+  static calculateHorizontalBadness(itemArray, lineWidth, textBoxMeasurer, penalty= null, flagsInARow = 0) {
     return new Promise( async (resolve) =>{
       let lineItemArray =  makeCopyOfArray(itemArray)
       let penaltyValue = 0
@@ -233,14 +239,15 @@ export class FirstFitLineBreaker extends LineBreaker {
           penaltyValue += (flagsInARow +1)*FLAG_PENALTY
         }
       }
-      lineItemArray = this.__compactItemArray(lineItemArray)
-      await this._measureTextBoxes(lineItemArray, textBoxMeasurer)
-      // if (debug) {
-      //   let tmpList = (new ItemList()).setList(lineItemArray)
-      //   // console.log(`Calculating badness of line '${tmpList.getText()}'`)
-      // }
-      let adjRatio = LineBreaker.calculateAdjustmentRatio(lineItemArray, lineWidth)
-      if (adjRatio === null || adjRatio < -1) {
+      lineItemArray = this.compactItemArray(lineItemArray)
+      await this.measureTextBoxes(lineItemArray, textBoxMeasurer)
+      let adjRatio = AdjustmentRatio.calculateHorizontalAdjustmentRatio(lineItemArray, lineWidth)
+      if (adjRatio === null) {
+        // no glue available to adjust the line. Terrible.
+        resolve(INFINITE_BADNESS)
+      }
+      if (adjRatio < -1) {
+        // No shrinking past the maximum, so any adjustment ratio of -1 or less is infinitely bad
         resolve(INFINITE_BADNESS)
       }
       let badness = 100*Math.pow( Math.abs(adjRatio), 3)
@@ -258,7 +265,7 @@ export class FirstFitLineBreaker extends LineBreaker {
    * @return {ItemList[]}
    * @private
    */
-  static _getLinesFromBreakpoints(itemArray, breakpoints) {
+  static getLinesFromBreakpoints(itemArray, breakpoints) {
     let lines = []
     let lineStartIndex = 0
     breakpoints.forEach( (breakIndex) => {
@@ -281,7 +288,7 @@ export class FirstFitLineBreaker extends LineBreaker {
         return !(item instanceof Penalty)
       }))
       // Compact the line (i.e., merge consecutive text boxes with the format, and consecutive glue
-      newLine.setList(this.__compactItemArray(newLine.getList()))
+      newLine.setList(this.compactItemArray(newLine.getList()))
       lines.push(newLine)
       lineStartIndex = breakIndex
     })
@@ -290,29 +297,29 @@ export class FirstFitLineBreaker extends LineBreaker {
 
 
   /**
-   *
+   * Compacts an item by performing all possible merges between
+   * consecutive items.
    * @param {TypesetterItem[]}itemArray
    * @private
    */
-  static __compactItemArray(itemArray) {
+  static compactItemArray(itemArray) {
     //debug && console.log(`Compacting line`)
     return itemArray.reduce( (currentArray, item) => {
       if (currentArray.length === 0) {
         return [item]
       }
       let lastItem = currentArray.pop()
-      let mergedArray = this.__mergeItemWithNext(lastItem, item)
-      for (let i = 0; i < mergedArray.length; i++) {
-        currentArray.push(mergedArray[i])
-      }
+      let mergedArray = this.mergeItemWithNext(lastItem, item)
+      currentArray.push(...mergedArray)
       return currentArray
     }, [])
   }
 
 
   /**
-   * Tries to merge an item with another item
-   * E.g. two text boxes with the same font descriptions
+   * Tries to merge an item with another item, for example,
+   * two text boxes with the same font descriptions.
+   *
    * Returns an array of items with 1 item if there was
    * a merge or with 2 item if no merge was possible
    * @param {TypesetterItem}item
@@ -320,7 +327,7 @@ export class FirstFitLineBreaker extends LineBreaker {
    * @return {TypesetterItem[]}
    * @private
    */
-  static __mergeItemWithNext(item, nextItem) {
+  static mergeItemWithNext(item, nextItem) {
     if (item.constructor.name !== nextItem.constructor.name) {
       // no merge possible between two items of different class
       //debug && console.log(`Cannot merge ${item.constructor.name} with ${nextItem.constructor.name}`)

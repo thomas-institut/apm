@@ -60,7 +60,7 @@ class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
             $opensearch_id = $max_id + 1;
 
             // Add new transcription to index
-            $indexcreator->indexCol($this->client, $opensearch_id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+            $indexcreator->indexColumn($this->client, $opensearch_id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
 
         } else { // SECOND CASE – Existing transcription was changed
 

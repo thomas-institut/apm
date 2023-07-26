@@ -2,9 +2,11 @@
 
 namespace APM\CommandLine;
 
+use APM\Api\ApiWorks;
 use APM\System\ApmConfigParameter;
 use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
+
 use function DI\string;
 
 class EditionIndexCreator extends IndexCreator
@@ -13,7 +15,6 @@ class EditionIndexCreator extends IndexCreator
     public Client $client;
     public array $index_names;
     protected $ctable;
-
 
     public function main($argc, $argv): bool
     {
@@ -89,6 +90,7 @@ class EditionIndexCreator extends IndexCreator
             $chunk = $edition['chunk_id'];
             $lang = $edition['lang'];
             $table_id = $edition['table_id'];
+            $work = $edition['work'];
             
             if ($lang != 'jrb') {
                 $index_name = 'editions_' . $lang;
@@ -97,8 +99,8 @@ class EditionIndexCreator extends IndexCreator
                 $index_name = 'editions_he';
             }
 
-            $this->indexEdition ($index_name, $id, $editor, $text, $title, $chunk, $lang, $table_id);
-            $this->logger->debug("Indexed Edition in $index_name – OpenSearch ID: $id, Editor: $editor, Title: $title, Chunk: $chunk, Lang: $lang, Table ID: $table_id\n");
+            $this->indexEdition ($index_name, $id, $editor, $text, $title, $chunk, $lang, $table_id, $work);
+            $this->logger->debug("Indexed Edition in $index_name – OpenSearch ID: $id, Editor: $editor, Title: $work, Chunk: $chunk, Lang: $lang, Table ID: $table_id\n");
 
         }
 
@@ -130,15 +132,17 @@ class EditionIndexCreator extends IndexCreator
             $edition_data['editor'] = $editor;
             $edition_data['text'] = $edition_text;
             $edition_data['title'] = $data['title'];
-            $edition_data['chunk_id'] = $data['chunkId'];
             $edition_data['lang'] = $data['lang'];
+            $edition_data['chunk_id'] = explode('-', $data['chunkId'])[1];
+            $work_id = explode('-', $data['chunkId'])[0];
+            $edition_data['work'] = $this->dm->getWorkInfo($work_id)['title'];
 
         }
 
         return $edition_data;
     }
 
-    protected function indexEdition (string $index_name, int $id, string $editor, string $text, string $title, string $chunk, string $lang, int $table_id): bool
+    protected function indexEdition (string $index_name, int $id, string $editor, string $text, string $title, string $chunk, string $lang, int $table_id, string $work): bool
     {
         // Encode text for avoiding errors in exec shell command because of characters like "(", ")" or " "
         $text_clean = $this->encode($text);
@@ -169,11 +173,11 @@ class EditionIndexCreator extends IndexCreator
                 'page' => '1',
                 'seq' => $table_id,
                 'foliation' => $chunk,
-                'column' => '1',
+                'column' => '',
                 'pageID' => '1',
                 'docID' => '1',
                 'transcriber' => $editor,
-                'title' => $title,
+                'title' => $work,
                 'chunk'=> $chunk,
                 'lang' => $lang,
                 'transcript_tokens' => $text_tokenized,

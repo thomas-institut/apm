@@ -127,7 +127,7 @@ class IndexCreator extends CommandLineUtility {
                     // Add data to the OpenSearch index with a unique id
                     $id = $id + 1;
 
-                    $this->indexCol($this->client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+                    $this->indexColumn($this->client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
                 }
             }
         }
@@ -219,7 +219,7 @@ class IndexCreator extends CommandLineUtility {
 
     // Function to add pages to the OpenSearch index
     // TODO: add types to parameters
-    public function indexCol ($client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang): bool
+    public function indexColumn ($client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang): bool
     {
 
         if ($lang != 'jrb') {

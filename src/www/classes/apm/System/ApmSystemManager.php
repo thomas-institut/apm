@@ -189,8 +189,6 @@ class ApmSystemManager extends SystemManager {
 
     private ?ApmNormalizerManager $normalizerManager;
 
-    private OpenSearchScheduler $openSearchScheduler;
-
     private ?ApmEditionSourceManager $editionSourceManager;
     private ApmJobQueueManager $jobManager;
 
@@ -259,23 +257,6 @@ class ApmSystemManager extends SystemManager {
         }
 
 //        $globalProfiler->lap("Database checked");
-
-        // Set up OpenSearchScheduler
-        try {
-            $schedulerTable = new MySqlDataTable($this->dbConn,
-                $this->tableNames[ApmMySqlTableName::TABLE_SCHEDULER]);
-        } catch (Exception $e) {
-            // Cannot replicate this in testing, yet
-            // @codeCoverageIgnoreStart
-            $this->logAndSetError(self::ERROR_CANNOT_READ_SCHEDULE_FROM_DB,
-                "Cannot read schedule from database: [ " . $e->getCode() . '] ' . $e->getMessage());
-            return;
-            // @codeCoverageIgnoreEnd
-        }
-
-        $this->openSearchScheduler=new OpenSearchScheduler($schedulerTable, $this->logger);
-
-//        $globalProfiler->lap("Opensearch scheduler ready");
 
         // Set up SettingsManager
         try {
@@ -767,11 +748,6 @@ class ApmSystemManager extends SystemManager {
         return $this->router;
     }
 
-    public function getOpenSearchScheduler(): OpenSearchScheduler
-    {
-        return $this->openSearchScheduler;
-    }
-
     public function getMultiChunkEditionManager(): MultiChunkEditionManager
     {
         if ($this->multiChunkEditionManager === null) {
@@ -795,8 +771,6 @@ class ApmSystemManager extends SystemManager {
     public function onTranscriptionUpdated(int $userId, int $docId, int $pageNumber, int $columnNumber): void
     {
         parent::onTranscriptionUpdated($userId, $docId, $pageNumber, $columnNumber);
-
-        //$this->getOpenSearchScheduler()->schedule($docId, $pageNumber, $columnNumber);
 
         $this->logger->debug("Scheduling update of SiteChunks cache");
         $this->jobManager->scheduleJob(ApmJobName::SITE_CHUNKS_UPDATE_DATA_CACHE,

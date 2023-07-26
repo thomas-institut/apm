@@ -85,7 +85,7 @@ export function setupSearchPage(baseUrl) {
       getListFromOpenSearch ('transcribers', errorMessageDiv)
     }
     else {
-      doc_or_edition.text("Edition")
+      doc_or_edition.text("Edition Title")
       trans_or_editor.text("Editor")
 
       // Get lists for edition and editor forms

@@ -257,7 +257,7 @@ async function displayResults (data, lang, num_passages, zoom, radius, num_passa
     // Make table head
     if (corpus === 'transcriptions') { // For transcriptions
       results_head.empty()
-      results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th><span title="Number of tokens, i. e. words or punctuation marks, to display before and after your first keyword. A value of 0 means that only the tokens matching your first keyword are displayed."><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}></span>
+      results_head.append(`<tr><th><span title="Passages can overlap, if a keyword occurs multiple times inside the chosen keyword distance.">Matched Passage (${num_passages})</span></th><th><span title="Number of tokens, i. e. words or punctuation marks, to display before and after your first keyword. A value of 0 means that only the tokens matching your first keyword are displayed."><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}></span>
                                 </th><th>Document (${num_titles})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
     }
     else { // For editions

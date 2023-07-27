@@ -33,6 +33,7 @@ class ApiSearch extends ApiController
         $now = TimeString::now();
 
         $this->profiler->start();
+
         // Get all user input!
         $corpus = $_POST['corpus'];
         $searched_phrase = $this->removeBlanks(strtolower($_POST['searched_phrase'])); // Lower-case and without additional blanks
@@ -43,13 +44,9 @@ class ApiSearch extends ApiController
         $lang = $_POST['lang'] ?? 'detect';
 
         // Name of the index to query
-        if ($lang != 'jrb') {
-            $index_name = $corpus . '_' . $lang;
-        }
-        else {
-            $index_name = $corpus . '_he';
-        }
+        $index_name = $this->getIndexName($corpus, $lang);
 
+        // Log query
         $this->logger->debug("Input parameters", [ 'text' => $searched_phrase, 'radius' => $radius, 'lang' => $lang, 'lemmatize' => $lemmatize]);
 
         // Instantiate OpenSearch client
@@ -125,8 +122,8 @@ class ApiSearch extends ApiController
 
         $this->profiler->lap("getData");
 
-        // Until now, only the first token in the searched phrase was handled
-        // So, if there is more than one token in the searched phrase, now filter out all columns and passages, which do not match all tokens
+        // Until now, there was no check, if the queried keywords are close enough to each other, depending on the radius value
+        // So, if there is more than one token in the searched phrase, now filter out all columns and passages, which do not match all tokens in the desired way
         if ($numTokens !== 1) {
             for ($i=1; $i<$numTokens; $i++) {
                 $data = $this->filterData($data, $tokensForQuery[$i], $lemmata[$i], $lemmatize);
@@ -172,6 +169,17 @@ class ApiSearch extends ApiController
             'data' => $data,
             'serverTime' => $now,
             'status' => $status]);
+    }
+
+    private function getIndexName(string $corpus, string $lang): string {
+        if ($lang != 'jrb') {
+            $index_name = $corpus . '_' . $lang;
+        }
+        else {
+            $index_name = $corpus . '_he';
+        }
+
+        return $index_name;
     }
 
     private  function getLemmaCacheKey($word): string
@@ -634,19 +642,22 @@ class ApiSearch extends ApiController
     }
 
     // Function to get a full list of i. e. titles or transcribers values in the index
-    static private function getListFromIndex ($client, $category) { // $category can be 'title' or 'transcriber' or 'editor' or 'edition'
+    static private function getAllEntriesFromIndex ($client, string $queryKey): array { // $queryKey can be 'transcription' or 'transcriber' or 'editor' or 'edition'
 
-        if ($category === 'title' or $category === 'transcriber') {
+        // Get names of target indices
+        if ($queryKey === 'transcription' or $queryKey === 'transcriber') {
             $index_names = ['transcriptions_la', 'transcriptions_ar', 'transcriptions_he'];
         }
         else {
             $index_names = ['editions_la', 'editions_ar', 'editions_he'];
-            if ($category === 'editor') {
-                $category = 'transcriber';
-            }
-            else {
-                $category = 'title';
-            }
+        }
+
+        // Get keys to query
+        if ($queryKey === 'transcriber' or $queryKey === 'editor') {
+            $queryKey = 'creator';
+        }
+        else {
+            $queryKey = 'title';
         }
 
         // Array to return
@@ -670,7 +681,7 @@ class ApiSearch extends ApiController
 
             // Append every value of the queried field to the $values-array, if not already done before (no duplicates)
             foreach ($query['hits']['hits'] as $match) {
-                $value = $match['_source'][$category];
+                $value = $match['_source'][$queryKey];
                 if (in_array($value, $values) === false) {
                     $values[] = $value;
                 }
@@ -692,10 +703,10 @@ class ApiSearch extends ApiController
         }
 
         // Get a list of all titles
-        $titles = self::getListFromIndex($client, 'title');
-        $transcribers = self::getListFromIndex($client, 'transcriber');
-        $editions = self::getListFromIndex($client, 'edition');
-        $editors = self::getListFromIndex($client, 'editor');
+        $titles = self::getAllEntriesFromIndex($client, 'title');
+        $transcribers = self::getAllEntriesFromIndex($client, 'transcriber');
+        $editions = self::getAllEntriesFromIndex($client, 'edition');
+        $editors = self::getAllEntriesFromIndex($client, 'editor');
 
         // Set cache
         $cache->set('Titles', serialize($titles));
@@ -707,7 +718,27 @@ class ApiSearch extends ApiController
     }
 
     // ApiCall – Function to get all doc titles
-    public function getTitles (Request $request, Response $response): Response
+    public function getTitles(Request $request, Response $response): Response
+    {
+        return $this->getDataFromCacheOrIndex($request, $response, 'Titles', 'transcription');
+    }
+
+    public function getTranscribers(Request $request, Response $response): Response
+    {
+        return $this->getDataFromCacheOrIndex($request, $response, 'Transcribers', 'transcriber');
+    }
+
+    public function getEditionTitles(Request $request, Response $response): Response
+    {
+        return $this->getDataFromCacheOrIndex($request, $response, 'Editions', 'edition');
+    }
+
+    public function getEditors(Request $request, Response $response): Response
+    {
+        return $this->getDataFromCacheOrIndex($request, $response, 'Editors', 'editor');
+    }
+
+    private function getDataFromCacheOrIndex(Request $request, Response $response, string $cacheKey, string $queryKey): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $cache = $this->systemManager->getSystemDataCache();
@@ -716,144 +747,30 @@ class ApiSearch extends ApiController
 
         // Get data from cache, if data is not cached, get data from open search index and set the cache
         try {
-
-            $titles = unserialize($cache->get('Titles'));
-
+            $data = unserialize($cache->get($cacheKey));
         } catch (KeyNotInCacheException $e) {
-
             // Instantiate OpenSearch client
             try {
                 $client = $this->instantiateClient($this->systemManager);
-            } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
+            } catch (Exception $e) {
                 $status = 'Connecting to OpenSearch server failed.';
                 return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
             }
 
-            // Get a list of all titles
-            $titles = self::getListFromIndex($client, 'title');
+            // Get a list of all items
+            $data = self::getAllEntriesFromIndex($client, $queryKey);
 
             // Set cache
-            $cache->set('Titles', serialize($titles));
-
+            $cache->set($cacheKey, serialize($data));
         }
 
         // Api Response
-        return $this->responseWithJson($response, [
-            'titles' => $titles,
+        $responseData = [
+            strtolower($cacheKey) => $data,
             'serverTime' => $now,
-            'status' => $status]);
+            'status' => $status
+        ];
+
+        return $this->responseWithJson($response, $responseData);
     }
-
-    // API Call – Function to get all transcribers
-    public function getTranscribers (Request $request, Response $response): Response
-    {
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $cache = $this->systemManager->getSystemDataCache();
-        $status = 'OK';
-        $now = TimeString::now();
-
-        // Get data from cache, if data is not cached, get data from open search index and set the cache
-        try {
-
-            $transcribers = unserialize($cache->get('Transcribers'));
-
-        } catch (KeyNotInCacheException $e) {
-
-            // Instantiate OpenSearch client
-            try {
-                $client = $this->instantiateClient($this->systemManager);
-            } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
-                $status = 'Connecting to OpenSearch server failed.';
-                return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
-            }
-
-            // Get a list of all transcribers
-            $transcribers = self::getListFromIndex($client, 'transcriber');
-
-            // Set cache
-            $cache->set('Transcribers', serialize($transcribers));
-
-    }
-        // Api Response
-        return $this->responseWithJson($response, [
-            'transcribers' => $transcribers,
-            'serverTime' => $now,
-            'status' => $status]);
-    }
-
-    // ApiCall – Function to get all edition titles
-    public function getEditionTitles (Request $request, Response $response): Response
-    {
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $cache = $this->systemManager->getSystemDataCache();
-        $status = 'OK';
-        $now = TimeString::now();
-
-        // Get data from cache, if data is not cached, get data from open search index and set the cache
-        try {
-
-            $editions = unserialize($cache->get('Editions'));
-
-        } catch (KeyNotInCacheException $e) {
-
-            // Instantiate OpenSearch client
-            try {
-                $client = $this->instantiateClient($this->systemManager);
-            } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
-                $status = 'Connecting to OpenSearch server failed.';
-                return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
-            }
-
-            // Get a list of all titles
-            $editions = self::getListFromIndex($client, 'edition');
-
-            // Set cache
-            $cache->set('Editions', serialize($editions));
-
-        }
-
-        // Api Response
-        return $this->responseWithJson($response, [
-            'editions' => $editions,
-            'serverTime' => $now,
-            'status' => $status]);
-    }
-
-    // API Call – Function to get all editors
-    public function getEditors (Request $request, Response $response): Response
-    {
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $cache = $this->systemManager->getSystemDataCache();
-        $status = 'OK';
-        $now = TimeString::now();
-
-        // Get data from cache, if data is not cached, get data from open search index and set the cache
-        try {
-
-            $editors = unserialize($cache->get('Editors'));
-
-        } catch (KeyNotInCacheException $e) {
-
-            // Instantiate OpenSearch client
-            try {
-                $client = $this->instantiateClient($this->systemManager);
-            } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
-                $status = 'Connecting to OpenSearch server failed.';
-                return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
-            }
-
-            // Get a list of all transcribers
-            $editors = self::getListFromIndex($client, 'editor');
-
-            // Set cache
-            $cache->set('Editors', serialize($editors));
-
-        }
-        // Api Response
-        return $this->responseWithJson($response, [
-            'editors' => $editors,
-            'serverTime' => $now,
-            'status' => $status]);
-    }
-
 }

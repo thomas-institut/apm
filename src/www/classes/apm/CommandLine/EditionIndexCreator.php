@@ -2,12 +2,9 @@
 
 namespace APM\CommandLine;
 
-use APM\Api\ApiWorks;
 use APM\System\ApmConfigParameter;
 use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
-
-use function DI\string;
 
 class EditionIndexCreator extends IndexCreator
 {
@@ -90,7 +87,6 @@ class EditionIndexCreator extends IndexCreator
             $chunk = $edition['chunk_id'];
             $lang = $edition['lang'];
             $table_id = $edition['table_id'];
-            $work = $edition['work'];
             
             if ($lang != 'jrb') {
                 $index_name = 'editions_' . $lang;
@@ -99,8 +95,8 @@ class EditionIndexCreator extends IndexCreator
                 $index_name = 'editions_he';
             }
 
-            $this->indexEdition ($index_name, $id, $editor, $text, $title, $chunk, $lang, $table_id, $work);
-            $this->logger->debug("Indexed Edition in $index_name – OpenSearch ID: $id, Editor: $editor, Title: $work, Chunk: $chunk, Lang: $lang, Table ID: $table_id\n");
+            $this->indexEdition ($index_name, $id, $editor, $text, $title, $chunk, $lang, $table_id);
+            $this->logger->debug("Indexed Edition in $index_name – OpenSearch ID: $id, Editor: $editor, Title: $title, Chunk: $chunk, Lang: $lang, Table ID: $table_id\n");
 
         }
 
@@ -131,18 +127,17 @@ class EditionIndexCreator extends IndexCreator
 
             $edition_data['editor'] = $editor;
             $edition_data['text'] = $edition_text;
-            $edition_data['title'] = $data['title'];
             $edition_data['lang'] = $data['lang'];
             $edition_data['chunk_id'] = explode('-', $data['chunkId'])[1];
             $work_id = explode('-', $data['chunkId'])[0];
-            $edition_data['work'] = $this->dm->getWorkInfo($work_id)['title'];
+            $edition_data['title'] = $this->dm->getWorkInfo($work_id)['title'];
 
         }
 
         return $edition_data;
     }
 
-    protected function indexEdition (string $index_name, int $id, string $editor, string $text, string $title, string $chunk, string $lang, int $table_id, string $work): bool
+    protected function indexEdition (string $index_name, int $id, string $editor, string $text, string $title, string $chunk, string $lang, int $table_id): bool
     {
         // Encode text for avoiding errors in exec shell command because of characters like "(", ")" or " "
         $text_clean = $this->encode($text);
@@ -153,15 +148,15 @@ class EditionIndexCreator extends IndexCreator
             exec("python3 ../../python/Lemmatizer_Indexing.py $lang $text_clean", $tokens_and_lemmata);
 
             // Get tokenized and lemmatized transcript
-            $text_tokenized = explode("#", $tokens_and_lemmata[0]);
-            $text_lemmatized = explode("#", $tokens_and_lemmata[1]);
+            $edition_tokenized = explode("#", $tokens_and_lemmata[0]);
+            $edition_lemmatized = explode("#", $tokens_and_lemmata[1]);
         }
         else {
-            $text_tokenized = [];
-            $text_lemmatized = [];
+            $edition_tokenized = [];
+            $edition_lemmatized = [];
             $this->logger->debug("Text is too short for lemmatization...");
         }
-        if (count($text_tokenized) !== count($text_lemmatized)) {
+        if (count($edition_tokenized) !== count($edition_lemmatized)) {
             $this->logger->debug("Error! Array of tokens and lemmata do not have the same length!\n");
         }
 
@@ -170,18 +165,13 @@ class EditionIndexCreator extends IndexCreator
             'index' => $index_name,
             'id' => $id,
             'body' => [
-                'page' => '1',
-                'seq' => $table_id,
-                'foliation' => $chunk,
-                'column' => '',
-                'pageID' => '1',
-                'docID' => '1',
-                'transcriber' => $editor,
-                'title' => $work,
-                'chunk'=> $chunk,
+                'table_id' => $table_id,
+                'chunk' => $chunk,
+                'creator' => $editor,
+                'title' => $title,
                 'lang' => $lang,
-                'transcript_tokens' => $text_tokenized,
-                'transcript_lemmata' => $text_lemmatized
+                'edition_tokens' => $edition_tokenized,
+                'edition_lemmata' => $edition_lemmatized
             ]
         ]);
 

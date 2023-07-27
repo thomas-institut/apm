@@ -166,8 +166,8 @@ function search() {
     corpus: corpus,
     searched_phrase: searchText,
     lang: detectedLang,
-    title: $("#transcriptBox").val(),
-    transcriber: $("#transcriberBox").val(),
+    title: $("#titleBox").val(),
+    creator: $("#creatorBox").val(),
     radius: parseInt($("#radiusSlider").val()) + 1,
     zoom: $("#zoomSlider").val(),
     lemmatize: $("#lemmatize").prop("checked")
@@ -241,9 +241,9 @@ async function displayResults (data, lang, num_passages, zoom, radius, num_passa
   let error_message = $("#error_message")
   const spinner = $("#spinner");
 
-  // Count matched columns and docs
-  let num_columns = data.length
-  let num_docs = getNumDocs(data, num_columns)
+  // Count matches and titles
+  let num_matches = data.length // means matches in the open-search index, not identical to num_passages
+  let num_titles = getNumTitles(data, num_matches)
 
   // If there are no matches, display this to the user and empty the results table
   if (num_passages === 0) {
@@ -255,15 +255,15 @@ async function displayResults (data, lang, num_passages, zoom, radius, num_passa
   else {
 
     // Make table head
-    if (corpus === 'transcriptions') {
+    if (corpus === 'transcriptions') { // For transcriptions
       results_head.empty()
       results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th><span title="Number of tokens, i. e. words or punctuation marks, to display before and after your first keyword. A value of 0 means that only the tokens matching your first keyword are displayed."><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}></span>
-                                </th><th>Document (${num_docs})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
+                                </th><th>Document (${num_titles})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
     }
-    else {
+    else { // For editions
       results_head.empty()
       results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th><span title="Number of tokens, i. e. words or punctuation marks, to display before and after your first keyword. A value of 0 means that only the tokens matching your first keyword are displayed."><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}></span>
-                                </th><th>Edition (${num_docs})</th><th>Chunk</th><th>Editor</th><th>Link</th></tr>`)
+                                </th><th>Edition (${num_titles})</th><th>Chunk</th><th>Editor</th><th>Link</th></tr>`)
     }
     results_body.empty()
 
@@ -276,26 +276,37 @@ async function displayResults (data, lang, num_passages, zoom, radius, num_passa
     await wait(1)
 
     // Write all matches into the results table
-    for (let i = 0; i < num_columns; i++) {
+    for (let i = 0; i < num_matches; i++) {
 
       // Collect relevant Data from API response
       let title = data[i]['title']
-      let seq = data[i]['seq']
-      let foliation = data[i]['foliation']
-      let column = data[i]['column']
-      let transcriber = data[i]['transcriber']
       let tokens_matched = data[i]['tokens_matched']
       let passages = data[i]['passage_tokenized']
-      let docID = data[i]['docID']
-      let transcript_tokenized = data[i]['transcript_tokenized']
       let positions = data[i]['positions']
+      let text_tokenized = data[i]['text_tokenized']
+      let creator = data[i]['creator']
 
-      // Get link for matched column
+      let foliation
+      let seq
+      let docID
+      let column
+      let table_id
+      let chunk
+      let link
+
+
+      // Get data
       if (corpus === 'transcriptions') {
-        var link = getLink(urlGen.sitePageView(docID, seq, column))
+        seq = data[i]['seq']
+        foliation = data[i]['foliation']
+        docID = data[i]['docID']
+        column = data[i]['column']
+        link = getLink(urlGen.sitePageView(docID, seq, column))
       }
       else {
-        var link = getLink(urlGen.siteEditCollationTable(seq))
+        table_id = data[i]['table_id']
+        chunk = data[i]['chunk']
+        link = getLink(urlGen.siteEditCollationTable(table_id))
       }
 
       // Slice and highlight passage
@@ -307,21 +318,26 @@ async function displayResults (data, lang, num_passages, zoom, radius, num_passa
         }
 
         data_for_zooming.push({
-          'transcript_tokenized': transcript_tokenized,
+          'text_tokenized': text_tokenized,
           'tokens_matched': tokens_matched,
           'position': positions[j]})
 
-        let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, positions[j], radius, zoom[k])
+        let passage = sliceAndHighlight(text_tokenized, tokens_matched, positions[j], radius, zoom[k])
 
         // Fill table with results - layout depends slightly on the language of the transcripts
-        fillResultsTable(passage, title, foliation, transcriber, link, lang, zoom, prev_title, k)
+        if (corpus === 'transcriptions') {
+          fillResultsTable(passage, title, foliation, creator, link, lang, zoom, prev_title, k)
+        }
+        else {
+          fillResultsTable(passage, title, chunk, creator, link, lang, zoom, prev_title, k)
+        }
+
         prev_title = title
-        // await wait(1)
       }
     }
 
     if (cropped) {
-      error_message.html(`<br>Too many matches! <br>Showing only ${num_passages} of ${num_passages_total} matched passages. <br>Specify your query or contact the administrators.<br><br>`)
+      error_message.html(`<br>Too many matches! Showing only ${num_passages} of ${num_passages_total} matched passages. <br>Specify your query or contact the administrators.<br><br>`)
     }
 
     // Zoom events
@@ -372,11 +388,11 @@ function updateResults (data, zoom, radius, index) {
 
   // Get the relevant data
   let tokens_matched = data[index-1]['tokens_matched']
-  let transcript_tokenized = data[index-1]['transcript_tokenized']
+  let text_tokenized = data[index-1]['text_tokenized']
   let position = data[index-1]['position']
 
   // Slice and highlight passage
-  let passage = sliceAndHighlight(transcript_tokenized, tokens_matched, position, radius, zoom[index])
+  let passage = sliceAndHighlight(text_tokenized, tokens_matched, position, radius, zoom[index])
   results_body.rows[index].cells[0].innerHTML = passage;
 }
 
@@ -386,20 +402,20 @@ function getLink (url) {
 }
 
 // Function to calculate total number of matched documents
-function getNumDocs (data, numColumns) {
+function getNumTitles (data, numColumns) {
 
-  let num_docs = 0
+  let num_titles = 0
   let prev_title = ""
 
   for (let i=0; i<numColumns; i++) {
     let title = data[i]['title']
     if (title !== prev_title) {
-      num_docs = num_docs + 1
+      num_titles = num_titles + 1
     }
     prev_title = title
   }
 
-  return num_docs
+  return num_titles
 }
 
 // Function to slice passages out of a transcript depending on zoom value
@@ -462,7 +478,7 @@ function removeBlanks (text) {
   return text
 }
 
-function fillResultsTable(passage, title, foliation, transcriber, link, lang, zoom, prev_title=' ', k) {
+function fillResultsTable(passage, title, identifier, transcriber, link, lang, zoom, prev_title=' ', k) {
 
   // Get selector
   let results_body = $("#resultsTable tbody")
@@ -472,28 +488,28 @@ function fillResultsTable(passage, title, foliation, transcriber, link, lang, zo
 
     if (lang==='la') {
       results_body.append(
-        `<tr><td class="text-justify" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+        `<tr><td class="text-la" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
     }
     else if (lang==='he') {
       results_body.append(
-        `<tr><td class="text-justify" class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+        `<tr><td class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
     }
     else if (lang==='ar') {
       results_body.append(
-        `<tr><td class="text-justify" class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+        `<tr><td class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
     }
   }
 
   else {
     if (lang === 'la') {
       results_body.append(
-        `<tr><td class="text-justify" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+        `<tr><td class="text-la" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
     } else if (lang === 'he') {
       results_body.append(
-        `<tr><td class="text-justify" class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+        `<tr><td class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
     } else if (lang === 'ar') {
       results_body.append(
-        `<tr><td class="text-justify" class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${foliation}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+        `<tr><td class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
     }
   }
 

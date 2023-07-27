@@ -36,8 +36,8 @@ class ApiSearch extends ApiController
         // Get all user input!
         $corpus = $_POST['corpus'];
         $searched_phrase = $this->removeBlanks(strtolower($_POST['searched_phrase'])); // Lower-case and without additional blanks
-        $doc_title = $_POST['title'];
-        $transcriber = $_POST['transcriber'];
+        $title = $_POST['title'];
+        $creator = $_POST['creator'];
         $radius = $_POST['radius'];
         $lemmatize = filter_var($_POST['lemmatize'], FILTER_VALIDATE_BOOLEAN);
         $lang = $_POST['lang'] ?? 'detect';
@@ -101,9 +101,9 @@ class ApiSearch extends ApiController
 
         $this->profiler->lap("Lemmatization");
 
-        // Query index for the first token in tokens_for_query – additional tokens will be handled below
+        // Query index
         try {
-            $query = $this->makeOpenSearchQuery($client, $index_name, $lang,  $doc_title, $transcriber, $tokensForQuery, $lemmatize);
+            $query = $this->makeOpenSearchQuery($client, $index_name, $lang,  $title, $creator, $tokensForQuery, $lemmatize, $corpus);
         } catch (\Exception $e) {
             $status = "OpenSearch query problem";
             return $this->responseWithJson($response,
@@ -121,7 +121,7 @@ class ApiSearch extends ApiController
         $this->profiler->lap("Opensearch query");
 
         // Get all information about the matched columns, including passages with the matched token as lists of tokens
-        $data = $this->getData($query, $tokensForQuery[0], $tokensForQuery, $lemmata, $radius, $lemmatize);
+        $data = $this->getData($query, $tokensForQuery[0], $tokensForQuery, $lemmata, $radius, $lemmatize, $corpus);
 
         $this->profiler->lap("getData");
 
@@ -157,17 +157,6 @@ class ApiSearch extends ApiController
             $num_passages_cropped = $num_passages_total;
         }
 
-//        if (sizeof($data) > 200) {
-//            $data = array_slice($data, 0, 200);
-//            $cropped = true;
-//            // Get total number of matched passages in cropped data
-//            foreach ($data as $matched_column) {
-//                $num_passages_cropped = $num_passages_cropped + $matched_column['num_passages'];
-//            }
-//        }
-//        else {
-//            $num_passages_cropped = $num_passages_total;
-//        }
 
         $this->profiler->stop();
         $this->logTimeProfile();
@@ -223,17 +212,26 @@ class ApiSearch extends ApiController
     }
 
     // Function to query a given OpenSearch-index
-    private function makeOpenSearchQuery ($client, $index_name, $lang, $doc_title, $transcriber, $tokens, $lemmatize) {
+    private function makeOpenSearchQuery ($client, $index_name, $lang, $title, $creator, $tokens, $lemmatize, $corpus) {
 
-        $this->logger->debug("Making opensearch query", [ 'index' => $index_name, 'tokens' => $tokens, 'doc' => $doc_title, 'transcriber' => $transcriber]);
-//        $first_token_for_query = $tokens[0];
-        // Check lemmatize (boolean) to determine the area of the query
+        $this->logger->debug("Making opensearch query", [ 'index' => $index_name, 'tokens' => $tokens, 'title' => $title, 'creator' => $creator]);
+
+        // Check lemmatize (boolean) and corpus to determine the target of the query
         if ($lemmatize) {
-            $area_of_query = 'transcript_lemmata';
+            if ($corpus === 'transcriptions') {
+                $area_of_query = 'transcription_lemmata';
+            }
+            else {
+                $area_of_query = 'edition_lemmata';
+            }
         }
         else {
-            $area_of_query = 'transcript_tokens';
-        }
+            if ($corpus === 'transcriptions') {
+                $area_of_query = 'transcription_tokens';
+            }
+            else {
+                $area_of_query = 'edition_tokens';
+            }        }
 
         $mustConditions = [];
 
@@ -244,141 +242,21 @@ class ApiSearch extends ApiController
             ]];
         }
 
-        if ($transcriber !== '') {
+        if ($creator !== '') {
             $mustConditions[] = [ 'match_phrase_prefix' => [
-                'transcriber' => [
-                    "query" => $transcriber
+                'creator' => [
+                    "query" => $creator
                 ]
             ]];
         }
 
-        if ($doc_title !== '') {
+        if ($title !== '') {
             $mustConditions[] = [ 'match_phrase_prefix' => [
                 'title' => [
-                    "query" => $doc_title
+                    "query" => $title
                 ]
             ]];
         }
-
-        // Search in all indexed columns
-//        if ($doc_title === "" and $transcriber === "") {
-//            $query = $client->search([
-//                'index' => $index_name,
-//                'body' => [
-//                    'from' => 0,
-//                    'size' => 20000,
-//                    'query' => [
-//                        'bool' => [
-//                            'must' => $mustConditions
-////                            'must' => [
-////                                'query_string' => [
-////                                    "query" => $first_token_for_query,
-////                                    "default_field" => $area_of_query,
-////                                    "analyze_wildcard" => true,
-////                                    "allow_leading_wildcard" => true
-////                                ]
-////                            ]
-//                        ]
-//                    ]
-//                ]
-//            ]);
-//        }
-//
-//        // Search only in specific columns, specified by transcriber or title
-//        elseif ($transcriber === "") {
-//
-//            $query = $client->search([
-//                'index' => $index_name,
-//                'body' => [
-//                    'size' => 20000,
-//                    'query' => [
-//                        'bool' => [
-//                            'filter' => [
-//                                'match_phrase_prefix' => [
-//                                    'title' => [
-//                                        "query" => $doc_title
-//                                    ]
-//                                ]
-//                            ],
-//                            'must' => [
-//                                'query_string' => [
-//                                    "query" => $first_token_for_query,
-//                                    "default_field" => $area_of_query,
-//                                    "analyze_wildcard" => true,
-//                                    "allow_leading_wildcard" => true
-//                                ]
-//                            ]
-//                        ]
-//                    ]
-//                ]
-//            ]);
-//        }
-//
-//        elseif ($doc_title === "") {
-//
-//            $query = $client->search([
-//                'index' => $index_name,
-//                'body' => [
-//                    'size' => 20000,
-//                    'query' => [
-//                        'bool' => [
-//                            'filter' => [
-//                                'match_phrase_prefix' => [
-//                                    'transcriber' => [
-//                                        "query" => $transcriber
-//                                    ]
-//                                ]
-//                            ],
-//                            'must' => [
-//                                'query_string' => [
-//                                    "query" => $first_token_for_query,
-//                                    "default_field" => $area_of_query,
-//                                    "analyze_wildcard" => true,
-//                                    "allow_leading_wildcard" => true
-//                                ]
-//                            ]
-//                        ]
-//                    ]
-//                ]
-//            ]);
-//        }
-//        // Transcriber AND title are given
-//        else {
-//
-//            $query = $client->search([
-//                'index' => $index_name,
-//                'body' => [
-//                    'size' => 20000,
-//                    'query' => [
-//                        'bool' => [
-//                            'filter' => [
-//                                'match_phrase_prefix' => [
-//                                    'title' => [
-//                                        "query" => $doc_title
-//                                    ]
-//                                ]
-//                            ],
-//                            'should' => [
-//                                'match_phrase_prefix' => [
-//                                    'transcriber' => [
-//                                        "query" => $transcriber,
-//                                    ]
-//                                ]
-//                            ],
-//                            "minimum_should_match" => 1,
-//                            'must' => [
-//                                'query_string' => [
-//                                    "query" => $first_token_for_query,
-//                                    "default_field" => $area_of_query,
-//                                    "analyze_wildcard" => true,
-//                                    "allow_leading_wildcard" => true
-//                                ]
-//                            ]
-//                        ]
-//                    ]
-//                ]
-//            ]);
-//        }
 
         return $client->search([
             'index' => $index_name,
@@ -394,7 +272,7 @@ class ApiSearch extends ApiController
     }
 
     // Get all information about matches, specified for a single document or all documents
-    private function getData (array $query, string $token, array $tokens_for_query, array $lemmata, int $radius, bool $lemmatize): array {
+    private function getData (array $query, string $token, array $tokens_for_query, array $lemmata, int $radius, bool $lemmatize, string $corpus): array {
 
         // Choose filter algorithm based on asterisks in the queried token - remove asterisks for further processing
         $filter = $this->getFilterType($token);
@@ -404,34 +282,44 @@ class ApiSearch extends ApiController
         $data = [];
 
         // Get number of matched columns
-        $num_columns = $query['hits']['total']['value'];
-
-//        $num_columns = count($query['hits']['hits']);
+        $num_matches = $query['hits']['total']['value'];
 
         // If there are any matched columns, collect them all in an ordered and nested array of columns
-        if ($num_columns !== 0) {
-            for ($i = 0; $i<$num_columns; $i++) {
+        if ($num_matches !== 0) {
+            for ($i = 0; $i<$num_matches; $i++) {
 
-                // Get all relevant column-data
+                if ($corpus === 'transcriptions') {
+                    // Get all relevant column-data
+                    $page = $query['hits']['hits'][$i]['_source']['page'];
+                    $seq = $query['hits']['hits'][$i]['_source']['seq'];
+                    $foliation = $query['hits']['hits'][$i]['_source']['foliation'];
+                    $column = $query['hits']['hits'][$i]['_source']['column'];
+                    $docID = $query['hits']['hits'][$i]['_source']['docID'];
+                    $pageID = $query['hits']['hits'][$i]['_id'];
+                    $text_tokenized = $query['hits']['hits'][$i]['_source']['transcription_tokens'];
+                    $text_lemmatized = $query['hits']['hits'][$i]['_source']['transcription_lemmata'];
+                    $score = $query['hits']['hits'][$i]['_score'];
+                }
+                else {
+                    // Get all relevant column-data
+                    $table_id = $query['hits']['hits'][$i]['_source']['table_id'];
+                    $chunk = $query['hits']['hits'][$i]['_source']['chunk'];
+                    $text_tokenized = $query['hits']['hits'][$i]['_source']['edition_tokens'];
+                    $text_lemmatized = $query['hits']['hits'][$i]['_source']['edition_lemmata'];
+                    $score = $query['hits']['hits'][$i]['_score'];
+                }
+
                 $title = $query['hits']['hits'][$i]['_source']['title'];
-                $page = $query['hits']['hits'][$i]['_source']['page'];
-                $seq = $query['hits']['hits'][$i]['_source']['seq'];
-                $foliation = $query['hits']['hits'][$i]['_source']['foliation'];
-                $column = $query['hits']['hits'][$i]['_source']['column'];
-                $transcriber = $query['hits']['hits'][$i]['_source']['transcriber'];
-                $docID = $query['hits']['hits'][$i]['_source']['docID'];
-                $pageID = $query['hits']['hits'][$i]['_id'];
-                $transcript_tokenized = $query['hits']['hits'][$i]['_source']['transcript_tokens'];
-                $transcript_lemmatized = $query['hits']['hits'][$i]['_source']['transcript_lemmata'];
-                $score = $query['hits']['hits'][$i]['_score'];
+                $creator = $query['hits']['hits'][$i]['_source']['creator'];
+
 
                 // Get all lower-case and upper-case token positions (lemmatized or unlemmatized) in the current column (measured in words)
                 if ($lemmatize) {
-                    $pos_lower = $this->getPositions($transcript_lemmatized, $lemmata[0], $filter);
-                    $pos_upper = $this->getPositions($transcript_lemmatized, ucfirst($lemmata[0]), $filter);
+                    $pos_lower = $this->getPositions($text_lemmatized, $lemmata[0], $filter);
+                    $pos_upper = $this->getPositions($text_lemmatized, ucfirst($lemmata[0]), $filter);
                 } else {
-                    $pos_lower = $this->getPositions($transcript_tokenized, $token, $filter);
-                    $pos_upper = $this->getPositions($transcript_tokenized, ucfirst($token), $filter);
+                    $pos_lower = $this->getPositions($text_tokenized, $token, $filter);
+                    $pos_upper = $this->getPositions($text_tokenized, ucfirst($token), $filter);
                 }
 
                 // Merge positions to one ordered array without duplicates
@@ -454,18 +342,18 @@ class ApiSearch extends ApiController
                 foreach ($pos_all as $pos) {
 
                         // Get tokenized and lemmatized passage and passage coordinates (measured in tokens, relative to the column)
-                        $passage_data = $this->getPassage($transcript_tokenized, $pos, $radius);
+                        $passage_data = $this->getPassage($text_tokenized, $pos, $radius);
                         $passage_tokenized[] = $passage_data['passage'];
 
                         if ($lemmatize) {
-                            $passage_data = $this->getPassage($transcript_lemmatized, $pos, $radius);
+                            $passage_data = $this->getPassage($text_lemmatized, $pos, $radius);
                             $passage_lemmatized[] = $passage_data['passage'];
                         }
 
                         $passage_coordinates[] = [$passage_data['start'], $passage_data['end']];
 
                         // Collect all matched tokens contained in the current passage in an array – will be used for highlighting keywords in js
-                        $tokens_matched[] = $transcript_tokenized[$pos];
+                        $tokens_matched[] = $text_tokenized[$pos];
                 }
 
                 // Remove duplicates from the tokens_matched array – also adjust the keys
@@ -475,29 +363,53 @@ class ApiSearch extends ApiController
                 $num_passages = count($passage_tokenized);
 
             // Collect data
-                $data[] = [
-                    'title' => $title,
-                    'page' => $page,
-                    'seq' => $seq,
-                    'positions' => $pos_all,
-                    'foliation' => $foliation,
-                    'column' => $column,
-                    'transcriber' => $transcriber,
-                    'pageID' => $pageID,
-                    'docID' => $docID,
-                    'transcript_tokenized' => $transcript_tokenized,
-                    'transcript_lemmatized' => $transcript_lemmatized,
-                    'tokens_for_query' => $tokens_for_query,
-                    'lemmata' => $lemmata,
-                    'filters' => [$filter],
-                    'tokens_matched' => $tokens_matched,
-                    'num_passages' => $num_passages,
-                    'passage_coordinates' => $passage_coordinates,
-                    'passage_tokenized' => $passage_tokenized,
-                    'passage_lemmatized' => $passage_lemmatized,
-                    'lemmatize' => $lemmatize,
-                    'score' => $score
-                ];
+                if ($corpus === 'transcriptions') {
+                    $data[] = [
+                        'title' => $title,
+                        'page' => $page,
+                        'seq' => $seq,
+                        'positions' => $pos_all,
+                        'foliation' => $foliation,
+                        'column' => $column,
+                        'creator' => $creator,
+                        'pageID' => $pageID,
+                        'docID' => $docID,
+                        'text_tokenized' => $text_tokenized,
+                        'text_lemmatized' => $text_lemmatized,
+                        'tokens_for_query' => $tokens_for_query,
+                        'lemmata' => $lemmata,
+                        'filters' => [$filter],
+                        'tokens_matched' => $tokens_matched,
+                        'num_passages' => $num_passages,
+                        'passage_coordinates' => $passage_coordinates,
+                        'passage_tokenized' => $passage_tokenized,
+                        'passage_lemmatized' => $passage_lemmatized,
+                        'lemmatize' => $lemmatize,
+                        'score' => $score
+                    ];
+                }
+                else {
+                    $data[] = [
+                        'title' => $title,
+                        'positions' => $pos_all,
+                        'chunk' => $chunk,
+                        'creator' => $creator,
+                        'table_id' => $table_id,
+                        'text_tokenized' => $text_tokenized,
+                        'text_lemmatized' => $text_lemmatized,
+                        'tokens_for_query' => $tokens_for_query,
+                        'lemmata' => $lemmata,
+                        'filters' => [$filter],
+                        'tokens_matched' => $tokens_matched,
+                        'num_passages' => $num_passages,
+                        'passage_coordinates' => $passage_coordinates,
+                        'passage_tokenized' => $passage_tokenized,
+                        'passage_lemmatized' => $passage_lemmatized,
+                        'lemmatize' => $lemmatize,
+                        'score' => $score
+                    ];
+                }
+
             }
 
             // Bring information in alphabetical and numerical order
@@ -513,13 +425,13 @@ class ApiSearch extends ApiController
         if ($lemmatize) { // Lemmatization requested
 
             // Remove all passages from $data, which do not match the additional keyword
-            foreach ($data as $i => $column) {
-                foreach ($column['passage_lemmatized'] as $j => $passage) {
+            foreach ($data as $i => $match) {
+                foreach ($match['passage_lemmatized'] as $j => $passage) {
                     foreach ($passage as $k => $token) {
 
                         // Add matched tokens to tokens_matched array and make it unique
                         if ($token === $lemma) {
-                            $data[$i]['tokens_matched'][] = $column['passage_tokenized'][$j][$k];
+                            $data[$i]['tokens_matched'][] = $match['passage_tokenized'][$j][$k];
                             $data[$i]['tokens_matched'] = array_unique($data[$i]['tokens_matched']);
                         }
                     }
@@ -543,11 +455,11 @@ class ApiSearch extends ApiController
             $token_plain= str_replace("*", "", $token_plain);
 
             // Add matching tokens (depending on filter type) to the tokens_matched array in data
-            foreach ($data as $i => $column) {
+            foreach ($data as $i => $match) {
 
                 $data[$i]['filters'][] = $filter;
 
-                foreach ($column['passage_tokenized'] as $j => $passage) {
+                foreach ($match['passage_tokenized'] as $j => $passage) {
 
                     $num_matched_tokens =  count($data[$i]['tokens_matched']);
 
@@ -575,18 +487,18 @@ class ApiSearch extends ApiController
         }
 
         // Unset all columns, which do not anymore have any passage_tokenized
-        foreach ($data as $i=>$column) {
-            if ($column['passage_tokenized'] === []) {
+        foreach ($data as $i=>$match) {
+            if ($match['passage_tokenized'] === []) {
                 unset ($data[$i]);
             }
 
             // Reset the keys of the remaining arrays
             else {
-                $data[$i]['passage_tokenized'] = array_values($column['passage_tokenized']);
-                $data[$i]['passage_lemmatized'] = array_values($column['passage_lemmatized']);
-                $data[$i]['tokens_matched'] = array_values($column['tokens_matched']);
-                $data[$i]['passage_coordinates'] = array_values($column['passage_coordinates']);
-                $data[$i]['positions'] = array_values($column['positions']);
+                $data[$i]['passage_tokenized'] = array_values($match['passage_tokenized']);
+                $data[$i]['passage_lemmatized'] = array_values($match['passage_lemmatized']);
+                $data[$i]['tokens_matched'] = array_values($match['tokens_matched']);
+                $data[$i]['passage_coordinates'] = array_values($match['passage_coordinates']);
+                $data[$i]['positions'] = array_values($match['positions']);
             }
         }
 
@@ -757,8 +669,8 @@ class ApiSearch extends ApiController
 
 
             // Append every value of the queried field to the $values-array, if not already done before (no duplicates)
-            foreach ($query['hits']['hits'] as $column) {
-                $value = $column['_source'][$category];
+            foreach ($query['hits']['hits'] as $match) {
+                $value = $match['_source'][$category];
                 if (in_array($value, $values) === false) {
                     $values[] = $value;
                 }

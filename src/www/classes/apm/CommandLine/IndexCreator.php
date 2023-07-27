@@ -263,10 +263,10 @@ class IndexCreator extends CommandLineUtility {
                 'pageID' => $page_id,
                 'docID' => $doc_id,
                 'lang' => $lang,
-                'transcriber' => $transcriber,
-                'transcript' => $transcript,
-                'transcript_tokens' => $transcript_tokenized,
-                'transcript_lemmata' => $transcript_lemmatized
+                'creator' => $transcriber,
+                //'transcript' => $transcript,
+                'transcription_tokens' => $transcript_tokenized,
+                'transcription_lemmata' => $transcript_lemmatized
             ]
         ]);
 

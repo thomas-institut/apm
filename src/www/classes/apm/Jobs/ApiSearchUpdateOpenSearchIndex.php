@@ -6,7 +6,7 @@ use APM\System\ApmConfigParameter;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
 use OpenSearch\ClientBuilder;
-use APM\CommandLine\IndexCreator;
+use APM\CommandLine\TranscriptionIndexCreator;
 use PHPUnit\Util\Exception;
 
 class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
@@ -38,15 +38,15 @@ class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
         $page = $payload['page'];
         $col = $payload['col'];
 
-        // Get instance of IndexCreator and all indexing-relevant data from the SQL database
-        $indexcreator = new IndexCreator($config, 0, [0]); // HERE I AM UNSURE | The arguments are necessary, because IndexCreator is designed to be executed as a command line function, but not used here.
+        // Get instance of TranscriptionIndexCreator and all indexing-relevant data from the SQL database
+        $indexcreator = new TranscriptionIndexCreator($config, 0, [0]); // HERE I AM UNSURE | The arguments are necessary, because TranscriptionIndexCreator is designed to be executed as a command line function, but not used here.
         $title = $indexcreator->getTitle($doc_id);
         $seq = $indexcreator->getSeq($doc_id, $page);
         $foliation = $indexcreator->getFoliation($doc_id, $page);
         $transcriber = $indexcreator->getTranscriber($doc_id, $page, $col);
         $page_id = $indexcreator->getPageID($doc_id, $page);
         $lang = $indexcreator->getLang($doc_id, $page);
-        $transcript = $indexcreator->getTranscript ($doc_id, $page, $col);
+        $transcript = $indexcreator->getTranscription($doc_id, $page, $col);
 
         // Check if a new transcription was made or an existing one was changed
         $transcription_status = $this->transcriptionStatus($this->client, $doc_id, $page, $col, $lang);
@@ -60,7 +60,7 @@ class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
             $opensearch_id = $max_id + 1;
 
             // Add new transcription to index
-            $indexcreator->indexColumn($this->client, $opensearch_id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+            $indexcreator->indexTranscription($this->client, $opensearch_id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
 
         } else { // SECOND CASE – Existing transcription was changed
 

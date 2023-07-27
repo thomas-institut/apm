@@ -8,9 +8,6 @@ use OpenSearch\ClientBuilder;
 
 class EditionIndexCreator extends IndexCreator
 {
-    // Variables for OpenSearch client and the name of the index to create
-    public Client $client;
-    public array $index_names;
     protected $ctable;
 
     public function main($argc, $argv): bool
@@ -25,37 +22,17 @@ class EditionIndexCreator extends IndexCreator
             ->setSSLVerification(false) // For testing only. Use certificate for validation
             ->build();
 
-        // Name of the indices in OpenSearch
-        $this->index_names = ['editions_la', 'editions_ar', 'editions_he'];
+        // Name of the indices to be created and filled in OpenSearch
+        $this->indices = ['editions_la', 'editions_ar', 'editions_he'];
 
         // Delete existing and create new indices
-        foreach ($this->index_names as $index_name) {
-            if ($this->client->indices()->exists(['index' => $index_name])) {
-                $this->client->indices()->delete([
-                    'index' => $index_name
-                ]);
-                $this->logger->debug("Existing index *$index_name* was deleted!\n");
-            };
-
-            $this->client->indices()->create([
-                'index' => $index_name,
-                'body' => [
-                    'settings' => [
-                        'index' => [
-                            'max_result_window' => 50000
-                        ]
-                    ]
-                ]
-            ]);
-
-            $this->logger->debug("New index *$index_name* was created!\n");
+        foreach ($this->indices as $index_name) {
+            $this->resetIndex($this->client, $index_name);
         }
 
-        $editions = [];
-
         // Get the data of up to 20000 editions
-        for ($id=1; $id<20000; $id++) {
-
+        $editions = [];
+        foreach (range(1, 20000) as $id) {
             try {
                 $editions[] = $this->getEditionData($id);
             } catch (\Exception $e) {
@@ -65,46 +42,21 @@ class EditionIndexCreator extends IndexCreator
             }
         }
 
-        // CLEAN DATA
-        // Remove empty editions
-        foreach ($editions as $i=>$edition) {
-            if (count($edition) === 0) {
-                unset ($editions[$i]);
-            }
-        }
+        // Clean data
+        $editions = $this->cleanEditionData($editions);
 
-        // Assign proper keys to editions and get number of non-empty editions
-        $editions = array_values($editions);
-        $num_editions = count($editions);
-        $this->logger->debug("Found $num_editions actual editions.");
-
-
-        // Get edition data for indexing
+        // Index editions
         foreach ($editions as $id => $edition) {
-            $editor = $edition['editor'];
-            $text = $edition['text'];
-            $title = $edition['title'];
-            $chunk = $edition['chunk_id'];
-            $lang = $edition['lang'];
-            $table_id = $edition['table_id'];
-            
-            if ($lang != 'jrb') {
-                $index_name = 'editions_' . $lang;
-            }
-            else {
-                $index_name = 'editions_he';
-            }
-
-            $this->indexEdition ($index_name, $id, $editor, $text, $title, $chunk, $lang, $table_id);
-            $this->logger->debug("Indexed Edition in $index_name – OpenSearch ID: $id, Editor: $editor, Title: $title, Chunk: $chunk, Lang: $lang, Table ID: $table_id\n");
-
+            $this->indexEdition ($id, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id']);
+            $log_data = 'Title: ' . $edition['title'] . ', Editor: ' . $edition['editor'] . ', Chunk: ' . $edition['chunk_id'];
+            $this->logger->debug("Indexed Edition – $log_data\n");
         }
 
         return true;
     }
 
-    private function getEditionData ($id) {
-
+    private function getEditionData ($id): array
+    {
         $edition_data = [];
         $data = $this->ctable->getCollationTableById($id);
 
@@ -137,10 +89,18 @@ class EditionIndexCreator extends IndexCreator
         return $edition_data;
     }
 
-    protected function indexEdition (string $index_name, int $id, string $editor, string $text, string $title, string $chunk, string $lang, int $table_id): bool
+    protected function indexEdition (int $id, string $editor, string $text, string $title, string $chunk, string $lang, int $table_id): bool
     {
+        // Get name of the target index
+        if ($lang != 'jrb') {
+            $index_name = 'editions_' . $lang;
+        }
+        else {
+            $index_name = 'editions_he';
+        }
+
         // Encode text for avoiding errors in exec shell command because of characters like "(", ")" or " "
-        $text_clean = $this->encode($text);
+        $text_clean = $this->encodeForLemmatization($text);
 
         // Tokenization and lemmatization
         // Test existence of text and tokenize/lemmatize existing texts in python
@@ -177,5 +137,22 @@ class EditionIndexCreator extends IndexCreator
 
         return true;
     }
-    
+
+    private function cleanEditionData (array $editions): array
+    {
+
+        // Remove empty editions
+        foreach ($editions as $i=>$edition) {
+            if (count($edition) === 0) {
+                unset ($editions[$i]);
+            }
+        }
+
+        // Update keys in editions array and get number of non-empty editions
+        $editions = array_values($editions);
+        $num_editions = count($editions);
+        $this->logger->debug("Found $num_editions actual editions.");
+
+        return $editions;
+    }
 }

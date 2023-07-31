@@ -123,4 +123,33 @@ abstract class IndexCreator extends CommandLineUtility {
         return true;
     }
 
+    // Function to get a full list of all OpenSearch-IDs in the index
+    public function getIDs ($client, string $index_name): array
+    {
+
+        // Array to return
+        $opensearch_ids = [];
+
+        // Make a match_all query
+        $query = $client->search([
+            'index' => $index_name,
+            'size' => 20000,
+            'body' => [
+                "query" => [
+                    "match_all" => [
+                        "boost" => 1.0
+                    ]
+                ],
+            ]
+        ]);
+
+        // Append every id to the $opensearch_ids-array
+        foreach ($query['hits']['hits'] as $column) {
+            $opensearch_id = $column['_id'];
+            $opensearch_ids[] = $opensearch_id;
+        }
+
+        return $opensearch_ids;
+    }
+
 }

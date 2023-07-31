@@ -27,7 +27,7 @@ export function setupSearchPage(baseUrl) {
   let errorMessageDiv = $("#error_message")
 
   // Get lists for transcript and transcriber forms
-  getListFromOpenSearch ('titles', errorMessageDiv)
+  getListFromOpenSearch ('transcriptions', errorMessageDiv)
   getListFromOpenSearch ('transcribers', errorMessageDiv)
 
   // Start query when the search button is pressed
@@ -81,7 +81,7 @@ export function setupSearchPage(baseUrl) {
       trans_or_editor.text("Transcriber")
 
       // Get lists for transcript and transcriber forms
-      getListFromOpenSearch ('titles', errorMessageDiv)
+      getListFromOpenSearch ('transcriptions', errorMessageDiv)
       getListFromOpenSearch ('transcribers', errorMessageDiv)
     }
     else {
@@ -99,11 +99,11 @@ window.setupSearchPage = setupSearchPage
 
 // Function to get list of indexed values, i.e. titles or transcribers, via an API call
 function getListFromOpenSearch(category, errorMessageDiv) {
-  // let apiUrl = category === 'titles' ? urlGen.apiSearchTitles(): urlGen.apiSearchTranscribers();
+  // let apiUrl = category === 'titles' ? urlGen.apiSearchTranscriptionTitles(): urlGen.apiSearchTranscribers();
   // let listSelector = category === 'titles' ? '#titleList' : '#transcriberList';
 
-  if (category === 'titles') {
-    var apiUrl = urlGen.apiSearchTitles()
+  if (category === 'transcriptions') {
+    var apiUrl = urlGen.apiSearchTranscriptionTitles()
     var listSelector = '#titleList'
   }
   else if (category === 'transcribers') {

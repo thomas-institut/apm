@@ -691,7 +691,7 @@ class ApiSearch extends ApiController
         return $values;
     }
 
-    static public function updateDataCache (SystemManager $systemManager) {
+    static public function updateDataCache (SystemManager $systemManager, string $whichindex) {
 
         $cache = $systemManager->getSystemDataCache();
 
@@ -701,26 +701,29 @@ class ApiSearch extends ApiController
         } catch (Exception $e) {
             return false;
         }
-
-        // Get a list of all titles
-        $titles = self::getAllEntriesFromIndex($client, 'title');
-        $transcribers = self::getAllEntriesFromIndex($client, 'transcriber');
-        $editions = self::getAllEntriesFromIndex($client, 'edition');
-        $editors = self::getAllEntriesFromIndex($client, 'editor');
-
-        // Set cache
-        $cache->set('Titles', serialize($titles));
-        $cache->set('Transcribers', serialize($transcribers));
-        $cache->set('Editions', serialize($editions));
-        $cache->set('Editors', serialize($editors));
-
+        
+        if ($whichindex === 'transcriptions')
+        {
+            $transcriptions = self::getAllEntriesFromIndex($client, 'transcription');
+            $transcribers = self::getAllEntriesFromIndex($client, 'transcriber');
+            $cache->set('Transcriptions', serialize($transcriptions));
+            $cache->set('Transcribers', serialize($transcribers));
+            
+        }
+        else if ($whichindex === 'editions') {
+            $editions = self::getAllEntriesFromIndex($client, 'edition');
+            $editors = self::getAllEntriesFromIndex($client, 'editor');
+            $cache->set('Editions', serialize($editions));
+            $cache->set('Editors', serialize($editors));
+        }
+        
         return true;
     }
 
     // ApiCall – Function to get all doc titles
-    public function getTitles(Request $request, Response $response): Response
+    public function getTranscriptionTitles(Request $request, Response $response): Response
     {
-        return $this->getDataFromCacheOrIndex($request, $response, 'Titles', 'transcription');
+        return $this->getDataFromCacheOrIndex($request, $response, 'Transcriptions', 'transcription');
     }
 
     public function getTranscribers(Request $request, Response $response): Response

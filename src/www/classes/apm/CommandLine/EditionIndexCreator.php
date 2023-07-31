@@ -34,7 +34,7 @@ class EditionIndexCreator extends IndexCreator
         $editions = [];
         foreach (range(1, 20000) as $id) {
             try {
-                $editions[] = $this->getEditionData($id);
+                $editions[] = $this->getEditionData($this->ctable, $id);
             } catch (\Exception $e) {
                 $num_editions = $id-1;
                 $this->logger->debug("Found $num_editions potential editions.");
@@ -44,10 +44,12 @@ class EditionIndexCreator extends IndexCreator
 
         // Clean data
         $editions = $this->cleanEditionData($editions);
+        $num_editions = count($editions);
+        $this->logger->debug("Found $num_editions actual editions.");
 
         // Index editions
         foreach ($editions as $id => $edition) {
-            $this->indexEdition ($id, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id']);
+            $this->indexEdition ($this->client, $id, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id']);
             $log_data = 'Title: ' . $edition['title'] . ', Editor: ' . $edition['editor'] . ', Chunk: ' . $edition['chunk_id'];
             $this->logger->debug("Indexed Edition – $log_data\n");
         }
@@ -55,10 +57,10 @@ class EditionIndexCreator extends IndexCreator
         return true;
     }
 
-    private function getEditionData ($id): array
+    public function getEditionData ($ctable, int $id): array
     {
         $edition_data = [];
-        $data = $this->ctable->getCollationTableById($id);
+        $data = $ctable->getCollationTableById($id);
 
         if ($data['type'] === 'edition') {
             $edition_data['table_id'] = $id; // equals $data['tableId']
@@ -66,7 +68,7 @@ class EditionIndexCreator extends IndexCreator
 
             $edition_json = $data['witnesses'][$edition_data['edition_witness_index']];
             $tokens = $edition_json['tokens'];
-            $editor_id = $this->ctable->getCollationTableVersionManager()->getCollationTableVersionInfo($id, 1)[0]->authorId;
+            $editor_id = $ctable->getCollationTableVersionManager()->getCollationTableVersionInfo($id, 1)[0]->authorId;
             $editor = $this->um->getUserInfoByUserId($editor_id)['fullname'];
 
             $edition_text = "";
@@ -89,7 +91,7 @@ class EditionIndexCreator extends IndexCreator
         return $edition_data;
     }
 
-    protected function indexEdition (int $id, string $editor, string $text, string $title, string $chunk, string $lang, int $table_id): bool
+    public function indexEdition ($client, int $id, string $editor, string $text, string $title, string $chunk, string $lang, int $table_id): bool
     {
         // Get name of the target index
         if ($lang != 'jrb') {
@@ -121,7 +123,7 @@ class EditionIndexCreator extends IndexCreator
         }
 
         // Data to be stored on the OpenSearch index
-        $this->client->create([
+        $client->create([
             'index' => $index_name,
             'id' => $id,
             'body' => [
@@ -138,7 +140,7 @@ class EditionIndexCreator extends IndexCreator
         return true;
     }
 
-    private function cleanEditionData (array $editions): array
+    public function cleanEditionData (array $editions): array
     {
 
         // Remove empty editions
@@ -150,9 +152,8 @@ class EditionIndexCreator extends IndexCreator
 
         // Update keys in editions array and get number of non-empty editions
         $editions = array_values($editions);
-        $num_editions = count($editions);
-        $this->logger->debug("Found $num_editions actual editions.");
 
         return $editions;
     }
+
 }

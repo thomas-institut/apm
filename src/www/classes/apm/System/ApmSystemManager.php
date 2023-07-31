@@ -33,7 +33,9 @@ use APM\Core\Token\Normalizer\IgnoreTatwilNormalizer;
 use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
 use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
 use APM\FullTranscription\TranscriptionManager;
-use APM\Jobs\ApiSearchUpdateOpenSearchIndex;
+use APM\Jobs\ApiSearchUpdateEditionsOpenSearchIndex;
+use APM\Jobs\ApiSearchUpdateEditorsAndTitlesCache;
+use APM\Jobs\ApiSearchUpdateTranscriptionOpenSearchIndex;
 use APM\Jobs\ApiSearchUpdateTranscribersAndTitlesCache;
 use APM\Jobs\ApiUsersUpdateCtDataForUser;
 use APM\Jobs\ApiUsersUpdateTranscribedPagesData;
@@ -785,7 +787,7 @@ class ApmSystemManager extends SystemManager {
             "User $userId", ['userId' => $userId],0, 3, 20);
 
         $this->logger->debug("Scheduling update of open search index");
-        $this->jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_OPENSEARCH_INDEX,
+        $this->jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_OPENSEARCH_INDEX,
             '', ['doc_id' => $docId, 'page' => $pageNumber, 'col' => $columnNumber],0, 3, 20);
 
         $this->logger->debug("Scheduling update of Transcribers cache and Titles cache");
@@ -806,6 +808,10 @@ class ApmSystemManager extends SystemManager {
         $this->logger->debug("Invalidating CollationTablesInfo cache for user $userId");
         $this->jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE,
             "User $userId", ['userId' => $userId],0, 3, 20);
+        $this->jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_OPENSEARCH_INDEX,
+            '', [$ctId],0, 3, 20);
+        $this->jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITORS_AND_TITLES_CACHE,
+            '', [],0, 3, 20);
     }
 
     public function onDocumentDeleted(int $userId, int $docId): void
@@ -847,6 +853,8 @@ class ApmSystemManager extends SystemManager {
         $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE, new ApiUsersUpdateTranscribedPagesData());
         $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE, new ApiUsersUpdateCtDataForUser());
         $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE, new ApiSearchUpdateTranscribersAndTitlesCache());
-        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_OPENSEARCH_INDEX, new ApiSearchUpdateOpenSearchIndex());
+        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_OPENSEARCH_INDEX, new ApiSearchUpdateTranscriptionOpenSearchIndex());
+        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_EDITORS_AND_TITLES_CACHE, new ApiSearchUpdateEditorsAndTitlesCache());
+        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_OPENSEARCH_INDEX, new ApiSearchUpdateEditionsOpenSearchIndex());
     }
 }

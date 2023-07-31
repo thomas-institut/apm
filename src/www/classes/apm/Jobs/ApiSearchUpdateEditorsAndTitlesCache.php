@@ -6,12 +6,12 @@ use APM\Api\ApiSearch;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
 
-class ApiSearchUpdateTranscribersAndTitlesCache implements JobHandlerInterface
+class ApiSearchUpdateEditorsAndTitlesCache implements JobHandlerInterface
 
 {
     public function run(SystemManager $sm, array $payload): bool
     {
-        return ApiSearch::updateDataCache($sm, 'transcriptions');
+        return ApiSearch::updateDataCache($sm, 'editions');
     }
 
     public function mustBeUnique(): bool

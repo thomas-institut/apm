@@ -9,7 +9,7 @@ use OpenSearch\ClientBuilder;
 use APM\CommandLine\TranscriptionIndexCreator;
 use PHPUnit\Util\Exception;
 
-class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
+class ApiSearchUpdateTranscriptionOpenSearchIndex implements JobHandlerInterface
 {
     public function run(SystemManager $sm, array $payload): bool
     {
@@ -39,14 +39,14 @@ class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
         $col = $payload['col'];
 
         // Get instance of TranscriptionIndexCreator and all indexing-relevant data from the SQL database
-        $indexcreator = new TranscriptionIndexCreator($config, 0, [0]); // HERE I AM UNSURE | The arguments are necessary, because TranscriptionIndexCreator is designed to be executed as a command line function, but not used here.
-        $title = $indexcreator->getTitle($doc_id);
-        $seq = $indexcreator->getSeq($doc_id, $page);
-        $foliation = $indexcreator->getFoliation($doc_id, $page);
-        $transcriber = $indexcreator->getTranscriber($doc_id, $page, $col);
-        $page_id = $indexcreator->getPageID($doc_id, $page);
-        $lang = $indexcreator->getLang($doc_id, $page);
-        $transcript = $indexcreator->getTranscription($doc_id, $page, $col);
+        $transcriptionIndexCreator = new TranscriptionIndexCreator($config, 0, [0]); // HERE I AM UNSURE | The arguments are necessary, because TranscriptionIndexCreator is designed to be executed as a command line function, but not used here.
+        $title = $transcriptionIndexCreator->getTitle($doc_id);
+        $seq = $transcriptionIndexCreator->getSeq($doc_id, $page);
+        $foliation = $transcriptionIndexCreator->getFoliation($doc_id, $page);
+        $transcriber = $transcriptionIndexCreator->getTranscriber($doc_id, $page, $col);
+        $page_id = $transcriptionIndexCreator->getPageID($doc_id, $page);
+        $lang = $transcriptionIndexCreator->getLang($doc_id, $page);
+        $transcript = $transcriptionIndexCreator->getTranscription($doc_id, $page, $col);
 
         // Check if a new transcription was made or an existing one was changed
         $transcription_status = $this->transcriptionStatus($this->client, $doc_id, $page, $col, $lang);
@@ -55,20 +55,17 @@ class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
         if ($transcription_status['exists'] === 0) {
 
             // Generate unique ID for new entry
-            $opensearch_id_list = $this->getIDs($this->client, $transcription_status['indexname']);
+            $opensearch_id_list = $transcriptionIndexCreator->getIDs($this->client, $transcription_status['indexname']);
             $max_id = max($opensearch_id_list);
             $opensearch_id = $max_id + 1;
 
             // Add new transcription to index
-            $indexcreator->indexTranscription($this->client, $opensearch_id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
+            $transcriptionIndexCreator->indexTranscription($this->client, $opensearch_id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcript, $lang);
 
         } else { // SECOND CASE – Existing transcription was changed
 
-            // Get OpenSearch ID of changed column
-            $opensearch_id = $transcription_status['id'];
-
             // Tokenize and lemmatize new transcription
-            $transcript_encoded = $indexcreator->encode($transcript);
+            $transcript_encoded = $transcriptionIndexCreator->encodeForLemmatization($transcript);
             exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcript_encoded", $tokens_and_lemmata);
 
             // Get tokenized and lemmatized transcript
@@ -78,7 +75,7 @@ class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
             // Update index
             $this->client->update([
                 'index' => $transcription_status['indexname'],
-                'id' => $opensearch_id,
+                'id' => $transcription_status['id'],
                 'body' => [
                     'doc' => [
                         'title' => $title,
@@ -89,45 +86,15 @@ class ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
                         'pageID' => $page_id,
                         'docID' => $doc_id,
                         'lang' => $lang,
-                        'transcriber' => $transcriber,
-                        'transcript' => $transcript,
-                        'transcript_tokens' => $transcript_tokenized,
-                        'transcript_lemmata' => $transcript_lemmatized
+                        'creator' => $transcriber,
+                        'transcription_tokens' => $transcript_tokenized,
+                        'transcription_lemmata' => $transcript_lemmatized
                     ]
                 ]
             ]);
 
         }
             return true;
-    }
-
-    // Function to get a full list of all OpenSearch-IDs in the index
-    protected function getIDs ($client, string $index_name): array
-    {
-
-        // Array to return
-        $opensearch_ids = [];
-
-        // Make a match_all query
-        $query = $client->search([
-            'index' => $index_name,
-            'size' => 20000,
-            'body' => [
-                "query" => [
-                    "match_all" => [
-                        "boost" => 1.0
-                    ]
-                ],
-            ]
-        ]);
-
-        // Append every id to the $opensearch_ids-array
-        foreach ($query['hits']['hits'] as $column) {
-            $opensearch_id = $column['_id'];
-            $opensearch_ids[] = $opensearch_id;
-        }
-
-        return $opensearch_ids;
     }
 
     // Function to check if a transcript already exists in a given OpenSearch-index – if yes, returns also its OpenSearch-ID

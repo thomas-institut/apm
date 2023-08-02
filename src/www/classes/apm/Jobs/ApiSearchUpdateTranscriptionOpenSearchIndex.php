@@ -111,14 +111,14 @@ class ApiSearchUpdateTranscriptionOpenSearchIndex implements JobHandlerInterface
 
     private function updateIndex(TranscriptionIndexCreator $tic, array $transcription_status, array $data): void
     {
-        if ($transcription_status['exists'] === 0) {
-            // Completely new transcription was created
-            $existingIDs = $tic->getIDs($this->client, $transcription_status['indexname']);
-            $max_id = max($existingIDs);
-            $opensearchID = $max_id + 1;
+        if ($transcription_status['exists'] === 0) { // Completely new transcription was created
+
+            $opensearchID = $this->generateUniqueOpenSearchId($this->client, $tic, $transcription_status['indexname']);
+
             $tic->indexTranscription($this->client, $opensearchID, ...$data);
-        } else {
-            // Existing transcription was changed
+
+        } else { // Existing transcription was changed
+
             $transcription_encoded = $tic->encodeForLemmatization($data['transcription']);
             $tokens_and_lemmata = $this->runLemmatizer($data['lang'], $transcription_encoded);
 
@@ -148,11 +148,16 @@ class ApiSearchUpdateTranscriptionOpenSearchIndex implements JobHandlerInterface
         }
     }
 
-    private function runLemmatizer(string $lang, string $transcription_encoded): array
+    private function generateUniqueOpenSearchId($client, $tic, string $indexname): int
     {
-        // Use proper PHP library or built-in function to execute Python script if available.
-        // This example keeps the existing code but note that using `exec` is not recommended in production environments.
-        exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcription_encoded", $tokens_and_lemmata);
+        $opensearchID_list = $tic->getIDs($client, $indexname);
+        $max_id = max($opensearchID_list);
+        return $max_id + 1;
+    }
+
+    private function runLemmatizer(string $lang, string $text_encoded): array
+    {
+        exec("python3 ../../python/Lemmatizer_Indexing.py $lang $text_encoded", $tokens_and_lemmata);
         return $tokens_and_lemmata;
     }
 

@@ -33,9 +33,9 @@ use APM\Core\Token\Normalizer\IgnoreTatwilNormalizer;
 use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
 use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
 use APM\FullTranscription\TranscriptionManager;
-use APM\Jobs\ApiSearchUpdateEditionsOpenSearchIndex;
+use APM\Jobs\ApiSearchUpdateIndexedEditions;
 use APM\Jobs\ApiSearchUpdateEditorsAndTitlesCache;
-use APM\Jobs\ApiSearchUpdateTranscriptionOpenSearchIndex;
+use APM\Jobs\ApiSearchUpdateIndexedTranscriptions;
 use APM\Jobs\ApiSearchUpdateTranscribersAndTitlesCache;
 use APM\Jobs\ApiUsersUpdateCtDataForUser;
 use APM\Jobs\ApiUsersUpdateTranscribedPagesData;
@@ -853,8 +853,8 @@ class ApmSystemManager extends SystemManager {
         $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE, new ApiUsersUpdateTranscribedPagesData());
         $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE, new ApiUsersUpdateCtDataForUser());
         $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE, new ApiSearchUpdateTranscribersAndTitlesCache());
-        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_OPENSEARCH_INDEX, new ApiSearchUpdateTranscriptionOpenSearchIndex());
+        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_OPENSEARCH_INDEX, new ApiSearchUpdateIndexedTranscriptions());
         $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_EDITORS_AND_TITLES_CACHE, new ApiSearchUpdateEditorsAndTitlesCache());
-        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_OPENSEARCH_INDEX, new ApiSearchUpdateEditionsOpenSearchIndex());
+        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_OPENSEARCH_INDEX, new ApiSearchUpdateIndexedEditions());
     }
 }

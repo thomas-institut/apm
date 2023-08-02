@@ -2,16 +2,12 @@
 
 namespace APM\Jobs;
 
-use APM\System\ApmConfigParameter;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
-use OpenSearch\ClientBuilder;
 use APM\CommandLine\TranscriptionIndexCreator;
 
-class ApiSearchUpdateTranscriptionOpenSearchIndex implements JobHandlerInterface
+class ApiSearchUpdateIndexedTranscriptions extends ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
 {
-    private $client;
-
     public function run(SystemManager $sm, array $payload): bool
     {
         $logger = $sm->getLogger();
@@ -40,15 +36,6 @@ class ApiSearchUpdateTranscriptionOpenSearchIndex implements JobHandlerInterface
         $this->updateIndex($tic, $transcription_status, $data);
 
         return true;
-    }
-
-    private function initializeOpenSearchClient(array $config): void
-    {
-        $this->client = (new ClientBuilder())
-            ->setHosts($config[ApmConfigParameter::OPENSEARCH_HOSTS])
-            ->setBasicAuthentication($config[ApmConfigParameter::OPENSEARCH_USER], $config[ApmConfigParameter::OPENSEARCH_PASSWORD])
-            ->setSSLVerification(false) // For testing only. Use certificate for validation
-            ->build();
     }
 
     // Fetch relevant data from the SQL database
@@ -109,11 +96,11 @@ class ApiSearchUpdateTranscriptionOpenSearchIndex implements JobHandlerInterface
         return ['exists' => $exists, 'id' => $opensearchID, 'indexname' => $index_name];
     }
 
-    private function updateIndex(TranscriptionIndexCreator $tic, array $transcription_status, array $data): void
+    protected function updateIndex(TranscriptionIndexCreator $tic, array $transcription_status, array $data): void
     {
         if ($transcription_status['exists'] === 0) { // Completely new transcription was created
 
-            $opensearchID = $this->generateUniqueOpenSearchId($this->client, $tic, $transcription_status['indexname']);
+            $opensearchID = $this->generateUniqueOpenSearchId($tic, $transcription_status['indexname']);
 
             $tic->indexTranscription($this->client, $opensearchID, ...$data);
 
@@ -146,19 +133,6 @@ class ApiSearchUpdateTranscriptionOpenSearchIndex implements JobHandlerInterface
                 ]
             ]);
         }
-    }
-
-    private function generateUniqueOpenSearchId($client, $tic, string $indexname): int
-    {
-        $opensearchID_list = $tic->getIDs($client, $indexname);
-        $max_id = max($opensearchID_list);
-        return $max_id + 1;
-    }
-
-    private function runLemmatizer(string $lang, string $text_encoded): array
-    {
-        exec("python3 ../../python/Lemmatizer_Indexing.py $lang $text_encoded", $tokens_and_lemmata);
-        return $tokens_and_lemmata;
     }
 
     public function mustBeUnique(): bool

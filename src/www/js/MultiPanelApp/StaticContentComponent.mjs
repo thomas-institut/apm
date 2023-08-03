@@ -11,6 +11,7 @@ export class StaticContentComponent extends Component {
   constructor (id, content='', additionalClasses = []) {
     super(id)
     this.content = content
+    this.title = `Static ${id}`
     this._additionalClasses = additionalClasses
   }
 

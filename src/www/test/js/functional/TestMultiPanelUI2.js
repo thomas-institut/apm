@@ -2,9 +2,10 @@
  * Multi Panel UI version 2 visual test
  */
 
-import { MultiPanelApp } from '../../../js/MultiPanelApp/MultiPanelApp.mjs'
-import { StaticContentComponent } from '../../../js/MultiPanelApp/StaticContentComponent'
+import { CONTAINER_TYPE, DIRECTION, MultiPanelApp } from '../../../js/MultiPanelApp/MultiPanelApp.mjs'
+import { StaticContentComponent } from '../../../js/MultiPanelApp/StaticContentComponent.mjs'
 import { Component } from '../../../js/MultiPanelApp/Component.mjs'
+import { FRAME_TYPE } from '../../../js/MultiPanelApp/GridContainer.mjs'
 
 let extraStyles = `
     html {
@@ -19,6 +20,11 @@ let extraStyles = `
       border-bottom: 1px solid silver;
       margin-bottom: 5px;
     }
+    .footer {
+      font-style: 'italic';
+      font-size: 0.8em;
+      border-top: 1px solid silver;
+    }
 `
 
 let app
@@ -30,14 +36,38 @@ $( () => {
       { // Main window
         style: extraStyles,
         containers: [
-        {
-          type: 'div',
-          component: new StaticContentComponent('header', 'My App', ['header'])
-        },
-        {
-          type: 'div',
-          component: new WindowAdder('main')
-        },
+          {
+            type: CONTAINER_TYPE.GRID,
+            id: 'app',
+            childrenDirection: DIRECTION.HORIZONTAL,
+            fullScreen: true,
+            frames: [
+              {
+                type: FRAME_TYPE.STATIC,
+                component: new StaticContentComponent('header', 'My App', ['header'])
+              },
+              {
+                type: FRAME_TYPE.DYNAMIC,
+                childrenDirection: DIRECTION.VERTICAL,
+                id: 'content',
+                frames: [
+                  {
+                    type: FRAME_TYPE.RESIZABLE,
+                    component: new WindowAdder('left')
+                  },
+                  {
+                    type: FRAME_TYPE.RESIZABLE,
+                    component: new StaticContentComponent('right', 'This is a right panel')
+                  },
+                ]
+              },
+
+              {
+                type: FRAME_TYPE.STATIC,
+                component: new StaticContentComponent('footer', 'Footer, (C) 2023', ['footer'])
+              },
+            ]
+          }
       ]
       }
     ],
@@ -52,6 +82,7 @@ class WindowAdder extends Component {
 
   constructor (id) {
     super(id)
+    this.title= `Window Adder ${id}`
     this.newWindows = 0
   }
 

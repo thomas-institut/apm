@@ -8,10 +8,18 @@ export class DivContainer extends ComponentContainer {
    */
   constructor (component) {
     super(component)
+
   }
 
+
   getHtml() {
-    return `<div class="${this.component.getContainerClasses().join(' ')}">${this.component.getHtml()}</div>`
+    let allClasses = this.component.getContainerClasses()
+    allClasses.push(...this.extraClasses)
+    let styleHtml = ''
+    if (this.style !== '') {
+      styleHtml = `style="${this.style}"`
+    }
+    return `<div class="${allClasses.join(' ')}" ${styleHtml}>${this.component.getHtml()}</div>`
   }
 
   postRender () {

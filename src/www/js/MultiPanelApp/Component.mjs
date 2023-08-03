@@ -5,7 +5,7 @@
  * to the multi panel UI controller.
  */
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
-import { MpAppClasses } from './MultiPanelApp.mjs'
+import { MP_APP_CLASS } from './MultiPanelApp.mjs'
 
 export class Component {
 
@@ -58,7 +58,7 @@ export class Component {
   }
 
   getContainerIdClass() {
-    return `${MpAppClasses.component}-${this.id}`
+    return `${MP_APP_CLASS.component}-${this.id}`
   }
 
 
@@ -76,7 +76,7 @@ export class Component {
    * @return {string[]}
    */
   getContainerClasses() {
-    return [ MpAppClasses.component, this.getContainerIdClass() ]
+    return [ MP_APP_CLASS.component, this.getContainerIdClass() ]
   }
 
   /**

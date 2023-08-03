@@ -1,4 +1,4 @@
-import { VERTICAL_DIRECTION } from './MultiPanelApp.mjs'
+import { DIRECTION } from './MultiPanelApp.mjs'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 
 export class PanelController {
@@ -9,7 +9,7 @@ export class PanelController {
    * @param {Component}panel
    * @param {string}direction
    */
-  constructor (style, panel, direction = VERTICAL_DIRECTION) {
+  constructor (style, panel, direction = DIRECTION.VERTICAL) {
     this.style = style
     this.panel = panel
     this.direction = direction

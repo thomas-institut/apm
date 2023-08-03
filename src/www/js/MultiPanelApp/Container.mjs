@@ -5,6 +5,10 @@ import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
  */
 export class Container {
 
+  constructor () {
+    this.extraClasses = []
+    this.style = ''
+  }
   /**
    *
    * @return {Component[]}
@@ -45,6 +49,27 @@ export class Container {
    */
   getHtml() {
     return ''
+  }
+
+
+  /**
+   * Adds a list of classes to the container
+   * @param {string[]}extraClasses
+   * @return {Container}
+   */
+  withExtraClasses(extraClasses) {
+    this.extraClasses = extraClasses
+    return this
+  }
+
+  /**
+   *
+   * @param {string}styleString
+   * @return {Container}
+   */
+  withStyle(styleString) {
+    this.style = styleString
+    return this
   }
 
 }

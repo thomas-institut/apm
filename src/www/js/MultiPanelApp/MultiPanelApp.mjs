@@ -3,8 +3,9 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 // import Split from 'split-grid'
 // import { makeCopyOfArray } from '../toolbox/ArrayUtil.mjs'
 import { WindowContainer } from './WindowContainer.mjs'
-import { DivContainer } from './DivContainer.js'
+import { DivContainer } from './DivContainer.mjs'
 import { allTrue } from '../toolbox/ArrayUtil.mjs'
+import { GridContainer } from './GridContainer.mjs'
 
 /**
  * A new version of the multi panel user interface supporting multiple windows.
@@ -26,25 +27,23 @@ import { allTrue } from '../toolbox/ArrayUtil.mjs'
  *
  */
 
-// export const HORIZONTAL_DIRECTION = 'horizontal'
-export const VERTICAL_DIRECTION = 'vertical'
+export const DIRECTION = {
+   HORIZONTAL: 'horizontal',
+   VERTICAL: 'vertical'
+}
 
-// export const PANEL_STYLE_FIXED = 'fixed'
-// export const PANEL_STYLE_CONTENT = 'content'
-// export const PANEL_STYLE_MULTI = 'multi'
+export const CONTAINER_TYPE = {
+  DIV: 'div',
+  GRID: 'grid'
+}
 
-export const MpAppClasses = {
+export const MP_APP_CLASS = {
   component: 'mpui-component'
 
 }
 
 const frameClass = 'mpui-frame'
-// const dividerWidth = '3px'
-//
-// const FRAME_TYPE_DIVIDER = 'divider'
-// const FRAME_TYPE_CONTENT = 'content'
-// const FRAME_TYPE_MULTI = 'multi'
-// const FRAME_TYPE_FIXED = 'fixed'
+
 const customStyles = `
   div.${frameClass} {
     width: 100%;
@@ -135,13 +134,57 @@ export class MultiPanelApp {
     windowContainer.setTitle(title)
     windowSpec.containers.forEach( (containerSpec) => {
       switch(containerSpec.type) {
-        case 'div':
+        case CONTAINER_TYPE.DIV:
           windowContainer.addChildContainer( new DivContainer(containerSpec.component))
+          break
+
+        case CONTAINER_TYPE.GRID:
+          let debug = true
+          let gridContainer = new GridContainer({
+            debug: debug,
+            id: containerSpec.id,
+            childrenDirection: containerSpec.childrenDirection,
+            fullScreen: containerSpec.fullScreen,
+            frames: containerSpec.frames.map( ( frameSpec) => {
+              return {
+                type: frameSpec.type,
+                container:  this.getContainerForGridFromFrameSpec(frameSpec, debug)
+              }
+            })
+          })
+          windowContainer.addChildContainer(gridContainer)
           break
       }
     })
     this.windows.push(windowContainer)
     return index
+  }
+
+  /**
+   *
+   * @param {{}}frameSpec
+   * @param {boolean}debug
+   * @return {GridContainer|DivContainer}
+   * @private
+   */
+  getContainerForGridFromFrameSpec(frameSpec, debug) {
+    if (frameSpec.component !== undefined) {
+      return new DivContainer(frameSpec.component)
+    }
+    if (frameSpec.frames !== undefined) {
+      // another grid!
+      return new GridContainer({
+        debug: debug,
+        id: frameSpec.id,
+        childrenDirection: frameSpec.childrenDirection === undefined ? DIRECTION.VERTICAL : frameSpec.childrenDirection,
+        frames: frameSpec.frames.map((subFrameSpec) => {
+          return {
+            type: subFrameSpec.type,
+            container: this.getContainerForGridFromFrameSpec(subFrameSpec, debug)
+          }
+        })
+      })
+    }
   }
 
   renderWindow(index) {

@@ -13,10 +13,13 @@ export class ComponentContainer extends Container {
      * @type {Component}
      */
     this.component = component
+
   }
 
   getComponents () {
     return [ this.component]
   }
+
+
 
 }

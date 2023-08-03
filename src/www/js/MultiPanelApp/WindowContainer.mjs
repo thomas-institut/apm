@@ -26,6 +26,7 @@ export class WindowContainer extends ParentContainer {
    */
   async render () {
     return new Promise( async (resolve) => {
+      // console.log(`Pre-rendering window`)
       let result = await this.preRender()
       if (!result) {
         resolve(false)

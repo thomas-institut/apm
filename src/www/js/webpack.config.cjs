@@ -6,26 +6,11 @@ module.exports = {
       import: './QuillLoader.js',
       filename: 'Quill.bundle.js'
     },
-    DocPage: {
-      import: './pages/DocPage.js',
-      filename: 'DocPage.bundle.js',
-    },
-    DocDefPages: {
-      import: './pages/DocDefPages.js',
-      filename: 'DocDefPages.bundle.js'
-    },
-    DocEditPage: {
-      import: './pages/DocEditPage.js',
-      filename: 'DocEditPage.bundle.js',
-    },
-    DocNewDocPage: {
-      import: './pages/DocNewDocPage.js',
-      filename: 'DocNewDocPage.bundle.js',
-    },
-    CollationTableEditor: {
-      import: './pages/CollationTableEditor.js',
-      filename: 'CollationTableEditor.bundle.js'
-    },
+    DocPage: './pages/DocPage.js',
+    DocDefPages: './pages/DocDefPages.js',
+    DocEditPage: './pages/DocEditPage.js',
+    DocNewDocPage: './pages/DocNewDocPage.js',
+    CollationTableEditor: './pages/CollationTableEditor.js',
     EditionComposer: {
       import: './EditionComposer/EditionComposer.js',
       filename: 'EditionComposer.bundle.js',
@@ -36,53 +21,24 @@ module.exports = {
       filename: 'MceComposer.bundle.js',
       // dependOn: 'QuillPack',
     },
-    AutomaticCollationTable: {
-      import: './pages/AutomaticCollationTable/AutomaticCollationTable.js',
-      filename: 'AutomaticCollationTable.bundle.js'
-    },
+    AutomaticCollationTable: './pages/AutomaticCollationTable/AutomaticCollationTable.js',
     ChunkPage: './pages/ChunkPage.js',
     ApmLogPage: './pages/ApmLogPage.js',
     DashboardPage: './pages/DashboardPage.js',
     SearchPage: './pages/SearchPage.js',
-    UserManager: {
-      import: './pages/UserManagerPage.js',
-      filename: 'UserManagerPage.bundle.js'
-    },
-    UserProfile: {
-      import: './pages/UserProfilePage.js',
-      filename: 'UserProfilePage.bundle.js'
-    },
+    UserManager: './pages/UserManagerPage.js',
+    UserProfile:  './pages/UserProfilePage.js',
     // JASMINE TESTS
     JasmineTests: {
       import: '../test/js/modules-to-test.js',
       filename: '../../test/js/JasmineTests.bundle.js'
     },
-
     // FUNCTIONAL TESTS
-    TestArrayToTable: {
-      import: '../test/js/functional/TestArrayToTable.js',
-      filename: '../../test/js/functional/dist/TestArrayToTable.bundle.js'
+    TestMultiPanelUI2: {
+      import: '../test/js/functional/TestMultiPanelUI2.js',
+      filename: '../../test/js/functional/dist/TestMultiPanelUI2.bundle.js'
     },
 
-    TestMultiPanelUI: {
-      import: '../test/js/functional/TestMultiPanelUI.js',
-      filename: '../../test/js/functional/dist/TestMultiPanelUI.bundle.js'
-    },
-
-    TestWords: {
-      import: '../test/js/functional/TestWords.js',
-      filename: '../../test/js/functional/dist/TestWords.bundle.js'
-    },
-    TestHtmlRenderer: {
-      import: '../test/js/functional/TestFmtTextRenderer.js',
-      filename: '../../test/js/functional/dist/TestFmtTextRenderer.bundle.js'
-    },
-
-    TestFreeTextEditor: {
-      import: '../test/js/functional/TestFreeTextEditor.js',
-      dependOn: 'QuillPack',
-      filename: '../../test/js/functional/dist/TestFreeTextEditor.bundle.js'
-    },
   },
   externals: {
     jquery: 'jQuery'

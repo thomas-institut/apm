@@ -214,7 +214,6 @@ export class MultiPanelUI {
         cleanPanelOptions.tabs.forEach( (tabOption, tabIndex) => {
           let tabOptionsChecker = new OptionsChecker({optionsDefinition: tabOptionsSpec, context: `MultiPanelUI: options for tab ${tabIndex} in panel ${panelIndex}`})
           let cleanTabOptions = tabOptionsChecker.getCleanOptions(tabOption)
-          // do more checks
           goodTabOptionsArray.push(cleanTabOptions)
         })
         cleanPanelOptions.tabs = goodTabOptionsArray

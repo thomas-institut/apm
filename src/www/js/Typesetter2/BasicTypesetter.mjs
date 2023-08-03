@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 Universität zu Köln
+ *  Copyright (C) 2022-23 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,20 +42,22 @@ import { BidiDisplayOrder } from './BidiDisplayOrder.mjs'
 import { AdjustmentRatio } from './AdjustmentRatio.mjs'
 import { MINUS_INFINITE_PENALTY, Penalty } from './Penalty.mjs'
 
-const signature = 'BasicTypesetter 0.1'
+const signature = 'BasicTypesetter 1.0'
 
-
-const INFINITE_VERTICAL_BADNESS = 100000000
+// Typesetting defaults
 
 // number of lines to look ahead when breaking lines into pages
-const MAX_LINES_TO_LOOK_AHEAD = 30
+
 const ACCEPTABLE_ORPHAN_COUNT = 3
 const ACCEPTABLE_WIDOW_COUNT = 3
 const ORPHAN_PENALTY = 3
 const WIDOW_PENALTY = 3
+const DEFAULT_FONT_FAMILY = 'FreeSerif'
+const DEFAULT_FONT_SIZE = Typesetter2.pt2px(12)
 
-const defaultFontFamily = 'FreeSerif'
-const defaultFontSize = Typesetter2.pt2px(12)
+const MAX_LINES_TO_LOOK_AHEAD = 30
+const INFINITE_VERTICAL_BADNESS = 100000000
+
 
 export class BasicTypesetter extends Typesetter2 {
   constructor (options) {
@@ -72,8 +74,8 @@ export class BasicTypesetter extends Typesetter2 {
         lineSkip: { type: 'number', default: 24},
         apparatusLineSkip: { type: 'number', default: 20},
         minLineSkip: { type: 'number', default: 0},
-        defaultFontFamily: { type: 'string', default: defaultFontFamily},
-        defaultFontSize: { type: 'number', default: defaultFontSize},
+        defaultFontFamily: { type: 'string', default: DEFAULT_FONT_FAMILY},
+        defaultFontSize: { type: 'number', default: DEFAULT_FONT_SIZE},
         showPageNumbers: { type: 'boolean', default: true},
         pageNumbersOptions: { type: 'object', default: {}},
         showLineNumbers: { type: 'boolean', default: true},
@@ -90,23 +92,24 @@ export class BasicTypesetter extends Typesetter2 {
         // This gives the apparatus typesetting engine an opportunity to reset or initialize
         // its state if needed. The function should return a promise to a boolean indicating
         // with true that the process can continue.
-        preTypesetApparatuses: { type: 'function', default: () => {
+        preTypesetApparatuses: { type: 'function', default: (apparatuses) => {
+          console.log(`Default preTypesetApparatuses on ${apparatuses.length} apparatus(es)`)
           return resolvedPromise(true)
           }},
         textToApparatusGlue: {
           type: 'object',
           default: {
-            height: defaultFontSize*1,
-            shrink: defaultFontSize*0.1,
+            height: DEFAULT_FONT_SIZE*1,
+            shrink: DEFAULT_FONT_SIZE*0.1,
             stretch: Typesetter2.cm2px(50)  // basically infinite stretch!
           }
         },
         interApparatusGlue: {
           type: 'object',
           default: {
-            height: defaultFontSize*1,
+            height: DEFAULT_FONT_SIZE*1,
             shrink: 0,
-            stretch: defaultFontSize*0.25
+            stretch: DEFAULT_FONT_SIZE*0.25
           }
         },
         justify: { type: 'boolean', default: true},
@@ -130,8 +133,8 @@ export class BasicTypesetter extends Typesetter2 {
           position: { type: 'string', default: 'bottom'},
           align: {type: 'string', default: 'center'},
           margin: { type: 'number', default: Typesetter2.cm2px(0.5) },
-          fontFamily: { type: 'string', default: defaultFontFamily},
-          fontSize: { type: 'number', default: defaultFontSize*0.8},
+          fontFamily: { type: 'string', default: DEFAULT_FONT_FAMILY},
+          fontSize: { type: 'number', default: DEFAULT_FONT_SIZE*0.8},
           numberStyle: { type: 'string', default: ''},
         }
       })
@@ -144,8 +147,8 @@ export class BasicTypesetter extends Typesetter2 {
         optionsDefinition: {
           xPosition: { type: 'number', default: this.options.marginLeft - Typesetter2.cm2px(0.5)},
           align: {type: 'string', default: 'right'},
-          fontFamily: { type: 'string', default: defaultFontFamily},
-          fontSize: { type: 'number', default: defaultFontSize},
+          fontFamily: { type: 'string', default: DEFAULT_FONT_FAMILY},
+          fontSize: { type: 'number', default: DEFAULT_FONT_SIZE},
           numberStyle: { type: 'string', default: ''},
           showLineOne: {type: 'boolean', default: false},
           lineNumberShift: { type: 'number', default: 0},
@@ -230,7 +233,7 @@ export class BasicTypesetter extends Typesetter2 {
           return item
         }))
 
-        // adjust glue  (i.e., justify the text within the line)
+        // adjust horizontal glue  (i.e., justify the text within the line)
         let adjRatio = AdjustmentRatio.calculateHorizontalAdjustmentRatio(line.getList(), this.lineWidth)
         line.addMetadata(MetadataKey.ADJUSTMENT_RATIO, adjRatio)
         let unadjustedLineWidth = line.getWidth()
@@ -297,6 +300,7 @@ export class BasicTypesetter extends Typesetter2 {
    * @return {Promise}
    */
   typesetVerticalList (list) {
+    // TODO: add widow/orphan control here too!
     return new Promise( async (resolve) => {
       let inputList = await super.typesetVerticalList(list)
       let outputList = new ItemList(TypesetterItemDirection.HORIZONTAL)
@@ -474,13 +478,15 @@ export class BasicTypesetter extends Typesetter2 {
       let doc = new TypesetterDocument()
       doc.addMetadata('typesetter', signature)
       let resetLineNumbersEachPage = this.options.lineNumbersOptions.resetEachPage
-
-        // typeset apparatuses if present
-      if (extraData.apparatuses !== undefined) {
-
-        await this.options.preTypesetApparatuses()
-        if (this.options.apparatusesAtEndOfDocument) {
-          // Apparatuses at the end of document, the easiest but rarest case
+      if (extraData.apparatuses === undefined) {
+        extraData.apparatuses = []
+      }
+      if (extraData.apparatuses.length !== 0) {
+        await this.options.preTypesetApparatuses(extraData.apparatuses)
+      }
+        if (extraData.apparatuses.length === 0 || this.options.apparatusesAtEndOfDocument) {
+          // No apparatuses or apparatuses should go at the end of the document, just append
+          // the apparatuses and typeset a normal document
           let apparatuses = await this.typesetApparatuses(verticalListToTypeset, extraData.apparatuses)
           this.debug && console.log(`Typeset apparatuses`)
           this.debug && console.log(apparatuses)
@@ -505,7 +511,6 @@ export class BasicTypesetter extends Typesetter2 {
             }
           }
           // simple page breaks
-          // TODO: implement line numbers starting from 1 each page
           let pageList = await this.typesetVerticalList(verticalListToTypeset)
           thePages = pageList.getList().map((pageItemList) => {
             pageItemList.setShiftX(this.options.marginLeft).setShiftY(this.options.marginTop)
@@ -518,7 +523,6 @@ export class BasicTypesetter extends Typesetter2 {
             //page.addMetadata(MetadataKey.PAGE_FOLIATION, `${pageIndex+1}`)
             return page
           })
-
         } else {
           // apparatuses should go at the foot of each page
           // go over the typeset text list determining the line ranges that fill up a page
@@ -637,7 +641,7 @@ export class BasicTypesetter extends Typesetter2 {
           this.debug && console.log(pageTypesettingData)
 
         }
-      }
+
 
       // Apply page processors
       let processedPages = []

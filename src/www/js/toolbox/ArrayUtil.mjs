@@ -190,3 +190,7 @@ export function makeCopyOfArray(someArray) {
   }
   return newArray
 }
+
+export function allTrue(someArray) {
+  return someArray.every( element => element === true)
+}

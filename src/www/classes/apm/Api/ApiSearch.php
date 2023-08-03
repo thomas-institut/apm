@@ -39,7 +39,7 @@ class ApiSearch extends ApiController
         $searched_phrase = $this->removeBlanks(strtolower($_POST['searched_phrase'])); // Lower-case and without additional blanks
         $title = $_POST['title'];
         $creator = $_POST['creator'];
-        $radius = $_POST['radius'];
+        $keywordDistance = $_POST['keywordDistance'];
         $lemmatize = filter_var($_POST['lemmatize'], FILTER_VALIDATE_BOOLEAN);
         $lang = $_POST['lang'] ?? 'detect';
 
@@ -47,46 +47,21 @@ class ApiSearch extends ApiController
         $index_name = $this->getIndexName($corpus, $lang);
 
         // Log query
-        $this->logger->debug("Input parameters", [ 'text' => $searched_phrase, 'radius' => $radius, 'lang' => $lang, 'lemmatize' => $lemmatize]);
+        $this->logger->debug("Input parameters", [ 'text' => $searched_phrase, 'keywordDistance' => $keywordDistance, 'lang' => $lang, 'lemmatize' => $lemmatize]);
 
         // Instantiate OpenSearch client
         try {
-            $client = $this->instantiateClient($this->systemManager);
+            $client = $this->instantiateOpenSearchClient($this->systemManager);
         } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
             $status = 'Connecting to OpenSearch server failed.';
             return $this->responseWithJson($response, ['searched_phrase' => $searched_phrase,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
 
         $this->profiler->lap("Setup");
-        $tokensForQuery = [];
 
+        // If wished, lemmatize searched keywords
         if ($lemmatize) {
-            // Lemmatization in python is very slow, so we need to cache it as much as possible
-            $cache = $this->systemManager->getSystemDataCache();
-            $searchTokens = explode(' ', $searched_phrase);
-            $tokensToLemmatizeWithPython = [];
-
-            foreach($searchTokens as $token) {
-                $cacheKey = $this->getLemmaCacheKey($token);
-                if ($cache->isInCache($cacheKey)) {
-                    $tokensForQuery[] = $cache->get($cacheKey);
-                } else {
-                    $tokensToLemmatizeWithPython[] = $token;
-                }
-            }
-            if (count($tokensToLemmatizeWithPython) > 0) {
-                $this->logger->debug(count($tokensToLemmatizeWithPython) . " tokens not in cache, need to run python lemmatizer", $tokensToLemmatizeWithPython);
-                $phrase = implode(' ', $tokensToLemmatizeWithPython);
-                exec("python3 ../python/Lemmatizer_Query.py $lang $phrase", $tokens_and_lemmata, $returnValue);
-                // Log output from exec-function
-                $this->logger->debug('output', [$tokens_and_lemmata, $returnValue]);
-                $lang = $tokens_and_lemmata[0];
-                $lemmata = explode("#", $tokens_and_lemmata[2]);
-                foreach ($lemmata as $i => $lemma) {
-                    $tokensForQuery[] = $lemma;
-                    $cache->set($this->getLemmaCacheKey($tokensToLemmatizeWithPython[$i]), $lemma);
-                }
-            }
+            $tokensForQuery = $this->getLemmata($searched_phrase, $lang);
         }
         else {
             $tokensForQuery = explode(" ", $searched_phrase);
@@ -117,12 +92,12 @@ class ApiSearch extends ApiController
 
         $this->profiler->lap("Opensearch query");
 
-        // Get all information about the matched columns, including passages with the matched token as lists of tokens
-        $data = $this->getData($query, $tokensForQuery[0], $tokensForQuery, $lemmata, $radius, $lemmatize, $corpus);
+        // Get all information about the matched entries, including passages with the matched token as lists of tokens
+        $data = $this->getData($query, $tokensForQuery[0], $tokensForQuery, $lemmata, $keywordDistance, $lemmatize, $corpus);
 
         $this->profiler->lap("getData");
 
-        // Until now, there was no check, if the queried keywords are close enough to each other, depending on the radius value
+        // Until now, there was no check, if the queried keywords are close enough to each other, depending on the keywordDistance value
         // So, if there is more than one token in the searched phrase, now filter out all columns and passages, which do not match all tokens in the desired way
         if ($numTokens !== 1) {
             for ($i=1; $i<$numTokens; $i++) {
@@ -130,30 +105,17 @@ class ApiSearch extends ApiController
             }
         }
 
-        // Get total and cropped number of matched passages
-        $num_passages_total = 0;
-        $max_results = 999;
+        // Crop data if there are more than 999 passages matched
+        $num_passages_total = $this->getnumPassages($data);
+        $max_passages = 999;
         $cropped = false;
+        $num_passages_cropped = $num_passages_total;
 
-        foreach ($data as $matched_column) {
-            $num_passages_total = $num_passages_total + $matched_column['num_passages'];
+        if ($num_passages_total>$max_passages) {
+            $data = $this->cropData($data, $max_passages);
+            $num_passages_cropped = $this->getNumPassages($data);
+            $cropped = true;
         }
-
-        if ($num_passages_total > $max_results) {
-            $num_passages_cropped = 0;
-            foreach ($data as $i=>$matched_column) {
-                if ($num_passages_cropped > $max_results) {
-                    $data = array_slice($data,0, $i);
-                    $cropped = true;
-                    break;
-                }
-                $num_passages_cropped = $num_passages_cropped + $matched_column['num_passages'];
-            }
-        }
-        else {
-            $num_passages_cropped = $num_passages_total;
-        }
-
 
         $this->profiler->stop();
         $this->logTimeProfile();
@@ -169,6 +131,70 @@ class ApiSearch extends ApiController
             'data' => $data,
             'serverTime' => $now,
             'status' => $status]);
+    }
+
+    // Get lemmata of words from cache or python lemmatizer
+    private function getLemmata (string $searched_phrase, $lang): array {
+
+        // Lemmatization in python is very slow, so we need to cache it as much as possible
+        $cache = $this->systemManager->getSystemDataCache();
+        $searchTokens = explode(' ', $searched_phrase);
+        $tokensToLemmatizeWithPython = [];
+
+        foreach($searchTokens as $token) { // Try to get lemmata from cache
+            $cacheKey = $this->getLemmaCacheKey($token);
+            if ($cache->isInCache($cacheKey)) {
+                $tokensForQuery[] = $cache->get($cacheKey);
+            } else {
+                $tokensToLemmatizeWithPython[] = $token;
+            }
+        }
+        if (count($tokensToLemmatizeWithPython) > 0) { // Get lemmata with python lemmatizer
+            $this->logger->debug(count($tokensToLemmatizeWithPython) . " tokens not in cache, need to run python lemmatizer", $tokensToLemmatizeWithPython);
+            $phrase = implode(' ', $tokensToLemmatizeWithPython);
+            $tokens_and_lemmata = $this->runLemmatizer($lang, $phrase);
+            $lemmata = explode("#", $tokens_and_lemmata[1]);
+            foreach ($lemmata as $i => $lemma) {
+                $tokensForQuery[] = $lemma;
+                $cache->set($this->getLemmaCacheKey($tokensToLemmatizeWithPython[$i]), $lemma);
+            }
+        }
+        
+        return $tokensForQuery;
+    }
+    
+    // Run python lemmatizer
+    private function runLemmatizer(string $lang, string $text_encoded): array
+    {
+        exec("python3 ../python/Lemmatizer_Query.py $lang $text_encoded", $tokens_and_lemmata);
+        $this->logger->debug('output', $tokens_and_lemmata);
+
+        return $tokens_and_lemmata;
+    }
+
+    // Get full number of passages stored in data-array
+    private function getNumPassages(array $data): int {
+
+        $num_passages_total = 0;
+        foreach ($data as $matched_column) {
+            $num_passages_total = $num_passages_total + $matched_column['num_passages'];
+        }
+
+        return $num_passages_total;
+    }
+
+    private function cropData (array $data, int $max_passages): array {
+
+            $num_passages_cropped = 0;
+            foreach ($data as $i=>$matched_column) {
+                if ($num_passages_cropped > $max_passages) {
+                    $data = array_slice($data,0, $i);
+                    break;
+                }
+                $num_passages_cropped = $num_passages_cropped + $matched_column['num_passages'];
+            }
+
+        return  $data;
     }
 
     private function getIndexName(string $corpus, string $lang): string {
@@ -207,7 +233,7 @@ class ApiSearch extends ApiController
     }
 
     // Function, which instantiates OpenSearch client
-    static private function instantiateClient ($systemManager): Client
+    static private function instantiateOpenSearchClient ($systemManager): Client
     {
         // Load authentication data from config-file
         $config = $systemManager->getConfig();
@@ -251,7 +277,7 @@ class ApiSearch extends ApiController
         }
 
         if ($creator !== '') {
-            $mustConditions[] = [ 'match_phrase_prefix' => [
+            $mustConditions[] = [ 'match_phrase' => [
                 'creator' => [
                     "query" => $creator
                 ]
@@ -259,7 +285,7 @@ class ApiSearch extends ApiController
         }
 
         if ($title !== '') {
-            $mustConditions[] = [ 'match_phrase_prefix' => [
+            $mustConditions[] = [ 'match_phrase' => [
                 'title' => [
                     "query" => $title
                 ]
@@ -280,7 +306,7 @@ class ApiSearch extends ApiController
     }
 
     // Get all information about matches, specified for a single document or all documents
-    private function getData (array $query, string $token, array $tokens_for_query, array $lemmata, int $radius, bool $lemmatize, string $corpus): array {
+    private function getData (array $query, string $token, array $tokens_for_query, array $lemmata, int $keywordDistance, bool $lemmatize, string $corpus): array {
 
         // Choose filter algorithm based on asterisks in the queried token - remove asterisks for further processing
         $filter = $this->getFilterType($token);
@@ -335,7 +361,7 @@ class ApiSearch extends ApiController
                 sort($pos_all);
 
 
-                if (count($pos_all) == 2 && ($pos_all[1]-$pos_all[0])<$radius) {
+                if (count($pos_all) == 2 && ($pos_all[1]-$pos_all[0])<$keywordDistance) {
                         unset($pos_all[0]);
                         $pos_all = array_values($pos_all);
                 }
@@ -350,11 +376,11 @@ class ApiSearch extends ApiController
                 foreach ($pos_all as $pos) {
 
                         // Get tokenized and lemmatized passage and passage coordinates (measured in tokens, relative to the column)
-                        $passage_data = $this->getPassage($text_tokenized, $pos, $radius);
+                        $passage_data = $this->getPassage($text_tokenized, $pos, $keywordDistance);
                         $passage_tokenized[] = $passage_data['passage'];
 
                         if ($lemmatize) {
-                            $passage_data = $this->getPassage($text_lemmatized, $pos, $radius);
+                            $passage_data = $this->getPassage($text_lemmatized, $pos, $keywordDistance);
                             $passage_lemmatized[] = $passage_data['passage'];
                         }
 
@@ -602,7 +628,7 @@ class ApiSearch extends ApiController
     }
 
     // Function to cut out a passage of a transcript
-    private function getPassage (array $transcript, int $pos, int $radius): array {
+    private function getPassage (array $transcript, int $pos, int $keywordDistance): array {
 
         // Store the token at the given position into an array and use this array in the next steps to collect the passage in it
         $passage = [$transcript[$pos]];
@@ -620,14 +646,14 @@ class ApiSearch extends ApiController
         $num_prec_tokens = count($prec_tokens);
         $num_suc_tokens = count($suc_tokens);
 
-        // Add as many preceding tokens to the passage-array, as the total number of preceding tokens and the radius size allow
-        for ($i=0; $i<$radius and $i<$num_prec_tokens; $i++) {
+        // Add as many preceding tokens to the passage-array, as the total number of preceding tokens and the keywordDistance size allow
+        for ($i=0; $i<$keywordDistance and $i<$num_prec_tokens; $i++) {
             array_unshift($passage, array_reverse($prec_tokens)[$i]);
             $passage_start = $pos - $i - 1;
         }
 
-        // Add as many succeeding words to the passage-array, as the total number of succeeding tokens and the radius size allow
-        for ($i=0; $i<$radius and $i<$num_suc_tokens; $i++) {
+        // Add as many succeeding words to the passage-array, as the total number of succeeding tokens and the keywordDistance size allow
+        for ($i=0; $i<$keywordDistance and $i<$num_suc_tokens; $i++) {
             $passage[] = $suc_tokens[$i];
             $passage_end = $pos + $i + 1;
         }
@@ -697,7 +723,7 @@ class ApiSearch extends ApiController
 
         // Instantiate OpenSearch client
         try {
-            $client = self::instantiateClient($systemManager);
+            $client = self::instantiateOpenSearchClient($systemManager);
         } catch (Exception $e) {
             return false;
         }
@@ -754,7 +780,7 @@ class ApiSearch extends ApiController
         } catch (KeyNotInCacheException $e) {
             // Instantiate OpenSearch client
             try {
-                $client = $this->instantiateClient($this->systemManager);
+                $client = $this->instantiateOpenSearchClient($this->systemManager);
             } catch (Exception $e) {
                 $status = 'Connecting to OpenSearch server failed.';
                 return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);

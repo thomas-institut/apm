@@ -3,7 +3,6 @@ import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
 
 let urlGen = new ApmUrlGenerator('')
 let data_for_zooming = []
-let searching = false
 
 const STATE_INIT = 0
 const STATE_WAITING_FOR_SERVER = 1
@@ -26,9 +25,9 @@ export function setupSearchPage(baseUrl) {
   // Get selector for signaling errors to user
   let errorMessageDiv = $("#error_message")
 
-  // Get lists for transcript and transcriber forms
-  getListFromOpenSearch ('transcriptions', errorMessageDiv)
-  getListFromOpenSearch ('transcribers', errorMessageDiv)
+  // Get lists for creator and title forms
+  getCreatorsAndTitles ('transcriptions', errorMessageDiv)
+  getCreatorsAndTitles ('transcribers', errorMessageDiv)
 
   // Start query when the search button is pressed
   $("#searchButton").on("click", function () {
@@ -37,6 +36,7 @@ export function setupSearchPage(baseUrl) {
       console.log(`Search button clicked while searching or processing results. Nothing to do. State = ${state}`)
       return
     }
+
     // Get all relevant information for the query
     let user_input = keywords_box.val()
 
@@ -49,7 +49,7 @@ export function setupSearchPage(baseUrl) {
     }
   })
 
-  // Error message if wildcards are combined with lemmatization
+  // Return an error message, if wildcards are combined with lemmatization
   lemmatization_box.on("click",  function (event) {
     let checked = lemmatization_box.prop("checked")
     let user_input = keywords_box.val()
@@ -70,6 +70,7 @@ export function setupSearchPage(baseUrl) {
     }
   })
 
+  // Adjust search form and creator/title lists to selected corpus
   corpus_selector.on("change",function (){
     let doc_or_edition = $("#doc-or-edition")
     let trans_or_editor = $("#transcriber-or-editor")
@@ -80,17 +81,17 @@ export function setupSearchPage(baseUrl) {
       doc_or_edition.text("Document")
       trans_or_editor.text("Transcriber")
 
-      // Get lists for transcript and transcriber forms
-      getListFromOpenSearch ('transcriptions', errorMessageDiv)
-      getListFromOpenSearch ('transcribers', errorMessageDiv)
+      // Get lists for transcription and transcriber forms
+      getCreatorsAndTitles ('transcriptions', errorMessageDiv)
+      getCreatorsAndTitles ('transcribers', errorMessageDiv)
     }
     else {
       doc_or_edition.text("Edition Title")
       trans_or_editor.text("Editor")
 
       // Get lists for edition and editor forms
-      getListFromOpenSearch ('editions', errorMessageDiv)
-      getListFromOpenSearch ('editors', errorMessageDiv)
+      getCreatorsAndTitles ('editions', errorMessageDiv)
+      getCreatorsAndTitles ('editors', errorMessageDiv)
     }
   })
 }
@@ -98,25 +99,26 @@ export function setupSearchPage(baseUrl) {
 window.setupSearchPage = setupSearchPage
 
 // Function to get list of indexed values, i.e. titles or transcribers, via an API call
-function getListFromOpenSearch(category, errorMessageDiv) {
-  // let apiUrl = category === 'titles' ? urlGen.apiSearchTranscriptionTitles(): urlGen.apiSearchTranscribers();
-  // let listSelector = category === 'titles' ? '#titleList' : '#transcriberList';
+function getCreatorsAndTitles(category, errorMessageDiv) {
+
+  let apiUrl = ''
+  let listSelector = ''
 
   if (category === 'transcriptions') {
-    var apiUrl = urlGen.apiSearchTranscriptionTitles()
-    var listSelector = '#titleList'
+    apiUrl = urlGen.apiSearchTranscriptionTitles()
+    listSelector = '#titleList'
   }
   else if (category === 'transcribers') {
-    var apiUrl = urlGen.apiSearchTranscribers()
-    var listSelector = '#transcriberList'
+    apiUrl = urlGen.apiSearchTranscribers()
+    listSelector = '#creatorList'
   }
   else if (category === 'editors') {
-    var apiUrl = urlGen.apiSearchEditors()
-    var listSelector = '#transcriberList'
+    apiUrl = urlGen.apiSearchEditors()
+    listSelector = '#creatorList'
   }
   else if (category === 'editions') {
-    var apiUrl = urlGen.apiSearchEditionTitles()
-    var listSelector = '#titleList'
+    apiUrl = urlGen.apiSearchEditionTitles()
+    listSelector = '#titleList'
   }
 
   // Make API request
@@ -150,16 +152,17 @@ function getListFromOpenSearch(category, errorMessageDiv) {
 function search() {
 
   let p = new SimpleProfiler('search')
+
   // Clear data_for_zooming
   data_for_zooming = []
 
+  // Get searched text, its language and the target corpus
   let ld = new LanguageDetector({ defaultLang: 'la'})
   let searchText = $("#keywordBox").val()
   let detectedLang = ld.detectLang(searchText)
   let corpus = $("#corpus-select").find(":selected").val()
 
   console.log(`Detected language for '${searchText}' is '${detectedLang}'`)
-
 
   // User inputs
   const inputs = {
@@ -168,8 +171,8 @@ function search() {
     lang: detectedLang,
     title: $("#titleBox").val(),
     creator: $("#creatorBox").val(),
-    radius: parseInt($("#radiusSlider").val()) + 1,
-    zoom: $("#zoomSlider").val(),
+    keywordDistance: parseInt($("#keywordDistanceValue").val()) + 1,
+    zoom: $("#zoomValue").val(),
     lemmatize: $("#lemmatize").prop("checked")
   };
 
@@ -186,7 +189,6 @@ function search() {
 
   // Show spinner
   spinner.html(`<span style="font-size: 2em">Getting results from server</span> ${spinnerHtml}`);
-
 
   state = STATE_WAITING_FOR_SERVER
 
@@ -213,12 +215,12 @@ function search() {
       // Remove spinner
       spinner.empty();
 
-      let zoom = new Array(apiResponse.num_passages_cropped+1).fill(inputs.radius)
+      // Make array to store zoom data in – default zoom values are dependent on the keyword distance values
+      let zoom = new Array(apiResponse.num_passages_cropped+1).fill(inputs.keywordDistance)
 
-      // Call displayResults-function and save backup of data for zoom handling
-
+      // Display results
       state = STATE_DISPLAYING_RESULTS
-      displayResults(apiResponse.data, apiResponse.lang, apiResponse.num_passages_cropped, zoom, inputs.radius, apiResponse.num_passages_total, apiResponse.cropped, corpus).then( () => {
+      displayResults(apiResponse.data, apiResponse.lang, apiResponse.num_passages_cropped, zoom, inputs.keywordDistance, apiResponse.num_passages_total, apiResponse.cropped, corpus).then( () => {
         p.stop('Results displayed')
         state = STATE_INIT
       })
@@ -233,7 +235,7 @@ function search() {
 
 
 // Function to collect and display the search results in a readable form
-async function displayResults (data, lang, num_passages, zoom, radius, num_passages_total, cropped, corpus) {
+async function displayResults (data, lang, num_passages, zoom, keywordDistance, num_passages_total, cropped, corpus) {
 
   // Get selectors for displaying results
   let results_body = $("#resultsTable tbody")
@@ -294,8 +296,6 @@ async function displayResults (data, lang, num_passages, zoom, radius, num_passa
       let chunk
       let link
 
-
-      // Get data
       if (corpus === 'transcriptions') {
         seq = data[i]['seq']
         foliation = data[i]['foliation']
@@ -309,7 +309,7 @@ async function displayResults (data, lang, num_passages, zoom, radius, num_passa
         link = getLink(urlGen.siteEditCollationTable(table_id))
       }
 
-      // Slice and highlight passage
+      // Slice and highlight passages
       for (let j = 0; j < passages.length; j++) {
         k=k+1
         if (k % 100 === 0) {
@@ -317,30 +317,31 @@ async function displayResults (data, lang, num_passages, zoom, radius, num_passa
           await wait(1)
         }
 
+        // Save data for zooming
         data_for_zooming.push({
           'text_tokenized': text_tokenized,
           'tokens_matched': tokens_matched,
           'position': positions[j]})
 
-        let passage = sliceAndHighlight(text_tokenized, tokens_matched, positions[j], radius, zoom[k])
+        let passage = sliceAndHighlight(text_tokenized, tokens_matched, positions[j], keywordDistance, zoom[k])
 
-        // Fill table with results - layout depends slightly on the language of the transcripts
+        // Fill table with results
         if (corpus === 'transcriptions') {
           fillResultsTable(passage, title, foliation, creator, link, lang, zoom, prev_title, k)
         }
         else {
           fillResultsTable(passage, title, chunk, creator, link, lang, zoom, prev_title, k)
         }
-
         prev_title = title
       }
     }
 
+    // Signal cropping of search results to the user
     if (cropped) {
       error_message.html(`<br>Too many matches! Showing only ${num_passages} of ${num_passages_total} matched passages. <br>Specify your query or contact the administrators.<br><br>`)
     }
 
-    // Zoom events
+    // Implement zoom handling
     let zoom_global = $("#zoomGlobal")
     let cancelled = false
     $(zoom_global).off('change').on("change",  async (event)=> {
@@ -359,16 +360,16 @@ async function displayResults (data, lang, num_passages, zoom, radius, num_passa
           spinner.html(`Updating zoom level for result ${i} of ${num_passages}`)
           await wait(1)
         }
-        let name = "#zoomSlider" + i
+        let name = "#zoomValue" + i
         let value = zoom_global.val()
         $(name).prop("value", value)
         let zoom_slider = $(name)
-        let radius_slider = $("#radiusSlider")
+        let keywordDistance_slider = $("#keywordDistanceValue")
         let index = name.match(/\d/g);
         index = index.join("");
         zoom[index] = zoom_slider.val()
-        let radius = parseInt(radius_slider.val()) + 1
-        updateResults(data_for_zooming, zoom, radius, index)
+        let keywordDistance = parseInt(keywordDistance_slider.val()) + 1
+        updateResults(data_for_zooming, zoom, keywordDistance, index)
       }
       spinner.html('')
     })
@@ -381,7 +382,7 @@ async function displayResults (data, lang, num_passages, zoom, radius, num_passa
 }
 
 // Function to update search results when user is zooming
-function updateResults (data, zoom, radius, index) {
+function updateResults (data, zoom, keywordDistance, index) {
 
   // Get selector for updating results
   let results_body = document.getElementById("resultsTable")
@@ -392,7 +393,7 @@ function updateResults (data, zoom, radius, index) {
   let position = data[index-1]['position']
 
   // Slice and highlight passage
-  let passage = sliceAndHighlight(text_tokenized, tokens_matched, position, radius, zoom[index])
+  let passage = sliceAndHighlight(text_tokenized, tokens_matched, position, keywordDistance, zoom[index])
   results_body.rows[index].cells[0].innerHTML = passage;
 }
 
@@ -418,12 +419,12 @@ function getNumTitles (data, numColumns) {
   return num_titles
 }
 
-// Function to slice passages out of a transcript depending on zoom value
-// and highlight the searched keywords in the passages depending on radius value
-function sliceAndHighlight (transcript, tokens_matched, position, radius, zoom) {
+// Function to slice passages out of a text depending on zoom value
+// and highlight the searched keywords in the passages depending on keywordDistance value
+function sliceAndHighlight (text, tokens_matched, position, keywordDistance, zoom) {
 
   // SLICE
-  let transcript_len = transcript.length
+  let text_len = text.length
   let passage_start = position-zoom
   let passage_end = parseInt(position)+parseInt(zoom)+1
 
@@ -431,11 +432,11 @@ function sliceAndHighlight (transcript, tokens_matched, position, radius, zoom) 
     passage_start = 0
   }
 
-  if (passage_end > (transcript_len-1)) {
-    passage_end = transcript_len
+  if (passage_end > (text_len-1)) {
+    passage_end = text_len
   }
 
-  let passage = transcript.slice(passage_start, passage_end)
+  let passage = text.slice(passage_start, passage_end)
 
   // HIGHLIGHT
   let passage_highlighted = ""
@@ -444,8 +445,8 @@ function sliceAndHighlight (transcript, tokens_matched, position, radius, zoom) 
   for (let i=0; i<passage.length; i++) {
     // Get current word of passage-array
     let token = passage[i]
-    // Highlight token, if it is one of the tokens_matched and inside the search radius, not the zoom (!) radius
-    if (tokens_matched.indexOf(token) !== -1 && insideRadius(i+passage_start, position, radius)) {
+    // Highlight token, if it is one of the tokens_matched and inside the search keywordDistance, not the zoom (!) keywordDistance
+    if (tokens_matched.indexOf(token) !== -1 && insidekeywordDistance(i+passage_start, position, keywordDistance)) {
       token = "<mark>" + token + "</mark>"
     }
     // Append token to returned string
@@ -455,11 +456,11 @@ function sliceAndHighlight (transcript, tokens_matched, position, radius, zoom) 
   return removeBlanks(passage_highlighted)
 }
 
-// Function to check if a matched keyword is inside the search radius
-function insideRadius (index, position, radius) {
+// Function to check if a matched keyword is inside the search keywordDistance
+function insidekeywordDistance (index, position, keywordDistance) {
 
   let distance = Math.abs(index-position)
-  if (distance>radius) {
+  if (distance>keywordDistance) {
     return false
   }
   else {
@@ -488,44 +489,42 @@ function fillResultsTable(passage, title, identifier, transcriber, link, lang, z
 
     if (lang==='la') {
       results_body.append(
-        `<tr><td class="text-la" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+        `<tr><td class="text-la" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
     }
     else if (lang==='he') {
       results_body.append(
-        `<tr><td class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+        `<tr><td class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
     }
     else if (lang==='ar') {
       results_body.append(
-        `<tr><td class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+        `<tr><td class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
     }
   }
 
   else {
     if (lang === 'la') {
       results_body.append(
-        `<tr><td class="text-la" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+        `<tr><td class="text-la" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
     } else if (lang === 'he') {
       results_body.append(
-        `<tr><td class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+        `<tr><td class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
     } else if (lang === 'ar') {
       results_body.append(
-        `<tr><td class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomSlider${k}"></label><input type="number" id="zoomSlider${k}" name="zoomSlider${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+        `<tr><td class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
     }
   }
 
-
-
-
+  // Implement zoom handling
   for (let i=1; i<(k+1); i++) {
-    let name = "#zoomSlider" + i
+    let name = "#zoomValue" + i
     $(name).on("change", function (event) {
       let zoom_slider = $(name)
-      let radius_slider = $("#radiusSlider")
+      let keywordDistance_slider = $("#keywordDistanceValue")
       let index = name.match(/\d/g);
       index = index.join("");
       zoom[index] = zoom_slider.val()
-      let radius = parseInt(radius_slider.val()) + 1
-      updateResults(data_for_zooming, zoom, radius, index)
+      let keywordDistance = parseInt(keywordDistance_slider.val()) + 1
+      updateResults(data_for_zooming, zoom, keywordDistance, index)
     })
   }
 

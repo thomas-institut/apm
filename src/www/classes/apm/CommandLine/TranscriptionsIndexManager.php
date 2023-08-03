@@ -34,7 +34,7 @@ use OpenSearch\ClientBuilder;
  * @author Lukas Reichert
  */
 
-class TranscriptionIndexCreator extends IndexCreator {
+class TranscriptionsIndexManager extends OpenSearchIndexManager {
 
     public function main($argc, $argv): bool
     {
@@ -72,7 +72,7 @@ class TranscriptionIndexCreator extends IndexCreator {
         return true;
     }
 
-    private function getAndIndexTranscriptionData (string $doc_id, $id)
+    private function getAndIndexTranscriptionData (string $doc_id, int $id): int
     {
 
         $title = $this->getTitle($doc_id);
@@ -115,7 +115,7 @@ class TranscriptionIndexCreator extends IndexCreator {
     }
 
     // Function to get plaintext of the transcripts in the sql-database (copied from the ApiTranscription class)
-    private function getPlainTextFromElements($elements) : string {
+    private function getPlainTextFromElements(array $elements) : string {
         $text = '';
         foreach($elements as $element) {
             if ($element->type === Element::LINE) {
@@ -145,33 +145,29 @@ class TranscriptionIndexCreator extends IndexCreator {
         return $text;
     }
 
-    public function getPageID ($doc_id, $page) {
+    public function getPageID (int $doc_id, int $page): int {
         return $this->dm->getpageIDByDocPage($doc_id, $page);
     }
 
-    public function getTitle($doc_id) {
+    public function getTitle(int $doc_id): string {
         $doc_info = $this->dm->getDocById($doc_id);
         return $doc_info['title'];
     }
 
-    public function getSeq($doc_id, $page) {
+    public function getSeq(int $doc_id, int $page): string {
         $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
         $page_info = $this->dm->getPageInfo($page_id);
         return $page_info['seq'];
     }
 
-
-    // TODO: add types to parameters
-
-    public function getTranscription($doc_id, $page, $col): string
+    public function getTranscription(int $doc_id, int $page, int $col): string
     {
         $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
         $elements = $this->dm->getColumnElementsBypageID($page_id, $col);
         return $this->getPlainTextFromElements($elements);
     }
 
-    // TODO: add types to parameters
-    public function getTranscriber($doc_id, $page, $col) {
+    public function getTranscriber(int $doc_id, int $page, int $col): string {
         $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
         $versions = $this->dm->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
         if ($versions === []) {
@@ -183,22 +179,19 @@ class TranscriptionIndexCreator extends IndexCreator {
         }
     }
 
-    // TODO: add types to parameters
-    public function getLang($doc_id, $page) {
+    public function getLang(int $doc_id, int $page): string {
         $seq = $this->getSeq($doc_id, $page);
         return $this->dm->getPageInfoByDocSeq($doc_id, $seq)['lang'];
     }
 
-    // TODO: add types to parameters
-    public function getFoliation($doc_id, $page): string
+    public function getFoliation(int $doc_id, int $page): string
     {
         $seq = $this->getSeq($doc_id, $page);
         return $this->dm->getPageFoliationByDocSeq($doc_id,  $seq);
     }
 
     // Function to add pages to the OpenSearch index
-    // TODO: add types to parameters
-    public function indexTranscription ($client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcription, $lang): bool
+    public function indexTranscription ($client, int $id, string $title, int $page, int $seq, string $foliation, int $col, string $transcriber, int $page_id, int $doc_id, string $transcription, string $lang): bool
     {
 
         if ($lang != 'jrb') {

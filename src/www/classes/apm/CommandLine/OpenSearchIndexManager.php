@@ -23,20 +23,20 @@ namespace APM\CommandLine;
 use OpenSearch\Client;
 
 /**
- * Description of IndexCreator
+ * Description of OpenSearchIndexManager
  *
  * Abstract class for Commandline utilities to index texts in OpenSearch based on a sql-database
  *
  * @author Lukas Reichert
  */
 
-abstract class IndexCreator extends CommandLineUtility {
+abstract class OpenSearchIndexManager extends CommandLineUtility {
 
     protected Client $client;
     protected array $indices;
 
     // Function to encode the text – makes it suitable for the exec-command
-    public function encodeForLemmatization($text) {
+    public function encodeForLemmatization(string $text): string {
 
         // Replace line breaks, blanks, brackets...these character can provoke errors in the exec-command
         $text_clean = str_replace("\n", "#", $text);

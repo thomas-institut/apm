@@ -6,7 +6,7 @@ use APM\System\ApmConfigParameter;
 use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
 
-class EditionIndexCreator extends IndexCreator
+class EditionsIndexManager extends OpenSearchIndexManager
 {
     protected $ctable;
 

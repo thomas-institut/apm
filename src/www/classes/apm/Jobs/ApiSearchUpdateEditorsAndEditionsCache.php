@@ -6,7 +6,7 @@ use APM\Api\ApiSearch;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
 
-class ApiSearchUpdateEditorsAndTitlesCache implements JobHandlerInterface
+class ApiSearchUpdateEditorsAndEditionsCache implements JobHandlerInterface
 
 {
     public function run(SystemManager $sm, array $payload): bool

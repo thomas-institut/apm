@@ -42,6 +42,9 @@ class ApiCollationTableConversion extends  ApiController
         $tableId = intval($inputData['tableId']);
         $initStrategy = $inputData['initStrategy'];
         $ctManager = $this->systemManager->getCollationTableManager();
+
+        $this->systemManager->onCollationTableSaved($this->apiUserId, $tableId);
+
         try {
             $ctManager->convertToEdition($tableId, $initStrategy, $this->apiUserId, TimeString::now());
         } catch (Exception $e) {
@@ -54,6 +57,7 @@ class ApiCollationTableConversion extends  ApiController
                 ]);
             return $this->responseWithJson($response, ['error' => self::ERROR_CANNOT_CONVERT], 409);
         }
+
         return $this->responseWithJson($response, ['status' => 'OK', 'url' => $this->router->urlFor('chunkedition.edit', ['tableId' => $tableId])]);
 
     }

@@ -2,7 +2,6 @@
 
 namespace APM\Jobs;
 
-use APM\CommandLine\IndexCreator;
 use APM\System\ApmConfigParameter;
 use OpenSearch\ClientBuilder;
 
@@ -19,9 +18,9 @@ abstract class ApiSearchUpdateOpenSearchIndex
             ->build();
     }
 
-    protected function generateUniqueOpenSearchId($indexcreator, string $indexname): int
+    protected function generateUniqueOpenSearchId($indexManager, string $indexname): int
     {
-        $opensearchID_list = $indexcreator->getIDs($this->client, $indexname);
+        $opensearchID_list = $indexManager->getIDs($this->client, $indexname);
         $max_id = max($opensearchID_list);
         return $max_id + 1;
     }

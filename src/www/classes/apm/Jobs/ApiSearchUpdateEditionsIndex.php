@@ -2,11 +2,11 @@
 
 namespace APM\Jobs;
 
-use APM\CommandLine\EditionIndexCreator;
+use APM\CommandLine\EditionsIndexManager;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
 
-class ApiSearchUpdateIndexedEditions extends ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
+class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
 {
 
     public function run(SystemManager $sm, array $payload): bool
@@ -21,7 +21,7 @@ class ApiSearchUpdateIndexedEditions extends ApiSearchUpdateOpenSearchIndex impl
             return false;
         }
 
-        $eic = new EditionIndexCreator($config, 0, [0]);
+        $eic = new EditionsIndexManager($config, 0, [0]);
 
         // Fetch data from payload
         $table_id = $payload[0];
@@ -32,11 +32,11 @@ class ApiSearchUpdateIndexedEditions extends ApiSearchUpdateOpenSearchIndex impl
 
         if (!empty($data)) {
             
-            // Clean edition data and check if edition already indexed
+            // Clean edition data and check if edition is already indexed and only modified ore newly created
             $data = $eic->cleanEditionData([$data])[0];
             $editionStatus = $this->getEditionStatus($data);
 
-            // Update index
+            // Update index with modified or newly created edition
             $this->updateIndex($eic, $editionStatus, $data);
         }
 
@@ -69,7 +69,7 @@ class ApiSearchUpdateIndexedEditions extends ApiSearchUpdateOpenSearchIndex impl
         return ['exists' => $exists, 'id' => $opensearchID, 'indexname' => $index_name];
     }
 
-    protected function updateIndex(EditionIndexCreator $eic, array $editionStatus, array $data): void
+    protected function updateIndex(EditionsIndexManager $eic, array $editionStatus, array $data): void
     {
 
         if ($editionStatus['exists'] === 0) { // New edition was created

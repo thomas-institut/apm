@@ -63,7 +63,13 @@ $( () => {
                   },
                   {
                     type: FRAME_TYPE.RESIZABLE,
-                    component: new StaticContentComponent('right', generateSomeText())
+                    id: 'rightTabs',
+                    tabs: [
+                      new StaticContentComponent('pears', generateSomeText()).withTitle('Pears'),
+                      new StaticContentComponent('oranges', generateSomeText()).withTitle('Oranges'),
+                      new StaticContentComponent('bananas', generateSomeText()).withTitle('Bananas')
+                    ]
+
                   },
                 ]
               },

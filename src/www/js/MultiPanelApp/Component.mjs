@@ -60,7 +60,7 @@ export class Component {
   }
 
   getContainerIdClass() {
-    return `${MP_APP_CLASS.component}-${this.id}`
+    return `${MP_APP_CLASS.COMPONENT}-${this.id}`
   }
 
 
@@ -78,7 +78,7 @@ export class Component {
    * @return {string[]}
    */
   getContainerClasses() {
-    return [ MP_APP_CLASS.component, this.getContainerIdClass() ]
+    return [ MP_APP_CLASS.COMPONENT, this.getContainerIdClass() ]
   }
 
   /**

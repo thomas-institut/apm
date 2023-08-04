@@ -6,6 +6,7 @@ import { WindowContainer } from './WindowContainer.mjs'
 import { DivContainer } from './DivContainer.mjs'
 import { allTrue } from '../toolbox/ArrayUtil.mjs'
 import { GridContainer } from './GridContainer.mjs'
+import { TabbedPanelContainer } from './TabbedPanelContainer.mjs'
 
 /**
  * A new version of the multi panel user interface supporting multiple windows.
@@ -34,12 +35,13 @@ export const DIRECTION = {
 
 export const CONTAINER_TYPE = {
   DIV: 'div',
-  GRID: 'grid'
+  GRID: 'grid',
+  TABS: 'tabs'
 }
 
 export const MP_APP_CLASS = {
-  component: 'mpui-component'
-
+  COMPONENT: 'mpui-component',
+  HIDDEN: 'mpui-hidden'
 }
 
 const frameClass = 'mpui-frame'
@@ -58,11 +60,22 @@ const customStyles = `
   div.mpui-divider-horizontal {
     cursor: row-resize;
   }
-  
  
   div.mpui-content {
     overflow-x: auto;
     overflow-y: auto;
+  }
+  
+  .mpui-hidden {
+    display: none;
+  }
+  
+  .mpui-active-tab {
+    font-weight: bold;
+  }
+  
+  .mpui-tab {
+    margin: 3px;
   }
 
 `
@@ -133,6 +146,7 @@ export class MultiPanelApp {
       title += `: ${index+1}`
     }
     windowContainer.setTitle(title)
+    let debug
     windowSpec.containers.forEach( (containerSpec) => {
       switch(containerSpec.type) {
         case CONTAINER_TYPE.DIV:
@@ -140,7 +154,7 @@ export class MultiPanelApp {
           break
 
         case CONTAINER_TYPE.GRID:
-          let debug = true
+          debug = true
           let gridContainer = new GridContainer({
             debug: debug,
             id: containerSpec.id,
@@ -156,6 +170,15 @@ export class MultiPanelApp {
           })
           windowContainer.addChildContainer(gridContainer)
           break
+
+        case CONTAINER_TYPE.TABS:
+          debug= true
+          let tabsContainer = new TabbedPanelContainer({
+            debug: debug,
+            id: containerSpec.id,
+            tabs: containerSpec.tabs
+          })
+          windowContainer.addChildContainer(tabsContainer)
       }
     })
     this.windows.push(windowContainer)
@@ -168,7 +191,7 @@ export class MultiPanelApp {
    * @param {{}}frameSpec
    * @param {WindowContainer}windowContainer
    * @param {boolean}debug
-   * @return {GridContainer|DivContainer}
+   * @return {GridContainer|DivContainer|TabbedPanelContainer}
    * @private
    */
   getContainerForGridFromFrameSpec(frameSpec, windowContainer, debug) {
@@ -185,9 +208,17 @@ export class MultiPanelApp {
         frames: frameSpec.frames.map((subFrameSpec) => {
           return {
             type: subFrameSpec.type,
-            container: this.getContainerForGridFromFrameSpec(subFrameSpec, debug)
+            container: this.getContainerForGridFromFrameSpec(subFrameSpec, windowContainer, debug)
           }
         })
+      })
+    }
+    if (frameSpec.tabs !== undefined) {
+      // a tabbed panel
+      return new TabbedPanelContainer({
+        id: frameSpec.id,
+        debug: debug,
+        tabs: frameSpec.tabs
       })
     }
   }

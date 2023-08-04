@@ -20,6 +20,8 @@ export class ComponentContainer extends Container {
     return [ this.component]
   }
 
-
+  onResize () {
+    return this.component.onResize()
+  }
 
 }

@@ -4,7 +4,7 @@ import { Container } from './Container.mjs'
 import { DIRECTION } from './MultiPanelApp.mjs'
 import { DivContainer } from './DivContainer.mjs'
 import { NullComponent } from './NullComponent.mjs'
-
+import { SplitGrid } from '../toolbox/SplitGrid.mjs'
 
 
 export const FRAME_TYPE = {
@@ -54,6 +54,10 @@ export class GridContainer extends ParentContainer {
           customCheck: (value) => { return validDirections.indexOf(value) !== -1},
           customCheckDescription: `either 'vertical' or 'horizontal'`
         },
+        getParentWindow: {
+          type: 'function',
+          default: () => { return window }
+        },
         fullScreen: {
           type: 'boolean',
           default: false
@@ -97,9 +101,60 @@ export class GridContainer extends ParentContainer {
     this.dividerWidth = cleanOptions.dividerWidth
     this.id = cleanOptions.id
     this.debug = cleanOptions.debug
-
+    this.getParentWindow = cleanOptions.getParentWindow
+    this.frames = []
     this.setupFrames(cleanOptions.frames)
+    this.split = null
+    this.splitTracks = this.getSplitTrackInfoFromFrames(this.frames)
+  }
 
+  preRender () {
+    return new Promise( (resolve) => {
+      // destroy current split
+      if (this.split !== null) {
+        this.split.destroy()
+      }
+      resolve(true)
+    })
+  }
+
+  /**
+   * Sets up and creates a SplitGrid object for the GridContainer
+   * @private
+   */
+  setupUpSplitGrid() {
+    if (this.splitTracks.length === 0) {
+      this.split = null
+      return
+    }
+    let splitOptions = {}
+
+    splitOptions.onDragEnd = this.genOnSplitDragEnd()
+    splitOptions.window = this.getParentWindow()
+
+    let gutterOptions = this.splitTracks.map( (splitTrackInfo) => {
+      return {
+        track: splitTrackInfo.track,
+        element: this.getParentWindow().document.querySelector(`.${splitTrackInfo.dividerIdClass}`)
+      }
+    })
+
+    if (this.childrenDirection === DIRECTION.HORIZONTAL) {
+      splitOptions.rowGutters  = gutterOptions
+    } else {
+      splitOptions.columnGutters = gutterOptions
+    }
+
+    this.split = new SplitGrid(splitOptions)
+  }
+
+  postRender () {
+    this.setupUpSplitGrid()
+    // if (this.split !== null) {
+    //   this.debug && console.log(`Grid ${this.id}: Split set up`)
+    //   this.debug && console.log(this.split)
+    // }
+    return super.postRender()
   }
 
   /**
@@ -108,8 +163,8 @@ export class GridContainer extends ParentContainer {
    * @private
    */
   setupFrames(frames) {
-    this.debug && console.log(`Grid ${this.id} : Processing frames. Input frame spec:`)
-    this.debug && console.log(frames)
+    // this.debug && console.log(`Grid ${this.id} : Processing frames. Input frame spec:`)
+    // this.debug && console.log(frames)
     this.frames = []
     this.children = []
     let gridTemplateItems = []
@@ -159,7 +214,7 @@ export class GridContainer extends ParentContainer {
               gridTemplateItems.push(`${this.dividerWidth}px`)
               let dividerId = `${this.id}-${this.children.length}`
               let dividerContainer = new DivContainer(new NullComponent(dividerId))
-              dividerContainer.withExtraClasses([ FRAME_CLASS.DIVIDER, `${FRAME_CLASS.DIVIDER}-${dividerId}`])
+              dividerContainer.withExtraClasses([ FRAME_CLASS.DIVIDER, `${FRAME_CLASS.DIVIDER}-${this.childrenDirection}`, `${FRAME_CLASS.DIVIDER}-${dividerId}`])
               this.children.push(dividerContainer)
               this.frames.push({
                 type: FRAME_TYPE.DIVIDER,
@@ -174,8 +229,94 @@ export class GridContainer extends ParentContainer {
       }
     })
     this.gridTemplate = gridTemplateItems.join(' ')
-    this.debug && console.log(`Grid ${this.id} : Finished processing frames, this.frames: `)
-    this.debug && console.log(this.frames)
+    // this.debug && console.log(`Grid ${this.id} : Finished processing frames, this.frames: `)
+    // this.debug && console.log(this.frames)
+  }
+
+  /**
+   * Gets all the information needed to set up a SplitGrid object with
+   * the given frame information
+   * @private
+   */
+  getSplitTrackInfoFromFrames(frames) {
+    let state = 0
+    let splitTrackInfo = []
+    frames.forEach( (frame, index) => {
+      switch(state) {
+        case 0: // looking for a resizable frame
+          if (frame.type === FRAME_TYPE.RESIZABLE) {
+            state = 1
+          }
+          break
+
+        case 1: // looking for a divider
+          if (frame.type === FRAME_TYPE.DIVIDER) {
+            state = 2
+          } else {
+            state = 0
+          }
+          break
+
+        case 2: // looking for another resizable
+          if (frame.type === FRAME_TYPE.RESIZABLE) {
+            // two resizable frames with a divider in between, we need to add a split
+            let firstResizableIndex = index -2
+            let dividerIndex = index -1
+            let secondResizableIndex = index
+            let dividerContainer = this.frames[dividerIndex].container
+            let dividerIdClass = this.getDividerClassIdFromContainer(dividerContainer)
+            splitTrackInfo.push ({
+              frameIndices: [ firstResizableIndex, secondResizableIndex],
+              track: dividerIndex,
+              dividerIdClass: dividerIdClass
+            })
+            state = 1
+          }
+          // go back to initial state
+          state = 0
+          break
+
+      }
+    })
+    return splitTrackInfo
+  }
+
+  /**
+   * Generates the OnSplitDragEnd handler for a SplitGrid object
+   * @return {(function(*, *): void)|*}
+   * @private
+   */
+  genOnSplitDragEnd() {
+    return (direction, track) => {
+      // this.debug && console.log(`Grid '${this.id}': drag end in track ${track}`)
+      let splitTrackInfo = this.getSplitTrackInfoFromTrackNumber(track)
+      if (splitTrackInfo === null) {
+        console.warn(`Grid '${this.id}': Got drag end event for a non existent track number ${track}`)
+        return
+      }
+      // this.debug && console.log(`Grid '${this.id}': Calling onResize for for frames ${splitTrackInfo.frameIndices.join(' and ')}`)
+      splitTrackInfo.frameIndices.forEach( (index) => {
+        this.frames[index].container.onResize()
+      })
+    }
+  }
+
+  getSplitTrackInfoFromTrackNumber(track) {
+    let index = this.splitTracks.map( sti => sti.track).indexOf(track)
+    if (index === -1) {
+      return null
+    }
+    return this.splitTracks[index]
+  }
+
+  /**
+   *
+   * @param {Container}container
+   * @return {string}
+   * @private
+   */
+  getDividerClassIdFromContainer(container) {
+    return `${FRAME_CLASS.DIVIDER}-${container.getComponents()[0].getId()}`
   }
 
   getHtml () {

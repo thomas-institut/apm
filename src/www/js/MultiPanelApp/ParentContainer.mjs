@@ -73,4 +73,16 @@ export class ParentContainer extends Container {
     })
   }
 
+  onResize () {
+    // call the onResize method in all children
+    return new Promise( async (resolve) => {
+      let promises = this.children.map( (childContainer) => {
+        return childContainer.onResize()
+      })
+      let results = await Promise.all(promises)
+      resolve(allTrue(results))
+    })
+
+  }
+
 }

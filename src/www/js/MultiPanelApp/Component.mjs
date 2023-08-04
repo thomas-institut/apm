@@ -30,7 +30,9 @@ export class Component {
 
     /**
      * The component's direction.
-     * It's up to the component to interpret this value for display purposes
+     *
+     * It's up to the component to interpret this value for display purposes.
+     *
      * MultiPanelApp will inform the component of changes between 'horizontal' and
      * 'vertical' direction with onDirectionChange()
      * @type {string}
@@ -100,7 +102,7 @@ export class Component {
   }
 
   /**
-   * A function to be called when the panel has become visible on screen
+   * A function to be called when the component has become visible on screen
    * from previously being hidden
    * @return {Promise<boolean>}
    */
@@ -109,7 +111,7 @@ export class Component {
   }
 
   /**
-   * A function to be called when the panel has become invisible on screen
+   * A function to be called when the component has become invisible on screen
    * from previously being visible.
    * @return {Promise<boolean>}
    */
@@ -118,7 +120,7 @@ export class Component {
   }
 
   /**
-   * A function to be called when the panel is resized.
+   * A function to be called when the component is resized.
    * @return {Promise<boolean>}
    */
   onResize() {
@@ -126,8 +128,8 @@ export class Component {
   }
 
   /**
-   * A function to be called when the panel has changed direction
-   * If the function resolves to false, the panel will be re-rendered
+   * A function to be called when the component has changed direction
+   * If the function resolves to false, the component will be re-rendered
    * @param {string}newDirection
    * @return {Promise<boolean>}
    */

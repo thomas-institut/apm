@@ -72,4 +72,8 @@ export class Container {
     return this
   }
 
+  onResize() {
+    return resolvedPromise(true)
+  }
+
 }

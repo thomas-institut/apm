@@ -31,6 +31,7 @@ use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiTranscription;
 use APM\Api\ApiWorks;
 
+use APM\Site\SiteMetadata;
 use APM\Site\SiteMultiChunkEdition;
 use APM\System\ConfigLoader;
 use JetBrains\PhpStorm\NoReturn;
@@ -172,6 +173,12 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
     $group->get('/search',
         SiteSearch::class . ':searchPage')
         ->setName('search');
+
+    // Metadata Editor Page
+
+    $group->get('/metadata',
+        SiteMetadata::class . ':metadataPage')
+        ->setName('metadata');
 
     // DASHBOARD
 

@@ -33,8 +33,10 @@ use APM\Core\Token\Normalizer\IgnoreTatwilNormalizer;
 use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
 use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
 use APM\FullTranscription\TranscriptionManager;
-use APM\Jobs\ApiSearchUpdateOpenSearchIndex;
-use APM\Jobs\ApiSearchUpdateTranscribersAndTitlesCache;
+use APM\Jobs\ApiSearchUpdateEditionsIndex;
+use APM\Jobs\ApiSearchUpdateEditorsAndEditionsCache;
+use APM\Jobs\ApiSearchUpdateTranscriptionsIndex;
+use APM\Jobs\ApiSearchUpdateTranscribersAndTranscriptionsCache;
 use APM\Jobs\ApiUsersUpdateCtDataForUser;
 use APM\Jobs\ApiUsersUpdateTranscribedPagesData;
 use APM\Jobs\ApmJobName;
@@ -189,8 +191,6 @@ class ApmSystemManager extends SystemManager {
 
     private ?ApmNormalizerManager $normalizerManager;
 
-    private OpenSearchScheduler $openSearchScheduler;
-
     private ?ApmEditionSourceManager $editionSourceManager;
     private ApmJobQueueManager $jobManager;
 
@@ -259,23 +259,6 @@ class ApmSystemManager extends SystemManager {
         }
 
 //        $globalProfiler->lap("Database checked");
-
-        // Set up OpenSearchScheduler
-        try {
-            $schedulerTable = new MySqlDataTable($this->dbConn,
-                $this->tableNames[ApmMySqlTableName::TABLE_SCHEDULER]);
-        } catch (Exception $e) {
-            // Cannot replicate this in testing, yet
-            // @codeCoverageIgnoreStart
-            $this->logAndSetError(self::ERROR_CANNOT_READ_SCHEDULE_FROM_DB,
-                "Cannot read schedule from database: [ " . $e->getCode() . '] ' . $e->getMessage());
-            return;
-            // @codeCoverageIgnoreEnd
-        }
-
-        $this->openSearchScheduler=new OpenSearchScheduler($schedulerTable, $this->logger);
-
-//        $globalProfiler->lap("Opensearch scheduler ready");
 
         // Set up SettingsManager
         try {
@@ -767,11 +750,6 @@ class ApmSystemManager extends SystemManager {
         return $this->router;
     }
 
-    public function getOpenSearchScheduler(): OpenSearchScheduler
-    {
-        return $this->openSearchScheduler;
-    }
-
     public function getMultiChunkEditionManager(): MultiChunkEditionManager
     {
         if ($this->multiChunkEditionManager === null) {
@@ -796,8 +774,6 @@ class ApmSystemManager extends SystemManager {
     {
         parent::onTranscriptionUpdated($userId, $docId, $pageNumber, $columnNumber);
 
-        //$this->getOpenSearchScheduler()->schedule($docId, $pageNumber, $columnNumber);
-
         $this->logger->debug("Scheduling update of SiteChunks cache");
         $this->jobManager->scheduleJob(ApmJobName::SITE_CHUNKS_UPDATE_DATA_CACHE,
             '', [],0, 3, 20);
@@ -811,7 +787,7 @@ class ApmSystemManager extends SystemManager {
             "User $userId", ['userId' => $userId],0, 3, 20);
 
         $this->logger->debug("Scheduling update of open search index");
-        $this->jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_OPENSEARCH_INDEX,
+        $this->jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_OPENSEARCH_INDEX,
             '', ['doc_id' => $docId, 'page' => $pageNumber, 'col' => $columnNumber],0, 3, 20);
 
         $this->logger->debug("Scheduling update of Transcribers cache and Titles cache");
@@ -832,6 +808,10 @@ class ApmSystemManager extends SystemManager {
         $this->logger->debug("Invalidating CollationTablesInfo cache for user $userId");
         $this->jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE,
             "User $userId", ['userId' => $userId],0, 3, 20);
+        $this->jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_OPENSEARCH_INDEX,
+            '', [$ctId],0, 3, 20);
+        $this->jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITORS_AND_TITLES_CACHE,
+            '', [],0, 3, 20);
     }
 
     public function onDocumentDeleted(int $userId, int $docId): void
@@ -872,7 +852,9 @@ class ApmSystemManager extends SystemManager {
         $this->jobManager->registerJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE, new SiteDocumentsUpdateDataCache());
         $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE, new ApiUsersUpdateTranscribedPagesData());
         $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE, new ApiUsersUpdateCtDataForUser());
-        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE, new ApiSearchUpdateTranscribersAndTitlesCache());
-        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_OPENSEARCH_INDEX, new ApiSearchUpdateOpenSearchIndex());
+        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE, new ApiSearchUpdateTranscribersAndTranscriptionsCache());
+        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_OPENSEARCH_INDEX, new ApiSearchUpdateTranscriptionsIndex());
+        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_EDITORS_AND_TITLES_CACHE, new ApiSearchUpdateEditorsAndEditionsCache());
+        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_OPENSEARCH_INDEX, new ApiSearchUpdateEditionsIndex());
     }
 }

@@ -15,8 +15,6 @@ if lang == 'detect':
 
 # Tokenization and lemmatization in three languages
 if (lang=='he'):
-    # Download model for hebrew lemmatization
-    spacy_udpipe.download("he")
     nlp = spacy_udpipe.load('he')
 #     tokens = phrase.split(" ")
     lemmata = []
@@ -25,16 +23,16 @@ if (lang=='he'):
         lemma = ''.join([token.lemma_ for token in annotations])
         lemmata.append(lemma)
 elif (lang=='ar' or lang=='fa'):
-    lang='ar'
+    # lang='ar'
 #     tokens = phrase.split(" ")
     lemmatizer = qalsadi.lemmatizer.Lemmatizer()
     lemmata = [lemmatizer.lemmatize(t) for t in tokens]
 else:
-    lang='la'
+    # lang='la'
     tokens = simplemma.simple_tokenizer(phrase)
     lemmata = [simplemma.lemmatize(t, lang=lang) for t in tokens]
 
 # Encode and print tokens and lemmata to work with them in php
-print(lang)
+# print(lang)
 print('#'.join(tokens))
 print('#'.join(lemmata))

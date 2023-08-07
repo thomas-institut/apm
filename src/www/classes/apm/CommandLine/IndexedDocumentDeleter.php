@@ -5,7 +5,7 @@ namespace APM\CommandLine;
 use APM\System\ApmConfigParameter;
 use OpenSearch\ClientBuilder;
 
-class IndexedDocumentDeleter extends IndexCreator
+class IndexedDocumentDeleter extends TranscriptionsIndexManager
 {
     public function main($argc, $argv): bool
     {
@@ -18,10 +18,10 @@ class IndexedDocumentDeleter extends IndexCreator
             ->build();
 
         // Name of the index in OpenSearch
-        $this->indexName = 'transcripts';
+        $this->indexName = '';
 
         // ID of the document to delete
-        $id = 11647;
+        $id = 20000;
 
         // Delete a single document
         $this->client->delete([

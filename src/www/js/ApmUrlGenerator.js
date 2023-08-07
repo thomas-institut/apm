@@ -300,8 +300,16 @@ class ApmUrlGenerator {
         return `${this.base}/api/search/transcribers`
     }
 
-    apiSearchTitles() {
-        return `${this.base}/api/search/titles`
+    apiSearchTranscriptionTitles() {
+        return `${this.base}/api/search/transcriptions`
+    }
+
+    apiSearchEditors() {
+        return `${this.base}/api/search/editors`
+    }
+
+    apiSearchEditionTitles() {
+        return `${this.base}/api/search/editions`
     }
 
 

@@ -54,11 +54,11 @@ export class TabbedPanelContainer extends ParentContainer {
 
   getTabHeaderHtml() {
     let tabs = this.children.map( (childContainer, index) => {
-      let classes = ["mpui-tab"]
+      let classes = ["mpui-tab", `mpui-tab-${this.id}-${index}`]
       if (index === this.visibleChildIndex) {
         classes.push(`mpui-active-tab`)
       }
-      return `<div class="tab-${index}"><a href="" class="${classes.join(' ')}">${childContainer.getComponents()[0].getTitle()}</a></div>`
+      return `<div class="${classes.join(' ')}"><a href="" class="mpui-tab-${this.id}-${index}-a">${childContainer.getComponents()[0].getTitle()}</a></div>`
     }).join('')
     return `<div class="mpui-tab-header" style="display: flex; flex-direction: row">${tabs}</div>`
   }

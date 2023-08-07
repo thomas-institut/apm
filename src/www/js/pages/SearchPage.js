@@ -8,7 +8,6 @@ const STATE_INIT = 0
 const STATE_WAITING_FOR_SERVER = 1
 const STATE_DISPLAYING_RESULTS = 2
 
-
 let state = STATE_INIT
 
 const spinnerHtml = '<div class="spinner-border" role="status"></div>'
@@ -74,6 +73,10 @@ export function setupSearchPage(baseUrl) {
   corpus_selector.on("change",function (){
     let doc_or_edition = $("#doc-or-edition")
     let trans_or_editor = $("#transcriber-or-editor")
+
+    // Clear title and creator lists
+    $('#titleList').empty()
+    $('#creatorList').empty()
 
     console.log(`corpus of the query was changed to ${$(this).find(":selected").val()}`)
 
@@ -446,7 +449,7 @@ function sliceAndHighlight (text, tokens_matched, position, keywordDistance, zoo
     // Get current word of passage-array
     let token = passage[i]
     // Highlight token, if it is one of the tokens_matched and inside the search keywordDistance, not the zoom (!) keywordDistance
-    if (tokens_matched.indexOf(token) !== -1 && insidekeywordDistance(i+passage_start, position, keywordDistance)) {
+    if (tokens_matched.indexOf(token) !== -1 && insideKeywordDistance(i+passage_start, position, keywordDistance)) {
       token = "<mark>" + token + "</mark>"
     }
     // Append token to returned string
@@ -457,7 +460,7 @@ function sliceAndHighlight (text, tokens_matched, position, keywordDistance, zoo
 }
 
 // Function to check if a matched keyword is inside the search keywordDistance
-function insidekeywordDistance (index, position, keywordDistance) {
+function insideKeywordDistance (index, position, keywordDistance) {
 
   let distance = Math.abs(index-position)
   if (distance>keywordDistance) {

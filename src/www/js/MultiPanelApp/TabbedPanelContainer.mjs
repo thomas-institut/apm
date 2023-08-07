@@ -53,20 +53,17 @@ export class TabbedPanelContainer extends ParentContainer {
   }
 
   getTabHeaderHtml() {
-
-
     let tabs = this.children.map( (childContainer, index) => {
       let classes = ["mpui-tab"]
       if (index === this.visibleChildIndex) {
         classes.push(`mpui-active-tab`)
       }
-      return `<a href="" class="${classes.join(' ')}">${childContainer.getComponents()[0].getTitle()}</a>`
+      return `<div class="tab-${index}"><a href="" class="${classes.join(' ')}">${childContainer.getComponents()[0].getTitle()}</a></div>`
     }).join('')
-    return `<div class="mpui-tab-header">${tabs}</div>`
+    return `<div class="mpui-tab-header" style="display: flex; flex-direction: row">${tabs}</div>`
   }
 
   getContentDivHtml() {
-    console.log(this.children.map( (c, i) => {return i}))
     let childrenHtml = this.children.map( (childContainer, index) => {
       if (index !== this.visibleChildIndex) {
         childContainer.withExtraClasses([MP_APP_CLASS.HIDDEN])

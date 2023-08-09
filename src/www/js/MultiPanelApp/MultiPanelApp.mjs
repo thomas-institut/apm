@@ -70,7 +70,7 @@ const customStyles = `
     display: none;
   }
   
-  .mpui-active-tab {
+  .mpui-tab-active {
     font-weight: bold;
   }
   

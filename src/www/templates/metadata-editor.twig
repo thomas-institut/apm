@@ -1,15 +1,122 @@
 {% extends "base.twig" %}
 
+{% block extraJS %}
+    <script type="application/javascript" src="{{baseurl}}/js/dist/MetadataEditor.bundle.js"></script>
+
+    <script>
+        let mde = new MetadataEditor()
+    </script>
+{% endblock %}
+
+
 {% block title %}Metadata Editor{% endblock %}
 
 {% block content %}
     <h1>Metadata Editor</h1>
+
+    <table class="doctable dataTable">
+        <thead>
+        <tr>
+        <th>Entity ID</th>
+        <th>Type</th>
+        <th>Attribute 1</th>
+        <th>Attribute 2</th>
+        <th>Attribute 3</th>
+        <th>Attribute 4</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+        <td>
+            <div>
+                <input type="number" id="entity_id" placeholder="0" style="padding: unset">
+            </div>
+        </td>
+        <td>
+            <div>
+                <input type="text" id="entity_type" placeholder="Type" style="padding: unset">
+            </div>
+        </td>
+        <td>
+            <div>
+                <input type="text" id="entity_attr1" placeholder="String" style="padding: unset">
+            </div>
+        </td>
+        <td>
+            <div>
+                <input type="number" id="entity_attr2" placeholder="0" style="padding: unset">
+            </div>
+        </td>
+        <td>
+            <div>
+                <input type="date" id="entity_attr3" placeholder="" style="padding: unset">
+            </div>
+        </td>
+        <td>
+            <div id=>
+                <input type="email" id="entity_attr4" placeholder="test@testmail.de" style="padding: unset">
+            </div>
+        </td>
+            <td>
+                <div id=>
+                    <button type="button" id="edit_button" name="Edit" style="background-color: white; padding: unset">Edit</button>
+                </div>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <br>
+
 {% endblock %}
 
 {% block finalBodyJS %}
     <script>
-        import {MetadataEditor} from "../js/pages/MetadataEditor";
 
-        let mde = new MetadataEditor()
+        // Get selectors
+        let form_id = $('#entity_id');
+        let form_type = $('#entity_type')
+        let form_attr1 = $('#entity_attr1')
+        let form_attr2 = $('#entity_attr2')
+        let form_attr3 = $('#entity_attr3')
+        let form_attr4 = $('#entity_attr4')
+
+        // Get api url
+        let urlGen = new ApmUrlGenerator('')
+        let apiUrl = urlGen.apiMetadataEditorGetData()
+
+        // Button event
+        $("#edit_button").on("click", function () {
+            form_id.empty()
+        })
+
+        // Make API request
+        $.post(apiUrl).done((apiResponse) => {
+
+            // Catch errors
+            if (apiResponse.status !== 'OK') {
+                console.log(`Error in query for ${category}!`);
+                if (apiResponse.errorData !== undefined) {
+                    console.log(apiResponse.errorData);
+                }
+                errorMessageDiv.html(`Error while getting metadata, please report to technical administrators.`)
+                    .removeClass('text-error');
+                return;
+            }
+
+            console.log(apiResponse);
+
+            // Get data from apiResponse
+            let data = apiResponse['data'];
+
+            // Fill forms with data
+            form_id.val(data.id)
+            form_type.val(data.type)
+            form_attr1.val(data.currentMetadata.attribute1)
+            form_attr2.val(data.currentMetadata.attribute2)
+            form_attr3.val(data.currentMetadata.attribute3)
+            form_attr4.val(data.currentMetadata.attribute4)
+
+        })
+
     </script>
 {%  endblock %}

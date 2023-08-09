@@ -27,6 +27,7 @@ namespace APM;
 
 use APM\Api\ApiEditionSources;
 use APM\Api\ApiLog;
+use APM\Api\ApiMetadataEditor;
 use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiTranscription;
 use APM\Api\ApiWorks;
@@ -334,6 +335,11 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
     $group->post('/search/editors',
         ApiSearch::class . ':getEditors')
         ->setName('search.editors');
+
+    // Metadata Editor
+    $group->post('/metadataeditor/getmetadata',
+        ApiMetadataEditor::class . ':getMetadata')
+        ->setName('getmetadata');
 
     // LOG
     $group->post('/admin/log',

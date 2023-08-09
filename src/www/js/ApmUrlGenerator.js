@@ -312,6 +312,9 @@ class ApmUrlGenerator {
         return `${this.base}/api/search/editions`
     }
 
+    apiMetadataEditorGetData() {
+        return `${this.base}/api/metadataeditor/getmetadata`
+    }
 
     images() {
         return this.base + '/images'

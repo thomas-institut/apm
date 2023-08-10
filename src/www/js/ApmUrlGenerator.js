@@ -316,6 +316,14 @@ class ApmUrlGenerator {
         return `${this.base}/api/metadataeditor/getmetadata`
     }
 
+    apiMetadataEditorSaveData() {
+        return `${this.base}/api/metadataeditor/savemetadata`
+    }
+
+    apiMetadataEditorCreateEntity() {
+        return `${this.base}/api/metadataeditor/createentity`
+    }
+
     images() {
         return this.base + '/images'
     }

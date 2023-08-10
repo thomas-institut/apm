@@ -15,7 +15,11 @@ class ApiMetadataEditor extends ApiController
         $status = 'OK';
         $now = TimeString::now();
 
-        $data = ['id' => 1,
+        $id = $_POST['id'];
+
+        // $data = $this->getMetadataFromSql($id);
+
+        $data = ['id' => $id,
             'type' => 'person',
             'currentMetadata' => [
                 'attribute1' => 'Lukas',
@@ -36,5 +40,71 @@ class ApiMetadataEditor extends ApiController
             'data' => $data,
             'serverTime' => $now,
             'status' => $status]);
+    }
+
+    public function saveMetadata(Request $request, Response $response): Response
+    {
+        $status = 'OK';
+        $now = TimeString::now();
+
+        $id = $_POST['id'];
+        $type = $_POST['type'];
+        $attributes = $_POST['attributes'];
+
+        // $this->saveMetadataInSql($id, $type, $attributes);
+
+        // ApiResponse
+        return $this->responseWithJson($response, [
+            'status' => $status,
+            'now' => $now,
+            'id' => $id,
+            'type' => $type,
+            'attributes' => $attributes
+        ]);
+    }
+
+    public function createEntity (Request $request, Response $response): Response
+    {
+        $status = 'OK';
+        $now = TimeString::now();
+
+        $id = $_POST['id'];
+        $type = $_POST['type'];
+        $attributes = $_POST['attributes'];
+
+        // $this->createEntityInSql($id, $type, $attributes);
+
+        // ApiResponse
+        return $this->responseWithJson($response, [
+            'status' => $status,
+            'now' => $now,
+            'id' => $id,
+            'type' => $type,
+            'attributes' => $attributes
+        ]);
+    }
+
+    private function getMetadataFromSql(int $id): array {
+
+        $data = [];
+
+        // TO DO | PLACE HERE A FUNCTION WHICH GETS DATA BY ID FROM A SQL TABLE
+
+        return $data;
+    }
+    private function saveMetadataInSql(int $id, string $type, array $attributes): bool {
+
+        // TO DO | PLACE HERE A FUNCTION WHICH WRITES THE DATA GIVEN AS ARGUMENTS INTO A SQL TABLE
+
+
+        return true;
+    }
+
+    private function createEntityInSql(int $id, string $type, array $attributes): bool {
+
+        // TO DO | PLACE HERE A FUNCTION WHICH CREATES AN ENTITY WITH ITS METADATA IN A SQL TABLE
+
+
+        return true;
     }
 }

@@ -14,59 +14,60 @@
 {% block content %}
     <h1>Metadata Editor</h1>
 
-    <table class="doctable dataTable">
-        <thead>
+    <table class="doctable">
         <tr>
         <th>Entity ID</th>
-        <th>Type</th>
-        <th>Attribute 1</th>
-        <th>Attribute 2</th>
-        <th>Attribute 3</th>
-        <th>Attribute 4</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-        <td>
-            <div>
-                <input type="number" id="entity_id" placeholder="0" style="padding: unset">
-            </div>
-        </td>
-        <td>
-            <div>
-                <input type="text" id="entity_type" placeholder="Type" style="padding: unset">
-            </div>
-        </td>
-        <td>
-            <div>
-                <input type="text" id="entity_attr1" placeholder="String" style="padding: unset">
-            </div>
-        </td>
-        <td>
-            <div>
-                <input type="number" id="entity_attr2" placeholder="0" style="padding: unset">
-            </div>
-        </td>
-        <td>
-            <div>
-                <input type="date" id="entity_attr3" placeholder="" style="padding: unset">
-            </div>
-        </td>
-        <td>
-            <div id=>
-                <input type="email" id="entity_attr4" placeholder="test@testmail.de" style="padding: unset">
-            </div>
-        </td>
-            <td>
-                <div id=>
-                    <button type="button" id="edit_button" name="Edit" style="background-color: white; padding: unset">Edit</button>
+            <td style="text-align: right">
+                <div>
+                    <input type="text" id="entity_id" placeholder="number" style="padding: unset">
                 </div>
             </td>
         </tr>
-        </tbody>
+        <tr>
+        <th>Type</th>
+            <td style="text-align: right">
+                <div>
+                    <input type="text" id="entity_type" placeholder="string" style="padding: unset">
+                </div>
+            </td>
+        </tr>
+        <tr>
+        <th>Attribute 1</th>
+            <td style="text-align: right">
+                <div>
+                    <input type="text" id="entity_attr1" placeholder="string" style="padding: unset">
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <th>Attribute 2</th>
+            <td style="text-align: right">
+                <div>
+                    <input type="text" id="entity_attr2" placeholder="number" style="padding: unset">
+                </div>
+            </td>
+        </tr>
+        <tr>
+        <th>Attribute 3</th>
+            <td style="text-align: right">
+                <div>
+                    <input type="text" id="entity_attr3" placeholder="date" style="padding: unset">
+                </div>
+            </td>
+        </tr>
+        <tr>
+        <th>Attribute 4</th>
+            <td style="text-align: right">
+                <div>
+                    <input type="email" id="entity_attr4" placeholder="email" style="padding: unset">
+                </div>
+            </td>
+        </tr>
     </table>
+
     <br>
 
+    <div id="buttons"></div>
 {% endblock %}
 
 {% block finalBodyJS %}
@@ -79,44 +80,133 @@
         let form_attr2 = $('#entity_attr2')
         let form_attr3 = $('#entity_attr3')
         let form_attr4 = $('#entity_attr4')
+        let buttons =  $('#buttons')
 
-        // Get api url
+        // Get api urls
         let urlGen = new ApmUrlGenerator('')
-        let apiUrl = urlGen.apiMetadataEditorGetData()
+        let apiUrlGet = urlGen.apiMetadataEditorGetData()
+        let apiUrlSave = urlGen.apiMetadataEditorSaveData()
+        let apiUrlCreate = urlGen.apiMetadataEditorCreateEntity()
 
-        // Button event
-        $("#edit_button").on("click", function () {
-            form_id.empty()
-        })
 
-        // Make API request
-        $.post(apiUrl).done((apiResponse) => {
+        // Button events
+        setupDefaultButtons()
 
-            // Catch errors
-            if (apiResponse.status !== 'OK') {
-                console.log(`Error in query for ${category}!`);
-                if (apiResponse.errorData !== undefined) {
-                    console.log(apiResponse.errorData);
+        function setupDefaultButtons () {
+
+            buttons.empty()
+            buttons.append
+            (`<button type="button" id="get_button" name="Get" style="background-color: white; padding: unset">Get Metadata By Entity ID</button>
+                <input type="number" id="id_selector" placeholder="0" style="padding: unset"><br>
+                <button type="button" id="edit_button" name="Edit" style="background-color: white; padding: unset">Edit Metadata</button><br>
+                <button type="button" id="create_button" name="Create" style="background-color: white; padding: unset">Create New Entity</button>`)
+
+            $("#get_button").on("click", function () {
+                let id_selector = $('#id_selector')
+                let id = id_selector.val()
+                showMetadata(id)
+            });
+
+            $("#edit_button").on("click", function () {
+
+                setupSaveButton()
+
+                $("#save_button").on("click", function () {
+                    let id = form_id.val()
+                    let type = form_type.val()
+                    let attributes = [form_attr1.val(), form_attr2.val(), form_attr3.val(), form_attr4.val()]
+
+                    saveMetadataById(id, type, attributes)
+                    setupDefaultButtons()
+
+                })
+            });
+
+            $("#create_button").on("click", function () {
+                let id = form_id.val()
+                let type = form_type.val()
+                let attributes = [form_attr1.val(), form_attr2.val(), form_attr3.val(), form_attr4.val()]
+
+                createEntity(id, type, attributes)
+            })
+
+        }
+
+        function setupSaveButton () {
+            buttons.empty()
+            buttons.append(`<button type="button" id="save_button" name="Save" style="background-color: white; padding: unset">Save Metadata</button>`)
+            return true
+        }
+
+        function showMetadata (id) {
+
+            let apiData = {id: id}
+
+            // Make API request
+            $.post(apiUrlGet, apiData).done((apiResponse) => {
+
+                // Catch errors
+                if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query for metadata of entity with ID ${id}!`);
+                    if (apiResponse.errorData !== undefined) {
+                        console.log(apiResponse.errorData);
+                    }
+                    errorMessageDiv.html(`Error while getting metadata, please report to technical administrators.`)
+                        .removeClass('text-error');
+                    return;
                 }
-                errorMessageDiv.html(`Error while getting metadata, please report to technical administrators.`)
-                    .removeClass('text-error');
-                return;
-            }
 
-            console.log(apiResponse);
+                console.log(`Got metadata for entity with ID ${id}`)
+                console.log(apiResponse);
 
-            // Get data from apiResponse
-            let data = apiResponse['data'];
+                data = apiResponse.data;
+                form_id.val(data.id)
+                form_type.val(data.type)
+                form_attr1.val(data.currentMetadata.attribute1)
+                form_attr2.val(data.currentMetadata.attribute2)
+                form_attr3.val(data.currentMetadata.attribute3)
+                form_attr4.val(data.currentMetadata.attribute4)
 
-            // Fill forms with data
-            form_id.val(data.id)
-            form_type.val(data.type)
-            form_attr1.val(data.currentMetadata.attribute1)
-            form_attr2.val(data.currentMetadata.attribute2)
-            form_attr3.val(data.currentMetadata.attribute3)
-            form_attr4.val(data.currentMetadata.attribute4)
+            })
 
-        })
+            return true
+        }
+
+        function saveMetadataById (id, type, attributes) {
+
+            let apiData = {id:id, type: type, attributes: attributes}
+            setMetadata(apiUrlSave, apiData)
+            console.log(`Saved metadata for entity with ID ${id}`)
+
+        }
+
+        function createEntity (id, type, attributes) {
+
+            let apiData = {id:id, type: type, attributes: attributes}
+
+            setMetadata(apiUrlCreate, apiData)
+            console.log(`Created entity with ID ${id}`)
+        }
+
+        function setMetadata (apiUrlSet, apiData) {
+
+            $.post(apiUrlSet, apiData).done((apiResponse) => {
+
+                // Catch errors
+                if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query for metadata of entity with ID ${apiData.id}!`);
+                    if (apiResponse.errorData !== undefined) {
+                        console.log(apiResponse.errorData);
+                    }
+                    errorMessageDiv.html(`Error while getting metadata, please report to technical administrators.`)
+                        .removeClass('text-error');
+                    return;
+                }
+
+                console.log(apiResponse);
+
+            })
+        }
 
     </script>
 {%  endblock %}

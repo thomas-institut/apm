@@ -324,6 +324,10 @@ class ApmUrlGenerator {
         return `${this.base}/api/metadataeditor/createentity`
     }
 
+    apiMetadataEditorGetIdForNewEntity() {
+        return `${this.base}/api/metadataeditor/getnewentityid`
+    }
+
     images() {
         return this.base + '/images'
     }

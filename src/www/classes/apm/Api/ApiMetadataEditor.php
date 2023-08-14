@@ -84,6 +84,22 @@ class ApiMetadataEditor extends ApiController
         ]);
     }
 
+    public function getIdForNewEntity (Request $request, Response $response): Response
+    {
+        $status = 'OK';
+        $now = TimeString::now();
+
+        // $id = $this->getIdForNewEntityFromSql();
+        $id = 115;
+
+        // ApiResponse
+        return $this->responseWithJson($response, [
+            'status' => $status,
+            'now' => $now,
+            'id' => $id,
+        ]);
+    }
+
     private function getMetadataFromSql(int $id): array {
 
         $data = [];
@@ -103,6 +119,14 @@ class ApiMetadataEditor extends ApiController
     private function createEntityInSql(int $id, string $type, array $attributes): bool {
 
         // TO DO | PLACE HERE A FUNCTION WHICH CREATES AN ENTITY WITH ITS METADATA IN A SQL TABLE
+
+
+        return true;
+    }
+
+    private function getIdForNewEntityFromSql(): bool {
+
+        // TO DO | PLACE HERE A FUNCTION WHICH GETS THE HIGHEST ID IN A SQL TABLE AND RETURNS ID+1
 
 
         return true;

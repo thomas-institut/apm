@@ -349,6 +349,10 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         ApiMetadataEditor::class . ':createEntity')
         ->setName('createentity');
 
+    $group->post('/metadataeditor/getnewentityid',
+        ApiMetadataEditor::class . ':getIdForNewEntity')
+        ->setName('getnewentityid');
+
     // LOG
     $group->post('/admin/log',
         function(Request $request, Response $response) use ($container){

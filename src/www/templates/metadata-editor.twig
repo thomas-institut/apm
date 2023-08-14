@@ -14,46 +14,44 @@
 {% block content %}
     <h1>Metadata Editor</h1>
 
-    <table class="doctable">
+    <table class="doctable dataTable">
         <tr>
-        <th>Entity ID</th>
-            <td style="text-align: right">
-                <div id="entity_id">
-                </div>
-            </td>
-        </tr>
-        <tr>
-        <th>Type</th>
-            <td style="text-align: right">
-                <div id="entity_type">
-                </div>
-            </td>
-        </tr>
-        <tr>
-        <th>Attribute 1</th>
-            <td style="text-align: right">
-                <div id="entity_attr1">
-                </div>
-            </td>
-        </tr>
-        <tr>
+            <th>Entity ID</th>
+            <th>Type</th>
+            <th>Attribute 1</th>
             <th>Attribute 2</th>
-            <td style="text-align: right">
+            <th>Attribute 3</th>
+            <th>Attribute 4</th>
+        </tr>
+        <tr>
+            <td>
+                <div id="entity_id">
+                    -
+                </div>
+            </td>
+            <td>
+                <div id="entity_type">
+                    -
+                </div>
+            </td>
+            <td>
+                <div id="entity_attr1">
+                    -
+                </div>
+            </td>
+            <td>
                 <div id="entity_attr2">
+                    -
                 </div>
             </td>
-        </tr>
-        <tr>
-        <th>Attribute 3</th>
-            <td style="text-align: right">
+            <td>
                 <div id="entity_attr3">
+                    -
                 </div>
             </td>
-        </tr>
-        <tr>
-        <th>Attribute 4</th>
-            <td style="text-align: right">
+            <td>
                 <div id="entity_attr4">
+                    -
                 </div>
             </td>
         </tr>
@@ -81,42 +79,46 @@
 
         // Get api urls
         let urlGen = new ApmUrlGenerator('')
-        let apiUrlGetData = urlGen.apiMetadataEditorGetData()
-        let apiUrlSaveData = urlGen.apiMetadataEditorSaveData()
-        let apiUrlCreateData = urlGen.apiMetadataEditorCreateEntity()
-        let apiUrlGetNewID = urlGen.apiMetadataEditorGetIdForNewEntity()
+
+        const apiUrls = {
+            getData: urlGen.apiMetadataEditorGetData(),
+            saveData: urlGen.apiMetadataEditorSaveData(),
+            createEntity: urlGen.apiMetadataEditorCreateEntity(),
+            getNewId: urlGen.apiMetadataEditorGetIdForNewEntity()
+        };
 
         // Button events
         setupDefaultButtons()
 
         function setupDefaultButtons () {
 
-            buttons.empty()
-            buttons.append
-            (`<button type="button" id="get_button" name="Get" style="background-color: white; padding: unset">Get Metadata By Entity ID</button>
-                <input type="number" id="id_selector" placeholder="0" style="padding: unset"><br>
-                <button type="button" id="edit_button" name="Edit" style="background-color: white; padding: unset">Edit Metadata</button><br>
-                <button type="button" id="create_button" name="Create" style="background-color: white; padding: unset">Create New Entity</button>`)
+            buttons.empty().append
+            (`<button type="button" id="get_button" name="Get" style="background-color: white; padding: unset">Get Metadata</button>
+                <button type="button" id="edit_button" name="Edit" style="background-color: white; padding: unset">Edit Metadata</button>
+                <button type="button" id="create_button" name="Create" style="background-color: white; padding: unset">Create New Entity</button><br>`)
 
             $("#get_button").on("click", function () {
-                let id_selector = $('#id_selector')
-                let id = id_selector.val()
-                getMetadata(id)
+                getMetadata(5)
             });
 
             $("#edit_button").on("click", function () {
-                setupInputForms()
-                fillInputForms()
-                setupSaveButton()
+                if (data.type === 'null') {
+                    console.log('Editing not possible. No entity was selected.')
+                }
+                else {
+                    setupInputForms()
+                    fillInputForms()
+                    setupSaveButton('edit')
+                    console.log('Metadata can now be edited.')
+                }
             });
 
             $("#create_button").on("click", function () {
                 form_id.empty()
                 getNewId()
                 setupInputForms()
-                setupSaveButton()
+                setupSaveButton('create')
             })
-
         }
 
         function setupInputForms() {
@@ -141,17 +143,18 @@
         }
 
         function clearTable() {
+            form_id.empty()
             form_type.empty()
             form_attr1.empty()
             form_attr2.empty()
             form_attr3.empty()
             form_attr4.empty()
         }
-        
+
         function getNewId() {
 
             // Make API request
-            $.post(apiUrlGetNewID).done((apiResponse) => {
+            $.post(apiUrls.getNewId).done((apiResponse) => {
 
                 // Catch errors
                 if (apiResponse.status !== 'OK') {
@@ -169,28 +172,52 @@
 
                 form_id.empty()
                 form_id.html(`${apiResponse.id}`)
+                data.id = apiResponse.id
 
                 return true
             })
         }
 
-        function setupSaveButton () {
-            buttons.empty()
-            buttons.append(`<button type="button" id="save_button" name="Save" style="background-color: white; padding: unset">Save Metadata</button>`)
+        function setupSaveButton (operation) {
+
+            buttons.empty().append(
+                `<button type="button" id="save_button" name="Save" style="background-color: white; padding: unset">Save Metadata</button>
+                 <button type="button" id="cancel_button" name="Save" style="background-color: white; padding: unset">Cancel</button><br>`)
 
             $("#save_button").on("click", function () {
-                let id = $('#entity_id_form').val()
-                let type = $('#entity_type_form').val()
-                let attributes = [$('#entity_attr1_form').val(), $('#entity_attr2_form').val(), $('#entity_attr3_form').val(), $('#entity_attr4_form').val()]
 
-                saveMetadataById(id, type, attributes)
-                setupDefaultButtons()
-                clearTable()
-                showMetadata(id, type, attributes)
+                let id = data.id
+                let type = $('#entity_type_form').val()
+                let attributes = [
+                    $('#entity_attr1_form').val(),
+                    $('#entity_attr2_form').val(),
+                    $('#entity_attr3_form').val(),
+                    $('#entity_attr4_form').val()]
+
                 data = {id: id, type: type, attributes: attributes}
+
+                if (operation === 'edit') {
+                    saveMetadataById(id, type, attributes)
+                }
+                else {
+                    createEntity(id, type, attributes)
+                }
+
+                setupDefaultButtons()
+                showMetadata(data)
+            })
+
+            $("#cancel_button").on("click", function () {
+                clearTable()
+                clearData()
+                setupDefaultButtons()
             })
 
             return true
+        }
+
+        function clearData () {
+            data = {id: 0, type: 'null', attributes: ['string', 0, 'date', 'email']}
         }
 
         function getMetadata (id) {
@@ -198,7 +225,7 @@
             let apiData = {id: id}
 
             // Make API request
-            $.post(apiUrlGetData, apiData).done((apiResponse) => {
+            $.post(apiUrls.getData, apiData).done((apiResponse) => {
 
                 // Catch errors
                 if (apiResponse.status !== 'OK') {
@@ -222,7 +249,6 @@
                     apiResponse.data.currentMetadata.attribute3,
                     apiResponse.data.currentMetadata.attribute4]
                 clearTable()
-                form_id.empty()
                 form_id.append(data.id)
                 form_type.append(data.type)
                 form_attr1.append(data.attributes[0])
@@ -236,27 +262,34 @@
             return false
         }
 
-        function showMetadata (id, type, attributes) {
+        function showMetadata (data) {
             clearTable()
-            form_id.append(id)
-            form_type.append(type)
-            form_attr1.append(attributes[0])
-            form_attr2.append(attributes[1])
-            form_attr3.append(attributes[2])
-            form_attr4.append(attributes[3])
+            form_id.append(data.id)
+            form_type.append(data.type)
+            form_attr1.append(data.attributes[0])
+            form_attr2.append(data.attributes[1])
+            form_attr3.append(data.attributes[2])
+            form_attr4.append(data.attributes[3])
         }
 
         function saveMetadataById (id, type, attributes) {
 
-            let apiData = {id:id, type: type, attributes: attributes}
-            setMetadata(apiUrlSaveData, apiData)
+            let apiData = {id: id, type: type, attributes: attributes}
+            setMetadata(apiUrls.saveData, apiData)
             console.log(`Saved metadata for entity with ID ${id}`)
 
         }
 
-        function setMetadata (apiUrlSet, apiData) {
+        function createEntity (id, type, attributes) {
 
-            $.post(apiUrlSet, apiData).done((apiResponse) => {
+            let apiData = {id: id, type: type, attributes: attributes}
+            setMetadata(apiUrls.createEntity, apiData)
+            console.log(`Created entity with ID ${id}`)
+        }
+
+        function setMetadata (apiUrl, apiData) {
+
+            $.post(apiUrl, apiData).done((apiResponse) => {
 
                 // Catch errors
                 if (apiResponse.status !== 'OK') {

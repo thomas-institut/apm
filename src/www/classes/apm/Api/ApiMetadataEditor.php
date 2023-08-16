@@ -21,17 +21,14 @@ class ApiMetadataEditor extends ApiController
 
         $data = ['id' => $id,
             'type' => 'person',
-            'currentMetadata' => [
-                'attribute1' => 'Lukas',
-                'attribute2' => 190,
-                'attribute3' => '21-01-1992',
-                'attribute4' => 'luk.reichert@posteo.de'
-            ],
+            'currentMetadata' => ['Lukas', 190, '21-01-1992', 'luk.reichert@posteo.de', 'Student', 'männlich'],
             'metadataSchema' => [
-                'attribute1' => 'type string',
-                'attribute2' => 'type number',
-                'attribute3' => 'type date',
-                'attribute4' => 'type emailAddress'
+                'Name' => 'string',
+                'Größe' => 'number',
+                'Geburtsdatum' => 'date',
+                'E-Mail Adresse' => 'email',
+                'Beruf' => 'string',
+                'Geschlecht' => 'string'
             ]
         ];
 
@@ -49,9 +46,9 @@ class ApiMetadataEditor extends ApiController
 
         $id = $_POST['id'];
         $type = $_POST['type'];
-        $attributes = $_POST['attributes'];
+        $values = $_POST['values'];
 
-        // $this->saveMetadataInSql($id, $type, $attributes);
+        // $this->saveMetadataInSql($id, $type, $values);
 
         // ApiResponse
         return $this->responseWithJson($response, [
@@ -59,7 +56,7 @@ class ApiMetadataEditor extends ApiController
             'now' => $now,
             'id' => $id,
             'type' => $type,
-            'attributes' => $attributes
+            'values' => $values
         ]);
     }
 
@@ -70,9 +67,9 @@ class ApiMetadataEditor extends ApiController
 
         $id = $_POST['id'];
         $type = $_POST['type'];
-        $attributes = $_POST['attributes'];
+        $values = $_POST['values'];
 
-        // $this->createEntityInSql($id, $type, $attributes);
+        // $this->createEntityInSql($id, $type, $values);
 
         // ApiResponse
         return $this->responseWithJson($response, [
@@ -80,7 +77,7 @@ class ApiMetadataEditor extends ApiController
             'now' => $now,
             'id' => $id,
             'type' => $type,
-            'attributes' => $attributes
+            'values' => $values
         ]);
     }
 
@@ -108,7 +105,7 @@ class ApiMetadataEditor extends ApiController
 
         return $data;
     }
-    private function saveMetadataInSql(int $id, string $type, array $attributes): bool {
+    private function saveMetadataInSql(int $id, string $type, array $values): bool {
 
         // TO DO | PLACE HERE A FUNCTION WHICH WRITES THE DATA GIVEN AS ARGUMENTS INTO A SQL TABLE
 
@@ -116,7 +113,7 @@ class ApiMetadataEditor extends ApiController
         return true;
     }
 
-    private function createEntityInSql(int $id, string $type, array $attributes): bool {
+    private function createEntityInSql(int $id, string $type, array $values): bool {
 
         // TO DO | PLACE HERE A FUNCTION WHICH CREATES AN ENTITY WITH ITS METADATA IN A SQL TABLE
 

@@ -14,67 +14,23 @@
 {% block content %}
     <h1>Metadata Editor</h1>
 
-    <table class="doctable dataTable">
-        <tr>
-            <th>Entity ID</th>
-            <th>Type</th>
-            <th>Attribute 1</th>
-            <th>Attribute 2</th>
-            <th>Attribute 3</th>
-            <th>Attribute 4</th>
-        </tr>
-        <tr>
-            <td>
-                <div id="entity_id">
-                    -
-                </div>
-            </td>
-            <td>
-                <div id="entity_type">
-                    -
-                </div>
-            </td>
-            <td>
-                <div id="entity_attr1">
-                    -
-                </div>
-            </td>
-            <td>
-                <div id="entity_attr2">
-                    -
-                </div>
-            </td>
-            <td>
-                <div id="entity_attr3">
-                    -
-                </div>
-            </td>
-            <td>
-                <div id="entity_attr4">
-                    -
-                </div>
-            </td>
-        </tr>
-    </table>
-
+    <table class="dataTable"><tr id="tableHead"></tr><tr id="tableBody"></tr></table>
+    <br>
+    <div id="buttons"></div>
     <br>
 
-    <div id="buttons"></div>
 {% endblock %}
 
 {% block finalBodyJS %}
     <script>
 
         // Constant to store data in
-        let data = {id: 0, type: 'null', attributes: ['string', 0, 'date', 'email']}
+        let entity = {id: 0, type: 'null', attributes: [], values: [], types: []}
+        let numAttributes = 0
 
-        // Get selectors
-        let form_id = $('#entity_id');
-        let form_type = $('#entity_type')
-        let form_attr1 = $('#entity_attr1')
-        let form_attr2 = $('#entity_attr2')
-        let form_attr3 = $('#entity_attr3')
-        let form_attr4 = $('#entity_attr4')
+        // Selectors
+        let form_id
+        let form_type
         let buttons =  $('#buttons')
 
         // Get api urls
@@ -87,28 +43,45 @@
             getNewId: urlGen.apiMetadataEditorGetIdForNewEntity()
         };
 
-        // Button events
-        setupDefaultButtons()
+        // Setup get button
+        setupGetButton()
+
+        function setupGetButton() {
+
+            buttons.empty().append
+            (`<button type="button" id="get_button" name="Get" style="background-color: white; padding: unset">Get Metadata</button>`)
+
+            $("#get_button").on("click", function () {
+                getMetadata(5, function() {
+                    makeTable()
+                    showMetadata()
+                    setupDefaultButtons()
+                })
+            });
+        }
 
         function setupDefaultButtons () {
 
             buttons.empty().append
             (`<button type="button" id="get_button" name="Get" style="background-color: white; padding: unset">Get Metadata</button>
                 <button type="button" id="edit_button" name="Edit" style="background-color: white; padding: unset">Edit Metadata</button>
-                <button type="button" id="create_button" name="Create" style="background-color: white; padding: unset">Create New Entity</button><br>`)
+                <button type="button" id="create_button" name="Create" style="background-color: white; padding: unset">Create New Entity</button>`)
 
             $("#get_button").on("click", function () {
-                getMetadata(5)
+                clearData()
+                getMetadata(5, function() {
+                    showMetadata()
+                })
             });
 
             $("#edit_button").on("click", function () {
-                if (data.type === 'null') {
+                if (entity.type === 'null') {
                     console.log('Editing not possible. No entity was selected.')
                 }
                 else {
                     setupInputForms()
                     fillInputForms()
-                    setupSaveButton('edit')
+                    setupSaveAndCancelButtons('editmode')
                     console.log('Metadata can now be edited.')
                 }
             });
@@ -117,38 +90,87 @@
                 form_id.empty()
                 getNewId()
                 setupInputForms()
-                setupSaveButton('create')
+                setupSaveAndCancelButtons('createmode')
             })
         }
 
         function setupInputForms() {
             form_type.html(
                 `<input type="text" id="entity_type_form" placeholder="string" style="padding: unset">`)
-            form_attr1.html(
-                `<input type="text" id="entity_attr1_form" placeholder="string" style="padding: unset">`)
-            form_attr2.html(
-                `<input type="text" id="entity_attr2_form" placeholder="number" style="padding: unset">`)
-            form_attr3.html(
-                `<input type="text" id="entity_attr3_form" placeholder="date" style="padding: unset">`)
-            form_attr4.html(
-                `<input type="email" id="entity_attr4_form" placeholder="email" style="padding: unset">`)
+            for (let i=1; i<=numAttributes; i++) {
+                let selectorId = "#entity_attr" + i
+                let inputId = "entity_attr" + i + "_form"
+                let placeholder = entity.types[i-1]
+                $(selectorId).html(
+                    `<input type="text" id=${inputId} placeholder=${placeholder} style="padding: unset">`)
             }
+        }
 
         function fillInputForms() {
-            $('#entity_type_form').val(data.type)
-            $('#entity_attr1_form').val(data.attributes[0])
-            $('#entity_attr2_form').val(data.attributes[1])
-            $('#entity_attr3_form').val(data.attributes[2])
-            $('#entity_attr4_form').val(data.attributes[3])
+            $('#entity_type_form').val(entity.type)
+            for (let i=1; i<=numAttributes; i++) {
+                let id = "#entity_attr" + i + "_form"
+                $(id).val(entity.values[i-1])
+            }
+        }
+
+        function makeTable() {
+
+            let thead = $('#tableHead')
+            let tbody = $('#tableBody')
+
+            thead.append(`
+                <th>Entity ID</th>
+                <th>Type</th>`)
+
+            tbody.append(`
+                <td>
+                    <div id="entity_id">
+                        -
+                    </div>
+                </td>
+                <td>
+                    <div id="entity_type">
+                        -
+                    </div>
+                </td>`)
+
+            for (let i=1; i<=numAttributes; i++) {
+
+                let id = "entity_attr" + i
+
+                thead.append(`<th>${entity.attributes[i-1]}</th>`)
+
+            tbody.append(`
+                <td>
+                    <div id=${id}>
+                        -
+                    </div>
+                </td>`)
+            }
+
+            form_id = $('#entity_id');
+            form_type = $('#entity_type')
+
+            return true
         }
 
         function clearTable() {
             form_id.empty()
             form_type.empty()
-            form_attr1.empty()
-            form_attr2.empty()
-            form_attr3.empty()
-            form_attr4.empty()
+            for (let i=1; i<=numAttributes; i++) {
+                let id = "#entity_attr" + i
+                $(id).empty()
+            }
+        }
+
+        function resetTable() {
+            form_id.empty().append('-')
+            form_type.empty().append('-')
+            for (let i=1; i<=numAttributes; i++) {
+                let id = "#entity_attr" + i
+                $(id).empty().append('-')
+            }
         }
 
         function getNewId() {
@@ -168,47 +190,49 @@
                 }
 
                 console.log(apiResponse);
-                console.log(`ID for new entity is ${apiResponse.id}`)
+                console.log(`ID for new entity will be ${apiResponse.id}`)
 
                 form_id.empty()
                 form_id.html(`${apiResponse.id}`)
-                data.id = apiResponse.id
+                entity.id = apiResponse.id
 
                 return true
             })
         }
 
-        function setupSaveButton (operation) {
+        function setupSaveAndCancelButtons (mode) {
 
             buttons.empty().append(
                 `<button type="button" id="save_button" name="Save" style="background-color: white; padding: unset">Save Metadata</button>
-                 <button type="button" id="cancel_button" name="Save" style="background-color: white; padding: unset">Cancel</button><br>`)
+                 <button type="button" id="cancel_button" name="Save" style="background-color: white; padding: unset">Cancel</button>`)
 
             $("#save_button").on("click", function () {
 
-                let id = data.id
+                let id = entity.id
                 let type = $('#entity_type_form').val()
-                let attributes = [
-                    $('#entity_attr1_form').val(),
-                    $('#entity_attr2_form').val(),
-                    $('#entity_attr3_form').val(),
-                    $('#entity_attr4_form').val()]
+                let values = []
 
-                data = {id: id, type: type, attributes: attributes}
+                for (let i=1; i<=numAttributes; i++) {
+                    let id = "#entity_attr" + i + "_form"
+                    values.push($(id).val())
+                }
 
-                if (operation === 'edit') {
-                    saveMetadataById(id, type, attributes)
+                entity.type = type
+                entity.values = values
+
+                if (mode === 'editmode') {
+                    saveMetadataById(id, type, values)
                 }
                 else {
-                    createEntity(id, type, attributes)
+                    createEntity(id, type, values)
                 }
 
                 setupDefaultButtons()
-                showMetadata(data)
+                showMetadata()
             })
 
             $("#cancel_button").on("click", function () {
-                clearTable()
+                resetTable()
                 clearData()
                 setupDefaultButtons()
             })
@@ -217,10 +241,12 @@
         }
 
         function clearData () {
-            data = {id: 0, type: 'null', attributes: ['string', 0, 'date', 'email']}
+            entity.id = 0
+            entity.type = 'null'
+            entity.values = []
         }
 
-        function getMetadata (id) {
+        function getMetadata (id, callback) {
 
             let apiData = {id: id}
 
@@ -241,20 +267,22 @@
                 console.log(`Got metadata for entity with ID ${id}`)
                 console.log(apiResponse);
 
-                data.id = apiResponse.data.id
-                data.type = apiResponse.data.type
-                data.attributes = [
-                    apiResponse.data.currentMetadata.attribute1,
-                    apiResponse.data.currentMetadata.attribute2,
-                    apiResponse.data.currentMetadata.attribute3,
-                    apiResponse.data.currentMetadata.attribute4]
-                clearTable()
-                form_id.append(data.id)
-                form_type.append(data.type)
-                form_attr1.append(data.attributes[0])
-                form_attr2.append(data.attributes[1])
-                form_attr3.append(data.attributes[2])
-                form_attr4.append(data.attributes[3])
+                // Fill data-object with relevant data
+                entity.id = apiResponse.data.id
+                entity.type = apiResponse.data.type
+                Object.entries(apiResponse.data.currentMetadata).forEach((value, index) => {
+                    entity.values[index] = value[1]
+                })
+                Object.entries(apiResponse.data.metadataSchema).forEach((value, index) => {
+                    entity.attributes[index] = value[0]
+                    entity.types[index] = value[1]
+                })
+
+                // Store number of values
+                numAttributes = entity.attributes.length
+                console.log(`Entity has ${numAttributes} attributes.`)
+
+                callback()
 
                 return true
             })
@@ -262,29 +290,26 @@
             return false
         }
 
-        function showMetadata (data) {
+        function showMetadata () {
             clearTable()
-            form_id.append(data.id)
-            form_type.append(data.type)
-            form_attr1.append(data.attributes[0])
-            form_attr2.append(data.attributes[1])
-            form_attr3.append(data.attributes[2])
-            form_attr4.append(data.attributes[3])
+            form_id.append(entity.id)
+            form_type.append(entity.type)
+            for (let i=1; i<=numAttributes; i++) {
+                let id = "#entity_attr" + i
+                $(id).append(entity.values[i-1])
+            }
         }
 
-        function saveMetadataById (id, type, attributes) {
+        function saveMetadataById (id, type, values) {
 
-            let apiData = {id: id, type: type, attributes: attributes}
+            let apiData = {id: id, type: type, values: values}
             setMetadata(apiUrls.saveData, apiData)
-            console.log(`Saved metadata for entity with ID ${id}`)
-
         }
 
-        function createEntity (id, type, attributes) {
+        function createEntity (id, type, values) {
 
-            let apiData = {id: id, type: type, attributes: attributes}
+            let apiData = {id: id, type: type, values: values}
             setMetadata(apiUrls.createEntity, apiData)
-            console.log(`Created entity with ID ${id}`)
         }
 
         function setMetadata (apiUrl, apiData) {
@@ -303,6 +328,7 @@
                 }
 
                 console.log(apiResponse);
+                console.log(`Created and/or saved metadata for entity with ID ${apiData.id}`)
 
             })
         }

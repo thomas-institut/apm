@@ -353,6 +353,10 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         ApiMetadataEditor::class . ':getIdForNewEntity')
         ->setName('getnewentityid');
 
+    $group->post('/metadataeditor/gettypedata',
+        ApiMetadataEditor::class . ':getTypeData')
+        ->setName('gettypedata');
+
     // LOG
     $group->post('/admin/log',
         function(Request $request, Response $response) use ($container){

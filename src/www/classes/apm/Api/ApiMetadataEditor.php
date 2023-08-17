@@ -20,15 +20,46 @@ class ApiMetadataEditor extends ApiController
         // $data = $this->getMetadataFromSql($id);
 
         $data = ['id' => $id,
-            'type' => 'person',
-            'currentMetadata' => ['Lukas', 190, '21-01-1992', 'luk.reichert@posteo.de', 'Student', 'männlich'],
+            'type' => 'Testtype',
+            'currentMetadata' => ['Test', 19, '20-07-1982', 'test@mail.com'],
             'metadataSchema' => [
-                'Name' => 'string',
-                'Größe' => 'number',
-                'Geburtsdatum' => 'date',
-                'E-Mail Adresse' => 'email',
-                'Beruf' => 'string',
-                'Geschlecht' => 'string'
+                'Attribute 1' => 'string',
+                'Attribute 2' => 'number',
+                'Attribute 3' => 'date',
+                'Attribute 4' => 'email',
+            ]
+        ];
+
+        // ApiResponse
+        return $this->responseWithJson($response, [
+            'data' => $data,
+            'serverTime' => $now,
+            'status' => $status]);
+    }
+
+    public function getTypeData(Request $request, Response $response): Response
+    {
+        $status = 'OK';
+        $now = TimeString::now();
+
+        // POSSIBLE TYPES OF ENTITIES CAN EITHER BE HARD-CODED HERE OR ABSTRACTED FROM DATA STORED IN A SQL TABLE
+        // $data = $this->getTypeSchemesFromSql();
+
+        $data = [
+            'Type 1' => [
+                'Attribute 1' => 'string',
+                'Attribute 2' => 'number',
+                'Attribute 3' => 'date',
+                'Attribute 4' => 'email',
+            ],
+            'Type 2' => [
+                'Attribute 1' => 'string',
+                'Attribute 2' => 'number',
+            ],
+            'Type 3' => [
+                'Attribute 1' => 'string',
+                'Attribute 2' => 'number',
+                'Attribute 3' => 'number',
             ]
         ];
 

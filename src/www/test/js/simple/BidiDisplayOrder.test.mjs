@@ -5,65 +5,85 @@ import { BidiDisplayOrder } from '../../../js/Typesetter2/BidiDisplayOrder.mjs'
 
 testSuite('Bidi Display Order', () => {
   test('Unidirectional Strings', () => {
+    let testCases = [
+      {
+        context:' Simple LTR text',
+        testItems:  [ 'This', ' ', 'is', ' ', 'a', ' ', 'test', ' '],
+        defaultTextDirection: 'ltr',
+        expectedOrder: [...Array(8).keys()],
+        expectedDirections: Array(8).fill('ltr')
+      },
+      {
+        context: 'Simple RTL text',
+        testItems:  [ 'THIS', ' ', 'IS', ' ', 'A', ' ', 'TEST', ' '],
+        defaultTextDirection: 'rtl',
+        expectedOrder: [...Array(8).keys()],
+        expectedDirections: Array(8).fill('rtl')
+      }
+    ]
 
-    let testItems
-    let result
-
-    testItems = [ 'This', ' ', 'is', ' ', 'a', ' ', 'test', ' ']
-    result = BidiDisplayOrder.getDisplayOrder(testItems, 'ltr', getStringTextDirectionCapsFake)
-    expect(result, 'Simple LTR text').toBeOfLength(testItems.length)
-    for (let i = 0; i < testItems.length; i++) {
-      let resultItem = result[i]
-      let context = `Simple RTL text, item ${i}`
-      expect(resultItem.inputIndex,context ).toBe(i)
-      expect(resultItem.textDirection,context).toBe('ltr')
-    }
-
-    testItems = [ 'THIS', ' ', 'IS', ' ', 'A', ' ', 'TEST', ' ']
-    result = BidiDisplayOrder.getDisplayOrder(testItems, 'rtl', getStringTextDirectionCapsFake)
-    expect(result, 'Simple RTL text').toBeOfLength(testItems.length)
-    for (let i = 0; i < testItems.length; i++) {
-      let resultItem = result[i]
-      let context = `Simple RTL text, item ${i}`
-      expect(resultItem.inputIndex,context ).toBe(i)
-      expect(resultItem.textDirection,context).toBe('rtl')
-    }
+    doTestCases(testCases, getStringTextDirectionCapsFake )
   })
 
   test('Bidirectional Strings', () => {
-    let testItems
-    let result
-    let expectedOrder
-    let expectedDirections
-    let context
+
+    let testCases = [
+      {
+        context:'Bidi text mostly LTR',
+        testItems: [ 'New', ' ', 'car', ' ', 'is', ' ', 'SAYYYARA', ' ', 'YADIDA', ' ', 'in', ' ', 'Arabic'],
+        defaultTextDirection: 'ltr',
+        expectedOrder: [ 0, 1, 2, 3, 4, 5, 8, 7, 6, 9, 10, 11, 12],
+        expectedDirections: [ 'ltr', 'ltr','ltr','ltr','ltr', 'ltr', 'rtl','rtl','rtl','ltr','ltr','ltr', 'ltr']
+      },
+      {
+        context:'Bidi text mostly LTR with numbers',
+        testItems:[ 'a', ' ', '1980', ' ', 'new', ' ', 'car', ' ', 'is', ' ', 'AL-SAYYYARA', ' ', 'AL-YADIDA', ' ', '1980', ' ', 'in', ' ', 'Arabic'],
+        defaultTextDirection: '',
+        expectedOrder: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,  14, 13, 12, 11, 10, 15, 16, 17, 18],
+        expectedDirections: [ 'ltr', 'ltr','ltr','ltr','ltr', 'ltr', 'ltr','ltr','ltr','ltr','rtl','rtl','rtl', 'rtl', 'rtl','ltr','ltr','ltr', 'ltr']
+      },
+      {
+        context:'Bidi text mostly RTL with numbers',
+        testItems: [ 'A', ' ', '1980', ' ', 'NEW', ' ', 'CAR', ' ', 'IS', ' ', 'sayyara', ' ', 'yadida', ' ', '1980', ' ', 'IN', ' ', 'ARABIC'],
+        defaultTextDirection: '',
+        expectedOrder: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 13, 12, 11, 10, 15, 16, 17, 18, 19],
+        expectedDirections: [ 'rtl', 'rtl','rtl','rtl','rtl','rtl','rtl','rtl','rtl','rtl','ltr','ltr','ltr','ltr','ltr','rtl','rtl','rtl','rtl', 'rtl']
+      }
+    ]
+    doTestCases(testCases, getStringTextDirectionCapsFake)
+  })
+
+  test('Strings with punctuation', () => {
+    let testCases = [
+      {
+        context: 'Bidi text with punctuation',
+        testItems: [ 'the', ' ', 'car', 'SAYYARA', ' ', 'YADIDA', ';', ' ', 'and', ' ', 'more'],
+        defaultTextDirection: 'ltr',
+        expectedOrder:      [ 0,      1,     2,     5,     4,    3,      6, 7, 8, 9, 10],
+        expectedDirections: [ 'ltr', 'ltr', 'ltr', 'rtl', 'rtl', 'rtl', 'ltr', 'ltr', 'ltr', 'ltr', 'ltr']
+      },
+      {
+        context: 'Bidi text with punctuation and numbers',
+        testItems:          [ 'the', ' ',   'car', 'SAYYARA',  ' ',  'YADIDA', ' ',    '1980', ';',    ' ', 'and', ' ', 'more'],
+        defaultTextDirection: 'ltr',
+        expectedOrder:      [  0,     1,     2,     7,          6,     5,       4,      3,      8,      9,     10, 11, 12],
+        expectedDirections: [ 'ltr', 'ltr', 'ltr', 'rtl',      'rtl', 'rtl',    'rtl',  'rtl',  'ltr', 'ltr', 'ltr', 'ltr', 'ltr']
+      }
 
 
-    context = 'Bidi text mostly LTR'
-    testItems = [ 'New', ' ', 'car', ' ', 'is', ' ', 'SAYYYARA', ' ', 'YADIDA', ' ', 'in', ' ', 'Arabic']
-    result = BidiDisplayOrder.getDisplayOrder(testItems, 'ltr', getStringTextDirectionCapsFake)
-    expect(result, context).toBeOfLength(testItems.length)
-    expectedOrder = [ 0, 1, 2, 3, 4, 5, 8, 7, 6, 9, 10, 11, 12]
-    expectedDirections = [ 'ltr', 'ltr','ltr','ltr','ltr', 'ltr', 'rtl','rtl','rtl','ltr','ltr','ltr', 'ltr']
-    expectResults(context, result, expectedOrder, expectedDirections)
-
-
-    context = 'Bidi text mostly LTR with numbers'
-    testItems = [ 'a', ' ', '1980', ' ', 'new', ' ', 'car', ' ', 'is', ' ', 'AL-SAYYYARA', ' ', 'AL-YADIDA', ' ', '1980', ' ', 'in', ' ', 'Arabic']
-    result = BidiDisplayOrder.getDisplayOrder(testItems, '', getStringTextDirectionCapsFake)
-    expect(result, context).toBeOfLength(testItems.length)
-    expectedOrder = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,  14, 13, 12, 11, 10, 15, 16, 17, 18]
-    expectedDirections = [ 'ltr', 'ltr','ltr','ltr','ltr', 'ltr', 'ltr','ltr','ltr','ltr','rtl','rtl','rtl', 'rtl', 'rtl','ltr','ltr','ltr', 'ltr']
-    expectResults(context, result, expectedOrder, expectedDirections)
-
-    context = 'Bidi text mostly RTL with numbers'
-    testItems = [ 'A', ' ', '1980', ' ', 'NEW', ' ', 'CAR', ' ', 'IS', ' ', 'sayyara', ' ', 'yadida', ' ', '1980', ' ', 'IN', ' ', 'ARABIC']
-    result = BidiDisplayOrder.getDisplayOrder(testItems, '', getStringTextDirectionCapsFake)
-    expect(result, context).toBeOfLength(testItems.length)
-    expectedOrder = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 13, 12, 11, 10, 15, 16, 17, 18, 19]
-    expectedDirections = [ 'rtl', 'rtl','rtl','rtl','rtl','rtl','rtl','rtl','rtl','rtl','ltr','ltr','ltr','ltr','ltr','rtl','rtl','rtl','rtl', 'rtl']
-    expectResults(context, result, expectedOrder, expectedDirections)
+    ]
+    doTestCases(testCases, getStringTextDirectionCapsFake)
   })
 })
+
+function doTestCases(testCaseArray, getItemIntrinsicTextDirection) {
+  testCaseArray.forEach( (testCase) => {
+    let result = BidiDisplayOrder.getDisplayOrder(testCase.testItems, testCase.defaultTextDirection, getItemIntrinsicTextDirection )
+    expect(result, testCase.context).toBeOfLength(testCase.testItems.length)
+    expectResults(testCase.context, result, testCase.expectedOrder, testCase.expectedDirections)
+  })
+
+}
 
 function expectResults(context, result, expectedOrder, expectedDirections ) {
   for(let i = 0; i < result.length; i++) {
@@ -93,5 +113,6 @@ function getStringTextDirectionCapsFake( someString) {
       return 'ltr'
     }
   }
+  // anything else, e.g. punctuation
   return ''
 }

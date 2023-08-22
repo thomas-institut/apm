@@ -128,7 +128,7 @@ export class LanguageDetector {
         return lang
       }
     }
-    // no match, so it should latin script
+    // no match, so it should be latin script
     return 'la'
   }
 

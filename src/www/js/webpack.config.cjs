@@ -26,8 +26,8 @@ module.exports = {
     ApmLogPage: './pages/ApmLogPage.js',
     DashboardPage: './pages/DashboardPage.js',
     SearchPage: './pages/SearchPage.js',
-    UserManager: './pages/UserManagerPage.js',
-    UserProfile:  './pages/UserProfilePage.js',
+    UserManagerPage: './pages/UserManagerPage.js',
+    UserProfilePage:  './pages/UserProfilePage.js',
     // JASMINE TESTS
     JasmineTests: {
       import: '../test/js/modules-to-test.js',

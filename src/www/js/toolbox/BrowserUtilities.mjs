@@ -17,23 +17,28 @@
  */
 
 
-const maxCanvasDimension = 20000
+const maxCanvasDimension = 32000
+const maxCanvasArea  = 16000 * 16000
+
 
 export class BrowserUtilities {
 
   static setCanvasHiPDI(canvasElement, width, height) {
-    console.log(`Setting canvas to ${width} x ${height} pixels`)
-    width = width > maxCanvasDimension ? maxCanvasDimension : width
-    height = height > maxCanvasDimension ? maxCanvasDimension : height
-    if (width === maxCanvasDimension || height === maxCanvasDimension) {
-      console.warn(`Oversized canvas cropped to ${width} x ${height} pixels`)
-    }
+    let ratio = window.devicePixelRatio
+    // let ratio = 1
+    console.log(`Setting canvas to ${width} x ${height} pixels, pixel ratio = ${ratio}`)
 
-    let ratio = window.devicePixelRatio;
-    canvasElement.width = width * ratio;
-    canvasElement.height = height * ratio;
-    canvasElement.style.width = width + "px";
-    canvasElement.style.height = height + "px";
+    let canvasWidth
+    let canvasHeight
+    [canvasWidth, canvasHeight] = getSafeCanvasDimensions(width, height, ratio, true)
+    if (canvasWidth === maxCanvasDimension || canvasHeight === maxCanvasDimension) {
+      console.warn(`Oversized canvas cropped to ${canvasWidth} x ${canvasHeight} pixels`)
+    }
+    canvasElement.width = canvasWidth
+    canvasElement.height = canvasHeight
+
+    canvasElement.style.width = canvasWidth + "px"
+    canvasElement.style.height = canvasHeight + "px"
     let context = canvasElement.getContext("2d")
     try {
       context.scale(ratio, ratio);
@@ -42,5 +47,23 @@ export class BrowserUtilities {
     }
     return canvasElement;
   }
+}
 
+function getDimension(dimension, ratio, max) {
+  return dimension * ratio > max ? max : dimension * ratio
+}
+
+function getSafeCanvasDimensions(width, height, ratio, cropHeight = true) {
+  let canvasWidth = getDimension(width, ratio, maxCanvasDimension)
+  let canvasHeight = getDimension(height, ratio, maxCanvasDimension)
+  let canvasArea = canvasHeight * canvasWidth
+  if (canvasArea > maxCanvasArea) {
+    // need to crop one dimension
+    if (cropHeight) {
+      canvasHeight = Math.floor(maxCanvasArea / canvasWidth)
+    } else {
+      canvasWidth = Math.floor(maxCanvasArea / canvasHeight)
+    }
+  }
+  return [ canvasWidth, canvasHeight]
 }

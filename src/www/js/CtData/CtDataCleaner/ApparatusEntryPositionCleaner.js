@@ -35,13 +35,13 @@ export class ApparatusEntryPositionCleaner extends CtDataCleaner {
           if (fromToken.tokenType !== 'word' && fromToken.tokenType !== 'punctuation') {
             errorsFound = true
             // fix it by looking at the closest word or punctuation token before the toToken
-            console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'from' index ${entry.from} refers to non-printable token (${toToken.tokenType})`)
+            console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'from' index ${entry.from} refers to non-printable token (${fromToken.tokenType})`)
             let newIndex = this.findPrintableIndex(editionWitnessTokens, entry.from, entry.to, true)
             if (newIndex === -1) {
               console.warn(`Could not fix the problem`)
               errorsNotFixed = true
             } else {
-              console.log(`Problem fixed`)
+              console.log(`Problem fixed, new 'from' index is ${newIndex}`)
               entry.from = newIndex
             }
           }
@@ -59,7 +59,7 @@ export class ApparatusEntryPositionCleaner extends CtDataCleaner {
               errorsNotFixed = true
               console.warn(`Could not fix the problem`)
             } else {
-              console.log(`Problem fixed`)
+              console.log(`Problem fixed, new 'to' index is ${newIndex }`)
               entry.to = newIndex
             }
           }
@@ -91,20 +91,26 @@ export class ApparatusEntryPositionCleaner extends CtDataCleaner {
   findPrintableIndex(tokens, from, to, forward) {
 
     let index = forward ? from : to
-    let limit = forward ? to+1 : from-1  // add/subtract 1 so that the limit itself is included in the loop
+    let limit = forward ? to : from  // add/subtract 1 so that the limit itself is included in the loop
+
+
 
     while(index !== limit) {
       if (tokens[index].tokenType === 'word' || tokens[index].tokenType === 'punctuation') {
         return index
       }
-      index = forward ? index++ : index--
+      if (forward) {
+        index++
+        if (index > limit) {
+          break
+        }
+      } else {
+        index--
+        if (index < limit) {
+          break
+        }
+      }
     }
-
     return -1
-
-
   }
-
-
-
 }

@@ -46,7 +46,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
 
     this.options = oc.getCleanOptions(options)
     this.ctData = this.options.ctData
-    this.debug = true
+    this.debug = false
   }
 
   generateEdition () {

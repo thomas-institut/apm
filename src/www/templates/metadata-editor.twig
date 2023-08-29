@@ -26,10 +26,8 @@
 
         // Constants to store data in
         let entity = {id: 0, type: 'null', attributes: [], values: [], types: []}
+        let schemes = {types: [], attributes: [], placeholders: []}
         let numAttributes = 0
-        let types = []
-        let typeAttributes = []
-        let typeAttributesPlaceholders = []
         let notfirstquery = false
         let state = {create: 'creating', edit: 'editing'}
         let thead
@@ -56,13 +54,14 @@
 
         function setupGetButton() {
 
-            buttons.empty().append
+            buttons.append
             (`<button type="button" id="get_button" name="Get" style="background-color: white; padding: unset">Get Metadata</button>`)
 
             $("#get_button").on("click", function () {
                 getMetadata(5, function() {
                     makeTable()
                     showMetadata()
+                    clearButtons()
                     setupDefaultButtons()
                 })
             });
@@ -70,7 +69,7 @@
 
         function setupDefaultButtons () {
 
-            buttons.empty().append
+            buttons.append
             (`<button type="button" id="get_button" name="Get" style="background-color: white; padding: unset">Get Metadata</button>
                 <button type="button" id="edit_button" name="Edit" style="background-color: white; padding: unset">Edit Metadata</button>
                 <button type="button" id="create_button" name="Create" style="background-color: white; padding: unset">Create New Entity</button>`)
@@ -88,35 +87,49 @@
                     console.log('Editing not possible. No entity was selected.')
                 }
                 else {
-                    setupInputForms(state.edit)
-                    fillInputForms()
-                    setupSaveAndCancelButtons(state.edit)
+                    clearButtons()
+                    setupInputForms(state.edit, function() {
+                        setupSaveAndCancelButtons(state.edit)
+                    })
                     console.log('Metadata can now be edited.')
                 }
             });
 
             $("#create_button").on("click", function () {
                 entity_id_cell.empty()
-                getNewId()
-                setupInputForms(state.create)
-                setupSaveAndCancelButtons(state.create)
+                clearButtons()
+                setupInputForms(state.create, function() {
+                    setupSaveAndCancelButtons(state.create)
+                })
             })
         }
 
-        function setupInputForms(mode) {
+        function setupInputForms(mode, callback) {
 
             if (mode === state.create) {
                 clearData()
-                clearTable()
+                clearTableCells()
                 removeTableRows()
                 getTypeData(function() {
-                    setupAttributesAndPlaceholders()
+                    makeEntityFitToSchema(schemes.types[0])
                     makeTable()
+                    getNewId(function () {
+                        showId()
+                    })
                     setupTypeSelector()
-                    setupSelectorOptions(types)
+                    setupSelectorOptions()
+                    makeAttributeForms()
+                    callback()
                 })
             }
+            else {
+                makeAttributeForms()
+                fillInputForms()
+                callback()
+            }
+        }
 
+        function makeAttributeForms() {
             for (let i=1; i<=numAttributes; i++) {
                 let selectorId = "#entity_attr" + i
                 let inputId = "entity_attr" + i + "_form"
@@ -129,20 +142,35 @@
         function setupTypeSelector() {
             entity_type_cell.html(
                 `<select id="entity_type_select">`)
+
+            $("#entity_type_select").on("change", function () {
+                makeEntityFitToSchema(this.value)
+                clearTableCells()
+                removeTableRows()
+                makeTable()
+                showId()
+                setupTypeSelector()
+                setupSelectorOptions(this.value)
+                makeAttributeForms()
+                console.log(`Adjusted table to chosen entity type "${this.value}".`)
+            });
         }
 
-        function setupSelectorOptions(options) {
-            $.each(options, function (i, option) {
-                $('#entity_type_select').append($('<option>', {
-                    value: option,
-                    text : option
+        function setupSelectorOptions(value=schemes.types[0]) {
+            let selector = $('#entity_type_select')
+            $.each(schemes.types, function (i, type) {
+                selector.append($('<option>', {
+                    value: type,
+                    text : type
                 }))
             })
+            selector.val(value)
         }
 
-        function setupAttributesAndPlaceholders() {
-            entity.attributes = typeAttributes[2]
-            entity.types = typeAttributesPlaceholders[2]
+        function makeEntityFitToSchema(type) {
+            let i = schemes.types.indexOf(type)
+            entity.attributes = schemes.attributes[i]
+            entity.types = schemes.placeholders[i]
             numAttributes = entity.attributes.length
         }
 
@@ -207,21 +235,12 @@
             return true
         }
 
-        function clearTable() {
+        function clearTableCells() {
             entity_id_cell.empty()
             entity_type_cell.empty()
             for (let i=1; i<=numAttributes; i++) {
                 let id = "#entity_attr" + i
                 $(id).empty()
-            }
-        }
-
-        function resetTable() {
-            entity_id_cell.empty().append('-')
-            entity_type_cell.empty().append('-')
-            for (let i=1; i<=numAttributes; i++) {
-                let id = "#entity_attr" + i
-                $(id).empty().append('-')
             }
         }
 
@@ -243,13 +262,14 @@
                 console.log(apiResponse);
                 console.log(`Got type data.`)
 
+                schemes.types = []
                Object.entries(apiResponse.data).forEach((element, index) => {
-                   types.push(element[0])
-                   typeAttributes[index] = []
-                   typeAttributesPlaceholders[index] = []
+                   schemes.types.push(element[0])
+                   schemes.attributes[index] = []
+                   schemes.placeholders[index] = []
                    Object.entries(element[1]).forEach((item) => {
-                       typeAttributes[index].push(item[0])
-                       typeAttributesPlaceholders[index].push(item[1])
+                       schemes.attributes[index].push(item[0])
+                       schemes.placeholders[index].push(item[1])
                    })
                 })
 
@@ -259,7 +279,7 @@
             })
         }
 
-        function getNewId() {
+        function getNewId(callback) {
 
             // Make API request
             $.post(apiUrls.getNewId).done((apiResponse) => {
@@ -278,17 +298,25 @@
                 console.log(apiResponse);
                 console.log(`ID for new entity will be ${apiResponse.id}`)
 
-                entity_id_cell.empty()
-                entity_id_cell.html(`${apiResponse.id}`)
                 entity.id = apiResponse.id
+                callback()
 
                 return true
             })
         }
 
+        function showId () {
+            entity_id_cell.empty()
+            entity_id_cell.html(`${entity.id}`)
+        }
+
+        function clearButtons() {
+            buttons.empty()
+        }
+
         function setupSaveAndCancelButtons (mode) {
 
-            buttons.empty().append(
+            buttons.append(
                 `<button type="button" id="save_button" name="Save" style="background-color: white; padding: unset">Save Metadata</button>
                  <button type="button" id="cancel_button" name="Save" style="background-color: white; padding: unset">Cancel</button>`)
 
@@ -319,13 +347,15 @@
                     createEntity(id, type, values)
                 }
 
+                clearButtons()
                 setupDefaultButtons()
                 showMetadata()
             })
 
             $("#cancel_button").on("click", function () {
-                resetTable()
+                clearTableCells()
                 clearData()
+                clearButtons()
                 setupDefaultButtons()
             })
 
@@ -381,7 +411,7 @@
         }
 
         function showMetadata () {
-            clearTable()
+            clearTableCells()
             entity_id_cell.append(entity.id)
             entity_type_cell.append(entity.type)
             for (let i=1; i<=numAttributes; i++) {

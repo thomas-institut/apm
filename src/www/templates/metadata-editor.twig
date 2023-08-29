@@ -25,17 +25,18 @@
     <script>
 
         // Constants to store data in
-        let entity = {id: 0, type: 'null', attributes: [], values: [], types: []}
+        let entity = {id: '', type: '', attributes: [], values: [], types: []}
         let schemes = {types: [], attributes: [], placeholders: []}
         let numAttributes = 0
         let notfirstquery = false
         let state = {create: 'creating', edit: 'editing'}
-        let thead
-        let tbody
+
 
         // Selectors
-        let entity_id_cell
-        let entity_type_cell
+        let thead = $('#tableHead')
+        let tbody = $('#tableBody')
+        let entity_id_cell = $('#entity_id')
+        let entity_type_cell = $('#entity_type')
         let buttons =  $('#buttons')
 
         // Get api urls
@@ -50,57 +51,115 @@
         };
 
         // Setup get button
-        setupGetButton()
+        setupGetAndCreateButton()
 
-        function setupGetButton() {
+        function setupGetAndCreateButton() {
 
             buttons.append
-            (`<button type="button" id="get_button" name="Get" style="background-color: white; padding: unset">Get Metadata</button>`)
+            (`<button type="button" id="get_button" name="Get" style="background-color: white; padding: unset">Get Metadata</button>
+              <button type="button" id="create_button" name="Create" style="background-color: white; padding: unset">Create New Entity</button>`)
 
-            $("#get_button").on("click", function () {
-                getMetadata(5, function() {
-                    makeTable()
-                    showMetadata()
-                    clearButtons()
-                    setupDefaultButtons()
-                })
-            });
+            makeGetButtonEvent()
+            makeCreateButtonEvent()
         }
 
-        function setupDefaultButtons () {
+        function setupGetEditAndCreateButton () {
 
             buttons.append
             (`<button type="button" id="get_button" name="Get" style="background-color: white; padding: unset">Get Metadata</button>
                 <button type="button" id="edit_button" name="Edit" style="background-color: white; padding: unset">Edit Metadata</button>
                 <button type="button" id="create_button" name="Create" style="background-color: white; padding: unset">Create New Entity</button>`)
 
+            makeGetButtonEvent()
+            makeEditButtonEvent()
+            makeCreateButtonEvent()
+        }
+
+        function makeGetButtonEvent () {
             $("#get_button").on("click", function () {
                 clearData()
                 getMetadata(5, function() {
                     makeTable()
                     showMetadata()
+                    clearButtons()
+                    setupGetEditAndCreateButton()
                 })
             });
+        }
 
+        function makeCreateButtonEvent() {
+            $("#create_button").on("click", function () {
+                entity_id_cell.empty()
+                clearButtons()
+                setupInputForms(state.create, function() {
+                    setupSaveAndCancelButton(state.create)
+                })
+            })
+        }
+
+        function makeEditButtonEvent () {
             $("#edit_button").on("click", function () {
-                if (entity.type === 'null') {
+                if (entity.type === '') {
                     console.log('Editing not possible. No entity was selected.')
                 }
                 else {
                     clearButtons()
                     setupInputForms(state.edit, function() {
-                        setupSaveAndCancelButtons(state.edit)
+                        setupSaveAndCancelButton(state.edit)
                     })
                     console.log('Metadata can now be edited.')
                 }
-            });
+            })
+        }
 
-            $("#create_button").on("click", function () {
-                entity_id_cell.empty()
+        function makeSaveButtonEvent (mode) {
+            $("#save_button").on("click", function () {
+
+                let id = entity.id
+                let type
+                if (mode === state.create) {
+                    type = $('#entity_type_select').val()
+                }
+                else {
+                    type = entity.type
+                }
+                let values = []
+
+                for (let i=1; i<=numAttributes; i++) {
+                    let id = "#entity_attr" + i + "_form"
+                    values.push($(id).val())
+                }
+
+                entity.type = type
+                entity.values = values
+
+                if (mode === state.edit) {
+                    saveMetadataById(id, type, values)
+                }
+                else {
+                    createEntity(id, type, values)
+                }
+
                 clearButtons()
-                setupInputForms(state.create, function() {
-                    setupSaveAndCancelButtons(state.create)
-                })
+                setupGetEditAndCreateButton()
+                showMetadata()
+            })
+        }
+
+        function makeCancelButtonEvent (mode) {
+            $("#cancel_button").on("click", function () {
+                clearTableCells()
+                removeTableRows()
+                makeTable()
+                clearButtons()
+                if (mode === state.create) {
+                    clearData()
+                    setupGetAndCreateButton()
+                }
+                else {
+                    showMetadata()
+                    setupGetEditAndCreateButton()
+                }
             })
         }
 
@@ -229,7 +288,7 @@
                     </td>`)
             }
 
-            entity_id_cell = $('#entity_id');
+            entity_id_cell = $('#entity_id')
             entity_type_cell = $('#entity_type')
 
             return true
@@ -314,56 +373,20 @@
             buttons.empty()
         }
 
-        function setupSaveAndCancelButtons (mode) {
+        function setupSaveAndCancelButton (mode) {
 
             buttons.append(
                 `<button type="button" id="save_button" name="Save" style="background-color: white; padding: unset">Save Metadata</button>
                  <button type="button" id="cancel_button" name="Save" style="background-color: white; padding: unset">Cancel</button>`)
 
-            $("#save_button").on("click", function () {
-
-                let id = entity.id
-                let type
-                if (mode === state.create) {
-                    type = $('#entity_type_select').val()
-                }
-                else {
-                    type = entity.type
-                }
-                let values = []
-
-                for (let i=1; i<=numAttributes; i++) {
-                    let id = "#entity_attr" + i + "_form"
-                    values.push($(id).val())
-                }
-
-                entity.type = type
-                entity.values = values
-
-                if (mode === state.edit) {
-                    saveMetadataById(id, type, values)
-                }
-                else {
-                    createEntity(id, type, values)
-                }
-
-                clearButtons()
-                setupDefaultButtons()
-                showMetadata()
-            })
-
-            $("#cancel_button").on("click", function () {
-                clearTableCells()
-                clearData()
-                clearButtons()
-                setupDefaultButtons()
-            })
+            makeSaveButtonEvent(mode)
+            makeCancelButtonEvent(mode)
 
             return true
         }
 
         function clearData () {
-            entity = {id: 0, type: 'null', attributes: [], values: [], types: []}
+            entity = {id: '', type: '', attributes: [], values: [], types: []}
         }
 
         function getMetadata (id, callback) {

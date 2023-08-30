@@ -46,6 +46,12 @@ export class LanguageDetector {
    * @param word
    */
   detectTextDirection(word) {
+    let debug = false
+
+    // if (word.charAt(0) === '(' || word.charAt(0) === ')') {
+    //   debug = true
+    // }
+    debug && console.log(`Detecting text direction for '${word}'`)
     // 1. Is it whitespace?
     if (isWhiteSpace(word)) {
       return ''
@@ -99,8 +105,12 @@ export class LanguageDetector {
       return 'en'
     }
 
+    debug && console.log(` Not a number and not all neutrals, detecting language for non-neutral substring '${stringToTest}'´`)
+
     // 3. Is it Arabic or Hebrew?
-    let lang = this.detectLang(word)
+    let lang = this.detectLang(stringToTest)
+
+    debug && console.log(` ...language is '${lang}'`)
     if (lang === 'ar' || lang === 'he') {
       return 'rtl'
     }
@@ -141,6 +151,12 @@ export class LanguageDetector {
    * @return {string}
    */
   detectLang(text) {
+    let debug = false
+
+    if (text.charAt(0) === '(' || text.charAt(0) === ')') {
+      debug = true
+    }
+
     const scores = {}
 
 
@@ -152,6 +168,7 @@ export class LanguageDetector {
       // detect occurrences of lang in a word
       let matches = text.match(regex) || []
       let numMatches = matches.length
+      debug && console.log(`Num matches for '${text}', lang '${lang}' = ${numMatches}`)
 
       if (lang === 'la') {
         // do not include numbers in the total for latin
@@ -160,6 +177,7 @@ export class LanguageDetector {
 
       if (lang === this.defaultLang) {
         numMatches = numMatches + punctuationMatches.length + latinScriptNumberMatches.length
+        debug && console.log(`Adjusted default lang num matches for '${text}', lang '${lang}' = ${numMatches}`)
       }
 
       let score =numMatches / text.length
@@ -173,6 +191,8 @@ export class LanguageDetector {
       }
     }
 
+    debug && console.log(`Scores:`)
+    debug && console.log(scores)
     // not detected
     if (Object.keys(scores).length === 0)
       return this.defaultLang

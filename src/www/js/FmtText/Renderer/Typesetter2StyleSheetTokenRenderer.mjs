@@ -30,6 +30,7 @@ import * as FontStyle from '../FontStyle.mjs'
 import * as FontWeight from '../FontWeight.mjs'
 import { TextBox } from '../../Typesetter2/TextBox.mjs'
 import { FmtTextClassProcessor } from './FmtTextClassProcessor.mjs'
+import { ObjectFactory } from '../../Typesetter2/ObjectFactory.mjs'
 
 
 export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
@@ -128,8 +129,46 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
             items.push(textBox)
         }
       }
-      resolve(items)
+      // At this point we have a 1 to 1 mapping of the fmtText item into Typesetter2 items,
+      // we need to split the text boxes so that each initial and final punctuation character gets its own box.
+      // This is necessary for the Bidi algorithm to properly work
+      let outputItems = []
+      items.forEach( (item) => {
+        if (item instanceof TextBox) {
+          outputItems.push(...this.expandTextBox(item))
+        } else {
+          outputItems.push(item)
+        }
+      })
+      resolve(outputItems)
     })
+  }
+
+  /**
+   *
+   * @param {TextBox}textBox
+   * @return TextBox[]
+   */
+  expandTextBox(textBox) {
+
+    // for now, just take care of final comma, semicolon and dot
+    let theText = textBox.getText()
+    if (theText === '') {
+      return [textBox]
+    }
+    const finals = [';', '.', ',']
+    let finalChar = theText.charAt(theText.length-1)
+    if (finals.indexOf(finalChar) === -1) {
+      return [textBox]
+    }
+    console.log(`Splitting box with text '${theText}' into two`)
+    let textBoxExportObject = textBox.getExportObject()
+    let initialTextBox = ObjectFactory.fromObject(textBoxExportObject)
+    initialTextBox.setText(theText.substring(0,theText.length-1))
+    let finalTextBox = ObjectFactory.fromObject(textBoxExportObject)
+    finalTextBox.setText(finalChar)
+
+   return [initialTextBox, finalTextBox]
   }
 
   /**

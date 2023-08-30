@@ -249,7 +249,7 @@ export class EditionViewerCanvas {
               editionTypesettingHelper.resetExtractedMetadataInfo()
               return resolvedPromise(true)
             },
-            debug: true
+            debug: false
           },
           extraData: { apparatuses: this.edition.apparatuses}
         }

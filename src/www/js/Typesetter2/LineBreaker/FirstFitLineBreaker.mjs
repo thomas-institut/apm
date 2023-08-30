@@ -239,7 +239,7 @@ export class FirstFitLineBreaker extends LineBreaker {
           penaltyValue += (flagsInARow +1)*FLAG_PENALTY
         }
       }
-      lineItemArray = this.compactItemArray(lineItemArray)
+      // lineItemArray = this.compactItemArray(lineItemArray)
       await this.measureTextBoxes(lineItemArray, textBoxMeasurer)
       let adjRatio = AdjustmentRatio.calculateHorizontalAdjustmentRatio(lineItemArray, lineWidth)
       if (adjRatio === null) {
@@ -288,13 +288,19 @@ export class FirstFitLineBreaker extends LineBreaker {
         return !(item instanceof Penalty)
       }))
       // Compact the line (i.e., merge consecutive text boxes with the format, and consecutive glue
-      newLine.setList(this.compactItemArray(newLine.getList()))
+      // newLine.setList(this.compactItemArray(newLine.getList()))
       lines.push(newLine)
       lineStartIndex = breakIndex
     })
     return lines
   }
 
+  // TODO: revisit compactItemArray
+  //  the idea was to get rid of consecutive text boxes with the same format and thus allow the
+  //  text renderer to potentially apply inter-word alignment properly. The problem is that
+  //  compacting at this point breaks the bidi algorithm when punctuation is merged to an item.
+  //  the solution would be to apply the bidi algorithm within the line breaker and return
+  //  a list of items in display order
 
   /**
    * Compacts an item by performing all possible merges between

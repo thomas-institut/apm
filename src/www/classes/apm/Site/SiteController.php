@@ -33,6 +33,7 @@ use APM\System\ApmContainerKey;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
+use Psr\Http\Message\RequestInterface;
 use \Psr\Http\Message\ResponseInterface as Response;
 use APM\System\ApmSystemManager;
 use AverroesProject\Data\DataManager;
@@ -57,7 +58,7 @@ use \Psr\Http\Message\ServerRequestInterface as Request;
 class SiteController implements LoggerAwareInterface, CodeDebugInterface
 {
 
-    const COOKIE_SIZE_THRESHHOLD = 1000;
+    const COOKIE_SIZE_THRESHOLD = 1000;
     const TEMPLATE_ERROR_NOT_ALLOWED = 'error-not-allowed.twig';
 
 
@@ -181,9 +182,12 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
      * @param string $template
      * @param array $data
      * @param bool $withBaseData
-     * @return Response
+     * @return \Slim\Psr7\Response|Response
      */
-    protected function renderPage(Response $response, string $template, array $data, $withBaseData = true) {
+    protected function renderPage(Response $response, string $template, array $data, bool $withBaseData = true): \Slim\Psr7\Response|Response
+    {
+
+
 
         if ($withBaseData) {
             $data['copyright']  = $this->getCopyrightNotice();
@@ -237,6 +241,12 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     
     protected function getBaseUrl() : string {
         return $this->systemManager->getBaseUrl();
+    }
+
+    protected function getAbsoluteBaseUrlFromRequest(RequestInterface $request) : string{
+        $path = $request->getUri();
+
+        return rtrim($path, '/');
     }
 
     // Utility function
@@ -337,7 +347,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 
     protected function reportCookieSize() {
         $cookieString = $_SERVER['HTTP_COOKIE'] ?? 'N/A';
-        if (strlen($cookieString) > self::COOKIE_SIZE_THRESHHOLD) {
+        if (strlen($cookieString) > self::COOKIE_SIZE_THRESHOLD) {
             $this->codeDebug("Got a cookie string of " . strlen($cookieString) . " bytes for user " . $this->userInfo['id']);
         }
     }

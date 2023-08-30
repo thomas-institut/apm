@@ -53,6 +53,7 @@ use APM\Presets\PresetManager;
 use APM\System\Job\ApmJobQueueManager;
 use APM\System\Job\JobQueueManager;
 use APM\System\Job\NullJobHandler;
+use APM\ToolBox\BaseUrlDetector;
 use Exception;
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Handler\StreamHandler;
@@ -442,36 +443,9 @@ class ApmSystemManager extends SystemManager {
     }
     
     public function getBaseUrl() : string {
-        $host = $_SERVER['HTTP_HOST'];
-        $port = $_SERVER['SERVER_PORT'];
-
-        if (isset($_SERVER['HTTP_X_FORWARDED_PORT'])) {
-            $port = $_SERVER['HTTP_X_FORWARDED_PORT'];
-        }
-        $protocol = 'http';
-        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
-            // check for https in the forwarded protocols
-            $forwardedProtocols = explode(',', $_SERVER['HTTP_X_FORWARDED_PROTO']);
-            for ($i = 0; $i < count($forwardedProtocols); $i++) {
-                if ($forwardedProtocols[$i] === 'https') {
-                    $protocol = 'https';
-                    break;
-                }
-            }
-        }
-        if ($port === '443') {
-            $protocol = 'https';
-        }
-
-        $subDir = $this->getBaseUrlSubDir();
-        if ($subDir !== '') {
-            $subDir = '/' . $subDir;
-        }
-
-        return "$protocol://$host$subDir";
-
+        return BaseUrlDetector::detectBaseUrl($this->getBaseUrlSubDir());
     }
-    
+
     public function getTableNames() : array {
         return $this->tableNames;
     }

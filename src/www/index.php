@@ -33,9 +33,16 @@ use APM\Api\ApiWorks;
 
 use APM\Site\SiteMultiChunkEdition;
 use APM\System\ConfigLoader;
+use APM\System\NodejsApiProxy;
+use APM\System\SystemManager;
+use APM\ToolBox\BaseUrlDetector;
 use JetBrains\PhpStorm\NoReturn;
+use Monolog\Handler\ErrorLogHandler;
+use Monolog\Logger;
 use Slim\App;
 use Slim\Psr7\Factory\ResponseFactory;
+use Slim\Psr7\Factory\ServerRequestFactory;
+use Slim\ResponseEmitter;
 use Slim\Routing\RouteCollectorProxy;
 use Slim\Views\TwigMiddleware;
 
@@ -87,9 +94,36 @@ if (!ConfigLoader::loadConfig()) {
 }
 require 'setup.php';
 require 'version.php';
+global $config;
+
+// See if there's something to intercept for the proxy
+
+$logger = new Logger('APM');
+$phpLog = new ErrorLogHandler();
+$logger->pushHandler($phpLog);
+$request = ServerRequestFactory::createFromGlobals();
+$baseUrl = BaseUrlDetector::detectBaseUrl($config[ApmConfigParameter::SUB_DIR]);
+$cmd = str_replace($baseUrl, '', $request->getUri());
+
+
+if (preg_match("/^\/api\/nodejs/", $cmd) === 1) {
+    $responseFactory = new ResponseFactory();
+    $emitter = new ResponseEmitter();
+    $proxy = new NodejsApiProxy();
+    $proxy->setLogger($logger);
+    $response = $responseFactory->createResponse();
+    SystemProfiler::lap('Ready to proxy');
+    $logger->debug("Sending $cmd to NodeJs");
+    $response = $proxy->proxy($cmd, $request, $response);
+    SystemProfiler::lap('Response ready');
+    $emitter->emit($response);
+    SystemProfiler::lap('Done');
+    $logger->debug("$cmd handled by NodeJS api ", [ 'profiler' => SystemProfiler::getLaps()]);
+    exit();
+}
 
 // Build System Manager
-global $config;
+
 $systemManager = new ApmSystemManager($config);
 
 if ($systemManager->fatalErrorOccurred()) {
@@ -126,7 +160,6 @@ try {
     $systemManager->getLogger()->error("Loader error exception, aborting", [ 'msg' => $e->getMessage()]);
     exitWithErrorMessage("Could not set up application, please report to administrators");
 }
-
 
 // -----------------------------------------------------------------------------
 //  SITE ROUTES
@@ -646,14 +679,18 @@ $app->group('/api/data', function(RouteCollectorProxy $group){
 })->add(Authenticator::class . ':authenticateDataApiRequest');
 
 // SPA Login
-
 $app->group('/api/app', function(RouteCollectorProxy $group) use ($container) {
-
     $group->any('/login', function(Request $request, Response $response) use ($container){
         $apiC = new Authenticator($container);
         return $apiC->apiLogin($request, $response);
     })->setName('api.app.login');
+});
 
+// NodeJS api
+
+$app->any('/api/node/{params:.*}', function(Request $request, Response $response, array $args) use ($container){
+    $dashboard = new SiteDashboard($container);
+    return $dashboard->DashboardPage($request, $response, $args);
 });
 
 // -----------------------------------------------------------------------------

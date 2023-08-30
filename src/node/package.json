@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
+    "express": "^4.18.2",
     "glob": "^10.3.0",
     "node-fetch": "^3.3.0",
     "node-gtk": "0.10.0",

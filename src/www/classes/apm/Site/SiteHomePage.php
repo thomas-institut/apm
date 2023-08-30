@@ -37,8 +37,10 @@ class SiteHomePage extends SiteController
   
     public function homePage(Request $request, Response $response): Response
     {
-        $dashBoardUrl =  $this->router->urlFor('dashboard');
-        $this->logger->debug('Rerouting to ' . $dashBoardUrl);
+
+        $url = $this->systemManager->getBaseUrl();
+        $dashBoardUrl =  $url . $this->router->urlFor('dashboard');
+        $this->logger->debug("Home page request ($url), redirecting to $dashBoardUrl");
         return $response->withHeader('Location', $dashBoardUrl)->withStatus(302);
     }
 

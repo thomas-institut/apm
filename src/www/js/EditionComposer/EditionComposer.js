@@ -66,6 +66,7 @@ import { CollationTableConsistencyCleaner } from '../CtData/CtDataCleaner/Collat
 import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
 
 import { PdfDownloadUrl } from './PdfDownloadUrl'
+import { IgnoreHyphen } from '../normalizers/TokenNormalizer/IgnoreHyphen'
 
 // import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS
@@ -459,6 +460,15 @@ export class EditionComposer {
             help: "E.g., 'Et' and 'et' will be taken to be the same word"
           }
         )
+        // this.normalizerRegister.registerNormalizer(
+        //   'ignoreHyphen',
+        //   new IgnoreHyphen(),
+        //   {
+        //     lang: 'la',
+        //     label: 'Ignore Hyphens',
+        //     help: "E.g., 'cor-de' and 'corde' will be taken to be the same word"
+        //   }
+        // )
         break
 
       case 'ar':

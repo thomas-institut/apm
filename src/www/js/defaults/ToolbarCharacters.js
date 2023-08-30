@@ -31,6 +31,7 @@ export const toolbarCharacters = {
     leftDQM: { character: '“', title: 'Left Double Quotation Mark'},
     rightSQM: { character: '’', title: 'Right Single Quotation Mark'},
     leftSQM: { character: '‘', title: 'Left Single Quotation Mark'},
+    maqaf: { character: '\u05be', title: 'Maqaf' },
     enDash: { character: '\u2013', title: 'En Dash'},
     emDash: { character: '\u2014', title: 'Em dash'},
     guillemetSt: { character: '«', title: 'Opening Guillemet'},

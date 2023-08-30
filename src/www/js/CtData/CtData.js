@@ -691,7 +691,10 @@ export class CtData  {
     ctData['automaticNormalizationsApplied'] = normalizationsToApply
 
     for (let i = 0; i < ctData['witnesses'].length; i++) {
-      ctData['witnesses'][i]['tokens'] = this.applyNormalizationsToWitnessTokens(ctData['witnesses'][i]['tokens'], normalizerRegister, normalizationsToApply)
+      let witness = ctData['witnesses'][i]
+      if (witness['witnessType'] !== 'source') {
+        ctData['witnesses'][i]['tokens'] = this.applyNormalizationsToWitnessTokens(ctData['witnesses'][i]['tokens'], normalizerRegister, normalizationsToApply)
+      }
     }
     return ctData
   }

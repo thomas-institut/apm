@@ -74,6 +74,14 @@ export const punctuationDefinition = [
   { char: '¶', // paragraph
     default: { isPunctuation: true, sticksToPrevious: false, sticksToNext: false }
   },
+  // The hyphen is taken to be a normal character, it should not be in this list
+  // if it were to be ignored inside words, it has to be handled by a normalizer
+  // { char:  '-', // hyphen
+  //   default: { isPunctuation: true, isPunctuationInsideWord: false, sticksToPrevious: true, sticksToNext: true }
+  // },
+  { char:  String.fromCodePoint(0x05be), // maqaf = Hebrew top hyphen
+    default: { isPunctuation: true, sticksToPrevious: true, sticksToNext: true }
+  },
   { char:  String.fromCodePoint(0x2013), // en dash
     default: { isPunctuation: true, sticksToPrevious: false, sticksToNext: false }
   },
@@ -171,14 +179,11 @@ export const punctuationDefinition = [
   { char:  String.fromCodePoint(0x60D), // Arabic date separator
     default: { isPunctuation: true, sticksToPrevious: false, sticksToNext: false }
   },
-  { char:  String.fromCodePoint(0x5BE), // Hebrew maqaf
-    default: { isPunctuation: true, sticksToPrevious: false, sticksToNext: false }
+  { char:  String.fromCodePoint(0x5C0), // Hebrew paseq (Hebrew vertical bar)
+    default: { isPunctuation: true, sticksToPrevious: true, sticksToNext: false }
   },
-  { char:  String.fromCodePoint(0x5C0), // Hebrew paseq
-    default: { isPunctuation: true, sticksToPrevious: false, sticksToNext: false }
-  },
-  { char:  String.fromCodePoint(0x5C3), // Hebrew soft pasuq
-    default: { isPunctuation: true, sticksToPrevious: false, sticksToNext: false }
+  { char:  String.fromCodePoint(0x5C3), // Hebrew soft pasuq (end of verse)
+    default: { isPunctuation: true, sticksToPrevious: true, sticksToNext: false }
   },
 ]
 

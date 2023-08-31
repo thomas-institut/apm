@@ -39,7 +39,7 @@ class SiteHomePage extends SiteController
     {
 
         $url = $this->systemManager->getBaseUrl();
-        $dashBoardUrl =  $url . $this->router->urlFor('dashboard');
+        $dashBoardUrl =  $this->router->urlFor('dashboard');
         $this->logger->debug("Home page request ($url), redirecting to $dashBoardUrl");
         return $response->withHeader('Location', $dashBoardUrl)->withStatus(302);
     }

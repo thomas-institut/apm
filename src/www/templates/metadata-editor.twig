@@ -385,7 +385,6 @@
             let index = 0
             for (let value of d.values) {
                 let type = getDataType(value)
-                console.log(`${type}, ${entity.types[index]}`)
                 if (type !== entity.types[index]) {
                     return false
                 }

@@ -24,13 +24,13 @@
 {% block finalBodyJS %}
     <script>
 
-        // Constants to store data in
+        // Globals
         let entity = {id: '', type: '', attributes: [], values: [], types: []}
         let schemes = {types: [], attributes: [], placeholders: []}
         let numAttributes = 0
+        let newId
         let notfirstquery = false
-        let state = {create: 'creating', edit: 'editing'}
-
+        let state = {create: 'c', edit: 'e'}
 
         // Selectors
         let thead = $('#tableHead')
@@ -39,22 +39,26 @@
         let entity_type_cell = $('#entity_type')
         let buttons =  $('#buttons')
 
-        // Get api urls
+        // Api urls
         let urlGen = new ApmUrlGenerator('')
-
         const apiUrls = {
             getData: urlGen.apiMetadataEditorGetData(),
             saveData: urlGen.apiMetadataEditorSaveData(),
             createEntity: urlGen.apiMetadataEditorCreateEntity(),
-            getNewId: urlGen.apiMetadataEditorGetIdForNewEntity(),
-            getTypeData: urlGen.apiMetadataEditorGetTypeData()
+            getIdForNewEntity: urlGen.apiMetadataEditorGetIdForNewEntity(),
+            getDataSchemesForEntityTypes: urlGen.apiMetadataEditorGetDataSchemesForEntityTypes()
         };
 
-        // Setup get button
+        // Setup get and create button as initial state of the metadata editor
         setupGetAndCreateButton()
 
+        // FUNCTIONS
+        // Buttons
+        function clearButtons() {
+            buttons.empty()
+        }
+        
         function setupGetAndCreateButton() {
-
             buttons.append
             (`<button type="button" id="get_button" name="Get" style="background-color: white; padding: unset">Get Metadata</button>
               <button type="button" id="create_button" name="Create" style="background-color: white; padding: unset">Create New Entity</button>`)
@@ -64,7 +68,6 @@
         }
 
         function setupGetEditAndCreateButton () {
-
             buttons.append
             (`<button type="button" id="get_button" name="Get" style="background-color: white; padding: unset">Get Metadata</button>
                 <button type="button" id="edit_button" name="Edit" style="background-color: white; padding: unset">Edit Metadata</button>
@@ -75,189 +78,108 @@
             makeCreateButtonEvent()
         }
 
+        function setupSaveAndCancelButton (mode) {
+            buttons.append(
+                `<button type="button" id="save_button" name="Save" style="background-color: white; padding: unset">Save Metadata</button>
+                 <button type="button" id="cancel_button" name="Save" style="background-color: white; padding: unset">Cancel</button>`)
+
+            makeSaveButtonEvent(mode)
+            makeCancelButtonEvent(mode)
+        }
+
         function makeGetButtonEvent () {
             $("#get_button").on("click", function () {
-                clearData()
-                getMetadata(5, function() {
+                clearButtons()
+                clearEntityData()
+                getMetadataByEntityId(5, function() {
                     makeTable()
                     showMetadata()
-                    clearButtons()
                     setupGetEditAndCreateButton()
+                    console.log(`Metadata for entity with ID ${entity.id} are being displayed.`)
                 })
-            });
+            })
         }
 
         function makeCreateButtonEvent() {
             $("#create_button").on("click", function () {
-                entity_id_cell.empty()
                 clearButtons()
-                setupInputForms(state.create, function() {
+                clearIdCell()
+                setupTableForDataInput(state.create, function() {
                     setupSaveAndCancelButton(state.create)
+                    console.log('Metadata for new entity can now be set.')
                 })
             })
         }
 
         function makeEditButtonEvent () {
             $("#edit_button").on("click", function () {
-                if (entity.type === '') {
-                    console.log('Editing not possible. No entity was selected.')
-                }
-                else {
-                    clearButtons()
-                    setupInputForms(state.edit, function() {
-                        setupSaveAndCancelButton(state.edit)
-                    })
-                    console.log('Metadata can now be edited.')
-                }
+                clearButtons()
+                setupTableForDataInput(state.edit, function() {
+                    setupSaveAndCancelButton(state.edit)
+                    console.log(`Metadata for entity with ID ${entity.id} can now be edited.`)
+                })
             })
         }
 
         function makeSaveButtonEvent (mode) {
             $("#save_button").on("click", function () {
 
-                let id = entity.id
-                let type
-                if (mode === state.create) {
-                    type = $('#entity_type_select').val()
-                }
-                else {
-                    type = entity.type
-                }
-                let values = []
-
-                for (let i=1; i<=numAttributes; i++) {
-                    let id = "#entity_attr" + i + "_form"
-                    values.push($(id).val())
-                }
-
-                entity.type = type
-                entity.values = values
-
+                // Get Data To Save
+                d = getEntityDataToSave(mode)
+                
+                // Make Api Call
                 if (mode === state.edit) {
-                    saveMetadataById(id, type, values)
+                    saveMetadata(d.id, d.type, d.values)
                 }
                 else {
-                    createEntity(id, type, values)
+                    createEntity(d.id, d.type, d.values)
                 }
 
+                updateEntityData(d.id, d.type, d.values)
+                showMetadata()
                 clearButtons()
                 setupGetEditAndCreateButton()
-                showMetadata()
             })
         }
 
         function makeCancelButtonEvent (mode) {
             $("#cancel_button").on("click", function () {
+                clearButtons()
                 clearTableCells()
                 removeTableRows()
-                makeTable()
-                clearButtons()
                 if (mode === state.create) {
-                    clearData()
+                    clearEntityData()
                     setupGetAndCreateButton()
+                    console.log('Creation of new entity was canceled.')
                 }
                 else {
+                    makeTable()
                     showMetadata()
                     setupGetEditAndCreateButton()
+                    console.log(`Editing of entity with ID ${entity.id} was canceled.`)
                 }
             })
         }
 
-        function setupInputForms(mode, callback) {
-
-            if (mode === state.create) {
-                clearData()
-                clearTableCells()
-                removeTableRows()
-                getTypeData(function() {
-                    makeEntityFitToSchema(schemes.types[0])
-                    makeTable()
-                    getNewId(function () {
-                        showId()
-                    })
-                    setupTypeSelector()
-                    setupSelectorOptions()
-                    makeAttributeForms()
-                    callback()
-                })
-            }
-            else {
-                makeAttributeForms()
-                fillInputForms()
-                callback()
-            }
-        }
-
-        function makeAttributeForms() {
-            for (let i=1; i<=numAttributes; i++) {
-                let selectorId = "#entity_attr" + i
-                let inputId = "entity_attr" + i + "_form"
-                let placeholder = entity.types[i-1]
-                $(selectorId).html(
-                    `<input type="text" id=${inputId} placeholder=${placeholder} style="padding: unset">`)
-            }
-        }
-
-        function setupTypeSelector() {
-            entity_type_cell.html(
-                `<select id="entity_type_select">`)
-
-            $("#entity_type_select").on("change", function () {
-                makeEntityFitToSchema(this.value)
-                clearTableCells()
-                removeTableRows()
-                makeTable()
-                showId()
-                setupTypeSelector()
-                setupSelectorOptions(this.value)
-                makeAttributeForms()
-                console.log(`Adjusted table to chosen entity type "${this.value}".`)
-            });
-        }
-
-        function setupSelectorOptions(value=schemes.types[0]) {
-            let selector = $('#entity_type_select')
-            $.each(schemes.types, function (i, type) {
-                selector.append($('<option>', {
-                    value: type,
-                    text : type
-                }))
-            })
-            selector.val(value)
-        }
-
-        function makeEntityFitToSchema(type) {
-            let i = schemes.types.indexOf(type)
-            entity.attributes = schemes.attributes[i]
-            entity.types = schemes.placeholders[i]
-            numAttributes = entity.attributes.length
-        }
-
-        function fillInputForms() {
-            for (let i=1; i<=numAttributes; i++) {
-                let id = "#entity_attr" + i + "_form"
-                $(id).val(entity.values[i-1])
-            }
-        }
-
-        function removeTableRows() {
-            thead.remove()
-            tbody.remove()
-        }
-
+        // Table Manipulation
         function makeTable() {
+            
+            removeTableRowsIfNotFirstQuery()
+            makeTableHeadAndBody()
+            appendCellsToTable()
 
-            if (notfirstquery) {
-                removeTableRows()
-            }
-            else {
-                notfirstquery = true
-            }
+            // Get Selectors for id and type cell
+            entity_id_cell = $('#entity_id')
+            entity_type_cell = $('#entity_type')
+        }
 
+        function makeTableHeadAndBody() {
             $('#metadataTable').append(`<tr id="tableHead"></tr><tr id="tableBody"></tr>`)
             thead = $('#tableHead')
             tbody = $('#tableBody')
-
+        }
+        
+        function appendCellsToTable () {
             thead.append(`
                 <th>Entity ID</th>
                 <th>Type</th>`)
@@ -287,109 +209,161 @@
                         </div>
                     </td>`)
             }
-
-            entity_id_cell = $('#entity_id')
-            entity_type_cell = $('#entity_type')
-
-            return true
+        }
+        
+        function showMetadata () {
+            clearTableCells()
+            entity_id_cell.append(entity.id)
+            entity_type_cell.append(entity.type)
+            for (let i=1; i<=numAttributes; i++) {
+                let id = "#entity_attr" + i
+                $(id).append(entity.values[i-1])
+            }
         }
 
         function clearTableCells() {
-            entity_id_cell.empty()
+            clearIdCell()
             entity_type_cell.empty()
             for (let i=1; i<=numAttributes; i++) {
                 let id = "#entity_attr" + i
                 $(id).empty()
             }
         }
+        
+        function setupTableForDataInput(mode, callback) {
 
-        function getTypeData(callback) {
-            // Make API request
-            $.post(apiUrls.getTypeData).done((apiResponse) => {
-
-                // Catch errors
-                if (apiResponse.status !== 'OK') {
-                    console.log(`Error in query for entity types!`);
-                    if (apiResponse.errorData !== undefined) {
-                        console.log(apiResponse.errorData);
-                    }
-                    errorMessageDiv.html(`Error while getting entity types, please report to technical administrators.`)
-                        .removeClass('text-error');
-                    return;
-                }
-
-                console.log(apiResponse);
-                console.log(`Got type data.`)
-
-                schemes.types = []
-               Object.entries(apiResponse.data).forEach((element, index) => {
-                   schemes.types.push(element[0])
-                   schemes.attributes[index] = []
-                   schemes.placeholders[index] = []
-                   Object.entries(element[1]).forEach((item) => {
-                       schemes.attributes[index].push(item[0])
-                       schemes.placeholders[index].push(item[1])
-                   })
+            if (mode === state.create) {
+                clearTableCells()
+                removeTableRows()
+                getDataSchemesForEntityTypes(function() {
+                    makeEntityFitToTypeSchema()
+                    makeTable()
+                    getIdForNewEntity(function () {
+                        showNewId()
+                    })
+                    setupTypeSelector()
+                    setupSelectorOptions()
+                    setupAttributesForms()
+                    callback()
                 })
-
+            }
+            else {
+                setupAttributesForms()
+                fillAttributesFormsWithValues()
                 callback()
-
-                return true
-            })
+            }
         }
 
-        function getNewId(callback) {
-
-            // Make API request
-            $.post(apiUrls.getNewId).done((apiResponse) => {
-
-                // Catch errors
-                if (apiResponse.status !== 'OK') {
-                    console.log(`Error in query for metadata of entity with ID ${id}!`);
-                    if (apiResponse.errorData !== undefined) {
-                        console.log(apiResponse.errorData);
-                    }
-                    errorMessageDiv.html(`Error while getting metadata, please report to technical administrators.`)
-                        .removeClass('text-error');
-                    return;
-                }
-
-                console.log(apiResponse);
-                console.log(`ID for new entity will be ${apiResponse.id}`)
-
-                entity.id = apiResponse.id
-                callback()
-
-                return true
-            })
+        function setupAttributesForms() {
+            for (let i=1; i<=numAttributes; i++) {
+                let selectorId = "#entity_attr" + i
+                let inputId = "entity_attr" + i + "_form"
+                let placeholder = entity.types[i-1]
+                $(selectorId).html(
+                    `<input type="text" id=${inputId} placeholder=${placeholder} style="padding: unset">`)
+            }
         }
 
-        function showId () {
+        function setupTypeSelector() {
+            entity_type_cell.html(
+                `<select id="entity_type_select">`)
+
+            $("#entity_type_select").on("change", function () {
+                clearTableCells()
+                removeTableRows()
+                makeEntityFitToTypeSchema(this.value)
+                makeTable()
+                setupTypeSelector()
+                setupSelectorOptions(this.value)
+                setupAttributesForms()
+                showNewId()
+                console.log(`Adjusted table to chosen entity type "${this.value}".`)
+            });
+        }
+
+        function setupSelectorOptions(value=schemes.types[0]) {
+            let selector = $('#entity_type_select')
+            $.each(schemes.types, function (i, type) {
+                selector.append($('<option>', {
+                    value: type,
+                    text : type
+                }))
+            })
+            selector.val(value)
+        }
+
+        function fillAttributesFormsWithValues() {
+            for (let i=1; i<=numAttributes; i++) {
+                let id = "#entity_attr" + i + "_form"
+                $(id).val(entity.values[i-1])
+            }
+        }
+
+        function removeTableRows() {
+            thead.remove()
+            tbody.remove()
+        }
+
+        function removeTableRowsIfNotFirstQuery() {
+            if (notfirstquery) {
+                removeTableRows()
+            }
+            else {
+                notfirstquery = true
+            }
+        }
+        
+        function showNewId () {
+            clearIdCell()
+            entity_id_cell.html(`${newId}`)
+        }
+
+        function clearIdCell() {
             entity_id_cell.empty()
-            entity_id_cell.html(`${entity.id}`)
         }
-
-        function clearButtons() {
-            buttons.empty()
-        }
-
-        function setupSaveAndCancelButton (mode) {
-
-            buttons.append(
-                `<button type="button" id="save_button" name="Save" style="background-color: white; padding: unset">Save Metadata</button>
-                 <button type="button" id="cancel_button" name="Save" style="background-color: white; padding: unset">Cancel</button>`)
-
-            makeSaveButtonEvent(mode)
-            makeCancelButtonEvent(mode)
-
-            return true
-        }
-
-        function clearData () {
+        
+        // Entity Data Manipulation
+        function clearEntityData () {
             entity = {id: '', type: '', attributes: [], values: [], types: []}
         }
+        
+        function updateEntityData(id, type, values) {
+            entity.id = id
+            entity.type = type
+            entity.values = values
+        }
+        
+        function getEntityDataToSave(mode) {
+            let id
+            let type
+            let values = []
 
-        function getMetadata (id, callback) {
+            if (mode === state.create) {
+                id = newId
+                type = $('#entity_type_select').val()
+            }
+            else {
+                id = entity.id
+                type = entity.type
+            }
+
+            for (let i=1; i<=numAttributes; i++) {
+                let name = "#entity_attr" + i + "_form"
+                values.push($(name).val())
+            }
+            
+            return {id: id, type: type, values: values}
+        }
+
+        function makeEntityFitToTypeSchema(type=schemes.types[0]) {
+            let i = schemes.types.indexOf(type)
+            entity.attributes = schemes.attributes[i]
+            entity.types = schemes.placeholders[i]
+            numAttributes = entity.attributes.length
+        }
+        
+        // Api Calls
+        function getMetadataByEntityId (id, callback) {
 
             let apiData = {id: id}
 
@@ -433,17 +407,67 @@
             return false
         }
 
-        function showMetadata () {
-            clearTableCells()
-            entity_id_cell.append(entity.id)
-            entity_type_cell.append(entity.type)
-            for (let i=1; i<=numAttributes; i++) {
-                let id = "#entity_attr" + i
-                $(id).append(entity.values[i-1])
-            }
+        function getDataSchemesForEntityTypes(callback) {
+
+            $.post(apiUrls.getDataSchemesForEntityTypes).done((apiResponse) => {
+
+                // Catch errors
+                if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query for entity types!`);
+                    if (apiResponse.errorData !== undefined) {
+                        console.log(apiResponse.errorData);
+                    }
+                    errorMessageDiv.html(`Error while getting entity types, please report to technical administrators.`)
+                        .removeClass('text-error');
+                    return;
+                }
+
+                console.log(apiResponse);
+                console.log(`Got type data.`)
+
+                schemes.types = []
+                Object.entries(apiResponse.data).forEach((element, index) => {
+                    schemes.types.push(element[0])
+                    schemes.attributes[index] = []
+                    schemes.placeholders[index] = []
+                    Object.entries(element[1]).forEach((item) => {
+                        schemes.attributes[index].push(item[0])
+                        schemes.placeholders[index].push(item[1])
+                    })
+                })
+
+                callback()
+
+                return true
+            })
         }
 
-        function saveMetadataById (id, type, values) {
+        function getIdForNewEntity(callback) {
+            
+            $.post(apiUrls.getIdForNewEntity).done((apiResponse) => {
+
+                // Catch errors
+                if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query for metadata of entity with ID ${id}!`);
+                    if (apiResponse.errorData !== undefined) {
+                        console.log(apiResponse.errorData);
+                    }
+                    errorMessageDiv.html(`Error while getting metadata, please report to technical administrators.`)
+                        .removeClass('text-error');
+                    return;
+                }
+
+                console.log(apiResponse);
+                console.log(`ID for new entity will be ${apiResponse.id}`)
+
+                newId = apiResponse.id
+                callback()
+
+                return true
+            })
+        }
+        
+        function saveMetadata (id, type, values) {
 
             let apiData = {id: id, type: type, values: values}
             setMetadata(apiUrls.saveData, apiData)

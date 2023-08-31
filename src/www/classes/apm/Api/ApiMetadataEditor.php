@@ -37,7 +37,7 @@ class ApiMetadataEditor extends ApiController
             'status' => $status]);
     }
 
-    public function getTypeData(Request $request, Response $response): Response
+    public function getSchemesForEntityTypes(Request $request, Response $response): Response
     {
         $status = 'OK';
         $now = TimeString::now();

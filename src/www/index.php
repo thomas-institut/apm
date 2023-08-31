@@ -353,9 +353,9 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         ApiMetadataEditor::class . ':getIdForNewEntity')
         ->setName('getnewentityid');
 
-    $group->post('/metadataeditor/gettypedata',
-        ApiMetadataEditor::class . ':getTypeData')
-        ->setName('gettypedata');
+    $group->post('/metadataeditor/getschemes',
+        ApiMetadataEditor::class . ':getSchemesForEntityTypes')
+        ->setName('getschemes');
 
     // LOG
     $group->post('/admin/log',

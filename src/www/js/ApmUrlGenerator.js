@@ -328,8 +328,8 @@ class ApmUrlGenerator {
         return `${this.base}/api/metadataeditor/getnewentityid`
     }
 
-    apiMetadataEditorGetTypeData() {
-        return `${this.base}/api/metadataeditor/gettypedata`
+    apiMetadataEditorGetDataSchemesForEntityTypes() {
+        return `${this.base}/api/metadataeditor/getschemes`
     }
 
     images() {

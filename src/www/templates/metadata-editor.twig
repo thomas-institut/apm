@@ -18,6 +18,8 @@
     <br>
     <div id="buttons"></div>
     <br>
+    <div id="errorMessage"></div>
+    <br>
 
 {% endblock %}
 
@@ -126,25 +128,32 @@
 
                 // Get Data To Save
                 d = getEntityDataToSave(mode)
-                
-                // Make Api Call
-                if (mode === state.edit) {
-                    saveMetadata(d.id, d.type, d.values)
+
+                if (dataTypesAreCorrect(d)) {
+                    // Make Api Call
+                    if (mode === state.edit) {
+                        saveMetadata(d.id, d.type, d.values)
+                    }
+                    else {
+                        createEntity(d.id, d.type, d.values)
+                    }
+
+                    updateEntityData(d.id, d.type, d.values)
+                    showMetadata()
+                    clearButtons()
+                    clearErrorMessage()
+                    setupGetEditAndCreateButton()
                 }
                 else {
-                    createEntity(d.id, d.type, d.values)
+                    returnDataTypeError()
                 }
-
-                updateEntityData(d.id, d.type, d.values)
-                showMetadata()
-                clearButtons()
-                setupGetEditAndCreateButton()
             })
         }
 
         function makeCancelButtonEvent (mode) {
             $("#cancel_button").on("click", function () {
                 clearButtons()
+                clearErrorMessage()
                 clearTableCells()
                 removeTableRows()
                 if (mode === state.create) {
@@ -321,8 +330,17 @@
         function clearIdCell() {
             entity_id_cell.empty()
         }
-        
-        // Entity Data Manipulation
+
+        function returnDataTypeError() {
+            console.log('Data Type Error!')
+            $("#errorMessage").html('The types of the given data do not match with the type scheme of the desired entity type! Please try again,')
+        }
+
+        function clearErrorMessage() {
+            $("#errorMessage").empty()
+        }
+
+        // Entity Data Managment
         function clearEntityData () {
             entity = {id: '', type: '', attributes: [], values: [], types: []}
         }
@@ -361,7 +379,51 @@
             entity.types = schemes.placeholders[i]
             numAttributes = entity.attributes.length
         }
-        
+
+        function dataTypesAreCorrect (d) {
+
+            let index = 0
+            for (let value of d.values) {
+                let type = getDataType(value)
+                console.log(`${type}, ${entity.types[index]}`)
+                if (type !== entity.types[index]) {
+                    return false
+                }
+                else {
+                    index++
+                }
+            }
+
+            return true
+        }
+
+        function getDataType(value) {
+
+            let type
+
+            if (value.includes('@')) {
+                type = 'email'
+            }
+            else if (containsNumber(value)) {
+
+                if (value.includes('.') || value.includes('-')) {
+                    type = 'date'
+                }
+                else {
+                    type = 'number'
+                }
+            }
+            else {
+                type = 'string'
+            }
+
+            return type
+        }
+
+        function containsNumber(str) {
+            return /\d/.test(str);
+        }
+
         // Api Calls
         function getMetadataByEntityId (id, callback) {
 
@@ -387,12 +449,12 @@
                 // Fill data-object with relevant data
                 entity.id = apiResponse.data.id
                 entity.type = apiResponse.data.type
-                Object.entries(apiResponse.data.currentMetadata).forEach((value, index) => {
-                    entity.values[index] = value[1]
+                Object.entries(apiResponse.data.currentMetadata).forEach((data, index) => {
+                    entity.values[index] = data[1]
                 })
-                Object.entries(apiResponse.data.metadataSchema).forEach((value, index) => {
-                    entity.attributes[index] = value[0]
-                    entity.types[index] = value[1]
+                Object.entries(apiResponse.data.metadataSchema).forEach((data, index) => {
+                    entity.attributes[index] = data[0]
+                    entity.types[index] = data[1]
                 })
 
                 // Store number of values

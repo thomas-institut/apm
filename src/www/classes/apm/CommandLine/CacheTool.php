@@ -7,10 +7,12 @@ namespace APM\CommandLine;
 use APM\System\ApmMySqlTableName;
 use PDO;
 
-class CacheTool extends  CommandLineUtility
+class CacheTool extends  CommandLineUtility implements AdminUtility
 {
+    const CMD = 'cache';
 
-    const USAGE = "cache <option>\n\nOptions:\n  info: print cache size, length, etc\n  flush: erases all cache entries\n   clean: removes all expired entries\n";
+    const USAGE = self::CMD . " <option>\n\nOptions:\n  info: print cache size, length, etc\n  flush: erases all cache entries\n   clean: removes all expired entries\n";
+    const DESCRIPTION = "Cache management functions: info, clean, etc";
     const FLUSH_SAFE_WORD = 'IKnowWhatImDoing';
     private string $cacheTable;
 
@@ -21,11 +23,11 @@ class CacheTool extends  CommandLineUtility
         $this->cacheTable = $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_SYSTEM_CACHE];
     }
 
-    protected function main($argc, $argv)
+    public function main($argc, $argv) : int
     {
        if ($argc === 1) {
            print self::USAGE . "\n";
-           return false;
+           return 0;
        }
 
        switch($argv[1]) {
@@ -43,11 +45,13 @@ class CacheTool extends  CommandLineUtility
 
            default:
                print "Unrecognized option: "  . $argv[1] ."\n";
-               return false;
+               return 0;
        }
+       return 1;
     }
 
-    private function printCacheInfo() {
+    private function printCacheInfo(): void
+    {
 
         $cacheSizeQuery = "SELECT sum(length(`value`)) AS size from `$this->cacheTable`";
         $cacheLengthQuery = "SELECT count(*) as length FROM `$this->cacheTable`";
@@ -79,7 +83,7 @@ class CacheTool extends  CommandLineUtility
 
     }
 
-    private function  getSingleValue($query, $name) {
+    private function  getSingleValue(string $query, string $name) {
         $r = $this->dbConn->query($query);
 
         $rows = [];
@@ -99,5 +103,20 @@ class CacheTool extends  CommandLineUtility
     {
         $this->systemManager->getSystemDataCache()->clean();
         $this->logger->info('Cache cleaned');
+    }
+
+    public function getCommand(): string
+    {
+        return self::CMD;
+    }
+
+    public function getHelp(): string
+    {
+        return self::USAGE;
+    }
+
+    public function getDescription(): string
+    {
+        return self::DESCRIPTION;
     }
 }

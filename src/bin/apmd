@@ -24,15 +24,15 @@ namespace APM;
 
 use APM\System\ConfigLoader;
 
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../www/vendor/autoload.php';
 
-if (!ConfigLoader::loadConfig([__DIR__ . '/../config.php'])) {
+if (!ConfigLoader::loadConfig([__DIR__ . '/../www/config.php'])) {
     print "ERROR: cannot load system configuration file\n";
     exit();
 }
 
-include_once __DIR__ . '/../setup.php';
-include_once __DIR__ . '/../version.php';
+include_once __DIR__ . '/../www/setup.php';
+include_once __DIR__ . '/../www/version.php';
 
 global $config;
 

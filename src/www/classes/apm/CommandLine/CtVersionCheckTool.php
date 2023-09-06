@@ -3,6 +3,7 @@
 namespace APM\CommandLine;
 
 use APM\System\ApmMySqlTableName;
+use Exception;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 
 class CtVersionCheckTool extends CommandLineUtility
@@ -75,7 +76,7 @@ class CtVersionCheckTool extends CommandLineUtility
                 } else {
                     // check consistency between versions
                     for ($i = 0; $i < count($versions); $i++) {
-                        $issue = '';
+//                        $issue = '';
                         $issueFrom = '';
                         $issueUntil = '';
                         if ($versions[$i]->timeFrom !== $storedVersions[$i]->timeFrom) {
@@ -91,7 +92,7 @@ class CtVersionCheckTool extends CommandLineUtility
                                 $fixed =true;
                                 try {
                                     $versionManager->updateTimesForVersion($versions[$i]->id, $storedVersions[$i]->timeFrom, $storedVersions[$i]->timeUntil);
-                                } catch(\Exception $e) {
+                                } catch(Exception) {
                                     $fixed = false;
                                     $issue .= ".... Sorry, could not fix this problem! ";
                                 }
@@ -133,7 +134,8 @@ class CtVersionCheckTool extends CommandLineUtility
     }
 
 
-    private function bruteForceDataTableConsistencyFix($ctId) {
+    private function bruteForceDataTableConsistencyFix($ctId): void
+    {
         $tableName = $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_COLLATION_TABLE];
         $dataTable = new MySqlUnitemporalDataTable($this->systemManager->getDbConnection(), $tableName);
         $versions = $dataTable->getRowHistory($ctId);

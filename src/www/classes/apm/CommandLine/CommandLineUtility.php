@@ -143,7 +143,7 @@ abstract class CommandLineUtility {
     }
 
 
-    protected abstract function main($argc, $argv);
+    public abstract function main($argc, $argv);
 
 
 }

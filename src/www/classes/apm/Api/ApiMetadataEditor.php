@@ -4,8 +4,10 @@
 
 namespace APM\Api;
 
+use PHPUnit\Util\Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
 
 class ApiMetadataEditor extends ApiController
@@ -117,8 +119,22 @@ class ApiMetadataEditor extends ApiController
         $status = 'OK';
         $now = TimeString::now();
 
-        // $id = $this->getIdForNewEntityFromSql();
-        $id = 115;
+        $cache = $this->systemManager->getSystemDataCache();
+        $cacheKey = 'Next_Entity_ID';
+
+        try { // Check for cached id
+
+            $id = unserialize($cache->get($cacheKey));
+
+        } catch (KeyNotInCacheException $e) { // Get id from sql database and set cache
+
+            // $id = $this->getIdForNewEntityFromSql();
+            $id = 0;
+
+        }
+
+        // Set cache
+        $cache->set($cacheKey, serialize($id+1));
 
         // ApiResponse
         return $this->responseWithJson($response, [

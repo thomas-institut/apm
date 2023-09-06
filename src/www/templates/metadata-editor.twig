@@ -333,7 +333,8 @@
 
         function returnDataTypeError() {
             console.log('Data Type Error!')
-            $("#errorMessage").html('The types of the given data do not match with the type scheme of the desired entity type! Please try again,')
+            $("#errorMessage").html(`The types of the given data do not match with the type scheme of the desired entity type!\n
+                The type scheme for entities of type '${entity.type}' is: ${entity.types}.\nPlease try again.`)
         }
 
         function clearErrorMessage() {
@@ -400,7 +401,7 @@
 
             let type
 
-            if (value.includes('@')) {
+            if (isMail(value)) {
                 type = 'email'
             }
             else if (containsNumber(value)) {
@@ -417,6 +418,10 @@
             }
 
             return type
+        }
+
+        function isMail(str) {
+            return /.+@.+\..+/.test(str)
         }
 
         function containsNumber(str) {

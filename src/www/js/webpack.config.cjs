@@ -33,8 +33,7 @@ module.exports = {
     },
     MetadataEditor: {
       import: './pages/MetadataEditor.js',
-      filename: 'MetadataEditor.bundle.js',
-      dependOn: 'QuillPack',
+      filename: 'MetadataEditor.bundle.js'
     },
     MceComposer: {
       import: './MceComposer/MceComposer.js',

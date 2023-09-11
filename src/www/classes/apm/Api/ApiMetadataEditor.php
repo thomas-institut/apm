@@ -25,7 +25,7 @@ class ApiMetadataEditor extends ApiController
             'type' => 'Testtype',
             'currentMetadata' => ['Test', 19, '20-07-1982', 'test@mail.com'],
             'metadataSchema' => [
-                'Attribute 1' => 'string',
+                'Attribute 1' => 'text',
                 'Attribute 2' => 'number',
                 'Attribute 3' => 'date',
                 'Attribute 4' => 'email',
@@ -49,17 +49,17 @@ class ApiMetadataEditor extends ApiController
 
         $data = [
             'Type 1' => [
-                'Attribute 1' => 'string',
+                'Attribute 1' => 'text',
                 'Attribute 2' => 'number',
                 'Attribute 3' => 'date',
                 'Attribute 4' => 'email',
             ],
             'Type 2' => [
-                'Attribute 1' => 'string',
+                'Attribute 1' => 'text',
                 'Attribute 2' => 'number',
             ],
             'Type 3' => [
-                'Attribute 1' => 'string',
+                'Attribute 1' => 'text',
                 'Attribute 2' => 'number',
                 'Attribute 3' => 'number',
             ]

@@ -2,10 +2,6 @@
 
 {% block extraJS %}
     <script type="application/javascript" src="{{baseurl}}/js/dist/MetadataEditor.bundle.js"></script>
-
-    <script>
-        let mde = new MetadataEditor()
-    </script>
 {% endblock %}
 
 
@@ -24,7 +20,9 @@
 {% endblock %}
 
 {% block finalBodyJS %}
-    <script>
+    <script type="module">
+
+        let mde = new MetadataEditor()
 
         // Globals
         let entity = {id: '', type: '', attributes: [], values: [], types: []}
@@ -127,7 +125,7 @@
             $("#save_button").on("click", function () {
 
                 // Get Data To Save
-                d = getEntityDataToSave(mode)
+                let d = getEntityDataToSave(mode)
 
                 if (dataTypesAreCorrect(d)) {
                     // Make Api Call
@@ -190,16 +188,16 @@
         
         function appendCellsToTable () {
             thead.append(`
-                <th>Entity ID</th>
-                <th>Type</th>`)
+                <th style="border: 0.5px solid black">Entity ID</th>
+                <th style="border: 0.5px solid black">Type</th>`)
 
             tbody.append(`
-                <td>
+                <td style="border: 0.5px solid black">
                     <div id="entity_id">
                         -
                     </div>
                 </td>
-                <td>
+                <td style="border: 0.5px solid black">
                     <div id="entity_type">
                         -
                     </div>
@@ -209,10 +207,10 @@
 
                 let id = "entity_attr" + i
 
-                thead.append(`<th>${entity.attributes[i-1]}</th>`)
+                thead.append(`<th style="border: 0.5px solid black">${entity.attributes[i-1]}</th>`)
 
                 tbody.append(`
-                    <td>
+                    <td style="border: 0.5px solid black">
                         <div id=${id}>
                            -
                         </div>
@@ -341,7 +339,7 @@
             $("#errorMessage").empty()
         }
 
-        // Entity Data Managment
+        // Entity Data Management
         function clearEntityData () {
             entity = {id: '', type: '', attributes: [], values: [], types: []}
         }
@@ -406,15 +404,15 @@
             }
             else if (containsNumber(value)) {
 
-                if (value.includes('.') || value.includes('-')) {
-                    type = 'date'
+                if (containsOnlyNumbers(value)) {
+                    type = 'number'
                 }
                 else {
-                    type = 'number'
+                    type = 'date'
                 }
             }
             else {
-                type = 'string'
+                type = 'text'
             }
 
             return type
@@ -426,6 +424,10 @@
 
         function containsNumber(str) {
             return /\d/.test(str);
+        }
+
+        function containsOnlyNumbers(str) {
+            return /^\d+$/.test(str);
         }
 
         // Api Calls

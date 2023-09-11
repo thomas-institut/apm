@@ -17,7 +17,7 @@
  *  
  */
 
-namespace ThomasInstitut\UserManager;
+namespace ThomasInstitut\AuthService;
 
 
 abstract class UserManager

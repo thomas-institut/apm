@@ -1,6 +1,6 @@
 <?php
 
-namespace ThomasInstitut\UserManager;
+namespace ThomasInstitut\AuthService;
 
 use PHPUnit\Framework\TestCase;
 

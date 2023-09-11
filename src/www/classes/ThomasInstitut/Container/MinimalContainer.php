@@ -33,7 +33,7 @@ class MinimalContainer implements ContainerInterface
     /**
      * @var array
      */
-    private $theArray;
+    private array $theArray;
 
     public function __construct()
     {

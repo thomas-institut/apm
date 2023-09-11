@@ -17,7 +17,7 @@
  *  
  */
 
-namespace ThomasInstitut\UserManager;
+namespace ThomasInstitut\AuthService;
 
 /**
  * Interface PersonInfoProvider
@@ -25,7 +25,7 @@ namespace ThomasInstitut\UserManager;
  * An interface that provides get methods for different kinds of data related to a Person
  *
  * Persons are ident
- * @package ThomasInstitut\UserManager
+ * @package ThomasInstitut\AuthenticationService
  */
 
 interface PersonInfoProvider

@@ -17,13 +17,13 @@
  *  
  */
 
-namespace ThomasInstitut\UserManager;
+namespace ThomasInstitut\AuthService;
 
 
 /**
  * Interface PersonInfoStore
  *
- * @package ThomasInstitut\UserManager
+ * @package ThomasInstitut\AuthenticationService
  */
 interface PersonInfoContainer
 {

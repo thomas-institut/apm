@@ -17,7 +17,7 @@
  *  
  */
 
-namespace ThomasInstitut\UserManager;
+namespace ThomasInstitut\AuthService;
 
 
 /**
@@ -25,7 +25,7 @@ namespace ThomasInstitut\UserManager;
  *
  * A PersonInfoProvider that just converts the given id to a simple string
  *
- * @package ThomasInstitut\UserManager
+ * @package ThomasInstitut\AuthenticationService
  */
 class SimplePersonInfoProvider implements PersonInfoProvider
 {

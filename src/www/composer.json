@@ -36,11 +36,8 @@
     
     "autoload": {
         "psr-4": {
-            "AverroesProject\\": "classes\\averroesproject",
-            "APM\\": "classes\\apm",
-            "AverroesProjectToApm\\" : "classes\\ap2apm",
-            "TestHelpers\\" : "test\\helperclasses",
-            "ThomasInstitut\\" : "classes\\thomasinstitut"
+            "" : "classes/",
+            "TestHelpers\\" : "test\\helperclasses"
         }
     }
 }

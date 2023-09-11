@@ -17,9 +17,10 @@
  *  
  */
 
-namespace AverroesProjectToApm;
+namespace Test\AverroesProjectToApm;
 
 use AverroesProject\ColumnElement\Element;
+use AverroesProjectToApm\AddressInDatabaseItemStream;
 use PHPUnit\Framework\TestCase;
 
 class AddressInDatabaseItemStreamTest extends TestCase

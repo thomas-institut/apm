@@ -17,13 +17,15 @@
  *  
  */
 
-namespace ThomasInstitut\EavDatabase;
+namespace Test\ThomasInstitut\EavDatabase;
 
 
 
 use Exception;
 use PDO;
 use PHPUnit\Framework\TestCase;
+use ThomasInstitut\EavDatabase\EavDatabaseTest;
+use ThomasInstitut\EavDatabase\SqlEavDatabase;
 
 class SqlEavDatabaseTest extends TestCase
 {
@@ -34,7 +36,7 @@ class SqlEavDatabaseTest extends TestCase
      * @throws Exception
      */
     public function testRunTests() {
-        $tester = new EavDatabaseTest();
+        $tester = new EavDatabaseTest("SqlEAV");
         $pdo = new PDO('sqlite:' . self::DB_FILE_NAME);
         $this->setUpDb($pdo);
         $db = new SqlEavDatabase($pdo, 'testtable');

@@ -17,12 +17,14 @@
  *  
  */
 
-namespace ThomasInstitut\EavDatabase;
+namespace Test\ThomasInstitut\EavDatabase;
 
 
 
 use Exception;
 use PHPUnit\Framework\TestCase;
+use ThomasInstitut\EavDatabase\EavDatabaseTest;
+use ThomasInstitut\EavDatabase\InMemoryEavDatabase;
 
 class InMemoryEavDatabaseTest extends TestCase
 {
@@ -31,7 +33,7 @@ class InMemoryEavDatabaseTest extends TestCase
      * @throws Exception
      */
     public function testRunTests() {
-        $tester = new EavDatabaseTest();
+        $tester = new EavDatabaseTest("InMemory");
         $dataStore = new InMemoryEavDatabase();
         $tester->runAllTests($dataStore, 'InMemoryEavDatabase');
     }

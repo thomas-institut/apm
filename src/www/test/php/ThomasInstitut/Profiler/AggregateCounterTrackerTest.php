@@ -17,7 +17,7 @@
  *  
  */
 
-namespace ThomasInstitut;
+namespace Test\ThomasInstitut\Profiler;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;

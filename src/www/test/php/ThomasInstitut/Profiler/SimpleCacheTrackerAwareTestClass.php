@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ThomasInstitut;
+namespace Test\ThomasInstitut\Profiler;
 
 
 use ThomasInstitut\Profiler\SimpleCacheTrackerAware;

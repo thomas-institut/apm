@@ -17,9 +17,12 @@
  *  
  */
 
-namespace ThomasInstitut\DataCache;
+namespace Test\ThomasInstitut\DataCache;
 
 use PHPUnit\Framework\TestCase;
+use ThomasInstitut\DataCache\DataCacheTest;
+use ThomasInstitut\DataCache\InMemoryDataCache;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
 
 
 class InMemoryDataCacheTest extends TestCase

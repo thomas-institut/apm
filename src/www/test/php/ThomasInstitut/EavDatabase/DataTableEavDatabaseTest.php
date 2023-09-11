@@ -17,13 +17,16 @@
  *  
  */
 
-namespace ThomasInstitut\EavDatabase;
+namespace Test\ThomasInstitut\EavDatabase;
 
 
 
 use Exception;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use ThomasInstitut\DataTable\InMemoryDataTable;
+use ThomasInstitut\EavDatabase\DataTableEavDatabase;
+use ThomasInstitut\EavDatabase\EavDatabaseTest;
 
 class DataTableEavDatabaseTest extends TestCase
 {
@@ -42,7 +45,7 @@ class DataTableEavDatabaseTest extends TestCase
      * @throws Exception
      */
     public function testRunTestsWithoutCache() {
-        $tester = new EavDatabaseTest();
+        $tester = new EavDatabaseTest("WithoutCache");
         $database = new DataTableEavDatabase(new InMemoryDataTable());
         $database->doNotUseCache();
         $tester->runAllTests($database, 'DataTableEavDatabase');

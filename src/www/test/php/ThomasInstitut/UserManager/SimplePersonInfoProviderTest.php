@@ -1,8 +1,9 @@
 <?php
 
-namespace ThomasInstitut\AuthService;
+namespace Test\ThomasInstitut\UserManager;
 
 use PHPUnit\Framework\TestCase;
+use ThomasInstitut\AuthService\SimplePersonInfoProvider;
 
 class SimplePersonInfoProviderTest extends TestCase
 {

@@ -17,10 +17,11 @@
  *  
  */
 
-namespace ThomasInstitut;
+namespace Test\ThomasInstitut\DataValidator;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use ThomasInstitut\DataValidator\EmailAddressValidator;
 use ThomasInstitut\DataValidator\NullValidator;
 use ThomasInstitut\DataValidator\StringValidator;
@@ -51,10 +52,9 @@ class DataValidatorTest extends TestCase
             $exceptionCaught = false;
             try {
                 new StringValidator(true, $badRegexPattern);
-            } catch (InvalidArgumentException $e) {
+            } catch (InvalidArgumentException|RuntimeException $e) {
                 $exceptionCaught = true;
             }
-
             $this->assertTrue($exceptionCaught, "testing pattern '$badRegexPattern'");
         }
 

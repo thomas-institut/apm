@@ -1,7 +1,6 @@
 <?php
 
-
-namespace ThomasInstitut;
+namespace Test\ThomasInstitut\Profiler;
 
 use PHPUnit\Framework\TestCase;
 use ThomasInstitut\Profiler\CacheTracker;

@@ -17,15 +17,17 @@
  *  
  */
 
-namespace ThomasInstitut\DataStore;
+namespace Test\ThomasInstitut\DataStore;
 
 use PHPUnit\Framework\TestCase;
+use ThomasInstitut\DataStore\DataStoreTest;
+use ThomasInstitut\DataStore\InMemoryDataStore;
 
 
 class InMemoryDataStoreTest extends TestCase
 {
     public function testRunTests() {
-        $tester = new DataStoreTest();
+        $tester = new DataStoreTest("InMemoryDataStore");
         $dataStore = new InMemoryDataStore();
         $tester->runAll($dataStore, 'InMemoryDataStore');
     }

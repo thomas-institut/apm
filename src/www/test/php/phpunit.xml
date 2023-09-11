@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" colors="true" processIsolation="true" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.0/phpunit.xsd" cacheDirectory=".phpunit.cache">
-  <coverage>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" colors="true" processIsolation="true" bootstrap="../../vendor/autoload.php" cacheDirectory=".phpunit.cache" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.1/phpunit.xsd">
+  <coverage/>
+  <source>
     <include>
       <directory suffix=".php">../../classes</directory>
     </include>
-  </coverage>
+  </source>
 </phpunit>

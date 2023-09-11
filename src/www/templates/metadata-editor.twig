@@ -8,21 +8,19 @@
 {% block title %}Metadata Editor{% endblock %}
 
 {% block content %}
-    <h1>Metadata Editor</h1>
-
-    <table class="dataTable" id="metadataTable"></table>
-    <br>
-    <div id="buttons"></div>
-    <br>
-    <div id="errorMessage"></div>
-    <br>
+    <div id="container"></div>
 
 {% endblock %}
 
 {% block finalBodyJS %}
     <script type="module">
 
-        let mde = new MetadataEditor()
+        let mde = new MetadataEditor({
+            containerSelector: "container",
+            entityId: 0,
+            entityType: "Type 2",
+            mode: "show"
+        })
 
     </script>
 {%  endblock %}

@@ -1,6 +1,22 @@
+import {defaultLanguageDefinition} from "../defaults/languages";
+import {OptionsChecker} from "@thomas-inst/optionschecker";
+
 export class MetadataEditor {
 
-    constructor() {
+    constructor(options) {
+
+        let optionsDefinition = {
+            containerSelector: { type:'string', required: true},
+            entityId: {type:'number', required: false},
+            entityType: {type:'string', required: false},
+            mode: {type:'string', required: true}
+        }
+
+        let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "MetadataEditor"})
+        this.options = oc.getCleanOptions(options)
+
+        // Fill container with editor structure
+        this.makeEditor(options.containerSelector)
 
         // Globals
         this.entity = {id: '', type: '', attributes: [], values: [], types: []}
@@ -29,7 +45,6 @@ export class MetadataEditor {
 
         // Setup get and create button as initial state of the metadata editor
         this.setupGetAndCreateButton()
-
     }
 
     // FUNCTIONS
@@ -149,6 +164,17 @@ export class MetadataEditor {
     }
 
     // Table Manipulation
+    makeEditor(container) {
+        container = "#" + container
+        $(container).html(
+            `<table class="dataTable" id="metadataTable"></table>
+                            <br>
+                            <div id="buttons"></div>
+                            <br>
+                            <div id="errorMessage"></div>
+                            <br>`)
+    }
+
     makeTable() {
 
         this.removeTableRowsIfNotFirstQuery()

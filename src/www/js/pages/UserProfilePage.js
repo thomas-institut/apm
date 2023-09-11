@@ -20,6 +20,7 @@
 import { CollapsePanel } from '../widgets/CollapsePanel'
 import { UserDocDataCommon } from './common/UserDocDataCommon'
 import { setBaseUrl } from './common/SiteUrlGen'
+import { MetadataEditor } from "./MetadataEditor"
 
 export class UserProfilePage {
   
@@ -44,6 +45,15 @@ export class UserProfilePage {
     let thisObject = this
     
     let userId = profileUserInfo['id']
+
+    // Make Metadata Editor
+    let mde = new MetadataEditor({
+      containerSelector: 'editProfileForm',
+      entityId: this.userId,
+      entityType: 'user',
+      mode: 'edit'
+    })
+
       // Pseudo-accordion behaviour
     $('#editProfileForm').on('show.bs.collapse', function () {
       $('#changePasswordForm').collapse('hide')

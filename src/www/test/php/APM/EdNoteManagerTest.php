@@ -59,9 +59,9 @@ class EdNoteManagerTest extends TestCase {
     private static $edNoteManager;
 
     public static function setUpBeforeClass() : void  {
-        global $apmTestConfig;
+        global $testConfig;
 
-        self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
+        self::$testEnvironment = new DatabaseTestEnvironment($testConfig);
         self::$container = self::$testEnvironment->getContainer();
 
         self::$dataManager = self::$container->get(ApmContainerKey::SYSTEM_MANAGER)->getDataManager();

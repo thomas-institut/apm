@@ -23,8 +23,10 @@ namespace Test\APM;
 
 
 
+use APM\Api\ApiController;
 use APM\Presets\PresetManager;
 use APM\System\ApmContainerKey;
+use APM\System\PresetFactory;
 use APM\System\SystemManager;
 use AverroesProject\Data\DataManager;
 use AverroesProject\EditorialNote;
@@ -45,11 +47,15 @@ use APM\Api\ApiPresets;
 use APM\Api\ApiDocuments;
 use APM\Api\ApiElements;
 
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
 use Slim\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use DI\Container;
-use function GuzzleHttp\Psr7\stream_for;
+use Test\APM\Mockup\SiteTestEnvironment;
+
+
 
 
 /**
@@ -69,10 +75,7 @@ class ApiControllerTest extends TestCase {
 
     static ApiCollation $apiCollation;
     
-    /**
-     *
-     * @var Api\ApiPresets
-     */
+
     static ApiPresets $apiPresets;
     
     /*     
@@ -105,10 +108,9 @@ class ApiControllerTest extends TestCase {
      */
     public static function setUpBeforeClass() : void
     {
-        global $apmTestConfig;
-        
+
        
-        self::$testEnvironment = new SiteTestEnvironment($apmTestConfig);
+        self::$testEnvironment = new SiteTestEnvironment();
         self::$container = self::$testEnvironment->getContainer();
         /** @var SystemManager $systemManager */
         $systemManager = self::$container->get(ApmContainerKey::SYSTEM_MANAGER);
@@ -213,13 +215,14 @@ class ApiControllerTest extends TestCase {
 //        $this->assertEquals(200, $response->getStatusCode());
 //
 //    }
-    
 
 
     /**
      * @return mixed
      * @throws DependencyException
      * @throws NotFoundException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function testGetPresets() {
 
@@ -245,7 +248,7 @@ class ApiControllerTest extends TestCase {
 
         $this->assertEquals(409, $response2->getStatusCode());
         $respData2 = json_decode($response2->getBody(), true);
-        $this->assertEquals(ApiPresets::API_ERROR_WRONG_TYPE, $respData2['error']);
+        $this->assertEquals(ApiController::API_ERROR_WRONG_TYPE, $respData2['error']);
 
         // Invalid tool
         $request3 = self::requestWithData($request,
@@ -261,7 +264,7 @@ class ApiControllerTest extends TestCase {
 
         // Invalid keyArraytoMatch
         $request4 = self::requestWithData($request,
-            ['tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
+            ['tool' =>  SystemManager::TOOL_AUTOMATIC_COLLATION,
                 'userId' => self::$editor1,
                 'keyArrayToMatch' => 'not an array']);
 
@@ -269,11 +272,11 @@ class ApiControllerTest extends TestCase {
 
         $this->assertEquals(409, $response4->getStatusCode());
         $respData4 = json_decode($response4->getBody(), true);
-        $this->assertEquals(ApiPresets::API_ERROR_WRONG_TYPE, $respData4['error']);
+        $this->assertEquals(ApiController::API_ERROR_WRONG_TYPE, $respData4['error']);
 
         // No presets returned
         $request5 = self::requestWithData($request,
-            ['tool' => ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
+            ['tool' => SystemManager::TOOL_AUTOMATIC_COLLATION,
                 'userId' => self::$editor1,
                 'keyArrayToMatch' => []]);
 
@@ -290,13 +293,13 @@ class ApiControllerTest extends TestCase {
         $presetTitle = 'MyTestPreset';
 
         $witnesses = [1,3,4];
-        $preset = $pf->create(System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION, self::$editor1, $presetTitle,
+        $preset = $pf->create(SystemManager::TOOL_AUTOMATIC_COLLATION, self::$editor1, $presetTitle,
             ['lang' => $lang, 'ignorePunctuation' => true, 'witnesses' => $witnesses]);
         $this->assertTrue($presetManager->addPreset($preset));
 
         // try again with one preset in the database
         $request6 = self::requestWithData($request,
-            ['tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
+            ['tool' => SystemManager::TOOL_AUTOMATIC_COLLATION,
                 'userId' => self::$editor1,
                 'keyArrayToMatch' => []]);
         $response6 = self::$apiPresets->getPresets($request6, new Response());
@@ -310,7 +313,7 @@ class ApiControllerTest extends TestCase {
 
         //try again without userId
         $request7 = self::requestWithData($request,
-            ['tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
+            ['tool' => SystemManager::TOOL_AUTOMATIC_COLLATION,
                 'userId' => false,
                 'keyArrayToMatch' => []]);
         $response7 = self::$apiPresets->getPresets($request7, new Response());
@@ -755,7 +758,7 @@ class ApiControllerTest extends TestCase {
         );
         $this->assertEquals(409, $response->getStatusCode());
         $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(Api\ApiController::API_ERROR_NO_DATA, $respData['error']);
+        $this->assertEquals(ApiController::API_ERROR_NO_DATA, $respData['error']);
 
 
         // TEST 2: unstructured data in request contents
@@ -765,7 +768,7 @@ class ApiControllerTest extends TestCase {
         );
         $this->assertEquals(409, $response->getStatusCode());
         $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(Api\ApiController::API_ERROR_NO_DATA, $respData['error']);
+        $this->assertEquals(ApiController::API_ERROR_NO_DATA, $respData['error']);
 
         // TEST 3: wrong POST field
         $queryString = http_build_query([ 'somefield' => 'some data'], '', '&');
@@ -775,7 +778,7 @@ class ApiControllerTest extends TestCase {
         );
         $this->assertEquals(409, $response->getStatusCode());
         $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(Api\ApiController::API_ERROR_NO_DATA, $respData['error']);
+        $this->assertEquals(ApiController::API_ERROR_NO_DATA, $respData['error']);
 
         // TEST 4: empty data
         $response = self::$apiElements->updateElementsByDocPageCol(
@@ -784,7 +787,7 @@ class ApiControllerTest extends TestCase {
         );
         $this->assertEquals(409, $response->getStatusCode());
         $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(Api\ApiController::API_ERROR_NO_ELEMENT_ARRAY, $respData['error']);
+        $this->assertEquals(ApiController::API_ERROR_NO_ELEMENT_ARRAY, $respData['error']);
 
         // TEST 4: wrong data fields
         $response = self::$apiElements->updateElementsByDocPageCol(
@@ -793,7 +796,7 @@ class ApiControllerTest extends TestCase {
         );
         $this->assertEquals(409, $response->getStatusCode());
         $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(Api\ApiController::API_ERROR_NO_ELEMENT_ARRAY, $respData['error']);
+        $this->assertEquals(ApiController::API_ERROR_NO_ELEMENT_ARRAY, $respData['error']);
 
         // TEST 5: no ednotes
         $response = self::$apiElements->updateElementsByDocPageCol(
@@ -806,7 +809,7 @@ class ApiControllerTest extends TestCase {
         );
         $this->assertEquals(409, $response->getStatusCode());
         $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(Api\ApiController::API_ERROR_NO_EDNOTES, $respData['error']);
+        $this->assertEquals(ApiController::API_ERROR_NO_EDNOTES, $respData['error']);
 
         // TEST 6: zero elements
         $response = self::$apiElements->updateElementsByDocPageCol(
@@ -818,7 +821,7 @@ class ApiControllerTest extends TestCase {
         );
         $this->assertEquals(409, $response->getStatusCode());
         $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(Api\ApiController::API_ERROR_ZERO_ELEMENTS, $respData['error']);
+        $this->assertEquals(ApiController::API_ERROR_ZERO_ELEMENTS, $respData['error']);
 
         $textItem = [
             'id'=> 100,
@@ -861,7 +864,7 @@ class ApiControllerTest extends TestCase {
             );
             $this->assertEquals(409, $response->getStatusCode());
             $respData = json_decode($response->getBody(), true);
-            $this->assertEquals(Api\ApiController::API_ERROR_MISSING_ELEMENT_KEY, $respData['error']);
+            $this->assertEquals(ApiController::API_ERROR_MISSING_ELEMENT_KEY, $respData['error']);
         }
 
         // TEST 8: bad pageId
@@ -878,7 +881,7 @@ class ApiControllerTest extends TestCase {
         );
         $this->assertEquals(409, $response->getStatusCode());
         $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(Api\ApiController::API_ERROR_WRONG_PAGE_ID, $respData['error']);
+        $this->assertEquals(ApiController::API_ERROR_WRONG_PAGE_ID, $respData['error']);
 
         // TEST 8: bad columnElement
         $badElement = $goodElement;
@@ -894,7 +897,7 @@ class ApiControllerTest extends TestCase {
         );
         $this->assertEquals(409, $response->getStatusCode());
         $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(Api\ApiController::API_ERROR_WRONG_COLUMN_NUMBER, $respData['error']);
+        $this->assertEquals(ApiController::API_ERROR_WRONG_COLUMN_NUMBER, $respData['error']);
 
         // TEST 8: bad editorId
         $badElement = $goodElement;
@@ -910,7 +913,7 @@ class ApiControllerTest extends TestCase {
         );
         $this->assertEquals(409, $response->getStatusCode());
         $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(Api\ApiController::API_ERROR_WRONG_EDITOR_ID, $respData['error']);
+        $this->assertEquals(ApiController::API_ERROR_WRONG_EDITOR_ID, $respData['error']);
 
         // TEST 9: no items
         $badElement = $goodElement;
@@ -926,7 +929,7 @@ class ApiControllerTest extends TestCase {
         );
         $this->assertEquals(409, $response->getStatusCode());
         $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(Api\ApiController::API_ERROR_EMPTY_ELEMENT, $respData['error']);
+        $this->assertEquals(ApiController::API_ERROR_EMPTY_ELEMENT, $respData['error']);
 
         // TEST 10: badly formed items
         $keys = array_keys($textItem);
@@ -945,7 +948,7 @@ class ApiControllerTest extends TestCase {
             );
             $this->assertEquals(409, $response->getStatusCode());
             $respData = json_decode($response->getBody(), true);
-            $this->assertEquals(Api\ApiController::API_ERROR_MISSING_ITEM_KEY, $respData['error']);
+            $this->assertEquals(ApiController::API_ERROR_MISSING_ITEM_KEY, $respData['error']);
         }
 
         // TEST 11: duplicate Item Ids
@@ -966,7 +969,7 @@ class ApiControllerTest extends TestCase {
         );
         $this->assertEquals(409, $response->getStatusCode());
         $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(Api\ApiController::API_ERROR_DUPLICATE_ITEM_ID, $respData['error']);
+        $this->assertEquals(ApiController::API_ERROR_DUPLICATE_ITEM_ID, $respData['error']);
 
         // FINALLY do it!
         $response = self::$apiElements->updateElementsByDocPageCol(

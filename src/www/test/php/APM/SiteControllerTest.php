@@ -87,9 +87,9 @@ class SiteControllerTest extends TestCase {
 
     public static function setUpBeforeClass() : void
     { 
-        global $apmTestConfig;
+        global $testConfig;
 
-        self::$testEnvironment = new SiteTestEnvironment($apmTestConfig);
+        self::$testEnvironment = new SiteTestEnvironment($testConfig);
         self::$ci = self::$testEnvironment->getContainer();
         self::$systemManager = self::$testEnvironment->getSystemManager();
         self::$dataManager = self::$systemManager->getDataManager();

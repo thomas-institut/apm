@@ -79,9 +79,9 @@ class ElementDatabaseTest extends TestCase {
     private static $logger;
 
     public static function setUpBeforeClass() : void  {
-        global $apmTestConfig;
+        global $testConfig;
 
-        self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
+        self::$testEnvironment = new DatabaseTestEnvironment($testConfig);
         self::$container = self::$testEnvironment->getContainer();
 
         /** @var SystemManager $systemManager */

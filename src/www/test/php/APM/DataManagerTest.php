@@ -68,8 +68,8 @@ class DataManagerTest extends TestCase {
      * @throws \Exception
      */
     public static function setUpBeforeClass() : void  {
-        global $apmTestConfig;
-        self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
+        global $testConfig;
+        self::$testEnvironment = new DatabaseTestEnvironment($testConfig);
         self::$container = self::$testEnvironment->getContainer();
 
         self::$dataManager = self::$container->get(ApmContainerKey::SYSTEM_MANAGER)->getDataManager();

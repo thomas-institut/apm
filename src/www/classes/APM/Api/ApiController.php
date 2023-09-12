@@ -36,6 +36,7 @@ use AverroesProject\Data\DataManager;
 use APM\System\SystemManager;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Slim\Interfaces\RouteParserInterface;
 use Slim\Routing\RouteParser;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
@@ -86,7 +87,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     protected int $apiUserId;
     protected SimpleProfiler $profiler;
     protected array $languages;
-    protected RouteParser $router;
+    protected RouteParserInterface $router;
 
     private ContainerInterface $container;
     private bool $debugMode;

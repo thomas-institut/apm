@@ -37,10 +37,10 @@ class CollatexEngineTest extends TestCase
     
     public static function setUpBeforeClass() : void
     { 
-        global $apmTestConfig;
+        global $testConfig;
         
-        self::$javaExec = $apmTestConfig['java_executable'];
-        self::$tmpDir = $apmTestConfig['collatex_temp_dir'];
+        self::$javaExec = $testConfig['java_executable'];
+        self::$tmpDir = $testConfig['collatex_temp_dir'];
     }
     
     public function createCollatexRunner(): Collatex

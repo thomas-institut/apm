@@ -67,8 +67,8 @@ class AuthenticatorTest extends TestCase {
         $logger = new Logger('APITEST');
         $logger->pushHandler($logStream);
 
-        global $apmTestConfig;
-        self::$testEnvironment = new SiteTestEnvironment($apmTestConfig);
+        global $testConfig;
+        self::$testEnvironment = new SiteTestEnvironment();
         self::$ci = self::$testEnvironment->getContainer();
         self::$authenticator = new Authenticator(self::$ci);
     }

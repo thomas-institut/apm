@@ -96,10 +96,10 @@ class AutomaticCollationTest extends TestCase
      */
     public static function setUpBeforeClass() : void
     {
-        global $apmTestConfig;
+        global $testConfig;
 
 
-        self::$testEnvironment = new SiteTestEnvironment($apmTestConfig);
+        self::$testEnvironment = new SiteTestEnvironment($testConfig);
         self::$container = self::$testEnvironment->getContainer();
 
         /** @var SystemManager $systemManager */

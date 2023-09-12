@@ -39,9 +39,9 @@ class MySqlHelperTest extends TestCase{
     protected static $handler;
     
     public static function setUpBeforeClass() : void{
-        global $apmTestConfig;
+        global $testConfig;
 
-        $dbConfig = $apmTestConfig['db'];
+        $dbConfig = $testConfig['db'];
 
 
 

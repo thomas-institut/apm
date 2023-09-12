@@ -82,7 +82,7 @@ use ThomasInstitut\Container\MinimalContainer;
 use Twig\Error\LoaderError;
 
 // Load system profiler first
-require 'SystemProfiler.php';
+require 'classes/APM/SystemProfiler.php';
 SystemProfiler::start();
 
 // autoload

@@ -22,12 +22,16 @@ namespace Test\APM\Mockup;
 
 use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
+use APM\SystemProfiler;
 use AverroesProject\Data\DataManager;
 use APM\System\ApmSystemManager;
 use mysql_xdevapi\Exception;
 use PDO;
 use Psr\Container\ContainerInterface;
 use ThomasInstitut\Container\MinimalContainer;
+
+
+require_once  __DIR__ .  "./../../test.config.php";
 
 /**
  * Utility class to set up the test environment for database testing
@@ -36,34 +40,21 @@ use ThomasInstitut\Container\MinimalContainer;
  */
 class DatabaseTestEnvironment {
     
-    /** @var array */
-    protected $config;
+    protected array $config;
+    protected PDO|false $dbConn;
+    protected false|ContainerInterface $container;
+    protected DataManager|false $dataManager;
+    protected ApmSystemManager|false $systemManager;
 
-    /**
-     * @var PDO
-     */
-    protected $dbConn;
-
-    /**
-     * @var ContainerInterface
-     */
-    protected $container;
-
-    /**
-     * @var DataManager
-     */
-    protected $dataManager;
-    /**
-     * @var ApmSystemManager
-     */
-    protected $systemManager;
-
-    public function __construct($apmTestConfig) {
-        $this->config = $this->createOptionsArray($apmTestConfig);
+    public function __construct() {
+        global $testConfig;
+        $this->config = $this->createOptionsArray($testConfig);
         $this->dbConn = false;
         $this->container = false;
         $this->dataManager = false;
         $this->systemManager = false;
+
+        SystemProfiler::start();
     }
     
     public function getPdo() : PDO
@@ -91,7 +82,7 @@ class DatabaseTestEnvironment {
         return $this->getContainer()->get(ApmContainerKey::SYSTEM_MANAGER);
     }
 
-    public function emptyDatabase()
+    public function emptyDatabase(): void
     {
         $dbConn = $this->getPdo();
         
@@ -121,7 +112,7 @@ EOD;
      * @param $userId
      * @throws \Exception
      */
-    public function setUserId($userId) {
+    public function setUserId($userId) : void {
         $this->getContainer()->set(ApmContainerKey::USER_ID, $userId);
     }
 
@@ -181,6 +172,7 @@ EOD;
 
         // BASE URL
         $config['baseurl']='localhost://';
+        $config['sub_dir'] = '';
 
         // TIME ZONE
         $config['default_timezone'] = "Europe/Berlin";

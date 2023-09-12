@@ -16,7 +16,7 @@ CREATE TABLE `ap_projects` (
     `parent` int default NULL,
     `name` varchar(512) NOT NULL,
     `institution` varchar(512) default '',
-    `description` text DEFAULT ''
+    `description` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO `ap_projects` (`id`, `parent`, `name`, `institution`, `description`) VALUES

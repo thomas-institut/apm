@@ -39,9 +39,9 @@ class SiteTestEnvironment extends DatabaseTestEnvironment {
      */
     private $twigExtensionSetup;
 
-    public function __construct($apmTestConfig)
+    public function __construct()
     {
-        parent::__construct($apmTestConfig);
+        parent::__construct();
         $this->routerSetup = false;
         $this->twigExtensionSetup = false;
     }

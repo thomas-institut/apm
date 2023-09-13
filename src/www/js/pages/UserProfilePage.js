@@ -51,7 +51,8 @@ export class UserProfilePage {
       containerSelector: 'editProfileForm',
       entityId: this.userId,
       entityType: 'user',
-      mode: 'edit'
+      mode: 'edit',
+      theme: 'vertical'
     })
 
       // Pseudo-accordion behaviour

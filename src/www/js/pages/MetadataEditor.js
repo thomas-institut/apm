@@ -1,4 +1,3 @@
-import {defaultLanguageDefinition} from "../defaults/languages";
 import {OptionsChecker} from "@thomas-inst/optionschecker";
 
 export class MetadataEditor {
@@ -7,9 +6,10 @@ export class MetadataEditor {
 
         let optionsDefinition = {
             containerSelector: { type:'string', required: true},
-            entityId: {type:'number', required: false},
+            entityId: {type:'number', required: true},
             entityType: {type:'string', required: false},
-            mode: {type:'string', required: true}
+            mode: {type:'string', required: true},
+            theme: {type:'string', required: true}
         }
 
         let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "MetadataEditor"})
@@ -27,8 +27,8 @@ export class MetadataEditor {
         this.state = {create: 'c', edit: 'e'}
 
         // Selectors
-        this.thead = $('#tableHead')
-        this.tbody = $('#tableBody')
+        //this.thead = $('#tableHead')
+        //this.tbody = $('#tableBody')
         this.entity_id_cell = $('#entity_id')
         this.entity_type_cell = $('#entity_type')
         this.buttons =  $('#buttons')
@@ -44,7 +44,13 @@ export class MetadataEditor {
         };
 
         // Setup get and create button as initial state of the metadata editor
-        this.setupGetAndCreateButton()
+        this.getMetadataByEntityId(this.options.entityId,() => {
+            this.makeTable()
+            this.setupTableForDataInput(this.state.edit, () => {
+                this.setupSaveAndCancelButton(this.state.edit)
+                console.log(`Metadata for entity with ID ${this.entity.id} can now be edited.`)
+            })
+        })
     }
 
     // FUNCTIONS
@@ -58,7 +64,7 @@ export class MetadataEditor {
         (`<button type="button" id="get_button" name="Get" style="background-color: white; padding: unset">Get Metadata</button>
               <button type="button" id="create_button" name="Create" style="background-color: white; padding: unset">Create New Entity</button>`)
 
-        this.makeGetButtonEvent()
+        //this.makeGetButtonEvent()
         this.makeCreateButtonEvent()
     }
 
@@ -68,32 +74,32 @@ export class MetadataEditor {
                 <button type="button" id="edit_button" name="Edit" style="background-color: white; padding: unset">Edit Metadata</button>
                 <button type="button" id="create_button" name="Create" style="background-color: white; padding: unset">Create New Entity</button>`)
 
-        this.makeGetButtonEvent()
+        //this.makeGetButtonEvent()
         this.makeEditButtonEvent()
         this.makeCreateButtonEvent()
     }
 
     setupSaveAndCancelButton (mode) {
         this.buttons.append(
-            `<button type="button" id="save_button" name="Save" style="background-color: white; padding: unset">Save Metadata</button>
-                 <button type="button" id="cancel_button" name="Save" style="background-color: white; padding: unset">Cancel</button>`)
+            `<button type="button" id="save_button" name="Save" style="background-color: white; padding: unset">Save</button>`)
+        // <button type="button" id="cancel_button" name="Save" style="background-color: white; padding: unset">Cancel</button>
 
         this.makeSaveButtonEvent(mode)
-        this.makeCancelButtonEvent(mode)
+        //this.makeCancelButtonEvent(mode)
     }
 
-    makeGetButtonEvent () {
-        $("#get_button").on("click",  () => {
-            this.clearButtons()
-            this.clearEntityData()
-            this.getMetadataByEntityId(5,() => {
-                this.makeTable()
-                this.showMetadata()
-                this.setupGetEditAndCreateButton()
-                console.log(`Metadata for entity with ID ${this.entity.id} are being displayed.`)
-            })
-        })
-    }
+    // makeGetButtonEvent () {
+    //     $("#get_button").on("click",  () => {
+    //         this.clearButtons()
+    //         this.clearEntityData()
+    //         this.getMetadataByEntityId(5,() => {
+    //             this.makeTable()
+    //             this.showMetadata()
+    //             this.setupGetEditAndCreateButton()
+    //             console.log(`Metadata for entity with ID ${this.entity.id} are being displayed.`)
+    //         })
+    //     })
+    // }
 
     makeCreateButtonEvent() {
         $("#create_button").on("click", () => {
@@ -132,10 +138,10 @@ export class MetadataEditor {
                 }
 
                 this.updateEntityData(d.id, d.type, d.values)
-                this.showMetadata()
-                this.clearButtons()
+                //this.showMetadata()
+                //this.clearButtons()
                 this.clearErrorMessage()
-                this.setupGetEditAndCreateButton()
+                //this.setupGetEditAndCreateButton()
             }
             else {
                 this.returnDataTypeError()
@@ -167,9 +173,12 @@ export class MetadataEditor {
     makeEditor(container) {
         container = "#" + container
         $(container).html(
-            `<table class="dataTable" id="metadataTable"></table>
+            `<br>
+                            <table id="metadataTable"></table>
                             <br>
                             <div id="buttons"></div>
+                            <br>
+                            <div id="confirmationMessage"></div>
                             <br>
                             <div id="errorMessage"></div>
                             <br>`)
@@ -178,49 +187,61 @@ export class MetadataEditor {
     makeTable() {
 
         this.removeTableRowsIfNotFirstQuery()
-        this.makeTableHeadAndBody()
-        this.appendCellsToTable()
+        this.makeTableRows()
+        this.makeTableCells()
 
         // Get Selectors for id and type cell
         this.entity_id_cell = $('#entity_id')
         this.entity_type_cell = $('#entity_type')
     }
 
-    makeTableHeadAndBody() {
-        $('#metadataTable').append(`<tr id="tableHead"></tr><tr id="tableBody"></tr>`)
-        this.thead = $('#tableHead')
-        this.tbody = $('#tableBody')
+    makeTableRows() {
+        if (this.options.theme === 'horizontal') {
+            $('#metadataTable').append(`<tr id="row1"></tr><tr id="row2"></tr>`)
+        }
+        else if (this.options.theme === 'vertical') {
+            for (let i=1; i<=this.numAttributes; i++) {
+                let id = "row" + i
+                $('#metadataTable').append(`<tr id=${id}></tr>`)
+            }
+        }
     }
 
-    appendCellsToTable () {
-        this.thead.append(`
-                <th style="border: 0.5px solid black">Entity ID</th>
-                <th style="border: 0.5px solid black">Type</th>`)
+    makeTableCells () {
+        // this.thead.append(`
+        //         <th style="border: 0.5px solid black">Entity ID</th>
+        //         <th style="border: 0.5px solid black">Type</th>`)
+        //
+        // this.tbody.append(`
+        //         <td style="border: 0.5px solid black">
+        //             <div id="entity_id">
+        //                 -
+        //             </div>
+        //         </td>
+        //         <td style="border: 0.5px solid black">
+        //             <div id="entity_type">
+        //                 -
+        //             </div>
+        //         </td>`)
 
-        this.tbody.append(`
-                <td style="border: 0.5px solid black">
-                    <div id="entity_id">
-                        -
-                    </div>
-                </td>
-                <td style="border: 0.5px solid black">
-                    <div id="entity_type">
-                        -
-                    </div>
-                </td>`)
+        if (this.options.theme === 'horizontal') {
+            for (let i = 1; i <= this.numAttributes; i++) {
 
-        for (let i=1; i<=this.numAttributes; i++) {
+                let cellId = "entity_attr" + i
+                $('#row1').append(`<th>${this.entity.attributes[i-1]}</th>`)
 
-            let id = "entity_attr" + i
+                $('#row2').append(`<td><div id=${cellId}></div></td>`)
+            }
+        } else if (this.options.theme === 'vertical') {
+            for (let i = 1; i <= this.numAttributes; i++) {
 
-            this.thead.append(`<th style="border: 0.5px solid black">${this.entity.attributes[i-1]}</th>`)
+                let row = "#row" + i
+                let cellId = "entity_attr" + i
+                let attributeName = this.entity.attributes[i-1] + "&emsp;&emsp;"
 
-            this.tbody.append(`
-                    <td style="border: 0.5px solid black">
-                        <div id=${id}>
-                           -
-                        </div>
-                    </td>`)
+                $(row).append(`<th>${attributeName}</th>
+                               <td><div id=${cellId}></div></td>`)
+            }
         }
     }
 
@@ -314,8 +335,10 @@ export class MetadataEditor {
     }
 
     removeTableRows() {
-        this.thead.remove()
-        this.tbody.remove()
+        for (let i=0; i<this.numAttributes; i++) {
+            let row = "#row" + i
+            $(row).remove()
+        }
     }
 
     removeTableRowsIfNotFirstQuery() {
@@ -344,6 +367,10 @@ export class MetadataEditor {
 
     clearErrorMessage() {
         $("#errorMessage").empty()
+    }
+
+    confirm(str) {
+        $("#confirmationMessage").html(str)
     }
 
     // Entity Data Management
@@ -558,6 +585,8 @@ export class MetadataEditor {
 
         $.post(apiUrl, apiData).done((apiResponse) => {
 
+            console.log(apiResponse);
+
             // Catch errors
             if (apiResponse.status !== 'OK') {
                 console.log(`Error in query for metadata of entity with ID ${apiData.id}!`);
@@ -566,19 +595,21 @@ export class MetadataEditor {
                 }
                 errorMessageDiv.html(`Error while getting metadata, please report to technical administrators.`)
                     .removeClass('text-error');
-                return;
-            }
-
-            console.log(apiResponse);
-            if (apiUrl === this.apiUrls.createEntity) {
-                console.log(`Created entity with ID ${apiData.id}`)
             }
             else {
-                console.log(`Saved metadata for entity with ID ${apiData.id}`)
+
+                if (apiUrl === this.apiUrls.createEntity) {
+                    this.confirm('Created!')
+                    console.log(`Created entity with ID ${apiData.id}`)
+                }
+                else {
+                    this.confirm('Saved!')
+                    console.log(`Saved metadata for entity with ID ${apiData.id}`)
+                }
             }
+
         })
     }
-
 }
 
 // Load as global variable so that it can be referenced in the Twig template

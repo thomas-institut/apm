@@ -62,6 +62,11 @@ class ApiMetadataEditor extends ApiController
                 'Attribute 1' => 'text',
                 'Attribute 2' => 'number',
                 'Attribute 3' => 'number',
+            ],
+            'user' => [
+                'Full Name' => 'text',
+                'Username' => 'text',
+                'E-Mail Address' => 'email'
             ]
         ];
 

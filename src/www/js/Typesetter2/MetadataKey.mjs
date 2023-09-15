@@ -47,6 +47,10 @@ export const PAGE_FOLIATION = 'pageFoliation'
 export const MAIN_TEXT_ORIGINAL_INDEX = 'editionMainTextIndex'
 export const LINE_TYPE  = 'lineType'
 
+export const MAIN_TEXT_LINE_DATA = 'mainTextLineData'
+
+export const PAGE_MARGINALIA = 'pageMarginalia'
+
 export const TOKEN_FOR_COUNTING_PURPOSES = 'textTokenForCountingPurposes'
 export const TOKEN_OCCURRENCE_IN_LINE = 'textTokenOccurrenceInLine'
 export const TOKEN_TOTAL_OCCURRENCES_IN_LINE = 'textTokenTotalOccurrencesInLine'

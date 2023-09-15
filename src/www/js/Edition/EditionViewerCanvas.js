@@ -66,6 +66,7 @@ export class EditionViewerCanvas {
         apparatusLineHeightInPts: { type: 'NumberGreaterThanZero', default: 12},
         normalSpaceWidthInEms: { type: 'NumberGreaterThanZero', default: 0.33},
         textToLineNumbersInCm: { type: 'NumberGreaterThanZero', default: 0.5},
+        textToMarginaliaInCm: { type: 'NumberGreaterThanZero', default: 0.5},
         textToApparatusInCm: { type: 'NumberGreaterThanZero', default: 1.5},
         interApparatusInCm: { type: 'NumberGreaterThanZero', default: 0.5},
         debug: {type: 'boolean', default: false}
@@ -89,6 +90,7 @@ export class EditionViewerCanvas {
         right: Typesetter2.cm2px(this.options.marginInCm.right)
       },
       textToLineNumbers: Typesetter2.cm2px(this.options.textToLineNumbersInCm),
+      textToMarginalia: Typesetter2.cm2px(this.options.textToMarginaliaInCm),
       textToApparatus: Typesetter2.cm2px(this.options.textToApparatusInCm),
       interApparatus: Typesetter2.cm2px(this.options.interApparatusInCm),
       normalSpaceWidthInEms: this.options.normalSpaceWidthInEms
@@ -197,9 +199,13 @@ export class EditionViewerCanvas {
         // this.debug && console.log(verticalListToTypeset)
         let lineNumbersAlign = 'right'
         let lineNumbersX = this.geometry.margin.left - this.geometry.textToLineNumbers
+        let marginaliaX = this.geometry.pageWidth - this.geometry.margin.right + this.geometry.textToMarginalia
+        let marginaliaAlign = 'left'
         if (isRtl(this.edition.lang)) {
           lineNumbersAlign = 'left'
           lineNumbersX = this.geometry.pageWidth - this.geometry.margin.right + this.geometry.textToLineNumbers
+          marginaliaAlign = 'right'
+          marginaliaX = this.geometry.margin.left - this.geometry.textToMarginalia
         }
         this.typesettingParameters = {
           mainTextVerticalListToTypeset: verticalListToTypeset,
@@ -241,6 +247,11 @@ export class EditionViewerCanvas {
               resetEachPage: this.options.resetLineNumbersEachPage,
               xPosition: lineNumbersX
             },
+            marginaliaOptions: {
+              xPosition: marginaliaX,
+              defaultTextDirection: isRtl(this.edition.lang) ? 'rtl' : 'ltr',
+              align: marginaliaAlign
+            },
             textBoxMeasurer: this.canvasMeasurer,
             getApparatusListToTypeset: (mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine) => {
               return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine)
@@ -248,6 +259,9 @@ export class EditionViewerCanvas {
             preTypesetApparatuses: () => {
               editionTypesettingHelper.resetExtractedMetadataInfo()
               return resolvedPromise(true)
+            },
+            getMarginaliaForLineRange: (lineFrom, lineTo) =>{
+              return editionTypesettingHelper.getMarginaliaForLineRange(lineFrom, lineTo)
             },
             debug: false
           },

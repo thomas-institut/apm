@@ -201,5 +201,24 @@ export const arabicDeGruyter = {
     },
     hand: {
       parent: "superscript"
+    },
+  marginalia: {
+    parent: "default",
+    text: {
+      fontSize: "10 pt",
+    },
+    paragraph: {
+      lineSkip: "15 pt"
+    },
+    glue: {
+      width: "0.25 em",
+      shrink: "0.03 em",
+      stretch: "0.08 em"
+    },
+  },
+  marginaliaKeyword: {
+    text: {
+      fontStyle: 'italic',
     }
+  },
 }

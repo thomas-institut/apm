@@ -9,6 +9,7 @@ import * as MetadataKey from '../MetadataKey.mjs'
 import { ObjectFactory } from '../ObjectFactory.mjs'
 import { Glue } from '../Glue.mjs'
 import { AdjustmentRatio } from '../AdjustmentRatio.mjs'
+import { ItemArray } from '../ItemArray.mjs'
 
 
 const INFINITE_BADNESS = 100000000
@@ -35,53 +36,11 @@ export class FirstFitLineBreaker extends LineBreaker {
       // final line measurement
       // should be very quick since all possible merged combinations have been measured before
       for (let i = 0; i < lines.length; i++) {
-        await this.measureTextBoxes(lines[i].getList(), textBoxMeasurer)
+        await ItemArray.measureTextBoxes(lines[i].getList(), textBoxMeasurer)
       }
       resolve(lines)
     })
   }
-
-  /**
-   * Measures all text boxes not already measured in the given item array.
-   *
-   * @param {TypesetterItem[]}itemArray
-   * @param {TextBoxMeasurer}textBoxMeasurer
-   * @return {Promise<void>}
-   * @private
-   */
-  static measureTextBoxes(itemArray, textBoxMeasurer) {
-    return new Promise ( async (resolve) => {
-      for (let i = 0; i < itemArray.length; i++) {
-        let item = itemArray[i]
-        if (item instanceof TextBox) {
-          if (item.getWidth() === -1) {
-            //debug && console.log(`Getting text box width`)
-            let measuredWidth = await textBoxMeasurer.getBoxWidth(item)
-            item.setWidth(measuredWidth)
-          }
-          if (item.getHeight() === -1) {
-            let measuredHeight = await textBoxMeasurer.getBoxHeight(item)
-            item.setHeight(measuredHeight)
-          }
-        }
-        if (item instanceof Penalty) {
-          if (item.hasItemToInsert() && item.getItemToInsert() instanceof TextBox) {
-            let itemToInsert = item.getItemToInsert()
-            if (itemToInsert.getWidth() === -1){
-              let measuredWidth = await textBoxMeasurer.getBoxWidth(itemToInsert)
-              itemToInsert.setWidth(measuredWidth)
-            }
-            if (itemToInsert.getHeight() === -1){
-              let measureHeight = await textBoxMeasurer.getBoxHeight(itemToInsert)
-              itemToInsert.setHeight(measureHeight)
-            }
-          }
-        }
-      }
-      resolve()
-    })
-  }
-
 
   /**
    * Determines line break points in an item array using the best-fit algorithm
@@ -240,7 +199,7 @@ export class FirstFitLineBreaker extends LineBreaker {
         }
       }
       // lineItemArray = this.compactItemArray(lineItemArray)
-      await this.measureTextBoxes(lineItemArray, textBoxMeasurer)
+      await ItemArray.measureTextBoxes(lineItemArray, textBoxMeasurer)
       let adjRatio = AdjustmentRatio.calculateHorizontalAdjustmentRatio(lineItemArray, lineWidth)
       if (adjRatio === null) {
         // no glue available to adjust the line. Terrible.

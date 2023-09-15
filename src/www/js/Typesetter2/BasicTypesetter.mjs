@@ -41,6 +41,8 @@ import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
 import { BidiDisplayOrder } from './BidiDisplayOrder.mjs'
 import { AdjustmentRatio } from './AdjustmentRatio.mjs'
 import { MINUS_INFINITE_PENALTY, Penalty } from './Penalty.mjs'
+import { AddMainTextLinePositionMetadata } from './PageProcessor/AddMainTextLinePositionMetadata.mjs'
+import { AddMarginalia } from './PageProcessor/AddMarginalia.mjs'
 
 const signature = 'BasicTypesetter 1.0'
 
@@ -80,6 +82,7 @@ export class BasicTypesetter extends Typesetter2 {
         pageNumbersOptions: { type: 'object', default: {}},
         showLineNumbers: { type: 'boolean', default: true},
         lineNumbersOptions: { type: 'object', default: {}},
+        marginaliaOptions: { type: 'object', default: {}},
         apparatusesAtEndOfDocument: { type: 'boolean', default: false},
         textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
         // A function to typeset an apparatus for the given line range must return a Promise
@@ -88,6 +91,16 @@ export class BasicTypesetter extends Typesetter2 {
           console.log(`Default typeset apparatus called `)
           return resolvedPromise(new ItemList())
         }},
+        // A function that will be called when ejecting a page to get the marginalia for the page's line range
+        // it must return an array of
+        //   { lineNumber: number, itemsToTypeset:  array of TypesetterItem[] arrays }
+        getMarginaliaForLineRange: {
+          type: 'function',
+          default: (lineFrom, lineTo) => {
+            console.log(`Default getMarginaliaForLineRange called for range (${lineFrom}, ${lineTo})`)
+            return []
+          }
+        },
         // A function that will be called before typesetting the apparatuses.
         // This gives the apparatus typesetting engine an opportunity to reset or initialize
         // its state if needed. The function should return a promise to a boolean indicating
@@ -141,6 +154,9 @@ export class BasicTypesetter extends Typesetter2 {
       let pnOptions = pnOc.getCleanOptions(this.options.pageNumbersOptions)
       this.addPageOutputProcessor( this.constructAddPageNumberProcessor(pnOptions))
     }
+
+    this.addPageOutputProcessor( new AddMainTextLinePositionMetadata({}))
+
     if (this.options.showLineNumbers) {
       let lnOc = new OptionsChecker({
         context: `${signature} - Line Numbers`,
@@ -165,6 +181,26 @@ export class BasicTypesetter extends Typesetter2 {
       console.log(lnOptions)
       this.addPageOutputProcessor(this.constructAddLineNumbersProcessor(lnOptions))
     }
+
+    // Marginalia processor
+    let mOc = new OptionsChecker({
+      context: `${signature} - Marginalia options`,
+      optionsDefinition: {
+        xPosition: { type: 'number', default: this.options.marginRight + Typesetter2.cm2px(0.5)},
+        defaultTextDirection: { type: 'string', default: 'ltr'},
+        align: {type: 'string', default: 'left'}
+      }
+    })
+
+    this.options.marginaliaOptions = mOc.getCleanOptions(this.options.marginaliaOptions)
+
+    this.addPageOutputProcessor(new AddMarginalia({
+      textBoxMeasurer: this.options.textBoxMeasurer,
+      xPosition: this.options.marginaliaOptions.xPosition,
+      align: this.options.marginaliaOptions.align
+    }))
+
+
     console.log('Basic typesetter clean options')
     console.log(this.options)
 
@@ -558,7 +594,7 @@ export class BasicTypesetter extends Typesetter2 {
               // insert a page break!
               this.debug && console.log(`EJECTING Page ${currentPage.pageNumber} due to forced page break`)
               this.debug && console.log(`===================`)
-              thePages.push (this.ejectPage(verticalListToTest, currentPage.pageNumber))
+              thePages.push (this.ejectPage(verticalListToTest, currentPage.pageNumber, currentPage.firstLine, currentLine))
               pageTypesettingData.push({ firstLine: currentPage.firstLine, lastLine: currentLine, badness: badness, linesLookedAhead: linesLookedAhead})
               // update current page
               currentPage.pageNumber++
@@ -592,7 +628,7 @@ export class BasicTypesetter extends Typesetter2 {
                   // Eject the best page we have found
                   this.debug && console.log(`EJECTING Page ${currentPage.pageNumber}`)
                   this.debug && console.log(`===================`)
-                  thePages.push(this.ejectPage(bestPage.list, currentPage.pageNumber))
+                  thePages.push(this.ejectPage(bestPage.list, currentPage.pageNumber, currentPage.firstLine, currentLine))
                   pageTypesettingData.push({ firstLine: bestPage.firstLine, lastLine: bestPage.lastLine, badness: bestPage.badness, linesLookedAhead: linesLookedAhead})
                   // backtrack the current line to the best page's last line
                   // the for loop will increment it by 1, so the next line tested will be the one after
@@ -621,7 +657,7 @@ export class BasicTypesetter extends Typesetter2 {
           if(bestPage.list !== null) {
             this.debug && console.log(`EJECTING page ${currentPage.pageNumber}, lines ${currentPage.firstLine} to ${bestPage.lastLine}`)
             this.debug && console.log(`===================`)
-            thePages.push ( this.ejectPage(bestPage.list, currentPage.pageNumber))
+            thePages.push ( this.ejectPage(bestPage.list, currentPage.pageNumber, currentPage.firstLine, bestPage.lastLine))
             pageTypesettingData.push({ firstLine: bestPage.firstLine, lastLine: bestPage.lastLine, badness: bestPage.badness, linesLookedAhead: linesLookedAhead})
             currentPage.pageNumber++
           }
@@ -633,7 +669,7 @@ export class BasicTypesetter extends Typesetter2 {
                 bestPage.lastLine+1, lastLine, resetLineNumbersEachPage)
             this.debug && console.log(`EJECTING page ${currentPage.pageNumber}, hanging lines ${bestPage.lastLine+1} to ${lastLine}`)
             this.debug && console.log(`===================`)
-            thePages.push(this.ejectPage(verticalListWithLastHangingLines, currentPage.pageNumber))
+            thePages.push(this.ejectPage(verticalListWithLastHangingLines, currentPage.pageNumber, bestPage.lastLine+1, lastLine))
             pageTypesettingData.push({ firstLine: bestPage.lastLine+1, lastLine: lastLine, badness: -1, linesLookedAhead: 0})
           }
           this.debug && console.log(`Max lines looked ahead: ${maxLinesLookedAhead}`)
@@ -659,7 +695,15 @@ export class BasicTypesetter extends Typesetter2 {
     })
   }
 
-  ejectPage(verticalList, pageNumber) {
+  /**
+   *
+   * @param {ItemList}verticalList
+   * @param {number}pageNumber
+   * @param {number}firstLine
+   * @param {number}lastLine
+   * @return {TypesetterPage}
+   */
+  ejectPage(verticalList, pageNumber, firstLine, lastLine) {
     verticalList
       .setShiftX(this.options.marginLeft)
       .setShiftY(this.options.marginTop)
@@ -683,8 +727,12 @@ export class BasicTypesetter extends Typesetter2 {
     let page = new TypesetterPage(this.options.pageWidth, this.options.pageHeight,
       [verticalList])
     page.addMetadata(MetadataKey.PAGE_NUMBER, pageNumber)
+
+    let marginalia = this.options.getMarginaliaForLineRange(firstLine, lastLine)
+    page.addMetadata(MetadataKey.PAGE_MARGINALIA, marginalia)
     return page
   }
+
 
   /**
    *

@@ -84,6 +84,10 @@ if (data.helperOptions !== undefined) {
     editionTypesettingHelper.resetExtractedMetadataInfo()
     return resolvedPromise(true)
   }
+
+  data.options.getMarginaliaForLineRange =  (lineFrom, lineTo) =>{
+    return editionTypesettingHelper.getMarginaliaForLineRange(lineFrom, lineTo)
+  }
 }
 
 let typesetter = new BasicTypesetter(data.options)

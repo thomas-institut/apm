@@ -26,3 +26,5 @@ export const LINE_NUMBERS = 'LineNumbers'
 export const LINE = 'line'
 
 
+export const MARGINALIA  = 'Marginalia'
+

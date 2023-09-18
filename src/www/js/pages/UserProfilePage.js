@@ -62,11 +62,11 @@ export class UserProfilePage {
     })
 
     function getMetadata(userinfo) {
-      return [userinfo.fullname, userinfo.username, userinfo.email]
+      return [userinfo.fullname, userinfo.username, userinfo.email, '']
     }
 
     function getMetadataSchema() {
-      return {attributes: ['Full Name', 'Username', 'E-Mail Address'], types: ['text', 'text', 'email']}
+      return {attributes: ['Full Name', 'Username', 'E-Mail Address', 'Password'], types: ['text', 'text', 'email', 'password']}
     }
 
       // Pseudo-accordion behaviour

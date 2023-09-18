@@ -27,6 +27,8 @@ export class MetadataEditor {
         this.numAttributes = 0
         this.idForNewEntity = 0
         this.mode = {create: 'create', edit: 'edit', show: 'show'}
+        this.password1Selector = ''
+        this.password2Selector = ''
 
         // Selectors
         this.buttons =  $('#buttons')
@@ -61,10 +63,8 @@ export class MetadataEditor {
             `<br>
                             <table id="metadataTable"></table>
                             <br>
-                            <div id="buttons"></div>
-                            <br>
-                            <div id="confirmationMessage"></div>
-                            <div id="errorMessage"></div>`)
+                            <div id="buttons"><comment id="confirmationMessage"></comment><comment id="errorMessage"></comment></div>
+                            <br>`)
     }
 
     setupEditMode() {
@@ -183,10 +183,45 @@ export class MetadataEditor {
         for (let i=1; i<=this.numAttributes; i++) {
             let selectorId = "#entity_attr" + i
             let inputId = "entity_attr" + i + "_form"
-            let placeholder = this.entity.types[i-1]
-            $(selectorId).html(
-                `<input type="text" id=${inputId} placeholder=${placeholder} style="padding: unset">`)
+            let type = this.entity.types[i-1]
+            if (type === 'password') {
+                this.makePasswordForm(selectorId, inputId)
+            } else {
+                $(selectorId).html(
+                    `<p><input type="text" class="form-control" id=${inputId} placeholder=${type} style="padding: unset"></p>`)
+            }
         }
+    }
+
+    makePasswordForm(selector, inputId) {
+
+        this.password1Selector = "#" + inputId
+        this.password2Selector = "#password2"
+
+        $(selector).html(
+            `<form data-toggle="validator" role="form" id="theChangePasswordForm">
+        <!-- Password -->
+        <div class="form-group has-feedback">
+            <input type="password" 
+               class="form-control" 
+               id=${inputId}
+               name="password1"
+               data-minlength="8"
+               maxlength="16"
+               placeholder="User password (8-16 characters)" required>
+            <div class="help-block with-errors" id="passwordError1"></div>
+        </div>
+        <!-- Password confirmation -->
+        <div class="form-group has-feedback">
+            <input type="password" 
+                   class="form-control" 
+                   id="password2"
+                   name="password2"
+                   data-match=${this.password1Selector}
+                   data-match-error="Passwords do not match"
+                   placeholder="Confirm" required>
+            <div class="help-block with-errors"></div>
+        </div></form>`)
     }
 
     fillAttributesFormsWithValues() {
@@ -196,35 +231,10 @@ export class MetadataEditor {
         }
     }
 
-    // DELETE? - API Call for New Entity ID
-    getIdForNewEntity() {
-
-        $.post(this.apiUrls.getIdForNewEntity).done((apiResponse) => {
-
-            // Catch errors
-            if (apiResponse.status !== 'OK') {
-                console.log(`Error in query for metadata of entity with ID ${id}!`);
-                if (apiResponse.errorData !== undefined) {
-                    console.log(apiResponse.errorData);
-                }
-                errorMessageDiv.html(`Error while getting metadata, please report to technical administrators.`)
-                    .removeClass('text-error');
-                return;
-            }
-
-            console.log(apiResponse);
-            console.log(`ID for next entity to be created will be ${apiResponse.id}`)
-
-            this.idForNewEntity = apiResponse.id
-
-            return true
-        })
-    }
-
     // Save Button Setup
     setupSaveButton (mode) {
-        this.buttons.append(
-            `<button type="button" id="save_button" name="Save" style="background-color: white; padding: unset">Save</button>`)
+        this.buttons.prepend(
+            `<button type="submit" class="btn btn-primary" id="save_button">Save</button>`)
         this.makeSaveButtonEvent(mode)
     }
 
@@ -238,16 +248,19 @@ export class MetadataEditor {
             // Get Data To Save
             let d = this.getEntityDataToSave(mode)
 
-            if (this.dataTypesAreCorrect(d)) {
+            if (this.dataTypesAreCorrect(d) && this.passwordsAreCorrect()) {
                 this.updateEntityData(d.id, d.type, d.values)
                 this.options.callback(this.entity)
-                this.confirm('Saved!')
+                this.returnConfirmation('Saved!')
                 if (mode === this.mode.create) {
                     this.getIdForNewEntity()
                 }
             }
-            else {
+            else if (this.passwordsAreCorrect()) {
                 this.returnDataTypeError()
+            }
+            else if (this.dataTypesAreCorrect(d)) {
+                this.returnPasswordError()
             }
         })
     }
@@ -278,13 +291,16 @@ export class MetadataEditor {
         return {id: id, type: type, values: values}
     }
 
-    // Validate Data for Saving
+    // Validate Data before Saving
     dataTypesAreCorrect (d) {
 
         let index = 0
         for (let value of d.values) {
             let type = this.getDataType(value)
-            if (type !== this.entity.types[index]) {
+            if (type !== this.entity.types[index] && this.entity.types[index] !== 'password') { // Passwords do not undergo a check here
+                this.mismatchedAttribute = this.entity.attributes[index]
+                this.givenType = type
+                this.affordedType = this.entity.types[index]
                 return false
             }
             else {
@@ -293,6 +309,15 @@ export class MetadataEditor {
         }
 
         return true
+    }
+
+    passwordsAreCorrect() {
+        if ($(this.password1Selector).val() === $(this.password2Selector).val()) {
+            return true
+        }
+        else {
+            return false
+        }
     }
 
     getDataType(value) {
@@ -333,15 +358,25 @@ export class MetadataEditor {
     // User Communication
     returnDataTypeError() {
         console.log('Data Type Error!')
-        $("#errorMessage").html(`The types of the given data do not match with the type scheme of the desired entity type!\n
-                The type scheme for entities of type '${this.entity.type}' is: ${this.entity.types}.\nPlease try again.`)
+        this.returnError(`Error! The given ${this.mismatchedAttribute} is of type '${this.givenType}' but has to be of type '${this.affordedType}'. Please try again.`)
+    }
+
+    returnPasswordError() {
+        console.log('Password Error!')
+      this.returnError(`Password Error! Please try again.`)
+    }
+
+    returnError(str) {
+        str = "&nbsp&nbsp" + str
+        $("#errorMessage").html(str)
     }
 
     clearErrorMessage() {
         $("#errorMessage").empty()
     }
 
-    confirm(str) {
+    returnConfirmation(str) {
+        str = "&nbsp&nbsp" + str
         $("#confirmationMessage").html(str)
     }
 
@@ -349,7 +384,30 @@ export class MetadataEditor {
         $("#confirmationMessage").empty()
     }
 
+    // DELETE? - API Call for New Entity ID
+    getIdForNewEntity() {
 
+        $.post(this.apiUrls.getIdForNewEntity).done((apiResponse) => {
+
+            // Catch errors
+            if (apiResponse.status !== 'OK') {
+                console.log(`Error in query for metadata of entity with ID ${id}!`);
+                if (apiResponse.errorData !== undefined) {
+                    console.log(apiResponse.errorData);
+                }
+                errorMessageDiv.html(`Error while getting metadata, please report to technical administrators.`)
+                    .removeClass('text-error');
+                return;
+            }
+
+            console.log(apiResponse);
+            console.log(`ID for next entity to be created will be ${apiResponse.id}`)
+
+            this.idForNewEntity = apiResponse.id
+
+            return true
+        })
+    }
 
 
 
@@ -595,11 +653,11 @@ export class MetadataEditor {
             else {
 
                 if (apiUrl === this.apiUrls.createEntity) {
-                    this.confirm('Created!')
+                    this.returnConfirmation('Created!')
                     console.log(`Created entity with ID ${apiData.id}`)
                 }
                 else {
-                    this.confirm('Saved!')
+                    this.returnConfirmation('Saved!')
                     console.log(`Saved metadata for entity with ID ${apiData.id}`)
                 }
             }

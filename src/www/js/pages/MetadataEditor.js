@@ -25,7 +25,7 @@ export class MetadataEditor {
         this.entity = {id: '', type: '', attributes: [], values: [], types: []}
         this.schemes = {types: [], attributes: [], placeholders: []}
         this.numAttributes = 0
-        this.idForNewEntity = 0
+        //this.idForNewEntity = 0
         this.mode = {create: 'create', edit: 'edit', show: 'show'}
         this.password1Selector = ''
         this.password2Selector = ''
@@ -46,7 +46,7 @@ export class MetadataEditor {
                 break
         }
 
-        // UNUSED - Api Urls
+        // // UNUSED - Api Urls
         // this.urlGen = new ApmUrlGenerator('')
         // this.apiUrls = {
         //     getData: this.urlGen.apiMetadataEditorGetData(),
@@ -175,14 +175,13 @@ export class MetadataEditor {
 
     setupTableForDataInput(mode, callback) {
 
+        this.setupAttributesForms()
+
         if (mode === this.mode.create) {
-            this.getIdForNewEntity()
-            this.setupAttributesForms()
             callback()
         }
         else {
-            this.setupAttributesForms()
-            this.fillAttributesFormsWithValues()
+            this.fillAttributesForms()
             callback()
         }
     }
@@ -259,7 +258,7 @@ export class MetadataEditor {
             `<p><input type="text" class="form-control" id=${inputId} placeholder=${type} style="padding: unset"></p>`)
     }
 
-     fillAttributesFormsWithValues() {
+     fillAttributesForms() {
         for (let i=1; i<=this.numAttributes; i++) {
             let id = "#entity_attr" + i + "_form"
             $(id).val(this.entity.values[i-1])
@@ -287,9 +286,6 @@ export class MetadataEditor {
                 this.updateEntityData(d.id, d.type, d.values)
                 this.options.callback(this.entity)
                 this.returnConfirmation('Saved!')
-                if (mode === this.mode.create) {
-                    this.getIdForNewEntity()
-                }
             }
             else if (this.passwordsAreCorrect()) {
                 this.returnDataTypeError()
@@ -307,16 +303,9 @@ export class MetadataEditor {
     }
 
     getEntityDataToSave(mode) {
-        let id
+        let id = this.entity.id
         let values = []
         let type = this.entity.type
-
-        if (mode === this.mode.create) {
-            id = this.idForNewEntity
-        }
-        else {
-            id = this.entity.id
-        }
 
         for (let i=1; i<=this.numAttributes; i++) {
             let name = "#entity_attr" + i + "_form"

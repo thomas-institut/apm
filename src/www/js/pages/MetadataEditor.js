@@ -34,14 +34,16 @@ export class MetadataEditor {
         this.buttons =  $('#buttons')
 
         // Setup metadata editor in desired mode
-        if (this.options.mode === 'edit') {
-            this.setupEditMode()
-        }
-        else if (this.options.mode === 'create') {
-            this.setupCreateMode()
-        }
-        else if (this.options.mode === 'show') {
-            this.setupShowMode()
+        switch (this.options.mode) {
+            case 'edit':
+                this.setupEditMode()
+                break
+            case 'create':
+                this.setupCreateMode()
+                break
+            case 'show':
+                this.setupShowMode()
+                break
         }
 
         // UNUSED - Api Urls
@@ -116,36 +118,42 @@ export class MetadataEditor {
     }
 
     makeTableRows() {
-        if (this.options.theme === 'horizontal') {
-            $('#metadataTable').append(`<tr id="row1"></tr><tr id="row2"></tr>`)
-        }
-        else if (this.options.theme === 'vertical') {
-            for (let i=1; i<=this.numAttributes; i++) {
-                let id = "row" + i
-                $('#metadataTable').append(`<tr id=${id}></tr>`)
-            }
+        let tableSelector = '#metadataTable'
+        switch (this.options.theme) {
+            case 'horizontal':
+                $(tableSelector).append(`<tr id="row1"></tr><tr id="row2"></tr>`)
+                break
+            case 'vertical':
+                for (let i=1; i<=this.numAttributes; i++) {
+                    let id = "row" + i
+                    $(tableSelector).append(`<tr id=${id}></tr>`)
+                }
+                break
         }
     }
 
     makeTableCells () {
-        if (this.options.theme === 'horizontal') {
-            for (let i = 1; i <= this.numAttributes; i++) {
+        switch (this.options.theme) {
+            case 'horizontal':
+                for (let i = 1; i <= this.numAttributes; i++) {
 
-                let cellId = "entity_attr" + i
-                $('#row1').append(`<th>${this.entity.attributes[i-1]}</th>`)
+                    let cellId = "entity_attr" + i
+                    $('#row1').append(`<th>${this.entity.attributes[i-1]}</th>`)
 
-                $('#row2').append(`<td><div id=${cellId}></div></td>`)
-            }
-        } else if (this.options.theme === 'vertical') {
-            for (let i = 1; i <= this.numAttributes; i++) {
+                    $('#row2').append(`<td><div id=${cellId}></div></td>`)
+                }
+                break
+            case 'vertical':
+                for (let i = 1; i <= this.numAttributes; i++) {
 
-                let row = "#row" + i
-                let cellId = "entity_attr" + i
-                let attributeName = this.entity.attributes[i-1] + "&emsp;&emsp;"
+                    let row = "#row" + i
+                    let cellId = "entity_attr" + i
+                    let attributeName = this.entity.attributes[i-1] + "&emsp;&emsp;"
 
-                $(row).append(`<th>${attributeName}</th>
+                    $(row).append(`<th>${attributeName}</th>
                                <td><div id=${cellId}></div></td>`)
-            }
+                }
+                break
         }
     }
 
@@ -184,11 +192,19 @@ export class MetadataEditor {
             let selectorId = "#entity_attr" + i
             let inputId = "entity_attr" + i + "_form"
             let type = this.entity.types[i-1]
-            if (type === 'password') {
-                this.makePasswordForm(selectorId, inputId)
-            } else {
-                $(selectorId).html(
-                    `<p><input type="text" class="form-control" id=${inputId} placeholder=${type} style="padding: unset"></p>`)
+
+            switch (type) {
+                case 'password':
+                    this.makePasswordForm(selectorId, inputId)
+                    break
+                case 'date':
+                    this.makeDateForm(selectorId, inputId, type)
+                    break
+                case 'year':
+                    this.makeYearForm(selectorId, inputId)
+                    break
+                default:
+                    this.makeTextForm(selectorId, inputId, type)
             }
         }
     }
@@ -208,7 +224,7 @@ export class MetadataEditor {
                name="password1"
                data-minlength="8"
                maxlength="16"
-               placeholder="User password (8-16 characters)" required>
+               placeholder="Password (8-16 characters)" required>
             <div class="help-block with-errors" id="passwordError1"></div>
         </div>
         <!-- Password confirmation -->
@@ -224,7 +240,26 @@ export class MetadataEditor {
         </div></form>`)
     }
 
-    fillAttributesFormsWithValues() {
+    makeDateForm(selectorId, inputId, type) {
+        $(selectorId).html(`<p><input type="date" class="form-control" id=${inputId} placeholder=${type} style="padding: unset"></p>`)
+    }
+
+    makeYearForm(selectorId, inputId) {
+        let inputSelector = "#" + inputId
+        let currentYear = new Date().getFullYear()
+        $(selectorId).html(
+            `<p><select class="form-control" id=${inputId} style="padding: unset"></p>`)
+        for (let i=-1000; i<=currentYear; i++) {
+            $(inputSelector).append(`<option>${i}</option>`)
+        }
+    }
+
+    makeTextForm(selectorId, inputId, type) {
+        $(selectorId).html(
+            `<p><input type="text" class="form-control" id=${inputId} placeholder=${type} style="padding: unset"></p>`)
+    }
+
+     fillAttributesFormsWithValues() {
         for (let i=1; i<=this.numAttributes; i++) {
             let id = "#entity_attr" + i + "_form"
             $(id).val(this.entity.values[i-1])
@@ -296,8 +331,9 @@ export class MetadataEditor {
 
         let index = 0
         for (let value of d.values) {
-            let type = this.getDataType(value)
-            if (type !== this.entity.types[index] && this.entity.types[index] !== 'password') { // Passwords do not undergo a check here
+            let type = this.dataType(value)
+            if (type !== this.entity.types[index] && this.entity.types[index] !== 'password' &&
+                this.entity.types[index] !== 'year') { // Passwords and years do not need to undergo a check here
                 this.mismatchedAttribute = this.entity.attributes[index]
                 this.givenType = type
                 this.affordedType = this.entity.types[index]
@@ -312,7 +348,7 @@ export class MetadataEditor {
     }
 
     passwordsAreCorrect() {
-        if ($(this.password1Selector).val() === $(this.password2Selector).val()) {
+        if ($(this.password1Selector).val() === $(this.password2Selector).val() && $(this.password1Selector).val() !== "") {
             return true
         }
         else {
@@ -320,7 +356,7 @@ export class MetadataEditor {
         }
     }
 
-    getDataType(value) {
+    dataType(value) {
 
         let type
 
@@ -332,8 +368,11 @@ export class MetadataEditor {
             if (this.containsOnlyNumbers(value)) {
                 type = 'number'
             }
-            else {
+            else if (this.isDate(value)) {
                 type = 'date'
+            }
+            else {
+                type = 'date_approx'
             }
         }
         else {
@@ -353,6 +392,10 @@ export class MetadataEditor {
 
     containsOnlyNumbers(str) {
         return /^\d+$/.test(str);
+    }
+
+    isDate(str) {
+        return /.+-.+-.+/.test(str)
     }
 
     // User Communication

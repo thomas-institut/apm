@@ -66,7 +66,7 @@ export class UserProfilePage {
     }
 
     function getMetadataSchema() {
-      return {attributes: ['Full Name', 'Username', 'E-Mail Address', 'Exact Date', 'Year', 'Approx. Date', 'Password'], types: ['text', 'text', 'email', 'date', 'year', 'date_approx', 'password']}
+      return {attributes: ['Full Name', 'Username', 'E-Mail Address', 'Exact Date', 'Year', 'Years (Range)', 'Password'], types: ['text', 'text', 'email', 'date', 'year', 'years_range', 'password']}
     }
 
       // Pseudo-accordion behaviour

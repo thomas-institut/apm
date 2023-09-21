@@ -202,6 +202,9 @@ export class MetadataEditor {
                 case 'year':
                     this.makeYearForm(selectorId, inputId)
                     break
+                case 'years_range':
+                    this.makeApproxDateForm(selectorId, inputId)
+                    break
                 default:
                     this.makeTextForm(selectorId, inputId, type)
             }
@@ -224,10 +227,7 @@ export class MetadataEditor {
                data-minlength="8"
                maxlength="16"
                placeholder="Password (8-16 characters)" required>
-            <div class="help-block with-errors" id="passwordError1"></div>
-        </div>
         <!-- Password confirmation -->
-        <div class="form-group has-feedback">
             <input type="password" 
                    class="form-control" 
                    id="password2"
@@ -250,6 +250,20 @@ export class MetadataEditor {
             `<p><select class="form-control" id=${inputId} style="padding: unset"></p>`)
         for (let i=-1000; i<=currentYear; i++) {
             $(inputSelector).append(`<option>${i}</option>`)
+        }
+    }
+
+    makeApproxDateForm(selectorId, inputId) {
+        let inputSelector1 = "#" + inputId
+        let inputId2 = "years_range2"
+        let inputSelector2 = "#" + inputId2
+        let currentYear = new Date().getFullYear()
+        $(selectorId).html(`<select class="form-control" id=${inputId} style="padding: unset">`)
+        $(selectorId).append(`<p><select class="form-control" id=${inputId2} style="padding: unset"></p>`)
+
+        for (let i=-1000; i<=currentYear; i++) {
+            $(inputSelector1).append(`<option>${i}</option>`)
+            $(inputSelector2).append(`<option>${i}</option>`)
         }
     }
 
@@ -280,7 +294,7 @@ export class MetadataEditor {
             this.clearConfirmationMessage()
 
             // Get Data To Save
-            let d = this.getEntityDataToSave(mode)
+            let d = this.getEntityDataToSave()
 
             if (this.dataTypesAreCorrect(d) && this.passwordsAreCorrect()) {
                 this.updateEntityData(d.id, d.type, d.values)
@@ -302,17 +316,39 @@ export class MetadataEditor {
         this.entity.values = values
     }
 
-    getEntityDataToSave(mode) {
+    getEntityDataToSave() {
         let id = this.entity.id
         let values = []
         let type = this.entity.type
 
         for (let i=1; i<=this.numAttributes; i++) {
             let name = "#entity_attr" + i + "_form"
-            values.push($(name).val())
+            let value = $(name).val()
+
+            if (this.entity.types[i-1] === 'years_range') {
+                let years = this.getYearsRange(value)
+                values.push(years)
+            }
+            else {
+                values.push(value)
+            }
         }
 
         return {id: id, type: type, values: values}
+    }
+
+    getYearsRange(value) {
+        let years = []
+        // let regex = /\d+/g;
+        // let year
+        // while ((year = regex.exec(str)) != null) {
+        //     years.push(year[0])
+        // }
+        
+        years.push(value)
+        years.push($("#years_range2").val())
+        
+        return years
     }
 
     // Validate Data before Saving
@@ -361,7 +397,7 @@ export class MetadataEditor {
                 type = 'date'
             }
             else {
-                type = 'date_approx'
+                type = 'years_range'
             }
         }
         else {

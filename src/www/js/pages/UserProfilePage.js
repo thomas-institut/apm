@@ -62,7 +62,7 @@ export class UserProfilePage {
     })
 
     function getMetadata(userinfo) {
-      return [userinfo.fullname, userinfo.username, userinfo.email, '1992-01-21', 1802, '900-1000', '']
+      return [userinfo.fullname, userinfo.username, userinfo.email, '1992-01-21', 1802, [1910, 1920, 'Years are only estimations!'], '']
     }
 
     function getMetadataSchema() {

@@ -1,10 +1,11 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
+import tab from "bootstrap/js/src/tab";
 
 export class MetadataEditor {
 
     constructor(options) {
 
-        let optionsDefinition = {
+        const optionsDefinition = {
             containerSelector: { type:'string', required: true},
             entityId: {type:'number', required: true},
             entityType: {type:'string', required: true},
@@ -15,7 +16,7 @@ export class MetadataEditor {
             theme: {type:'string', required: true}
         }
 
-        let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "MetadataEditor"})
+        const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "MetadataEditor"})
         this.options = oc.getCleanOptions(options)
 
         // Fill container with the metadata editor html structure
@@ -61,9 +62,18 @@ export class MetadataEditor {
     // Setup Editor
     makeEditor(container) {
         container = "#" + container
+        let tableClass
+        switch (this.options.theme) {
+            case 'vertical':
+                tableClass = 'table'
+                break
+            case 'horizontal':
+                tableClass = 'dataTable'
+                break
+        }
         $(container).html(
             `<br>
-                            <table id="metadataTable"></table>
+                            <table class=${tableClass} id="metadataTable"></table>
                             <br>
                             <div id="buttons"><comment id="confirmationMessage"></comment><comment id="errorMessage"></comment></div>
                             <br>`)
@@ -150,7 +160,7 @@ export class MetadataEditor {
                     let cellId = "entity_attr" + i
                     let attributeName = this.entity.attributes[i-1] + "&emsp;&emsp;"
 
-                    $(row).append(`<th>${attributeName}</th>
+                    $(row).append(`<th style="vertical-align: top">${attributeName}</th>
                                <td><div id=${cellId}></div></td>`)
                 }
                 break
@@ -162,7 +172,13 @@ export class MetadataEditor {
         this.clearTableCells()
         for (let i=1; i<=this.numAttributes; i++) {
             let id = "#entity_attr" + i
-            $(id).append(this.entity.values[i-1])
+            let value = this.entity.values[i-1]
+            if (Array.isArray(value)) { // Years Range with Note
+                value = value[0] + "-" + value[1] + ", " + value[2]
+                $(id).append(value)
+            } else {
+                $(id).append(value)
+            }
         }
     }
 
@@ -175,7 +191,7 @@ export class MetadataEditor {
 
     setupTableForDataInput(mode, callback) {
 
-        this.setupAttributesForms()
+        this.setupInputFormsForAttributes()
 
         if (mode === this.mode.create) {
             callback()
@@ -186,7 +202,7 @@ export class MetadataEditor {
         }
     }
 
-    setupAttributesForms() {
+    setupInputFormsForAttributes() {
         for (let i=1; i<=this.numAttributes; i++) {
             let selectorId = "#entity_attr" + i
             let inputId = "entity_attr" + i + "_form"
@@ -203,7 +219,7 @@ export class MetadataEditor {
                     this.makeYearForm(selectorId, inputId)
                     break
                 case 'years_range':
-                    this.makeApproxDateForm(selectorId, inputId)
+                    this.makeYearsRangeForm(selectorId, inputId)
                     break
                 default:
                     this.makeTextForm(selectorId, inputId, type)
@@ -253,13 +269,15 @@ export class MetadataEditor {
         }
     }
 
-    makeApproxDateForm(selectorId, inputId) {
+    makeYearsRangeForm(selectorId, inputId) {
         let inputSelector1 = "#" + inputId
         let inputId2 = "years_range2"
+        let inputId3 = "years_range_note"
         let inputSelector2 = "#" + inputId2
         let currentYear = new Date().getFullYear()
         $(selectorId).html(`<select class="form-control" id=${inputId} style="padding: unset">`)
         $(selectorId).append(`<p><select class="form-control" id=${inputId2} style="padding: unset"></p>`)
+        $(selectorId).append(`<p><textarea rows="2" cols="50" id=${inputId3} placeholder="Your Note For The Given Range of Years"></textarea></p>`)
 
         for (let i=-1000; i<=currentYear; i++) {
             $(inputSelector1).append(`<option>${i}</option>`)
@@ -275,9 +293,17 @@ export class MetadataEditor {
      fillAttributesForms() {
         for (let i=1; i<=this.numAttributes; i++) {
             let id = "#entity_attr" + i + "_form"
-            $(id).val(this.entity.values[i-1])
+            if (this.entity.types[i-1] === 'years_range') {
+                $(id).val(this.entity.values[i-1][0])
+                $('#years_range2').val(this.entity.values[i-1][1])
+                $('#years_range_note').val(this.entity.values[i-1][2])
+            }
+            else {
+                $(id).val(this.entity.values[i-1])
+            }
         }
     }
+
 
     // Save Button Setup
     setupSaveButton (mode) {
@@ -301,12 +327,6 @@ export class MetadataEditor {
                 this.options.callback(this.entity)
                 this.returnConfirmation('Saved!')
             }
-            else if (this.passwordsAreCorrect()) {
-                this.returnDataTypeError()
-            }
-            else if (this.dataTypesAreCorrect(d)) {
-                this.returnPasswordError()
-            }
         })
     }
 
@@ -326,7 +346,7 @@ export class MetadataEditor {
             let value = $(name).val()
 
             if (this.entity.types[i-1] === 'years_range') {
-                let years = this.getYearsRange(value)
+                let years = this.getDataForYearsRange(value)
                 values.push(years)
             }
             else {
@@ -337,7 +357,7 @@ export class MetadataEditor {
         return {id: id, type: type, values: values}
     }
 
-    getYearsRange(value) {
+    getDataForYearsRange(value) {
         let years = []
         // let regex = /\d+/g;
         // let year
@@ -347,6 +367,7 @@ export class MetadataEditor {
         
         years.push(value)
         years.push($("#years_range2").val())
+        years.push($("#years_range_note").val())
         
         return years
     }
@@ -356,13 +377,21 @@ export class MetadataEditor {
 
         let index = 0
         for (let value of d.values) {
-            let type = this.dataType(value)
-            if (type !== this.entity.types[index] && this.entity.types[index] !== 'password' &&
-                this.entity.types[index] !== 'year') { // Passwords and years do not need to undergo a check here
-                this.mismatchedAttribute = this.entity.attributes[index]
-                this.givenType = type
-                this.affordedType = this.entity.types[index]
-                return false
+
+            let attribute = this.entity.attributes[index]
+            let affordedType = this.entity.types[index]
+
+            if (affordedType !== 'password' && affordedType !== 'year' && affordedType !== 'years_range') {
+                // Passwords and years do not need to undergo a check here
+
+                let givenType = this.dataType(value)
+
+                if (givenType !== affordedType) {
+                    this.returnDataTypeError(attribute, givenType, affordedType)
+                    return false
+                } else {
+                    index++
+                }
             }
             else {
                 index++
@@ -377,6 +406,7 @@ export class MetadataEditor {
             return true
         }
         else {
+            this.returnPasswordError()
             return false
         }
     }
@@ -397,7 +427,7 @@ export class MetadataEditor {
                 type = 'date'
             }
             else {
-                type = 'years_range'
+                type = 'mixed'
             }
         }
         else {
@@ -424,9 +454,9 @@ export class MetadataEditor {
     }
 
     // User Communication
-    returnDataTypeError() {
+    returnDataTypeError(attribute, givenType, affordedType) {
         console.log('Data Type Error!')
-        this.returnError(`Error! The given ${this.mismatchedAttribute} is of type '${this.givenType}' but has to be of type '${this.affordedType}'. Please try again.`)
+        this.returnError(`Error! Given data for '${attribute}' is of type '${givenType}' but has to be of type '${affordedType}'. Please try again.`)
     }
 
     returnPasswordError() {
@@ -576,7 +606,7 @@ export class MetadataEditor {
             this.makeTableStructure()
             this.setupTypeSelector()
             this.setupSelectorOptions(value)
-            this.setupAttributesForms()
+            this.setupInputFormsForAttributes()
             console.log(`Adjusted table to chosen entity type "${value}".`)
         });
     }

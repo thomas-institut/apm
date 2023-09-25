@@ -7,7 +7,7 @@ export class MetadataEditor {
 
         const optionsDefinition = {
             containerSelector: { type:'string', required: true},
-            entityId: {type:'number', required: true},
+            entityId: {type:'string', required: true},
             entityType: {type:'string', required: true},
             metadata: {type:'array', required: true},
             metadataSchema: {type: 'object', required: true},
@@ -24,12 +24,12 @@ export class MetadataEditor {
 
         // Globals
         this.entity = {id: '', type: '', attributes: [], values: [], types: []}
-        this.schemes = {types: [], attributes: [], placeholders: []}
         this.numAttributes = 0
-        //this.idForNewEntity = 0
         this.mode = {create: 'create', edit: 'edit', show: 'show'}
-        this.password1Selector = ''
-        this.password2Selector = ''
+
+        // Probably not needed anymore
+        //this.schemes = {types: [], attributes: [], placeholders: []}
+        //this.idForNewEntity = 0
 
         // Selectors
         this.buttons =  $('#buttons')
@@ -269,19 +269,22 @@ export class MetadataEditor {
         }
     }
 
-    makeYearsRangeForm(selectorId, inputId) {
-        let inputSelector1 = "#" + inputId
-        let inputId2 = "years_range2"
-        let inputId3 = "years_range_note"
-        let inputSelector2 = "#" + inputId2
+    makeYearsRangeForm(selectorId, inputIdYearsRangeStart) {
+
+        let inputIdYearsRangeEnd = "years_range_end"
+        let inputIdYearsRangeNote = "years_range_note"
         let currentYear = new Date().getFullYear()
-        $(selectorId).html(`<select class="form-control" id=${inputId} style="padding: unset">`)
-        $(selectorId).append(`<p><select class="form-control" id=${inputId2} style="padding: unset"></p>`)
-        $(selectorId).append(`<p><textarea rows="2" cols="50" id=${inputId3} placeholder="Your Note For The Given Range of Years"></textarea></p>`)
+
+        $(selectorId).html(`<select class="form-control" id=${inputIdYearsRangeStart} style="padding: unset">`)
+        $(selectorId).append(`<p><select class="form-control" id=${inputIdYearsRangeEnd} style="padding: unset"></p>`)
+        $(selectorId).append(`<p><textarea rows="2" cols="50" id=${inputIdYearsRangeNote} placeholder="Your Note For The Given Range of Years"></textarea></p>`)
+
+        let selectorYearsRangeStart = "#" + inputIdYearsRangeStart
+        let selectorYearsRangeEnd = "#" + inputIdYearsRangeEnd
 
         for (let i=-1000; i<=currentYear; i++) {
-            $(inputSelector1).append(`<option>${i}</option>`)
-            $(inputSelector2).append(`<option>${i}</option>`)
+            $(selectorYearsRangeStart).append(`<option>${i}</option>`)
+            $(selectorYearsRangeEnd).append(`<option>${i}</option>`)
         }
     }
 
@@ -295,7 +298,7 @@ export class MetadataEditor {
             let id = "#entity_attr" + i + "_form"
             if (this.entity.types[i-1] === 'years_range') {
                 $(id).val(this.entity.values[i-1][0])
-                $('#years_range2').val(this.entity.values[i-1][1])
+                $('#years_range_end').val(this.entity.values[i-1][1])
                 $('#years_range_note').val(this.entity.values[i-1][2])
             }
             else {
@@ -366,7 +369,7 @@ export class MetadataEditor {
         // }
         
         years.push(value)
-        years.push($("#years_range2").val())
+        years.push($("#years_range_end").val())
         years.push($("#years_range_note").val())
         
         return years
@@ -386,7 +389,7 @@ export class MetadataEditor {
 
                 let givenType = this.dataType(value)
 
-                if (givenType !== affordedType) {
+                if (givenType !== affordedType) { // Empty values and mismatching types throw an error
                     this.returnDataTypeError(attribute, givenType, affordedType)
                     return false
                 } else {
@@ -418,6 +421,9 @@ export class MetadataEditor {
         if (this.isMail(value)) {
             type = 'email'
         }
+        else if (this.isUrl(value)) {
+            type = 'url'
+        }
         else if (this.containsNumber(value)) {
 
             if (this.containsOnlyNumbers(value)) {
@@ -430,6 +436,9 @@ export class MetadataEditor {
                 type = 'mixed'
             }
         }
+        else if (value === "") {
+            type = 'emtpy'
+        }
         else {
             type = 'text'
         }
@@ -439,6 +448,10 @@ export class MetadataEditor {
 
     isMail(str) {
         return /.+@.+\..+/.test(str)
+    }
+
+    isUrl(str) {
+        return /www\..+\..+/.test(str)
     }
 
     containsNumber(str) {

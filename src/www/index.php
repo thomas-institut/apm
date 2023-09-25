@@ -29,11 +29,13 @@ use APM\Api\ApiEditionSources;
 use APM\Api\ApiLog;
 use APM\Api\ApiMetadataEditor;
 use APM\Api\ApiMultiChunkEdition;
+use APM\Api\ApiPeopleManager;
 use APM\Api\ApiTranscription;
 use APM\Api\ApiWorks;
 
 use APM\Site\SiteMetadataEditor;
 use APM\Site\SiteMultiChunkEdition;
+use APM\Site\SitePeopleManager;
 use APM\System\ConfigLoader;
 use JetBrains\PhpStorm\NoReturn;
 use Slim\App;
@@ -175,11 +177,12 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
         SiteSearch::class . ':searchPage')
         ->setName('search');
 
-    // Metadata Editor Page
+    // People Manager Page
 
-    $group->get('/metadataeditor',
-        SiteMetadataEditor::class . ':metadataEditorPage')
-        ->setName('metadataeditor');
+    $group->get('/peoplemanager',
+        SitePeopleManager::class . ':peopleManagerPage')
+        ->setName('people.manager');
+
 
     // DASHBOARD
 
@@ -335,6 +338,19 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
     $group->post('/search/editors',
         ApiSearch::class . ':getEditors')
         ->setName('search.editors');
+
+    // People Manager
+    $group->post('/person/get',
+        ApiPeopleManager::class . ':getData')
+        ->setName('getData');
+
+    $group->post('/person/save',
+        ApiPeopleManager::class . ':saveData')
+        ->setName('saveData');
+
+    $group->post('/person/create',
+        ApiPeopleManager::class . ':createPerson')
+        ->setName('createPerson');
 
     // Metadata Editor
     $group->post('/metadataeditor/getmetadata',

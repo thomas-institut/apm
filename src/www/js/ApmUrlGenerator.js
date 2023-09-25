@@ -312,6 +312,18 @@ class ApmUrlGenerator {
         return `${this.base}/api/search/editions`
     }
 
+    apiPersonManagerGetData() {
+        return `${this.base}/api/person/get`
+    }
+
+    apiPersonManagerSaveData() {
+        return `${this.base}/api/person/save`
+    }
+
+    apiPersonManagerCreatePerson() {
+        return `${this.base}/api/person/create`
+    }
+
     apiMetadataEditorGetData() {
         return `${this.base}/api/metadataeditor/getmetadata`
     }

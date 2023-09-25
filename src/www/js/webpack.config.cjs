@@ -31,9 +31,9 @@ module.exports = {
       filename: 'EditionComposer.bundle.js',
       dependOn: 'QuillPack',
     },
-    MetadataEditor: {
-      import: './pages/MetadataEditor.js',
-      filename: 'MetadataEditor.bundle.js'
+    PeopleManager: {
+      import: './pages/PeopleManagerPage.js',
+      filename: 'PeopleManagerPage.bundle.js'
     },
     MceComposer: {
       import: './MceComposer/MceComposer.js',

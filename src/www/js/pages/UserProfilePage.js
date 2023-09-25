@@ -47,27 +47,16 @@ export class UserProfilePage {
     let userId = profileUserInfo['id']
 
     // Make Metadata Editor
-    let metadata = getMetadata(thisObject.profileUserInfo)
-    let metadataSchema = getMetadataSchema()
-
     let mde = new MetadataEditor({
       containerSelector: 'editProfileForm',
       entityId: this.userId,
       entityType: 'user',
-      metadata: metadata,
-      metadataSchema: metadataSchema,
+      metadata: [profileUserInfo.fullname, profileUserInfo.username, profileUserInfo.email],
+      metadataSchema: {attributes: ['Full Name', 'Username', 'E-Mail Address'], types: ['text', 'text', 'email']},
       callback: (d) => {console.log(d)},
       mode: 'edit',
       theme: 'vertical'
     })
-
-    function getMetadata(userinfo) {
-      return [userinfo.fullname, userinfo.username, userinfo.email, '1992-01-21', 1802, [1910, 1920, 'Years are only estimations!'], '']
-    }
-
-    function getMetadataSchema() {
-      return {attributes: ['Full Name', 'Username', 'E-Mail Address', 'Exact Date', 'Year', 'Years (Range)', 'Password'], types: ['text', 'text', 'email', 'date', 'year', 'years_range', 'password']}
-    }
 
       // Pseudo-accordion behaviour
     $('#editProfileForm').on('show.bs.collapse', function () {

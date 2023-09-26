@@ -1,6 +1,6 @@
 import { expect, test, testSuite } from '../../../js/SimpleUnitTest/SimpleUnitTest.mjs'
 import { isAllUpperCase, isWhiteSpace } from '../../../js/toolbox/Util.mjs'
-import { BidiDisplayOrder } from '../../../js/Typesetter2/BidiDisplayOrder.mjs'
+import { BidiDisplayOrder } from '../../../js/Typesetter2/Bidi/BidiDisplayOrder.mjs'
 
 
 testSuite('Bidi Display Order', () => {

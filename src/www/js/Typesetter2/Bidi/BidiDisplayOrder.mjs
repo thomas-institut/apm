@@ -1,4 +1,23 @@
+/*
+ *  Copyright (C) 2023 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
 
+import { BidiOrderInfo} from './BidiOrderInfo.mjs'
+import { LevelInfo} from './LevelInfo.mjs'
 
 export class BidiDisplayOrder {
 
@@ -33,6 +52,7 @@ export class BidiDisplayOrder {
    * @param items
    * @param {string}defaultTextDirection 'ltr' or 'rtl'
    * @param { function}getItemIntrinsicTextDirection  a function that returns 'ltr', 'rtl' or '' (neutral direction) for the g
+   * @return {BidiOrderInfo[]}
    */
   static getDisplayOrder (items, defaultTextDirection, getItemIntrinsicTextDirection) {
 
@@ -59,39 +79,36 @@ export class BidiDisplayOrder {
     }
     // Loosely based on the Unicode Bidirectional Algorithm
     // 1. Determine embedding levels
-    let itemDataArray = []
+    let bidiOrderInfoArray = []
     let defaultLevel = defaultTextDirection === 'ltr' ? 0 : 1
     let currentLevel = defaultLevel
     let currentTextDirection = defaultTextDirection
 
     items.forEach((item, index) => {
-      let itemData = {
-        inputIndex: index,
-        intrinsicTextDirection: getItemIntrinsicTextDirection(item),
-        textDirection: ''
-      }
+      let bidiOrderInfo = new BidiOrderInfo()
+      bidiOrderInfo.inputIndex = index
+      bidiOrderInfo.intrinsicTextDirection = getItemIntrinsicTextDirection(item)
       let levelChange = false
-      if (itemData.intrinsicTextDirection === 'rtl' && currentTextDirection === 'ltr') {
+      if (bidiOrderInfo.intrinsicTextDirection === 'rtl' && currentTextDirection === 'ltr') {
         currentLevel = 1
         currentTextDirection = 'rtl'
       } else {
-        if (itemData.intrinsicTextDirection === 'ltr' && currentTextDirection === 'rtl') {
+        if (bidiOrderInfo.intrinsicTextDirection === 'ltr' && currentTextDirection === 'rtl') {
           currentLevel = 0
           currentTextDirection = 'ltr'
         }
       }
-      itemData.embeddingLevel = currentLevel
-      itemDataArray.push(itemData)
-
+      bidiOrderInfo.embeddingLevel = currentLevel
+      bidiOrderInfoArray.push(bidiOrderInfo)
     })
-    let levelInfoArray = this.getLevelInfoFromItemDataArray(itemDataArray)
+    let levelInfoArray = this.getLevelInfoFromBidiOrderInfoArray(bidiOrderInfoArray)
     // Move all neutrals at the end of non-default levels to the default
     // I.e, non-default levels should only contain strong directional text and numbers
     levelInfoArray.forEach((levelInfo) => {
       if (levelInfo.level !== defaultLevel) {
         for (let i = levelInfo.end; i >= levelInfo.start; i--) {
-          if (itemDataArray[i].intrinsicTextDirection === '') {
-            itemDataArray[i].embeddingLevel = defaultLevel
+          if (bidiOrderInfoArray[i].intrinsicTextDirection === '') {
+            bidiOrderInfoArray[i].embeddingLevel = defaultLevel
           } else {
             break
           }
@@ -99,10 +116,11 @@ export class BidiDisplayOrder {
       }
     })
     // set final text direction
-    levelInfoArray = this.getLevelInfoFromItemDataArray(itemDataArray)
+    levelInfoArray = this.getLevelInfoFromBidiOrderInfoArray(bidiOrderInfoArray)
     levelInfoArray.forEach( (levelInfo) => {
       for (let i = levelInfo.start; i <= levelInfo.end; i++) {
-        itemDataArray[i].textDirection = levelInfo.level === 0 ? 'ltr' : 'rtl'
+        // TODO: all even levels are ltr, right?
+        bidiOrderInfoArray[i].textDirection = levelInfo.level === 0 ? 'ltr' : 'rtl'
       }
     })
     // get the items per level, reversing the ones in the reverse direction of the defaultTextDirection
@@ -111,11 +129,11 @@ export class BidiDisplayOrder {
       let levelRun = []
       if ((defaultTextDirection === 'ltr' && levelInfo.level === 0) || (defaultTextDirection === 'rtl' && levelInfo.level === 1)) {
         for (let i = levelInfo.start; i <= levelInfo.end; i++) {
-          levelRun.push(itemDataArray[i])
+          levelRun.push(bidiOrderInfoArray[i])
         }
       } else {
         for (let i = levelInfo.end; i >= levelInfo.start; i--) {
-          levelRun.push(itemDataArray[i])
+          levelRun.push(bidiOrderInfoArray[i])
         }
       }
       levelRuns.push(levelRun)
@@ -126,23 +144,33 @@ export class BidiDisplayOrder {
     levelRuns.forEach( (levelRun) => {
       returnArray.push(...levelRun)
     })
-
+    returnArray = returnArray.map( (itemInfo, index) => {
+      itemInfo.displayOrder = index
+      return itemInfo
+    })
     return returnArray
   }
 
-  static getLevelInfoFromItemDataArray(itemDataArray) {
+  /**
+   * Returns an array with information about the starting and ending indexes for
+   * the different embedding levels in the given itemDataArray
+   * @param {BidiOrderInfo[]}itemDataArray
+   * @return {LevelInfo[]}
+   * @private
+   */
+  static getLevelInfoFromBidiOrderInfoArray(itemDataArray) {
     let levelInfoArray = []
     if (itemDataArray.length === 0) {
       return []
     }
     let currentLevel = itemDataArray[0].embeddingLevel
-    let levelInfo = { level: currentLevel, start: 0, end: -1}
+    let levelInfo = new LevelInfo(currentLevel, 0, -1)
     itemDataArray.forEach((itemData, index) => {
       if (itemData.embeddingLevel !== currentLevel) {
         levelInfo.end = index-1
         levelInfoArray.push(levelInfo)
         currentLevel = itemData.embeddingLevel
-        levelInfo = { level: currentLevel, start: index, end: -1}
+        levelInfo = new LevelInfo(currentLevel, index, -1)
       }
     })
     levelInfo.end = itemDataArray.length -1
@@ -150,3 +178,8 @@ export class BidiDisplayOrder {
     return levelInfoArray
   }
 }
+
+
+
+
+

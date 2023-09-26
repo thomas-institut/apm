@@ -38,7 +38,7 @@ import { trimPunctuation } from '../defaults/Punctuation.mjs'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { MAX_LINE_COUNT } from '../Edition/EditionTypesetting.mjs'
 import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
-import { BidiDisplayOrder } from './BidiDisplayOrder.mjs'
+import { BidiDisplayOrder } from './Bidi/BidiDisplayOrder.mjs'
 import { AdjustmentRatio } from './AdjustmentRatio.mjs'
 import { MINUS_INFINITE_PENALTY, Penalty } from './Penalty.mjs'
 import { AddMainTextLinePositionMetadata } from './PageProcessor/AddMainTextLinePositionMetadata.mjs'
@@ -220,6 +220,9 @@ export class BasicTypesetter extends Typesetter2 {
    * to the typesetter) and inter-line glue that gives the lines certain spacing between
    * them (the lineSkip parameter in the typesetter options).
    *
+   * For the purposes of bidirectional text display, it is assumed that the given horizontal
+   * list constitutes a paragraph.
+   *
    * Adds metadata to each text with the line number within the horizontal list.
    * @param {ItemList}list
    * @return {Promise<unknown>}
@@ -228,6 +231,9 @@ export class BasicTypesetter extends Typesetter2 {
     return new Promise( async (resolve) => {
       // Run the list through the Typesetter2 class checks
       let inputList = await super.typesetHorizontalList(list)
+
+      // console.log(`Typesetting horizontal list`)
+      // console.log(inputList)
 
       // Construct a vertical list to hold the lines
       let outputList = new ItemList(TypesetterItemDirection.VERTICAL)
@@ -239,6 +245,20 @@ export class BasicTypesetter extends Typesetter2 {
         return
       }
       let lines = await FirstFitLineBreaker.breakIntoLines(itemArray, this.lineWidth, this.options.textBoxMeasurer)
+      let displayOrderArray =  BidiDisplayOrder.getDisplayOrder(itemArray, inputList.getTextDirection(), (item) => {
+        return this.getItemIntrinsicTextDirection(item)
+      })
+      // console.log(`displayOrderArray`)
+      // console.log(displayOrderArray)
+
+      let originalIndexToOrderMap = []
+      displayOrderArray.forEach( (orderInfo) => {
+        originalIndexToOrderMap[orderInfo.inputIndex] = orderInfo.displayOrder
+      })
+      let originalIndexToTextDirectionMap = []
+      displayOrderArray.forEach( (orderInfo) => {
+        originalIndexToTextDirectionMap[orderInfo.inputIndex] = orderInfo.textDirection
+      })
 
       // Post-process lines
       let lineNumberInParagraph = 1
@@ -291,7 +311,7 @@ export class BasicTypesetter extends Typesetter2 {
         // At this point the line contains a list of items in textual order, independently of their text direction
         // Renderers, however, need to the items in display order, so they can simply iterate on the list, display
         // an item, move the current position to the right (or left for RTL text) and process the next.
-        line = this.arrangeItemsInDisplayOrderNew(line)
+        line = this.arrangeItemsInDisplayOrderNew(line, originalIndexToOrderMap, originalIndexToTextDirectionMap)
         return line
       })
 
@@ -882,6 +902,7 @@ export class BasicTypesetter extends Typesetter2 {
   typesetApparatuses(typesetMainTextVerticalList, apparatuses, lineFrom = 1,
         lineTo = MAX_LINE_COUNT, resetLineNumbersEachPage = false) {
     return new Promise( async (resolve) => {
+      // console.log(`Typesetting apparatuses lines ${lineFrom}-${lineTo}`)
       let outputArray = []
       for (let i = 0; i < apparatuses.length; i++) {
         let apparatusListToTypeset = await
@@ -972,34 +993,61 @@ export class BasicTypesetter extends Typesetter2 {
     return item.getTextDirection()
   }
 
-  arrangeItemsInDisplayOrderNew(line) {
+  arrangeItemsInDisplayOrderNew(line, originalIndexToOrderMap, originalIndexToTextDirectionMap) {
     let originalLineItems = line.getList()
-    let lineTextDirection = line.getTextDirection()
-    let newOrderInfoArray = BidiDisplayOrder.getDisplayOrder(originalLineItems, lineTextDirection, (item) => {
-      return this.getItemIntrinsicTextDirection(item)
+    let originalIndexes = originalLineItems.map( (item) => {
+      return item.getMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX)
     })
+    let lineDisplayOrder = originalIndexes.map ( (originalIndex) => {
+      return originalIndexToOrderMap[originalIndex]
+    })
+
+    let textDirections = originalIndexes.map ( (originalIndex) => {
+      return originalIndexToTextDirectionMap[originalIndex]
+    })
+
+    // set text directions
+    originalLineItems = originalLineItems.map( (item, index) => {
+      item.setTextDirection(textDirections[index])
+      return item
+    })
+
+    // See if there are reordered items
     let hasReorderedItems = false
-    let newItems = []
-    let originalOrder = newOrderInfoArray.map( () => { return -1})
-    for (let i = 0; i < newOrderInfoArray.length; i++ ) {
-      let newOrderInfo = newOrderInfoArray[i]
-      if (newOrderInfo.inputIndex !== i) {
+    let previousOrder = -1
+    for (let i = 0; i < lineDisplayOrder.length; i++) {
+      if (lineDisplayOrder[i] < previousOrder) {
         hasReorderedItems = true
+        break
       }
-      let item = originalLineItems[newOrderInfo.inputIndex]
-      item.setTextDirection(newOrderInfo.textDirection)
-      if (hasReorderedItems) {
-        item.addMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX, i)
-      }
-      originalOrder[i] = newOrderInfo.inputIndex
+      previousOrder = lineDisplayOrder[i]
+    }
+    if (!hasReorderedItems) {
+      line.setList(originalLineItems)
+      return line
+    }
+    // need to reorder
+    let sparseNewItems = []
+    originalLineItems.forEach( (item, index) => {
+      sparseNewItems[lineDisplayOrder[index]] = item
+    })
+    let newItems = []
+    sparseNewItems.forEach( (item) => {
       newItems.push(item)
-    }
+    })
+    // console.log(`Reordered items in line`)
+    // console.log(`Original items`)
+    // console.log(originalLineItems)
+    // console.log(`lineDisplayOrder`)
+    // console.log(lineDisplayOrder)
+    // console.log('textDirections')
+    // console.log(textDirections)
+    // console.log('New items')
+    // console.log(newItems)
     line.setList(newItems)
-    if (hasReorderedItems) {
-      line.addMetadata(MetadataKey.HAS_REVERSE_TEXT, true)
-      line.addMetadata(MetadataKey.HAS_REORDERED_ITEMS, true)
-      line.addMetadata(MetadataKey.ORIGINAL_ITEM_ORDER, originalOrder)
-    }
+    line.addMetadata(MetadataKey.HAS_REVERSE_TEXT, true)
+    line.addMetadata(MetadataKey.HAS_REORDERED_ITEMS, true)
+    line.addMetadata(MetadataKey.ORIGINAL_ITEM_ORDER, originalIndexes)
     return line
   }
 

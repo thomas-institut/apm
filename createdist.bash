@@ -74,7 +74,6 @@ cp src/www/index.php "$TMP_DIR"/www
 cp src/www/package.json "$TMP_DIR"/www
 cp src/www/setup.php "$TMP_DIR"/www
 cp src/www/version.php "$TMP_DIR"/www
-cp src/www/SystemProfiler.php "$TMP_DIR"/www
 
 mkdir "$TMP_DIR"/www/downloads
 mkdir "$TMP_DIR"/www/downloads/pdf

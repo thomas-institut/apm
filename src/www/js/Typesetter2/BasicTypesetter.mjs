@@ -232,24 +232,24 @@ export class BasicTypesetter extends Typesetter2 {
       // Run the list through the Typesetter2 class checks
       let inputList = await super.typesetHorizontalList(list)
 
-      // console.log(`Typesetting horizontal list`)
-      // console.log(inputList)
-
+      let itemArray = inputList.getList()
       // Construct a vertical list to hold the lines
       let outputList = new ItemList(TypesetterItemDirection.VERTICAL)
-
-      // Run the First Fit algorithm on the input list
-      let itemArray = inputList.getList()
       if (itemArray.length === 0) {
         resolve(outputList)
         return
       }
-      let lines = await FirstFitLineBreaker.breakIntoLines(itemArray, this.lineWidth, this.options.textBoxMeasurer)
+
+      // console.log(`Typesetting horizontal list`)
+      // console.log(inputList)
+
+
+
+      // Determine the bidirectional text item order for the whole list; this will be the basis for
+      // potentially reordering items for each line
       let displayOrderArray =  BidiDisplayOrder.getDisplayOrder(itemArray, inputList.getTextDirection(), (item) => {
         return this.getItemIntrinsicTextDirection(item)
       })
-      // console.log(`displayOrderArray`)
-      // console.log(displayOrderArray)
 
       let originalIndexToOrderMap = []
       displayOrderArray.forEach( (orderInfo) => {
@@ -259,6 +259,10 @@ export class BasicTypesetter extends Typesetter2 {
       displayOrderArray.forEach( (orderInfo) => {
         originalIndexToTextDirectionMap[orderInfo.inputIndex] = orderInfo.textDirection
       })
+
+      // Run the First Fit algorithm on the input list
+
+      let lines = await FirstFitLineBreaker.breakIntoLines(itemArray, this.lineWidth, this.options.textBoxMeasurer)
 
       // Post-process lines
       let lineNumberInParagraph = 1
@@ -993,12 +997,20 @@ export class BasicTypesetter extends Typesetter2 {
     return item.getTextDirection()
   }
 
+  /**
+   *
+   * @param {ItemList}line
+   * @param {number[]}originalIndexToOrderMap
+   * @param {string[]}originalIndexToTextDirectionMap
+   * @return {ItemList}
+   * @private
+   */
   arrangeItemsInDisplayOrderNew(line, originalIndexToOrderMap, originalIndexToTextDirectionMap) {
     let originalLineItems = line.getList()
     let originalIndexes = originalLineItems.map( (item) => {
       return item.getMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX)
     })
-    let lineDisplayOrder = originalIndexes.map ( (originalIndex) => {
+    let displayOrder = originalIndexes.map ( (originalIndex) => {
       return originalIndexToOrderMap[originalIndex]
     })
 
@@ -1015,12 +1027,12 @@ export class BasicTypesetter extends Typesetter2 {
     // See if there are reordered items
     let hasReorderedItems = false
     let previousOrder = -1
-    for (let i = 0; i < lineDisplayOrder.length; i++) {
-      if (lineDisplayOrder[i] < previousOrder) {
+    for (let i = 0; i < displayOrder.length; i++) {
+      if (displayOrder[i] < previousOrder) {
         hasReorderedItems = true
         break
       }
-      previousOrder = lineDisplayOrder[i]
+      previousOrder = displayOrder[i]
     }
     if (!hasReorderedItems) {
       line.setList(originalLineItems)
@@ -1029,21 +1041,12 @@ export class BasicTypesetter extends Typesetter2 {
     // need to reorder
     let sparseNewItems = []
     originalLineItems.forEach( (item, index) => {
-      sparseNewItems[lineDisplayOrder[index]] = item
+      sparseNewItems[displayOrder[index]] = item
     })
     let newItems = []
     sparseNewItems.forEach( (item) => {
       newItems.push(item)
     })
-    // console.log(`Reordered items in line`)
-    // console.log(`Original items`)
-    // console.log(originalLineItems)
-    // console.log(`lineDisplayOrder`)
-    // console.log(lineDisplayOrder)
-    // console.log('textDirections')
-    // console.log(textDirections)
-    // console.log('New items')
-    // console.log(newItems)
     line.setList(newItems)
     line.addMetadata(MetadataKey.HAS_REVERSE_TEXT, true)
     line.addMetadata(MetadataKey.HAS_REORDERED_ITEMS, true)

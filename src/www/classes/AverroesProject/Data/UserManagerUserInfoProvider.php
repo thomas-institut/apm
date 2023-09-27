@@ -21,7 +21,8 @@ namespace AverroesProject\Data;
 
 
 use APM\ToolBox\FullName;
-use ThomasInstitut\UserManager\PersonInfoProvider;
+use ThomasInstitut\AuthService\PersonInfoProvider;
+
 
 class UserManagerUserInfoProvider implements PersonInfoProvider
 {

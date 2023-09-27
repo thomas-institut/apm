@@ -28,9 +28,10 @@ use APM\Core\Item\Item;
 use APM\Core\Item\NoWbMark;
 use APM\Core\Transcription\ItemAddressInDocument;
 use AverroesProjectToApm\DatabaseItemStream;
+use ThomasInstitut\AuthService\PersonInfoProvider;
+use ThomasInstitut\AuthService\SimplePersonInfoProvider;
 use ThomasInstitut\TimeString\TimeString;
-use ThomasInstitut\UserManager\PersonInfoProvider;
-use ThomasInstitut\UserManager\SimplePersonInfoProvider;
+
 
 /**
  * Description of WitnessPageFormatter

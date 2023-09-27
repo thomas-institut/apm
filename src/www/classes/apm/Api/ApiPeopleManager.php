@@ -14,20 +14,16 @@ class ApiPeopleManager extends ApiController
 {
     public function getData(Request $request, Response $response): Response
     {
+
         $status = 'OK';
         $now = TimeString::now();
-
         $id = $_POST['id'];
 
-        // $data = $this->getMetadataFromSql($id);
+        $data = $this->getMetadataFromSql($id);
 
-        $data = [
-            'id' => $id,
-            'type' => 'person',
-            'keys' => ['Display Name', 'Date of Birth', 'Place of Birth', 'Date of Death', 'Place of Death', 'URL'],
-            'types' => ['text', 'date', 'text', 'date', 'text', 'url'],
-            'values' => ['Hans', '1992-01-21', 'Karlsruhe', '1982-07-22', 'Toronto', 'www.wikipedia.com']
-        ];
+        if ($data === []) {
+            $status = 'Error in Cache!';
+        }
 
         // ApiResponse
         return $this->responseWithJson($response, [
@@ -36,92 +32,55 @@ class ApiPeopleManager extends ApiController
             'status' => $status]);
     }
 
-    public function getSchemesForEntityTypes(Request $request, Response $response): Response
-    {
-        $status = 'OK';
-        $now = TimeString::now();
-
-        // POSSIBLE TYPES OF ENTITIES CAN EITHER BE HARD-CODED HERE OR ABSTRACTED FROM DATA STORED IN A SQL TABLE
-        // $data = $this->getTypeSchemesFromSql();
-
-        $data = [
-            'Type 1' => [
-                'Attribute 1' => 'text',
-                'Attribute 2' => 'number',
-                'Attribute 3' => 'date',
-                'Attribute 4' => 'email',
-            ],
-            'Type 2' => [
-                'Attribute 1' => 'text',
-                'Attribute 2' => 'number',
-            ],
-            'Type 3' => [
-                'Attribute 1' => 'text',
-                'Attribute 2' => 'number',
-                'Attribute 3' => 'number',
-            ],
-            'user' => [
-                'Full Name' => 'text',
-                'Username' => 'text',
-                'E-Mail Address' => 'email'
-            ]
-        ];
-
-        // ApiResponse
-        return $this->responseWithJson($response, [
-            'data' => $data,
-            'serverTime' => $now,
-            'status' => $status]);
-    }
 
     public function saveData(Request $request, Response $response): Response
     {
         $status = 'OK';
         $now = TimeString::now();
 
-        $id = $_POST['id'];
-        $type = $_POST['type'];
-        $values = $_POST['values'];
+        $data = [
+            'id' => $_POST['id'],
+            'type' => $_POST['type'],
+            'keys' => $_POST['keys'],
+            'types' => $_POST['types'],
+            'values' => $_POST['values']
+        ];
 
-        // $this->saveMetadataInSql($id, $type, $values);
-
-
-        // ApiResponse
-        return $this->responseWithJson($response, [
-            'status' => $status,
-            'now' => $now,
-            'id' => $id,
-            'type' => $type,
-            'values' => $values
-        ]);
-    }
-
-    public function createPerson (Request $request, Response $response): Response
-    {
-        $status = 'OK';
-        $now = TimeString::now();
-
-        $id = $_POST['id'];
-        $type = $_POST['type'];
-        $values = $_POST['values'];
-
-        // $this->createEntityInSql($id, $type, $values);
+        $this->saveMetadataInSql($data);
 
         // ApiResponse
         return $this->responseWithJson($response, [
             'status' => $status,
             'now' => $now,
-            'id' => $id,
-            'type' => $type,
-            'values' => $values
+            'data' => $data,
         ]);
     }
 
-    public function getIdForNewEntity (Request $request, Response $response): Response
+    public function getPersonSchema(Request $request, Response $response): Response
     {
         $status = 'OK';
         $now = TimeString::now();
 
+        // POSSIBLE TYPES OF ENTITIES CAN EITHER BE HARD-CODED HERE OR ABSTRACTED FROM DATA STORED IN A SQL TABLE
+
+        $id = $this->getIdForNewPerson();
+            
+        $data = [
+            'id' => $id,
+            'type' => 'person',
+            'keys' => ['Display Name', 'Date of Birth', 'Place of Birth', 'Date of Death', 'Place of Death', 'URL'],
+            'types' => ['text', 'date', 'text', 'date', 'text', 'url']
+        ];
+
+        // ApiResponse
+        return $this->responseWithJson($response, [
+            'data' => $data,
+            'serverTime' => $now,
+            'status' => $status]);
+    }
+
+    private function getIdForNewPerson (): string {
+       
         $cache = $this->systemManager->getSystemDataCache();
         $cacheKey = 'Next_Entity_ID';
 
@@ -131,7 +90,7 @@ class ApiPeopleManager extends ApiController
 
         } catch (KeyNotInCacheException $e) { // Get id from sql database and set cache
 
-            // $id = $this->getIdForNewEntityFromSql();
+            // $id = $this->getIdForNewPersonFromSql();
             $id = 0;
 
         }
@@ -140,38 +99,42 @@ class ApiPeopleManager extends ApiController
         $cache->set($cacheKey, serialize($id+1));
 
         // ApiResponse
-        return $this->responseWithJson($response, [
-            'status' => $status,
-            'now' => $now,
-            'id' => $id,
-        ]);
+        return strval($id);
     }
 
-    private function getMetadataFromSql(int $id): array {
-
-        $data = [];
+    private function getMetadataFromSql(string $id): array {
 
         // TO DO | PLACE HERE A FUNCTION WHICH GETS DATA BY ID FROM A SQL TABLE
 
+        $cache = $this->systemManager->getSystemDataCache();
+        $cacheKey = 'person' . $id;
+        try {
+            $data = unserialize($cache->get($cacheKey));
+        } catch (KeyNotInCacheException) {
+            $data = [
+                'id' => $id,
+                'type' => 'person',
+                'keys' => ['Display Name', 'Date of Birth', 'Place of Birth', 'Date of Death', 'Place of Death', 'URL'],
+                'types' => ['text', 'date', 'text', 'date', 'text', 'url'],
+                'values' => ['Hans', '1992-01-21', 'Karlsruhe', '1982-07-22', 'Toronto', 'www.wikipedia.com']
+            ];
+        }
+
         return $data;
     }
-    private function saveMetadataInSql(int $id, string $type, array $values): bool {
+
+    private function saveMetadataInSql(array $data): bool {
 
         // TO DO | PLACE HERE A FUNCTION WHICH WRITES THE DATA GIVEN AS ARGUMENTS INTO A SQL TABLE
 
+        $cache = $this->systemManager->getSystemDataCache();
+        $cacheKey = 'person' . $data['id'];
+        $cache->set($cacheKey, serialize($data));
 
         return true;
     }
 
-    private function createEntityInSql(int $id, string $type, array $values): bool {
-
-        // TO DO | PLACE HERE A FUNCTION WHICH CREATES AN ENTITY WITH ITS METADATA IN A SQL TABLE
-
-
-        return true;
-    }
-
-    private function getIdForNewEntityFromSql(): bool {
+    private function getIdForNewPersonFromSql(): bool {
 
         // TO DO | PLACE HERE A FUNCTION WHICH GETS THE HIGHEST ID IN A SQL TABLE AND RETURNS ID+1
 

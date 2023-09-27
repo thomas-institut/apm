@@ -1,5 +1,4 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
-import tab from "bootstrap/js/src/tab";
 
 export class MetadataEditor {
 
@@ -9,7 +8,7 @@ export class MetadataEditor {
             containerSelector: { type:'string', required: true},
             entityId: {type:'string', required: true},
             entityType: {type:'string', required: true},
-            metadata: {type:'array', required: true},
+            metadata: {type:'array', required: false, default: []},
             metadataSchema: {type: 'object', required: true},
             mode: {type:'string', required: true},
             callback: {type:'function', required: false},
@@ -23,12 +22,12 @@ export class MetadataEditor {
         this.makeEditor(options.containerSelector)
 
         // Globals
-        this.entity = {id: '', type: '', attributes: [], values: [], types: []}
-        this.numAttributes = 0
+        this.entity = {id: '', type: '', keys: [], values: [], types: []}
+        this.numKeys = 0
         this.mode = {create: 'create', edit: 'edit', show: 'show'}
 
         // Probably not needed anymore
-        //this.schemes = {types: [], attributes: [], placeholders: []}
+        //this.schemes = {types: [], keys: [], placeholders: []}
         //this.idForNewEntity = 0
 
         // Selectors
@@ -90,7 +89,7 @@ export class MetadataEditor {
     }
 
     setupCreateMode() {
-        this.buildEntity(() => {
+        this.buildEntitySchema(() => {
             this.makeTableStructure()
             this.setupTableForDataInput(this.options.mode, () => {
                 this.setupSaveButton(this.options.mode)
@@ -112,11 +111,23 @@ export class MetadataEditor {
         this.entity.id = this.options.entityId
         this.entity.type = this.options.entityType
         this.entity.values = this.options.metadata
-        this.entity.attributes = this.options.metadataSchema.attributes
+        this.entity.keys = this.options.metadataSchema.keys
         this.entity.types = this.options.metadataSchema.types
 
         // Store number of values
-        this.numAttributes = this.entity.attributes.length
+        this.numKeys = this.entity.keys.length
+
+        callback()
+    }
+
+    buildEntitySchema(callback) {
+        this.entity.id = this.options.entityId
+        this.entity.type = this.options.entityType
+        this.entity.keys = this.options.metadataSchema.keys
+        this.entity.types = this.options.metadataSchema.types
+
+        // Store number of values
+        this.numKeys = this.entity.keys.length
 
         callback()
     }
@@ -134,7 +145,7 @@ export class MetadataEditor {
                 $(tableSelector).append(`<tr id="row1"></tr><tr id="row2"></tr>`)
                 break
             case 'vertical':
-                for (let i=1; i<=this.numAttributes; i++) {
+                for (let i=1; i<=this.numKeys; i++) {
                     let id = "row" + i
                     $(tableSelector).append(`<tr id=${id}></tr>`)
                 }
@@ -145,22 +156,22 @@ export class MetadataEditor {
     makeTableCells () {
         switch (this.options.theme) {
             case 'horizontal':
-                for (let i = 1; i <= this.numAttributes; i++) {
+                for (let i = 1; i <= this.numKeys; i++) {
 
                     let cellId = "entity_attr" + i
-                    $('#row1').append(`<th>${this.entity.attributes[i-1]}</th>`)
+                    $('#row1').append(`<th>${this.entity.keys[i-1]}</th>`)
 
                     $('#row2').append(`<td><div id=${cellId}></div></td>`)
                 }
                 break
             case 'vertical':
-                for (let i = 1; i <= this.numAttributes; i++) {
+                for (let i = 1; i <= this.numKeys; i++) {
 
                     let row = "#row" + i
                     let cellId = "entity_attr" + i
-                    let attributeName = this.entity.attributes[i-1] + "&emsp;&emsp;"
+                    let keyName = this.entity.keys[i-1] + "&emsp;&emsp;"
 
-                    $(row).append(`<th style="vertical-align: top">${attributeName}</th>
+                    $(row).append(`<th style="vertical-align: top">${keyName}</th>
                                <td><div id=${cellId}></div></td>`)
                 }
                 break
@@ -170,7 +181,7 @@ export class MetadataEditor {
     // Table Data Management
     showMetadata () {
         this.clearTableCells()
-        for (let i=1; i<=this.numAttributes; i++) {
+        for (let i=1; i<=this.numKeys; i++) {
             let id = "#entity_attr" + i
             let value = this.entity.values[i-1]
             if (Array.isArray(value)) { // Years Range with Note
@@ -183,7 +194,7 @@ export class MetadataEditor {
     }
 
     clearTableCells() {
-        for (let i=1; i<=this.numAttributes; i++) {
+        for (let i=1; i<=this.numKeys; i++) {
             let id = "#entity_attr" + i
             $(id).empty()
         }
@@ -191,19 +202,19 @@ export class MetadataEditor {
 
     setupTableForDataInput(mode, callback) {
 
-        this.setupInputFormsForAttributes()
+        this.setupInputFormsForKeys()
 
         if (mode === this.mode.create) {
             callback()
         }
         else {
-            this.fillAttributesForms()
+            this.fillKeysForms()
             callback()
         }
     }
 
-    setupInputFormsForAttributes() {
-        for (let i=1; i<=this.numAttributes; i++) {
+    setupInputFormsForKeys() {
+        for (let i=1; i<=this.numKeys; i++) {
             let selectorId = "#entity_attr" + i
             let inputId = "entity_attr" + i + "_form"
             let type = this.entity.types[i-1]
@@ -293,8 +304,8 @@ export class MetadataEditor {
             `<p><input type="text" class="form-control" id=${inputId} placeholder=${type} style="padding: unset"></p>`)
     }
 
-     fillAttributesForms() {
-        for (let i=1; i<=this.numAttributes; i++) {
+     fillKeysForms() {
+        for (let i=1; i<=this.numKeys; i++) {
             let id = "#entity_attr" + i + "_form"
             if (this.entity.types[i-1] === 'years_range') {
                 $(id).val(this.entity.values[i-1][0])
@@ -327,8 +338,9 @@ export class MetadataEditor {
 
             if (this.dataTypesAreCorrect(d) && this.passwordsAreCorrect()) {
                 this.updateEntityData(d.id, d.type, d.values)
-                this.options.callback(this.entity)
-                this.returnConfirmation('Saved!')
+                this.options.callback(this.entity, () => {
+                    this.returnConfirmation('Saved!')
+                })
             }
         })
     }
@@ -344,7 +356,7 @@ export class MetadataEditor {
         let values = []
         let type = this.entity.type
 
-        for (let i=1; i<=this.numAttributes; i++) {
+        for (let i=1; i<=this.numKeys; i++) {
             let name = "#entity_attr" + i + "_form"
             let value = $(name).val()
 
@@ -367,11 +379,11 @@ export class MetadataEditor {
         // while ((year = regex.exec(str)) != null) {
         //     years.push(year[0])
         // }
-        
+
         years.push(value)
         years.push($("#years_range_end").val())
         years.push($("#years_range_note").val())
-        
+
         return years
     }
 
@@ -381,7 +393,7 @@ export class MetadataEditor {
         let index = 0
         for (let value of d.values) {
 
-            let attribute = this.entity.attributes[index]
+            let key = this.entity.keys[index]
             let affordedType = this.entity.types[index]
 
             if (affordedType !== 'password' && affordedType !== 'year' && affordedType !== 'years_range') {
@@ -390,7 +402,7 @@ export class MetadataEditor {
                 let givenType = this.dataType(value)
 
                 if (givenType !== affordedType) { // Empty values and mismatching types throw an error
-                    this.returnDataTypeError(attribute, givenType, affordedType)
+                    this.returnDataTypeError(key, givenType, affordedType)
                     return false
                 } else {
                     index++
@@ -467,14 +479,19 @@ export class MetadataEditor {
     }
 
     // User Communication
-    returnDataTypeError(attribute, givenType, affordedType) {
+    returnDataTypeError(key, givenType, affordedType) {
         console.log('Data Type Error!')
-        this.returnError(`Error! Given data for '${attribute}' is of type '${givenType}' but has to be of type '${affordedType}'. Please try again.`)
+        this.returnError(`Error! Given data for '${key}' is of type '${givenType}' but has to be of type '${affordedType}'. Please try again.`)
     }
 
     returnPasswordError() {
         console.log('Password Error!')
       this.returnError(`Password Error! Please try again.`)
+    }
+
+    returnApiError() {
+        console.log('Error in api call!')
+        this.returnError('Data could not be saved! Please contact the administrators.')
     }
 
     returnError(str) {
@@ -619,7 +636,7 @@ export class MetadataEditor {
             this.makeTableStructure()
             this.setupTypeSelector()
             this.setupSelectorOptions(value)
-            this.setupInputFormsForAttributes()
+            this.setupInputFormsForKeys()
             console.log(`Adjusted table to chosen entity type "${value}".`)
         });
     }
@@ -636,7 +653,7 @@ export class MetadataEditor {
     }
 
     removeTableRows() {
-        for (let i=0; i<this.numAttributes; i++) {
+        for (let i=0; i<this.numKeys; i++) {
             let row = "#row" + i
             $(row).remove()
         }
@@ -644,14 +661,14 @@ export class MetadataEditor {
 
     // Entity Data Management
     clearEntityData () {
-        this.entity = {id: '', type: '', attributes: [], values: [], types: []}
+        this.entity = {id: '', type: '', keys: [], values: [], types: []}
     }
 
     makeEntityFitToTypeSchema(type=this.options.entityType) {
         let i = this.schemes.types.indexOf(type)
-        this.entity.attributes = this.schemes.attributes[i]
+        this.entity.keys = this.schemes.keys[i]
         this.entity.types = this.schemes.placeholders[i]
-        this.numAttributes = this.entity.attributes.length
+        this.numKeys = this.entity.keys.length
     }
 
     // Api Calls
@@ -683,13 +700,13 @@ export class MetadataEditor {
                 this.entity.values[index] = data[1]
             })
             Object.entries(apiResponse.data.metadataSchema).forEach((data, index) => {
-                this.entity.attributes[index] = data[0]
+                this.entity.keys[index] = data[0]
                 this.entity.types[index] = data[1]
             })
 
             // Store number of values
-            this.numAttributes = this.entity.attributes.length
-            console.log(`Entity has ${this.numAttributes} attributes.`)
+            this.numKeys = this.entity.keys.length
+            console.log(`Entity has ${this.numKeys} keys.`)
 
             callback()
 
@@ -719,10 +736,10 @@ export class MetadataEditor {
             this.schemes.types = []
             Object.entries(apiResponse.data).forEach((element, index) => {
                 this.schemes.types.push(element[0])
-                this.schemes.attributes[index] = []
+                this.schemes.keys[index] = []
                 this.schemes.placeholders[index] = []
                 Object.entries(element[1]).forEach((item) => {
-                    this.schemes.attributes[index].push(item[0])
+                    this.schemes.keys[index].push(item[0])
                     this.schemes.placeholders[index].push(item[1])
                 })
             })

@@ -312,36 +312,17 @@ class ApmUrlGenerator {
         return `${this.base}/api/search/editions`
     }
 
-    apiPersonManagerGetData() {
+    apiPeopleManagerGetData() {
         return `${this.base}/api/person/get`
     }
 
-    apiPersonManagerSaveData() {
+    apiPeopleManagerSaveData() {
         return `${this.base}/api/person/save`
     }
 
-    apiPersonManagerCreatePerson() {
-        return `${this.base}/api/person/create`
-    }
+    apiPeopleManagerGetSchema() {
+        return `${this.base}/api/person/schema`
 
-    apiMetadataEditorGetData() {
-        return `${this.base}/api/metadataeditor/getmetadata`
-    }
-
-    apiMetadataEditorSaveData() {
-        return `${this.base}/api/metadataeditor/savemetadata`
-    }
-
-    apiMetadataEditorCreateEntity() {
-        return `${this.base}/api/metadataeditor/createentity`
-    }
-
-    apiMetadataEditorGetIdForNewEntity() {
-        return `${this.base}/api/metadataeditor/getnewentityid`
-    }
-
-    apiMetadataEditorGetDataSchemesForEntityTypes() {
-        return `${this.base}/api/metadataeditor/getschemes`
     }
 
     images() {

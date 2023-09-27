@@ -349,29 +349,12 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         ->setName('saveData');
 
     $group->post('/person/create',
-        ApiPeopleManager::class . ':createPerson')
+        ApiPeopleManager::class . ':saveData')
         ->setName('createPerson');
 
-    // Metadata Editor
-    $group->post('/metadataeditor/getmetadata',
-        ApiMetadataEditor::class . ':getMetadata')
-        ->setName('getmetadata');
-
-    $group->post('/metadataeditor/savemetadata',
-        ApiMetadataEditor::class . ':saveMetadata')
-        ->setName('savemetadata');
-
-    $group->post('/metadataeditor/createentity',
-        ApiMetadataEditor::class . ':createEntity')
-        ->setName('createentity');
-
-    $group->post('/metadataeditor/getnewentityid',
-        ApiMetadataEditor::class . ':getIdForNewEntity')
-        ->setName('getnewentityid');
-
-    $group->post('/metadataeditor/getschemes',
-        ApiMetadataEditor::class . ':getSchemesForEntityTypes')
-        ->setName('getschemes');
+    $group->post('/person/schema',
+        ApiPeopleManager::class . ':getPersonSchema')
+        ->setName('getPersonSchema');
 
     // LOG
     $group->post('/admin/log',

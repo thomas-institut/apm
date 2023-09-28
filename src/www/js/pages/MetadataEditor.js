@@ -11,7 +11,8 @@ export class MetadataEditor {
             metadata: {type:'array', required: false, default: []},
             metadataSchema: {type: 'object', required: true},
             mode: {type:'string', required: true},
-            callback: {type:'function', required: false},
+            callbackSave: {type:'function', required: false},
+            callbackCreate: {type:'function', required: false},
             theme: {type:'string', required: true}
         }
 
@@ -26,12 +27,9 @@ export class MetadataEditor {
         this.numKeys = 0
         this.mode = {create: 'create', edit: 'edit', show: 'show'}
 
-        // Probably not needed anymore
-        //this.schemes = {types: [], keys: [], placeholders: []}
-        //this.idForNewEntity = 0
-
         // Selectors
-        this.buttons =  $('#buttons')
+        this.buttonsSelectorTop = 'buttons_top'
+        this.buttonsSelectorBottom = 'buttons_bottom'
 
         // Setup metadata editor in desired mode
         switch (this.options.mode) {
@@ -72,9 +70,11 @@ export class MetadataEditor {
         }
         $(container).html(
             `<br>
+                            <div id="buttons_top" align="right"></div>
+                            <br>
                             <table class=${tableClass} id="metadataTable"></table>
                             <br>
-                            <div id="buttons"><comment id="confirmationMessage"></comment><comment id="errorMessage"></comment></div>
+                            <div id="buttons_bottom" align="left"><comment id="confirmationMessage"></comment><comment id="errorMessage"></comment></div>
                             <br>`)
     }
 
@@ -82,7 +82,8 @@ export class MetadataEditor {
         this.buildEntity(() => {
             this.makeTableStructure()
             this.setupTableForDataInput(this.options.mode, () => {
-                this.setupSaveButton(this.options.mode)
+                this.setupCancelButton()
+                this.setupSaveButton()
                 console.log(`Metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} can now be edited.`)
             })
         })
@@ -92,7 +93,8 @@ export class MetadataEditor {
         this.buildEntitySchema(() => {
             this.makeTableStructure()
             this.setupTableForDataInput(this.options.mode, () => {
-                this.setupSaveButton(this.options.mode)
+                this.setupCancelButton()
+                this.setupSaveButton()
                 console.log('A new entity can now be created.')
             })
         })
@@ -101,6 +103,7 @@ export class MetadataEditor {
     setupShowMode() {
         this.buildEntity(() => {
             this.makeTableStructure()
+            this.setupEditAndCreateButton()
             this.showMetadata()
             console.log(`Metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} are being displayed.`)
         })
@@ -134,6 +137,7 @@ export class MetadataEditor {
 
     // Table Design Management
     makeTableStructure() {
+        this.clearTable()
         this.makeTableRows()
         this.makeTableCells()
     }
@@ -176,6 +180,15 @@ export class MetadataEditor {
                 }
                 break
         }
+    }
+
+    makeSpinner(container) {
+        container = "#" + container
+        $(container).html(`<div class="spinner-border" role="status" id="spinner" style="color: dodgerblue"></div>`)
+    }
+
+    removeSpinner() {
+        $('#spinner').remove()
     }
 
     // Table Data Management
@@ -320,13 +333,53 @@ export class MetadataEditor {
 
 
     // Save Button Setup
-    setupSaveButton (mode) {
-        this.buttons.prepend(
+    setupSaveButton () {
+        this.clearBottomButtons()
+        let selector = '#' + this.buttonsSelectorBottom
+        $(selector).prepend(
             `<button type="submit" class="btn btn-primary" id="save_button">Save</button>`)
-        this.makeSaveButtonEvent(mode)
+        this.makeSaveButtonEvent()
     }
 
-    makeSaveButtonEvent (mode) {
+    setupEditAndCreateButton() {
+        this.clearTopButtons()
+        this.makeEditButton()
+        this.insertSpaceBetweenButtons()
+        this.makeCreateButton()
+    }
+
+    setupCancelButton() {
+        this.clearTopButtons()
+        this.makeCancelButton()
+    }
+
+    insertSpaceBetweenButtons() {
+        let selector = '#' + this.buttonsSelectorTop
+        $(selector).append(' ')
+    }
+
+    makeEditButton(){
+        let selector = '#' + this.buttonsSelectorTop
+        $(selector).append(
+            `<button type="submit" class="btn btn-primary" id="edit_button">Edit</button>`)
+        this.makeEditButtonEvent()
+    }
+
+    makeCreateButton(){
+        let selector = '#' + this.buttonsSelectorTop
+        $(selector).append(
+            `<button type="submit" class="btn btn-primary" id="create_button">Create</button>`)
+        this.makeCreateButtonEvent()
+    }
+
+    makeCancelButton(){
+        let selector = '#' + this.buttonsSelectorTop
+        $(selector).append(
+            `<button type="submit" class="btn btn-primary" id="cancel_button">Cancel</button>`)
+        this.makeCancelButtonEvent()
+    }
+
+    makeSaveButtonEvent () {
         $("#save_button").on("click",  () => {
 
             // Clear Messages
@@ -337,11 +390,50 @@ export class MetadataEditor {
             let d = this.getEntityDataToSave()
 
             if (this.dataTypesAreCorrect(d) && this.passwordsAreCorrect()) {
+                this.makeSpinner(this.buttonsSelectorBottom)
                 this.updateEntityData(d.id, d.type, d.values)
-                this.options.callback(this.entity, () => {
+                this.options.callbackSave(this.entity, () => {
+                    this.removeSpinner()
                     this.returnConfirmation('Saved!')
                 })
             }
+        })
+    }
+
+    makeEditButtonEvent() {
+        $("#edit_button").on("click",  () => {
+
+            this.options.mode = 'edit'
+
+            // Clear Messages
+            this.clearErrorMessage()
+            this.clearConfirmationMessage()
+            this.setupEditMode()
+        })
+    }
+
+    makeCreateButtonEvent() {
+
+        this.options.mode = 'create'
+
+        $("#create_button").on("click",  () => {
+
+            // Clear Messages
+            this.clearErrorMessage()
+            this.clearConfirmationMessage()
+            this.setupCreateMode()
+        })
+    }
+
+    makeCancelButtonEvent() {
+        $("#cancel_button").on("click",  () => {
+
+            this.options.mode = 'show'
+
+            // Clear Messages
+            this.clearErrorMessage()
+            this.clearConfirmationMessage()
+            this.setupShowMode()
         })
     }
 
@@ -489,11 +581,6 @@ export class MetadataEditor {
       this.returnError(`Password Error! Please try again.`)
     }
 
-    returnApiError() {
-        console.log('Error in api call!')
-        this.returnError('Data could not be saved! Please contact the administrators.')
-    }
-
     returnError(str) {
         str = "&nbsp&nbsp" + str
         $("#errorMessage").html(str)
@@ -512,285 +599,19 @@ export class MetadataEditor {
         $("#confirmationMessage").empty()
     }
 
-    // DELETE? - API Call for New Entity ID
-    getIdForNewEntity() {
-
-        $.post(this.apiUrls.getIdForNewEntity).done((apiResponse) => {
-
-            // Catch errors
-            if (apiResponse.status !== 'OK') {
-                console.log(`Error in query for metadata of entity with ID ${id}!`);
-                if (apiResponse.errorData !== undefined) {
-                    console.log(apiResponse.errorData);
-                }
-                errorMessageDiv.html(`Error while getting metadata, please report to technical administrators.`)
-                    .removeClass('text-error');
-                return;
-            }
-
-            console.log(apiResponse);
-            console.log(`ID for next entity to be created will be ${apiResponse.id}`)
-
-            this.idForNewEntity = apiResponse.id
-
-            return true
-        })
+    clearTopButtons() {
+        let selector = '#' + this.buttonsSelectorTop
+        $(selector).empty()
     }
 
-
-
-
-
-
-
-    // ------------------------------OUTDATED FUNCTIONS-------------------------------------
-    clearButtons() {
-        this.buttons.empty()
+    clearBottomButtons() {
+        let selector = '#' + this.buttonsSelectorBottom
+        $(selector).empty()
     }
 
-    setupGetAndCreateButton() {
-        this.buttons.append
-        (`<button type="button" id="get_button" name="Get" style="background-color: white; padding: unset">Get Metadata</button>
-              <button type="button" id="create_button" name="Create" style="background-color: white; padding: unset">Create New Entity</button>`)
-
-        //this.makeGetButtonEvent()
-        this.makeCreateButtonEvent()
-    }
-
-    setupGetEditAndCreateButton () {
-        this.buttons.append
-        (`<button type="button" id="get_button" name="Get" style="background-color: white; padding: unset">Get Metadata</button>
-                <button type="button" id="edit_button" name="Edit" style="background-color: white; padding: unset">Edit Metadata</button>
-                <button type="button" id="create_button" name="Create" style="background-color: white; padding: unset">Create New Entity</button>`)
-
-        //this.makeGetButtonEvent()
-        this.makeEditButtonEvent()
-        this.makeCreateButtonEvent()
-    }
-
-
-    makeGetButtonEvent () {
-        $("#get_button").on("click",  () => {
-            this.clearButtons()
-            this.clearEntityData()
-            this.getMetadataByEntityId(5,() => {
-                this.makeTableStructure()
-                this.showMetadata()
-                this.setupGetEditAndCreateButton()
-                console.log(`Metadata for entity with ID ${this.entity.id} are being displayed.`)
-            })
-        })
-    }
-
-    makeCreateButtonEvent() {
-        $("#create_button").on("click", () => {
-            this.clearButtons()
-            this.setupTableForDataInput(this.options.mode, () => {
-                this.setupSaveButton(this.options.mode)
-                console.log('Metadata for new entity can now be set.')
-            })
-        })
-    }
-
-    makeEditButtonEvent () {
-        $("#edit_button").on("click", () => {
-            this.clearButtons()
-            this.setupTableForDataInput(this.options.mode, () => {
-                this.setupSaveButton(this.options.mode)
-                console.log(`Metadata for entity with ID ${this.entity.id} can now be edited.`)
-            })
-        })
-    }
-
-
-    makeCancelButtonEvent (mode) {
-        $("#cancel_button").on("click",  () => {
-            this.clearButtons()
-            this.clearErrorMessage()
-            this.clearTableCells()
-            this.removeTableRows()
-            if (mode === this.mode.create) {
-                this.clearEntityData()
-                this.setupGetAndCreateButton()
-                console.log('Creation of new entity was canceled.')
-            }
-            else {
-                this.makeTableStructure()
-                this.showMetadata()
-                this.setupGetEditAndCreateButton()
-                console.log(`Editing of entity with ID ${this.entity.id} was canceled.`)
-            }
-        })
-    }
-
-    // Table Manipulation
-    setupTypeSelector() {
-        this.entity_type_cell.html(
-            `<select id="entity_type_select">`)
-
-        $("#entity_type_select").on("change", () => {
-            let value = $("#entity_type_select").val()
-            this.clearTableCells()
-            this.removeTableRows()
-            this.makeEntityFitToTypeSchema(value)
-            this.makeTableStructure()
-            this.setupTypeSelector()
-            this.setupSelectorOptions(value)
-            this.setupInputFormsForKeys()
-            console.log(`Adjusted table to chosen entity type "${value}".`)
-        });
-    }
-
-    setupSelectorOptions(value=this.schemes.types[0]) {
-        let selector = $('#entity_type_select')
-        $.each(this.schemes.types, (i, type) => {
-            selector.append($('<option>', {
-                value: type,
-                text : type
-            }))
-        })
-        selector.val(value)
-    }
-
-    removeTableRows() {
-        for (let i=0; i<this.numKeys; i++) {
-            let row = "#row" + i
-            $(row).remove()
-        }
-    }
-
-    // Entity Data Management
-    clearEntityData () {
-        this.entity = {id: '', type: '', keys: [], values: [], types: []}
-    }
-
-    makeEntityFitToTypeSchema(type=this.options.entityType) {
-        let i = this.schemes.types.indexOf(type)
-        this.entity.keys = this.schemes.keys[i]
-        this.entity.types = this.schemes.placeholders[i]
-        this.numKeys = this.entity.keys.length
-    }
-
-    // Api Calls
-    getMetadataByEntityId (id, callback) {
-
-        let apiData = {id: id}
-
-        // Make API request
-        $.post(this.apiUrls.getData, apiData).done((apiResponse) => {
-
-            // Catch errors
-            if (apiResponse.status !== 'OK') {
-                console.log(`Error in query for metadata of entity with ID ${id}!`);
-                if (apiResponse.errorData !== undefined) {
-                    console.log(apiResponse.errorData);
-                }
-                errorMessageDiv.html(`Error while getting metadata, please report to technical administrators.`)
-                    .removeClass('text-error');
-                return;
-            }
-
-            console.log(`Got metadata for entity with ID ${id}`)
-            console.log(apiResponse);
-
-            // Fill data-object with relevant data
-            this.entity.id = apiResponse.data.id
-            this.entity.type = apiResponse.data.type
-            Object.entries(apiResponse.data.currentMetadata).forEach((data, index) => {
-                this.entity.values[index] = data[1]
-            })
-            Object.entries(apiResponse.data.metadataSchema).forEach((data, index) => {
-                this.entity.keys[index] = data[0]
-                this.entity.types[index] = data[1]
-            })
-
-            // Store number of values
-            this.numKeys = this.entity.keys.length
-            console.log(`Entity has ${this.numKeys} keys.`)
-
-            callback()
-
-            return true
-        })
-
-        return false
-    }
-
-    getDataSchemesForEntityTypes(callback) {
-
-        $.post(this.apiUrls.getDataSchemesForEntityTypes).done((apiResponse) => {
-
-            // Catch errors
-            if (apiResponse.status !== 'OK') {
-                console.log(`Error in query for entity types!`);
-                if (apiResponse.errorData !== undefined) {
-                    console.log(apiResponse.errorData);
-                }
-                errorMessageDiv.html(`Error while getting entity types, please report to technical administrators.`)
-                    .removeClass('text-error');
-                return;
-            }
-
-            console.log(apiResponse)
-
-            this.schemes.types = []
-            Object.entries(apiResponse.data).forEach((element, index) => {
-                this.schemes.types.push(element[0])
-                this.schemes.keys[index] = []
-                this.schemes.placeholders[index] = []
-                Object.entries(element[1]).forEach((item) => {
-                    this.schemes.keys[index].push(item[0])
-                    this.schemes.placeholders[index].push(item[1])
-                })
-            })
-
-            callback()
-
-            return true
-        })
-    }
-
-    saveMetadata (id, type, values) {
-
-        let apiData = {id: id, type: type, values: values}
-        this.setMetadata(this.apiUrls.saveData, apiData)
-    }
-
-    createEntity (id, type, values) {
-
-        type = 'user'
-        let apiData = {id: id, type: type, values: values}
-        this.setMetadata(this.apiUrls.createEntity, apiData)
-    }
-
-    setMetadata (apiUrl, apiData) {
-
-        $.post(apiUrl, apiData).done((apiResponse) => {
-
-            console.log(apiResponse);
-
-            // Catch errors
-            if (apiResponse.status !== 'OK') {
-                console.log(`Error in query for metadata of entity with ID ${apiData.id}!`);
-                if (apiResponse.errorData !== undefined) {
-                    console.log(apiResponse.errorData);
-                }
-                errorMessageDiv.html(`Error while getting metadata, please report to technical administrators.`)
-                    .removeClass('text-error');
-            }
-            else {
-
-                if (apiUrl === this.apiUrls.createEntity) {
-                    this.returnConfirmation('Created!')
-                    console.log(`Created entity with ID ${apiData.id}`)
-                }
-                else {
-                    this.returnConfirmation('Saved!')
-                    console.log(`Saved metadata for entity with ID ${apiData.id}`)
-                }
-            }
-
-        })
+    clearTable() {
+        let tableSelector = '#metadataTable'
+        $(tableSelector).empty()
     }
 }
 

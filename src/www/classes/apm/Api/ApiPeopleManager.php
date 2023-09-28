@@ -56,7 +56,7 @@ class ApiPeopleManager extends ApiController
         ]);
     }
 
-    public function getPersonSchema(Request $request, Response $response): Response
+    public function getPersonSchemaWithNewId(Request $request, Response $response): Response
     {
         $status = 'OK';
         $now = TimeString::now();

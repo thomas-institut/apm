@@ -7,21 +7,23 @@ export function setupPeopleManagerPage (baseUrl) {
 
     urlGen.setBase(baseUrl)
 
-    // Determine editor mode via value of user input
+    // Determine editor mode and entity id
     let mode = 'show'
-    let id = '62'
+    let id = '77'
 
+    // Show spinner while loading
+    makeSpinner()
+
+    // setup metadatas editor in desired mode
     switch (mode) {
         case 'create':
-            getPersonSchema((entity) => {
-                makeModeSelector()
-                makeEditor(entity, mode)
+            getPersonSchemaWithNewId((entity) => {
+                setupMetadataEditor(entity, mode)
             })
             break
         default:
             getPerson(id, (entity) => {
-                makeModeSelector()
-                makeEditor(entity, mode)
+                setupMetadataEditor(entity, mode)
             })
             break
     }
@@ -29,59 +31,29 @@ export function setupPeopleManagerPage (baseUrl) {
 
 window.setupPeopleManagerPage = setupPeopleManagerPage
 
-function makeModeSelector() {
-    ($('#modeSelector')).html(`
-        <select name="select-mode" id="select-mode" style="border: black; background-color: white; padding: unset;">
-        <option value="show">Show</option>
-        <option value="edit">Edit</option>
-        <option value="create">Create</option>
-        </select>`)
+function setupMetadataEditor (entity, mode) {
 
-    makeSelectModeEvent()
-
-}
-
-function makeEditor (entity, mode) {
+    removeMetadataEditor()
     let mde = new MetadataEditor({
         containerSelector: 'peopleEditor',
         entityId: entity.id,
         entityType: entity.type,
         metadata: entity.values,
         metadataSchema: {keys: entity.keys, types: entity.types},
-        callback: (data, returnConfirmation) => {savePersonData(data, returnConfirmation)},
+        callbackSave: (data, returnConfirmation) => {savePersonData(data, returnConfirmation)},
+        callbackCreate: () => {getPersonSchemaWithNewId(entity)},
         mode: mode,
         theme: 'vertical'
     })
-
-    $('#select-mode').val(mode)
+    
 }
 
-function removeEditor() {
+function removeMetadataEditor() {
     $('#peopleEditor').empty()
 }
 
-function makeSelectModeEvent() {
-    let modeSelector = $('#select-mode')
 
-    modeSelector.on('change', function() {
-
-        removeEditor()
-        let mode = modeSelector.val()
-
-        switch (mode) {
-            case 'create':
-                getPersonSchema((entity) => {
-                    makeEditor(entity, mode)
-                })
-                break
-            default:
-                makeEditor(entity, mode)
-                break
-        }
-    })
-}
-
-function getPerson (id, makeEditor) {
+function getPerson (id, setupMetadataEditor) {
     // Make API Call
     $.post(urlGen.apiPeopleManagerGetData(), {id: id})
         .done((apiResponse) => {
@@ -96,7 +68,7 @@ function getPerson (id, makeEditor) {
             }
             else {
                 console.log(apiResponse)
-                makeEditor(apiResponse.data)
+                setupMetadataEditor(apiResponse.data)
                 entity = apiResponse.data
                 return true
             }
@@ -108,7 +80,7 @@ function getPerson (id, makeEditor) {
         })
 }
 
-function getPersonSchema (makeEditor) {
+function getPersonSchemaWithNewId (setupMetadataEditor) {
     // Make API Call
     $.post(urlGen.apiPeopleManagerGetSchema())
         .done((apiResponse) => {
@@ -123,7 +95,7 @@ function getPersonSchema (makeEditor) {
             }
             else {
                 console.log(apiResponse)
-                makeEditor(apiResponse.data)
+                setupMetadataEditor(apiResponse.data)
                 return true
             }
 
@@ -153,11 +125,15 @@ function savePersonData (data, returnConfirmation) {
             console.log(apiResponse);
             returnConfirmation()
             entity = data
-            removeEditor()
-            makeEditor(entity, 'show')
+            setupMetadataEditor(entity, 'show')
             return true
         })
         .fail((status) => {
             console.log(status);
         })
+}
+
+function makeSpinner() {
+    removeMetadataEditor()
+    $('#peopleEditor').html(`<div class="spinner-border" role="status" id="spinner" style="color: dodgerblue"></div>`)
 }

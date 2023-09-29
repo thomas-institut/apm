@@ -3,12 +3,14 @@
 namespace APM\CommandLine;
 
 use APM\System\ApmConfigParameter;
+use APM\System\PythonLemmatizer;
 use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
 
 class EditionsIndexManager extends OpenSearchIndexManager
 {
     protected $ctable;
+
 
     public function main($argc, $argv): bool
     {
@@ -107,7 +109,8 @@ class EditionsIndexManager extends OpenSearchIndexManager
         // Tokenization and lemmatization
         // Test existence of text and tokenize/lemmatize existing texts in python
         if (strlen($text_clean) > 3) {
-            exec("python3 ../../python/Lemmatizer_Indexing.py $lang $text_clean", $tokens_and_lemmata);
+            PythonLemmatizer::runLemmatizer($lang, $text_clean, $tokens_and_lemmata);
+//            exec("python3 ../../python/Lemmatizer_Indexing.py $lang $text_clean", $tokens_and_lemmata);
 
             // Get tokenized and lemmatized transcript
             $edition_tokenized = explode("#", $tokens_and_lemmata[0]);

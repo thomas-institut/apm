@@ -3,6 +3,7 @@
 namespace APM\Jobs;
 
 use APM\System\ApmConfigParameter;
+use APM\System\PythonLemmatizer;
 use OpenSearch\ClientBuilder;
 
 abstract class ApiSearchUpdateOpenSearchIndex
@@ -27,7 +28,8 @@ abstract class ApiSearchUpdateOpenSearchIndex
 
     protected function runLemmatizer(string $lang, string $text_encoded): array
     {
-        exec("python3 ../../python/Lemmatizer_Indexing.py $lang $text_encoded", $tokens_and_lemmata);
+        PythonLemmatizer::runLemmatizer($lang, $text_encoded, $tokens_and_lemmata);
+//        exec("python3 ../../python/Lemmatizer_Indexing.py $lang $text_encoded", $tokens_and_lemmata);
         return $tokens_and_lemmata;
     }
 }

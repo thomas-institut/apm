@@ -21,6 +21,7 @@
 namespace APM\CommandLine;
 
 use APM\System\ApmConfigParameter;
+use APM\System\PythonLemmatizer;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
 use OpenSearch\ClientBuilder;
@@ -207,7 +208,8 @@ class TranscriptionsIndexManager extends OpenSearchIndexManager {
         // Tokenization and lemmatization
         // Test existence of transcript and tokenize/lemmatize existing transcripts in python
         if (strlen($transcription_clean) > 3) {
-            exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcription_clean", $tokens_and_lemmata);
+            PythonLemmatizer::runLemmatizer($lang, $transcription_clean, $tokens_and_lemmata);
+//            exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcription_clean", $tokens_and_lemmata);
 
             // Get tokenized and lemmatized transcript
             $transcription_tokenized = explode("#", $tokens_and_lemmata[0]);

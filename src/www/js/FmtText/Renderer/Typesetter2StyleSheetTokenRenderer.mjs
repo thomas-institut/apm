@@ -150,25 +150,57 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
    * @return TextBox[]
    */
   expandTextBox(textBox) {
-
-    // for now, just take care of final comma, semicolon and dot
     let theText = textBox.getText()
-    if (theText === '') {
+    if (theText === '' || theText.length === 1) {
       return [textBox]
     }
-    const finals = [';', '.', ',']
-    let finalChar = theText.charAt(theText.length-1)
-    if (finals.indexOf(finalChar) === -1) {
-      return [textBox]
-    }
-    console.log(`Splitting box with text '${theText}' into two`)
-    let textBoxExportObject = textBox.getExportObject()
-    let initialTextBox = ObjectFactory.fromObject(textBoxExportObject)
-    initialTextBox.setText(theText.substring(0,theText.length-1))
-    let finalTextBox = ObjectFactory.fromObject(textBoxExportObject)
-    finalTextBox.setText(finalChar)
+    const initials = [ '(', '{']
+    const finals = [';', '.', ',', ')', '}']
 
-   return [initialTextBox, finalTextBox]
+    let initialsChars = []
+    let finalsChars = []
+
+    for (let i = 0; i < theText.length; i++) {
+      if (initials.includes(theText.charAt(i))) {
+        initialsChars.push(theText.charAt(i))
+      } else {
+        break
+      }
+    }
+
+    for (let i = theText.length-1; i >= 0; i--) {
+      if (finals.includes(theText.charAt(i))) {
+        finalsChars.unshift(theText.charAt(i))
+      } else {
+        break
+      }
+    }
+    if (initialsChars.length === 0 && finalsChars.length === 0) {
+      return [textBox]
+    }
+
+    let parts = []
+    parts.push(...initialsChars)
+    parts.push(theText.substring(initialsChars.length, theText.length - finalsChars.length))
+    parts.push(...finalsChars)
+
+    let returnArray =  this.buildTextBoxArrayFromStringArray(parts, textBox)
+    console.log(`Splitting text box '${theText}' into ${returnArray.length}: ${returnArray.map( tb => `'${tb.getText()}'`).join(' | ')}`)
+    return returnArray
+  }
+
+  /**
+   *
+   * @param {string[]}stringArray
+   * @param {TextBox}seedTextBox
+   * @return {*}
+   */
+  buildTextBoxArrayFromStringArray(stringArray, seedTextBox) {
+    return stringArray.map( (str) => {
+      let tb = ObjectFactory.fromObject(seedTextBox.getExportObject())
+      tb.setText(str)
+      return tb
+    })
   }
 
   /**

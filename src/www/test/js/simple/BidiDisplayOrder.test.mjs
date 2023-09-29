@@ -69,8 +69,40 @@ testSuite('Bidi Display Order', () => {
         expectedOrder:      [  0,     1,     2,     7,          6,     5,       4,      3,      8,      9,     10, 11, 12],
         expectedDirections: [ 'ltr', 'ltr', 'ltr', 'rtl',      'rtl', 'rtl',    'rtl',  'rtl',  'ltr', 'ltr', 'ltr', 'ltr', 'ltr']
       }
+    ]
+    doTestCases(testCases, getStringTextDirectionCapsFake)
+  })
 
-
+  test('Strings with brackets', () => {
+    let testCases = [
+      {
+        context: 'Bidi text with brackets LTR (simple)',
+        testItems: [ 'the', ' ', '(', 'car', ',', ' ', 'SAYYARA', ')', ' ', 'and', ' ', 'more'],
+        defaultTextDirection: 'ltr',
+        expectedOrder:      [ 0,      1,     2,     3,     4,    5,      6, 7, 8, 9, 10, 11],
+        expectedDirections: [ 'ltr', 'ltr', 'ltr', 'ltr', 'ltr', 'ltr', 'rtl', 'ltr', 'ltr', 'ltr', 'ltr', 'ltr']
+      },
+      {
+        context: 'Bidi text with brackets RTL (simple)',
+        testItems: [ 'THE', ' ', '(', 'CAR', ',', ' ', 'sayyara', ')', ' ', 'AND', ' ', 'MORE'],
+        defaultTextDirection: 'rtl',
+        expectedOrder:      [ 0,      1,     2,     3,     4,    5,      6, 7, 8, 9, 10, 11],
+        expectedDirections: [ 'rtl', 'rtl', 'rtl', 'rtl', 'rtl', 'rtl', 'ltr', 'rtl', 'rtl', 'rtl', 'rtl', 'rtl']
+      },
+      {
+        context: 'Bidi text with brackets LTR ',
+        testItems: [ 'the', ' ', '(', 'car', ',', ' ', 'SAYYARA', ' ', 'YADIDA', ')', ' ', 'and', ' ', 'more'],
+        defaultTextDirection: 'ltr',
+        expectedOrder:      [ 0,      1,     2,     3,     4,     5,     8,     7,     6,     9, 10, 11, 12, 13],
+        expectedDirections: [ 'ltr', 'ltr', 'ltr', 'ltr', 'ltr', 'ltr', 'rtl', 'rtl', 'rtl', 'ltr', 'ltr', 'ltr', 'ltr', 'ltr']
+      },
+      {
+        context: 'Bidi text with brackets RTL ',
+        testItems: [ 'THE', ' ', '(', 'CAR', ',', ' ', 'sayyara', ' ', 'yadida', ')', ' ', 'AND', ' ', 'MORE'],
+        defaultTextDirection: 'rtl',
+        expectedOrder:      [ 0,      1,     2,     3,     4,     5,     8,     7,     6,     9, 10, 11, 12, 13],
+        expectedDirections: [ 'rtl', 'rtl', 'rtl', 'rtl', 'rtl', 'rtl', 'ltr', 'ltr', 'ltr', 'rtl', 'rtl', 'rtl', 'rtl', 'rtl']
+      },
     ]
     doTestCases(testCases, getStringTextDirectionCapsFake)
   })

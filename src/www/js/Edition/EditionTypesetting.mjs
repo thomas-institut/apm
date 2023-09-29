@@ -105,6 +105,9 @@ export class EditionTypesetting {
    * @param lineTo
    */
   getMarginaliaForLineRange(lineFrom, lineTo) {
+    if (this.lineRanges === undefined) {
+      return []
+    }
     if (this.lineRanges[marginaliaApparatusType] === undefined) {
       return []
     }

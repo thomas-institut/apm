@@ -88,7 +88,7 @@ abstract class CommandLineUtility {
         $pid = posix_getpid();
         $this->argc = $argc;
         $this->argv = $argv;
-        $cmd = $argv[0];
+        $cmd = $argv[0] ?? 'cmd_not_in_argv';
 
         // System Manager 
         $systemManager = new ApmSystemManager($config);

@@ -71,4 +71,8 @@ class ApmConfigParameter
     const OPENSEARCH_USER = 'opensearch_user';
     const OPENSEARCH_PASSWORD = 'opensearch_password';
 
+    const COMMAND_LINE_USERS = 'commandLineUsers';
+
+    const APM_DAEMON_PID_FILE = 'apmDaemonPidFile';
+
 }

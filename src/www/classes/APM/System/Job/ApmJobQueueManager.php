@@ -3,6 +3,7 @@
 namespace APM\System\Job;
 
 use APM\System\SystemManager;
+use Exception;
 use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
@@ -69,11 +70,37 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         return $rowId;
     }
 
+    public function rescheduleJob(int $jobId, int $secondsToWait = 0, int $maxAttempts = -1, int $secondBetweenRetries = -1): int
+    {
+        if (!$this->dataTable->rowExists($jobId)) {
+            return -1;
+        }
+        $timeStampNow = microtime(true);
+        $row = [
+            'id' => $jobId,
+            'state'=> ScheduledJobState::WAITING,
+            'next_retry_at' => TimeString::fromTimeStamp($timeStampNow + $secondsToWait),
+            'scheduled_at' => TimeString::fromTimeStamp($timeStampNow),
+            'completed_runs' => 0
+        ];
+
+        if ($maxAttempts !== -1) {
+            $row['max_attempts'] = $maxAttempts;
+        }
+        if ($secondBetweenRetries !== -1) {
+            $row['secs_between_retries'] = $secondBetweenRetries;
+        }
+
+        $this->dataTable->updateRow($row);
+        return $jobId;
+
+    }
+
     private function isRegistered(string $name) : bool {
         return $name !== '' && isset($this->registeredJobs[$name]);
     }
 
-    public function process()
+    public function process(): void
     {
         $now = TimeString::now();
 
@@ -87,7 +114,9 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         }
     }
 
-    protected function doJob($jobRow) {
+
+    protected function doJob($jobRow): void
+    {
 
         if (!$this->isRegistered($jobRow['name'])) {
             $this->logger->error("Scheduled job is not registered", $jobRow);
@@ -110,7 +139,12 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         $payload = unserialize($jobRow['payload']);
         $secondsBetweenRetries = intval($jobRow['secs_between_retries']);
         $start = microtime(true);
-        $result = $handler->run($this->systemManager, $payload);
+        try {
+            $result = $handler->run($this->systemManager, $payload);
+        } catch (Exception $e) {
+            $this->logger->info("Job '$jobSignature' caused an exception", [ 'class' => get_class($e), 'code' => $e->getCode(), 'msg' => $e->getMessage()]);
+            $result = false;
+        }
         $runTimeInMs = intval((microtime(true) - $start)*1000);
         if ($result){
             // success
@@ -149,7 +183,7 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         ]);
     }
 
-    public function cleanQueue()
+    public function cleanQueue(): void
     {
         $jobsToClean = $this->dataTable->search([
             [ 'column' => 'state', 'condition' => GenericDataTable::COND_EQUAL_TO, 'value' => ScheduledJobState::DONE ],
@@ -161,4 +195,20 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
             $this->dataTable->deleteRow($jobRow['id']);
         }
     }
+
+    public function getJobCountsByState(): array
+    {
+        $states = [ ScheduledJobState::WAITING, ScheduledJobState::RUNNING, ScheduledJobState::ERROR, ScheduledJobState::DONE];
+        $returnObject = [];
+        foreach ($states as $state) {
+            $returnObject[$state] = count($this->getJobsByState($state));
+        }
+        return $returnObject;
+    }
+
+    public function getJobsByState(string $state) : array {
+        return $this->dataTable->findRows([ 'state' => $state]);
+    }
+
+
 }

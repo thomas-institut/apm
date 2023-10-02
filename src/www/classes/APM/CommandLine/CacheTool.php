@@ -11,7 +11,7 @@ class CacheTool extends  CommandLineUtility implements AdminUtility
 {
     const CMD = 'cache';
 
-    const USAGE = self::CMD . " <option>\n\nOptions:\n  info: print cache size, length, etc\n  flush: erases all cache entries\n   clean: removes all expired entries\n";
+    const USAGE = self::CMD . " <option>\n\nOptions:\n  info: print cache size, length, etc\n  flush: erases all cache entries\n  clean: removes all expired entries\n";
     const DESCRIPTION = "Cache management functions: info, clean, etc";
     const FLUSH_SAFE_WORD = 'IKnowWhatImDoing';
     private string $cacheTable;

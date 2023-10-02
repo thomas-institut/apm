@@ -42,8 +42,6 @@ use APM\Jobs\ApiUsersUpdateTranscribedPagesData;
 use APM\Jobs\ApmJobName;
 use APM\Jobs\SiteChunksUpdateDataCache;
 use APM\Jobs\SiteDocumentsUpdateDataCache;
-use APM\Jobs\UpdateOpenSearchIndex;
-use APM\Jobs\UpdateTranscribersAndTitlesCache;
 use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\Plugin\HookManager;
@@ -119,6 +117,8 @@ class ApmSystemManager extends SystemManager {
     ];
     
     const REQUIRED_CONFIG_VARIABLES_DB = [ 'host', 'db', 'user', 'pwd'];
+
+
 
     protected array $serverLoggerFields = [
         'method' => 'REQUEST_METHOD',

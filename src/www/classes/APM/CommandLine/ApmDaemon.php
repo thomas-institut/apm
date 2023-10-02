@@ -4,6 +4,7 @@ namespace APM\CommandLine;
 
 use APM\Site\SiteChunks;
 use APM\Site\SiteDocuments;
+use APM\System\ApmConfigParameter;
 use Exception;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 
@@ -32,7 +33,11 @@ class ApmDaemon extends CommandLineUtility
 
         if ($daemon) {
             $this->logger = $this->logger->withName('APM_D');
-            $this->logger->info("Starting as a (pseudo) daemon");
+            $this->logger->info("Starting as a (pseudo) daemon, pid is $this->pid");
+            if (!$this->writePidFile()) {
+                $this->logger->error("Could not write PID file, exiting");
+                exit(1);
+            }
             $keepRunning = true;
             pcntl_async_signals(true);
             pcntl_signal(SIGTERM, function() use (&$keepRunning) {
@@ -47,6 +52,9 @@ class ApmDaemon extends CommandLineUtility
             while(1) {
                 if (!$keepRunning) {
                     $this->logger->info("Exiting cleanly");
+                    if (!$this->erasePidFile()){
+                        $this->logger->warning("Could not erase daemon pid file");
+                    };
                     exit();
                 }
                 $this->reestablishCacheItems($cacheItemsToReestablish);
@@ -60,6 +68,14 @@ class ApmDaemon extends CommandLineUtility
                 $this->logger->info("Cache is up to date");
             }
         }
+    }
+
+    private function writePidFile() : bool {
+        return file_put_contents($this->config[ApmConfigParameter::APM_DAEMON_PID_FILE], "$this->pid") !== false;
+    }
+
+    private  function erasePidFile() : bool {
+        return unlink($this->config[ApmConfigParameter::APM_DAEMON_PID_FILE]);
     }
 
     private function reestablishCacheItems(array $cacheItemInfo) : bool {

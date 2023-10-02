@@ -20,6 +20,7 @@
 
 namespace APM\CommandLine;
 
+use APM\System\ApmConfigParameter;
 use APM\System\ApmSystemManager;
 use AverroesProject\Data\UserManager;
 use AverroesProject\Data\DataManager;
@@ -68,9 +69,9 @@ abstract class CommandLineUtility {
     protected DataManager $dm;
 
     /**
-     * @var array|int|false
+     * @var array
      */
-    private array|int|false $processUser;
+    protected array $processUserInfoArray;
     /**
      * @var int
      */
@@ -79,15 +80,25 @@ abstract class CommandLineUtility {
      * @var array
      */
     protected array $argv;
+    protected int $pid;
 
 
     public function __construct(array $config, int $argc, array $argv) {
 
         $this->config = $config;
-        $this->processUser = posix_getpwuid(posix_geteuid());
-        $pid = posix_getpid();
+        $this->processUserInfoArray = posix_getpwuid(posix_geteuid());
+        $this->pid = posix_getpid();
         $this->argc = $argc;
         $this->argv = $argv;
+
+        $authorizedUsers = $config[ApmConfigParameter::COMMAND_LINE_USERS];
+        $authorizedUsers[] = 'root';
+
+        if (!in_array($this->processUserInfoArray['name'], $authorizedUsers)) {
+            $this->printErrorMsg("Sorry, you don't have permission to run this command\n");
+            exit(1);
+        }
+
         $cmd = $argv[0] ?? 'cmd_not_in_argv';
 
         // System Manager 
@@ -96,16 +107,16 @@ abstract class CommandLineUtility {
         $this->systemManager = $systemManager;
 
         if ($systemManager->fatalErrorOccurred()) {
-            print "ERROR: " . $systemManager->getErrorMessage();
-            exit();
+            $this->printErrorMsg($systemManager->getErrorMessage());
+            exit(1);
         }
 
         $this->logger = $systemManager->getLogger()->withName('CMD');
-        $processUser = $this->processUser;
+        $processUser = $this->processUserInfoArray;
         $this->logger->pushProcessor(
-            function ($record) use($processUser, $pid, $cmd) { 
+            function ($record) use($processUser, $cmd) {
                 $record['extra']['unixuser'] = $processUser['name'];
-                $record['extra']['pid'] = $pid;
+                $record['extra']['pid'] = $this->pid;
                 $record['extra']['cmd'] = $cmd;
                 return $record;
         });

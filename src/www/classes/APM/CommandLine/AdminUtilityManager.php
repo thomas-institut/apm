@@ -21,6 +21,7 @@ class AdminUtilityManager extends CommandLineUtility
     public function __construct(array $config, int $argc, array $argv)
     {
         parent::__construct($config, $argc, $argv);
+
         $this->calledScriptName = basename($argv[0]);
 
         $this->commands = [];
@@ -29,7 +30,8 @@ class AdminUtilityManager extends CommandLineUtility
         $this->commandArgc = $argc -1;
 
         $utilityObjects = [
-            new CacheTool($config, $this->commandArgc, $this->commandArgv)
+            new CacheTool($config, $this->commandArgc, $this->commandArgv),
+            new JobQueueTool($config, $this->commandArgc, $this->commandArgv)
         ];
 
         $this->commands = $this->getCommandObjectFromUtilityObjectArray($utilityObjects);

@@ -72,3 +72,6 @@ $config['opensearch_hosts'] = ['https://localhost:9200'];
 $config['opensearch_user'] = 'admin';
 $config['opensearch_password'] = 'admin';
 
+
+
+$config['commandLineUsers'] = [ 'user1', 'user2'];

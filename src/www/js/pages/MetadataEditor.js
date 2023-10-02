@@ -12,7 +12,6 @@ export class MetadataEditor {
             metadataSchema: {type: 'object', required: true},
             mode: {type:'string', required: true},
             callbackSave: {type:'function', required: false},
-            callbackCreate: {type:'function', required: false},
             theme: {type:'string', required: true}
         }
 
@@ -33,26 +32,16 @@ export class MetadataEditor {
 
         // Setup metadata editor in desired mode
         switch (this.options.mode) {
-            case 'edit':
+            case this.mode.edit:
                 this.setupEditMode()
                 break
-            case 'create':
+            case this.mode.create:
                 this.setupCreateMode()
                 break
-            case 'show':
+            case this.mode.show:
                 this.setupShowMode()
                 break
         }
-
-        // // UNUSED - Api Urls
-        // this.urlGen = new ApmUrlGenerator('')
-        // this.apiUrls = {
-        //     getData: this.urlGen.apiMetadataEditorGetData(),
-        //     saveData: this.urlGen.apiMetadataEditorSaveData(),
-        //     createEntity: this.urlGen.apiMetadataEditorCreateEntity(),
-        //     getIdForNewEntity: this.urlGen.apiMetadataEditorGetIdForNewEntity(),
-        //     getDataSchemesForEntityTypes: this.urlGen.apiMetadataEditorGetDataSchemesForEntityTypes()
-        // };
     }
 
     // FUNCTIONS
@@ -74,7 +63,8 @@ export class MetadataEditor {
                             <br>
                             <table class=${tableClass} id="metadataTable"></table>
                             <br>
-                            <div id="buttons_bottom" align="left"><comment id="confirmationMessage"></comment><comment id="errorMessage"></comment></div>
+                            <div id="buttons_bottom" align="left"></div>
+                            <div id="errorMessage" style="font-style: oblique"></div>
                             <br>`)
     }
 
@@ -84,7 +74,7 @@ export class MetadataEditor {
             this.setupTableForDataInput(this.options.mode, () => {
                 this.setupCancelButton()
                 this.setupSaveButton()
-                console.log(`Metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} can now be edited.`)
+                console.log(`edit-mode for metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} activated.`)
             })
         })
     }
@@ -95,7 +85,7 @@ export class MetadataEditor {
             this.setupTableForDataInput(this.options.mode, () => {
                 this.setupCancelButton()
                 this.setupSaveButton()
-                console.log('A new entity can now be created.')
+                console.log(`create-mode for new entity of type '${this.entity.type}' activated.`)
             })
         })
     }
@@ -105,7 +95,7 @@ export class MetadataEditor {
             this.makeTableStructure()
             this.setupEditAndCreateButton()
             this.showMetadata()
-            console.log(`Metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} are being displayed.`)
+            console.log(`show-mode for metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} activated.`)
         })
     }
 
@@ -384,7 +374,6 @@ export class MetadataEditor {
 
             // Clear Messages
             this.clearErrorMessage()
-            this.clearConfirmationMessage()
 
             // Get Data To Save
             let d = this.getEntityDataToSave()
@@ -392,9 +381,9 @@ export class MetadataEditor {
             if (this.dataTypesAreCorrect(d) && this.passwordsAreCorrect()) {
                 this.makeSpinner(this.buttonsSelectorBottom)
                 this.updateEntityData(d.id, d.type, d.values)
-                this.options.callbackSave(this.entity, () => {
+                this.options.callbackSave(this.entity, this.options.mode, () => {
                     this.removeSpinner()
-                    this.returnConfirmation('Saved!')
+                    this.logSaveAction(this.options.mode)
                 })
             }
         })
@@ -403,24 +392,20 @@ export class MetadataEditor {
     makeEditButtonEvent() {
         $("#edit_button").on("click",  () => {
 
-            this.options.mode = 'edit'
+            this.options.mode = this.mode.edit
 
             // Clear Messages
             this.clearErrorMessage()
-            this.clearConfirmationMessage()
             this.setupEditMode()
         })
     }
 
     makeCreateButtonEvent() {
 
-        this.options.mode = 'create'
+        this.options.mode = this.mode.create
 
         $("#create_button").on("click",  () => {
-
-            // Clear Messages
             this.clearErrorMessage()
-            this.clearConfirmationMessage()
             this.setupCreateMode()
         })
     }
@@ -428,11 +413,11 @@ export class MetadataEditor {
     makeCancelButtonEvent() {
         $("#cancel_button").on("click",  () => {
 
-            this.options.mode = 'show'
+            this.options.mode = this.mode.show
 
             // Clear Messages
             this.clearErrorMessage()
-            this.clearConfirmationMessage()
+            this.clearBottomButtons()
             this.setupShowMode()
         })
     }
@@ -578,7 +563,7 @@ export class MetadataEditor {
 
     returnPasswordError() {
         console.log('Password Error!')
-      this.returnError(`Password Error! Please try again.`)
+        this.returnError(`Password Error! Please try again.`)
     }
 
     returnError(str) {
@@ -590,13 +575,13 @@ export class MetadataEditor {
         $("#errorMessage").empty()
     }
 
-    returnConfirmation(str) {
-        str = "&nbsp&nbsp" + str
-        $("#confirmationMessage").html(str)
-    }
-
-    clearConfirmationMessage() {
-        $("#confirmationMessage").empty()
+    logSaveAction(mode) {
+        if (mode === this.mode.edit) {
+            console.log(`Saved alterations of entity with ID ${this.entity.id}.`)
+        }
+        else if (mode === this.mode.create) {
+            console.log(`Created new entity of type '${this.entity.type}' with ID ${this.entity.id}.`)
+        }
     }
 
     clearTopButtons() {

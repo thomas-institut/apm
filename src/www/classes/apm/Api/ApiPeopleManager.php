@@ -56,17 +56,16 @@ class ApiPeopleManager extends ApiController
         ]);
     }
 
-    public function getPersonSchemaWithNewId(Request $request, Response $response): Response
+    public function getSchema(Request $request, Response $response): Response
     {
         $status = 'OK';
         $now = TimeString::now();
 
         // POSSIBLE TYPES OF ENTITIES CAN EITHER BE HARD-CODED HERE OR ABSTRACTED FROM DATA STORED IN A SQL TABLE
 
-        $id = $this->getIdForNewPerson();
-            
+        //$data = $this->getEntitySchemaFromSql();
         $data = [
-            'id' => $id,
+            'id' => '',
             'type' => 'person',
             'keys' => ['Display Name', 'Date of Birth', 'Place of Birth', 'Date of Death', 'Place of Death', 'URL'],
             'types' => ['text', 'date', 'text', 'date', 'text', 'url']
@@ -79,18 +78,21 @@ class ApiPeopleManager extends ApiController
             'status' => $status]);
     }
 
-    private function getIdForNewPerson (): string {
-       
+    public function getNewId (Request $request, Response $response): Response {
+
+        $status = 'OK';
+        $now = TimeString::now();
+
         $cache = $this->systemManager->getSystemDataCache();
         $cacheKey = 'Next_Entity_ID';
 
         try { // Check for cached id
 
             $id = unserialize($cache->get($cacheKey));
+            // $id = $this->getIdForNewPersonFromSql();
 
         } catch (KeyNotInCacheException $e) { // Get id from sql database and set cache
 
-            // $id = $this->getIdForNewPersonFromSql();
             $id = 0;
 
         }
@@ -99,7 +101,10 @@ class ApiPeopleManager extends ApiController
         $cache->set($cacheKey, serialize($id+1));
 
         // ApiResponse
-        return strval($id);
+        return $this->responseWithJson($response, [
+            'id' => strval($id),
+            'serverTime' => $now,
+            'status' => $status]);
     }
 
     private function getMetadataFromSql(string $id): array {
@@ -137,6 +142,14 @@ class ApiPeopleManager extends ApiController
     private function getIdForNewPersonFromSql(): bool {
 
         // TO DO | PLACE HERE A FUNCTION WHICH GETS THE HIGHEST ID IN A SQL TABLE AND RETURNS ID+1
+
+
+        return true;
+    }
+
+    private function getEntitySchemaFromSql(): array {
+
+        // TO DO | PLACE HERE A FUNCTION WHICH GETS THE METADATA SCHEMA OF AN ENTITY FROM A SQL TABLE
 
 
         return true;

@@ -322,7 +322,10 @@ class ApmUrlGenerator {
 
     apiPeopleManagerGetSchema() {
         return `${this.base}/api/person/schema`
+    }
 
+    apiPeopleManagerGetNewId() {
+        return `${this.base}/api/person/newid`
     }
 
     images() {

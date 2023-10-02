@@ -353,8 +353,12 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         ->setName('createPerson');
 
     $group->post('/person/schema',
-        ApiPeopleManager::class . ':getPersonSchemaWithNewId')
-        ->setName('getPersonSchema');
+        ApiPeopleManager::class . ':getSchema')
+        ->setName('getSchema');
+
+    $group->post('/person/newid',
+        ApiPeopleManager::class . ':getNewId')
+        ->setName('getNewId');
 
     // LOG
     $group->post('/admin/log',

@@ -9,15 +9,15 @@ export function setupPeopleManagerPage (baseUrl) {
 
     // Determine editor mode and entity id
     let mode = 'show'
-    let id = '77'
+    let id = '111'
 
     // Show spinner while loading
     makeSpinner()
 
-    // setup metadatas editor in desired mode
+    // setup metadata editor in desired mode
     switch (mode) {
         case 'create':
-            getPersonSchemaWithNewId((entity) => {
+            getPersonSchema((entity) => {
                 setupMetadataEditor(entity, mode)
             })
             break
@@ -31,6 +31,11 @@ export function setupPeopleManagerPage (baseUrl) {
 
 window.setupPeopleManagerPage = setupPeopleManagerPage
 
+function makeSpinner() {
+    removeMetadataEditor()
+    $('#peopleEditor').html(`<div class="spinner-border" role="status" id="spinner" style="color: dodgerblue"></div>`)
+}
+
 function setupMetadataEditor (entity, mode) {
 
     removeMetadataEditor()
@@ -40,8 +45,9 @@ function setupMetadataEditor (entity, mode) {
         entityType: entity.type,
         metadata: entity.values,
         metadataSchema: {keys: entity.keys, types: entity.types},
-        callbackSave: (data, returnConfirmation) => {savePersonData(data, returnConfirmation)},
-        callbackCreate: () => {getPersonSchemaWithNewId(entity)},
+        callbackSave: (data, mode, callback) => {
+            savePersonData(data, mode, callback)
+        },
         mode: mode,
         theme: 'vertical'
     })
@@ -80,7 +86,32 @@ function getPerson (id, setupMetadataEditor) {
         })
 }
 
-function getPersonSchemaWithNewId (setupMetadataEditor) {
+function getIdForNewPerson(data, saveEntity) {
+    $.post(urlGen.apiPeopleManagerGetNewId())
+        .done((apiResponse) => {
+
+            // Catch Error
+            if (apiResponse.status !== 'OK') {
+                console.log(`Error in query`);
+                if (apiResponse.errorData !== undefined) {
+                    console.log(apiResponse.errorData);
+                }
+                return false
+            }
+            else {
+                console.log(apiResponse)
+                data.id = apiResponse.id
+                saveEntity(data)
+            }
+
+        })
+        .fail((status) => {
+            console.log(status);
+            return false
+        })
+}
+
+function getPersonSchema (setupMetadataEditor) {
     // Make API Call
     $.post(urlGen.apiPeopleManagerGetSchema())
         .done((apiResponse) => {
@@ -106,34 +137,58 @@ function getPersonSchemaWithNewId (setupMetadataEditor) {
         })
 }
 
-function savePersonData (data, returnConfirmation) {
+function savePersonData (data, mode, callback) {
 
-    // Make API Call
-    $.post(urlGen.apiPeopleManagerSaveData(), data)
-        .done((apiResponse) => {
+    if (mode === 'edit') {
+        // Make API Call
+        $.post(urlGen.apiPeopleManagerSaveData(), data)
+            .done((apiResponse) => {
 
-            // Catch Error
-            if (apiResponse.status !== 'OK') {
-                console.log(`Error in query`);
-                if (apiResponse.errorData !== undefined) {
-                    console.log(apiResponse.errorData);
+                // Catch Error
+                if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query`);
+                    if (apiResponse.errorData !== undefined) {
+                        console.log(apiResponse.errorData);
+                    }
+                    return;
                 }
-                return;
-            }
 
-            // Log API response and change to show mode
-            console.log(apiResponse);
-            returnConfirmation()
-            entity = data
-            setupMetadataEditor(entity, 'show')
-            return true
-        })
-        .fail((status) => {
-            console.log(status);
-        })
-}
+                // Log API response and change to show mode
+                console.log(apiResponse);
+                callback()
+                entity = data
+                setupMetadataEditor(entity, 'show')
+                return true
+            })
+            .fail((status) => {
+                console.log(status);
+            })
+    }
+    else if (mode === 'create') {
+        getIdForNewPerson(data, (newData) => {
+            // Make API Call
+            $.post(urlGen.apiPeopleManagerSaveData(), newData)
+                .done((apiResponse) => {
 
-function makeSpinner() {
-    removeMetadataEditor()
-    $('#peopleEditor').html(`<div class="spinner-border" role="status" id="spinner" style="color: dodgerblue"></div>`)
+                    // Catch Error
+                    if (apiResponse.status !== 'OK') {
+                        console.log(`Error in query`);
+                        if (apiResponse.errorData !== undefined) {
+                            console.log(apiResponse.errorData);
+                        }
+                        return;
+                    }
+
+                    // Log API response and change to show mode
+                    console.log(apiResponse);
+                    callback()
+                    entity = newData
+                    setupMetadataEditor(entity, 'show')
+                    return true
+                })
+                .fail((status) => {
+                    console.log(status);
+                })
+        })
+    }
 }

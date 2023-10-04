@@ -20,4 +20,4 @@
 export const CRITICUS = 'criticus'
 export const FONTIUM = 'fontium'
 export const COMPARATIVUS = 'comparativus'
-export const TESTIMONIORUM = 'testimoniorum'
+export const MARGINALIA = 'marginalia'

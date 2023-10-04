@@ -1,5 +1,6 @@
 import { CtDataUpdater } from './CtDataUpdater'
 import { EDITION } from '../../constants/CollationTableType'
+import * as ApparatusType from '../../constants/ApparatusType'
 
 /**
  * Schema 1.3 adds a 'marginalia' apparatus to editions
@@ -25,12 +26,12 @@ export  class UpdaterToOnePointThree extends CtDataUpdater {
 
 
     if (sourceCtData['type'] === EDITION) {
-      // just make sure there's no 'marginalia'
       let currentMarginaliaApparatusIndex = ctData['customApparatuses'].map( app => app['type']).indexOf('marginalia')
       if (currentMarginaliaApparatusIndex === -1) {
-        ctData['customApparatuses'].push( { type: 'marginalia', entries: []})
+        ctData['customApparatuses'].push( { type: ApparatusType.MARGINALIA, entries: []})
       } else {
-        console.warn(`Found a marginalia apparatus in CtData version ${this.sourceSchemaVersion()}`)
+        // this is not an error,
+        console.log(`Found a marginalia apparatus in CtData version ${this.sourceSchemaVersion()}`)
       }
     }
 

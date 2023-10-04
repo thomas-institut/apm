@@ -19,10 +19,8 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
     const CMD_PROCESS = 'process';
     const CMD_CLEAN = 'clean';
     const CMD_INFO = 'info';
-    const CMD_FAILED = 'failed';
 
-    const CMD_PENDING = 'pending';
-
+    const CMD_LIST = 'list';
     const CMD_RESCHEDULE = 'reschedule';
 
     private array $commandInfo = [];
@@ -37,21 +35,18 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
             'info' => "prints information about the current job queue",
         ];
 
+        $this->commandInfo[] = [
+            'command' => self::CMD_LIST,
+            'usage' => '[waiting|running|done|error]',
+            'info' => "lists all jobs or jobs in the given state",
+        ];
+
 
         $this->commandInfo[] = [
             'command' => self::CMD_CLEAN,
             'info' => "removes all finished jobs from the queue"
         ];
 
-        $this->commandInfo[] = [
-            'command' => self::CMD_PENDING,
-            'info' => 'prints information about pending jobs'
-        ];
-
-        $this->commandInfo[] = [
-            'command' => self::CMD_FAILED,
-            'info' => 'prints information about jobs that finished with error'
-        ];
 
         $this->commandInfo[] = [
             'command' => self::CMD_RESCHEDULE,
@@ -96,12 +91,13 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
                 $this->info();
                 break;
 
-            case self::CMD_FAILED:
-                $this->failed();
-                break;
+            case self::CMD_LIST:
 
-            case self::CMD_PENDING:
-                $this->pending();
+                if (!isset($argv[2])) {
+                    $this->printErrorMsg("Need a type of job to list: all, waiting, running, error, done");
+                    return 1;
+                }
+                $this->list($argv[2]);
                 break;
 
             case self::CMD_RESCHEDULE:
@@ -141,29 +137,34 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
         }
     }
 
-    private function failed(): void {
-        $failedJobs = $this->systemManager->getJobManager()->getJobsByState(ScheduledJobState::ERROR);
+    private function list(string $state): void {
 
-        $countFailedJobs = count($failedJobs);
-        if ($countFailedJobs === 0) {
-            print "There are no failed jobs in the queue\n";
+        $validStates =  [ ScheduledJobState::WAITING, ScheduledJobState::RUNNING, ScheduledJobState::ERROR, ScheduledJobState::DONE];
+
+        if ($state === 'all') {
+            $statesToList = $validStates;
         } else {
-            printf("There are %d failed jobs in the queue: \n", $countFailedJobs);
-            $this->printJobs($failedJobs);
+            if (!in_array($state, $validStates)) {
+                $this->printErrorMsg("Invalid state '$state'");
+                exit(1);
+            }
+            $statesToList = [ $state ];
+        }
+
+        foreach($statesToList as $state) {
+            $jobs = $this->systemManager->getJobManager()->getJobsByState($state);
+            $countJobs = count($jobs);
+            printf("%s, %d job(s)", $state, $countJobs);
+            if ($countJobs === 0) {
+                print "\n";
+            } else {
+                print ":\n";
+                $this->printJobs($jobs);
+            }
         }
     }
 
-    private function pending() : void {
-        $pendingJobs = $this->systemManager->getJobManager()->getJobsByState(ScheduledJobState::WAITING);
 
-        $countPendingJobs = count($pendingJobs);
-        if ($countPendingJobs === 0) {
-            print "There are no pending jobs in the queue\n";
-        } else {
-            printf("There are %d jobs in the queue waiting to be run: \n", $countPendingJobs);
-            $this->printJobs($pendingJobs);
-        }
-    }
 
     private function printJobs(array $jobs): void {
         foreach($jobs as $job) {

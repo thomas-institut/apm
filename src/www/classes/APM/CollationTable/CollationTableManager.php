@@ -210,6 +210,13 @@ abstract class CollationTableManager implements ErrorReporter
         $newData['witnesses'][] = $editionWitness;
         $newData['collationMatrix'][] = $newCtRow;
         $newData['editionWitnessIndex'] = $editionWitnessIndex;
+        $newData['customApparatuses'] = [
+            [ 'type' => 'criticus', 'entries' => []],
+            [ 'type' => 'fontium', 'entries' => []],
+            [ 'type' => 'comparativus', 'entries' => []],
+            [ 'type' => 'marginalia', 'entries' => []]
+        ];
+
 
         return $newData;
     }

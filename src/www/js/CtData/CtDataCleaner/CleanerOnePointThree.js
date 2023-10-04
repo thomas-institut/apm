@@ -1,7 +1,7 @@
-import { CleanerOnePointTwo } from './CleanerOnePointTwo'
 import { CtDataCleaner } from './CtDataCleaner'
 import { SubEntryPositionsConsistencyCleaner } from './SubEntryPositionsConsistencyCleaner'
 import { ApparatusEntryPositionCleaner } from './ApparatusEntryPositionCleaner'
+import { DefaultApparatusesCleaner } from './DefaultApparatusesCleaner'
 
 /**
  *
@@ -13,6 +13,10 @@ export class CleanerOnePointThree extends CtDataCleaner {
   }
 
   getCleanCtData (ctData) {
+
+    // make sure all custom apparatuses are there
+    let defaultApparatusesCleaner = new DefaultApparatusesCleaner({verbose: this.verbose})
+    ctData = defaultApparatusesCleaner.getCleanCtData(ctData)
     // just run the 1.2 cleaner
     let subEntryPositionsCleaner = new SubEntryPositionsConsistencyCleaner({verbose: this.verbose})
     let apparatusEntryCleaner = new ApparatusEntryPositionCleaner({ verbose: this.verbose})

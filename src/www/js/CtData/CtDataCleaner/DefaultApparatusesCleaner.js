@@ -21,7 +21,8 @@ import * as ApparatusType from '../../constants/ApparatusType'
 const defaultApparatus = [
   ApparatusType.CRITICUS,
   ApparatusType.FONTIUM,
-  ApparatusType.COMPARATIVUS
+  ApparatusType.COMPARATIVUS,
+  ApparatusType.MARGINALIA
 ]
 
 import { CtDataCleaner } from './CtDataCleaner'

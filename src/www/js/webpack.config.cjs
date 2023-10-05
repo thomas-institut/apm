@@ -35,6 +35,10 @@ module.exports = {
       import: './pages/PeopleManagerPage.js',
       filename: 'PeopleManagerPage.bundle.js'
     },
+    PersonPage: {
+      import: './pages/PersonPage.js',
+      filename: 'PersonPage.bundle.js'
+    },
     MceComposer: {
       import: './MceComposer/MceComposer.js',
       filename: 'MceComposer.bundle.js',

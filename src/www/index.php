@@ -36,6 +36,7 @@ use APM\Api\ApiWorks;
 use APM\Site\SiteMetadataEditor;
 use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePeopleManager;
+use APM\Site\SitePerson;
 use APM\System\ConfigLoader;
 use JetBrains\PhpStorm\NoReturn;
 use Slim\App;
@@ -182,6 +183,10 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
     $group->get('/peoplemanager',
         SitePeopleManager::class . ':peopleManagerPage')
         ->setName('people.manager');
+
+    $group->get('/person/{id}',
+        SitePerson::class . ':personPage')
+        ->setName('person');
 
 
     // DASHBOARD
@@ -359,6 +364,10 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
     $group->post('/person/newid',
         ApiPeopleManager::class . ':getNewId')
         ->setName('getNewId');
+
+    $group->post('/people/all',
+        ApiPeopleManager::class . ':getAllPeople')
+        ->setName('getAllPeople');
 
     // LOG
     $group->post('/admin/log',

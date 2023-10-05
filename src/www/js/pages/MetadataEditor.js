@@ -12,7 +12,8 @@ export class MetadataEditor {
             metadataSchema: {type: 'object', required: true},
             mode: {type:'string', required: true},
             callbackSave: {type:'function', required: false},
-            theme: {type:'string', required: true}
+            theme: {type:'string', required: true},
+            backLink: {type:'string', required: true}
         }
 
         const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "MetadataEditor"})
@@ -59,6 +60,7 @@ export class MetadataEditor {
         }
         $(container).html(
             `<br>
+                            <div align="left"><a class="nav-link" href=${this.options.backLink} >Back</a></div>
                             <div id="buttons_top" align="right"></div>
                             <br>
                             <table class=${tableClass} id="metadataTable"></table>
@@ -83,7 +85,6 @@ export class MetadataEditor {
         this.buildEntitySchema(() => {
             this.makeTableStructure()
             this.setupTableForDataInput(this.options.mode, () => {
-                this.setupCancelButton()
                 this.setupSaveButton()
                 console.log(`create-mode for new entity of type '${this.entity.type}' activated.`)
             })
@@ -93,7 +94,7 @@ export class MetadataEditor {
     setupShowMode() {
         this.buildEntity(() => {
             this.makeTableStructure()
-            this.setupEditAndCreateButton()
+            this.setupEditButton()
             this.showMetadata()
             console.log(`show-mode for metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} activated.`)
         })
@@ -338,6 +339,12 @@ export class MetadataEditor {
         this.makeCreateButton()
     }
 
+    setupEditButton() {
+        this.clearTopButtons()
+        this.makeEditButton()
+    }
+
+
     setupCancelButton() {
         this.clearTopButtons()
         this.makeCancelButton()
@@ -451,12 +458,6 @@ export class MetadataEditor {
 
     getDataForYearsRange(value) {
         let years = []
-        // let regex = /\d+/g;
-        // let year
-        // while ((year = regex.exec(str)) != null) {
-        //     years.push(year[0])
-        // }
-
         years.push(value)
         years.push($("#years_range_end").val())
         years.push($("#years_range_note").val())

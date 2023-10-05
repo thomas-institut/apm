@@ -12,6 +12,35 @@ use ThomasInstitut\TimeString\TimeString;
 
 class ApiPeopleManager extends ApiController
 {
+
+    public function getAllPeople(Request $request, Response $response): Response
+    {
+
+        $status = 'OK';
+        $now = TimeString::now();
+        $data = [];
+
+        // Get number of people
+        $cache = $this->systemManager->getSystemDataCache();
+        $cacheKey = 'Next_Entity_ID';
+        $num_people = unserialize($cache->get($cacheKey))-1;
+
+
+        for ($id=0; $id<=$num_people; $id++) {
+            $data[] = $this->getMetadataFromSql($id);
+        }
+
+        if ($data === []) {
+            $status = 'Error in Cache!';
+        }
+
+        // ApiResponse
+        return $this->responseWithJson($response, [
+            'data' => $data,
+            'serverTime' => $now,
+            'status' => $status]);
+    }
+
     public function getData(Request $request, Response $response): Response
     {
 
@@ -147,7 +176,7 @@ class ApiPeopleManager extends ApiController
         return true;
     }
 
-    private function getEntitySchemaFromSql(): array {
+    private function getEntitySchemaFromSql(): bool {
 
         // TO DO | PLACE HERE A FUNCTION WHICH GETS THE METADATA SCHEMA OF AN ENTITY FROM A SQL TABLE
 

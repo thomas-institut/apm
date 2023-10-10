@@ -31,9 +31,9 @@ module.exports = {
       filename: 'EditionComposer.bundle.js',
       dependOn: 'QuillPack',
     },
-    PeopleManager: {
-      import: './pages/PeopleManagerPage.js',
-      filename: 'PeopleManagerPage.bundle.js'
+    People: {
+      import: './pages/PeoplePage.js',
+      filename: 'PeoplePage.bundle.js'
     },
     PersonPage: {
       import: './pages/PersonPage.js',

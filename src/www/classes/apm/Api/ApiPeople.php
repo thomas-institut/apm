@@ -10,7 +10,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
 
-class ApiPeopleManager extends ApiController
+class ApiPeople extends ApiController
 {
 
     public function getAllPeople(Request $request, Response $response): Response

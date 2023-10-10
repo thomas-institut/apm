@@ -5,9 +5,9 @@ namespace APM\Site;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
-class SitePeopleManager extends SiteController
+class SitePeople extends SiteController
 {
-    const TEMPLATE_SCRATCH_PAGE = 'people-manager.twig';
+    const TEMPLATE_SCRATCH_PAGE = 'people-page.twig';
 
     /**
      * @param Request $request
@@ -15,7 +15,7 @@ class SitePeopleManager extends SiteController
      * @return Response
      */
 
-    public function peopleManagerPage(Request $request, Response $response): Response
+    public function peoplePage(Request $request, Response $response): Response
     {
         return $this->renderPage($response, self::TEMPLATE_SCRATCH_PAGE,[]);
     }

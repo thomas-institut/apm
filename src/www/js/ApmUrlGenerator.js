@@ -99,8 +99,8 @@ class ApmUrlGenerator {
         return this.base + '/person/' + id
     }
 
-    sitePeopleManager() {
-        return this.base + '/peoplemanager'
+    sitePeople() {
+        return this.base + '/people'
     }
 
     siteEditMultiChunkEdition(editionId) {
@@ -321,23 +321,23 @@ class ApmUrlGenerator {
         return `${this.base}/api/search/editions`
     }
 
-    apiPeopleManagerGetPersonData() {
+    apiPeopleGetPerson() {
         return `${this.base}/api/person/get`
     }
 
-    apiPeopleManagerSaveData() {
+    apiPeopleSaveData() {
         return `${this.base}/api/person/save`
     }
 
-    apiPeopleManagerGetSchema() {
+    apiPeopleGetSchema() {
         return `${this.base}/api/person/schema`
     }
 
-    apiPeopleManagerGetNewId() {
+    apiPeopleGetNewId() {
         return `${this.base}/api/person/newid`
     }
 
-    apiPeopleManagerGetAllPeople() {
+    apiPeopleGetAllPeople() {
         return `${this.base}/api/people/all`
     }
 

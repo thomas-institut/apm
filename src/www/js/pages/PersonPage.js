@@ -48,7 +48,7 @@ function setupMetadataEditor (entity, mode) {
         },
         mode: mode,
         theme: 'vertical',
-        backLink: urlGen.sitePeopleManager()
+        backlink: urlGen.sitePeople()
     })
     
 }
@@ -61,7 +61,7 @@ function removeMetadataEditor() {
 function getPerson (id, setupMetadataEditor) {
 
     // Make API Call
-    $.post(urlGen.apiPeopleManagerGetPersonData(), {id: id})
+    $.post(urlGen.apiPeopleGetPerson(), {id: id})
         .done((apiResponse) => {
 
             // Catch Error
@@ -87,7 +87,7 @@ function getPerson (id, setupMetadataEditor) {
 }
 
 function getIdForNewPerson(data, saveEntity) {
-    $.post(urlGen.apiPeopleManagerGetNewId())
+    $.post(urlGen.apiPeopleGetNewId())
         .done((apiResponse) => {
 
             // Catch Error
@@ -113,7 +113,7 @@ function getIdForNewPerson(data, saveEntity) {
 
 function getPersonSchema (setupMetadataEditor) {
     // Make API Call
-    $.post(urlGen.apiPeopleManagerGetSchema())
+    $.post(urlGen.apiPeopleGetSchema())
         .done((apiResponse) => {
 
             // Catch Error
@@ -141,7 +141,7 @@ function savePersonData (data, mode, callback) {
 
     if (mode === 'edit') {
         // Make API Call
-        $.post(urlGen.apiPeopleManagerSaveData(), data)
+        $.post(urlGen.apiPeopleSaveData(), data)
             .done((apiResponse) => {
 
                 // Catch Error
@@ -157,7 +157,7 @@ function savePersonData (data, mode, callback) {
                 console.log(apiResponse);
                 callback()
                 entity = data
-                setupMetadataEditor(entity, 'show')
+                //setupMetadataEditor(entity, 'show')
                 return true
             })
             .fail((status) => {
@@ -167,7 +167,7 @@ function savePersonData (data, mode, callback) {
     else if (mode === 'create') {
         getIdForNewPerson(data, (newData) => {
             // Make API Call
-            $.post(urlGen.apiPeopleManagerSaveData(), newData)
+            $.post(urlGen.apiPeopleSaveData(), newData)
                 .done((apiResponse) => {
 
                     // Catch Error
@@ -183,7 +183,7 @@ function savePersonData (data, mode, callback) {
                     console.log(apiResponse);
                     callback()
                     entity = newData
-                    setupMetadataEditor(entity, 'show')
+                    //setupMetadataEditor(entity, 'show')
                     return true
                 })
                 .fail((status) => {

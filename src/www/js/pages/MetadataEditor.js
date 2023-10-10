@@ -1,4 +1,5 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
+import {urlGen} from "./common/SiteUrlGen";
 
 export class MetadataEditor {
 
@@ -11,9 +12,9 @@ export class MetadataEditor {
             metadata: {type:'array', required: false, default: []},
             metadataSchema: {type: 'object', required: true},
             mode: {type:'string', required: true},
-            callbackSave: {type:'function', required: false},
+            callbackSave: {type:'function', required: true},
             theme: {type:'string', required: true},
-            backLink: {type:'string', required: true}
+            backlink: {type:'string', required: false, default: ''}
         }
 
         const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "MetadataEditor"})
@@ -60,7 +61,6 @@ export class MetadataEditor {
         }
         $(container).html(
             `<br>
-                            <div align="left"><a class="nav-link" href=${this.options.backLink} >Back</a></div>
                             <div id="buttons_top" align="right"></div>
                             <br>
                             <table class=${tableClass} id="metadataTable"></table>
@@ -86,15 +86,17 @@ export class MetadataEditor {
             this.makeTableStructure()
             this.setupTableForDataInput(this.options.mode, () => {
                 this.setupSaveButton()
+                this.makeBackButton()
                 console.log(`create-mode for new entity of type '${this.entity.type}' activated.`)
             })
         })
     }
 
     setupShowMode() {
+        this.removeSpinner()
         this.buildEntity(() => {
             this.makeTableStructure()
-            this.setupEditButton()
+            this.setupBackAndEditButton()
             this.showMetadata()
             console.log(`show-mode for metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} activated.`)
         })
@@ -104,7 +106,9 @@ export class MetadataEditor {
     buildEntity(callback) {
         this.entity.id = this.options.entityId
         this.entity.type = this.options.entityType
-        this.entity.values = this.options.metadata
+        if (this.entity.values.length === 0) { // After having edited and esaved values, they get updated via the updateEntityData function
+            this.entity.values = this.options.metadata
+        }
         this.entity.keys = this.options.metadataSchema.keys
         this.entity.types = this.options.metadataSchema.types
 
@@ -322,7 +326,6 @@ export class MetadataEditor {
         }
     }
 
-
     // Save Button Setup
     setupSaveButton () {
         this.clearBottomButtons()
@@ -339,9 +342,11 @@ export class MetadataEditor {
         this.makeCreateButton()
     }
 
-    setupEditButton() {
+    setupBackAndEditButton() {
         this.clearTopButtons()
         this.makeEditButton()
+        this.insertSpaceBetweenButtons()
+        this.makeBackButton()
     }
 
 
@@ -373,9 +378,17 @@ export class MetadataEditor {
         let selector = '#' + this.buttonsSelectorTop
         $(selector).append(
             `<button type="submit" class="btn btn-primary" id="cancel_button">Cancel</button>`)
-        this.makeCancelButtonEvent()
+            this.makeCancelButtonEvent()
     }
 
+    makeBackButton() {
+        if (this.options.backlink !== '') {
+            let selector = '#' + this.buttonsSelectorTop
+            $(selector).append(
+                `<button type="submit" class="btn btn-primary" id="back_button" onClick = "window.location.href='${this.options.backlink}';">Back</button>`)
+        }
+    }
+    
     makeSaveButtonEvent () {
         $("#save_button").on("click",  () => {
 
@@ -389,8 +402,13 @@ export class MetadataEditor {
                 this.makeSpinner(this.buttonsSelectorBottom)
                 this.updateEntityData(d.id, d.type, d.values)
                 this.options.callbackSave(this.entity, this.options.mode, () => {
-                    this.removeSpinner()
                     this.logSaveAction(this.options.mode)
+                    if (this.options.mode === this.mode.create) {
+                        window.location.href = urlGen.sitePerson(this.entity.id);
+                    }
+                    else {
+                        this.setupShowMode()
+                    }
                 })
             }
         })

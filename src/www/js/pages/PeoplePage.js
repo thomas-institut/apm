@@ -1,19 +1,19 @@
 let urlGen = new ApmUrlGenerator('')
 let numPersons = 0
 
-export function setupPeopleManagerPage (baseUrl) {
+export function setupPeoplePage (baseUrl) {
 
     urlGen.setBase(baseUrl)
 
     makeSpinner()
     makeTable(() => {
         removeSpinner()
-        makeCreateLink()
+        makeCreateButton()
     })
 
 }
 
-window.setupPeopleManagerPage = setupPeopleManagerPage
+window.setupPeoplePage = setupPeoplePage
 
 function makeSpinner() {
     $('#table-spinner').html(`<div class="spinner-border" role="status" id="spinner" style="color: dodgerblue"></div>`)
@@ -27,7 +27,7 @@ function makeTable(callback) {
 
     let peopleTable = $('#people-table')
     // Make API Call
-    $.post(urlGen.apiPeopleManagerGetAllPeople())
+    $.post(urlGen.apiPeopleGetAllPeople())
         .done((apiResponse) => {
 
             // Catch Error
@@ -58,8 +58,10 @@ function makeTable(callback) {
         })
 }
 
-function makeCreateLink() {
-    $('#create_link').html(`<a class="nav-link" href=${urlGen.sitePerson('create')} >Create Person</a>`)
+function makeCreateButton() {
+    $('#div_create_button').html(
+        `<button type="submit" class="btn btn-primary" id="create_button" 
+                            onClick = "window.location.href='${urlGen.sitePerson('create')}';">Add Person</button>`)
 }
 
 function getNameWithLink (person) {

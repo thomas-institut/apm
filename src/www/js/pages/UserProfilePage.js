@@ -49,11 +49,11 @@ export class UserProfilePage {
     // Make Metadata Editor
     let mde = new MetadataEditor({
       containerSelector: 'editProfileForm',
-      entityId: this.userId,
+      entityId: this.userId.toString(),
       entityType: 'user',
       metadata: [profileUserInfo.fullname, profileUserInfo.username, profileUserInfo.email],
-      metadataSchema: {attributes: ['Full Name', 'Username', 'E-Mail Address'], types: ['text', 'text', 'email']},
-      callback: (d) => {console.log(d)},
+      metadataSchema: {keys: ['Full Name', 'Username', 'E-Mail Address'], types: ['text', 'text', 'email']},
+      callbackSave: (d) => {console.log(d)},
       mode: 'edit',
       theme: 'vertical'
     })

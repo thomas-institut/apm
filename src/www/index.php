@@ -29,13 +29,13 @@ use APM\Api\ApiEditionSources;
 use APM\Api\ApiLog;
 use APM\Api\ApiMetadataEditor;
 use APM\Api\ApiMultiChunkEdition;
-use APM\Api\ApiPeopleManager;
+use APM\Api\ApiPeople;
 use APM\Api\ApiTranscription;
 use APM\Api\ApiWorks;
 
 use APM\Site\SiteMetadataEditor;
 use APM\Site\SiteMultiChunkEdition;
-use APM\Site\SitePeopleManager;
+use APM\Site\SitePeople;
 use APM\Site\SitePerson;
 use APM\System\ConfigLoader;
 use JetBrains\PhpStorm\NoReturn;
@@ -178,10 +178,10 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
         SiteSearch::class . ':searchPage')
         ->setName('search');
 
-    // People Manager Page
+    // People and Person Pages
 
-    $group->get('/peoplemanager',
-        SitePeopleManager::class . ':peopleManagerPage')
+    $group->get('/people',
+        SitePeople::class . ':peoplePage')
         ->setName('people.manager');
 
     $group->get('/person/{id}',
@@ -344,29 +344,29 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         ApiSearch::class . ':getEditors')
         ->setName('search.editors');
 
-    // People Manager
+    // People
     $group->post('/person/get',
-        ApiPeopleManager::class . ':getData')
+        ApiPeople::class . ':getData')
         ->setName('getData');
 
     $group->post('/person/save',
-        ApiPeopleManager::class . ':saveData')
+        ApiPeople::class . ':saveData')
         ->setName('saveData');
 
     $group->post('/person/create',
-        ApiPeopleManager::class . ':saveData')
+        ApiPeople::class . ':saveData')
         ->setName('createPerson');
 
     $group->post('/person/schema',
-        ApiPeopleManager::class . ':getSchema')
+        ApiPeople::class . ':getSchema')
         ->setName('getSchema');
 
     $group->post('/person/newid',
-        ApiPeopleManager::class . ':getNewId')
+        ApiPeople::class . ':getNewId')
         ->setName('getNewId');
 
     $group->post('/people/all',
-        ApiPeopleManager::class . ':getAllPeople')
+        ApiPeople::class . ':getAllPeople')
         ->setName('getAllPeople');
 
     // LOG

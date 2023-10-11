@@ -44,10 +44,10 @@ function makeTable(callback) {
 
                 for (let person of apiResponse.data) {
                     let name = getNameWithLink(person)
-                    peopleTableBody.append(`<tr><td>${person.id}</td><td>${name}</td></tr>`)
+                    peopleTableBody.append(`<tr><td>${person.id}</td><td>${name}</td><td>${person.values[5]}</td></tr>`)
                     numPersons = numPersons+1
                 }
-                peopleTableHead.append(`<tr><th>ID</th><th>Name</th></tr>`)
+                peopleTableHead.append(`<tr><th>ID</th><th>Name</th><th>E-Mail</th></tr>`)
 
                 formatTable()
                 callback()

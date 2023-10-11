@@ -139,6 +139,7 @@ export class MetadataEditor {
 
     makeTableRows() {
         let tableSelector = '#metadataTable'
+
         switch (this.options.theme) {
             case 'horizontal':
                 $(tableSelector).append(`<tr id="row1"></tr><tr id="row2"></tr>`)
@@ -335,13 +336,6 @@ export class MetadataEditor {
         this.makeSaveButtonEvent()
     }
 
-    setupEditAndCreateButton() {
-        this.clearTopButtons()
-        this.makeEditButton()
-        this.insertSpaceBetweenButtons()
-        this.makeCreateButton()
-    }
-
     setupBackAndEditButton() {
         this.clearTopButtons()
         this.makeEditButton()
@@ -363,7 +357,9 @@ export class MetadataEditor {
     makeEditButton(){
         let selector = '#' + this.buttonsSelectorTop
         $(selector).append(
-            `<button type="submit" class="btn btn-primary" id="edit_button">Edit</button>`)
+            `<a class="card-link" id="edit_button">Edit</a>`)
+            //`<button type="submit" class="btn btn-primary" id="edit_button">Edit</button>`)
+
         this.makeEditButtonEvent()
     }
 
@@ -377,7 +373,8 @@ export class MetadataEditor {
     makeCancelButton(){
         let selector = '#' + this.buttonsSelectorTop
         $(selector).append(
-            `<button type="submit" class="btn btn-primary" id="cancel_button">Cancel</button>`)
+            `<a class="card-link" id="cancel_button">Cancel</a>`)
+            //`<button type="submit" class="btn btn-primary" id="cancel_button">Cancel</button>`)
             this.makeCancelButtonEvent()
     }
 
@@ -385,7 +382,8 @@ export class MetadataEditor {
         if (this.options.backlink !== '') {
             let selector = '#' + this.buttonsSelectorTop
             $(selector).append(
-                `<button type="submit" class="btn btn-primary" id="back_button" onClick = "window.location.href='${this.options.backlink}';">Back</button>`)
+                `<a class="card-link" id="back_button" href = ${this.options.backlink}>Back</a>`)
+                //`<button type="submit" class="btn btn-primary" id="back_button" onClick = "window.location.href='${this.options.backlink}';">Back</button>`)
         }
     }
     
@@ -403,12 +401,11 @@ export class MetadataEditor {
                 this.updateEntityData(d.id, d.type, d.values)
                 this.options.callbackSave(this.entity, this.options.mode, () => {
                     this.logSaveAction(this.options.mode)
-                    if (this.options.mode === this.mode.create) {
-                        window.location.href = urlGen.sitePerson(this.entity.id);
-                    }
-                    else {
-                        this.setupShowMode()
-                    }
+                    this.removeSpinner()
+                    this.setupShowMode()
+                    //if (this.options.mode === this.mode.create) {
+                    //  window.location.href = urlGen.sitePerson(this.entity.id);
+                    //}
                 })
             }
         })

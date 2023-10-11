@@ -43,7 +43,6 @@ class ApiPeople extends ApiController
 
     public function getData(Request $request, Response $response): Response
     {
-
         $status = 'OK';
         $now = TimeString::now();
         $id = $_POST['id'];

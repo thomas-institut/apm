@@ -11,18 +11,24 @@ export function setupPersonPage (baseUrl, id, mode='show') {
     if (mode === 'create') {
         getPersonSchema((entity) => {
             removeSpinner()
+            makeHeading()
             setupMetadataEditor(entity, mode)
         })
     }
     else {
         getPerson(id, (entity) => {
             removeSpinner()
+            makeHeading(entity.values[0])
             setupMetadataEditor(entity, mode)
         })
     }
 }
 
 window.setupPersonPage = setupPersonPage
+
+function makeHeading(name='Person') {
+    $('#person-heading').html(`${name}`)
+}
 
 function makeSpinner() {
     removeMetadataEditor()
@@ -45,6 +51,7 @@ function setupMetadataEditor (entity, mode) {
         metadataSchema: {keys: entity.keys, types: entity.types},
         callbackSave: (data, mode, callback) => {
             savePersonData(data, mode, callback)
+            makeHeading(data.values[0])
         },
         mode: mode,
         theme: 'vertical',

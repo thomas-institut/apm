@@ -47,7 +47,7 @@ function makeTable(callback) {
                     peopleTableBody.append(`<tr><td>${person.id}</td><td>${name}</td><td>${person.values[5]}</td></tr>`)
                     numPersons = numPersons+1
                 }
-                peopleTableHead.append(`<tr><th>ID</th><th>Name</th><th>E-Mail</th></tr>`)
+                peopleTableHead.append(`<tr><th>ID</th><th>Name</th><th>URL</th></tr>`)
 
                 formatTable()
                 callback()

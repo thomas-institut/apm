@@ -11,14 +11,14 @@ export function setupPersonPage (baseUrl, id, mode='show') {
     if (mode === 'create') {
         getPersonSchema((entity) => {
             removeSpinner()
-            makeHeading()
+            makePage()
             setupMetadataEditor(entity, mode)
         })
     }
     else {
         getPerson(id, (entity) => {
             removeSpinner()
-            makeHeading(entity.values[0])
+            makePage(entity.values[0])
             setupMetadataEditor(entity, mode)
         })
     }
@@ -26,8 +26,10 @@ export function setupPersonPage (baseUrl, id, mode='show') {
 
 window.setupPersonPage = setupPersonPage
 
-function makeHeading(name='Person') {
+function makePage(name='Person') {
     $('#person-heading').html(`${name}`)
+    $('#nav_people').html(`<a href=${urlGen.sitePeople()}>People</a>`)
+    $('#nav_person_name').html(`${name}`)
 }
 
 function makeSpinner() {
@@ -51,11 +53,9 @@ function setupMetadataEditor (entity, mode) {
         metadataSchema: {keys: entity.keys, types: entity.types},
         callbackSave: (data, mode, callback) => {
             savePersonData(data, mode, callback)
-            makeHeading(data.values[0])
         },
         mode: mode,
         theme: 'vertical',
-        backlink: urlGen.sitePeople()
     })
     
 }
@@ -164,7 +164,7 @@ function savePersonData (data, mode, callback) {
                 console.log(apiResponse);
                 callback()
                 entity = data
-                //setupMetadataEditor(entity, 'show')
+                makePage(data.values[0]) // Updates heading with person name
                 return true
             })
             .fail((status) => {
@@ -190,7 +190,7 @@ function savePersonData (data, mode, callback) {
                     console.log(apiResponse);
                     callback()
                     entity = newData
-                    //setupMetadataEditor(entity, 'show')
+                    makePage(data.values[0]) // Updates heading with person name
                     return true
                 })
                 .fail((status) => {

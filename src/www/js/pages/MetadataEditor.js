@@ -190,15 +190,23 @@ export class MetadataEditor {
     // Table Data Management
     showMetadata () {
         this.clearTableCells()
-        for (let i=1; i<=this.numKeys; i++) {
+        for (let i = 1; i <= this.numKeys; i++) {
             let id = "#entity_attr" + i
-            let value = this.entity.values[i-1]
+            let value = this.entity.values[i - 1]
             if (Array.isArray(value)) { // Years Range with Note
-                value = value[0] + "-" + value[1] + ", " + value[2]
-                $(id).append(value)
-            } else {
-                $(id).append(value)
+                if (value[0] === "") {
+                    value = ""
+                } else if (value[1] === "" && value[2] === "") {
+                    value = value[0]
+                } else if (value[1] !== "" && value[2] === "") {
+                    value = value[0] + "-" + value[1]
+                } else if (value[1] === "" && value[2] !== "") {
+                    value = value[0] + ", " + value[2]
+                } else {
+                    value = value[0] + "-" + value[1] + ", " + value[2]
+                }
             }
+            $(id).append(value)
         }
     }
 
@@ -226,7 +234,7 @@ export class MetadataEditor {
         for (let i=1; i<=this.numKeys; i++) {
             let selectorId = "#entity_attr" + i
             let inputId = "entity_attr" + i + "_form"
-            let type = this.entity.types[i-1]
+            let type = this.entity.types[i-1][0] // first possible type of data, set in the corresponding schema, determines type of input form
 
             switch (type) {
                 case 'password':
@@ -284,6 +292,9 @@ export class MetadataEditor {
         let currentYear = new Date().getFullYear()
         $(selectorId).html(
             `<p><select class="form-control" id=${inputId} style="padding: unset"></p>`)
+
+        $(inputSelector).append(`<option></option>`)
+
         for (let i=-1000; i<=currentYear; i++) {
             $(inputSelector).append(`<option>${i}</option>`)
         }
@@ -302,6 +313,9 @@ export class MetadataEditor {
         let selectorYearsRangeStart = "#" + inputIdYearsRangeStart
         let selectorYearsRangeEnd = "#" + inputIdYearsRangeEnd
 
+        $(selectorYearsRangeStart).append(`<option></option>`)
+        $(selectorYearsRangeEnd).append(`<option></option>`)
+
         for (let i=-1000; i<=currentYear; i++) {
             $(selectorYearsRangeStart).append(`<option>${i}</option>`)
             $(selectorYearsRangeEnd).append(`<option>${i}</option>`)
@@ -316,7 +330,7 @@ export class MetadataEditor {
      fillKeysForms() {
         for (let i=1; i<=this.numKeys; i++) {
             let id = "#entity_attr" + i + "_form"
-            if (this.entity.types[i-1] === 'years_range') {
+            if (this.entity.types[i-1][0] === 'years_range') {
                 $(id).val(this.entity.values[i-1][0])
                 $('#years_range_end').val(this.entity.values[i-1][1])
                 $('#years_range_note').val(this.entity.values[i-1][2])
@@ -396,7 +410,7 @@ export class MetadataEditor {
             // Get Data To Save
             let d = this.getEntityDataToSave()
 
-            if (this.dataTypesAreCorrect(d) && this.passwordsAreCorrect()) {
+            if (this.validateData(d) && this.validatePasswords()) {
                 this.makeSpinner(this.buttonsSelectorBottom)
                 this.updateEntityData(d.id, d.type, d.values)
                 this.options.callbackSave(this.entity, this.options.mode, () => {
@@ -459,7 +473,7 @@ export class MetadataEditor {
             let name = "#entity_attr" + i + "_form"
             let value = $(name).val()
 
-            if (this.entity.types[i-1] === 'years_range') {
+            if (this.entity.types[i-1][0] === 'years_range') {
                 let years = this.getDataForYearsRange(value)
                 values.push(years)
             }
@@ -481,21 +495,21 @@ export class MetadataEditor {
     }
 
     // Validate Data before Saving
-    dataTypesAreCorrect (d) {
+    validateData (d) {
 
         let index = 0
         for (let value of d.values) {
 
             let key = this.entity.keys[index]
-            let affordedType = this.entity.types[index]
+            let affordedTypes = this.entity.types[index]
 
-            if (affordedType !== 'password' && affordedType !== 'year' && affordedType !== 'years_range') {
+            if (affordedTypes.includes('password') === false) {
                 // Passwords and years do not need to undergo a check here
 
                 let givenType = this.dataType(value)
 
-                if (givenType !== affordedType) { // Empty values and mismatching types throw an error
-                    this.returnDataTypeError(key, givenType, affordedType)
+                if (affordedTypes.includes(givenType) === false) { // Empty values and mismatching types throw an error
+                    this.returnDataTypeError(key, givenType, affordedTypes)
                     return false
                 } else {
                     index++
@@ -509,7 +523,7 @@ export class MetadataEditor {
         return true
     }
 
-    passwordsAreCorrect() {
+    validatePasswords() {
         if ($(this.password1Selector).val() === $(this.password2Selector).val() && $(this.password1Selector).val() !== "") {
             return true
         }
@@ -523,7 +537,15 @@ export class MetadataEditor {
 
         let type
 
-        if (this.isMail(value)) {
+        if (Array.isArray(value)) {
+            if (this.isYearsRange(value)) {
+                type = 'years_range'
+            }
+            else {
+                type = 'empty'
+            }
+        }
+        else if (this.isMail(value)) {
             type = 'email'
         }
         else if (this.isUrl(value)) {
@@ -542,13 +564,22 @@ export class MetadataEditor {
             }
         }
         else if (value === "") {
-            type = 'emtpy'
+            type = 'empty'
         }
         else {
             type = 'text'
         }
 
         return type
+    }
+
+    isYearsRange(value) {
+        if (value.length === 3 && value[0] !== "") {
+            return true
+        }
+        else {
+            return false
+        }
     }
 
     isMail(str) {
@@ -572,9 +603,9 @@ export class MetadataEditor {
     }
 
     // User Communication
-    returnDataTypeError(key, givenType, affordedType) {
+    returnDataTypeError(key, givenType, affordedTypes) {
         console.log('Data Type Error!')
-        this.returnError(`Error! Given data for '${key}' is of type '${givenType}' but has to be of type '${affordedType}'. Please try again.`)
+        this.returnError(`Error! Given data for '${key}' is of type '${givenType}' but has to be of one of the types '${affordedTypes}'. Please try again.`)
     }
 
     returnPasswordError() {

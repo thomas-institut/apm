@@ -23,8 +23,13 @@ class ApiPeople extends ApiController
         // Get number of people
         $cache = $this->systemManager->getSystemDataCache();
         $cacheKey = 'Next_Entity_ID';
-        $num_people = unserialize($cache->get($cacheKey))-1;
 
+        try {
+            $num_people = unserialize($cache->get($cacheKey)) - 1;
+        }
+        catch (KeyNotInCacheException) {
+            $num_people = 0;
+        }
 
         for ($id=0; $id<=$num_people; $id++) {
             $data[] = $this->getMetadataFromSql($id);
@@ -95,8 +100,8 @@ class ApiPeople extends ApiController
         $data = [
             'id' => '',
             'type' => 'person',
-            'keys' => ['Display Name', 'Date of Birth', 'Place of Birth', 'Date of Death', 'Place of Death', 'URL'],
-            'types' => ['text', 'date', 'text', 'date', 'text', 'url']
+            'keys' => ['Display Name', 'Date of Birth', 'Place of Birth', 'Date of Death', 'Place of Death', 'URL', 'Year'],
+            'types' => [['text'], ['date'], ['text'], ['date', 'empty'], ['text', 'empty'], ['url', 'empty'], ['year']]
         ];
 
         // ApiResponse
@@ -144,13 +149,7 @@ class ApiPeople extends ApiController
         try {
             $data = unserialize($cache->get($cacheKey));
         } catch (KeyNotInCacheException) {
-            $data = [
-                'id' => $id,
-                'type' => 'person',
-                'keys' => ['Display Name', 'Date of Birth', 'Place of Birth', 'Date of Death', 'Place of Death', 'URL'],
-                'types' => ['text', 'date', 'text', 'date', 'text', 'url'],
-                'values' => ['Hans', '1992-01-21', 'Karlsruhe', '1982-07-22', 'Toronto', 'www.wikipedia.com']
-            ];
+            $data = [];
         }
 
         return $data;

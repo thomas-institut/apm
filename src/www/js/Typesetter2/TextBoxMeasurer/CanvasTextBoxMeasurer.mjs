@@ -46,6 +46,11 @@ export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
   }
 
   getBoxWidth (textBox) {
+    let myDebug = false
+    if (textBox.getText().charAt(0) === 'f') {
+       myDebug = true
+    }
+
     if (this.useCache) {
       let cacheKey = this.__getCacheKeyForTextBox(textBox)
       if (this.widthCache.has(cacheKey)) {
@@ -62,8 +67,10 @@ export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
     let fontWeight = textBox.getFontWeight() === '' ? 'normal' : textBox.getFontWeight()
     let fontStyle = textBox.getFontStyle() === '' ? 'normal' : textBox.getFontStyle()
     let fontVariant = 'normal'
-    context.font = `${fontStyle} ${fontVariant} ${fontWeight} ${textBox.fontSize}px ${textBox.getFontFamily()} `
+    context.font = `${fontStyle} ${fontVariant} ${fontWeight} ${textBox.fontSize}px ${textBox.getFontFamily()}`
     let metrics = context.measureText(textBox.text);
+    myDebug && console.log(`Text width for '${textBox.getText()}', font '${context.font}'is ${metrics.width}px`)
+    myDebug && console.log(metrics)
     return resolvedPromise(metrics.width)
   }
 

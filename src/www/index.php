@@ -27,11 +27,16 @@ namespace APM;
 
 use APM\Api\ApiEditionSources;
 use APM\Api\ApiLog;
+use APM\Api\ApiMetadataEditor;
 use APM\Api\ApiMultiChunkEdition;
+use APM\Api\ApiPeople;
 use APM\Api\ApiTranscription;
 use APM\Api\ApiWorks;
 
+use APM\Site\SiteMetadataEditor;
 use APM\Site\SiteMultiChunkEdition;
+use APM\Site\SitePeople;
+use APM\Site\SitePerson;
 use APM\System\ConfigLoader;
 use APM\System\NodejsApiProxy;
 use APM\System\SystemManager;
@@ -206,6 +211,17 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
         SiteSearch::class . ':searchPage')
         ->setName('search');
 
+    // People and Person Pages
+
+    $group->get('/people',
+        SitePeople::class . ':peoplePage')
+        ->setName('people.manager');
+
+    $group->get('/person/{id}',
+        SitePerson::class . ':personPage')
+        ->setName('person');
+
+
     // DASHBOARD
 
     $group->get('/dashboard',
@@ -360,6 +376,31 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
     $group->post('/search/editors',
         ApiSearch::class . ':getEditors')
         ->setName('search.editors');
+
+    // People
+    $group->post('/person/get',
+        ApiPeople::class . ':getData')
+        ->setName('getData');
+
+    $group->post('/person/save',
+        ApiPeople::class . ':saveData')
+        ->setName('saveData');
+
+    $group->post('/person/create',
+        ApiPeople::class . ':saveData')
+        ->setName('createPerson');
+
+    $group->post('/person/schema',
+        ApiPeople::class . ':getSchema')
+        ->setName('getSchema');
+
+    $group->post('/person/newid',
+        ApiPeople::class . ':getNewId')
+        ->setName('getNewId');
+
+    $group->post('/people/all',
+        ApiPeople::class . ':getAllPeople')
+        ->setName('getAllPeople');
 
     // LOG
     $group->post('/admin/log',

@@ -95,6 +95,14 @@ class ApmUrlGenerator {
         return this.base + '/search'
     }
 
+    sitePerson(id) {
+        return this.base + '/person/' + id
+    }
+
+    sitePeople() {
+        return this.base + '/people'
+    }
+
     siteEditMultiChunkEdition(editionId) {
         return `${this.base}/edition/multi/edit/${editionId}`
     }
@@ -122,6 +130,7 @@ class ApmUrlGenerator {
     siteEditCollationTableBeta(tableId) {
         return this.base + '/collation/edit/' + tableId + '/beta'
     }
+
 
     // -------------------------------
     // API
@@ -312,6 +321,25 @@ class ApmUrlGenerator {
         return `${this.base}/api/search/editions`
     }
 
+    apiPeopleGetPerson() {
+        return `${this.base}/api/person/get`
+    }
+
+    apiPeopleSaveData() {
+        return `${this.base}/api/person/save`
+    }
+
+    apiPeopleGetSchema() {
+        return `${this.base}/api/person/schema`
+    }
+
+    apiPeopleGetNewId() {
+        return `${this.base}/api/person/newid`
+    }
+
+    apiPeopleGetAllPeople() {
+        return `${this.base}/api/people/all`
+    }
 
     images() {
         return this.base + '/images'

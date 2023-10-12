@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -23,6 +24,8 @@
     <script type="text/javascript" src="{{baseurl}}/node_modules/datatables.net-dt/js/dataTables.dataTables.min.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
     <script type="text/javascript" src="{{baseurl}}/js/SimpleProfiler.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/jquery-ui.min.js"></script>
+
 
     {% block extraJS %}{% endblock %}
 </head>
@@ -39,6 +42,8 @@
                 <li class="nav-item"><a class="nav-link" href="{{url_for('user.manager')}}" title="Users">Users</a></li>
 {#                {% endif %}#}
                 <li class="nav-item"><a class="nav-link" href="{{url_for('search')}}" title="Search">Search</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{url_for('people.manager')}}" title="People">People</a></li>
+
                 <li class="nav-item">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</li>
                 <li class="nav-item dropdown">
                    <a href="/" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Useful Links</a>

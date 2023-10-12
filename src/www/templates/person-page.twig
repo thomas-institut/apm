@@ -1,0 +1,33 @@
+{% extends "base.twig" %}
+
+{% block title %}Person{% endblock %}
+
+{% block extraJS %}
+    <script type="application/javascript" src="{{baseurl}}/js/dist/PersonPage.bundle.js"></script>
+{% endblock %}
+
+
+{% block finalBodyJS %}
+    <script>
+        $(() => {
+            let id = JSON.parse('{{id|json_encode|e('js')}}');
+            if (id === 'create') {
+                setupPersonPage('{{ baseurl }}', '', 'create')
+            }
+            else {
+                setupPersonPage('{{ baseurl }}', id)
+            }
+        })
+    </script>
+
+{%  endblock %}
+
+{% block content %}
+    <h1 id="person-heading"></h1>
+    <div id="spinner" align="center"></div>
+    <div id="peopleEditor" align="center"></div>
+    <br>
+{% endblock %}
+
+
+

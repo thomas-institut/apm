@@ -16,6 +16,14 @@ module.exports = {
       filename: 'EditionComposer.bundle.js',
       dependOn: 'QuillPack',
     },
+    People: {
+      import: './pages/PeoplePage.js',
+      filename: 'PeoplePage.bundle.js'
+    },
+    PersonPage: {
+      import: './pages/PersonPage.js',
+      filename: 'PersonPage.bundle.js'
+    },
     MceComposer: {
       import: './MceComposer/MceComposer.js',
       filename: 'MceComposer.bundle.js',

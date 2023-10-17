@@ -741,18 +741,26 @@ export class EditionTypesetting {
 
         case 'fullCustom': {
           let keyword = subEntry['keyword']
+          let keywordString = ''
+          console.log(`Full custom entry; keyword: '${keyword}'`)
           if (keyword !== '') {
-            keyword = this.ss.getStrings()[keyword]
-            let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword).setTextDirection(this.textDirection), keywordStyle)
+            keywordString = this.ss.getStrings()[keyword]
+            let keywordTextBox = await this.ss.apply((new TextBox()).setText(keywordString).setTextDirection(this.textDirection), keywordStyle)
             items.push(keywordTextBox)
-            items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+            if (keyword !== 'omission') {
+              items.push((await this.createNormalSpaceGlue(apparatusStyle)).setTextDirection(this.textDirection))
+            }
           }
-          items.push(...this.setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, apparatusStyle), 'detect'))
+          if (keyword !== 'omission') {
+            items.push(...this.setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, apparatusStyle), 'detect'))
+          }
           if (subEntry.witnessData.length !== 0) {
             items.push(this.createPenalty(INFINITE_PENALTY))
             items.push((await this.createNormalSpaceGlue(apparatusStyle)).setTextDirection(this.textDirection))
             items.push(...await this.getTsItemsForSigla(subEntry))
           }
+          console.log(`TS item for full custom entry:`)
+          console.log(items)
           break
         }
       }

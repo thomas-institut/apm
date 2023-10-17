@@ -66,6 +66,8 @@ try {
 } catch (e) {
   exitWithError(`Error building typesetter object from input main text list: '${e.toString()}'`)
 }
+
+
 data.options.textBoxMeasurer = new PangoMeasurerNodeGTK()
 
 if (data.helperOptions !== undefined) {

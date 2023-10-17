@@ -240,10 +240,6 @@ export class BasicTypesetter extends Typesetter2 {
         return
       }
 
-      // console.log(`Typesetting horizontal list`)
-      // console.log(inputList)
-
-
 
       // Determine the bidirectional text item order for the whole list; this will be the basis for
       // potentially reordering items for each line
@@ -251,18 +247,21 @@ export class BasicTypesetter extends Typesetter2 {
         return this.getItemIntrinsicTextDirection(item)
       })
 
+      // compact the whole paragraph
+      let compactedBidiData = FirstFitLineBreaker.compactItemArray(itemArray, displayOrderArray)
+
       let originalIndexToOrderMap = []
-      displayOrderArray.forEach( (orderInfo) => {
+      compactedBidiData.bidiOrderInfoArray.forEach( (orderInfo) => {
         originalIndexToOrderMap[orderInfo.inputIndex] = orderInfo.displayOrder
       })
       let originalIndexToTextDirectionMap = []
-      displayOrderArray.forEach( (orderInfo) => {
+      compactedBidiData.bidiOrderInfoArray.forEach( (orderInfo) => {
         originalIndexToTextDirectionMap[orderInfo.inputIndex] = orderInfo.textDirection
       })
 
       // Run the First Fit algorithm on the input list
 
-      let lines = await FirstFitLineBreaker.breakIntoLines(itemArray, this.lineWidth, this.options.textBoxMeasurer)
+      let lines = await FirstFitLineBreaker.breakIntoLines(compactedBidiData.itemArray, this.lineWidth, this.options.textBoxMeasurer, compactedBidiData.bidiOrderInfoArray)
 
       // Post-process lines
       let lineNumberInParagraph = 1

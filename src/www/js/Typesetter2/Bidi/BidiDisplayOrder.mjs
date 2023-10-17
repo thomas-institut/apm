@@ -18,40 +18,39 @@
 
 import { BidiOrderInfo} from './BidiOrderInfo.mjs'
 import { LevelInfo} from './LevelInfo.mjs'
+import { BidiOrderInfoArray } from './BidiOrderInfoArray.mjs'
 
 export class BidiDisplayOrder {
 
   /**
-   * Returns an array that represents the display order and text direction of the given items:
+   * Returns an array of BidiOrderInfo objects with information each input item's display order taking
+   * into account bidirectional text.
    *
-   *   [
-   *    { inputIndex: xx, textDirection:  'rtl' | 'ltr' },
-   *    { inputIndex: yy, textDirection: 'rtl'| 'ltr },
-   *    ...
-   *   ]
+   * This is a partial implementation of the Unicode Bidirectional Algorithm. It does not recognize
+   * explicit embedding and direction-change characters.
    *
-   *
-   * An item is meant to represent a string that can be displayed in either RTL or LTR direction.
-   * The algorithm needs a function that determines the item's intrinsic text direction, which can be
-   * neutral (for example, for whitespace, some punctuation and numbers).
-   *
-   * getItemIntrinsicTextDirection(item[i]) must return one of:
+   * The input to the algorithm is an array of textual items that are meant to represent a single paragraph of text
+   * in logical order. The type of the items is irrelevant because the algorithm does not use their actual content.
+   * The algorithm only cares about each item's intrinsic text direction. So, it needs a function
+   * getItemIntrinsicTextDirection(item[i]) that determines that information. When called on a single item, the
+   * function must return one of:
    *   'en' : European numbers  (also for numerical strings such as '1.9' or '1,923,234.25')
    *   'rtl' :  right to left text
    *   'ltr' :  left to right text
    *   '' : neutral text (e.g., whitespace and punctuation)
    *
+   * The algorithm also needs a default text direction for the paragraph ('ltr' or 'rtl'). If none is given
+   * it will the direction of the non-neutral, non-numeric item in the array.
+   *
    * The algorithm returns the text direction that must be used to display the item assuming
    * that the display mechanism will follow standard rules for display of bidirectional text within the item.
-   * For example, the string '123,'  should be displayed as LTR 123, or RTL ,123 depending on the text surrounding
-   * it.  If the algorithm returns 'rtl' as its text direction, it's up to the display
-   * mechanism to determine that '123,' should look ",123" which is not a simple inversion of the string's characters.
-   * However, in cases like this, where there is punctuation mixed with numbers, it is more accurate overall to pass
-   * the numbers and the punctuation as separate items.
+   * However, the algorithm will be accurate only if each input item has only one intrinsic text direction.
+   * For example, input items with numbers and punctuation (e.g., '123.') may cause the algorithm to incorrectly
+   * place the period.
    *
-   * @param items
-   * @param {string}defaultTextDirection 'ltr' or 'rtl'
-   * @param { function}getItemIntrinsicTextDirection  a function that returns 'ltr', 'rtl' or '' (neutral direction) for the g
+   * @param {[]}items
+   * @param {string}defaultTextDirection
+   * @param { function}getItemIntrinsicTextDirection
    * @return {BidiOrderInfo[]}
    */
   static getDisplayOrder (items, defaultTextDirection, getItemIntrinsicTextDirection) {
@@ -77,7 +76,7 @@ export class BidiDisplayOrder {
       console.warn(`Setting text direction to ${detectedTextDirection}`)
       defaultTextDirection = detectedTextDirection
     }
-    // Loosely based on the Unicode Bidirectional Algorithm
+
     // 1. Determine embedding levels
     let bidiOrderInfoArray = []
     let defaultLevel = defaultTextDirection === 'ltr' ? 0 : 1
@@ -88,7 +87,6 @@ export class BidiDisplayOrder {
       let bidiOrderInfo = new BidiOrderInfo()
       bidiOrderInfo.inputIndex = index
       bidiOrderInfo.intrinsicTextDirection = getItemIntrinsicTextDirection(item)
-      let levelChange = false
       if (bidiOrderInfo.intrinsicTextDirection === 'rtl' && currentTextDirection === 'ltr') {
         currentLevel = 1
         currentTextDirection = 'rtl'
@@ -101,7 +99,7 @@ export class BidiDisplayOrder {
       bidiOrderInfo.embeddingLevel = currentLevel
       bidiOrderInfoArray.push(bidiOrderInfo)
     })
-    let levelInfoArray = this.getLevelInfoFromBidiOrderInfoArray(bidiOrderInfoArray)
+    let levelInfoArray = BidiOrderInfoArray.getLevelInfoFromBidiOrderInfoArray(bidiOrderInfoArray)
     // Move all neutrals at the end of non-default levels to the default
     // I.e, non-default levels should only contain strong directional text and numbers
     levelInfoArray.forEach((levelInfo) => {
@@ -116,10 +114,9 @@ export class BidiDisplayOrder {
       }
     })
     // set final text direction
-    levelInfoArray = this.getLevelInfoFromBidiOrderInfoArray(bidiOrderInfoArray)
+    levelInfoArray = BidiOrderInfoArray.getLevelInfoFromBidiOrderInfoArray(bidiOrderInfoArray)
     levelInfoArray.forEach( (levelInfo) => {
       for (let i = levelInfo.start; i <= levelInfo.end; i++) {
-        // TODO: all even levels are ltr, right?
         bidiOrderInfoArray[i].textDirection = levelInfo.level === 0 ? 'ltr' : 'rtl'
       }
     })
@@ -151,32 +148,6 @@ export class BidiDisplayOrder {
     return returnArray
   }
 
-  /**
-   * Returns an array with information about the starting and ending indexes for
-   * the different embedding levels in the given itemDataArray
-   * @param {BidiOrderInfo[]}itemDataArray
-   * @return {LevelInfo[]}
-   * @private
-   */
-  static getLevelInfoFromBidiOrderInfoArray(itemDataArray) {
-    let levelInfoArray = []
-    if (itemDataArray.length === 0) {
-      return []
-    }
-    let currentLevel = itemDataArray[0].embeddingLevel
-    let levelInfo = new LevelInfo(currentLevel, 0, -1)
-    itemDataArray.forEach((itemData, index) => {
-      if (itemData.embeddingLevel !== currentLevel) {
-        levelInfo.end = index-1
-        levelInfoArray.push(levelInfo)
-        currentLevel = itemData.embeddingLevel
-        levelInfo = new LevelInfo(currentLevel, index, -1)
-      }
-    })
-    levelInfo.end = itemDataArray.length -1
-    levelInfoArray.push(levelInfo)
-    return levelInfoArray
-  }
 }
 
 

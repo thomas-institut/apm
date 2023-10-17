@@ -10,6 +10,9 @@ import { ObjectFactory } from '../ObjectFactory.mjs'
 import { Glue } from '../Glue.mjs'
 import { AdjustmentRatio } from '../AdjustmentRatio.mjs'
 import { ItemArray } from '../ItemArray.mjs'
+import { BidiOrderInfoArray } from '../Bidi/BidiOrderInfoArray.mjs'
+import { LevelInfo } from '../Bidi/LevelInfo.mjs'
+import { BidiOrderInfo } from '../Bidi/BidiOrderInfo.mjs'
 
 
 const INFINITE_BADNESS = 100000000
@@ -19,15 +22,30 @@ const debug = false
 
 export class FirstFitLineBreaker extends LineBreaker {
 
-  static breakIntoLines(itemArray, lineWidth, textBoxMeasurer) {
+
+  /**
+   *
+   * @param {TypesetterItem[]}itemArray
+   * @param {number} lineWidth
+   * @param {TextBoxMeasurer}textBoxMeasurer
+   * @param {BidiOrderInfo[]}bidiOrderInfoArray
+   * @return {Promise<ItemList[]>}
+   */
+  static breakIntoLines(itemArray, lineWidth, textBoxMeasurer, bidiOrderInfoArray) {
     return new Promise(async (resolve) => {
+      if (itemArray.length !== bidiOrderInfoArray.length) {
+        console.error(`itemArray is not the same length as bidiOrderInfoArray`)
+        resolve([])
+        return
+      }
+
       // save the original array indexes into the items
       itemArray = itemArray.map( (item, index) => {
         item.addMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX, index)
         return item
       })
 
-      let lineBreaks = await this.getBreakPoints(itemArray, lineWidth, textBoxMeasurer)
+      let lineBreaks = await this.getBreakPoints(itemArray, lineWidth, textBoxMeasurer, bidiOrderInfoArray)
       // add a break at the end if there isn't one
       if (lineBreaks[lineBreaks.length-1] !== itemArray.length -1) {
         lineBreaks.push(itemArray.length -1)
@@ -53,10 +71,11 @@ export class FirstFitLineBreaker extends LineBreaker {
    * @param {TypesetterItem[]}itemArray
    * @param {number}lineWidth
    * @param {TextBoxMeasurer}textBoxMeasurer
+   * @param {BidiOrderInfo[]}bidiOrderInfoArray
    * @return {Promise<number[]>}
    * @private
    */
-  static getBreakPoints(itemArray, lineWidth, textBoxMeasurer) {
+  static getBreakPoints(itemArray, lineWidth, textBoxMeasurer, bidiOrderInfoArray) {
     return new Promise( async (resolve) => {
       debug && console.log(`Getting break points of a paragraph with ${itemArray.length} items`)
       let breaks = []
@@ -260,13 +279,72 @@ export class FirstFitLineBreaker extends LineBreaker {
 
 
   /**
-   * Compacts an item by performing all possible merges between
-   * consecutive items.
+   * Compacts an item array and its corresponding bidiDisplayOrderArray by performing all possible merges between
+   * consecutive items with the same text direction
    * @param {TypesetterItem[]}itemArray
-   * @private
+   * @param {BidiOrderInfo[]}bidiOrderInfoArray
    */
-  static compactItemArray(itemArray) {
-    //debug && console.log(`Compacting line`)
+  static compactItemArray(itemArray, bidiOrderInfoArray) {
+    let spotDebug = false
+    // if (itemArray.length === 145) {
+    //   spotDebug = true
+    // }
+    if (itemArray.length === 0) {
+      return { itemArray: [], bidiOrderInfoArray: []}
+    }
+    if (itemArray.length === 1) {
+      return { itemArray: itemArray, bidiOrderInfoArray: bidiOrderInfoArray}
+    }
+    spotDebug && console.log(`Compacting item array`)
+    spotDebug && console.log(`Original bidiOrder`)
+    spotDebug && console.log(bidiOrderInfoArray)
+    let levelInfoArray = BidiOrderInfoArray.getLevelInfoFromBidiOrderInfoArray(bidiOrderInfoArray)
+    let defaultTextDirection = BidiOrderInfoArray.detectDefaultTextDirectionFromLevelInfoArray(levelInfoArray, bidiOrderInfoArray)
+
+    spotDebug && console.log(`Default text direction is '${defaultTextDirection}'`)
+    let newItemArray = []
+    let newBidiOrderInfoArray = []
+    let lastIndex = -1
+    levelInfoArray.forEach( (levelInfo, index) => {
+      spotDebug && console.log(`Processing level info ${index}`)
+      spotDebug && console.log(levelInfo)
+      let levelItemArray = []
+      for (let i = levelInfo.start; i <= levelInfo.end; i++) {
+        levelItemArray.push(itemArray[i])
+      }
+      let compactedLevelRun = this.compactLevelItemArray(levelItemArray)
+      spotDebug && console.log(`Original level run has ${levelItemArray.length} items, compacted has ${compactedLevelRun.length}`)
+      newItemArray.push(...compactedLevelRun)
+      let newLevelStartIndex = lastIndex +1
+      let newLevelEndIndex = lastIndex + compactedLevelRun.length
+
+      for (let i = 0; i < compactedLevelRun.length; i++) {
+        let newBidiOrderInfo = new BidiOrderInfo()
+        newBidiOrderInfo.textDirection = levelInfo.textDirection
+        newBidiOrderInfo.inputIndex = newLevelStartIndex+i
+        newBidiOrderInfo.embeddingLevel = levelInfo.level
+        if (levelInfo.textDirection === defaultTextDirection) {
+          newBidiOrderInfo.displayOrder = newLevelStartIndex+i
+        } else {
+          newBidiOrderInfo.displayOrder = newLevelEndIndex-i
+        }
+        // note that intrinsicTextDirection is not set in the newBidiOrderInfo object
+        // this should not be a problem because that information is not needed for display
+        newBidiOrderInfoArray.push(newBidiOrderInfo)
+      }
+      lastIndex = newLevelEndIndex
+    })
+    spotDebug && console.log(`New item array`)
+    spotDebug && console.log(newItemArray)
+    return { itemArray: newItemArray, bidiOrderInfoArray: newBidiOrderInfoArray}
+  }
+
+  /**
+   *
+   * @param {TypesetterItem[]}itemArray
+   * @return {*}
+   */
+  static compactLevelItemArray(itemArray) {
     return itemArray.reduce( (currentArray, item) => {
       if (currentArray.length === 0) {
         return [item]

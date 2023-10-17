@@ -47,9 +47,9 @@ export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
 
   getBoxWidth (textBox) {
     let myDebug = false
-    if (textBox.getText().charAt(0) === 'f') {
-       myDebug = true
-    }
+    // if (textBox.getText().charAt(0) === 'f' && textBox.getFontSize() === 16) {
+    //    myDebug = true
+    // }
 
     if (this.useCache) {
       let cacheKey = this.__getCacheKeyForTextBox(textBox)

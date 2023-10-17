@@ -21,7 +21,7 @@ import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 import { Typesetter2 } from './Typesetter2.mjs'
 
 const defaultFontFamily = 'FreeSerif'
-const defaultFontSize = Typesetter2.pt2px(12)
+const defaultFontSize = 16
 
 
 /**

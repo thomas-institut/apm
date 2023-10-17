@@ -23,7 +23,7 @@ import { BrowserUtilities } from '../toolbox/BrowserUtilities.mjs'
 import { Typesetter2 } from '../Typesetter2/Typesetter2.mjs'
 import { EditionTypesetting } from './EditionTypesetting.mjs'
 import { BasicTypesetter } from '../Typesetter2/BasicTypesetter.mjs'
-import { isRtl } from '../toolbox/Util.mjs'
+import { deepCopy, isRtl } from '../toolbox/Util.mjs'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
 import { Dimension } from '../Typesetter2/Dimension.mjs'
@@ -164,6 +164,10 @@ export class EditionViewerCanvas {
   }
 
 
+  getMainTextListToTypeset() {
+    return this.rawMainTextVerticalListToTypeset
+  }
+
 
   __typesetEdition() {
     return new Promise( async (resolve) => {
@@ -194,6 +198,7 @@ export class EditionViewerCanvas {
       let editionTypesettingHelper = new EditionTypesetting(helperOptions)
       editionTypesettingHelper.setup().then( async () => {
         let verticalListToTypeset = await editionTypesettingHelper.generateListToTypesetFromMainText()
+        this.rawMainTextVerticalListToTypeset = verticalListToTypeset.getExportObject()
         this.mainTextVerticalListToTypeset = verticalListToTypeset
         // this.debug && console.log(`List to typeset`)
         // this.debug && console.log(verticalListToTypeset)

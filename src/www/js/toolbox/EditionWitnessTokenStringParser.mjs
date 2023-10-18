@@ -124,6 +124,9 @@ export class EditionWitnessTokenStringParser {
   }
 
   static parseStringWithPunctuation(theString, lang, debug = false) {
+    if (theString.charAt(0) === '<' || theString.charAt(0) === '〈') {
+      console.log(`Parsing string '${theString}', lang '${lang}'`)
+    }
     // TODO: detect matching square brackets and don't generate punctuation for the closing one
     //  e.g:  'Roma[m]' should be a single word
     let chars = theString.split('')

@@ -91,6 +91,12 @@ export const punctuationDefinition = [
   { char:  String.fromCodePoint(0x2e3a), // two-em dash
     default: { isPunctuation: true, sticksToPrevious: false, sticksToNext: false }
   },
+  { char: '<', // left angle bracket
+    default: { isPunctuation: true, sticksToPrevious: false, sticksToNext: true }
+  },
+  { char: '>', // right angle bracket
+    default: { isPunctuation: true, sticksToPrevious: true, sticksToNext: false }
+  },
   { char: '«', // start guillemet   (i.e., left-pointing guillemet in Latin, right-pointing guillemet in Hebrew/Arabic
     default: { isPunctuation: true, sticksToPrevious: false, sticksToNext: true }
   },
@@ -115,14 +121,25 @@ export const punctuationDefinition = [
   { char: '}', // end curly bracket
     default: { isPunctuation: true, isPunctuationInsideWord: false, sticksToPrevious: true, sticksToNext: false }
   },
-  { char: '⟨', // start angle bracket
+  { char: '〈', // start angle bracket (U+2329)
     default: { isPunctuation: true, isPunctuationInsideWord: false, sticksToPrevious: false, sticksToNext: true }
   },
-  { char: '⟩', // end angle bracket
+  { char: '〉', // end angle bracket (U+232A)
     default: { isPunctuation: true, isPunctuationInsideWord: false, sticksToPrevious: true, sticksToNext: false }
   },
-
-  { char: '"', // straight double quote 
+  { char: '〈', // start angle bracket (U+3008)
+    default: { isPunctuation: true, isPunctuationInsideWord: false, sticksToPrevious: false, sticksToNext: true }
+  },
+  { char: '〉', // end angle bracket (U+3009)
+    default: { isPunctuation: true, isPunctuationInsideWord: false, sticksToPrevious: true, sticksToNext: false }
+  },
+  { char: '⟨', // start angle bracket (U+27E8)
+    default: { isPunctuation: true, isPunctuationInsideWord: false, sticksToPrevious: false, sticksToNext: true }
+  },
+  { char: '⟩', // end angle bracket (U+27E9)
+    default: { isPunctuation: true, isPunctuationInsideWord: false, sticksToPrevious: true, sticksToNext: false }
+  },
+  { char: '"', // straight double quote
     default: {
       isPunctuation: false,  // Editors MUST use proper left/right quotation mark characters
       sticksToPrevious: false,
@@ -287,36 +304,36 @@ function buildPunctuationDefinitionForLanguage(lang) {
 }
 
 
-export const common =  [
-  '.',
-  ',',
-  ';',
-  ':',
-  '?',
-  '¿',
-  '¡',
-  '!',
-  '⊙',
-  '¶',
-  '«',
-  '»',
-  '“', // left double quote
-  '”', // right double quote
-  '‘', // left single quote
-  '’', // right single quote
-  String.fromCodePoint(0x2013), // en dash
-  String.fromCodePoint(0x2014), // em dash
-  String.fromCodePoint(0x2e3a), // two-em dash
-
-  String.fromCodePoint(0x61B), // Arabic semi-colon
-  String.fromCodePoint(0x61F), // Arabic question mark
-  String.fromCodePoint(0x60C), // Arabic comma
-  String.fromCodePoint(0x60D), // Arabic date separator
-
-  String.fromCodePoint(0x5BE), // Hebrew maqaf
-  String.fromCodePoint(0x5C0), // Hebrew paseq
-  String.fromCodePoint(0x5C3) // Hebrew soft pasuq
-]
+// export const common =  [
+//   '.',
+//   ',',
+//   ';',
+//   ':',
+//   '?',
+//   '¿',
+//   '¡',
+//   '!',
+//   '⊙',
+//   '¶',
+//   '«',
+//   '»',
+//   '“', // left double quote
+//   '”', // right double quote
+//   '‘', // left single quote
+//   '’', // right single quote
+//   String.fromCodePoint(0x2013), // en dash
+//   String.fromCodePoint(0x2014), // em dash
+//   String.fromCodePoint(0x2e3a), // two-em dash
+//
+//   String.fromCodePoint(0x61B), // Arabic semi-colon
+//   String.fromCodePoint(0x61F), // Arabic question mark
+//   String.fromCodePoint(0x60C), // Arabic comma
+//   String.fromCodePoint(0x60D), // Arabic date separator
+//
+//   String.fromCodePoint(0x5BE), // Hebrew maqaf
+//   String.fromCodePoint(0x5C0), // Hebrew paseq
+//   String.fromCodePoint(0x5C3) // Hebrew soft pasuq
+// ]
 /**
  * 
  * @param lang

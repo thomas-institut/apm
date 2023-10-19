@@ -261,7 +261,10 @@ export class TableEditor {
       },
       onColumnDelete: {
         // a function to be called when a column is deleted
-        // (deletedCol) => { ... return nothing ... }
+        // if TableEditor needs to delete multiple columns, the function will be called once per each
+        // deleted column with the all but the last call with lastDeletedColumnInOperation parameter
+        // set to false
+        // (deletedCol, lastDeletedColumnInOperation) => { ... return nothing ... }
         type: 'function',
         default: doNothing
       },
@@ -1539,24 +1542,70 @@ export class TableEditor {
     window.scrollTo(this.currentXScroll, this.currentYScroll)
   }
 
+  /**
+   * Deletes a single column from the table inner data
+   * (nothing is done in the UI)
+   * @param {number}col
+   */
+  deleteSingleColumnData(col) {
+    this.matrix.deleteColumn(col)
+    this.columnSequence.removeNumber(col)
+  }
+
+  /**
+   * Deletes all empty columns in the table
+   */
+  compactTable() {
+    console.log(`Compacting table`)
+    // 1. make a list of all columns to delete
+    let columnsToDelete = []
+    for (let col = 0; col < this.matrix.nCols; col++) {
+      if (this.canDeleteColumn(col)) {
+        columnsToDelete.push(col)
+      }
+    }
+    if (columnsToDelete.length === 0) {
+      console.log(`No columns that can be deleted found in table`)
+      return
+    }
+    console.log(`Deleting ${columnsToDelete.length} empty columns from table`)
+    let countDeletedColumns = 0
+    this.currentYScroll = window.scrollY
+    this.currentXScroll = window.scrollX
+    this.waitingForScrollZero = true
+    columnsToDelete.forEach( (col) => {
+
+      $(this.getThSelector(col)).addClass('te-deleting')
+      let actualColumnNumberToDelete = col - countDeletedColumns
+
+      this.deleteSingleColumnData(actualColumnNumberToDelete)
+      countDeletedColumns++
+      let isLastOne = (columnsToDelete.length - countDeletedColumns) === 0
+      console.log(`Deleting column ${col+1}, which is now number ${actualColumnNumberToDelete+1} ${isLastOne ? '(last one)' : ''}`)
+      this.options.onColumnDelete(actualColumnNumberToDelete, isLastOne)
+    })
+    this.redrawTable()
+    this.forceRestoreScroll(250)
+  }
+
+
   genOnClickDeleteColumnButton() {
-    let thisObject = this
-    return function(ev) {
-      let col = thisObject._getThIndexFromElement($(ev.currentTarget).parent())
+    return (ev)=> {
+      let col = this._getThIndexFromElement($(ev.currentTarget).parent())
       if (col === -1) {
         return true
       }
-      if (thisObject.canDeleteColumn(col)) {
-        $(thisObject.getThSelector(col)).addClass('te-deleting')
+      if (this.canDeleteColumn(col)) {
+        $(this.getThSelector(col)).addClass('te-deleting')
         console.log('Deleting column ' + col)
-        thisObject.currentYScroll = window.scrollY
-        thisObject.currentXScroll = window.scrollX
-        thisObject.waitingForScrollZero = true
-        thisObject.matrix.deleteColumn(col)
-        thisObject.columnSequence.removeNumber(col)
-        thisObject.options.onColumnDelete(col)
-        thisObject.redrawTable()
-        thisObject.forceRestoreScroll(250)
+        this.currentYScroll = window.scrollY
+        this.currentXScroll = window.scrollX
+        this.waitingForScrollZero = true
+        this.matrix.deleteColumn(col)
+        this.columnSequence.removeNumber(col)
+        this.options.onColumnDelete(col, true)
+        this.redrawTable()
+        this.forceRestoreScroll(250)
       } else {
         console.log('Column NOT empty, cannot delete')
       }

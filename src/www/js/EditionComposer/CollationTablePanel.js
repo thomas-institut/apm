@@ -135,7 +135,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     }).join('')
 
     return `<div class="panel-toolbar-group">
-        <div class="panel-toolbar-group" id="mode-toggle"></div>
+       <div class="panel-toolbar-group" id="mode-toggle"></div>
        <div class="panel-toolbar-group"><span id="popovers-toggle"></span></div>
        <div class="panel-toolbar-group">
             <span id="normalizations-toggle"></span>
@@ -152,6 +152,10 @@ export class CollationTablePanel extends PanelWithToolbar {
                   </div>
                </div>      
         </div>
+        
+        <div class="panel-toolbar-group" id="table-ops-group">
+         <a class="tb-button" href="#" title="Compact table (delete all empty columns)" id="compact-table-button"><i class="bi bi-wrench-adjustable"></i></a>
+</div>
 </div>
 <div class="panel-toolbar-group leftmost">
     <div class="panel-toolbar-item">
@@ -276,6 +280,10 @@ export class CollationTablePanel extends PanelWithToolbar {
       }
     })
 
+    // COMPACT TABLE
+    this.compactTableButton = $('#compact-table-button')
+    this.compactTableButton.on('click', this.genOnClickCompactTable())
+
     // EXPORT CSV
     this.exportCsvButton = $('#export-csv-button')
 
@@ -299,6 +307,15 @@ export class CollationTablePanel extends PanelWithToolbar {
           this.tableEditor.clearColumnSelection()
         }
       }
+    }
+  }
+
+  /**
+   * @private
+   */
+  genOnClickCompactTable() {
+    return () => {
+      this.tableEditor.compactTable()
     }
   }
 
@@ -746,7 +763,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   genOnColumnDelete() {
-    return (deletedCol) => {
+    return (deletedCol, lastDeletedColumnInOperation) => {
       this.ctData['groupedColumns'] = this.tableEditor.columnSequence.groupedWithNextNumbers
       if (this.ctData['type'] === CollationTableType.COLLATION_TABLE) {
         // nothing else to do for regular collation tables
@@ -757,7 +774,9 @@ export class CollationTablePanel extends PanelWithToolbar {
       // fix references in custom apparatuses
       this.ctData['customApparatuses'] = CtData.fixReferencesInCustomApparatusesAfterColumnAdd(this.ctData, deletedCol, -1)
       this.setCsvDownloadFile()
-      this.options.onCtDataChange(this.ctData)
+      if (lastDeletedColumnInOperation) {
+        this.options.onCtDataChange(this.ctData)
+      }
     }
   }
 

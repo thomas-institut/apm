@@ -154,7 +154,7 @@ export class CollationTablePanel extends PanelWithToolbar {
         </div>
         
         <div class="panel-toolbar-group" id="table-ops-group">
-         <a class="tb-button" href="#" title="Compact table (delete all empty columns)" id="compact-table-button"><i class="bi bi-wrench-adjustable"></i></a>
+         <a class="tb-button" href="#" title="Delete all empty columns" id="compact-table-button"><i class="bi bi-eraser-fill"></i></a>
 </div>
 </div>
 <div class="panel-toolbar-group leftmost">

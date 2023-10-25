@@ -194,20 +194,26 @@ export class MetadataEditor {
             let id = "#entity_attr" + i
             let value = this.entity.values[i - 1]
             if (Array.isArray(value)) { // Years Range with Note
-                if (value[0] === "") {
-                    value = ""
-                } else if (value[1] === "" && value[2] === "") {
-                    value = value[0]
-                } else if (value[1] !== "" && value[2] === "") {
-                    value = value[0] + "-" + value[1]
-                } else if (value[1] === "" && value[2] !== "") {
-                    value = value[0] + ", " + value[2]
-                } else {
-                    value = value[0] + "-" + value[1] + ", " + value[2]
-                }
+                value = this.formatYearsRange(value)
             }
             $(id).append(value)
         }
+    }
+
+    formatYearsRange(value) {
+        if (value[0] === "") {
+            value = ""
+        } else if (value[1] === "" && value[2] === "") {
+            value = value[0]
+        } else if (value[1] !== "" && value[2] === "") {
+            value = value[0] + "-" + value[1]
+        } else if (value[1] === "" && value[2] !== "") {
+            value = value[0] + " (" + value[2] + ")"
+        } else {
+            value = value[0] + "-" + value[1] + " (" + value[2] + ")"
+        }
+
+        return value
     }
 
     clearTableCells() {
@@ -271,6 +277,7 @@ export class MetadataEditor {
                data-minlength="8"
                maxlength="16"
                placeholder="Password (8-16 characters)" required>
+            <div class="help-block with-errors"></div>
         <!-- Password confirmation -->
             <input type="password" 
                    class="form-control" 
@@ -503,7 +510,7 @@ export class MetadataEditor {
             let key = this.entity.keys[index]
             let affordedTypes = this.entity.types[index]
 
-            if (affordedTypes.includes('password') === false) {
+            if (affordedTypes.includes('password') === false && affordedTypes.includes('year') === false) {
                 // Passwords and years do not need to undergo a check here
 
                 let givenType = this.dataType(value)

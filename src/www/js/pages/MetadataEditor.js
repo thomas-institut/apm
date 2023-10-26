@@ -505,10 +505,21 @@ export class MetadataEditor {
     validateData (d) {
 
         let index = 0
+        let date_birth = '0'
+        let date_death = 'z'
+
         for (let value of d.values) {
 
             let key = this.entity.keys[index]
             let affordedTypes = this.entity.types[index]
+
+            // Get dates of birth and death
+            if (key === 'Date of Birth') {
+                date_birth = value
+            }
+            if (key === 'Date of Death') {
+                date_death = value
+            }
 
             if (affordedTypes.includes('password') === false && affordedTypes.includes('year') === false) {
                 // Passwords and years do not need to undergo a check here
@@ -517,6 +528,9 @@ export class MetadataEditor {
 
                 if (affordedTypes.includes(givenType) === false) { // Empty values and mismatching types throw an error
                     this.returnDataTypeError(key, givenType, affordedTypes)
+                    return false
+                } else if (date_birth > date_death) {
+                    this.returnImpossibleDatesError()
                     return false
                 } else {
                     index++
@@ -613,6 +627,11 @@ export class MetadataEditor {
     returnDataTypeError(key, givenType, affordedTypes) {
         console.log('Data Type Error!')
         this.returnError(`Error! Given data for '${key}' is of type '${givenType}' but has to be of one of the types '${affordedTypes}'. Please try again.`)
+    }
+
+    returnImpossibleDatesError() {
+        console.log('Impossible Dates Error!')
+        this.returnError(`Error! Given date for 'Date of Birth' is after given date for 'Date of Death'. Please try again.`)
     }
 
     returnPasswordError() {

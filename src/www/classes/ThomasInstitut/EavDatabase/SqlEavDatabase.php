@@ -46,15 +46,15 @@ class SqlEavDatabase implements EavDatabase
     /**
      * @var string
      */
-    private $entityColumn;
+    private string $entityColumn;
     /**
      * @var string
      */
-    private $attributeColumn;
+    private string $attributeColumn;
     /**
      * @var string
      */
-    private $valueColumn;
+    private string $valueColumn;
 
     public function __construct(PDO $pdo, string $tableName, array $columns = [])
     {

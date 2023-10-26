@@ -31,7 +31,8 @@ class AdminUtilityManager extends CommandLineUtility
 
         $utilityObjects = [
             new CacheTool($config, $this->commandArgc, $this->commandArgv),
-            new JobQueueTool($config, $this->commandArgc, $this->commandArgv)
+            new JobQueueTool($config, $this->commandArgc, $this->commandArgv),
+            new EntityTool($config, $this->commandArgc, $this->commandArgv)
         ];
 
         $this->commands = $this->getCommandObjectFromUtilityObjectArray($utilityObjects);

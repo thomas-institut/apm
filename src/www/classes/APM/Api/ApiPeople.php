@@ -100,8 +100,8 @@ class ApiPeople extends ApiController
         $data = [
             'id' => '',
             'type' => 'person',
-            'keys' => ['Display Name', 'Date of Birth', 'Date of Death', 'Place of Birth', 'Place of Death', 'Inauguration', 'URL'],
-            'types' => [['text'], ['date'], ['date', 'empty'], ['text'], ['text', 'empty'], ['year', 'empty'], ['url', 'empty']]
+            'keys' => ['Display Name', 'Date of Birth', 'Date of Death', 'Place of Birth', 'Place of Death', 'Partner', 'Inauguration', 'URL'],
+            'types' => [['text'], ['date'], ['date', 'empty'], ['text'], ['text', 'empty'], ['person', 'empty'], ['year', 'empty'], ['url', 'empty']]
         ];
 
         // ApiResponse

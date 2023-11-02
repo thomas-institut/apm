@@ -269,9 +269,28 @@ export class MetadataEditor {
                 case 'years_range':
                     this.makeYearsRangeForm(selectorId, inputId)
                     break
+                case 'person':
+                    this.makePersonForm(selectorId, inputId)
+                    break
                 default:
                     this.makeTextForm(selectorId, inputId, type)
             }
+        }
+    }
+
+    makePersonForm(selector, inputId) {
+        let list = inputId + "_list"
+        let listSelector = "#" + list
+        $(selector).html(`<p>
+            <input class="form-control" list=${list} id=${inputId} placeholder="" autoComplete="off" style="padding: unset">
+                <datalist id=${list}></datalist></p>`)
+        let people = this.getListOfPeople()
+        this.addItemsToList(people, listSelector)
+    }
+
+    addItemsToList(people, list) {
+        for (let person of people) {
+            $(list).append(`<option>${person}</option>`)
         }
     }
 
@@ -739,6 +758,15 @@ export class MetadataEditor {
         let tableSelector = '#metadataTable'
         $(tableSelector).empty()
     }
+
+    // API Calls
+
+    getListOfPeople() {
+        let urlGen = new ApmUrlGenerator('')
+        let apiUrl = urlGen.apiSearchTranscriptionTitles()
+
+    }
+
 }
 
 // Load as global variable so that it can be referenced in the Twig template

@@ -192,9 +192,13 @@ export class MetadataEditor {
         this.clearTableCells()
         for (let i = 1; i <= this.numKeys; i++) {
             let id = "#entity_attr" + i
-            let value = this.entity.values[i - 1]
-            if (Array.isArray(value)) { // Years Range with Note
-                value = this.formatYearsRange(value)
+            let value = this.entity.values[i-1]
+            if (Array.isArray(value)) {
+                if (value.length === 3) {// Years Range with Note
+                    value = this.formatYearsRange(value)
+                } else if (value.length === 2) {
+                    value = this.formatYear(value)
+                }
             }
             $(id).append(value)
         }
@@ -213,6 +217,16 @@ export class MetadataEditor {
             value = value[0] + "-" + value[1] + " (" + value[2] + ")"
         }
 
+        return value
+    }
+
+    formatYear(value) {
+        if (value[0] !== '') {
+            value = value[0] + " " + value[1]
+        }
+        else {
+            value = ''
+        }
         return value
     }
 
@@ -250,7 +264,7 @@ export class MetadataEditor {
                     this.makeDateForm(selectorId, inputId, type)
                     break
                 case 'year':
-                    this.makeYearForm(selectorId, inputId)
+                    this.makeYearForm(selectorId, inputId, type)
                     break
                 case 'years_range':
                     this.makeYearsRangeForm(selectorId, inputId)
@@ -294,17 +308,24 @@ export class MetadataEditor {
         $(selectorId).html(`<p><input type="date" class="form-control" id=${inputId} placeholder=${type} style="padding: unset"></p>`)
     }
 
-    makeYearForm(selectorId, inputId) {
-        let inputSelector = "#" + inputId
-        let currentYear = new Date().getFullYear()
-        $(selectorId).html(
-            `<p><select class="form-control" id=${inputId} style="padding: unset"></p>`)
+    makeYearForm(selectorId, inputId, type) {
+        // let inputSelector = "#" + inputId
+        // let currentYear = new Date().getFullYear()
+        // $(selectorId).html(
+        //     `<p><select class="form-control" id=${inputId} style="padding: unset"></p>`)
+        //
+        // $(inputSelector).append(`<option selected></option>`)
+        //
+        // for (let i=-1000; i<=currentYear; i++) {
+        //     $(inputSelector).append(`<option>${i}</option>`)
+        // }
 
-        $(inputSelector).append(`<option></option>`)
+        let inputIdBcAd = inputId + "_" + "year_bc_ad"
+        let inputIdBcADSelector = "#" + inputIdBcAd
 
-        for (let i=-1000; i<=currentYear; i++) {
-            $(inputSelector).append(`<option>${i}</option>`)
-        }
+        $(selectorId).html(`<p><input type="text" class="form-control" id=${inputId} placeholder=${type} style="padding: unset">
+                                                                    <select class="form-control" id=${inputIdBcAd} style="padding: unset"></p>`)
+        $(inputIdBcADSelector).append(`<option>BC</option><option selected>AD</option>`)
     }
 
     makeYearsRangeForm(selectorId, inputIdYearsRangeStart) {
@@ -337,7 +358,12 @@ export class MetadataEditor {
      fillKeysForms() {
         for (let i=1; i<=this.numKeys; i++) {
             let id = "#entity_attr" + i + "_form"
-            if (this.entity.types[i-1][0] === 'years_range') {
+            if (this.entity.types[i-1][0] === 'year') {
+                let idYearBcAd = id + "_year_bc_ad"
+                $(id).val(this.entity.values[i-1][0])
+                $(idYearBcAd).val(this.entity.values[i-1][1])
+            }
+            else if (this.entity.types[i-1][0] === 'years_range') {
                 $(id).val(this.entity.values[i-1][0])
                 $('#years_range_end').val(this.entity.values[i-1][1])
                 $('#years_range_note').val(this.entity.values[i-1][2])
@@ -480,7 +506,11 @@ export class MetadataEditor {
             let name = "#entity_attr" + i + "_form"
             let value = $(name).val()
 
-            if (this.entity.types[i-1][0] === 'years_range') {
+            if (this.entity.types[i-1][0] === 'year') {
+                let year = this.getDataForYear(name, value)
+                values.push(year)
+            }
+            else if (this.entity.types[i-1][0] === 'years_range') {
                 let years = this.getDataForYearsRange(value)
                 values.push(years)
             }
@@ -501,6 +531,15 @@ export class MetadataEditor {
         return years
     }
 
+    getDataForYear(name, value) {
+        let year = []
+        name = name + "_year_bc_ad"
+        year.push(value)
+        year.push($(name).val())
+
+        return year
+    }
+
     // Validate Data before Saving
     validateData (d) {
 
@@ -514,15 +553,15 @@ export class MetadataEditor {
             let affordedTypes = this.entity.types[index]
 
             // Get dates of birth and death
-            if (key === 'Date of Birth') {
+            if (key === 'Date of Birth' && value !== '') {
                 date_birth = value
             }
-            if (key === 'Date of Death') {
+            if (key === 'Date of Death' && value !== '') {
                 date_death = value
             }
 
-            if (affordedTypes.includes('password') === false && affordedTypes.includes('year') === false) {
-                // Passwords and years do not need to undergo a check here
+            if (affordedTypes.includes('password') === false) {
+                // Passwords do not need to undergo a check here
 
                 let givenType = this.dataType(value)
 
@@ -530,7 +569,7 @@ export class MetadataEditor {
                     this.returnDataTypeError(key, givenType, affordedTypes)
                     return false
                 } else if (date_birth > date_death) {
-                    this.returnImpossibleDatesError()
+                    this.returnImpossibleDatesError(date_birth, date_death)
                     return false
                 } else {
                     index++
@@ -562,8 +601,11 @@ export class MetadataEditor {
             if (this.isYearsRange(value)) {
                 type = 'years_range'
             }
+            else if (this.isYear(value)) {
+                type = 'year'
+            }
             else {
-                type = 'empty'
+                type = this.dataType(value[0])
             }
         }
         else if (this.isMail(value)) {
@@ -603,6 +645,15 @@ export class MetadataEditor {
         }
     }
 
+    isYear(value) {
+        if (value.length === 2 && value[0] !== "" && this.containsOnlyNumbers(value[0])) {
+            return true
+        }
+        else {
+            return false
+        }
+    }
+
     isMail(str) {
         return /.+@.+\..+/.test(str)
     }
@@ -629,8 +680,10 @@ export class MetadataEditor {
         this.returnError(`Error! Given data for '${key}' is of type '${givenType}' but has to be of one of the types '${affordedTypes}'. Please try again.`)
     }
 
-    returnImpossibleDatesError() {
+    returnImpossibleDatesError(birth, death) {
         console.log('Impossible Dates Error!')
+        console.log(`${birth}`)
+        console.log(`${death}`)
         this.returnError(`Error! Given date for 'Date of Birth' is after given date for 'Date of Death'. Please try again.`)
     }
 

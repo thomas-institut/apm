@@ -328,18 +328,18 @@ export class MetadataEditor {
         $(inputIdBcADSelector).append(`<option>BC</option><option selected>AD</option>`)
     }
 
-    makeYearsRangeForm(selectorId, inputIdYearsRangeStart) {
+    makeYearsRangeForm(selectorId, inputId) {
 
-        let inputIdYearsRangeEnd = "years_range_end"
-        let inputIdYearsRangeNote = "years_range_note"
+        let idYearsRangeEnd = inputId + "_years_range_end"
+        let idYearsRangeNote = inputId + "_years_range_note"
         let currentYear = new Date().getFullYear()
 
-        $(selectorId).html(`<select class="form-control" id=${inputIdYearsRangeStart} style="padding: unset">`)
-        $(selectorId).append(`<p><select class="form-control" id=${inputIdYearsRangeEnd} style="padding: unset"></p>`)
-        $(selectorId).append(`<p><textarea rows="2" cols="50" id=${inputIdYearsRangeNote} placeholder="Your Note For The Given Range of Years"></textarea></p>`)
+        $(selectorId).html(`<select class="form-control" id=${inputId} style="padding: unset">`)
+        $(selectorId).append(`<p><select class="form-control" id=${idYearsRangeEnd} style="padding: unset"></p>`)
+        $(selectorId).append(`<p><textarea class="form-control" rows="2" id=${idYearsRangeNote} placeholder="Note"></textarea></p>`)
 
-        let selectorYearsRangeStart = "#" + inputIdYearsRangeStart
-        let selectorYearsRangeEnd = "#" + inputIdYearsRangeEnd
+        let selectorYearsRangeStart = "#" + inputId
+        let selectorYearsRangeEnd = "#" + idYearsRangeEnd
 
         $(selectorYearsRangeStart).append(`<option></option>`)
         $(selectorYearsRangeEnd).append(`<option></option>`)
@@ -364,9 +364,11 @@ export class MetadataEditor {
                 $(idYearBcAd).val(this.entity.values[i-1][1])
             }
             else if (this.entity.types[i-1][0] === 'years_range') {
+                let idYearsRangeEnd = id + "_years_range_end"
+                let idYearsRangeNote = id + "_years_range_note"
                 $(id).val(this.entity.values[i-1][0])
-                $('#years_range_end').val(this.entity.values[i-1][1])
-                $('#years_range_note').val(this.entity.values[i-1][2])
+                $(idYearsRangeEnd).val(this.entity.values[i-1][1])
+                $(idYearsRangeNote).val(this.entity.values[i-1][2])
             }
             else {
                 $(id).val(this.entity.values[i-1])
@@ -511,7 +513,7 @@ export class MetadataEditor {
                 values.push(year)
             }
             else if (this.entity.types[i-1][0] === 'years_range') {
-                let years = this.getDataForYearsRange(value)
+                let years = this.getDataForYearsRange(name, value)
                 values.push(years)
             }
             else {
@@ -522,11 +524,14 @@ export class MetadataEditor {
         return {id: id, type: type, values: values}
     }
 
-    getDataForYearsRange(value) {
+    getDataForYearsRange(name, value) {
         let years = []
+        let idYearsRangeEnd = name + "_years_range_end"
+        let idYearsRangeNote = name + "_years_range_note"
+
         years.push(value)
-        years.push($("#years_range_end").val())
-        years.push($("#years_range_note").val())
+        years.push($(idYearsRangeEnd).val())
+        years.push($(idYearsRangeNote).val())
 
         return years
     }
@@ -569,8 +574,15 @@ export class MetadataEditor {
                     this.returnDataTypeError(key, givenType, affordedTypes)
                     return false
                 } else if (date_birth > date_death) {
-                    this.returnImpossibleDatesError(date_birth, date_death)
+                    this.returnImpossibleDatesError()
                     return false
+                } else if (affordedTypes.includes('years_range')) {
+                    if (parseInt(value[0]) > parseInt(value[1]) ||
+                            (value[0] === '' && value[1] !== '') ||
+                            (value[0] === '' && value[2] !== '')) {
+                        this.returnImpossibleYearsRangeError(key)
+                        return false
+                    }
                 } else {
                     index++
                 }
@@ -680,11 +692,14 @@ export class MetadataEditor {
         this.returnError(`Error! Given data for '${key}' is of type '${givenType}' but has to be of one of the types '${affordedTypes}'. Please try again.`)
     }
 
-    returnImpossibleDatesError(birth, death) {
+    returnImpossibleDatesError() {
         console.log('Impossible Dates Error!')
-        console.log(`${birth}`)
-        console.log(`${death}`)
         this.returnError(`Error! Given date for 'Date of Birth' is after given date for 'Date of Death'. Please try again.`)
+    }
+
+    returnImpossibleYearsRangeError(key) {
+        console.log('Impossible Years Range Error!')
+        this.returnError(`Error! Given data for '${key}' are inconsistent. Please try again.`)
     }
 
     returnPasswordError() {

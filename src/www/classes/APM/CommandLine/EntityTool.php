@@ -5,7 +5,7 @@ namespace APM\CommandLine;
 use APM\CommandLine\AdminUtility;
 use APM\CommandLine\CommandLineUtility;
 use http\Exception\RuntimeException;
-use ThomasInstitut\EntitySystem\EntityId;
+use ThomasInstitut\EntitySystem\Tid;
 
 class EntityTool extends CommandLineUtility implements AdminUtility
 {
@@ -37,9 +37,16 @@ class EntityTool extends CommandLineUtility implements AdminUtility
             return 0;
         }
 
-        switch($argv[1]) {
-            case 'newId':
-                $this->getNewId();
+        switch(strtolower($argv[1])) {
+            case 'newid':
+                $numTids = 1;
+                if (isset($argv[2])) {
+                    $numTids = intval($argv[2]);
+                    if ($numTids === 0) {
+                        $numTids = 1;
+                    }
+                }
+                $this->getNewTid($numTids);
                 break;
 
             case 'info':
@@ -60,23 +67,25 @@ class EntityTool extends CommandLineUtility implements AdminUtility
     }
 
     private function printInfo(string $tidString) : void {
-        $tid = EntityId::strToTid($tidString);
+        $tid = Tid::fromString($tidString);
 
         if ($tid === -1) {
             print "ERROR: invalid TID '$tidString'\n";
             return;
         }
 
-        printf("Entity %s ( = %d, 0x%s), timestamp %s\n", EntityId::tidToAlphanumeric($tid), $tid, EntityId::tidToHex($tid), EntityId::tidToTimeString($tid));
+        printf("Entity %s ( = %d, 0x%s), timestamp %s\n", Tid::toBase36String($tid), $tid, Tid::toHexString($tid), Tid::toTimeString($tid));
     }
 
-    private function getNewId() : void{
-        try {
-            $newId = EntityId::generateUnique();
-        } catch(\RuntimeException $exception) {
-            print "ERROR: " . $exception->getMessage() . "\n";
-            return;
+    private function getNewTid(int $numTids) : void{
+        for ($i = 0; $i < $numTids; $i++) {
+            try {
+                $tid = Tid::generateUnique();
+            } catch(\RuntimeException $exception) {
+                print "ERROR: " . $exception->getMessage() . "\n";
+                return;
+            }
+            printf("%s, %d, 0x%s, %s\n",Tid::toBase36String($tid), $tid,  Tid::toHexString($tid), Tid::toTimeString($tid) );
         }
-        print $newId . " = " . EntityId::tidToAlphanumeric($newId) . "\n";
     }
 }

@@ -8,7 +8,7 @@ use ThomasInstitut\TimeString\TimeString;
 /**
  * This class provides the basic functions to deal with Thomas-Institut entity IDs (TID)
  *
- * TIDs are 64-bit integers greater than 0 that are uniquely generated using the current system timestamp up to
+ * TIDs are positive integers that are uniquely generated using the current system timestamp up to
  * the millisecond.
  *
  * The formula is:
@@ -18,38 +18,40 @@ use ThomasInstitut\TimeString\TimeString;
  *  The generating algorithm makes sure that different TIDs are generated when the timestamp at
  *  the generation event of two TIDs is the same up to the millisecond.
  *
- * A 1 to 1 equivalence exists between any TID less than 2^60 and a valid UUID constructed by
- * concatenating the 60 least significant bits of the TID with a 48 bit unique MAC address stored
+ * A 1 to 1 equivalence exists between all valid TIDs less than 2^60 and a valid UUID. The equivalent UUID is
+ * constructed by concatenating the 60 least significant bits of the TID with a 48 bit unique MAC address stored
  * in this class. This MAC address must NEVER be modified.  As of 2023, there is no actual need to
  * use this equivalence, but in the future it may be used to easily migrate to a UUID-based system.
- * The functions in this class assume that the maximum valid TID is 2^60 - 1.
+ * The functions in this class assume that the maximum valid TID is 2^60 - 1 so that this equivalence is assured.
  *
  * TIDs can be represented alphanumerically by converting their integer value to a base-36 (A-Z, 0-9) string.
  * Only 8 alphanumeric characters are needed for TIDs generated before 2059-05-25 17:38:27 UTC. [N1]
- * Any unique string of less than 12 alphanumeric characters can represent a valid TID, and any string of less
- * than 11 can represent a TID that has a valid equivalent UUID.
+ * Any base-36 numerical string of less than 12 characters represents a valid TID, and any such string of less
+ * than 11 characters represents a TID that has a valid equivalent UUID.
  *
- * Obviously, a string composed of only numbers is a valid alphanumeric string and will not represent
+ * A string composed of only numbers is a valid base-36 string, but obviously it will not represent
  * the TID with the numerical value equal to the numerical value of the string read in base 10. For example,
  * '1234' does not represent TID 1234. However, if a numerical string has 12 digits or more, it will not represent
  * a valid TID in base-36. This fact can be used to support both base-36 and base-10 decoding of a string at the same
- * time. Any numeric string that decodes to 1e11 or more can be taken to be a TID in base-10, that is, any TID
- * generated after March 3, 1973 9:46:40 UTC, which is any automatically generated TID in the Averroes Project.
+ * time. Any base-10 numeric string of more than 11 characters can be taken to be a TID in base-10. The lowest TID
+ * that can be expressed this way would be one generated March 3, 1973 9:46:40 UTC, so all possible TIDs automatically
+ * generated in the Averroes Project are covered.
  *
  * It is possible to have "custom" TIDs based on meaningful strings. For example, the string
  * 'Averroes' is equivalent to TID 852015060820, which would have been generated automatically
  * on December 31, 1996 6:51:00.820 UTC,  'Aristotle' is equivalent to TID 30367856507090,
  * which will be generated automatically exactly on April 26, 2932 19:41:47.090 UTC. The chances of repeating
- * one of these custom TIDs by normal time-based generation are virtually zero.
+ * one of these custom TIDs by normal time-based generation are virtually zero. However, this practice should be
+ * discouraged except for very important entities.
  *
  * Notes:
  *   N1. Having a reasonably short alphanumeric representation of TIDs for the next few years is the reason why a
  *       1-millisecond clock resolution was chosen. A 1-microsecond resolution, which is the maximum technically
  *       possible, requires 10 alphanumeric characters, whereas lower resolutions are not desirable because
- *       there are more chances of getting repeated ids at the first try in the generation algorithm.
+ *       there are more chances of getting repeated ids in the first try in the generation algorithm.
  *
  */
-class EntityId
+class Tid
 {
 
     const TI_UUID_MAC_ADDRESS = 47103254751;
@@ -59,6 +61,7 @@ class EntityId
     /**
      * Generates a unique TID based on the current time
      * @return int
+     * @throws RuntimeException
      */
     public static function generateUnique(): int {
         if (!file_exists(self::LOCK_FILE)) {
@@ -69,9 +72,10 @@ class EntityId
             throw new RuntimeException("Can't open lock file");
         }
         if (flock($lockFile, LOCK_EX)) {
-            $lastIdGeneratedId = intval(fgets($lockFile));
+            $lockFileContents = fgets($lockFile);
+            $lastIdGeneratedId = intval(trim($lockFileContents));
             $newId = self::getIdFromClock();
-            if ($newId === $lastIdGeneratedId) {
+            while ($newId <= $lastIdGeneratedId) {
                 $newId++;
             }
             ftruncate($lockFile,0);
@@ -84,39 +88,45 @@ class EntityId
         }
     }
 
-    public static function tidToTimeString(int $tid) : string {
-
-        if ($tid < 1e14) {
-            return TimeString::fromTimeStamp($tid/1000);
-        }
-        $ts = TimeString::fromTimeStamp(intval($tid/1000));
-
-        return substr($ts, 0, strlen($ts) -7);
+    public static function toTimeString(int $tid) : string {
+        // need to do this trick with strings because if the TID is a very big number
+        // the time string from $tid/1000 will be inaccurate
+        $strTid = strval($tid);
+        $secondsTimeStamp = intval(substr($strTid, 0, strlen($strTid) -3));
+        $milliseconds = intval(substr($strTid, -3));
+        $ts = TimeString::fromTimeStamp($secondsTimeStamp);
+        return sprintf("%s.%03d000", substr($ts, 0, strlen($ts) -7), $milliseconds);
     }
 
     /**
      * Converts a string to a TID. If the string is not a valid TID, returns -1.
      * Dashes, periods and spaces within the string are ignored, e.g. 'AB C-123.DEF' becomes 'ABC123DEF'
      *
-     * If the string is all numbers and its length is 13 or more, it is considered to
+     * If the string is all numbers and its length is 12 or more, it is considered to
      * be a base-10 TID, otherwise it is interpreted as a base-36 number.
+     *
+     * If the given string is not a valid TID returns -1
      *
      * @param string $str
      * @return int
      */
-    public static function strToTid(string $str) : int {
-        $str = str_replace(['-', '.', ' ', "\n"], '', $str);
+    public static function fromString(string $str) : int {
+        $str = str_replace(['-', '.', ' ', "\n", "\t", '_'], '', $str);
         if (strlen($str) >= 12 and self::isAllNumbers($str)) {
             return intval($str);
         }
         if (self::strIsValidTid($str)) {
-            return self::alphanumericToTid($str);
+            return self::fromBase36String($str);
         }
         return -1;
     }
 
-    public static function alphanumericToTid(string $alpha) : int {
+    public static function fromBase36String(string $alpha) : int {
         return intval(base_convert($alpha, 36, 10));
+    }
+
+    public static function toBase36String(int $tid) : string {
+        return strtoupper(base_convert(strval($tid), 10, 36));
     }
 
     public static function strIsValidTid(string $str) : bool {
@@ -135,12 +145,10 @@ class EntityId
         return true;
     }
 
-    public static function tidToHex(int $tid) : string {
+    public static function toHexString(int $tid) : string {
         return strtoupper(base_convert(strval($tid), 10, 16));
     }
-    public static function tidToAlphanumeric(int $tid) : string {
-        return strtoupper(base_convert(strval($tid), 10, 36));
-    }
+
 
     private static function getIdFromClock() : int{
         return intval(1000*microtime(true));

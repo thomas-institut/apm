@@ -341,10 +341,6 @@ class ApmUrlGenerator {
         return `${this.base}/api/people/all`
     }
 
-    apiMetadataEditorGetListOfPeople() {
-        return `${this.base}/api/metadataeditor/people`
-    }
-
     images() {
         return this.base + '/images'
     }

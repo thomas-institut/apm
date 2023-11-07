@@ -28,6 +28,7 @@ export class MetadataEditor {
         this.numKeys = 0
         this.mode = {create: 'create', edit: 'edit', show: 'show'}
 
+
         // Selectors
         this.buttonsSelectorTop = 'buttons_top'
         this.buttonsSelectorBottom = 'buttons_bottom'
@@ -193,15 +194,81 @@ export class MetadataEditor {
         for (let i = 1; i <= this.numKeys; i++) {
             let id = "#entity_attr" + i
             let value = this.entity.values[i-1]
-            if (Array.isArray(value)) {
+            let type = this.entity.types[i-1]
+
+            if (type.includes('person')) {
+                this.getPersonNameWithLinkById(value, (linkId, url, name) => {
+                    value = `<a id=${linkId} href=${url} >${name}</a>`
+                    $(id).append(value)
+                })
+            }
+            else if (Array.isArray(value)) {
                 if (value.length === 3) {// Years Range with Note
                     value = this.formatYearsRange(value)
                 } else if (value.length === 2) {
                     value = this.formatYear(value)
                 }
+                $(id).append(value)
             }
-            $(id).append(value)
+            else {
+                $(id).append(value)
+            }
         }
+    }
+
+    getPersonNameWithLinkById (id, callback) {
+        let url = urlGen.sitePerson(id)
+        let linkId = "linktoperson" + id
+
+        // API Call
+        $.post(urlGen.apiPeopleGetPerson(), {id: id})
+            .done((apiResponse) => {
+
+                // Catch Error
+                if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query`);
+                    if (apiResponse.errorData !== undefined) {
+                        console.log(apiResponse.errorData);
+                    }
+                    return false
+                }
+                else {
+                    let name = apiResponse.data.values[0]
+                    callback(linkId, url, name)
+                    return true
+                }
+
+            })
+            .fail((status) => {
+                console.log(status);
+                return false
+            })
+    }
+
+    getPersonNameById (id, callback) {
+        // API Call
+        $.post(urlGen.apiPeopleGetPerson(), {id: id})
+            .done((apiResponse) => {
+
+                // Catch Error
+                if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query`);
+                    if (apiResponse.errorData !== undefined) {
+                        console.log(apiResponse.errorData);
+                    }
+                    return false
+                }
+                else {
+                    let name = apiResponse.data.values[0]
+                    callback(name)
+                    return true
+                }
+
+            })
+            .fail((status) => {
+                console.log(status);
+                return false
+            })
     }
 
     formatYearsRange(value) {
@@ -284,13 +351,16 @@ export class MetadataEditor {
         $(selector).html(`<p>
             <input class="form-control" list=${list} id=${inputId} placeholder="" autoComplete="off" style="padding: unset">
                 <datalist id=${list}></datalist></p>`)
-        let people = this.getListOfPeople()
-        this.addItemsToList(people, listSelector)
+        this.getPeople((people) => {
+            this.addItemsToList(people, listSelector)
+        })
     }
 
     addItemsToList(people, list) {
         for (let person of people) {
-            $(list).append(`<option>${person}</option>`)
+            let id = person.id
+            let name = person.values[0]
+            $(list).append(`<option value=${name} id=${id}>${name}</option>`)
         }
     }
 
@@ -388,6 +458,11 @@ export class MetadataEditor {
                 $(id).val(this.entity.values[i-1][0])
                 $(idYearsRangeEnd).val(this.entity.values[i-1][1])
                 $(idYearsRangeNote).val(this.entity.values[i-1][2])
+            }
+            else if (this.entity.types[i-1].includes('person')) {
+                this.getPersonNameById(this.entity.values[i-1], (name) => {
+                    $(id).val(name)
+                })
             }
             else {
                 $(id).val(this.entity.values[i-1])
@@ -535,11 +610,15 @@ export class MetadataEditor {
                 let years = this.getDataForYearsRange(name, value)
                 values.push(years)
             }
+            else if (this.entity.types[i-1].includes('person')) {
+                let datalist = "#entity_attr" + i + "_form_list"
+                let person_id = $(`${datalist} option[value=${value}]`).attr('id')
+                values.push(person_id)
+            }
             else {
                 values.push(value)
             }
         }
-
         return {id: id, type: type, values: values}
     }
 
@@ -589,7 +668,9 @@ export class MetadataEditor {
 
                 let givenType = this.dataType(value)
 
-                if (affordedTypes.includes(givenType) === false) { // Empty values and mismatching types throw an error
+                if ((affordedTypes.includes(givenType) === false &&
+                        affordedTypes.includes('person') === false) ||
+                        value === undefined) { // Mismatching types throw an error, non existing person ids are marked as ,undefined‘ and will also be detected
                     this.returnDataTypeError(key, givenType, affordedTypes)
                     return false
                 } else if (date_birth > date_death) {
@@ -602,7 +683,8 @@ export class MetadataEditor {
                         this.returnImpossibleYearsRangeError(key)
                         return false
                     }
-                } else {
+                }
+                else {
                     index++
                 }
             }
@@ -760,13 +842,30 @@ export class MetadataEditor {
     }
 
     // API Calls
+    getPeople(callback) {
+        $.post(urlGen.apiPeopleGetAllPeople())
+            .done((apiResponse) => {
 
-    getListOfPeople() {
-        let urlGen = new ApmUrlGenerator('')
-        let apiUrl = urlGen.apiSearchTranscriptionTitles()
+                // Catch Error
+                if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query`);
+                    if (apiResponse.errorData !== undefined) {
+                        console.log(apiResponse.errorData);
+                    }
+                    return false
+                }
+                else {
+                    console.log(apiResponse)
 
+                    callback(apiResponse.data)
+                }
+
+            })
+            .fail((status) => {
+                console.log(status);
+                return false
+            })
     }
-
 }
 
 // Load as global variable so that it can be referenced in the Twig template

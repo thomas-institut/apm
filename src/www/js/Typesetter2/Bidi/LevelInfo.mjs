@@ -22,8 +22,10 @@ export class LevelInfo {
    * @param {number}level
    * @param {number}start
    * @param {number}end
+   * @param {string}direction
    */
-  constructor (level, start, end) {
+  constructor (level, start, end, direction) {
+    this.textDirection = direction
     this.level = level
     this.start = start
     this.end = end

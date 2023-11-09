@@ -685,3 +685,7 @@ div.sigla-groups-div {
 table.source-table td {
     padding: 5px;
 }
+div.source-list-div {
+    overflow: auto;
+    max-height: 400px;
+}

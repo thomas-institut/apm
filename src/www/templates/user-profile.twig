@@ -79,67 +79,67 @@ Make Root
 
 {% if canEditProfile %}
 <div class="collapse" id="editProfileForm" >
-{#    <div class="withtopmargin"></div>#}
-{#    <div class="row">#}
-{#    <div class="col-md-4" id="editProfileFormDiv">#}
-{#    <form data-toggle="validator" role="form" id="theEditProfileForm"> #}
+    <div class="withtopmargin"></div>
+    <div class="row">
+    <div class="col-md-4" id="editProfileFormDiv">
+    <form data-toggle="validator" role="form" id="theEditProfileForm">
 
-{#    <!-- Username -->#}
-{#    <div class="form-group">#}
-{#        <label for="username">Username</label>#}
-{#        <input type="text"  #}
-{#           data-minlength="5"#}
-{#           maxlength="20" #}
-{#           class="form-control"#}
-{#           name="username"#}
-{#           id="username"#}
-{#           value="{{theuser.username}}"#}
-{#           disabled>#}
-{#    </div>#}
+    <!-- Username -->
+    <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text"
+           data-minlength="5"
+           maxlength="20"
+           class="form-control"
+           name="username"
+           id="username"
+           value="{{theuser.username}}"
+           disabled>
+    </div>
 
-{#    <!-- Full name -->#}
-{#    <div class="form-group has-feedback">#}
-{#    <label for="fullname">Full Name</label>#}
-{#    <input type="text" #}
-{#           class="form-control" #}
-{#           maxlength="50"#}
-{#           name="fullname"#}
-{#           id="fullname" #}
-{#           value="{{theuser.fullname}}"#}
-{#           required>#}
-{#    <span class="glyphicon form-control-feedback" aria-hidden="true"></span>#}
-{#    <div class="help-block with-errors"></div>#}
-{#    </div>#}
+    <!-- Full name -->
+    <div class="form-group has-feedback">
+    <label for="fullname">Full Name</label>
+    <input type="text"
+           class="form-control"
+           maxlength="50"
+           name="fullname"
+           id="fullname"
+           value="{{theuser.fullname}}"
+           required>
+    <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+    <div class="help-block with-errors"></div>
+    </div>
 
-{#    <!-- Email address -->#}
-{#    <div class="form-group has-feedback">#}
-{#    <label for="email">Email address</label>#}
-{#    <input type="email" #}
-{#           class="form-control" #}
-{#           name="email"#}
-{#           id="email" #}
-{#           value="{{theuser.email}}">#}
-{#    <span class="glyphicon form-control-feedback" aria-hidden="true"></span>#}
-{#    <div class="help-block with-errors"></div>#}
-{#    </div>#}
-{#    #}
-{#  <button type="submit" class="btn btn-primary">Submit</button>#}
-{#  <button type="button" class="btn btn-default" onClick="$('#editProfileForm').collapse('hide');">Cancel</button>#}
-{#</form>#}
-{#    {% if not canMakeRoot %}#}
-{#    <div class="alert alert-info alert-dismissable withtopmargin" role="alert">#}
-{#        <button type="button" class="close" data-dismiss="alert" #}
-{#                    aria-label="Close">#}
-{#                <span aria-hidden="true">&times;</span>#}
-{#            </button>#}
-{#        <strong>Note:</strong> Your avatar is associated with your email address and#}
-{#        is managed by Gravatar. To set it or change it, please visit#}
-{#        <a href="https://gravatar.com/" target="_blank">gravatar.com#}
-{#            <i class="fas fa-external-link-alt"></i></a>#}
-{#    </div>#}
-{#    {% endif %}#}
-{#  </div> <!-- col -->#}
-{#    </div> <!-- row -->#}
+    <!-- Email address -->
+    <div class="form-group has-feedback">
+    <label for="email">Email address</label>
+    <input type="email"
+           class="form-control"
+           name="email"
+           id="email"
+           value="{{theuser.email}}">
+    <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+    <div class="help-block with-errors"></div>
+    </div>
+
+  <button type="submit" class="btn btn-primary">Submit</button>
+  <button type="button" class="btn btn-default" onClick="$('#editProfileForm').collapse('hide');">Cancel</button>
+</form>
+    {% if not canMakeRoot %}
+    <div class="alert alert-info alert-dismissable withtopmargin" role="alert">
+        <button type="button" class="close" data-dismiss="alert"
+                    aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        <strong>Note:</strong> Your avatar is associated with your email address and
+        is managed by Gravatar. To set it or change it, please visit
+        <a href="https://gravatar.com/" target="_blank">gravatar.com
+            <i class="fas fa-external-link-alt"></i></a>
+    </div>
+    {% endif %}
+  </div> <!-- col -->
+    </div> <!-- row -->
 </div> <!-- Collapse -->
 
 <!-- PASSWORD Change Form -->

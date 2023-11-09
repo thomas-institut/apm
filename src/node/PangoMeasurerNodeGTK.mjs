@@ -26,7 +26,7 @@ import { PangoMeasurer } from './PangoMeasurer.mjs'
 import {resolvedPromise} from '../www/js/toolbox/FunctionUtil.mjs'
 import { Typesetter2} from '../www/js/Typesetter2/Typesetter2.mjs'
 
-const measuringScale = 10000
+const measuringScale = 1000
 
 export class PangoMeasurerNodeGTK extends PangoMeasurer {
   constructor () {
@@ -37,7 +37,8 @@ export class PangoMeasurerNodeGTK extends PangoMeasurer {
     // this.debug = true
   }
 
-  __measureText(text, fontDesc) {
+  measureText(text, fontDesc) {
+
     const fd = Pango.fontDescriptionFromString(fontDesc)
     this.layout.setFontDescription(fd)
     this.layout.setText(text)
@@ -47,8 +48,8 @@ export class PangoMeasurerNodeGTK extends PangoMeasurer {
 
   __getPangoMeasurements (textBox) {
     let fontDesc = `${textBox.getFontFamily()} ${textBox.getFontWeight()} ${textBox.getFontStyle()} ${Typesetter2.px2pt(textBox.getFontSize())*measuringScale}`
-    this.debug && console.log(`Measuring '${textBox.getText()}' with font desc '${fontDesc}'`)
-    let extents = this.__measureText(textBox.getText(), fontDesc)
+    console.log(`Measuring '${textBox.getText()}' with font desc '${fontDesc}'`)
+    let extents = this.measureText(textBox.getText(), fontDesc)
     let divisor = Pango.SCALE * measuringScale
     let returnObject = { width: extents.logical.width/ divisor, height: extents.logical.height /divisor, baseline: extents.baseline / divisor}
     this.debug && console.log(returnObject)

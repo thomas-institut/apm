@@ -47,16 +47,16 @@ export class UserProfilePage {
     let userId = profileUserInfo['id']
 
     // Make Metadata Editor
-    let mde = new MetadataEditor({
-      containerSelector: 'editProfileForm',
-      entityId: this.userId.toString(),
-      entityType: 'user',
-      metadata: [profileUserInfo.fullname, profileUserInfo.username, profileUserInfo.email],
-      metadataSchema: {keys: ['Full Name', 'Username', 'E-Mail Address'], types: ['text', 'text', 'email']},
-      callbackSave: (d) => {console.log(d)},
-      mode: 'edit',
-      theme: 'vertical'
-    })
+    // let mde = new MetadataEditor({
+    //   containerSelector: 'editProfileForm',
+    //   entityId: this.userId.toString(),
+    //   entityType: 'user',
+    //   metadata: [profileUserInfo.fullname, profileUserInfo.username, profileUserInfo.email],
+    //   metadataSchema: {keys: ['Full Name', 'Username', 'E-Mail Address'], types: ['text', 'text', 'email']},
+    //   callbackSave: (d) => {console.log(d)},
+    //   mode: 'edit',
+    //   theme: 'vertical'
+    // })
 
       // Pseudo-accordion behaviour
     $('#editProfileForm').on('show.bs.collapse', function () {

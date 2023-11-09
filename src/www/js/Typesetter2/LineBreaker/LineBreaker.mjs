@@ -1,5 +1,4 @@
 import { resolvedPromise } from '../../toolbox/FunctionUtil.mjs'
-import { Glue } from '../Glue.mjs'
 import { ItemList } from '../ItemList.mjs'
 
 export class LineBreaker {
@@ -14,9 +13,10 @@ export class LineBreaker {
    * @param {TypesetterItem[]}itemArray
    * @param {number} lineWidth
    * @param {TextBoxMeasurer}textBoxMeasurer
+   * @param {BidiOrderInfo[]}bidiOrderInfoArray
    * @return {Promise<ItemList[]>}
    */
-  static breakIntoLines(itemArray, lineWidth, textBoxMeasurer) {
+  static breakIntoLines(itemArray, lineWidth, textBoxMeasurer, bidiOrderInfoArray) {
     // do nothing
     let theList = new ItemList()
     theList.setList(itemArray)

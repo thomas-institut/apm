@@ -200,6 +200,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       }
       // delete browser specific options, these will
       // be set by the server-side process
+
       typesettingParameters.typesetterOptions.textBoxMeasurer = undefined
       typesettingParameters.typesetterOptions.getApparatusListToTypeset = undefined
       typesettingParameters.typesetterOptions.preTypesetApparatuses = undefined
@@ -209,7 +210,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       let data = {
         options: typesettingParameters.typesetterOptions,
         helperOptions: typesettingParameters.helperOptions,
-        mainTextList: typesettingParameters.mainTextVerticalListToTypeset.getExportObject(),
+        mainTextList: this.viewer.getMainTextListToTypeset(),
         extraData: typesettingParameters.extraData
       }
       console.log(`About to call PDF API with the following data:`)

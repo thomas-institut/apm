@@ -118,6 +118,9 @@ export class AddLineNumbers extends PageProcessor {
          fontFamily: this.options.fontFamily,
          fontSize: this.options.fontSize
        })
+       // the number may be RTL, but alignments are calculated assuming LTR box placement
+       lineNumberTextBox.setTextDirection('ltr')
+
        if (this.options.align === 'right') {
          let boxWidth = await this.options.textBoxMeasurer.getBoxWidth(lineNumberTextBox)
          lineNumberTextBox.setShiftX(-boxWidth)

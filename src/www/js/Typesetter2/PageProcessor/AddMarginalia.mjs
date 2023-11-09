@@ -106,8 +106,15 @@ export class AddMarginalia extends PageProcessor {
 
         // for now, just display the first sub entry
         let marginalItemArray = pageMarginalia[i].marginalSubEntries[0]
+        // TODO: deal with bidirectional text
+        marginalItemArray.forEach( (item) => {
+          item.setTextDirection(this.options.defaultTextDirection)
+        })
+
+
         await ItemArray.measureTextBoxes(marginalItemArray, this.options.textBoxMeasurer)
         let entryList = new ItemList(TypesetterItemDirection.HORIZONTAL)
+        // TODO: check this, maybe it should be LTR always,like in the line numbers
         entryList.setList(marginalItemArray)
           .setTextDirection(this.options.defaultTextDirection)
         let listWidth = entryList.getWidth()

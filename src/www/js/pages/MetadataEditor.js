@@ -28,7 +28,6 @@ export class MetadataEditor {
         this.numKeys = 0
         this.mode = {create: 'create', edit: 'edit', show: 'show'}
 
-
         // Selectors
         this.buttonsSelectorTop = 'buttons_top'
         this.buttonsSelectorBottom = 'buttons_bottom'

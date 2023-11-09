@@ -33,24 +33,28 @@ export class MetadataEditor {
         this.buttonsSelectorTop = 'buttons_top'
         this.buttonsSelectorBottom = 'buttons_bottom'
 
-        // Setup metadata editor in desired mode
-        switch (this.options.mode) {
-            case this.mode.edit:
-                this.setupEditMode()
-                break
-            case this.mode.create:
-                this.setupCreateMode()
-                break
-            case this.mode.show:
-                this.setupShowMode()
-                break
-        }
+        // Get list of all people (esp. for handling of entities as values, saving their ids, showing their names) and setup metadata editor in desired mode
+        this.getPeople((people) => {
+            this.people = people
+            switch (this.options.mode) {
+                case this.mode.edit:
+                    this.setupEditMode()
+                    break
+                case this.mode.create:
+                    this.setupCreateMode()
+                    break
+                case this.mode.show:
+                    this.setupShowMode()
+                    break
+            }
+        })
     }
 
     // FUNCTIONS
     // Setup Editor
     makeEditor(container) {
         container = "#" + container
+
         let tableClass
         switch (this.options.theme) {
             case 'vertical':
@@ -107,7 +111,7 @@ export class MetadataEditor {
     buildEntity(callback) {
         this.entity.id = this.options.entityId
         this.entity.type = this.options.entityType
-        if (this.entity.values.length === 0) { // After having edited and esaved values, they get updated via the updateEntityData function
+        if (this.entity.values.length === 0) { // After having edited and saved values, they get updated via the updateEntityData function
             this.entity.values = this.options.metadata
         }
         this.entity.keys = this.options.metadataSchema.keys
@@ -190,85 +194,36 @@ export class MetadataEditor {
 
     // Table Data Management
     showMetadata () {
+
         this.clearTableCells()
+        this.removeSpinner()
+
         for (let i = 1; i <= this.numKeys; i++) {
             let id = "#entity_attr" + i
             let value = this.entity.values[i-1]
             let type = this.entity.types[i-1]
 
             if (type.includes('person')) {
-                this.getPersonNameWithLinkById(value, (linkId, url, name) => {
-                    value = `<a id=${linkId} href=${url} >${name}</a>`
-                    $(id).append(value)
-                })
-            }
-            else if (Array.isArray(value)) {
+                let url = urlGen.sitePerson(value)
+                let linkId = "linktoperson" + value
+                let name = this.getPersonNameById(value)
+                let link = `<a id=${linkId} href=${url} >${name}</a>`
+                $(id).append(link)
+            } else if (Array.isArray(value)) {
                 if (value.length === 3) {// Years Range with Note
                     value = this.formatYearsRange(value)
                 } else if (value.length === 2) {
                     value = this.formatYear(value)
                 }
                 $(id).append(value)
-            }
-            else {
+            } else {
                 $(id).append(value)
             }
         }
     }
 
-    getPersonNameWithLinkById (id, callback) {
-        let url = urlGen.sitePerson(id)
-        let linkId = "linktoperson" + id
-
-        // API Call
-        $.post(urlGen.apiPeopleGetPerson(), {id: id})
-            .done((apiResponse) => {
-
-                // Catch Error
-                if (apiResponse.status !== 'OK') {
-                    console.log(`Error in query`);
-                    if (apiResponse.errorData !== undefined) {
-                        console.log(apiResponse.errorData);
-                    }
-                    return false
-                }
-                else {
-                    let name = apiResponse.data.values[0]
-                    callback(linkId, url, name)
-                    return true
-                }
-
-            })
-            .fail((status) => {
-                console.log(status);
-                return false
-            })
-    }
-
-    getPersonNameById (id, callback) {
-        // API Call
-        $.post(urlGen.apiPeopleGetPerson(), {id: id})
-            .done((apiResponse) => {
-
-                // Catch Error
-                if (apiResponse.status !== 'OK') {
-                    console.log(`Error in query`);
-                    if (apiResponse.errorData !== undefined) {
-                        console.log(apiResponse.errorData);
-                    }
-                    return false
-                }
-                else {
-                    let name = apiResponse.data.values[0]
-                    callback(name)
-                    return true
-                }
-
-            })
-            .fail((status) => {
-                console.log(status);
-                return false
-            })
+    getPersonNameById (id) {
+        return this.people[id].values[0]
     }
 
     formatYearsRange(value) {
@@ -349,11 +304,9 @@ export class MetadataEditor {
         let list = inputId + "_list"
         let listSelector = "#" + list
         $(selector).html(`<p>
-            <input class="form-control" list=${list} id=${inputId} placeholder="" autoComplete="off" style="padding: unset">
+            <input class="form-control" list=${list} id=${inputId} placeholder="person" autoComplete="off" style="padding: unset">
                 <datalist id=${list}></datalist></p>`)
-        this.getPeople((people) => {
-            this.addItemsToList(people, listSelector)
-        })
+        this.addItemsToList(this.people, listSelector)
     }
 
     addItemsToList(people, list) {
@@ -398,17 +351,6 @@ export class MetadataEditor {
     }
 
     makeYearForm(selectorId, inputId, type) {
-        // let inputSelector = "#" + inputId
-        // let currentYear = new Date().getFullYear()
-        // $(selectorId).html(
-        //     `<p><select class="form-control" id=${inputId} style="padding: unset"></p>`)
-        //
-        // $(inputSelector).append(`<option selected></option>`)
-        //
-        // for (let i=-1000; i<=currentYear; i++) {
-        //     $(inputSelector).append(`<option>${i}</option>`)
-        // }
-
         let inputIdBcAd = inputId + "_" + "year_bc_ad"
         let inputIdBcADSelector = "#" + inputIdBcAd
 
@@ -460,9 +402,8 @@ export class MetadataEditor {
                 $(idYearsRangeNote).val(this.entity.values[i-1][2])
             }
             else if (this.entity.types[i-1].includes('person')) {
-                this.getPersonNameById(this.entity.values[i-1], (name) => {
-                    $(id).val(name)
-                })
+                let name = this.getPersonNameById(this.entity.values[i-1])
+                $(id).val(name)
             }
             else {
                 $(id).val(this.entity.values[i-1])
@@ -544,11 +485,7 @@ export class MetadataEditor {
                 this.updateEntityData(d.id, d.type, d.values)
                 this.options.callbackSave(this.entity, this.options.mode, () => {
                     this.logSaveAction(this.options.mode)
-                    this.removeSpinner()
                     this.setupShowMode()
-                    //if (this.options.mode === this.mode.create) {
-                    //  window.location.href = urlGen.sitePerson(this.entity.id);
-                    //}
                 })
             }
         })
@@ -602,17 +539,22 @@ export class MetadataEditor {
             let name = "#entity_attr" + i + "_form"
             let value = $(name).val()
 
-            if (this.entity.types[i-1][0] === 'year') {
+            if (this.entity.types[i-1].includes('year')) {
                 let year = this.getDataForYear(name, value)
                 values.push(year)
             }
-            else if (this.entity.types[i-1][0] === 'years_range') {
+            else if (this.entity.types[i-1].includes('years_range')) {
                 let years = this.getDataForYearsRange(name, value)
                 values.push(years)
             }
             else if (this.entity.types[i-1].includes('person')) {
                 let datalist = "#entity_attr" + i + "_form_list"
-                let person_id = $(`${datalist} option[value=${value}]`).attr('id')
+                let person_id
+                try {
+                    person_id = $(`${datalist} option[value=${value}]`).attr('id')
+                } catch {
+                    person_id = ''
+                }
                 values.push(person_id)
             }
             else {
@@ -668,9 +610,7 @@ export class MetadataEditor {
 
                 let givenType = this.dataType(value)
 
-                if ((affordedTypes.includes(givenType) === false &&
-                        affordedTypes.includes('person') === false) ||
-                        value === undefined) { // Mismatching types throw an error, non existing person ids are marked as ,undefined‘ and will also be detected
+                if ((affordedTypes.includes(givenType) === false && !(affordedTypes.includes('person') && givenType === 'number')) || value === undefined) { // Mismatching types throw an error, non existing person ids are marked as ,undefined‘ and will also be detected
                     this.returnDataTypeError(key, givenType, affordedTypes)
                     return false
                 } else if (date_birth > date_death) {
@@ -710,7 +650,10 @@ export class MetadataEditor {
 
         let type
 
-        if (Array.isArray(value)) {
+        if (value === undefined) {
+            type = undefined
+        }
+        else if (Array.isArray(value)) {
             if (this.isYearsRange(value)) {
                 type = 'years_range'
             }

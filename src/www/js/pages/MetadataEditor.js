@@ -1,5 +1,7 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
 import {urlGen} from "./common/SiteUrlGen";
+import {TagEditor} from "./TagEditor";
+
 
 export class MetadataEditor {
 
@@ -290,10 +292,26 @@ export class MetadataEditor {
                 case 'person':
                     this.makePersonForm(selectorId, inputId)
                     break
+                case 'tags':
+                    this.makeTagsForm(selectorId, inputId, type)
+                    break
                 default:
                     this.makeTextForm(selectorId, inputId, type)
             }
         }
+    }
+
+    makeTagsForm(selectorId, inputId, type) {
+
+        let tagsDiv = inputId + "_tags"
+
+        let te = new TagEditor({
+            containerSelector: selectorId,
+            inputForm: inputId,
+            tagsDiv: tagsDiv,
+            tags: ['Test', 'Versuch'],
+            mode: 'edit',
+        })
     }
 
     makePersonForm(selector, inputId) {

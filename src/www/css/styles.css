@@ -232,3 +232,13 @@ input[type=number] {
     font-size: 14px;
     width: 42px
 }
+
+.tag {
+    background-color: var(--purple);
+    border-radius: 10px;
+    color: var(--default-font-color);
+    font-size: var(--default-font-size);
+    margin-bottom: 0.5rem;
+    margin-right: 0.5rem;
+    padding: 0.2rem 0.5rem;
+}

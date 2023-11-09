@@ -192,7 +192,7 @@ export class MetadataEditor {
     }
 
     // Table Data Management
-    showMetadata () {
+    showMetadata() {
 
         this.clearTableCells()
         this.removeSpinner()
@@ -206,18 +206,15 @@ export class MetadataEditor {
                 let url = urlGen.sitePerson(value)
                 let linkId = "linktoperson" + value
                 let name = this.getPersonNameById(value)
-                let link = `<a id=${linkId} href=${url} >${name}</a>`
-                $(id).append(link)
+                value = `<a id=${linkId} href=${url} >${name}</a>`
             } else if (Array.isArray(value)) {
                 if (value.length === 3) {// Years Range with Note
                     value = this.formatYearsRange(value)
                 } else if (value.length === 2) {
                     value = this.formatYear(value)
                 }
-                $(id).append(value)
-            } else {
-                $(id).append(value)
             }
+            $(id).append(value)
         }
     }
 
@@ -446,13 +443,6 @@ export class MetadataEditor {
         this.makeEditButtonEvent()
     }
 
-    makeCreateButton(){
-        let selector = '#' + this.buttonsSelectorTop
-        $(selector).append(
-            `<button type="submit" class="btn btn-primary" id="create_button">Create</button>`)
-        this.makeCreateButtonEvent()
-    }
-
     makeCancelButton(){
         let selector = '#' + this.buttonsSelectorTop
         $(selector).append(
@@ -498,16 +488,6 @@ export class MetadataEditor {
             // Clear Messages
             this.clearErrorMessage()
             this.setupEditMode()
-        })
-    }
-
-    makeCreateButtonEvent() {
-
-        this.options.mode = this.mode.create
-
-        $("#create_button").on("click",  () => {
-            this.clearErrorMessage()
-            this.setupCreateMode()
         })
     }
 

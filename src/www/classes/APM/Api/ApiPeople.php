@@ -121,7 +121,7 @@ class ApiPeople extends ApiController
                 ['person'],
                 ['year', 'empty'],
                 ['url', 'empty'],
-                ['tags']]
+                ['tags', 'empty']]
         ];
 
         // ApiResponse

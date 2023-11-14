@@ -6,47 +6,94 @@ export class TagEditor {
     constructor(options) {
 
         const optionsDefinition = {
-            containerSelector: {type: 'string', required: true},
-            inputForm: {type: 'string', required: true},
-            tagsDiv: {type: 'string', required: true},
+            containerId: {type: 'string', required: true},
+            inputFormId: {type: 'string', required: true},
             tags: {type: 'array', required: false},
-            mode: {type: 'string', required: true}
         }
 
         const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: "MetadataEditor"})
         this.options = oc.getCleanOptions(options)
 
-        switch (this.options.mode) {
-            case 'edit':
-                this.makeTagEditor()
-                break
-            case 'show':
-                this.showTags()
-                break
-        }
+        this.makeTagEditor()
     }
 
     makeTagEditor() {
 
-        let tags = ''
-        let tagsDivSelector = '#' + this.options.tagsDiv
+        // let tags = ''
+        //
+        // for (let tag of this.options.tags) {
+        //     tags = tags + ' ' + tag
+        // }
+        //
+        // $(this.options.containerId).html(
+        //     `<p><input type="text" class="form-control" id=${this.options.inputFormId} placeholder='tags' style="padding: unset">
+        //                         <div id=${this.options.tagsDiv}><div></p>`)
 
-        for (let tag of this.options.tags) {
-            tags = tags + ' ' + tag
-        }
+        $(this.options.containerId).html(`<ul class="tags" id="tag-list">
+            <li class="tagAdd taglist">
+                <input type="text" class="form-control" id="search-field" placeholder="+" style="border: none">
+            </li>
+           </ul>`)
 
-        $(this.options.containerSelector).html(
-            `<p><input type="text" class="form-control" id=${this.options.inputForm} placeholder='tags' style="padding: unset">
-                                <div id=${this.options.tagsDiv}><div></p>`)
+        for (let tag of this.options.tags.reverse()) {
+            $('#tag-list').prepend(`<li class="addedTag">${tag}
+                                        <span onClick=${$(this).parent().remove()} class="tagRemove"><sup>x</sup></span>
+                                        <input type="hidden" name="tags[]" value=${tag}></li>`)
+            }
 
-        $(tagsDivSelector).append(tags)
+        this.makeEvents()
+    }
 
-        this.makeTagFormEvent()
+    makeEvents() {
+        $.expr[":"].contains = $.expr.createPseudo(function(arg) {
+            return function( elem ) {
+                return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
+            };
+        });
+        $(document).ready(function() {
+            $('#addTagBtn').click(function() {
+                $('#tags option:selected').each(function() {
+                    $(this).appendTo($('#selectedTags'));
+                });
+            });
+            $('#removeTagBtn').click(function() {
+                $('#selectedTags option:selected').each(function(el) {
+                    $(this).appendTo($('#tags'));
+                });
+            });
+            $('.tagRemove').click(function(event) {
+                event.preventDefault();
+                $(this).parent().remove();
+            });
+            $('ul.tags').click(function() {
+                $('#search-field').focus();
+            });
+            $('#search-field').keypress(function(event) {
+                if (event.which == '13') {
+                    if (($(this).val() != '') && ($(".tags .addedTag:contains('" + $(this).val() + "') ").length == 0 ))  {
+
+
+
+                        $('<li class="addedTag">' + $(this).val() + '<span class="tagRemove" onclick="$(this).parent().remove();"><sup>x</sup></span><input type="hidden" value="' + $(this).val() + '" name="tags[]"></li>').insertBefore('.tags .tagAdd');
+                        $(this).val('');
+
+                    } else {
+                        $(this).val('');
+
+                    }
+                }
+            });
+
+        });
+    }
+
+    makeAddTagEvent() {
+
     }
 
     makeTagFormEvent() {
 
-        let formSelector = '#' + this.options.inputForm
+        let formSelector = '#' + this.options.inputFormId
         let thisobject = this
 
         $(formSelector).keypress(function (e) {
@@ -73,7 +120,7 @@ export class TagEditor {
             tags = tags + ' ' + tag
         }
 
-        $(this.options.containerSelector).html(
+        $(this.options.containerId).html(
             `<p><div id=${this.options.tagsDiv}><div></p>`)
 
         $(tagsDivSelector).append(tags)

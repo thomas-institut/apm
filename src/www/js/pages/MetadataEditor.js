@@ -293,7 +293,7 @@ export class MetadataEditor {
                     this.makePersonForm(selectorId, inputId)
                     break
                 case 'tags':
-                    this.makeTagsForm(selectorId, inputId, type)
+                    this.makeTagsForm(selectorId, inputId)
                     break
                 default:
                     this.makeTextForm(selectorId, inputId, type)
@@ -301,16 +301,18 @@ export class MetadataEditor {
         }
     }
 
-    makeTagsForm(selectorId, inputId, type) {
+    makeTagsForm(selectorId, inputId) {
 
-        let tagsDiv = inputId + "_tags"
+        // $(selectorId).tagEditor({
+        //     initialTags: ['Hello', 'World', 'Example', 'Tags'],
+        //     placeholder: type,
+        //     forceLowercase: false
+        // })
 
         let te = new TagEditor({
-            containerSelector: selectorId,
-            inputForm: inputId,
-            tagsDiv: tagsDiv,
+            containerId: selectorId,
+            inputFormId: inputId,
             tags: ['Test', 'Versuch'],
-            mode: 'edit',
         })
     }
 

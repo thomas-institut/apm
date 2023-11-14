@@ -233,12 +233,46 @@ input[type=number] {
     width: 42px
 }
 
-.tag {
-    background-color: var(--purple);
-    border-radius: 10px;
-    color: var(--default-font-color);
-    font-size: var(--default-font-size);
-    margin-bottom: 0.5rem;
-    margin-right: 0.5rem;
-    padding: 0.2rem 0.5rem;
+
+ol, ul {
+    list-style: outside none none;
+}
+
+.tags {
+    background: none repeat scroll 0 0 #fff;
+    border: 0px solid #ccc;
+    display: table;
+    padding: 0.5em;
+    width: 100%;
+}
+.tags li.tagAdd, .tags li.addedTag {
+    float: left;
+    margin-left: 0.25em;
+    margin-right: 0.25em;
+}
+.tags li.addedTag {
+    background: none repeat scroll 0 0 transparent;
+    color: black;
+    border-color: black;
+    padding: 0.6em;
+    /*border-radius: 20px*/
+}
+.tags input, li.addedTag {
+    border: 1px solid transparent;
+    border-radius: 2px;
+    box-shadow: none;
+    display: block;
+    padding: 0.5em;
+}
+.tags input:hover {
+    border: 1px solid #000;
+}
+span.tagRemove {
+    cursor: pointer;
+    display: inline-block;
+    padding-left: 0.25em;
+    color: black
+}
+span.tagRemove:hover {
+    color: red;
 }

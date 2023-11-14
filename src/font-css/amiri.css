@@ -1,0 +1,65 @@
+/*
+ *  Copyright (C) 2020 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+/*
+ *  Font face definitions for the ApmAmiri font hosted by APM
+ */
+
+/*  NORMAL */
+
+@font-face {
+    font-family: "ApmAmiri";
+    src: local("ApmAmiri"),
+        local("ApmAmiri Regular"),
+        url(../amiri/Amiri-Regular.ttf) format("truetype");
+    font-weight: 400;  /* normal */
+    font-style: normal;
+    font-stretch: normal;
+}
+
+/* BOLD */
+@font-face {
+    font-family: "ApmAmiri";
+    src: local("ApmAmiri Bold"),
+        url(../amiri/Amiri-Bold.ttf) format("truetype");
+    font-weight: 700;  /* bold */
+    font-style: normal;
+    font-stretch: normal;
+}
+
+/*  ITALIC */
+
+@font-face {
+    font-family: "ApmAmiri";
+    src: local("ApmAmiri"),
+        local("ApmAmiri Italic"),
+        url(../amiri/Amiri-Italic.ttf) format("truetype");
+    font-weight: 400;  /* normal */
+    font-style: italic;
+    font-stretch: normal;
+}
+
+@font-face {
+    font-family: "ApmAmiri";
+    src: local("ApmAmiri"),
+    local("ApmAmiri Bold Italic"),
+    url(../amiri/Amiri-BoldItalic.ttf) format("truetype");
+    font-weight: 700;  /* bold */
+    font-style: italic;
+    font-stretch: normal;
+}

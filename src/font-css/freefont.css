@@ -1,0 +1,138 @@
+/*
+ *  Copyright (C) 2020 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+
+/* Font face definitions for GNU Free fonts hosted in the Averroes Server */
+
+/**
+ *  Free versions of Helvetica, Times  and Courier, with almost full character support
+ */
+
+/* Free Sans */
+
+@font-face {
+    font-family: FreeSans;
+    src: local(FreeSans),
+        url(../freefont/FreeSans.woff) format("woff"),
+        url(../freefont/FreeSans.ttf) format("truetype");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: FreeSans;
+    src: local(FreeSans),
+        url(../freefont/FreeSansOblique.woff) format("woff"),
+        url(../freefont/FreeSansOblique.ttf) format("truetype");
+    font-weight: 400;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: FreeSans;
+    src: local("FreeSans Bold"),
+        url(../freefont/FreeSansBold.woff) format("woff"),
+    url(../freefont/FreeSansBold.ttf) format("truetype");
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: FreeSans;
+    src: local("FreeSans Oblique"),
+        url(../freefont/FreeSansBoldOblique.woff) format("woff"),
+        url(../freefont/FreeSansBoldOblique.ttf) format("truetype");
+    font-weight: 700;
+    font-style: italic;
+}
+
+/* Free Serif */
+
+@font-face {
+    font-family: FreeSerif;
+    src: local(FreeSerif),
+        url(../freefont/FreeSerif.woff) format("woff"),
+        url(../freefont/FreeSerif.ttf) format("truetype");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: FreeSerif;
+    src: local(FreeSerif Italic),
+        url(../freefont/FreeSerifItalic.woff) format("woff"),
+        url(../freefont/FreeSerifItalic.ttf) format("truetype");
+    font-weight: 400;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: FreeSerif;
+    src: local(FreeSerif Bold),
+    url(../freefont/FreeSerifBold.woff) format("woff"),
+    url(../freefont/FreeSerifBold.ttf) format("truetype");
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: FreeSerif;
+    src: local(FreeSerifBoldItalic),
+        url(../freefont/FreeSerifBoldItalic.woff) format("woff"),
+        url(../freefont/FreeSerifBoldItalic.ttf) format("truetype");
+    font-weight: 700;
+    font-style: italic;
+}
+
+/* Free Mono */
+
+@font-face {
+    font-family: FreeMono;
+    src: local(FreeMono),
+        url(../freefont/FreeMono.woff) format("woff"),
+        url(../freefont/FreeMono.ttf) format("truetype");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: FreeMono;
+    src: local(FreeMonoOblique),
+        url(../freefont/FreeMonoOblique.woff) format("woff"),
+        url(../freefont/FreeMonoOblique.ttf) format("truetype");
+    font-weight: 400;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: FreeMono;
+    src: local(FreeSans),
+        url(../freefont/FreeMonoBold.woff) format("woff"),
+        url(../freefont/FreeMonoBold.ttf) format("truetype");
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: FreeMono;
+    src: local(FreeMonoBoldOblique),
+        url(../freefont/FreeMonoBoldOblique.woff) format("woff"),
+        url(../freefont/FreeMonoBoldOblique.ttf) format("truetype");
+    font-weight: 700;
+    font-style: italic;
+}

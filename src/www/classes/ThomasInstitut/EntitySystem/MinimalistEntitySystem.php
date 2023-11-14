@@ -292,7 +292,7 @@ class MinimalistEntitySystem implements EntitySystem
 
 
     public function makeAttributeStatement(int $subjectTid, string|int $attribute, string $value, array $qualifications,
-                                           int $editedByPersonTid, string $statementNote = '', int $ts = -1): int
+                                           int $editedByPersonTid, string $statementMetadata = '', int $ts = -1): int
     {
         if (is_int($attribute)) {
             try {
@@ -319,7 +319,7 @@ class MinimalistEntitySystem implements EntitySystem
             'value' => $value,
             'qualifications' => $qualifications,
             'editedBy' => $editedByPersonTid,
-            'statementNote' => $statementNote,
+            'statementNote' => $statementMetadata,
             'timestamp' => $timestamp,
             'cancellationTid' => -1,
             'cancelledBy' => -1,
@@ -415,7 +415,7 @@ class MinimalistEntitySystem implements EntitySystem
             if ($statementData->isAttribute) {
                 $data->attributes[] = $statementData;
             } else {
-                $data->relationsAsSubject[] = $statementData;
+                $data->relations[] = $statementData;
                 if ($statementData->predicate === StandardNames::RELATION_IS_OF_TYPE) {
                     $data->type = $this->getEntityName($statementData->object, StandardNames::TYPE_ENTITY_TYPE);
                 }
@@ -423,7 +423,7 @@ class MinimalistEntitySystem implements EntitySystem
         }
         $data->relationsAsObject = $this->findStatementsByObject($entityTid);
 
-        if (count ($data->attributes) !== 0 || count($data->relationsAsObject) !== 0 || count($data->relationsAsSubject) !== 0) {
+        if (count ($data->attributes) !== 0 || count($data->relationsAsObject) !== 0 || count($data->relations) !== 0) {
             $data->isDefined = true;
         }
         return $data;
@@ -448,6 +448,7 @@ class MinimalistEntitySystem implements EntitySystem
     private function statementDataFromRow(array $row) : StatementData {
         $data = new StatementData();
 
+
         $data->tid = $row['tid'];
         $data->isAttribute = $row['predicateType'] === self::PREDICATE_ATTRIBUTE;
         $data->predicate = $row['predicate'];
@@ -466,5 +467,15 @@ class MinimalistEntitySystem implements EntitySystem
             $data->cancellationNote = $row['cancellationNote'];
         }
         return $data;
+    }
+
+    public function setEntityData(int $entityTid, array $predicates, int $editedBy, int $ts = -1): int
+    {
+        // TODO: Implement setEntityData() method.
+    }
+
+    public function getEntityStatementTuples(int|string $entityId, int|string $entityType): array
+    {
+        // TODO: Implement getEntityStatementTuples() method.
     }
 }

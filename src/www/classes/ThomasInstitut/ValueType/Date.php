@@ -1,8 +1,8 @@
 <?php
 
-namespace ThomasInstitut\DataType;
+namespace ThomasInstitut\ValueType;
 
-class ApproximateDate
+class Date
 {
 
     const INTRA_SEP = '.';
@@ -11,10 +11,15 @@ class ApproximateDate
     private array $post;
     private array $ante;
 
+    private bool $postCirca;
+    private bool $anteCirca;
+
     public function __construct()
     {
         $this->post = [];
         $this->ante = [];
+        $this->postCirca = false;
+        $this->anteCirca = false;
     }
 
     public function getSortableString() : string {
@@ -35,7 +40,7 @@ class ApproximateDate
         return implode(self::INTER_SEP, [ $postString, $anteString]);
     }
 
-    public function setFromCompactString(string $str) : ApproximateDate {
+    public function setFromCompactString(string $str) : Date {
         [ $post, $ante ]= explode(self::INTER_SEP, $str);
         if ($post !== '') {
             $postArray = explode(self::INTRA_SEP, $post );
@@ -48,7 +53,7 @@ class ApproximateDate
         return $this;
     }
 
-    public static function fromCompactString(string $str) : ApproximateDate {
-        return (new ApproximateDate())->setFromCompactString($str);
+    public static function fromCompactString(string $str) : Date {
+        return (new Date())->setFromCompactString($str);
     }
 }

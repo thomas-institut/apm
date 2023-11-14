@@ -26,7 +26,7 @@ class StatementData implements Exportable
     public int $cancellationTimestamp = 0;
     public string $cancellationNote = '';
 
-    // TODO: add statement metadata
+    public array $metadata;
 
 
     public function getExportObject(): array

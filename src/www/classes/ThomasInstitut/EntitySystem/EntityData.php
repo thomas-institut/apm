@@ -24,7 +24,7 @@ class EntityData implements Exportable
     /**
      * @var StatementData[]
      */
-    public array $relationsAsSubject = [];
+    public array $relations = [];
 
     /**
      * @var StatementData[]
@@ -37,7 +37,7 @@ class EntityData implements Exportable
         $exportObject = get_object_vars($this);
         $exportObject['className'] = ExportClasses::ENTITY_DATA;
         $exportObject['attributes'] = ExportableObject::getArrayExportObject($this->attributes);
-        $exportObject['relationsAsSubject']  = ExportableObject::getArrayExportObject($this->relationsAsSubject);
+        $exportObject['relations']  = ExportableObject::getArrayExportObject($this->relations);
         $exportObject['relationsAsObject'] = ExportableObject::getArrayExportObject($this->relationsAsObject);
         return $exportObject;
     }

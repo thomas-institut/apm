@@ -6,6 +6,7 @@ import { defaultHebrewEditionStyle } from '../../defaults/EditionStyles/Hebrew.m
 
 import { StyleSheet } from './StyleSheet.mjs'
 import { arabicDeGruyter } from '../../defaults/EditionStyles/ArabicDeGruyter.mjs'
+import { arabicDeGruyterAmiri} from '../../defaults/EditionStyles/ArabicDeGruyterAmiri.mjs'
 
 
 let systemStyles = {
@@ -18,7 +19,8 @@ let systemStyles = {
   },
   ar: {
     default: defaultArabicEditionStyle,
-    degruyter: arabicDeGruyter
+    degruyter: arabicDeGruyter,
+    degruyteramiri: arabicDeGruyterAmiri
   }
 }
 

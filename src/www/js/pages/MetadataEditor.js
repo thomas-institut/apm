@@ -69,7 +69,7 @@ export class MetadataEditor {
             `<br>
                             <div id="buttons_top" align="right"></div>
                             <br>
-                            <table class=${tableClass} id="metadataTable"></table>
+                            <table class=${tableClass} id="metadataTable" style="table-layout:fixed;"></table>
                             <br>
                             <div id="buttons_bottom" align="left"></div>
                             <div id="errorMessage" style="font-style: oblique"></div>

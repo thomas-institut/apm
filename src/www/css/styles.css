@@ -249,13 +249,17 @@ ol, ul {
     float: left;
     margin-left: 0.25em;
     margin-right: 0.25em;
+    margin-bottom: 0.75em;
 }
 .tags li.addedTag {
     background: none repeat scroll 0 0 transparent;
-    color: black;
-    border-color: black;
-    padding: 0.6em;
-    /*border-radius: 20px*/
+    color: darkblue;
+    border-color: darkblue;
+    padding-left: 0.6em;
+    padding-bottom: 0.1em;
+    padding-top: 0.1em;
+    padding-right: 0.3em;
+    border-radius: 10px
 }
 .tags input, li.addedTag {
     border: 1px solid transparent;
@@ -270,7 +274,7 @@ ol, ul {
 span.tagRemove {
     cursor: pointer;
     display: inline-block;
-    padding-left: 0.25em;
+    padding-left: 0em;
     color: black
 }
 span.tagRemove:hover {

@@ -1,5 +1,5 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
-import {urlGen} from "./common/SiteUrlGen";
+import {capitalizeFirstLetter} from "../toolbox/Util.mjs";
 
 export class TagEditor {
 
@@ -14,119 +14,89 @@ export class TagEditor {
         const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: "MetadataEditor"})
         this.options = oc.getCleanOptions(options)
 
-        this.makeTagEditor()
+        this.setupTagEditor(this)
     }
 
-    makeTagEditor() {
+    setupTagEditor(thisObject) {
+        this.buildStructureOfTagEditor()
+        this.fillDatalistWithTags()
+        this.showGivenTags()
+        this.setupEvents(thisObject)
+    }
 
-        // let tags = ''
-        //
-        // for (let tag of this.options.tags) {
-        //     tags = tags + ' ' + tag
-        // }
-        //
-        // $(this.options.containerId).html(
-        //     `<p><input type="text" class="form-control" id=${this.options.inputFormId} placeholder='tags' style="padding: unset">
-        //                         <div id=${this.options.tagsDiv}><div></p>`)
-
-        $(this.options.containerId).html(`<ul class="tags" id="tag-list">
-            <li class="tagAdd taglist">
-                <input type="text" class="form-control" id="search-field" placeholder="+" style="border: none">
-            </li>
+    buildStructureOfTagEditor() {
+        $(this.options.containerId).html(`
+            <ul class="tags" id="tag-list">
+                <li class="tagAdd taglist">
+                    <input list="list-of-tags" class="form-control" id="search-field" placeholder="+" style="border: none; height: 1.6em; width: 7em">
+                    <datalist id="list-of-tags"></datalist>
+                </li>
            </ul>`)
+    }
 
+    fillDatalistWithTags() {
+        this.options.tags.forEach((tag) => {
+            $('#list-of-tags').append(`<option value="${tag}">${tag}</option>`)
+        })
+    }
+    
+    showGivenTags () {
         for (let tag of this.options.tags.reverse()) {
-            $('#tag-list').prepend(`<li class="addedTag">${tag}
-                                        <span onClick=${$(this).parent().remove()} class="tagRemove"><sup>x</sup></span>
-                                        <input type="hidden" name="tags[]" value=${tag}></li>`)
-            }
-
-        this.makeEvents()
+            $('#tag-list').prepend(`
+                <li class="addedTag">${tag}
+                    <span class="tagRemove"><sup style="font-family: Arial">x</sup></span>
+                    <input type="hidden" name="tags[]" value=${tag}>
+                </li>`)
+        }
+    }
+    
+    setupEvents(thisObject) {
+        this.makeRemoveTagEvent(thisObject)
+        this.makeFocusSearchFieldEvent()
+        this.makeAddTagEvent(thisObject)
+    }
+    
+    makeRemoveTagEvent(thisObject) {
+        $('.tagRemove').click(function(event) {
+            event.preventDefault();
+            let index = thisObject.options.tags.indexOf($(this).parent().val())
+            console.log(index)
+            delete thisObject.options.tags[index]
+            console.log(thisObject.options.tags)
+            $(this).parent().remove();
+        })
+    }
+    
+    makeFocusSearchFieldEvent() {
+        $('ul.tags').click(function() {
+            $('#search-field').focus();
+        })
     }
 
-    makeEvents() {
-        $.expr[":"].contains = $.expr.createPseudo(function(arg) {
-            return function( elem ) {
-                return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
-            };
-        });
-        $(document).ready(function() {
-            $('#addTagBtn').click(function() {
-                $('#tags option:selected').each(function() {
-                    $(this).appendTo($('#selectedTags'));
-                });
-            });
-            $('#removeTagBtn').click(function() {
-                $('#selectedTags option:selected').each(function(el) {
-                    $(this).appendTo($('#tags'));
-                });
-            });
-            $('.tagRemove').click(function(event) {
-                event.preventDefault();
-                $(this).parent().remove();
-            });
-            $('ul.tags').click(function() {
-                $('#search-field').focus();
-            });
-            $('#search-field').keypress(function(event) {
-                if (event.which == '13') {
-                    if (($(this).val() != '') && ($(".tags .addedTag:contains('" + $(this).val() + "') ").length == 0 ))  {
+    makeAddTagEvent(thisObject) {
+        $('#search-field').keypress(function(event) {
+            if (event.which == '13') {
 
+                let value = thisObject.capitalizeFirstCharacter($(this).val())
 
-
-                        $('<li class="addedTag">' + $(this).val() + '<span class="tagRemove" onclick="$(this).parent().remove();"><sup>x</sup></span><input type="hidden" value="' + $(this).val() + '" name="tags[]"></li>').insertBefore('.tags .tagAdd');
-                        $(this).val('');
-
-                    } else {
-                        $(this).val('');
-
-                    }
+                if (value !== '' && thisObject.options.tags.includes(value) === false) {
+                    $('<li class="addedTag">' + value + ' ' +
+                        '<span class="tagRemove" onclick="$(this).parent().remove()">' +
+                        '<sup style="font-family: Arial">x</sup></span>' +
+                        '<input type="hidden" value="' + value +
+                        '" name="tags[]"></li>').insertBefore('.tags .tagAdd')
                 }
-            });
 
-        });
-    }
-
-    makeAddTagEvent() {
-
-    }
-
-    makeTagFormEvent() {
-
-        let formSelector = '#' + this.options.inputFormId
-        let thisobject = this
-
-        $(formSelector).keypress(function (e) {
-            let key = e.which;
-            if(key === 13)  {
-                let value = ' ' + $(this).val()
-                thisobject.addTagToDiv(value)
+                thisObject.options.tags.push(value)
                 $(this).val('')
             }
         })
     }
 
-    addTagToDiv(tag) {
-        let tagsDivSelector = '#' + this.options.tagsDiv
-
-        $(tagsDivSelector).append(tag)
-    }
-
-    showTags() {
-        let tags = ''
-        let tagsDivSelector = '#' + this.options.tagsDiv
-
-        for (let tag of this.options.tags) {
-            tags = tags + ' ' + tag
-        }
-
-        $(this.options.containerId).html(
-            `<p><div id=${this.options.tagsDiv}><div></p>`)
-
-        $(tagsDivSelector).append(tags)
+    capitalizeFirstCharacter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
     }
 }
-
 
 // Load as global variable so that it can be referenced in the Twig template
 window.TagEditor = TagEditor

@@ -1,5 +1,4 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
-import {capitalizeFirstLetter} from "../toolbox/Util.mjs";
 
 export class TagEditor {
 
@@ -20,7 +19,7 @@ export class TagEditor {
     setupTagEditor(thisObject) {
         this.buildStructureOfTagEditor()
         this.fillDatalistWithTags()
-        this.showGivenTags()
+        this.showGivenTags(thisObject)
         this.setupEvents(thisObject)
     }
 
@@ -40,30 +39,31 @@ export class TagEditor {
         })
     }
     
-    showGivenTags () {
+    showGivenTags (thisObject) {
         for (let tag of this.options.tags.reverse()) {
+            let tagId = tag + "_id"
             $('#tag-list').prepend(`
-                <li class="addedTag">${tag}
-                    <span class="tagRemove"><sup style="font-family: Arial">x</sup></span>
-                    <input type="hidden" name="tags[]" value=${tag}>
+                <li class="addedTag" value=${tag}>${tag}
+                    <span class="tagRemove" id=${tagId}><sup style="font-family: Arial">x</sup></span>
+                    <input type="hidden" name="tags[]">
                 </li>`)
+            this.makeRemoveTagEvent(thisObject, tagId)
         }
     }
     
     setupEvents(thisObject) {
-        this.makeRemoveTagEvent(thisObject)
         this.makeFocusSearchFieldEvent()
         this.makeAddTagEvent(thisObject)
     }
     
-    makeRemoveTagEvent(thisObject) {
-        $('.tagRemove').click(function(event) {
+    makeRemoveTagEvent(thisObject, tag_id) {
+        let selector = "#" + tag_id
+        $(selector).click(function(event) {
             event.preventDefault();
-            let index = thisObject.options.tags.indexOf($(this).parent().val())
-            console.log(index)
-            delete thisObject.options.tags[index]
-            console.log(thisObject.options.tags)
-            $(this).parent().remove();
+            let value = $(this).parent()[0].getAttribute('value')
+            let index = thisObject.options.tags.indexOf(value)
+            thisObject.options.tags.splice(index, 1);
+            $(this).parent().remove()
         })
     }
     
@@ -77,24 +77,46 @@ export class TagEditor {
         $('#search-field').keypress(function(event) {
             if (event.which == '13') {
 
-                let value = thisObject.capitalizeFirstCharacter($(this).val())
+                let value = thisObject.formatTag($(this).val())
 
-                if (value !== '' && thisObject.options.tags.includes(value) === false) {
-                    $('<li class="addedTag">' + value + ' ' +
-                        '<span class="tagRemove" onclick="$(this).parent().remove()">' +
+                if (value !== '' && thisObject.validateTag(value) && thisObject.options.tags.includes(value) === false) {
+                    let tagId = value + "_id"
+                    $(`<li class="addedTag" value=${value}>` + value + ' ' +
+                        `<span class="tagRemove" id=${tagId}>` +
                         '<sup style="font-family: Arial">x</sup></span>' +
                         '<input type="hidden" value="' + value +
                         '" name="tags[]"></li>').insertBefore('.tags .tagAdd')
-                }
 
-                thisObject.options.tags.push(value)
-                $(this).val('')
+                    thisObject.makeRemoveTagEvent(thisObject, tagId)
+                    thisObject.options.tags.push(value)
+                    $(this).val('')
+                }
             }
         })
     }
 
-    capitalizeFirstCharacter(string) {
+    formatTag(string) {
+
+        while (string[0] === ' ') {
+            string = string.slice(1)
+        }
+
+        while (string.slice(-1) === ' ') {
+            string = string.slice(0, -1)
+        }
+
+        string = string.toLowerCase()
         return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+
+    // TO DO, prohibit blanks and special characters in tags
+    validateTag(tag) {
+        let specialCharacters = /[ `!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/
+        return !specialCharacters.test(tag);
+    }
+
+    getTags() {
+        return this.options.tags
     }
 }
 

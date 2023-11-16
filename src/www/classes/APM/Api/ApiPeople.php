@@ -112,13 +112,13 @@ class ApiPeople extends ApiController
                 'URL',
                 'Tags'],
             'types' => [
-                ['text'],
-                ['date'],
+                ['text', 'empty'],
                 ['date', 'empty'],
-                ['text'],
+                ['date', 'empty'],
+                ['text', 'empty'],
                 ['text', 'empty'],
                 ['person', 'empty'],
-                ['person'],
+                ['person', 'empty'],
                 ['year', 'empty'],
                 ['url', 'empty'],
                 ['tags', 'empty']]

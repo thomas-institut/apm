@@ -241,11 +241,11 @@ ol, ul {
 .tags {
     background: none repeat scroll 0 0 #fff;
     border: 0px solid #ccc;
-    display: table;
     padding: 0.5em;
     width: 100%;
+    display: table
 }
-.tags li.tagAdd, .tags li.addedTag {
+.tags li.tagAdd, .tags li.addedTag, li.showAddedTag {
     float: left;
     margin-left: 0.25em;
     margin-right: 0.25em;
@@ -255,21 +255,31 @@ ol, ul {
     background: none repeat scroll 0 0 transparent;
     color: darkblue;
     border-color: darkblue;
-    padding-left: 0.6em;
+    padding-left: 0.5em;
     padding-bottom: 0.1em;
     padding-top: 0.1em;
     padding-right: 0.3em;
     border-radius: 10px
 }
-.tags input, li.addedTag {
+.tags li.showAddedTag {
+    background: none repeat scroll 0 0 transparent;
+    color: darkblue;
+    border-color: darkblue;
+    padding-left: 0.3em;
+    padding-bottom: 0.1em;
+    padding-top: 0.1em;
+    padding-right: 0.3em;
+    border-radius: 10px
+}
+.tags input, li.addedTag, li.showAddedTag {
     border: 1px solid transparent;
-    border-radius: 2px;
+    border-radius: 1px;
     box-shadow: none;
     display: block;
     padding: 0.5em;
 }
 .tags input:hover {
-    border: 1px solid #000;
+    border: 1px solid;
 }
 span.tagRemove {
     cursor: pointer;
@@ -278,5 +288,5 @@ span.tagRemove {
     color: black
 }
 span.tagRemove:hover {
-    color: red;
+    color: dodgerblue;
 }

@@ -29,6 +29,7 @@ export class MetadataEditor {
         this.entity = {id: '', type: '', keys: [], values: [], types: []}
         this.numKeys = 0
         this.mode = {create: 'create', edit: 'edit', show: 'show'}
+        this.tagEditor = undefined
 
         // Selectors
         this.buttonsSelectorTop = 'buttons_top'
@@ -201,23 +202,36 @@ export class MetadataEditor {
 
         for (let i = 1; i <= this.numKeys; i++) {
             let id = "#entity_attr" + i
-            let value = this.entity.values[i-1]
-            let type = this.entity.types[i-1]
+            let value = this.entity.values[i - 1]
+            let type = this.entity.types[i - 1]
 
-            if (type.includes('person')) {
+            if (type.includes('person') && value !== '') {
                 let url = urlGen.sitePerson(value)
                 let linkId = "linktoperson" + value
                 let name = this.getPersonNameById(value)
                 value = `<a id=${linkId} href=${url} >${name}</a>`
-            } else if (Array.isArray(value)) {
-                if (value.length === 3) {// Years Range with Note
-                    value = this.formatYearsRange(value)
-                } else if (value.length === 2) {
-                    value = this.formatYear(value)
-                }
+            } else if (type.includes('years_range')) {
+                value = this.formatYearsRange(value)
+            } else if (type.includes('year')) {
+                value = this.formatYear(value)
+            } else if (type.includes('tags')) {
+                value = this.showAsTags(value)
             }
             $(id).append(value)
         }
+    }
+
+    showAsTags (tags) {
+
+        let start = '<ul class="tags" id="tag-list"><li class="tagAdd taglist">'
+        let end = '</li></ul>'
+        let mid = ''
+
+        for (let tag of tags) {
+            mid = mid + `<li class = "showAddedTag">${tag}</li>`
+        }
+
+        return start + mid + end
     }
 
     getPersonNameById (id) {
@@ -302,17 +316,10 @@ export class MetadataEditor {
     }
 
     makeTagsForm(selectorId, inputId) {
-
-        // $(selectorId).tagEditor({
-        //     initialTags: ['Hello', 'World', 'Example', 'Tags'],
-        //     placeholder: type,
-        //     forceLowercase: false
-        // })
-
-        let te = new TagEditor({
+        this.tagEditor = new TagEditor({
             containerId: selectorId,
             inputFormId: inputId,
-            tags: ['Test', 'Versuch'],
+            tags: this.entity.values[9]
         })
     }
 
@@ -417,7 +424,7 @@ export class MetadataEditor {
                 $(idYearsRangeEnd).val(this.entity.values[i-1][1])
                 $(idYearsRangeNote).val(this.entity.values[i-1][2])
             }
-            else if (this.entity.types[i-1].includes('person')) {
+            else if (this.entity.types[i-1].includes('person') && this.entity.values[i-1] !== '') {
                 let name = this.getPersonNameById(this.entity.values[i-1])
                 $(id).val(name)
             }
@@ -546,6 +553,10 @@ export class MetadataEditor {
                 let years = this.getDataForYearsRange(name, value)
                 values.push(years)
             }
+            else if (this.entity.types[i-1].includes('tags')) {
+                let tags = this.tagEditor.getTags()
+                values.push(tags)
+            }
             else if (this.entity.types[i-1].includes('person')) {
                 let datalist = "#entity_attr" + i + "_form_list"
                 let person_id
@@ -659,8 +670,11 @@ export class MetadataEditor {
             else if (this.isYear(value)) {
                 type = 'year'
             }
-            else {
+            else if (this.isIncorrectYear(value)) {
                 type = this.dataType(value[0])
+            }
+            else {
+                type = 'tags'
             }
         }
         else if (this.isMail(value)) {
@@ -692,21 +706,15 @@ export class MetadataEditor {
     }
 
     isYearsRange(value) {
-        if (value.length === 3 && value[0] !== "") {
-            return true
-        }
-        else {
-            return false
-        }
+        return value.length === 3 && value[0] !== "" && this.containsOnlyNumbers(value[0]);
     }
 
     isYear(value) {
-        if (value.length === 2 && value[0] !== "" && this.containsOnlyNumbers(value[0])) {
-            return true
-        }
-        else {
-            return false
-        }
+        return value.length === 2 && value[0] !== "" && this.containsOnlyNumbers(value[0]);
+    }
+
+    isIncorrectYear(value) {
+        return value.length === 2 && value[1] === 'BC' || value[1] === 'AD';
     }
 
     isMail(str) {

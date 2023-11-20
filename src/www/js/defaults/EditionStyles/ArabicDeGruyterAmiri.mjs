@@ -70,8 +70,8 @@ export const arabicDeGruyterAmiri = {
         shiftY: "0"
       },
       glue: {
-        width: "0.25 em",
-        shrink: "0.03 em",
+        width: "0.35 em",
+        shrink: "0.02 em",
         stretch: "0.08 em"
       },
     },
@@ -113,7 +113,7 @@ export const arabicDeGruyterAmiri = {
   h1: {
       parent: "default",
       text: {
-        fontSize: "1.25 em",
+        fontSize: "1.33333333 em",
       },
       paragraph: {
         align: "center",
@@ -124,7 +124,7 @@ export const arabicDeGruyterAmiri = {
     h2: {
       parent: "default",
       text: {
-        fontSize: "1.1 em",
+        fontSize: "1.1666666 em",
       },
       paragraph: {
         spaceBefore: "1 em",
@@ -144,14 +144,14 @@ export const arabicDeGruyterAmiri = {
     apparatus: {
       parent: "default",
       text: {
-        fontSize: "12 pt",
+        fontSize: "9 pt",
       },
       paragraph: {
-        lineSkip: "14 pt"
+        lineSkip: "15 pt"
       },
       glue: {
-        width: "0.25 em",
-        shrink: "0.03 em",
+        width: "0.35 em",
+        shrink: "0.02 em",
         stretch: "0.08 em"
       },
     },

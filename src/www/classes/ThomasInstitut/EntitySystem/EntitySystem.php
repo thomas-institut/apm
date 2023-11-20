@@ -6,8 +6,8 @@ namespace ThomasInstitut\EntitySystem;
  * This interface describes the entity system to be used across all Thomas-Institut applications: APM, Dare, Bilderberg.
  *
  * The entity system is an abstraction that makes it easier to interface with metadata collectors and providers. It is
- * conceptually independent of how the data is actually stored and used within the applications, but a generic
- * implementation can be used to model and manipulate new data before more efficient implementations are devised.
+ * conceptually independent of how the data is actually stored and used within our applications, but a generic
+ * implementation can be used to model and manipulate new data before more efficient implementations are developed.
  *
  * The fundamental principle of the entity system is that all metadata can be expressed as a list of statements
  * in the form of semantic triples:
@@ -35,7 +35,7 @@ namespace ThomasInstitut\EntitySystem;
  *     - storeStatement( subjectTid, predicateTid, objectTid | string, statementTid)
  *     - getStatements(subjectId | null, predicateId | null, objectTid | null, statementId | null) : array of quads
  *
- * This, however, will be extremely inefficient, cumbersome and error-prone. The system must provide basic management
+ * but it will be extremely inefficient, cumbersome and error-prone. The system must provide basic management
  * of entities, predicates and data types, in addition to convenient methods to access the data.
  *
  * These are the design choices made in our system:
@@ -63,26 +63,32 @@ namespace ThomasInstitut\EntitySystem;
  *     it to a user's will. With the built-in mechanism, editors must not assume any particular way of unpacking
  *     qualified statements. Attribute or relation qualifications are just parts of the statement itself.
  *
- *   - A statement may be qualified also with a sequence number. This makes it easy to work with ordered attributes
+ *   - A statement may be qualified also with a sequence number to make it easier to work with ordered attributes
  *     and relations. For example:
  *
  *        [s1] [Manuscript1] [hasWork] [SomeWork] seq 1
  *        [s2] [Manuscript1] [hasWork] [OtherWork] seq 2
  *
- *   - Statements may be qualified with both dates and sequences:
+ *   - A relation may be qualified with a referredAs label, representing the way the object is referenced in the context
+ *     in which the statement is valid. For example, in a manuscript description, a person may be referred by
+ *     a name different from their "official" name in the database:
  *
- *          [s1] [Averroes] [wrote] [SomeWork] from '1150' until '1151' seq 1
- *          [s2] [Averroes] [wrote] [OtherWork] from '1152' until '1152' seq 2
+ *     [s1] [Manuscript2] [hasScribe] [PetrusScribanus] referredAs 'Petrus'
  *
- *     Statement quads in the system become 7-tuples when fully qualified:
+ *   - Statements may be qualified with any combination of dates, sequences and labels :
  *
- *        [statementEntity] [subject] [predicate] [object]|'value' 'fromDate' 'untilDate' sequenceNumber
+ *          [s1] [Averroes] [wrote] [SomeWork] from '1150' until '1151' seq 1 referredAs 'The first work'
+ *          [s2] [Averroes] [wrote] [OtherWork] from '1152' until '1152' seq 2 referredAs 'The other work'
+ *
+ *     Taking into account qualifications, statement quads in the system become 8-tuples when fully qualified:
+ *
+ *        [statementEntity] [subject] [predicate] [object]|'value' 'fromDate' 'untilDate' sequenceNumber referredAs
  *
  *   - All entities have textual name and description attributes by default, which can be empty depending on the
  *     entity type.
  *
  *   - All entities have a definite type, e.g., Person, Statement, Attribute, etc. All types must be registered before
- *     use. 
+ *     use.
  *
  *   - Entities of certain entity types should be identifiable also by type name and a unique textual name within the
  *     type.  For example, if entity 1698761211655 is the attribute for age, it could be identified also by
@@ -186,6 +192,24 @@ namespace ThomasInstitut\EntitySystem;
  */
 interface EntitySystem
 {
+
+    /**
+     * The system entity tid
+     */
+    const SYSTEM = 1;
+
+    /**
+     * Fundamental predicates
+     */
+    const RELATION__HAS_TYPE = 10;
+    const ATTRIBUTE__NAME = 20;
+    const ATTRIBUTE__DESCRIPTION = 21;
+
+    /**
+     * The entity type EntityType
+     */
+    const ENTITY_TYPE__ENTITY_TYPE = 101;
+
     /**
      * Creates an entity of the given type and returns its Tid.
      *
@@ -199,48 +223,48 @@ interface EntitySystem
     public function createEntity(string|int $type, string $name = '', string $description = '') : int;
 
     /**
-     * Makes an attribution statement and returns the Tid of the associated statement entity.
+     * Makes a statement and returns the Tid of the associated statement entity.
      *
-     * The $qualifications array can include 'dateFrom', 'dateUntil' and 'seq' properties.
+     * $predicate can be a tid of a 'Attribute:attributeName' / 'Relation:relationName'  string
      *
-     * The statement can be accompanied by data about the statement itself, for example, and editorial note, a
-     * source attribution, etc., with the parameter $statementMetadata, which is of the form:
+     * $valueOrObject will be converted to the required type. If the predicate is a relation and a string is given,
+     * it will be interpreted as a 'Type:name' entity identifier. If the predicate is an attribute and an integer
+     * is given, it will be converted to a string
+     *
+     * The $qualifications array can include 'dateFrom', 'dateUntil', 'seq' and 'referredAs' properties.
+     *
+     * The statement can be accompanied by data about the statement itself, for example, a
+     * source attribution, a consultation date, etc., with the parameter $extraStatementMetadata, which is of the form:
      *   [  attribute|relation => value|object ]
-     * where attribute|relation can be a Tid, 'Attribute:attrName' or
+     * where attribute|relation can be a Tid, 'Attribute:attrName' or 'Relation:relationName'
+     *
+     * An optional statement group tid can be given, it needs to be a EntityType:StatementGroup entity previously
+     * created with createEntity
      *
      *
      * @param int $subjectTid
-     * @param string|int $attribute the name of the attribute or its Tid
-     * @param string $value
+     * @param string|int $predicate
+     * @param string|int $valueOrObject
      * @param array $qualifications
      * @param int $editedByPersonTid
-     * @param array $statementMetadata
+     * @param string $editorialNote
+     * @param array $extraStatementMetadata
+     * @param int $statementGroupTid
      * @param int $ts the statement's timestamp, if -1, the current time will be used
      * @return int
+     * @throws InvalidSubjectException
+     * @throws InvalidPredicateException
      * @throws InvalidAttributeException
-     */
-    public function makeAttributeStatement(int   $subjectTid, string|int $attribute, string $value,
-                                           array $qualifications,
-                                           int   $editedByPersonTid, array $statementMetadata = [], int $ts = -1 ) : int;
-
-    /**
-     * Makes a relation statement and returns the Tid of the associated statement entity.
-     *
-     * The $qualifications array can include 'dateFrom', 'dateUntil' and 'seq' properties
-     *
-     * @param string|int $subjectTid
-     * @param string|int $relation the name of the relation or its Tid
-     * @param int $objectTid
-     * @param array $qualifications
-     * @param int $editedByPersonTid
-     * @param string $statementNote
-     * @param int $ts the statement's timestamp, if -1, the current time will be used
-     * @return int
      * @throws InvalidRelationException
+     * @throws InvalidObjectException
      */
-    public function makeRelationStatement(string|int $subjectTid, string|int $relation, int $objectTid,
-                                          array $qualifications,
-                                          int $editedByPersonTid,   string $statementNote = '', int $ts = -1) : int;
+    public function makeStatement(int  $subjectTid, string|int $predicate, string|int $valueOrObject,
+                                           array $qualifications,
+                                           int   $editedByPersonTid,
+                                           string $editorialNote,
+                                           array $extraStatementMetadata = [],
+                                           int $statementGroupTid = -1,
+                                           int $ts = -1 ) : int;
 
     /**
      * Cancels a statement.
@@ -260,12 +284,13 @@ interface EntitySystem
      *
      * Anywhere a value or an object is required an integer, a string or an array can be used:
      *
-     *    - an integer is taken to be a tid. If a literal value is required, the entity's name is used.
+     *    - an integer is taken to be a tid. If a literal value is required, the integer will be converted
+     *      to a string.
      *    - a string is taken to be either the required literal value for an attribute or a 'Type:name' string
      *      that identifies the object of a relation.
      *    - an array can be:
      *        + an associative array defining a statement with keys ['value', 'object', 'from', 'until,
-     *           'seq', 'statementMetadata']
+     *           'seq', 'editorialNote', 'extraStatementMetadata']
      *        + a (normal) array with numerical keys, with each element being an associative array like the
      *          previous case.
      *
@@ -277,7 +302,8 @@ interface EntitySystem
      *      'Attribute:name' => 'Joe',
      *      'Attribute:occupation' => [
      *          [ 'value' => 'plumber', 'from' => 'c. 1985', 'until => '1990-06', 'seq' => 1  ],
-     *          [ 'value' => 'baker', 'from' => '1990-07', 'until => '1995-12-31', 'seq' => 2  ]
+     *          [ 'value' => 'baker', 'from' => '1990-07', 'until => '1995-12-31', 'seq' => 2,
+     *             editorialNote: "From Joe's autobiography"  ]
      *       ],
      *     'Relation:hasValueType' => 'ValueType:boolean'
      *    ];
@@ -301,22 +327,40 @@ interface EntitySystem
 
     /**
      * Merges an entity into another.
-     * @param string|int $entityTid
+     * @param int $entityTid
      * @param int $intoEntityTid
      * @param int $mergedByPersonTid
+     * @param string $mergeNote
      * @param int $ts the merge timestamp, if -1, the current time will be used
      * @return int
      */
-    public function mergeEntities(string|int $entityTid, int $intoEntityTid, int $mergedByPersonTid, int $ts = -1) : int;
+    public function mergeEntities(int $entityTid, int $intoEntityTid, int $mergedByPersonTid, string $mergeNote, int $ts = -1) : int;
 
 
     /**
-     *  Returns an array of tuples representing the current statements where the given entity is referenced as
-     *  subject or object.  Each element in the returning array should be interpreted as:
+     *  Returns an array of arrays representing the current statements where the given entity is referenced as
+     *  subject or object.  Each element in the returning array is of the form:
      *
-     *   [ statementTid,
-     *     subjectTid, predicateTid, objectTid | 'value',
-     *    'fromDate', 'untilDate', sequenceNumber
+     *   [
+     *     'tid' => statementTid,
+     *
+     *     'subject' => subjectTid,
+     *     'predicate' => predicateTid,
+     *     'predicateType' =>  'Attribute' | 'Relation'
+     *     'predicateName' => 'attrName' | 'relationName'
+     *
+     *     'object' => objectTid | -1 // for relations
+     *     'value' => 'literalValue'  // for attributes
+     *
+     *     // qualifications, only the ones actually present in the statement
+     *     'from' => 'fromDate',
+     *     'until' => 'untilDate',
+     *     'seq' => sequenceNumber
+     *     'referredAs'  =>  'someLabel'
+     *
+     *     'editedBy' => editorTid
+     *     'editTimestamp' => statementTimestamp
+     *     'editorialNote' => 'someNote'
      *   ]
      *
      * Providing the entity's type may greatly improve the response time, but it must be the actual
@@ -327,34 +371,27 @@ interface EntitySystem
      * @return array
      * @throws EntityDoesNotExistException
      */
-    public function getEntityStatementTuples(string|int $entityId, string|int $entityType = '') : array;
-
-
-
-    /**
-     * Returns all data in the system for the given entity.
-     * Providing the entity's type may greatly improve the response time, but it must be the actual
-     * type of the entity or else an EntityDoesNotExistException may be thrown.
-     * @param int $entityTid
-     * @param string|int $type
-     * @return EntityData
-     * @throws EntityDoesNotExistException
-     */
-//    public function getEntityData(int $entityTid, string|int $type = '') : EntityData;
+    public function getEntityStatements(string|int $entityId, string|int $entityType = '') : array;
 
 
     /**
      * Returns the Tid of an entity of the given type and name.
+     *
+     * It accepts a single parameter with a string of the form 'Type:Name'  or two
+     * parameters 'Type' and 'Name'
+     *
      * Returns -1 if the type is invalid, the type is not one that has entities with unique names or
      * there's no entity with the given type and name.
-     * @param string|int $type
+     *
+     * @param string $typeNameOrType
      * @param string $name
      * @return int
      */
-    public function getEntityTidByTypeAndName(string|int $type, string $name) : int;
+    public function getTidByTypeName(string $typeNameOrType, string $name = '') : int;
 
     /**
      * Returns name of an entity.
+     *
      * Providing the entity's type may greatly improve the response time, but it must be the actual
      * type of the entity or else an EntityDoesNotExistException may be thrown.
      * @param int $entityTid

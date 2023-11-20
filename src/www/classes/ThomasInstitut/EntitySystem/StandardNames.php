@@ -11,6 +11,7 @@ class StandardNames
     const TYPE_RELATION = 'Relation';
     const TYPE_DATA_TYPE = 'DataType';
     const TYPE_STATEMENT = 'Statement';
+    const TYPE_STATEMENT_GROUP = 'StatementGroup';
     const TYPE_PERSON = 'Person';
     const TYPE_PLACE = 'Place';
 
@@ -22,7 +23,7 @@ class StandardNames
     const ATTRIBUTE_TIMESTAMP = 'timestamp';
 
 
-    const RELATION_IS_OF_TYPE = 'isOfType';
+    const RELATION_HAS_TYPE = 'hasType';
     const RELATION_MERGED_INTO = 'mergedInto';
     const RELATION_EDITED_BY = 'editedBy';
 

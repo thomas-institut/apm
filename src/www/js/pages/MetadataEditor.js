@@ -210,28 +210,23 @@ export class MetadataEditor {
                 let linkId = "linktoperson" + value
                 let name = this.getPersonNameById(value)
                 value = `<a id=${linkId} href=${url} >${name}</a>`
+                $(id).append(value)
             } else if (type.includes('years_range')) {
                 value = this.formatYearsRange(value)
+                $(id).append(value)
             } else if (type.includes('year')) {
                 value = this.formatYear(value)
+                $(id).append(value)
             } else if (type.includes('tags')) {
-                value = this.showAsTags(value)
+                let te = new TagEditor({
+                    containerId: id,
+                    tags: value,
+                    mode: 'show'
+                })
+            } else {
+                $(id).append(value)
             }
-            $(id).append(value)
         }
-    }
-
-    showAsTags (tags) {
-
-        let start = '<ul class="tags" id="tag-list"><li class="tagAdd taglist">'
-        let end = '</li></ul>'
-        let mid = ''
-
-        for (let tag of tags) {
-            mid = mid + `<li class = "showAddedTag">${tag}</li>`
-        }
-
-        return start + mid + end
     }
 
     getPersonNameById (id) {
@@ -319,7 +314,8 @@ export class MetadataEditor {
         this.tagEditor = new TagEditor({
             containerId: selectorId,
             inputFormId: inputId,
-            tags: this.entity.values[9]
+            tags: this.entity.values[9],
+            mode: 'edit'
         })
     }
 
@@ -499,6 +495,7 @@ export class MetadataEditor {
             if (this.validateData(d) && this.validatePasswords()) {
                 this.makeSpinner(this.buttonsSelectorBottom)
                 this.updateEntityData(d.id, d.type, d.values)
+                this.tagEditor.saveTags()
                 this.options.callbackSave(this.entity, this.options.mode, () => {
                     this.logSaveAction(this.options.mode)
                     this.setupShowMode()

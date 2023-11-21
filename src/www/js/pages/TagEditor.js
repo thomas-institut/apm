@@ -1,24 +1,37 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
 
+let urlGen = new ApmUrlGenerator('')
+urlGen.setBase('http://0.0.0.0:8888')
+
 export class TagEditor {
 
     constructor(options) {
 
         const optionsDefinition = {
             containerId: {type: 'string', required: true},
-            inputFormId: {type: 'string', required: true},
-            tags: {type: 'array', required: false},
+            inputFormId: {type: 'string', required: false, default: 'nil'},
+            tags: {type: 'array', required: false, default: []},
+            mode: {type: 'string', required: true}
         }
 
         const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: "MetadataEditor"})
         this.options = oc.getCleanOptions(options)
-
-        this.setupTagEditor(this)
+        
+        switch (this.options.mode) {
+            case 'edit':
+                this.setupEditMode(this)
+                break
+            case 'show':
+                this.showTags(this.options.tags)
+                break
+        }
     }
 
-    setupTagEditor(thisObject) {
+    setupEditMode(thisObject) {
         this.buildStructureOfTagEditor()
-        this.fillDatalistWithTags()
+        this.getAllTags((alltags) => {
+            this.fillDatalistWithTags(alltags)
+        })
         this.showGivenTags(thisObject)
         this.setupEvents(thisObject)
     }
@@ -33,14 +46,23 @@ export class TagEditor {
            </ul>`)
     }
 
-    fillDatalistWithTags() {
-        this.options.tags.forEach((tag) => {
-            $('#list-of-tags').append(`<option value="${tag}">${tag}</option>`)
-        })
+    showTags (tags) {
+
+        let start = '<ul class="tags" id="tag-list"><li class="tagAdd taglist">'
+        let end = '</li></ul>'
+        let mid = ''
+
+        for (let tag of tags.sort()) {
+            mid = mid + `<li class = "showAddedTag">${tag}</li>`
+        }
+
+        $(this.options.containerId).html(start + mid + end)
+
+        return true
     }
     
     showGivenTags (thisObject) {
-        for (let tag of this.options.tags.reverse()) {
+        for (let tag of this.options.tags.sort().reverse()) {
             let tagId = tag + "_id"
             $('#tag-list').prepend(`
                 <li class="addedTag" value=${tag}>${tag}
@@ -116,7 +138,62 @@ export class TagEditor {
     }
 
     getTags() {
-        return this.options.tags
+        return this.options.tags.sort()
+    }
+    
+    fillDatalistWithTags(tags) {
+        tags.forEach((tag) => {
+            $('#list-of-tags').append(`<option value="${tag}">${tag}</option>`)
+        })
+    }
+
+    saveTags() {
+
+        // Make API Call
+        $.post(urlGen.apiTagEditorSaveTags(), {'tags': this.options.tags})
+            .done((apiResponse) => {
+
+                // Catch Error
+                if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query`);
+                    if (apiResponse.errorData !== undefined) {
+                        console.log(apiResponse.errorData);
+                    }
+                    return;
+                }
+
+                // Log API response and change to show mode
+                console.log(apiResponse);
+                return true
+            })
+            .fail((status) => {
+                console.log(status);
+            })
+    }
+    
+    getAllTags(callback) {
+        
+        // Make API Call
+        $.post(urlGen.apiTagEditorGetAllTags())
+            .done((apiResponse) => {
+
+                // Catch Error
+                if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query`);
+                    if (apiResponse.errorData !== undefined) {
+                        console.log(apiResponse.errorData);
+                    }
+                    return;
+                }
+
+                // Log API response and change to show mode
+                console.log(apiResponse);
+                callback(apiResponse.tags)
+                return true
+            })
+            .fail((status) => {
+                console.log(status);
+            })
     }
 }
 

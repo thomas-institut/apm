@@ -83,6 +83,7 @@ use APM\Api\ApiCollationTableConversion;
 use APM\Api\ApiTypesetPdf;
 use APM\Api\ApiWitness;
 use APM\Api\ApiSearch;
+use APM\Api\ApiTagEditor;
 use ThomasInstitut\Container\MinimalContainer;
 use Twig\Error\LoaderError;
 
@@ -401,6 +402,15 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
     $group->post('/people/all',
         ApiPeople::class . ':getAllPeople')
         ->setName('getAllPeople');
+
+    // Tag Editor
+    $group->post('/tags/save',
+        ApiTagEditor::class . ':saveTags')
+        ->setName('saveTags');
+
+    $group->post('/tags/all',
+        ApiTagEditor::class . ':getAllTags')
+        ->setName('getAllTags');
 
     // LOG
     $group->post('/admin/log',

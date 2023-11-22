@@ -35,7 +35,7 @@ namespace ThomasInstitut\EntitySystem;
  *     - storeStatement( subjectTid, predicateTid, objectTid | string, statementTid)
  *     - getStatements(subjectId | null, predicateId | null, objectTid | null, statementId | null) : array of quads
  *
- * but it will be extremely inefficient, cumbersome and error-prone. The system must provide basic management
+ * but this will be extremely inefficient, cumbersome and error-prone. The system must provide basic management
  * of entities, predicates and data types, in addition to convenient methods to access the data.
  *
  * These are the design choices made in our system:
@@ -88,7 +88,8 @@ namespace ThomasInstitut\EntitySystem;
  *     entity type.
  *
  *   - All entities have a definite type, e.g., Person, Statement, Attribute, etc. All types must be registered before
- *     use.
+ *     use. Entity types are themselves entities, but should not be manipulated directly like any other entities. Special
+ *     methods are provided to deal with them.
  *
  *   - Entities of certain entity types should be identifiable also by type name and a unique textual name within the
  *     type.  For example, if entity 1698761211655 is the attribute for age, it could be identified also by
@@ -112,7 +113,7 @@ namespace ThomasInstitut\EntitySystem;
  *          [EntityType:Person]: normally a human being, but in general, an agent that can be an author, editor, etc.
  *          [EntityType:Place]: a definite place that can be located with a set of lat/long coordinates and that
  *             normally has a given name, for example: the Cologne Cathedral, the Thomas-Institut building.
- *          [EntityType:GeographicalArea]: a geographical area, e.g. a country, a city, a university campus 
+ *          [EntityType:Area]: a geographical area, e.g. a country, a city, a university campus
  *
  *   - The following [EntityType:ValueType] entities are predefined:
  * 
@@ -132,8 +133,8 @@ namespace ThomasInstitut\EntitySystem;
  *         [Attribute:annotation]: generally a longer text explaining something about the entity that
  *            for some reason cannot or is chosen not to be stated using attributes and relations.
  * 
- *   - The [EntityType:Relation] entity [Relation:isOfType] is predefined and is used to associate an entity with 
- *     is type. Every entity in the system has this relation, that is, this relation is guaranteed to be
+ *   - The [EntityType:Relation] entity [Relation:hasType] is predefined and is used to associate an entity with
+ *     is type. Every entity in the system has this relation. That is, this relation is guaranteed to be
  *     reported when data for any entity is requested from the system.
  *
  *   - All statements in the system have an author and a timestamp stated with the following predicates
@@ -141,7 +142,7 @@ namespace ThomasInstitut\EntitySystem;
  *          [Relation:editedBy]: the object must be an [EntityType:Person] entity
  *          [Attribute:editTimestamp]: the value must be of [ValueType:timestamp]
  *
- *   - An [EntityType:Person] entity that stands for the system itself is predefined: [system]. It is
+ *   - An entity that stands for the system itself is predefined: [system]. It is
  *     used as the author for all the statements concerning the predefined entities, attributes and relations
  *     described here, and may be used for other statements as well.
 
@@ -150,8 +151,8 @@ namespace ThomasInstitut\EntitySystem;
  *     restrictions.
  *
  *     These and other restrictions on predicates, values and object can only be stated before they
- *     are used. They can be changed after use, but normally this will require some form of migration of the data
- *     that must be developed, tested and deployed case by case.
+ *     are used. They cannot be changed after use by simply stating the new conditions again because such change
+ *     may imply some form of data migration that can only be assessed and executed on a case by case basis.
  *
  *   - Specific attributes and relations can be restricted to have a single value or object. For example,
  *     there can be only one current [Attribute:name] statement for every entity. This restriction is stated
@@ -165,6 +166,7 @@ namespace ThomasInstitut\EntitySystem;
  *     the current statement about it to be cancelled.
  *
  *   - Entities cannot be deleted, but can be merged into others.
+ *
  *     The only two reasonable causes for deletion of an entity are:
  *        (1) the  entity does not have any attributes and is not part of any relation, which is unlikely
  *            except for entities created by mistake and untouched after creation. The system may choose to
@@ -173,10 +175,10 @@ namespace ThomasInstitut\EntitySystem;
  *
  *        (2) the entity, entity A, is found to be a duplicate of another entity, entity B, which has more or better
  *            data. Data editors may be tempted to change all relations including A to B and then delete A.
- *            Not only this is prone to errors (relations may be overlooked), but also any external
- *            references to A will break if A is deleted.
- *            The correct solution is for the system to provide a merge operation of A into B: the predicates of A
- *            not present in B are copied to B, and all subsequent references to A are redirected to B.
+ *            The problem is that after deleting A, any internal and external references to A will break.
+ *
+ *            The correct solution is for the system to provide a merge operation of A into B after which A's
+ *            data will not be accessible and any reference to A will be directed to B.
  *
  *     The system captures the person who performed the merge, as well as the time in which it was done. After
  *     an entity is merged, the entity will not be allowed to be a subject or and object in a statement. If the data
@@ -196,19 +198,40 @@ interface EntitySystem
     /**
      * The system entity tid
      */
-    const SYSTEM = 1;
+    const ENTITY_SYSTEM = 1;
 
     /**
      * Fundamental predicates
      */
-    const RELATION__HAS_TYPE = 10;
-    const ATTRIBUTE__NAME = 20;
-    const ATTRIBUTE__DESCRIPTION = 21;
+    const RELATION_HAS_TYPE = 10;
+
+    const ATTRIBUTE_HAS_UNIQUE_NAMES = 20;
+    const ATTRIBUTE_NAME = 21;
+    const ATTRIBUTE_DESCRIPTION = 22;
 
     /**
-     * The entity type EntityType
+     * Fundamental types
      */
     const ENTITY_TYPE__ENTITY_TYPE = 101;
+    const ENTITY_TYPE__ATTRIBUTE = 102;
+    const ENTITY_TYPE__RELATION = 103;
+
+    /**
+     * Creates an entity type with the given name and description
+     *
+     * The given type name must be unique and cannot be changed later on.
+     *
+     * If the parameter $uniqueNames is true, the entities of the newly created
+     * type will be required to have unique names within the type.
+     *
+     * @param string $typeName
+     * @param string $description
+     * @param bool $uniqueNames
+     * @param int $createdBy
+     * @param int $timestamp
+     * @return int
+     */
+    public function createEntityType(string $typeName, string $description, bool $uniqueNames, int $createdBy, int $timestamp) : int;
 
     /**
      * Creates an entity of the given type and returns its Tid.
@@ -216,16 +239,18 @@ interface EntitySystem
      * @param string|int $type
      * @param string $name
      * @param string $description
+     * @param int $createdBy
+     * @param int $timestamp
      * @return int
      * @throws InvalidTypeException
      * @throws InvalidNameException
      */
-    public function createEntity(string|int $type, string $name = '', string $description = '') : int;
+    public function createEntity(string|int $type, string $name = '', string $description = '', int $createdBy = -1, int $timestamp = -1) : int;
 
     /**
      * Makes a statement and returns the Tid of the associated statement entity.
      *
-     * $predicate can be a tid of a 'Attribute:attributeName' / 'Relation:relationName'  string
+     * $predicate can be a tid or a 'Attribute:attributeName' / 'Relation:relationName'  string
      *
      * $valueOrObject will be converted to the required type. If the predicate is a relation and a string is given,
      * it will be interpreted as a 'Type:name' entity identifier. If the predicate is an attribute and an integer
@@ -378,16 +403,16 @@ interface EntitySystem
      * Returns the Tid of an entity of the given type and name.
      *
      * It accepts a single parameter with a string of the form 'Type:Name'  or two
-     * parameters 'Type' and 'Name'
+     * parameters 'Type' or typeTid and 'Name'
      *
-     * Returns -1 if the type is invalid, the type is not one that has entities with unique names or
-     * there's no entity with the given type and name.
      *
-     * @param string $typeNameOrType
+     * @param string|int $typeNameOrType
      * @param string $name
      * @return int
+     * @throws InvalidTypeException
+     * @throws EntityDoesNotExistException
      */
-    public function getTidByTypeName(string $typeNameOrType, string $name = '') : int;
+    public function getTidByTypeAndName(string|int $typeNameOrType, string $name = '') : int;
 
     /**
      * Returns name of an entity.
@@ -401,5 +426,56 @@ interface EntitySystem
      */
     public function getEntityName(int $entityTid, string|int $type = '') : string;
 
+    /**
+     * Returns an entity's type tid
+     *
+     * @param int $entityTid
+     * @return int
+     * @throws EntityDoesNotExistException
+     */
+    public function getEntityType(int $entityTid) : int;
 
+
+    /**
+     * Returns an array with the entity names defined within the given type
+     *
+     * If the type does not have unique names, throws an InvalidTypeException
+     *
+     * @param string|int $type
+     * @return string[]
+     * @throws InvalidTypeException
+     */
+    public function getDefinedEntityNamesForType(string|int $type) : array;
+
+    /**
+     * Returns an array with the all the valid attribute names in the system
+     *
+     * @return string[]
+     */
+    public function getValidAttributeNames() : array;
+
+    /**
+     * Returns an array with the all the valid relation names in the system
+     *
+     * @return string[]
+     */
+    public function getValidRelationNames() : array;
+
+    /**
+     * Returns an array with the all the valid entity type names in the system
+     *
+     * @return string[]
+     */
+    public function getValidEntityTypeNames() : array;
+
+
+    /**
+     * Returns an array with tids of all the entities in the system
+     * that have the given type.
+     *
+     * @param string|int $type
+     * @return int[]
+     * @throws InvalidTypeException
+     */
+    public function getEntitiesOfType(string|int $type): array;
 }

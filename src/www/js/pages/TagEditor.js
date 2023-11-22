@@ -22,7 +22,7 @@ export class TagEditor {
                 this.setupEditMode(this)
                 break
             case 'show':
-                this.showTags(this.options.tags)
+                this.showGivenTagsInShowMode(this.options.tags)
                 break
         }
     }
@@ -32,7 +32,7 @@ export class TagEditor {
         this.getAllTags((alltags) => {
             this.fillDatalistWithTags(alltags)
         })
-        this.showGivenTags(thisObject)
+        this.showGivenTagsInEditModeInEditMode(thisObject)
         this.setupEvents(thisObject)
     }
 
@@ -46,10 +46,10 @@ export class TagEditor {
            </ul>`)
     }
 
-    showTags (tags) {
+    showGivenTagsInShowMode (tags) {
 
-        let start = '<ul class="tags" id="tag-list"><li class="tagAdd taglist">'
-        let end = '</li></ul>'
+        let start = '<ul class="tags" id="tag-list">'
+        let end = '</ul>'
         let mid = ''
 
         for (let tag of tags.sort()) {
@@ -61,14 +61,14 @@ export class TagEditor {
         return true
     }
     
-    showGivenTags (thisObject) {
+    showGivenTagsInEditModeInEditMode (thisObject) {
         for (let tag of this.options.tags.sort().reverse()) {
             let tagId = tag + "_id"
             $('#tag-list').prepend(`
-                <li class="addedTag" value=${tag}>${tag}
-                    <span class="tagRemove" id=${tagId}><sup style="font-family: Arial">x</sup></span>
-                    <input type="hidden" name="tags[]">
-                </li>`)
+               <li class="addedTag" value=${tag} style="margin-left: 0em">${tag}
+               <span class="tagRemove" id=${tagId}><sup style="font-family: Arial">x</sup></span>
+               <input type="hidden" name="tags[]">
+               </li>`)
             this.makeRemoveTagEvent(thisObject, tagId)
         }
     }

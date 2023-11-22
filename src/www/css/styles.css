@@ -247,8 +247,8 @@ ol, ul {
 }
 .tags li.tagAdd, .tags li.addedTag, li.showAddedTag {
     float: left;
-    margin-left: 0.25em;
-    margin-right: 0.25em;
+    margin-left: 0em;
+    margin-right: 0.5em;
     margin-bottom: 0.75em;
 }
 .tags li.addedTag {

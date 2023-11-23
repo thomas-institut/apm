@@ -28,7 +28,7 @@ const defaultIcons = {
   zoomOut: '<i class="bi bi-zoom-out"></i>',
 }
 
-const zoomSteps = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4]
+const zoomSteps = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 5, 6, 7, 8]
 const defaultZoomStep = 3
 
 

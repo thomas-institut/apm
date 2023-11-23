@@ -294,12 +294,17 @@ interface EntitySystem
     /**
      * Cancels a statement.
      *
+     * If the type of the statement's subject is given, the operation may be executed considerably faster, but
+     * no other type will be checked, so it has to be the right one.
+     *
      * @param int $statementTid
-     * @param int $cancelledByPersonTid
+     * @param int $cancelledBy
+     * @param string $cancellationNote
+     * @param string|int $subjectType
      * @param int $ts the cancellation timestamp, if -1, the current time will be used
      * @return void
      */
-    public function cancelStatement(int $statementTid, int $cancelledByPersonTid, int $ts = -1) : void;
+    public function cancelStatement(int $statementTid, int $cancelledBy, string $cancellationNote, string|int $subjectType = '', int $ts = -1) : void;
 
     /**
      * Sets multiple attributes and relations for an entity.

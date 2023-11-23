@@ -697,11 +697,68 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         $this->logger->info("Finished bootstrapping the entity system");
     }
 
+    /**
+     * Returns the type name from a string or integer input parameter, additionally
+     * checking that the type is defined.
+     *
+     * @param string|int $type
+     * @return string
+     * @throws InvalidTypeException
+     * @throws EntityDoesNotExistException
+     * @throws DataConsistencyException
+     */
+    protected function getTypeNameFromStringOrInt(string|int $type) : string {
+        if (is_int($type)) {
+            return $this->getEntityName($type, StandardNames::TYPE_ENTITY_TYPE);
+        }
+        $this->getTypeTid($type);
+        return $type;
+    }
 
-    public function cancelStatement(int $statementTid, int $cancelledByPersonTid, int $ts = -1): void
+
+    /**
+     *
+     * @throws DataConsistencyException
+     * @throws InvalidArgumentException
+     */
+    public function cancelStatement(int $statementTid, int $cancelledBy, string $cancellationNote,
+                                    string|int $subjectType = '', int $ts = -1) : void
     {
-        // TODO: implement this!
+        if ($subjectType !== '') {
+            try {
+                $subjectType = $this->getTypeNameFromStringOrInt($subjectType);
+            } catch (InvalidTypeException|EntityDoesNotExistException) {
+                throw new InvalidArgumentException("Given subject type $subjectType is not valid");
+            }
 
+        }
+        /** @var DataTable[] $tablesToCheck */
+        $tablesToCheck = [];
+        if ($subjectType !== '') {
+            $tablesToCheck[] = $this->typesConfig[$subjectType]['statementsTable'];
+        } else {
+            foreach ($this->typesConfig as $typeConfig) {
+                if (!in_array($typeConfig['statementsTable'], $tablesToCheck)) {
+                    $tablesToCheck[] = $typeConfig['statementsTable'];
+                }
+            }
+        }
+
+        foreach ($tablesToCheck as $table) {
+            $rows = $table->findRows(['tid' => $statementTid]);
+            if (count($rows) === 1) {
+                // found it
+                $newRow = $rows[0];
+                $newRow['cancelled'] = 1;
+                $newRow['cancelledBy'] = $cancelledBy;
+                $newRow['cancellationNote'] = $cancellationNote;
+                $newRow['cancellationTimestamp'] = $ts === -1 ? time() : $ts;
+                $table->updateRow($newRow);
+                return;
+            }
+        }
+
+        throw  new InvalidArgumentException("Statement $statementTid not found");
     }
 
     public function mergeEntities(int $entityTid, int $intoEntityTid, int $mergedByPersonTid, string $mergeNote, int $ts = -1) : int

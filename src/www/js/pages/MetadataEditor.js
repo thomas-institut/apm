@@ -1,6 +1,7 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
 import {urlGen} from "./common/SiteUrlGen";
 import {TagEditor} from "./TagEditor";
+import {value} from "lodash/seq";
 
 
 export class MetadataEditor {
@@ -80,7 +81,7 @@ export class MetadataEditor {
     setupEditMode() {
         this.buildEntity(() => {
             this.makeTableStructure()
-            this.setupTableForDataInput(this.options.mode, () => {
+            this.setupTableForDataInput(() => {
                 this.setupCancelButton()
                 this.setupSaveButton()
                 console.log(`edit-mode for metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} activated.`)
@@ -91,7 +92,7 @@ export class MetadataEditor {
     setupCreateMode() {
         this.buildEntitySchema(() => {
             this.makeTableStructure()
-            this.setupTableForDataInput(this.options.mode, () => {
+            this.setupTableForDataInput(() => {
                 this.setupSaveButton()
                 this.makeBackButton()
                 console.log(`create-mode for new entity of type '${this.entity.type}' activated.`)
@@ -137,6 +138,11 @@ export class MetadataEditor {
         callback()
     }
 
+    getValueByKey(name) {
+        let i = this.entity.keys.indexOf(name)
+        return this.entity.values[i]
+    }
+
     // Table Design Management
     makeTableStructure() {
         this.clearTable()
@@ -176,10 +182,21 @@ export class MetadataEditor {
 
                     let row = "#row" + i
                     let cellId = "entity_attr" + i
+                    let editAttributeButton = "entity_attr" + i + "_editButton"
                     let keyName = this.entity.keys[i-1] + "&emsp;&emsp;"
 
-                    $(row).append(`<th style="vertical-align: top">${keyName}</th>
-                               <td><div id=${cellId}></div></td>`)
+                    if (this.options.mode !== this.mode.show) {
+                        $(row).append(`<th style="vertical-align: top">${keyName}</th>
+                                    <td><div id=${cellId}></div></td>`)
+                    } else {
+                        let cellButtonId = cellId + "_tableCellButton"
+                        $(row).append(`<th style="vertical-align: top">${keyName}</th>
+                                    <td><div id=${cellId}></div></td>
+                                    <td id=${cellButtonId} style="width: 3em">
+                                        <button id=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: gray"></i></button>
+                                    </td>`)
+                        this.makeEditKeyIconEvent(editAttributeButton)
+                    }
                 }
                 break
         }
@@ -202,8 +219,8 @@ export class MetadataEditor {
 
         for (let i = 1; i <= this.numKeys; i++) {
             let id = "#entity_attr" + i
-            let value = this.entity.values[i - 1]
-            let type = this.entity.types[i - 1]
+            let value = this.entity.values[i-1]
+            let type = this.entity.types[i-1]
 
             if (type.includes('person') && value !== '') {
                 let url = urlGen.sitePerson(value)
@@ -266,21 +283,51 @@ export class MetadataEditor {
         }
     }
 
-    setupTableForDataInput(mode, callback) {
+    setupTableForDataInput(callback, keyIndex='all') {
 
-        this.setupInputFormsForKeys()
+        this.setupInputFormsForKeys(keyIndex)
 
-        if (mode === this.mode.create) {
+        if (this.options.mode === this.mode.create) {
             callback()
         }
         else {
-            this.fillKeysForms()
+            this.fillKeysForms(keyIndex)
             callback()
         }
     }
 
-    setupInputFormsForKeys() {
-        for (let i=1; i<=this.numKeys; i++) {
+    setupInputFormsForKeys(keyIndex) {
+        if (keyIndex === 'all') {
+            for (let i = 1; i <= this.numKeys; i++) {
+                let selectorId = "#entity_attr" + i
+                let inputId = "entity_attr" + i + "_form"
+                let type = this.entity.types[i - 1][0] // first possible type of data, set in the corresponding schema, determines type of input form
+
+                switch (type) {
+                    case 'password':
+                        this.makePasswordForm(selectorId, inputId)
+                        break
+                    case 'date':
+                        this.makeDateForm(selectorId, inputId, type)
+                        break
+                    case 'year':
+                        this.makeYearForm(selectorId, inputId, type)
+                        break
+                    case 'years_range':
+                        this.makeYearsRangeForm(selectorId, inputId)
+                        break
+                    case 'person':
+                        this.makePersonForm(selectorId, inputId)
+                        break
+                    case 'tags':
+                        this.makeTagsForm(selectorId, inputId)
+                        break
+                    default:
+                        this.makeTextForm(selectorId, inputId, type)
+                }
+            }
+        } else {
+            let i = keyIndex
             let selectorId = "#entity_attr" + i
             let inputId = "entity_attr" + i + "_form"
             let type = this.entity.types[i-1][0] // first possible type of data, set in the corresponding schema, determines type of input form
@@ -314,7 +361,7 @@ export class MetadataEditor {
         this.tagEditor = new TagEditor({
             containerId: selectorId,
             inputFormId: inputId,
-            tags: this.entity.values[9],
+            tags: this.getValueByKey('Tags'),
             mode: 'edit'
         })
     }
@@ -405,29 +452,55 @@ export class MetadataEditor {
             `<p><input type="text" class="form-control" id=${inputId} placeholder=${type} style="padding: unset"></p>`)
     }
 
-     fillKeysForms() {
-        for (let i=1; i<=this.numKeys; i++) {
-            let id = "#entity_attr" + i + "_form"
-            if (this.entity.types[i-1][0] === 'year') {
-                let idYearBcAd = id + "_year_bc_ad"
-                $(id).val(this.entity.values[i-1][0])
-                $(idYearBcAd).val(this.entity.values[i-1][1])
-            }
-            else if (this.entity.types[i-1][0] === 'years_range') {
-                let idYearsRangeEnd = id + "_years_range_end"
-                let idYearsRangeNote = id + "_years_range_note"
-                $(id).val(this.entity.values[i-1][0])
-                $(idYearsRangeEnd).val(this.entity.values[i-1][1])
-                $(idYearsRangeNote).val(this.entity.values[i-1][2])
-            }
-            else if (this.entity.types[i-1].includes('person') && this.entity.values[i-1] !== '') {
-                let name = this.getPersonNameById(this.entity.values[i-1])
-                $(id).val(name)
-            }
-            else {
-                $(id).val(this.entity.values[i-1])
-            }
-        }
+     fillKeysForms(keyIndex) {
+        let values = this.entity.values
+
+         if (keyIndex === 'all') {
+             for (let i=1; i<=this.numKeys; i++) {
+                 let id = "#entity_attr" + i + "_form"
+                 if (this.entity.types[i-1][0] === 'year') {
+                     let idYearBcAd = id + "_year_bc_ad"
+                     $(id).val(values[i-1][0])
+                     $(idYearBcAd).val(values[i-1][1])
+                 }
+                 else if (this.entity.types[i-1][0] === 'years_range') {
+                     let idYearsRangeEnd = id + "_years_range_end"
+                     let idYearsRangeNote = id + "_years_range_note"
+                     $(id).val(values[i-1][0])
+                     $(idYearsRangeEnd).val(values[i-1][1])
+                     $(idYearsRangeNote).val(values[i-1][2])
+                 }
+                 else if (this.entity.types[i-1].includes('person') && values[i-1] !== '') {
+                     let name = this.getPersonNameById(values[i-1])
+                     $(id).val(name)
+                 }
+                 else {
+                     $(id).val(values[i-1])
+                 }
+             }
+         } else {
+             let i = keyIndex
+             let id = "#entity_attr" + i + "_form"
+             if (this.entity.types[i-1][0] === 'year') {
+                 let idYearBcAd = id + "_year_bc_ad"
+                 $(id).val(values[i-1][0])
+                 $(idYearBcAd).val(values[i-1][1])
+             }
+             else if (this.entity.types[i-1][0] === 'years_range') {
+                 let idYearsRangeEnd = id + "_years_range_end"
+                 let idYearsRangeNote = id + "_years_range_note"
+                 $(id).val(values[i-1][0])
+                 $(idYearsRangeEnd).val(values[i-1][1])
+                 $(idYearsRangeNote).val(values[i-1][2])
+             }
+             else if (this.entity.types[i-1].includes('person') && values[i-1] !== '') {
+                 let name = this.getPersonNameById(values[i-1])
+                 $(id).val(name)
+             }
+             else {
+                 $(id).val(values[i-1])
+             }
+         }
     }
 
     // Save Button Setup
@@ -435,7 +508,7 @@ export class MetadataEditor {
         this.clearBottomButtons()
         let selector = '#' + this.buttonsSelectorBottom
         $(selector).prepend(
-            `<button type="submit" class="btn btn-primary" id="save_button">Save</button>`)
+            `<button type="submit" class="btn btn-primary save" id="save-button">Save</button>`)
         this.makeSaveButtonEvent()
     }
 
@@ -461,8 +534,6 @@ export class MetadataEditor {
         let selector = '#' + this.buttonsSelectorTop
         $(selector).append(
             `<a class="card-link" id="edit_button">Edit</a>`)
-            //`<button type="submit" class="btn btn-primary" id="edit_button">Edit</button>`)
-
         this.makeEditButtonEvent()
     }
 
@@ -479,12 +550,11 @@ export class MetadataEditor {
             let selector = '#' + this.buttonsSelectorTop
             $(selector).append(
                 `<a class="card-link" id="back_button" href = ${this.options.backlink}>Back</a>`)
-                //`<button type="submit" class="btn btn-primary" id="back_button" onClick = "window.location.href='${this.options.backlink}';">Back</button>`)
         }
     }
     
     makeSaveButtonEvent () {
-        $("#save_button").on("click",  () => {
+        $("#save-button").on("click",  () => {
 
             // Clear Messages
             this.clearErrorMessage()
@@ -502,6 +572,55 @@ export class MetadataEditor {
                 })
             }
         })
+    }
+
+    makeEditKeyIconEvent(selector) {
+        selector = '#' + selector
+        $(selector).on("click",  () => {
+            let keyIndex = selector.match(/\d+/)[0]
+            this.setupTableForDataInput(() => {
+                this.replaceEditWithSaveIcon(keyIndex)
+                console.log(`'${this.entity.keys[keyIndex-1]}' in edit mode!`)
+            }, keyIndex)
+            this.options.mode = this.mode.edit
+        })
+    }
+
+    replaceEditWithSaveIcon(i) {
+        let cellButtonSelector = "#entity_attr" + i + "_tableCellButton"
+        let editButtonSelector = '#entity_attr' + i + '_editButton'
+        let cellSaveButton = "entity_attr" + i + "_saveButton"
+        $(editButtonSelector).remove()
+        $(cellButtonSelector).html(`<button class="save" id=${cellSaveButton} style="border: transparent; background-color: transparent">
+                                                    <i class="fa fa-check" style="color: green"></i></button>`)
+        this.makeSaveKeyValueIconEvent(cellSaveButton)
+    }
+
+    makeSaveKeyValueIconEvent(selector) {
+        selector = '#' + selector
+        $(selector).on("click",  () => {
+            let keyIndex = selector.match(/\d+/)[0]
+            let valueForm = "#entity_attr" + keyIndex + "_form"
+            this.makeCellEditButton(keyIndex)
+            // ADD: VALIDATION OF VALUE, ERROR MESSAGE FOR WRONG TYPES, FORMATTING OF VALUES IF NOT ONLY STRINGS, BUT TAGS, YEAR RANGES etc.
+            this.entity.values[keyIndex-1] = $(valueForm).val()
+            this.options.callbackSave(this.entity, this.options.mode, () => {
+                this.logSaveAction(this.options.mode)
+                this.setupShowMode()
+            })
+
+            console.log(`Saved value for '${this.entity.keys[keyIndex-1]}'.`)
+        })
+    }
+
+    makeCellEditButton(i) {
+        let cellButtonId = "#entity_attr" + i + "_tableCellButton"
+        let editAttributeButton = "entity_attr" + i + "_editButton"
+        let saveButtonSelector = '#entity_attr' + i + '_saveButton'
+        $(saveButtonSelector).remove()
+        $(cellButtonId).html(`<button id=${editAttributeButton} style="border: transparent; background-color: transparent"><i
+            class="fas fa-pencil-alt" style="color: gray"></i></button>`)
+        this.makeEditKeyIconEvent(editAttributeButton)
     }
 
     makeEditButtonEvent() {

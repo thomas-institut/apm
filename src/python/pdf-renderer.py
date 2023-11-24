@@ -108,7 +108,10 @@ def print_text_box(context, x, y, text_box):
     tb_text_direction = get_value(text_box, 'textDirection', '')
 
     # text_box_height = px2pt(get_value(text_box, 'height', 0))
-    layout = PangoCairo.create_layout(context)
+    pc = PangoCairo.create_context(context)
+    pc.set_round_glyph_positions(False)
+    #layout = PangoCairo.create_layout(context)
+    layout = Pango.Layout(pc)
 
     text_to_render = text_box['text']
 
@@ -117,8 +120,6 @@ def print_text_box(context, x, y, text_box):
         tb_width = px2pt(get_value(text_box, 'width', 0))
 #         debug_msg("Shifting " + str(tb_width) + " pts to the left")
         shift_x -= tb_width
-        # Insert RLM (Right to Left Mark) and LRM characters so that the text is laid out properly
-        # text_to_render = '\u200f' + text_to_render + '\u200e'
         # Insert RLI (Right to Left Isolate) and PDI (Pop Directional Isolate) characters so that the text is laid
         # out properly
         text_to_render = '\u2067' + text_to_render + '\u2069'
@@ -137,6 +138,7 @@ def print_text_box(context, x, y, text_box):
     layout.set_text(text_to_render)
     context.move_to(x + shift_x, y + shift_y)
     context.set_source_rgb(0, 0, 0)
+    PangoCairo.update_layout(context, layout)
     PangoCairo.show_layout(context, layout)
 
 

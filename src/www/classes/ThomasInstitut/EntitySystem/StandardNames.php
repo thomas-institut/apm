@@ -20,6 +20,8 @@ class StandardNames
     const ATTRIBUTE_ALIAS = 'alias';
     const ATTRIBUTE_HAS_UNIQUE_NAMES = 'hasUniqueNames';
 
+    const  ATTRIBUTE_ONLY_ONE_ALLOWED = 'onlyOneAllowed';
+
     const ATTRIBUTE_ANNOTATION = 'annotation';
     const ATTRIBUTE_EDIT_TIMESTAMP = 'editTimestamp';
     const ATTRIBUTE_EDITORIAL_NOTE = 'editorialNote';
@@ -29,6 +31,8 @@ class StandardNames
 
 
     const RELATION_HAS_TYPE = 'hasType';
+
+    const RELATION_OBJECT_TYPE_ALLOWED = 'objectTypeAllowed';
 
     const RELATION_EDITED_BY = 'editedBy';
     const RELATION_MERGED_INTO = 'mergedInto';

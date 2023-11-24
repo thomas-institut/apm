@@ -13,7 +13,7 @@ use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataCache\SimpleCacheAware;
 use ThomasInstitut\DataTable\DataTable;
-
+use ThomasInstitut\TimeString\TimeString;
 
 
 /**
@@ -522,14 +522,18 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
     }
 
     /**
-     * @throws InvalidTypeException
-     * @throws InvalidNameException
      * @throws DataConsistencyException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidArgumentException
+     * @throws InvalidNameException
+     * @throws InvalidTypeException
      */
     protected function bootStrap() : void {
 
         $bootstrapTimestamp = time();
-        $this->logger->info("Bootstrapping the entity system at timestamp $bootstrapTimestamp");
+        $now = TimeString::now();
+        $bootstrapEditorialNote = "Bootstrapping the entity system at $now server time";
+        $this->logger->info($bootstrapEditorialNote);
         $entityTypeStatementsTable = $this->getStatementsTableForType(StandardNames::TYPE_ENTITY_TYPE);
 
         $this->setupTypeInStatementsTable($entityTypeStatementsTable,
@@ -585,7 +589,6 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             'A geographical area', false,
             $this->systemTid, $bootstrapTimestamp);
 
-
         // Set up the fundamental attributes
         $attributeStatementsTable = $this->getStatementsTableForType(StandardNames::TYPE_ATTRIBUTE);
         $this->setupEntityInStatementsTable($attributeStatementsTable,
@@ -593,14 +596,14 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             EntitySystem::ENTITY_TYPE__ATTRIBUTE,
             StandardNames::ATTRIBUTE_NAME,
             "The entity's name",
-            'Setting up the Setting up the Attribute:name entity',
+            $bootstrapEditorialNote,
             $this->systemTid, $bootstrapTimestamp);
         $this->setupEntityInStatementsTable($attributeStatementsTable,
             EntitySystem::ATTRIBUTE_DESCRIPTION,
             EntitySystem::ENTITY_TYPE__ATTRIBUTE,
             StandardNames::ATTRIBUTE_DESCRIPTION,
             "A short description of the entity",
-            'Setting up the Setting up the Attribute:descriptions entity',
+            $bootstrapEditorialNote,
             $this->systemTid, $bootstrapTimestamp);
 
         $this->setupEntityInStatementsTable($attributeStatementsTable,
@@ -608,9 +611,16 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             EntitySystem::ENTITY_TYPE__ATTRIBUTE,
             StandardNames::ATTRIBUTE_HAS_UNIQUE_NAMES,
             "Indicates if a type has entities with unique names",
-            'Setting up the Setting up the Attribute:hasUniqueNames entity',
+            $bootstrapEditorialNote,
             $this->systemTid, $bootstrapTimestamp);
 
+        $this->setupEntityInStatementsTable($attributeStatementsTable,
+            EntitySystem::ATTRIBUTE_ONLY_ONE_ALLOWED,
+            EntitySystem::ENTITY_TYPE__ATTRIBUTE,
+            StandardNames::ATTRIBUTE_ONLY_ONE_ALLOWED,
+            "Indicates if only one value or object is allowed for a specific predicate",
+            $bootstrapEditorialNote,
+            $this->systemTid, $bootstrapTimestamp);
 
         // Create standard attributes
         $this->createEntity(StandardNames::TYPE_ATTRIBUTE,
@@ -639,7 +649,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             "timestamp for the merge operation",
             $this->systemTid, $bootstrapTimestamp);
 
-        // Set up the fundamental hasType relation
+        // Set up the fundamental relations
         $relationStatementsTable = $this->getStatementsTableForType(StandardNames::TYPE_RELATION);
 
         $this->setupEntityInStatementsTable($relationStatementsTable,
@@ -647,7 +657,15 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             EntitySystem::ENTITY_TYPE__RELATION,
             StandardNames::RELATION_HAS_TYPE,
             "The entity's type",
-            'Setting up the Setting up the Relation:hasType entity',
+            $bootstrapEditorialNote,
+            $this->systemTid, $bootstrapTimestamp);
+
+        $this->setupEntityInStatementsTable($relationStatementsTable,
+            EntitySystem::RELATION_OBJECT_TYPE_ALLOWED,
+            EntitySystem::ENTITY_TYPE__RELATION,
+            StandardNames::RELATION_OBJECT_TYPE_ALLOWED,
+            "Adds an entity type to the types allowed for the object of a particular relation",
+            $bootstrapEditorialNote,
             $this->systemTid, $bootstrapTimestamp);
 
         // Create standard relations
@@ -664,7 +682,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             "The author of a merge operation",
             $this->systemTid, $bootstrapTimestamp);
 
-        // Create data types
+        // Create standard data types
         $this->createEntity(StandardNames::TYPE_DATA_TYPE,
             StandardNames::DATATYPE_BOOLEAN,
             "a value that is either true or false",
@@ -694,6 +712,28 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             "an Unix timestamp",
             $this->systemTid, $bootstrapTimestamp);
 
+        // Set up constraints in standard attributes
+        $this->makeStatement(EntitySystem::ATTRIBUTE_NAME,
+            EntitySystem::ATTRIBUTE_ONLY_ONE_ALLOWED, StandardNames::VALUE_TRUE, [],
+            $this->systemTid, $bootstrapEditorialNote, [], -1, $bootstrapTimestamp);
+
+        $this->makeStatement(EntitySystem::ATTRIBUTE_DESCRIPTION,
+            EntitySystem::ATTRIBUTE_ONLY_ONE_ALLOWED, StandardNames::VALUE_TRUE, [],
+            $this->systemTid, $bootstrapEditorialNote, [], -1, $bootstrapTimestamp);
+
+        $this->makeStatement(EntitySystem::ATTRIBUTE_ONLY_ONE_ALLOWED,
+            EntitySystem::ATTRIBUTE_ONLY_ONE_ALLOWED, StandardNames::VALUE_TRUE, [],
+            $this->systemTid, $bootstrapEditorialNote, [], -1, $bootstrapTimestamp);
+
+        // Set up constraints in standard relations
+        $this->makeStatement(EntitySystem::RELATION_HAS_TYPE,
+            EntitySystem::ATTRIBUTE_ONLY_ONE_ALLOWED, StandardNames::VALUE_TRUE, [],
+            $this->systemTid, $bootstrapEditorialNote, [], -1, $bootstrapTimestamp);
+
+        $this->makeStatement(EntitySystem::RELATION_HAS_TYPE,
+            EntitySystem::RELATION_OBJECT_TYPE_ALLOWED, EntitySystem::ENTITY_TYPE__ENTITY_TYPE, [],
+            $this->systemTid, $bootstrapEditorialNote, [], -1, $bootstrapTimestamp);
+
         $this->logger->info("Finished bootstrapping the entity system");
     }
 
@@ -715,6 +755,102 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         return $type;
     }
 
+    /**
+     * Utility function to find a statement in the system
+     * returns an array:
+     *
+     *   [
+     *      'subjectTypeName' => someType,
+     *      'dataTable' => someDataTable
+     *      'statementRow' => row
+     *   ]
+     * @param int $statementTid
+     * @param string|int $subjectType
+     * @return array
+     * @throws InvalidArgumentException
+     * @throws DataConsistencyException
+     */
+    protected function findStatementDataByTid(int $statementTid, string|int $subjectType) : array {
+
+        if ($subjectType !== '') {
+            try {
+                $subjectType = $this->getTypeNameFromStringOrInt($subjectType);
+            } catch (InvalidTypeException|EntityDoesNotExistException) {
+                throw new InvalidArgumentException("Given subject type $subjectType is not valid");
+            }
+
+        }
+
+        if ($subjectType !== '') {
+            $table = $this->typesConfig[$subjectType]['statementsTable'];
+            $rows = $table->findRows(['tid' => $statementTid]);
+            if (count($rows) === 1) {
+                // found it!
+                return [
+                    'subjectDataType' => $subjectType,
+                    'dataTable' => $table,
+                    'statementRow' => $rows[0]
+                ];
+            }
+            if (count($rows) > 1) {
+                $msg = "Found two rows for statement $statementTid in type $subjectType";
+                $this->codeDebug($msg);
+                throw new DataConsistencyException($msg);
+            }
+
+        } else {
+            /** @var DataTable[] $tablesChecked */
+            $tablesChecked = [];
+            foreach ($this->typesConfig as $typeName => $typeConfig) {
+                if (!in_array($typeConfig['statementsTable'], $tablesChecked)) {
+                    /** @var DataTable $table */
+                    $table =  $typeConfig['statementsTable'];
+                    $tablesChecked[] = $table;
+                    $rows =  $table->findRows(['tid' => $statementTid]);
+                    if (count($rows) === 1) {
+                        try {
+                            $subjectType = $this->getEntityType($rows[0]['subject']);
+                        } catch (EntityDoesNotExistException $e) {
+                            // should never happen!
+                            $msg = "EntityDoesNotExist exception looking for subject type for statement";
+                            $this->codeDebug( $msg, ['statementRow' => $rows[0] ]);
+                            throw new DataConsistencyException($msg);
+                        }
+                        // found it!
+                        return [
+                            'subjectDataType' => $subjectType,
+                            'dataTable' => $table,
+                            'statementRow' => $rows[0]
+                        ];
+                    }
+                    if (count($rows) > 1) {
+                        $msg = "Found two rows for statement $statementTid in table for type $typeName";
+                        $this->codeDebug($msg);
+                        throw new DataConsistencyException($msg);
+                    }
+
+                }
+            }
+        }
+
+        throw  new InvalidArgumentException("Statement $statementTid not found");
+    }
+
+    protected function doActualStatementCancellation(DataTable $table, DataCache $subjectDataCache,
+                                                     array $statementRow,
+                                                     int $cancelledBy, string $cancellationNote, $timestamp) : void {
+        $statementRow['cancelled'] = 1;
+        $statementRow['cancelledBy'] = $cancelledBy;
+        $statementRow['cancellationNote'] = $cancellationNote;
+        $statementRow['cancellationTimestamp'] = $timestamp;
+        $table->updateRow($statementRow);
+        // delete entity caches for subject and/or object
+        $this->deleteEntityDataInCache($statementRow['subject'], $subjectDataCache);
+        if ($statementRow['object'] !== -1 && $statementRow['object'] !== null) {
+            $this->deleteEntityDataInCache($statementRow['object']);
+        }
+    }
+
 
     /**
      *
@@ -724,41 +860,14 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
     public function cancelStatement(int $statementTid, int $cancelledBy, string $cancellationNote,
                                     string|int $subjectType = '', int $ts = -1) : void
     {
-        if ($subjectType !== '') {
-            try {
-                $subjectType = $this->getTypeNameFromStringOrInt($subjectType);
-            } catch (InvalidTypeException|EntityDoesNotExistException) {
-                throw new InvalidArgumentException("Given subject type $subjectType is not valid");
-            }
+        $statementData = $this->findStatementDataByTid($statementTid, $subjectType);
+        // TODO: check if statement is cancellable
 
-        }
-        /** @var DataTable[] $tablesToCheck */
-        $tablesToCheck = [];
-        if ($subjectType !== '') {
-            $tablesToCheck[] = $this->typesConfig[$subjectType]['statementsTable'];
-        } else {
-            foreach ($this->typesConfig as $typeConfig) {
-                if (!in_array($typeConfig['statementsTable'], $tablesToCheck)) {
-                    $tablesToCheck[] = $typeConfig['statementsTable'];
-                }
-            }
-        }
-
-        foreach ($tablesToCheck as $table) {
-            $rows = $table->findRows(['tid' => $statementTid]);
-            if (count($rows) === 1) {
-                // found it
-                $newRow = $rows[0];
-                $newRow['cancelled'] = 1;
-                $newRow['cancelledBy'] = $cancelledBy;
-                $newRow['cancellationNote'] = $cancellationNote;
-                $newRow['cancellationTimestamp'] = $ts === -1 ? time() : $ts;
-                $table->updateRow($newRow);
-                return;
-            }
-        }
-
-        throw  new InvalidArgumentException("Statement $statementTid not found");
+        /** @var DataTable $table */
+        $table = $statementData['dataTable'];
+        $subjectDataCache = $this->typesConfig[$statementData['subjectTypeName']]['dataCache'];
+        $this->doActualStatementCancellation($table,
+            $subjectDataCache, $statementData['statementRow'], $cancelledBy, $cancellationNote,$ts === -1 ? time() : $ts );
     }
 
     public function mergeEntities(int $entityTid, int $intoEntityTid, int $mergedByPersonTid, string $mergeNote, int $ts = -1) : int
@@ -899,13 +1008,39 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
     }
 
     /**
+     * Returns an entity's statements for the given predicate
+     *
+     * @throws InvalidArgumentException
+     * @throws DataConsistencyException
+     */
+    public function getPredicateStatements(int $entityId, string $predicateType, string|int $predicate, string|int $entityType = '') : array {
+
+        $entityStatements = $this->getEntityStatements($entityId, $entityType);
+
+        $statements = [];
+        foreach($entityStatements as $statement) {
+            if ($statement['subject'] === $entityId && $statement['predicateType'] === $predicateType) {
+                if (is_string($predicate) && $statement['predicateName'] === $predicate) {
+                   $statements[] = $statement;
+                }
+                if (is_int($predicate) && $statement['predicate'] === $predicate) {
+                    $statements[] = $statement;
+                }
+            }
+        }
+        return $statements;
+    }
+
+
+
+    /**
      * @throws EntityDoesNotExistException
      * @throws InvalidArgumentException
      * @throws DataConsistencyException
      */
     public function makeStatement(int $subjectTid, int|string $predicate, int|string $valueOrObject, array $qualifications, int $editedByPersonTid, string $editorialNote, array $extraStatementMetadata = [], int $statementGroupTid = -1, int $ts = -1): int
     {
-        // TODO: implement qualifications and statement metadata
+        // TODO: implement qualifications
         if ($subjectTid === -1) {
             throw new InvalidArgumentException("Subject entity does not exist");
         }
@@ -939,6 +1074,8 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             $ts = time();
         }
 
+        // check restrictions on the predicate
+
         switch ($predicateType) {
             case  EntitySystem::ENTITY_TYPE__ATTRIBUTE:
                 $value = strval($valueOrObject);
@@ -970,41 +1107,78 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
     }
 
     /**
-     * @throws InvalidTypeException
-     * @throws EntityDoesNotExistException
+     * @throws KeyNotInCacheException
+     */
+    protected function getEntityDataFromCache(DataCache $cache, int $entityTid) : array {
+        $cacheKey = self::CACHE_KEY_PREFIX_ENTITY_DATA . $entityTid;
+        return unserialize($cache->get($cacheKey));
+    }
+
+    protected function storeEntityDataInCache(DataCache $cache, int $entityTid, array $data, int $ttl) : void {
+        $cacheKey = self::CACHE_KEY_PREFIX_ENTITY_DATA . $entityTid;
+        $cache->set($cacheKey, serialize($data), $ttl);
+    }
+
+    /**
+     * Deletes entity data from cache.
+     *
+     * If no cache is given, tries to delete data from all caches in use by the system
+     *
+     * @param int $entityTid
+     * @param DataCache|null $cache
+     * @return void
+     */
+    protected function deleteEntityDataInCache(int $entityTid, DataCache $cache = null) : void {
+        $cacheKey = self::CACHE_KEY_PREFIX_ENTITY_DATA . $entityTid;
+        if ($cache !== null) {
+            $cache->delete($cacheKey);
+            return;
+        }
+        $this->internalInMemoryCache->delete($cacheKey);
+        foreach($this->typesConfig as $typeConfig) {
+            /** @var DataCache $cache */
+            $cache = $typeConfig['dataCache'];
+            $cache->delete($cacheKey);
+        }
+    }
+
+    /**
+     *
      * @throws DataConsistencyException
+     * @throws InvalidArgumentException
      */
     public function getEntityStatements(int|string $entityId, int|string $entityType = ''): array
     {
         $entityTid = $entityId;
         if (is_string($entityId)) {
-            $entityTid = $this->getTidByTypeAndName($entityId);
-        }
-        $entityTypeName = $entityType;
-        $entityTypeTid = -1;
-        if (is_int($entityType)) {
             try {
-                $entityTypeName = $this->getEntityName($entityType, StandardNames::TYPE_ENTITY_TYPE);
-            } catch (EntityDoesNotExistException) {
-                throw new InvalidTypeException("Type $entityType not valid");
+                $entityTid = $this->getTidByTypeAndName($entityId);
+            } catch(InvalidTypeException) {
+                throw new EntityDoesNotExistException("Invalid entity id $entityId");
+            }
+        }
+        if ($entityType === '') {
+            $entityTypeTid = $this->getEntityType($entityTid);
+            try {
+                $entityTypeName = $this->getEntityName($entityTypeTid, StandardNames::TYPE_ENTITY_TYPE);
+            } catch(InvalidTypeException) {
+                // this should never happen
+                $this->logger->error("Invalid type exception trying to get type name for  $entityTypeTid");
+                throw new DataConsistencyException();
             }
         } else {
-            // given entity type is a string
-            if ($entityType === '') {
-                // no type given, get it from the system
-                $entityTypeTid = $this->getEntityType($entityTid);
-                $entityTypeName = $this->getEntityName($entityTypeTid, StandardNames::TYPE_ENTITY_TYPE);
-            } else {
-                // see if the type is valid
-                $entityTypeTid = $this->getTypeTid($entityType);
+            try {
+                $entityTypeName = $this->getTypeNameFromStringOrInt($entityType);
+            } catch (InvalidTypeException|EntityDoesNotExistException) {
+                throw new InvalidArgumentException("Given entity type $entityType is not valid");
             }
         }
 
-        $cacheKey = self::CACHE_KEY_PREFIX_ENTITY_DATA . $entityTid;
+
         /** @var DataCache $cache */
         $cache = $this->typesConfig[$entityTypeName]['dataCache'];
         try {
-            $statements = unserialize($cache->get($cacheKey));
+            $statements = $this->getEntityDataFromCache($cache, $entityTid);
         } catch (KeyNotInCacheException) {
             // need to rebuild
             $statements = $this->getEntityStatementsAsSubject($entityTid, $entityTypeName);
@@ -1012,7 +1186,8 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             foreach($statementsAsObject as $statement) {
                 $statements[] = $statement;
             }
-            $cache->set($cacheKey, serialize($statements), $this->typesConfig[$entityTypeName]['defaultCacheTtl']);
+            $this->storeEntityDataInCache($cache, $entityTid, $statements,
+                $this->typesConfig[$entityTypeName]['defaultCacheTtl']);
         }
         return $statements;
     }

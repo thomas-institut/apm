@@ -203,18 +203,20 @@ interface EntitySystem
     /**
      * Fundamental predicates
      */
-    const RELATION_HAS_TYPE = 10;
+    const RELATION_HAS_TYPE = 1001;
+    const RELATION_OBJECT_TYPE_ALLOWED = 1002;
 
-    const ATTRIBUTE_HAS_UNIQUE_NAMES = 20;
-    const ATTRIBUTE_NAME = 21;
-    const ATTRIBUTE_DESCRIPTION = 22;
+    const ATTRIBUTE_HAS_UNIQUE_NAMES = 2001;
+    const ATTRIBUTE_NAME = 2002;
+    const ATTRIBUTE_DESCRIPTION = 2003;
+    const ATTRIBUTE_ONLY_ONE_ALLOWED = 2004;
 
     /**
      * Fundamental types
      */
-    const ENTITY_TYPE__ENTITY_TYPE = 101;
-    const ENTITY_TYPE__ATTRIBUTE = 102;
-    const ENTITY_TYPE__RELATION = 103;
+    const ENTITY_TYPE__ENTITY_TYPE = 500001;
+    const ENTITY_TYPE__ATTRIBUTE = 500002;
+    const ENTITY_TYPE__RELATION = 500003;
 
     /**
      * Creates an entity type with the given name and description

@@ -1,0 +1,81 @@
+/*
+ *  Copyright (C) 2020 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+
+/* Font face definitions for Libertine fonts hosted by APM*/
+
+/* LINUX LIBERTINE */
+
+/*Regular*/
+@font-face {
+    font-family: "Linux Libertine";
+    src: local("Linux Libertine"),
+        local("Linux Libertine Regular"),
+        url(../LinuxLibertine/LinLibertine_R.woff) format("woff"),
+        url(../LinuxLibertine/LinLibertine_Rah.ttf) format("truetype");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Linux Libertine";
+    src: local("Linux Libertine Italic"),
+        url(../LinuxLibertine/LinLibertine_RI.woff) format("woff"),
+        url(../LinuxLibertine/LinLibertine_RIah.ttf) format("truetype");
+    font-weight: 400;
+    font-style: italic;
+}
+
+/*SemiBold*/
+@font-face {
+    font-family: "Linux Libertine";
+    src: local("Linux Libertine SemiBold"),
+      url(../LinuxLibertine/LinLibertine_RZ.woff) format("woff"),
+      url(../LinuxLibertine/LinLibertine_RZah.ttf) format("truetype");
+    font-weight: 600;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Linux Libertine";
+    src: local("Linux Libertine SemiBold Italic"),
+      url(../LinuxLibertine/LinLibertine_RZI.woff) format("woff"),
+      url(../LinuxLibertine/LinLibertine_RZIah.ttf) format("truetype");
+    font-weight: 600;
+    font-style: italic;
+}
+
+/*Bold*/
+@font-face {
+    font-family: "Linux Libertine";
+    src: local("Linux Libertine Bold"),
+      url(../LinuxLibertine/LinLibertine_RB.woff) format("woff"),
+      url(../LinuxLibertine/LinLibertine_RBah.ttf) format("truetype");
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Linux Libertine";
+    src: local("Linux Libertine Bold Italic"),
+      url(../LinuxLibertine/LinLibertine_RBI.woff) format("woff"),
+      url(../LinuxLibertine/LinLibertine_RBIah.ttf) format("truetype");
+    font-weight: 700;
+    font-style: italic;
+}
+

@@ -1,0 +1,17 @@
+/* Fonts */
+
+
+@font-face {
+    font-family: "DejaVu Sans";
+    src: local("DejaVu Sans"),
+        url(../DejaVuSans.ttf) format("truetype");
+}
+
+@font-face {
+    font-family: Scheherazade;
+    src: local(Scheherazade), url(../Scheherazade-Regular.woff);
+}
+@font-face {
+    font-family: Ezra;
+    src: local(Ezra), url(../Ezra.woff);
+}

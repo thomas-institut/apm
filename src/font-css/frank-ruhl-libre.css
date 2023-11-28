@@ -1,0 +1,76 @@
+/*
+ *  Copyright (C) 2201 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+
+
+/*  LIGHT */
+
+@font-face {
+    font-family: "Frank Ruhl Libre";
+    src: local("Frank Ruhl Libre Light"),
+        url(../FrankRuhlLibre/FrankRuhlLibre-Light.ttf) format("truetype");
+    font-weight: 300;  /* normal */
+    font-style: normal;
+    font-stretch: normal;
+}
+
+/*  NORMAL */
+
+@font-face {
+    font-family: "Frank Ruhl Libre";
+    src: local("Frank Ruhl Libre"),
+        local("Frank Ruhl Libre Regular"),
+        url(../FrankRuhlLibre/FrankRuhlLibre-Regular.ttf) format("truetype");
+    font-weight: 400;  /* normal */
+    font-style: normal;
+    font-stretch: normal;
+}
+
+/* MEDIUM */
+
+@font-face {
+    font-family: "Frank Ruhl Libre";
+    src: local("Frank Ruhl Libre Medium"),
+        url(../FrankRuhlLibre/FrankRuhlLibre-Medium.ttf) format("truetype");
+    font-weight: 500;  /* medium */
+    font-style: normal;
+    font-stretch: normal;
+}
+
+
+/* BOLD */
+
+@font-face {
+    font-family: "Frank Ruhl Libre";
+    src: local("Frank Ruhl Libre Bold"),
+        url(../FrankRuhlLibre/FrankRuhlLibre-Bold.ttf) format("truetype");
+    font-weight: 700;  /* bold */
+    font-style: normal;
+    font-stretch: normal;
+}
+
+/* BLACK  */
+
+@font-face {
+    font-family: "Frank Ruhl Libre";
+    src: local("Frank Ruhl Libre Black"),
+        url(../FrankRuhlLibre/FrankRuhlLibre-Black.ttf) format("truetype");
+    font-weight: 900;  /* black */
+    font-style: normal;
+    font-stretch: normal;
+}

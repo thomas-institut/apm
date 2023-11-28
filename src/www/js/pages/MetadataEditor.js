@@ -31,6 +31,7 @@ export class MetadataEditor {
         this.numKeys = 0
         this.mode = {create: 'create', edit: 'edit', show: 'show'}
         this.tagEditor = undefined
+        this.singleEdit = false
 
         // Selectors
         this.buttonsSelectorTop = 'buttons_top'
@@ -79,6 +80,7 @@ export class MetadataEditor {
     }
 
     setupEditMode() {
+        this.options.mode = this.mode.edit
         this.buildEntity(() => {
             this.makeTableStructure()
             this.setupTableForDataInput(() => {
@@ -90,6 +92,7 @@ export class MetadataEditor {
     }
 
     setupCreateMode() {
+        this.options.mode = this.mode.create
         this.buildEntitySchema(() => {
             this.makeTableStructure()
             this.setupTableForDataInput(() => {
@@ -101,6 +104,7 @@ export class MetadataEditor {
     }
 
     setupShowMode() {
+        this.options.mode = this.mode.show
         this.removeSpinner()
         this.buildEntity(() => {
             this.makeTableStructure()
@@ -202,9 +206,9 @@ export class MetadataEditor {
         }
     }
 
-    makeSpinner(container) {
+    makeSpinner(container, size='2em') {
         container = "#" + container
-        $(container).html(`<div class="spinner-border" role="status" id="spinner" style="color: dodgerblue"></div>`)
+        $(container).html(`<div class="spinner-border" role="status" id="spinner" style="color: dodgerblue; width: ${size}; height: ${size}"></div>`)
     }
 
     removeSpinner() {
@@ -576,40 +580,78 @@ export class MetadataEditor {
 
     makeEditKeyIconEvent(selector) {
         selector = '#' + selector
-        $(selector).on("click",  () => {
-            let keyIndex = selector.match(/\d+/)[0]
-            this.setupTableForDataInput(() => {
-                this.replaceEditWithSaveIcon(keyIndex)
-                console.log(`'${this.entity.keys[keyIndex-1]}' in edit mode!`)
-            }, keyIndex)
-            this.options.mode = this.mode.edit
-        })
+            $(selector).on("click", () => {
+                if (!this.singleEdit) {
+                    let keyIndex = selector.match(/\d+/)[0]
+                    this.setupTableForDataInput(() => {
+                        this.replaceEditWithSaveIcon(keyIndex)
+                        console.log(`'${this.entity.keys[keyIndex-1]}' in edit mode!`)
+                    }, keyIndex)
+                    this.options.mode = this.mode.edit
+                    this.singleEdit = true
+                    this.mutePencils(keyIndex)
+                }
+            })
+    }
+
+    mutePencils(keyIndex) {
+        console.log (keyIndex)
+
+        for (let i=1; i<=this.numKeys; i++) {
+            let selector = "#entity_attr" + i + "_tableCellButton"
+            let editAttributeButton = "entity_attr" + i + "_editButton"
+
+            if (i !== parseInt(keyIndex)) {
+                $(selector).html(`<i class="fas fa-pencil-alt" style="color: lightgray"></i>`)
+            }
+        }
     }
 
     replaceEditWithSaveIcon(i) {
         let cellButtonSelector = "#entity_attr" + i + "_tableCellButton"
         let editButtonSelector = '#entity_attr' + i + '_editButton'
         let cellSaveButton = "entity_attr" + i + "_saveButton"
+        let cellAbortButton = "entity_attr" + i + "_abortButton"
+
         $(editButtonSelector).remove()
         $(cellButtonSelector).html(`<button class="save" id=${cellSaveButton} style="border: transparent; background-color: transparent">
                                                     <i class="fa fa-check" style="color: green"></i></button>`)
+        $(cellButtonSelector).append(`<button class="abort" id=${cellAbortButton} style="border: transparent; background-color: transparent">
+                                                    <i class="fa fa-times" style="color: darkred; margin-left: 0.15em"></i></button>`)
         this.makeSaveKeyValueIconEvent(cellSaveButton)
+        this.makeAbortIconEvent(cellAbortButton)
+    }
+
+    makeAbortIconEvent(selector) {
+        selector = '#' + selector
+        $(selector).on("click",  () => {
+            this.singleEdit = false
+            let keyIndex = selector.match(/\d+/)[0]
+            this.clearErrorMessage()
+            this.setupShowMode()
+            this.makeCellEditButton(keyIndex)
+            console.log(`Editing value for '${this.entity.keys[keyIndex-1]}' aborted.`)
+        })
     }
 
     makeSaveKeyValueIconEvent(selector) {
         selector = '#' + selector
         $(selector).on("click",  () => {
             let keyIndex = selector.match(/\d+/)[0]
-            let valueForm = "#entity_attr" + keyIndex + "_form"
-            this.makeCellEditButton(keyIndex)
-            // ADD: VALIDATION OF VALUE, ERROR MESSAGE FOR WRONG TYPES, FORMATTING OF VALUES IF NOT ONLY STRINGS, BUT TAGS, YEAR RANGES etc.
-            this.entity.values[keyIndex-1] = $(valueForm).val()
-            this.options.callbackSave(this.entity, this.options.mode, () => {
-                this.logSaveAction(this.options.mode)
-                this.setupShowMode()
-            })
-
-            console.log(`Saved value for '${this.entity.keys[keyIndex-1]}'.`)
+            let cellButtonId = "entity_attr" + keyIndex + "_tableCellButton"
+            let value = this.getEntityDataToSave(keyIndex)
+            if (this.validateData(value, keyIndex)) {
+                this.clearErrorMessage()
+                this.makeSpinner(cellButtonId, '1.25em')
+                this.entity.values[keyIndex-1] = value // Corresponds to updateEntityData function in global save event
+                this.options.callbackSave(this.entity, this.options.mode, () => {
+                    this.logSaveAction(this.options.mode)
+                    this.singleEdit = false
+                    this.setupShowMode()
+                    this.makeCellEditButton(keyIndex)
+                })
+                console.log(`Saved value for '${this.entity.keys[keyIndex-1]}'.`)
+            }
         })
     }
 
@@ -652,42 +694,60 @@ export class MetadataEditor {
         this.entity.values = values
     }
 
-    getEntityDataToSave() {
+    getEntityDataToSave(keyIndex='all') {
         let id = this.entity.id
         let values = []
         let type = this.entity.type
 
-        for (let i=1; i<=this.numKeys; i++) {
-            let name = "#entity_attr" + i + "_form"
+        if (keyIndex === 'all') {
+            for (let i = 1; i <= this.numKeys; i++) {
+                let name = "#entity_attr" + i + "_form"
+                let value = $(name).val()
+
+                if (this.entity.types[i - 1].includes('year')) {
+                    let year = this.getDataForYear(name, value)
+                    values.push(year)
+                } else if (this.entity.types[i - 1].includes('years_range')) {
+                    let years = this.getDataForYearsRange(name, value)
+                    values.push(years)
+                } else if (this.entity.types[i - 1].includes('tags')) {
+                    let tags = this.tagEditor.getTags()
+                    values.push(tags)
+                } else if (this.entity.types[i - 1].includes('person')) {
+                    let datalist = "#entity_attr" + i + "_form_list"
+                    let person_id
+                    try {
+                        person_id = $(`${datalist} option[value=${value}]`).attr('id')
+                    } catch {
+                        person_id = ''
+                    }
+                    values.push(person_id)
+                } else {
+                    values.push(value)
+                }
+            }
+            return {id: id, type: type, values: values}
+        }
+        else {
+            let name = "#entity_attr" + keyIndex + "_form"
             let value = $(name).val()
 
-            if (this.entity.types[i-1].includes('year')) {
-                let year = this.getDataForYear(name, value)
-                values.push(year)
-            }
-            else if (this.entity.types[i-1].includes('years_range')) {
-                let years = this.getDataForYearsRange(name, value)
-                values.push(years)
-            }
-            else if (this.entity.types[i-1].includes('tags')) {
-                let tags = this.tagEditor.getTags()
-                values.push(tags)
-            }
-            else if (this.entity.types[i-1].includes('person')) {
-                let datalist = "#entity_attr" + i + "_form_list"
-                let person_id
+            if (this.entity.types[keyIndex-1].includes('year')) {
+                value = this.getDataForYear(name, value)
+            } else if (this.entity.types[keyIndex-1].includes('years_range')) {
+                value = this.getDataForYearsRange(name, value)
+            } else if (this.entity.types[keyIndex-1].includes('tags')) {
+                value = this.tagEditor.getTags()
+            } else if (this.entity.types[keyIndex-1].includes('person')) {
+                let datalist = "#entity_attr" + keyIndex + "_form_list"
                 try {
-                    person_id = $(`${datalist} option[value=${value}]`).attr('id')
+                    value = $(`${datalist} option[value=${value}]`).attr('id')
                 } catch {
-                    person_id = ''
+                    value = ''
                 }
-                values.push(person_id)
             }
-            else {
-                values.push(value)
-            }
+            return value
         }
-        return {id: id, type: type, values: values}
     }
 
     getDataForYearsRange(name, value) {
@@ -712,16 +772,56 @@ export class MetadataEditor {
     }
 
     // Validate Data before Saving
-    validateData (d) {
+    validateData (d, keyIndex='all') {
 
         let index = 0
         let date_birth = '0'
         let date_death = 'z'
 
-        for (let value of d.values) {
+        if (keyIndex === 'all') {
+            for (let value of d.values) {
 
+                let key = this.entity.keys[index]
+                let affordedTypes = this.entity.types[index]
+
+                // Get dates of birth and death
+                if (key === 'Date of Birth' && value !== '') {
+                    date_birth = value
+                }
+                if (key === 'Date of Death' && value !== '') {
+                    date_death = value
+                }
+
+                if (affordedTypes.includes('password') === false) {
+                    // Passwords do not need to undergo a check here
+
+                    let givenType = this.dataType(value)
+
+                    if ((affordedTypes.includes(givenType) === false && !(affordedTypes.includes('person') && givenType === 'number')) || value === undefined) { // Mismatching types throw an error, non existing person ids are marked as ,undefined‘ and will also be detected
+                        this.returnDataTypeError(key, givenType, affordedTypes)
+                        return false
+                    } else if (date_birth > date_death) {
+                        this.returnImpossibleDatesError()
+                        return false
+                    } else if (affordedTypes.includes('years_range')) {
+                        if (parseInt(value[0]) > parseInt(value[1]) ||
+                            (value[0] === '' && value[1] !== '') ||
+                            (value[0] === '' && value[2] !== '')) {
+                            this.returnImpossibleYearsRangeError(key)
+                            return false
+                        }
+                    } else {
+                        index++
+                    }
+                } else {
+                    index++
+                }
+            }
+        } else {
+            index = keyIndex-1
             let key = this.entity.keys[index]
             let affordedTypes = this.entity.types[index]
+            let value = d
 
             // Get dates of birth and death
             if (key === 'Date of Birth' && value !== '') {
@@ -744,21 +844,14 @@ export class MetadataEditor {
                     return false
                 } else if (affordedTypes.includes('years_range')) {
                     if (parseInt(value[0]) > parseInt(value[1]) ||
-                            (value[0] === '' && value[1] !== '') ||
-                            (value[0] === '' && value[2] !== '')) {
+                        (value[0] === '' && value[1] !== '') ||
+                        (value[0] === '' && value[2] !== '')) {
                         this.returnImpossibleYearsRangeError(key)
                         return false
                     }
                 }
-                else {
-                    index++
-                }
-            }
-            else {
-                index++
             }
         }
-
         return true
     }
 

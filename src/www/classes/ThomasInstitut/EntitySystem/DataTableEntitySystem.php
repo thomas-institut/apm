@@ -69,11 +69,15 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
     private int $systemTid;
 
     private string $cachingPrefix;
-    private array $typesConfig;
+    private array $typeConfig;
+    private ?array $attributeConfig;
+    private ?array $relationConfig;
     private DataTable $systemStatementsTable;
     private DataCache $systemDataCache;
     protected ?LoggerInterface $logger = null;
     private InMemoryDataCache $internalInMemoryCache;
+
+
 
 
     /**
@@ -176,7 +180,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         $this->systemDataCache = $systemConfig['dataCache'] ?? $this->dataCache;
 
         // Build skeleton typesConfig array with standard types and default configuration
-        $this->typesConfig = [
+        $this->typeConfig = [
             StandardNames::TYPE_ENTITY_TYPE => [
                 'typeTid' => EntitySystem::ENTITY_TYPE__ENTITY_TYPE,
                 'uniqueNames' => true,
@@ -254,8 +258,8 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
 
         // Fill in data table and cache configuration from constructor parameters
         foreach($typeConfigArray as $typeName => $typeConfig) {
-            if (!isset($this->typesConfig[$typeName])) {
-                $this->typesConfig[$typeName] = [
+            if (!isset($this->typeConfig[$typeName])) {
+                $this->typeConfig[$typeName] = [
                     'typeTid' => -1,
                     'uniqueNames'=> false,
                     'statementsTable' => $this->defaultStatementsTable,
@@ -268,16 +272,16 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
                 if(!is_a($typeConfig['statementsTable'], DataTable::class)){
                     throw new InvalidArgumentException("Statements table for type '$typeName' not a DataTable object");
                 }
-                $this->typesConfig[$typeName]['statementsTable'] = $typeConfig['statementsTable'];
+                $this->typeConfig[$typeName]['statementsTable'] = $typeConfig['statementsTable'];
             }
             if (isset($typeConfig['dataCache'])) {
                 if(!is_a($typeConfig['dataCache'], DataCache::class)){
                     throw new InvalidArgumentException("Data cache for type '$typeName' not a DataCache object");
                 }
-                $this->typesConfig[$typeName]['dataCache'] = $typeConfig['dataCache'];
+                $this->typeConfig[$typeName]['dataCache'] = $typeConfig['dataCache'];
             }
             if (isset($typeConfig['defaultCacheTtl'])) {
-                $this->typesConfig[$typeName]['defaultCacheTtl'] = intval($typeConfig['defaultCacheTtl']);
+                $this->typeConfig[$typeName]['defaultCacheTtl'] = intval($typeConfig['defaultCacheTtl']);
             }
         }
 
@@ -292,8 +296,8 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
 
         $this->debugMsg("Available types: " . implode(', ', $this->getValidEntityTypeNames()));
         foreach($entityTypeNameToTidMap as $typeName => $typeTid) {
-            if (!isset($this->typesConfig[$typeName])) {
-                $this->typesConfig[$typeName] = [
+            if (!isset($this->typeConfig[$typeName])) {
+                $this->typeConfig[$typeName] = [
                     'uniqueNames'=> false,
                     'statementsTable' => $this->defaultStatementsTable,
                     'dataCache' => $this->systemDataCache,
@@ -301,16 +305,20 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
                     'cacheAll' => false
                 ];
             }
-            $this->typesConfig[$typeName]['typeTid'] = $typeTid;
+            $this->typeConfig[$typeName]['typeTid'] = $typeTid;
         }
 
         // check that all types have a valid type tid
-        foreach($this->typesConfig as $typeName => $typeConfig) {
+        foreach($this->typeConfig as $typeName => $typeConfig) {
             if (!isset($typeConfig['typeTid']) || $typeConfig['typeTid'] === -1) {
                 $this->deleteEntityNameToTidMapFromCache(StandardNames::TYPE_ENTITY_TYPE);
                 throw new DataConsistencyException("No EntityType tid found for type '$typeName'");
             }
         }
+
+        $this->attributeConfig = null;
+        $this->relationConfig = null;
+
         $this->debugMsg("Done constructing");
     }
 
@@ -416,7 +424,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         }
         $typeTid = -1;
         $entityTypeName = '';
-        foreach($this->typesConfig as $typeName => $typeConfig) {
+        foreach($this->typeConfig as $typeName => $typeConfig) {
             if ($typeConfig['typeTid'] === $type || $typeName === $type) {
                 $typeTid = $typeConfig['typeTid'];
                 $entityTypeName = $typeName;
@@ -444,7 +452,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
      * @throws InvalidTypeException
      */
     private function getStatementsTableForType(string|int $type) : DataTable {
-        foreach($this->typesConfig as $typeName => $spec) {
+        foreach($this->typeConfig as $typeName => $spec) {
             if ($typeName=== $type || $spec['typeTid'] === $type) {
                 return $spec['statementsTable'] ?? $this->defaultStatementsTable;
             }
@@ -782,7 +790,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         }
 
         if ($subjectType !== '') {
-            $table = $this->typesConfig[$subjectType]['statementsTable'];
+            $table = $this->typeConfig[$subjectType]['statementsTable'];
             $rows = $table->findRows(['tid' => $statementTid]);
             if (count($rows) === 1) {
                 // found it!
@@ -801,7 +809,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         } else {
             /** @var DataTable[] $tablesChecked */
             $tablesChecked = [];
-            foreach ($this->typesConfig as $typeName => $typeConfig) {
+            foreach ($this->typeConfig as $typeName => $typeConfig) {
                 if (!in_array($typeConfig['statementsTable'], $tablesChecked)) {
                     /** @var DataTable $table */
                     $table =  $typeConfig['statementsTable'];
@@ -865,7 +873,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
 
         /** @var DataTable $table */
         $table = $statementData['dataTable'];
-        $subjectDataCache = $this->typesConfig[$statementData['subjectTypeName']]['dataCache'];
+        $subjectDataCache = $this->typeConfig[$statementData['subjectTypeName']]['dataCache'];
         $this->doActualStatementCancellation($table,
             $subjectDataCache, $statementData['statementRow'], $cancelledBy, $cancellationNote,$ts === -1 ? time() : $ts );
     }
@@ -886,7 +894,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
     public function getEntityType(int $entityTid) : int {
         // look into type config
         $tablesSearched = [];
-        foreach ($this->typesConfig as $typeConfig) {
+        foreach ($this->typeConfig as $typeConfig) {
             if ($entityTid === $typeConfig['typeTid']) {
                 // it's a type
                 return EntitySystem::ENTITY_TYPE__ENTITY_TYPE;
@@ -943,7 +951,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         // quick processing for entity types
         if ($type === StandardNames::TYPE_ENTITY_TYPE || $type === EntitySystem::ENTITY_TYPE__ENTITY_TYPE) {
             // look into type config
-            foreach ($this->typesConfig as $typeName => $typeConfig) {
+            foreach ($this->typeConfig as $typeName => $typeConfig) {
                 if ($entityTid === $typeConfig['typeTid']) {
                     return $typeName;
                 }
@@ -965,7 +973,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             $typeName = $type;
             $typeTid = $this->getTypeTid($typeName);
         }
-        if (!isset($this->typesConfig[$typeName])) {
+        if (!isset($this->typeConfig[$typeName])) {
             $this->logger->error("No configuration for type '$typeName'");
             throw new DataConsistencyException();
         }
@@ -975,7 +983,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             return '';
         }
 
-        if ($this->typesConfig[$typeName]['uniqueNames']) {
+        if ($this->typeConfig[$typeName]['uniqueNames']) {
             // look into the name to tid map
             $map = $this->getEntityNameToTidMap($typeName);
             foreach($map as $name => $tid) {
@@ -985,7 +993,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             }
         } else {
             // look into statements
-            $table =$this->typesConfig[$typeName]['statementsTable'];
+            $table =$this->typeConfig[$typeName]['statementsTable'];
             $rows = $table->findRows([ 'subject' => $entityTid, 'predicate' => EntitySystem::ATTRIBUTE_NAME, 'cancelled' => 0]);
             if (count($rows) === 1) {
                 return $rows[0]['value'];
@@ -1076,6 +1084,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
 
         // check restrictions on the predicate
 
+
         switch ($predicateType) {
             case  EntitySystem::ENTITY_TYPE__ATTRIBUTE:
                 $value = strval($valueOrObject);
@@ -1135,7 +1144,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             return;
         }
         $this->internalInMemoryCache->delete($cacheKey);
-        foreach($this->typesConfig as $typeConfig) {
+        foreach($this->typeConfig as $typeConfig) {
             /** @var DataCache $cache */
             $cache = $typeConfig['dataCache'];
             $cache->delete($cacheKey);
@@ -1176,7 +1185,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
 
 
         /** @var DataCache $cache */
-        $cache = $this->typesConfig[$entityTypeName]['dataCache'];
+        $cache = $this->typeConfig[$entityTypeName]['dataCache'];
         try {
             $statements = $this->getEntityDataFromCache($cache, $entityTid);
         } catch (KeyNotInCacheException) {
@@ -1187,9 +1196,28 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
                 $statements[] = $statement;
             }
             $this->storeEntityDataInCache($cache, $entityTid, $statements,
-                $this->typesConfig[$entityTypeName]['defaultCacheTtl']);
+                $this->typeConfig[$entityTypeName]['defaultCacheTtl']);
         }
         return $statements;
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     * @throws EntityDoesNotExistException
+     * @throws DataConsistencyException
+     */
+    protected function getAttributeValue(int|string $entityTid, int|string $attribute) : string {
+        $attributeTid = $this->getTidByTypeAndName($attribute);
+        if ($this->getEntityType($attributeTid) !== EntitySystem::ENTITY_TYPE__ATTRIBUTE) {
+            throw new InvalidArgumentException("Given attribute $attribute not an attribute");
+        }
+        $statements = $this->getEntityStatements($entityTid, $attribute);
+        foreach ($statements as $statement) {
+            if ($statement['predicate'] === $attributeTid) {
+                return $statement['value'];
+            }
+        }
+        throw new InvalidAttributeException("Entity $entityTid does not have a value for attribute $attribute");
     }
 
 
@@ -1212,7 +1240,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         // for now, a brute force search in all statement tables
         $tablesSearched = [];
         $statements = [];
-        foreach($this->typesConfig as $typeConfig) {
+        foreach($this->typeConfig as $typeConfig) {
             /** @var DataTable $table */
             $table = $typeConfig['statementsTable'];
             if (!in_array($table, $tablesSearched)) {
@@ -1262,7 +1290,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
      * @throws InvalidTypeException
      */
     private function getTypeTid(string $typeName) : int {
-        foreach ($this->typesConfig as $name => $typeConfig) {
+        foreach ($this->typeConfig as $name => $typeConfig) {
             if ($typeName === $name) {
                 return $typeConfig['typeTid'];
             }
@@ -1320,7 +1348,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
 
 //        $this->debugMsg("Getting tid for $entityTypeName:$entityName");
 
-        foreach($this->typesConfig as $typeName => $typeConfig) {
+        foreach($this->typeConfig as $typeName => $typeConfig) {
             if ($entityTypeName === $typeName) {
                 $uniqueNames = $typeConfig['uniqueNames'] ?? false;
                 if (!$uniqueNames) {
@@ -1369,11 +1397,11 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             $timestamp,
             $createdBy
         );
-        if (isset($this->typesConfig[$typeName])){
-            $this->typesConfig[$typeName]['typeTid'] = $tid;
-            $this->typesConfig[$typeName]['uniqueNames'] = $uniqueNames;
+        if (isset($this->typeConfig[$typeName])){
+            $this->typeConfig[$typeName]['typeTid'] = $tid;
+            $this->typeConfig[$typeName]['uniqueNames'] = $uniqueNames;
         } else {
-            $this->typesConfig[$typeName] = [
+            $this->typeConfig[$typeName] = [
                 'typeTid' => $tid,
                 'uniqueNames' => $uniqueNames,
                 'statementsTable' => $this->defaultStatementsTable,
@@ -1453,18 +1481,51 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             $typeTid = $this->getTypeTid($type);
             $typeName = $type;
         }
-        if ($this->typesConfig[$typeName]['uniqueNames']) {
+        if ($this->typeConfig[$typeName]['uniqueNames']) {
             return array_values($this->getEntityNameToTidMap($typeName));
         }
         // look in statements
         $tids = [];
         /** @var DataTable $table */
-        $table = $this->typesConfig[$typeName]['statementsTable'];
+        $table = $this->typeConfig[$typeName]['statementsTable'];
         $rows = $table->findRows( ['predicate' => EntitySystem::RELATION_HAS_TYPE, 'object' => $typeTid, 'cancelled' => 0]);
         foreach($rows as $row) {
             $tids[] = $row['subject'];
         }
         return $tids;
+    }
+
+    private function getUpdatedPredicateConfig(string $type, string $attributeName) : array {
+
+    }
+
+    /**
+     * @throws InvalidTypeException
+     * @throws EntityDoesNotExistException
+     * @throws DataConsistencyException
+     * @throws InvalidArgumentException
+     */
+    protected function getPredicateConfig(string $type) : array {
+        if ($type !== StandardNames::TYPE_ATTRIBUTE && $type !== StandardNames::TYPE_RELATION) {
+            throw new InvalidArgumentException("Expect attribute or relation, got $type");
+        }
+        $predicateConfig = $type === StandardNames::TYPE_ATTRIBUTE ? $this->attributeConfig : $this->relationConfig;
+        if ($predicateConfig !== null) {
+            // refresh stale entries
+            foreach($predicateConfig as $attr => $config) {
+                if (!$config['upToDate']) {
+                    $predicateConfig[$attr] = $this->getUpdatedPredicateConfig($type, $attr);
+                }
+            }
+            return $this->attributeConfig;
+        }
+        // need to rebuild
+        $predicateConfig = [];
+        $predicateNames = $this->getDefinedEntityNamesForType($type);
+        foreach ($predicateNames as $attr) {
+            $predicateConfig[$attr] = $this->getUpdatedPredicateConfig($type, $attr);
+        }
+        return $predicateConfig;
     }
 
 }

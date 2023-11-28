@@ -79,5 +79,5 @@ function getNameWithLink (person) {
     let name = person.values[0]
     let url = urlGen.sitePerson(id)
     let linkId = "linktoperson" + id
-    return `<a id=${linkId} class="nav-link" href=${url} >${name}</a>`;
+    return `<a id=${linkId} class="nav-link" href=${url}>${name}</a>`;
 }

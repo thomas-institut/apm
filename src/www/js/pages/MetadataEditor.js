@@ -176,9 +176,21 @@ export class MetadataEditor {
                 for (let i = 1; i <= this.numKeys; i++) {
 
                     let cellId = "entity_attr" + i
-                    $('#row1').append(`<th>${this.entity.keys[i-1]}</th>`)
 
-                    $('#row2').append(`<td><div id=${cellId}></div></td>`)
+                    if (this.options.mode === this.mode.show) {
+                        let cellButtonId = cellId + "_tableCellButton"
+                        let editAttributeButton = "entity_attr" + i + "_editButton"
+                        $('#row1').append(`<th>${this.entity.keys[i-1]}</th><th></th>`)
+                        $('#row2').append(`<td><div id=${cellId}></div></td>
+                                                <td id=${cellButtonId} style="width: 3em; text-align: center">
+                                                    <button id=${editAttributeButton} style="border: transparent; background-color: transparent">
+                                                        <i class="fas fa-pencil-alt" style="color: gray"></i></button>
+                                                </td>`)
+                        this.makeEditKeyIconEvent(editAttributeButton)
+                    } else {
+                        $('#row1').append(`<th>${this.entity.keys[i-1]}</th>`)
+                        $('#row2').append(`<td><div id=${cellId}></div></td>`)
+                    }
                 }
                 break
             case 'vertical':

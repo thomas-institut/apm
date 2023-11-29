@@ -16,13 +16,14 @@ export class TagEditor {
 
         const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: "MetadataEditor"})
         this.options = oc.getCleanOptions(options)
-        
+        this.removedTags = []
+
         switch (this.options.mode) {
             case 'edit':
                 this.setupEditMode(this)
                 break
             case 'show':
-                this.showGivenTagsInShowMode(this.options.tags)
+                this.setupShowMode(this.options.tags)
                 break
         }
     }
@@ -46,7 +47,7 @@ export class TagEditor {
            </ul>`)
     }
 
-    showGivenTagsInShowMode (tags) {
+    setupShowMode (tags) {
 
         let start = '<ul class="tags" id="tag-list">'
         let end = '</ul>'
@@ -66,7 +67,7 @@ export class TagEditor {
             let tagId = tag + "_id"
             $('#tag-list').prepend(`
                <li class="addedTag" value=${tag} style="margin-left: 0em">${tag}
-               <span class="tagRemove" id=${tagId}><sup style="font-family: Arial">x</sup></span>
+               <span class="tagRemove" id=${tagId}><sup><i class="fa fa-times fa-xs" style="color: darkblue"></i></sup></span>
                <input type="hidden" name="tags[]">
                </li>`)
             this.makeRemoveTagEvent(thisObject, tagId)
@@ -83,8 +84,8 @@ export class TagEditor {
         $(selector).click(function(event) {
             event.preventDefault();
             let value = $(this).parent()[0].getAttribute('value')
-            let index = thisObject.options.tags.indexOf(value)
-            thisObject.options.tags.splice(index, 1);
+            thisObject.removedTags.push(value)
+            console.log(thisObject.removedTags)
             $(this).parent().remove()
         })
     }
@@ -105,7 +106,7 @@ export class TagEditor {
                     let tagId = value + "_id"
                     $(`<li class="addedTag" value=${value}>` + value + ' ' +
                         `<span class="tagRemove" id=${tagId}>` +
-                        '<sup style="font-family: Arial">x</sup></span>' +
+                        '<sup><i class="fa fa-times fa-xs" style="color: darkblue"></i></sup></span>' +
                         '<input type="hidden" value="' + value +
                         '" name="tags[]"></li>').insertBefore('.tags .tagAdd')
 
@@ -138,6 +139,7 @@ export class TagEditor {
     }
 
     getTags() {
+        this.updateTagsInOptions()
         return this.options.tags.sort()
     }
     
@@ -147,7 +149,17 @@ export class TagEditor {
         })
     }
 
+    updateTagsInOptions () {
+        for (let removedTag of this.removedTags) {
+            let index = this.options.tags.indexOf(removedTag)
+            this.options.tags.splice(index, 1);
+        }
+        this.removedTags = []
+    }
+
     saveTags() {
+
+        this.updateTagsInOptions()
 
         // Make API Call
         $.post(urlGen.apiTagEditorSaveTags(), {'tags': this.options.tags})

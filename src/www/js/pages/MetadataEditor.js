@@ -72,11 +72,13 @@ export class MetadataEditor {
             `<br>
                             <div id="buttons_top" align="right"></div>
                             <br>
-                            <table class=${tableClass} id="metadataTable" style="table-layout:fixed;"></table>
+                            <table class=${tableClass} id="metadataTable" style="table-layout:fixed;">
+                            </table>
                             <br>
                             <div id="buttons_bottom" align="left"></div>
                             <div id="errorMessage" style="font-style: oblique"></div>
                             <br>`)
+
     }
 
     setupEditMode() {
@@ -655,6 +657,9 @@ export class MetadataEditor {
             if (this.validateData(value, keyIndex)) {
                 this.clearErrorMessage()
                 this.makeSpinner(cellButtonId, '1.25em')
+                if (this.entity.types[keyIndex-1].includes('tags')) {
+                    this.tagEditor.saveTags()
+                }
                 this.entity.values[keyIndex-1] = value // Corresponds to updateEntityData function in global save event
                 this.options.callbackSave(this.entity, this.options.mode, () => {
                     this.logSaveAction(this.options.mode)

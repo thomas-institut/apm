@@ -78,7 +78,6 @@ export class MetadataEditor {
                             <div id="buttons_bottom" align="left"></div>
                             <div id="errorMessage" style="font-style: oblique"></div>
                             <br>`)
-
     }
 
     setupEditMode() {

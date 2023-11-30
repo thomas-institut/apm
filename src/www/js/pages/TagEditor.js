@@ -128,13 +128,28 @@ export class TagEditor {
             string = string.slice(0, -1)
         }
 
+        while (string.includes('  ')) {
+            string = string.replace('  ', ' ')
+        }
+
         string = string.toLowerCase()
-        return string.charAt(0).toUpperCase() + string.slice(1);
+        let words = string.split(' ')
+        let tag = ''
+
+        for (let word of words) {
+            tag = tag + word.charAt(0).toUpperCase() + word.slice(1) + ' '
+        }
+
+        if (tag.slice(-1) === ' ') {
+            tag = tag.slice(0, -1)
+        }
+
+        return tag
     }
 
-    // TO DO, prohibit blanks and special characters in tags
+    // TO DO, prohibit special characters in tags
     validateTag(tag) {
-        let specialCharacters = /[ `!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/
+        let specialCharacters = /[`!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/
         return !specialCharacters.test(tag);
     }
 

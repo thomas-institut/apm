@@ -88,7 +88,7 @@ function makeCreateButton() {
 function getNameWithLink (id, name) {
     let url = urlGen.sitePerson(id)
     let linkId = "linktoperson" + id
-    return `<a id=${linkId} class="nav-link" href=${url}>${name}</a>`
+    return `<a id=${linkId} class="nav-link" target="_blank" href=${url}>${name}</a>`
 }
 
 function getValueByKey(people, person, key) {

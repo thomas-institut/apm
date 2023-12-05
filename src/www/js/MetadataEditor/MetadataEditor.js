@@ -1,6 +1,6 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
-import {urlGen} from "./common/SiteUrlGen";
-import {TagEditor} from "./TagEditor";
+import {urlGen} from "../pages/common/SiteUrlGen";
+import {TagEditor} from "../widgets/TagEditor";
 import {value} from "lodash/seq";
 
 
@@ -221,7 +221,7 @@ export class MetadataEditor {
 
     makeSpinner(container, size='2em') {
         container = "#" + container
-        $(container).html(`<div class="spinner-border" role="status" id="spinner" style="color: dodgerblue; width: ${size}; height: ${size}"></div>`)
+        $(container).html(`<div class="spinner-border" role="status" id="spinner" style="color: dodgerblue; margin-top: 0.7em; width: ${size}; height: ${size}"></div>`)
     }
 
     removeSpinner() {
@@ -257,6 +257,13 @@ export class MetadataEditor {
                     tags: value,
                     mode: 'show'
                 })
+            } else if (type.includes('date')) {
+                value = this.formatDate(value)
+                $(id).append(value)
+            } else if (type.includes('url')) {
+                let extLink = 'http://' + value
+                value = `<a target="_blank" href=${extLink}>${value}</a>`
+                $(id).append(value)
             } else {
                 $(id).append(value)
             }
@@ -291,6 +298,18 @@ export class MetadataEditor {
             value = ''
         }
         return value
+    }
+
+    formatDate(value) {
+        if (value !== '') {
+            let nums = value.split('-')
+            while (nums[0][0] === '0') {
+                nums[0] = nums[0].slice(1)
+            }
+            return nums[2] + '.' + nums[1] + '.' + nums[0]
+        } else {
+            return value
+        }
     }
 
     clearTableCells() {
@@ -608,8 +627,6 @@ export class MetadataEditor {
     }
 
     mutePencils(keyIndex) {
-        console.log (keyIndex)
-
         for (let i=1; i<=this.numKeys; i++) {
             let selector = "#entity_attr" + i + "_tableCellButton"
             let editAttributeButton = "entity_attr" + i + "_editButton"
@@ -851,6 +868,8 @@ export class MetadataEditor {
                 // Passwords do not need to undergo a check here
 
                 let givenType = this.dataType(value)
+                console.log(value)
+                console.log(givenType)
 
                 if ((affordedTypes.includes(givenType) === false && !(affordedTypes.includes('person') && givenType === 'number')) || value === undefined) { // Mismatching types throw an error, non existing person ids are marked as ,undefined‘ and will also be detected
                     this.returnDataTypeError(key, givenType, affordedTypes)

@@ -20,7 +20,6 @@
 import { CollapsePanel } from '../widgets/CollapsePanel'
 import { UserDocDataCommon } from './common/UserDocDataCommon'
 import { setBaseUrl } from './common/SiteUrlGen'
-import { MetadataEditor } from "../MetadataEditor/MetadataEditor"
 
 export class UserProfilePage {
   

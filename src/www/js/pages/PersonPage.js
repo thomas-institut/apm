@@ -1,4 +1,4 @@
-import {MetadataEditor} from "./MetadataEditor";
+import {MetadataEditor} from "../MetadataEditor/MetadataEditor";
 
 let urlGen = new ApmUrlGenerator('')
 let entity = {}

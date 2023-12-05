@@ -1,4 +1,5 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
+import {list} from "quill/ui/icons";
 
 let urlGen = new ApmUrlGenerator('')
 urlGen.setBase('http://0.0.0.0:8888')
@@ -33,7 +34,7 @@ export class TagEditor {
         this.getAllTags((alltags) => {
             this.fillDatalistWithTags(alltags)
         })
-        this.showGivenTagsInEditModeInEditMode(thisObject)
+        this.showGivenTagsInEditMode(thisObject)
         this.setupEvents(thisObject)
     }
 
@@ -62,15 +63,16 @@ export class TagEditor {
         return true
     }
     
-    showGivenTagsInEditModeInEditMode (thisObject) {
+    showGivenTagsInEditMode (thisObject) {
         for (let tag of this.options.tags.sort().reverse()) {
-            let tagId = tag + "_id"
+            let tagId = this.removeBlanks(tag) + "_id"
+            let liItemId = this.removeBlanks(tag) + "_ListItemId"
             $('#tag-list').prepend(`
-               <li class="addedTag" value=${tag} style="margin-left: 0em">${tag}
+               <li class="addedTag" value=${thisObject.removeBlanks(tag)} id=${liItemId} style="margin-left: 0em">${tag}
                <span class="tagRemove" id=${tagId}><sup><i class="fa fa-times fa-xs" style="color: darkblue"></i></sup></span>
                <input type="hidden" name="tags[]">
                </li>`)
-            this.makeRemoveTagEvent(thisObject, tagId)
+            this.makeRemoveTagEvent(thisObject, tagId, liItemId)
         }
     }
     
@@ -79,14 +81,14 @@ export class TagEditor {
         this.makeAddTagEvent(thisObject)
     }
     
-    makeRemoveTagEvent(thisObject, tag_id) {
+    makeRemoveTagEvent(thisObject, tag_id, list_item_id) {
         let selector = "#" + tag_id
-        $(selector).click(function(event) {
-            event.preventDefault();
-            let value = $(this).parent()[0].getAttribute('value')
+        let selector2 = '#' + list_item_id
+        $(selector).on('click', () => {
+            let value = $(selector2).attr('value')
+            value = thisObject.insertBlank(value)
             thisObject.removedTags.push(value)
-            console.log(thisObject.removedTags)
-            $(this).parent().remove()
+            $(selector2).remove()
         })
     }
     
@@ -103,19 +105,31 @@ export class TagEditor {
                 let value = thisObject.formatTag($(this).val())
 
                 if (value !== '' && thisObject.validateTag(value) && thisObject.options.tags.includes(value) === false) {
-                    let tagId = value + "_id"
-                    $(`<li class="addedTag" value=${value}>` + value + ' ' +
+                    let tagId = thisObject.removeBlanks(value) + "_id"
+                    let listItemId = thisObject.removeBlanks(value) + "_listItemid"
+                    $(`<li class="addedTag" id=${listItemId} value=${thisObject.removeBlanks(value)}>` + value + ' ' +
                         `<span class="tagRemove" id=${tagId}>` +
                         '<sup><i class="fa fa-times fa-xs" style="color: darkblue"></i></sup></span>' +
                         '<input type="hidden" value="' + value +
                         '" name="tags[]"></li>').insertBefore('.tags .tagAdd')
 
-                    thisObject.makeRemoveTagEvent(thisObject, tagId)
+                    thisObject.makeRemoveTagEvent(thisObject, tagId, listItemId)
                     thisObject.options.tags.push(value)
                     $(this).val('')
                 }
             }
         })
+    }
+
+    removeBlanks (string) {
+        while (string.includes(' ')) {
+            string = string.replace(' ', '')
+        }
+        return string
+    }
+
+    insertBlank (string) {
+        return string.replace(/([A-Z])/g, ' $1').trim()
     }
 
     formatTag(string) {
@@ -154,7 +168,7 @@ export class TagEditor {
     }
 
     getTags() {
-        this.updateTagsInOptions()
+        this.removeTagsFromOptions()
         return this.options.tags.sort()
     }
     
@@ -164,7 +178,7 @@ export class TagEditor {
         })
     }
 
-    updateTagsInOptions () {
+    removeTagsFromOptions () {
         for (let removedTag of this.removedTags) {
             let index = this.options.tags.indexOf(removedTag)
             this.options.tags.splice(index, 1);
@@ -174,7 +188,7 @@ export class TagEditor {
 
     saveTags() {
 
-        this.updateTagsInOptions()
+        this.removeTagsFromOptions()
 
         // Make API Call
         $.post(urlGen.apiTagEditorSaveTags(), {'tags': this.options.tags})
@@ -186,11 +200,9 @@ export class TagEditor {
                     if (apiResponse.errorData !== undefined) {
                         console.log(apiResponse.errorData);
                     }
-                    return;
+                    return
                 }
-
-                // Log API response and change to show mode
-                console.log(apiResponse);
+                
                 return true
             })
             .fail((status) => {

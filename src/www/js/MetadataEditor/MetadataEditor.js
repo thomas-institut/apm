@@ -868,8 +868,6 @@ export class MetadataEditor {
                 // Passwords do not need to undergo a check here
 
                 let givenType = this.dataType(value)
-                console.log(value)
-                console.log(givenType)
 
                 if ((affordedTypes.includes(givenType) === false && !(affordedTypes.includes('person') && givenType === 'number')) || value === undefined) { // Mismatching types throw an error, non existing person ids are marked as ,undefined‘ and will also be detected
                     this.returnDataTypeError(key, givenType, affordedTypes)

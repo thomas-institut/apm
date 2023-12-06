@@ -1,8 +1,6 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
 import {urlGen} from "../pages/common/SiteUrlGen";
 import {TagEditor} from "../widgets/TagEditor";
-import {value} from "lodash/seq";
-
 
 export class MetadataEditor {
 
@@ -253,7 +251,7 @@ export class MetadataEditor {
                 $(id).append(value)
             } else if (type.includes('tags')) {
                 let te = new TagEditor({
-                    containerId: id,
+                    container: id,
                     tags: value,
                     mode: 'show'
                 })
@@ -356,7 +354,7 @@ export class MetadataEditor {
                         this.makePersonForm(selectorId, inputId)
                         break
                     case 'tags':
-                        this.makeTagsForm(selectorId, inputId)
+                        this.makeTagsForm(selectorId)
                         break
                     default:
                         this.makeTextForm(selectorId, inputId, type)
@@ -385,7 +383,7 @@ export class MetadataEditor {
                     this.makePersonForm(selectorId, inputId)
                     break
                 case 'tags':
-                    this.makeTagsForm(selectorId, inputId)
+                    this.makeTagsForm(selectorId)
                     break
                 default:
                     this.makeTextForm(selectorId, inputId, type)
@@ -393,10 +391,9 @@ export class MetadataEditor {
         }
     }
 
-    makeTagsForm(selectorId, inputId) {
+    makeTagsForm(selectorId) {
         this.tagEditor = new TagEditor({
-            containerId: selectorId,
-            inputFormId: inputId,
+            container: selectorId,
             tags: this.getValueByKey('Tags'),
             mode: 'edit'
         })

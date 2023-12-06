@@ -46,18 +46,17 @@ function setupMetadataEditor (entity, mode) {
 
     removeMetadataEditor()
     let mde = new MetadataEditor({
-        containerSelector: 'peopleEditor',
+        container: 'peopleEditor',
         entityId: entity.id,
         entityType: entity.type,
         metadata: entity.values,
         metadataSchema: {keys: entity.keys, types: entity.types},
-        callbackSave: (data, mode, callback) => {
+        callback: (data, mode, callback) => {
             savePersonData(data, mode, callback)
         },
         mode: mode,
         theme: 'vertical',
     })
-    
 }
 
 function removeMetadataEditor() {

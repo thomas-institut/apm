@@ -106,6 +106,7 @@ class ApiPeople extends ApiController
                 'Place of Birth',
                 'Partner',
                 'Inauguration',
+                'Years of Study',
                 'URL',
                 'Tags'],
             'types' => [
@@ -114,6 +115,7 @@ class ApiPeople extends ApiController
                 ['text', 'empty'],
                 ['person', 'empty'],
                 ['year', 'empty'],
+                ['years_range', 'empty'],
                 ['url', 'empty'],
                 ['tags', 'empty']]
         ];

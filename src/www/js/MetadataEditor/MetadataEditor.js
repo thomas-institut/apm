@@ -7,13 +7,13 @@ export class MetadataEditor {
     constructor(options) {
 
         const optionsDefinition = {
-            containerSelector: { type:'string', required: true},
+            container: { type:'string', required: true},
             entityId: {type:'string', required: true},
             entityType: {type:'string', required: true},
             metadata: {type:'array', required: false, default: []},
             metadataSchema: {type: 'object', required: true},
             mode: {type:'string', required: true},
-            callbackSave: {type:'function', required: true},
+            callback: {type:'function', required: true},
             theme: {type:'string', required: true},
             backlink: {type:'string', required: false, default: ''}
         }
@@ -22,7 +22,7 @@ export class MetadataEditor {
         this.options = oc.getCleanOptions(options)
 
         // Fill container with the metadata editor html structure
-        this.makeEditor(options.containerSelector)
+        this.makeEditor(options.container)
 
         // Globals
         this.entity = {id: '', type: '', keys: [], values: [], types: []}
@@ -30,14 +30,14 @@ export class MetadataEditor {
         this.mode = {create: 'create', edit: 'edit', show: 'show'}
         this.tagEditor = undefined
         this.singleEdit = false
+        this.people = []
 
         // Selectors
         this.buttonsSelectorTop = 'buttons_top'
         this.buttonsSelectorBottom = 'buttons_bottom'
 
-        // Get list of all people (esp. for handling of entities as values, saving their ids, showing their names) and setup metadata editor in desired mode
-        this.getPeople((people) => {
-            this.people = people
+        // Get list of all people (for handling of entities as values, saving their ids, showing their names) and setup metadata editor in desired mode
+        this.getPeople(() => {
             switch (this.options.mode) {
                 case this.mode.edit:
                     this.setupEditMode()
@@ -52,8 +52,7 @@ export class MetadataEditor {
         })
     }
 
-    // FUNCTIONS
-    // Setup Editor
+    // Editor Setup
     makeEditor(container) {
         container = "#" + container
 
@@ -146,6 +145,10 @@ export class MetadataEditor {
         return this.entity.values[i]
     }
 
+    getPersonNameById (id) {
+        return this.people[id].values[0]
+    }
+
     // Table Design Management
     makeTableStructure() {
         this.clearTable()
@@ -226,6 +229,13 @@ export class MetadataEditor {
         $('#spinner').remove()
     }
 
+    clearTableCells() {
+        for (let i=1; i<=this.numKeys; i++) {
+            let id = "#entity_attr" + i
+            $(id).empty()
+        }
+    }
+
     // Table Data Management
     showMetadata() {
 
@@ -243,21 +253,26 @@ export class MetadataEditor {
                 let name = this.getPersonNameById(value)
                 value = `<a id=${linkId} href=${url} >${name}</a>`
                 $(id).append(value)
+
             } else if (type.includes('years_range')) {
                 value = this.formatYearsRange(value)
                 $(id).append(value)
+
             } else if (type.includes('year')) {
                 value = this.formatYear(value)
                 $(id).append(value)
+
             } else if (type.includes('tags')) {
                 let te = new TagEditor({
                     container: id,
                     tags: value,
                     mode: 'show'
                 })
+
             } else if (type.includes('date')) {
                 value = this.formatDate(value)
                 $(id).append(value)
+
             } else if (type.includes('url')) {
                 let extLink = 'http://' + value
                 value = `<a target="_blank" href=${extLink}>${value}</a>`
@@ -268,52 +283,41 @@ export class MetadataEditor {
         }
     }
 
-    getPersonNameById (id) {
-        return this.people[id].values[0]
-    }
-
-    formatYearsRange(value) {
-        if (value[0] === "") {
-            value = ""
-        } else if (value[1] === "" && value[2] === "") {
-            value = value[0]
-        } else if (value[1] !== "" && value[2] === "") {
-            value = value[0] + "-" + value[1]
-        } else if (value[1] === "" && value[2] !== "") {
-            value = value[0] + " (" + value[2] + ")"
+    formatYearsRange(y) {
+        if (y[0] === "") {
+            y = ""
+        } else if (y[1] === "" && y[2] === "") {
+            y = y[0]
+        } else if (y[1] !== "" && y[2] === "") {
+            y = y[0] + "-" + y[1]
+        } else if (y[1] === "" && y[2] !== "") {
+            y = y[0] + " (" + y[2] + ")"
         } else {
-            value = value[0] + "-" + value[1] + " (" + value[2] + ")"
+            y = y[0] + "-" + y[1] + " (" + y[2] + ")"
         }
 
-        return value
+        return y
     }
 
-    formatYear(value) {
-        if (value[0] !== '') {
-            value = value[0] + " " + value[1]
+    formatYear(y) {
+        if (y[0] !== '') {
+            y = y[0] + " " + y[1]
         }
         else {
-            value = ''
+            y = ''
         }
-        return value
+        return y
     }
 
-    formatDate(value) {
-        if (value !== '') {
-            let nums = value.split('-')
+    formatDate(d) {
+        if (d !== '') {
+            let nums = d.split('-')
             while (nums[0][0] === '0') {
                 nums[0] = nums[0].slice(1)
             }
             return nums[2] + '.' + nums[1] + '.' + nums[0]
         } else {
-            return value
-        }
-    }
-
-    clearTableCells() {
-        for (let i=1; i<=this.numKeys; i++) {
-            let id = "#entity_attr" + i
-            $(id).empty()
+            return d
         }
     }
 
@@ -466,7 +470,7 @@ export class MetadataEditor {
 
         $(selectorId).html(`<select class="form-control" id=${inputId} style="padding: unset">`)
         $(selectorId).append(`<p><select class="form-control" id=${idYearsRangeEnd} style="padding: unset"></p>`)
-        $(selectorId).append(`<p><textarea class="form-control" rows="2" id=${idYearsRangeNote} placeholder="Note"></textarea></p>`)
+        $(selectorId).append(`<p><textarea class="form-control" rows="2" id=${idYearsRangeNote} placeholder="note"></textarea></p>`)
 
         let selectorYearsRangeStart = "#" + inputId
         let selectorYearsRangeEnd = "#" + idYearsRangeEnd
@@ -599,7 +603,7 @@ export class MetadataEditor {
                 this.makeSpinner(this.buttonsSelectorBottom)
                 this.updateEntityData(d.id, d.type, d.values)
                 this.tagEditor.saveTags()
-                this.options.callbackSave(this.entity, this.options.mode, () => {
+                this.options.callback(this.entity, this.options.mode, () => {
                     this.logSaveAction(this.options.mode)
                     this.setupShowMode()
                 })
@@ -674,7 +678,7 @@ export class MetadataEditor {
                     this.tagEditor.saveTags()
                 }
                 this.entity.values[keyIndex-1] = value // Corresponds to updateEntityData function in global save event
-                this.options.callbackSave(this.entity, this.options.mode, () => {
+                this.options.callback(this.entity, this.options.mode, () => {
                     this.logSaveAction(this.options.mode)
                     this.singleEdit = false
                     this.setupShowMode()
@@ -801,7 +805,7 @@ export class MetadataEditor {
         return year
     }
 
-    // Validate Data before Saving
+    // Validate Data
     validateData (d, keyIndex='all') {
 
         let index = 0
@@ -822,12 +826,12 @@ export class MetadataEditor {
                     date_death = value
                 }
 
-                if (affordedTypes.includes('password') === false) {
+                if (!affordedTypes.includes('password')) {
                     // Passwords do not need to undergo a check here
 
                     let givenType = this.dataType(value)
 
-                    if ((affordedTypes.includes(givenType) === false && !(affordedTypes.includes('person') && givenType === 'number')) || value === undefined) { // Mismatching types throw an error, non existing person ids are marked as ,undefined‘ and will also be detected
+                    if ((!affordedTypes.includes(givenType) && !(affordedTypes.includes('person') && givenType === 'number')) || value === undefined) { // Mismatching types throw an error, non existing person ids are marked as ,undefined‘ and will also be detected
                         this.returnDataTypeError(key, givenType, affordedTypes)
                         return false
                     } else if (date_birth > date_death) {
@@ -835,10 +839,12 @@ export class MetadataEditor {
                         return false
                     } else if (affordedTypes.includes('years_range')) {
                         if (parseInt(value[0]) > parseInt(value[1]) ||
-                            (value[0] === '' && value[1] !== '') ||
-                            (value[0] === '' && value[2] !== '')) {
-                            this.returnImpossibleYearsRangeError(key)
-                            return false
+                                (value[0] === '' && value[1] !== '') ||
+                                (value[0] === '' && value[2] !== '')) {
+                                    this.returnImpossibleYearsRangeError(key)
+                                    return false
+                        } else {
+                            index++
                         }
                     } else {
                         index++
@@ -900,7 +906,7 @@ export class MetadataEditor {
         let type
 
         if (value === undefined) {
-            type = undefined
+            type = value
         }
         else if (Array.isArray(value)) {
             if (this.isYearsRange(value)) {
@@ -912,7 +918,9 @@ export class MetadataEditor {
             else if (this.isIncorrectYear(value)) {
                 type = this.dataType(value[0])
             }
-            else {
+            else if (this.isEmptyArray(value)) {
+                type = 'empty'
+            } else {
                 type = 'tags'
             }
         }
@@ -944,16 +952,29 @@ export class MetadataEditor {
         return type
     }
 
-    isYearsRange(value) {
-        return value.length === 3 && value[0] !== "" && this.containsOnlyNumbers(value[0]);
+    isEmptyArray(array) {
+        if (array === []) {
+            return true
+        } else {
+            for (let value of array) {
+                if (value !== '') {
+                    return false
+                }
+            }
+        }
+        return true
     }
 
-    isYear(value) {
-        return value.length === 2 && value[0] !== "" && this.containsOnlyNumbers(value[0]);
+    isYearsRange(array) {
+        return array.length === 3 && array[0] !== "" && this.containsOnlyNumbers(array[0])
+    }
+
+    isYear(array) {
+        return array.length === 2 && array[0] !== "" && this.containsOnlyNumbers(array[0])
     }
 
     isIncorrectYear(value) {
-        return value.length === 2 && value[1] === 'BC' || value[1] === 'AD';
+        return value.length === 2 && value[1] === 'BC' || value[1] === 'AD'
     }
 
     isMail(str) {
@@ -1045,8 +1066,8 @@ export class MetadataEditor {
                 }
                 else {
                     console.log(apiResponse)
-
-                    callback(apiResponse.data)
+                    this.people = apiResponse.data
+                    callback()
                 }
 
             })

@@ -25,14 +25,14 @@
 
     <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/Item.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/Element.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/TranscriptionEditor.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/TranscriptionEditorBlots.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/TranscriptionEditorBlotConfig.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/EditorClipboard.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/EditorData.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/PageViewer.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/pages/TranscriptionEditor/Item.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/pages/TranscriptionEditor/Element.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/pages/TranscriptionEditor/TranscriptionEditor.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/pages/TranscriptionEditor/TranscriptionEditorBlots.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/pages/TranscriptionEditor/TranscriptionEditorBlotConfig.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/pages/TranscriptionEditor/EditorClipboard.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/pages/TranscriptionEditor/EditorData.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/pages/TranscriptionEditor/PageViewer.js"></script>
 
     <link href='{{baseurl}}/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
     <script>
@@ -40,9 +40,9 @@
     
     $( () => {
         let pv = new PageViewer({
-            baseUrl : '{{ baseurl }}',
+            baseUrl : '{{ baseurl }}', // superfluous?
             urlGenerator: new ApmUrlGenerator('{{ baseurl }}'),
-            imageUrl: '{{imageUrl}}',
+            imageUrl: '{{imageUrl}}',  // superfluous?
             pageType: {{pageInfo.type}},
             foliation: '{{pageInfo.foliation}}',
             pageNumber: {{ page }},

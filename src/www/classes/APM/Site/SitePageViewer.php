@@ -39,14 +39,15 @@ use Twig\Error\SyntaxError;
 class SitePageViewer extends SiteController
 {
 
-    const TEMPLATE_TRANSCRIPTION_EDITOR = 'transcription-editor.twig';
+    const TEMPLATE_PAGE_VIEWER = 'page-viewer.twig';
+    const TEMPLATE_PAGE_VIEWER_NEW = 'page-viewer-new.twig';
 
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    function pageViewerPageByDocPage(Request $request, Response $response)
+    function pageViewerPageByDocPage(Request $request, Response $response): Response
     {
         $docId = $request->getAttribute('doc');
         $pageNumber = $request->getAttribute('page');
@@ -72,7 +73,7 @@ class SitePageViewer extends SiteController
             $pageNumberFoliation = $pageInfo['foliation'];
         }
 
-        return $this->renderPage($response, self::TEMPLATE_TRANSCRIPTION_EDITOR, [
+        return $this->renderPage($response, self::TEMPLATE_PAGE_VIEWER, [
             'navByPage' => true,
             'doc' => $docId,
             'docInfo' => $docInfo,
@@ -91,12 +92,29 @@ class SitePageViewer extends SiteController
         ]);
     }
 
+    public function pageViewerPageByDocSeqNew(Request $request, Response $response): Response
+    {
+        $docId = $request->getAttribute('doc');
+        $seq = $request->getAttribute('seq');
+        $activeColumn = intval($request->getAttribute('col'));
+        if ($activeColumn === 0) {
+            $activeColumn = 1;
+        }
+
+        $pageId = $this->dataManager->getPageIdByDocSeq($docId, $seq);
+
+        return $this->renderPage($response, self::TEMPLATE_PAGE_VIEWER_NEW, [
+            'pageId' => $pageId,
+            'activeColumn' => $activeColumn
+        ]);
+
+    }
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    function pageViewerPageByDocSeq(Request $request, Response $response)
+    public function pageViewerPageByDocSeq(Request $request, Response $response): Response
     {
         $docId = $request->getAttribute('doc');
         $seq = $request->getAttribute('seq');
@@ -124,7 +142,7 @@ class SitePageViewer extends SiteController
             $pageNumberFoliation = $pageInfo['foliation'];
         }
 
-        return $this->renderPage($response, self::TEMPLATE_TRANSCRIPTION_EDITOR, [
+        return $this->renderPage($response, self::TEMPLATE_PAGE_VIEWER, [
             'navByPage' => false,  // i.e., navigate by sequence
             'doc' => $docId,
             'docInfo' => $docInfo,

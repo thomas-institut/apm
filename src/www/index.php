@@ -339,12 +339,25 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
 
     // PAGE VIEWER / TRANSCRIPTION EDITOR
     $group->get('/doc/{doc}/realpage/{page}/view',
-        SitePageViewer::class . ':pageViewerPageByDocPage')
+        function(Request $request, Response $response, array $args) use ($container){
+            $c = new SitePageViewer($container);
+            return $c->pageViewerPageByDocPage($request, $response, $args);
+        })
         ->setName('pageviewer.docpage');
 
     $group->get('/doc/{doc}/page/{seq}/view[/c/{col}]',
-        SitePageViewer::class . ':pageViewerPageByDocSeq')
+        function(Request $request, Response $response, array $args) use ($container){
+            $c = new SitePageViewer($container);
+            return $c->pageViewerPageByDocSeq($request, $response, $args);
+        })
         ->setName('pageviewer.docseq');
+
+    $group->get('/doc/{doc}/page/{seq}/new-viewer[/c/{col}]',
+        function(Request $request, Response $response, array $args) use ($container){
+            $c = new SitePageViewer($container);
+            return $c->pageViewerPageByDocSeqNew($request, $response, $args);
+        })
+        ->setName('pageviewer.new');
 
 })->add(Authenticator::class . ':authenticate');
 

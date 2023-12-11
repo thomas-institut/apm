@@ -24,8 +24,8 @@ class PageViewer {
   
   constructor (options){
     this.options = options
-    //console.log('Page Viewer options')
-    //console.log(options)
+    console.log('Page Viewer options')
+    console.log(options)
     this.cookieName = 'apm-pv2-' + this.options.userId + '-' + this.options.pageSystemId
 
     this.splitPaneElements =  $('div.split-pane')

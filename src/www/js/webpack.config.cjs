@@ -36,6 +36,7 @@ module.exports = {
     SearchPage: './pages/SearchPage.js',
     UserManagerPage: './pages/UserManagerPage.js',
     UserProfilePage:  './pages/UserProfilePage.js',
+    NewPageViewer: './pages/NewPageViewer.js',
     // JASMINE TESTS
     JasmineTests: {
       import: '../test/js/modules-to-test.js',

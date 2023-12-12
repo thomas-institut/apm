@@ -112,7 +112,7 @@ export class MetadataEditor {
         })
     }
 
-    // Entity Management
+    // Entity and Table Management
     buildEntity(callback) {
         this.entity.id = this.options.entityId
         this.entity.type = this.options.entityType
@@ -188,7 +188,7 @@ export class MetadataEditor {
                                                     <button id=${editAttributeButton} style="border: transparent; background-color: transparent">
                                                         <i class="fas fa-pencil-alt" style="color: gray"></i></button>
                                                 </td>`)
-                        this.makeEditKeyIconEvent(editAttributeButton)
+                        this.makeEditIconEvent(editAttributeButton)
                     } else {
                         $('#row1').append(`<th>${this.entity.keys[i-1]}</th>`)
                         $('#row2').append(`<td><div id=${cellId}></div></td>`)
@@ -213,7 +213,7 @@ export class MetadataEditor {
                                     <td id=${cellButtonId} style="width: 3em">
                                         <button id=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: gray"></i></button>
                                     </td>`)
-                        this.makeEditKeyIconEvent(editAttributeButton)
+                        this.makeEditIconEvent(editAttributeButton)
                     }
                 }
                 break
@@ -234,6 +234,11 @@ export class MetadataEditor {
             let id = "#entity_attr" + i
             $(id).empty()
         }
+    }
+
+    clearTable() {
+        let tableSelector = '#metadataTable'
+        $(tableSelector).empty()
     }
 
     // Table Data Management
@@ -323,75 +328,57 @@ export class MetadataEditor {
 
     setupTableForDataInput(callback, keyIndex='all') {
 
-        this.setupInputFormsForKeys(keyIndex)
+        this.setupInputFormByIndex(keyIndex)
 
         if (this.options.mode === this.mode.create) {
             callback()
         }
         else {
-            this.fillKeysForms(keyIndex)
+            this.addValueToInputFormByIndex(keyIndex)
             callback()
         }
     }
 
-    setupInputFormsForKeys(keyIndex) {
+    setupInputFormByIndex(keyIndex) {
         if (keyIndex === 'all') {
             for (let i = 1; i <= this.numKeys; i++) {
                 let selectorId = "#entity_attr" + i
                 let inputId = "entity_attr" + i + "_form"
                 let type = this.entity.types[i - 1][0] // first possible type of data, set in the corresponding schema, determines type of input form
 
-                switch (type) {
-                    case 'password':
-                        this.makePasswordForm(selectorId, inputId)
-                        break
-                    case 'date':
-                        this.makeDateForm(selectorId, inputId, type)
-                        break
-                    case 'year':
-                        this.makeYearForm(selectorId, inputId, type)
-                        break
-                    case 'years_range':
-                        this.makeYearsRangeForm(selectorId, inputId)
-                        break
-                    case 'person':
-                        this.makePersonForm(selectorId, inputId)
-                        break
-                    case 'tags':
-                        this.makeTagsForm(selectorId)
-                        break
-                    default:
-                        this.makeTextForm(selectorId, inputId, type)
-                }
+                this.setupInputFormByType(type, selectorId, inputId)
             }
         } else {
-            let i = keyIndex
-            let selectorId = "#entity_attr" + i
-            let inputId = "entity_attr" + i + "_form"
-            let type = this.entity.types[i-1][0] // first possible type of data, set in the corresponding schema, determines type of input form
+            let selectorId = "#entity_attr" + keyIndex
+            let inputId = "entity_attr" + keyIndex + "_form"
+            let type = this.entity.types[keyIndex-1][0] // first possible type of data, set in the corresponding schema, determines type of input form
 
-            switch (type) {
-                case 'password':
-                    this.makePasswordForm(selectorId, inputId)
-                    break
-                case 'date':
-                    this.makeDateForm(selectorId, inputId, type)
-                    break
-                case 'year':
-                    this.makeYearForm(selectorId, inputId, type)
-                    break
-                case 'years_range':
-                    this.makeYearsRangeForm(selectorId, inputId)
-                    break
-                case 'person':
-                    this.makePersonForm(selectorId, inputId)
-                    break
-                case 'tags':
-                    this.makeTagsForm(selectorId)
-                    break
-                default:
-                    this.makeTextForm(selectorId, inputId, type)
-            }
+            this.setupInputFormByType(type, selectorId, inputId)
+        }
+    }
+
+    setupInputFormByType(type, selectorId, inputId) {
+        switch (type) {
+            case 'password':
+                this.makePasswordForm(selectorId, inputId)
+                break
+            case 'date':
+                this.makeDateForm(selectorId, inputId, type)
+                break
+            case 'year':
+                this.makeYearForm(selectorId, inputId, type)
+                break
+            case 'years_range':
+                this.makeYearsRangeForm(selectorId, inputId)
+                break
+            case 'person':
+                this.makePersonForm(selectorId, inputId)
+                break
+            case 'tags':
+                this.makeTagsForm(selectorId)
+                break
+            default:
+                this.makeTextForm(selectorId, inputId, type)
         }
     }
 
@@ -409,10 +396,10 @@ export class MetadataEditor {
         $(selector).html(`<p>
             <input class="form-control" list=${list} id=${inputId} placeholder="person" autoComplete="off" style="padding: unset">
                 <datalist id=${list}></datalist></p>`)
-        this.addItemsToList(this.people, listSelector)
+        this.addNamesToDatalist(this.people, listSelector)
     }
 
-    addItemsToList(people, list) {
+    addNamesToDatalist(people, list) {
         for (let person of people) {
             let id = person.id
             let name = person.values[0]
@@ -489,58 +476,46 @@ export class MetadataEditor {
             `<p><input type="text" class="form-control" id=${inputId} placeholder=${type} style="padding: unset"></p>`)
     }
 
-     fillKeysForms(keyIndex) {
-        let values = this.entity.values
-
+     addValueToInputFormByIndex(keyIndex) {
          if (keyIndex === 'all') {
              for (let i=1; i<=this.numKeys; i++) {
-                 let id = "#entity_attr" + i + "_form"
-                 if (this.entity.types[i-1][0] === 'year') {
-                     let idYearBcAd = id + "_year_bc_ad"
-                     $(id).val(values[i-1][0])
-                     $(idYearBcAd).val(values[i-1][1])
-                 }
-                 else if (this.entity.types[i-1][0] === 'years_range') {
-                     let idYearsRangeEnd = id + "_years_range_end"
-                     let idYearsRangeNote = id + "_years_range_note"
-                     $(id).val(values[i-1][0])
-                     $(idYearsRangeEnd).val(values[i-1][1])
-                     $(idYearsRangeNote).val(values[i-1][2])
-                 }
-                 else if (this.entity.types[i-1].includes('person') && values[i-1] !== '') {
-                     let name = this.getPersonNameById(values[i-1])
-                     $(id).val(name)
-                 }
-                 else {
-                     $(id).val(values[i-1])
-                 }
+                 this.addValueToInputFormByType(this.entity.types[i-1][0], i)
              }
          } else {
-             let i = keyIndex
-             let id = "#entity_attr" + i + "_form"
-             if (this.entity.types[i-1][0] === 'year') {
-                 let idYearBcAd = id + "_year_bc_ad"
-                 $(id).val(values[i-1][0])
-                 $(idYearBcAd).val(values[i-1][1])
-             }
-             else if (this.entity.types[i-1][0] === 'years_range') {
-                 let idYearsRangeEnd = id + "_years_range_end"
-                 let idYearsRangeNote = id + "_years_range_note"
-                 $(id).val(values[i-1][0])
-                 $(idYearsRangeEnd).val(values[i-1][1])
-                 $(idYearsRangeNote).val(values[i-1][2])
-             }
-             else if (this.entity.types[i-1].includes('person') && values[i-1] !== '') {
-                 let name = this.getPersonNameById(values[i-1])
-                 $(id).val(name)
-             }
-             else {
-                 $(id).val(values[i-1])
-             }
+             this.addValueToInputFormByType(this.entity.types[keyIndex-1][0], keyIndex)
          }
     }
 
-    // Save Button Setup
+    addValueToInputFormByType(type, index) {
+
+        let values = this.entity.values
+        let entityAttrFormId = "#entity_attr" + index + "_form"
+
+        switch (type) {
+            case 'year':
+                let idYearBcAd = entityAttrFormId + "_year_bc_ad"
+                $(entityAttrFormId).val(values[index-1][0])
+                $(idYearBcAd).val(values[index-1][1])
+                break
+            case 'years_range':
+                let idYearsRangeEnd = entityAttrFormId + "_years_range_end"
+                let idYearsRangeNote = entityAttrFormId + "_years_range_note"
+                $(entityAttrFormId).val(values[index-1][0])
+                $(idYearsRangeEnd).val(values[index-1][1])
+                $(idYearsRangeNote).val(values[index-1][2])
+                break
+            case 'person':
+                if (values[index-1] !== '') {
+                    let name = this.getPersonNameById(values[index-1])
+                    $(entityAttrFormId).val(name)
+                }
+                break
+            default:
+                $(entityAttrFormId).val(values[index-1])
+        }
+    }
+
+    // Button Setup
     setupSaveButton () {
         this.clearBottomButtons()
         let selector = '#' + this.buttonsSelectorBottom
@@ -589,7 +564,17 @@ export class MetadataEditor {
                 `<a class="card-link" id="back_button" href = ${this.options.backlink}>Back</a>`)
         }
     }
-    
+
+    clearTopButtons() {
+        let selector = '#' + this.buttonsSelectorTop
+        $(selector).empty()
+    }
+
+    clearBottomButtons() {
+        let selector = '#' + this.buttonsSelectorBottom
+        $(selector).empty()
+    }
+
     makeSaveButtonEvent () {
         $("#save-button").on("click",  () => {
 
@@ -597,7 +582,7 @@ export class MetadataEditor {
             this.clearErrorMessage()
 
             // Get Data To Save
-            let d = this.getEntityDataToSave()
+            let d = this.getEntityDataByIndex()
 
             if (this.validateData(d) && this.validatePasswords()) {
                 this.makeSpinner(this.buttonsSelectorBottom)
@@ -611,34 +596,32 @@ export class MetadataEditor {
         })
     }
 
-    makeEditKeyIconEvent(selector) {
+    makeEditIconEvent(selector) {
         selector = '#' + selector
             $(selector).on("click", () => {
                 if (!this.singleEdit) {
                     let keyIndex = selector.match(/\d+/)[0]
                     this.setupTableForDataInput(() => {
-                        this.replaceEditWithSaveIcon(keyIndex)
+                        this.replaceEditWithSaveAndAbortIcons(keyIndex)
                         console.log(`'${this.entity.keys[keyIndex-1]}' in edit mode!`)
                     }, keyIndex)
                     this.options.mode = this.mode.edit
                     this.singleEdit = true
-                    this.mutePencils(keyIndex)
+                    this.mutePencilIcons(keyIndex)
                 }
             })
     }
 
-    mutePencils(keyIndex) {
+    mutePencilIcons(keyIndex) {
         for (let i=1; i<=this.numKeys; i++) {
             let selector = "#entity_attr" + i + "_tableCellButton"
-            let editAttributeButton = "entity_attr" + i + "_editButton"
-
             if (i !== parseInt(keyIndex)) {
                 $(selector).html(`<i class="fas fa-pencil-alt" style="color: lightgray"></i>`)
             }
         }
     }
 
-    replaceEditWithSaveIcon(i) {
+    replaceEditWithSaveAndAbortIcons(i) {
         let cellButtonSelector = "#entity_attr" + i + "_tableCellButton"
         let editButtonSelector = '#entity_attr' + i + '_editButton'
         let cellSaveButton = "entity_attr" + i + "_saveButton"
@@ -649,7 +632,7 @@ export class MetadataEditor {
                                                     <i class="fa fa-check" style="color: green"></i></button>`)
         $(cellButtonSelector).append(`<button class="abort" id=${cellAbortButton} style="border: transparent; background-color: transparent">
                                                     <i class="fa fa-times" style="color: darkred; margin-left: 0.15em"></i></button>`)
-        this.makeSaveKeyValueIconEvent(cellSaveButton)
+        this.makeSaveIconEvent(cellSaveButton)
         this.makeAbortIconEvent(cellAbortButton)
     }
 
@@ -660,17 +643,17 @@ export class MetadataEditor {
             let keyIndex = selector.match(/\d+/)[0]
             this.clearErrorMessage()
             this.setupShowMode()
-            this.makeCellEditButton(keyIndex)
+            this.makeEditIcon(keyIndex)
             console.log(`Editing value for '${this.entity.keys[keyIndex-1]}' aborted.`)
         })
     }
 
-    makeSaveKeyValueIconEvent(selector) {
+    makeSaveIconEvent(selector) {
         selector = '#' + selector
         $(selector).on("click",  () => {
             let keyIndex = selector.match(/\d+/)[0]
             let cellButtonId = "entity_attr" + keyIndex + "_tableCellButton"
-            let value = this.getEntityDataToSave(keyIndex)
+            let value = this.getEntityDataByIndex(keyIndex)
             if (this.validateData(value, keyIndex)) {
                 this.clearErrorMessage()
                 this.makeSpinner(cellButtonId, '1.25em')
@@ -682,21 +665,21 @@ export class MetadataEditor {
                     this.logSaveAction(this.options.mode)
                     this.singleEdit = false
                     this.setupShowMode()
-                    this.makeCellEditButton(keyIndex)
+                    this.makeEditIcon(keyIndex)
                 })
                 console.log(`Saved value for '${this.entity.keys[keyIndex-1]}'.`)
             }
         })
     }
 
-    makeCellEditButton(i) {
+    makeEditIcon(i) {
         let cellButtonId = "#entity_attr" + i + "_tableCellButton"
         let editAttributeButton = "entity_attr" + i + "_editButton"
         let saveButtonSelector = '#entity_attr' + i + '_saveButton'
         $(saveButtonSelector).remove()
         $(cellButtonId).html(`<button id=${editAttributeButton} style="border: transparent; background-color: transparent"><i
             class="fas fa-pencil-alt" style="color: gray"></i></button>`)
-        this.makeEditKeyIconEvent(editAttributeButton)
+        this.makeEditIconEvent(editAttributeButton)
     }
 
     makeEditButtonEvent() {
@@ -728,58 +711,47 @@ export class MetadataEditor {
         this.entity.values = values
     }
 
-    getEntityDataToSave(keyIndex='all') {
+    getEntityDataByIndex(keyIndex='all') {
         let id = this.entity.id
         let values = []
         let type = this.entity.type
 
         if (keyIndex === 'all') {
             for (let i = 1; i <= this.numKeys; i++) {
-                let name = "#entity_attr" + i + "_form"
-                let value = $(name).val()
-
-                if (this.entity.types[i - 1].includes('year')) {
-                    let year = this.getDataForYear(name, value)
-                    values.push(year)
-                } else if (this.entity.types[i - 1].includes('years_range')) {
-                    let years = this.getDataForYearsRange(name, value)
-                    values.push(years)
-                } else if (this.entity.types[i - 1].includes('tags')) {
-                    let tags = this.tagEditor.getTags()
-                    values.push(tags)
-                } else if (this.entity.types[i - 1].includes('person')) {
-                    let datalist = "#entity_attr" + i + "_form_list"
-                    let person_id
-                    try {
-                        person_id = $(`${datalist} option[value=${value}]`).attr('id')
-                    } catch {
-                        person_id = ''
-                    }
-                    values.push(person_id)
-                } else {
-                    values.push(value)
-                }
+                values.push(this.getEntityDataByType(this.entity.types[i-1], i))
             }
             return {id: id, type: type, values: values}
-        }
-        else {
-            let name = "#entity_attr" + keyIndex + "_form"
-            let value = $(name).val()
 
-            if (this.entity.types[keyIndex-1].includes('year')) {
-                value = this.getDataForYear(name, value)
-            } else if (this.entity.types[keyIndex-1].includes('years_range')) {
-                value = this.getDataForYearsRange(name, value)
-            } else if (this.entity.types[keyIndex-1].includes('tags')) {
-                value = this.tagEditor.getTags()
-            } else if (this.entity.types[keyIndex-1].includes('person')) {
-                let datalist = "#entity_attr" + keyIndex + "_form_list"
-                try {
-                    value = $(`${datalist} option[value=${value}]`).attr('id')
-                } catch {
-                    value = ''
-                }
+        } else {
+            return this.getEntityDataByType(this.entity.types[keyIndex-1], keyIndex)
+        }
+    }
+
+    getEntityDataByType (type, keyIndex) {
+
+        let selector = "#entity_attr" + keyIndex + "_form"
+        let value = $(selector).val()
+
+        if (type.includes('year')) {
+            return this.getDataForYear(selector, value)
+
+        } else if (type.includes('years_range')) {
+            return this.getDataForYearsRange(selector, value)
+
+        } else if (type.includes('tags')) {
+            return this.tagEditor.getTags()
+
+        } else if (type.includes('person')) {
+            let datalist = "#entity_attr" + keyIndex + "_form_list"
+            let person_id
+            try {
+                person_id = $(`${datalist} option[value=${value}]`).attr('id')
+            } catch {
+                person_id = ''
             }
+            return person_id
+
+        } else {
             return value
         }
     }
@@ -809,86 +781,75 @@ export class MetadataEditor {
     validateData (d, keyIndex='all') {
 
         let index = 0
-        let date_birth = '0'
-        let date_death = 'z'
 
-        if (keyIndex === 'all') {
+        if (keyIndex === 'all') { // full edit
             for (let value of d.values) {
 
                 let key = this.entity.keys[index]
                 let affordedTypes = this.entity.types[index]
 
-                // Get dates of birth and death
-                if (key === 'Date of Birth' && value !== '') {
-                    date_birth = value
-                }
-                if (key === 'Date of Death' && value !== '') {
-                    date_death = value
-                }
-
-                if (!affordedTypes.includes('password')) {
-                    // Passwords do not need to undergo a check here
-
-                    let givenType = this.dataType(value)
-
-                    if ((!affordedTypes.includes(givenType) && !(affordedTypes.includes('person') && givenType === 'number')) || value === undefined) { // Mismatching types throw an error, non existing person ids are marked as ,undefined‘ and will also be detected
-                        this.returnDataTypeError(key, givenType, affordedTypes)
-                        return false
-                    } else if (date_birth > date_death) {
-                        this.returnImpossibleDatesError()
-                        return false
-                    } else if (affordedTypes.includes('years_range')) {
-                        if (parseInt(value[0]) > parseInt(value[1]) ||
-                                (value[0] === '' && value[1] !== '') ||
-                                (value[0] === '' && value[2] !== '')) {
-                                    this.returnImpossibleYearsRangeError(key)
-                                    return false
-                        } else {
-                            index++
-                        }
-                    } else {
-                        index++
-                    }
+                if (!affordedTypes.includes('password') && !this.isValid(key, affordedTypes, this.dataType(value), value)) { // Passwords do not need to undergo a check here
+                    return false
                 } else {
                     index++
                 }
             }
-        } else {
-            index = keyIndex-1
-            let key = this.entity.keys[index]
-            let affordedTypes = this.entity.types[index]
+        } else { // single edit
+
+            let key = this.entity.keys[keyIndex-1]
+            let affordedTypes = this.entity.types[keyIndex-1]
             let value = d
 
-            // Get dates of birth and death
-            if (key === 'Date of Birth' && value !== '') {
-                date_birth = value
-            }
-            if (key === 'Date of Death' && value !== '') {
-                date_death = value
-            }
-
-            if (affordedTypes.includes('password') === false) {
-                // Passwords do not need to undergo a check here
-
-                let givenType = this.dataType(value)
-
-                if ((affordedTypes.includes(givenType) === false && !(affordedTypes.includes('person') && givenType === 'number')) || value === undefined) { // Mismatching types throw an error, non existing person ids are marked as ,undefined‘ and will also be detected
-                    this.returnDataTypeError(key, givenType, affordedTypes)
-                    return false
-                } else if (date_birth > date_death) {
-                    this.returnImpossibleDatesError()
-                    return false
-                } else if (affordedTypes.includes('years_range')) {
-                    if (parseInt(value[0]) > parseInt(value[1]) ||
-                        (value[0] === '' && value[1] !== '') ||
-                        (value[0] === '' && value[2] !== '')) {
-                        this.returnImpossibleYearsRangeError(key)
-                        return false
-                    }
-                }
+            if (!affordedTypes.includes('password') && !this.isValid(key, affordedTypes, this.dataType(value), value)) { // Passwords do not need to undergo a check here
+                return false
             }
         }
         return true
+    }
+
+    isValid(key, affordedTypes, givenType, value) {
+        if (this.typesNotMatching(givenType, affordedTypes) || value === undefined) {
+            this.returnDataTypeError(key, givenType, affordedTypes)
+            return false
+        } else if (this.inconsistentDates(key, givenType, value)) {
+            this.returnImpossibleDatesError()
+            return false
+        } else if (this.inconsistentYearsRange(affordedTypes, value)) {
+            this.returnImpossibleYearsRangeError(key)
+            return false
+        } else {
+            return true
+        }
+    }
+
+    typesNotMatching (givenType, affordedTypes) {
+        return affordedTypes.includes(givenType) === false && !(affordedTypes.includes('person') && givenType === 'number')
+    }
+
+    inconsistentDates(key, givenType, value) {
+
+        if (givenType !== 'date') {
+            return false
+        } else {
+            let date_birth = '0'
+            let date_death = 'z'
+
+            // Get dates of birth and death
+            if (key === 'Date of Birth' && value !== '' && this.getValueByKey('Date of Death') !== '') {
+                date_birth = value
+                date_death = this.getValueByKey('Date of Death')
+            }
+            if (key === 'Date of Death' && value !== '' && this.getValueByKey('Date of Birth') !== '') {
+                date_death = value
+                date_birth = this.getValueByKey('Date of Birth')
+            }
+            return date_birth > date_death
+        }
+    }
+
+    inconsistentYearsRange(affordedTypes, value) {
+        return affordedTypes.includes('years_range') &&
+            (parseInt(value[0]) > parseInt(value[1]) || (value[0] === '' && value[1] !== '') || (value[0] === '' && value[2] !== ''))
     }
 
     validatePasswords() {
@@ -997,7 +958,7 @@ export class MetadataEditor {
         return /.+-.+-.+/.test(str)
     }
 
-    // User Communication
+    // Error Communication and Logging
     returnDataTypeError(key, givenType, affordedTypes) {
         console.log('Data Type Error!')
         this.returnError(`Error! Given data for '${key}' is of type '${givenType}' but has to be of one of the types '${affordedTypes}'. Please try again.`)
@@ -1036,22 +997,7 @@ export class MetadataEditor {
         }
     }
 
-    clearTopButtons() {
-        let selector = '#' + this.buttonsSelectorTop
-        $(selector).empty()
-    }
-
-    clearBottomButtons() {
-        let selector = '#' + this.buttonsSelectorBottom
-        $(selector).empty()
-    }
-
-    clearTable() {
-        let tableSelector = '#metadataTable'
-        $(tableSelector).empty()
-    }
-
-    // API Calls
+    // API Call
     getPeople(callback) {
         $.post(urlGen.apiPeopleGetAllPeople())
             .done((apiResponse) => {

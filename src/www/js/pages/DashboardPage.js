@@ -21,62 +21,61 @@ import { UserDocDataCommon } from './common/UserDocDataCommon'
 import { tr } from './common/SiteLang'
 import { NormalPage } from './NormalPage'
 import { urlGen } from './common/SiteUrlGen'
+import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 
 const newMceEditionIcon = '<i class="bi bi-file-plus"></i>'
 
 export class DashboardPage extends NormalPage {
   constructor(options) {
     super(options)
-    this.initPage()
+    console.log(`Dashboard Page`)
+    console.log(options)
+    this.initPage().then( () => {
+      console.log(`Dashboard page initialized`)
+    })
   }
 
-  initPage() {
-    super.initPage()
-
+  async initPage() {
+    await super.initPage()
     document.title = tr('Dashboard')
-
     this.mcEditionsCollapse = this.constructCollapse('#multi-chunk-editions', tr('Multi-Chunk Editions'), [ 'first'])
     this.chunkEditionsCollapse = this.constructCollapse('#chunk-editions', tr('Chunk Editions'))
     this.collationTablesCollapse = this.constructCollapse('#collation-tables', tr('Collation Tables'))
     this.transcriptionsCollapse = this.constructCollapse('#transcriptions', tr('Transcriptions'))
     this.adminCollapse = this.constructCollapse('#admin',tr('Admin'))
     this.adminCollapse.setContent(this.genAdminSectionHtml())
-    // now get the data
-    this.fetchMultiChunkEditions()
-    this.fetchCollationTablesAndEditions()
-    this.fetchTranscriptions()
+    await Promise.all( [
+      this.fetchMultiChunkEditions(),
+      this.fetchCollationTablesAndEditions(),
+      this.fetchTranscriptions()
+    ])
   }
 
-
-
-  fetchMultiChunkEditions() {
-    this.fetch(urlGen.apiUserGetMultiChunkEditionInfo(this.userId)).then ( (data) => {
-      let html = UserDocDataCommon.generateMultiChunkEditionsListHtml(data)
-      let newMceUrl = urlGen.siteMultiChunkEditionNew()
-      html += `<p class="new-mce"><a href="${newMceUrl}" title="${tr('Click to start a new multi-chunk edition')}" target="_blank">${newMceEditionIcon} ${tr('Create new multi-chunk edition')}</a></p>`
-      this.mcEditionsCollapse.setContent(html)
-    })
+  async fetchMultiChunkEditions() {
+    let data = await this.apmDataProxy.get(urlGen.apiUserGetMultiChunkEditionInfo(this.userId))
+    let html = UserDocDataCommon.generateMultiChunkEditionsListHtml(data)
+    let newMceUrl = urlGen.siteMultiChunkEditionNew()
+    html += `<p class="new-mce"><a href="${newMceUrl}" title="${tr('Click to start a new multi-chunk edition')}" target="_blank">${newMceEditionIcon} ${tr('Create new multi-chunk edition')}</a></p>`
+    this.mcEditionsCollapse.setContent(html)
   }
 
-  fetchCollationTablesAndEditions() {
-    let p = new SimpleProfiler('fetchCT_Info')
-    this.fetch(urlGen.apiUserGetCollationTableInfo(this.userId)).then( (data) => {
-      p.lap('Got data from server')
-      let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo'])
-      p.lap('Generated HTML')
-      this.chunkEditionsCollapse.setContent(listHtml.editions)
-      this.collationTablesCollapse.setContent(listHtml.cTables)
-      p.stop('Finished')
-    })
+  async fetchCollationTablesAndEditions() {
+   let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.userId))
+   let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo'])
+   this.chunkEditionsCollapse.setContent(listHtml.editions)
+   this.collationTablesCollapse.setContent(listHtml.cTables)
   }
 
-  fetchTranscriptions() {
-    this.fetch(urlGen.apiTranscriptionsByUserDocPageData(this.userId)).then( (data) => {
-      this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data))
-    })
+  async fetchTranscriptions() {
+    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.userId))
+    this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data))
   }
 
-  genHtml() {
+  /**
+   *
+   * @return {Promise<string>}
+   */
+  async genHtml() {
     return `<div class="dashboard">
         <div id="multi-chunk-editions" class="dashboard-section"></div>
         <div id="chunk-editions" class="dashboard-section"></div>

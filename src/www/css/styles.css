@@ -91,33 +91,53 @@ table.pagetable td {
 }
 
 /* Page Type: Not set */
-table.pagetable td.type0 {
-    background-color: #EFFEEF;
-}
+/*table.pagetable td.type0 {*/
+/*    background-color: #EFFEEF;*/
+/*}*/
 
-/* Page Type: Normal text */
-table.pagetable td.type1 {
-    background-color: white;
-}
+/*!* Page Type: Normal text *!*/
+/*table.pagetable td.type1 {*/
+/*    background-color: white;*/
+/*}*/
 
-/* Page Type: Front Matter */
-table.pagetable td.type2 {
-    background-color: #f9f9f9;
-}
+/*!* Page Type: Front Matter *!*/
+/*table.pagetable td.type2 {*/
+/*    background-color: #f9f9f9;*/
+/*}*/
 
-/* Page Type: Back Matter */
-table.pagetable td.type3 {
-    background-color: #f9f9f9;
+/*!* Page Type: Back Matter *!*/
+/*table.pagetable td.type3 {*/
+/*    background-color: #f9f9f9;*/
 
-}
+/*}*/
 table.pagetable a {
     color: var(--default-font-color);
 }
 
-table.pagetable td.withouttranscription a {
+td.withouttranscription a {
     color: silver;
 }
 
+td.without-transcription a{
+    color:silver
+}
+
+.foliation-set {
+   font-weight: bold;
+}
+.out-of-sequence {
+   background-color: #f5f0e7;
+}
+div.page-table-div {
+    margin-bottom: 1em;
+}
+
+div.page-table-legend {
+    font-size: 0.8em;
+    color: #8d8d8d;
+    margin-left: 3em;
+    margin-bottom: 2em;
+}
 .in-text {
     margin-left: 5px;
     margin-right: 5px;

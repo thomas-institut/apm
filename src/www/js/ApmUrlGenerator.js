@@ -79,6 +79,13 @@ class ApmUrlGenerator {
         return this.base + '/doc/' + docId + '/details'
     }
 
+    siteDocEdit(docId) {
+        return `${this.base}/doc/${docId}/edit`
+    }
+    siteDocDefinePages(docId) {
+        return `${this.base}/doc/${docId}/definepages`
+    }
+
     siteDocs() {
         return this.base + '/documents'
     }

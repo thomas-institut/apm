@@ -30,39 +30,43 @@ class PageInfo
     /**
      * @var int
      */
-    public $docId;
+    public int $docId;
     /**
      * @var int
      */
-    public $pageNumber;
+    public int $pageNumber;
     /**
      * @var int
      */
-    public $imageNumber;
+    public int $imageNumber;
     /**
      * @var int
      */
-    public $sequence;
+    public int $sequence;
     /**
      * @var int
      */
-    public $type;
+    public int $type;
     /**
      * @var string
      */
-    public $langCode;
+    public string $langCode;
     /**
      * @var int
      */
-    public $numCols;
+    public int $numCols;
     /**
      * @var string
      */
-    public $foliation;
+    public string $foliation;
     /**
      * @var int
      */
-    public $pageId;
+    public int $pageId;
+    /**
+     * @var false
+     */
+    public bool $foliationIsSet;
 
     public function __construct()
     {
@@ -75,9 +79,11 @@ class PageInfo
         $this->langCode = '';
         $this->numCols = 0;
         $this->foliation = '';
+        $this->foliationIsSet = false;
     }
 
-    public function setFromDatabaseRow(array $row) {
+    public function setFromDatabaseRow(array $row): void
+    {
         $this->pageId = (int) $row['id'];
         $this->docId = (int) $row['doc_id'];
         $this->pageNumber = (int) $row['page_number'];
@@ -87,9 +93,11 @@ class PageInfo
         $this->langCode = $row['lang'];
         $this->numCols = (int)$row['num_cols'];
         if (is_null($row['foliation'])) {
-            $this->foliation = $this->pageNumber;
+            $this->foliation = $this->sequence;
+            $this->foliationIsSet = false;
         } else {
             $this->foliation = $row['foliation'];
+            $this->foliationIsSet = true;
         }
     }
 

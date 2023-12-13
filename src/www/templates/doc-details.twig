@@ -4,80 +4,166 @@
 {% block title %}Doc: {{doc.docInfo.title}}{% endblock %}
 
 {% block extraJS %}
+
+    <style>
+        div.viewer-container {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            height: 800px;
+            margin-top: 2em;
+            margin-bottom: 2em;
+        }
+
+        div.viewer-container a, div.viewer-container a:visited {
+            color: inherit;
+        }
+
+        div.viewer-container a.btn {
+            color: white;
+        }
+
+        div.viewer-toolbar {
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+
+
+        div.page-viewer {
+            width: 60%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        div.osd-viewer {
+            width: 100%;
+            height: 100%;
+        }
+
+        div.page-info-panel {
+            /*width: 50%;*/
+            margin-left: 2em;
+            margin-top: 3em;
+        }
+
+        div.page-list-popover {
+            background: white;
+            border: 1px solid silver;
+            border-radius: 4px;
+            display: none;
+            height: 400px;
+            width: 600px;
+        }
+        div.page-list-popover[data-show] {
+            display: block;
+            padding: 0;
+        }
+
+        div.page-list {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        div.page-list-header {
+            background: #eaeaea;
+            border-bottom: 1px solid silver;
+            font-size: 1.2em;
+            font-weight: bold;
+            padding: 0.5em;
+        }
+
+        div.page-list-contents {
+            overflow-y: scroll;
+            width: 100%;
+            /*height: 100%;*/
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            /*padding: 3px;*/
+            align-items: center;
+        }
+
+        div.osd-div {
+            border: 1px solid silver;
+            height: 100%;
+            width: 100%;
+        }
+        div.page-div {
+            padding: 5px;
+            width: 3em;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        div.page-info {
+            text-align: center;
+            cursor: pointer;
+        }
+
+        span.page-info-foliation {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .foliation-not-set {
+            font-style: italic;
+        }
+
+        .page-selected {
+            border: 1px solid black;
+            border-radius: 3px;
+        }
+
+        .without-transcription {
+            color: silver
+        }
+
+        .out-of-sequence {
+            background: #fffcf8;
+        }
+
+        .foliation-span {
+            padding: 0.5em;
+
+        }
+
+        .foliation-span.etf-editing{
+            border: none;
+        }
+
+        div.page-info-item {
+            margin-bottom: 0.5em;
+        }
+
+
+
+    </style>
+    <script type="application/javascript" src="../../node_modules/openseadragon/build/openseadragon/openseadragon.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/dist/DocPage.bundle.js"></script>
     <script>
-
-      let chunkInfo = JSON.parse('{{chunkInfo|json_encode|e('js')}}')
-      let works = JSON.parse('{{works|json_encode|e('js')}}')
-      let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
-      let docId = parseInt({{ doc.docInfo.id }})
-      let lastVersions = JSON.parse('{{lastVersions|json_encode|e('js')}}')
-      let authorInfo = JSON.parse('{{authorInfo|json_encode|e('js')}}')
-      let lastSaves = JSON.parse('{{lastSaves|json_encode|e('js')}}')
-      let pages = JSON.parse('{{doc.pages|json_encode|e('js')}}')
-      let metaData = JSON.parse('{{metaData|json_encode|e('js')}}')
-      console.log('Pages:')
-      console.log(pages)
-      console.log('Chunk Info: ')
-      console.log(chunkInfo)
-      console.log('Last Version: ')
-      console.log(lastVersions)
-      console.log('Authors:')
-      console.log(authorInfo)
-      console.log('Works:')
-      console.log(works)
-      console.log('Last Saves:')
-      console.log(lastSaves)
-      console.log('Metadata:')
-      console.log(metaData)
-
-      let docShowPage = new DocPage(pages, chunkInfo, lastVersions, lastSaves, works, authorInfo, docId, urlGenerator)
-
-      $(function () {
-        $('#chunkinfo').html(docShowPage.genWorkInfoHtml())
-        $('#pagetablediv').html(docShowPage.getPageTableHtml())
-        $('#lastsaves').html(docShowPage.getLastSavesHtml())
-        $('[data-toggle="popover"]').popover({trigger:  'hover', html: true})
-        ApmUtil.disableHyperlinks('a.alwaysblack')
-      })
+      $( () => {
+        new DocPage({
+          baseUrl: '{{baseurl}}',
+          doc: JSON.parse('{{doc|json_encode|e('js')}}'),
+          chunkInfo: JSON.parse('{{chunkInfo|json_encode|e('js')}}'),
+          versionInfo: JSON.parse('{{lastVersions|json_encode|e('js')}}'),
+          lastSaves: JSON.parse('{{lastSaves|json_encode|e('js')}}'),
+          canDefinePages: '{{ canDefinePages }}' === '1',
+          metadata: JSON.parse('{{metaData|json_encode|e('js')}}'),
+          userId: parseInt('{{ userId }}'),
+          userInfo: JSON.parse("{{userInfo|json_encode|e('js')}}"),
+          showLanguageSelector: parseInt('{{ showLanguageSelector }}') === 1
+        })
+      });
     </script>
 {% endblock %}
 
-{% block content %}
-<nav aria-label="breadcumb">
-     <ol class="breadcrumb">
-         <li class="breadcrumb-item"><a href="{{url_for('docs')}}">Documents</a></li>
-        <li class="breadcrumb-item active">Document Details</li>
-    </ol>
-</nav>
-<h1>{{doc.docInfo.title}}</h1>
-    <p class="docinfo">{{macros.langName(doc.docInfo.lang)}} {{macros.docTypeName(doc.docInfo.doc_type)}}, 
-        {{doc.numTranscribedPages}} of {{doc.numPages}} pages transcribed
-{% if doc.numLines %}
-        by
-        {% apply spaceless %}
-        {% for editor in doc.editors %}
-            <a href="{{url_for('user.profile', {'username' : editor.username})}}" title="View profile">{{editor.fullname}}</a>{% if not loop.last %}, {% endif %}
-        {% endfor %}
-        {% endapply %}{% endif %}</p>
-    <p class="docinfo">{{doc.docInfoHtml|raw}}</p>
-    <h3 class="docinfo">Pages</h3>
-<div id="pagetablediv">
-</div>
-
-    <h3 class="docinfo">Works</h3>
-    <div class="worksinfo" id="chunkinfo"></div>
-    <h3 class="docinfo">Last Saves </h3>
-    <div id="lastsaves"></div>
-    
-{% if canDefinePages %}
-    <h3>Admin</h3>
-    <ul>
-        <li><a href="{{url_for('doc.editdoc', {'id' : doc.docInfo.id})}}">Edit / Delete document</a></li>
-        <li><a href="{{url_for('doc.definedocpages', {'id' : doc.docInfo.id})}}">Add / Define pages</a></li>
-    </ul>
-{% endif %}    
-{% endblock %}
 
 

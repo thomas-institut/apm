@@ -66,6 +66,7 @@ class ApiDocuments extends ApiController
         
         $pageId = (int) $request->getAttribute('pageId');
         $postData = $request->getParsedBody();
+        $this->logger->debug("Update page settings, postData", [ $postData]);
         $foliation = $postData['foliation'];
         $type = (int) $postData['type'];
         $lang = $postData['lang'];

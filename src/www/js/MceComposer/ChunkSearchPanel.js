@@ -20,7 +20,7 @@
 import { Panel } from '../MultiPanelUI/Panel'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import * as Util from '../toolbox/Util.mjs'
-import { KeyCache } from '../toolbox/KeyCache'
+import { KeyCache } from '../toolbox/KeyCache/KeyCache'
 
 const defaultIcons = {
   alert: '<i class="fas fa-exclamation-triangle"></i>',

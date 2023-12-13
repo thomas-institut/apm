@@ -27,6 +27,7 @@
 namespace APM\Site;
 
 use APM\FullTranscription\ApmChunkSegmentLocation;
+use APM\System\ApmConfigParameter;
 use APM\System\DataRetrieveHelper;
 use APM\System\SystemManager;
 use AverroesProject\Data\DataManager;
@@ -175,12 +176,11 @@ class SiteDocuments extends SiteController
         $editorsIds = $dataManager->getEditorsByDocId($docId);
         $doc['editors'] = array();
         foreach ($editorsIds as $edId){
-            array_push($doc['editors'], 
-                    $this->dataManager->userManager->getUserInfoByUserId($edId));
+            $doc['editors'][] = $this->dataManager->userManager->getUserInfoByUserId($edId);
         }
         $doc['docInfo'] = $dataManager->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";
-        $doc['pages'] = $this->buildPageArrayNew($pageInfoArray, $transcribedPages);
+        $doc['pages'] = $this->buildPageArrayNew($pageInfoArray, $transcribedPages, $doc['docInfo']);
         
         $docInfoHtml = $this->hookManager->callHookedMethods('get-docinfo-html-' . $doc['docInfo']['image_source'],
                 [ 'imageSourceData' => $doc['docInfo']['image_source_data']]);
@@ -273,10 +273,6 @@ class SiteDocuments extends SiteController
 
         }
 
-        $works = [];
-        foreach(array_keys($chunkLocationMap) as $workId) {
-            $works[$workId] = $dataManager->getWorkInfo($workId);
-        }
 
         $canDefinePages = false;
         if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')) {
@@ -284,19 +280,24 @@ class SiteDocuments extends SiteController
         }
 
 
+        $pageTypeNames  = $this->dataManager->getPageTypeNames();
+
         $this->profiler->stop();
         $this->logProfilerData('showDocPage-' . $docId);
+        $userId = (int) $this->userInfo['id'];
 
         return $this->renderPage($response, self::TEMPLATE_SHOW_DOCS_PAGE, [
             'navByPage' => false,
-            'canDefinePages' => $canDefinePages,
+            'canDefinePages' => $canDefinePages ? '1' : '0',
+            'pageTypeNames' => $pageTypeNames,
             'doc' => $doc,
             'chunkInfo' => $chunkInfo,
-            'works' => $works,
             'lastVersions' => $lastVersions,
-            'authorInfo' => $authorInfo,
             'lastSaves' => $lastSaves,
-            'metaData' => $metaData
+            'metaData' => $metaData,
+            'userId' => $userId,
+            'userInfo' => $this->userInfo,
+            'showLanguageSelector' => $this->config[ApmConfigParameter::SHOW_LANG_SELECTOR] ? '1' : 0
         ]);
     }
 

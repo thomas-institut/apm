@@ -1,11 +1,37 @@
+/*
+ *  Copyright (C) 2022-23 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { setSiteLanguage, SiteLang, tr } from './common/SiteLang'
 import { setBaseUrl, urlFor } from './common/SiteUrlGen'
-import { KeyCache } from '../toolbox/KeyCache'
-import { CachedFetcher } from '../toolbox/CachedFetcher'
+import { ApmDataProxy } from './common/ApmDataProxy'
 
 
 
+/**
+ * Base class for (eventually) all 'normal' web pages in the APM.
+ *
+ * Normal web pages are all those that display a top menu, a user area and
+ * (optionally) a language selector. Non-normal pages are specialized tools
+ * such as the transcription editor and the edition composer.
+ *
+ */
 export class NormalPage {
 
   constructor(options) {
@@ -24,8 +50,9 @@ export class NormalPage {
     setBaseUrl(this.normalPageOptions.baseUrl)
     this.userId = this.normalPageOptions.userId
     this.userName = this.normalPageOptions.userInfo.username
-    this.cache = new KeyCache()
-    this.cachedFetcher = new CachedFetcher(this.cache)
+
+    this.apmDataProxy = new ApmDataProxy()
+
     this.showLanguageSelector = this.normalPageOptions.showLanguageSelector
     if (this.showLanguageSelector) {
       this.siteLanguage = this.normalPageOptions.siteLanguage
@@ -42,13 +69,21 @@ export class NormalPage {
     this.topNavBarContainer = $('#top-nav-bar')
   }
 
+
+  /**
+   *
+   * @return {Promise<void>}
+   */
   initPage() {
-    this.container.html(this.genHtml())
-    this.topNavBarContainer.html(this.genTopNavBarHtml())
-    if (this.showLanguageSelector) {
-      $('#change-lang-en').on('click', this.genOnClickLangChange('en'))
-      $('#change-lang-es').on('click', this.genOnClickLangChange('es'))
-    }
+    return new Promise ( async (resolve) => {
+      this.container.html(await this.genHtml())
+      this.topNavBarContainer.html(this.genTopNavBarHtml())
+      if (this.showLanguageSelector) {
+        $('#change-lang-en').on('click', this.genOnClickLangChange('en'))
+        $('#change-lang-es').on('click', this.genOnClickLangChange('es'))
+      }
+      resolve()
+    })
   }
 
   genOnClickLangChange(lang) {
@@ -59,19 +94,30 @@ export class NormalPage {
     }
   }
 
+  /**
+   *
+   * @return {Promise<string>}
+   */
   genHtml() {
-    return ''
+    return new Promise( (resolve) => { resolve('')})
   }
 
   changeLanguage(newLang) {
     if (newLang !== this.siteLanguage) {
       setSiteLanguage(newLang)
       this.siteLanguage = newLang
-      console.log(`Site language set to '${newLang}'`)
-      this.initPage()
+      this.initPage().then( () => {
+        console.log(`Site language set to '${newLang}'`)
+      })
     }
   }
 
+  /**
+   *
+   * @param url
+   * @param forceActualFetch
+   * @return {Promise<{}>}
+   */
   fetch(url, forceActualFetch = false) {
     let key = encodeURI(url)
     return this.cachedFetcher.fetch(key, () => {

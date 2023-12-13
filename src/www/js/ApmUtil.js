@@ -174,11 +174,11 @@ class ApmUtil {
       if (!page.isTranscribed) {
         classes += ' withouttranscription'
       }
-      let url = urlGenerator.sitePageView(docId, page.seq)
+      let url = urlGenerator.sitePageView(docId, page.sequence)
 
       tds.push('<td class="' + classes + '"><a href="' + url + '"' +
         ' target="_blank"' +
-        ' title="View Page ' +  page.foliation + ' (n= ' + page.number + ', seq=' + page.seq + ') in new tab">' +
+        ' title="View Page ' +  page.foliation + ' (n = ' + page.pageNumber + ', seq = ' + page.sequence + ') in new tab">' +
         page.foliation + '</a></td>')
     }
     return ApmUtil.getTableFromRawTds(tds, pagesPerRow, 'pagetable')

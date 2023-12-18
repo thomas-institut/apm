@@ -235,7 +235,7 @@ export class DocPage extends NormalPage {
 
     let osdOptions = {
       id: "osd-div",
-      prefixUrl: this.getOsdImagesPrefixUrl() ,
+      prefixUrl: urlGen.siteOpenSeadragonIconsPrefix(),
       minZoomLevel: 0.4,
       maxZoomLevel:5,
       showRotationControl: true,
@@ -320,11 +320,6 @@ export class DocPage extends NormalPage {
      ${tr('Edit Transcription')}</a>`)
     return infoItems.map( item => `<div class="page-info-item">${item}</div>`).join('')
   }
-
-  getOsdImagesPrefixUrl() {
-    return `../../../node_modules/openseadragon/build/openseadragon/images/`
-  }
-
 
   getAdminHtml() {
     if (!this.canDefinePages) {

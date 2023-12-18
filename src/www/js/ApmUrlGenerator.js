@@ -138,6 +138,10 @@ class ApmUrlGenerator {
         return this.base + '/collation/edit/' + tableId + '/beta'
     }
 
+    siteOpenSeadragonIconsPrefix() {
+        return `${this.base}/node_modules/openseadragon/build/openseadragon/images/`
+    }
+
 
     // -------------------------------
     // API

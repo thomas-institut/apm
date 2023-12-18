@@ -42,6 +42,8 @@ import { UpdaterToOnePointTwo } from './CtDataUpdater/UpdaterToOnePointTwo'
 import { CleanerOnePointTwo } from './CtDataCleaner/CleanerOnePointTwo'
 import { UpdaterToOnePointThree } from './CtDataUpdater/UpdaterToOnePointThree'
 import { CleanerOnePointThree } from './CtDataCleaner/CleanerOnePointThree'
+import { CleanerOnePointFour } from './CtDataCleaner/CleanerOnePointFour'
+import { UpdaterToOnePointFour } from './CtDataUpdater/UpdaterToOnePointFour'
 
 
 
@@ -53,7 +55,7 @@ import { CleanerOnePointThree } from './CtDataCleaner/CleanerOnePointThree'
 
 
 
-const schemaVersions = [ '0', '1.0', '1.1', '1.2', '1.3']
+const schemaVersions = [ '0', '1.0', '1.1', '1.2', '1.3', '1.4']
 
 
 export class CtData  {
@@ -98,39 +100,45 @@ export class CtData  {
     function getCleanerForSchemaVersion(sourceSchemaVersion, verbose, debug) {
       switch(sourceSchemaVersion) {
         case '0':
-          return new CleanerZero({verbose: verbose, debug: debug})
+          return new CleanerZero({verbose: verbose, debug: debug});
         case '1.0':
-           return new CleanerOnePointZero({ verbose: verbose, debug: debug})
+           return new CleanerOnePointZero({ verbose: verbose, debug: debug});
         case '1.1':
-          return new CleanerOnePointOne({ verbose: verbose, debug: debug})
+          return new CleanerOnePointOne({ verbose: verbose, debug: debug});
 
         case '1.2':
-          return new CleanerOnePointTwo({ verbose: verbose, debug: debug})
+          return new CleanerOnePointTwo({ verbose: verbose, debug: debug});
 
         case '1.3':
-          return new CleanerOnePointThree({ verbose: verbose, debug: debug})
+          return new CleanerOnePointThree({ verbose: verbose, debug: debug});
+
+        case '1.4':
+          return new CleanerOnePointFour({ verbose: verbose, debug: debug});
 
         default:
-          throw new Error(`Invalid source schema ${sourceSchemaVersion} requested`)
+          throw new Error(`Invalid source schema ${sourceSchemaVersion} requested`);
       }
     }
 
     function getUpdaterForTargetSchemaVersion(targetSchemaVersion, verbose, debug) {
       switch(targetSchemaVersion) {
         case '1.0':
-          return new UpdaterToOnePointZero({verbose: verbose, debug: debug})
+          return new UpdaterToOnePointZero({verbose: verbose, debug: debug});
 
         case '1.1':
-          return new UpdaterToOnePointOne({verbose: verbose, debug: debug})
+          return new UpdaterToOnePointOne({verbose: verbose, debug: debug});
 
         case '1.2':
-          return new UpdaterToOnePointTwo({verbose: verbose, debug: debug})
+          return new UpdaterToOnePointTwo({verbose: verbose, debug: debug});
 
         case '1.3':
-          return new UpdaterToOnePointThree({verbose: verbose, debug: debug})
+          return new UpdaterToOnePointThree({verbose: verbose, debug: debug});
+
+        case '1.4':
+          return new UpdaterToOnePointFour({verbose: verbose, debug: debug});
 
         default:
-          throw new Error(`Invalid target schema ${targetSchemaVersion} requested`)
+          throw new Error(`Invalid target schema ${targetSchemaVersion} requested`);
       }
     }
 
@@ -226,7 +234,8 @@ export class CtData  {
       preLemma: editedEntry.preLemma,
       lemma: editedEntry.lemma,
       postLemma: editedEntry.postLemma,
-      separator: editedEntry.separator
+      separator: editedEntry.separator,
+      tags: [...editedEntry.tags]
     }
     // new entry, first get the auto subEntries
     newEntry.subEntries = editedEntry.subEntries.filter( (subEntry) => { return subEntry.type === 'auto'})

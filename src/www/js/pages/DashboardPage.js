@@ -22,6 +22,7 @@ import { tr } from './common/SiteLang'
 import { NormalPage } from './NormalPage'
 import { urlGen } from './common/SiteUrlGen'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
+import { TagEditor } from '../widgets/TagEditor'
 
 const newMceEditionIcon = '<i class="bi bi-file-plus"></i>'
 
@@ -44,6 +45,7 @@ export class DashboardPage extends NormalPage {
     this.transcriptionsCollapse = this.constructCollapse('#transcriptions', tr('Transcriptions'))
     this.adminCollapse = this.constructCollapse('#admin',tr('Admin'))
     this.adminCollapse.setContent(this.genAdminSectionHtml())
+
     await Promise.all( [
       this.fetchMultiChunkEditions(),
       this.fetchCollationTablesAndEditions(),

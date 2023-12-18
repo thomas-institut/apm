@@ -28,7 +28,7 @@ import { FmtText } from '../FmtText/FmtText.mjs'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { ApparatusEntryTextEditor } from './ApparatusEntryTextEditor'
 import {
-  capitalizeFirstLetter,
+  capitalizeFirstLetter, deepCopy,
   getTextDirectionForLang,
   removeExtraWhiteSpace,
   trimWhiteSpace
@@ -43,6 +43,7 @@ import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
 import { ConfirmDialog } from '../pages/common/ConfirmDialog'
 import { WitnessDataEditor } from './WitnessDataEditor'
 import { ApparatusEntry } from '../Edition/ApparatusEntry.mjs'
+import { TagEditor } from '../widgets/TagEditor'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
@@ -252,6 +253,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     }
     theEntry.metadata.delete('ctGroup')
     theEntry.metadata.add('ctGroup', { from: ctIndexFrom, to: ctIndexTo})
+
     return theEntry
   }
 
@@ -287,6 +289,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this._loadLemmaGroupVariableInForm('lemma', this.entryInEditor, this.lemmaToggle, this.customLemmaTextInput)
     this._loadLemmaGroupVariableInForm('postLemma', this.entryInEditor, this.postLemmaToggle, this.customPostLemmaTextInput)
     this._loadLemmaGroupVariableInForm('separator', this.entryInEditor, this.separatorToggle, this.customSeparatorTextInput)
+
+    this.tagEditor.setTags(this.entryInEditor.tags)
 
     this.editedEntry = ApparatusEntry.clone(this.entryInEditor)
     this.entryFormState = entryFormStateDisplaying
@@ -663,7 +667,13 @@ export class ApparatusPanel extends  PanelWithToolbar {
                         <div class="col-sm-${shortCol}">Collation Table:</div>
                         <div class="col-sm-${longCol} ct-table-cols"></div>
                     </div>
+                    
+                  
                 </div>
+                  <div class="form-group row">
+                        <div class="col-sm-${shortCol}">Tags:</div>
+                        <div class="col-sm-${longCol} tags"></div>
+                    </div>
                 <div class="form-group row">
                     <label for="pre-lemma-div" class="col-sm-${shortCol} col-form-label">Pre Lemma:</label>
                     <div class="col-sm-${longCol} aei-multitoggle-div pre-lemma-div">
@@ -753,6 +763,20 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.updateButton.on('click', this._genOnClickUpdateApparatusButton())
     this.cancelButton = $(`${formSelector} .cancel-btn`)
     this.cancelButton.on('click', this._genOnClickApparatusEntryCancelButton())
+
+    // tags
+
+    this.tagEditor = new TagEditor( {
+      containerSelector: `${formSelector} div.tags`,
+      idPrefix:  `app-tags-${this.options.apparatusIndex}`,
+      getTagHints: async () => { return ['revise', 'remove', 'disjunctive error']},
+      saveTags: async (tags) => {
+        this.editedEntry.tags = [...tags];
+        this._updateUpdateApparatusButton()
+      },
+      tags: [],
+      mode: 'edit'
+    })
 
     // preLemma
     let anteKeyword = ApparatusCommon.getKeywordString('ante', this.edition.lang)
@@ -871,7 +895,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
         preLemma:  this.editedEntry.preLemma,
         lemma: this.editedEntry.lemma,
         postLemma: this.editedEntry.postLemma,
-        separator: this.editedEntry.separator
+        separator: this.editedEntry.separator,
+        tags: [...this.editedEntry.tags]
       }
 
       entryForCtData.subEntries = this.editedEntry.subEntries.map( (subEntry) => {
@@ -886,10 +911,12 @@ export class ApparatusPanel extends  PanelWithToolbar {
           se.witnessData = subEntry.witnessData
           se.position = subEntry.position
           se.keyword = subEntry.keyword
+          se.tags = [...subEntry.tags]
           return {
             type: 'auto',
             enabled: subEntry.enabled,
             position: subEntry.position,
+            tags: [...subEntry.tags],
             hash: se.hashString()
           }
         }
@@ -900,7 +927,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
           position: subEntry.position,
           fmtText: subEntry.fmtText,
           witnessData: subEntry.witnessData,
-          keyword: subEntry.keyword
+          keyword: subEntry.keyword,
+          tags: [...subEntry.tags]
         }
       })
 
@@ -981,9 +1009,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
   _updateUpdateApparatusButton() {
     if (!varsAreEqual(this.entryInEditor, this.editedEntry)) {
-      this.updateButton.removeClass('hidden')
+      this.updateButton.removeClass('hidden');
     } else {
-      this.updateButton.addClass('hidden')
+      this.updateButton.addClass('hidden');
     }
     // console.log(`Changes in apparatus entry form`)
     // console.log(this.editedEntry)

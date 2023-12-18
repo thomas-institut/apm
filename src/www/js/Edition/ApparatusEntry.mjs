@@ -15,6 +15,7 @@ export class ApparatusEntry {
     this.lemmaText = ''
     this.postLemma = ''
     this.separator = ''
+    this.tags = []
     /**
      *
      * @type {ApparatusSubEntry[]}
@@ -34,14 +35,15 @@ export class ApparatusEntry {
    * @return{ApparatusEntry}
    */
   static clone(entry) {
-    let copy = new ApparatusEntry()
-    copy.from = entry.from
-    copy.to = entry.to
-    copy.preLemma = entry.preLemma
-    copy.lemma = entry.lemma
-    copy.lemmaText = entry.lemmaText
-    copy.postLemma = entry.postLemma
-    copy.separator = entry.separator
+    let copy = new ApparatusEntry();
+    copy.from = entry.from;
+    copy.to = entry.to;
+    copy.preLemma = entry.preLemma;
+    copy.lemma = entry.lemma;
+    copy.lemmaText = entry.lemmaText;
+    copy.postLemma = entry.postLemma;
+    copy.separator = entry.separator;
+    copy.tags = [...entry.tags];
     copy.metadata = KeyStore.clone(entry.metadata)
     copy.subEntries = entry.subEntries.map( (subEntry) => {
       return ApparatusSubEntry.clone(subEntry)

@@ -252,3 +252,34 @@ input[type=number] {
     font-size: 14px;
     width: 42px
 }
+
+input.tag-input {
+    border: none;
+    height: 1.6em;
+    width: 7em;
+}
+
+ul.tag-editor-tags-ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+div.aei-form ul.tag-editor-tags-ul {
+    font-size: 0.9em;
+}
+
+ul.tag-editor-tags-ul li {
+    display: inline;
+    margin-right: 0.5em;
+}
+
+span.tag-text {
+    border: 1px solid #c5d2f6;
+    background-color: #e3f4ff;
+    border-radius: 4px;
+    padding: 3px;
+}
+
+span.tagRemove {
+    cursor: pointer;
+}

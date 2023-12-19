@@ -1,4 +1,4 @@
-import { KeyCache } from '../toolbox/KeyCache'
+import { KeyCache } from '../toolbox/KeyCache/KeyCache'
 
 class FormattedTextToken {
 

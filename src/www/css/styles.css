@@ -91,33 +91,53 @@ table.pagetable td {
 }
 
 /* Page Type: Not set */
-table.pagetable td.type0 {
-    background-color: #EFFEEF;
-}
+/*table.pagetable td.type0 {*/
+/*    background-color: #EFFEEF;*/
+/*}*/
 
-/* Page Type: Normal text */
-table.pagetable td.type1 {
-    background-color: white;
-}
+/*!* Page Type: Normal text *!*/
+/*table.pagetable td.type1 {*/
+/*    background-color: white;*/
+/*}*/
 
-/* Page Type: Front Matter */
-table.pagetable td.type2 {
-    background-color: #f9f9f9;
-}
+/*!* Page Type: Front Matter *!*/
+/*table.pagetable td.type2 {*/
+/*    background-color: #f9f9f9;*/
+/*}*/
 
-/* Page Type: Back Matter */
-table.pagetable td.type3 {
-    background-color: #f9f9f9;
+/*!* Page Type: Back Matter *!*/
+/*table.pagetable td.type3 {*/
+/*    background-color: #f9f9f9;*/
 
-}
+/*}*/
 table.pagetable a {
     color: var(--default-font-color);
 }
 
-table.pagetable td.withouttranscription a {
+td.withouttranscription a {
     color: silver;
 }
 
+td.without-transcription a{
+    color:silver
+}
+
+.foliation-set {
+   font-weight: bold;
+}
+.out-of-sequence {
+   background-color: #f5f0e7;
+}
+div.page-table-div {
+    margin-bottom: 1em;
+}
+
+div.page-table-legend {
+    font-size: 0.8em;
+    color: #8d8d8d;
+    margin-left: 3em;
+    margin-bottom: 2em;
+}
 .in-text {
     margin-left: 5px;
     margin-right: 5px;
@@ -233,65 +253,6 @@ input[type=number] {
     width: 42px
 }
 
-
-ol, ul {
-    list-style: outside none none;
-}
-
-.tags {
-    background: none repeat scroll 0 0 #fff;
-    border: 0px solid #ccc;
-    padding: 0.5em;
-    width: 100%;
-    display: table
-}
-.tags li.tagAdd, .tags li.addedTag, li.showAddedTag {
-    float: left;
-    margin-left: 0em;
-    margin-right: 0.5em;
-    margin-bottom: 0.75em;
-}
-.tags li.addedTag {
-    background: none repeat scroll 0 0 transparent;
-    color: darkblue;
-    border-color: darkblue;
-    padding-left: 0.5em;
-    padding-bottom: 0.1em;
-    padding-top: 0.1em;
-    padding-right: 0.3em;
-    border-radius: 10px
-}
-.tags li.showAddedTag {
-    background: none repeat scroll 0 0 transparent;
-    color: darkblue;
-    border-color: darkblue;
-    padding-left: 0.3em;
-    padding-bottom: 0.1em;
-    padding-top: 0.1em;
-    padding-right: 0.3em;
-    border-radius: 10px
-}
-.tags input, li.addedTag, li.showAddedTag {
-    border: 1px solid transparent;
-    border-radius: 1px;
-    box-shadow: none;
-    display: block;
-    padding: 0.5em;
-}
-.tags input:hover {
-    border: 1px solid;
-}
-span.tagRemove {
-    cursor: pointer;
-    display: inline-block;
-    padding-left: 0em;
-    color: black
-}
-span.tagRemove:hover {
-    color: dodgerblue;
-}
-
-
 .embed-create-button {
     position: relative;
 }
@@ -316,4 +277,48 @@ span.tagRemove:hover {
     background-color: lightskyblue;
     color: #fff;
     cursor: pointer;
+}
+
+input.tag-input {
+    border: none;
+    height: 1.6em;
+    width: 7em;
+}
+
+ul.tag-editor-tags-ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+div.aei-form ul.tag-editor-tags-ul {
+    font-size: 0.9em;
+}
+
+ul.tag-editor-tags-ul li {
+    display: inline;
+    margin-right: 0.5em;
+    line-height: 2.5em;
+}
+
+span.tag-text {
+    border: 1px solid #c5d2f6;
+    background-color: #e3f4ff;
+    border-radius: 4px;
+    padding: 3px;
+}
+
+span.tagRemove {
+    cursor: pointer;
+}
+
+.tags {
+    background: none repeat scroll 0 0 #fff;
+    border: 0px solid #ccc;
+    padding: 0.5em;
+    width: 100%;
+    display: table
+}
+
+li.addedTag {
+    white-space: nowrap;
 }

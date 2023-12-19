@@ -75,7 +75,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     use SimpleSqlQueryCounterTrackerAware;
     use LoggerAwareTrait;
     
-    private $userTable;
+    private DataTable $userTable;
     private $relationsTable;
     private $peopleTable;
     private $tokensTable;
@@ -181,7 +181,12 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         }
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
-        $ui = $this->userTable->getRow($userid);
+        try {
+            $ui = $this->userTable->getRow($userid);
+        } catch(\InvalidArgumentException) {
+            $ui = [];
+        }
+
         
         if (!isset($pi['email'])) {
             $pi['email'] = '';
@@ -197,7 +202,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         
         
         return [ 'id' => $userid, 
-                 'username' => $ui['username'],
+                 'username' => $ui['username'] ?? '',
                  'fullname' => $pi['fullname'],
                  'email' => $pi['email'], 
                  'emailhash' => $emailhash

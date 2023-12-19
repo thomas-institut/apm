@@ -1,3 +1,22 @@
+/*
+ *  Copyright (C) 2023 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+
 import { Language } from '../../toolbox/Language'
 import {Cookies} from '../../toolbox/Cookies'
 
@@ -31,7 +50,28 @@ const strings = [
   { key: 'Multi-Chunk Editions', es: 'Ediciones de múltiples chunks'},
   { key: 'Transcriptions', es: 'Transcripciones'},
   { key: 'Admin', es: 'Administración'},
-  { key: 'undefined', es: 'indefinido'}
+  { key: 'undefined', es: 'indefinido'},
+  { key: 'Arabic', es: 'Árabe'},
+  { key: 'Hebrew', es: 'Hebreo'},
+  { key: 'Latin', es: 'Latín' },
+  { key: 'Judeo Arabic', es: 'Judeoarábe'},
+  { key: 'Hebrew Manuscript', es: 'Manuscrito en hebreo'},
+  { key: 'Latin Manuscript', es: 'Manuscrito en latín'},
+  { key: 'Arabic Manuscript', es: 'Manuscrito en árabe'},
+  { key: 'Judeo Arabic Manuscript', es: 'Manuscrito en judeoárabe'},
+  { key: 'Hebrew Print', es: 'Impresión en hebreo'},
+  { key: 'Latin Print', es: 'Impresión en latín'},
+  { key: 'Arabic Print', es: 'Impresión en árabe'},
+  { key: 'Judeo Arabic Print', es: 'Impresión en judeoárabe'},
+  { key: '{{num}} of {{total}} pages transcribed', es: '{{num}} de {{total}} páginas transcritas'},
+  { key: 'Page Id', es: 'Id de página'},
+  { key: 'Foliation', es: 'Foliación'},
+  { key: 'Page Number', es: 'Número de página'},
+  { key: 'Image Number', es: 'Número de imagen'},
+  { key: 'Sequence Number', es: 'Número de secuencia'},
+  { key: 'Columns Defined', es: 'Columnas definidas'},
+  { key: 'Edit Transcription', es: 'Editar transcripción'},
+  { key: 'Foliation not set, using sequence number', es: 'Foliación no definida, usando número de secuencia'}
 ]
 
 export class SiteLang {

@@ -270,7 +270,7 @@ export class MetadataEditor {
 
             } else if (type.includes('tags')) {
                 let te = new TagEditor({
-                    container: id,
+                    containerSelector: id,
                     tags: value,
                     mode: 'show'
                 })
@@ -385,7 +385,7 @@ export class MetadataEditor {
 
     makeTagsForm(selectorId) {
         this.tagEditor = new TagEditor({
-            container: selectorId,
+            containerSelector: selectorId,
             tags: this.getValueByKey('Tags'),
             mode: 'edit'
         })
@@ -621,7 +621,7 @@ export class MetadataEditor {
             if (this.validateData(d) && this.validatePasswords()) {
                 this.makeSpinner(this.buttonsSelectorBottom)
                 this.updateEntityData(d.id, d.type, d.values)
-                this.tagEditor.saveTags()
+                //this.tagEditor.saveTags()
                 this.options.callback(this.entity, this.options.mode, () => {
                     this.logSaveAction(this.options.mode)
                     this.setupShowMode()
@@ -692,7 +692,7 @@ export class MetadataEditor {
                 this.clearErrorMessage()
                 this.makeSpinner(cellButtonId, '1.25em')
                 if (this.entity.types[keyIndex-1].includes('tags')) {
-                    this.tagEditor.saveTags()
+                    //this.tagEditor.saveTags()
                 }
                 this.entity.values[keyIndex-1] = value // Corresponds to updateEntityData function in global save event
                 this.options.callback(this.entity, this.options.mode, () => {
@@ -1031,7 +1031,7 @@ export class MetadataEditor {
         }
     }
 
-    // API Call
+    // API Calls
     getPeople(callback) {
         $.post(urlGen.apiPeopleGetAllPeople())
             .done((apiResponse) => {
@@ -1054,6 +1054,54 @@ export class MetadataEditor {
             .fail((status) => {
                 console.log(status);
                 return false
+            })
+    }
+
+    // Functions for saving and getting tags to/from global tag cache
+    saveTags() {
+
+        // Make API Call
+        $.post(urlGen.apiTagEditorSaveTags(), {'tags': this.options.tags})
+            .done((apiResponse) => {
+
+                // Catch Error
+                if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query`);
+                    if (apiResponse.errorData !== undefined) {
+                        console.log(apiResponse.errorData);
+                    }
+                    return
+                }
+
+                return true
+            })
+            .fail((status) => {
+                console.log(status);
+            })
+    }
+
+    getAllTags() {
+
+        // Make API Call
+        $.post(urlGen.apiTagEditorGetAllTags())
+            .done((apiResponse) => {
+
+                // Catch Error
+                if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query`);
+                    if (apiResponse.errorData !== undefined) {
+                        console.log(apiResponse.errorData);
+                    }
+                    return []
+                }
+
+                // Log API response and change to show mode
+                console.log(apiResponse)
+                return apiResponse.tags
+            })
+            .fail((status) => {
+                console.log(status)
+                return []
             })
     }
 }

@@ -90,7 +90,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     /**
      * @var HookManager
      */
-    protected $hookManager;
+    protected HookManager $hookManager;
 
     /**
      * @var RouteParser
@@ -276,27 +276,26 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     }
 
     // Utility function
-    protected function buildPageArrayNew(array $pagesInfo, array $transcribedPages): array
+    protected function buildPageArrayNew(array $pagesInfo, array $transcribedPages, $docInfo): array
     {
         $thePages = [];
         foreach ($pagesInfo as $pageInfo) {
             /** @var $pageInfo PageInfo */
-            $thePage = [];
-            $thePage['number'] = $pageInfo->pageNumber;
-            $thePage['seq'] = $pageInfo->sequence;
-            $thePage['type'] = $pageInfo->type;
-            $thePage['foliation'] = $pageInfo->foliation;
-            $thePage['pageId'] = $pageInfo->pageId;
-            $thePage['numCols'] = $pageInfo->numCols;
-
-            $thePage['classes'] = '';
-            $thePage['isTranscribed'] = true;
-            if (array_search($pageInfo->pageNumber, $transcribedPages) === false){
-                $thePage['classes'] =
-                    $thePage['classes'] . ' withouttranscription';
-                $thePage['isTranscribed'] = false;
-            }
-            $thePage['classes'] .= ' type' . $pageInfo->type;
+            $thePage = get_object_vars($pageInfo);
+//            $thePage['classes'] = '';
+            $thePage['imageSource'] = $docInfo['image_source'];
+            $thePage['isDeepZoom'] = $docInfo['image_source'] === 'dare-deepzoom';
+            $thePage['isTranscribed'] = in_array($pageInfo->pageNumber, $transcribedPages);
+            $thePage['imageUrl'] =  $this->hookManager->callHookedMethods('get-image-url-' . $docInfo['image_source'],
+                [
+                    'imageNumber' => $pageInfo->imageNumber,
+                    'imageSourceData' => $docInfo['image_source_data']
+                ]);
+            $thePage['thumbnailUrl'] =  $this->hookManager->callHookedMethods('get-thumbnail-url-' . $docInfo['image_source'],
+                [
+                    'imageNumber' => $pageInfo->imageNumber,
+                    'imageSourceData' => $docInfo['image_source_data']
+                ]);
             $thePages[$pageInfo->pageId] = $thePage;
         }
         return $thePages;

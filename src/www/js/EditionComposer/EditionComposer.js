@@ -25,7 +25,7 @@ import { capitalizeFirstLetter, deepCopy } from '../toolbox/Util.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
 import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
-import { KeyCache } from '../toolbox/KeyCache'
+import { KeyCache } from '../toolbox/KeyCache/KeyCache'
 import { ServerLogger } from '../Server/ServerLogger'
 
 // MultiPanel UI
@@ -1288,24 +1288,21 @@ export class EditionComposer {
   }
 
   genOnConfirmTitleField() {
-    let thisObject = this
-    return function (data) {
-      //console.log('confirm title field')
-      //console.log(data.detail)
+    return  (data) => {
       if (data.detail.newText !== data.detail.oldText) {
-        let normalizedNewTitle = thisObject.normalizeTitleString(data.detail.newText)
+        let normalizedNewTitle = this.normalizeTitleString(data.detail.newText)
         if (normalizedNewTitle === '') {
           console.debug('Empty new title')
-          thisObject.titleField.setText(thisObject.ctData['title'])
-          return false
+          this.titleField.setText(this.ctData['title'])
+          return true
         }
         //console.debug('New title: ' + normalizedNewTitle)
-        thisObject.ctData['title'] = normalizedNewTitle
-        thisObject.titleField.setText(normalizedNewTitle)
-        thisObject._updateSaveArea()
-        document.title = `${thisObject.ctData.title} (${thisObject.ctData['chunkId']})`
+        this.ctData['title'] = normalizedNewTitle
+        this.titleField.setText(normalizedNewTitle)
+        this._updateSaveArea()
+        document.title = `${this.ctData.title} (${this.ctData['chunkId']})`
       }
-      return false
+      return true
     }
   }
 

@@ -57,7 +57,7 @@ interface DataCache
 
     /**
      * Deletes the cache entry for the given key
-     * If the key is not the cache, throws a KeyNotInCacheException
+     * If the key is not the cache, does not do anything.
      * @param string $key
      */
     public function delete(string $key) : void;

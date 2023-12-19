@@ -1,265 +1,195 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
+import { trimWhiteSpace } from '../toolbox/Util.mjs'
 
-let urlGen = new ApmUrlGenerator('')
-urlGen.setBase('http://0.0.0.0:8888')
+
+const cacheKeyPrefix = 'apm-tag_hints'
 
 export class TagEditor {
 
-    constructor(options) {
+  constructor(options) {
 
-        const optionsDefinition = {
-            container: {type: 'string', required: true},
-            tags: {type: 'array', required: false, default: []},
-            mode: {type: 'string', required: true}
+    const optionsDefinition = {
+      containerSelector: {type: 'string', required: true},
+      idPrefix: { type: 'string', default: 'tag-editor'},
+      inputFormId: {type: 'string', required: false, default: 'nil'},
+      tags: {type: 'array', required: false, default: []},
+      getTagHints: { type: 'function', default: async () => {
+          return []
         }
-
-        const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: "MetadataEditor"})
-        this.options = oc.getCleanOptions(options)
-
-        // Collecting visually removed tags for removing them from this.options.tags when saving
-        this.removedTags = []
-
-        switch (this.options.mode) {
-            case 'edit':
-                this.setupEditMode()
-                break
-            case 'show':
-                this.setupShowMode()
-                break
-        }
+        },
+      saveTags: { type: 'function', default: async (tags) => {
+          console.log(`Tags [${tags.join(', ')}] would be saved now`)
+        } },
+      mode: {type: 'string', required: true}
     }
 
-    setupEditMode() {
-        this.buildTagEditor()
-        this.getAllTags((tags) => {
-            this.fillDatalistWithTags(tags)
-        })
-        this.showGivenTags()
-        this.setupEvents()
+    const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: "TagEditor"});
+    this.options = oc.getCleanOptions(options);
+
+    console.log(`Options`)
+    console.log(this.options)
+
+    this.idPrefix = this.options.idPrefix;
+
+
+
+    switch (this.options.mode) {
+      case 'edit':
+        this.setupEditMode();
+        break
+
+      case 'show':
+        this.setupShowMode();
+        break
+    }
+  }
+
+  setTags(tags) {
+    console.log(`Setting tags: [ ${tags.join(', ')}]`)
+    this.options.tags = [...tags];
+    switch (this.options.mode) {
+      case 'edit':
+        this.setupEditMode();
+        break
+
+      case 'show':
+        this.setupShowMode();
+        break
     }
 
-    setupShowMode () {
-        const start = '<ul class="tags" id="tag-list">'
-        const end = '</ul>'
-        let mid = ''
+  }
 
-        for (let tag of this.options.tags.sort()) {
-            mid += `<li class = "showAddedTag">${tag}</li>`
-        }
+  setupEditMode() {
+    this.buildStructureOfTagEditor()
+    this.options.getTagHints().then( (tags) => {
+      this.fillDatalistWithTags(tags)
+      this.showGivenTagsInEditMode()
+      this.setupEvents()
+    })
+  }
 
-        $(this.options.container).html(start + mid + end)
-    }
+  setupShowMode() {
+    this.buildStructureOfTagEditor()
+    this.showGivenTagsInShowMode()
+  }
 
-    buildTagEditor() {
-        $(this.options.container).html(`
-            <ul class="tags" id="tag-list">
+  buildStructureOfTagEditor() {
+    $(this.options.containerSelector).html(`
+            <ul class="tag-editor-tags-ul" id="${this.idPrefix}-tag-list">
                 <li class="tagAdd taglist">
-                    <input list="list-of-tags" class="form-control" id="search-field" placeholder="+" 
-                                                                style="border: none; height: 1.6em; width: 7em">
-                    <datalist id="list-of-tags"></datalist>
+                    <input list="${this.idPrefix}-list-of-tags" class="tag-input" id="${this.idPrefix}-search-field" placeholder="+">
+                    <datalist id="${this.idPrefix}-list-of-tags"></datalist>
                 </li>
            </ul>`)
-    }
+  }
 
-    fillDatalistWithTags(tags) {
-        tags.forEach((tag) => {
-            $('#list-of-tags').append(`<option value="${tag}">${tag}</option>`)
-        })
-    }
-    
-    showGivenTags () {
-        for (let tag of this.options.tags.sort().reverse()) {
-            const thisObject = this
-            let removeTagCrossId = this.removeBlanks(tag) + "_id"
-            let liElementId = this.removeBlanks(tag) + "_listElementId"
-            
-            $('#tag-list').prepend(`
-               <li class="addedTag" value=${thisObject.removeBlanks(tag)} id=${liElementId} style="margin-left: 0em">${tag}
-                    <span class="tagRemove" id=${removeTagCrossId}>
-                        <sup>
-                            <i class="fa fa-times fa-xs" style="color: darkblue"></i>
-                        </sup>
-                    </span>
-                    <input type="hidden" name="tags[]">
+  showGivenTagsInShowMode () {
+    for (let tag of this.options.tags.sort().reverse()) {
+      let valueForTagId = tag.replace(/ /g, "_")
+      $(`#${this.idPrefix}-tag-list`).prepend(`
+               <li class="addedTag" value=${valueForTagId}><span class="tag-text">${tag}</span>
                </li>`)
-            
-            this.makeRemoveTagEvent(thisObject, removeTagCrossId, liElementId)
+    }
+  }
+
+  showGivenTagsInEditMode () {
+    for (let tag of this.options.tags.sort().reverse()) {
+      let valueForTagId = tag.replace(/ /g, "_")
+      let tagId = `${this.idPrefix}-${valueForTagId}-id`
+
+      $(`#${this.idPrefix}-tag-list`).prepend(`
+               <li class="addedTag" value=${valueForTagId}><span class="tag-text">${tag}</span>
+               <span class="tagRemove" id=${tagId}><sup>x</sup></span>
+               <input type="hidden" name="tags[]">
+               </li>`)
+      this.makeRemoveTagEvent(tagId)
+    }
+  }
+
+  setupEvents() {
+    this.makeFocusSearchFieldEvent()
+    this.makeAddTagEvent()
+  }
+
+  makeRemoveTagEvent(tag_id) {
+    let thisObject = this;
+    let selector = "#" + tag_id;
+    $(selector).click(function(event) {
+      event.preventDefault();
+      console.log(`Click on remove tag ${tag_id}`)
+      let value = $(this).parent()[0].getAttribute('value').replace('_', ' ')
+      console.log(value)
+      let index = thisObject.options.tags.indexOf(value)
+      console.log(index)
+      thisObject.options.tags.splice(index, 1);
+      thisObject.options.saveTags(thisObject.options.tags)
+      $(this).parent().remove()
+    })
+  }
+
+  makeFocusSearchFieldEvent() {
+    $('ul.tags').click(()  => {
+      $(`#${this.idPrefix}-search-field`).focus();
+    })
+  }
+
+  makeAddTagEvent() {
+    let thisObject = this
+    $(`#${this.idPrefix}-search-field`).keypress(function(event) {
+      if (event.which === 13) {
+        event.preventDefault();
+
+        let value = thisObject.formatTag($(this).val())
+        let valueForTagId = value.replace(/ /g, "_")
+
+        if (value !== '' && thisObject.isTagValid(value) && thisObject.options.tags.includes(value) === false) {
+          let tagId = `${thisObject.idPrefix}-${valueForTagId}-id`
+          $(`<li class="addedTag" value="${value}"><span class="tag-text">${value}</span> `   +
+            `<span class="tagRemove" id="${tagId}">` +
+            '<sup>x</sup></span>'
+            +'<input type="hidden" value="' + value +
+            '" name="tags[]"></li>'
+          ).insertBefore(`${thisObject.options.containerSelector} .tagAdd`)
+
+          thisObject.makeRemoveTagEvent(tagId)
+          thisObject.options.tags.push(value)
+          thisObject.options.saveTags(thisObject.options.tags).then ( () => {
+            // console.log(`Tag ${value} added`)
+            $(this).val('')
+          })
         }
-    }
+        event.stopPropagation();
+      }
+    })
+  }
 
-    makeRemoveTagEvent(thisObject, removeTagCrossId, listElementId) {
-        let removeTagCrossSelector = "#" + removeTagCrossId
-        let listElementSelector = '#' + listElementId
-        $(removeTagCrossSelector).on('click', () => {
-            let value = $(listElementSelector).attr('value')
-            value = thisObject.insertBlank(value)
-            thisObject.removedTags.push(value)
-            $(listElementSelector).remove()
-        })
-    }
-    
-    setupEvents() {
-        this.makeFocusSearchFieldEvent()
-        this.makeAddTagEvent()
-    }
-    
-    makeFocusSearchFieldEvent() {
-        $('ul.tags').click(function() {
-            $('#search-field').focus();
-        })
-    }
+  /**
+   *
+   * @param {string}string
+   * @return {string}
+   */
+  formatTag(string) {
+    return trimWhiteSpace(string)
+  }
 
-    makeAddTagEvent() {
-        const thisObject = this
+  /**
+   * 
+   * @param {string}tag
+   * @return {boolean}
+   */
+  isTagValid(tag) {
+    let specialCharacters = /[`!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/
+    return !specialCharacters.test(tag);
+  }
 
-        $('#search-field').keypress(function(event) {
-            if (event.which == '13') {
+  fillDatalistWithTags(tags) {
+    tags.forEach((tag) => {
+      $(`#${this.idPrefix}-list-of-tags`).append(`<option value="${tag}">${tag}</option>`)
+    })
+  }
 
-                let tag = thisObject.formatTag($(this).val())
-
-                // Validate tag, not empty, no special characters, not already existing or already visually removed
-                if (thisObject.validateTag(tag) &&
-                    (!thisObject.options.tags.includes(tag) || thisObject.removedTags.includes(tag))) {
-
-                    // Delete tag from removedTags if added again and do not add it again to options.tags
-                    if (thisObject.removedTags.includes(tag)) {
-                        console.log(thisObject.removedTags)
-                        const index = thisObject.removedTags.indexOf(tag)
-                        thisObject.removedTags.splice(index, 1)
-                        console.log(thisObject.removedTags)
-                    } else {
-                        thisObject.options.tags.push(tag)
-                    }
-
-                    // show new li element
-                    let tagId = thisObject.removeBlanks(tag) + "_id"
-                    let listElementId = thisObject.removeBlanks(tag) + "_listElementId"
-
-                    $(`<li class="addedTag" id=${listElementId} value=${thisObject.removeBlanks(tag)}>` + tag + ' ' +
-                        `<span class="tagRemove" id=${tagId}>` +
-                            '<sup><i class="fa fa-times fa-xs" style="color: darkblue"></i></sup> </span>' +
-                        '<input type="hidden" value="' + tag +
-                        '" name="tags[]"></li>').insertBefore('.tags .tagAdd')
-
-                    thisObject.makeRemoveTagEvent(thisObject, tagId, listElementId)
-                    $(this).val('')
-                }
-            }
-        })
-    }
-
-    validateTag(tag) {
-        if (tag === '') {
-            return false
-        }
-
-        let specialCharacters = /[`!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/
-        return !specialCharacters.test(tag);
-    }
-
-    // Little help-functions
-    removeBlanks (string) {
-        while (string.includes(' ')) {
-            string = string.replace(' ', '')
-        }
-        return string
-    }
-
-    insertBlank (string) {
-        return string.replace(/([A-Z])/g, ' $1').trim()
-    }
-
-    formatTag(string) {
-
-        while (string[0] === ' ') {
-            string = string.slice(1)
-        }
-
-        while (string.slice(-1) === ' ') {
-            string = string.slice(0, -1)
-        }
-
-        while (string.includes('  ')) {
-            string = string.replace('  ', ' ')
-        }
-
-        string = string.toLowerCase()
-        let words = string.split(' ')
-        let tag = ''
-
-        for (let word of words) {
-            tag = tag + word.charAt(0).toUpperCase() + word.slice(1) + ' '
-        }
-
-        if (tag.slice(-1) === ' ') {
-            tag = tag.slice(0, -1)
-        }
-
-        return tag
-    }
-
-    getTags() {
-        this.removeTagsFromOptions()
-        return this.options.tags.sort()
-    }
-
-    removeTagsFromOptions () {
-        for (let removedTag of this.removedTags) {
-            let index = this.options.tags.indexOf(removedTag)
-            this.options.tags.splice(index, 1);
-        }
-        this.removedTags = []
-    }
-
-    // API Calls
-    saveTags() {
-
-        this.removeTagsFromOptions()
-
-        // Make API Call
-        $.post(urlGen.apiTagEditorSaveTags(), {'tags': this.options.tags})
-            .done((apiResponse) => {
-
-                // Catch Error
-                if (apiResponse.status !== 'OK') {
-                    console.log(`Error in query`);
-                    if (apiResponse.errorData !== undefined) {
-                        console.log(apiResponse.errorData);
-                    }
-                    return
-                }
-                
-                return true
-            })
-            .fail((status) => {
-                console.log(status);
-            })
-    }
-    
-    getAllTags(callback) {
-        
-        // Make API Call
-        $.post(urlGen.apiTagEditorGetAllTags())
-            .done((apiResponse) => {
-
-                // Catch Error
-                if (apiResponse.status !== 'OK') {
-                    console.log(`Error in query`);
-                    if (apiResponse.errorData !== undefined) {
-                        console.log(apiResponse.errorData);
-                    }
-                    return
-                }
-
-                // Log API response and change to show mode
-                console.log(apiResponse);
-                callback(apiResponse.tags)
-            })
-            .fail((status) => {
-                console.log(status);
-            })
-    }
+  getTags() {
+    //this.removeTagsFromOptions()
+    return this.options.tags.sort()
+  }
 }
-
-// Load as global variable so that it can be referenced in the Twig template
-window.TagEditor = TagEditor

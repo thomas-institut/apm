@@ -34,6 +34,8 @@ class DareImageSource extends ImageSourcePlugin {
     const BILDERBERG_DOC_URL_OLD_SCHEME = "%s/cgi-bin/berg.pas?page=book&book=%s";
     const BILDERBERG_DOC_URL_SCHEME = "%s/%s";
     const DARE_DOC_URL_SCHEME = "https://dare.uni-koeln.de/app/manuscripts/%s";
+
+
     /**
      * @var bool
      */
@@ -65,7 +67,16 @@ class DareImageSource extends ImageSourcePlugin {
             $imageSourceData,
             $imageNumber);
     }
-    
+
+    public function getThumbnailUrl($param): string
+    {
+       return sprintf("%s/%s/%s/thumbnail",
+           $this->bilderBergBaseUrl,
+           $param['imageSourceData'],
+           $param['imageNumber']
+       );
+    }
+
     public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber) : string {
         return sprintf(self::OSD_CONFIG_SCHEME,
                 $this->realGetImageUrl($imageSourceData, $imageNumber));
@@ -85,14 +96,15 @@ class DareImageSource extends ImageSourcePlugin {
 
     public function realGetDocInfoHtml($imageSourceData) : string {
 
-        $html = "= <em>$imageSourceData</em>";
-        $html .= self::HTML_INFO_SEPARATOR;
+        $html = '';
+//        $html = "= <em>$imageSourceData</em>";
+//        $html .= self::HTML_INFO_SEPARATOR;
         $html .= '<a href="' . $this->getDareDocumentUrl($imageSourceData) . '" target="_blank" title="View document in DARE">' .
                 'DARE ' . self::ICON_EXTERNAL_URL .  '</a>' ;
-        $html .= self::HTML_INFO_SEPARATOR;
-        $html .= '<a href="' . $this->getBilderbergDocumentUrl($imageSourceData) .
-                '" target="_blank" title="View document in Bilderberg">' .
-            'Bilderberg ' . self::ICON_EXTERNAL_URL .  '</a>' ;
+//        $html .= self::HTML_INFO_SEPARATOR;
+//        $html .= '<a href="' . $this->getBilderbergDocumentUrl($imageSourceData) .
+//                '" target="_blank" title="View document in Bilderberg">' .
+//            'Bilderberg ' . self::ICON_EXTERNAL_URL .  '</a>' ;
         
         return $html;
 

@@ -1,6 +1,7 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
 import {urlGen} from "../pages/common/SiteUrlGen";
 import {TagEditor} from "../widgets/TagEditor";
+import {ConfirmDialog, LARGE_DIALOG} from "../pages/common/ConfirmDialog";
 
 export class MetadataEditor {
 
@@ -393,18 +394,51 @@ export class MetadataEditor {
     makePersonForm(selector, inputId) {
         let list = inputId + "_list"
         let listSelector = "#" + list
-        $(selector).html(`<p>
+        $(selector).html(`<p class="embed-create-button" id="person-form">
             <input class="form-control" list=${list} id=${inputId} placeholder="person" autoComplete="off" style="padding: unset">
                 <datalist id=${list}></datalist></p>`)
         this.addNamesToDatalist(this.people, listSelector)
+        this.makePersonFormEvent(inputId, listSelector)
     }
 
     addNamesToDatalist(people, list) {
+
+        let id = 0
+
         for (let person of people) {
-            let id = person.id
+            id = person.id
             let name = person.values[0]
             $(list).append(`<option value=${name} id=${id}>${name}</option>`)
         }
+    }
+
+    makePersonFormEvent(inputId, list) {
+
+        inputId = '#' + inputId
+
+        $(inputId).on('input', () => {
+            let value = $(inputId).val()
+            if ($(`${list} option[value=${value}]`).attr('id') === undefined) {
+                $('#person-form').append(`<button id='create-person-from-datalist'>Create</button>`)
+            } else {
+                console.log(value)
+                $('#create-person-from-datalist').remove()
+            }
+        })
+    }
+
+    makeCreatePersonFromDataListEvent () {
+        let dialog = new ConfirmDialog({
+            title: 'Add Sources',
+            size: LARGE_DIALOG,
+            acceptButtonLabel:  'Add Checked Sources',
+            body: dialogBody,
+            hideOnAccept: false,
+            cancelFunction: () => {
+                console.log(`Canceled add/edit sigla group`)
+            }
+        })
+        dialog.show()
     }
 
     makePasswordForm(selector, inputId) {

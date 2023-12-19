@@ -290,3 +290,30 @@ span.tagRemove {
 span.tagRemove:hover {
     color: dodgerblue;
 }
+
+
+.embed-create-button {
+    position: relative;
+}
+.embed-create-button input {
+    width: 100%;
+    padding: 15px;
+}
+.embed-create-button button {
+    color: white;
+    position: absolute;
+    right: 0.8em;
+    top: 0.25em;
+    background: dodgerblue;
+    border: none;
+    padding: 1em;
+    transition: all 0.2s;
+    margin: 0.1em;
+    width: 6em;
+    height: 0.2em;
+}
+.embed-create-button button:hover {
+    background-color: lightskyblue;
+    color: #fff;
+    cursor: pointer;
+}

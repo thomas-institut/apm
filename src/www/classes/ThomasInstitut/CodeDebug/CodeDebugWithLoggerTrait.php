@@ -53,4 +53,10 @@ trait CodeDebugWithLoggerTrait
         $this->debugCode = false;
     }
 
+    public function debugMsg(string $msg) : void {
+        if ($this->debugCode && !is_null($this->logger)) {
+            $this->logger->debug($msg);
+        }
+    }
+
 }

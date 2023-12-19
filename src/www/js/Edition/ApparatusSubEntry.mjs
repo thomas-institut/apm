@@ -70,7 +70,9 @@ export class ApparatusSubEntry {
      *
      * @member {number}
      */
-    this.position = -1
+    this.position = -1;
+
+    this.tags = [];
   }
 
   /**
@@ -80,16 +82,17 @@ export class ApparatusSubEntry {
    */
   static clone(subEntry) {
     let copy = new ApparatusSubEntry()
-    copy.type = subEntry.type
-    copy.enabled = subEntry.enabled
-    copy.source = subEntry.source
-    copy.fmtText = FmtTextFactory.fromAnything(subEntry.fmtText)
-    copy.position = subEntry.position
-    copy.keyword = subEntry.keyword
+    copy.type = subEntry.type;
+    copy.enabled = subEntry.enabled;
+    copy.source = subEntry.source;
+    copy.fmtText = FmtTextFactory.fromAnything(subEntry.fmtText);
+    copy.position = subEntry.position;
+    copy.keyword = subEntry.keyword;
+    copy.tags = [...subEntry.tags];
     copy.witnessData = subEntry.witnessData.map( (dataItem) => {
-      return WitnessDataItem.clone(dataItem)
+      return WitnessDataItem.clone(dataItem);
     })
-    return copy
+    return copy;
   }
 
 

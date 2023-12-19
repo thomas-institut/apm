@@ -95,4 +95,8 @@ class InMemoryDataCache implements DataCache
             $this->delete($key);
         }
     }
+
+    public function getKeys() : array {
+        return array_keys($this->theCache);
+    }
 }

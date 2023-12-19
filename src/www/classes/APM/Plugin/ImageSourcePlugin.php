@@ -68,6 +68,7 @@ abstract class ImageSourcePlugin extends Plugin
     {
         
         $hookGetImageUrl = 'get-image-url-' . $this->stub;
+        $hookGetThumbnailUrl = 'get-thumbnail-url-' . $this->stub;
         $hookGetDocInfoHtml = 'get-docinfo-html-' . $this->stub;
         $hookGetOpenSeaDragonConfig = 'get-openseadragon-config-' . $this->stub;
         $hookGetDocMetadata = 'get-doc-metadata-' . $this->stub;
@@ -77,6 +78,10 @@ abstract class ImageSourcePlugin extends Plugin
         // Cannot reproduce these errors in testing
         if (! $this->hookManager->attachToHook($hookGetImageUrl, array($this, 'getImageUrl')) ) {
             $this->logger->error("Cannot attach to hook $hookGetImageUrl");
+            return false;
+        }
+        if (! $this->hookManager->attachToHook($hookGetThumbnailUrl, array($this, 'getThumbnailUrl')) ) {
+            $this->logger->error("Cannot attach to hook $hookGetThumbnailUrl");
             return false;
         }
         if (! $this->hookManager->attachToHook($hookGetDocInfoHtml, array($this, 'getDocInfoHtml')) ) {
@@ -156,4 +161,8 @@ abstract class ImageSourcePlugin extends Plugin
     abstract public function realGetImageUrl($imageSourceData, $imageNumber) : string;
     abstract public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber) : string;
     abstract public function realGetDocInfoHtml($imageSourceData) : string;
+
+    public function getThumbnailUrl($param) : string {
+        return '';
+    }
 }

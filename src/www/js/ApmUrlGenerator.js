@@ -79,6 +79,13 @@ class ApmUrlGenerator {
         return this.base + '/doc/' + docId + '/details'
     }
 
+    siteDocEdit(docId) {
+        return `${this.base}/doc/${docId}/edit`
+    }
+    siteDocDefinePages(docId) {
+        return `${this.base}/doc/${docId}/definepages`
+    }
+
     siteDocs() {
         return this.base + '/documents'
     }
@@ -129,6 +136,10 @@ class ApmUrlGenerator {
 
     siteEditCollationTableBeta(tableId) {
         return this.base + '/collation/edit/' + tableId + '/beta'
+    }
+
+    siteOpenSeadragonIconsPrefix() {
+        return `${this.base}/node_modules/openseadragon/build/openseadragon/images/`
     }
 
 

@@ -993,7 +993,7 @@ export class WitnessInfoPanel extends Panel{
       if (oldText === newText || newText === '') {
         // just reset the editor's text in case the edited text contained whitespace
         editor.setText(this.ctData['sigla'][witnessIndex])
-        return false
+        return true
       }
       console.log('Change in siglum for witness index ' + witnessIndex +  ' to ' + newText)
       if (this.ctData['sigla'].indexOf(newText) !== -1) {
@@ -1006,7 +1006,7 @@ export class WitnessInfoPanel extends Panel{
       this._redrawSiglaGroupSigla()
 
       this.options.onSiglaChange(this.ctData['sigla'])
-
+      return true
     }
   }
 

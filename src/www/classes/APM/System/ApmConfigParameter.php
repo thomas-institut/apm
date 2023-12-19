@@ -75,4 +75,7 @@ class ApmConfigParameter
 
     const APM_DAEMON_PID_FILE = 'apmDaemonPidFile';
 
+
+    const BILDERBERG_URL = 'BilderbergUrl';
+
 }

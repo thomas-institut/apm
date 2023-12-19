@@ -62,11 +62,12 @@ class SitePageViewer extends SiteController
         $transcribedPages = $this->dataManager->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $this->dataManager->getImageUrl($docId, $pageInfo['img_number']);
-        $osdConfig = $this->dataManager->getOpenSeaDragonConfig($docId, $pageInfo['img_number']);
+//        $osdConfig = $this->dataManager->getOpenSeaDragonConfig($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->dataManager->getPageTypeNames();
         $activeWorks = $this->dataManager->getActiveWorks();
         $pageNumberFoliation = $pageNumber;
         $languagesArray = $this->languages;
+        $deepZoom = $this->dataManager->isImageDeepZoom($docId) ? '1' : '0';
 
         if ($pageInfo['foliation'] !== NULL) {
             $pageNumberFoliation = $pageInfo['foliation'];
@@ -86,8 +87,9 @@ class SitePageViewer extends SiteController
             'activeWorks' => $activeWorks,
             'thePages' => $thePages,
             'imageUrl' => $imageUrl,
-            'openSeaDragonConfig' => $osdConfig,
-            'languagesArray' => $languagesArray
+//            'openSeaDragonConfig' => $osdConfig,
+            'languagesArray' => $languagesArray,
+            'deepZoom' => $deepZoom
         ]);
     }
 
@@ -114,7 +116,7 @@ class SitePageViewer extends SiteController
         $transcribedPages = $this->dataManager->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $this->dataManager->getImageUrl($docId, $pageInfo['img_number']);
-        $osdConfig = $this->dataManager->getOpenSeaDragonConfig($docId, $pageInfo['img_number']);
+//        $osdConfig = $this->dataManager->getOpenSeaDragonConfig($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->dataManager->getPageTypeNames();
         $activeWorks = $this->dataManager->getActiveWorks();
         $languagesArray = $this->languages;
@@ -123,6 +125,8 @@ class SitePageViewer extends SiteController
         if ($pageInfo['foliation'] !== NULL) {
             $pageNumberFoliation = $pageInfo['foliation'];
         }
+
+        $deepZoom = $this->dataManager->isImageDeepZoom($docId) ? '1' : '0';
 
         return $this->renderPage($response, self::TEMPLATE_TRANSCRIPTION_EDITOR, [
             'navByPage' => false,  // i.e., navigate by sequence
@@ -138,8 +142,9 @@ class SitePageViewer extends SiteController
             'activeWorks' => $activeWorks,
             'thePages' => $thePages,
             'imageUrl' => $imageUrl,
-            'openSeaDragonConfig' => $osdConfig,
-            'languagesArray' => $languagesArray
+//            'openSeaDragonConfig' => $osdConfig,
+            'languagesArray' => $languagesArray,
+            'deepZoom' => $deepZoom
         ]);
     }
 

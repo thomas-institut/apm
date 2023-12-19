@@ -33,13 +33,11 @@ use APM\Api\ApiPeople;
 use APM\Api\ApiTranscription;
 use APM\Api\ApiWorks;
 
-use APM\Site\SiteMetadataEditor;
 use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePeople;
 use APM\Site\SitePerson;
 use APM\System\ConfigLoader;
 use APM\System\NodejsApiProxy;
-use APM\System\SystemManager;
 use APM\ToolBox\BaseUrlDetector;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Handler\ErrorLogHandler;
@@ -57,8 +55,6 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use APM\System\ApmContainerKey;
 use APM\System\ApmSystemManager;
 use APM\System\ApmConfigParameter;
-
-use AverroesProject\Data\DataManager;
 
 use APM\Site\SiteDashboard;
 use APM\Site\SiteHomePage;
@@ -134,13 +130,6 @@ $systemManager = new ApmSystemManager($config);
 if ($systemManager->fatalErrorOccurred()) {
     exitWithErrorMessage($systemManager->getErrorMessage());
 }
-
-// Build DataManager (will be replaced completely by SystemManager at some point
-$dataManager = new DataManager($systemManager->getDbConnection(), $systemManager->getTableNames(),
-    $systemManager->getLogger(), $systemManager->getHookManager(), $config[ApmConfigParameter::LANG_CODES]);
-$dataManager->setSqlQueryCounterTracker($systemManager->getSqlQueryCounterTracker());
-$dataManager->userManager->setSqlQueryCounterTracker($systemManager->getSqlQueryCounterTracker());
-$systemManager->setDataManager($dataManager);
 
 // Build container for Slim
 $container = new MinimalContainer();

@@ -149,12 +149,29 @@ export class DocPage extends NormalPage {
     return map
   }
 
-  async genHtml() {
+  async getDocInfoHtml() {
     let langName = await this.apmDataProxy.getLangName(this.docInfo.lang)
     let docTypeName = await this.apmDataProxy.getDocTypeName(this.docInfo.doc_type)
     let docTypeString = tr(`${langName} ${docTypeName}`)
     let transcribedPagesString = tr('{{num}} of {{total}} pages transcribed',
       { num:this.doc['numTranscribedPages'], total:  this.doc['numPages']})
+    let storageInfo = ''
+    switch(this.docInfo.image_source) {
+      case 'averroes-server':
+        storageInfo = 'images stored in the Averroes server';
+        break;
+
+      case 'bilderberg':
+        storageInfo = 'images stored in Bilderberg';
+        break;
+    }
+
+    return `${docTypeString}, ${transcribedPagesString}, ${storageInfo}`
+  }
+
+  async genHtml() {
+
+
     return `
        <nav aria-label="breadcumb">
      <ol class="breadcrumb">
@@ -164,8 +181,7 @@ export class DocPage extends NormalPage {
 </nav>
 
 <h2>${this.docInfo.title}</h2>
-        <p class="docinfo">${docTypeString}, ${transcribedPagesString}, ${this.doc['docInfoHtml']}
-        </p>
+        <p class="docinfo"> ${await this.getDocInfoHtml()}</p>
         <div class="viewer-container">
             <div class="page-viewer">
                 <div class="viewer-toolbar">

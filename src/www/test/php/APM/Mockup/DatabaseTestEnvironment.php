@@ -134,15 +134,7 @@ EOD;
         }
 
         $this->systemManager = $systemManager;
-        
-        $config = $systemManager->getConfig();
-        
-        
-        $dbConnection = $systemManager->getDbConnection();
-        $hm = $systemManager->getHookManager();
-        $logger = $systemManager->getLogger();
-        $dataManager = new DataManager($dbConnection, $systemManager->getTableNames(), $logger, $hm, $config[ApmConfigParameter::LANG_CODES]);
-        $systemManager->setDataManager($dataManager);
+
         $container = new MinimalContainer();
         $container->addDefinitions([
             ApmContainerKey::SYSTEM_MANAGER => $systemManager,

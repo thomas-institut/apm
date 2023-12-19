@@ -35,7 +35,6 @@ use APM\System\Job\JobQueueManager;
 use APM\System\NormalizerManager;
 use APM\System\SystemManager;
 use APM\System\SettingsManager;
-use APM\Plugin\HookManager;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
@@ -51,8 +50,7 @@ use Monolog\Handler\StreamHandler;
 class SystemManagerMockup extends SystemManager {
     
     private $logger;
-    private $hm;
-    private $sm;
+     private $sm;
     private $pm;
     /**
      * @var Twig
@@ -81,8 +79,7 @@ class SystemManagerMockup extends SystemManager {
         $logger->pushHandler($logStream);
         
         $this->logger = $logger;
-        
-        $this->hm = new HookManager();
+
         $this->sm = new SettingsManager();
         $this->pm = new DataTablePresetManager(new InMemoryDataTable());
         $this->tm = new MockTranscriptionManager();
@@ -105,10 +102,7 @@ class SystemManagerMockup extends SystemManager {
     public function setUpSystem() {
         return true;
     }
-    
-    public function getHookManager() : HookManager {
-        return $this->hm;
-    }
+
 
     public function getSettingsManager() : SettingsManager {
         return $this->sm;
@@ -178,5 +172,10 @@ class SystemManagerMockup extends SystemManager {
     public function getJobManager(): JobQueueManager
     {
         // TODO: Implement getJobManager() method.
+    }
+
+    public function getAvailableImageSources(): array
+    {
+       return [];
     }
 }

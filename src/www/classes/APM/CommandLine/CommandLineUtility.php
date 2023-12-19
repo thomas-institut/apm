@@ -122,12 +122,10 @@ abstract class CommandLineUtility {
         });
         $dbConn = $systemManager->getDbConnection();
         $this->dbConn = $dbConn;
-        $hm = $systemManager->getHookManager();
 
         // Data Manager (will be replaced completely by SystemManager at some point
-        $this->dm = new DataManager($dbConn, $systemManager->getTableNames(), $this->logger, $hm, $config['langCodes']);
-        $this->systemManager->setDataManager($this->dm);
-        
+        $this->dm = $this->systemManager->getDataManager();
+
         $this->um = $this->dm->userManager;
     }
     

@@ -1,26 +1,13 @@
-DROP TABLE IF EXISTS `ap_edition_styles`;
+ALTER TABLE `ap_docs` ADD `public` TINYINT NOT NULL DEFAULT '1' AFTER `doc_type`;
+ALTER TABLE `ap_docs` ADD `in_dare` TINYINT NOT NULL DEFAULT '1' AFTER `doc_type`;
+ALTER TABLE `ap_docs` ADD `deep_zoom` TINYINT NOT NULL DEFAULT '0' AFTER `image_source_data`;
+ALTER TABLE `ap_docs` DROP COLUMN `short_title`;
 
-CREATE TABLE `ap_edition_styles` (
-    `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `project_id` int default 1,
-    `lang` varchar(8) NOT NULL,
-    `name` varchar(512) NOT NULL,
-    `description` varchar(512) DEFAULT '',
-    `data` longtext
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+UPDATE `ap_docs` set image_source='bilderberg' WHERE image_source='dare';
+UPDATE `ap_docs` SET ap_docs.deep_zoom=1 where image_source='dare-deepzoom';
+UPDATE `ap_docs` set ap_docs.in_dare=0 WHERE image_source='local';
+UPDATE `ap_docs` set ap_docs.public=0 WHERE image_source='local';
+UPDATE `ap_docs` set image_source='bilderberg' WHERE image_source='dare-deepzoom';
+UPDATE `ap_docs` set image_source='averroes-server' WHERE image_source='local';
 
-DROP TABLE IF EXISTS `ap_projects`;
-
-CREATE TABLE `ap_projects` (
-    `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `parent` int default NULL,
-    `name` varchar(512) NOT NULL,
-    `institution` varchar(512) default '',
-    `description` text
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-INSERT INTO `ap_projects` (`id`, `parent`, `name`, `institution`, `description`) VALUES
-    (1, null, 'System', '', 'System-wide resources available to all projects'),
-    (2, 1, 'Averroes', 'Thomas-Institut', 'A trilingual critical edition of Averroes conducted by the Thomas-Institut at the University of Cologne');
-
-UPDATE `ap_settings` SET `value` = '31' WHERE `ap_settings`.`setting` = 'dbversion';
+UPDATE `ap_settings` SET `value` = '25' WHERE `ap_settings`.`setting` = 'dbversion';

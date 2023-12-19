@@ -44,14 +44,15 @@ use APM\Jobs\SiteChunksUpdateDataCache;
 use APM\Jobs\SiteDocumentsUpdateDataCache;
 use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
-use APM\Plugin\HookManager;
-use APM\Plugin\Plugin;
 use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
+use APM\System\ImageSource\BilderbergImageSource;
+use APM\System\ImageSource\OldBilderbergStyleRepository;
 use APM\System\Job\ApmJobQueueManager;
 use APM\System\Job\JobQueueManager;
 use APM\System\Job\NullJobHandler;
 use APM\ToolBox\BaseUrlDetector;
+use AverroesProject\Data\DataManager;
 use Exception;
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Handler\StreamHandler;
@@ -144,11 +145,6 @@ class ApmSystemManager extends SystemManager {
     private SettingsManager $settingsMgr;
 
     /**
-     * @var HookManager
-     */
-    private HookManager $hookManager;
-
-    /**
      * @var CollationEngine
      */
     private CollationEngine $collationEngine;
@@ -194,6 +190,10 @@ class ApmSystemManager extends SystemManager {
 
     private ?ApmEditionSourceManager $editionSourceManager;
     private ApmJobQueueManager $jobManager;
+    /**
+     * @var BilderbergImageSource[]|array
+     */
+    protected array $imageSources;
 
 
     public function __construct(array $configArray) {
@@ -233,8 +233,7 @@ class ApmSystemManager extends SystemManager {
         // Set timezone
         date_default_timezone_set($this->config[ApmConfigParameter::DEFAULT_TIMEZONE]);
         
-        // Create HookManager
-        $this->hookManager = new HookManager();
+
         
         // Create table names
         $this->tableNames = 
@@ -335,32 +334,29 @@ class ApmSystemManager extends SystemManager {
         $this->collationTableManager = new ApmCollationTableManager($ctTable, $ctVersionManager, $this->logger);
         $this->collationTableManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
 
+        $this->imageSources = [
+            'bilderberg' => new BilderbergImageSource($this->config[ApmConfigParameter::BILDERBERG_URL]),
+            'local' => new OldBilderbergStyleRepository('/localrep'),
+            'averroes-server' => new OldBilderbergStyleRepository('https://averroes.uni-koeln.de/localrep')
+        ];
 
-//        $globalProfiler->lap("Collation Table Manager ready");
+        $dataManager = new DataManager($this->dbConn, $this->tableNames,
+            $this->logger, $this->imageSources, $this->config[ApmConfigParameter::LANG_CODES]);
+        $dataManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
+        $dataManager->userManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
+        $this->dataManager = $dataManager;
 
-        // Load plugins
-        foreach($this->config[ApmConfigParameter::PLUGINS] as $pluginName) {
-            $pluginPhpFile = $this->config[ApmConfigParameter::PLUGIN_DIR] . '/' .
-                    $pluginName . '.php';
-            if ((@include_once $pluginPhpFile) === false) {
-                $this->logAndSetError(self::ERROR_CANNOT_LOAD_PLUGIN, 
-                        'Cannot load plugin: ' . $pluginName);
-                return;
-            }
-            $pluginClassName = '\\' . $pluginName;
-            $pluginObject = new $pluginClassName($this);
-            if (is_a($pluginObject, Plugin::class)) {
-                /** @var Plugin $pluginObject */
-                $pluginObject->init();
-            }
-        }
-
-//        $globalProfiler->lap("Plugins loaded");
 
         $this->twig = null;
         $this->normalizerManager = null;
         $this->multiChunkEditionManager = null;
         $this->editionSourceManager = null;
+    }
+
+    public function getAvailableImageSources(): array
+    {
+        return array_keys($this->imageSources);
+
     }
 
     /**
@@ -424,10 +420,6 @@ class ApmSystemManager extends SystemManager {
     public function getDbConnection(): PDO
     {
         return $this->dbConn;
-    }
-    
-    public function getHookManager() : HookManager {
-        return $this->hookManager;
     }
     
     public function getSettingsManager() : SettingsManager {

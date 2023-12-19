@@ -249,7 +249,7 @@ class ApiDocuments extends ApiController
         
         $docId = $dataManager->newDoc(
                 $docSettings['title'], 
-                $docSettings['short_title'],
+                '',
                 0,  // start with 0 pages
                 $docSettings['lang'],
                 $docSettings['doc_type'],

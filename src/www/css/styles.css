@@ -270,6 +270,7 @@ div.aei-form ul.tag-editor-tags-ul {
 
 ul.tag-editor-tags-ul li {
     display: inline;
+    line-height: 2.5em;
     margin-right: 0.5em;
 }
 

@@ -22,7 +22,8 @@ export class DocEditPage {
   
   constructor(prefix, docInfo, docEditApiUrl, cancelUrl, deleteUrl, successDeleteUrl) {
     
-    this.docInfoFields = ['title', 'short_title', 'doc_type', 'lang', 'image_source', 'image_source_data']
+    // this.docInfoFields = ['title', 'short_title', 'doc_type', 'lang', 'image_source', 'image_source_data']
+    this.docInfoFields = ['title', 'doc_type', 'lang', 'image_source', 'image_source_data']
     
     this.docInfo = docInfo
     this.docEditApiUrl = docEditApiUrl
@@ -30,7 +31,7 @@ export class DocEditPage {
     this.successDeleteUrl = successDeleteUrl
     
     this.titleField = $('#' + prefix + '-title')
-    this.shortTitleField = $('#' + prefix + '-shorttitle')
+    // this.shortTitleField = $('#' + prefix + '-shorttitle')
     this.typeSelect = $('#' + prefix + '-type')
     this.langSelect = $('#' + prefix + '-lang')
     this.imageSourceSelect = $('#' + prefix + '-imagesource')
@@ -49,7 +50,7 @@ export class DocEditPage {
     this.alertModalText = $('#' + prefix + '-alert-modal-text')
     
     this.titleField.on('keyup', this.genCheckFormFunction())
-    this.shortTitleField.on('keyup', this.genCheckFormFunction())
+    // this.shortTitleField.on('keyup', this.genCheckFormFunction())
     this.typeSelect.on('change', this.genCheckFormFunction())
     this.langSelect.on('change', this.genCheckFormFunction())
     this.imageSourceSelect.on('change', this.genCheckFormFunction())
@@ -170,7 +171,7 @@ export class DocEditPage {
      let docInfo = {}
      
      docInfo['title'] = this.titleField.val().trim()
-     docInfo['short_title'] = this.shortTitleField.val().trim()
+     // docInfo['short_title'] = this.shortTitleField.val().trim()
      docInfo['doc_type'] = this.typeSelect.val()
      docInfo['lang'] = this.langSelect.val()
      docInfo['image_source'] = this.imageSourceSelect.val()
@@ -182,7 +183,7 @@ export class DocEditPage {
   putDocInfoIntoForm(docInfo)
   {
     this.titleField.val(docInfo['title'])
-    this.shortTitleField.val(docInfo['short_title'])
+    // this.shortTitleField.val(docInfo['short_title'])
     this.typeSelect.val(docInfo['doc_type'])
     this.langSelect.val(docInfo['lang'])
     this.imageSourceSelect.val(docInfo['image_source'])

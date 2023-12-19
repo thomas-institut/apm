@@ -20,6 +20,8 @@
 
 namespace AverroesProject\Data;
 
+use APM\System\ImageSource\ImageSourceInterface;
+use APM\System\ImageSource\NullImageSource;
 use APM\ToolBox\ArraySort;
 use AverroesProject\ColumnElement\Custodes;
 use AverroesProject\ColumnElement\Gloss;
@@ -52,10 +54,11 @@ use AverroesProject\TxText\Rubric;
 use AverroesProject\TxText\Sic;
 use AverroesProject\TxText\Text;
 use AverroesProject\TxText\Unclear;
+use ThomasInstitut\DataCache\InMemoryDataCache;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlDataTableWithRandomIds;
 use APM\ToolBox\MyersDiff;
-use APM\Plugin\HookManager;
 use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
 use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 use ThomasInstitut\TimeString\TimeString;
@@ -165,16 +168,13 @@ class DataManager implements  SqlQueryCounterTrackerAware
     private MySqlDataTable $txVersionsTable;
 
 
-    /**
-     *
-     * @var HookManager
-     */
-    public HookManager $hookManager;
 
     /**
      * @var array
      */
     private array $langCodes;
+    private InMemoryDataCache $cache;
+    private array $imageSources;
 
     /**
      * Tries to initialize and connect to the MySQL database.
@@ -184,16 +184,16 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param PDO $dbConn
      * @param array $tableNames
      * @param Logger $logger
-     * @param HookManager $hm
+     * @param array $imageSources
      * @param array $langCodes
      */
-    function __construct(PDO $dbConn, array $tableNames, Logger $logger, HookManager $hm, array $langCodes = [])
+    function __construct(PDO $dbConn, array $tableNames, Logger $logger, array $imageSources, array $langCodes = [])
     {
         $this->dbConn = $dbConn;
         $this->tNames = $tableNames;
         $this->logger = $logger;
-        $this->hookManager = $hm;
         $this->langCodes = $langCodes;
+        $this->imageSources = $imageSources;
 
         $this->initSqlQueryCounterTracker();
 
@@ -228,6 +228,9 @@ class DataManager implements  SqlQueryCounterTrackerAware
                 $tableNames['works']);
 
         $this->txVersionsTable = new MySqlDataTable($this->dbConn, $tableNames['versions_tx']);
+
+        $this->cache = new InMemoryDataCache();
+
     }
 
     /**
@@ -275,12 +278,12 @@ class DataManager implements  SqlQueryCounterTrackerAware
      */
     public function newDoc(string $title, string $shortTitle, int $pageCount, 
             string $lang, string $type, 
-            string $imageSource, string $imageSourceData) 
+            string $imageSource, string $imageSourceData): bool|int
     {
         
         $doc = [ 
             'title' => $title, 
-            'short_title' => $shortTitle,
+//            'short_title' => $shortTitle,
             'lang' => $lang, 
             'doc_type' => $type,
             'image_source' => $imageSource, 
@@ -510,9 +513,9 @@ class DataManager implements  SqlQueryCounterTrackerAware
             }
         }
         
-        if (isset($newSettings['short_title'])) {
-            $row['short_title'] = trim($newSettings['short_title']);
-        }
+//        if (isset($newSettings['short_title'])) {
+//            $row['short_title'] = trim($newSettings['short_title']);
+//        }
         
         if (isset($newSettings['lang'])) {
             $row['lang'] = $newSettings['lang'];
@@ -704,9 +707,16 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
     function getDocById($docId)
     {
-
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        return $this->databaseHelper->getRowById($this->tNames['docs'], $docId);
+        $cacheKey = "doc-$docId";
+        try {
+            $data = unserialize($this->cache->get($cacheKey));
+        } catch (KeyNotInCacheException $e) {
+            $this->getSqlQueryCounterTracker()->incrementSelect();
+            $docInfo =  $this->databaseHelper->getRowById($this->tNames['docs'], $docId);
+            $this->cache->set($cacheKey, serialize($docInfo));
+            return $docInfo;
+        }
+        return $data;
     }
     
     function getDocByDareId($dareId) {
@@ -793,45 +803,45 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $imageNumber
      * @return string|boolean
      */
-    public function getImageUrl($docId, int $imageNumber){
+    public function getImageUrl(int $docId, int $imageNumber): bool|string
+    {
         $doc = $this->getDocById($docId);
         if ($doc === false) {
             return false;
         }
-        
-        $isd = $doc['image_source_data'];
-        
-        $url = $this->hookManager->callHookedMethods('get-image-url-' . $doc['image_source'],
-                [ 'imageSourceData' => $isd, 
-                   'imageNumber' => $imageNumber]);
 
-        if (!is_string($url)) {
-            return false;
+        $imageSource = $this->imageSources[$doc['image_source']] ?? new NullImageSource();
+        $type = ImageSourceInterface::IMAGE_TYPE_JPG;
+        if ($doc['deep_zoom']) {
+            $type = ImageSourceInterface::IMAGE_TYPE_DEEP_ZOOM;
         }
+
+
         
-        return $url;
+//        $isd = $doc['image_source_data'];
+//
+//        $url = $this->hookManager->callHookedMethods('get-image-url-' . $doc['image_source'],
+//                [ 'imageSourceData' => $isd,
+//                   'imageNumber' => $imageNumber]);
+//
+//        if (!is_string($url)) {
+//            return false;
+//        }
+//
+//
+//        return $url;
+
+        return $imageSource->getImageUrl($type, $doc['image_source_data'], $imageNumber);
     }
-    
-    public function getOpenSeaDragonConfig($docId, $imageNumber){
+
+    public function isImageDeepZoom(int $docId) : bool {
         $doc = $this->getDocById($docId);
         if ($doc === false) {
             return false;
         }
-        
-        $isd = $doc['image_source_data'];
-        
-        $url = $this->hookManager->callHookedMethods('get-openseadragon-config-' . $doc['image_source'],
-                [ 'imageSourceData' => $isd, 
-                   'imageNumber' => $imageNumber]);
-
-        if (!is_string($url)) {
-            return false;
-        }
-        
-        return $url;
+        return $doc['deep_zoom'];
     }
-    
-    
+
     public function getColumnElementsByPageId($pageId, $col,$time = false) {
 
         $this->getSqlQueryCounterTracker()->incrementSelect();

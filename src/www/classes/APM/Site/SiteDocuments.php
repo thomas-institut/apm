@@ -181,30 +181,11 @@ class SiteDocuments extends SiteController
         $doc['docInfo'] = $dataManager->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";
         $doc['pages'] = $this->buildPageArrayNew($pageInfoArray, $transcribedPages, $doc['docInfo']);
-        
-        $docInfoHtml = $this->hookManager->callHookedMethods('get-docinfo-html-' . $doc['docInfo']['image_source'],
-                [ 'imageSourceData' => $doc['docInfo']['image_source_data']]);
-
-        if (!is_string($docInfoHtml)) {
-            $docInfoHtml = 'Image source not supported, please report to administrator.';
-        }
-        $doc['docInfoHtml'] = $docInfoHtml;
 
 
         // TODO: enable metadata when there's a use for it, or when the doc details JS app
         //  would not hang if there's an error with it.
         $metaData = [];
-
-//        $metaData = $this->hookManager->callHookedMethods('get-doc-metadata-' . $doc['docInfo']['image_source'],
-//            [ 'imageSourceData' => $doc['docInfo']['image_source_data']]);
-//
-//        if (!is_array($metaData)) {
-//            $this->logger->debug('Invalid metadata returned for hook get-doc-metadata-' . $doc['docInfo']['image_source'],
-//                [ 'returnedMetadata' =>$metaData]);
-//            $metaData = [];
-//        }
-
-
 
         $chunkLocationMap = $transcriptionManager->getChunkLocationMapForDoc($docId, '');
 
@@ -316,9 +297,8 @@ class SiteDocuments extends SiteController
             ]);
         }
 
-        $availableImageSources = $this->hookManager->callHookedMethods('get-image-sources', []);
+        $availableImageSources = $this->systemManager->getAvailableImageSources();
         $imageSourceOptions = '';
-        $docImageSourceIsImplemented = false;
         foreach($availableImageSources as $imageSource) {
             $imageSourceOptions .= '<option value="' . $imageSource . '"';
             $imageSourceOptions .= '>' . $imageSource . '</option>';
@@ -365,7 +345,7 @@ class SiteDocuments extends SiteController
         $dataManager = $this->dataManager;
         $docInfo = $dataManager->getDocById($docId);
         
-        $availableImageSources = $this->hookManager->callHookedMethods('get-image-sources', []);
+        $availableImageSources = $this->systemManager->getAvailableImageSources();
         
         $imageSourceOptions = '';
         $docImageSourceIsImplemented = false;

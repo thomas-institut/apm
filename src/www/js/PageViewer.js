@@ -24,8 +24,8 @@ class PageViewer {
   
   constructor (options){
     this.options = options
-    //console.log('Page Viewer options')
-    //console.log(options)
+    console.log('Page Viewer options')
+    console.log(options)
     this.cookieName = 'apm-pv2-' + this.options.userId + '-' + this.options.pageSystemId
 
     this.splitPaneElements =  $('div.split-pane')
@@ -49,8 +49,17 @@ class PageViewer {
       defaultZoomLevel: this.layout.zoom,
       preserveImageSizeOnResize: true
    }
-    osdOptions.tileSources = options.osdConfig.tileSources
-    
+    if (options.deepZoom) {
+      osdOptions.tileSources = options.imageUrl;
+    } else {
+      osdOptions.tileSources = {
+        type: 'image',
+        url: options.imageUrl,
+        buildPyramid: false,
+        homeFillsViewer: true
+      }
+    }
+
     this.osdViewer = OpenSeadragon(osdOptions)
     
     $('#pagenumber').popover({

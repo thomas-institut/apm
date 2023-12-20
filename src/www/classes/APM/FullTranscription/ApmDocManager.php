@@ -42,7 +42,7 @@ class ApmDocManager extends DocManager implements LoggerAwareInterface, ErrorRep
     /**
      * @var DataTable
      */
-    private $docDataTable;
+    private DataTable $docDataTable;
 
     public function __construct(DataTable $docDataTable, LoggerInterface $logger)
     {
@@ -64,7 +64,7 @@ class ApmDocManager extends DocManager implements LoggerAwareInterface, ErrorRep
             $this->throwInvalidArgumentException("Document $docId not found in database", self::ERROR_DOC_NOT_FOUND);
         }
         if ($row === []) {
-            $this->throwRunTimeException('Unknown error occured', self::ERROR_UNKNOWN);
+            $this->throwRunTimeException('Unknown error occurred', self::ERROR_UNKNOWN);
         }
         return DocInfo::createFromDatabaseRow($row);
     }

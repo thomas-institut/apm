@@ -255,10 +255,10 @@ class SiteDocuments extends SiteController
         }
 
 
-        $canDefinePages = false;
-        if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')) {
-            $canDefinePages = true;
-        }
+//        $canDefinePages = true;
+//        if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')) {
+//            $canDefinePages = true;
+//        }
 
 
         $pageTypeNames  = $this->dataManager->getPageTypeNames();
@@ -269,7 +269,7 @@ class SiteDocuments extends SiteController
 
         return $this->renderPage($response, self::TEMPLATE_SHOW_DOCS_PAGE, [
             'navByPage' => false,
-            'canDefinePages' => $canDefinePages ? '1' : '0',
+            'canDefinePages' => '1',
             'pageTypeNames' => $pageTypeNames,
             'doc' => $doc,
             'chunkInfo' => $chunkInfo,
@@ -397,6 +397,8 @@ class SiteDocuments extends SiteController
         
         
     }
+
+
 
     /**
      * @param Request $request

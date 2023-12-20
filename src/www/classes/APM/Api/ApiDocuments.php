@@ -86,6 +86,13 @@ class ApiDocuments extends ApiController
         return $this->responseWithStatus($response, 200);
     }
 
+    public function getPageTypes(Request $request, Response $response): Response
+    {
+        $this->profiler->start();
+        $pageTypes  = $this->dataManager->getPageTypeNames();
+        return $this->responseWithJson($response, $pageTypes);
+    }
+
     /**
      * @param Request $request
      * @param Response $response
@@ -304,6 +311,16 @@ class ApiDocuments extends ApiController
                       'data' => $postData]);
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_DATA], 409);
         }
+
+        $currentSettings = $dataManager->getDocById($docId);
+
+        if ($currentSettings === false) {
+            $this->logger->error("Doc  settings update: document does not exist",
+                [ 'apiUserId' => $this->apiUserId,
+                    'apiError' => ApiController::API_ERROR_NO_DATA,
+                    'data' => $postData]);
+            return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_WRONG_DOCUMENT], 409);
+        }
         
 
         try {
@@ -322,6 +339,18 @@ class ApiDocuments extends ApiController
             'apiUserId'=> $this->apiUserId,
             'newSettings' => $newSettings
             ]);
+
+
+        // update pages
+        if ($currentSettings['lang'] !== $newSettings['lang']) {
+            $pages = $dataManager->getDocPageInfo($docId);
+            foreach($pages as $page) {
+                $result =  $dataManager->updatePageSettings($page['id'], [ 'lang' => $newSettings['lang']]);
+                if ($result === false) {
+                    $this->logger->error("Could not update language for page" . $page['id']);
+                }
+            }
+        }
 
         $this->systemManager->onDocumentUpdated($this->apiUserId, $docId);
         return $this->responseWithStatus($response, 200);

@@ -217,6 +217,10 @@ class ApmUrlGenerator {
     apiAddPages(docId) {
         return this.base + '/api/doc/' + docId + '/addpages';
     }
+
+    apiGetPageTypes() {
+        return `${this.base}/api/page/types`
+    }
     apiQuickCollation() {
         return this.base + '/api/public/collation/quick';
     }

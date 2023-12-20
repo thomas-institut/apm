@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2019 Universität zu Köln
+ *  Copyright (C) 2019-23 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,11 +18,9 @@
 
 
 export class DocEditPage {
-  
-  
+
   constructor(prefix, docInfo, docEditApiUrl, cancelUrl, deleteUrl, successDeleteUrl) {
-    
-    // this.docInfoFields = ['title', 'short_title', 'doc_type', 'lang', 'image_source', 'image_source_data']
+
     this.docInfoFields = ['title', 'doc_type', 'lang', 'image_source', 'image_source_data']
     
     this.docInfo = docInfo
@@ -31,7 +29,6 @@ export class DocEditPage {
     this.successDeleteUrl = successDeleteUrl
     
     this.titleField = $('#' + prefix + '-title')
-    // this.shortTitleField = $('#' + prefix + '-shorttitle')
     this.typeSelect = $('#' + prefix + '-type')
     this.langSelect = $('#' + prefix + '-lang')
     this.imageSourceSelect = $('#' + prefix + '-imagesource')
@@ -50,7 +47,6 @@ export class DocEditPage {
     this.alertModalText = $('#' + prefix + '-alert-modal-text')
     
     this.titleField.on('keyup', this.genCheckFormFunction())
-    // this.shortTitleField.on('keyup', this.genCheckFormFunction())
     this.typeSelect.on('change', this.genCheckFormFunction())
     this.langSelect.on('change', this.genCheckFormFunction())
     this.imageSourceSelect.on('change', this.genCheckFormFunction())
@@ -59,137 +55,139 @@ export class DocEditPage {
     
     this.submitButton.on('click', this.genSubmitFunction())
     this.resetButton.on('click', this.genResetFunction())
-    this.cancelButton.on('click', function (){ location.replace(cancelUrl)})
+    this.cancelButton.on('click',  ()=> {
+      if (this.updating) {
+        return;
+      }
+      location.replace(cancelUrl);
+    });
     this.deleteButton.on('click', this.genDeleteFunction())
     
     this.submitButton.hide()
     this.submitButton.removeClass('hidden')
     this.resetButton.hide()
     this.resetButton.removeClass('hidden')
+    this.updating = false
   }
   
   genSubmitFunction() {
-    let thisObject = this
-    return function() {
-      let newInfo = thisObject.getDocInfoFromForm()
-      if (thisObject.docInfosAreDifferent(thisObject.docInfo, newInfo)) {
+    return () => {
+      if (this.updating) {
+        return;
+      }
+      let newInfo = this.getDocInfoFromForm();
+      if (this.docInfosAreDifferent(this.docInfo, newInfo)) {
+        this.updating = true;
+        let currentSubmitButtonHtml = this.submitButton.html();
+        this.submitButton.html(`Applying changes... <i class="fa fa-spinner fa-spin fa-fw">`);
         $.post(
-          thisObject.docEditApiUrl, 
+          this.docEditApiUrl,
           { data: JSON.stringify(newInfo) }
         )
-        .done(function () { 
-          thisObject.statusDiv.html("Updating... done")
-          thisObject.updating = false
-          location.replace('')
+        .done( () => {
+          this.statusDiv.html("Updating... done");
+          this.updating = false;
+          location.replace('');
         })
-        .fail(function(resp) {
-          thisObject.statusDiv.html("Updating... fail with error code " + resp.status + ' :(')
-          thisObject.updating = false
+        .fail((resp) => {
+          this.statusDiv.html("Updating... fail with error code " + resp.status + ' :(');
+          this.updating = false;
+          this.submitButton.html(currentSubmitButtonHtml);
         })
-        return true
+        return true;
       }
-      thisObject.statusDiv.html('<div class="alert alert-info>No changes, nothing to do</div>')
+      this.statusDiv.html('<div class="alert alert-info>No changes, nothing to do</div>');
     }
   }
   
   genDeleteFunction() {
-    let thisObject = this
-    return function() {
-      thisObject.alertModalTitle.html('Please confirm')
-      thisObject.alertModalSubmitButton.html('Delete Document')
-      thisObject.alertModalCancelButton.html('Cancel')
-      thisObject.alertModalText.html(
-                      'Are you sure you want to delete this document?</p>'+ 
-                      '<p class="text-danger">This can NOT be undone!')
-      thisObject.alertModalSubmitButton.off()
-      thisObject.alertModalSubmitButton.on('click', function () {
-        $.get(
-          thisObject.apiDeleteUrl
-        )
-        .done(function () { 
-          thisObject.statusDiv.html("Delete... done")
-          location.replace(thisObject.successDeleteUrl)
-         })
-        .fail(function(resp) {
-          thisObject.statusDiv.html("Delete... fail with error code " + resp.status + ' :(')
-        })
-        return true
-      })
-      thisObject.alertModal.modal('show')
+    return ()=> {
+      this.alertModalTitle.html('Please confirm');
+      this.alertModalSubmitButton.html('Delete Document');
+      this.alertModalCancelButton.html('Cancel');
+      this.alertModalText.html(`<p>Are you sure you want to delete this document?</p> 
+                      <p class="text-danger">This can NOT be undone!`);
+      this.alertModalSubmitButton.off();
+      this.alertModalSubmitButton.on('click',  ()=> {
+        $.get(this.apiDeleteUrl).done( ()=> {
+          this.statusDiv.html("Delete... done");
+          location.replace(this.successDeleteUrl);
+         }).fail((resp) => {
+          this.statusDiv.html("Delete... fail with error code " + resp.status + ' :(');
+        });
+        return true;
+      });
+      this.alertModal.modal('show');
     }
   }
   
   genResetFunction( ){
-    let thisObject = this
-    return function() {
-      let newInfo = thisObject.getDocInfoFromForm()
-      if (thisObject.docInfosAreDifferent(thisObject.docInfo, newInfo)) {
-        thisObject.putDocInfoIntoForm(thisObject.docInfo)
-        thisObject.resetButton.hide()
-        thisObject.submitButton.hide()
+    return () => {
+      if (this.updating) {
+        return;
+      }
+      let newInfo = this.getDocInfoFromForm();
+      if (this.docInfosAreDifferent(this.docInfo, newInfo)) {
+        this.putDocInfoIntoForm(this.docInfo);
+        this.resetButton.hide();
+        this.submitButton.hide();
       }
     }
   }
   
   genCheckFormFunction( ){
-    let thisObject = this
-    return function() {
-      let newInfo = thisObject.getDocInfoFromForm()
+    return () => {
+      let newInfo = this.getDocInfoFromForm();
       if (!newInfo['title'].replace(/\s/g, '').length) {
-        thisObject.titleStatusDiv.html('<p class="text-danger"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Title can\'t be empty</p>')
-        thisObject.resetButton.hide()
-        thisObject.submitButton.hide()
-        return true
+        this.titleStatusDiv.html(`<p class="text-danger">
+            <i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Title can\'t be empty</p>`);
+        this.resetButton.hide();
+        this.submitButton.hide();
+        return true;
       } else {
-        thisObject.titleStatusDiv.html('')
+        this.titleStatusDiv.html('');
       }
       
-      if (thisObject.docInfosAreDifferent(thisObject.docInfo, newInfo)) {
-        thisObject.resetButton.show()
-        thisObject.submitButton.show()
-        return true
+      if (this.docInfosAreDifferent(this.docInfo, newInfo)) {
+        this.resetButton.show();
+        this.submitButton.show();
+        return true;
       }
-      thisObject.resetButton.hide()
-      thisObject.submitButton.hide()
+      this.resetButton.hide();
+      this.submitButton.hide();
     }
   }
   
   docInfosAreDifferent(oldInfo, newInfo) {
-    let changeInInfo = false
+    let changeInInfo = false;
     for (const f of this.docInfoFields) {
       if (oldInfo[f] !== newInfo[f]) {
-        changeInInfo = true
-        break
+        changeInInfo = true;
+        break;
       }
     }
-    return changeInInfo
-    
+    return changeInInfo;
   }
    
   getDocInfoFromForm()
   {
-     let docInfo = {}
-     
-     docInfo['title'] = this.titleField.val().trim()
-     // docInfo['short_title'] = this.shortTitleField.val().trim()
-     docInfo['doc_type'] = this.typeSelect.val()
-     docInfo['lang'] = this.langSelect.val()
-     docInfo['image_source'] = this.imageSourceSelect.val()
-     docInfo['image_source_data'] = this.imageSourceDataField.val().trim()
-     
-     return docInfo
+     return {
+       title: this.titleField.val().trim(),
+       doc_type: this.typeSelect.val(),
+       lang: this.langSelect.val(),
+       image_source: this.imageSourceSelect.val(),
+       image_source_data: this.imageSourceDataField.val().trim()
+     }
   }
   
   putDocInfoIntoForm(docInfo)
   {
-    this.titleField.val(docInfo['title'])
-    // this.shortTitleField.val(docInfo['short_title'])
-    this.typeSelect.val(docInfo['doc_type'])
-    this.langSelect.val(docInfo['lang'])
-    this.imageSourceSelect.val(docInfo['image_source'])
-    this.imageSourceDataField.val(docInfo['image_source_data'])
+    this.titleField.val(docInfo['title']);
+    this.typeSelect.val(docInfo['doc_type']);
+    this.langSelect.val(docInfo['lang']);
+    this.imageSourceSelect.val(docInfo['image_source']);
+    this.imageSourceDataField.val(docInfo['image_source_data']);
   }
-  
 }
 
 // make global

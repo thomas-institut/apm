@@ -91,7 +91,7 @@ class ApmSystemManager extends SystemManager {
 
 
     // Database version
-    const DB_VERSION = 30;
+    const DB_VERSION = 31;
 
     const DEFAULT_LOG_APPNAME = 'APM';
     const DEFAULT_LOG_DEBUG = false;
@@ -336,7 +336,6 @@ class ApmSystemManager extends SystemManager {
 
         $this->imageSources = [
             'bilderberg' => new BilderbergImageSource($this->config[ApmConfigParameter::BILDERBERG_URL]),
-            'local' => new OldBilderbergStyleRepository('/localrep'),
             'averroes-server' => new OldBilderbergStyleRepository('https://averroes.uni-koeln.de/localrep')
         ];
 

@@ -460,6 +460,14 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         ApiDocuments::class . ':getNumColumns')
         ->setName('api.numcolumns');
 
+    // API -> pageTypes
+
+    $group->get('/page/types',  function(Request $request, Response $response) use ($container){
+        $ac = new ApiDocuments($container);
+        return $ac->getPageTypes($request, $response);
+    })->setName('api.page.types');
+
+
     // API -> updatePageSettings
     $group->post('/page/{pageId}/update',
         ApiDocuments::class . ':updatePageSettings')

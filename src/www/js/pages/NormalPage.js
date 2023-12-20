@@ -140,7 +140,7 @@ export class NormalPage {
             </ul>`
     }
     return `<div class="container">
-        <a class="navbar-brand" style="padding:0;" href="${urlFor('siteHome')}"><img src="${urlFor('images')}/apm-logo-plain.svg" alt="APM" height="50" ></a>
+        <a class="navbar-brand" style="padding:0;" href="${urlFor('siteHome')}"><img src="${urlFor('images')}/apm-logo-plain.svg" alt="APM" height="40" ></a>
         <div id="navbar" class="collapse navbar-collapse">
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item"><a class="nav-link" href="${urlFor('siteDashboard')}" title="${tr('Dashboard')}">${tr('Dashboard')}</a></li>

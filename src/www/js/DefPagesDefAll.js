@@ -238,7 +238,7 @@ export class DefPagesDefAll {
         pageDefs.push(thePageDef)
       }
       
-      thisObject.statusSpan.html('Updating, this might take a few seconds ... <i class="fa fa-refresh fa-spin"></i>')
+      thisObject.statusSpan.html('Updating, this might take a few seconds ... <i class="fa fa-spinner fa-spin fa-fw"></i>')
       thisObject.updating = true
       
       $.post(

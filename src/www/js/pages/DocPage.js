@@ -69,7 +69,14 @@ export class DocPage extends NormalPage {
   }
 
   async initPage () {
-    await super.initPage()
+    await super.initPage();
+
+
+    let pageTypesData = await this.apmDataProxy.getAvailablePageTypes();
+    this.pageTypes = [];
+    pageTypesData.forEach( ( ptd) => {
+      this.pageTypes[ptd.id] = ptd.descr;
+    })
 
     this.selectedPage = -1
 
@@ -165,7 +172,6 @@ export class DocPage extends NormalPage {
         storageInfo = 'images stored in Bilderberg';
         break;
     }
-
     return `${docTypeString}, ${transcribedPagesString}, ${storageInfo}`
   }
 
@@ -328,8 +334,12 @@ export class DocPage extends NormalPage {
     infoItems.push(`<strong>${tr('Page Number')}</strong>: ${page['pageNumber']}`)
     infoItems.push(`<strong>${tr('Image Number')}</strong>: ${page['imageNumber']}`)
     infoItems.push(`<strong>${tr('Sequence Number')}</strong>: ${page['sequence']}`)
+    infoItems.push('&nbsp;')
+    infoItems.push(`<strong>${tr('Image Links')}</strong>: <a class="image-link" 
+        title="${tr('Click to open in new tab/window')}" href="${page['imageUrl']}" target="_blank">JPG</a>`)
 
     infoItems.push('&nbsp;')
+    infoItems.push(`<strong>${tr('Page Type')}</strong>: ${this.pageTypes[page['type']]}`)
     infoItems.push(`<strong>${tr('Columns Defined')}</strong>: ${page['numCols']}`)
     infoItems.push('&nbsp;')
     infoItems.push(`<a class="btn btn-primary btn-sm" href="${urlGen.sitePageView(this.docId, page['sequence'])}" title="${tr('Click to edit in new tab/window')}" target="_blank">

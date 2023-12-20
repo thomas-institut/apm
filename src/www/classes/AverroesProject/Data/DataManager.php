@@ -257,7 +257,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         
         $docIds = [];
         while ($row = $r->fetch(PDO::FETCH_ASSOC)){
-            $docIds[] = $row['id'];
+            $docIds[] = intval($row['id']);
         }
         return $docIds;
     }
@@ -707,14 +707,20 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
     function getDocById($docId)
     {
-        $cacheKey = "doc-$docId";
-        try {
-            $data = unserialize($this->cache->get($cacheKey));
-        } catch (KeyNotInCacheException $e) {
-            $this->getSqlQueryCounterTracker()->incrementSelect();
-            $docInfo =  $this->databaseHelper->getRowById($this->tNames['docs'], $docId);
-            $this->cache->set($cacheKey, serialize($docInfo));
-            return $docInfo;
+//        $cacheKey = "doc-$docId";
+//        try {
+//            $data = unserialize($this->cache->get($cacheKey));
+//        } catch (KeyNotInCacheException $e) {
+//            $this->getSqlQueryCounterTracker()->incrementSelect();
+//            $docInfo =  $this->databaseHelper->getRowById($this->tNames['docs'], $docId);
+//            $this->cache->set($cacheKey, serialize($docInfo));
+//            return $docInfo;
+//        }
+//        return $data;
+
+        $data =  $this->databaseHelper->getRowById($this->tNames['docs'], $docId);
+        if ($docId === 167) {
+            $this->logger->debug("Data for id $docId", $data);
         }
         return $data;
     }
@@ -722,8 +728,12 @@ class DataManager implements  SqlQueryCounterTrackerAware
     function getDocByDareId($dareId) {
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
+        $rows = $this->docsDataTable->findRows(['image_source_data' => $dareId], 1);
+        if (count($rows) !== 1) {
+            return null;
+        }
 
-        return $this->docsDataTable->findRows(['image_source_data' => $dareId], 1)[0];
+        return $rows[0];
     }
 
     /**

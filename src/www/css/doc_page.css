@@ -1,0 +1,143 @@
+div.viewer-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 1000px;
+    margin-top: 1em;
+    margin-bottom: 2em;
+}
+
+div.viewer-container a, div.viewer-container a:visited {
+    color: inherit;
+}
+
+div.viewer-container a.btn {
+    color: white;
+}
+
+div.viewer-toolbar {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+
+div.page-viewer {
+    width: 80%;
+    max-width: 800px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+div.osd-viewer {
+    width: 100%;
+    height: 100%;
+}
+
+div.page-info-panel {
+    margin-left: 2em;
+    margin-top: 3em;
+}
+
+div.page-list-popover {
+    background: white;
+    border: 1px solid silver;
+    border-radius: 4px;
+    display: none;
+    height: 400px;
+    width: 600px;
+}
+div.page-list-popover[data-show] {
+    display: block;
+    padding: 0;
+}
+
+div.page-list {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+div.page-list-header {
+    background: #eaeaea;
+    border-bottom: 1px solid silver;
+    font-size: 1.2em;
+    font-weight: bold;
+    padding: 0.5em;
+}
+
+div.page-list-contents {
+    overflow-y: scroll;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+div.osd-div {
+    border: 1px solid silver;
+    height: 100%;
+    width: 100%;
+}
+div.page-div {
+    padding: 5px;
+    width: 3em;
+    cursor: pointer;
+    text-align: center;
+}
+
+div.page-info {
+    text-align: center;
+    cursor: pointer;
+}
+
+span.page-info-foliation {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.foliation-not-set {
+    font-style: italic;
+}
+
+.page-selected {
+    border: 1px solid black;
+    border-radius: 3px;
+}
+
+.without-transcription {
+    color: silver
+}
+
+.out-of-sequence {
+    background: #fffcf8;
+}
+
+.foliation-span {
+    padding: 0.5em;
+
+}
+
+.foliation-span.etf-editing{
+    border: none;
+}
+
+div.page-info-item {
+    margin-bottom: 0.5em;
+}
+
+a.image-link {
+    background: #f8f6f6;
+    border-radius: 4px;
+    padding: 3px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+span.foliation-span {
+    border: 1px solid #eeeeee;
+}

@@ -284,3 +284,18 @@ span.tag-text {
 span.tagRemove {
     cursor: pointer;
 }
+
+
+div.def-pages-edit-div input[type="number"] {
+    border: 1px solid silver;
+    padding: 3px;
+}
+
+nav {
+    padding:0;
+    line-height: 1em;
+}
+
+ol.breadcrumb {
+    padding:0;
+}

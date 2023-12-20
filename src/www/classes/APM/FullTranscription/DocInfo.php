@@ -69,10 +69,10 @@ class DocInfo
         $this->pageIds = [];
     }
 
-    public function setFromDatabaseRow(array $row) {
+    public function setFromDatabaseRow(array $row): void
+    {
         $this->id = intval($row['id']);
         $this->title = $row['title'];
-        $this->shortTitle = $row['short_title'];
         $this->languageCode = $row['lang'];
         $this->type = $row['doc_type'];
         $this->imageSource = $row['image_source'];

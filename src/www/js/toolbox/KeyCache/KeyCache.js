@@ -41,7 +41,7 @@ export class KeyCache {
    * @param {number}ttl
    */
   store(key, data, ttl = 0) {
-    let now = Date.now()
+    let now = this.now()
     this.storeItemObject(key, {
       data: data,
       expires: ttl > 0 ? now + ttl : -1,
@@ -65,7 +65,8 @@ export class KeyCache {
     if (itemData.expires === -1) {
       return itemData.data
     }
-    if (itemData.expires < Date.now()) {
+
+    if (itemData.expires > this.now()) {
         return itemData.data
     }
     // item is expired, so completely delete it from cache
@@ -92,7 +93,7 @@ export class KeyCache {
    * @param before
    */
   cleanCache(before = -1) {
-    let now = Date.now()
+    let now = this.now()
     this.getKeys().forEach( (key) => {
       let itemObject = this.getItemObject(key)
       if (itemObject.expires < now) {
@@ -103,6 +104,10 @@ export class KeyCache {
       }
     })
 
+  }
+
+  now() {
+    return Date.now() / 1000
   }
 
   /**

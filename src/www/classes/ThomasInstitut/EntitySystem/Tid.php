@@ -125,8 +125,13 @@ class Tid
         return intval(base_convert($alpha, 36, 10));
     }
 
-    public static function toBase36String(int $tid) : string {
-        return strtoupper(base_convert(strval($tid), 10, 36));
+    public static function toBase36String(int $tid, bool $addCosmeticDash = true) : string {
+        $str = strtoupper(base_convert(strval($tid), 10, 36));
+        if ($addCosmeticDash) {
+            return substr($str, 0, 4) . '-' . substr($str, 4);
+        } else {
+            return $str;
+        }
     }
 
     public static function strIsValidTid(string $str) : bool {
@@ -150,8 +155,12 @@ class Tid
     }
 
 
+    public static function fromTimestamp(float $timestamp) : int {
+        return intval(1000*$timestamp);
+    }
+
     private static function getIdFromClock() : int{
-        return intval(1000*microtime(true));
+        return self::fromTimestamp(microtime(true));
     }
 
     private static function createLockFile() : void {

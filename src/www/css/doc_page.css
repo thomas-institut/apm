@@ -141,3 +141,7 @@ a.image-link {
 span.foliation-span {
     border: 1px solid #eeeeee;
 }
+
+span.doc-info-item {
+    margin-right: 2em;
+}

@@ -27,7 +27,6 @@ namespace APM;
 
 use APM\Api\ApiEditionSources;
 use APM\Api\ApiLog;
-use APM\Api\ApiMetadataEditor;
 use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiPeople;
 use APM\Api\ApiTranscription;

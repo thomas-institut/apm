@@ -29,6 +29,7 @@ use Exception;
 use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use ThomasInstitut\EntitySystem\Tid;
 
 
 /**
@@ -253,7 +254,7 @@ class ApiDocuments extends ApiController
 
         $this->debug('New doc',[ 'apiUserId' => $this->apiUserId,
                       'docSettings' => $docSettings] );
-        
+
         $docId = $dataManager->newDoc(
                 $docSettings['title'], 
                 '',
@@ -261,7 +262,8 @@ class ApiDocuments extends ApiController
                 $docSettings['lang'],
                 $docSettings['doc_type'],
                 $docSettings['image_source'],
-                $docSettings['image_source_data']
+                $docSettings['image_source_data'],
+                Tid::generateUnique()
             );
         
         if ($docId === false) {

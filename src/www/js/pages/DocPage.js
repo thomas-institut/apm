@@ -24,6 +24,7 @@ import { urlGen } from './common/SiteUrlGen'
 import { tr } from './common/SiteLang'
 import { EditableTextField } from '../widgets/EditableTextField'
 import { trimWhiteSpace } from '../toolbox/Util.mjs'
+import { Tid } from '../Tid/Tid'
 
 export class DocPage extends NormalPage {
   constructor(options) {
@@ -159,20 +160,25 @@ export class DocPage extends NormalPage {
   async getDocInfoHtml() {
     let langName = await this.apmDataProxy.getLangName(this.docInfo.lang)
     let docTypeName = await this.apmDataProxy.getDocTypeName(this.docInfo.doc_type)
-    let docTypeString = tr(`${langName} ${docTypeName}`)
-    let transcribedPagesString = tr('{{num}} of {{total}} pages transcribed',
-      { num:this.doc['numTranscribedPages'], total:  this.doc['numPages']})
-    let storageInfo = ''
+    let items = []
+    items.push(tr(`${langName} ${docTypeName}`))
+    items.push(tr('{{num}} of {{total}} pages transcribed',
+      { num:this.doc['numTranscribedPages'], total:  this.doc['numPages']}));
+
     switch(this.docInfo.image_source) {
       case 'averroes-server':
-        storageInfo = 'images stored in the Averroes server';
+        items.push('images stored in the Averroes server');
         break;
 
       case 'bilderberg':
-        storageInfo = 'images stored in Bilderberg';
+        items.push('images stored in Bilderberg');
         break;
     }
-    return `${docTypeString}, ${transcribedPagesString}, ${storageInfo}`
+    items.push(`doc ${this.docInfo.id}`)
+
+    items.push(`entity ${Tid.toBase36String(this.docInfo.tid)}`)
+
+    return items.join(', ')
   }
 
   async genHtml() {

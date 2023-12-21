@@ -22,46 +22,21 @@ namespace APM\FullTranscription;
 
 class DocInfo
 {
-    /**
-     * @var int
-     */
-    public int $id;
-    /**
-     * @var string
-     */
-    public string $title;
-    /**
-     * @var string
-     */
-    public string $languageCode;
-    /**
-     * @var string
-     */
-    public string $type;
-    /**
-     * @var string
-     */
-    public string $imageSource;
-    /**
-     * @var string
-     */
-    public string $imageSourceData;
-    /**
-     * @var string
-     */
-    public string $shortTitle;
 
-    /**
-     * Array of page Ids, not filled up from a simple database query!
-     * @var array
-     */
+    public int $id;
+    public string $title;
+    public string $languageCode;
+    public string $type;
+    public string $imageSource;
+    public string $imageSourceData;
     public array $pageIds;
+    public int $tid;
 
     public function __construct()
     {
         $this->id = 0;
+        $this->tid = 0;
         $this->title = '';
-        $this->shortTitle = '';
         $this->languageCode = '';
         $this->type = '';
         $this->imageSource = '';
@@ -72,6 +47,7 @@ class DocInfo
     public function setFromDatabaseRow(array $row): void
     {
         $this->id = intval($row['id']);
+        $this->tid = intval($row['tid'] ?? 0);
         $this->title = $row['title'];
         $this->languageCode = $row['lang'];
         $this->type = $row['doc_type'];

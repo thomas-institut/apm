@@ -278,12 +278,12 @@ class DataManager implements  SqlQueryCounterTrackerAware
      */
     public function newDoc(string $title, string $shortTitle, int $pageCount, 
             string $lang, string $type, 
-            string $imageSource, string $imageSourceData): bool|int
+            string $imageSource, string $imageSourceData, int $tid = 0): bool|int
     {
         
         $doc = [ 
             'title' => $title, 
-//            'short_title' => $shortTitle,
+            'tid' => $tid,
             'lang' => $lang, 
             'doc_type' => $type,
             'image_source' => $imageSource, 
@@ -498,10 +498,12 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
     }
     
-    public function updateDocSettings($docId, $newSettings) 
+    public function updateDocSettings($docId, $newSettings): bool
     {
         $row['id'] = $docId;
-        
+
+        // NOTE: $row['tid'] must NEVER be updated
+
         if ($newSettings === []) {
             return false;
         }
@@ -512,11 +514,8 @@ class DataManager implements  SqlQueryCounterTrackerAware
                 return false;
             }
         }
-        
-//        if (isset($newSettings['short_title'])) {
-//            $row['short_title'] = trim($newSettings['short_title']);
-//        }
-        
+
+
         if (isset($newSettings['lang'])) {
             $row['lang'] = $newSettings['lang'];
         }
@@ -707,20 +706,14 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
     function getDocById($docId)
     {
-//        $cacheKey = "doc-$docId";
-//        try {
-//            $data = unserialize($this->cache->get($cacheKey));
-//        } catch (KeyNotInCacheException $e) {
-//            $this->getSqlQueryCounterTracker()->incrementSelect();
-//            $docInfo =  $this->databaseHelper->getRowById($this->tNames['docs'], $docId);
-//            $this->cache->set($cacheKey, serialize($docInfo));
-//            return $docInfo;
-//        }
-//        return $data;
-
-        $data =  $this->databaseHelper->getRowById($this->tNames['docs'], $docId);
-        if ($docId === 167) {
-            $this->logger->debug("Data for id $docId", $data);
+        $cacheKey = "doc-$docId";
+        try {
+            $data = unserialize($this->cache->get($cacheKey));
+        } catch (KeyNotInCacheException $e) {
+            $this->getSqlQueryCounterTracker()->incrementSelect();
+            $docInfo =  $this->databaseHelper->getRowById($this->tNames['docs'], $docId);
+            $this->cache->set($cacheKey, serialize($docInfo));
+            return $docInfo;
         }
         return $data;
     }

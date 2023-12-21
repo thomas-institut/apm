@@ -138,6 +138,10 @@ class ApmUrlGenerator {
         return this.base + '/collation/edit/' + tableId + '/beta'
     }
 
+    siteBlankThumbnail() {
+        return `${this.base}/images/thumbnail-blank.png`
+    }
+
     siteOpenSeadragonIconsPrefix() {
         return `${this.base}/node_modules/openseadragon/build/openseadragon/images/`
     }

@@ -421,19 +421,22 @@ class SiteDocuments extends SiteController
         $doc = [];
         $doc['numPages'] = $db->getPageCountByDocId($docId);
         $transcribedPages = $db->getTranscribedPageListByDocId($docId);
-        $pagesInfo = $db->getDocPageInfo($docId);
-        $pageTypes  = $this->dataManager->getPageTypeNames();
+        $db->getDocPageInfo($docId);
+        $transcriptionManager = $this->systemManager->getTranscriptionManager();
+        $pageManager = $transcriptionManager->getPageManager();
+        $pageInfoArray = $pageManager->getPageInfoArrayForDoc($docId);
         $doc['numTranscribedPages'] = count($transcribedPages);
         $doc['docInfo'] = $db->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";
-        $doc['pages'] = $this->buildPageArray($pagesInfo, 
-                $transcribedPages);
+        $doc['pages'] = $this->buildPageArrayNew($pageInfoArray,
+                $transcribedPages, $doc['docInfo']);
 
         $this->profiler->stop();
         $this->logProfilerData('defineDocPages-' . $docId);
         return $this->renderPage($response, self::TEMPLATE_DEFINE_DOC_PAGES, [
-            'pageTypes' => $pageTypes,
-            'doc' => $doc
+            'doc' => $doc,
+            'userInfo' => $this->userInfo,
+            'userId' => (int) $this->userInfo['id']
         ]);
     }
 }

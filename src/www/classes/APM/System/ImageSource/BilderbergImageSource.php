@@ -2,6 +2,7 @@
 
 namespace APM\System\ImageSource;
 
+use APM\System\ApmImageType;
 use APM\System\ImageSource\ImageSourceInterface;
 
 class BilderbergImageSource implements ImageSourceInterface
@@ -23,11 +24,15 @@ class BilderbergImageSource implements ImageSourceInterface
             throw new \InvalidArgumentException("Need document id and image number");
         }
         return match ($type) {
-            self::IMAGE_TYPE_JPG => sprintf("%s/%s/%d/jpg",
+            ApmImageType::IMAGE_TYPE_JPG => sprintf("%s/%s/%d/jpg",
                 $this->baseUrl,
                 $params[0],
                 $params[1]),
-            self::IMAGE_TYPE_DEEP_ZOOM => sprintf("%s/%s/%d/DeepZoom",
+            ApmImageType::IMAGE_TYPE_DEEP_ZOOM => sprintf("%s/%s/%d/DeepZoom",
+                $this->baseUrl,
+                $params[0],
+                $params[1]),
+            ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL =>  sprintf("%s/%s/%d/thumbnail",
                 $this->baseUrl,
                 $params[0],
                 $params[1]),
@@ -40,6 +45,6 @@ class BilderbergImageSource implements ImageSourceInterface
      */
     public function getSupportedImageTypes(): array
     {
-        return [ ImageSourceInterface::IMAGE_TYPE_JPG, ImageSourceInterface::IMAGE_TYPE_DEEP_ZOOM];
+        return [ ApmImageType::IMAGE_TYPE_JPG, ApmImageType::IMAGE_TYPE_DEEP_ZOOM, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL];
     }
 }

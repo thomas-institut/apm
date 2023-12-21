@@ -71,7 +71,10 @@ const strings = [
   { key: 'Sequence Number', es: 'Número de secuencia'},
   { key: 'Columns Defined', es: 'Columnas definidas'},
   { key: 'Edit Transcription', es: 'Editar transcripción'},
-  { key: 'Foliation not set, using sequence number', es: 'Foliación no definida, usando número de secuencia'}
+  { key: 'Foliation not set, using sequence number', es: 'Foliación no definida, usando número de secuencia'},
+  { key: 'Image Links', es: "Enlaces de imágenes"},
+  { key: 'Click to open in new tab/window', es: 'Click para abrir en nueva tab/ventana'},
+  { key: 'Page Type', es: 'Tipo de página'}
 ]
 
 export class SiteLang {

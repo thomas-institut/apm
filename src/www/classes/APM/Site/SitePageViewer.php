@@ -87,7 +87,6 @@ class SitePageViewer extends SiteController
             'activeWorks' => $activeWorks,
             'thePages' => $thePages,
             'imageUrl' => $imageUrl,
-//            'openSeaDragonConfig' => $osdConfig,
             'languagesArray' => $languagesArray,
             'deepZoom' => $deepZoom
         ]);

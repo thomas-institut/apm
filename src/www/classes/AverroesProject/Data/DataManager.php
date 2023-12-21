@@ -20,6 +20,7 @@
 
 namespace AverroesProject\Data;
 
+use APM\System\ApmImageType;
 use APM\System\ImageSource\ImageSourceInterface;
 use APM\System\ImageSource\NullImageSource;
 use APM\ToolBox\ArraySort;
@@ -804,9 +805,10 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * is not recognized
      * @param int $docId
      * @param int $imageNumber
+     * @param string $type
      * @return string|boolean
      */
-    public function getImageUrl(int $docId, int $imageNumber): bool|string
+    public function getImageUrl(int $docId, int $imageNumber, $type = ''): bool|string
     {
         $doc = $this->getDocById($docId);
         if ($doc === false) {
@@ -814,26 +816,12 @@ class DataManager implements  SqlQueryCounterTrackerAware
         }
 
         $imageSource = $this->imageSources[$doc['image_source']] ?? new NullImageSource();
-        $type = ImageSourceInterface::IMAGE_TYPE_JPG;
-        if ($doc['deep_zoom']) {
-            $type = ImageSourceInterface::IMAGE_TYPE_DEEP_ZOOM;
+        if ($type === '') {
+            $type = ApmImageType::IMAGE_TYPE_JPG;
+            if ($doc['deep_zoom']) {
+                $type = ApmImageType::IMAGE_TYPE_DEEP_ZOOM;
+            }
         }
-
-
-        
-//        $isd = $doc['image_source_data'];
-//
-//        $url = $this->hookManager->callHookedMethods('get-image-url-' . $doc['image_source'],
-//                [ 'imageSourceData' => $isd,
-//                   'imageNumber' => $imageNumber]);
-//
-//        if (!is_string($url)) {
-//            return false;
-//        }
-//
-//
-//        return $url;
-
         return $imageSource->getImageUrl($type, $doc['image_source_data'], $imageNumber);
     }
 

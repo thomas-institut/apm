@@ -2,6 +2,7 @@
 
 namespace APM\System\ImageSource;
 
+use APM\System\ApmImageType;
 use APM\System\ImageSource\ImageSourceInterface;
 
 class OldBilderbergStyleRepository implements ImageSourceInterface
@@ -24,7 +25,7 @@ class OldBilderbergStyleRepository implements ImageSourceInterface
             throw new \InvalidArgumentException("Need document id and image number");
         }
         return match ($type) {
-            self::IMAGE_TYPE_JPG => sprintf( "%s/%s/%s-%04d.jpg",
+            ApmImageType::IMAGE_TYPE_JPG => sprintf( "%s/%s/%s-%04d.jpg",
                 $this->baseUrl,
                 $params[0],
                 $params[0],
@@ -38,6 +39,6 @@ class OldBilderbergStyleRepository implements ImageSourceInterface
      */
     public function getSupportedImageTypes(): array
     {
-        return [ self::IMAGE_TYPE_JPG];
+        return [ ApmImageType::IMAGE_TYPE_JPG];
     }
 }

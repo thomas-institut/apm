@@ -25,6 +25,7 @@ import { tr } from './common/SiteLang'
 import { EditableTextField } from '../widgets/EditableTextField'
 import { trimWhiteSpace } from '../toolbox/Util.mjs'
 import { Tid } from '../Tid/Tid'
+import { PageArray } from './common/PageArray'
 
 export class DocPage extends NormalPage {
   constructor(options) {
@@ -49,7 +50,7 @@ export class DocPage extends NormalPage {
     this.docId = this.docInfo.id
     this.pages = this.doc.pages
     this.pageSeqToPageKeyMap = this.getPageSequenceToPageKeyMap(this.pages)
-    this.pageArray = this.getPageArray(this.pages, 'sequence')
+    this.pageArray = PageArray.getPageArray(this.pages, 'sequence')
 
     console.log(`DocPage for docId ${this.docId}`)
     console.log(options)
@@ -227,14 +228,10 @@ export class DocPage extends NormalPage {
   getPageListHtml(docId, pageArray) {
     let divs = []
     pageArray.forEach( (page) => {
-
       let classes = [ 'page-div', `page-div-${page['sequence']}`, `type${page['type']}`]
       if (page['foliationIsSet']) {
         classes.push('foliation-set')
       }
-      // if (page['sequence'] !== page['pageNumber']) {
-      //   classes.push('out-of-sequence')
-      // }
       if (!page['isTranscribed']) {
         classes.push('without-transcription')
       }
@@ -261,6 +258,7 @@ export class DocPage extends NormalPage {
       this.osd.destroy();
     }
 
+
     let osdOptions = {
       id: "osd-div",
       prefixUrl: urlGen.siteOpenSeadragonIconsPrefix(),
@@ -269,7 +267,7 @@ export class DocPage extends NormalPage {
       showRotationControl: true,
       tileSources: {
         type: 'image',
-        url: page['imageUrl'],
+        url: page['jpgUrl'],
         buildPyramid: false,
         homeFillsViewer: true
       },
@@ -342,7 +340,7 @@ export class DocPage extends NormalPage {
     infoItems.push(`<strong>${tr('Sequence Number')}</strong>: ${page['sequence']}`)
     infoItems.push('&nbsp;')
     infoItems.push(`<strong>${tr('Image Links')}</strong>: <a class="image-link" 
-        title="${tr('Click to open in new tab/window')}" href="${page['imageUrl']}" target="_blank">JPG</a>`)
+        title="${tr('Click to open in new tab/window')}" href="${page['jpgUrl']}" target="_blank">JPG</a>`)
 
     infoItems.push('&nbsp;')
     infoItems.push(`<strong>${tr('Page Type')}</strong>: ${this.pageTypes[page['type']]}`)
@@ -454,23 +452,7 @@ export class DocPage extends NormalPage {
       icon + '</a>';
   }
 
-  // loadThumbnails() {
-  //   return new Promise( async (outerResolve) => {
-  //     let pageArray = this.getPageArray(this.pages)
-  //     for (let i = 0; i < pageArray.length; i++) {
-  //       let page = pageArray[i]
-  //       await new Promise( (resolve) => {
-  //         $(`img.thumbnail-${page['pageNumber']}`).attr('src', page['thumbnailUrl'])
-  //           .on('load', () => {
-  //               // console.log(`Finished loading thumbnail for page ${page['pageNumber']}`)
-  //               resolve()
-  //             }
-  //           )
-  //       })
-  //     }
-  //     outerResolve()
-  //   })
-  // }
+
 
   /**
    *
@@ -531,27 +513,6 @@ export class DocPage extends NormalPage {
     }
     // @ts-ignore
     return '<a href="' + url + '" target="_blank" title="' + title + '">' + label + '</a>';
-  }
-
-  getPageArray(pageObject, orderBy = '', asc = true) {
-    let pageArray = []
-    Object.keys(pageObject).forEach( (pageKey) => {
-      pageArray.push(pageObject[pageKey])
-    })
-    if (orderBy === '') {
-      return pageArray
-    }
-    let allowedOrderKeys = [ 'sequence', 'pageNumber', 'imageNumber']
-    if (allowedOrderKeys.indexOf(orderBy) !== -1) {
-      return pageArray.sort( (a, b) => {
-        if (asc) {
-          return a[orderBy] > b[orderBy]
-        }
-        return a[orderBy] < b[orderBy]
-      })
-    }
-    console.warn(`Invalid order key '${orderBy}'`)
-    return pageArray
   }
 }
 

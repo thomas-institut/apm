@@ -27,6 +27,7 @@
 namespace APM\Site;
 
 use APM\FullTranscription\PageInfo;
+use APM\System\ApmImageType;
 use APM\SystemProfiler;
 use APM\System\ApmContainerKey;
 use Psr\Container\ContainerExceptionInterface;
@@ -280,6 +281,8 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             $thePage['isDeepZoom'] = $docInfo['deep_zoom'];
             $thePage['isTranscribed'] = in_array($pageInfo->pageNumber, $transcribedPages);
             $thePage['imageUrl'] = $this->dataManager->getImageUrl($docInfo['id'], $pageInfo->imageNumber);
+            $thePage['jpgUrl'] = $this->dataManager->getImageUrl($docInfo['id'], $pageInfo->imageNumber, ApmImageType::IMAGE_TYPE_JPG);
+            $thePage['thumbnailUrl'] = $this->dataManager->getImageUrl($docInfo['id'], $pageInfo->imageNumber, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL);
             $thePages[$pageInfo->pageId] = $thePage;
         }
         return $thePages;

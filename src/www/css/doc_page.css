@@ -112,6 +112,14 @@ span.page-info-foliation {
 .without-transcription {
     color: silver
 }
+.type0 {
+    background: #fcfcfc;
+}
+
+.type2, .type3 {
+    background: #f8f8f8;
+}
+
 
 .out-of-sequence {
     background: #fffcf8;
@@ -144,4 +152,35 @@ span.foliation-span {
 
 span.doc-info-item {
     margin-right: 2em;
+}
+
+
+div.doc-def-pages-page-list {
+    margin-top: 2em;
+
+}
+
+div.page-list-page-container {
+    display: flex;
+    flex-direction: column;
+    margin-left: 0.5em;
+    margin-bottom: 1em;
+    align-items: center;
+}
+
+
+div.doc-def-pages-page-list div.page-div {
+    margin-top: 0.1em;
+}
+
+.thumbnail-toggle-btn {
+    border: 1px solid silver;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 4px;
+    color: black;
+}
+
+.multitoggle-on {
+    background: lightblue;
 }

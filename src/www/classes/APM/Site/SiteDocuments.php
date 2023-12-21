@@ -334,12 +334,12 @@ class SiteDocuments extends SiteController
     public function editDocPage(Request $request, Response $response): Response
     {
         $this->profiler->start();
-        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'edit-documents')){
-            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to edit a document but is not allowed to do it');
-            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
-                'message' => 'You are not authorized to edit document settings'
-            ]);
-        }
+//        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'edit-documents')){
+//            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to edit a document but is not allowed to do it');
+//            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
+//                'message' => 'You are not authorized to edit document settings'
+//            ]);
+//        }
         
         $docId = $request->getAttribute('id');
         $dataManager = $this->dataManager;
@@ -409,12 +409,12 @@ class SiteDocuments extends SiteController
     {
         $this->profiler->start();
         
-        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')){
-            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to define document pages  but is not allowed to do it');
-            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
-                'message' => 'You are not authorized to edit document settings'
-            ]);
-        }
+//        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')){
+//            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to define document pages  but is not allowed to do it');
+//            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
+//                'message' => 'You are not authorized to edit document settings'
+//            ]);
+//        }
         
         $docId = $request->getAttribute('id');
         $db = $this->dataManager;

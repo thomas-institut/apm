@@ -156,13 +156,13 @@ class ApiDocuments extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $dataManager = $this->getDataManager();
         $this->profiler->start();
-        
-        if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'add-pages')){
-            $this->logger->warning("addPages: unauthorized request", 
-                    [ 'apiUserId' => $this->apiUserId]
-                );
-            return $this->responseWithStatus($response, 403);
-        }
+//
+//        if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'add-pages')){
+//            $this->logger->warning("addPages: unauthorized request",
+//                    [ 'apiUserId' => $this->apiUserId]
+//                );
+//            return $this->responseWithStatus($response, 403);
+//        }
         
         $docId = (int) $request->getAttribute('id');
         $docInfo = $dataManager->getDocById($docId);
@@ -230,7 +230,7 @@ class ApiDocuments extends ApiController
         $this->profiler->start();
         
         if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'create-new-document')){
-            $this->logger->warning("New Doc: unauthorized request", 
+            $this->logger->warning("New Doc: unauthorized request",
                     [ 'apiUserId' => $this->apiUserId]
                 );
             return $this->responseWithStatus($response, 403);
@@ -290,12 +290,12 @@ class ApiDocuments extends ApiController
         $dataManager = $this->getDataManager();
 //        $this->profiler->start();
 
-        if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'update-doc-settings')){
-            $this->logger->warning("updateDocSettings: unauthorized request", 
-                    [ 'apiUserId' => $this->apiUserId]
-                );
-            return $this->responseWithStatus($response, 403);
-        }
+//        if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'update-doc-settings')){
+//            $this->logger->warning("updateDocSettings: unauthorized request",
+//                    [ 'apiUserId' => $this->apiUserId]
+//                );
+//            return $this->responseWithStatus($response, 403);
+//        }
         $docId = (int) $request->getAttribute('id');
         
         $rawData = $request->getBody()->getContents();
@@ -368,17 +368,16 @@ class ApiDocuments extends ApiController
     {
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $dataManager = $this->getDataManager();
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
-//        $this->profiler->start();
-        
-        if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'update-page-settings-bulk')){
-            
-            $this->logger->warning("updatePageSettingsBulk: unauthorized request", 
-                    [ 'apiUserId' => $this->apiUserId]
-                );
-            return $this->responseWithStatus($response, 403);
-        }
+
+//        $dataManager = $this->getDataManager();
+//        if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'update-page-settings-bulk')){
+//
+//            $this->logger->warning("updatePageSettingsBulk: unauthorized request",
+//                    [ 'apiUserId' => $this->apiUserId]
+//                );
+//            return $this->responseWithStatus($response, 403);
+//        }
         $rawData = $request->getBody()->getContents();
         $postData = [];
         parse_str($rawData, $postData);
@@ -413,16 +412,10 @@ class ApiDocuments extends ApiController
             }
 
             $pageId = $pageInfo->pageId;
-//            if ($pageId === false) {
-//                $errors[] = "Page not found, doc " . $pageDef['docId'] . " page " . $pageDef['page'];
-//                continue;
-//            }
 
             $newPageInfo = clone $pageInfo;
-            $newPageSettings = [];
-            
+
             if (isset($pageDef['type'])) {
-                //$newPageSettings['type'] = $pageDef['type'];
                 $newPageInfo->type = $pageDef['type'];
             }
             
@@ -431,51 +424,25 @@ class ApiDocuments extends ApiController
                     $errors[] = "No overwriteFoliation in request, " . $pageDef['docId'] . " page " . $pageDef['page'];
                     continue;
                 }
-                if (!$pageDef['overwriteFoliation']) {
-                    // do not overwrite foliation if foliation already exists
-
-//                    $pageInfo = $dataManager->getPageInfo($pageId);
-//                    if ($pageInfo === null) {
-//                        $errors[] = "Could not get page Info from DB, " . $pageDef['docId'] . " page " . $pageDef['page'];
-//                        continue;
-//                    }
-                    if ($pageInfo->foliation === '' || $pageInfo->foliation===$pageInfo->pageNumber) {
-                        $newPageInfo->foliation = $pageDef['foliation'];
-                    }
-//                    if (is_null($pageInfo['foliation'])) {
-//                        // no page foliation exists, so, set the new one
-//                        $newPageSettings['foliation'] = $pageDef['foliation'];
-//                    }
-                } else {
-                    //$newPageSettings['foliation'] = $pageDef['foliation'];
+                if ($pageDef['overwriteFoliation']) {
                     $newPageInfo->foliation = $pageDef['foliation'];
+                    $newPageInfo->foliationIsSet = true;
                 }
             }
             
             if (isset($pageDef['cols'])) {
-                //$pageInfo = $dataManager->getPageInfo($pageId);
                 if ($pageInfo->numCols < $pageDef['cols']) {
                     $newPageInfo->numCols = $pageDef['cols'];
-//                }
-//                if ($pageInfo['num_cols'] < $pageDef['cols']) {
-//                    // Add columns
-//                    for ($i = $pageInfo['num_cols']; $i < $pageDef['cols']; $i++) {
-//                        $dataManager->addNewColumn($pageDef['docId'], $pageDef['page']);
-//                    }
                 } else {
                     // nothing to be done if asking for less or equal number of columns than what's already in the page
                     $this->debug("Asked for " . $pageDef['cols'] . " col(s), currently " . $pageInfo->numCols . " col(s). Nothing done. ");
                 }
             }
-            
-//            if (count(array_keys($newPageSettings)) === 0) {
-//                // nothing to do
-//                $this->debug("Nothing to update for doc " . $pageDef['docId'] . " page " . $pageDef['page']);
-//                continue;
-//            }
-
+            $this->logger->debug("Updating page settings for page $pageId", [
+                'oldData' => get_object_vars($pageInfo),
+                'newData' => get_object_vars($newPageInfo)
+            ]);
             $transcriptionManager->updatePageSettings($pageId, $newPageInfo, $this->apiUserId);
-            //$dataManager->updatePageSettings($pageId, $newPageSettings);
         }
 
         $this->logger->info("Bulk page settings", [

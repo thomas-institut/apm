@@ -63,7 +63,6 @@ rm -fr "$TMP_DIR"/www/js/istanbul
 rm -f "$TMP_DIR"/www/js/Makefile
 rm -f "$TMP_DIR"/www/js/.eslintrc.json
 cp -R src/www/node_modules "$TMP_DIR"/www
-cp -R src/www/plugins "$TMP_DIR"/www
 cp -R src/www/templates "$TMP_DIR"/www
 cp -R src/www/utilities "$TMP_DIR"/www
 cp -R src/www/vendor "$TMP_DIR"/www

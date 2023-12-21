@@ -237,6 +237,9 @@ export class DefPagesDefAll {
         }
         pageDefs.push(thePageDef)
       }
+
+      console.log(`About to update with the following page definitions`)
+      console.log(pageDefs)
       
       thisObject.statusSpan.html('Updating, this might take a few seconds ... <i class="fa fa-spinner fa-spin fa-fw"></i>')
       thisObject.updating = true

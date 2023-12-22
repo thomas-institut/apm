@@ -26,6 +26,7 @@ import { EditableTextField } from '../widgets/EditableTextField'
 import { trimWhiteSpace } from '../toolbox/Util.mjs'
 import { Tid } from '../Tid/Tid'
 import { PageArray } from './common/PageArray'
+import { MultiToggle } from '../widgets/MultiToggle'
 
 export class DocPage extends NormalPage {
   constructor(options) {
@@ -81,6 +82,50 @@ export class DocPage extends NormalPage {
     })
 
     this.selectedPage = -1
+    this.thumbnails = 'none';
+
+    this.thumbnailToggle = new MultiToggle({
+      containerSelector: 'div.thumbnail-selector',
+      title: 'Thumbnails: ',
+      buttonClass: 'thumbnail-toggle-btn',
+      buttonDef: [
+        { label: 'None', name: 'none'},
+        { label: 'Tiny', name: 'tiny'},
+        { label: 'Small', name: 'small'},
+        { label: 'Medium', name: 'medium'},
+        { label: 'Large', name: 'large'},
+        // { label: 'X-Large', name: 'x-large'},
+      ],
+    })
+    this.thumbnailToggle.on( 'toggle', () => {
+      let option = this.thumbnailToggle.getOption();
+      let thumbnailSize = 0;
+      switch(option) {
+        case 'tiny':
+          thumbnailSize = 50;
+          break;
+        case 'small':
+          thumbnailSize = 100;
+          break;
+
+        case 'medium':
+          thumbnailSize = 200;
+          break;
+
+        case 'large':
+          thumbnailSize = 400;
+          break;
+        // case 'x-large':
+        //   thumbnailSize = 800;
+        //   break;
+      }
+      let previousOption = this.thumbnails;
+      this.thumbnails = option;
+      this.setThumbnailSize(thumbnailSize);
+      if (previousOption === 'none') {
+        this.loadThumbnails();
+      }
+    })
 
     $('button.first-btn').on('click', () => { this.selectPage(this.firstPage)})
     $('button.last-btn').on('click', () => { this.selectPage(this.lastPage)})
@@ -98,50 +143,123 @@ export class DocPage extends NormalPage {
     let toolbarPageInfoDiv =  $('div.page-info')
     this.rebuildPageList()
 
-    this.pageInfoPopper = Popper.createPopper(
-      toolbarPageInfoDiv.get(0),
-      this.pageListPopoverDiv.get(0),
-      {
-        placement: 'bottom',
-        modifiers: [ {
-          name: 'offset',
-          options: { offset: [ 0, 0]}
-        }]
-      }
-    )
-    this.pageInfoPopperShown = false
-    toolbarPageInfoDiv.on('click', () => {
-      if (this.pageInfoPopperShown) {
-        this.hidePageListPopover()
-      } else {
-        this.showPageListPopover()
-      }
-    })
+    // this.pageInfoPopper = Popper.createPopper(
+    //   toolbarPageInfoDiv.get(0),
+    //   this.pageListPopoverDiv.get(0),
+    //   {
+    //     placement: 'bottom',
+    //     modifiers: [ {
+    //       name: 'offset',
+    //       options: { offset: [ 0, 0]}
+    //     }]
+    //   }
+    // )
+    // this.pageInfoPopperShown = false
+    // toolbarPageInfoDiv.on('click', () => {
+    //   if (this.pageInfoPopperShown) {
+    //     this.hidePageListPopover()
+    //   } else {
+    //     this.showPageListPopover()
+    //   }
+    // })
     this.selectPage(this.firstPage)
   }
 
   rebuildPageList() {
-    this.pageListPopoverDiv = $('div.page-list-popover')
-    this.pageListPopoverDiv.html(this.getPageListHtml(this.docId, this.pageArray))
+    // this.pageListPopoverDiv = $('div.page-list-popover')
+    $('div.page-list-left-pane').html(this.getPageListHtml(this.docId, this.pageArray, false))
+    // this.pageListPopoverDiv.html(this.getPageListHtml(this.docId, this.pageArray))
     this.setupEventHandlersForPageTable()
   }
 
   hidePageListPopover() {
-    this.pageListPopoverDiv.get(0).removeAttribute('data-show')
+    // this.pageListPopoverDiv.get(0).removeAttribute('data-show')
     this.pageInfoPopperShown = false
   }
-
-
-  showPageListPopover() {
-    this.pageListPopoverDiv.get(0).setAttribute('data-show', '');
-    this.pageInfoPopper.update().then( () => {
-      this.pageInfoPopperShown = true;
-    });
+  getPageListHtml() {
+    let divs = []
+    this.pageArray.forEach( (page) => {
+      let classes = [ `page-div`, `page-div-${page['sequence']}`, `type${page['type']}`]
+      if (page['foliationIsSet']) {
+        classes.push('foliation-set');
+      }
+      if (!page['isTranscribed']) {
+        classes.push('without-transcription');
+      }
+      divs.push(`<div class="page-big-div page-big-div-${page['sequence']}">
+            <div class="thumbnail-div">
+            <img src="${urlGen.siteBlankThumbnail()}" class="thumbnail-${page['sequence']} hidden"
+                height="200px" alt="Page ${page['sequence']} thumbnail">
+            </div>
+            <div class="${classes.join(' ')}">${page['foliation']}</div>
+        </div>`);
+    })
+    return `<div class="page-list-contents">${divs.join('')}</div>` ;
   }
+
+
+  setThumbnailSize(size) {
+    this.pageArray.forEach( (page) => {
+      let thumbnailImg = $(`img.thumbnail-${page['sequence']}`);
+      if (size === 0) {
+        thumbnailImg.addClass('hidden')
+      } else {
+        thumbnailImg.attr('height', `${size}px`).removeClass('hidden')
+      }
+    })
+  }
+
+  loadThumbnails() {
+    const parallelRequests = 5;
+    return new Promise( async (outerResolve) => {
+      for (let i = 0; i < this.pageArray.length; i+=parallelRequests) {
+        let promises = [];
+        for (let j = 0; i+j < this.pageArray.length && j < parallelRequests; j++) {
+          let page = this.pageArray[i+j];
+          if (this.thumbnails === 'none') {
+            console.log(`Thumbnail set to 'none', aborting actual loading of thumbnails at sequence ${page['sequence']}`);
+            outerResolve();
+            return;
+          }
+          promises.push(  new Promise( (resolve) => {
+            let thumbnailUrl = page['thumbnailUrl'];
+            if (thumbnailUrl === '') {
+              thumbnailUrl = page['jpgUrl'];
+              if (thumbnailUrl === '') {
+                resolve();
+                return;
+              }
+            }
+            let thumbnailImg = $(`img.thumbnail-${page['sequence']}`);
+            let currentUrl = thumbnailImg.attr('src');
+            if (currentUrl === page['thumbnailUrl']) {
+              resolve();
+            } else {
+              console.log(`Fetching thumbnail for page ${page['sequence']}`);
+              thumbnailImg.attr('src', thumbnailUrl).on('load', () => {
+                resolve()
+              });
+            }
+          }));
+        }
+        await Promise.all(promises);
+      }
+      outerResolve()
+    })
+  }
+
+
+
+  // showPageListPopover() {
+  //   this.pageListPopoverDiv.get(0).setAttribute('data-show', '');
+  //   this.pageInfoPopper.update().then( () => {
+  //     this.pageInfoPopperShown = true;
+  //   });
+  // }
 
   setupEventHandlersForPageTable() {
     this.pageArray.forEach( (page) => {
-      $(`div.page-div-${page['sequence']}`).on('click', () => {
+      $(`div.page-big-div-${page['sequence']}`).on('click', () => {
         this.selectPage(page['sequence'])
         if (this.pageInfoPopperShown) {
           this.hidePageListPopover()
@@ -182,21 +300,39 @@ export class DocPage extends NormalPage {
     return items.join(', ')
   }
 
+  getExtraClassesForPageContentDiv () {
+    return [ 'doc-page'];
+  }
+
   async genHtml() {
 
-
+    let breadcrumbHtml = this.getBreadcrumbNavHtml([
+      { label: 'Documents', url:  urlGen.siteDocs()},
+      { label: 'Document Details', active: true}
+    ])
     return `
-       <nav aria-label="breadcumb">
-     <ol class="breadcrumb">
-         <li class="breadcrumb-item"><a href="${urlGen.siteDocs()}">Documents</a></li>
-        <li class="breadcrumb-item active">Document Details</li>
-    </ol>
-</nav>
-
-<h2>${this.docInfo.title}</h2>
-        <p class="docinfo"> ${await this.getDocInfoHtml()}</p>
-        <div class="viewer-container">
-            <div class="page-viewer">
+    <div>${breadcrumbHtml}</div>
+    <div class="doc-page-header">
+            <h2>${this.docInfo.title}</h2>
+            <div class="doc-info-tag"> ${await this.getDocInfoHtml()}</div>
+            <div class="doc-admin">${this.getAdminHtml()}</div> 
+        </div>
+    <div class="doc-page-content">
+        <div class="left-pane"> 
+         <div>
+            <div class="thumbnail-selector"></div>
+            <div class="page-list-left-pane"></div>
+          </div>
+         <div> 
+            <h4>Works</h4>
+            <div class="worksinfo" id="chunkinfo">${await this.genWorkInfoHtml()}</div>
+        </div>
+            <div>
+            <h4>Last Saves </h4>
+            <div id="lastsaves">${await this.getLastSavesHtml()}</div>
+        </div> 
+        </div>
+        <div class="page-viewer">
                 <div class="viewer-toolbar">
                     <div>
                         <button class="btn first-btn" title="First Page"><i class="fa fa-step-backward" aria-hidden="true"></i></button>
@@ -210,41 +346,35 @@ export class DocPage extends NormalPage {
                     </div>    
                 </div>
                 <div id="osd-div" class="osd-div"></div>
-                
             </div>
-            <div class="page-info-panel">
-</div>
-        </div>
-          <h3 class="docinfo">Works</h3>
-    <div class="worksinfo" id="chunkinfo">${await this.genWorkInfoHtml()}</div>
-    <h3 class="docinfo">Last Saves </h3>
-    <div id="lastsaves">${await this.getLastSavesHtml()}</div>
-    ${this.getAdminHtml()}
-    <!-- Page list menu -->
+        <div class="page-info-panel"></div>
+    </div>
+     <!-- Page list menu -->
     <div class="page-list-popover"></div>
 `
   }
 
-  getPageListHtml(docId, pageArray) {
-    let divs = []
-    pageArray.forEach( (page) => {
-      let classes = [ 'page-div', `page-div-${page['sequence']}`, `type${page['type']}`]
-      if (page['foliationIsSet']) {
-        classes.push('foliation-set')
-      }
-      if (!page['isTranscribed']) {
-        classes.push('without-transcription')
-      }
-      divs.push( `<div title="Click to select page" class="${classes.join(' ')}">${page['foliation']}</div>`)
-    })
-    return `<div class="page-list">
-           <div class="page-list-header">Page List</div>
-           <div class="page-list-contents">
-            ${divs.join('')}       
-            </div>
-    
-</div>`
-  }
+//   getPageListHtml(docId, pageArray, withHeader = true) {
+//     let divs = []
+//     pageArray.forEach( (page) => {
+//       let classes = [ 'page-div', `page-div-${page['sequence']}`, `type${page['type']}`]
+//       if (page['foliationIsSet']) {
+//         classes.push('foliation-set')
+//       }
+//       if (!page['isTranscribed']) {
+//         classes.push('without-transcription')
+//       }
+//       divs.push( `<div title="Click to select page" class="${classes.join(' ')}">${page['foliation']}</div>`)
+//     })
+//     let header = withHeader ? `<div class="page-list-header">Page List</div>` : ''
+//     return `<div class="page-list">
+//            ${header}
+//            <div class="page-list-contents">
+//             ${divs.join('')}
+//             </div>
+//
+// </div>`
+//   }
 
   /**
    * Loads a page into OpenSeaDragon
@@ -357,11 +487,8 @@ export class DocPage extends NormalPage {
     }
     let editDocUrl = urlGen.siteDocEdit(this.docId)
     let defineDocPagesUrl = urlGen.siteDocDefinePages(this.docId)
-    return ` <h3>Admin</h3>
-    <ul>
-        <li><a href="${editDocUrl}">Edit / Delete document</a></li>
-        <li><a href="${defineDocPagesUrl}">Add / Define pages</a></li>
-    </ul>`
+    return `<a class="" href="${editDocUrl}">Edit Document</a> 
+        <a class="" href="${defineDocPagesUrl}">Define pages</a>`
   }
   async genWorkInfoHtml() {
     if (Object.keys(this.chunkInfo).length === 0) {

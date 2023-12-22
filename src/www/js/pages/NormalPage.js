@@ -43,6 +43,7 @@ export class NormalPage {
         userId: { type: 'number', default: -1 },
         userInfo: { type: 'object'},
         siteLanguage: { type: 'string', default: ''},
+        copyrightHtml: { type: 'string', default: "&copy; Thomas-Institut, 2016-23"},
         showLanguageSelector: { type: 'boolean', default: false}
       }
     })
@@ -65,8 +66,9 @@ export class NormalPage {
     } else {
       this.siteLanguage = 'en'
     }
-    this.container = $('#page-content')
-    this.topNavBarContainer = $('#top-nav-bar')
+    this.pageContentsDiv = $('div.normal-page-content')
+    this.topBarDiv = $('div.normal-page-top-bar')
+    this.footerDiv = $('div.normal-page-footer')
   }
 
 
@@ -76,14 +78,38 @@ export class NormalPage {
    */
   initPage() {
     return new Promise ( async (resolve) => {
-      this.container.html(await this.genHtml())
-      this.topNavBarContainer.html(this.genTopNavBarHtml())
+      this.topBarDiv.html(await this.genTopNavBarHtml());
+      this.pageContentsDiv.addClass(this.getExtraClassesForPageContentDiv().join(' ')).html(await this.genHtml());
+      this.footerDiv.html(await this.genFooterHtml()).addClass('text-muted');
       if (this.showLanguageSelector) {
-        $('#change-lang-en').on('click', this.genOnClickLangChange('en'))
-        $('#change-lang-es').on('click', this.genOnClickLangChange('es'))
+        $('#change-lang-en').on('click', this.genOnClickLangChange('en'));
+        $('#change-lang-es').on('click', this.genOnClickLangChange('es'));
       }
-      resolve()
+      resolve();
     })
+  }
+
+  getBreadcrumbNavHtml(breadCrumbArray) {
+    let breadcrumbItemsHtml = breadCrumbArray.map( (breadcrumb) => {
+      let activeClass = breadcrumb.active === true ? 'active' : '';
+      let linkStart = '';
+      let linkEnd = '';
+      if(breadcrumb.url !== undefined && breadcrumb.url !== ''){
+        linkStart = `<a href="${breadcrumb.url}">`;
+        linkEnd = '</a>';
+      }
+      return `<li class="breadcrumb-item ${activeClass}">${linkStart}${breadcrumb.label}${linkEnd}</li>`;
+    }).join('')
+    return `<nav aria-label="breadcumb"><ol class="breadcrumb">${breadcrumbItemsHtml}</ol></nav>`
+  }
+
+
+  /**
+   * Returns extra classes to add to the page content's div
+   * @return {*[]}
+   */
+  getExtraClassesForPageContentDiv() {
+    return []
   }
 
   genOnClickLangChange(lang) {
@@ -125,22 +151,27 @@ export class NormalPage {
     }, forceActualFetch)
   }
 
-  genTopNavBarHtml() {
+  async genFooterHtml() {
+    return this.normalPageOptions.copyrightHtml
+  }
+
+  async genTopNavBarHtml() {
     let languageSelectorHtml = ''
     if (this.showLanguageSelector) {
-      languageSelectorHtml = ` <ul class="navbar-nav">
+      languageSelectorHtml = `<ul class="navbar-nav">
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#"  data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                     ${this.siteLanguage.toUpperCase()}</a>
-                    <ul class="dropdown-menu">
+                    <ul class="dropdown-menu dropdown-menu-right">
                         <li><a class="nav-link dd-menu-item" href="#" id="change-lang-en">EN - English</a></li>
                         <li><a class="nav-link dd-menu-item" href="#" id="change-lang-es">ES - Español</a></li>
                     </ul>
                 </li>
             </ul>`
     }
-    return `<div class="container">
-        <a class="navbar-brand" style="padding:0;" href="${urlFor('siteHome')}"><img src="${urlFor('images')}/apm-logo-plain.svg" alt="APM" height="40" ></a>
+    return `
+<nav class="navbar navbar-expand-lg navbar-light">
+<a class="navbar-brand" style="padding:0;" href="${urlFor('siteHome')}"><img src="${urlFor('images')}/apm-logo-plain.svg" alt="APM" height="40" ></a>
         <div id="navbar" class="collapse navbar-collapse">
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item"><a class="nav-link" href="${urlFor('siteDashboard')}" title="${tr('Dashboard')}">${tr('Dashboard')}</a></li>
@@ -163,7 +194,7 @@ export class NormalPage {
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#"  data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                     <i class="fas fa-user"></i>&nbsp;${this.normalPageOptions.userInfo.fullname}</a>
-                    <ul class="dropdown-menu">
+                    <ul class="dropdown-menu dropdown-menu-right">
                         <li><a class="nav-link dd-menu-item" href="${urlFor('siteUserProfile', this.userName)}">${tr('My Profile')}</a></li>
                         <li><a class="nav-link dd-menu-item"  href="${urlFor('siteUserProfile', this.userName)}">${tr('My Settings')}</a></li>
                         <li role="separator" class="divider"></li>
@@ -173,6 +204,6 @@ export class NormalPage {
             </ul>
             ${languageSelectorHtml}
         </div>
-        </div>`
+        </nav>`
   }
 }

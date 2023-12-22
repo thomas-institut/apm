@@ -73,18 +73,20 @@ export class DashboardPage extends NormalPage {
     this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data))
   }
 
+  getExtraClassesForPageContentDiv () {
+    return [ 'dashboard'];
+  }
+
   /**
    *
    * @return {Promise<string>}
    */
   async genHtml() {
-    return `<div class="dashboard">
-        <div id="multi-chunk-editions" class="dashboard-section"></div>
+    return `<div id="multi-chunk-editions" class="dashboard-section"></div>
         <div id="chunk-editions" class="dashboard-section"></div>
         <div id="collation-tables" class="dashboard-section"></div>
         <div id="transcriptions" class="dashboard-section"></div>
-        <div id="admin" class="dashboard-section"></div>
-       </div>`
+        <div id="admin" class="dashboard-section"></div> `
   }
 
   genAdminSectionHtml() {

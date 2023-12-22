@@ -1,4 +1,4 @@
-{% extends "base.twig" %}
+{% extends "normal-page.twig" %}
 
 {% block title %}Dashboard{% endblock %}
 
@@ -19,7 +19,8 @@
       baseUrl: '{{ baseurl }}',
       userId: parseInt('{{ userId }}'),
       userInfo: JSON.parse("{{userInfo|json_encode|e('js')}}"),
-      showLanguageSelector: parseInt('{{ showLanguageSelector }}') === 1
+      showLanguageSelector: parseInt('{{ showLanguageSelector }}') === 1,
+      copyrightHtml: `{{ copyright|raw}}`
     }))
   })
 </script>

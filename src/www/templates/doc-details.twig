@@ -1,5 +1,5 @@
-{% extends "base.twig" %}
-{% import 'macros.twig' as macros %}
+{% extends "normal-page.twig" %}
+
 
 {% block title %}Doc: {{doc.docInfo.title}}{% endblock %}
 
@@ -23,7 +23,8 @@
           metadata: JSON.parse('{{metaData|json_encode|e('js')}}'),
           userId: parseInt('{{ userId }}'),
           userInfo: JSON.parse("{{userInfo|json_encode|e('js')}}"),
-          showLanguageSelector: parseInt('{{ showLanguageSelector }}') === 1
+          showLanguageSelector: parseInt('{{ showLanguageSelector }}') === 1,
+          copyrightHtml: `{{ copyright|raw}}`
         })
       });
     </script>

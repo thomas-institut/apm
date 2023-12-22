@@ -1,4 +1,4 @@
-{% extends "base.twig" %}
+{% extends "normal-page.twig" %}
 
 {% block extraCSS %}
     <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/doc_page.css"/>
@@ -14,7 +14,8 @@
           userInfo: JSON.parse("{{userInfo|json_encode|e('js')}}"),
           showLanguageSelector: parseInt('{{ showLanguageSelector }}') === 1,
           doc: JSON.parse("{{doc|json_encode|e('js')}}"),
-          numPages: {{doc.numPages}}
+          numPages: {{doc.numPages}},
+          copyrightHtml: `{{ copyright|raw}}`
         });
     })
 </script>

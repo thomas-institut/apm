@@ -31,8 +31,6 @@ export class TagEditor {
 
     this.idPrefix = this.options.idPrefix;
 
-
-
     switch (this.options.mode) {
       case 'edit':
         this.setupEditMode();
@@ -56,7 +54,6 @@ export class TagEditor {
         this.setupShowMode();
         break
     }
-
   }
 
   setupEditMode() {
@@ -74,13 +71,24 @@ export class TagEditor {
   }
 
   buildStructureOfTagEditor() {
-    $(this.options.containerSelector).html(`
+    switch (this.options.mode) {
+      case 'edit':
+        $(this.options.containerSelector).html(`
             <ul class="tag-editor-tags-ul" id="${this.idPrefix}-tag-list">
                 <li class="tagAdd taglist">
                     <input list="${this.idPrefix}-list-of-tags" class="tag-input" id="${this.idPrefix}-search-field" placeholder="+">
                     <datalist id="${this.idPrefix}-list-of-tags"></datalist>
                 </li>
            </ul>`)
+        break
+
+      case 'show':
+        $(this.options.containerSelector).html(`
+            <ul class="tag-editor-tags-ul" id="${this.idPrefix}-tag-list">
+                <li class="tagAdd taglist"></li>
+           </ul>`)
+        break
+    }
   }
 
   showGivenTagsInShowMode () {
@@ -118,9 +126,7 @@ export class TagEditor {
       event.preventDefault();
       console.log(`Click on remove tag ${tag_id}`)
       let value = $(this).parent()[0].getAttribute('value').replace('_', ' ')
-      console.log(value)
       let index = thisObject.options.tags.indexOf(value)
-      console.log(index)
       thisObject.options.tags.splice(index, 1);
       thisObject.options.saveTags(thisObject.options.tags)
       $(this).parent().remove()

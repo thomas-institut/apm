@@ -141,8 +141,8 @@ export class MetadataEditor {
         callback()
     }
 
-    getValueByKey(name) {
-        let i = this.entity.keys.indexOf(name)
+    getValueByKey(key) {
+        let i = this.entity.keys.indexOf(key)
         return this.entity.values[i]
     }
 
@@ -345,7 +345,7 @@ export class MetadataEditor {
             for (let i = 1; i <= this.numKeys; i++) {
                 let selectorId = "#entity_attr" + i
                 let inputId = "entity_attr" + i + "_form"
-                let type = this.entity.types[i - 1][0] // first possible type of data, set in the corresponding schema, determines type of input form
+                let type = this.entity.types[i-1][0] // first possible type of data, set in the corresponding schema, determines type of input form
 
                 this.setupInputFormByType(type, selectorId, inputId)
             }
@@ -774,7 +774,6 @@ export class MetadataEditor {
 
         } else if (type.includes('tags')) {
             return this.tagEditor.getTags()
-
         } else if (type.includes('person')) {
             let datalist = "#entity_attr" + keyIndex + "_form_list"
             let person_id

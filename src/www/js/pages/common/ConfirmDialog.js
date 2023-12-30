@@ -217,8 +217,6 @@ export class ConfirmDialog {
       postHtml = `</div></div></div>`
     }
 
-    console.log(this.options.body)
-
     return `${preHtml}
             <div class="form-header ${headerExtraClass}">
                 <h5 class="form-title ${titleExtraClass}">${this.options.title}</h5>

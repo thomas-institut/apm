@@ -394,11 +394,13 @@ export class MetadataEditor {
     makePersonForm(selector, inputId) {
         let list = inputId + "_list"
         let listSelector = "#" + list
-        $(selector).html(`<p class="embed-create-button" id="person-form">
+        let paragraphId = inputId + 'paragraph'
+
+        $(selector).html(`<p class="embed-create-button" id=${paragraphId}>
             <input class="form-control" list=${list} id=${inputId} placeholder="person" autoComplete="off" style="padding: unset">
                 <datalist id=${list}></datalist></p>`)
         this.addNamesToDatalist(this.people, listSelector)
-        this.makePersonFormEvent(inputId, listSelector)
+        this.makePersonFormEvent(inputId, listSelector, paragraphId)
     }
 
     addNamesToDatalist(people, list) {
@@ -412,33 +414,100 @@ export class MetadataEditor {
         }
     }
 
-    makePersonFormEvent(inputId, list) {
+    makePersonFormEvent(inputId, list, selector) {
 
+        let buttonId = inputId + '_create-person-from-datalist'
+        let buttonSelector = '#' + buttonId
         inputId = '#' + inputId
+        selector = '#' + selector
 
         $(inputId).on('input', () => {
             let value = $(inputId).val()
+            $(buttonSelector).remove()
             if ($(`${list} option[value=${value}]`).attr('id') === undefined) {
-                $('#person-form').append(`<button id='create-person-from-datalist'>Create</button>`)
-            } else {
-                console.log(value)
-                $('#create-person-from-datalist').remove()
+                $(selector).append(`<button id=${buttonId}>Create</button>`)
+                this.makeCreatePersonFromInputFormButtonEvent(buttonSelector)
             }
         })
     }
 
-    makeCreatePersonFromDataListEvent () {
-        let dialog = new ConfirmDialog({
-            title: 'Add Sources',
-            size: LARGE_DIALOG,
-            acceptButtonLabel:  'Add Checked Sources',
-            body: dialogBody,
-            hideOnAccept: false,
-            cancelFunction: () => {
-                console.log(`Canceled add/edit sigla group`)
-            }
+    getPersonSchema (setupMetadataEditor) {
+        // Make API Call
+        $.post(urlGen.apiPeopleGetSchema())
+            .done((apiResponse) => {
+
+                // Catch Error
+                if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query`);
+                    if (apiResponse.errorData !== undefined) {
+                        console.log(apiResponse.errorData);
+                    }
+                    return false
+                }
+                else {
+                    console.log(apiResponse)
+                    setupMetadataEditor(apiResponse.data)
+                    return true
+                }
+
+            })
+            .fail((status) => {
+                console.log(status);
+                return false
+            })
+    }
+
+    setupMetadataEditor (entity, mode) {
+
+        let mde = new MetadataEditor({
+            container: 'personCreator',
+            entityId: entity.id,
+            entityType: entity.type,
+            metadata: entity.values,
+            metadataSchema: {keys: entity.keys, types: entity.types},
+            callback: (data, mode, callback) => {
+                savePersonData(data, mode, callback)
+            },
+            mode: mode,
+            theme: 'vertical',
         })
-        dialog.show()
+    }
+
+    makeCreatePersonFromInputFormButtonEvent (buttonSelector) {
+
+        let dialogBody = `<div id="personCreator" align="center">Hallo</div>`
+
+        $(buttonSelector).on('click', () => {
+
+            let dialog = new ConfirmDialog({
+                title: 'Create Person',
+                size: LARGE_DIALOG,
+                acceptButtonLabel: 'Save',
+                body: dialogBody,
+                hideOnAccept: false,
+                cancelFunction: () => {
+                    console.log(`Canceled person creation.`)
+                }
+            })
+            dialog.show()
+            let dialogSelector = dialog.getSelector().replace('#', '')
+
+            // let mde = new MetadataEditor({
+            //     container: dialogSelector,
+            //     entityId: '23',
+            //     entityType: 'person',
+            //     metadata: [],
+            //     metadataSchema: {keys:['Name'], types: [['text']]},
+            //     callback: (data, mode, callback) => {},
+            //     mode: 'create',
+            //     theme: 'vertical',
+            // })
+
+            dialog.setAcceptFunction( () => {
+                dialog.hide()
+                dialog.destroy()
+            })
+        })
     }
 
     makePasswordForm(selector, inputId) {

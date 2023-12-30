@@ -261,21 +261,23 @@ input[type=number] {
     padding: 15px;
 }
 .embed-create-button button {
-    color: white;
+    color: dodgerblue;
     position: absolute;
-    right: 0.8em;
-    top: 0.25em;
-    background: dodgerblue;
+    right: 0.3em;
+    top: 0.3em;
+    background: white;
     border: none;
-    padding: 1em;
+    border-color: dodgerblue;
+    padding: 0.6em;
+    padding-bottom: 0.2em;
+    padding-top: 0.2em;
     transition: all 0.2s;
     margin: 0.1em;
-    width: 6em;
-    height: 0.2em;
+    text-align: center;
 }
 .embed-create-button button:hover {
-    background-color: lightskyblue;
-    color: #fff;
+    background-color: white;
+    color: blue;
     cursor: pointer;
 }
 

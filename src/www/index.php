@@ -243,13 +243,13 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
         })
         ->setName('user.manager');
 
-    // CHUNKS
+    // WORKS
 
-    $group->get('/chunks',
-        SiteChunks::class . ':chunksPage')
-        ->setName('chunks');
+    $group->get('/works',
+        SiteChunks::class . ':worksPage')
+        ->setName('works');
 
-    $group->get('/chunk/{work}/{chunk}',
+    $group->get('/work/{work}/chunk/{chunk}',
         SiteChunkPage::class . ':singleChunkPage')
         ->setName('chunk');
 

@@ -176,7 +176,7 @@ export class NormalPage {
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item"><a class="nav-link" href="${urlFor('siteDashboard')}" title="${tr('Dashboard')}">${tr('Dashboard')}</a></li>
                 <li class="nav-item"><a class="nav-link" href="${urlFor('siteDocs')}" title="${tr('Documents')}">${tr('Documents')}</a></li>
-                <li class="nav-item"><a class="nav-link" href="${urlFor('siteChunks')}" title="${tr('Chunks')}">${tr('Chunks')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlFor('siteChunks')}" title="${tr('Works')}">${tr('Works')}</a></li>
                 <li class="nav-item"><a class="nav-link" href="${urlFor('siteUsers')}" title="${tr('Users')}">${tr('Users')}</a></li>
                 <li class="nav-item"><a class="nav-link" href="${urlFor('siteSearch')}" title="${tr('Search')}">${tr('Search')}</a></li>
                 <li class="nav-item">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</li>

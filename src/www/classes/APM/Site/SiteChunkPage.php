@@ -147,7 +147,6 @@ class SiteChunkPage extends SiteController
             'pageInfo' => $pageInfoArray,
             'languageInfo' => $fullLanguageInfo,
             'validChunks' => $validChunks,
-
             'savedCollationTables' => $savedCollationTableInfoArray
         ]);
     }

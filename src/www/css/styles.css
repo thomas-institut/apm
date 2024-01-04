@@ -352,6 +352,7 @@ div.normal-page-footer {
     padding-left: var(--container-side-padding);
     padding-right: var(--container-side-padding);
     margin-top: 0.5rem;
-    border-top: 1px solid var(--very-light-gray);
+    /*border-top: 1px solid var(--very-light-gray);*/
+    font-size: 0.8em;
 }
 

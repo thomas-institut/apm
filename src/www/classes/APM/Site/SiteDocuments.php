@@ -277,8 +277,6 @@ class SiteDocuments extends SiteController
             'lastSaves' => $lastSaves,
             'metaData' => $metaData,
             'userId' => $userId,
-            'userInfo' => $this->userInfo,
-            'showLanguageSelector' => $this->config[ApmConfigParameter::SHOW_LANG_SELECTOR] ? '1' : 0
         ]);
     }
 

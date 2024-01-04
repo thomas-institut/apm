@@ -157,7 +157,7 @@ class SiteControllerTest extends TestCase {
         self::$ci->set(ApmContainerKey::USER_INFO, ['id' => 100, 'username' => 'testUser']);
         $sc = new SiteChunks(self::$ci);
         
-        $response = $sc->chunksPage($request, new Response());
+        $response = $sc->worksPage($request, new Response());
         
         $this->assertEquals(200, $response->getStatusCode());
     }

@@ -74,7 +74,9 @@ const strings = [
   { key: 'Foliation not set, using sequence number', es: 'Foliación no definida, usando número de secuencia'},
   { key: 'Image Links', es: "Enlaces de imágenes"},
   { key: 'Click to open in new tab/window', es: 'Click para abrir en nueva tab/ventana'},
-  { key: 'Page Type', es: 'Tipo de página'}
+  { key: 'Page Type', es: 'Tipo de página'},
+  { key: 'Works', es: 'Obras'},
+  { key: 'Click to show chunk list', es: 'Click para mostrar lista de chunks'}
 ]
 
 export class SiteLang {

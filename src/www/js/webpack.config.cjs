@@ -7,6 +7,7 @@ module.exports = {
       filename: 'Quill.bundle.js'
     },
     DocPage: './pages/DocPage.js',
+    WorksPage: './pages/WorksPage.js',
     DocDefPages: './pages/DocDefPages.js',
     DocEditPage: './pages/DocEditPage.js',
     DocNewDocPage: './pages/DocNewDocPage.js',

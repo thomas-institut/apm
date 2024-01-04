@@ -49,6 +49,23 @@ export function rTrimWhiteSpace(someString) {
 }
 
 /**
+ * Compares two strings a and b, and return 1 is a>b, -1 if b<a or
+ * 0 if the strings are equal
+ * @param {string}a
+ * @param {string}b
+ * @return {number}
+ */
+export function compareStrings(a, b) {
+  if (a < b) {
+    return -1;
+  }
+  if (a > b) {
+    return 1;
+  }
+  return 0;
+}
+
+/**
  *
  * @param {string}someString
  * @param {string[]}charactersToTrim

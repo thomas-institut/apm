@@ -1,5 +1,4 @@
 {% extends "base.twig" %}
-{#{% import 'macros.twig' as macros %}#}
 
 {% block title %}Chunk {{work}}-{{chunk}}{% endblock %}
 
@@ -30,8 +29,9 @@
 {% block content %}
 <nav aria-label="breadcumb">
      <ol class="breadcrumb">
-         <li class="breadcrumb-item"><a href="{{url_for('chunks')}}">Chunks</a></li>
-        <li class="breadcrumb-item active">Chunk Details</li>
+         <li class="breadcrumb-item"><a href="{{url_for('works')}}">Works</a></li>
+         <li class="breadcrumb-item">{{ work }}</li>
+        <li class="breadcrumb-item active">Chunk {{ chunk }}</li>
     </ol>
 </nav>
     <div id="chunkpageheader"></div>

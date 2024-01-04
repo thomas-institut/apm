@@ -70,7 +70,7 @@ class ApmUrlGenerator {
         return this.base + '/doc/' + docId + '/realpage/' + pageNumber + '/view'
     }
     siteChunkPage(work, chunk) {
-        return this.base + '/chunk/' + work + '/' + chunk
+        return `${this.base}/work/${work}/chunk/${chunk}`
     }
     siteUserProfile(userName) {
         return this.base + '/user/' + userName
@@ -91,7 +91,7 @@ class ApmUrlGenerator {
     }
 
     siteChunks() {
-        return this.base + '/chunks'
+        return this.base + '/works'
     }
 
     siteUsers() {

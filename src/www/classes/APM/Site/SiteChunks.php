@@ -50,14 +50,14 @@ class SiteChunks extends SiteController
 {
 
     const WORK_DATA_CACHE_KEY = 'SiteChunks-WorkData';
-    const TEMPLATE_CHUNKS = 'chunks.twig';
+    const TEMPLATE_WORKS_PAGE = 'works-page.twig';
     const TEMPLATE_CHUNK_MAP = 'chunks-map.twig';
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    public function chunksPage(Request $request, Response $response): Response
+    public function worksPage(Request $request, Response $response): Response
     {
         $dataManager = $this->dataManager;
         $this->profiler->start();
@@ -80,7 +80,7 @@ class SiteChunks extends SiteController
 
         $this->profiler->stop();
         $this->logProfilerData('chunksPage');
-        return $this->renderPage($response, self::TEMPLATE_CHUNKS, [
+        return $this->renderPage($response, self::TEMPLATE_WORKS_PAGE, [
             'works' => $works
         ]);
     }

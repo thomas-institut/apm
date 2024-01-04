@@ -27,6 +27,7 @@
 namespace APM\Site;
 
 use APM\FullTranscription\PageInfo;
+use APM\System\ApmConfigParameter;
 use APM\System\ApmImageType;
 use APM\SystemProfiler;
 use APM\System\ApmContainerKey;
@@ -190,6 +191,8 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             if ($this->userAuthenticated) {
                 $data['userinfo'] = $this->userInfo;
             }
+            $data['showLanguageSelector'] = $this->config[ApmConfigParameter::SHOW_LANG_SELECTOR] ? '1' : 0;
+            $data['userInfo'] = $this->userInfo;
         }
 
         $responseToReturn = new \Slim\Psr7\Response();

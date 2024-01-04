@@ -729,7 +729,7 @@ class ApmSystemManager extends SystemManager {
     {
         if (is_null($this->editionSourceManager)) {
             $table = new MySqlDataTable($this->dbConn,
-                $this->tableNames[ApmMySqlTableName::TABLE_EDITION_SOURCES]);
+                $this->tableNames[ApmMySqlTableName::TABLE_EDITION_SOURCES], true);
             $this->editionSourceManager = new ApmEditionSourceManager($table);
         }
         return $this->editionSourceManager;

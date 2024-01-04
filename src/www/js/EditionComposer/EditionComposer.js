@@ -1054,7 +1054,7 @@ export class EditionComposer {
         this.ctData.witnesses.push( {
           witnessType: WitnessType.SOURCE,
           title: sourceData.title,
-          ApmWitnessId: 'source:' + sourceData.uuid
+          ApmWitnessId: 'source:' + sourceData['tid']
         })
         this.ctData.witnessTitles.push(sourceData.title)
         this.ctData.witnessOrder.push(currentNumWitnesses + index)
@@ -1068,16 +1068,28 @@ export class EditionComposer {
     }
   }
 
+  filterOutUsedSources(sourceInfoArray) {
+    return sourceInfoArray.filter( (sourceInfo)=> {
+      let sourceApmId = `source:${sourceInfo['tid']}`;
+      for (let i = 0; i < this.ctData.witnesses.length; i++) {
+        if (this.ctData.witnesses[i]['ApmWitnessId'] === sourceApmId) {
+          return false;
+        }
+      }
+      return true;
+    })
+  }
+
   genFetchSources() {
     return () => {
       return new Promise( (resolve, reject) => {
         if (this.editionSources !== null) {
-          resolve(this.editionSources)
+          resolve(this.filterOutUsedSources(this.editionSources))
         }
         $.get(this.options.urlGenerator.apiEditionSourcesGetAll())
           .done( (apiResponse) => {
             this.editionSources = apiResponse
-            resolve(apiResponse)
+            resolve(this.filterOutUsedSources(this.editionSources))
           })
           .fail ( (resp) => {
             reject(resp)

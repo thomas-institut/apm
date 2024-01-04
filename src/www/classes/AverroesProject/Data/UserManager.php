@@ -27,6 +27,7 @@ use ThomasInstitut\DataTable\InMemoryDataTable;
 use Exception;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\NullLogger;
+use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
 use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 
@@ -275,7 +276,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     private function createPerson() : int
     {
         $this->getSqlQueryCounterTracker()->incrementCreate();
-        return $this->peopleTable->createRow(['fullname' => '']);
+        return $this->peopleTable->createRow(['fullname' => '', 'tid' => Tid::generateUnique(), 'isApmUser' => 1]);
     }
     //
     // Allowed action methods

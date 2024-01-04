@@ -595,10 +595,10 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         })->setName('api.edition_sources.get_all');
 
 
-    $group->get('/edition/source/get/{uuid}',
+    $group->get('/edition/source/get/{tid}',
         function(Request $request, Response $response, array $args) use ($container){
             $apiC = new ApiEditionSources($container);
-            return $apiC->getSourceByUuid($request, $response, $args);
+            return $apiC->getSourceByTid($request, $response, $args);
         })->setName('api.edition_sources.get');
 
     // MULTI CHUNK EDITION

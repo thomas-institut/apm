@@ -109,7 +109,8 @@ class ApiPeople extends ApiController
                 'Inauguration',
                 'Years of Study',
                 'URL',
-                'Tags'],
+                'Tags',
+                'Password'],
             'types' => [
                 ['text', 'empty'],
                 ['date', 'empty'],
@@ -119,7 +120,8 @@ class ApiPeople extends ApiController
                 ['year', 'empty'],
                 ['years_range', 'empty'],
                 ['url', 'empty'],
-                ['tags', 'empty']]
+                ['tags', 'empty'],
+                ['password', 'empty']]
         ];
 
         // ApiResponse

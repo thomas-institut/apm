@@ -8,7 +8,7 @@ export class MetadataEditor {
     constructor(options) {
 
         const optionsDefinition = {
-            container: { type:'string', required: true},
+            containerSelector: { type:'string', required: true},
             entityId: {type:'string', required: true},
             entityType: {type:'string', required: true},
             metadata: {type:'array', required: false, default: []},
@@ -23,7 +23,7 @@ export class MetadataEditor {
         this.options = oc.getCleanOptions(options)
 
         // Fill container with the metadata editor html structure
-        this.makeEditor(options.container)
+        this.makeEditor()
 
         // Globals
         this.entity = {id: '', type: '', keys: [], values: [], types: []}
@@ -34,8 +34,8 @@ export class MetadataEditor {
         this.people = []
 
         // Selectors
-        this.buttonsSelectorTop = 'buttons_top'
-        this.buttonsSelectorBottom = 'buttons_bottom'
+        this.buttonsSelectorTop = `${this.options.containerSelector} .buttons_top`
+        this.buttonsSelectorBottom = `${this.options.containerSelector} .buttons_bottom`
 
         // Get list of all people (for handling of entities as values, saving their ids, showing their names) and setup metadata editor in desired mode
         this.getPeople(() => {
@@ -54,8 +54,7 @@ export class MetadataEditor {
     }
 
     // Editor Setup
-    makeEditor(container) {
-        container = "#" + container
+    makeEditor() {
 
         let tableClass
         switch (this.options.theme) {
@@ -66,15 +65,18 @@ export class MetadataEditor {
                 tableClass = 'dataTable'
                 break
         }
-        $(container).html(
+
+        this.metadataTableSelector = `${this.options.containerSelector} .metadataTable`
+
+        $(this.options.containerSelector).html(
             `<br>
-                            <div id="buttons_top" align="right"></div>
+                            <div class="buttons_top" align="right"></div>
                             <br>
-                            <table class=${tableClass} id="metadataTable" style="table-layout:fixed;">
+                            <table class='${tableClass} metadataTable' style="table-layout:fixed;">
                             </table>
                             <br>
-                            <div id="buttons_bottom" align="left"></div>
-                            <div id="errorMessage" style="font-style: oblique"></div>
+                            <div class="buttons_bottom" align="left"></div>
+                            <div class="errorMessage" style="font-style: oblique"></div>
                             <br>`)
     }
 
@@ -158,16 +160,14 @@ export class MetadataEditor {
     }
 
     makeTableRows() {
-        let tableSelector = '#metadataTable'
-
         switch (this.options.theme) {
             case 'horizontal':
-                $(tableSelector).append(`<tr id="row1"></tr><tr id="row2"></tr>`)
+                $(this.metadataTableSelector).append(`<tr class="row1"></tr><tr class="row2"></tr>`)
                 break
             case 'vertical':
                 for (let i=1; i<=this.numKeys; i++) {
-                    let id = "row" + i
-                    $(tableSelector).append(`<tr id=${id}></tr>`)
+                    let className = "row" + i
+                    $(this.metadataTableSelector).append(`<tr class=${className}></tr>`)
                 }
                 break
         }
@@ -183,36 +183,36 @@ export class MetadataEditor {
                     if (this.options.mode === this.mode.show) {
                         let cellButtonId = cellId + "_tableCellButton"
                         let editAttributeButton = "entity_attr" + i + "_editButton"
-                        $('#row1').append(`<th>${this.entity.keys[i-1]}</th><th></th>`)
-                        $('#row2').append(`<td><div id=${cellId}></div></td>
-                                                <td id=${cellButtonId} style="width: 3em; text-align: center">
-                                                    <button id=${editAttributeButton} style="border: transparent; background-color: transparent">
+                        $(`${this.options.containerSelector} .row1`).append(`<th>${this.entity.keys[i-1]}</th><th></th>`)
+                        $(`${this.options.containerSelector} .row2`).append(`<td><div class=${cellId}></div></td>
+                                                <td class=${cellButtonId} style="width: 3em; text-align: center">
+                                                    <button class=${editAttributeButton} style="border: transparent; background-color: transparent">
                                                         <i class="fas fa-pencil-alt" style="color: gray"></i></button>
                                                 </td>`)
                         this.makeEditIconEvent(editAttributeButton)
                     } else {
-                        $('#row1').append(`<th>${this.entity.keys[i-1]}</th>`)
-                        $('#row2').append(`<td><div id=${cellId}></div></td>`)
+                        $(`${this.options.containerSelector} .row1`).append(`<th>${this.entity.keys[i-1]}</th>`)
+                        $(`${this.options.containerSelector} .row2`).append(`<td><div class=${cellId}></div></td>`)
                     }
                 }
                 break
             case 'vertical':
                 for (let i = 1; i <= this.numKeys; i++) {
 
-                    let row = "#row" + i
+                    let row = this.options.containerSelector + " .row" + i
                     let cellId = "entity_attr" + i
                     let editAttributeButton = "entity_attr" + i + "_editButton"
                     let keyName = this.entity.keys[i-1] + "&emsp;&emsp;"
 
                     if (this.options.mode !== this.mode.show) {
                         $(row).append(`<th style="vertical-align: top">${keyName}</th>
-                                    <td><div id=${cellId}></div></td>`)
+                                    <td><div class=${cellId}></div></td>`)
                     } else {
                         let cellButtonId = cellId + "_tableCellButton"
                         $(row).append(`<th style="vertical-align: top">${keyName}</th>
-                                    <td><div id=${cellId}></div></td>
-                                    <td id=${cellButtonId} style="width: 3em">
-                                        <button id=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: gray"></i></button>
+                                    <td><div class=${cellId}></div></td>
+                                    <td class=${cellButtonId} style="width: 3em">
+                                        <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: gray"></i></button>
                                     </td>`)
                         this.makeEditIconEvent(editAttributeButton)
                     }
@@ -222,7 +222,6 @@ export class MetadataEditor {
     }
 
     makeSpinner(container, size='2em') {
-        container = "#" + container
         $(container).html(`<div class="spinner-border" role="status" id="spinner" style="color: dodgerblue; margin-top: 0.7em; width: ${size}; height: ${size}"></div>`)
     }
 
@@ -238,8 +237,7 @@ export class MetadataEditor {
     }
 
     clearTable() {
-        let tableSelector = '#metadataTable'
-        $(tableSelector).empty()
+        $(this.metadataTableSelector).empty()
     }
 
     // Table Data Management
@@ -249,7 +247,7 @@ export class MetadataEditor {
         this.removeSpinner()
 
         for (let i = 1; i <= this.numKeys; i++) {
-            let id = "#entity_attr" + i
+            let selector = this.options.containerSelector + " .entity_attr" + i
             let value = this.entity.values[i-1]
             let type = this.entity.types[i-1]
 
@@ -258,33 +256,33 @@ export class MetadataEditor {
                 let linkId = "linktoperson" + value
                 let name = this.getPersonNameById(value)
                 value = `<a id=${linkId} href=${url} >${name}</a>`
-                $(id).append(value)
+                $(selector).append(value)
 
             } else if (type.includes('years_range')) {
                 value = this.formatYearsRange(value)
-                $(id).append(value)
+                $(selector).append(value)
 
             } else if (type.includes('year')) {
                 value = this.formatYear(value)
-                $(id).append(value)
+                $(selector).append(value)
 
             } else if (type.includes('tags')) {
                 let te = new TagEditor({
-                    containerSelector: id,
+                    containerSelector: selector,
                     tags: value,
                     mode: 'show'
                 })
 
             } else if (type.includes('date')) {
                 value = this.formatDate(value)
-                $(id).append(value)
+                $(selector).append(value)
 
             } else if (type.includes('url')) {
                 let extLink = 'http://' + value
                 value = `<a target="_blank" href=${extLink}>${value}</a>`
-                $(id).append(value)
+                $(selector).append(value)
             } else {
-                $(id).append(value)
+                $(selector).append(value)
             }
         }
     }
@@ -343,14 +341,14 @@ export class MetadataEditor {
     setupInputFormByIndex(keyIndex) {
         if (keyIndex === 'all') {
             for (let i = 1; i <= this.numKeys; i++) {
-                let selectorId = "#entity_attr" + i
+                let selectorId = this.options.containerSelector + " .entity_attr" + i
                 let inputId = "entity_attr" + i + "_form"
                 let type = this.entity.types[i-1][0] // first possible type of data, set in the corresponding schema, determines type of input form
 
                 this.setupInputFormByType(type, selectorId, inputId)
             }
         } else {
-            let selectorId = "#entity_attr" + keyIndex
+            let selectorId = this.options.containerSelector + " .entity_attr" + keyIndex
             let inputId = "entity_attr" + keyIndex + "_form"
             let type = this.entity.types[keyIndex-1][0] // first possible type of data, set in the corresponding schema, determines type of input form
 
@@ -393,39 +391,39 @@ export class MetadataEditor {
 
     makePersonForm(selector, inputId) {
         let list = inputId + "_list"
-        let listSelector = "#" + list
-        let paragraphId = inputId + 'paragraph'
+        let listSelector = this.options.containerSelector + ' #' + list
+        let paragraphId = inputId + '_paragraph'
 
-        $(selector).html(`<p class="embed-create-button" id=${paragraphId}>
-            <input class="form-control" list=${list} id=${inputId} placeholder="person" autoComplete="off" style="padding: unset">
+        $(selector).html(`<p class='${paragraphId} embed-create-button'>
+            <input class='${inputId} form-control' list=${list} placeholder="person" autoComplete="off" style="padding: unset">
                 <datalist id=${list}></datalist></p>`)
         this.addNamesToDatalist(this.people, listSelector)
         this.makePersonFormEvent(inputId, listSelector, paragraphId)
     }
 
-    addNamesToDatalist(people, list) {
+    addNamesToDatalist(people, listSelector) {
 
         let id = 0
 
         for (let person of people) {
             id = person.id
             let name = person.values[0]
-            $(list).append(`<option value=${name} id=${id}>${name}</option>`)
+            $(listSelector).append(`<option value=${name} id=${id}>${name}</option>`)
         }
     }
 
-    makePersonFormEvent(inputId, list, selector) {
+    makePersonFormEvent(inputId, listSelector, paragraphSelector) {
 
         let buttonId = inputId + '_create-person-from-datalist'
-        let buttonSelector = '#' + buttonId
-        inputId = '#' + inputId
-        selector = '#' + selector
+        let buttonSelector = this.options.containerSelector + ' .' + buttonId
+        inputId = this.options.containerSelector + ' .' + inputId
+        paragraphSelector = this.options.containerSelector + ' .' + paragraphSelector
 
         $(inputId).on('input', () => {
             let value = $(inputId).val()
             $(buttonSelector).remove()
-            if ($(`${list} option[value=${value}]`).attr('id') === undefined) {
-                $(selector).append(`<button id=${buttonId}>Create</button>`)
+            if ($(`${listSelector} option[value=${value}]`).attr('id') === undefined) {
+                $(paragraphSelector).append(`<button class=${buttonId}>Create</button>`)
                 this.makeCreatePersonFromInputFormButtonEvent(buttonSelector)
             }
         })
@@ -475,7 +473,7 @@ export class MetadataEditor {
 
     makeCreatePersonFromInputFormButtonEvent (buttonSelector) {
 
-        let dialogBody = `<div id="personCreator" align="center">Hallo</div>`
+        let dialogBody = `<div id="personCreatorDialog" align="center">Hallo</div>`
 
         $(buttonSelector).on('click', () => {
 
@@ -490,18 +488,17 @@ export class MetadataEditor {
                 }
             })
             dialog.show()
-            let dialogSelector = dialog.getSelector().replace('#', '')
 
-            // let mde = new MetadataEditor({
-            //     container: dialogSelector,
-            //     entityId: '23',
-            //     entityType: 'person',
-            //     metadata: [],
-            //     metadataSchema: {keys:['Name'], types: [['text']]},
-            //     callback: (data, mode, callback) => {},
-            //     mode: 'create',
-            //     theme: 'vertical',
-            // })
+            let mde = new MetadataEditor({
+                containerSelector: '#personCreatorDialog',
+                entityId: '23',
+                entityType: 'person',
+                metadata: [],
+                metadataSchema: {keys:['Name'], types: [['text']]},
+                callback: (data, mode, callback) => {},
+                mode: 'create',
+                theme: 'vertical',
+            })
 
             dialog.setAcceptFunction( () => {
                 dialog.hide()
@@ -512,16 +509,15 @@ export class MetadataEditor {
 
     makePasswordForm(selector, inputId) {
 
-        this.password1Selector = "#" + inputId
-        this.password2Selector = "#password2"
+        this.password1Selector = this.options.containerSelector + " ." + inputId
+        this.password2Selector = this.options.containerSelector + " .password2"
 
         $(selector).html(
             `<form data-toggle="validator" role="form" id="theChangePasswordForm">
         <!-- Password -->
         <div class="form-group has-feedback">
             <input type="password" 
-               class="form-control" 
-               id=${inputId}
+               class="${inputId} form-control"
                name="password1"
                data-minlength="8"
                maxlength="16"
@@ -529,8 +525,7 @@ export class MetadataEditor {
             <div class="help-block with-errors"></div>
         <!-- Password confirmation -->
             <input type="password" 
-                   class="form-control" 
-                   id="password2"
+                   class="password2 form-control" 
                    name="password2"
                    data-match=${this.password1Selector}
                    data-match-error="Passwords do not match"
@@ -540,15 +535,15 @@ export class MetadataEditor {
     }
 
     makeDateForm(selectorId, inputId, type) {
-        $(selectorId).html(`<p><input type="date" class="form-control" id=${inputId} placeholder=${type} style="padding: unset"></p>`)
+        $(selectorId).html(`<p><input type="date" class="${inputId} form-control" placeholder=${type} style="padding: unset"></p>`)
     }
 
     makeYearForm(selectorId, inputId, type) {
         let inputIdBcAd = inputId + "_" + "year_bc_ad"
-        let inputIdBcADSelector = "#" + inputIdBcAd
+        let inputIdBcADSelector = this.options.containerSelector + " ." + inputIdBcAd
 
-        $(selectorId).html(`<p><input type="text" class="form-control" id=${inputId} placeholder=${type} style="padding: unset">
-                                                                    <select class="form-control" id=${inputIdBcAd} style="padding: unset"></p>`)
+        $(selectorId).html(`<p><input type="text" class="${inputId} form-control" placeholder=${type} style="padding: unset">
+                                                                    <select class="${inputIdBcAd} form-control" style="padding: unset"></p>`)
         $(inputIdBcADSelector).append(`<option>BC</option><option selected>AD</option>`)
     }
 
@@ -558,12 +553,12 @@ export class MetadataEditor {
         let idYearsRangeNote = inputId + "_years_range_note"
         let currentYear = new Date().getFullYear()
 
-        $(selectorId).html(`<select class="form-control" id=${inputId} style="padding: unset">`)
-        $(selectorId).append(`<p><select class="form-control" id=${idYearsRangeEnd} style="padding: unset"></p>`)
-        $(selectorId).append(`<p><textarea class="form-control" rows="2" id=${idYearsRangeNote} placeholder="note"></textarea></p>`)
+        $(selectorId).html(`<select class="${inputId} form-control" style="padding: unset">`)
+        $(selectorId).append(`<p><select class="${idYearsRangeEnd} form-control" style="padding: unset"></p>`)
+        $(selectorId).append(`<p><textarea class="${idYearsRangeNote} form-control" rows="2" placeholder="note"></textarea></p>`)
 
-        let selectorYearsRangeStart = "#" + inputId
-        let selectorYearsRangeEnd = "#" + idYearsRangeEnd
+        let selectorYearsRangeStart = this.options.containerSelector + " ." + inputId
+        let selectorYearsRangeEnd = this.options.containerSelector + " ." + idYearsRangeEnd
 
         $(selectorYearsRangeStart).append(`<option></option>`)
         $(selectorYearsRangeEnd).append(`<option></option>`)
@@ -576,7 +571,7 @@ export class MetadataEditor {
 
     makeTextForm(selectorId, inputId, type) {
         $(selectorId).html(
-            `<p><input type="text" class="form-control" id=${inputId} placeholder=${type} style="padding: unset"></p>`)
+            `<p><input type="text" class="${inputId} form-control" placeholder=${type} style="padding: unset"></p>`)
     }
 
      addValueToInputFormByIndex(keyIndex) {
@@ -592,7 +587,7 @@ export class MetadataEditor {
     addValueToInputFormByType(type, index) {
 
         let values = this.entity.values
-        let entityAttrFormId = "#entity_attr" + index + "_form"
+        let entityAttrFormId = this.options.containerSelector + " .entity_attr" + index + "_form"
 
         switch (type) {
             case 'year':
@@ -621,8 +616,7 @@ export class MetadataEditor {
     // Button Setup
     setupSaveButton () {
         this.clearBottomButtons()
-        let selector = '#' + this.buttonsSelectorBottom
-        $(selector).prepend(
+        $(this.buttonsSelectorBottom).prepend(
             `<button type="submit" class="btn btn-primary save" id="save-button">Save</button>`)
         this.makeSaveButtonEvent()
     }
@@ -641,41 +635,34 @@ export class MetadataEditor {
     }
 
     insertSpaceBetweenButtons() {
-        let selector = '#' + this.buttonsSelectorTop
-        $(selector).append(' ')
+        $(this.buttonsSelectorTop).append(' ')
     }
 
     makeEditButton(){
-        let selector = '#' + this.buttonsSelectorTop
-        $(selector).append(
+        $(this.buttonsSelectorTop).append(
             `<a class="card-link" id="edit_button">Edit</a>`)
         this.makeEditButtonEvent()
     }
 
     makeCancelButton(){
-        let selector = '#' + this.buttonsSelectorTop
-        $(selector).append(
+        $(this.buttonsSelectorTop).append(
             `<a class="card-link" id="cancel_button">Cancel</a>`)
-            //`<button type="submit" class="btn btn-primary" id="cancel_button">Cancel</button>`)
             this.makeCancelButtonEvent()
     }
 
     makeBackButton() {
         if (this.options.backlink !== '') {
-            let selector = '#' + this.buttonsSelectorTop
-            $(selector).append(
+            $(this.buttonsSelectorTop).append(
                 `<a class="card-link" id="back_button" href = ${this.options.backlink}>Back</a>`)
         }
     }
 
     clearTopButtons() {
-        let selector = '#' + this.buttonsSelectorTop
-        $(selector).empty()
+        $(this.buttonsSelectorTop).empty()
     }
 
     clearBottomButtons() {
-        let selector = '#' + this.buttonsSelectorBottom
-        $(selector).empty()
+        $(this.buttonsSelectorBottom).empty()
     }
 
     makeSaveButtonEvent () {
@@ -756,10 +743,11 @@ export class MetadataEditor {
         $(selector).on("click",  () => {
             let keyIndex = selector.match(/\d+/)[0]
             let cellButtonId = "entity_attr" + keyIndex + "_tableCellButton"
+            let cellButtonIdSelector = '#' + cellButtonId
             let value = this.getEntityDataByIndex(keyIndex)
             if (this.validateData(value, keyIndex)) {
                 this.clearErrorMessage()
-                this.makeSpinner(cellButtonId, '1.25em')
+                this.makeSpinner(cellButtonIdSelector, '1.25em')
                 if (this.entity.types[keyIndex-1].includes('tags')) {
                     //this.tagEditor.saveTags()
                 }
@@ -1083,11 +1071,11 @@ export class MetadataEditor {
 
     returnError(str) {
         str = "&nbsp&nbsp" + str
-        $("#errorMessage").html(str)
+        $(`${this.options.containerSelector} .errorMessage`).html(str)
     }
 
     clearErrorMessage() {
-        $("#errorMessage").empty()
+        $(`${this.options.containerSelector} .errorMessage`).empty()
     }
 
     logSaveAction(mode) {

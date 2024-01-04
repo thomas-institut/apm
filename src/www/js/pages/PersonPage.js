@@ -46,7 +46,7 @@ function setupMetadataEditor (entity, mode) {
 
     removeMetadataEditor()
     let mde = new MetadataEditor({
-        container: 'peopleEditor',
+        containerSelector: '#person-metadata-editor-container',
         entityId: entity.id,
         entityType: entity.type,
         metadata: entity.values,

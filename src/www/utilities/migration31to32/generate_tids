@@ -36,4 +36,4 @@ include_once __DIR__ . '/../../version.php';
 
 global $config;
 
-(new CommandLine\Migration31to32\GeneratePeopleTids($config, $argc, $argv))->run();
+(new CommandLine\Migration31to32\GenerateTids($config, $argc, $argv))->run();

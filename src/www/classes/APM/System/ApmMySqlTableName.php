@@ -22,7 +22,6 @@ namespace APM\System;
 
 class ApmMySqlTableName
 {
-    const TABLE_SCHEDULER = 'scheduler';
     const TABLE_SETTINGS = 'settings';
     const TABLE_EDNOTES = 'ednotes';
     const TABLE_ELEMENTS = 'elements';

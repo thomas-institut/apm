@@ -22,7 +22,7 @@
         "php-di/slim-bridge" : "3.2.0",
         "dflydev/fig-cookies": "^v3.0.0",
         "rafaelnajera/xmlmatcher": "^0.4",
-        "thomas-institut/datatable" : "^0.9",
+        "thomas-institut/datatable" : "^1.0",
         "thomas-institut/timestring" : "^1.2",
         "monolog/monolog": "^3.0",
         "swaggest/json-schema": "^0.12.29",

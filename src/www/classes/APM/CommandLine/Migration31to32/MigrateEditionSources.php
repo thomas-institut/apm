@@ -26,25 +26,7 @@ class MigrateEditionSources extends CommandLineUtility
 
         $editionSourcesDt = new MySqlDataTable($dbConn, $tableName, false);
 
-        $rowsWithoutTid = $editionSourcesDt->findRows(['tid' => 0]);
-
-        if (count($rowsWithoutTid) === 0) {
-            print "Tids already assigned to edition sources\n";
-        }
-
-        foreach ($rowsWithoutTid as $row) {
-            $tid = Tid::generateUnique();
-
-            printf("Assigning tid for id %d: %s ( %s)\n", $row['id'],
-                        Tid::toBase36String($tid), Tid::toTimeString($tid));
-            if ($doIt) {
-                $row['tid'] = $tid;
-                $editionSourcesDt->updateRow($row);
-            }
-        }
-
         // build the uuid to tid conversion table
-
         $allSources = $editionSourcesDt->getAllRows();
         $conversionTable = new InMemoryDataCache();
         foreach($allSources as $source) {

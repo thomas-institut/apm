@@ -365,7 +365,6 @@ class ApmSystemManager extends SystemManager {
     protected function  createTableNames(string $prefix) : array {
         
         $tableKeys = [
-            ApmMySqlTableName::TABLE_SCHEDULER,
             ApmMySqlTableName::TABLE_SETTINGS,
             ApmMySqlTableName::TABLE_EDNOTES,
             ApmMySqlTableName::TABLE_ELEMENTS,

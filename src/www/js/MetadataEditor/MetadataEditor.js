@@ -1,7 +1,7 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
 import {urlGen} from "../pages/common/SiteUrlGen";
 import {TagEditor} from "../widgets/TagEditor";
-import {ConfirmDialog, LARGE_DIALOG} from "../pages/common/ConfirmDialog";
+import {ConfirmDialog} from "../pages/common/ConfirmDialog";
 
 export class MetadataEditor {
 
@@ -16,7 +16,8 @@ export class MetadataEditor {
             mode: {type:'string', required: true},
             callback: {type:'function', required: true},
             theme: {type:'string', required: true},
-            backlink: {type:'string', required: false, default: ''}
+            backlink: {type:'string', required: false, default: ''},
+            hideSaveButton: {type:'boolean', default: false}
         }
 
         const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "MetadataEditor"})
@@ -32,6 +33,7 @@ export class MetadataEditor {
         this.tagEditor = undefined
         this.singleEdit = false
         this.people = []
+        this.dialog = ''
 
         // Selectors
         this.buttonsSelectorTop = `${this.options.containerSelector} .buttons_top`
@@ -66,6 +68,10 @@ export class MetadataEditor {
                 break
         }
 
+        if (this.options.containerSelector.includes('confirm-dialog')) {
+            tableClass = 'table'
+        }
+
         this.metadataTableSelector = `${this.options.containerSelector} .metadataTable`
 
         $(this.options.containerSelector).html(
@@ -97,8 +103,10 @@ export class MetadataEditor {
         this.buildEntitySchema(() => {
             this.makeTableStructure()
             this.setupTableForDataInput(() => {
-                this.setupSaveButton()
-                this.makeBackButton()
+                if (!this.options.hideSaveButton) {
+                    this.setupSaveButton()
+                    this.makeBackButton()
+                }
                 console.log(`create-mode for new entity of type '${this.entity.type}' activated.`)
             })
         })
@@ -429,81 +437,43 @@ export class MetadataEditor {
         })
     }
 
-    getPersonSchema (setupMetadataEditor) {
-        // Make API Call
-        $.post(urlGen.apiPeopleGetSchema())
-            .done((apiResponse) => {
+    makeCreatePersonFromInputFormButtonEvent (buttonSelector) {
 
-                // Catch Error
-                if (apiResponse.status !== 'OK') {
-                    console.log(`Error in query`);
-                    if (apiResponse.errorData !== undefined) {
-                        console.log(apiResponse.errorData);
-                    }
-                    return false
-                }
-                else {
-                    console.log(apiResponse)
-                    setupMetadataEditor(apiResponse.data)
-                    return true
-                }
+        $(buttonSelector).on('click', () => {
 
+            let dialogBody = `<div id="personCreatorDialog" align="center"></div>`
+
+            let dialog = new ConfirmDialog({
+                size: 'lg',
+                acceptButtonLabel: 'Save',
+                body: dialogBody,
+                metadataEditor: true,
+                cancelFunction: () => {
+                    console.log(`Canceled person creation.`)
+                }
             })
-            .fail((status) => {
-                console.log(status);
-                return false
+
+            let dialogSelector = dialog.getSelector()
+            dialog.show()
+
+            this.getPersonSchema((entity) => {
+                this.setupMetadataEditorInDialogWindow(entity, `${dialogSelector} #personCreatorDialog`)
             })
+        })
     }
 
-    setupMetadataEditor (entity, mode) {
-
+    setupMetadataEditorInDialogWindow (entity, selector) {
         let mde = new MetadataEditor({
-            container: 'personCreator',
+            containerSelector: selector,
             entityId: entity.id,
             entityType: entity.type,
             metadata: entity.values,
             metadataSchema: {keys: entity.keys, types: entity.types},
             callback: (data, mode, callback) => {
-                savePersonData(data, mode, callback)
+                this.savePersonData(data, mode, callback)
             },
-            mode: mode,
+            mode: 'create',
             theme: 'vertical',
-        })
-    }
-
-    makeCreatePersonFromInputFormButtonEvent (buttonSelector) {
-
-        let dialogBody = `<div id="personCreatorDialog" align="center">Hallo</div>`
-
-        $(buttonSelector).on('click', () => {
-
-            let dialog = new ConfirmDialog({
-                title: 'Create Person',
-                size: LARGE_DIALOG,
-                acceptButtonLabel: 'Save',
-                body: dialogBody,
-                hideOnAccept: false,
-                cancelFunction: () => {
-                    console.log(`Canceled person creation.`)
-                }
-            })
-            dialog.show()
-
-            let mde = new MetadataEditor({
-                containerSelector: '#personCreatorDialog',
-                entityId: '23',
-                entityType: 'person',
-                metadata: [],
-                metadataSchema: {keys:['Name'], types: [['text']]},
-                callback: (data, mode, callback) => {},
-                mode: 'create',
-                theme: 'vertical',
-            })
-
-            dialog.setAcceptFunction( () => {
-                dialog.hide()
-                dialog.destroy()
-            })
         })
     }
 
@@ -830,7 +800,8 @@ export class MetadataEditor {
             return this.getDataForYearsRange(selector, value)
 
         } else if (type.includes('tags')) {
-            return this.tagEditor.getTags()
+            return ['Test']
+            //return this.tagEditor.getTags()
         } else if (type.includes('person')) {
             let datalist = this.options.containerSelector + " #entity_attr" + keyIndex + "_form_list"
             let person_id
@@ -1050,7 +1021,7 @@ export class MetadataEditor {
 
     // Error Communication and Logging
     returnDataTypeError(key, givenType, affordedTypes) {
-        console.log('Data Type Error!')
+        console.log(`Data Type Error! Given data for '${key}' is of type '${givenType}' but has to be of one of the types '${affordedTypes}'. Please try again.`)
         this.returnError(`Error! Given data for '${key}' is of type '${givenType}' but has to be of one of the types '${affordedTypes}'. Please try again.`)
     }
 
@@ -1104,6 +1075,84 @@ export class MetadataEditor {
                     console.log(apiResponse)
                     this.people = apiResponse.data
                     callback()
+                }
+
+            })
+            .fail((status) => {
+                console.log(status);
+                return false
+            })
+    }
+
+    getPersonSchema (setupMetadataEditor) {
+        // Make API Call
+        $.post(urlGen.apiPeopleGetSchema())
+            .done((apiResponse) => {
+
+                // Catch Error
+                if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query`);
+                    if (apiResponse.errorData !== undefined) {
+                        console.log(apiResponse.errorData);
+                    }
+                    return false
+                }
+                else {
+                    console.log(apiResponse)
+                    setupMetadataEditor(apiResponse.data)
+                    return true
+                }
+
+            })
+            .fail((status) => {
+                console.log(status);
+                return false
+            })
+    }
+
+    savePersonData (data, mode, callback) {
+
+        this.getIdForNewPerson(data, (newData) => {
+            // Make API Call
+            $.post(urlGen.apiPeopleSaveData(), newData)
+                .done((apiResponse) => {
+
+                    // Catch Error
+                    if (apiResponse.status !== 'OK') {
+                        console.log(`Error in query`);
+                        if (apiResponse.errorData !== undefined) {
+                            console.log(apiResponse.errorData);
+                        }
+                        return;
+                    }
+
+                    // Log API response and change to show mode
+                    console.log(apiResponse);
+                    callback()
+                    return true
+                })
+                .fail((status) => {
+                    console.log(status);
+                })
+        })
+    }
+
+    getIdForNewPerson(data, saveEntity) {
+        $.post(urlGen.apiPeopleGetNewId())
+            .done((apiResponse) => {
+
+                // Catch Error
+                if (apiResponse.status !== 'OK') {
+                    console.log(`Error in query`);
+                    if (apiResponse.errorData !== undefined) {
+                        console.log(apiResponse.errorData);
+                    }
+                    return false
+                }
+                else {
+                    console.log(apiResponse)
+                    data.id = apiResponse.id
+                    saveEntity(data)
                 }
 
             })

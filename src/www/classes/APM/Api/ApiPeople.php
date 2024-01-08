@@ -104,24 +104,18 @@ class ApiPeople extends ApiController
                 'Display Name',
                 'Date of Birth',
                 'Place of Birth',
-                'Date of Death',
                 'Partner',
                 'Inauguration',
-                'Years of Study',
                 'URL',
-                'Tags',
-                'Password'],
+                'Tags',],
             'types' => [
                 ['text', 'empty'],
                 ['date', 'empty'],
                 ['text', 'empty'],
-                ['date', 'empty'],
                 ['person', 'empty'],
                 ['year', 'empty'],
-                ['years_range', 'empty'],
                 ['url', 'empty'],
-                ['tags', 'empty'],
-                ['password', 'empty']]
+                ['tags', 'empty']]
         ];
 
         // ApiResponse

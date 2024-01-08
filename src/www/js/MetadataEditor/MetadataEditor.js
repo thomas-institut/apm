@@ -617,7 +617,7 @@ export class MetadataEditor {
     setupSaveButton () {
         this.clearBottomButtons()
         $(this.buttonsSelectorBottom).prepend(
-            `<button type="submit" class="btn btn-primary save" id="save-button">Save</button>`)
+            `<button type="submit" class="save-button btn btn-primary save">Save</button>`)
         this.makeSaveButtonEvent()
     }
 
@@ -640,20 +640,20 @@ export class MetadataEditor {
 
     makeEditButton(){
         $(this.buttonsSelectorTop).append(
-            `<a class="card-link" id="edit_button">Edit</a>`)
+            `<a class='edit_button card-link'>Edit</a>`)
         this.makeEditButtonEvent()
     }
 
     makeCancelButton(){
         $(this.buttonsSelectorTop).append(
-            `<a class="card-link" id="cancel_button">Cancel</a>`)
+            `<a class="cancel_button card-link">Cancel</a>`)
             this.makeCancelButtonEvent()
     }
 
     makeBackButton() {
         if (this.options.backlink !== '') {
             $(this.buttonsSelectorTop).append(
-                `<a class="card-link" id="back_button" href = ${this.options.backlink}>Back</a>`)
+                `<a class="back_button card-link" href = ${this.options.backlink}>Back</a>`)
         }
     }
 
@@ -666,7 +666,7 @@ export class MetadataEditor {
     }
 
     makeSaveButtonEvent () {
-        $("#save-button").on("click",  () => {
+        $(`${this.options.containerSelector} .save-button`).on("click",  () => {
 
             // Clear Messages
             this.clearErrorMessage()
@@ -687,7 +687,7 @@ export class MetadataEditor {
     }
 
     makeEditIconEvent(selector) {
-        selector = '#' + selector
+        selector = this.options.containerSelector + ' .' + selector
             $(selector).on("click", () => {
                 if (!this.singleEdit) {
                     let keyIndex = selector.match(/\d+/)[0]
@@ -704,7 +704,7 @@ export class MetadataEditor {
 
     mutePencilIcons(keyIndex) {
         for (let i=1; i<=this.numKeys; i++) {
-            let selector = "#entity_attr" + i + "_tableCellButton"
+            let selector = this.options.containerSelector + " .entity_attr" + i + "_tableCellButton"
             if (i !== parseInt(keyIndex)) {
                 $(selector).html(`<i class="fas fa-pencil-alt" style="color: lightgray"></i>`)
             }
@@ -712,22 +712,22 @@ export class MetadataEditor {
     }
 
     replaceEditWithSaveAndAbortIcons(i) {
-        let cellButtonSelector = "#entity_attr" + i + "_tableCellButton"
-        let editButtonSelector = '#entity_attr' + i + '_editButton'
+        let cellButtonSelector = this.options.containerSelector + " .entity_attr" + i + "_tableCellButton"
+        let editButtonSelector = this.options.containerSelector + ' .entity_attr' + i + '_editButton'
         let cellSaveButton = "entity_attr" + i + "_saveButton"
         let cellAbortButton = "entity_attr" + i + "_abortButton"
 
         $(editButtonSelector).remove()
-        $(cellButtonSelector).html(`<button class="save" id=${cellSaveButton} style="border: transparent; background-color: transparent">
+        $(cellButtonSelector).html(`<button class="save ${cellSaveButton}" style="border: transparent; background-color: transparent">
                                                     <i class="fa fa-check" style="color: green"></i></button>`)
-        $(cellButtonSelector).append(`<button class="abort" id=${cellAbortButton} style="border: transparent; background-color: transparent">
+        $(cellButtonSelector).append(`<button class="abort ${cellAbortButton}" style="border: transparent; background-color: transparent">
                                                     <i class="fa fa-times" style="color: darkred; margin-left: 0.15em"></i></button>`)
         this.makeSaveIconEvent(cellSaveButton)
         this.makeAbortIconEvent(cellAbortButton)
     }
 
     makeAbortIconEvent(selector) {
-        selector = '#' + selector
+        selector = this.options.containerSelector + ' .' + selector
         $(selector).on("click",  () => {
             this.singleEdit = false
             let keyIndex = selector.match(/\d+/)[0]
@@ -739,11 +739,11 @@ export class MetadataEditor {
     }
 
     makeSaveIconEvent(selector) {
-        selector = '#' + selector
+        selector = this.options.containerSelector + ' .' + selector
         $(selector).on("click",  () => {
             let keyIndex = selector.match(/\d+/)[0]
             let cellButtonId = "entity_attr" + keyIndex + "_tableCellButton"
-            let cellButtonIdSelector = '#' + cellButtonId
+            let cellButtonIdSelector = this.options.containerSelector + ' .' + cellButtonId
             let value = this.getEntityDataByIndex(keyIndex)
             if (this.validateData(value, keyIndex)) {
                 this.clearErrorMessage()
@@ -764,17 +764,17 @@ export class MetadataEditor {
     }
 
     makeEditIcon(i) {
-        let cellButtonId = "#entity_attr" + i + "_tableCellButton"
+        let cellButtonId = this.options.containerSelector + " .entity_attr" + i + "_tableCellButton"
         let editAttributeButton = "entity_attr" + i + "_editButton"
-        let saveButtonSelector = '#entity_attr' + i + '_saveButton'
+        let saveButtonSelector = this.options.containerSelector + ' .entity_attr' + i + '_saveButton'
         $(saveButtonSelector).remove()
-        $(cellButtonId).html(`<button id=${editAttributeButton} style="border: transparent; background-color: transparent"><i
+        $(cellButtonId).html(`<button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i
             class="fas fa-pencil-alt" style="color: gray"></i></button>`)
         this.makeEditIconEvent(editAttributeButton)
     }
 
     makeEditButtonEvent() {
-        $("#edit_button").on("click",  () => {
+        $(`${this.options.containerSelector} .edit_button`).on("click",  () => {
 
             this.options.mode = this.mode.edit
 
@@ -785,7 +785,7 @@ export class MetadataEditor {
     }
 
     makeCancelButtonEvent() {
-        $("#cancel_button").on("click",  () => {
+        $(`${this.options.containerSelector} .cancel_button`).on("click",  () => {
 
             this.options.mode = this.mode.show
 
@@ -820,7 +820,7 @@ export class MetadataEditor {
 
     getEntityDataByType (type, keyIndex) {
 
-        let selector = "#entity_attr" + keyIndex + "_form"
+        let selector = this.options.containerSelector + " .entity_attr" + keyIndex + "_form"
         let value = $(selector).val()
 
         if (type.includes('year')) {
@@ -832,7 +832,7 @@ export class MetadataEditor {
         } else if (type.includes('tags')) {
             return this.tagEditor.getTags()
         } else if (type.includes('person')) {
-            let datalist = "#entity_attr" + keyIndex + "_form_list"
+            let datalist = this.options.containerSelector + " #entity_attr" + keyIndex + "_form_list"
             let person_id
             try {
                 person_id = $(`${datalist} option[value=${value}]`).attr('id')

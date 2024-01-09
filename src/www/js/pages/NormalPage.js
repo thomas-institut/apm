@@ -39,20 +39,28 @@ export class NormalPage {
     let optionsChecker = new OptionsChecker({
       context: 'NormalPage',
       optionsDefinition: {
-        baseUrl: { required: true, type: 'string'},
-        userId: { type: 'number', default: -1 },
-        userInfo: { type: 'object'},
-        siteLanguage: { type: 'string', default: ''},
-        copyrightHtml: { type: 'string', default: "&copy; Thomas-Institut, 2016-23"},
-        showLanguageSelector: { type: 'boolean', default: false}
+        basicData: {
+          required: true,
+          type: 'object',
+          objectDefinition: {
+            apmVersion: { required: true, type: 'string'},
+            cacheDataId: { required: true, type: 'string'},
+            baseUrl: { required: true, type: 'string'},
+            userInfo: { type: 'object'},
+            siteLanguage: { type: 'string', default: ''},
+            showLanguageSelector: { type: 'boolean', default: false}
+          }
+        }
       }
     })
-    this.normalPageOptions = optionsChecker.getCleanOptions(options)
-    setBaseUrl(this.normalPageOptions.baseUrl)
-    this.userId = this.normalPageOptions.userId
-    this.userName = this.normalPageOptions.userInfo.username
+    let cleanOptions = optionsChecker.getCleanOptions(options)
+    this.normalPageOptions = cleanOptions.basicData
+    setBaseUrl(this.normalPageOptions.baseUrl);
+    this.userId = this.normalPageOptions.userInfo['id'];
+    this.userTid = this.normalPageOptions.userInfo['tid'];
+    this.userName = this.normalPageOptions.userInfo.userName;
 
-    this.apmDataProxy = new ApmDataProxy()
+    this.apmDataProxy = new ApmDataProxy(this.normalPageOptions.cacheDataId)
 
     this.showLanguageSelector = this.normalPageOptions.showLanguageSelector
     if (this.showLanguageSelector) {
@@ -138,18 +146,6 @@ export class NormalPage {
     }
   }
 
-  /**
-   *
-   * @param url
-   * @param forceActualFetch
-   * @return {Promise<{}>}
-   */
-  fetch(url, forceActualFetch = false) {
-    let key = encodeURI(url)
-    return this.cachedFetcher.fetch(key, () => {
-      return $.get(url)
-    }, forceActualFetch)
-  }
 
   async genFooterHtml() {
     return this.normalPageOptions.copyrightHtml
@@ -178,6 +174,7 @@ export class NormalPage {
                 <li class="nav-item"><a class="nav-link" href="${urlFor('siteDocs')}" title="${tr('Documents')}">${tr('Documents')}</a></li>
                 <li class="nav-item"><a class="nav-link" href="${urlFor('siteChunks')}" title="${tr('Works')}">${tr('Works')}</a></li>
                 <li class="nav-item"><a class="nav-link" href="${urlFor('siteUsers')}" title="${tr('Users')}">${tr('Users')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlFor('sitePeople')}" title="${tr('People')}">${tr('People')}</a></li>
                 <li class="nav-item"><a class="nav-link" href="${urlFor('siteSearch')}" title="${tr('Search')}">${tr('Search')}</a></li>
                 <li class="nav-item">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</li>
                 <li class="nav-item dropdown">

@@ -51,11 +51,16 @@ use APM\System\ImageSource\OldBilderbergStyleRepository;
 use APM\System\Job\ApmJobQueueManager;
 use APM\System\Job\JobQueueManager;
 use APM\System\Job\NullJobHandler;
+use APM\System\Person\ApmPersonManager;
+use APM\System\Person\PersonManagerInterface;
+use APM\System\User\ApmUserManager;
+use APM\System\User\UserManagerInterface;
 use APM\ToolBox\BaseUrlDetector;
 use AverroesProject\Data\DataManager;
 use Exception;
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Handler\StreamHandler;
+use Monolog\Level;
 use Monolog\Logger;
 use Monolog\Processor\WebProcessor;
 use PDO;
@@ -79,127 +84,63 @@ class ApmSystemManager extends SystemManager {
 
     // Error codes
     const ERROR_DATABASE_CONNECTION_FAILED = 1001;
-//    const ERROR_DATABASE_CANNOT_READ_SETTINGS = 1002;
     const ERROR_DATABASE_IS_NOT_INITIALIZED = 1003;
     const ERROR_DATABASE_SCHEMA_NOT_UP_TO_DATE  = 1004;
     const ERROR_CANNOT_READ_SETTINGS_FROM_DB = 1005;
-    const ERROR_CANNOT_LOAD_PLUGIN = 1006;
     const ERROR_CONFIG_ARRAY_IS_NOT_VALID = 1007;
-//    const ERROR_BAD_DEFAULT_TIMEZONE = 1008;
-//    const ERROR_NO_LOGFILENAME_GIVEN = 1009;
-    const ERROR_CANNOT_READ_SCHEDULE_FROM_DB = 1010;
-
 
     // Database version
     const DB_VERSION = 31;
 
-    const DEFAULT_LOG_APPNAME = 'APM';
-    const DEFAULT_LOG_DEBUG = false;
-    const DEFAULT_LOG_IN_PHP_ERROR_HANDLER = true;
-    const DEFAULT_TABLE_PREFIX = 'ap_';
-    const DEFAULT_COLLATEX_JARFILE = 'collatex/bin/collatex-tools-1.7.1.jar';
-    const DEFAULT_COLLATEX_TMPDIR = '/tmp';
-    const DEFAULT_JAVA_EXECUTABLE = '/usr/bin/java';
-    const DEFAULT_PLUGIN_DIR = 'plugins';
-    const DEFAULT_COLLATION_ENGINE = 'Collatex';
-    
-    const REQUIRED_CONFIG_VARIABLES = [ 
+    const REQUIRED_CONFIG_VARIABLES = [
         ApmConfigParameter::APP_NAME,
         ApmConfigParameter::VERSION,
         ApmConfigParameter::COPYRIGHT_NOTICE,
         ApmConfigParameter::DB,
-        ApmConfigParameter::SUPPORT_CONTACT_NAME,
-        ApmConfigParameter::SUPPORT_CONTACT_EMAIL,
-        //ApmConfigParameter::BASE_URL,
         ApmConfigParameter::SUB_DIR,
         ApmConfigParameter::LOG_FILENAME,
         ApmConfigParameter::LANGUAGES,
         ApmConfigParameter::LANG_CODES,
+        ApmConfigParameter::DB_TABLE_PREFIX,
+        ApmConfigParameter::APM_DAEMON_PID_FILE,
+        ApmConfigParameter::OPENSEARCH_HOSTS,
+        ApmConfigParameter::OPENSEARCH_USER,
+        ApmConfigParameter::OPENSEARCH_PASSWORD
     ];
     
     const REQUIRED_CONFIG_VARIABLES_DB = [ 'host', 'db', 'user', 'pwd'];
-
-
 
     protected array $serverLoggerFields = [
         'method' => 'REQUEST_METHOD',
         'url'         => 'REQUEST_URI',
         'ip'          => 'REMOTE_ADDR',
-//        'server'      => 'SERVER_NAME',
         'referrer'    => 'HTTP_REFERER',
-//        'forwarded_host' => 'HTTP_X_FORWARDED_HOST',
-//        'forwarded_port' => 'HTTP_X_FORWARDED_PORT'
     ];
     
     /** @var string[] */
     private array $tableNames;
 
-    /**
-     * @var DataTablePresetManager
-     */
     private DataTablePresetManager $presetsManager;
-
-    /**
-     * @var SettingsManager
-     */
     private SettingsManager $settingsMgr;
-
-    /**
-     * @var CollationEngine
-     */
     private CollationEngine $collationEngine;
-
-    /**
-     * @var PDO
-     */
     private PDO $dbConn;
-
-    /**
-     * @var Logger
-     */
     private Logger $logger;
-    /**
-     * @var ApmTranscriptionManager
-     */
     private ApmTranscriptionManager $transcriptionManager;
-    /**
-     * @var DataTableDataCache
-     */
     private DataTableDataCache $systemDataCache;
-    /**
-     * @var ApmCollationTableManager
-     */
     private ApmCollationTableManager $collationTableManager;
-
-    /**
-     * @var ApmMultiChunkEditionManager|null
-     */
     private ?ApmMultiChunkEditionManager $multiChunkEditionManager;
-
-    /**
-     * @var ?Twig
-     */
     private ?Twig $twig;
-    /**
-     * @var RouteParserInterface
-     */
     private RouteParserInterface $router;
-
-
     private ?ApmNormalizerManager $normalizerManager;
-
-    private ?ApmEditionSourceManager $editionSourceManager;
+    private ?ApmUserManager $userManager;
+    private ?ApmPersonManager $personManager;
     private ApmJobQueueManager $jobManager;
-    /**
-     * @var BilderbergImageSource[]|array
-     */
     protected array $imageSources;
+    private ?ApmEditionSourceManager $editionSourceManager;
 
 
     public function __construct(array $configArray) {
-//        global $globalProfiler;
         $config = $this->getSanitizedConfigArray($configArray);
-        
         if ($config[ApmConfigParameter::ERROR]) {
             $msg = "Configuration file is not valid:\n";
             foreach($config[ApmConfigParameter::ERROR_MESSAGES] as $errorMsg) {
@@ -208,9 +149,6 @@ class ApmSystemManager extends SystemManager {
             $this->setError($msg, self::ERROR_CONFIG_ARRAY_IS_NOT_VALID);
             return;
         }
-
-
-        
         parent::__construct($config);
         
         if ($this->fatalErrorOccurred()) {
@@ -220,24 +158,17 @@ class ApmSystemManager extends SystemManager {
         // Create logger
         $this->logger = $this->createLogger();
 
-//        $globalProfiler->lap('Logger created');
-
-//        $this->logger->info("Config file path: '" . $config[ApmConfigParameter::CONFIG_FILE_PATH] . "'");
-
         // Dump configuration warnings in the log
         foreach($this->config[ApmConfigParameter::WARNINGS] as $warning) {
             $this->logger->debug($warning);
         }
 
-
         // Set timezone
         date_default_timezone_set($this->config[ApmConfigParameter::DEFAULT_TIMEZONE]);
-        
 
-        
         // Create table names
         $this->tableNames = 
-                $this->createTableNames($this->config[ApmConfigParameter::TABLE_PREFIX]);
+                $this->createTableNames($this->config[ApmConfigParameter::DB_TABLE_PREFIX]);
         
         // Set up database connection
         try {
@@ -248,8 +179,7 @@ class ApmSystemManager extends SystemManager {
             return;
         }
 
-//        $globalProfiler->lap("Database ready");
-        
+
          // Check that the database is initialized
         // TODO: Is this check necessary?
         if (!$this->isDatabaseInitialized()) {
@@ -257,8 +187,6 @@ class ApmSystemManager extends SystemManager {
                     "Database is not initialized");
             return;
         }
-
-//        $globalProfiler->lap("Database checked");
 
         // Set up SettingsManager
         try {
@@ -292,8 +220,8 @@ class ApmSystemManager extends SystemManager {
         switch($this->config[ApmConfigParameter::COLLATION_ENGINE]) {
             case ApmCollationEngine::COLLATEX:
                 $this->collationEngine = new Collatex(
-                    $this->config[ApmConfigParameter::COLLATEX_JARFILE],
-                    $this->config[ApmConfigParameter::COLLATEX_TMPDIR],
+                    $this->config[ApmConfigParameter::COLLATEX_JAR_FILE],
+                    $this->config[ApmConfigParameter::COLLATEX_TEMP_DIR],
                     $this->config[ApmConfigParameter::JAVA_EXECUTABLE]
                 );
                 break;
@@ -350,6 +278,8 @@ class ApmSystemManager extends SystemManager {
         $this->normalizerManager = null;
         $this->multiChunkEditionManager = null;
         $this->editionSourceManager = null;
+        $this->userManager = null;
+        $this->personManager = null;
     }
 
     public function getAvailableImageSources(): array
@@ -442,12 +372,12 @@ class ApmSystemManager extends SystemManager {
 
     protected function createLogger(): Logger
     {
-        $loggerLevel = Logger::INFO;
-        if ($this->config[ApmConfigParameter::LOG_DEBUG]) {
-            $loggerLevel = Logger::DEBUG;
+        $loggerLevel = Level::Info;
+        if ($this->config[ApmConfigParameter::LOG_INCLUDE_DEBUG_INFO]) {
+            $loggerLevel = Level::Debug;
         }
         
-        $logger = new Logger($this->config[ApmConfigParameter::LOG_APPNAME]);
+        $logger = new Logger($this->config[ApmConfigParameter::LOG_APP_NAME]);
 
         try {
             $logStream = new StreamHandler($this->config[ApmConfigParameter::LOG_FILENAME],
@@ -483,7 +413,7 @@ class ApmSystemManager extends SystemManager {
     protected function isDatabaseUpToDate(): bool
     {
         
-        $dbVersion = $this->settingsMgr->getSetting('dbversion');
+        $dbVersion = $this->settingsMgr->getSetting('DatabaseVersion');
         if ($dbVersion === false) {
             return false; // @codeCoverageIgnore
         }
@@ -506,7 +436,7 @@ class ApmSystemManager extends SystemManager {
         return false;
     }
     
-    protected function logAndSetError(int $errorCode, string $msg) {
+    protected function logAndSetError(int $errorCode, string $msg) : void {
         $this->logger->error($msg, [ 'errorCode' => $errorCode]);
         $this->setError( $msg, $errorCode);
     }
@@ -536,38 +466,7 @@ class ApmSystemManager extends SystemManager {
             return $config;
         }
         
-        $stringParametersWithDefaults = [
-            ApmConfigParameter::DEFAULT_TIMEZONE => date_default_timezone_get(),
-            ApmConfigParameter::LOG_APPNAME => self::DEFAULT_LOG_APPNAME,
-            ApmConfigParameter::TABLE_PREFIX => self::DEFAULT_TABLE_PREFIX,
-            ApmConfigParameter::COLLATEX_JARFILE => self::DEFAULT_COLLATEX_JARFILE,
-            ApmConfigParameter::COLLATEX_TMPDIR => self::DEFAULT_COLLATEX_TMPDIR,
-            ApmConfigParameter::JAVA_EXECUTABLE => self::DEFAULT_JAVA_EXECUTABLE,
-            ApmConfigParameter::COLLATION_ENGINE => self::DEFAULT_COLLATION_ENGINE,
-            ApmConfigParameter::PLUGIN_DIR => self::DEFAULT_PLUGIN_DIR
-        ];
-        
-        foreach($stringParametersWithDefaults as $param => $default) {
-            if (!isset($config[$param]) || !is_string($config[$param]) || ($config[$param] === '')) {
-                $config[$param] = $default;
-                $config[ApmConfigParameter::WARNINGS][] = 'Using default for "' .
-                        $param  . '" => "' . $default . '"';
-            }
-        }
-        
-        $boolParametersWithDefaults = [
-            ApmConfigParameter::LOG_DEBUG => self::DEFAULT_LOG_DEBUG,
-            ApmConfigParameter::LOG_IN_PHP_ERROR_HANDLER => self::DEFAULT_LOG_IN_PHP_ERROR_HANDLER
-        ];
-        
-        foreach($boolParametersWithDefaults as $param => $default) {
-            if (!isset($config[$param]) || !is_bool($config[$param])) {
-                $config[$param] = $default;
-                $config[ApmConfigParameter::WARNINGS][] = 'Using default for "' .
-                        $param  . '" => ' . ( $default ? 'true' : 'false') ;
-            }
-        }
-        
+
         // Check database configuration 
         foreach(self::REQUIRED_CONFIG_VARIABLES_DB as $requiredVariable) {
             if (!isset($config[ApmConfigParameter::DB][$requiredVariable])) {
@@ -585,27 +484,11 @@ class ApmSystemManager extends SystemManager {
             }
         }
         
-        // Make sure there's a plugins array
-        if (!isset($config[ApmConfigParameter::PLUGINS]) || !is_array($config)) {
-            $config[ApmConfigParameter::PLUGINS] = [];
-        } 
         return $config;
     }
 
     /**
      * Returns the subdirectory part of a base Url
-     *
-     * The base url must be of the form:
-     *   http<s>://somewebsite</subdir>
-     *
-     * where strings in <> are optional.
-     *
-     * For examples:  http://my.com  (subdir = '')
-     *
-     * or  https:/my.com/web  (subdir = 'web')
-     *
-     * if the given base url is wrongly formed, the function throws an InvalidArgument exception
-     *
      * @return string
      */
     public function getBaseUrlSubDir() : string {
@@ -802,6 +685,27 @@ class ApmSystemManager extends SystemManager {
         $this->logger->debug("Scheduling update of SiteDocuments cache");
         $this->jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '', [],0, 3, 20);
+    }
+
+    public function getUserManager() : UserManagerInterface {
+        if ($this->userManager === null) {
+            $this->userManager = new ApmUserManager(
+                new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_USERS], true),
+                new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_TOKENS], true)
+            );
+        }
+        return $this->userManager;
+    }
+
+    public function getPersonManager(): PersonManagerInterface
+    {
+        if ($this->personManager === null) {
+            $this->personManager = new ApmPersonManager(
+                new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_PEOPLE], true),
+                $this->getUserManager()
+            );
+        }
+        return $this->personManager;
     }
 
     public function getJobManager(): JobQueueManager

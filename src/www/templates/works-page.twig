@@ -9,21 +9,13 @@
 
 
 {% block extraJS %}
-{#    <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>#}
     <script type="application/javascript" src="{{baseurl}}/js/dist/WorksPage.bundle.js"></script>
     <script>
-
       $( () => {
         new WorksPage({
-          baseUrl: '{{baseurl}}',
+          basicData:  JSON.parse("{{basicData|json_encode|e('js')}}"),
           works: JSON.parse('{{works|json_encode|e('js')}}'),
-          userId: parseInt('{{ userId }}'),
-          userInfo: JSON.parse("{{userInfo|json_encode|e('js')}}"),
-          showLanguageSelector: parseInt('{{ showLanguageSelector }}') === 1,
-          copyrightHtml: `{{ copyright|raw}}`
         })
       });
     </script>
 {% endblock %}
-
-

@@ -48,12 +48,18 @@ const langNames = {
  */
 export class ApmDataProxy {
 
-  constructor () {
+  /**
+   *
+   * @param {string}cacheDataId
+   */
+  constructor (cacheDataId) {
+    this.cacheDataId = cacheDataId;
     this.caches = {
       memory: new KeyCache(),
-      session: new WebStorageKeyCache('session'),
-      local: new WebStorageKeyCache('local')
+      session: new WebStorageKeyCache('session', this.cacheDataId),
+      local: new WebStorageKeyCache('local', this.cacheDataId)
     }
+
     this.cachedFetcher = new CachedFetcher(this.caches.memory);
   }
 

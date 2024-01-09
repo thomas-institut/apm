@@ -98,6 +98,10 @@ ALTER TABLE `ap_versions_tx`
 -- change current uuid references to sources to new edition sources tids
 -- RUN migrate_edition_sources doIt
 
+
+-- clean up the multi-chunk editions table
+ALTER TABLE `ap_mc_editions` DROP COLUMN `author_id`;
+
 -- clean up the edition sources table
 ALTER TABLE `ap_edition_sources` DROP COLUMN `uuid`;
 ALTER TABLE `ap_edition_sources` MODIFY COLUMN `id` int NOT NULL AUTO_INCREMENT;
@@ -106,7 +110,10 @@ ALTER TABLE `ap_edition_sources` MODIFY COLUMN `id` int NOT NULL AUTO_INCREMENT;
 ALTER TABLE `ap_people` ADD `isApmUser` TINYINT NOT NULL DEFAULT 0 AFTER `email`;
 UPDATE `ap_people` SET `isApmUser` = 1 where `id` > 10;
 
-
+ALTER TABLE `ap_users` ADD `flags` VARCHAR(1024) DEFAULT  '' AFTER `password`;
+UPDATE `ap_users` SET `flags` = 'disabled' WHERE `password` IS NULL;
+UPDATE `ap_users` SET `flags` = 'root' WHERE `username`='rafael';
+UPDATE `ap_users` SET `flags` = 'readOnly' WHERE `username`='guest';
 
 -- Let MySql handle the id column in ap_works
 ALTER TABLE `ap_works` MODIFY COLUMN `id` int NOT NULL AUTO_INCREMENT;
@@ -117,4 +124,8 @@ DROP TABLE ap_scheduler;
 -- clean up token table
 DELETE FROM ap_tokens where creation_time < '2023-07-01';
 
-UPDATE `ap_settings` SET `value` = '32' WHERE `ap_settings`.`setting` = 'dbversion';
+
+-- Change database version setting name
+UPDATE `ap_settings` SET `setting` = 'DatabaseVersion' WHERE `ap_settings`.`setting` = 'dbversion';
+
+UPDATE `ap_settings` SET `value` = '32' WHERE `ap_settings`.`setting` = 'DatabaseVersion';

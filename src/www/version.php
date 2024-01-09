@@ -23,6 +23,11 @@ use APM\System\ApmConfigParameter;
 global $config;
 
 
+
+// JS App data ID
+$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = hash('md5', '2024-01-09 12:44:21');
+
+
 $config[ApmConfigParameter::APP_NAME] = 'APM';
 // Version 0.42.10, named after Oded, who discovered the first reproducible bug after EditionComposer's bug detector
 // was implemented
@@ -31,7 +36,7 @@ $config[ApmConfigParameter::VERSION] = '0.62.3 (2023-Dec-21)';
 
 
 $config[ApmConfigParameter::COPYRIGHT_NOTICE] = <<<EOD
-        2016-23, 
+        2016-24, 
         <a href="https://www.thomasinstitut.uni-koeln.de/">
             Thomas-Institut</a>, 
         <a href="https://www.uni-koeln.de/">

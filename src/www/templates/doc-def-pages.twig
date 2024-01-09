@@ -9,13 +9,9 @@
 <script>
     $( () => {
         new DocDefPages( {
-          baseUrl: '{{ baseurl }}',
-          userId: parseInt('{{ userId }}'),
-          userInfo: JSON.parse("{{userInfo|json_encode|e('js')}}"),
-          showLanguageSelector: parseInt('{{ showLanguageSelector }}') === 1,
+          basicData:  JSON.parse("{{basicData|json_encode|e('js')}}"),
           doc: JSON.parse("{{doc|json_encode|e('js')}}"),
           numPages: {{doc.numPages}},
-          copyrightHtml: `{{ copyright|raw}}`
         });
     })
 </script>

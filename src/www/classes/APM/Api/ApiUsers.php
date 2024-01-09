@@ -27,6 +27,7 @@ use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\EntitySystem\Tid;
 
 /**
  * API Controller class
@@ -521,10 +522,10 @@ class ApiUsers extends ApiController
         return true;
     }
 
-    public function getMultiChunkEditionInfo(Request $request, Response $response) : Response {
-        $userId =  (int) $request->getAttribute('userId');
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $userId);
-        $editionInfo = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionInfoForUserId($userId);
+    public function getMultiChunkEditionsByUser(Request $request, Response $response) : Response {
+        $userTid =  (int) $request->getAttribute('userTid');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . Tid::toBase36String($userTid));
+        $editionInfo = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionsByUser($userTid);
         return $this->responseWithJson($response, $editionInfo);
     }
 }

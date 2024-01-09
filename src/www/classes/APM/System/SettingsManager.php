@@ -33,11 +33,8 @@ use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 class SettingsManager implements SqlQueryCounterTrackerAware {
 
     use SimpleSqlQueryCounterTrackerAware;
-    /**
-     *
-     * @var DataTable
-     */
-    private $settingsTable;
+
+    private DataTable $settingsTable;
     
     public function __construct($table = false) {
         $this->initSqlQueryCounterTracker();
@@ -57,7 +54,7 @@ class SettingsManager implements SqlQueryCounterTrackerAware {
         return $rows[0]['value'];
     }
     
-    public function setSetting(string $setting, string $value)
+    public function setSetting(string $setting, string $value) : bool
     {
 
         $this->getSqlQueryCounterTracker()->incrementSelect();

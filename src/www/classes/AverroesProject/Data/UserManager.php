@@ -149,7 +149,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     }
     
     /**
-     * Returns the user Id associated with a user name
+     * Returns the user Id associated with a username
      * or false if the user does not exist
      * @param string $userName
      * @return int

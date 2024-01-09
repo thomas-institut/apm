@@ -16,11 +16,7 @@
 
   $(() => {
     new DashboardPage(( {
-      baseUrl: '{{ baseurl }}',
-      userId: parseInt('{{ userId }}'),
-      userInfo: JSON.parse("{{userInfo|json_encode|e('js')}}"),
-      showLanguageSelector: parseInt('{{ showLanguageSelector }}') === 1,
-      copyrightHtml: `{{ copyright|raw}}`
+      basicData:  JSON.parse("{{basicData|json_encode|e('js')}}")
     }))
   })
 </script>

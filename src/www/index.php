@@ -36,15 +36,12 @@ use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePeople;
 use APM\Site\SitePerson;
 use APM\System\ConfigLoader;
-use APM\System\NodejsApiProxy;
-use APM\ToolBox\BaseUrlDetector;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Logger;
+use Psr\Http\Server\RequestHandlerInterface;
 use Slim\App;
 use Slim\Psr7\Factory\ResponseFactory;
-use Slim\Psr7\Factory\ServerRequestFactory;
-use Slim\ResponseEmitter;
 use Slim\Routing\RouteCollectorProxy;
 use Slim\Views\TwigMiddleware;
 
@@ -53,7 +50,6 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 
 use APM\System\ApmContainerKey;
 use APM\System\ApmSystemManager;
-use APM\System\ApmConfigParameter;
 
 use APM\Site\SiteDashboard;
 use APM\Site\SiteHomePage;
@@ -88,39 +84,19 @@ SystemProfiler::start();
 // autoload
 require 'vendor/autoload.php';
 
-// load and setup configuration file
+require 'config_setup.php';
+require 'version.php';
+
+// load configuration file
 if (!ConfigLoader::loadConfig()) {
     exitWithErrorMessage('Config file not found');
 }
-require 'setup.php';
-require 'version.php';
-global $config;
 
-// See if there's something to intercept for the proxy
+global $config;
 
 $logger = new Logger('APM');
 $phpLog = new ErrorLogHandler();
 $logger->pushHandler($phpLog);
-$request = ServerRequestFactory::createFromGlobals();
-$baseUrl = BaseUrlDetector::detectBaseUrl($config[ApmConfigParameter::SUB_DIR]);
-$cmd = str_replace($baseUrl, '', $request->getUri());
-
-
-if (preg_match("/^\/api\/nodejs/", $cmd) === 1) {
-    $responseFactory = new ResponseFactory();
-    $emitter = new ResponseEmitter();
-    $proxy = new NodejsApiProxy();
-    $proxy->setLogger($logger);
-    $response = $responseFactory->createResponse();
-    SystemProfiler::lap('Ready to proxy');
-    $logger->debug("Sending $cmd to NodeJs");
-    $response = $proxy->proxy($cmd, $request, $response);
-    SystemProfiler::lap('Response ready');
-    $emitter->emit($response);
-    SystemProfiler::lap('Done');
-    $logger->debug("$cmd handled by NodeJS api ", [ 'profiler' => SystemProfiler::getLaps()]);
-    exit();
-}
 
 // Build System Manager
 
@@ -160,36 +136,30 @@ try {
  
 // LOGIN and LOGOUT
 $app->any('/login',
-    function(Request $request, Response $response, array $args) use ($container){
+    function(Request $request, Response $response) use ($container){
         $authenticator = new Authenticator($container);
-        return $authenticator->login($request, $response, $args);
+        return $authenticator->login($request, $response);
     })
     ->setName('login');
 
 $app->any('/logout',
-    function(Request $request, Response $response, array $args) use ($container){
+    function(Request $request, Response $response) use ($container){
         $authenticator = new Authenticator($container);
-        return $authenticator->logout($request, $response, $args);
+        return $authenticator->logout($response);
     })
     ->setName('logout');
 
 
-// PUBLIC ACCESS
-
-//$app->get('/collation/quick', SiteCollationTable::class . ':quickCollationPage')
-//    ->setName('quickcollation');
-
-
-// AUTHENTICATED ACCESS
+// AUTHENTICATED SITE ACCESS
 
 $app->group('', function (RouteCollectorProxy $group) use ($container){
 
     // HOME
 
     $group->get('/',
-        function(Request $request, Response $response, array $args) use ($container){
+        function(Request $request, Response $response) use ($container){
             $siteHomePage = new SiteHomePage($container);
-            return $siteHomePage->homePage($request, $response, $args);
+            return $siteHomePage->homePage($request, $response);
         })
         ->setName('home');
 
@@ -213,9 +183,9 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
     // DASHBOARD
 
     $group->get('/dashboard',
-        function(Request $request, Response $response, array $args) use ($container){
+        function(Request $request, Response $response) use ($container){
             $dashboard = new SiteDashboard($container);
-            return $dashboard->DashboardPage($request, $response, $args);
+            return $dashboard->DashboardPage($request, $response);
         })
         ->setName('dashboard');
 
@@ -334,7 +304,12 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
         SitePageViewer::class . ':pageViewerPageByDocSeq')
         ->setName('pageviewer.docseq');
 
-})->add(Authenticator::class . ':authenticate');
+})->add( function(Request $request, RequestHandlerInterface $handler) use($container){
+    $authenticator = new Authenticator($container);
+    return $authenticator->authenticateSiteRequest($request, $handler);
+});
+
+
 
 // -----------------------------------------------------------------------------
 //  API ROUTES
@@ -541,9 +516,9 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
     } )->setName('api.user.collationTables');
 
     // API -> user : get multi-chunk editions by user
-    $group->get('/user/{userId}/multiChunkEditions', function(Request $request, Response $response, array $args) use ($container){
+    $group->get('/user/{userTid}/multiChunkEditions', function(Request $request, Response $response, array $args) use ($container){
         $apiUsers = new ApiUsers($container);
-        return $apiUsers->getMultiChunkEditionInfo($request, $response, $args);
+        return $apiUsers->getMultiChunkEditionsByUser($request, $response, $args);
     } )->setName('api.user.multiChunkEditions');
 
 
@@ -609,9 +584,9 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
             return $apiC->getEdition($request, $response, $args);
         })->setName('api.multi_chunk.get');
 
-    $group->post('/edition/multi/save', function(Request $request, Response $response, array $args) use ($container){
+    $group->post('/edition/multi/save', function(Request $request, Response $response) use ($container){
         $apiC = new ApiMultiChunkEdition($container);
-        return $apiC->saveEdition($request, $response, $args);
+        return $apiC->saveEdition($request, $response);
     })->setName('api.multi_chunk.save');
 
     //  EDITION ENGINE
@@ -703,7 +678,10 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         ApiIcons::class . ':generateParagraphMarkIcon')
         ->setName('api.images.charactergap');
 
-})->add(Authenticator::class . ':authenticateApiRequest');
+})->add( function(Request $request, RequestHandlerInterface $handler) use($container){
+    $authenticator = new Authenticator($container);
+    return $authenticator->authenticateApiRequest($request, $handler);
+});
 
 //  API for DARE
 
@@ -713,21 +691,9 @@ $app->group('/api/data', function(RouteCollectorProxy $group){
 
     // get the transcription for a given document and page
     $group->get('/transcription/get/{docId}/{page}', ApiTranscription::class . ':getTranscription');
-})->add(Authenticator::class . ':authenticateDataApiRequest');
-
-// SPA Login
-$app->group('/api/app', function(RouteCollectorProxy $group) use ($container) {
-    $group->any('/login', function(Request $request, Response $response) use ($container){
-        $apiC = new Authenticator($container);
-        return $apiC->apiLogin($request, $response);
-    })->setName('api.app.login');
-});
-
-// NodeJS api
-
-$app->any('/api/node/{params:.*}', function(Request $request, Response $response, array $args) use ($container){
-    $dashboard = new SiteDashboard($container);
-    return $dashboard->DashboardPage($request, $response, $args);
+})->add( function(Request $request, RequestHandlerInterface $handler) use($container){
+    $authenticator = new Authenticator($container);
+    return $authenticator->authenticateDataApiRequest($request, $handler);
 });
 
 // -----------------------------------------------------------------------------

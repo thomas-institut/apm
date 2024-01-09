@@ -14,17 +14,13 @@
     <script>
       $( () => {
         new DocPage({
-          baseUrl: '{{baseurl}}',
+          basicData:  JSON.parse("{{basicData|json_encode|e('js')}}"),
           doc: JSON.parse('{{doc|json_encode|e('js')}}'),
           chunkInfo: JSON.parse('{{chunkInfo|json_encode|e('js')}}'),
           versionInfo: JSON.parse('{{lastVersions|json_encode|e('js')}}'),
           lastSaves: JSON.parse('{{lastSaves|json_encode|e('js')}}'),
           canDefinePages: '{{ canDefinePages }}' === '1',
           metadata: JSON.parse('{{metaData|json_encode|e('js')}}'),
-          userId: parseInt('{{ userId }}'),
-          userInfo: JSON.parse("{{userInfo|json_encode|e('js')}}"),
-          showLanguageSelector: parseInt('{{ showLanguageSelector }}') === 1,
-          copyrightHtml: `{{ copyright|raw}}`
         })
       });
     </script>

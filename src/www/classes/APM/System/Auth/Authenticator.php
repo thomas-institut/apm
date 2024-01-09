@@ -33,29 +33,27 @@
 namespace APM\System\Auth;
 
 use APM\System\ApmContainerKey;
+use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
-use AverroesProject\Data\UserManager;
+use APM\System\User\UserManagerInterface;
+use APM\System\User\UserNotFoundException;
 use DateInterval;
 use DateTime;
-use Dflydev\FigCookies\Cookies;
-use Dflydev\FigCookies\Modifier\SameSite;
-use DI\DependencyException;
-use DI\NotFoundException;
 use Exception;
 use Monolog\Logger;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
-use \Dflydev\FigCookies\FigRequestCookies;
-use \Dflydev\FigCookies\SetCookie;
-use \Dflydev\FigCookies\FigResponseCookies;
+use Psr\Http\Message\ServerRequestInterface;
+use Dflydev\FigCookies\FigRequestCookies;
+use Dflydev\FigCookies\SetCookie;
+use Dflydev\FigCookies\FigResponseCookies;
 use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Interfaces\RouteParserInterface;
-use Slim\Routing\RouteParser;
+use Slim\Psr7\Response;
 use Slim\Views\Twig;
+use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\Profiler\SimpleProfiler;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -82,33 +80,21 @@ class Authenticator {
     private Logger $apiLogger;
     private Logger $siteLogger;
     private Logger $logger;
-
-    /**
-     * @var RouteParser|RouteParserInterface
-     */
-    protected RouteParserInterface|RouteParser $router;
+    protected RouteParserInterface $router;
 
    
-    private string $cookieName = 'rme';
+    private string $cookieName = 'rme2';
     private string $secret = '1256106427895916503';
     private bool $debugMode;
    
     //Constructor
 
-    /**
-     * @var UserManager
-     */
-    private UserManager $userManager;
-    /**
-     * @var Twig
-     */
-    private Twig $view;
 
-    /**
-     * @var SystemManager
-     */
+
+    private Twig $view;
     private SystemManager $systemManager;
     private SimpleProfiler $profiler;
+    private UserManagerInterface $userManager;
 
     /**
      * Authenticator constructor.
@@ -121,13 +107,12 @@ class Authenticator {
         $this->container = $ci;
         $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
         $this->router = $this->systemManager->getRouter();
-        $this->userManager = $this->systemManager->getDataManager()->userManager;
+        $this->userManager = $this->systemManager->getUserManager();
         $this->logger = $this->systemManager->getLogger()->withName('AUTH');
         $this->view = $this->systemManager->getTwig();
         $this->apiLogger = $this->logger->withName('AUTH-API');
         $this->siteLogger = $this->logger->withName('AUTH-SITE');
         $this->profiler = new SimpleProfiler();
-
         $this->debugMode = false;
     }
 
@@ -147,9 +132,9 @@ class Authenticator {
         return bin2hex(random_bytes(20));
     }
 
-    private function generateLongTermCookieValue($token, $userId): string
+    private function generateLongTermCookieValue($token, $userTid): string
     {
-        $v = $userId . ':' . $token;
+        $v = $userTid . ':' . $token;
         return $v . ':' . $this->generateMac($v);
     }
     
@@ -172,12 +157,15 @@ class Authenticator {
         }
     }
 
-    public function authenticate(Request $request, RequestHandlerInterface $handler): Response
+    /**
+     * @throws UserNotFoundException
+     * @throws PersonNotFoundException
+     */
+    public function authenticateSiteRequest(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         if ($this->debugMode) {
             $this->profiler->start();
         }
-
 
         session_start();
 
@@ -188,33 +176,39 @@ class Authenticator {
         if (!isset($_SESSION['userid'])){
             // Check for long term cookie
             $this->debug('SITE : No session');
-            $userId = $this->getUserIdFromLongTermCookie($request);
-            if ($userId !== false) {
+            $userTid = $this->getUserTidFromLongTermCookie($request);
+            if ($userTid > 0) {
                 $success = true;
             }
         } else {
-            $userId = $_SESSION['userid'];
-            $this->debug('SITE : Session is set, user id = ' . $userId);
-            if ($this->userManager->userExistsById($userId)){
-                $this->debug("User id exists!");
+            $userTid = intval($_SESSION['userid']);
+            $this->debug('SITE : Session is set, user tid = ' . $userTid);
+            if ($this->userManager->isUser($userTid)){
+                $this->debug("Tid $userTid is a user");
                 $success = true;
             } else {
-                $this->debug("User id does not exist!");
+                $this->debug("Tid $userTid is NOT a user");
             }
-            
         }
         if ($success){
             $this->debug('SITE: Success, go ahead!');
-            $_SESSION['userid'] = $userId;
-            $ui = $this->userManager->getUserInfoByUserId($userId);
-            if ($this->userManager->isUserAllowedTo($userId, 'manageUsers')){
-                $ui['manageUsers'] = 1;
-            }
-            if ($this->userManager->isRoot($userId)) {
-                $ui['isRoot'] = true;
-            }
+            $_SESSION['userid'] = $userTid;
+            $userData = $this->userManager->getUserData($userTid);
 
-            $this->container->set(ApmContainerKey::USER_INFO, $ui);
+            $userInfo = $userData->getExportObject();
+            unset($userInfo['passwordHash']);
+
+            $personData = $this->systemManager->getPersonManager()->getPersonEssentialData($userTid);
+            $userInfo['name'] = $personData->name;
+            // legacy data
+            // TODO: get rid of this!
+            $userInfo['fullname'] = $personData->name;
+            $userInfo['email'] = '';
+            $userInfo['isRoot'] = $userData->root;
+            $userInfo['manageUsers'] = $userData->root;
+            $userInfo['tidString'] = Tid::toBase36String($userData->tid);
+
+            $this->container->set(ApmContainerKey::USER_INFO, $userInfo);
             if ($this->debugMode) {
                 $this->profiler->stop();
                 $this->debug("Profiler", $this->profiler->getLaps());
@@ -225,9 +219,9 @@ class Authenticator {
                     . "and redirecting to login");
             session_unset();
             session_destroy();
-            $response = new \Slim\Psr7\Response();
-            $response = FigResponseCookies::expire($response, 
-                    $this->cookieName);
+            $response = new Response();
+            $cookie = SetCookie::create($this->cookieName);
+            $response = FigResponseCookies::set($response, $cookie->expire());
 
             $loginUrl = $this->router->urlFor('login');
             $this->logger->debug('Redirecting to ' . $loginUrl);
@@ -242,115 +236,14 @@ class Authenticator {
             ->withStatus($status);
     }
 
-
     /**
-     * Authenticates a user via API call
-     *   If the request includes cookies, it will use them to try to authenticate the
-     *   user that way. Otherwise, it will look for user/pwd in data.
-     *   Will send a cookie with the authentication token both in the Set-Cookie
-     *   header and as part of the response data (together with user information)
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     * @throws Exception
-     */
-    public function apiLogin(Request $request, Response $response): Response {
-        $this->debugMode = true;
-        $this->debug('API Login request');
-        $this->debug("Login headers", $request->getHeaders());
-        $this->debug('Request method is ' . $request->getMethod());
-        $origin = $request->getHeaders()["Origin"];
-        // TODO: check origin against list of valid origins
-        $response = $response->withHeader("Access-Control-Allow-Origin", $origin)->withHeader("Access-Control-Allow-Credentials", "true");
-
-        // first try the authentication cookie
-        $cookies = Cookies::fromRequest($request);
-        if ($cookies->has($this->cookieName)) {
-            $userId = $this->getUserIdFromLongTermCookie($request);
-            if ($userId !== false){
-                $this->apiLogger->info("User $userId authenticated with long term cookie");
-                $userData = $this->userManager->getUserInfoByUserId($userId);
-                return $this->responseWithJson($response, ['userId' => $userId, 'userData' => $userData]);
-           }
-            $this->debug("Cookie is no good, will try user/pwd");
-        }
-        // no luck, try user/pwd in post
-        if ($request->getMethod() === 'POST') {
-            $data = $request->getParsedBody();
-            // DON'T DO THIS:    $this->debug('Got POST data', $data);
-            // ... it will show the user password in the log!
-            if (isset($data['user']) && isset($data['pwd'])){
-                $this->debug('Got data for login');
-                $user = htmlspecialchars($data['user']);
-                $pwd = htmlspecialchars($data['pwd']);
-                $redirectUrl = $data['redirect'] ?? '';
-                $this->debug('Trying to log in user ' . $user);
-                if ($this->userManager->verifyUserPassword($user, $pwd)){
-                    $userAgent = $request->getHeader('User-Agent')[0];
-                    $ipAddress = $request->getServerParams()['REMOTE_ADDR'];
-                    $this->apiLogger->info("API Login", ['user' => $user, 'user_agent' => $userAgent, 'ip_address' => $ipAddress ]);
-                    // Success!
-                    $userId = $this->userManager->getUserIdFromUsername($user);
-                    $this->debug('Generating token cookie');
-                    $token = $this->generateRandomToken();
-                    $this->userManager->storeUserToken(
-                        $userId,
-                        $userAgent,
-                        $ipAddress,
-                        $token
-                    );
-                    $cookieValue = $this->generateLongTermCookieValue($token,
-                        $userId);
-                    $now = new DateTime();
-                    $cookie = SetCookie::create($this->cookieName)
-                        ->withValue($cookieValue)->withSameSite(SameSite::none())->withSecure(true)
-                        ->withExpires($now->add(
-                        new DateInterval('P14D')));
-                    $response = FigResponseCookies::set($response, $cookie);
-                    $this->debug("Redirect URL '$redirectUrl'");
-                    if ($this->isValidRedirectUrl($redirectUrl)) {
-                        return $response->withHeader('Location',
-                            $redirectUrl);
-                    }
-                    $this->apiLogger->info("User $userId authenticated with user/pwd data");
-                    $userData = $this->userManager->getUserInfoByUserId($userId);
-                    return $this->responseWithJson($response, [
-                        'userId' => $userId,
-                        'userData' => $userData,
-                        'authCookie' => $cookie->__toString()
-                    ]);
-                }
-                else {
-                    $this->apiLogger->notice('Wrong user/password',
-                        ['user' => $user]);
-                }
-            } else {
-                $this->debug("No user or password in data");
-            }
-        }
-
-        // Authentication fail
-        return $response->withStatus(401);
-    }
-
-    private function isValidRedirectUrl($url) : bool {
-        if (is_null($url) || $url === '') {
-            return false;
-        }
-        // TODO: check against a list of valid urls
-        return true;
-    }
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     * @throws LoaderError
-     * @throws RuntimeError
      * @throws SyntaxError
+     * @throws RuntimeError
+     * @throws UserNotFoundException
+     * @throws LoaderError
      * @throws Exception
      */
-    public function login(Request $request, Response $response): Response
+    public function login(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         session_start();
         $this->debug('Site Login request');
@@ -363,27 +256,33 @@ class Authenticator {
             // ... it will show the user password in the log!
             if (isset($data['user']) && isset($data['pwd'])){
                 $this->debug('Got data for login');
-                $user = htmlspecialchars($data['user']);
+                $userName = htmlspecialchars($data['user']);
                 $pwd = htmlspecialchars($data['pwd']);
                 $rememberMe = $data['rememberme'] ?? '';
-                $this->debug('Trying to log in user ' . $user);
-                if ($this->userManager->verifyUserPassword($user, $pwd)){
+                $this->debug('Trying to log in user ' . $userName);
+                $userTid = $this->userManager->getUserTidForUserName($userName);
+
+                if ($userTid !== -1 && $this->userManager->verifyPassword($userTid, $pwd)){
                     $userAgent = $request->getHeader('User-Agent')[0];
                     $ipAddress = $request->getServerParams()['REMOTE_ADDR'];
-                    $this->siteLogger->info("Login", ['user' => $user, 'user_agent' => $userAgent, 'ip_address' => $ipAddress ]);
+                    $this->siteLogger->info("Login", [
+                        'tid' => $userTid,
+                        'tidString' => Tid::toBase36String($userTid),
+                        'username' => $userName,
+                        'user_agent' => $userAgent,
+                        'ip_address' => $ipAddress
+                    ]);
                     // Success!
-                    $userId = $this->userManager->getUserIdFromUsername($user);
-                    $_SESSION['userid'] = $userId;
+                    $_SESSION['userid'] = $userTid;
                     $this->debug('Generating token cookie');
                     $token = $this->generateRandomToken();
-                    $this->userManager->storeUserToken(
-                            $userId, 
+                    $this->userManager->storeToken(
+                            $userTid,
                             $userAgent, 
-                            $ipAddress,
                             $token
                     );
                     $cookieValue = $this->generateLongTermCookieValue($token, 
-                            $userId);
+                            $userTid);
                     if ($rememberMe === 'on'){
                         $this->debug('User wants to be remembered');
                         $now = new DateTime();
@@ -402,7 +301,7 @@ class Authenticator {
                 }
                 else {
                     $this->siteLogger->notice('Wrong user/password', 
-                            ['user' => $user]);
+                            ['user' => $userName]);
                     $msg = "Wrong username/password, please try again";
                 }
             }
@@ -419,7 +318,7 @@ class Authenticator {
                 ]);
     }
     
-    public function logout(Request $request, Response $response)
+    public function logout(ResponseInterface $response): ResponseInterface
     {
         $this->debug('Logout request');
         session_start();
@@ -428,42 +327,49 @@ class Authenticator {
             return $response->withHeader('Location', 
                 $this->router->urlFor('home'))->withStatus(302);
         }
-        $userId = $_SESSION['userid'];
-        $userName = $this->userManager->getUsernameFromUserId($userId);
-        if ($userName === false) {
+        $userTid = intval($_SESSION['userid']);
+        try {
+            $userData = $this->userManager->getUserData($userTid);
+        } catch (UserNotFoundException) {
             $this->siteLogger->error("Can't get username from user Id at "
-                    . "logout attempt", ['userId' => $userId]);
+                . "logout attempt", ['userId' => $userTid]);
         }
-        $this->siteLogger->info('Logout', ['user' => $userName]);
+
+        $this->siteLogger->info('Logout',
+            [
+                'tid' => $userData->tid ?? -1,
+                'tidString' => Tid::toBase36String($userData->tid) ?? '',
+                'userName' => $userData->userName ?? ''
+            ]
+        );
         session_unset();
         session_destroy();
-        $response = FigResponseCookies::expire($response, $this->cookieName);
+        $cookie = SetCookie::create($this->cookieName);
+        $response = FigResponseCookies::set($response, $cookie->expire());
         return $response->withHeader('Location',$this->router->urlFor('home'))
             ->withStatus(302);
     }
 
-    public function authenticateDataApiRequest(Request $request, RequestHandlerInterface $handler): Response
+    public function authenticateDataApiRequest(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $this->container->set(ApmContainerKey::API_USER_ID, 0);
-        //$this->logger->debug("DataApi headers", $request->getHeaders());
+        $this->container->set(ApmContainerKey::API_USER_TID, 0);
         return $handler->handle($request);
     }
     
     
-    public function authenticateApiRequest (Request $request, RequestHandlerInterface $handler): \Slim\Psr7\Response|Response
+    public function authenticateApiRequest (ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $this->debugMode = true;
         if ($this->debugMode) {
             $this->profiler->start();
         }
-        $userId = $this->getUserIdFromLongTermCookie($request);
-        if ($userId === false){
+        $userTid = $this->getUserTidFromLongTermCookie($request);
+        if ($userTid <= 0){
             $this->apiLogger->notice("Authentication fail");
-            $response = new \Slim\Psr7\Response();
+            $response = new Response();
             return $response->withStatus(401);
         }
         $this->debug('API : Success, go ahead!');
-        $this->container->set(ApmContainerKey::API_USER_ID, $userId);
+        $this->container->set(ApmContainerKey::API_USER_TID, $userTid);
         if ($this->debugMode) {
             $this->profiler->stop();
             $this->debug("Profiler", $this->profiler->getLaps());
@@ -471,31 +377,34 @@ class Authenticator {
         return $handler->handle($request);
     }
     
-    private function getUserIdFromLongTermCookie(Request $request)
+    private function getUserTidFromLongTermCookie(ServerRequestInterface $request): int
     {
-        //$this->debug('Checking long term cookie');
         $longTermCookie = FigRequestCookies::get($request, $this->cookieName);
-        if (!is_null($longTermCookie) and $longTermCookie->getValue()){
-            $cookieValue = $longTermCookie->getValue();
-            list($userId, $token, $mac) = explode(':', $cookieValue);
-            if (hash_equals($this->generateMac($userId . ':' . $token), $mac)) {
-                $userToken = $this->userManager->getUserToken(
-                    $userId,
-                    $request->getHeader('User-Agent')[0]
-                );
+        $cookieValue = $longTermCookie->getValue();
+        if (!is_null($cookieValue)){
+            list($userTid, $token, $mac) = explode(':', $cookieValue);
+            $userTid = intval($userTid);
+            if (hash_equals($this->generateMac($userTid . ':' . $token), $mac)) {
+                try {
+                    $userToken = $this->userManager->getTokenByUserAgent(
+                        $userTid,
+                        $request->getHeader('User-Agent')[0]
+                    );
+                } catch (UserNotFoundException) {
+                    return -1;
+                }
                 if (hash_equals($userToken, $token)){
-                    //$this->debug('Cookie looks good, user = ' . $userId);
-                    return $userId;
+                    return $userTid;
                 }
                 $this->debug('User tokens do not match -> ' . $userToken . 
                         ' vs ' . $token);
-                return false;
+                return -1;
             } 
             $this->debug('Macs do not match!');
-            return false;
+            return -1;
         }
         $this->debug('There is no long term cookie. Fail!');
-        return false;
+        return -1;
     }
     
 }

@@ -44,10 +44,6 @@ class SiteDashboard extends SiteController
         $this->reportCookieSize();
         $this->profiler->stop();
         $this->logProfilerData('Dashboard');
-        return $this->renderPage($response, self::TEMPLATE_DASHBOARD, [
-            'userId' => $userId,
-            'userInfo' => $this->userInfo,
-            'showLanguageSelector' => $this->config[ApmConfigParameter::SHOW_LANG_SELECTOR] ? '1' : 0
-        ]);
+        return $this->renderPage($response, self::TEMPLATE_DASHBOARD, []);
     }
 }

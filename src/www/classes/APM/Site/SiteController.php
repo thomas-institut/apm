@@ -34,12 +34,12 @@ use APM\System\ApmContainerKey;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use Psr\Http\Message\RequestInterface;
-use \Psr\Http\Message\ResponseInterface as Response;
 use APM\System\ApmSystemManager;
 use AverroesProject\Data\DataManager;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Slim\Psr7\Response;
 use Slim\Routing\RouteParser;
 use Slim\Views\Twig;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
@@ -50,7 +50,6 @@ use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 
-use \Psr\Http\Message\ServerRequestInterface as Request;
 
 /**
  * Site Controller class
@@ -65,45 +64,17 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 
     use LoggerAwareTrait;
     use CodeDebugWithLoggerTrait;
-    /**
-     * @var ContainerInterface
-     */
+
     protected ContainerInterface $container;
-    
-    /** @var ApmSystemManager */
-    protected $systemManager;
-    
-    /** @var Twig */
-    protected $view;
-    
-    /** @var array */
-    protected $config;
-    
-    /** @var DataManager */
-    protected $dataManager;
-    
-    /** @var bool */
+    protected ApmSystemManager $systemManager;
+    protected Twig $view;
+    protected array $config;
+    protected DataManager $dataManager;
     protected bool $userAuthenticated;
-    
-    /** @var array */
-    protected $userInfo;
-
-    /**
-     * @var RouteParser
-     */
-    protected $router;
-
-    /**
-     * @var array
-     */
-    protected $languages;
-    /**
-     * @var SimpleProfiler
-     */
+    protected array $userInfo;
+    protected RouteParser $router;
+    protected array $languages;
     protected SimpleProfiler $profiler;
-    /**
-     * @var array
-     */
     protected array $languagesByCode;
 
     /**
@@ -167,35 +138,41 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return $lapInfo[count($lapInfo)-1]['time']['cumulative'];
     }
 
-//    protected function responseWithText(Response $response, string $text, int $status=200) : Response {
-//        $response->getBody()->write($text);
-//        return $response->withStatus($status);
-//    }
 
     /**
-     * @param Response $response
+     * @param ResponseInterface $response
      * @param string $template
      * @param array $data
      * @param bool $withBaseData
-     * @return \Slim\Psr7\Response|Response
+     * @return ResponseInterface
      */
-    protected function renderPage(Response $response, string $template, array $data, bool $withBaseData = true): \Slim\Psr7\Response|Response
+    protected function renderPage(ResponseInterface $response, string $template, array $data, bool $withBaseData = true): ResponseInterface
     {
 
-
-
         if ($withBaseData) {
+            // legacy data for old code pages
+            // this will disappear eventually
             $data['copyright']  = $this->getCopyrightNotice();
             $data['baseurl'] = $this->getBaseUrl();
             $data['userAuthenticated'] = $this->userAuthenticated;
+            $data['userInfo'] = [];
+            $data['userId'] = -1;
             if ($this->userAuthenticated) {
-                $data['userinfo'] = $this->userInfo;
+                $data['userInfo'] = $this->userInfo;
+                $data['userId'] = $this->userInfo['id'];
             }
-            $data['showLanguageSelector'] = $this->config[ApmConfigParameter::SHOW_LANG_SELECTOR] ? '1' : 0;
-            $data['userInfo'] = $this->userInfo;
+
+            // Data for new code pages (e.g. NormalPage js class descendants)
+            $basicData = [];
+            $basicData['apmVersion'] = $this->config[ApmConfigParameter::VERSION];
+            $basicData['cacheDataId'] = $this->config[ApmConfigParameter::JS_APP_CACHE_DATA_ID];
+            $basicData['userInfo'] = $data['userInfo'];
+            $basicData['showLanguageSelector'] = $this->config[ApmConfigParameter::SITE_SHOW_LANGUAGE_SELECTOR] ? '1' : 0;
+            $basicData['baseUrl'] = $this->getBaseUrl();
+            $data['basicData'] = $basicData;
         }
 
-        $responseToReturn = new \Slim\Psr7\Response();
+        $responseToReturn = new Response();
         $twigExceptionRaised = false;
         $errorMessage = '';
         try {
@@ -221,7 +198,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return $responseToReturn;
     }
 
-    protected function getBasicErrorPage(Response $response, string $title, string $errorMessage) : Response
+    protected function getBasicErrorPage(ResponseInterface $response, string $title, string $errorMessage) : ResponseInterface
     {
 
         $html = "<!DOCTYPE html><html lang='en'><head><title>$title</title></head><body><h1>APM Error</h1><p>$errorMessage</p></body></html>";
@@ -240,14 +217,8 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return $this->systemManager->getBaseUrl();
     }
 
-    protected function getAbsoluteBaseUrlFromRequest(RequestInterface $request) : string{
-        $path = $request->getUri();
-
-        return rtrim($path, '/');
-    }
-
     // Utility function
-    protected function buildPageArray($pagesInfo, $transcribedPages, $navByPage = true): array
+    protected function buildPageArray($pagesInfo, $transcribedPages): array
     {
         $thePages = array();
         foreach ($pagesInfo as $page) {
@@ -262,12 +233,12 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             }
 
             $thePage['classes'] = '';
-            if (array_search($page['page_number'], $transcribedPages) === FALSE){
+            if (!in_array($page['page_number'], $transcribedPages)){
                 $thePage['classes'] =
                     $thePage['classes'] . ' withouttranscription';
             }
             $thePage['classes'] .= ' type' . $page['type'];
-            array_push($thePages, $thePage);
+            $thePages[] = $thePage;
         }
         return $thePages;
     }
@@ -291,34 +262,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return $thePages;
     }
 
-//    protected function genDocPagesListForUser($userId, $docId): string
-//    {
-//        $docInfo = $this->dataManager->getDocById($docId);
-//        $url = $this->router->urlFor('doc.showdoc', ['id' => $docId]);
-//        $title = $docInfo['title'];
-//        $docListHtml = '<li>';
-//        $docListHtml .= "<a href=\"$url\" title=\"View Document\">$title</a>";
-//        $docListHtml .= '<br/><span style="font-size: 0.9em">';
-//        $pageIds = $this->dataManager->getPageIdsTranscribedByUser($userId, $docId);
-//
-//        $nPagesInLine = 0;
-//        $maxPagesInLine = 25;
-//        foreach($pageIds as $pageId) {
-//            $nPagesInLine++;
-//            if ($nPagesInLine > $maxPagesInLine) {
-//                $docListHtml .= "<br/>";
-//                $nPagesInLine = 1;
-//            }
-//            $pageInfo = $this->dataManager->getPageInfo($pageId);
-//            $pageNum = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
-//            $pageUrl = $this->router->urlFor('pageviewer.docseq', ['doc' => $docId, 'seq'=>$pageInfo['seq']]);
-//            $docListHtml .= "<a href=\"$pageUrl\" title=\"View page in new tab\" target=\"_blank\">$pageNum</a>&nbsp;&nbsp;";
-//        }
-//        $docListHtml .= '</span></li>';
-//
-//        return $docListHtml;
-//    }
-
 
     protected function getNormalizerData(string $language, string $category) : array {
         $normalizerManager = $this->systemManager->getNormalizerManager();
@@ -334,7 +277,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return $normalizerData;
     }
 
-    protected function reportCookieSize() {
+    protected function reportCookieSize() : void {
         $cookieString = $_SERVER['HTTP_COOKIE'] ?? 'N/A';
         if (strlen($cookieString) > self::COOKIE_SIZE_THRESHOLD) {
             $this->codeDebug("Got a cookie string of " . strlen($cookieString) . " bytes for user " . $this->userInfo['id']);

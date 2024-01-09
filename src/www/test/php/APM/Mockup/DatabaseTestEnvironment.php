@@ -139,7 +139,7 @@ EOD;
         $container->addDefinitions([
             ApmContainerKey::SYSTEM_MANAGER => $systemManager,
             ApmContainerKey::USER_ID => 0,  // invalid user Ids, must be set downstream for some API and Site operations
-            ApmContainerKey::API_USER_ID => 0,
+            ApmContainerKey::API_USER_TID => 0,
         ]);
 
         $this->container = $container;
@@ -229,7 +229,7 @@ EOD;
      * @throws \Exception
      */
     public function setApiUser(int $userId) {
-        $this->getContainer()->set(ApmContainerKey::API_USER_ID, $userId);
+        $this->getContainer()->set(ApmContainerKey::API_USER_TID, $userId);
 
     }
 

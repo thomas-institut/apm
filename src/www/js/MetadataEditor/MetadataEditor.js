@@ -17,7 +17,10 @@ export class MetadataEditor {
             callback: {type:'function', required: true},
             theme: {type:'string', required: true},
             backlink: {type:'string', required: false, default: ''},
-            hideSaveButton: {type:'boolean', default: false}
+            hideSaveButton: {type:'boolean', default: false},
+            dialog: {type: 'object', required: false, default: {}},
+            dialogRootSelector: {type:'string', required: false, default: ''},
+            dialogRootDatalistSelector: {type: 'string', required: false, default: ''}
         }
 
         const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "MetadataEditor"})
@@ -33,7 +36,6 @@ export class MetadataEditor {
         this.tagEditor = undefined
         this.singleEdit = false
         this.people = []
-        this.dialog = ''
 
         // Selectors
         this.buttonsSelectorTop = `${this.options.containerSelector} .buttons_top`
@@ -68,6 +70,7 @@ export class MetadataEditor {
                 break
         }
 
+        // REMOVE?
         if (this.options.containerSelector.includes('confirm-dialog')) {
             tableClass = 'table'
         }
@@ -80,7 +83,6 @@ export class MetadataEditor {
                             <br>
                             <table class='${tableClass} metadataTable' style="table-layout:fixed;">
                             </table>
-                            <br>
                             <div class="buttons_bottom" align="left"></div>
                             <div class="errorMessage" style="font-style: oblique"></div>
                             <br>`)
@@ -100,6 +102,7 @@ export class MetadataEditor {
 
     setupCreateMode() {
         this.options.mode = this.mode.create
+
         this.buildEntitySchema(() => {
             this.makeTableStructure()
             this.setupTableForDataInput(() => {
@@ -422,47 +425,77 @@ export class MetadataEditor {
 
     makePersonFormEvent(inputId, listSelector, paragraphSelector) {
 
+        let dialog = ''
         let buttonId = inputId + '_create-person-from-datalist'
         let buttonSelector = this.options.containerSelector + ' .' + buttonId
         inputId = this.options.containerSelector + ' .' + inputId
         paragraphSelector = this.options.containerSelector + ' .' + paragraphSelector
+
+        if (!(this.options.dialog instanceof ConfirmDialog)) {
+            dialog = this.makeDialog(inputId)
+        } else {
+            $(inputId).on('focus', () => {
+                dialog = this.makeDialog(inputId)
+            })
+        }
 
         $(inputId).on('input', () => {
             let value = $(inputId).val()
             $(buttonSelector).remove()
             if ($(`${listSelector} option[value=${value}]`).attr('id') === undefined) {
                 $(paragraphSelector).append(`<button class=${buttonId}>Create</button>`)
-                this.makeCreatePersonFromInputFormButtonEvent(buttonSelector)
+                this.makeCreatePersonFromInputFormButtonEvent(buttonSelector, dialog, inputId)
             }
         })
     }
 
-    makeCreatePersonFromInputFormButtonEvent (buttonSelector) {
+    makeDialog(inputId) {
+        let dialogBody = `<div class="personCreatorDialog" align="center"></div>`
+
+        let dialog = new ConfirmDialog({
+            size: 'xl',
+            acceptButtonLabel: 'Save',
+            body: dialogBody,
+            metadataEditor: true,
+            cancelFunction: () => {
+                console.log(`Canceled person creation.`)
+            },
+            reuseDialog: true
+        })
+
+        let dialogSelector = dialog.getSelector()
+        this.getPersonSchema((entity) => {
+            this.setupMetadataEditorInDialogWindow(entity, `${dialogSelector} .personCreatorDialog`, dialog, inputId)
+        })
+
+        return dialog
+    }
+
+    makeCreatePersonFromInputFormButtonEvent (buttonSelector, dialog, inputId) {
 
         $(buttonSelector).on('click', () => {
-
-            let dialogBody = `<div id="personCreatorDialog" align="center"></div>`
-
-            let dialog = new ConfirmDialog({
-                size: 'lg',
-                acceptButtonLabel: 'Save',
-                body: dialogBody,
-                metadataEditor: true,
-                cancelFunction: () => {
-                    console.log(`Canceled person creation.`)
-                }
-            })
-
-            let dialogSelector = dialog.getSelector()
+            this.copyValueToDialog(inputId, dialog)
             dialog.show()
-
-            this.getPersonSchema((entity) => {
-                this.setupMetadataEditorInDialogWindow(entity, `${dialogSelector} #personCreatorDialog`)
-            })
         })
     }
 
-    setupMetadataEditorInDialogWindow (entity, selector) {
+    copyValueToDialog(inputId, dialog) {
+        let value = $(inputId).val()
+        let dialogSelector = dialog.getSelector()
+        $(`${dialogSelector} .entity_attr1_form`).val(value)
+    }
+
+    copyValueFromDialog() {
+        let value = $(`${this.options.containerSelector} .entity_attr1_form`).val()
+        $(this.options.dialogRootSelector).val(value)
+        $(this.options.dialogRootDatalistSelector).append(`<option value=${name} id='5000'>${name}</option>`)
+    }
+
+    setupMetadataEditorInDialogWindow (entity, selector, dialog, inputId) {
+
+        let keyIndex = inputId.match(/\d+/)[0]
+        let datalistSelector = this.options.containerSelector + " #entity_attr" + keyIndex + "_form_list"
+
         let mde = new MetadataEditor({
             containerSelector: selector,
             entityId: entity.id,
@@ -474,6 +507,9 @@ export class MetadataEditor {
             },
             mode: 'create',
             theme: 'vertical',
+            dialog: dialog,
+            dialogRootSelector: inputId,
+            dialogRootDatalistSelector: datalistSelector
         })
     }
 
@@ -650,7 +686,13 @@ export class MetadataEditor {
                 //this.tagEditor.saveTags()
                 this.options.callback(this.entity, this.options.mode, () => {
                     this.logSaveAction(this.options.mode)
-                    this.setupShowMode()
+                    if (this.options.dialog !== {}) {
+                        this.copyValueFromDialog()
+                        this.options.dialog.hide()
+                        this.options.dialog.destroy()
+                    } else {
+                        this.setupShowMode()
+                    }
                 })
             }
         })

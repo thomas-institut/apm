@@ -220,9 +220,9 @@ export class ConfirmDialog {
 
     if (this.options.metadataEditor) {
       return `${preHtml}
-            <div class="form-body ${bodyExtraClass}">
+            <div class="form-body ${bodyExtraClass}" align="right">
+                <a class="cancel_button card-link cancel-btn">${this.options.cancelButtonLabel}</a>
                 ${this.options.body}
-                <button type="submit" class="btn btn-primary cancel-btn">${this.options.cancelButtonLabel}</button>
             </div>           
             ${postHtml}`
     } else {

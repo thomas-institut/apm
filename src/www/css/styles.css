@@ -324,3 +324,8 @@ span.tagRemove {
 li.addedTag {
     white-space: nowrap;
 }
+
+.personCreatorDialog {
+    overflow: auto;
+    max-height: 400px;
+}

@@ -443,10 +443,10 @@ class ApiUsers extends ApiController
     public function getCollationTableInfo(Request $request, Response $response) : Response
     {
         $this->profiler->start();
-        $userId =  (int) $request->getAttribute('userId');
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $userId);
+        $userTid =  (int) $request->getAttribute('userTid');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . Tid::toBase36String($userTid));
 
-        $cacheKey = self::CACHE_KEY_PREFIX_CT_INFO . $userId;
+        $cacheKey = self::CACHE_KEY_PREFIX_CT_INFO . $userTid;
 
         $cacheHit = true;
         $dataCache = $this->systemManager->getSystemDataCache();
@@ -455,7 +455,7 @@ class ApiUsers extends ApiController
             $data = unserialize($dataCache->get($cacheKey));
         } catch (KeyNotInCacheException) {
             $cacheHit = false;
-            $data = self::buildCollationTableInfoForUser($this->systemManager, $userId);
+            $data = self::buildCollationTableInfoForUser($this->systemManager, $userTid);
             $dataCache->set($cacheKey, serialize($data), self::CACHE_TTL_CT_INFO);
         }
 
@@ -467,13 +467,12 @@ class ApiUsers extends ApiController
         return $this->responseWithJson($response, $data);
     }
 
-    static public function buildCollationTableInfoForUser(SystemManager $systemManager, int $userId) : array {
+    static public function buildCollationTableInfoForUser(SystemManager $systemManager, int $userTid) : array {
         $ctManager = $systemManager->getCollationTableManager();
-        $tableIds = $ctManager->getCollationTableVersionManager()->getActiveCollationTableIdsForUserId($userId);
+        $tableIds = $ctManager->getCollationTableVersionManager()->getActiveCollationTableIdsForUser($userTid);
         $logger = $systemManager->getLogger();
         $tableInfo = [];
         $worksCited = [];
-        //$this->debug("Getting collation table info for user $userId", [ 'tableIds' => $tableIds]);
         foreach($tableIds as $tableId) {
             try {
                 $ctData = $ctManager->getCollationTableById($tableId);

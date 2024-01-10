@@ -9,7 +9,7 @@
 <script>
     $( () => {
         new DocDefPages( {
-          basicData:  JSON.parse("{{basicData|json_encode|e('js')}}"),
+          commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
           doc: JSON.parse("{{doc|json_encode|e('js')}}"),
           numPages: {{doc.numPages}},
         });

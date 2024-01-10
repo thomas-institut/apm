@@ -205,8 +205,8 @@ class ApmUrlGenerator {
     apiUserGetCollationTableInfo(id) {
         return this.base + '/api/user/' + id + '/collationTables';
     }
-    apiUserGetMultiChunkEditionInfo(id) {
-        return this.base + '/api/user/' + id + '/multiChunkEditions';
+    apiUserGetMultiChunkEditionInfo(tid) {
+        return `${this.base}/api/user/${tid}/multiChunkEditions`
     }
 
     apiUserPasswordChange(id) {

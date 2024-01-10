@@ -62,7 +62,7 @@ export class DashboardPage extends NormalPage {
   }
 
   async fetchCollationTablesAndEditions() {
-   let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.userId))
+   let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.userTid))
    let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo'])
    this.chunkEditionsCollapse.setContent(listHtml.editions)
    this.collationTablesCollapse.setContent(listHtml.cTables)

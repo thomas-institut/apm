@@ -14,7 +14,7 @@
     <script>
       $( () => {
         new DocPage({
-          basicData:  JSON.parse("{{basicData|json_encode|e('js')}}"),
+          commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
           doc: JSON.parse('{{doc|json_encode|e('js')}}'),
           chunkInfo: JSON.parse('{{chunkInfo|json_encode|e('js')}}'),
           versionInfo: JSON.parse('{{lastVersions|json_encode|e('js')}}'),

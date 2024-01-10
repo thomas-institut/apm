@@ -13,7 +13,7 @@
     <script>
       $( () => {
         new WorksPage({
-          basicData:  JSON.parse("{{basicData|json_encode|e('js')}}"),
+          commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
           works: JSON.parse('{{works|json_encode|e('js')}}'),
         })
       });

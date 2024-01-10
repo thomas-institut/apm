@@ -27,43 +27,16 @@ use ThomasInstitut\TimeString\TimeString;
  */
 class CollationTableVersionInfo
 {
-    /**
-     * The version id
-     * @var int
-     */
+
     public int $id;
-    /**
-     * Collation table id
-     * @var int
-     */
+
     public int $collationTableId;
-//    /**
-//     * @var int
-//     */
-//    public $column;
-    /**
-     * @var string
-     */
     public string $timeFrom;
-    /**
-     * @var string
-     */
     public string $timeUntil;
-    /**
-     * @var int
-     */
     public int $authorId;
-    /**
-     * @var string
-     */
+    public int $authorTid;
     public string $description;
-    /**
-     * @var bool
-     */
     public bool $isMinor;
-    /**
-     * @var bool
-     */
     public bool $isReview;
 
     public function __construct()
@@ -73,17 +46,20 @@ class CollationTableVersionInfo
         $this->timeFrom = TimeString::TIME_ZERO;
         $this->timeUntil = TimeString::TIME_ZERO;
         $this->authorId = 0;
+        $this->authorTid = 0;
         $this->description = '';
         $this->isMinor = false;
         $this->isReview = false;
     }
 
-    public function setFromDbRow(array $row) {
+    public function setFromDbRow(array $row): void
+    {
         $this->id = intval($row['id']);
         $this->collationTableId = intval($row['ct_id']);
         $this->timeFrom = $row['time_from'];
         $this->timeUntil = $row['time_until'];
         $this->authorId = intval($row['author_id']);
+        $this->authorTid = intval($row['author_tid']);
         $this->description = $row['descr'];
         $this->isMinor = intval($row['minor']) !== 0;
         $this->isReview = intval($row['review']) !== 0;
@@ -102,7 +78,8 @@ class CollationTableVersionInfo
             'ct_id' => $this->collationTableId,
             'time_from' => $this->timeFrom,
             'time_until' => $this->timeUntil,
-            'author_id' => $this->authorId,
+            'author_id' => 0,
+            'author_tid' => $this->authorTid,
             'descr' => $this->description,
             'minor' => $this->isMinor ? 1 : 0,
             'review' => $this->isReview ? 1 : 0

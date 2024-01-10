@@ -510,9 +510,9 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
 
 
     // API -> user : get collation tables (and chunk edition) by user
-    $group->get('/user/{userId}/collationTables', function(Request $request, Response $response, array $args) use ($container){
+    $group->get('/user/{userTid}/collationTables', function(Request $request, Response $response) use ($container){
         $apiUsers = new ApiUsers($container);
-        return $apiUsers->getCollationTableInfo($request, $response, $args);
+        return $apiUsers->getCollationTableInfo($request, $response);
     } )->setName('api.user.collationTables');
 
     // API -> user : get multi-chunk editions by user
@@ -543,7 +543,10 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         ->setName('api.collation.auto');
 
     $group->post('/collation/save',
-        ApiCollation::class . ':saveCollationTable')
+        function(Request $request, Response $response, array $args) use ($container){
+            $apiC = new ApiCollation($container);
+            return $apiC->saveCollationTable($request, $response);
+        })
         ->setName('api.collation.save');
 
     $group->post('/collation/convert/{tableId}',

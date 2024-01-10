@@ -162,14 +162,18 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
                 $data['userId'] = $this->userInfo['id'];
             }
 
-            // Data for new code pages (e.g. NormalPage js class descendants)
-            $basicData = [];
-            $basicData['apmVersion'] = $this->config[ApmConfigParameter::VERSION];
-            $basicData['cacheDataId'] = $this->config[ApmConfigParameter::JS_APP_CACHE_DATA_ID];
-            $basicData['userInfo'] = $data['userInfo'];
-            $basicData['showLanguageSelector'] = $this->config[ApmConfigParameter::SITE_SHOW_LANGUAGE_SELECTOR] ? '1' : 0;
-            $basicData['baseUrl'] = $this->getBaseUrl();
-            $data['basicData'] = $basicData;
+            // Data for new code pages (e.g. ApmPage js class descendants)
+            $commonData = [];
+            $commonData['appName'] = $this->config[ApmConfigParameter::APP_NAME];
+            $commonData['appVersion'] = $this->config[ApmConfigParameter::VERSION];
+            $commonData['copyrightNotice'] = $this->config[ApmConfigParameter::COPYRIGHT_NOTICE];
+            $commonData['renderTime'] =  date("Y-M-d, H:i:s T");
+            $commonData['cacheDataId'] = $this->config[ApmConfigParameter::JS_APP_CACHE_DATA_ID];
+            $commonData['userInfo'] = $data['userInfo'];
+            $commonData['showLanguageSelector'] = $this->config[ApmConfigParameter::SITE_SHOW_LANGUAGE_SELECTOR];
+            $commonData['baseUrl'] = $this->getBaseUrl();
+
+            $data['commonData'] = $commonData;
         }
 
         $responseToReturn = new Response();

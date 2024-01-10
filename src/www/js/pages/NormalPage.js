@@ -16,11 +16,9 @@
  *
  */
 
-
-import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { setSiteLanguage, SiteLang, tr } from './common/SiteLang'
-import { setBaseUrl, urlFor } from './common/SiteUrlGen'
-import { ApmDataProxy } from './common/ApmDataProxy'
+import { urlGen } from './common/SiteUrlGen'
+import { ApmPage } from './ApmPage'
 
 
 
@@ -32,53 +30,14 @@ import { ApmDataProxy } from './common/ApmDataProxy'
  * such as the transcription editor and the edition composer.
  *
  */
-export class NormalPage {
+export class NormalPage extends ApmPage {
 
   constructor(options) {
-
-    let optionsChecker = new OptionsChecker({
-      context: 'NormalPage',
-      optionsDefinition: {
-        basicData: {
-          required: true,
-          type: 'object',
-          objectDefinition: {
-            apmVersion: { required: true, type: 'string'},
-            cacheDataId: { required: true, type: 'string'},
-            baseUrl: { required: true, type: 'string'},
-            userInfo: { type: 'object'},
-            siteLanguage: { type: 'string', default: ''},
-            showLanguageSelector: { type: 'boolean', default: false}
-          }
-        }
-      }
-    })
-    let cleanOptions = optionsChecker.getCleanOptions(options)
-    this.normalPageOptions = cleanOptions.basicData
-    setBaseUrl(this.normalPageOptions.baseUrl);
-    this.userId = this.normalPageOptions.userInfo['id'];
-    this.userTid = this.normalPageOptions.userInfo['tid'];
-    this.userName = this.normalPageOptions.userInfo.userName;
-
-    this.apmDataProxy = new ApmDataProxy(this.normalPageOptions.cacheDataId)
-
-    this.showLanguageSelector = this.normalPageOptions.showLanguageSelector
-    if (this.showLanguageSelector) {
-      this.siteLanguage = this.normalPageOptions.siteLanguage
-      if (this.siteLanguage === '' || this.siteLanguage === 'detect') {
-        console.log(`No site language given, detecting language`)
-        this.siteLanguage = SiteLang.detectBrowserLanguage()
-      }
-      setSiteLanguage(this.siteLanguage)
-      console.log(`Site language set to '${this.siteLanguage}'`)
-    } else {
-      this.siteLanguage = 'en'
-    }
+    super(options)
     this.pageContentsDiv = $('div.normal-page-content')
     this.topBarDiv = $('div.normal-page-top-bar')
     this.footerDiv = $('div.normal-page-footer')
   }
-
 
   /**
    *
@@ -148,7 +107,8 @@ export class NormalPage {
 
 
   async genFooterHtml() {
-    return this.normalPageOptions.copyrightHtml
+    let po = this.commonData
+    return `${po.appName} v${po.appVersion} &bull; &copy ${po.copyrightNotice} &bull; ${po.renderTime}`
   }
 
   async genTopNavBarHtml() {
@@ -167,15 +127,15 @@ export class NormalPage {
     }
     return `
 <nav class="navbar navbar-expand-lg navbar-light">
-<a class="navbar-brand" style="padding:0;" href="${urlFor('siteHome')}"><img src="${urlFor('images')}/apm-logo-plain.svg" alt="APM" height="40" ></a>
+<a class="navbar-brand" style="padding:0;" href="${urlGen.siteHome()}"><img src="${urlGen.images()}/apm-logo-plain.svg" alt="APM" height="40" ></a>
         <div id="navbar" class="collapse navbar-collapse">
             <ul class="navbar-nav mr-auto">
-                <li class="nav-item"><a class="nav-link" href="${urlFor('siteDashboard')}" title="${tr('Dashboard')}">${tr('Dashboard')}</a></li>
-                <li class="nav-item"><a class="nav-link" href="${urlFor('siteDocs')}" title="${tr('Documents')}">${tr('Documents')}</a></li>
-                <li class="nav-item"><a class="nav-link" href="${urlFor('siteChunks')}" title="${tr('Works')}">${tr('Works')}</a></li>
-                <li class="nav-item"><a class="nav-link" href="${urlFor('siteUsers')}" title="${tr('Users')}">${tr('Users')}</a></li>
-                <li class="nav-item"><a class="nav-link" href="${urlFor('sitePeople')}" title="${tr('People')}">${tr('People')}</a></li>
-                <li class="nav-item"><a class="nav-link" href="${urlFor('siteSearch')}" title="${tr('Search')}">${tr('Search')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlGen.siteDashboard()}" title="${tr('Dashboard')}">${tr('Dashboard')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlGen.siteDocs()}" title="${tr('Documents')}">${tr('Documents')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlGen.siteChunks()}" title="${tr('Works')}">${tr('Works')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlGen.siteUsers()}" title="${tr('Users')}">${tr('Users')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlGen.sitePeople()}" title="${tr('People')}">${tr('People')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlGen.siteSearch()}" title="${tr('Search')}">${tr('Search')}</a></li>
                 <li class="nav-item">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</li>
                 <li class="nav-item dropdown">
                    <a href="/" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">${tr('Useful Links')}</a>
@@ -190,12 +150,12 @@ export class NormalPage {
             <ul class="navbar-nav">
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#"  data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                    <i class="fas fa-user"></i>&nbsp;${this.normalPageOptions.userInfo.fullname}</a>
+                    <i class="fas fa-user"></i>&nbsp;${this.commonData.userInfo.name}</a>
                     <ul class="dropdown-menu dropdown-menu-right">
-                        <li><a class="nav-link dd-menu-item" href="${urlFor('siteUserProfile', this.userName)}">${tr('My Profile')}</a></li>
-                        <li><a class="nav-link dd-menu-item"  href="${urlFor('siteUserProfile', this.userName)}">${tr('My Settings')}</a></li>
+                        <li><a class="nav-link dd-menu-item" href="${urlGen.siteUserProfile(this.userName)}">${tr('My Profile')}</a></li>
+                        <li><a class="nav-link dd-menu-item"  href="${urlGen.siteUserProfile(this.userName)}">${tr('My Settings')}</a></li>
                         <li role="separator" class="divider"></li>
-                        <li><a class="nav-link dd-menu-item" href="${urlFor('siteLogout')}" title="${tr('Logout')}">${tr('Logout')}</a></li>
+                        <li><a class="nav-link dd-menu-item" href="${urlGen.siteLogout()}" title="${tr('Logout')}">${tr('Logout')}</a></li>
                     </ul>
                 </li>
             </ul>

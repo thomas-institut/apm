@@ -36,6 +36,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use APM\Core\Collation\CollationTable;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\TimeString\TimeString;
 
 
@@ -435,6 +436,7 @@ class ApiCollation extends ApiController
 
         $versionInfo = new CollationTableVersionInfo();
         $versionInfo->authorId = $this->apiUserId;
+        $versionInfo->authorTid = $this->apiUserTid;
         $versionInfo->description = $inputDataObject['descr'] ?? '';
         $versionInfo->isMinor = $inputDataObject['isMinor'] ?? false;
         $versionInfo->isReview = $inputDataObject['isReview'] ?? false;
@@ -447,7 +449,9 @@ class ApiCollation extends ApiController
             if ($collationTableId <= 0) {
                 $msg = 'Invalid collation table ID ' . $collationTableId;
                 $this->logger->error($msg,
-                    [ 'apiUserId' => $this->apiUserId,
+                    [
+                        'apiUserTid' => $this->apiUserTid,
+                        'apiUserTidString' => Tid::toBase36String($this->apiUserTid),
                         'apiError' => self::ERROR_INVALID_COLLATION_TABLE_ID,
                         'data' => $inputDataObject,
                     ]);
@@ -456,10 +460,12 @@ class ApiCollation extends ApiController
             // check that the ct exists
             $versions = $ctManager->getCollationTableVersions($collationTableId);
             if (count($versions) === 0) {
-                // table Id does not exist!
+                // table id does not exist!
                 $msg = "Collation table ID $collationTableId does not exist";
                 $this->logger->error($msg,
-                    [ 'apiUserId' => $this->apiUserId,
+                    [
+                        'apiUserTid' => $this->apiUserTid,
+                        'apiUserTidString' => Tid::toBase36String($this->apiUserTid),
                         'apiError' => self::ERROR_COLLATION_TABLE_DOES_NOT_EXIST,
                         'data' => $inputDataObject,
                     ]);

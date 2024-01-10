@@ -16,7 +16,7 @@ class UserData implements Exportable
     /**
      * @var string[]
      */
-    public array $flags;
+    public array $tags;
 
     public string $passwordHash;
 
@@ -29,7 +29,7 @@ class UserData implements Exportable
         $this->disabled = false;
         $this->root = false;
         $this->readOnly = false;
-        $this->flags = [];
+        $this->tags = [];
     }
 
     public function getExportObject(): array

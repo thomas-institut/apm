@@ -175,7 +175,7 @@ export class ApmDataProxy {
       let getUrl = '';
       switch(entityType) {
         case 'Person':
-          getUrl =  urlGen.apiUserGetInfo(entityId);
+          getUrl =  urlGen.apiPersonGetEssentialData(entityId);
           break;
 
         case 'Work':
@@ -219,11 +219,7 @@ export class ApmDataProxy {
    * @private
    */
   getPersonDataToStoreFromServerData(serverData) {
-    return {
-      id: serverData['id'],
-      username: serverData['username'],
-      name: serverData['fullname']
-    }
+    return serverData
   }
 
   /**
@@ -237,6 +233,7 @@ export class ApmDataProxy {
       id: serverData['id'],
       dareId: serverData['dare_id'],
       authorId: serverData['author_id'],
+      authorTid: serverData['author_tid'],
       title: serverData['title']
     }
   }

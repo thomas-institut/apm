@@ -12,13 +12,13 @@ namespace APM\System\User;
  * In the future, email addresses may be used for login, but right now this
  * is not implemented.
  *
- * Users can have a number of flags set that can be used for diverse purposes
+ * Users can have a number of tags set that can be used for diverse purposes
  * such as deciding whether a user is permitted to do a specific action or to
  * make the user have a certain role.
  *
- * There are three fundamental flags that are always reported explicitly by the
- * system:  root, disabled and readOnly.  Any other flag will be reported
- * as part of an array of set flags.
+ * There are three fundamental tags that are always reported explicitly by the
+ * system:  root, disabled and readOnly.  Any other tag will be reported
+ * as part of an array of set tags.
  *
  * For authentication purposes the system can store and verify a user's password
  * and maintains a list of authentication tokens per user and user agent.
@@ -44,26 +44,35 @@ interface UserManagerInterface
      */
     public function getUserData(int $userTid) : UserData;
 
-
     /**
-     * Returns true if the given string is valid username
-     *
-     * Only checks the string itself, does not check if the userName is already
-     * taken
+     * Returns true if the given userName is already
+     * in use in the system
      *
      * @param string $userName
      * @return bool
      */
-    public function isUserNameValid(string $userName) : bool;
+    public function isUserNameAlreadyInUse(string $userName) : bool;
+
+    /**
+     * Returns true if the given string can be used as a username
+     * in the system.
+     *
+     * It does not check if the string is already in use as
+     * a username.
+     *
+     * @param string $userName
+     * @return bool
+     */
+    public function isStringValidUserName(string $userName) : bool;
 
 
     /**
-     * Returns true if the given string can be used as a flag in the system.
-     * Normally, any non-empty alphanumeric string is a valid flag name
+     * Returns true if the given string can be used as a tag in the system.
+     * Normally, any non-empty alphanumeric string is a valid tag name
      * @param string $flagName
      * @return bool
      */
-    public function isFlagNameValid(string $flagName) : bool;
+    public function isStringValidTag(string $flagName) : bool;
 
     /**
      * Returns the tid for the given username.
@@ -106,22 +115,31 @@ interface UserManagerInterface
      * Returns true if the given flag is set of the given user.
      *
      * @param int $userTid
-     * @param string $flag
+     * @param string $tag
      * @return bool
      * @throws UserNotFoundException
      */
-    public function isSet(int $userTid, string $flag) : bool;
+    public function hasTag(int $userTid, string $tag) : bool;
 
     /**
-     * Sets a user's flag to the given value
+     * Adds the given tag to the user
      *
      * @param int $userTid
-     * @param string $flag
-     * @param bool $flagValue
+     * @param string $tag
      * @return void
      * @throws UserNotFoundException
      */
-    public function set(int $userTid, string $flag, bool $flagValue = true) : void;
+    public function addTag(int $userTid, string $tag) : void;
+
+    /**
+     * Removes the given tag from the user
+     *
+     * @param int $userTid
+     * @param string $tag
+     * @return void
+     * @throws UserNotFoundException
+     */
+    public function removeTag(int $userTid, string $tag) : void;
 
 
     /**

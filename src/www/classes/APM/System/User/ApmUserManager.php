@@ -66,10 +66,10 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
         $data->tid = intval($row['tid']);
         $data->userName = $row['username'];
         $data->passwordHash = is_null($row['password']) ? '' : $row['password'];
-        $data->disabled = in_array(UserFlag::DISABLED, $flags);
-        $data->root = in_array(UserFlag::ROOT, $flags);
-        $data->readOnly = in_array(UserFlag::READ_ONLY, $flags);
-        $data->flags = $flags;
+        $data->disabled = in_array(UserTag::DISABLED, $flags);
+        $data->root = in_array(UserTag::ROOT, $flags);
+        $data->readOnly = in_array(UserTag::READ_ONLY, $flags);
+        $data->tags = $flags;
         return $data;
     }
 
@@ -94,7 +94,7 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
         if ($newUserName === $userData->userName) {
             return;
         }
-        if (!$this->isUserNameValid($newUserName)) {
+        if (!$this->isStringValidUserName($newUserName)) {
             throw new InvalidUserNameException();
         }
         if ($this->isUserNameAlreadyInUse($newUserName)) {
@@ -104,7 +104,10 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
         unset($this->cache[$userTid]);
     }
 
-    private function isUserNameAlreadyInUse(string $userName) : bool {
+    /**
+     * @inheritDoc
+     */
+    public function isUserNameAlreadyInUse(string $userName) : bool {
         return count($this->usersTable->findRows(['username' => $userName])) !== 0;
     }
 
@@ -121,17 +124,22 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
             throw new UserNameAlreadyInUseException();
         }
 
-        $this->usersTable->createRow(['tid' => $tid, 'username' => $userName]);
+        $this->usersTable->createRow([
+            'tid' => $tid,
+            'username' => $userName,
+            'password' => null,
+            'flags' => ''
+        ]);
     }
 
     /**
      * @inheritDoc
      */
-    public function isUserNameValid(string $userName) : bool {
+    public function isStringValidUserName(string $userName) : bool {
         return strlen($userName) >= 5 && ctype_alnum($userName);
     }
 
-    public function isFlagNameValid(string $flagName) : bool
+    public function isStringValidTag(string $flagName) : bool
     {
         return $flagName !== '' && ctype_alnum($flagName);
     }
@@ -139,38 +147,44 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
     /**
      * @inheritDoc
      */
-    public function isSet(int $userTid, string $flag): bool
+    public function hasTag(int $userTid, string $tag): bool
     {
         $data = $this->getUserData($userTid);
-        return in_array($flag, $data->flags);
+        return in_array($tag, $data->tags);
     }
 
     /**
      * @inheritDoc
      */
-    public function set(int $userTid, string $flag, bool $flagValue = true): void
+    public function addTag(int $userTid, string $tag): void
     {
-        $userData = $this->getUserData($userTid);
-        $newFlagArray = [];
-        if ($this->isSet($userTid, $flag)) {
-            if ($flagValue) {
-                return;
-            }
-            foreach($userData->flags as $currentFlag) {
-                if($currentFlag !== $flag) {
+        if (!$this->hasTag($userTid, $tag)) {
+            $userData = $this->getUserData($userTid);
+            $newFlagArray = $userData->tags;
+            $newFlagArray[]  = $tag;
+            $this->usersTable->updateRow([ 'id' => $userData->id, 'flags' => implode(',', $newFlagArray)]);
+            unset($this->cache[$userTid]);
+        }
+    }
+
+
+
+    /**
+     * @inheritDoc
+     */
+    public function removeTag(int $userTid, string $tag): void
+    {
+        if ($this->hasTag($userTid, $tag)) {
+            $userData = $this->getUserData($userTid);
+            $newFlagArray = [];
+            foreach($userData->tags as $currentFlag) {
+                if($currentFlag !== $tag) {
                     $newFlagArray[] = $currentFlag;
                 }
             }
-        } else {
-            if (!$flagValue) {
-                return;
-            }
-            $newFlagArray = $userData->flags;
-            $newFlagArray[]  = $flag;
+            $this->usersTable->updateRow([ 'id' => $userData->id, 'flags' => implode(',', $newFlagArray)]);
+            unset($this->cache[$userTid]);
         }
-
-        $this->usersTable->updateRow([ 'id' => $userData->id, 'flags' => implode(',', $newFlagArray)]);
-        unset($this->cache[$userTid]);
     }
 
     /**

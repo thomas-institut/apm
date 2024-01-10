@@ -200,6 +200,14 @@ class ApmUrlGenerator {
         return this.base + '/api/user/' + id + '/info';
     }
 
+    apiPersonGetEssentialData(tid) {
+        return `${this.base}/api/person/${tid}/data/essential`
+    }
+
+    apiPersonGetEssentialDataAll() {
+        return `${this.base}/api/person/all/data/essential`
+    }
+
 
 
     apiUserGetCollationTableInfo(id) {

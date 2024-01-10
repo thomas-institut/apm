@@ -329,6 +329,7 @@ class ApiElements extends ApiController
         $versionInfo->pageId = $pageId;
         $versionInfo->column = $columnNumber;
         $versionInfo->authorId = $this->apiUserId;
+        $versionInfo->authorTid = $this->apiUserTid;
         $versionInfo->description = $versionDescr;
         $versionInfo->isMinor = $versionIsMinor;
         $versionInfo->isReview = $versionIsReview;

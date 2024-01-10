@@ -27,47 +27,19 @@ use ThomasInstitut\TimeString\TimeString;
  */
 class ColumnVersionInfo
 {
-    /**
-     * @var int
-     */
-    public $id;
-    /**
-     * @var int
-     */
-    public $pageId;
-    /**
-     * @var int
-     */
-    public $column;
-    /**
-     * @var string
-     */
-    public $timeFrom;
-    /**
-     * @var string
-     */
-    public $timeUntil;
-    /**
-     * @var int
-     */
-    public $authorId;
-    /**
-     * @var string
-     */
-    public $description;
-    /**
-     * @var bool
-     */
-    public $isMinor;
-    /**
-     * @var bool
-     */
-    public $isReview;
 
-    /**
-     * @var
-     */
-    public $isPublished;
+    public int $id;
+    public int $pageId;
+    public int $column;
+    public string $timeFrom;
+    public string $timeUntil;
+    public int $authorId;
+    public int $authorTid;
+    public string $description;
+    public bool $isMinor;
+    public bool $isReview;
+    public bool $isPublished;
+
 
     public function __construct()
     {
@@ -77,26 +49,30 @@ class ColumnVersionInfo
         $this->timeFrom = TimeString::TIME_ZERO;
         $this->timeUntil = TimeString::TIME_ZERO;
         $this->authorId = 0;
+        $this->authorTid = 0;
         $this->description = '';
         $this->isMinor = false;
         $this->isReview = false;
         $this->isPublished = false;
     }
 
-    public function setFromDbRow(array $row) {
+    public function setFromDbRow(array $row): void
+    {
         $this->id = intval($row['id']);
         $this->pageId = intval($row['page_id']);
         $this->column = intval($row['col']);
         $this->timeFrom = $row['time_from'];
         $this->timeUntil = $row['time_until'];
         $this->authorId = intval($row['author_id']);
+        $this->authorTid = intval($row['author_tid']);
         $this->description = $row['descr'];
         $this->isMinor = intval($row['minor']) !== 0;
         $this->isReview = intval($row['review']) !== 0;
         $this->isPublished = intval($row['is_published']) !== 0;
     }
 
-    public static function createFromDbRow(array $row) {
+    public static function createFromDbRow(array $row): ColumnVersionInfo
+    {
         $ci = new ColumnVersionInfo();
         $ci->setFromDbRow($row);
         return $ci;
@@ -110,6 +86,7 @@ class ColumnVersionInfo
             'time_from' => $this->timeFrom,
             'time_until' => $this->timeUntil,
             'author_id' => $this->authorId,
+            'author_tid' => $this->authorTid,
             'descr' => $this->description,
             'minor' => $this->isMinor ? 1 : 0,
             'review' => $this->isReview ? 1 : 0,

@@ -22,6 +22,7 @@ class PersonEssentialData implements Exportable
      */
     public int $id;
     public string $userName;
+    public array $userTags;
 
     public function __construct()
     {
@@ -31,6 +32,7 @@ class PersonEssentialData implements Exportable
         $this->sortName = '';
         $this->isUser = false;
         $this->userName = '';
+        $this->userTags = [];
         $this->extraAttributes = [];
     }
 

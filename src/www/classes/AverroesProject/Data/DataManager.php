@@ -931,9 +931,9 @@ class DataManager implements  SqlQueryCounterTrackerAware
     /**
      *  Get data for a work
      * @param string $work
-     * @return boolean
+     * @return bool|array
      */
-    public function getWorkInfo($work)
+    public function getWorkInfo(string $work) : bool|array
     {
         $rows = $this->worksTable->findRows(['dare_id' => $work], 1);
         if (count($rows)===0) {

@@ -199,7 +199,7 @@ abstract class TranscriptionManager implements ErrorReporter
     abstract public function getLastSavesForDoc(int $docId, int $numSaves) : array;
 
     /**
-     * Returns an array of WitnessInfo object with the available witnessess for given work
+     * Returns an array of WitnessInfo object with the available witnesses for given work
      *
      * @param string $workId
      * @param int $chunkNumber
@@ -248,6 +248,7 @@ abstract class TranscriptionManager implements ErrorReporter
      * @param int $pageId
      * @param PageInfo $newSettings
      * @param int $userId
+     * @param int $userTid
      */
-    abstract public function updatePageSettings(int $pageId, PageInfo $newSettings, int $userId) : void;
+    abstract public function updatePageSettings(int $pageId, PageInfo $newSettings, int $userId, int $userTid) : void;
 }

@@ -78,7 +78,7 @@ class ApiDocuments extends ApiController
         $pageInfo->langCode = $lang;
 
         try {
-            $this->systemManager->getTranscriptionManager()->updatePageSettings($pageId, $pageInfo, $this->apiUserId);
+            $this->systemManager->getTranscriptionManager()->updatePageSettings($pageId, $pageInfo, $this->apiUserId, $this->apiUserTid);
         } catch (Exception $e) {
             $this->logger->error("Can't update page settings for page $pageId: " . $e->getMessage(), $pageInfo->getDatabaseRow());
             return $this->responseWithStatus($response, 409);
@@ -442,7 +442,7 @@ class ApiDocuments extends ApiController
                 'oldData' => get_object_vars($pageInfo),
                 'newData' => get_object_vars($newPageInfo)
             ]);
-            $transcriptionManager->updatePageSettings($pageId, $newPageInfo, $this->apiUserId);
+            $transcriptionManager->updatePageSettings($pageId, $newPageInfo, $this->apiUserId, $this->apiUserTid);
         }
 
         $this->logger->info("Bulk page settings", [

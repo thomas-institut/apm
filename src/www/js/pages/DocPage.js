@@ -501,7 +501,7 @@ export class DocPage extends NormalPage {
         continue;
       }
       let workData = await this.apmDataProxy.getWorkData(workDareId)
-      let authorData = await this.apmDataProxy.getPersonData(workData['authorId'])
+      let authorData = await this.apmDataProxy.getPersonData(workData['authorTid'])
       html += '<li>' + authorData['name'] + ', <em>' + workData['title'] + '</em> (' + workDareId + ')';
       html += '<ul><li>';
       let tdArray = [];
@@ -555,7 +555,7 @@ export class DocPage extends NormalPage {
       let formattedTime = ApmUtil.formatVersionTime(this.versionInfo[work][chunk]['timeFrom'])
       let authorName = '';
       if (this.versionInfo[work][chunk].authorId !== 0) {
-        let authorData = await this.apmDataProxy.getPersonData(this.versionInfo[work][chunk].authorId)
+        let authorData = await this.apmDataProxy.getPersonData(this.versionInfo[work][chunk]['authorTid'])
         authorName = authorData['name']
       }
       dataContent = '<b>Last change:</b><br/>' + formattedTime + '<br/>' + authorName;
@@ -583,15 +583,15 @@ export class DocPage extends NormalPage {
 
   /**
    *
-   * @param authorId
+   * @param {int} authorTid
    * @return {Promise<string>}
    */
-  async getAuthorLink(authorId) {
-    if (authorId === 0) {
+  async getAuthorLink(authorTid) {
+    if (authorTid === 0) {
       return 'n/a';
     }
-    let authorData = await this.apmDataProxy.getPersonData(authorId)
-    let url = urlGen.siteUserProfile(authorData['username']);
+    let authorData = await this.apmDataProxy.getPersonData(authorTid)
+    let url = urlGen.siteUserProfile(authorData['userName']);
     return `<a href="${url}" title="View user profile" target="_blank">${authorData['name']}</a>`;
   }
 
@@ -601,7 +601,7 @@ export class DocPage extends NormalPage {
       let versionInfo = this.lastSaves[i];
       // @ts-ignore
       let formattedTime = ApmUtil.formatVersionTime(versionInfo['timeFrom']);
-      let authorLink = await this.getAuthorLink(versionInfo.authorId);
+      let authorLink = await this.getAuthorLink(versionInfo['authorTid']);
       html += '<li> Page ' + this.getPageLink2(versionInfo.pageId, versionInfo.column) + ', ' +
         formattedTime + ' by ' + authorLink + '</li>';
     }

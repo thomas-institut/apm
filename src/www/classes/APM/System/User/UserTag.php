@@ -2,7 +2,7 @@
 
 namespace APM\System\User;
 
-class UserFlag
+class UserTag
 {
     const ROOT = 'root';
     const DISABLED = 'disabled';

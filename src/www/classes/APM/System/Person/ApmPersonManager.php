@@ -43,19 +43,29 @@ class ApmPersonManager implements PersonManagerInterface, LoggerAwareInterface
             if (count($rows) === 0) {
                 throw new PersonNotFoundException();
             }
-            $personData = $this->getPersonDataFromDataTableRow($rows[0]);
-            if ($personData->isUser) {
-                try {
-                    $userData = $this->userManager->getUserData($personTid);
-                } catch (UserNotFoundException) {
-                    // this should never happen, but should not cause a major failure
-                    $this->logger->error("User data not found for user $personTid");
-                }
-                $personData->userName = $userData->userName ?? '';
-            }
+            $personData = $this->buildPersonEssentialDataFromRow($rows[0]);
             $this->cache[$personTid] = $personData;
         }
         return $this->cache[$personTid];
+    }
+
+    private function buildPersonEssentialDataFromRow(array $row): PersonEssentialData
+    {
+        $personData = $this->getPersonDataFromDataTableRow($row);
+        $personTid = intval($row['tid']);
+        $personData->isUser = false;
+        if ($this->userManager->isUser($personTid)) {
+            try {
+                $userData = $this->userManager->getUserData($personTid);
+            } catch (UserNotFoundException) {
+                // should never happen, but should not break things too much
+                $this->logger->error("User data not found for tid $personTid");
+            }
+            $personData->isUser = true;
+            $personData->userName = $userData->userName ?? '';
+            $personData->userTags = $userData->tags ?? [];
+        }
+        return $personData;
     }
 
     private function getPersonDataFromDataTableRow(array $row) : PersonEssentialData {
@@ -78,7 +88,7 @@ class ApmPersonManager implements PersonManagerInterface, LoggerAwareInterface
     /**
      * @inheritDoc
      */
-    public function newPerson(string $name, string $sortName, bool $isUser = false): int
+    public function createPerson(string $name, string $sortName, bool $isUser = false): int
     {
         if ($name === '') {
             throw  new InvalidPersonNameException();
@@ -88,5 +98,35 @@ class ApmPersonManager implements PersonManagerInterface, LoggerAwareInterface
 
         $this->personsTable->createRow([ 'tid' => $tid,  'fullname' => $name, 'isApmUser' => $isUser]);
         return $tid;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getAllPeopleEssentialData(): array
+    {
+        $rows = $this->personsTable->getAllRows();
+        $personDataArray = [];
+        foreach ($rows as $row) {
+            $personTid = intval($row['tid']);
+            $personData = $this->buildPersonEssentialDataFromRow($row);
+            $this->cache[$personTid] = $personData;
+            $personDataArray[] = $personData;
+        }
+        return $personDataArray;
+    }
+
+
+    /**
+     * @inheritDoc
+     */
+    public function getAllPeopleTids(): array
+    {
+        $rows = $this->personsTable->getAllRows();
+        $tids = [];
+        foreach ($rows as $row) {
+            $tids[] = intval($row['tid']);
+        }
+        return $tids;
     }
 }

@@ -469,7 +469,24 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         })
         ->setName('api.work.info');
 
-    //  USERS  / PEOPLE
+    //  PERSON
+
+    $group->get('/person/all/data/essential',
+        function(Request $request, Response $response) use ($container){
+            $apiUsers = new ApiPeople($container);
+            return $apiUsers->getAllPeopleEssentialData($request, $response);
+        })
+        ->setName('api.person.data.essential');
+
+    $group->get('/person/{tid}/data/essential',
+        function(Request $request, Response $response) use ($container){
+            $apiUsers = new ApiPeople($container);
+            return $apiUsers->getPersonEssentialData($request, $response);
+        })
+        ->setName('api.person.data.essential');
+
+
+    // USERS
 
     // API -> user : get profile info
     $group->get('/user/{userId}/info',

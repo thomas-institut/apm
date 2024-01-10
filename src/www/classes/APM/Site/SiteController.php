@@ -157,9 +157,11 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             $data['userAuthenticated'] = $this->userAuthenticated;
             $data['userInfo'] = [];
             $data['userId'] = -1;
+            $data['userTid'] = -1;
             if ($this->userAuthenticated) {
                 $data['userInfo'] = $this->userInfo;
                 $data['userId'] = $this->userInfo['id'];
+                $data['userTid'] = $this->userInfo['tid'];
             }
 
             // Data for new code pages (e.g. ApmPage js class descendants)

@@ -69,7 +69,7 @@ export class DashboardPage extends NormalPage {
   }
 
   async fetchTranscriptions() {
-    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.userId))
+    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.userTid))
     this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data))
   }
 

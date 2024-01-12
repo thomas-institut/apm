@@ -228,7 +228,7 @@ class ApiPresets extends ApiController
             $userInfo = $dataManager->userManager->getUserInfoByUserId($preset->getUserId());
             $presetsInArrayForm[] = [
                 'userId' => $preset->getUserId(),
-                'userName' => $userInfo['fullname'],
+                'userName' => $userInfo['name'],
                 'presetId' => $preset->getId(),
                 'title' => $preset->getTitle(),
                 'data' => $preset->getData()
@@ -326,7 +326,7 @@ class ApiPresets extends ApiController
             $userInfo = $dataManager->userManager->getUserInfoByUserId($preset->getUserId());
             $presetsInArrayForm[] = [
                 'userId' => $preset->getUserId(),
-                'userName' => $userInfo['fullname'],
+                'userName' => $userInfo['name'],
                 'presetId' => $preset->getId(),
                 'title' => $preset->getTitle(),
                 'data' => $preset->getData()

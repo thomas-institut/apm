@@ -493,7 +493,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
   getAuthorLink(authorId) {
     return '<a href="' + this.pathFor.siteUserProfile(this.options.authorInfo[authorId].username) +
       '" title="View user profile" target="_blank">' +
-      this.options.authorInfo[authorId].fullname + '</a>'
+      this.options.authorInfo[authorId].name + '</a>'
   }
 
   genPageLink(docId, pageId, column) {

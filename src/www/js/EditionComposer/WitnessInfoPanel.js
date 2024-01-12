@@ -93,6 +93,7 @@ export class WitnessInfoPanel extends Panel{
       updateWitness: {
         type: 'function',
         required: true
+        // (witnessIndex, changeData, newWitness) => Promise()
       },
       fetchSiglaPresets: {
         // a function that fetches the sigla presets from the server.
@@ -140,12 +141,14 @@ export class WitnessInfoPanel extends Panel{
     this.ctData = CtData.copyFromObject(newData)
     if (reRender) {
       this.verbose && console.log(`New ctData, re-rendering panel`)
-      this.reRender()
+      this.reRender().then( () => {
+        this.verbose && console.log(`Finished re-rendering panel`)
+      })
     }
   }
 
-  reRender() {
-    $(this.containerSelector).html(this.generateHtml())
+  async reRender() {
+    $(this.containerSelector).html(await this.generateHtml())
     this.postRender()
   }
 
@@ -157,7 +160,7 @@ export class WitnessInfoPanel extends Panel{
     return SiglaGroupsUI.genSiglaGroupsTable(this.ctData['siglaGroups'], this.ctData['sigla'], icons)
   }
 
-  generateHtml() {
+  async generateHtml() {
     return `<div class="witnessinfotable">${this._genWitnessTableHtml()}</div>
         <div class="witness-update-div">
             <span class="witness-update-info"></span>

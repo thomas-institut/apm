@@ -47,7 +47,7 @@ $(function()
     <td>
     {% if doc.numTranscribedPages %}
         {% for editor in doc.editors %}
-            <a href="{{url_for('user.profile', {'username' : editor.username})}}" title="View profile">{{editor.fullname}}</a>{% if not loop.last %}, {% endif %}
+            <a href="{{url_for('user.profile', {'username' : editor.userName})}}" title="View profile">{{editor.name}}</a>{% if not loop.last %}, {% endif %}
         {% endfor %}
     {% endif %}    
     </td>

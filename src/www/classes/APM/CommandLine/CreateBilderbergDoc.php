@@ -84,7 +84,6 @@ class CreateBilderbergDoc extends CommandLineUtility
 
         $docId = $this->systemManager->getDataManager()->newDoc(
             $title,
-            '',
             $numPages,
             $lang,
             $type,

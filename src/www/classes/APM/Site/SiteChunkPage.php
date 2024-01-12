@@ -53,7 +53,7 @@ class SiteChunkPage extends SiteController
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
         $this->profiler->start();
-        $workInfo = $dm->getWorkInfo($workId);
+        $workInfo = $dm->getWorkInfoByDareId($workId);
 
         $witnessInfoArray = $transcriptionManager->getWitnessesForChunk($workId, $chunkNumber);
         $time =  TimeString::now();
@@ -99,7 +99,7 @@ class SiteChunkPage extends SiteController
                     }
                     $lastVersion = $witnessInfo->typeSpecificInfo['lastVersion'];
                     /** @var $lastVersion ColumnVersionInfo */
-                    $authorsMentioned[] = $lastVersion->authorId;
+                    $authorsMentioned[] = $lastVersion->authorTid;
                     $pagesMentioned[] = $lastVersion->pageId;
                     $segmentArray =  $witnessInfo->typeSpecificInfo['segments'];
                     foreach ($segmentArray as $segment) {

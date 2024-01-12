@@ -71,7 +71,7 @@ class EditionsIndexManager extends OpenSearchIndexManager
             $edition_json = $data['witnesses'][$edition_data['edition_witness_index']];
             $tokens = $edition_json['tokens'];
             $editor_id = $ctable->getCollationTableVersionManager()->getCollationTableVersionInfo($id, 1)[0]->authorId;
-            $editor = $this->um->getUserInfoByUserId($editor_id)['fullname'];
+            $editor = $this->um->getUserInfoByUserId($editor_id)['name'];
 
             $edition_text = "";
 
@@ -86,7 +86,7 @@ class EditionsIndexManager extends OpenSearchIndexManager
             $edition_data['lang'] = $data['lang'];
             $edition_data['chunk_id'] = explode('-', $data['chunkId'])[1];
             $work_id = explode('-', $data['chunkId'])[0];
-            $edition_data['title'] = $this->dm->getWorkInfo($work_id)['title'];
+            $edition_data['title'] = $this->dm->getWorkInfoByDareId($work_id)['title'];
 
         }
 

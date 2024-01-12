@@ -21,6 +21,9 @@
 namespace Test\APM;
 
 use APM\System\ApmContainerKey;
+use APM\System\Person\InvalidPersonNameException;
+use APM\System\User\InvalidUserNameException;
+use APM\System\User\UserNameAlreadyInUseException;
 use AverroesProject\ColumnElement\Line;
 use AverroesProject\Data\DataManager;
 use AverroesProject\Data\EdNoteManager;
@@ -28,10 +31,14 @@ use AverroesProject\EditorialNote;
 use AverroesProject\TxText\Abbreviation;
 use AverroesProject\TxText\Rubric;
 use AverroesProject\TxText\Text;
-use DI\Container;
+use Exception;
 use PHPUnit\Framework\TestCase;
 
 use AverroesProject\TxText\ItemArray;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use Test\APM\Mockup\DatabaseTestEnvironment;
 
 
 /**
@@ -40,55 +47,57 @@ use AverroesProject\TxText\ItemArray;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class EdNoteManagerTest extends TestCase {
-    /**
-     *
-     * @var DataManager
-     */
-    static $dataManager;
-    /**
-     * @var Container
-     */
-    private static $container;
+
+    static DataManager $dataManager;
+
+    private static ContainerInterface $container;
     /**
      * @var DatabaseTestEnvironment
      */
-    private static $testEnvironment;
-    /**
-     * @var EdNoteManager
-     */
-    private static $edNoteManager;
+    private static DatabaseTestEnvironment $testEnvironment;
+    private static EdNoteManager $edNoteManager;
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws Exception
+     */
     public static function setUpBeforeClass() : void  {
         global $testConfig;
 
-        self::$testEnvironment = new DatabaseTestEnvironment($testConfig);
+        self::$testEnvironment = new DatabaseTestEnvironment();
         self::$container = self::$testEnvironment->getContainer();
 
         self::$dataManager = self::$container->get(ApmContainerKey::SYSTEM_MANAGER)->getDataManager();
         self::$edNoteManager = self::$dataManager->edNoteManager;
 
     }
-    
+
+    /**
+     * @throws Exception
+     */
     public function testAddRetrieveEdNotes()
     {
         self::$testEnvironment->emptyDatabase();
         $numElements = 10;
         $numPages = 1;
         $dm = self::$dataManager;
-        $docId = $dm->newDoc('Test EdNote Manager', 'TENM-1', $numPages, 'la', 
-                'mss', 'local', 'TESTENM-1');
+
+        $docId = $dm->newDoc('Test EdNote Manager', $numPages, 'la',
+            'mss', 'local', 'TESTENM-1');
         for ($i = 1; $i <= $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
         }
-        $editorId = $dm->userManager->createUserByUsername('testenmeditor');
-        $authorId = $dm->userManager->createUserByUsername('testenmauthor');
+
+        $editorTid = self::$testEnvironment->createUserByUsername('testenmeditor');
+        $authorTid = self::$testEnvironment->createUserByUsername('testenmauthor');
         $pageId =  $dm->getPageIdByDocPage($docId, 1);
         
         for ($i=0; $i<$numElements; $i++) {
             $element = new Line();
             $element->pageId = $pageId;
             $element->columnNumber = 1;
-            $element->editorId = $editorId;
+            $element->editorTid = $editorTid;
             $element->lang = 'la';
             $element->handId = 0;
             ItemArray::addItem($element->items, new Rubric($i*10+1, 0,"This is $i"));
@@ -109,7 +118,7 @@ class EdNoteManagerTest extends TestCase {
         
         $elements = $dm->getColumnElements($docId, 1, 1);
         foreach ($elements as $ele) {
-            $noteId = self::$edNoteManager->insertInlineNote($ele->items[2]->id, $authorId, "My note for element id " . $ele->id );
+            $noteId = self::$edNoteManager->insertInlineNote($ele->items[2]->id, $authorTid, "My note for element id " . $ele->id );
             $this->assertNotFalse($noteId);
         }
         
@@ -145,20 +154,23 @@ class EdNoteManagerTest extends TestCase {
         $numElements = 10;
         $numPages = 1;
         $dm = self::$dataManager;
-        $docId = $dm->newDoc('Test EdNote Manager 2', 'TENM-2', $numPages, 'la', 
-                'mss', 'local', 'TESTENM-2');
+        $docId = $dm->newDoc('Test EdNote Manager 2', $numPages, 'la',
+            'mss', 'local', 'TESTENM-2');
         for ($i = 1; $i <= $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
         }
-        $editorId = $dm->userManager->createUserByUsername('testenmeditor2');
-        $authorId = $dm->userManager->createUserByUsername('testenmauthor2');
+
+        $editorTid = self::$testEnvironment->createUserByUsername('testenmeditor2');
+        $authorTid = self::$testEnvironment->createUserByUsername('testenmauthor2');
+
+
         $pageId =  $dm->getPageIdByDocPage($docId, 1);
         
         for ($i=0; $i<$numElements; $i++) {
             $element = new Line();
             $element->pageId = $pageId;
             $element->columnNumber = 1;
-            $element->editorId = $editorId;
+            $element->editorTid = $editorTid;
             $element->lang = 'la';
             $element->handId = 0;
             ItemArray::addItem($element->items, new Rubric($i*10+1, 0,"This is $i"));
@@ -179,7 +191,7 @@ class EdNoteManagerTest extends TestCase {
         
         $elements = $dm->getColumnElements($docId, 1, 1);
         foreach ($elements as $ele) {
-            $noteId = self::$edNoteManager->insertInlineNote($ele->items[2]->id, $authorId, "Test 2 note for " . $ele->items[2]->id );
+            $noteId = self::$edNoteManager->insertInlineNote($ele->items[2]->id, $authorTid, "Test 2 note for " . $ele->items[2]->id );
             $this->assertNotFalse($noteId);
         }
         

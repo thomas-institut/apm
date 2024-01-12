@@ -110,7 +110,8 @@ abstract class CollationTableManager implements ErrorReporter
         return $this->getCollationTableVersionManager()->getCollationTableVersionInfo($collationTableId);
     }
 
-    public function convertToEdition(int $collationTableId, string $strategy, int $authorId, string $timeStampFrom ='') {
+    public function convertToEdition(int $collationTableId, string $strategy, int $authorTid, string $timeStampFrom =''): void
+    {
         $info  = $this->getCollationTableInfo($collationTableId);
         if ($info->type === CollationTableType::EDITION) {
             throw new \InvalidArgumentException("Collation table $collationTableId already an edition",
@@ -132,7 +133,7 @@ abstract class CollationTableManager implements ErrorReporter
 
         $newVersionInfo = new CollationTableVersionInfo();
         $newVersionInfo->collationTableId = $collationTableId;
-        $newVersionInfo->authorId = $authorId;
+        $newVersionInfo->authorTid = $authorTid;
         $newVersionInfo->description = "Converted to edition getting text from " . $strategy;
         $newVersionInfo->isMinor = false;
         $newVersionInfo->isReview = false;

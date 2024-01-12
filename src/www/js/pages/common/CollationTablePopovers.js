@@ -297,7 +297,7 @@ function getNoteHtml(note, peopleInfo) {
     authorShortName = peopleInfo[note.authorId]['shortName']
     if (authorShortName === undefined) {
       //console.warn(`No short name defined for author ${note.authorId}`)
-      authorShortName = peopleInfo[note.authorId]['fullname']
+      authorShortName = peopleInfo[note.authorId]['name']
     }
   }
 

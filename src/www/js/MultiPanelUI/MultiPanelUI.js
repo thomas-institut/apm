@@ -248,18 +248,11 @@ export class MultiPanelUI {
 
   }
 
-  start() {
-    return new Promise( (resolve) => {
-      this._doStart()
-      resolve()
-    })
-  }
-
-  _doStart() {
+  async start() {
     let body = $('body')
     body.html(`Rendering....`)
-    let html = this._genHtmlTopBar()
-    html += this._genHtmlPanels()
+    let html = this.genHtmlTopBar()
+    html += await this.genHtmlPanels()
     body.html(html)
     this._fitPanelsToScreen()
     this._setupSplit()
@@ -553,7 +546,12 @@ export class MultiPanelUI {
     })
   }
 
-  _genHtmlTopBar() {
+  /**
+   *
+   * @return {string}
+   * @private
+   */
+   genHtmlTopBar() {
     return `<div class="${classes.topBarDiv}">
 <div class="top-bar-item ${classes.logo}">${this.options.logo}</div>
 ${this.options.topBarContent()}
@@ -568,7 +566,7 @@ ${this.options.topBarRightAreaContent()}
   }
 
   _renderPanels() {
-    let newHtml = this._genHtmlPanels()
+    let newHtml = this.genHtmlPanels()
     $(`#${ids.panelsDiv}`).replaceWith(newHtml)
   }
 
@@ -586,16 +584,21 @@ ${this.options.topBarRightAreaContent()}
     })
   }
 
-  _genHtmlPanels() {
+  /**
+   * Generates html for panels
+   * @return {Promise<string>}
+   * @private
+   */
+  async genHtmlPanels() {
     let firstPanel = this.panels[this.options.panelOrder[0]]
     let secondPanel = this.panels[this.options.panelOrder[1]]
     let firstPanelClass = this.currentMode === verticalMode ? 'left-panel' : 'top-panel'
     let secondPanelClass = this.currentMode === verticalMode ? 'right-panel' : 'bottom-panel'
     let panelsDivClass = this.currentMode === verticalMode ? 'vertical-mode' : 'horizontal-mode'
     return `<div class="panels ${panelsDivClass}" id="${ids.panelsDiv}">
-<div class="panel ${firstPanelClass}" id="${firstPanel.id}">${this._getPanelContent(firstPanel)}</div>
+<div class="panel ${firstPanelClass}" id="${firstPanel.id}">${await this._getPanelContent(firstPanel)}</div>
 <div class="divider"></div>
-<div class="panel ${secondPanelClass}" id="${secondPanel.id}">${this._getPanelContent(secondPanel)}</div>
+<div class="panel ${secondPanelClass}" id="${secondPanel.id}">${await this._getPanelContent(secondPanel)}</div>
 </div>`
   }
 

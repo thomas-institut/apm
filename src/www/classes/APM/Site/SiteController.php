@@ -76,6 +76,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     protected array $languages;
     protected SimpleProfiler $profiler;
     protected array $languagesByCode;
+    protected int $userTid;
 
     /**
      * SiteController constructor.
@@ -95,6 +96,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         $this->router = $this->systemManager->getRouter();
         $this->userAuthenticated = false;
         $this->userInfo = [];
+        $this->userTid = -1;
         $this->languages = $this->config['languages'];
         $this->languagesByCode = $this->buildLanguageByCodeArray($this->languages);
 
@@ -106,9 +108,10 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
        
        // Check if the user has been authenticated by the authentication middleware
         //$this->logger->debug('Checking user authentication');
-        if ($ci->has(ApmContainerKey::USER_INFO)) {
+        if ($ci->has(ApmContainerKey::USER_DATA)) {
            $this->userAuthenticated = true;
-           $this->userInfo = $ci->get(ApmContainerKey::USER_INFO);
+           $this->userInfo = $ci->get(ApmContainerKey::USER_DATA);
+           $this->userTid = $this->userInfo['tid'];
         }
     }
 

@@ -33,7 +33,11 @@ class ColumnVersionInfo
     public int $column;
     public string $timeFrom;
     public string $timeUntil;
-    public int $authorId;
+//    /**
+//     * @var int
+//     * @deprecated
+//     */
+//    public int $authorId;
     public int $authorTid;
     public string $description;
     public bool $isMinor;
@@ -48,7 +52,6 @@ class ColumnVersionInfo
         $this->column = 0;
         $this->timeFrom = TimeString::TIME_ZERO;
         $this->timeUntil = TimeString::TIME_ZERO;
-        $this->authorId = 0;
         $this->authorTid = 0;
         $this->description = '';
         $this->isMinor = false;
@@ -63,7 +66,6 @@ class ColumnVersionInfo
         $this->column = intval($row['col']);
         $this->timeFrom = $row['time_from'];
         $this->timeUntil = $row['time_until'];
-        $this->authorId = intval($row['author_id']);
         $this->authorTid = intval($row['author_tid']);
         $this->description = $row['descr'];
         $this->isMinor = intval($row['minor']) !== 0;
@@ -85,7 +87,6 @@ class ColumnVersionInfo
             'col' => $this->column,
             'time_from' => $this->timeFrom,
             'time_until' => $this->timeUntil,
-            'author_id' => $this->authorId,
             'author_tid' => $this->authorTid,
             'descr' => $this->description,
             'minor' => $this->isMinor ? 1 : 0,

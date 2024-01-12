@@ -25,7 +25,7 @@
         <td style="padding: 10px;">{{user.id}} </td>
         <td style="padding: 10px;"><a href="{{ url_for('user.profile', {'username' : user.username}) }}"
                                       title="View/Edit user">{{user.username}}</a></td>
-        <td style="padding: 10px;">{{user.fullname}} </td>
+        <td style="padding: 10px;">{{user.name}} </td>
         <td style="padding: 10px;">{{user.email}}</td>
     </tr>
 
@@ -65,13 +65,13 @@
 
     <!-- Full name -->
     <div class="form-group has-feedback">
-    <label for="fullname">Full Name</label>
+    <label for="name">Full Name</label>
     <input type="text" 
            class="form-control" 
            maxlength="50"
-           id="fullname"
-           name="fullname"
-           placeholder="The new user's full name"
+           id="name"
+           name="name"
+           placeholder="The new user's name"
            required>
     <div class="help-block with-errors text-danger"></div>
     </div>

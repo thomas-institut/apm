@@ -40,7 +40,7 @@ class UserManagerUserInfoProvider implements PersonInfoProvider
     public function getNormalizedName(int $id): string
     {
         $userInfo = $this->userManager->getUserInfoByUserId($id);
-        return $userInfo['fullname'];
+        return $userInfo['name'];
     }
 
     public function getShortName(int $id): string

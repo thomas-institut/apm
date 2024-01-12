@@ -51,7 +51,7 @@ export class UserProfilePage {
     //   containerSelector: 'editProfileForm',
     //   entityId: this.userId.toString(),
     //   entityType: 'user',
-    //   metadata: [profileUserInfo.fullname, profileUserInfo.username, profileUserInfo.email],
+    //   metadata: [profileUserInfo.name, profileUserInfo.username, profileUserInfo.email],
     //   metadataSchema: {keys: ['Full Name', 'Username', 'E-Mail Address'], types: ['text', 'text', 'email']},
     //   callbackSave: (d) => {console.log(d)},
     //   mode: 'edit',
@@ -93,16 +93,16 @@ export class UserProfilePage {
         return false
       }
       // Check if the profile has changed
-      let fullname = $('#fullname').val()
+      let name = $('#name').val()
       let email = $('#email').val()
-      if (fullname === profileUserInfo['fullname'] &&
+      if (name === profileUserInfo['name'] &&
                   email === profileUserInfo['email']) {
         return false
       }
 
       event.preventDefault()
       event.stopPropagation()
-      console.log(profileUserInfo['fullname'])
+      console.log(profileUserInfo['name'])
       $.post(
         thisObject.pathFor.apiUpdateProfile(userId),
         $('#theEditProfileForm').serialize(),
@@ -199,7 +199,7 @@ export class UserProfilePage {
   
   genUserProfileHtml (userInfo) {
     let str = '<img src="https://www.gravatar.com/avatar/' + userInfo['emailhash'] + '?d=mm&s=200" alt="User Gravatar">'
-    str += '<h1>' + userInfo['fullname'] + '</h1>'
+    str += '<h1>' + userInfo['name'] + '</h1>'
     str += '<p>Username: ' + userInfo['username'] + '</p>'
     str += '<p>Email address: '
     if (userInfo['email']) {

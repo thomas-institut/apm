@@ -29,11 +29,10 @@ interface PersonManagerInterface
      *
      * @param string $name
      * @param string $sortName
-     * @param bool $isUser
      * @return int
      * @throws InvalidPersonNameException
      */
-    public function createPerson(string $name, string $sortName, bool $isUser = false) : int;
+    public function createPerson(string $name, string $sortName) : int;
 
 
     /**

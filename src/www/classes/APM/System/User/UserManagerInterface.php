@@ -69,10 +69,10 @@ interface UserManagerInterface
     /**
      * Returns true if the given string can be used as a tag in the system.
      * Normally, any non-empty alphanumeric string is a valid tag name
-     * @param string $flagName
+     * @param string $tagName
      * @return bool
      */
-    public function isStringValidTag(string $flagName) : bool;
+    public function isStringValidTag(string $tagName) : bool;
 
     /**
      * Returns the tid for the given username.
@@ -102,17 +102,27 @@ interface UserManagerInterface
      * The given $tid must correspond to a valid Person entity in the system
      * but this method does not check if this is the case.
      *
-     * @param int $tid
+     * @param int $userTid
      * @param string $userName
      * @return void
      * @throws InvalidUserNameException
      * @throws UserNameAlreadyInUseException
      */
-    public function createUser(int $tid, string $userName) : void;
+    public function createUser(int $userTid, string $userName) : void;
 
 
     /**
-     * Returns true if the given flag is set of the given user.
+     * Disables a user.
+     *
+     * @param int $userTid
+     * @return void
+     * @throws UserNotFoundException
+     */
+    public function disableUser(int $userTid) : void;
+
+
+    /**
+     * Returns true if the given tag is set of the given user.
      *
      * @param int $userTid
      * @param string $tag
@@ -143,6 +153,15 @@ interface UserManagerInterface
 
 
     /**
+     * Returns true if the user is root
+     *
+     * @param int $userTid
+     * @return bool
+     * @throws UserNotFoundException
+     */
+    public function isRoot(int $userTid) : bool;
+
+    /**
      * Retrieves the stored user token for the given user agent.
      *
      * If there's no such token, returns an empty string
@@ -170,11 +189,23 @@ interface UserManagerInterface
      *
      * @param int $userTid
      * @param string $userAgent
+     * @param string $ipAddress
      * @param string $token
      * @return void
      * @throws UserNotFoundException
      */
-    public function storeToken(int $userTid, string $userAgent, string $token): void;
+    public function storeToken(int $userTid, string $userAgent, string $ipAddress, string $token): void;
+
+
+    /**
+     * Removes a token for a user.
+     *
+     * This effectively logs out the user from the system.
+     * @param int $userTid
+     * @param string $userAgent
+     * @return void
+     */
+    public function removeToken(int $userTid, string $userAgent) : void;
 
 
     /**
@@ -197,8 +228,8 @@ interface UserManagerInterface
     public function isStringValidPassword(string $someStr) : bool;
 
     /**
-     * Returns true if the given password is exactly the same as the stored password
-     * for the given user
+     * Returns true if the user is not disabled, the stored password is not empty
+     * and the given password matches the stored one.
      *
      * @param int $userTid
      * @param string $password
@@ -209,7 +240,10 @@ interface UserManagerInterface
 
 
     /**
-     * Stores the password for a user
+     * Stores the password for a user.
+     *
+     * Implementations must actually store a password hash, not the password
+     * string as it is given.
      *
      * @param int $userTid
      * @param string $password

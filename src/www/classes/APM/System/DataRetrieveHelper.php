@@ -72,7 +72,7 @@ class DataRetrieveHelper implements LoggerAwareInterface
                     } catch (Exception $e) {
                         // cannot get the info
                         $this->logger->debug("Person info not found for id $id");
-                        return ['id' => $id, 'fullname' => "Person Unknown $id"];
+                        return ['id' => $id, 'name' => "Person Unknown $id"];
                     }
                     return $info;
                 }

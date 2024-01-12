@@ -247,8 +247,7 @@ abstract class TranscriptionManager implements ErrorReporter
      *
      * @param int $pageId
      * @param PageInfo $newSettings
-     * @param int $userId
      * @param int $userTid
      */
-    abstract public function updatePageSettings(int $pageId, PageInfo $newSettings, int $userId, int $userTid) : void;
+    abstract public function updatePageSettings(int $pageId, PageInfo $newSettings, int $userTid) : void;
 }

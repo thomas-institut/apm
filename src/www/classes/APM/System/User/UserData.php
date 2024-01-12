@@ -7,6 +7,13 @@ use ThomasInstitut\ObjectData\Exportable;
 class UserData implements Exportable
 {
 
+    /**
+     * The row id in the user table.
+     *
+     * To be used ONLY when dealing with the database.
+     * DO NOT use for identifying a user in any other case.
+     * @var int
+     */
     public int $id;
     public int $tid;
     public string $userName;
@@ -19,6 +26,7 @@ class UserData implements Exportable
     public array $tags;
 
     public string $passwordHash;
+    public string $emailAddress;
 
     public function __construct()
     {
@@ -26,6 +34,7 @@ class UserData implements Exportable
         $this->tid = -1;
         $this->userName = '';
         $this->passwordHash = '';
+        $this->emailAddress = '';
         $this->disabled = false;
         $this->root = false;
         $this->readOnly = false;

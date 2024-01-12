@@ -501,7 +501,7 @@ export class DocPage extends NormalPage {
         continue;
       }
       let workData = await this.apmDataProxy.getWorkData(workDareId)
-      let authorData = await this.apmDataProxy.getPersonData(workData['authorTid'])
+      let authorData = await this.apmDataProxy.getPersonEssentialData(workData['authorTid'])
       html += '<li>' + authorData['name'] + ', <em>' + workData['title'] + '</em> (' + workDareId + ')';
       html += '<ul><li>';
       let tdArray = [];
@@ -555,7 +555,7 @@ export class DocPage extends NormalPage {
       let formattedTime = ApmUtil.formatVersionTime(this.versionInfo[work][chunk]['timeFrom'])
       let authorName = '';
       if (this.versionInfo[work][chunk].authorId !== 0) {
-        let authorData = await this.apmDataProxy.getPersonData(this.versionInfo[work][chunk]['authorTid'])
+        let authorData = await this.apmDataProxy.getPersonEssentialData(this.versionInfo[work][chunk]['authorTid'])
         authorName = authorData['name']
       }
       dataContent = '<b>Last change:</b><br/>' + formattedTime + '<br/>' + authorName;
@@ -590,7 +590,7 @@ export class DocPage extends NormalPage {
     if (authorTid === 0) {
       return 'n/a';
     }
-    let authorData = await this.apmDataProxy.getPersonData(authorTid)
+    let authorData = await this.apmDataProxy.getPersonEssentialData(authorTid)
     let url = urlGen.siteUserProfile(authorData['userName']);
     return `<a href="${url}" title="View user profile" target="_blank">${authorData['name']}</a>`;
   }

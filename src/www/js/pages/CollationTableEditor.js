@@ -2040,7 +2040,7 @@ export class CollationTableEditor {
       html += '<tr>'
       html += '<td>' + (i+1) + '</td>'
       html += '<td>' + version['id'] + '</td>'
-      html += '<td class="author">' + this.options.peopleInfo[version['authorId']].fullname + '</td>'
+      html += '<td class="author">' + this.options.peopleInfo[version['authorId']].name + '</td>'
       html += '<td class="time">' + Util.formatVersionTime(version['timeFrom']) + '</td>'
       html += '<td>' + version['description'] + '</td>'
 
@@ -2738,7 +2738,7 @@ export class CollationTableEditor {
     let html = ''
     let workTitle = this.options.workInfo['title']
     let workAuthorId = this.options.workInfo['authorId']
-    let workAuthorName = this.options.peopleInfo[workAuthorId]['fullname']
+    let workAuthorName = this.options.peopleInfo[workAuthorId]['name']
     let newEditorHtml = this.ctData['type'] === CollationTableType.EDITION
       ? `... <a href="${this.options.urlGenerator.siteEditCollationTableBeta(this.tableId)}" title="Click to load new editor">New Editor</a>`
       : ''

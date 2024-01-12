@@ -199,16 +199,15 @@ class Authenticator {
             unset($userInfo['passwordHash']);
 
             $personData = $this->systemManager->getPersonManager()->getPersonEssentialData($userTid);
-            $userInfo['name'] = $personData->name;
             // legacy data
             // TODO: get rid of this!
-            $userInfo['fullname'] = $personData->name;
+            $userInfo['name'] = $personData->name;
             $userInfo['email'] = '';
             $userInfo['isRoot'] = $userData->root;
             $userInfo['manageUsers'] = $userData->root;
             $userInfo['tidString'] = Tid::toBase36String($userData->tid);
 
-            $this->container->set(ApmContainerKey::USER_INFO, $userInfo);
+            $this->container->set(ApmContainerKey::USER_DATA, $userInfo);
             if ($this->debugMode) {
                 $this->profiler->stop();
                 $this->debug("Profiler", $this->profiler->getLaps());
@@ -278,7 +277,8 @@ class Authenticator {
                     $token = $this->generateRandomToken();
                     $this->userManager->storeToken(
                             $userTid,
-                            $userAgent, 
+                            $userAgent,
+                            $ipAddress,
                             $token
                     );
                     $cookieValue = $this->generateLongTermCookieValue($token, 
@@ -318,7 +318,7 @@ class Authenticator {
                 ]);
     }
     
-    public function logout(ResponseInterface $response): ResponseInterface
+    public function logout(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $this->debug('Logout request');
         session_start();
@@ -335,17 +335,23 @@ class Authenticator {
                 . "logout attempt", ['userId' => $userTid]);
         }
 
+        $userAgent = $request->getHeader('User-Agent')[0];
+        $ipAddress = $request->getServerParams()['REMOTE_ADDR'];
+
         $this->siteLogger->info('Logout',
             [
-                'tid' => $userData->tid ?? -1,
-                'tidString' => Tid::toBase36String($userData->tid) ?? '',
-                'userName' => $userData->userName ?? ''
+                'tid' => $userTid,
+                'tidString' => Tid::toBase36String($userTid),
+                'username' => $userData->userName ?? '',
+                'user_agent' => $userAgent,
+                'ip_address' => $ipAddress
             ]
         );
         session_unset();
         session_destroy();
         $cookie = SetCookie::create($this->cookieName);
         $response = FigResponseCookies::set($response, $cookie->expire());
+        $this->userManager->removeToken($userTid, $userAgent );
         return $response->withHeader('Location',$this->router->urlFor('home'))
             ->withStatus(302);
     }

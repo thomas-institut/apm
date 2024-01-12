@@ -38,7 +38,6 @@ use APM\System\SystemManager;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Slim\Interfaces\RouteParserInterface;
-use Slim\Routing\RouteParser;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\EntitySystem\Tid;
@@ -86,6 +85,11 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     const API_ERROR_WRONG_TYPE = 1300;
 
     protected SystemManager $systemManager;
+    /**
+     * Use $apiUserTid
+     * @var int
+     * @deprecated
+     */
     protected int $apiUserId;
     protected SimpleProfiler $profiler;
     protected array $languages;
@@ -129,13 +133,13 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
         $this->apiCallName  = $name;
     }
 
-    public function setApiUserId(int $userId=0): void
+    public function setApiUserId(int $userTid=0): void
     {
-        if ($userId === 0) {
-            $this->apiUserId = $this->container->get(ApmContainerKey::API_USER_TID);
+        if ($userTid === 0) {
+            $this->apiUserTid = $this->container->get(ApmContainerKey::API_USER_TID);
         } else {
-            $this->container->set(ApmContainerKey::API_USER_TID, $userId);
-            $this->apiUserId = $userId;
+            $this->container->set(ApmContainerKey::API_USER_TID, $userTid);
+            $this->apiUserTid = $userTid;
         }
     }
 

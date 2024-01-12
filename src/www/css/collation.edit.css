@@ -18,13 +18,13 @@ table.witnesstable td,th {
     padding: 10px;
 }
 
-table.versioninfo {
+table.version-info {
     margin-top: 20px;
     margin-left: 20px;
     margin-bottom: 2rem;
 }
 
-table.versioninfo td,th {
+table.version-info td,th {
     padding: 5px;
 }
 
@@ -177,16 +177,16 @@ svg.edition-svg {
     font-size: 0.8em;
 }
 
-table.versioninfo td {
+table.version-info td {
     vertical-align: top;
 
 }
 
-table.versioninfo td.author {
+table.version-info td.author {
     min-width: 10em;
 }
 
-table.versioninfo td.time {
+table.version-info td.time {
     min-width: 11em;
 }
 

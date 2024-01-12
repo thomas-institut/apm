@@ -33,6 +33,11 @@ class CollationTableVersionInfo
     public int $collationTableId;
     public string $timeFrom;
     public string $timeUntil;
+    /**
+     * Use authorTid
+     * @var int
+     * @deprecated
+     */
     public int $authorId;
     public int $authorTid;
     public string $description;

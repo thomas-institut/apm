@@ -280,22 +280,22 @@ class AutomaticCollationTest extends TestCase
         $this->assertEquals(ApiCollation::ERROR_BAD_WITNESS, $respData['error']);
     }
 
-    private function createWitnessesInDb($work, $chunk, $lang, $editor, $numGoodWitnesses, $numBadWitnesses) {
+    private function createWitnessesInDb($work, $chunk, $lang, $editorTid, $numGoodWitnesses, $numBadWitnesses) {
 
-        $this->debug("Creating $numGoodWitnesses / $numBadWitnesses witnesses in DB for $work-$chunk, lang $lang, editor $editor");
+        $this->debug("Creating $numGoodWitnesses / $numBadWitnesses witnesses in DB for $work-$chunk, lang $lang, editor $editorTid");
         $dm = self::$dataManager;
 
         $witnessNumber = 1;
         $docIds = [];
         for($i=0; $i< $numGoodWitnesses; $i++) {
-            $docId = $dm->newDoc('TestWitness' . $witnessNumber, 'TW-1', 1, $lang,
+            $docId = $dm->newDoc('TestWitness' . $witnessNumber, 1, $lang,
                 'mss', 'local', 'TESTWITNESS' . $witnessNumber);
             $pageId =  $dm->getPageIdByDocPage($docId, 1);
             $dm->addNewColumn($docId, 1);
             $element = new Line();
             $element->pageId = $pageId;
             $element->columnNumber = 1;
-            $element->editorId = $editor;
+            $element->editorTid = $editorTid;
             $element->lang = $lang;
             $element->handId = 0;
             $element->seq = 0;
@@ -310,14 +310,14 @@ class AutomaticCollationTest extends TestCase
         }
 
         for($i=0; $i< $numBadWitnesses; $i++) {
-            $docId = $dm->newDoc('TestWitness' . $witnessNumber . ' (bad)', 'TW-1', 1, $lang,
+            $docId = $dm->newDoc('TestWitness' . $witnessNumber . ' (bad)', 1, $lang,
                 'mss', 'local', 'TESTWITNESS' . $witnessNumber);
             $pageId =  $dm->getPageIdByDocPage($docId, 1);
             $dm->addNewColumn($docId, 1);
             $element = new Line();
             $element->pageId = $pageId;
             $element->columnNumber = 1;
-            $element->editorId = $editor;
+            $element->editorTid = $editorTid;
             $element->lang = $lang;
             $element->handId = 0;
             $element->seq = 0;

@@ -64,7 +64,7 @@ class PublishTranscription extends CommandLineUtility
             }
 
             if ($invert) {
-                $versionManager->unpublishVersion($versionId);
+                $versionManager->unPublishVersion($versionId);
             } else {
                 $versionManager->publishVersion($versionId);
             }
@@ -123,7 +123,7 @@ class PublishTranscription extends CommandLineUtility
                                 "(id:" . $versionInfo->id . ", timestamp: " .
                                 $versionInfo->timeFrom . ")\n");
                             $versionManager->publishVersion($versionInfo->id);
-                            $versionManager->unpublishVersion($versionInfo->id);
+                            $versionManager->unPublishVersion($versionInfo->id);
                         }
                     }
                 }

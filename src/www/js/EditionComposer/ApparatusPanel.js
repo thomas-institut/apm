@@ -635,7 +635,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     return `${ctFrom+1}&ndash;${ctTo+1}`
   }
 
-  generateContentHtml (tabId, mode, visible) {
+  async generateContentHtml (tabId, mode, visible) {
     let textDirection = this.edition.lang === 'la' ? 'ltr' : 'rtl'
     return `<div class="aei-form" style="direction: ${textDirection}">${this._generateApparatusEntryFormHtml()}</div>
 <div class="apparatus text-${this.lang}">${this.cachedHtml}</div>`

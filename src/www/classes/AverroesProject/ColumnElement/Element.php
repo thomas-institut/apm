@@ -35,14 +35,14 @@ class Element {
      * @var int id
      * The element's unique id 
      */
-    public $id;
+    public int $id;
     
 
     /**
-     * Page Id to which the element belongs.
+     * Page id to which the element belongs.
      * @var int 
      */
-    public $pageId;
+    public int $pageId;
     /**
      *
      * @var int 
@@ -50,38 +50,47 @@ class Element {
      * The column number. 0 means the element is associated with the 
      * page rather than with one of the text columns 
      */
-    public $columnNumber;
+    public int $columnNumber;
     /**
      *
      * @var int $seq
      * The element's sequence number within the column. By convention
      * the first element has sequence number 1
      */
-    public $seq;
+    public int $seq;
     
     /**
      * @var string $lang 
      * @brief The element's language
      */
-    public $lang;
+    public string $lang;
     
     /**
      * @var int $handId
      * @brief The element's hand
      */
-    public $handId;
+    public int $handId;
     
     /**
-     * @var int $editor
-     * @brief The element's editor
+     * The editor's userId
+     *
+     * Use editorTid instead
+     *
+     * @var int
+     * @deprecated
      */
-    public $editorId;
+    public int $editorId;
+
+    /**
+     * @var int
+     */
+    public int $editorTid;
 
     /**
      * @var int type
      * @brief the element's type
      */
-    public $type;
+    public int $type;
     
     // type constants
     const INVALID = 0;
@@ -108,21 +117,21 @@ class Element {
      * In the DB it is not necessary because the transcribedText elements
      * will refer to the column element id.
      */
-    public $items;
+    public array $items;
     /**
      *
-     * @var int 
+     * @var ?int
      * For items of type LINE, the line number
      * For items of type ADDITION: the mark or deletion ID
      */
-    public $reference;
+    public ?int $reference;
     /**
      *
-     * @var string $placement
+     * @var ?string
      * For items of type GLOSS, ADDITION and PAGE_NUMBER, 
      * a string stating the placement within the page or column
      */
-    public $placement;
+    public ?string $placement;
     
     public function __construct($id = self::ID_NOT_SET, 
             $colNumber = 0, $lang = self::LANG_NOT_SET)
@@ -133,39 +142,26 @@ class Element {
         $this->items = [];
         $this->lang = $lang;
         $this->editorId  = self::ID_NOT_SET;
+        $this->editorTid = 0;
         $this->reference = null;
         $this->placement = null;
     }
-    
-    /**
-     * @codeCoverageIgnore
-     * @todo See whether this method is necessary at all.
-     * 
-     */
-    function isRightToLeft()
-    {
-        switch($this->lang){
-            case 'ar':
-            case 'he':
-                return true;
-                
-            default:
-                return false;
-        }
-    }
-    
+
     /**
      * Determines if element data is equal, ignoring seq, id and possibly editorId
-     * 
-     * @param Item $a
-     * @param Item $b
+     *
+     * @param Element $a
+     * @param Element $b
+     * @param bool $ignoreItems
+     * @param bool $ignoreEditorTid
+     * @param bool $ignoreSequence
      * @return boolean
      */
-    public static function isElementDataEqual(Element $a, 
-            Element $b, 
-            $ignoreItems = true, 
-            $ignoreEditorId = false, 
-            $ignoreSequence = true) 
+    public static function isElementDataEqual(Element $a,
+                                              Element $b,
+                                              bool    $ignoreItems = true,
+                                              bool    $ignoreEditorTid = false,
+                                              bool    $ignoreSequence = true): bool
     {
         $dataA = get_object_vars($a);
         $dataB = get_object_vars($b);
@@ -180,9 +176,11 @@ class Element {
         unset($dataB['items']);
 //        unset($dataA['reference']);
 //        unset($dataB['reference']);
-        if ($ignoreEditorId) {
+        if ($ignoreEditorTid) {
             unset($dataA['editorId']);
             unset($dataB['editorId']);
+            unset($dataA['editorTid']);
+            unset($dataB['editorTid']);
         }
         if ($dataA != $dataB) {
             return false;

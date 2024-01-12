@@ -43,15 +43,15 @@ class ApiCollationTableConversion extends  ApiController
         $initStrategy = $inputData['initStrategy'];
         $ctManager = $this->systemManager->getCollationTableManager();
 
-        $this->systemManager->onCollationTableSaved($this->apiUserId, $tableId);
+        $this->systemManager->onCollationTableSaved($this->apiUserTid, $tableId);
 
         try {
-            $ctManager->convertToEdition($tableId, $initStrategy, $this->apiUserId, TimeString::now());
+            $ctManager->convertToEdition($tableId, $initStrategy, $this->apiUserTid, TimeString::now());
         } catch (Exception $e) {
             // table ID does not exist!
             $msg = "Error converting table to edition: '" . $e->getMessage() . "', error " . $e->getCode();
             $this->logger->error($msg,
-                [ 'apiUserId' => $this->apiUserId,
+                [ 'apiUserTid' => $this->apiUserTid,
                     'apiError' => self::ERROR_CANNOT_CONVERT,
                     'data' => $inputData,
                 ]);

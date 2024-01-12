@@ -127,7 +127,7 @@ class ApiTranscription extends ApiController
             $versions = $versionManager->getColumnVersionInfoByPageCol($pageId, $col);
             // for the moment, find the first published version in the array
             foreach($versions as $version) {
-                $transcriberIds[$version->authorId] = 1;
+                $transcriberIds[$version->authorTid] = 1;
                 if ($version->isPublished) {
                     $columnData = [ 'column' => $col];
                     $elements = $this->getDataManager()->getColumnElementsByPageId($pageId, $col, $version->timeFrom);
@@ -135,7 +135,7 @@ class ApiTranscription extends ApiController
                     $columnData['text'] = $this->getExportDataFromElements($elements);
                     $columnData['version'] = $version->timeFrom;
                     $columnData['isLatestVersion'] = $version->timeUntil === TimeString::END_OF_TIMES;
-                    $columnData['versionTranscriberId'] = $version->authorId;
+                    $columnData['versionTranscriberId'] = $version->authorTid;
                     $columns[] = $columnData;
                 }
             }
@@ -154,7 +154,7 @@ class ApiTranscription extends ApiController
             $userInfo = $this->getDataManager()->userManager->getUserInfoByUserId($userId);
             $transcriberInfo[] = [
                 'ApmId' => $userId,
-                'FullName' => $userInfo['fullname']
+                'FullName' => $userInfo['name']
                 ];
         }
 

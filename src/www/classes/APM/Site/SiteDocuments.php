@@ -29,7 +29,11 @@ namespace APM\Site;
 use APM\FullTranscription\ApmChunkSegmentLocation;
 use APM\System\ApmConfigParameter;
 use APM\System\DataRetrieveHelper;
+use APM\System\Person\PersonManagerInterface;
+use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
+use APM\System\User\UserNotFoundException;
+use APM\System\User\UserTag;
 use AverroesProject\Data\DataManager;
 use Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -51,10 +55,12 @@ class SiteDocuments extends SiteController
     const TEMPLATE_DOC_EDIT_PAGE = 'doc-edit.twig';
     const TEMPLATE_NEW_DOC_PAGE = 'doc-new.twig';
     const TEMPLATE_DEFINE_DOC_PAGES = 'doc-def-pages.twig';
+
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws PersonNotFoundException
      */
     public function documentsPage(Request $request, Response $response): Response
     {
@@ -68,15 +74,20 @@ class SiteDocuments extends SiteController
         } catch (KeyNotInCacheException $e) {
             // not in cache
             $this->logger->debug("Cache miss for SiteDocuments document data");
-            $data = self::buildDocumentData($dataManager);
+            $data = self::buildDocumentData($dataManager, $this->systemManager->getPersonManager());
             $cache->set(self::DOCUMENT_DATA_CACHE_KEY, serialize($data));
         }
         $docs = $data['docs'];
         $peopleInfo = $data['peopleInfo'];
 
         $canManageDocuments = false;
-        if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'docs-create-new')) {
-            $canManageDocuments = true;
+        $userManager = $this->systemManager->getUserManager();
+        try {
+            if ($userManager->hasTag($this->userTid, UserTag::CAN_CREATE_DOCUMENTS) || $userManager->isRoot($this->userTid)) {
+                $canManageDocuments = true;
+            }
+        } catch (UserNotFoundException) {
+            // should never happen though
         }
 
         $this->profiler->stop();
@@ -89,7 +100,10 @@ class SiteDocuments extends SiteController
         ]);
     }
 
-    static public function buildDocumentData(DataManager $dataManager): array
+    /**
+     * @throws PersonNotFoundException
+     */
+    static public function buildDocumentData(DataManager $dataManager, PersonManagerInterface $personManager): array
     {
         $docs = [];
         $usersMentioned = [];
@@ -101,12 +115,12 @@ class SiteDocuments extends SiteController
             $doc['numPages'] = $dataManager->getPageCountByDocId($docId);
             $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
             $doc['numTranscribedPages'] = count($transcribedPages);
-            $editorsIds = $dataManager->getEditorsByDocId($docId);
+            $editorTids = $dataManager->getEditorTidsByDocId($docId);
             $doc['editors'] = [];
-            foreach ($editorsIds as $edId){
-                $usersMentioned[] = $edId;
+            foreach ($editorTids as $editorTid){
+                $usersMentioned[] = $editorTid;
                 $doc['editors'][] =
-                    $dataManager->userManager->getUserInfoByUserId($edId);
+                    $personManager->getPersonEssentialData($editorTid);
             }
             $doc['docInfo'] = $dataManager->getDocById($docId);
             $doc['tableId'] = "doc-$docId-table";
@@ -122,7 +136,7 @@ class SiteDocuments extends SiteController
     public static function updateDataCache(SystemManager $systemManager): bool
     {
         try {
-            $data = self::buildDocumentData($systemManager->getDataManager());
+            $data = self::buildDocumentData($systemManager->getDataManager(), $systemManager->getPersonManager());
         } catch(Exception $e) {
             $systemManager->getLogger()->error("Exception while building DocumentData",
                 [
@@ -147,6 +161,7 @@ class SiteDocuments extends SiteController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws PersonNotFoundException
      */
     public function showDocPage(Request $request, Response $response): Response
     {
@@ -173,10 +188,10 @@ class SiteDocuments extends SiteController
         $pageInfoArray = $pageManager->getPageInfoArrayForDoc($docId);
 
         $doc['numTranscribedPages'] = count($transcribedPages);
-        $editorsIds = $dataManager->getEditorsByDocId($docId);
-        $doc['editors'] = array();
-        foreach ($editorsIds as $edId){
-            $doc['editors'][] = $this->dataManager->userManager->getUserInfoByUserId($edId);
+        $editorTids = $dataManager->getEditorTidsByDocId($docId);
+        $doc['editors'] = [];
+        foreach ($editorTids as $editorTid){
+            $doc['editors'][] = $this->systemManager->getPersonManager()->getPersonEssentialData($editorTid);
         }
         $doc['docInfo'] = $dataManager->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";
@@ -198,8 +213,9 @@ class SiteDocuments extends SiteController
         $authorInfo = [];
 
         foreach($lastSaves as $saveVersionInfo) {
-            if (!isset($authorInfo[$saveVersionInfo->authorId])) {
-                $authorInfo[$saveVersionInfo->authorId] = $dataManager->userManager->getUserInfoByUserId($saveVersionInfo->authorId);
+            if (!isset($authorInfo[$saveVersionInfo->authorTid])) {
+                $authorInfo[$saveVersionInfo->authorTid] =
+                    $this->systemManager->getPersonManager()->getPersonEssentialData($saveVersionInfo->authorTid);
             }
         }
 

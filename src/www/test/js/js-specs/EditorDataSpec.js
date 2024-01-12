@@ -552,10 +552,10 @@ describe("EditorData", function() {
   "ednotes": [],
   "people": [
     {
-      "fullname": "No editor"
+      "name": "No editor"
     },
     {
-      "fullname": "Editor 1"
+      "name": "Editor 1"
     }
   ],
   "info": {
@@ -699,10 +699,10 @@ let columnData = JSON.parse(`
   "ednotes": [],
   "people": [
     {
-      "fullname": "No editor"
+      "name": "No editor"
     },
     {
-      "fullname": "Editor 1"
+      "name": "Editor 1"
     }
   ],
   "info": {
@@ -871,10 +871,10 @@ let columnData = JSON.parse(`
   "ednotes": [],
   "people": [
     {
-      "fullname": "No editor"
+      "name": "No editor"
     },
     {
-      "fullname": "Editor 1"
+      "name": "Editor 1"
     }
   ],
   "info": {

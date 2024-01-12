@@ -125,7 +125,7 @@ export class MainTextPanel extends PanelWithToolbar {
    * @param {object} ctData
    * @param {Edition} edition
    */
-  updateData(ctData, edition) {
+  async updateData(ctData, edition) {
     this.verbose && console.log(`New data received`)
     this.ctData = CtData.copyFromObject(ctData)
     this.edition = edition
@@ -136,7 +136,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
     if (this.visible) {
       this.verbose && console.log(`MainTextPanel is visible, regenerating content`)
-      $(this.getContentAreaSelector()).html(this.generateContentHtml('', '', true))
+      $(this.getContentAreaSelector()).html(await this.generateContentHtml('', '', true))
       this._setupMainTextDivEventHandlers()
       this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = false
       this._updateLineNumbersAndApparatuses()
@@ -192,7 +192,7 @@ export class MainTextPanel extends PanelWithToolbar {
         </div>`
   }
 
-  generateContentHtml (tabId, mode, visible) {
+  async generateContentHtml (tabId, mode, visible) {
     if (!visible) {
       // if (mode !== this.lastMode) {
         this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = true

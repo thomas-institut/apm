@@ -204,7 +204,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         
         return [ 'id' => $userid, 
                  'username' => $ui['username'] ?? '',
-                 'fullname' => $pi['fullname'],
+                 'name' => $pi['name'],
                  'email' => $pi['email'], 
                  'emailhash' => $emailhash
                 ];
@@ -219,7 +219,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         if ($this->userExistsById($userId)) {
             $newInfo = [];
             $newInfo['id'] = $userId;
-            $newInfo['fullname'] = $fullName;
+            $newInfo['name'] = $fullName;
             $newInfo['email'] = $email;
             $this->getSqlQueryCounterTracker()->incrementUpdate();
             return false !== $this->peopleTable->updateRow($newInfo);
@@ -276,7 +276,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     private function createPerson() : int
     {
         $this->getSqlQueryCounterTracker()->incrementCreate();
-        return $this->peopleTable->createRow(['fullname' => '', 'tid' => Tid::generateUnique(), 'isApmUser' => 1]);
+        return $this->peopleTable->createRow(['name' => '', 'tid' => Tid::generateUnique()]);
     }
     //
     // Allowed action methods

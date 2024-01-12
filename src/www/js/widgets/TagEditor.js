@@ -26,8 +26,8 @@ export class TagEditor {
     const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: "TagEditor"});
     this.options = oc.getCleanOptions(options);
 
-    console.log(`Options`)
-    console.log(this.options)
+    // console.log(`Options`)
+    // console.log(this.options)
 
     this.idPrefix = this.options.idPrefix;
 

@@ -11,39 +11,14 @@ namespace AverroesProject\Data;
 class DocInfo
 {
 
-    /**
-     * @var int
-     */
-    public $id = 0;
 
-    /**
-     * @var string
-     */
-    public $title = '';
-
-    /**
-     * @var string
-     */
-    public $shortTitle = '';
-
-    /**
-     * @var string
-     */
-    public $lang = '';
-
-    /**
-     * @var string
-     */
-    public $docType = '';
-
-    /**
-     * @var string
-     */
-    public $imageSource = '';
-
-    /**
-     * @var string
-     */
-    public $imageSourceData = '';
+    public int $id = 0;
+    public int $tid = 0;
+    public string $title = '';
+    public string $shortTitle = '';
+    public string $lang = '';
+    public string $docType = '';
+    public string $imageSource = '';
+    public string $imageSourceData = '';
 
 }

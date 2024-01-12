@@ -125,7 +125,7 @@ class ApiControllerTest extends TestCase {
 
         $apiUser = self::$dataManager->userManager->createUserByUserName('testApiUser');
         self::$testEnvironment->setApiUser($apiUser);
-        self::$testEnvironment->setUserId($apiUser);
+        self::$testEnvironment->setUserTid($apiUser);
 
         // API controllers to test
         self::$apiCollation = new ApiCollation(self::$container);
@@ -483,7 +483,7 @@ class ApiControllerTest extends TestCase {
         $request6 = self::requestWithData($request,
             [   'command' => ApiPresets::COMMAND_NEW,
                 'tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
-                'userId' => self::$container->get(ApmContainerKey::USER_ID),
+                'userId' => self::$container->get(ApmContainerKey::USER_TID),
                 'title' => $presetTitle,
                 'presetId' => 0,
                 'presetData' => $presetOwnedByNewApiUser
@@ -544,7 +544,7 @@ class ApiControllerTest extends TestCase {
      * @param $presetData
      */
     public function testDeletePreset($presetData) {
-        self::$testEnvironment->setUserId($presetData['apiUserId']);
+        self::$testEnvironment->setUserTid($presetData['apiUserId']);
         self::$apiPresets->setApiUserId($presetData['apiUserId']);
         $presetId1 = $presetData['presetId1']; // owned by self::$editor1
         $presetId2 = $presetData['presetId2']; // owned by the current api user
@@ -586,20 +586,20 @@ class ApiControllerTest extends TestCase {
 
     }
     
-    private function createWitnessesInDb($work, $chunk, $lang, $editor, $numGoodWitnesses, $numBadWitnesses) {
+    private function createWitnessesInDb($work, $chunk, $lang, $editorTid, $numGoodWitnesses, $numBadWitnesses) {
         $dm = self::$dataManager;
         
         $witnessNumber = 1;
         $docIds = [];
         for($i=0; $i< $numGoodWitnesses; $i++) {
-            $docId = $dm->newDoc('TestWitness' . $witnessNumber, 'TW-1', 1, $lang, 
+            $docId = $dm->newDoc('TestWitness' . $witnessNumber, 1, $lang,
                 'mss', 'local', 'TESTWITNESS' . $witnessNumber);
             $pageId =  $dm->getPageIdByDocPage($docId, 1);
             $dm->addNewColumn($docId, 1);
             $element = new Line();
             $element->pageId = $pageId;
             $element->columnNumber = 1;
-            $element->editorId = $editor;
+            $element->editorTid = $editorTid;
             $element->lang = $lang;
             $element->handId = 0;
             $element->seq = 0;
@@ -614,14 +614,14 @@ class ApiControllerTest extends TestCase {
         }
         
         for($i=0; $i< $numBadWitnesses; $i++) {
-            $docId = $dm->newDoc('TestWitness' . $witnessNumber . ' (bad)', 'TW-1', 1, $lang, 
+            $docId = $dm->newDoc('TestWitness' . $witnessNumber . ' (bad)', 1, $lang,
                 'mss', 'local', 'TESTWITNESS' . $witnessNumber);
             $pageId =  $dm->getPageIdByDocPage($docId, 1);
             $dm->addNewColumn($docId, 1);
             $element = new Line();
             $element->pageId = $pageId;
             $element->columnNumber = 1;
-            $element->editorId = $editor;
+            $element->editorTid = $editorTid;
             $element->lang = $lang;
             $element->handId = 0;
             $element->seq = 0;
@@ -670,25 +670,25 @@ class ApiControllerTest extends TestCase {
         $data = json_decode($response->getBody(), true);
         $this->assertEquals([], $data['elements']);
         $this->assertEquals([], $data['ednotes']);
-        $this->assertEquals([self::$container->get(ApmContainerKey::USER_ID)], array_keys($data['people'])); // only test UserId
+        $this->assertEquals([self::$container->get(ApmContainerKey::USER_TID)], array_keys($data['people'])); // only test UserId
         $this->assertEquals(1, $data['info']['col']);
 
         $numElements = 5;
         $numPages = 5;
         $dm = self::$dataManager;
-        $docId = $dm->newDoc('Test API Doc', 'TA-1', $numPages, 'la',
+        $docId = $dm->newDoc('Test API Doc', $numPages, 'la',
             'mss', 'local', 'TESTELEM-5');
         for ($i = 1; $i <= $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
         }
-        $editor = $dm->userManager->createUserByUsername('apieditor');
+        $editorTid = self::$testEnvironment->createUserByUsername('apieditor');
         $pageId =  $dm->getPageIdByDocPage($docId, 1);
         $elementIds = [];
         for ($i=0; $i<$numElements; $i++) {
             $element = new Line();
             $element->pageId = $pageId;
             $element->columnNumber = 1;
-            $element->editorId = $editor;
+            $element->editorTid = $editorTid;
             $element->lang = 'la';
             $element->handId = 0;
             $element->seq = $i;
@@ -716,7 +716,7 @@ class ApiControllerTest extends TestCase {
             $this->assertEquals(Element::LINE, $ele['type']);
             $this->assertEquals($pageId, $ele['pageId']);
             $this->assertEquals(1, $ele['columnNumber']);
-            $this->assertEquals($editor, $ele['editorId']);
+            $this->assertEquals($editorTid, $ele['editorId']);
             $this->assertEquals('la', $ele['lang']);
             $this->assertEquals(0, $ele['handId']);
             $this->assertCount(1, $ele['items']);
@@ -737,7 +737,7 @@ class ApiControllerTest extends TestCase {
 
         $numPages = 5;
         $dm = self::$dataManager;
-        $docId = $dm->newDoc('Test API Doc 2', 'TA-2', $numPages, 'la',
+        $docId = $dm->newDoc('Test API Doc 2', $numPages, 'la',
             'mss', 'local', 'TESTELEM');
         for ($i = 1; $i <= $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
@@ -993,7 +993,7 @@ class ApiControllerTest extends TestCase {
         $this->assertEquals($goodElement['type'], $elementsInDb[0]->type);
         $this->assertEquals($goodElement['lang'], $elementsInDb[0]->lang);
         $this->assertEquals($goodElement['handId'], $elementsInDb[0]->handId);
-        $this->assertEquals($goodElement['editorId'], $elementsInDb[0]->editorId);
+        $this->assertEquals($goodElement['editorTid'], $elementsInDb[0]->editorTid);
         $this->assertEquals($goodElement['reference'], $elementsInDb[0]->reference);
         $this->assertEquals($goodElement['placement'], $elementsInDb[0]->placement);
         $this->assertCount(1, $elementsInDb[0]->items);
@@ -1038,7 +1038,7 @@ class ApiControllerTest extends TestCase {
         $this->assertEquals($goodElement['type'], $elementsInDb[0]->type);
         $this->assertEquals($goodElement['lang'], $elementsInDb[0]->lang);
         $this->assertEquals($goodElement['handId'], $elementsInDb[0]->handId);
-        $this->assertEquals($goodElement['editorId'], $elementsInDb[0]->editorId);
+        $this->assertEquals($goodElement['editorTid'], $elementsInDb[0]->editorTid);
         $this->assertEquals($goodElement['reference'], $elementsInDb[0]->reference);
         $this->assertEquals($goodElement['placement'], $elementsInDb[0]->placement);
         $this->assertCount(2, $elementsInDb[0]->items);

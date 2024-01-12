@@ -1,7 +1,7 @@
 
 {% extends "base.twig" %}
 
-{% block title %}{{theuser.fullname}} | Collaborator in the Averroes Project{% endblock %}
+{% block title %}{{theuser.name}} | Collaborator in the Averroes Project{% endblock %}
 
 {% block extraCSS %}
     <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/user-profile.css"/>
@@ -34,7 +34,7 @@
 
 <div id="userprofile">
 <img src="https://www.gravatar.com/avatar/{{theuser.emailhash}}?d=mm&s=200" alt="User Avatar">
-<h1>{{ theuser.fullname }} </h1>
+<h1>{{ theuser.name }} </h1>
 <p>Username: {{theuser.username}}</p>
 {% if theuser.email %}
     <p>Email address: <a href='mailto:{{theuser.email}}'>{{theuser.email}}</a></p>
@@ -99,13 +99,13 @@ Make Root
 
     <!-- Full name -->
     <div class="form-group has-feedback">
-    <label for="fullname">Full Name</label>
+    <label for="name">Name</label>
     <input type="text"
            class="form-control"
            maxlength="50"
-           name="fullname"
-           id="fullname"
-           value="{{theuser.fullname}}"
+           name="name"
+           id="name"
+           value="{{theuser.name}}"
            required>
     <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
     <div class="help-block with-errors"></div>

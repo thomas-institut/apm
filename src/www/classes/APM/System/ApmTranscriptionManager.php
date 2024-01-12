@@ -1041,7 +1041,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     /**
      * @inheritDoc
      */
-    public function updatePageSettings(int $pageId, PageInfo $newSettings, int $userId, int $userTid): void
+    public function updatePageSettings(int $pageId, PageInfo $newSettings, int $userTid): void
     {
 
 
@@ -1072,7 +1072,6 @@ class ApmTranscriptionManager extends TranscriptionManager
                     $versionInfo->column = $i;
                     $versionInfo->isReview = false;
                     $versionInfo->isMinor = true;
-                    $versionInfo->authorId = $userId;
                     $versionInfo->authorTid = $userTid;
                     $versionInfo->description = 'New page foliation: ' . $newSettings->foliation;
                     $versionInfo->timeFrom = TimeString::now();

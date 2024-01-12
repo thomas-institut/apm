@@ -10,19 +10,22 @@ class PersonEssentialData implements Exportable
     public int $tid;
     public string $name;
     public string $sortName;
-    /**
-     * @var false
-     */
-    public bool $isUser;
     public array $extraAttributes;
 
     /**
      * Internal system ID (e.g., a database row id)
+     *
+     * Should not be used for identifying a person. Use the person's tid instead.
+     *
      * @var int
+     * @deprecated
      */
     public int $id;
     public string $userName;
     public array $userTags;
+
+    public bool $isUser;
+    public string $userEmailAddress;
 
     public function __construct()
     {
@@ -32,6 +35,7 @@ class PersonEssentialData implements Exportable
         $this->sortName = '';
         $this->isUser = false;
         $this->userName = '';
+        $this->userEmailAddress = '';
         $this->userTags = [];
         $this->extraAttributes = [];
     }

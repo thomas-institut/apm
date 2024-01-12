@@ -130,7 +130,7 @@ export class EditionPanel extends Panel {
   }
 
 
-  generateHtml() {
+  async generateHtml() {
     if (MceData.isEmpty(this.mceData)) {
       if (this.options.showLoadingDataMessage) {
         return this.__genLoadingStateHtml('Loading')

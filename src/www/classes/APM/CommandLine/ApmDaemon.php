@@ -14,6 +14,7 @@ class ApmDaemon extends CommandLineUtility
     public function main($argc, $argv): void
     {
         $dataManager = $this->systemManager->getDataManager();
+        $personManager = $this->systemManager->getPersonManager();
 
         $daemon = false;
         if (isset($argv[1]) && $argv[1] === '-d') {
@@ -27,7 +28,9 @@ class ApmDaemon extends CommandLineUtility
             ],
             [
                 'cacheKey' => SiteDocuments::DOCUMENT_DATA_CACHE_KEY,
-                'builder' => function () use ($dataManager) { return SiteDocuments::buildDocumentData($dataManager);}
+                'builder' => function () use ($dataManager, $personManager) {
+                        return SiteDocuments::buildDocumentData($dataManager, $personManager);
+                }
             ]
         ];
 

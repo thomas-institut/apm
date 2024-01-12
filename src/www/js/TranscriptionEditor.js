@@ -404,8 +404,8 @@ class TranscriptionEditor
     
     if (options.people === undefined) {
       options.people = []
-      options.people[0] = { fullname: 'No editor' }
-      options.people[1] = { fullname: 'Editor 1'}
+      options.people[0] = { name: 'No editor' }
+      options.people[1] = { name: 'Editor 1'}
     }
     // editorId: int
     // the Id of the transcriber
@@ -2407,7 +2407,7 @@ class TranscriptionEditor
         }
         ednotesHtml += '<blockquote><p>' + note.text + '</p>'
         ednotesHtml += '<footer>' +
-                    thisObject.people[note.authorId].fullname +
+                    thisObject.people[note.authorId].name +
                     ' @ ' +
                     note.time + '</footer>'
         ednotesHtml += '</blockquote>'
@@ -2538,7 +2538,7 @@ class TranscriptionEditor
         for (const note of ednotes) {
           ednotesHtml += '<blockquote><p>' + note.text + '</p>'
           ednotesHtml += '<footer>' +
-                        editorObject.people[note.authorId].fullname +
+                        editorObject.people[note.authorId].name +
                         ' @ ' +
                         note.time + '</footer>'
           ednotesHtml += '</blockquote>'

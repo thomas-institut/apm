@@ -109,7 +109,7 @@ if ($systemManager->fatalErrorOccurred()) {
 // Build container for Slim
 $container = new MinimalContainer();
 $container->set(ApmContainerKey::SYSTEM_MANAGER, $systemManager);
-$container->set(ApmContainerKey::USER_ID, 0);  // The authentication module will update this with the correct ID
+$container->set(ApmContainerKey::USER_TID, 0);  // The authentication module will update this with the correct ID
 
 // Setup Slim App
 $responseFactory = new ResponseFactory();
@@ -145,7 +145,7 @@ $app->any('/login',
 $app->any('/logout',
     function(Request $request, Response $response) use ($container){
         $authenticator = new Authenticator($container);
-        return $authenticator->logout($response);
+        return $authenticator->logout($request, $response);
     })
     ->setName('logout');
 

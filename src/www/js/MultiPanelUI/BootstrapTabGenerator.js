@@ -132,8 +132,8 @@ export class BootstrapTabGenerator {
     return this.order.map( index => this.tabs[index].id)
   }
 
-  generateHtml() {
-    return this.generateTabListHtml() + this.generateTabContentHtml()
+  async generateHtml() {
+    return this.generateTabListHtml() + await this.generateTabContentHtml()
   }
 
   getTabListId() {
@@ -167,11 +167,12 @@ aria-controls="${tab.id}" title="${linkTitle}" aria-selected="${tab.id === activ
       '</ul>'
   }
 
-  generateTabContentHtml() {
-    let activeTabId = this.activeTabId
-    let mode = this.mode
-    return `<div class="tab-content" id="${this.getTabContentDivId()}">` +
-    this.tabs.map( (tab) => {
+  async generateTabContentHtml() {
+    let activeTabId = this.activeTabId;
+    let mode = this.mode;
+    let html = '';
+    for (let i = 0; i < this.tabs.length; i++) {
+      let tab = this.tabs[i];
       let contentClasses = ['tab-pane']
       if (tab.contentClasses !== []) {
         contentClasses = contentClasses.concat(tab.contentClasses)
@@ -181,10 +182,11 @@ aria-controls="${tab.id}" title="${linkTitle}" aria-selected="${tab.id === activ
         contentClasses.push('active')
         visible = true
       }
-      return `<div class="${contentClasses.join(' ')}" id="${tab.id}" role="tabpanel" aria-labelledby="${tab.id}-tab">
-${tab.content(tab.id, mode, visible)}
-</div>`
-    }).join('') +
-    '</div>'
+      let tabContent = await tab.content(tab.id, mode, visible)
+      html += `<div class="${contentClasses.join(' ')}" id="${tab.id}" role="tabpanel" aria-labelledby="${tab.id}-tab">
+    ${tabContent}</div>`
+    }
+
+    return `<div class="tab-content" id="${this.getTabContentDivId()}">${html}</div>`
   }
 }

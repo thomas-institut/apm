@@ -1,10 +1,10 @@
 {% extends "base.twig" %}
 
-{% block title %}{{theuser.fullname}} | Settings {% endblock %}
+{% block title %}{{theuser.name}} | Settings {% endblock %}
 
 {% block content %}
 {% if canedit %}
-<h1>Settings for {{ theuser.fullname }} </h1>
+<h1>Settings for {{ theuser.name }} </h1>
 <p>Username: {{theuser.username}}</p>
 
 

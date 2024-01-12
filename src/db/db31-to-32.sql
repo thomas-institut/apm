@@ -106,26 +106,43 @@ ALTER TABLE `ap_mc_editions` DROP COLUMN `author_id`;
 ALTER TABLE `ap_edition_sources` DROP COLUMN `uuid`;
 ALTER TABLE `ap_edition_sources` MODIFY COLUMN `id` int NOT NULL AUTO_INCREMENT;
 
--- add apmUser flag in the people table and index the tid column
-ALTER TABLE `ap_people` ADD `isApmUser` TINYINT NOT NULL DEFAULT 0 AFTER `email`;
-UPDATE `ap_people` SET `isApmUser` = 1 where `id` > 10;
+-- add tags and email address columns to user's table
+ALTER TABLE `ap_users` ADD `tags` VARCHAR(1024) DEFAULT  '' AFTER `password`;
+UPDATE `ap_users` SET `tags` = 'disabled' WHERE `password` IS NULL;
+UPDATE `ap_users` SET `tags` = 'root' WHERE `username`='rafael';
+UPDATE `ap_users` SET `tags` = 'readOnly' WHERE `username`='guest';
+ALTER TABLE `ap_users` ADD `email_address` VARCHAR(1024) DEFAULT NULL UNIQUE AFTER `password`;
+UPDATE `ap_users`, `ap_people` SET `ap_users`.`email_address`=`ap_people`.`email` WHERE `ap_users`.`tid` = `ap_people`.tid;
 
-ALTER TABLE `ap_users` ADD `flags` VARCHAR(1024) DEFAULT  '' AFTER `password`;
-UPDATE `ap_users` SET `flags` = 'disabled' WHERE `password` IS NULL;
-UPDATE `ap_users` SET `flags` = 'root' WHERE `username`='rafael';
-UPDATE `ap_users` SET `flags` = 'readOnly' WHERE `username`='guest';
+
+-- clean up people table: fullname becomes name, add sort_name to the people table and drop email
+ALTER TABLE `ap_people` CHANGE COLUMN `fullname` `name` VARCHAR(1024) NOT NULL;
+ALTER TABLE `ap_people` ADD `sort_name` VARCHAR(1024) DEFAULT NULL AFTER `name`;
+ALTER TABLE `ap_people` DROP COLUMN `email`;
+
+
 
 -- Let MySql handle the id column in ap_works
 ALTER TABLE `ap_works` MODIFY COLUMN `id` int NOT NULL AUTO_INCREMENT;
+
 
 -- drop unused tables
 DROP TABLE ap_scheduler;
 
 -- clean up token table
-DELETE FROM ap_tokens where creation_time < '2023-07-01';
+ALTER TABLE `ap_tokens` MODIFY COLUMN `id` int NOT NULL AUTO_INCREMENT;
+ALTER TABLE `ap_tokens` DROP COLUMN `user_id`;
+DELETE FROM ap_tokens where creation_time < '2023-12-11';
 
 
 -- Change database version setting name
 UPDATE `ap_settings` SET `setting` = 'DatabaseVersion' WHERE `ap_settings`.`setting` = 'dbversion';
+
+
+
+ALTER TABLE `ap_ednotes` DROP COLUMN `author_id`;
+ALTER TABLE `ap_elements` DROP COLUMN `editor_id`;
+ALTER TABLE `ap_users` MODIFY COLUMN `username` VARCHAR(128) NOT NULL;
+
 
 UPDATE `ap_settings` SET `value` = '32' WHERE `ap_settings`.`setting` = 'DatabaseVersion';

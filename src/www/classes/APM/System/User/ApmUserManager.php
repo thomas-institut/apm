@@ -60,16 +60,17 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
     private function getUserDataFromTableRow(array $row) : UserData
     {
         $data = new UserData();
-
-        $flags = explode(',', $row['flags']);
+        $tagString =  trim($row['tags']);
+        $tags = $tagString !== '' ? explode(',', $tagString) : [];
         $data->id = intval($row['id']);
         $data->tid = intval($row['tid']);
         $data->userName = $row['username'];
+        $data->emailAddress = $row['email_address'] ?? '';
         $data->passwordHash = is_null($row['password']) ? '' : $row['password'];
-        $data->disabled = in_array(UserTag::DISABLED, $flags);
-        $data->root = in_array(UserTag::ROOT, $flags);
-        $data->readOnly = in_array(UserTag::READ_ONLY, $flags);
-        $data->tags = $flags;
+        $data->disabled = in_array(UserTag::DISABLED, $tags);
+        $data->root = in_array(UserTag::ROOT, $tags);
+        $data->readOnly = in_array(UserTag::READ_ONLY, $tags);
+        $data->tags = $tags;
         return $data;
     }
 
@@ -114,9 +115,9 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
     /**
      * @inheritDoc
      */
-    public function createUser(int $tid, string $userName): void
+    public function createUser(int $userTid, string $userName): void
     {
-        if ($this->isUser($tid)) {
+        if ($this->isUser($userTid)) {
             return;
         }
 
@@ -125,11 +126,24 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
         }
 
         $this->usersTable->createRow([
-            'tid' => $tid,
+            'tid' => $userTid,
             'username' => $userName,
             'password' => null,
-            'flags' => ''
+            'tags' => ''
         ]);
+    }
+
+
+    /**
+     * @inheritDoc
+     */
+    public function disableUser(int $userTid) : void {
+
+        $userData = $this->getUserData($userTid);
+
+        $this->addTag($userTid, UserTag::DISABLED);
+        $this->usersTable->updateRow([ 'id' => $userData->id, 'password' => null]);
+        unset($this->cache[$userTid]);
     }
 
     /**
@@ -139,9 +153,9 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
         return strlen($userName) >= 5 && ctype_alnum($userName);
     }
 
-    public function isStringValidTag(string $flagName) : bool
+    public function isStringValidTag(string $tagName) : bool
     {
-        return $flagName !== '' && ctype_alnum($flagName);
+        return $tagName !== '' && ctype_alnum($tagName);
     }
 
     /**
@@ -160,9 +174,9 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
     {
         if (!$this->hasTag($userTid, $tag)) {
             $userData = $this->getUserData($userTid);
-            $newFlagArray = $userData->tags;
-            $newFlagArray[]  = $tag;
-            $this->usersTable->updateRow([ 'id' => $userData->id, 'flags' => implode(',', $newFlagArray)]);
+            $newTagArray = $userData->tags;
+            $newTagArray[]  = $tag;
+            $this->usersTable->updateRow([ 'id' => $userData->id, 'tags' => implode(',', $newTagArray)]);
             unset($this->cache[$userTid]);
         }
     }
@@ -176,15 +190,19 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
     {
         if ($this->hasTag($userTid, $tag)) {
             $userData = $this->getUserData($userTid);
-            $newFlagArray = [];
-            foreach($userData->tags as $currentFlag) {
-                if($currentFlag !== $tag) {
-                    $newFlagArray[] = $currentFlag;
+            $newTagArray = [];
+            foreach($userData->tags as $currentTag) {
+                if($currentTag !== $tag) {
+                    $newTagArray[] = $currentTag;
                 }
             }
-            $this->usersTable->updateRow([ 'id' => $userData->id, 'flags' => implode(',', $newFlagArray)]);
+            $this->usersTable->updateRow([ 'id' => $userData->id, 'tags' => implode(',', $newTagArray)]);
             unset($this->cache[$userTid]);
         }
+    }
+
+    public function isRoot(int $userTid) : bool {
+        return $this->hasTag($userTid, UserTag::ROOT);
     }
 
     /**
@@ -227,7 +245,7 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
     /**
      * @inheritDoc
      */
-    public function storeToken(int $userTid, string $userAgent, string $token): void
+    public function storeToken(int $userTid, string $userAgent, string $ipAddress, string $token): void
     {
         $userData = $this->getUserData($userTid);
         if ($userAgent === '' || $token === '') {
@@ -235,11 +253,18 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
         }
         $this->deleteToken($userTid, $userAgent); // this checks if the user exists
         $this->tokensTable->createRow([
-            'user_id' => $userData->id,
             'user_tid' => $userTid,
             'user_agent' => $userAgent,
-            'ip_address' => '',
+            'ip_address' => $ipAddress,
             'token' => $token]);
+    }
+
+    public function removeToken(int $userTid, string $userAgent) : void
+    {
+        $rows = $this->tokensTable->findRows([ 'user_tid' => $userTid, 'user_agent' => $userAgent]);
+        foreach($rows as $row) {
+            $this->tokensTable->deleteRow($row['id']);
+        }
     }
 
     public function isStringValidPassword(string $someStr) : bool {

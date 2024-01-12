@@ -21,7 +21,7 @@ class ApiWorks extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $workId);
         $dataManager = $this->systemManager->getDataManager();
 
-        $workInfo = $dataManager->getWorkInfo($workId);
+        $workInfo = $dataManager->getWorkInfoByDareId($workId);
 
 
         if ($workInfo === false) {

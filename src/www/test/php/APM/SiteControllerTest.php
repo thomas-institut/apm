@@ -113,7 +113,7 @@ class SiteControllerTest extends TestCase {
     {
         $request = new ServerRequest('GET', '');
 
-        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => 100]);
+        self::$ci->set(ApmContainerKey::USER_DATA, ['id' => 100]);
         
         $sc = new  SiteHomePage(self::$ci);
         $response = $sc->homePage($request, new Response());
@@ -126,7 +126,7 @@ class SiteControllerTest extends TestCase {
         
         $request = new ServerRequest('GET', '');
 
-        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => 100, 'username' => 'testUser']);
+        self::$ci->set(ApmContainerKey::USER_DATA, ['id' => 100, 'username' => 'testUser']);
 
         $sc = new SiteDashboard(self::$ci);
         
@@ -140,7 +140,7 @@ class SiteControllerTest extends TestCase {
         
         $request = new ServerRequest('GET', '');
 
-        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => 100, 'username' => 'testUser']);
+        self::$ci->set(ApmContainerKey::USER_DATA, ['id' => 100, 'username' => 'testUser']);
         
         $sc = new SiteDocuments(self::$ci);
         
@@ -154,7 +154,7 @@ class SiteControllerTest extends TestCase {
         
         $request = new ServerRequest('GET', '');
 
-        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => 100, 'username' => 'testUser']);
+        self::$ci->set(ApmContainerKey::USER_DATA, ['id' => 100, 'username' => 'testUser']);
         $sc = new SiteChunks(self::$ci);
         
         $response = $sc->worksPage($request, new Response());
@@ -167,7 +167,7 @@ class SiteControllerTest extends TestCase {
         
         $request = new ServerRequest('GET', '');
 
-        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => 100, 'username' => 'testUser']);
+        self::$ci->set(ApmContainerKey::USER_DATA, ['id' => 100, 'username' => 'testUser']);
         
         $sc = new SiteUserManager(self::$ci);
         
@@ -180,14 +180,14 @@ class SiteControllerTest extends TestCase {
     public function testChunkAndWitnessPage()
     {
         self::$testEnvironment->emptyDatabase();
-        $editor1 = self::$dataManager->userManager->createUserByUserName('testeditor1');
-        $editor2 = self::$dataManager->userManager->createUserByUserName('testeditor2');
-        $editor3 = self::$dataManager->userManager->createUserByUsername('anothereditor');
+        $editor1 = self::$testEnvironment->createUserByUserName('testeditor1');
+        $editor2 = self::$testEnvironment->createUserByUserName('testeditor2');
+        $editor3 = self::$testEnvironment->createUserByUserName('anothereditor');
         
         $this->assertNotFalse($editor1);
         $this->assertNotFalse($editor2);
         $this->assertNotFalse($editor3);
-        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => $editor1]);
+        self::$ci->set(ApmContainerKey::USER_DATA, ['id' => $editor1]);
 
         $dm = self::$dataManager;
         $dm->userManager->allowUserTo($editor1, 'witness-view-details');
@@ -198,17 +198,17 @@ class SiteControllerTest extends TestCase {
         $lang2 = 'he';
         $numPages = 5;
 
-        $docId = $dm->newDoc('Test site Doc', 'TA-1', $numPages, $lang1, 
-                'mss', 'local', 'TESTSITE1');
-        $docId2 = $dm->newDoc('Test site Doc 2', 'TA-2', $numPages, $lang1, 
-                'mss', 'local', 'TESTSITE2');
-        $docId3 = $dm->newDoc('Test site Doc 3', 'TA-3', $numPages, $lang1, 
-                'mss', 'local', 'TESTSITE3');
-        $docId4 = $dm->newDoc('Test site Doc 4', 'TA-4', $numPages, $lang1, 
-                'mss', 'local', 'TESTSITE4');
+        $docId = $dm->newDoc('Test site Doc', $numPages, $lang1,
+            'mss', 'local', 'TESTSITE1');
+        $docId2 = $dm->newDoc('Test site Doc 2', $numPages, $lang1,
+            'mss', 'local', 'TESTSITE2');
+        $docId3 = $dm->newDoc('Test site Doc 3', $numPages, $lang1,
+            'mss', 'local', 'TESTSITE3');
+        $docId4 = $dm->newDoc('Test site Doc 4', $numPages, $lang1,
+            'mss', 'local', 'TESTSITE4');
         // in a different language!
-        $docId5 = $dm->newDoc('Test site Doc 5', 'TA-5', $numPages, $lang2, 
-                'mss', 'local', 'TESTSITE5');
+        $docId5 = $dm->newDoc('Test site Doc 5', $numPages, $lang2,
+            'mss', 'local', 'TESTSITE5');
         
         for ($i = 1; $i <= $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
@@ -223,7 +223,7 @@ class SiteControllerTest extends TestCase {
         $element = new Line();
         $element->pageId = $pageId;
         $element->columnNumber = 1;
-        $element->editorId = $editor3;
+        $element->editorTid = $editor3;
         $element->lang = $lang1;
         $element->handId = 0;
         $element->seq = 0;
@@ -255,7 +255,7 @@ class SiteControllerTest extends TestCase {
         $element2 = new Line();
         $element2->pageId = $pageId2;
         $element2->columnNumber = 1;
-        $element2->editorId = $editor3;
+        $element2->editorTid = $editor3;
         $element2->lang = $lang1;
         $element2->handId = 0;
         $element2->seq = 0;
@@ -269,7 +269,7 @@ class SiteControllerTest extends TestCase {
         $element3 = new Line();
         $element3->pageId = $pageId3;
         $element3->columnNumber = 1;
-        $element3->editorId = $editor3;
+        $element3->editorTid = $editor3;
         $element3->lang = $lang1;
         $element3->handId = 0;
         $element3->seq = 0;
@@ -317,7 +317,7 @@ class SiteControllerTest extends TestCase {
         $element4 = new Line();
         $element4->pageId = $pageId4;
         $element4->columnNumber = 1;
-        $element4->editorId = $editor3;
+        $element4->editorTid = $editor3;
         $element4->lang = $lang1;
         $element4->handId = 0;
         $element4->seq = 0;
@@ -334,7 +334,7 @@ class SiteControllerTest extends TestCase {
         $element5 = new Line();
         $element5->pageId = $pageId5;
         $element5->columnNumber = 1;
-        $element5->editorId = $editor3;
+        $element5->editorTid = $editor3;
         $element5->lang = $lang2;
         $element5->handId = 0;
         $element5->seq = 0;
@@ -394,7 +394,7 @@ class SiteControllerTest extends TestCase {
         $lang = $witnessInfo['lang'];
         $editor1 = $witnessInfo['editors'][0];
 
-        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => $editor1]);
+        self::$ci->set(ApmContainerKey::USER_DATA, ['id' => $editor1]);
         self::$dataManager->userManager->allowUserTo($editor1, 'act-view-experimental-data');
         
         $collationTableControllerObject = new SiteCollationTable(self::$ci);
@@ -440,7 +440,7 @@ class SiteControllerTest extends TestCase {
 //        $lang = $witnessInfo['lang'];
         $editor1 = $witnessInfo['editors'][0];
 
-        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => $editor1]);
+        self::$ci->set(ApmContainerKey::USER_DATA, ['id' => $editor1]);
         self::$dataManager->userManager->allowUserTo($editor1, 'act-view-experimental-data');
         
         $collationTableControllerObject = new SiteCollationTable(self::$ci);
@@ -486,7 +486,7 @@ class SiteControllerTest extends TestCase {
         $lang = $witnessInfo['lang'];
         $editor1 = $witnessInfo['editors'][0];
 
-        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => $editor1]);
+        self::$ci->set(ApmContainerKey::USER_DATA, ['id' => $editor1]);
         self::$dataManager->userManager->allowUserTo($editor1, 'act-view-experimental-data');
         
         $collationTableControllerObject = new SiteCollationTable(self::$ci);

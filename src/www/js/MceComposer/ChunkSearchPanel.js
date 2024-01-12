@@ -66,7 +66,7 @@ export class ChunkSearchPanel extends Panel {
     this.__setupUI()
   }
 
-  generateHtml() {
+  async generateHtml() {
     let loadDataLabel = this.activeEditionsData === null ? 'Load Data' : 'Reload Data'
     return `<div class="chunk-search">
         <div class="active-editions">
@@ -139,12 +139,12 @@ export class ChunkSearchPanel extends Panel {
             userData = await $.get(this.options.urlGenerator.apiUserGetInfo(userId))
           } catch(e) {
             console.warn(`Error retrieving user info for user ${userId}`)
-            userData = { id: userId, fullname: `User ${userId}`}
+            userData = { id: userId, name: `User ${userId}`}
           }
-          if (userData === undefined || userData.fullname === undefined) {
+          if (userData === undefined || userData.name === undefined) {
             // bad data
             console.warn(`Bad data for ${userId}`)
-            userData = { id: userId, fullname: `User ${userId}`}
+            userData = { id: userId, name: `User ${userId}`}
           }
           this.cache.store(cacheKey, userData)
         }
@@ -229,7 +229,7 @@ export class ChunkSearchPanel extends Panel {
         return `<tr>
             <td>${info['chunkId']}</td>
             <td>${info['title']}</td>
-            <td>${this._getUserInfoFromCache(versionInfo.authorId).fullname}</td>
+            <td>${this._getUserInfoFromCache(versionInfo.authorId).name}</td>
             <td><small>${lastSaveLabel}</small></td>
             <td>${addButton} <span class="info-span-edition-${info.id}"</td>
         </tr>`

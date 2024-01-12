@@ -86,7 +86,7 @@ class DataManagerTest extends TestCase {
         $this->assertEquals(0, $dm->getPageCountByDocId(100));
         $this->assertFalse($dm->getPageInfoByDocPage(100, 200));
         $this->assertFalse($dm->getElementById(1000));
-        $this->assertEquals([], $dm->getEditorsByDocId(100));
+        $this->assertEquals([], $dm->getEditorTidsByDocId(100));
         $this->assertEquals([], $dm->getTranscribedPageListByDocId(100));
         $this->assertFalse($dm->getImageUrl(100, 100));
         $this->assertEquals(0, $dm->getNumColumns(100, 200));
@@ -102,8 +102,8 @@ class DataManagerTest extends TestCase {
     {
         $dm = self::$dataManager;
         
-        $newDocId = $dm->newDoc('Document 1', 'Doc 1', 10, 'la', 
-                'mss', 'local', 'DOC1');
+        $newDocId = $dm->newDoc('Document 1', 10, 'la',
+            'mss', 'local', 'DOC1');
         
         $this->assertNotFalse($newDocId);
         $this->assertEquals([$newDocId], $dm->getDocIdList());
@@ -152,12 +152,12 @@ class DataManagerTest extends TestCase {
         $pageId = $dm->getPageIdByDocPage($docId, 1);
         $this->assertNotFalse($pageId);
         $this->assertTrue($dm->isPageEmpty($pageId));
-        $editor1 = $dm->userManager->createUserByUserName('testeditor1');
+        $editor1 = self::$testEnvironment->createUserByUserName('testeditor1');
         
         $lineElement = new Line();
         $lineElement->lang = 'la';
         $lineElement->handId = 0;
-        $lineElement->editorId = $editor1;
+        $lineElement->editorTid = $editor1;
 
         ItemArray::addItem($lineElement->items, new Text(100, 0, 'sometext'));
         ItemArray::addItem($lineElement->items, new Deletion(101, 1, 'deleted', 'strikeout'));
@@ -211,7 +211,7 @@ class DataManagerTest extends TestCase {
         $lineElement2 = new Line();
         $lineElement2->lang = 'la';
         $lineElement2->handId = 0;
-        $lineElement2->editorId = $editor1;
+        $lineElement2->editorTid = $editor1;
 
         ItemArray::addItem($lineElement2->items, new Text(106, 0, 'sometext2'));
         ItemArray::addItem($lineElement2->items, new Addition(107, 1, 'added3', 'above', 105));
@@ -337,8 +337,8 @@ class DataManagerTest extends TestCase {
         $this->assertFalse($res);
         $testPageCount = 100;
         
-        $newDocId = $dm->newDoc('Document 2', 'Doc 1', $testPageCount, 'la', 
-                'mss', 'local', 'DOC2');
+        $newDocId = $dm->newDoc('Document 2', $testPageCount, 'la',
+            'mss', 'local', 'DOC2');
         
         $this->assertNotFalse($newDocId);
         $this->assertEquals($testPageCount, $dm->getPageCountByDocId($newDocId));
@@ -381,8 +381,8 @@ class DataManagerTest extends TestCase {
         $testPageCount = 10;
       
         // Create document
-        $docId = $dm->newDoc('Document 3', 'Doc 3', $testPageCount, 'la', 
-                'mss', 'local', 'DOC3');
+        $docId = $dm->newDoc('Document 3', $testPageCount, 'la',
+            'mss', 'local', 'DOC3');
         
         $this->assertNotFalse($docId);
         $this->assertEquals($testPageCount, $dm->getPageCountByDocId($docId));
@@ -394,7 +394,8 @@ class DataManagerTest extends TestCase {
         }
         
         // Create an editor user id
-        $editor = $dm->userManager->createUserByUserName('testeditor');
+        
+        $editorTid = self::$testEnvironment->createUserByUserName('testeditor');
         
         // Test case 1: simple item array, no references
         
@@ -415,7 +416,7 @@ class DataManagerTest extends TestCase {
         $mainTextElement = new Line();
         $mainTextElement->lang = 'la';
         $mainTextElement->handId = 0;
-        $mainTextElement->editorId = $editor;
+        $mainTextElement->editorTid = $editorTid;
         $itemId = 100;
         $itemSeq = 0;
         foreach($testCase1Array as $itemDef) {
@@ -458,7 +459,7 @@ class DataManagerTest extends TestCase {
         $mainTextElement2 = new Line();
         $mainTextElement2->lang = 'la';
         $mainTextElement2->handId = 0;
-        $mainTextElement2->editorId = $editor;
+        $mainTextElement2->editorTid = $editorTid;
         ItemArray::addItem($mainTextElement2->items, new Deletion(100, 0, 'deletion', 'strikeout'));
         ItemArray::addItem($mainTextElement2->items, new Text(101, 1, 'some text'));
         ItemArray::addItem($mainTextElement2->items, new Addition(102, 2, 'addition', 'above', 100));
@@ -485,7 +486,7 @@ class DataManagerTest extends TestCase {
         $mainTextElement3 = new Line();
         $mainTextElement3->lang = 'la';
         $mainTextElement3->handId = 0;
-        $mainTextElement3->editorId = $editor;
+        $mainTextElement3->editorTid = $editorTid;
         ItemArray::addItem($mainTextElement3->items, new Text(100, 0, 'Some text.'));
         ItemArray::addItem($mainTextElement3->items, new MarginalMark(101, 1, '[A]'));
         ItemArray::addItem($mainTextElement3->items, new Text(102, 2, ' More text.'));
@@ -496,7 +497,7 @@ class DataManagerTest extends TestCase {
         $marginalElement->reference = 101;
         $marginalElement->lang = 'la';
         $marginalElement->handId = 0;
-        $marginalElement->editorId = $editor;
+        $marginalElement->editorTid = $editorTid;
         ItemArray::addItem($marginalElement->items, new Text(105, 0, 'Marginal text.'));
         $newElements3 = [];
         $newElements3[] = $mainTextElement3;

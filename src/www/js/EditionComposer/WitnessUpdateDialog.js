@@ -39,7 +39,7 @@ export class WitnessUpdateDialog {
       },
       updateWitness: {
         // function to call to actually update the witnesses
-        // (witnessIndex, changeData) => { ... return nothing, may throw errors }
+        // (witnessIndex, changeData) =>  Promise
         type: 'function',
         required: true
       },
@@ -234,14 +234,14 @@ export class WitnessUpdateDialog {
 
                 // actually do the changes!
                 this.debug && console.log(`Actually doing the changes`)
-                this.options.updateWitness(witnessIndex, changes, changeData.newWitness)
-                // changes done!
-
-                doChangesP.removeClass('status-running')
-                doChangesP.addClass('status-done')
-                doChangesP.html(`${doChangesStepTitle} ${this.icons.checkOK}`)
-                cancelButton.html('Done!')
-                cancelButton.prop('disabled', false)
+                this.options.updateWitness(witnessIndex, changes, changeData.newWitness).then( () => {
+                  // changes done!
+                  doChangesP.removeClass('status-running')
+                  doChangesP.addClass('status-done')
+                  doChangesP.html(`${doChangesStepTitle} ${this.icons.checkOK}`)
+                  cancelButton.html('Done!')
+                  cancelButton.prop('disabled', false)
+                })
               })
             })
           .catch( reason => {

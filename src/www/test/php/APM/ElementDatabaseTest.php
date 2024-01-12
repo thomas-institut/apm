@@ -25,7 +25,6 @@ use APM\System\ApmContainerKey;
 use APM\System\SystemManager;
 use AverroesProject\ColumnElement\Line;
 use AverroesProject\Data\DataManager;
-use AverroesProject\Data\EdNoteManager;
 use AverroesProject\TxText\Abbreviation;
 use AverroesProject\TxText\Addition;
 use AverroesProject\TxText\CharacterGap;
@@ -34,6 +33,7 @@ use AverroesProject\TxText\Deletion;
 use AverroesProject\TxText\Gliph;
 use AverroesProject\TxText\Illegible;
 use AverroesProject\TxText\Initial;
+use AverroesProject\TxText\Item;
 use AverroesProject\TxText\Mark;
 use AverroesProject\TxText\MathText;
 use AverroesProject\TxText\NoWordBreak;
@@ -42,11 +42,15 @@ use AverroesProject\TxText\Rubric;
 use AverroesProject\TxText\Sic;
 use AverroesProject\TxText\Text;
 use AverroesProject\TxText\Unclear;
-use DI\Container;
-use Monolog\Logger;
+use Exception;
 use PHPUnit\Framework\TestCase;
 use AverroesProject\TxText\ItemArray;
 use AverroesProject\ColumnElement\Element;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use Psr\Log\LoggerInterface;
+use Test\APM\Mockup\DatabaseTestEnvironment;
 
 
 /**
@@ -55,52 +59,36 @@ use AverroesProject\ColumnElement\Element;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class ElementDatabaseTest extends TestCase {
-    /**
-     *
-     * @var DataManager
-     */
-    static $dataManager;
-    /**
-     * @var Container
-     */
-    private static $container;
-    /**
-     * @var DatabaseTestEnvironment
-     */
-    private static $testEnvironment;
-    /**
-     * @var EdNoteManager
-     */
-    private static $edNoteManager;
+    static DataManager $dataManager;
+
+    private static ContainerInterface $container;
+    private static DatabaseTestEnvironment $testEnvironment;
+    private static LoggerInterface $logger;
 
     /**
-     * @var Logger
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws Exception
      */
-    private static $logger;
-
     public static function setUpBeforeClass() : void  {
-        global $testConfig;
 
-        self::$testEnvironment = new DatabaseTestEnvironment($testConfig);
+        self::$testEnvironment = new DatabaseTestEnvironment();
         self::$container = self::$testEnvironment->getContainer();
 
         /** @var SystemManager $systemManager */
         $systemManager = self::$container->get(ApmContainerKey::SYSTEM_MANAGER);
-
-
         self::$dataManager = $systemManager->getDataManager();
-        self::$edNoteManager = self::$dataManager->edNoteManager;
         self::$logger = $systemManager->getLogger();
-
     }
-    
+
+    /**
+     * @throws Exception
+     */
     public function testEmptyDatabase()
     {
         $dm = self::$dataManager;
         self::$testEnvironment->emptyDatabase();
-        
         $this->assertEquals([], $dm->getColumnElements(1, 1, 1));
-        
     }
 
     /**
@@ -108,20 +96,21 @@ class ElementDatabaseTest extends TestCase {
      */
     public function testAddElementSimple() 
     {
-        $numPages = 10;
+        $numPages = 5;
         $dm = self::$dataManager;
-        $docId = $dm->newDoc('Test Elements Doc', 'TED', $numPages, 'la', 
-                'mss', 'local', 'TESTELEM');
+        $docId = $dm->newDoc('Test Elements Doc', $numPages, 'la',
+            'mss', 'local', 'TEST_ELEM');
         for ($i = 1; $i <= $numPages; $i++) {
-            $dm->addNewColumn($docId, $i);
+            $result = $dm->addNewColumn($docId, $i);
+            $this->assertNotFalse($result, "Adding column to doc $docId, page $i");
         }
-        $editorId = $dm->userManager->createUserByUsername('testeditor');
+        $editorTid = self::$testEnvironment->createUserByUsername('TestEditor1');
         
         $goodElement = new Line();
         $goodElement->id = 200; // this will be ignored!
         $goodElement->pageId = $dm->getPageIdByDocPage($docId, 1);
         $goodElement->columnNumber = 1;
-        $goodElement->editorId = $editorId;
+        $goodElement->editorTid = $editorTid;
         $goodElement->handId = 0;
         // One of each item type, for good measure  (no item line break at the moment)
         ItemArray::addItem($goodElement->items, new Text(0,-1,'Some text '));
@@ -145,7 +134,7 @@ class ElementDatabaseTest extends TestCase {
         
         // Null page ID        
         $element = clone $goodElement;
-        $element->pageId = NULL;
+        $element->pageId = -1;
         $res1 = $dm->insertNewElement($element);
         $this->assertFalse($res1);
         
@@ -169,7 +158,7 @@ class ElementDatabaseTest extends TestCase {
         
         // Wrong editor ID
         $element = clone $goodElement;
-        $element->editorId = 0;
+        $element->editorTid = 0;
         $res5 = $dm->insertNewElement($element);
         $this->assertFalse($res5);
 
@@ -201,35 +190,46 @@ class ElementDatabaseTest extends TestCase {
         $this->assertCount(1, $elementArray);
         $this->assertEquals($newElement, $elementArray[0]);
     }
-    
+
+    private function createTestElement(int $pageId, int $editorId, int $index) : Element {
+        $element = new Line();
+        $element->pageId = $pageId;
+        $element->columnNumber = 1;
+        $element->editorTid = $editorId;
+        $element->lang = 'la';
+        $element->handId = 0;
+        ItemArray::addItem($element->items, new Text(0,-1,"Text $index "));
+        ItemArray::addItem($element->items, new Rubric(0,-1,"with rubric $index" ));
+        ItemArray::addItem($element->items, new Text(0,-1,"and more text $index"));
+        ItemArray::addItem($element->items, new Abbreviation(0,-1,"LOL $index",
+            "laughing out loud  $index"));
+
+        return $element;
+    }
+
+
     /**
-     * @depends testAddElementSimple
+     * @depends testEmptyDatabase
+     * @throws Exception
      */
     public function testAddElements()
     {
+        self::$testEnvironment->emptyDatabase();
         $numElements = 10;
         $numPages = 5;
         $dm = self::$dataManager;
-        $docId = $dm->newDoc('Test Elements Doc 2', 'TED-2', $numPages, 'la', 
-                'mss', 'local', 'TESTELEM-2');
-        for ($i = 0; $i < $numPages; $i++) {
-            $dm->addNewColumn($docId, $i);
+        $docId = $dm->newDoc('Test Elements Doc 2', $numPages, 'la',
+            'mss', 'local', 'TEST_ELEM-2');
+        for ($i = 1; $i <= $numPages; $i++) {
+            $result = $dm->addNewColumn($docId, $i);
+            $this->assertNotFalse($result, "Adding column to doc $docId, page $i");
         }
-        $editorId = $dm->userManager->createUserByUsername('testeditor2');
-        $pageId =  $dm->getPageIdByDocPage($docId, 2);
-        
-        for ($i=0; $i<$numElements; $i++) {
-            $element = new Line();
-            $element->pageId = $pageId;
-            $element->columnNumber = 1;
-            $element->editorId = $editorId;
-            $element->lang = 'la';
-            $element->handId = 0;
-            ItemArray::addItem($element->items, new Text(0,-1,"This is $i "));
-            ItemArray::addItem($element->items, new Rubric(0,-1,'with rubric '));
-            ItemArray::addItem($element->items, new Text(0,-1,'and more text '));
-            ItemArray::addItem($element->items, new Abbreviation(0,-1,'LOL',
-                    'laughing out loud'));
+        $editorId = self::$testEnvironment->createUserByUsername('Editor2');
+        $pageId =  $dm->getPageIdByDocPage($docId, 1);
+        $this->assertGreaterThan(0, $pageId);
+
+        for ($i = 0; $i < $numElements; $i++) {
+            $element = $this->createTestElement($pageId, $editorId, $i);
             $newElement = $dm->insertNewElement($element);
             $this->assertNotFalse($newElement);
             $this->assertNotEquals(0, $newElement->id);
@@ -241,60 +241,58 @@ class ElementDatabaseTest extends TestCase {
         // Now elements with sequence
         
         // This will be inserted at the end
-        $element->seq = $numElements+100;
-        $newElement = $dm->insertNewElement($element, false);
+        $element2 = $this->createTestElement($pageId, $editorId, 1002);
+        $element2->seq = $numElements+100;
+        $newElement = $dm->insertNewElement($element2, false);
         $this->assertNotFalse($newElement);
         $this->assertNotEquals(0, $newElement->id);
         $this->assertEquals($numElements, $newElement->seq);
-        $this->assertCount(count($element->items), 
+        $this->assertCount(count($element2->items),
                     $newElement->items);
         
         // This will be inserted as the first element in the column
-        $element->seq = 1;
-        $newElement = $dm->insertNewElement($element, false);
+        $element3 = $this->createTestElement($pageId, $editorId, 1003);
+        $element3->seq = 1;
+        $newElement = $dm->insertNewElement($element3, false);
         $this->assertNotFalse($newElement);
         $this->assertNotEquals(0, $newElement->id);
         $this->assertEquals(1, $newElement->seq);
-        $this->assertCount(count($element->items), 
+        $this->assertCount(count($element3->items),
                     $newElement->items);
         
         
-                    
-        $element->seq = $numElements;
-        $newElement = $dm->insertNewElement($element, false);
+        // another test
+        $element4 = $this->createTestElement($pageId, $editorId, 1004);
+        $element4->seq = $numElements;
+        $newElement = $dm->insertNewElement($element4, false);
         $this->assertNotFalse($newElement);
         $this->assertNotEquals(0, $newElement->id);
         $this->assertEquals($numElements, $newElement->seq);
-        $this->assertCount(count($element->items), 
+        $this->assertCount(count($element4->items),
                     $newElement->items);
 
     }
-    
+
+    /**
+     * @depends testEmptyDatabase
+     * @throws Exception
+     */
     public function testDeleteElements()
     {
-        $numElements = 5;
+        $numElements = 10;
         $numPages = 5;
         $dm = self::$dataManager;
-        $docId = $dm->newDoc('Test Elements Doc 3', 'TED-3', $numPages, 'la', 
-                'mss', 'local', 'TESTELEM-3');
-        for ($i = 0; $i < $numPages; $i++) {
-            $dm->addNewColumn($docId, $i);
+        $docId = $dm->newDoc('Test Elements Doc 3', $numPages, 'la',
+            'mss', 'local', 'TEST_ELEM-3');
+        for ($i = 1; $i <= $numPages; $i++) {
+            $result = $dm->addNewColumn($docId, $i);
+            $this->assertNotFalse($result, "Adding column to doc $docId, page $i");
         }
-        $editorId = $dm->userManager->createUserByUsername('testeditor3');
-        $pageId =  $dm->getPageIdByDocPage($docId, 3);
+        $editorId = self::$testEnvironment->createUserByUsername('TestEditor3');
+        $pageId =  $dm->getPageIdByDocPage($docId, 1);
         
         for ($i=0; $i<$numElements; $i++) {
-            $element = new Line();
-            $element->pageId = $pageId;
-            $element->columnNumber = 1;
-            $element->editorId = $editorId;
-            $element->lang = 'la';
-            $element->handId = 0;
-            ItemArray::addItem($element->items, new Text(0,-1,"This is $i "));
-            ItemArray::addItem($element->items, new Rubric(0,-1,'with rubric '));
-            ItemArray::addItem($element->items, new Text(0,-1,'and more text '));
-            ItemArray::addItem($element->items, new Abbreviation(0,-1,'LOL',
-                    'laughing out loud'));
+            $element = $this->createTestElement($pageId, $editorId, $i);
             $newElement = $dm->insertNewElement($element);
             $this->assertNotFalse($newElement);
             $this->assertNotEquals(0, $newElement->id);
@@ -311,33 +309,49 @@ class ElementDatabaseTest extends TestCase {
             }
         }
     }
-    
+
+    /**
+     * @param Item[] $items
+     * @param int $newStartId
+     * @param int $step
+     * @return Item[]
+     */
+    private function rewriteItemIds(array $items, int $newStartId, int $step) : array{
+        $newItems = [];
+        foreach($items as $i => $item) {
+            $newItem = clone $item;
+            $newItem->id = $newStartId + $i * $step;
+            $newItems[] = $newItem;
+        }
+        return $newItems;
+    }
+
+//    private function extractKey(array $someArray, string $key) : array {
+//        return array_map( function($item) use ($key) { return $item->$key;}, $someArray);
+//    }
+
+    /**
+     * @depends testEmptyDatabase
+     * @throws Exception
+     */
     public function testUpdateElements()
     {
-        $numElements = 5;
+//        self::$testEnvironment->emptyDatabase();
+        $numElements = 10;
         $numPages = 5;
         $dm = self::$dataManager;
-        $docId = $dm->newDoc('Test Elements Doc 4', 'TED-4', $numPages, 'la', 
-                'mss', 'local', 'TESTELEM-4');
+        $docId = $dm->newDoc('Test Elements Doc 4', $numPages, 'la',
+            'mss', 'local', 'TEST_ELEM-4');
         for ($i = 1; $i <= $numPages; $i++) {
-            $dm->addNewColumn($docId, $i);
+            $result = $dm->addNewColumn($docId, $i);
+            $this->assertNotFalse($result, "Adding column to doc $docId, page $i");
         }
-        $editorId = $dm->userManager->createUserByUsername('testeditor4');
+        $editorId = self::$testEnvironment->createUserByUsername('TestEditor4');
         $pageId =  $dm->getPageIdByDocPage($docId, 1);
         
         $elementIds = [];
-        for ($i=0; $i<$numElements; $i++) {
-            $element = new Line();
-            $element->pageId = $pageId;
-            $element->columnNumber = 1;
-            $element->editorId = $editorId;
-            $element->lang = 'la';
-            $element->handId = 0;
-            ItemArray::addItem($element->items, new Rubric(0,0,"Hello "));
-            ItemArray::addItem($element->items, new Text(0,1,'darkness '));
-            ItemArray::addItem($element->items, new Text(0,2,'my '));
-            ItemArray::addItem($element->items, new Abbreviation(0,3,'f. ',
-                    'friend'));
+        for ($i=0; $i < $numElements; $i++) {
+            $element = $this->createTestElement($pageId, $editorId, $i);
             $elementIds[] = $dm->insertNewElement($element)->id;
         }
         
@@ -345,23 +359,18 @@ class ElementDatabaseTest extends TestCase {
         $testElementId = $elementIds[0];
         $currentElement = $dm->getElementById($testElementId);
         $newVersion = clone $currentElement;
-        $newVersion->items = [];
-        ItemArray::addItem($newVersion->items, new Rubric(100,-1,"Hello "));
-        ItemArray::addItem($newVersion->items, new Text(101,-1,'darkness '));
-        ItemArray::addItem($newVersion->items, new Text(102,-1,'my '));
-        ItemArray::addItem($newVersion->items, new Abbreviation(103,-1,'f. ',
-                'friend'));
-        ItemArray::setLang($newVersion->items, 'la');
-        ItemArray::setHandId($newVersion->items, 0);
-        list ($id, $itemIds) = $dm->updateElement($newVersion, $currentElement);
-        $this->assertEquals($testElementId, $id);
-        $updatedElement = $dm->getElementById($id);
+        // item ids should be irrelevant
+        $newVersion->items = $this->rewriteItemIds($newVersion->items, 100, 1);
+        list ($updatedElementId, $itemIds) = $dm->updateElement($newVersion, $currentElement);
+        $this->assertEquals($testElementId, $updatedElementId);
+        $updatedElement = $dm->getElementById($updatedElementId);
         $this->assertTrue(Element::isElementDataEqual($updatedElement, 
                 $currentElement));
         for ($i=0; $i < count($currentElement->items); $i++)  {
             $this->assertEquals(
                 $currentElement->items[$i]->id,
-                $updatedElement->items[$i]->id
+                $updatedElement->items[$i]->id,
+                "Comparing element $updatedElementId item $i"
             );
             // updated itemIds should point to updated element's item ids
             $this->assertEquals(
@@ -370,21 +379,15 @@ class ElementDatabaseTest extends TestCase {
             );
         }
         
-        // TEST 2: different element Id, same data
+        // TEST 2: different element id, same data
         // Even if the id of the new element is different, there should
         // not be any real update to the DB if the data is the same
         $testElementId2 = $elementIds[1];
         $currentElement2 = $dm->getElementById($testElementId2);
         $newVersion2 = clone $currentElement2;
         $newVersion2->id = 0;
-        $newVersion2->items = [];
-        ItemArray::addItem($newVersion2->items, new Rubric(100,-1,"Hello "));
-        ItemArray::addItem($newVersion2->items, new Text(101,-1,'darkness '));
-        ItemArray::addItem($newVersion2->items, new Text(102,-1,'my '));
-        ItemArray::addItem($newVersion2->items, new Abbreviation(103,-1,'f. ',
-                'friend'));
-        ItemArray::setLang($newVersion2->items, 'la');
-        ItemArray::setHandId($newVersion2->items, 0);
+        // item ids should be irrelevant
+        $newVersion2->items = $this->rewriteItemIds($newVersion2->items, 200, 2);
         list ($id2, $itemIds2) = $dm->updateElement($newVersion2, $currentElement2);
         $this->assertEquals($testElementId2, $id2);
         $updatedElement2 = $dm->getElementById($id2);
@@ -407,14 +410,8 @@ class ElementDatabaseTest extends TestCase {
         $currentElement3 = $dm->getElementById($testElementId3);
         $newVersion3 = clone $currentElement3;
         $newVersion3->type = Element::HEAD;  // Different type!
-        $newVersion3->items = [];
-        ItemArray::addItem($newVersion3->items, new Rubric(100,-1,"Hello "));
-        ItemArray::addItem($newVersion3->items, new Text(101,-1,'darkness '));
-        ItemArray::addItem($newVersion3->items, new Text(102,-1,'my '));
-        ItemArray::addItem($newVersion3->items, new Abbreviation(103,-1,'f. ',
-                'friend'));
-        ItemArray::setLang($newVersion3->items, 'la');
-        ItemArray::setHandId($newVersion3->items, 0);
+        // item ids should be irrelevant
+        $newVersion3->items = $this->rewriteItemIds($newVersion3->items, 300, 3);
         list ($id3, $itemIds3) = $dm->updateElement($newVersion3, $currentElement3);
         $this->assertEquals($testElementId3, $id3);
         $updatedElement3 = $dm->getElementById($id3);
@@ -434,70 +431,64 @@ class ElementDatabaseTest extends TestCase {
         $testElementId4 = $elementIds[3];
         $currentElement4 = $dm->getElementById($testElementId4);
         $newVersion4 = clone $currentElement4;
-        $newVersion4->items = [];
-        ItemArray::addItem($newVersion4->items, new Rubric(-1001,-1,"Hello "));
-        ItemArray::addItem($newVersion4->items, new Text(-1,-1,'my '));
-        ItemArray::addItem($newVersion4->items, new Text(-1,-1,'darkness '));
-        ItemArray::addItem($newVersion4->items, new Abbreviation(-1003,-1,'f. ',
-                'friend'));
-        ItemArray::setLang($newVersion4->items, 'la');
-        ItemArray::setHandId($newVersion4->items, 0);
-        
-        list ($id4, $itemIds4) = $dm->updateElement($newVersion4, $currentElement4);
+        $newVersion4->items = $this->rewriteItemIds($newVersion4->items, 100, 1);
+
+        // switching the first two items
+        $newVersion4->items = [
+            $newVersion4->items[1],
+            $newVersion4->items[0],
+            $newVersion4->items[2],
+            $newVersion4->items[3],
+        ];
+        list ($id4,) = $dm->updateElement($newVersion4, $currentElement4);
         $this->assertEquals($testElementId4, $id4);
         $updatedElement4 = $dm->getElementById($id4);
         $this->assertTrue(Element::isElementDataEqual($updatedElement4, 
                 $currentElement4));
         $this->assertCount(4, $updatedElement4->items);
-        $this->assertEquals(
-            $currentElement4->items[0]->id,
-            $updatedElement4->items[0]->id
-        );
-        $this->assertEquals(
-            $currentElement4->items[3]->id,
-            $updatedElement4->items[3]->id
-        );
-        // updated item Ids should correspond to the new version in the DB
-        //var_dump($itemIds4);
-        for ($i=0; $i < count($newVersion4->items); $i++)  {
-            // only check new version item Ids !== -1
-            if ($newVersion4->items[$i]->id !== -1) {
-                $this->assertEquals(
-                    $itemIds4[$newVersion4->items[$i]->id],
-                    $updatedElement4->items[$i]->id
-                );
-            }
+
+        // ids of the non-switched items should be the same
+        for ($i = 2; $i <= 3; $i++) {
+            $this->assertEquals($currentElement4->items[$i]->id, $updatedElement4->items[$i]->id);
         }
     }
-    
+
+    /**
+     * @depends testEmptyDatabase
+     * @throws Exception
+     */
     public function testUpdateColumnElements() 
     {
-        $numElements = 5;
-        $numPages = 1;
+        $numElements = 10;
+        $numPages = 5;
         $dm = self::$dataManager;
-        $docId = $dm->newDoc('Test Elements Doc 5', 'TED-5', $numPages, 'la', 
-                'mss', 'local', 'TESTELEM-5');
+        $docId = $dm->newDoc('Test Elements Doc 5', $numPages, 'la',
+            'mss', 'local', 'TEST_ELEM-5');
         for ($i = 1; $i <= $numPages; $i++) {
-            $dm->addNewColumn($docId, $i);
+            $result = $dm->addNewColumn($docId, $i);
+            $this->assertNotFalse($result, "Adding column to doc $docId, page $i");
         }
-        $originalEditor = $dm->userManager->createUserByUsername('testcoled');
-        $reviewer = $dm->userManager->createUserByUsername('testcolrev');
-        $reviewer2 = $dm->userManager->createUserByUsername('testcolrev2');
-        $reviewer3 = $dm->userManager->createUserByUsername('testcolrev3');
-        $reviewer4 = $dm->userManager->createUserByUsername('testcolrev5');
+        $originalEditor = self::$testEnvironment->createUserByUsername('EditorUpdateColumns');
+        $reviewer = self::$testEnvironment->createUserByUsername('UpdateColumnsReviewer1');
+        $reviewer2 = self::$testEnvironment->createUserByUsername('UpdateColumnsReviewer2');
+        $reviewer3 = self::$testEnvironment->createUserByUsername('UpdateColumnsReviewer3');
+        $reviewer4 = self::$testEnvironment->createUserByUsername('UpdateColumnsReviewer4');
         $pageId =  $dm->getPageIdByDocPage($docId, 1);
         
-        $elementIds = [];
-        for ($i=0; $i<$numElements; $i++) { 
+        for ($i=0; $i<$numElements; $i++) {
             $element = new Line();
+            $element->editorTid = $originalEditor;
+
             $element->pageId = $pageId;
             $element->columnNumber = 1;
-            $element->editorId = $originalEditor;
             $element->lang = 'la';
             $element->handId = 0;
             $element->seq = $i;
-            ItemArray::addItem($element->items, new Text(0,-1,"Original Line ". (string)($i+1)));
-            $elementIds[] = $dm->insertNewElement($element)->id;
+            ItemArray::addItem($element->items, new Text(0,-1,"Original Line ". $i+1));
+            ItemArray::setLang($element->items, 'la');
+            ItemArray::setHandId($element->items, 0);
+
+            $dm->insertNewElement($element);
         }
         $originalElements = $dm->getColumnElementsByPageId($pageId, 1);
         //print ("ORIGINAL ELEMENTS: \n\n");
@@ -509,52 +500,56 @@ class ElementDatabaseTest extends TestCase {
         $newElements = [];
         for ($i=0; $i<$numElements; $i++) { 
             $element = new Line();
+            $element->editorTid = $reviewer;
+
             $element->pageId = $pageId;
             $element->columnNumber = 1;
-            $element->editorId = $reviewer;
             $element->lang = 'la';
             $element->handId = 0;
             $element->seq = $i;
-            ItemArray::addItem($element->items, new Text($i+100,0,"Original Line ". (string)($i+1)));
+            ItemArray::addItem($element->items, new Text(0,-1,"Original Line ". $i+1));
             ItemArray::setLang($element->items, 'la');
             ItemArray::setHandId($element->items, 0);
+
             $newElements[] = $element;
         }
-        //print "Editor Id: " . $reviewer . " (but no changes in DB) \n";
-        $updatedItemIds = $dm->updateColumnElements($pageId, 1, $newElements);
+        $dm->updateColumnElements($pageId, 1, $newElements);
+        //print "Editor id: " . $reviewer . " (but no changes in DB) \n";
         $updatedElements = $dm->getColumnElementsByPageId($pageId, 1);
-        $this->assertEquals($updatedElements, $originalElements);
-        for ($i = 0; $i < $numElements; $i++) {
-            $this->assertEquals($updatedItemIds[$newElements[$i]->items[0]->id], $updatedElements[$i]->items[0]->id);
+        $this->assertCount(count($originalElements), $updatedElements);
+        for ($i = 0; $i < count($originalElements); $i++) {
+            $originalElement = $originalElements[$i];
+            $updatedElement = $updatedElements[$i];
+            $this->assertEquals($originalElement->id, $updatedElement->id);
+            $this->assertEquals($originalElement->items[0]->id, $updatedElement->items[0]->id);
         }
         
         // TEST 2: Changes in all lines
         // Elements should reflect new editor, items should all change
-        //print "\n\n========== TEST 2 ===============\n\n";
         $newElements2 = [];
         for ($i=0; $i<$numElements; $i++) { 
             $element = new Line();
+            $element->editorTid = $reviewer;
+
             $element->pageId = $pageId;
             $element->columnNumber = 1;
-            $element->editorId = $reviewer;
             $element->lang = 'la';
             $element->handId = 0;
             $element->seq = $i;
-            ItemArray::addItem($element->items, new Text($i+200,0,"Test 2 Line ". (string)($i+1)));
+            ItemArray::addItem($element->items, new Text(0,-1,"Changed Line ". $i+1));
             ItemArray::setLang($element->items, 'la');
             ItemArray::setHandId($element->items, 0);
+
             $newElements2[] = $element;
         }
-        //print "Editor Id: " . $reviewer . "\n";
-        $updatedItemIds2 = $dm->updateColumnElements($pageId, 1, $newElements2);
+        $dm->updateColumnElements($pageId, 1, $newElements2);
         $updatedElements2 = $dm->getColumnElementsByPageId($pageId, 1);
         $this->assertCount($numElements, $updatedElements2);
         for ($i = 0; $i < $numElements; $i++) {
             $this->assertEquals($updatedElements2[$i]->id, $originalElements[$i]->id);
             $this->assertEquals($updatedElements2[$i]->seq, $originalElements[$i]->seq);
-            $this->assertNotEquals($updatedElements2[$i]->editorId, $originalElements[$i]->editorId);
-            $this->assertEquals($reviewer, $updatedElements2[$i]->editorId);
-            $this->assertEquals($updatedItemIds2[$newElements2[$i]->items[0]->id], $updatedElements2[$i]->items[0]->id);
+            $this->assertNotEquals($updatedElements2[$i]->editorTid, $originalElements[$i]->editorTid);
+            $this->assertEquals($reviewer, $updatedElements2[$i]->editorTid);
         }
         
         // TEST 3: Text Change in one line
@@ -564,61 +559,56 @@ class ElementDatabaseTest extends TestCase {
         $newElements3 = [];
         for ($i=0; $i<$numElements; $i++) { 
             $element = new Line();
-            $element->id = $i+100;
+            $element->editorTid = $reviewer2;
+
             $element->pageId = $pageId;
             $element->columnNumber = 1;
-            $element->editorId = $reviewer2;
             $element->lang = 'la';
             $element->handId = 0;
             $element->seq = $i;
-            ItemArray::addItem($element->items, new Text($i+300,0,"Test 2 Line ". (string)($i+1)));
+            ItemArray::addItem($element->items, new Text(0,-1,"Changed Line ". $i+1));
             ItemArray::setLang($element->items, 'la');
             ItemArray::setHandId($element->items, 0);
+
             $newElements3[] = $element;
         }
         //print "Editor Id: " . $reviewer2 . "\n";
         $newElements3[0]->items[0]->theText = 'Test 3 Line 1';
-        $updatedItemIds3 = $dm->updateColumnElements($pageId, 1, $newElements3);
+        $dm->updateColumnElements($pageId, 1, $newElements3);
         $updatedElements3 = $dm->getColumnElementsByPageId($pageId, 1);
         $this->assertCount($numElements, $updatedElements3);
         $this->assertEquals($updatedElements3[0]->id, $originalElements3[0]->id); 
         $this->assertEquals($updatedElements3[0]->seq, $originalElements3[0]->seq); // same sequence
-        $this->assertNotEquals($updatedElements3[0]->editorId, $originalElements3[0]->editorId);
-        $this->assertEquals($reviewer2, $updatedElements3[0]->editorId);
-        $this->assertEquals($updatedItemIds3[$newElements3[0]->items[0]->id], $updatedElements3[0]->items[0]->id);
+        $this->assertNotEquals($updatedElements3[0]->editorTid, $originalElements3[0]->editorTid);
+        $this->assertEquals($reviewer2, $updatedElements3[0]->editorTid);
         for ($i = 1; $i < $numElements; $i++) {
             $this->assertEquals($updatedElements3[$i]->id, $originalElements3[$i]->id);
             $this->assertEquals($updatedElements3[$i]->seq, $originalElements3[$i]->seq);
-            $this->assertEquals($updatedElements3[$i]->editorId, $originalElements3[$i]->editorId);
-            $this->assertEquals($reviewer, $updatedElements3[$i]->editorId);
-            $this->assertEquals($updatedItemIds3[$newElements3[$i]->items[0]->id], $updatedElements3[$i]->items[0]->id);
+            $this->assertEquals($updatedElements3[$i]->editorTid, $originalElements3[$i]->editorTid);
+            $this->assertEquals($reviewer, $updatedElements3[$i]->editorTid);
         }
         
-        // TEST 4: Text and type change in one line 
-        // Line elements will be bumped up, new items created
+        // TEST 4: Text and type change in one line, checking reported item ids
         //print "\n\n========== TEST 4 ===============\n\n";
-        $originalElements4 = $updatedElements3;
         $newElements4 = [];
         for ($i=0; $i<$numElements; $i++) { 
             $element = new Line();
             $element->id = $i+1000;
             $element->pageId = $pageId;
             $element->columnNumber = 1;
-            $element->editorId = $reviewer3; 
+            $element->editorTid = $reviewer3;
             $element->lang = 'la';
             $element->handId = 0;
             $element->seq = $i;
-            ItemArray::addItem($element->items, new Text($i+400,0,"Test 2 Line ". (string)($i+1)));
+            ItemArray::addItem($element->items, new Text($i+400,0,"Test 2 Line ". $i+1));
             ItemArray::setLang($element->items, 'la');
             ItemArray::setHandId($element->items, 0);
             $newElements4[] = $element;
         }
-        //print "Editor Id: " . $reviewer3 . "\n";
         $newElements4[0]->type = Element::HEAD;
         $newElements4[0]->items[0]->theText = 'Test 4 Line 1';
         $updatedItemIds4 = $dm->updateColumnElements($pageId, 1, $newElements4);
         $updatedElements4 = $dm->getColumnElementsByPageId($pageId, 1);
-        //print_r($updatedElements4);
         $this->assertCount($numElements, $updatedElements4);
         for ($i = 0; $i < $numElements; $i++) {
             $this->assertEquals($i, $updatedElements4[$i]->seq);
@@ -627,7 +617,6 @@ class ElementDatabaseTest extends TestCase {
         
         // TEST 5: More items per line, checking reported item ids
         //print "\n\n========== TEST 5 ===============\n\n";
-        $originalElements5 = $updatedElements4;
         $givenItemId = -1000;
         $newElements5 = [];
         for ($i=0; $i<$numElements; $i++) { 
@@ -635,12 +624,12 @@ class ElementDatabaseTest extends TestCase {
             $element->id = $i+2000; // Irrelevant
             $element->pageId = $pageId;
             $element->columnNumber = 1;
-            $element->editorId = $reviewer4; 
+            $element->editorTid = $reviewer4;
             $element->lang = 'la';
             $element->handId = 0;
             $element->seq = $i;
             ItemArray::addItem($element->items, new Rubric($givenItemId--,0,"Test 5"));
-            ItemArray::addItem($element->items, new Text($givenItemId--,1,": line". (string)($i+1)));
+            ItemArray::addItem($element->items, new Text($givenItemId--,1,": line". $i+1));
             ItemArray::setLang($element->items, 'la');
             ItemArray::setHandId($element->items, 0);
             $newElements5[] = $element;
@@ -648,8 +637,6 @@ class ElementDatabaseTest extends TestCase {
         //print "Editor Id: " . $reviewer4 . "\n";
         $updatedItemIds5 = $dm->updateColumnElements($pageId, 1, $newElements5);
         $updatedElements5 = $dm->getColumnElementsByPageId($pageId, 1);
-        //print_r($newElements5);
-        //print_r($updatedElements5);
         $this->assertCount($numElements, $updatedElements5);
         for ($i = 0; $i < $numElements; $i++) {
             $this->assertEquals($i, $updatedElements5[$i]->seq);

@@ -29,11 +29,11 @@ export class PanelWithToolbar extends Panel {
     }
   }
 
-  generateHtml (tabId, mode, visible) {
+  async generateHtml (tabId, mode, visible) {
     let toolbarClassString = this.getToolbarClasses().concat( [ toolbarClass]).join(' ')
     let toolbarHtml = this.generateToolbarHtml(tabId, mode, visible)
     let contentAreaClassString = this.getContentAreaClasses().concat( [ contentAreaClass]).join(' ')
-    let contentHtml = this.generateContentHtml(tabId, mode, visible)
+    let contentHtml = await this.generateContentHtml(tabId, mode, visible)
     let contentAreaIdString = this.contentAreaId !== '' ?  `id="${this.contentAreaId}"` : ''
     return `<div class="${toolbarClassString}">${toolbarHtml}</div><div class="${contentAreaClassString}" ${contentAreaIdString}>${contentHtml}</div>`
   }
@@ -58,7 +58,7 @@ export class PanelWithToolbar extends Panel {
     return ''
   }
 
-  generateContentHtml(tabId, mode, visible) {
+  async generateContentHtml(tabId, mode, visible) {
     return ''
   }
 

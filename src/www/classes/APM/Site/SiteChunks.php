@@ -91,7 +91,7 @@ class SiteChunks extends SiteController
         $workIds = $dataManager->getWorksWithTranscriptions();
         foreach($workIds as $workId) {
             $work = ['work_id' => $workId, 'is_valid' => true];
-            $workInfo = $dataManager->getWorkInfo($workId);
+            $workInfo = $dataManager->getWorkInfoByDareId($workId);
             if ($workInfo === false) {
                 $work['is_valid'] = false;
                 $works[] = $work;

@@ -22,12 +22,17 @@ namespace Test\APM\Mockup;
 
 use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
+use APM\System\Person\InvalidPersonNameException;
+use APM\System\User\InvalidUserNameException;
+use APM\System\User\UserNameAlreadyInUseException;
 use APM\SystemProfiler;
 use AverroesProject\Data\DataManager;
 use APM\System\ApmSystemManager;
-use mysql_xdevapi\Exception;
+use Exception;
 use PDO;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\Container\MinimalContainer;
 
 
@@ -41,26 +46,25 @@ require_once  __DIR__ .  "./../../test.config.php";
 class DatabaseTestEnvironment {
     
     protected array $config;
-    protected PDO|false $dbConn;
-    protected false|ContainerInterface $container;
-    protected DataManager|false $dataManager;
-    protected ApmSystemManager|false $systemManager;
+    protected ?PDO $dbConn;
+    protected ?ContainerInterface $container;
+    protected ?DataManager $dataManager;
+    protected ?ApmSystemManager $systemManager;
 
     public function __construct() {
         global $testConfig;
-        $this->config = $this->createOptionsArray($testConfig);
-        $this->dbConn = false;
-        $this->container = false;
-        $this->dataManager = false;
-        $this->systemManager = false;
-
+        $this->config = $this->createConfig($testConfig);
+        $this->dbConn = null;
+        $this->container = null;
+        $this->dataManager = null;
+        $this->systemManager = null;
         SystemProfiler::start();
     }
     
     public function getPdo() : PDO
     {
         
-        if ($this->dbConn !== false) {
+        if ($this->dbConn !== null) {
             return $this->dbConn;
         }
         $config = $this->config;
@@ -72,16 +76,33 @@ class DatabaseTestEnvironment {
         $this->dbConn = $pdo;
         return $pdo;
     }
-    
 
-    /**
-     * @return ApmSystemManager
-     * @throws \Exception
-     */
+
+
     public function getSystemManager() : ApmSystemManager {
-        return $this->getContainer()->get(ApmContainerKey::SYSTEM_MANAGER);
+        return $this->systemManager;
     }
 
+    public function createUserByUserName(string $userName) : int {
+        $userManager = $this->getSystemManager()->getUserManager();
+        $personManager = $this->getSystemManager()->getPersonManager();
+        try {
+            $userTid = $personManager->createPerson($userName, $userName);
+        } catch (InvalidPersonNameException) {
+            return -1;
+        }
+        try {
+            $userManager->createUser($userTid, $userName);
+        } catch (InvalidUserNameException|UserNameAlreadyInUseException) {
+            return -1;
+        }
+        return $userTid;
+    }
+
+    /**
+     * @throws Exception
+     * @noinspection SqlWithoutWhere
+     */
     public function emptyDatabase(): void
     {
         $dbConn = $this->getPdo();
@@ -101,36 +122,36 @@ class DatabaseTestEnvironment {
                 INSERT INTO `ap_hands` (`id`, `name`, `description`) VALUES
 (0, 'Unknown', 'Unknown hand');
 EOD;
-        $result = $dbConn->query($query);
-        if ($result === false) {
-            throw new Exception('Error in MySQL query trying to empty the database for testing');
-        }
+        $dbConn->query($query);
+//        if ($result === false) {
+//            throw new Exception('Error in MySQL query trying to empty the database for testing');
+//        }
 
     }
 
     /**
-     * @param $userId
-     * @throws \Exception
+     * @param $userTid
+     * @throws Exception
      */
-    public function setUserId($userId) : void {
-        $this->getContainer()->set(ApmContainerKey::USER_ID, $userId);
+    public function setUserTid($userTid) : void {
+        $this->getContainer()->set(ApmContainerKey::USER_TID, $userTid);
     }
 
     /**
-     * @return bool|ContainerInterface
-     * @throws \Exception
+     * @return ContainerInterface
+     * @throws Exception
      */
-    public function getContainer()
+    public function getContainer() : ContainerInterface
     {
         
-        if ($this->container !== false) {
+        if ($this->container !== null) {
             return $this->container;
         }
 
         $systemManager = new ApmSystemManager($this->config);
 
         if ($systemManager->fatalErrorOccurred()) {
-            throw new \Exception($systemManager->getErrorMessage());
+            throw new Exception($systemManager->getErrorMessage());
         }
 
         $this->systemManager = $systemManager;
@@ -138,7 +159,7 @@ EOD;
         $container = new MinimalContainer();
         $container->addDefinitions([
             ApmContainerKey::SYSTEM_MANAGER => $systemManager,
-            ApmContainerKey::USER_ID => 0,  // invalid user Ids, must be set downstream for some API and Site operations
+            ApmContainerKey::USER_TID => 0,  // invalid user Ids, must be set downstream for some API and Site operations
             ApmContainerKey::API_USER_TID => 0,
         ]);
 
@@ -146,14 +167,24 @@ EOD;
         return $container;
     }
     
-    protected function createOptionsArray($config) : array {
+    protected function createConfig($config) : array {
         // This function will create or overwrite
         // configuration options in the given $config
         // array, except for database connection information
         
         // SUPPORT
-        $config['support_contact_name'] = 'John Doe';
-        $config['support_contact_email'] = 'john@doe.com';
+//        $config['support_contact_name'] = 'John Doe';
+//        $config['support_contact_email'] = 'john@doe.com';
+
+
+
+        $config[ApmConfigParameter::DB_TABLE_PREFIX] = 'ap_';
+        $config[ApmConfigParameter::APM_DAEMON_PID_FILE] = '';
+        $config[ApmConfigParameter::OPENSEARCH_HOSTS] = '';
+        $config[ApmConfigParameter::OPENSEARCH_USER] = '';
+        $config[ApmConfigParameter::OPENSEARCH_PASSWORD] = '';
+        $config[ApmConfigParameter::BILDERBERG_URL] = '';
+
 
 //            // DATABASE ACCESS
 //            // should be in $config array already!
@@ -162,12 +193,12 @@ EOD;
 //            $config['db']['pwd'] = "";
 //            $config['db']['db'] ="";
 
-        // BASE URL
-        $config['baseurl']='localhost://';
-        $config['sub_dir'] = '';
+        // SUBDIR
+
+        $config[ApmConfigParameter::SUB_DIR] = '';
 
         // TIME ZONE
-        $config['default_timezone'] = "Europe/Berlin";
+        $config[ApmConfigParameter::DEFAULT_TIMEZONE] = "Europe/Berlin";
 
         // SLIM ERROR HANDLING
         // Might be set to false in production
@@ -180,7 +211,7 @@ EOD;
         $config['log_in_php_error_handler'] = false;
 
         // LANGUAGES
-        $config['languages'] = [
+        $config[ApmConfigParameter::LANGUAGES] = [
             [ 'code' => 'ar', 'name' => 'Arabic', 'rtl' => true, 'fontsize' => 5],
             [ 'code' => 'jrb', 'name' => 'Judeo Arabic', 'rtl' => true, 'fontsize' => 3],
             [ 'code' => 'he', 'name' => 'Hebrew', 'rtl' => true, 'fontsize' => 3], 
@@ -189,33 +220,24 @@ EOD;
 
         // COLLATEX
         $config['collatex_temp_dir'] = '/tmp';
-        //$config['java_executable'] = '/usr/bin/java';
         $config['collatex_jar_file'] = '../../collatex/bin/collatex-tools-1.7.1.jar';
 
 
-        // PLUGINS
-        // a plugin named 'PluginName' must be implemented as
-        // a class with the fully qualified name '\PluginName' and its
-        // code must reside in  ./plugins/PluginName.php
+//        $config['plugin_dir'] = 'apm/test-plugins';
 
-
-        $config['addContentLengthHeader'] = false;
-
-        $config['plugin_dir'] = 'apm/test-plugins';
-
-        $config['loggerAppName'] = 'APM';
+        $config[ApmConfigParameter::LOG_APP_NAME] = 'APM';
 
         // Generate langCodes
-        $config['langCodes'] = [];
-        foreach ($config['languages'] as $lang) {
-            $config['langCodes'][] = $lang['code'];
+        $config[ApmConfigParameter::LANG_CODES] = [];
+        foreach ($config[ApmConfigParameter::LANGUAGES] as $lang) {
+            $config[ApmConfigParameter::LANG_CODES][] = $lang['code'];
         }
         
-        $config['app_name'] = 'Averroes Project Manager (test)';
-        $config['version'] = '(develop)';
+        $config[ApmConfigParameter::APP_NAME] = 'Averroes Project Manager (test)';
+        $config[ApmConfigParameter::VERSION] = '(develop)';
 
 
-        $config['copyright_notice'] = '(C) Thomas Institut';
+        $config[ApmConfigParameter::COPYRIGHT_NOTICE] = '(C) Thomas Institut';
 
         $config[ApmConfigParameter::TWIG_USE_CACHE] = false;
         $config[ApmConfigParameter::TWIG_TEMPLATE_DIR] = '../../templates';
@@ -226,9 +248,10 @@ EOD;
 
     /**
      * @param int $userId
-     * @throws \Exception
+     * @throws Exception
      */
-    public function setApiUser(int $userId) {
+    public function setApiUser(int $userId): void
+    {
         $this->getContainer()->set(ApmContainerKey::API_USER_TID, $userId);
 
     }

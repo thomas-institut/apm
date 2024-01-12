@@ -63,12 +63,12 @@ export class ApmDataProxy {
     this.cachedFetcher = new CachedFetcher(this.caches.memory);
   }
 
-  async getPersonData(personId) {
-    return await this.getApmEntityData('Person', personId, 'session');
+  async getPersonEssentialData(personId) {
+    return await this.getApmEntityData('Person', 'essential',  personId, 'session');
   }
 
   async getWorkData(workDareId) {
-    return await this.getApmEntityData('Work', workDareId, 'local');
+    return await this.getApmEntityData('Work', '', workDareId, 'local');
   }
 
   async getDocTypeName(type) {
@@ -165,17 +165,22 @@ export class ApmDataProxy {
   /**
    *
    * @param {string} entityType
+   * @param {string} dataType
    * @param {string|number}entityId
    * @param {string}cacheName
    * @return {Promise<any>}
    * @private
    */
-  getApmEntityData(entityType, entityId, cacheName = 'session') {
+  getApmEntityData(entityType, dataType, entityId, cacheName = 'session') {
     return new Promise ( (resolve, reject) => {
       let getUrl = '';
       switch(entityType) {
         case 'Person':
-          getUrl =  urlGen.apiPersonGetEssentialData(entityId);
+          if (dataType === 'essential') {
+            getUrl =  urlGen.apiPersonGetEssentialData(entityId);
+          } else {
+            reject(`Invalid data type for Perso data: ${dataType}`)
+          }
           break;
 
         case 'Work':
@@ -183,9 +188,9 @@ export class ApmDataProxy {
           break
       }
       if (getUrl === '') {
-        reject(`Invalid entity type ${entityType}`)
+        reject(`Invalid entity type ${entityType} : ${dataType}`)
       }
-      let cacheKey = this.getCacheKey(entityType, entityId);
+      let cacheKey = this.getCacheKey(entityType, dataType, entityId);
       let cache = this.caches[cacheName];
       let cachedInfo = cache.retrieve(cacheKey);
       if (cachedInfo !== null) {
@@ -240,14 +245,18 @@ export class ApmDataProxy {
 
   /**
    *
-   * @param entityType
-   * @param entityId
-   * @param attribute
+   * @param {string}entityType
+   * @param {string}dataType
+   * @param {int}entityId
+   * @param {string}attribute
    * @return {string}
    * @private
    */
-  getCacheKey(entityType, entityId, attribute = '') {
-    return `${cachePrefix}-${entityType}-${entityId}${attribute === '' ? '' : '-' + attribute}`
+  getCacheKey(entityType, dataType, entityId, attribute = '') {
+    if (dataType === '') {
+      dataType = 'default';
+    }
+    return `${cachePrefix}-${entityType}-${dataType}-${entityId}${attribute === '' ? '' : '-' + attribute}`;
   }
 
 

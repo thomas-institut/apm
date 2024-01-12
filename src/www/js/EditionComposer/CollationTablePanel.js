@@ -165,7 +165,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 </div>`
   }
 
-  generateContentHtml (tabId, mode, visible) {
+  async generateContentHtml (tabId, mode, visible) {
     this.panelIsSetup = false
     return `Setting up collation table....`
   }

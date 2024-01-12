@@ -161,9 +161,7 @@ class UserManagerTest extends TestCase {
         $expectedUserInfo = [
             'id' => $userId,
             'username' => 'test',
-            'fullname' => '',
-            'email' => '',
-            'emailhash' => ''
+            'name' => '',
         ];
         
         $this->assertEquals($expectedUserInfo, 
@@ -175,10 +173,8 @@ class UserManagerTest extends TestCase {
         $this->assertFalse($um->updateUserInfo($userId, ''));
         $this->assertTrue($um->updateUserInfo($userId, 'Name', 'email'));
         $ui = $um->getUserInfoByUserId($userId);
-        $this->assertEquals('Name', $ui['fullname']);
-        $this->assertEquals('email', $ui['email']);
-        $this->assertNotEquals('', $ui['emailhash']);
-        
+        $this->assertEquals('Name', $ui['name']);
+
         // Password
         $this->assertFalse($um->verifyUserPassword('test', 'somepassword'));
         $this->assertFalse($um->storeUserPassword('test', ''));

@@ -67,6 +67,7 @@ import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
 
 import { PdfDownloadUrl } from './PdfDownloadUrl'
 import { IgnoreHyphen } from '../normalizers/TokenNormalizer/IgnoreHyphen'
+import { ApmPage } from '../pages/ApmPage'
 
 // import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS
@@ -88,9 +89,12 @@ const saveButtonTextClassSaving = 'text-warning'
 const saveButtonTextClassError = 'text-danger'
 
 
-export class EditionComposer {
+export class EditionComposer extends ApmPage {
 
   constructor(options) {
+    super(options)
+    console.log(`Common Apm Page Data`)
+    console.log(this.commonData)
     console.log(`Initializing Edition Composer`)
 
     // first load the fonts!
@@ -104,7 +108,6 @@ export class EditionComposer {
     // })
 
     let optionsDefinition = {
-      userId: { type:'NonZeroNumber', required: true},
       isTechSupport: { type: 'boolean', default: false},
       lastVersion: { type: 'boolean'},
       collationTableData : { type: 'object', required: true},
@@ -122,6 +125,9 @@ export class EditionComposer {
 
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "EditionComposer"})
     this.options = oc.getCleanOptions(options)
+
+    console.log(`EditionComposer Options`)
+    console.log(this.options)
 
     // icons
     this.icons = {
@@ -210,7 +216,7 @@ export class EditionComposer {
     })
     this.witnessInfoPanel = new WitnessInfoPanel({
       verbose: true,
-      userId: this.options.userId,
+      userId: this.userId,
       containerSelector: `#${witnessInfoTabId}`,
       ctData: this.ctData,
       onWitnessOrderChange: this.genOnWitnessOrderChange(),
@@ -229,6 +235,7 @@ export class EditionComposer {
     })
 
     this.adminPanel = new AdminPanel({
+      apmDataProxy: this.apmDataProxy,
       urlGen: this.options.urlGenerator,
       tableId: this.tableId,
       verbose: false,
@@ -527,13 +534,13 @@ export class EditionComposer {
     }
   }
 
-  _updateDataInPanels(updateWitnessInfo = false) {
+  async _updateDataInPanels(updateWitnessInfo = false) {
     if (this.errorDetected) {
       console.log(`Not updating data in panels because of error`)
       return
     }
 
-    this.mainTextPanel.updateData(this.ctData, this.edition)  // mainTextPanel takes care of updating the apparatus panels
+    await this.mainTextPanel.updateData(this.ctData, this.edition)  // mainTextPanel takes care of updating the apparatus panels
     this.collationTablePanel.updateCtData(this.ctData, 'EditionComposer')
     // this.editionPreviewPanel.updateData(this.ctData, this.edition)
     this.editionPreviewPanelNew.updateData(this.edition)
@@ -843,13 +850,13 @@ export class EditionComposer {
         $.post(
           this.apiSaveCollationUrl,
           {data: JSON.stringify(apiCallOptions)}
-        ).done(  (apiResponse) => {
+        ).done(  async (apiResponse) => {
           console.log("Success saving table")
           console.log(apiResponse)
           this.saveButton.html(this.icons.saveEdition)
           this.lastSavedCtData = Util.deepCopy(this.ctData)
           this.versionInfo = apiResponse.versionInfo
-          this.adminPanel.updateVersionInfo(this.versionInfo)
+          await this.adminPanel.updateVersionInfo(this.versionInfo)
           this.witnessUpdates = []
           this.witnessInfoPanel.onDataSave()
           this.unsavedChanges = false
@@ -896,7 +903,7 @@ export class EditionComposer {
   }
 
   genUpdateWitness() {
-    return (witnessIndex, changeData, newWitness) => {
+    return async (witnessIndex, changeData, newWitness) => {
 
       console.log(`Updating witness ${witnessIndex} (${this.ctData['witnessTitles'][witnessIndex]})`)
 
@@ -975,7 +982,7 @@ export class EditionComposer {
       })
       this._updateSaveArea()
       this._reGenerateEdition(`Witness Update`)
-      this._updateDataInPanels(false)
+      await this._updateDataInPanels(false)
       this.witnessInfoPanel.markWitnessAsJustUpdated(witnessIndex)
       return true
     }
@@ -1340,7 +1347,7 @@ export class EditionComposer {
   genCtInfoDiv() {
     let workTitle = this.options.workInfo['title']
     let workAuthorId = this.options.workInfo['authorId']
-    let workAuthorName = this.options.peopleInfo[workAuthorId]['fullname']
+    let workAuthorName = this.options.peopleInfo[workAuthorId]['name']
     let warningSign = ''
     return `<div id="ct-info" title="${workAuthorName}, ${workTitle}; table ID: ${this.tableId}">${this.options.workId}-${this.options.chunkNumber}</div>`
   }

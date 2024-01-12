@@ -48,6 +48,7 @@ class ApiUsers extends ApiController
 
     public function getAllUsers(Request $request, Response $response) : Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
+
         $um = $this->getDataManager()->userManager;
 
         $users = $um->getUserInfoForAllUsers();
@@ -93,7 +94,7 @@ class ApiUsers extends ApiController
 
         $um = $this->getDataManager()->userManager;
         $postData = $request->getParsedBody();
-        $fullname = $postData['fullname'];
+        $name = $postData['name'];
         $email = $postData['email'];
         $profileUserInfo = $um->getUserInfoByUserId($profileUserId);
 
@@ -104,8 +105,8 @@ class ApiUsers extends ApiController
             return $this->responseWithStatus($response, 409);
         }
        
-        if ($fullname == '') {
-            $this->logger->warning("No fullname given", 
+        if ($name == '') {
+            $this->logger->warning("No name given",
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
             return $this->responseWithStatus($response, 409);
@@ -122,7 +123,7 @@ class ApiUsers extends ApiController
                       'userId' => $profileUserId]);
             return  $this->responseWithStatus($response, 403);
         }
-        if ($fullname === $profileUserInfo['fullname'] && 
+        if ($name === $profileUserInfo['name'] &&
                 $email === $profileUserInfo['email']) {
             $this->logger->notice("$updater tried to update "
                     . "$profileUserName's profile, but without new information", 
@@ -131,17 +132,17 @@ class ApiUsers extends ApiController
             return  $this->responseWithStatus($response, 200);
         }
         
-        if ($um->updateUserInfo($profileUserId, $fullname, $email) !== false) {
+        if ($um->updateUserInfo($profileUserId, $name, $email) !== false) {
             
             $this->logger->info("$updater updated $profileUserName's "
-                    . "profile with fullname '$fullname', email '$email'", 
+                    . "profile with name '$name', email '$email'",
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
             return $this->responseWithStatus($response, 200);
         }
 
         $this->logger->error("Could not update user $profileUserId with "
-                . "fullname '$fullname', email '$email'", 
+                . "fullname '$name', email '$email'",
                 [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
         return $this->responseWithStatus($response, 409);
@@ -276,7 +277,7 @@ class ApiUsers extends ApiController
         $um = $this->getDataManager()->userManager;
         $postData = $request->getParsedBody();
         $username = $postData['username'];
-        $fullname = $postData['fullname'];
+        $name = $postData['name'];
         $email = $postData['email'];
         $password1 = $postData['password1'];
         $password2 = $postData['password2'];
@@ -302,8 +303,8 @@ class ApiUsers extends ApiController
                     ['apiUserId' => $this->apiUserId]);
             return $this->responseWithStatus($response, 409);
         }
-        if ($fullname == '') {
-            $this->logger->warning("No fullname given for user creation, "
+        if ($name == '') {
+            $this->logger->warning("No name given for user creation, "
                     . "change attempted by $updater", 
                     ['apiUserId' => $this->apiUserId]);
             return $this->responseWithStatus($response, 409);
@@ -341,7 +342,7 @@ class ApiUsers extends ApiController
         // will log if there's any problem
         
         // Update the profile info
-        if ($um->updateUserInfo($newUserId, $fullname, $email) === false) {
+        if ($um->updateUserInfo($newUserId, $name, $email) === false) {
             $this->logger->error("Can't update info for user $username, "
                     . "change attempted by $updater", 
                     ['apiUserId' => $this->apiUserId ,
@@ -372,10 +373,10 @@ class ApiUsers extends ApiController
     public function getTranscribedPages(Request $request, Response $response) : Response
     {
         $this->profiler->start();
-        $userId =  (int) $request->getAttribute('userId');
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $userId);
+        $userTid =  (int) $request->getAttribute('userId');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $userTid);
 
-        $cacheKey = self::CACHE_KEY_PREFIX_TRANSCRIBED_PAGES . $userId;
+        $cacheKey = self::CACHE_KEY_PREFIX_TRANSCRIBED_PAGES . $userTid;
         $cacheHit = true;
         $dataCache = $this->systemManager->getSystemDataCache();
         $this->systemManager->getSqlQueryCounterTracker()->incrementSelect();
@@ -383,7 +384,7 @@ class ApiUsers extends ApiController
             $data = unserialize($dataCache->get($cacheKey));
         } catch (KeyNotInCacheException) {
             $cacheHit = false;
-            $data = self::buildTranscribedPagesData($this->systemManager, $userId);
+            $data = self::buildTranscribedPagesData($this->systemManager, $userTid);
             $dataCache->set($cacheKey, serialize($data), self::CACHE_TTL_TRANSCRIBED_PAGES);
         }
 
@@ -412,19 +413,19 @@ class ApiUsers extends ApiController
         return true;
     }
 
-    static public function buildTranscribedPagesData(SystemManager $systemManager, int $userId) : array {
+    static public function buildTranscribedPagesData(SystemManager $systemManager, int $userTid) : array {
         $dm = $systemManager->getDataManager();
         $docManager = $systemManager->getTranscriptionManager()->getDocManager();
         $pageManager = $systemManager->getTranscriptionManager()->getPageManager();
 
         $helper = new DataRetrieveHelper();
         $helper->setLogger($systemManager->getLogger());
-        $docIds = $dm->getDocIdsTranscribedByUser($userId);
+        $docIds = $dm->getDocIdsTranscribedByUser($userTid);
         $docInfoArray = $helper->getDocInfoArrayFromList($docIds, $docManager);
         $allPageIds = [];
 
         foreach($docIds as $docId) {
-            $pageIds = $dm->getPageIdsTranscribedByUser($userId, $docId);
+            $pageIds = $dm->getPageIdsTranscribedByUser($userTid, $docId);
             $docInfoArray[$docId]->pageIds = $pageIds;
             foreach($pageIds as $pageId) {
                 $allPageIds[] = $pageId;
@@ -499,24 +500,24 @@ class ApiUsers extends ApiController
         }
         $workInfo = [];
         foreach (array_keys($worksCited) as $work) {
-            $workInfo[$work] = $systemManager->getDataManager()->getWorkInfo($work);
+            $workInfo[$work] = $systemManager->getDataManager()->getWorkInfoByDareId($work);
         }
 
         return ['tableInfo' => $tableInfo, 'workInfo' => $workInfo];
     }
 
-    static public function updateCtInfoData(SystemManager $systemManager, int $userId) : bool {
+    static public function updateCtInfoData(SystemManager $systemManager, int $userTid) : bool {
         try {
-            $data = self::buildCollationTableInfoForUser($systemManager, $userId);
+            $data = self::buildCollationTableInfoForUser($systemManager, $userTid);
         } catch(Exception $e) {
-            $systemManager->getLogger()->error("Exception while building CollationTable Data for user $userId",
+            $systemManager->getLogger()->error("Exception while building CollationTable Data for user $userTid",
                 [
                     'code' => $e->getCode(),
                     'msg' => $e->getMessage()
                 ]);
             return false;
         }
-        $systemManager->getSystemDataCache()->set(self::CACHE_KEY_PREFIX_CT_INFO . $userId,
+        $systemManager->getSystemDataCache()->set(self::CACHE_KEY_PREFIX_CT_INFO . $userTid,
             serialize($data), self::CACHE_TTL_CT_INFO);
         return true;
     }

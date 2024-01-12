@@ -41,12 +41,11 @@
     let workInfo = JSON.parse("{{workInfo|json_encode|e('js')}}")
     let docInfo = JSON.parse("{{docInfo|json_encode|e('js')}}")
     let versionInfo = JSON.parse("{{versionInfo|json_encode|e('js')}}")
-    let userId = {{ userId }} ;
     let isTechSupport = '{{isTechSupport }}' === 'yes';
     let lastVersion = '{{lastVersion }}' === 'yes';
 
     let te = new EditionComposer({
-      userId: userId,
+      commonData: JSON.parse("{{commonData|json_encode|e('js')}}"),
       lastVersion: lastVersion,
       isTechSupport: isTechSupport,
       collationTableData : ctData,

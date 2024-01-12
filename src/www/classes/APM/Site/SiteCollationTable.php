@@ -72,9 +72,9 @@ class SiteCollationTable extends SiteController
      *
      * @param Request $request
      * @param Response $response
-     * @return Response|\Slim\Psr7\Response
+     * @return Response
      */
-    public function editCollationTable(Request $request, Response $response) {
+    public function editCollationTable(Request $request, Response $response) : Response{
         $tableId = intval($request->getAttribute('tableId'));
         $versionId = intval($request->getAttribute('versionId'));
 
@@ -122,7 +122,7 @@ class SiteCollationTable extends SiteController
         [ $workId, $chunkNumber] = explode('-', $chunkId);
 
         $dm = $this->dataManager;
-        $rawWorkInfo = $dm->getWorkInfo($workId);
+        $rawWorkInfo = $dm->getWorkInfoByDareId($workId);
         $workInfo = [
             'authorId' => intval($rawWorkInfo['author_id']),
             'title' => $rawWorkInfo['title']
@@ -346,7 +346,7 @@ class SiteCollationTable extends SiteController
         $lang =  $presetData['lang'];
         $ignorePunctuation = $presetData['ignorePunctuation'];
 
-        $presetUserName = $this->dataManager->userManager->getUserInfoByUserId($preset->getUserId())['fullname'];
+        $presetUserName = $this->dataManager->userManager->getUserInfoByUserId($preset->getUserId())['name'];
         
         $collationPageOptions = [
             'work' => $workId,
@@ -521,7 +521,7 @@ class SiteCollationTable extends SiteController
         }
         
         // get work info
-        $workInfo = $dm->getWorkInfo($workId);
+        $workInfo = $dm->getWorkInfoByDareId($workId);
         
         // get total witness counts
         $validWitnesses = $this->getValidWitnessesForChunkLang($workId, $chunkNumber, $language);

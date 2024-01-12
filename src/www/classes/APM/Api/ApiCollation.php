@@ -328,7 +328,7 @@ class ApiCollation extends ApiController
         if ($collatexOutput === false) {
             $msg = "Automatic Collation: error running collation engine";
             $this->logger->error($msg,
-                        [ 'apiUserId' => $this->apiUserId,
+                        [ 'apiUserTid' => $this->apiUserTid,
                         'apiError' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR,
                         'data' => $collatexInput, 
                         'collationEngineDetails' => $collationEngine->getRunDetails()
@@ -347,7 +347,7 @@ class ApiCollation extends ApiController
         catch(Exception $ex) {
             $msg = 'Error processing collation engine output into collation object';
             $this->logger->error($msg, 
-                    [ 'apiUserId' => $this->apiUserId,
+                    [ 'apiUserTid' => $this->apiUserTid,
                         'apiError' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING,
 //                        'data' => $inputDataObject,
                          'collationEngineDetails' => $collationEngine->getRunDetails(),
@@ -435,7 +435,7 @@ class ApiCollation extends ApiController
         $ctManager = $this->systemManager->getCollationTableManager();
 
         $versionInfo = new CollationTableVersionInfo();
-        $versionInfo->authorId = $this->apiUserId;
+//        $versionInfo->authorId = $this->apiUserId;
         $versionInfo->authorTid = $this->apiUserTid;
         $versionInfo->description = $inputDataObject['descr'] ?? '';
         $versionInfo->isMinor = $inputDataObject['isMinor'] ?? false;
@@ -490,7 +490,7 @@ class ApiCollation extends ApiController
                 'versionInfo' => $ctManager->getCollationTableVersions($collationTableId)
             ];
 
-            $this->systemManager->onCollationTableSaved($this->apiUserId, $collationTableId);
+            $this->systemManager->onCollationTableSaved($this->apiUserTid, $collationTableId);
             $this->profiler->stop();
             $this->info("Collation Table $collationTableId saved");
             return $this->responseWithJson($response, $responseData);
@@ -505,7 +505,7 @@ class ApiCollation extends ApiController
             'versionInfo' => $ctManager->getCollationTableVersions($collationTableId)
         ];
 
-        $this->systemManager->onCollationTableSaved($this->apiUserId, $collationTableId);
+        $this->systemManager->onCollationTableSaved($this->apiUserTid, $collationTableId);
 
         $this->profiler->stop();
         $this->info("Collation Table $collationTableId saved (new table)");
@@ -560,7 +560,8 @@ class ApiCollation extends ApiController
         $ctManager = $this->systemManager->getCollationTableManager();
 
         $versionInfo = new CollationTableVersionInfo();
-        $versionInfo->authorId = $this->apiUserId;
+        $versionInfo->authorTid = $this->apiUserTid;
+//        $versionInfo->authorId = $this->apiUserId;
         $versionInfo->description = 'Table with single witness registered in the system';
         $versionInfo->isMinor = false;
         $versionInfo->isReview = false;
@@ -601,7 +602,8 @@ class ApiCollation extends ApiController
         $standardData->witnessOrder = [ 1, 0];
 
         $versionInfo = new CollationTableVersionInfo();
-        $versionInfo->authorId = $this->apiUserId;
+        $versionInfo->authorTid = $this->apiUserTid;
+//        $versionInfo->authorId = $this->apiUserId;
         $versionInfo->collationTableId = $collationTableId;
         $versionInfo->description = 'Edition text added by the system to complete creation of edition with a single witness';
         $versionInfo->isMinor = false;

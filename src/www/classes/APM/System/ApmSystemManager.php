@@ -155,6 +155,14 @@ class ApmSystemManager extends SystemManager {
             return; // @codeCoverageIgnore
         }
 
+
+        $this->twig = null;
+        $this->normalizerManager = null;
+        $this->multiChunkEditionManager = null;
+        $this->editionSourceManager = null;
+        $this->userManager = null;
+        $this->personManager = null;
+
         // Create logger
         $this->logger = $this->createLogger();
 
@@ -267,19 +275,13 @@ class ApmSystemManager extends SystemManager {
             'averroes-server' => new OldBilderbergStyleRepository('https://averroes.uni-koeln.de/localrep')
         ];
 
-        $dataManager = new DataManager($this->dbConn, $this->tableNames,
+        $dataManager = new DataManager($this->dbConn, $this->getPersonManager(), $this->tableNames,
             $this->logger, $this->imageSources, $this->config[ApmConfigParameter::LANG_CODES]);
         $dataManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
         $dataManager->userManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
         $this->dataManager = $dataManager;
 
 
-        $this->twig = null;
-        $this->normalizerManager = null;
-        $this->multiChunkEditionManager = null;
-        $this->editionSourceManager = null;
-        $this->userManager = null;
-        $this->personManager = null;
     }
 
     public function getAvailableImageSources(): array
@@ -617,9 +619,9 @@ class ApmSystemManager extends SystemManager {
         return $this->editionSourceManager;
     }
 
-    public function onTranscriptionUpdated(int $userId, int $docId, int $pageNumber, int $columnNumber): void
+    public function onTranscriptionUpdated(int $userTid, int $docId, int $pageNumber, int $columnNumber): void
     {
-        parent::onTranscriptionUpdated($userId, $docId, $pageNumber, $columnNumber);
+        parent::onTranscriptionUpdated($userTid, $docId, $pageNumber, $columnNumber);
 
         $this->logger->debug("Scheduling update of SiteChunks cache");
         $this->jobManager->scheduleJob(ApmJobName::SITE_CHUNKS_UPDATE_DATA_CACHE,
@@ -629,9 +631,9 @@ class ApmSystemManager extends SystemManager {
         $this->jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '',[],0, 3, 20);
 
-        $this->logger->debug("Scheduling update of TranscribedPages cache for user $userId");
+        $this->logger->debug("Scheduling update of TranscribedPages cache for user $userTid");
         $this->jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE,
-            "User $userId", ['userId' => $userId],0, 3, 20);
+            "User $userTid", ['userTid' => $userTid],0, 3, 20);
 
         $this->logger->debug("Scheduling update of open search index");
         $this->jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_OPENSEARCH_INDEX,
@@ -642,28 +644,28 @@ class ApmSystemManager extends SystemManager {
             '', [], 0, 3, 20);
     }
 
-    public function onUpdatePageSettings(int $userId, int $pageId) : void {
-        parent::onUpdatePageSettings($userId, $pageId);
-        $this->logger->debug("Scheduling update of TranscribedPages cache for user $userId after update of page $pageId");
+    public function onUpdatePageSettings(int $userTid, int $pageId) : void {
+        parent::onUpdatePageSettings($userTid, $pageId);
+        $this->logger->debug("Scheduling update of TranscribedPages cache for user $userTid after update of page $pageId");
         $this->jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE,
-            "User $userId", ['userId' => $userId],0, 3, 20);
+            "User $userTid", ['userTid' => $userTid],0, 3, 20);
     }
 
-    public function onCollationTableSaved(int $userId, int $ctId): void
+    public function onCollationTableSaved(int $userTid, int $ctId): void
     {
-        parent::onCollationTableSaved($userId, $ctId);
-        $this->logger->debug("Invalidating CollationTablesInfo cache for user $userId");
+        parent::onCollationTableSaved($userTid, $ctId);
+        $this->logger->debug("Invalidating CollationTablesInfo cache for user $userTid");
         $this->jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE,
-            "User $userId", ['userId' => $userId],0, 3, 20);
+            "User $userTid", ['userTid' => $userTid],0, 3, 20);
         $this->jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_OPENSEARCH_INDEX,
             '', [$ctId],0, 3, 20);
         $this->jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITORS_AND_TITLES_CACHE,
             '', [],0, 3, 20);
     }
 
-    public function onDocumentDeleted(int $userId, int $docId): void
+    public function onDocumentDeleted(int $userTid, int $docId): void
     {
-        parent::onDocumentDeleted($userId, $docId);
+        parent::onDocumentDeleted($userTid, $docId);
 
         $this->logger->debug("Scheduling update of SiteDocuments cache");
         $this->jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
@@ -671,17 +673,17 @@ class ApmSystemManager extends SystemManager {
 
     }
 
-    public function onDocumentUpdated(int $userId, int $docId): void
+    public function onDocumentUpdated(int $userTid, int $docId): void
     {
-        parent::onDocumentUpdated($userId, $docId);
+        parent::onDocumentUpdated($userTid, $docId);
         $this->logger->debug("Scheduling update of SiteDocuments cache");
         $this->jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '', [],0, 3, 20);
     }
 
-    public function onDocumentAdded(int $userId, int $docId): void
+    public function onDocumentAdded(int $userTid, int $docId): void
     {
-        parent::onDocumentAdded($userId, $docId);
+        parent::onDocumentAdded($userTid, $docId);
         $this->logger->debug("Scheduling update of SiteDocuments cache");
         $this->jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '', [],0, 3, 20);
@@ -690,7 +692,7 @@ class ApmSystemManager extends SystemManager {
     public function getUserManager() : UserManagerInterface {
         if ($this->userManager === null) {
             $this->userManager = new ApmUserManager(
-                new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_USERS], true),
+                new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_USERS], false),
                 new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_TOKENS], true)
             );
         }
@@ -701,7 +703,7 @@ class ApmSystemManager extends SystemManager {
     {
         if ($this->personManager === null) {
             $this->personManager = new ApmPersonManager(
-                new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_PEOPLE], true),
+                new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_PEOPLE], false),
                 $this->getUserManager()
             );
         }

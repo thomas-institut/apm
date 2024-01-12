@@ -51,7 +51,7 @@ class ApmPersonManager implements PersonManagerInterface, LoggerAwareInterface
 
     private function buildPersonEssentialDataFromRow(array $row): PersonEssentialData
     {
-        $personData = $this->getPersonDataFromDataTableRow($row);
+        $personData = $this->getPersonDataFromPeopleTableRow($row);
         $personTid = intval($row['tid']);
         $personData->isUser = false;
         if ($this->userManager->isUser($personTid)) {
@@ -64,31 +64,30 @@ class ApmPersonManager implements PersonManagerInterface, LoggerAwareInterface
             $personData->isUser = true;
             $personData->userName = $userData->userName ?? '';
             $personData->userTags = $userData->tags ?? [];
+            $personData->userEmailAddress = $userData->emailAddress ?? '';
         }
         return $personData;
     }
 
-    private function getPersonDataFromDataTableRow(array $row) : PersonEssentialData {
+    private function getPersonDataFromPeopleTableRow(array $row) : PersonEssentialData {
         $data = new PersonEssentialData();
 
         $data->id = intval($row['id']);
         $data->tid = intval($row['tid']);
-        $data->name = $row['fullname'];
+        $data->name = $row['name'];
         $data->sortName = $row['sort_name'] ?? $data->name;
-        $data->isUser = intval($row['isApmUser']) === 1;
-        $email = $row['email'] ?? '';
-        if ($email !== '') {
-            $data->extraAttributes = [
-                'email' => $email
-            ];
-        }
+        $data->extraAttributes = [];
+        $data->isUser = false;
+        $data->userName = '';
+        $data->userTags = [];
+        $data->userEmailAddress = '';
         return $data;
     }
 
     /**
      * @inheritDoc
      */
-    public function createPerson(string $name, string $sortName, bool $isUser = false): int
+    public function createPerson(string $name, string $sortName): int
     {
         if ($name === '') {
             throw  new InvalidPersonNameException();
@@ -96,7 +95,7 @@ class ApmPersonManager implements PersonManagerInterface, LoggerAwareInterface
 
         $tid = Tid::generateUnique();
 
-        $this->personsTable->createRow([ 'tid' => $tid,  'fullname' => $name, 'isApmUser' => $isUser]);
+        $this->personsTable->createRow([ 'tid' => $tid,  'name' => $name]);
         return $tid;
     }
 

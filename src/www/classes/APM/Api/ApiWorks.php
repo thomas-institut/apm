@@ -26,7 +26,7 @@ class ApiWorks extends ApiController
 
         if ($workInfo === false) {
             $this->logger->error("Work '$workId' not found",
-                [ 'apiUserId' => $this->apiUserId,
+                [ 'apiUserId' => $this->apiUserTid,
                     'workId' => $workId]);
             return $this->responseWithStatus($response, 409);
         }

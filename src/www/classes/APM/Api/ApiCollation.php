@@ -25,7 +25,6 @@ use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
 use APM\Core\Witness\EditionWitness;
 use APM\StandardData\CollationTableDataProvider;
-use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use APM\ToolBox\SiglumGenerator;
@@ -61,7 +60,7 @@ class ApiCollation extends ApiController
 //    const ERROR_MISSING_VERSION_INFO = 2007;
 
 
-    public function  getActiveEditions(Request $request, Response $response, array $args): Response
+    public function  getActiveEditions(Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $infoArray = $this->systemManager->getCollationTableManager()->getActiveEditionTableInfo();
@@ -71,9 +70,9 @@ class ApiCollation extends ApiController
 
     public function getTable(Request $request, Response $response): Response
     {
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
         $tableId = intval($request->getAttribute('tableId'));
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":$tableId");
         $timeStamp = '';
         $compactEncodedTimeStamp =  $request->getAttribute('timestamp', '');
         if ($compactEncodedTimeStamp !== '') {
@@ -88,7 +87,7 @@ class ApiCollation extends ApiController
         $ctManager = $this->systemManager->getCollationTableManager();
         try {
             $ctData = $ctManager->getCollationTableById($tableId, $timeStamp);
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException) {
             $this->logger->info("Table $tableId not found");
             return $this->responseWithJson($response,  [
                 'tableId' => $tableId,
@@ -141,7 +140,7 @@ class ApiCollation extends ApiController
      *          <TYPE> is a valid witness type
      *          <ID ARRAY> is the witness system id (normally relative to its type)
      *                for full transcriptions it is an array with 1 to 3 elements containing
-     *                the document Id, an optional local witness Id (defaults to 'A') and an
+     *                the document id, an optional local witness id (defaults to 'A') and an
      *                optional timeStamp (defaults to TimeString::now())
      *
      *      If the witnesses array is empty, all valid witnesses for the
@@ -200,11 +199,13 @@ class ApiCollation extends ApiController
             foreach($inputDataObject['normalizers'] as $normalizerName) {
                 try {
                     $normalizer = $normalizerManager->getNormalizerByName($normalizerName);
-                } catch(InvalidArgumentException $e) {
+                } catch(InvalidArgumentException) {
                     $this->codeDebug("Unknown normalizer name found: $normalizerName");
                 }
-                $normalizers[] = $normalizer;
-                $normalizerNames[] = $normalizerName;
+                if (isset($normalizer)) {
+                    $normalizers[] = $normalizer;
+                    $normalizerNames[] = $normalizerName;
+                }
             }
         } else {
             $normalizerNames = $normalizerManager->getNormalizerNamesByLangAndCategory($language, 'standard');
@@ -249,7 +250,7 @@ class ApiCollation extends ApiController
 
                     try {
                         $collationTable->addWitness($requestedWitness['title'], $fullTxWitness);
-                    } catch (InvalidArgumentException $e) {
+                    } catch (InvalidArgumentException) {
                         $this->logger->warning('Cannot add fullTx witness to collation table', [$witnessInfo]);
                     }
 
@@ -282,9 +283,10 @@ class ApiCollation extends ApiController
         $cacheHit = true;
         try {
             $cachedData = $cache->get($cacheKey);
-        } catch ( KeyNotInCacheException $e) {
+        } catch ( KeyNotInCacheException) {
             $this->systemManager->getCacheTracker()->incrementMisses();
             $cacheHit = false;
+            $cachedData = '';
         }
 
         if ($cacheHit) {
@@ -552,7 +554,7 @@ class ApiCollation extends ApiController
         $editionWitnessSiglum = '_edition_';
         $collationTable->addWitness($fullTxWitnessSiglum, $fullTxWitness, $witnessTitle, false);
 
-        // save the collation table to get a table Id
+        // save the collation table to get a table id
         $standardData =(new CollationTableDataProvider($collationTable))->getStandardData();
         // add normalizer names to std data
         $standardData->automaticNormalizationsApplied = $normalizerNames;
@@ -624,24 +626,24 @@ class ApiCollation extends ApiController
     }
 
 
-    /**
-     * @param string $workId
-     * @param int $chunkNumber
-     * @param string $langCode
-     * @return WitnessInfo[]
-     */
-    protected function getValidWitnessesForChunkLang(string $workId, int $chunkNumber, string $langCode) : array {
-        $this->logger->debug("Getting valid witnesses for $workId, $chunkNumber, $langCode");
-        $tm = $this->systemManager->getTranscriptionManager();
-
-        $vw = $tm->getWitnessesForChunk($workId, $chunkNumber);
-
-        $vWL = [];
-        foreach($vw as $witnessInfo) {
-            if ($witnessInfo->languageCode === $langCode) {
-                $vWL[] = $witnessInfo;
-            }
-        }
-        return $vWL;
-    }
+//    /**
+//     * @param string $workId
+//     * @param int $chunkNumber
+//     * @param string $langCode
+//     * @return WitnessInfo[]
+//     */
+//    protected function getValidWitnessesForChunkLang(string $workId, int $chunkNumber, string $langCode) : array {
+//        $this->logger->debug("Getting valid witnesses for $workId, $chunkNumber, $langCode");
+//        $tm = $this->systemManager->getTranscriptionManager();
+//
+//        $vw = $tm->getWitnessesForChunk($workId, $chunkNumber);
+//
+//        $vWL = [];
+//        foreach($vw as $witnessInfo) {
+//            if ($witnessInfo->languageCode === $langCode) {
+//                $vWL[] = $witnessInfo;
+//            }
+//        }
+//        return $vWL;
+//    }
 }

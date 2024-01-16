@@ -226,8 +226,8 @@ class SiteDocuments extends SiteController
                     foreach($witnessLocalIdArray as $witnessLocalId => $segmentArray) {
                         $lastChunkVersion = $lastChunkVersions[$workId][$chunkNumber][$docIdInMap][$witnessLocalId];
                         $lastVersions[$workId][$chunkNumber] = $lastChunkVersion;
-                        if ($lastChunkVersion->authorId !== 0 && !isset($authorInfo[$lastChunkVersion->authorId])) {
-                            $authorInfo[$lastChunkVersion->authorId] = $dataManager->userManager->getUserInfoByUserId($lastChunkVersion->authorId);
+                        if ($lastChunkVersion->authorTid !== 0 && !isset($authorInfo[$lastChunkVersion->authorTid])) {
+                            $authorInfo[$lastChunkVersion->authorTid] = $this->systemManager->getPersonManager()->getPersonEssentialData($lastChunkVersion->authorTid);
                         }
                         foreach ($segmentArray as $segmentNumber => $location) {
                             /** @var $location ApmChunkSegmentLocation */

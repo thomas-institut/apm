@@ -179,7 +179,7 @@ export class ApmDataProxy {
           if (dataType === 'essential') {
             getUrl =  urlGen.apiPersonGetEssentialData(entityId);
           } else {
-            reject(`Invalid data type for Perso data: ${dataType}`)
+            reject(`Invalid data type for Person data: ${dataType}`)
           }
           break;
 

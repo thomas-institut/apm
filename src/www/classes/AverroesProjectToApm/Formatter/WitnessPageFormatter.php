@@ -316,7 +316,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
             /** @var Note $note */
             $html .= '<p class="notetext">' . $note->getText() . '</p>';
             $html .= '<p class="noteheader"> -- ' .
-                    $this->personInfoProvider->getShortName($note->getAuthorId()) . ', ' .
+                    $this->personInfoProvider->getShortName($note->getAuthorTid()) . ', ' .
                     TimeString::format($note->getTimestamp(), self::DATEFORMAT_NOTE) . '</p>';
         }
         return $html;

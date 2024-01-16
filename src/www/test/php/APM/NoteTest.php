@@ -37,7 +37,7 @@ class NoteTest extends TestCase {
         $note1 = new Note();
         
         
-        $this->assertEquals(Note::DEFAULT_AUTHOR_ID, $note1->getAuthorId());
+        $this->assertEquals(Note::DEFAULT_AUTHOR_TID, $note1->getAuthorTid());
         $this->assertEquals(Note::DEFAULT_TEXT, $note1->getText());
         $this->assertEquals(Note::DEFAULT_TIMESTAMP, $note1->getTimestamp());
         

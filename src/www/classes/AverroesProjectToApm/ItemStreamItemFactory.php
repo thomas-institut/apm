@@ -192,15 +192,16 @@ class ItemStreamItemFactory {
         return $item;
     }
     
-    public function createItemNoteFromRow(array $row) {
+    public function createItemNoteFromRow(array $row): ItemNote
+    {
 
-        $authorId = -1;
+        $authorTid = -1;
         $text = '[ No text ]';
         $timeStamp = TimeString::TIME_ZERO;
 
 
-        if (isset($row['author_id'])) {
-            $authorId = intval($row['author_id']);
+        if (isset($row['author_tid'])) {
+            $authorTid = intval($row['author_tid']);
         }
         
         if (isset($row['time'])) {
@@ -211,7 +212,7 @@ class ItemStreamItemFactory {
             $text = $row['text'];
         }
         
-        return new ItemNote($text, $authorId, $timeStamp);
+        return new ItemNote($text, $authorTid, $timeStamp);
     }
     
     private function getGoodString(array $someArray, string $someKey) : string {

@@ -70,7 +70,7 @@ class EditionsIndexManager extends OpenSearchIndexManager
 
             $edition_json = $data['witnesses'][$edition_data['edition_witness_index']];
             $tokens = $edition_json['tokens'];
-            $editor_id = $ctable->getCollationTableVersionManager()->getCollationTableVersionInfo($id, 1)[0]->authorId;
+            $editor_id = $ctable->getCollationTableVersionManager()->getCollationTableVersionInfo($id, 1)[0]->authorTid;
             $editor = $this->um->getUserInfoByUserId($editor_id)['name'];
 
             $edition_text = "";

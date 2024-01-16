@@ -27,6 +27,8 @@ import * as WitnessType from '../Witness/WitnessType'
 
 import {CollapseToggleButton} from '../widgets/CollapseToggleButton'
 import { ConfirmDialog } from './common/ConfirmDialog'
+import { ApmPage } from './ApmPage'
+import { urlGen } from './common/SiteUrlGen'
 
 
 const convertToEditionIcon = '<i class="fas fa-file-alt"></i>'
@@ -37,23 +39,19 @@ const convertToEditionLinkClass =  'cte-link'
 /**
  * Mini JS app running in the Chunk Page
  */
-export class ChunkPage {
+export class ChunkPage extends ApmPage {
 
   constructor(options) {
-
+    super(options);
     let optionsChecker = new OptionsChecker({
       context: 'ChunkPage',
       optionsDefinition: {
         work : { required: true, type: 'string'},
         chunk : { required: true, type: 'NumberGreaterThanZero' },
         showAdminInfo : { type: 'boolean', default: false},
-        urlGenerator: { required: true, type: 'object'},
-        userId: { type: 'number', default: -1 },
         witnessInfo :{ type: 'Array', default: []},
-        authorInfo:  { type: 'object', default: []},
         pageInfo:  { type: 'object', default: []},
         languageInfo : { type: 'object', default: []},
-        workInfo : { type: 'object', default: []},
         validChunks : {type: 'Array', default: []},
         savedCollationTables: { type: 'Array', default: []}
       }
@@ -89,18 +87,30 @@ export class ChunkPage {
     this.editionsDiv = $('#editions')
 
     // shortcuts to options
-    this.pathFor = this.options.urlGenerator
+    this.pathFor = urlGen;
 
     this.getPresetsUrl = this.pathFor.apiGetAutomaticCollationPresets()
+    this.witnessesByLang = {}
 
-    this.headerDiv.html(this.generateHeaderDivHtml())
-    this.chunkIdDiv.html(this.generateChunkIdDivHtml())
-    this.witnessListNewDiv.html(this.generateWitnessListNew())
 
-   this.options.witnessInfo.forEach( (info, i) => {
-     $(`.${convertToEditionLinkClass}-${i}`).on('click', this.genOnClickConvertToEditionButton(i, info))
-   })
 
+    this.init().then( () => {
+      console.log(`ChunkPage initialized`)
+    })
+  }
+
+  async init() {
+
+    this.workInfo = await  this.apmDataProxy.getWorkData(this.options.work);
+    this.authorInfo = await this.apmDataProxy.getPersonEssentialData(this.workInfo.authorTid);
+    this.headerDiv.html(this.generateHeaderDivHtml());
+    this.chunkIdDiv.html(this.generateChunkIdDivHtml());
+
+    this.witnessListNewDiv.html(await  this.generateWitnessListNew());
+
+    this.options.witnessInfo.forEach( (info, i) => {
+      $(`.${convertToEditionLinkClass}-${i}`).on('click', this.genOnClickConvertToEditionButton(i, info))
+    });
     $("#witnessTableNew").DataTable({
       paging: false,
       searching : false,
@@ -115,7 +125,7 @@ export class ChunkPage {
         { orderable: false}, // actions
         { orderable: false} // admin
       ]
-    })
+    });
 
     // build witness data by language
     this.witnessesByLang = {}
@@ -153,16 +163,19 @@ export class ChunkPage {
         new CollapseToggleButton($('#texttoggle-' + witness.systemId), $('#text-' + witness.systemId))
       }
     }
-    console.log('Witnesses by lang')
-    console.log(this.witnessesByLang)
+    console.log('Witnesses by lang');
+    console.log(this.witnessesByLang);
 
-    this.savedCollationTablesDiv.html(this.genSavedCollationTablesDivHtml('ctable'))
-    this.editionsDiv.html(this.genSavedCollationTablesDivHtml('edition'))
+
+
+    this.savedCollationTablesDiv.html(await this.genSavedCollationTablesDivHtml('ctable'))
+    this.editionsDiv.html(await this.genSavedCollationTablesDivHtml('edition'))
 
 
     this.updateCollationTableLinks()
 
     this.witnessPanelsDiv.html(this.generateWitnessPanelHtml())
+
 
     // load good witnesses into panels
 
@@ -202,14 +215,15 @@ export class ChunkPage {
     }
 
     $('body').popover({
-            container: 'body', 
-            html: true,
-            trigger: 'hover', 
-            selector: '.withformatpopover',
-            delay: {show: 500, hide: 0},
-            placement: 'auto',
-            sanitize: false
-         })
+      container: 'body',
+      html: true,
+      trigger: 'hover',
+      selector: '.withformatpopover',
+      delay: {show: 500, hide: 0},
+      placement: 'auto',
+      sanitize: false
+    })
+
   }
 
   genOnClickConvertToEditionButton(index, info) {
@@ -260,7 +274,7 @@ export class ChunkPage {
     }
   }
 
-  genSavedCollationTablesDivHtml(type) {
+  async genSavedCollationTablesDivHtml(type) {
     let html = ''
 
     const titles = {
@@ -277,7 +291,7 @@ export class ChunkPage {
         let url = this.pathFor.siteEditCollationTable(ctInfo['tableId'])
         html += '<li class="smallpadding"><a title="Open in new tab/window" target="_blank" href="' + url + '">' + ctInfo['title'] +
           '</a>, <small>last change: ' + ApmUtil.formatVersionTime(ctInfo['lastSave']) +
-          ' by ' + this.getAuthorLink(ctInfo['authorId']) + '</small></li>'
+          ' by ' + await this.getAuthorLink(ctInfo['authorTid']) + '</small></li>'
       }
       html += '</ul>'
 
@@ -319,8 +333,8 @@ export class ChunkPage {
       html += '&nbsp;&nbsp;'
     }
 
-    html += this.options.workInfo['author_name'] + ', <em>' +
-        this.options.workInfo['title'] + '</em>, chunk ' + this.options.chunk
+    html += this.authorInfo.name + ', <em>' +
+        this.workInfo.title + '</em>, chunk ' + this.options.chunk
     html += '</div>'
 
     html += '<div class="col-md1 cpheader justifyright">'
@@ -385,7 +399,7 @@ export class ChunkPage {
     return html
   }
 
-  generateWitnessListNew() {
+  async generateWitnessListNew() {
     let html = ''
 
     html += '<table id="witnessTableNew" class="stripe">'
@@ -421,7 +435,7 @@ export class ChunkPage {
       let info = ''
       switch (witnessInfo.type) {
         case WitnessType.FULL_TX:
-          info = this.genFullTxInfo(witnessInfo, i)
+          info = await this.genFullTxInfo(witnessInfo, i)
           break
 
         case WitnessType.PARTIAL_TX:
@@ -447,7 +461,7 @@ export class ChunkPage {
     return html
   }
 
-  genFullTxInfo(witnessInfo, index) {
+  async genFullTxInfo(witnessInfo, index) {
 
     let info = []
     let docInfo = witnessInfo["typeSpecificInfo"].docInfo
@@ -469,7 +483,7 @@ export class ChunkPage {
 
     let lastVersion = witnessInfo.typeSpecificInfo.lastVersion
     if (witnessInfo.isValid) {
-      info['essential'] = '<small>Last change: ' + ApmUtil.formatVersionTime(lastVersion.timeFrom) + ' by ' + this.getAuthorLink(lastVersion.authorId) + '</small>'
+      info['essential'] = '<small>Last change: ' + ApmUtil.formatVersionTime(lastVersion['timeFrom']) + ' by ' + await this.getAuthorLink(lastVersion.authorTid) + '</small>'
     } else {
       let errorMsg = this.invalidErrorCodes[witnessInfo.errorCode]
       if (errorMsg === undefined) {
@@ -490,10 +504,11 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
     return info
   }
 
-  getAuthorLink(authorId) {
-    return '<a href="' + this.pathFor.siteUserProfile(this.options.authorInfo[authorId].username) +
+  async getAuthorLink(authorTid) {
+    let userData = await this.apmDataProxy.getPersonEssentialData(authorTid);
+    return '<a href="' + urlGen.siteUserProfile(userData.userName) +
       '" title="View user profile" target="_blank">' +
-      this.options.authorInfo[authorId].name + '</a>'
+      userData.name + '</a>'
   }
 
   genPageLink(docId, pageId, column) {
@@ -524,7 +539,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
     let numWitnesses = this.options.witnessInfo.length
     let numValidWitnesses = this.calculateTotalValidWitnesses()
     html += '<p>'
-    html += '<b>Chunk ID:</b> ' + this.options.workInfo['dare_id'] + '-' + this.options.chunk
+    html += '<b>Chunk ID:</b> ' + this.workInfo.dareId + '-' + this.options.chunk
     html += '<br/>'
     if (numWitnesses === 0) {
       html += '<b>Witnesses:</b> none'
@@ -624,7 +639,6 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
           { data: JSON.stringify(apiCallOptions) }
         )
         .done(function (data) { 
-          console.log('Presets retrieved for ' + langName + ' in ' + data.runTime + 'ms')
           console.log('Got ' + data.presets.length + ' presets')
           console.log(data.presets)
           for(const pr of data.presets) {
@@ -731,7 +745,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
           isPreset: urls[u].isPreset,
           preset: urls[u].preset,
           applyButtonText: 'Generate Collation',
-          urlGenerator: this.options.urlGenerator,
+          urlGenerator: urlGen,
           userId: this.options.userId,
           normalizerData: this.options.languageInfo[urls[u].lang]['normalizerData'],
           debug: true

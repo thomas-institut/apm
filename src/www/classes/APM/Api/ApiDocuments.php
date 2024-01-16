@@ -20,13 +20,9 @@
 
 namespace APM\Api;
 
-use APM\FullTranscription\ApmPageManager;
-use APM\FullTranscription\PageInfo;
 use APM\FullTranscription\PageManager;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
-use DI\DependencyException;
-use DI\NotFoundException;
 use Exception;
 use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -52,7 +48,6 @@ class ApiDocuments extends ApiController
     public function updatePageSettings(Request $request, Response $response) : Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $dataManager = $this->getDataManager();
         $this->profiler->start();
 
         if ($this->systemManager->getUserManager()->hasTag($this->apiUserTid, UserTag::READ_ONLY)) {
@@ -79,12 +74,12 @@ class ApiDocuments extends ApiController
         $pageInfo->langCode = $lang;
 
         try {
-            $this->systemManager->getTranscriptionManager()->updatePageSettings($pageId, $pageInfo, $this->apiUserId, $this->apiUserTid);
+            $this->systemManager->getTranscriptionManager()->updatePageSettings($pageId, $pageInfo, $this->apiUserTid);
         } catch (Exception $e) {
             $this->logger->error("Can't update page settings for page $pageId: " . $e->getMessage(), $pageInfo->getDatabaseRow());
             return $this->responseWithStatus($response, 409);
         }
-        $this->systemManager->onUpdatePageSettings($this->apiUserId, $pageId);
+        $this->systemManager->onUpdatePageSettings($this->apiUserTid, $pageId);
         return $this->responseWithStatus($response, 200);
     }
 
@@ -157,14 +152,7 @@ class ApiDocuments extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $dataManager = $this->getDataManager();
         $this->profiler->start();
-//
-//        if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'add-pages')){
-//            $this->logger->warning("addPages: unauthorized request",
-//                    [ 'apiUserTid' => $this->apiUserTid]
-//                );
-//            return $this->responseWithStatus($response, 403);
-//        }
-        
+
         $docId = (int) $request->getAttribute('id');
         $docInfo = $dataManager->getDocById($docId);
         if ($docInfo === false) {
@@ -289,14 +277,7 @@ class ApiDocuments extends ApiController
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $dataManager = $this->getDataManager();
-//        $this->profiler->start();
 
-//        if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'update-doc-settings')){
-//            $this->logger->warning("updateDocSettings: unauthorized request",
-//                    [ 'apiUserTid' => $this->apiUserTid]
-//                );
-//            return $this->responseWithStatus($response, 403);
-//        }
         $docId = (int) $request->getAttribute('id');
         
         $rawData = $request->getBody()->getContents();
@@ -371,14 +352,6 @@ class ApiDocuments extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
 
-//        $dataManager = $this->getDataManager();
-//        if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'update-page-settings-bulk')){
-//
-//            $this->logger->warning("updatePageSettingsBulk: unauthorized request",
-//                    [ 'apiUserTid' => $this->apiUserTid]
-//                );
-//            return $this->responseWithStatus($response, 403);
-//        }
         $rawData = $request->getBody()->getContents();
         $postData = [];
         parse_str($rawData, $postData);
@@ -407,7 +380,7 @@ class ApiDocuments extends ApiController
 
             try {
                 $pageInfo = $transcriptionManager->getPageManager()->getPageInfoByDocPage($docId, $pageNumber);
-            } catch (InvalidArgumentException $e) {
+            } catch (InvalidArgumentException) {
                 $errors[] = "Page not found, doc " . $pageDef['docId'] . " page " . $pageDef['page'];
                 continue;
             }
@@ -443,11 +416,11 @@ class ApiDocuments extends ApiController
                 'oldData' => get_object_vars($pageInfo),
                 'newData' => get_object_vars($newPageInfo)
             ]);
-            $transcriptionManager->updatePageSettings($pageId, $newPageInfo, $this->apiUserId, $this->apiUserTid);
+            $transcriptionManager->updatePageSettings($pageId, $newPageInfo, $this->apiUserTid);
         }
 
         $this->logger->info("Bulk page settings", [
-            'apiUserId'=> $this->apiUserId,
+            'apiUserTid'=> $this->apiUserTid,
             'count' => count($inputArray)
             ]);
         if (count($errors) > 0) {
@@ -506,7 +479,7 @@ class ApiDocuments extends ApiController
         $userName = $updaterInfo->userName;
         $this->info("$userName added a column to " .
                 "doc $docId, page $pageNumber", 
-                ['apiUserId' => $this->apiUserTid]);
+                ['apiUserTid' => $this->apiUserTid]);
         
         return $this->responseWithJson($response, $numColumns);
    }
@@ -521,32 +494,28 @@ class ApiDocuments extends ApiController
     public function getPageInfo(Request $request, Response $response) : Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
-//        $this->profiler->start();
         $inputData = $this->checkAndGetInputData($request, $response, ['pages']);
         if (!is_array($inputData)) {
             return $inputData;
         }
 
         $returnData = [];
-        $pageIds = [];
 
         for($i = 0; $i<count($inputData['pages']); $i++) {
             $pageId = $inputData['pages'][$i];
             try {
                 $pageInfo = $this->systemManager->getTranscriptionManager()->getPageManager()->getPageInfoById($pageId);
-            } catch (\InvalidArgumentException $e) {
+            } catch (InvalidArgumentException $e) {
                 if ($e->getCode() === PageManager::ERROR_PAGE_NOT_FOUND) {
                     $this->logger->error("Page $pageId not found", [ 'errorMsg' => $e->getMessage(), 'errorCode' ]);
                     return $this->responseWithText($response,"Page $pageId not found", 404);
                 }
                 $this->logException($e, "Invalid Argument Exception from getPageInfoById, page $pageId");
                 return $this->responseWithText($response, "Server error", 500);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->logException($e, "Generic Exception from getPageInfoById, page $pageId");
                 return $this->responseWithText($response, "Server error", 500);
             }
-
-//            $pageIds[] = $pageId;
             $returnData[] = [
                 'id' => $pageId,
                 'docId' => $pageInfo->docId,
@@ -556,8 +525,7 @@ class ApiDocuments extends ApiController
                 'foliation' => $pageInfo->foliation
             ];
         }
-        return $this->responseWithJson($response, $returnData, 200);
-
+        return $this->responseWithJson($response, $returnData);
     }
    
 }

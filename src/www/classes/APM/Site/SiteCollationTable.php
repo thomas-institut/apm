@@ -30,6 +30,7 @@ use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
 use APM\FullTranscription\DocInfo;
 use APM\System\DataRetrieveHelper;
+use APM\System\Person\PersonNotFoundException;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
@@ -124,17 +125,27 @@ class SiteCollationTable extends SiteController
         $dm = $this->dataManager;
         $rawWorkInfo = $dm->getWorkInfoByDareId($workId);
         $workInfo = [
-            'authorId' => intval($rawWorkInfo['author_id']),
+            'authorTid' => intval($rawWorkInfo['author_tid']),
             'title' => $rawWorkInfo['title']
         ];
 
-        $people = [];
-        $people[] = $workInfo['authorId'];
-        $people = array_merge($people, $this->getMentionedAuthorsFromCtData($ctData));
-        $people = array_merge($people, $this->getMentionedPeopleFromVersionArray($versionInfoArray));
-        $helper = new DataRetrieveHelper();
-        $helper->setLogger($this->logger);
-        $peopleInfo = $helper->getAuthorInfoArrayFromList($people, $dm->userManager);
+        $peopleTids = [];
+        $peopleTids[] = $workInfo['authorTid'];
+        $peopleTids = array_merge($peopleTids, $this->getMentionedAuthorsFromCtData($ctData));
+        $peopleTids = array_merge($peopleTids, $this->getMentionedPeopleFromVersionArray($versionInfoArray));
+        $pm = $this->systemManager->getPersonManager();
+        $peopleInfo = [];
+        foreach($peopleTids as $personTid) {
+
+            try {
+                $personData = $pm->getPersonEssentialData($personTid);
+            } catch (PersonNotFoundException) {
+                $this->logger->error("Person $personTid mentioned in CT not found");
+            }
+            if (isset($personData)) {
+                $peopleInfo[$personTid] = $personData->getExportObject();
+            }
+        }
 
         $docs = $this->getMentionedDocsFromCtData($ctData);
         $helper = new DataRetrieveHelper();
@@ -144,19 +155,15 @@ class SiteCollationTable extends SiteController
         $this->profiler->stop();
         $this->logProfilerData("Edit Collation Table");
         $this->codeDebug('Editor Type', [$request->getAttribute('type')]);
+
         if ($ctData['type'] === 'edition') {
             $template = $request->getAttribute('type') !== 'old' ? self::TEMPLATE_EDITION_COMPOSER : self::TEMPLATE_EDIT_COLLATION_TABLE_OLD;
         } else {
             $template = self::TEMPLATE_EDIT_COLLATION_TABLE_OLD;
         }
 
-        $um = $this->dataManager->userManager;
-        $isTechSupport = $um->isRoot($this->userInfo['id']) || $um->userHasRole($this->userInfo['id'], 'techSupport');
-        $this->codeDebug("Tech support: $isTechSupport", [ $this->userInfo]);
-
         return $this->renderPage($response, $template, [
             'userId' => $this->userInfo['id'],
-            'isTechSupport' => $isTechSupport ? 'yes' : 'no',
             'workId' => $workId,
             'chunkNumber' => $chunkNumber,
             'tableId' => $tableId,
@@ -173,7 +180,7 @@ class SiteCollationTable extends SiteController
         $people = [];
         foreach($versionArray as $version) {
             /** @var CollationTableVersionInfo $version */
-            $people[] = $version->authorId;
+            $people[] = $version->authorTid;
         }
         return $people;
     }
@@ -186,7 +193,7 @@ class SiteCollationTable extends SiteController
                 foreach($witness['items']  as $item) {
                     if (isset($item['notes'])) {
                         foreach($item['notes'] as $note) {
-                            $authors[] = $note['authorId'];
+                            $authors[] = $note['authorTid'];
                         }
                     }
                 }

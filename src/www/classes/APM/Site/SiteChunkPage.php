@@ -29,9 +29,10 @@ namespace APM\Site;
 use APM\FullTranscription\ApmChunkSegmentLocation;
 use APM\FullTranscription\ColumnVersionInfo;
 use APM\System\DataRetrieveHelper;
+use APM\System\User\UserNotFoundException;
 use APM\System\WitnessType;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\TimeString\TimeString;
 
 
@@ -44,7 +45,10 @@ class SiteChunkPage extends SiteController
 
     const TEMPLATE_CHUNK_PAGE = 'chunk-page.twig';
 
-    public function singleChunkPage(Request $request, Response $response)
+    /**
+     * @throws UserNotFoundException
+     */
+    public function singleChunkPage(Request $request, Response $response): Response
     {
        
         $dm = $this->dataManager;
@@ -64,14 +68,14 @@ class SiteChunkPage extends SiteController
         foreach ($savedCollationTableIds as $tableId) {
             $tableVersions = $ctManager->getCollationTableVersionManager()->getCollationTableVersionInfo($tableId, 1);
             if (count($tableVersions) !== 0 ){
-                $authorsMentioned[] =  $tableVersions[0]->authorId;
+                $authorsMentioned[] =  $tableVersions[0]->authorTid;
                 $ctInfo = $ctManager->getCollationTableInfo($tableId, $time);
                 if ($ctInfo->archived) {
                     continue;
                 }
                 $savedCollationTableInfoArray[] = [
                     'tableId' => $tableId,
-                    'authorId' => $tableVersions[0]->authorId,
+                    'authorTid' => $tableVersions[0]->authorTid,
                     'lastSave' => $tableVersions[0]->timeFrom,
                     'title' => $ctInfo->title,
                     'type' => $ctInfo->type
@@ -124,16 +128,13 @@ class SiteChunkPage extends SiteController
         $helper->setLogger($this->logger);
 
         $pageInfoArray = $helper->getPageInfoArrayFromList($pagesMentioned, $transcriptionManager->getPageManager());
-        $authorInfoArray = $helper->getAuthorInfoArrayFromList($authorsMentioned, $dm->userManager);
 
         $showAdminInfo = false;
-        if ($dm->userManager->isUserAllowedTo($this->userInfo['id'], 'witness-view-details')) {
+        if ($this->systemManager->getUserManager()->isRoot($this->userTid)) {
             $showAdminInfo = true;
         }
 
         $validChunks = $this->dataManager->getChunksWithTranscriptionForWorkId($workId);
-
-
 
         $this->profiler->stop();
         $this->logProfilerData("ChunkPage-$workId-$chunkNumber");
@@ -143,7 +144,6 @@ class SiteChunkPage extends SiteController
             'work_info' => $workInfo,
             'showAdminInfo' => $showAdminInfo,
             'witnessInfoArray' => $witnessInfoArray,
-            'authorInfo' => $authorInfoArray,
             'pageInfo' => $pageInfoArray,
             'languageInfo' => $fullLanguageInfo,
             'validChunks' => $validChunks,

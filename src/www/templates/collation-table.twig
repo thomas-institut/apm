@@ -49,7 +49,7 @@
 {% block content %}
     <nav aria-label="breadcrumb">
      <ol class="breadcrumb">
-         <li class="breadcrumb-item"><a href="{{url_for('chunks')}}">Chunks</a></li>
+         <li class="breadcrumb-item"><a href="{{url_for('works')}}">Works</a></li>
          <li class="breadcrumb-item"><a href="{{url_for('chunk', {'work' : work, 'chunk': chunk})}}">{{work}}-{{chunk}}</a></li>
          <li class="breadcrumb-item">Automatic Collation Table</li>
          <li class="breadcrumb-item active">{{langName}} {%if isPartial %}(partial){%endif%}</li>

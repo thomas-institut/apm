@@ -30,7 +30,7 @@
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item"><a class="nav-link" href="{{url_for('dashboard')}}" title="Dashboard">Dashboard</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{url_for('docs')}}" title="Documents">Documents</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{url_for('chunks')}}" title="Chunks">Chunks</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{url_for('works')}}" title="Works">Works</a></li>
                 {% if userinfo.manageUsers %}
                     <li class="nav-item"><a class="nav-link" href="{{url_for('user.manager')}}" title="Users">Users</a></li>
                 {% endif %}
@@ -51,8 +51,8 @@
                     <a class="nav-link dropdown-toggle" href="#"  data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                         <i class="fas fa-user"></i>&nbsp;{{ userinfo.name }}</a>
                     <ul class="dropdown-menu">
-                        <li><a class="nav-link" href="{{ url_for('user.profile', {'username' : userinfo.username}) }}">My Profile</a></li>
-                        <li><a class="nav-link" href="{{ url_for('user.settings', {'username' : userinfo.username}) }}">My Settings</a></li>
+                        <li><a class="nav-link" href="{{ url_for('user.profile', {'username' : userinfo.userName}) }}">My Profile</a></li>
+                        <li><a class="nav-link" href="{{ url_for('user.settings', {'username' : userinfo.userName}) }}">My Settings</a></li>
                         <li role="separator" class="divider"></li>
                         <li><a class="nav-link" href="{{ url_for('logout') }}" title="Logout">Logout</a></li>
                     </ul>
@@ -128,8 +128,8 @@
                 <div>
                     <a id="export-svg-button" class="tb-button"  download="apm-quick-edition.svg"
                        title="Download SVG"><small>SVG</small> <i class="fas fa-download"></i></a>
-                    <a id="export-pdf-button" class="tb-button margin-left-med" href="#" download="apm-quick-edition.pdf"
-                       title="Download PDF"><small>PDF</small> <i class="fas fa-download"></i></a>
+{#                    <a id="export-pdf-button" class="tb-button margin-left-med" href="#" download="apm-quick-edition.pdf"#}
+{#                       title="Download PDF"><small>PDF</small> <i class="fas fa-download"></i></a>#}
                 </div>
             </div>
             <div id="edition-svg-div">
@@ -160,41 +160,20 @@
         </div>
     </div>
 </div>
-{#<footer class="footer">#}
-{#    <div class="container">#}
-{#        <p class="text-muted">{% block copyright %}{{ copyright|raw }}{% endblock %}</p>#}
-{#    </div>#}
-{#</footer>#}
-<script type="module">
-  $(function() {
+<script>
+  $(() => {
     let ctData  = JSON.parse("{{collationTableData|json_encode|e('js')}}")
     let peopleInfo = JSON.parse("{{peopleInfo|json_encode|e('js')}}")
     let workInfo = JSON.parse("{{workInfo|json_encode|e('js')}}")
     let docInfo = JSON.parse("{{docInfo|json_encode|e('js')}}")
     let versionInfo = JSON.parse("{{versionInfo|json_encode|e('js')}}")
-    let userId = {{ userId }}
 
-    console.group(`Template parameters`)
-    console.log(`ctData`)
-    console.log(ctData)
-    // console.log(`peopleInfo`)
-    // console.log(peopleInfo)
-    // console.log(`workInfo`)
-    // console.log(workInfo)
-    // console.log(`docInfo`)
-    // console.log(docInfo)
-    // console.log(`versionInfo`)
-    // console.log(versionInfo)
-    console.log('User ID: ' + userId )
-    console.groupEnd()
-
-    let te = new CollationTableEditor({
-      userId: userId,
+    new CollationTableEditor({
+      commonData: JSON.parse("{{commonData|json_encode|e('js')}}"),
       collationTableData : ctData,
       workId: '{{ workId }}',
       chunkNumber: {{ chunkNumber }},
       tableId: {{ tableId }},
-      urlGenerator: new ApmUrlGenerator('{{ baseurl }}'),
       peopleInfo: peopleInfo,
       workInfo: workInfo,
       docInfo: docInfo,

@@ -81,7 +81,7 @@ class ApmTxWitnessDecorator implements WitnessDecorator, CodeDebugInterface, Log
                             /** @var Note $note */
                             $decoratedToken['postNotes'][] = [
                                 'text' => $note->getText(),
-                                'authorId' => $note->getAuthorId(),
+                                'authorId' => $note->getAuthorTid(),
                                 'time' => $note->getTime()
                             ];
                         }

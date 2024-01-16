@@ -220,8 +220,10 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
         ->setName('works');
 
     $group->get('/work/{work}/chunk/{chunk}',
-        SiteChunkPage::class . ':singleChunkPage')
-        ->setName('chunk');
+        function(Request $request, Response $response) use ($container){
+            $c = new SiteChunkPage($container);
+            return $c->singleChunkPage($request, $response);
+        })->setName('chunk');
 
 
     $group->get('/chunks/map[/{timestamp}]',
@@ -252,8 +254,10 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
 
     // EDITION
     $group->get('/edition/chunk/edit/{tableId}[/{type}]',
-        SiteCollationTable::class . ':editCollationTable')
-        ->setName('chunkedition.edit');
+        function(Request $request, Response $response) use ($container){
+        $c = new SiteCollationTable($container);
+        return $c->editCollationTable($request, $response);
+    })->setName('chunkedition.edit');
 
 
     // MULTI-CHUNK EDITION
@@ -265,7 +269,7 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
        )->setName('mce.new');
 
     $group->get('/edition/multi/edit/{editionId}',
-        function(Request $request, Response $response, array $args) use ($container){
+        function(Request $request, Response $response) use ($container){
             $c = new SiteMultiChunkEdition($container);
             return $c->getMultiChunkEdition($request, $response);
         }
@@ -410,29 +414,34 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
     // DOCUMENTS
 
      // API -> create new document
-    $group->post('/doc/new',
-        ApiDocuments::class . ':newDocument')
-        ->setName('api.doc.new');
+    $group->post('/doc/new',function(Request $request, Response $response) use ($container){
+        $ac = new ApiDocuments($container);
+        return $ac->newDocument($request, $response);
+    })->setName('api.doc.new');
 
     // API -> delete document
-    $group->get('/doc/{id}/delete',
-        ApiDocuments::class . ':deleteDocument')
-        ->setName('api.doc.delete');
+    $group->get('/doc/{id}/delete',function(Request $request, Response $response) use ($container){
+        $ac = new ApiDocuments($container);
+        return $ac->deleteDocument($request, $response);
+    })->setName('api.doc.delete');
 
     // API -> add pages to a document
-     $group->post('/doc/{id}/addpages',
-         ApiDocuments::class . ':addPages')
-        ->setName('api.doc.addpages');
+     $group->post('/doc/{id}/addpages',function(Request $request, Response $response) use ($container){
+         $ac = new ApiDocuments($container);
+         return $ac->addPages($request, $response);
+     })->setName('api.doc.addpages');
 
     // API -> update document settings
-    $group->post('/doc/{id}/update',
-        ApiDocuments::class . ':updateDocSettings')
-        ->setName('api.doc.update');
+    $group->post('/doc/{id}/update',function(Request $request, Response $response) use ($container){
+        $ac = new ApiDocuments($container);
+        return $ac->updateDocSettings($request, $response);
+    })->setName('api.doc.update');
 
     // API -> numColumns
-    $group->get('/{document}/{page}/numcolumns',
-        ApiDocuments::class . ':getNumColumns')
-        ->setName('api.numcolumns');
+    $group->get('/{document}/{page}/numcolumns',function(Request $request, Response $response) use ($container){
+        $ac = new ApiDocuments($container);
+        return $ac->getNumColumns($request, $response);
+    })->setName('api.numcolumns');
 
     // API -> pageTypes
 
@@ -443,21 +452,27 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
 
 
     // API -> updatePageSettings
-    $group->post('/page/{pageId}/update',
-        ApiDocuments::class . ':updatePageSettings')
-        ->setName('api.updatepagesettings');
+    $group->post('/page/{pageId}/update',function(Request $request, Response $response) use ($container){
+        $ac = new ApiDocuments($container);
+        return $ac->updatePageSettings($request, $response);
+    })->setName('api.updatepagesettings');
 
-    $group->post('/page/bulkupdate',
-        ApiDocuments::class . ':updatePageSettingsBulk')
-        ->setName('api.updatepagesettings.bulk');
+    $group->post('/page/bulkupdate',function(Request $request, Response $response) use ($container){
+        $ac = new ApiDocuments($container);
+        return $ac->updatePageSettingsBulk($request, $response);
+    })->setName('api.updatepagesettings.bulk');
 
     // API -> numColumns
-    $group->get('/{document}/{page}/newcolumn',
-        ApiDocuments::class . ':addNewColumn')
-        ->setName('api.newcolumn');
+    $group->get('/{document}/{page}/newcolumn',function(Request $request, Response $response) use ($container){
+        $ac = new ApiDocuments($container);
+        return $ac->addNewColumn($request, $response);
+    })->setName('api.newcolumn');
 
     // API -> getPageInfo
-    $group->post('/pages/info', ApiDocuments::class . ':getPageInfo')->setName('api.getPageInfo');
+    $group->post('/pages/info', function(Request $request, Response $response) use ($container){
+        $ac = new ApiDocuments($container);
+        return $ac->getPageInfo($request, $response);
+    })->setName('api.getPageInfo');
 
     // WORKS
 
@@ -550,17 +565,20 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         ->setName('api.witness.check.updates');
 
     $group->get('/witness/{witnessId}/to/edition',
-        ApiCollation::class . ':convertWitnessToEdition')
-        ->setName('api.witness.convert.to.edition');
+        function(Request $request, Response $response) use ($container){
+            $apiC = new ApiCollation($container);
+            return $apiC->convertWitnessToEdition($request, $response);
+        })->setName('api.witness.convert.to.edition');
 
     // COLLATION TABLES
 
-    $group->post('/collation/auto',
-        ApiCollation::class . ':automaticCollation')
-        ->setName('api.collation.auto');
+    $group->post('/collation/auto',function(Request $request, Response $response) use ($container){
+        $apiC = new ApiCollation($container);
+        return $apiC->automaticCollation($request, $response);
+    })->setName('api.collation.auto');
 
     $group->post('/collation/save',
-        function(Request $request, Response $response, array $args) use ($container){
+        function(Request $request, Response $response) use ($container){
             $apiC = new ApiCollation($container);
             return $apiC->saveCollationTable($request, $response);
         })
@@ -575,9 +593,9 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         return $apiC->getTable($request, $response);
     })->setName('api.collation.get');
 
-    $group->get('/collation/info/edition/active',  function(Request $request, Response $response, array $args) use ($container){
+    $group->get('/collation/info/edition/active',  function(Response $response) use ($container){
         $apiC = new ApiCollation($container);
-        return $apiC->getActiveEditions($request, $response, $args);
+        return $apiC->getActiveEditions($response);
     })->setName('api.collation.info.edition.active');
 
 

@@ -43,7 +43,7 @@ import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Matrix } from '@thomas-inst/matrix'
 import { ConfirmDialog } from './common/ConfirmDialog'
-import { VERBOSITY_DEBUG_PLUS, WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
+import { WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
 import { FULL_TX } from '../Witness/WitnessTokenClass.mjs'
 
 // Normalizations
@@ -62,24 +62,25 @@ import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditio
 import { EditionViewerSvg } from '../Edition/EditionViewerSvg'
 
 import { Punctuation} from '../defaults/Punctuation.mjs'
+import { ApmPage } from './ApmPage'
+import { urlGen } from './common/SiteUrlGen'
 
 /** @namespace Twig */
 
 // constants
 
-export class CollationTableEditor {
+export class CollationTableEditor extends ApmPage{
 
   constructor(options) {
+    super(options);
 
     let optionsDefinition = {
-      userId: { type:'NonZeroNumber', required: true},
       collationTableData : { type: 'object', required: true},
       workId : { type: 'string', required: true},
       chunkNumber: {type: 'NonZeroNumber', required: true},
       tableId: { type: 'NonZeroNumber', required: true},
       langDef : { type: 'object', default: defaultLanguageDefinition },
       availableWitnesses: { type: 'Array', default: [] },
-      urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true},
       workInfo: { type: 'object', default: {} },
       peopleInfo: { type: 'object', default: {} },
       docInfo: { type: 'object', default: {} },
@@ -88,6 +89,8 @@ export class CollationTableEditor {
 
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "EditCollationTable"})
     this.options = oc.getCleanOptions(options)
+    console.log(`CollationTableEditor options`);
+    console.log(this.options);
 
     // icons
     this.icons = {
@@ -111,7 +114,7 @@ export class CollationTableEditor {
     this.rtlClass = 'rtltext'
     this.ltrClass = 'ltrtext'
 
-    this.apiSaveCollationUrl = this.options.urlGenerator.apiSaveCollation()
+    this.apiSaveCollationUrl = urlGen.apiSaveCollation()
 
     let originalCtData = deepCopy(this.options['collationTableData'])
     console.log('Original CtData')
@@ -155,10 +158,6 @@ export class CollationTableEditor {
     // consistency check
     this.checkCollationTableConsistency()
 
-    // console.log(`Original CT Data`)
-    // console.log(originalCtData)
-    // console.log(`CT Data after fixes`)
-    // console.log(this.ctData)
     console.groupEnd()
 
     // by default, the table is not archived
@@ -183,10 +182,6 @@ export class CollationTableEditor {
     this.siglaPresets = []
     this.siglaPresetLoaded = ''
 
-    // DOM elements
-    // this.ctTitleDiv = $('#collationtabletitle')
-    // this.ctTitleEditButton = $('#cttitleedit')
-
     this.ctInfoDiv = $('#collationtableinfo')
     this.breadcrumbCtTitleSpan = $('#breadcrumb-cttitle')
     this.witnessesDivSelector = '#witnessesdiv'
@@ -201,7 +196,7 @@ export class CollationTableEditor {
     this.lastSaveSpan = $('#lastSave')
     this.exportCsvButton = $('#export-csv-button')
     this.exportSvgButton = $('#export-svg-button')
-    this.exportPdfButton = $('#export-pdf-button')
+    // this.exportPdfButton = $('#export-pdf-button')
     this.convertToEditionDiv = $('#convert-to-edition-div')
     this.convertToEditionButton = $('#convert-to-edition-btn')
     this.archiveTableButton = $('#archive-table-btn')
@@ -356,7 +351,7 @@ export class CollationTableEditor {
     this.unsavedChanges = false
 
     // Export PDF
-    this.exportPdfButton.on('click', this.genOnClickExportPdfButton())
+    // this.exportPdfButton.on('click', this.genOnClickExportPdfButton())
 
     let label = this.ctData.type === CollationTableType.EDITION ? 'Edition' : 'Collation Table'
     this.archiveTableButton.html(`Archive This ${label}`)
@@ -489,7 +484,7 @@ export class CollationTableEditor {
           if (t === null) {
             console.log(`Found null token in witness ${wIndex}, index ${i}`)
             return {
-              tokenType: TokenType.WORD,
+              tokenType: TranscriptionTokenType.WORD,
               text: '',
               tokenClass: TokenClass.FULL_TX,
               sourceItems: [],
@@ -743,38 +738,38 @@ export class CollationTableEditor {
     // }
   }
 
-  genOnClickExportPdfButton() {
-    let thisObject = this
-    return function() {
-      console.log('Export PDF clicked')
-      let buttonHtml = thisObject.exportPdfButton.html()
-      thisObject.exportPdfButton.html(`Generating PDF...` + thisObject.icons.busy)
-      let svg = thisObject.editionSvgDiv.html()
-      if (svg === '') {
-        return false
-      }
-      console.log('Calling API')
-      let apiUrl = thisObject.options.urlGenerator.apiConvertSvg()
-      $.post(
-        apiUrl,
-        {data: JSON.stringify({
-            pdfId: `ct-${thisObject.options.tableId}`,
-            svg: svg
-        })}
-      ).done(
-        apiResponse => {
-          window.open(apiResponse.url)
-          thisObject.exportPdfButton.html(buttonHtml)
-        }
-      ).fail (
-        error => {
-          console.error('API error')
-          console.log(error)
-        }
-      )
-      return false
-    }
-  }
+  // genOnClickExportPdfButton() {
+  //   let thisObject = this
+  //   return function() {
+  //     console.log('Export PDF clicked')
+  //     let buttonHtml = thisObject.exportPdfButton.html()
+  //     thisObject.exportPdfButton.html(`Generating PDF...` + thisObject.icons.busy)
+  //     let svg = thisObject.editionSvgDiv.html()
+  //     if (svg === '') {
+  //       return false
+  //     }
+  //     console.log('Calling API')
+  //     let apiUrl = urlGen.apiConvertSvg()
+  //     $.post(
+  //       apiUrl,
+  //       {data: JSON.stringify({
+  //           pdfId: `ct-${thisObject.options.tableId}`,
+  //           svg: svg
+  //       })}
+  //     ).done(
+  //       apiResponse => {
+  //         window.open(apiResponse.url)
+  //         thisObject.exportPdfButton.html(buttonHtml)
+  //       }
+  //     ).fail (
+  //       error => {
+  //         console.error('API error')
+  //         console.log(error)
+  //       }
+  //     )
+  //     return false
+  //   }
+  // }
 
   checkForWitnessUpdates() {
     let profiler = new SimpleProfiler('Check-Witness-Updates')
@@ -784,7 +779,7 @@ export class CollationTableEditor {
     button.attr('title', '')
     let thisObject = this
 
-    let apiUrl = this.options.urlGenerator.apiWitnessCheckUpdates()
+    let apiUrl = urlGen.apiWitnessCheckUpdates()
     let apiCallOptions = {
       witnesses: []
     }
@@ -946,7 +941,7 @@ export class CollationTableEditor {
         resultSpan.html(`Waiting for server's response... ${thisObject.icons.busy}`).addClass('text-warning')
         thisObject.convertingToEdition = true
         $.post(
-            thisObject.options.urlGenerator.apiConvertCollationTable(thisObject.tableId),
+            urlGen.apiConvertCollationTable(thisObject.tableId),
             { data: JSON.stringify({
                 tableId: thisObject.tableId,
                 initStrategy: initStrategy
@@ -1034,7 +1029,7 @@ export class CollationTableEditor {
         loadP.removeClass('status-waiting')
         loadP.addClass('status-running')
         // 1.2. actually load the new version
-        let apiUrl = thisObject.options.urlGenerator.apiWitnessGet(newWitnessInfo['updatedWitnessId'], 'standardData')
+        let apiUrl = urlGen.apiWitnessGet(newWitnessInfo['updatedWitnessId'], 'standardData')
         $.get(apiUrl)
           .then(
             // Load new version success
@@ -2040,7 +2035,7 @@ export class CollationTableEditor {
       html += '<tr>'
       html += '<td>' + (i+1) + '</td>'
       html += '<td>' + version['id'] + '</td>'
-      html += '<td class="author">' + this.options.peopleInfo[version['authorId']].name + '</td>'
+      html += '<td class="author">' + this.options.peopleInfo[version['authorTid']].name + '</td>'
       html += '<td class="time">' + Util.formatVersionTime(version['timeFrom']) + '</td>'
       html += '<td>' + version['description'] + '</td>'
 
@@ -2338,7 +2333,7 @@ export class CollationTableEditor {
 
         console.log('About to call save preset API')
         console.log(apiCallData)
-        let apiUrl = thisObject.options.urlGenerator.apiSaveSiglaPreset()
+        let apiUrl = urlGen.apiSaveSiglaPreset()
         footInfoLabel.html('Saving....')
         saveButton.addClass('hidden')
         $.post(apiUrl, { data: JSON.stringify(apiCallData)}).done( () =>{
@@ -2632,7 +2627,7 @@ export class CollationTableEditor {
 
   fetchSiglaPresets() {
     console.log('Fetching sigla presets')
-    let apiSiglaPresetsUrl = this.options.urlGenerator.apiGetSiglaPresets()
+    let apiSiglaPresetsUrl = urlGen.apiGetSiglaPresets()
     let apiCallOptions = {
       lang: this.ctData['lang'],
       witnesses: this.ctData['witnesses'].filter( w => { return w['witnessType'] === 'fullTx'}).map( w => w['ApmWitnessId'])
@@ -2737,10 +2732,10 @@ export class CollationTableEditor {
   genCtInfoDiv() {
     let html = ''
     let workTitle = this.options.workInfo['title']
-    let workAuthorId = this.options.workInfo['authorId']
+    let workAuthorId = this.options.workInfo['authorTid']
     let workAuthorName = this.options.peopleInfo[workAuthorId]['name']
     let newEditorHtml = this.ctData['type'] === CollationTableType.EDITION
-      ? `... <a href="${this.options.urlGenerator.siteEditCollationTableBeta(this.tableId)}" title="Click to load new editor">New Editor</a>`
+      ? `... <a href="${urlGen.siteEditCollationTableBeta(this.tableId)}" title="Click to load new editor">New Editor</a>`
       : ''
     return `<p>${workAuthorName}, <i>${workTitle}</i>, chunk ${this.options.chunkNumber}  (${this.options.workId}-${this.options.chunkNumber})</p>
 <p>Table ID: ${this.tableId}  ${newEditorHtml} `

@@ -47,7 +47,7 @@ class DatabaseItemStream implements  CodeDebugInterface{
      *
      * @var array 
      */
-    private $items;
+    private array $items;
     /**
      * @var int|string
      */
@@ -67,7 +67,7 @@ class DatabaseItemStream implements  CodeDebugInterface{
      * @param array $edNotes
      * @param bool $debugMode
      */
-    public function __construct(int $docId, array $itemSegments, string $defaultLang = 'la', array $edNotes = [], $debugMode = false) {
+    public function __construct(int $docId, array $itemSegments, string $defaultLang = 'la', array $edNotes = [], bool $debugMode = false) {
         $this->items = [];
         $itemFactory = new ItemStreamItemFactory($defaultLang);
         $langs = [];
@@ -173,7 +173,8 @@ class DatabaseItemStream implements  CodeDebugInterface{
         return $this->items;
     }
     
-    public function addItem(ItemInDatabaseItemStream $item) {
+    public function addItem(ItemInDatabaseItemStream $item): void
+    {
         $this->items[] = $item;
     }
     

@@ -81,7 +81,6 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
         $mceData['archived'] = intval($dbData['archived']) === 1;
 
         return [
-            'authorId' => $dbData['author_id'],
             'authorTid' => $dbData['author_tid'],
             'chunks' => explode(',', $dbData['chunks']),
             'versionDescription' => $dbData['version_description'],

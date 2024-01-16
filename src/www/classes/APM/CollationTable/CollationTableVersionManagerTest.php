@@ -55,7 +55,7 @@ class CollationTableVersionManagerTest extends TestCase
         $versionInfo1->timeFrom  = TimeString::now();
         $versionInfo1->collationTableId = $testCollationTableId;
         $versionInfo1->description = 'Test version';
-        $versionInfo1->authorId = 1;
+        $versionInfo1->authorTid = 1;
 
         $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId, $versionInfo1);
 
@@ -66,7 +66,7 @@ class CollationTableVersionManagerTest extends TestCase
 
         $this->assertEquals($versionInfo1->timeFrom, $systemVersion->timeFrom);
         $this->assertEquals($versionInfo1->description, $systemVersion->description);
-        $this->assertEquals($versionInfo1->authorId, $systemVersion->authorId);
+        $this->assertEquals($versionInfo1->authorTid, $systemVersion->authorTid);
         $this->assertEquals($versionInfo1->isMinor, $systemVersion->isMinor);
         $this->assertEquals($versionInfo1->isReview, $systemVersion->isReview);
         $this->assertEquals(TimeString::END_OF_TIMES, $systemVersion->timeUntil);
@@ -82,7 +82,7 @@ class CollationTableVersionManagerTest extends TestCase
         $goodVersionInfo->timeFrom  = TimeString::now();
         $goodVersionInfo->collationTableId = $testCollationTableId;
         $goodVersionInfo->description = 'Test version';
-        $goodVersionInfo->authorId = $testAuthorId;
+        $goodVersionInfo->authorTid = $testAuthorId;
 
         // wrong  chunk id
         $exceptionCaught = false;
@@ -95,7 +95,7 @@ class CollationTableVersionManagerTest extends TestCase
 
         // wrong authorID
         $badVersionInfo = clone $goodVersionInfo;
-        $badVersionInfo->authorId = 0;
+        $badVersionInfo->authorTid = 0;
         $exceptionCaught = false;
         try {
             $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId, $badVersionInfo);
@@ -105,7 +105,7 @@ class CollationTableVersionManagerTest extends TestCase
         $this->assertTrue($exceptionCaught);
 
         // wrong timeFrom
-        $badVersionInfo->authorId = $testAuthorId;
+        $badVersionInfo->authorTid = $testAuthorId;
         $badVersionInfo->timeFrom = TimeString::TIME_ZERO;
         $exceptionCaught = false;
         try {
@@ -141,7 +141,7 @@ class CollationTableVersionManagerTest extends TestCase
             $versionInfo = new CollationTableVersionInfo();
             $versionInfo->collationTableId = $testCollationTableId;
             $versionInfo->description = "Initial test version $i";
-            $versionInfo->authorId = $testAuthorId;
+            $versionInfo->authorTid = $testAuthorId;
             $versionInfo->isMinor = true;
             $versionInfo->isReview = true;
             $versionInfo->timeFrom = TimeString::fromTimeStamp($initialTimestamp + ($timeStampFrequency * $i));
@@ -165,7 +165,7 @@ class CollationTableVersionManagerTest extends TestCase
             $versionInfo = new CollationTableVersionInfo();
             $versionInfo->collationTableId = $testCollationTableId;
             $versionInfo->description = "Pre-version $i";
-            $versionInfo->authorId = $testAuthorId;
+            $versionInfo->authorTid = $testAuthorId;
             $versionInfo->timeFrom = TimeString::fromTimeStamp($initialTimestamp - ($timeStampFrequency * ($i+1)));
             $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId, $versionInfo);
             $versions = $this->collationTableVersionManager->getCollationTableVersionInfo($testCollationTableId);
@@ -180,7 +180,7 @@ class CollationTableVersionManagerTest extends TestCase
             $versionInfo = new CollationTableVersionInfo();
             $versionInfo->collationTableId = $testCollationTableId;
             $versionInfo->description = "In the middle version $i";
-            $versionInfo->authorId = $testAuthorId;
+            $versionInfo->authorTid = $testAuthorId;
             $versionInfo->timeFrom = TimeString::fromTimeStamp($initialTimestamp + ($timeStampFrequency*$i) + $timeStampFrequency/2);
             $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId, $versionInfo);
             $versions = $this->collationTableVersionManager->getCollationTableVersionInfo($testCollationTableId);

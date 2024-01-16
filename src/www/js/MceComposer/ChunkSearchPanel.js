@@ -21,6 +21,8 @@ import { Panel } from '../MultiPanelUI/Panel'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import * as Util from '../toolbox/Util.mjs'
 import { KeyCache } from '../toolbox/KeyCache/KeyCache'
+import { urlGen } from '../pages/common/SiteUrlGen'
+import { ApmDataProxy } from '../pages/common/ApmDataProxy'
 
 const defaultIcons = {
   alert: '<i class="fas fa-exclamation-triangle"></i>',
@@ -38,8 +40,7 @@ export class ChunkSearchPanel extends Panel {
       optionsDefinition: {
         mceData: { type: 'object', required: true},
         icons: { type: 'object', default: defaultIcons},
-        userId: { type: 'number', required: true},
-        urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true },
+        apmDataProxy: { type: 'object', objectClass: ApmDataProxy, required: true},
         // Function to be called to add a single chunk
         // edition to the multi chunk edition.
         // It should return a promise.
@@ -51,19 +52,19 @@ export class ChunkSearchPanel extends Panel {
       }
     })
 
-    this.options = oc.getCleanOptions(options)
-    this.mceData = this.options.mceData
-    this.icons = this.options.icons
-    this.userId = this.options.userId
+    this.options = oc.getCleanOptions(options);
+    this.mceData = this.options.mceData;
+    this.icons = this.options.icons;
+    this.apmDataProxy = this.options.apmDataProxy;
     this.activeEditionsData = null
     this.lastFilter = ''
     this.cache = new KeyCache()
   }
 
-  updateData(mceData) {
+  async updateData(mceData) {
     this.mceData = mceData
-    $(this.getContainerSelector()).html(this.generateHtml())
-    this.__setupUI()
+    $(this.getContainerSelector()).html(await this.generateHtml())
+    this.setupUI()
   }
 
   async generateHtml() {
@@ -71,7 +72,7 @@ export class ChunkSearchPanel extends Panel {
     return `<div class="chunk-search">
         <div class="active-editions">
         <h4>Single Chunk Editions <button class="btn btn-sm btn-outline-secondary load-active-editions-btn">${loadDataLabel}</button></h4>
-        <div class="active-editions-table">${this.__genActiveEditionTable(this.activeEditionsData)} </div>
+        <div class="active-editions-table">${await this.genActiveEditionTable(this.activeEditionsData)} </div>
     </div>
     
       <div class="quick-add">
@@ -88,78 +89,57 @@ export class ChunkSearchPanel extends Panel {
 
   postRender (id, mode, visible) {
     super.postRender(id, mode, visible)
-    this.__setupUI()
-
+    this.setupUI()
   }
 
-  __setupUI() {
+  /**
+   *
+   * @private
+   */
+  setupUI() {
     this.loadActiveEditionDataButton = $(`${this.containerSelector} .load-active-editions-btn`)
     this.activeEditionTableContainer = $(`${this.containerSelector} div.active-editions-table`)
 
-    this.loadActiveEditionDataButton.on('click', this._genOnClickLoadActiveEditionData())
-    this._setupActiveEditionTableButtons(this.activeEditionsData)
+    this.loadActiveEditionDataButton.on('click', this.genOnClickLoadActiveEditionData())
+    this.setupActiveEditionTableButtons(this.activeEditionsData)
 
     this.tableIdInput = $(`${this.containerSelector} .table-id-input`)
-    this.tableIdInput.on('keyup change', this._genOnTableIdInputValChange())
+    this.tableIdInput.on('keyup change', this.genOnTableIdInputValChange())
     this.quickAddButton = $(`${this.containerSelector} .quick-add-btn`)
     this.quickAddButton.prop('disabled', true)
-      .on('click', this._genOnClickQuickAddButton())
+      .on('click', this.genOnClickQuickAddButton())
 
     this.quickAddInfoSpan = $(`${this.containerSelector} span.quick-add-info`)
     this.quickAddError = false
   }
 
-  _genOnClickLoadActiveEditionData() {
-    return () => {
-      this.loadActiveEditionDataButton.html(`Loading ... ${this.icons.busy}`)
-        $.get(this.options.urlGenerator.apiGetActiveEditionInfo()).then( (data) => {
-          this.activeEditionsData = data
-          this._getUserInfoForData(data).then( () => {
-            this.activeEditionTableContainer.html(this.__genActiveEditionTable(data))
-            this._setupActiveEditionTableButtons(data)
-            this.loadActiveEditionDataButton.html('Reload Data')
-          })
-        })
+  /**
+   *
+   * @return {(function(): Promise<void>)|*}
+   * @private
+   */
+  genOnClickLoadActiveEditionData() {
+    return async () => {
+      this.loadActiveEditionDataButton.html(`Loading ... ${this.icons.busy}`);
+      let data = await  $.get(urlGen.apiGetActiveEditionInfo());
+      this.activeEditionTableContainer.html(await this.genActiveEditionTable(data));
+      this.setupActiveEditionTableButtons(data);
+      this.loadActiveEditionDataButton.html('Reload Data');
     }
   }
 
- _getUserInfoFromCache(userId) {
-    return this.cache.retrieve(`USER-${userId}`)
- }
-
-  _getUserInfoForData(data) {
-    return new Promise(async (resolve) => {
-      for (let i = 0; i < data.length; i++) {
-        let userId = data[i]['lastVersion'].authorId
-        let cacheKey = `USER-${userId}`
-
-        let userData = this.cache.retrieve(cacheKey)
-        if (userData === null) {
-          try {
-            userData = await $.get(this.options.urlGenerator.apiUserGetInfo(userId))
-          } catch(e) {
-            console.warn(`Error retrieving user info for user ${userId}`)
-            userData = { id: userId, name: `User ${userId}`}
-          }
-          if (userData === undefined || userData.name === undefined) {
-            // bad data
-            console.warn(`Bad data for ${userId}`)
-            userData = { id: userId, name: `User ${userId}`}
-          }
-          this.cache.store(cacheKey, userData)
-        }
-      }
-      resolve()
-    })
-  }
-
-  _setupActiveEditionTableButtons(data) {
+  /**
+   *
+   * @param data
+   * @private
+   */
+  setupActiveEditionTableButtons(data) {
     if (data === null || data.length === 0) {
       return
     }
 
     data.forEach( (info) => {
-      $(`${this.containerSelector} .add-edition-${info.id}`).on('click', this._genOnClickAddEdition(info.id))
+      $(`${this.containerSelector} .add-edition-${info.id}`).on('click', this.genOnClickAddEdition(info.id))
     })
 
     $("table.active-editions").DataTable({
@@ -179,12 +159,15 @@ export class ChunkSearchPanel extends Panel {
     });
   }
 
-
-
-  _genOnClickAddEdition(editionId) {
+  /**
+   *
+   * @param editionId
+   * @return {(function(): void)|*}
+   * @private
+   */
+  genOnClickAddEdition(editionId) {
     return () => {
       console.log(`Click on add edition ${editionId}`)
-      // this.lastFilter = this.__getSearchElement().val()
       console.log(`Current filter: ${this.lastFilter}`)
       let infoSpan =  $(`${this.containerSelector} .info-span-edition-${editionId}`)
       let button =  $(`${this.containerSelector} button.add-edition-${editionId}`)
@@ -201,10 +184,14 @@ export class ChunkSearchPanel extends Panel {
     }
   }
 
+  /**
+   *
+   * @param infoArray
+   * @return Promise<string>
+   * @private
+   */
 
-
-
-  __genActiveEditionTable(infoArray) {
+  async genActiveEditionTable(infoArray) {
     if (infoArray === null) {
       return `<em>No data: please click on 'Load Data' to start</em>`
     }
@@ -217,7 +204,7 @@ export class ChunkSearchPanel extends Panel {
     return [
       '<table class="active-editions">',
       '<thead><tr><th>Chunk</th><th>Title</th><th>Author</th><th>Last Save</th><th></th></tr></thead>',
-      infoArray.map( (info) => {
+      infoArray.map( async (info) => {
         let versionInfo = info['lastVersion']
         let lastSaveLabel = `${Util.formatVersionTime(versionInfo['timeFrom'])}`
         let addButton
@@ -226,10 +213,11 @@ export class ChunkSearchPanel extends Panel {
         } else {
           addButton = '<small>Already added</small>'
         }
+        let authorData = await this.apmDataProxy.getPersonEssentialData(versionInfo.authorTid)
         return `<tr>
             <td>${info['chunkId']}</td>
             <td>${info['title']}</td>
-            <td>${this._getUserInfoFromCache(versionInfo.authorId).name}</td>
+            <td>${authorData.name}</td>
             <td><small>${lastSaveLabel}</small></td>
             <td>${addButton} <span class="info-span-edition-${info.id}"</td>
         </tr>`
@@ -238,7 +226,12 @@ export class ChunkSearchPanel extends Panel {
     ].join('')
   }
 
-  _genOnClickQuickAddButton() {
+  /**
+   *
+   * @return {(function(): void)|*}
+   * @private
+   */
+  genOnClickQuickAddButton() {
     return () => {
       console.log(`Quick add button clicked`)
       let editionId = parseInt(this.tableIdInput.val().toString())
@@ -260,7 +253,12 @@ export class ChunkSearchPanel extends Panel {
     }
   }
 
-  _genOnTableIdInputValChange() {
+  /**
+   *
+   * @return {(function(): void)|*}
+   * @private
+   */
+  genOnTableIdInputValChange() {
     return () => {
       if (this.quickAddError) {
         this.quickAddInfoSpan.html('').removeClass('text-danger')

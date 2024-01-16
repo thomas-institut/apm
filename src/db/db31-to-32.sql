@@ -2,6 +2,9 @@
 -- DB version 31 to 32
 --
 
+-- Change database version setting name
+UPDATE `ap_settings` SET `setting` = 'DatabaseVersion' WHERE `ap_settings`.`setting` = 'dbversion';
+
 -- Add tids to people, works and edition sources
 ALTER TABLE `ap_people` ADD `tid` BIGINT UNSIGNED DEFAULT 0 AFTER `id`;
 ALTER TABLE `ap_people` ADD INDEX(`tid`);
@@ -133,12 +136,6 @@ DROP TABLE ap_scheduler;
 ALTER TABLE `ap_tokens` MODIFY COLUMN `id` int NOT NULL AUTO_INCREMENT;
 ALTER TABLE `ap_tokens` DROP COLUMN `user_id`;
 DELETE FROM ap_tokens where creation_time < '2023-12-11';
-
-
--- Change database version setting name
-UPDATE `ap_settings` SET `setting` = 'DatabaseVersion' WHERE `ap_settings`.`setting` = 'dbversion';
-
-
 
 ALTER TABLE `ap_ednotes` DROP COLUMN `author_id`;
 ALTER TABLE `ap_elements` DROP COLUMN `editor_id`;

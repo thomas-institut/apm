@@ -28,6 +28,7 @@ import { transientAlert } from '../widgets/TransientAlert'
 import { ConfirmDialog, SMALL_DIALOG } from '../pages/common/ConfirmDialog'
 import { SiglaGroupsUI } from '../EditionComposer/SiglaGroupsUI'
 import { MultiToggle } from '../widgets/MultiToggle'
+import { urlGen } from '../pages/common/SiteUrlGen'
 
 const defaultIcons = {
   alert: '<i class="fas fa-exclamation-triangle"></i>',
@@ -105,7 +106,6 @@ export class EditionPanel extends Panel {
             return resolvedPromise()
           }
         },
-        urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true },
       }
     })
 
@@ -236,7 +236,7 @@ export class EditionPanel extends Panel {
       html += `<tr>
         <td>${upButton}&nbsp;${downButton}</td>
         <td>${chunk.chunkId}</td>
-        <td><a href="${this.options.urlGenerator.siteChunkEdition(chunk.chunkEditionTableId)}" title="Open in new tab" target="_blank">${chunk.title}</a></td>
+        <td><a href="${urlGen.siteChunkEdition(chunk.chunkEditionTableId)}" title="Open in new tab" target="_blank">${chunk.title}</a></td>
         <td>${Util.formatVersionTime(chunk.version)}</td>
         <td class="chunk-break-td chunk-break-td-${chunkIndex}">${this._getBreakLabel(chunk.break)}</td>
         <td class="chunk-actions-td chunk-actions-td-${chunkIndex}">

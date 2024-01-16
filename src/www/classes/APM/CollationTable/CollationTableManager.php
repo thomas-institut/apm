@@ -50,7 +50,7 @@ abstract class CollationTableManager implements ErrorReporter
     const INIT_STRATEGY_MOST_COMMON_VARIANT = 'mostCommonVariant';
 
     /**
-     * Saves a new collation table in the system. Returns the Id of the new collation table
+     * Saves a new collation table in the system. Returns the id of the new collation table
      * or -1 if there's an error.
      * @param array $collationTableData
      * @param CollationTableVersionInfo $versionInfo
@@ -85,7 +85,7 @@ abstract class CollationTableManager implements ErrorReporter
     abstract public function getCollationTableById(int $collationTableId, string $timeStamp = '') : array;
 
     /**
-     * Get the collation table title for the given table Id at the given time
+     * Get the collation table title for the given table id at the given time
      *
      * if $timeStamp is '', returns the title of the latest version of the collation table
      *
@@ -103,9 +103,14 @@ abstract class CollationTableManager implements ErrorReporter
      * table with the given id stored in the system.
      *
      * @param int $id
+     * @return CollationTableInfo[]
      */
     abstract public function getCollationTableStoredVersionsInfo(int $id) : array;
 
+    /**
+     * @param int $collationTableId
+     * @return CollationTableVersionInfo[]
+     */
     public function getCollationTableVersions(int $collationTableId): array {
         return $this->getCollationTableVersionManager()->getCollationTableVersionInfo($collationTableId);
     }

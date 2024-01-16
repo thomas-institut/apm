@@ -33,7 +33,7 @@ use AverroesProject\Data\UserManagerUserInfoProvider;
 use Exception;
 use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ResponseInterface as Response;
 use APM\Core\Collation\CollationTable;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
@@ -69,7 +69,7 @@ class ApiCollation extends ApiController
     }
 
 
-    public function  getTable(Request $request, Response $response): Response
+    public function getTable(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
@@ -98,11 +98,11 @@ class ApiCollation extends ApiController
 
         $ctInfo = $ctManager->getCollationTableInfo($tableId, $timeStamp);
         $versionInfoArray = $ctManager->getCollationTableVersions($tableId);
-        $authorId = -1;
+        $authorTid = -1;
         $versionId = -1;
         foreach($versionInfoArray as $vi) {
             if ($vi->timeFrom === $ctInfo->timeFrom) {
-                $authorId = $vi->authorId;
+                $authorTid = $vi->authorTid;
                 $versionId = $vi->id;
             }
         }
@@ -119,7 +119,7 @@ class ApiCollation extends ApiController
             'ctInfo' => $ctInfo,
             'timeStamp' => $ctInfo->timeFrom,
             'versions' => $versionInfoArray,
-            'authorId' => $authorId,
+            'authorTid' => $authorTid,
             'versionId' => $versionId,
             'isLatestVersion' => $ctInfo->timeUntil === TimeString::END_OF_TIMES,
             'docInfo' => $docInfoArray

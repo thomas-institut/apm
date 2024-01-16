@@ -16,7 +16,8 @@ class GenerateTids extends CommandLineUtility
     public function main($argc, $argv): void
     {
 
-        $doIt = $argv[1] === 'doIt';
+
+        $doIt = ($argv[1] ?? '') === 'doIt';
 
         $dbConn = $this->systemManager->getDbConnection();
 

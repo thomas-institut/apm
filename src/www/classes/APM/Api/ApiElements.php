@@ -296,7 +296,7 @@ class ApiElements extends ApiController
         $this->profiler->lap('Checks Done');
         $updateTime = TimeString::now();
         $this->logger->info("UPDATE elements", 
-                            [ 'apiUserId' => $this->apiUserTid,
+                            [ 'apiUserTid' => $this->apiUserTid,
                               'pageId' => $pageId,
                               'docId' => $docId,
                               'pageNumber' => $pageNumber,

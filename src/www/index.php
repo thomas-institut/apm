@@ -570,7 +570,7 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         ApiCollationTableConversion::class
     )->setName('api.collation.convert');
 
-    $group->get('/collation/get/{tableId}[/{timestamp}]',  function(Request $request, Response $response, array $args) use ($container){
+    $group->get('/collation/get/{tableId}[/{timestamp}]',  function(Request $request, Response $response) use ($container){
         $apiC = new ApiCollation($container);
         return $apiC->getTable($request, $response);
     })->setName('api.collation.get');

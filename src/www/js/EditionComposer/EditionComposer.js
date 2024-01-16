@@ -744,7 +744,7 @@ export class EditionComposer extends ApmPage {
   }
 
   genGetPdfDownloadUrlForPreviewPanel() {
-    return PdfDownloadUrl.genGetPdfDownloadUrlForPreviewPanel(this.options.urlGenerator)
+    return PdfDownloadUrl.genGetPdfDownloadUrlForPreviewPanel()
     // return (rawData) => {
     //   return new Promise( (resolve, reject) => {
     //     let apiUrl = this.options.urlGenerator.apiTypesetRaw()

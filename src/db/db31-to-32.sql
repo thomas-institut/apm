@@ -137,6 +137,9 @@ ALTER TABLE `ap_tokens` MODIFY COLUMN `id` int NOT NULL AUTO_INCREMENT;
 ALTER TABLE `ap_tokens` DROP COLUMN `user_id`;
 DELETE FROM ap_tokens where creation_time < '2023-12-11';
 
+
+
+
 ALTER TABLE `ap_ednotes` DROP COLUMN `author_id`;
 ALTER TABLE `ap_elements` DROP COLUMN `editor_id`;
 ALTER TABLE `ap_users` MODIFY COLUMN `username` VARCHAR(128) NOT NULL;

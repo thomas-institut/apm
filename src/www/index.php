@@ -260,14 +260,14 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
     $group->get('/edition/multi/new',
         function(Request $request, Response $response, array $args) use ($container){
             $c = new SiteMultiChunkEdition($container);
-            return $c->newMultiChunkEdition($request, $response, $args);
+            return $c->newMultiChunkEdition($response);
         }
        )->setName('mce.new');
 
     $group->get('/edition/multi/edit/{editionId}',
         function(Request $request, Response $response, array $args) use ($container){
             $c = new SiteMultiChunkEdition($container);
-            return $c->getMultiChunkEdition($request, $response, $args);
+            return $c->getMultiChunkEdition($request, $response);
         }
     )->setName('mce.edit');
 

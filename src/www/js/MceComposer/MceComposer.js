@@ -44,8 +44,6 @@ import { TimeString } from '../toolbox/TimeString.mjs'
 import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
 import { CtData } from '../CtData/CtData'
 import { WitnessDataItem } from '../Edition/WitnessDataItem.mjs'
-import { SystemStyleSheet } from '../Typesetter2/Style/SystemStyleSheet.mjs'
-import { NormalPage } from '../pages/NormalPage'
 import { urlGen } from '../pages/common/SiteUrlGen'
 import { ApmPage } from '../pages/ApmPage'
 
@@ -149,7 +147,7 @@ export class MceComposer extends ApmPage {
       if (this.editionId === -1) {
         // create empty MceEdition
         this.editionId = -1
-        this.editionPanel.showLoadingDataMessage(false)
+        this.editionPanel.setLoadingStatus(false)
         this.editionPanel.updateData(this.mceData)
         resolve()
       } else {
@@ -168,9 +166,10 @@ export class MceComposer extends ApmPage {
             this.regenerateEdition().then( () => {
               this.previewPanel.updateData(this.edition)
               this.editionPanel.updateData(this.mceData)
-              this.chunkSearchPanel.updateData(this.mceData)
-              this.updateSaveUI()
-              resolve()
+              this.chunkSearchPanel.updateData(this.mceData).then( () => {
+                this.updateSaveUI();
+                resolve();
+              })
             }, (error) => {
               console.error(error)
               reject(`Cannot regenerate edition from data`)
@@ -184,6 +183,11 @@ export class MceComposer extends ApmPage {
     })
  }
 
+  /**
+   *
+   * @return {Promise<boolean>}
+   * @private
+   */
  _init_setupUi() {
     // construct panels
    this.editionPanel = new EditionPanel({
@@ -577,12 +581,13 @@ export class MceComposer extends ApmPage {
       console.log(`New MceData`)
       console.log(this.mceData)
       this.editionPanel.updateData(this.mceData)
-      this.chunkSearchPanel.updateData(this.mceData)
-      this.updateSaveUI()
-      this.regenerateEdition().then( () => {
-        this.previewPanel.updateData(this.edition)
-        resolve()
-      }, (error) => { reject(error)})
+      this.chunkSearchPanel.updateData(this.mceData).then ( () => {
+        this.updateSaveUI();
+        this.regenerateEdition().then( () => {
+          this.previewPanel.updateData(this.edition)
+          resolve()
+        }, (error) => { reject(error)})
+      })
     })
   }
 
@@ -613,16 +618,16 @@ export class MceComposer extends ApmPage {
           return
         }
         console.log(`Generated edition for table ${tableId}, chunk ${ctData.chunkId}`)
-        console.log(edition)
-        this.editions[chunkIndex] = edition
-        this.editionPanel.updateData(this.mceData)
-        this.chunkSearchPanel.updateData(this.mceData)
-        this.updateSaveUI()
-        this.regenerateEdition().then( () => {
-          this.previewPanel.updateData(this.edition)
-          resolve()
-        }, (error) => { reject(error)})
-
+        console.log(edition);
+        this.editions[chunkIndex] = edition;
+        this.editionPanel.updateData(this.mceData);
+        this.chunkSearchPanel.updateData(this.mceData).then ( () => {
+          this.updateSaveUI();
+          this.regenerateEdition().then( () => {
+            this.previewPanel.updateData(this.edition);
+            resolve();
+          }, (error) => { reject(error)})
+        })
       }, (error) => { reject(error)})
     })
   }
@@ -635,7 +640,7 @@ export class MceComposer extends ApmPage {
   chunkAdd(tableId, timeStamp) {
     return new Promise ( (resolve, reject) => {
       // first, get the table from the server
-      this.getSingleChunkDataFromServer(tableId, timeStamp).then( (data) => {
+      this.getSingleChunkDataFromServer(tableId, timeStamp).then( async (data) => {
         let ctData = data['ctData']
         if (ctData.type !== 'edition') {
           reject(`Table ${tableId} is not an edition`)
@@ -645,7 +650,7 @@ export class MceComposer extends ApmPage {
           reject(`Table ${tableId} is archived`)
           return
         }
-        if (!this.addChunkToMceData(tableId, ctData, data['timeStamp'])){
+        if (! await this.addChunkToMceData(tableId, ctData, data['timeStamp'])){
           reject(this.errorDetail)
           return
         }
@@ -883,7 +888,7 @@ export class MceComposer extends ApmPage {
     })
   }
 
-  addChunkToMceData(tableId, ctData, timeStamp) {
+  async addChunkToMceData(tableId, ctData, timeStamp) {
     // first, see if the exact chunk edition is already in
     for (let chunkIndex = 0; chunkIndex < this.mceData.chunks.length; chunkIndex++) {
       let chunk = this.mceData.chunks[chunkIndex]
@@ -983,7 +988,7 @@ export class MceComposer extends ApmPage {
     // console.log(edition)
     this.editions.push(edition)
     this.editionPanel.updateData(this.mceData)
-    this.chunkSearchPanel.updateData(this.mceData)
+    await this.chunkSearchPanel.updateData(this.mceData)
     this.updateSaveUI()
     return true
   }

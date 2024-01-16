@@ -179,7 +179,7 @@ export class EditionViewerCanvas {
         defaultFontFamily: this.options.fontFamily,
         defaultFontSize: Typesetter2.pt2px(this.options.mainTextFontSizeInPts),
         textBoxMeasurer: this.canvasMeasurer,
-        debug: true
+        debug: false
       }
       // Load fonts
       console.log(`Loading fonts`)

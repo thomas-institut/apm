@@ -110,6 +110,7 @@ export class EditionPanel extends Panel {
     })
 
     this.options = oc.getCleanOptions(options)
+    this.loading = this.options.showLoadingDataMessage;
 
     this.mceData = this.options.mceData
     this.options.getUpdateStatuses().then( (statuses) => {
@@ -118,12 +119,16 @@ export class EditionPanel extends Panel {
     this.icons = this.options.icons
   }
 
-  showLoadingDataMessage(yes) {
-    this.options.showLoadingDataMessage = yes
+  /**
+   *
+   * @param {boolean}loadingStatus
+   */
+  setLoadingStatus(loadingStatus) {
+    this.loading = loadingStatus
   }
 
   updateLoadingMessage(newMessage) {
-    if (MceData.isEmpty(this.mceData) && this.options.showLoadingDataMessage)
+    if (MceData.isEmpty(this.mceData) && this.loading)
     {
       $(this.getContainerSelector()).html(this.__genLoadingStateHtml(newMessage))
     }
@@ -131,8 +136,9 @@ export class EditionPanel extends Panel {
 
 
   async generateHtml() {
+
     if (MceData.isEmpty(this.mceData)) {
-      if (this.options.showLoadingDataMessage) {
+      if (this.loading) {
         return this.__genLoadingStateHtml('Loading')
       }else {
         return `<div class='empty-chunks-info'>
@@ -141,6 +147,7 @@ export class EditionPanel extends Panel {
 </div>`
       }
     }
+    console.log(`Generating EditionPanel html with actual chunk table`)
     return `<div class="chunk-table">
                 ${this.__genChunksTable()}
             </div>
@@ -272,9 +279,9 @@ export class EditionPanel extends Panel {
     this.mceData = mceData
     console.log(`Updating mceData, ${this.mceData.chunks.length} chunks`)
 
-    this.options.getUpdateStatuses().then( (statuses) => {
+    this.options.getUpdateStatuses().then( async (statuses) => {
       this.updateStatuses = statuses
-      $(this.containerSelector).html(this.generateHtml())
+      $(this.containerSelector).html(await this.generateHtml())
       this._setupEventHandlers()
    })
   }

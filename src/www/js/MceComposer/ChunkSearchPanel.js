@@ -201,29 +201,29 @@ export class ChunkSearchPanel extends Panel {
     let tableIdsInMceData = this.mceData.chunks.map( (chunk) => { return chunk.chunkEditionTableId})
     console.log('Table Id in MCE Data')
     console.log(tableIdsInMceData)
-    return [
-      '<table class="active-editions">',
-      '<thead><tr><th>Chunk</th><th>Title</th><th>Author</th><th>Last Save</th><th></th></tr></thead>',
-      infoArray.map( async (info) => {
-        let versionInfo = info['lastVersion']
-        let lastSaveLabel = `${Util.formatVersionTime(versionInfo['timeFrom'])}`
-        let addButton
-        if (tableIdsInMceData.indexOf(info.id) === -1) {
-          addButton = `<button class="btn btn-sm btn-outline-secondary add-edition-${info.id}">Add</button>`
-        } else {
-          addButton = '<small>Already added</small>'
-        }
-        let authorData = await this.apmDataProxy.getPersonEssentialData(versionInfo.authorTid)
-        return `<tr>
+    let html = '<table class="active-editions">';
+    html +=  '<thead><tr><th>Chunk</th><th>Title</th><th>Author</th><th>Last Save</th><th></th></tr></thead>';
+    for(let i = 0; i < infoArray.length; i++) {
+      let info = infoArray[i];
+      let versionInfo = info['lastVersion']
+      let lastSaveLabel = `${Util.formatVersionTime(versionInfo['timeFrom'])}`
+      let addButton
+      if (tableIdsInMceData.indexOf(info.id) === -1) {
+        addButton = `<button class="btn btn-sm btn-outline-secondary add-edition-${info.id}">Add</button>`
+      } else {
+        addButton = '<small>Already added</small>'
+      }
+      let authorData = await this.apmDataProxy.getPersonEssentialData(versionInfo.authorTid)
+      html += `<tr>
             <td>${info['chunkId']}</td>
             <td>${info['title']}</td>
             <td>${authorData.name}</td>
             <td><small>${lastSaveLabel}</small></td>
             <td>${addButton} <span class="info-span-edition-${info.id}"</td>
         </tr>`
-      }).join(''),
-      '</table>'
-    ].join('')
+    }
+    html += '</table>';
+    return html;
   }
 
   /**

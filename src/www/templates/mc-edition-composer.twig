@@ -37,13 +37,9 @@
 <script>
 
   $(() => {
-    let userId = {{ userId }} ;
-    let editionId = {{  editionId }}
-
     new MceComposer({
-      userId: userId,
-      editionId: editionId,
-      urlGenerator: new ApmUrlGenerator('{{ baseurl }}'),
+      editionId: {{ editionId }},
+      commonData: JSON.parse("{{commonData|json_encode|e('js')}}"),
     })
   })
 </script>

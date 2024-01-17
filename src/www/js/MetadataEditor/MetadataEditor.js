@@ -19,9 +19,8 @@ export class MetadataEditor {
             backlink: {type:'string', required: false, default: ''},
             hideSaveButton: {type:'boolean', default: false},
             dialog: {type: 'object', required: false, default: {}},
-            rootMetadataEditor: {type: 'object', required: false, default: {}},
-            dialogRootSelector: {type:'string', required: false, default: ''},
-            dialogRootDatalistSelector: {type: 'string', required: false, default: ''}
+            dialogRootMetadataEditor: {type: 'object', required: false, default: {}},
+            dialogRootInputFormSelector: {type:'string', required: false, default: ''},
         }
 
         const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "MetadataEditor"})
@@ -41,7 +40,7 @@ export class MetadataEditor {
         // Selectors
         this.buttonsSelectorTop = `${this.options.containerSelector} .buttons_top`
         this.buttonsSelectorBottom = `${this.options.containerSelector} .buttons_bottom`
-        this.datalistSelector = ''
+        this.datalistSelector = this.options.containerSelector + " #people-datalist"
 
         // Get list of all people (for handling of entities as values, saving their ids, showing their names) and setup metadata editor in desired mode
         this.getPeople(() => {
@@ -130,7 +129,9 @@ export class MetadataEditor {
 
     // Entity and Table Management
     buildEntity(callback) {
-        this.entity.id = this.options.entityId
+        if (this.entity.id === '') {
+            this.entity.id = this.options.entityId
+        }
         this.entity.type = this.options.entityType
         if (this.entity.values.length === 0) { // After having edited and saved values, they get updated via the updateEntityData function
             this.entity.values = this.options.metadata
@@ -410,15 +411,17 @@ export class MetadataEditor {
     }
 
     makeTagsForm(selectorId) {
+        let tagEditorId = 'tag-editor-' + (1 + Math.floor( Math.random() * 10000))
         this.tagEditor = new TagEditor({
             containerSelector: selectorId,
+            idPrefix: tagEditorId,
             tags: this.getValueByKey('Tags'),
             mode: 'edit'
         })
     }
 
     makePersonForm(selector, inputId) {
-        let list = inputId + "_list"
+        let list = "people-datalist"
         let listSelector = '#' + list
         let paragraphId = inputId + '_paragraph'
 
@@ -508,25 +511,18 @@ export class MetadataEditor {
 
     copyValueFromDialog(id) {
         let value = $(`${this.options.containerSelector} .entity_attr1_form`).val()
-        let buttonSelector = this.options.dialogRootSelector + '_create-person-from-datalist-button'
-        $(this.options.dialogRootSelector).val(value)
+        let buttonSelector = this.options.dialogRootInputFormSelector + '_create-person-from-datalist-button'
+        $(this.options.dialogRootInputFormSelector).val(value)
         $(buttonSelector).remove()
     }
 
     updateDatalist () {
-        // this.getPeople(() => {
-        //     this.addNamesToDatalist(this.people, this.options.dialogRootDatalistSelector)
-        // })
-        // callback()
         let value = $(`${this.options.containerSelector} .entity_attr1_form`).val()
-        $(this.options.dialogRootDatalistSelector).append(`<option value=${value} id=${this.people.length}>${value}</option>`)
+        $(this.options.dialogRootMetadataEditor.datalistSelector).append(`<option value=${value} id=${this.people.length}>${value}</option>`)
     }
 
     setupMetadataEditorInDialogWindow (entity, selector, dialog, inputId) {
-
-        let keyIndex = inputId.match(/\d+/)[0]
-        let datalistSelector = "#entity_attr" + keyIndex + "_form_list"
-
+        
         let mde = new MetadataEditor({
             containerSelector: selector,
             entityId: entity.id,
@@ -539,9 +535,8 @@ export class MetadataEditor {
             mode: 'create',
             theme: 'vertical',
             dialog: dialog,
-            rootMetadataEditor: this,
-            dialogRootSelector: inputId,
-            dialogRootDatalistSelector: datalistSelector
+            dialogRootMetadataEditor: this,
+            dialogRootInputFormSelector: inputId,
         })
     }
 
@@ -722,7 +717,7 @@ export class MetadataEditor {
                             this.copyValueFromDialog(d.id)
                             this.options.dialog.hide()
                             this.options.dialog.destroy()
-                            this.options.rootMetadataEditor.updatePeople(d.id, d.values[0])
+                            this.options.dialogRootMetadataEditor.updatePeople(d.id, d.values[0])
                         } else {
                             this.setupShowMode()
                         }
@@ -877,7 +872,7 @@ export class MetadataEditor {
         } else if (type.includes('tags')) {
             return this.tagEditor.getTags()
         } else if (type.includes('person')) {
-            this.datalistSelector = this.options.containerSelector + " #entity_attr" + keyIndex + "_form_list"
+            //this.datalistSelector = this.options.containerSelector + " #entity_attr" + keyIndex + "_form_list"
             let person_id
             try {
                 person_id = $(`${this.datalistSelector} option[value=${value}]`).attr('id')
@@ -961,12 +956,6 @@ export class MetadataEditor {
     }
 
     nameIsDuplicate (key, givenType, value) {
-        // if (value !== '' && givenType === 'text' && value !== this.entity.values[0]) { // Exclude empty, non-text values and the name-value of the current entity
-        //     let id = $(`${this.datalistSelector} option[value=${value}]`).attr('id')
-        //     return id !== undefined && key === 'Display Name';
-        // } else {
-        //     return false
-        // }
         let names = this.getPersonNames()
         return givenType === 'text' && names.includes(value) && value !== this.entity.values[0]
     }
@@ -1129,8 +1118,14 @@ export class MetadataEditor {
     }
 
     returnDuplicateInNameError (value) {
+        let names = this.getPersonNames()
+        let personId = names.indexOf(value)
+        let url = urlGen.sitePerson(personId)
+        let linkId = "linktoperson" + personId
+        let link = `<a id=${linkId} href=${url} >${value}</a>`
+
         console.log('Duplicate in Name Error!')
-        this.returnError(`Error! Given person with name '${value}' already exists. Please try again.`)
+        this.returnError(`Error! Person with display name '${link}' already exists. Please try again.`)
     }
 
     returnError(str) {

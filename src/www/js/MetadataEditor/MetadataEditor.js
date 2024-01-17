@@ -19,6 +19,7 @@ export class MetadataEditor {
             backlink: {type:'string', required: false, default: ''},
             hideSaveButton: {type:'boolean', default: false},
             dialog: {type: 'object', required: false, default: {}},
+            rootMetadataEditor: {type: 'object', required: false, default: {}},
             dialogRootSelector: {type:'string', required: false, default: ''},
             dialogRootDatalistSelector: {type: 'string', required: false, default: ''}
         }
@@ -40,6 +41,7 @@ export class MetadataEditor {
         // Selectors
         this.buttonsSelectorTop = `${this.options.containerSelector} .buttons_top`
         this.buttonsSelectorBottom = `${this.options.containerSelector} .buttons_bottom`
+        this.datalistSelector = ''
 
         // Get list of all people (for handling of entities as values, saving their ids, showing their names) and setup metadata editor in desired mode
         this.getPeople(() => {
@@ -161,6 +163,21 @@ export class MetadataEditor {
 
     getPersonNameById (id) {
         return this.people[id].values[0]
+    }
+
+    getPersonNames () {
+        let names = []
+
+        for (let person of this.people) {
+            names.push(person.values[0])
+        }
+
+        return names
+    }
+
+    updatePeople(id, name) {
+        this.people.push({id: id, values: [name]})
+        return true
     }
 
     // Table Design Management
@@ -402,7 +419,7 @@ export class MetadataEditor {
 
     makePersonForm(selector, inputId) {
         let list = inputId + "_list"
-        let listSelector = this.options.containerSelector + ' #' + list
+        let listSelector = '#' + list
         let paragraphId = inputId + '_paragraph'
 
         $(selector).html(`<p class='${paragraphId} embed-create-button'>
@@ -416,6 +433,8 @@ export class MetadataEditor {
 
         let id = 0
 
+        $(listSelector).empty()
+
         for (let person of people) {
             id = person.id
             let name = person.values[0]
@@ -426,7 +445,7 @@ export class MetadataEditor {
     makePersonFormEvent(inputId, listSelector, paragraphSelector) {
 
         let dialog = ''
-        let buttonId = inputId + '_create-person-from-datalist'
+        let buttonId = inputId + '_create-person-from-datalist-button'
         let buttonSelector = this.options.containerSelector + ' .' + buttonId
         inputId = this.options.containerSelector + ' .' + inputId
         paragraphSelector = this.options.containerSelector + ' .' + paragraphSelector
@@ -442,9 +461,11 @@ export class MetadataEditor {
         $(inputId).on('input', () => {
             let value = $(inputId).val()
             $(buttonSelector).remove()
-            if ($(`${listSelector} option[value=${value}]`).attr('id') === undefined) {
-                $(paragraphSelector).append(`<button class=${buttonId}>Create</button>`)
-                this.makeCreatePersonFromInputFormButtonEvent(buttonSelector, dialog, inputId)
+            if (value !== '') {
+                if ($(`${listSelector} option[value=${value}]`).attr('id') === undefined) {
+                    $(paragraphSelector).append(`<button class=${buttonId}>Create</button>`)
+                    this.makeCreatePersonFromInputFormButtonEvent(buttonSelector, dialog, inputId)
+                }
             }
         })
     }
@@ -485,16 +506,26 @@ export class MetadataEditor {
         $(`${dialogSelector} .entity_attr1_form`).val(value)
     }
 
-    copyValueFromDialog() {
+    copyValueFromDialog(id) {
         let value = $(`${this.options.containerSelector} .entity_attr1_form`).val()
+        let buttonSelector = this.options.dialogRootSelector + '_create-person-from-datalist-button'
         $(this.options.dialogRootSelector).val(value)
-        $(this.options.dialogRootDatalistSelector).append(`<option value=${name} id='5000'>${name}</option>`)
+        $(buttonSelector).remove()
+    }
+
+    updateDatalist () {
+        // this.getPeople(() => {
+        //     this.addNamesToDatalist(this.people, this.options.dialogRootDatalistSelector)
+        // })
+        // callback()
+        let value = $(`${this.options.containerSelector} .entity_attr1_form`).val()
+        $(this.options.dialogRootDatalistSelector).append(`<option value=${value} id=${this.people.length}>${value}</option>`)
     }
 
     setupMetadataEditorInDialogWindow (entity, selector, dialog, inputId) {
 
         let keyIndex = inputId.match(/\d+/)[0]
-        let datalistSelector = this.options.containerSelector + " #entity_attr" + keyIndex + "_form_list"
+        let datalistSelector = "#entity_attr" + keyIndex + "_form_list"
 
         let mde = new MetadataEditor({
             containerSelector: selector,
@@ -508,6 +539,7 @@ export class MetadataEditor {
             mode: 'create',
             theme: 'vertical',
             dialog: dialog,
+            rootMetadataEditor: this,
             dialogRootSelector: inputId,
             dialogRootDatalistSelector: datalistSelector
         })
@@ -634,7 +666,6 @@ export class MetadataEditor {
         this.makeBackButton()
     }
 
-
     setupCancelButton() {
         this.clearTopButtons()
         this.makeCancelButton()
@@ -678,23 +709,25 @@ export class MetadataEditor {
             this.clearErrorMessage()
 
             // Get Data To Save
-            let d = this.getEntityDataByIndex()
+            this.updateDatalist()
+                let d = this.getEntityDataByIndex()
 
-            if (this.validateData(d) && this.validatePasswords()) {
-                this.makeSpinner(this.buttonsSelectorBottom)
-                this.updateEntityData(d.id, d.type, d.values)
-                //this.tagEditor.saveTags()
-                this.options.callback(this.entity, this.options.mode, () => {
-                    this.logSaveAction(this.options.mode)
-                    if (this.options.dialog !== {}) {
-                        this.copyValueFromDialog()
-                        this.options.dialog.hide()
-                        this.options.dialog.destroy()
-                    } else {
-                        this.setupShowMode()
-                    }
-                })
-            }
+                if (this.validateData(d) && this.validatePasswords()) {
+                    this.makeSpinner(this.buttonsSelectorBottom)
+                    this.updateEntityData(d.id, d.type, d.values)
+                    //this.tagEditor.saveTags()
+                    this.options.callback(this.entity, this.options.mode, () => {
+                        this.logSaveAction(this.options.mode)
+                        if (this.options.dialog instanceof ConfirmDialog) {
+                            this.copyValueFromDialog(d.id)
+                            this.options.dialog.hide()
+                            this.options.dialog.destroy()
+                            this.options.rootMetadataEditor.updatePeople(d.id, d.values[0])
+                        } else {
+                            this.setupShowMode()
+                        }
+                    })
+                }
         })
     }
 
@@ -842,13 +875,13 @@ export class MetadataEditor {
             return this.getDataForYearsRange(selector, value)
 
         } else if (type.includes('tags')) {
-            return ['Test']
-            //return this.tagEditor.getTags()
+            return this.tagEditor.getTags()
         } else if (type.includes('person')) {
-            let datalist = this.options.containerSelector + " #entity_attr" + keyIndex + "_form_list"
+            this.datalistSelector = this.options.containerSelector + " #entity_attr" + keyIndex + "_form_list"
             let person_id
             try {
-                person_id = $(`${datalist} option[value=${value}]`).attr('id')
+                person_id = $(`${this.datalistSelector} option[value=${value}]`).attr('id')
+                console.log(person_id)
             } catch {
                 person_id = ''
             }
@@ -920,9 +953,22 @@ export class MetadataEditor {
         } else if (this.inconsistentYearsRange(affordedTypes, value)) {
             this.returnImpossibleYearsRangeError(key)
             return false
+        } else if (this.nameIsDuplicate(key, givenType, value)) {
+            this.returnDuplicateInNameError(value)
         } else {
             return true
         }
+    }
+
+    nameIsDuplicate (key, givenType, value) {
+        // if (value !== '' && givenType === 'text' && value !== this.entity.values[0]) { // Exclude empty, non-text values and the name-value of the current entity
+        //     let id = $(`${this.datalistSelector} option[value=${value}]`).attr('id')
+        //     return id !== undefined && key === 'Display Name';
+        // } else {
+        //     return false
+        // }
+        let names = this.getPersonNames()
+        return givenType === 'text' && names.includes(value) && value !== this.entity.values[0]
     }
 
     typesNotMatching (givenType, affordedTypes) {
@@ -1080,6 +1126,11 @@ export class MetadataEditor {
     returnPasswordError() {
         console.log('Password Error!')
         this.returnError(`Password Error! Please try again.`)
+    }
+
+    returnDuplicateInNameError (value) {
+        console.log('Duplicate in Name Error!')
+        this.returnError(`Error! Given person with name '${value}' already exists. Please try again.`)
     }
 
     returnError(str) {

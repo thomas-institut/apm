@@ -44,17 +44,21 @@ export class ApmPage {
     this.localCache = new WebStorageKeyCache('local', this.commonData.cacheDataId);
     this.sessionCache = new WebStorageKeyCache('session', this.commonData.cacheDataId);
 
-    this.showLanguageSelector = this.commonData.showLanguageSelector
+    this.showLanguageSelector = this.commonData.showLanguageSelector;
     if (this.showLanguageSelector) {
-      this.siteLanguage = this.commonData.siteLanguage
+      this.siteLanguage = this.commonData.siteLanguage;
       if (this.siteLanguage === '' || this.siteLanguage === 'detect') {
-        console.log(`No site language given, detecting language`)
-        this.siteLanguage = SiteLang.detectBrowserLanguage()
+        console.log(`No site language given, detecting language`);
+        this.siteLanguage = SiteLang.detectBrowserLanguage();
       }
-      setSiteLanguage(this.siteLanguage)
-      console.log(`Site language set to '${this.siteLanguage}'`)
+      setSiteLanguage(this.siteLanguage);
+      console.log(`Site language set to '${this.siteLanguage}'`);
     } else {
-      this.siteLanguage = 'en'
+      this.siteLanguage = 'en';
     }
+
+    this.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    console.log(`Client timezone is '${this.timeZone}'`);
   }
 }

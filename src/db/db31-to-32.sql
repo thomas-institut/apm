@@ -2,6 +2,9 @@
 -- DB version 31 to 32
 --
 
+-- BEFORE migrating to DB version 32 stop all APM operations (apache, apmd, opensearch)  and
+-- do a complete database backup
+
 -- Change database version setting name
 UPDATE `ap_settings` SET `setting` = 'DatabaseVersion' WHERE `ap_settings`.`setting` = 'dbversion';
 
@@ -12,7 +15,9 @@ ALTER TABLE `ap_works` ADD `tid` BIGINT UNSIGNED DEFAULT 0 AFTER `id`;
 ALTER TABLE `ap_works` ADD INDEX (`tid`);
 ALTER TABLE `ap_edition_sources` ADD `tid` BIGINT UNSIGNED DEFAULT 0 AFTER `id`;
 ALTER TABLE `ap_edition_sources` ADD INDEX (`tid`);
+--
 -- RUN: generate_tids doIt
+--
 
 -- use new people tids in the users table too
 ALTER TABLE `ap_users` ADD `tid` BIGINT UNSIGNED DEFAULT 0 AFTER `id`;
@@ -41,6 +46,7 @@ ALTER TABLE `ap_ednotes`
 
 -- use new people tids for element editors
 ALTER TABLE ap_elements ADD `editor_tid` BIGINT UNSIGNED DEFAULT 0 AFTER `editor_id`;
+-- the next line will take a while!
 UPDATE  `ap_elements`, `ap_people` SET `ap_elements`.`editor_tid` = `ap_people`.`tid` where `ap_elements`.`editor_id`=`ap_people`.`id`;
 ALTER TABLE `ap_elements` ADD INDEX (`editor_tid`);
 ALTER TABLE `ap_elements` DROP FOREIGN KEY `ap_elements_ibfk_2`;
@@ -71,7 +77,6 @@ ALTER TABLE `ap_relations` DROP FOREIGN KEY `fk_userid`;
 ALTER TABLE `ap_relations`
     ADD CONSTRAINT `fk_userid` FOREIGN KEY (`user_tid`) REFERENCES `ap_people` (`tid`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
-
 -- use new people tids for token users
 ALTER TABLE `ap_tokens` ADD `user_tid` BIGINT UNSIGNED DEFAULT 0 AFTER `user_id`;
 UPDATE  `ap_tokens`, `ap_people` SET `ap_tokens`.`user_tid` = `ap_people`.`tid` where `ap_tokens`.`user_id`=`ap_people`.`id`;
@@ -97,13 +102,19 @@ ALTER TABLE `ap_versions_tx` DROP FOREIGN KEY `ap_versions_tx_author`;
 ALTER TABLE `ap_versions_tx`
     ADD CONSTRAINT `ap_versions_tx_author` FOREIGN KEY (`author_tid`) REFERENCES `ap_people` (`tid`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
+-- change current author ids in notes saved within collation tables to new author tids
+--
+-- RUN migrate_author_ids doIt  (this will take a while!)
+--
+
 
 -- change current uuid references to sources to new edition sources tids
+--
 -- RUN migrate_edition_sources doIt
-
+--
 
 -- clean up the multi-chunk editions table
-ALTER TABLE `ap_mc_editions` DROP COLUMN `author_id`;
+
 
 -- clean up the edition sources table
 ALTER TABLE `ap_edition_sources` DROP COLUMN `uuid`;
@@ -117,17 +128,13 @@ UPDATE `ap_users` SET `tags` = 'readOnly' WHERE `username`='guest';
 ALTER TABLE `ap_users` ADD `email_address` VARCHAR(1024) DEFAULT NULL UNIQUE AFTER `password`;
 UPDATE `ap_users`, `ap_people` SET `ap_users`.`email_address`=`ap_people`.`email` WHERE `ap_users`.`tid` = `ap_people`.tid;
 
-
 -- clean up people table: fullname becomes name, add sort_name to the people table and drop email
 ALTER TABLE `ap_people` CHANGE COLUMN `fullname` `name` VARCHAR(1024) NOT NULL;
 ALTER TABLE `ap_people` ADD `sort_name` VARCHAR(1024) DEFAULT NULL AFTER `name`;
 ALTER TABLE `ap_people` DROP COLUMN `email`;
 
-
-
 -- Let MySql handle the id column in ap_works
 ALTER TABLE `ap_works` MODIFY COLUMN `id` int NOT NULL AUTO_INCREMENT;
-
 
 -- drop unused tables
 DROP TABLE ap_scheduler;
@@ -137,12 +144,22 @@ ALTER TABLE `ap_tokens` MODIFY COLUMN `id` int NOT NULL AUTO_INCREMENT;
 ALTER TABLE `ap_tokens` DROP COLUMN `user_id`;
 DELETE FROM ap_tokens where creation_time < '2023-12-11';
 
-
-
-
+-- get rid of person id columns
 ALTER TABLE `ap_ednotes` DROP COLUMN `author_id`;
 ALTER TABLE `ap_elements` DROP COLUMN `editor_id`;
+ALTER TABLE `ap_mc_editions` DROP COLUMN `author_id`;
+ALTER TABLE `ap_presets` DROP COLUMN  `user_id`;
+ALTER TABLE `ap_relations` DROP COLUMN `userId`;
+ALTER TABLE `ap_versions_ct` DROP COLUMN `author_id`;
+ALTER TABLE `ap_versions_tx` DROP COLUMN `author_id`;
+ALTER TABLE `ap_works` DROP COLUMN `author_id`;
+
+-- allow longer username
 ALTER TABLE `ap_users` MODIFY COLUMN `username` VARCHAR(128) NOT NULL;
 
+-- reset system cache
+TRUNCATE `ap_system_cache`;
 
+
+-- Finally, update version number
 UPDATE `ap_settings` SET `value` = '32' WHERE `ap_settings`.`setting` = 'DatabaseVersion';

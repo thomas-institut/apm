@@ -28,7 +28,7 @@ use APM\StandardData\CollationTableDataProvider;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use APM\ToolBox\SiglumGenerator;
-use AverroesProject\Data\UserManagerUserInfoProvider;
+use AverroesProjectToApm\ApmPersonInfoProvider;
 use Exception;
 use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -360,7 +360,7 @@ class ApiCollation extends ApiController
         // @codeCoverageIgnoreEnd
         
         $this->profiler->lap('Collation table built from collation engine output');
-        $userDirectory = new UserManagerUserInfoProvider($dataManager->userManager);
+        $personInfoProvider = new ApmPersonInfoProvider($this->systemManager->getPersonManager());
 
         $ctStandardDataProvider = new CollationTableDataProvider($collationTable);
         $standardData = $ctStandardDataProvider->getStandardData();
@@ -385,12 +385,12 @@ class ApiCollation extends ApiController
         $standardData->chunkId = $standardData->witnesses[0]->chunkId;
 
 
-        $userIds = $ctStandardDataProvider->getUserIdsFromData($standardData);
+        $userTids = $ctStandardDataProvider->getUserTidsFromData($standardData);
         $people = [];
-        foreach($userIds as $userId) {
-            $people[$userId] = [
-                'fullName' => $userDirectory->getNormalizedName($userId),
-                'shortName' => $userDirectory->getShortName($userId)
+        foreach($userTids as $userTid) {
+            $people[$userTid] = [
+                'fullName' => $personInfoProvider->getNormalizedName($userTid),
+                'shortName' => $personInfoProvider->getShortName($userTid)
                 ];
         }
 

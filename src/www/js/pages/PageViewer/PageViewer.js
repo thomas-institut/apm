@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2019-20 Universität zu Köln
+ *  Copyright (C) 2019-24 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,21 +17,44 @@
  */
 
 
-/* global TranscriptionEditor */
 
- 
-class PageViewer {  
+import { TranscriptionEditor } from './TranscriptionEditor'
+import { urlGen } from '../common/SiteUrlGen'
+import { ApmUtil } from '../../ApmUtil'
+import { ApmPage } from '../ApmPage'
+import { OptionsChecker } from '@thomas-inst/optionschecker'
+
+const DEFAULT_LAYOUT_CACHE_TTL = 180 * 24 * 3600;  // 6 months
+const LAYOUT_CACHE_DATA_ID = 'apm_pv_a4af3548';
+
+export class PageViewer extends ApmPage {
   
   constructor (options){
+    super(options);
+
+    let oc = new OptionsChecker({
+      context: 'PageViewer',
+      optionsDefinition: {
+        docId: { type: 'integer', required: true},
+        pageSystemId: { type: 'integer', required: true},
+
+      }
+    });
+
     this.options = options
     console.log('Page Viewer options')
     console.log(options)
-    this.cookieName = 'apm-pv2-' + this.options.userId + '-' + this.options.pageSystemId
+
+    TranscriptionEditor.init(this.commonData.baseUrl);
+    this.pageSystemId = this.options.pageSystemId;
+
+
+    this.layoutCacheKey = `apm-PageViewer-Layout-${this.userTid}-${this.pageSystemId}`
 
     this.splitPaneElements =  $('div.split-pane')
     
-    this.getViewerLayoutFromCookie()
-    let pathFor = options.urlGenerator
+    this.getViewerLayoutFromCache()
+    this.langDef =  ApmUtil.getLangDefFromLanguagesArray(this.options.languagesArray)
     
     if (this.layout.vertical) {
       this.doVerticalLayout(this.layout.percentage)
@@ -42,7 +65,7 @@ class PageViewer {
     
     let osdOptions = {
       id: "osd-pane",
-      prefixUrl: pathFor.openSeaDragonImagePrefix(),
+      prefixUrl: urlGen.openSeaDragonImagePrefix(),
       minZoomLevel: 0.4,
       maxZoomLevel:5,
       showRotationControl: true,
@@ -72,7 +95,7 @@ class PageViewer {
       sanitize: false
     })
 
-    this.splitPaneElements.on('dividerdragend', this.genOnDividerdragend())
+    this.splitPaneElements.on('dividerdragend', this.genOnDividerDragEnd())
     this.osdViewer.addHandler('zoom', this.genOnOsdZoom())
     
     $('#realAddColumnButton').on('click', 
@@ -91,53 +114,44 @@ class PageViewer {
       this.genOnHorizontalButton())  
       
     // Load columns
-    $.getJSON(pathFor.apiGetNumColumns(this.options.docId, this.options.pageNumber), 
+    $.getJSON(urlGen.apiGetNumColumns(this.options.docId, this.options.pageNumber),
       this.genOnLoadNumColumns())
   }
   
   genOnOsdZoom() {
-    let thisObject = this
-    return function(e) {
+    return (e) => {
       //console.log('OSD zoom to ' + e.zoom)
-      thisObject.layout.zoom = e.zoom
-      thisObject.storeViewerLayoutInCookie(thisObject.layout)
+      this.layout.zoom = e.zoom
+      this.storeViewerLayoutInCache(this.layout)
     }
   }
   
-  genOnDividerdragend() {
-    let thisObject = this
-    return function (e, data){
-      for (const te of TranscriptionEditor.editors) {
-        // TODO: optimize, renumber lines only for active tab
-        // if the tab's text is LTR 
-        //console.log('Number lines on dividerdragend')
-        te.resizeContainer()
-        te.numberLines()
-        thisObject.layout.percentage = 100 * data.lastComponentSize / (data.lastComponentSize + data.firstComponentSize + 5)
-        thisObject.storeViewerLayoutInCookie(thisObject.layout)
-      }
+  genOnDividerDragEnd() {
+    return  (e, data) => {
+      // TODO: optimize, renumber lines only for active tab
+      TranscriptionEditor.editors.forEach( (editor) => {
+        editor.resizeContainer();
+        editor.numberLines();
+      })
+      this.layout.percentage = 100 * data.lastComponentSize / (data.lastComponentSize + data.firstComponentSize + 5)
+      this.storeViewerLayoutInCache(this.layout)
     }
   }
   
-  getViewerLayoutFromCookie() {
-    
-    let layout
-
-    try {
-      layout = JSON.parse(Cookies.get(this.cookieName))
-    } catch (e) {
-      console.log(`Error parsing cookie ${this.cookieName}, resetting`)
-      layout = undefined
+  getViewerLayoutFromCache() {
+    let layout = null;
+    let layoutJson = this.localCache.retrieve(this.layoutCacheKey, LAYOUT_CACHE_DATA_ID);
+    if (layoutJson !== null) {
+      layout = JSON.parse(layoutJson);
     }
-
-    if (layout === undefined) {
-      console.log('No layout cookie present, using defaults')
+    if (layout === null) {
+      // console.log('No layout in cache, using defaults')
       layout = { 
         vertical: true,
         percentage: 50,
         zoom: 1
       }
-      this.storeViewerLayoutInCookie(layout)
+      this.storeViewerLayoutInCache(layout)
     }
     if (layout.zoom === undefined) {
       layout.zoom = 1
@@ -145,29 +159,22 @@ class PageViewer {
     this.layout = layout
   }
   
-  storeViewerLayoutInCookie(layout) {
-    // console.log(`Storing layout in cookie`)
-    // console.log(layout)
-    Cookies.set(this.cookieName, JSON.stringify(layout))
+  storeViewerLayoutInCache(layout) {
+    this.localCache.store(this.layoutCacheKey, JSON.stringify(layout), DEFAULT_LAYOUT_CACHE_TTL, LAYOUT_CACHE_DATA_ID);
   }
   
   genOnClickRealAddColumnButton() {
-    let pathFor = this.options.urlGenerator
-    let apiAddColumnUrl = pathFor.apiAddColumn(this.options.docId, this.options.pageNumber)
+    let apiAddColumnUrl = urlGen.apiAddColumn(this.options.docId, this.options.pageNumber)
     return function () {
-      $.getJSON(apiAddColumnUrl, function () {
+      $.getJSON(apiAddColumnUrl,  () => {
         location.replace('')
       })
-      .fail( function (resp) {
+      .fail(  (resp) => {
         console.log("Error adding new column")
         
         $('#addColumnModal').modal('hide')
-        let msg = ''
-        if (resp.responseJSON.msg !== undefined) {
-          msg = resp.responseJSON.msg
-        }
-
-        $('#pageinfoerrors').html('<p class="text-danger">Error adding new column.<br/>' 
+        let msg = resp.responseJSON['msg'] ?? ''
+        $('#pageinfoerrors').html('<p class="text-danger">Error adding new column.<br/>'
           + 'HTTP Status: '  + resp.status + '<br/>'  
           + 'Error: (' + resp.responseJSON.error + ') ' 
           + msg  + '</p>')
@@ -175,11 +182,8 @@ class PageViewer {
     }
   }
   genOnLoadNumColumns(){
-    let thisObject = this
-    let pathFor = thisObject.options.urlGenerator
-    
-    return function (numColumns) {
-      const thePageNumber = thisObject.options.pageNumber
+    return  (numColumns) => {
+      const thePageNumber = this.options.pageNumber
       if (numColumns === 0) {
         $('#pageinfoTab').addClass('active')
         return true
@@ -192,103 +196,86 @@ class PageViewer {
         $('#tabsUl').append(theUl)
       }
       for (let col = 1; col <= numColumns; col++) {
-        let apiGetColumnDataUrl = pathFor.apiTranscriptionsGetData(thisObject.options.docId, thePageNumber, col)
-        $.getJSON(
-          apiGetColumnDataUrl, 
-          function (respColData) {
+        let apiGetColumnDataUrl = urlGen.apiTranscriptionsGetData(this.options.docId, thePageNumber, col)
+        $.getJSON(apiGetColumnDataUrl,
+          (respColData) => {
             $('.nav-tabs a').on('click', function () {
               $(this).tab('show')
             })
-          const theCol = respColData.info.col
+            const theCol = respColData.info.col
             const versions = respColData.info.versions
-            $('#versions-col' + col).html(thisObject.genVersionsDiv(col, versions))
-          let theDiv = '<div class="textcol tab-pane'
-          if (col === thisObject.options.activeColumn) {
+            $('#versions-col' + col).html(this.genVersionsDiv(col, versions))
+            let theDiv = '<div class="textcol tab-pane'
+            if (col === this.options.activeColumn) {
               theDiv += ' active'
-          }
-          theDiv += '" id="col' + col + '"></div>'
-          $('#theTabs').append(theDiv)
-          const te = new TranscriptionEditor('col' + theCol, theCol,
-            { 
-              editorId: thisObject.options.userId , 
-              activeWorks: thisObject.options.activeWorks, 
-              langDef: thisObject.options.langDef,
-              defaultLang: thisObject.options.defaultLang,
-              containerId: 'editor-pane',
             }
-          )
-          te.setData(respColData)
-          te.on('editor-enable',function () {
+            theDiv += '" id="col' + col + '"></div>'
+            $('#theTabs').append(theDiv)
+            const te = new TranscriptionEditor('col' + theCol, theCol,
+                {
+                editorId: this.userTid ,
+                activeWorks: this.options.activeWorks,
+                langDef: this.langDef,
+                defaultLang: this.options.defaultLang,
+                containerId: 'editor-pane',
+            })
+            te.setData(respColData)
+            te.on('editor-enable', ()=> {
               $('#col-label-' + theCol).html('Column ' + theCol + ' (editing)')
-          })
-          te.on('editor-disable', function () {
-            $('#col-label-' + theCol).html('Column ' + theCol)
-           })
+            })
+            te.on('editor-disable',  ()=> {
+              $('#col-label-' + theCol).html('Column ' + theCol)
+            })
 
-           $('#col-label-' + theCol).on('shown.bs.tab', function (){
-             //console.log("Number lines on shown.bs.tab")
-             te.resizeContainer()
-             te.numberLines()
-          })
+            $('#col-label-' + theCol).on('shown.bs.tab',  ()=> {
+              //console.log("Number lines on shown.bs.tab")
+              te.resizeContainer()
+              te.numberLines()
+            })
 
-          te.on('editor-save', function(ev){
-            console.log("Saving...")
-            console.log('Quill data:')
-            console.log(te.quillObject.getContents())
-            const currentData = te.getData();
-            currentData.versionInfo = ev.originalEvent.detail
-            console.log('API data uploaded to server:')
-            console.log(currentData)
-            $.post(
-              pathFor.apiTranscriptionsUpdateData(thisObject.options.docId, thePageNumber, col),
-              { data: JSON.stringify(currentData) }
-            )
-            .done(function () { 
-                $.getJSON(apiGetColumnDataUrl, function (newColumnData){
-                  //console.log(newResp)
-                  console.log('API data received from server:')
-                  console.log(newColumnData)
-                  te.saveSuccess(newColumnData)
-                  console.log('... finished saving')
-                  const versions = newColumnData.info.versions
-                  console.log(versions)
-                  $('#versions-col' + col).html(thisObject.genVersionsDiv(col, versions))
+            te.on('editor-save', (ev)=> {
+              console.log("Saving...")
+              console.log('Quill data:')
+              console.log(te.quillObject.getContents())
+              const currentData = te.getData();
+              currentData.versionInfo = ev.originalEvent.detail
+              console.log('API data uploaded to server:')
+              console.log(currentData)
+              $.post(urlGen.apiTranscriptionsUpdateData(this.options.docId, thePageNumber, col),
+              { data: JSON.stringify(currentData) })
+                .done( ()=> {
+                  $.getJSON(apiGetColumnDataUrl,  (newColumnData) => {
+                    //console.log(newResp)
+                    console.log('API data received from server:')
+                    console.log(newColumnData)
+                    te.saveSuccess(newColumnData)
+                    console.log('... finished saving')
+                    const versions = newColumnData.info.versions
+                    console.log(versions)
+                    $('#versions-col' + col).html(this.genVersionsDiv(col, versions))
+                  })
                 })
-            })
-            .fail(function(resp) {
-              let msg = 'Click to try again'
-              if (resp.responseJSON.msg !== undefined) {
-                msg = resp.responseJSON.msg
-              }
-              te.saveFail('Status: ' + resp.status + ' Error: ' + resp.responseJSON.error + ' (' 
-                 + msg + ')')
-            })
-          })
-
-            te.on('version-request', function(ev){
+                .fail((resp) => {
+                  let msg = resp.responseJSON['msg'] ?? 'Click to try again'
+                  te.saveFail('Status: ' + resp.status + ' Error: ' + resp.responseJSON.error + ' ('
+                    + msg + ')')
+                })
+            });
+            te.on('version-request', (ev) => {
               let versionId = ev.originalEvent.detail.versionId
               console.log('Version request from editor, version ID = ' + versionId)
-              let apiGetColumnDataUrl = pathFor.apiTranscriptionsGetDataWithVersion(thisObject.options.docId, thePageNumber, col, versionId)
-              $.getJSON(apiGetColumnDataUrl, function (newColumnData){
+              let apiGetColumnDataUrl = urlGen.apiTranscriptionsGetDataWithVersion(this.options.docId, thePageNumber, col, versionId)
+              $.getJSON(apiGetColumnDataUrl,  (newColumnData)=> {
                 console.log('API data received from server:')
                 console.log(newColumnData)
                 const versions = newColumnData.info.versions
                 console.log(versions)
-                $('#versions-col' + col).html(thisObject.genVersionsDiv(col, versions))
+                $('#versions-col' + col).html(this.genVersionsDiv(col, versions))
                 te.loadNewVersion(newColumnData)
               })
-                // .fail(function(resp) {
-                //   let msg = 'Click to try again'
-                //   if (resp.responseJSON.msg !== undefined) {
-                //     msg = resp.responseJSON.msg
-                //   }
-                //   te.saveFail('Status: ' + resp.status + ' Error: ' + resp.responseJSON.error + ' ('
-                //     + msg + ')')
-                // })
             })
-
-          te.on('editor-reset',function(e){
-            //console.log("Resetting...")
+          te.on('editor-reset',(e) => {
+            console.log("Editor reset event")
           });
 
           $(window).on('beforeunload', function() {
@@ -297,7 +284,7 @@ class PageViewer {
               return false // make the browser show a message confirming leave
             }
           })
-          if (col === thisObject.options.activeColumn) {
+          if (col === this.options.activeColumn) {
             $('#colheader' + theCol).tab('show')
             $(`#col-label-${theCol}`).addClass('active')
           }
@@ -331,37 +318,27 @@ class PageViewer {
 
   formatVersionTime(time) {
     return moment(time).format('D MMM YYYY, H:mm:ss')
-
-    //return d.getDate() + ' ' + d.getMonth() + ' ' + d.getFullYear()
-    //return time.split('.')[0]
   }
 
   genOnClickEditPageSubmitButton(){
-    let apiUpdatePageSettingsUrl = this.options.urlGenerator.apiUpdatePageSettings(this.options.pageSystemId)
-    
-    return function () {
-      console.log('Updating page settings')
-      console.log($('#pageSettingsForm').serialize())
-      $.post(
-        apiUpdatePageSettingsUrl, 
-        $('#pageSettingsForm').serialize())
-      .done(function () { 
-        location.replace('')         
-      })
-      .fail(function(resp) {
-        console.log("Error updating page settings")
-        
-        $('#editPageModal').modal('hide')
-        let msg = ''
-        if (resp.responseJSON.msg !== undefined) {
-          msg = resp.responseJSON.msg
-        }
-
-        $('#pageinfoerrors').html('<p class="text-danger">Error updating page settings.<br/>' 
-          + 'HTTP Status: '  + resp.status + '<br/>'  
-          + 'Error: (' + resp.responseJSON.error + ') ' 
-          + msg  + '</p>')
-      })
+    let apiUpdatePageSettingsUrl = urlGen.apiUpdatePageSettings(this.options.pageSystemId)
+    return  () => {
+      let pageSettingsForm = $('#pageSettingsForm');
+      console.log('Updating page settings');
+      console.log(pageSettingsForm.serialize());
+      $.post(apiUpdatePageSettingsUrl, pageSettingsForm.serialize())
+        .done(() =>  {
+          location.replace('');
+        })
+        .fail((resp) => {
+          console.log("Error updating page settings")
+          $('#editPageModal').modal('hide')
+          let msg = resp.responseJSON['msg'] ?? ''
+          $('#pageinfoerrors').html('<p class="text-danger">Error updating page settings.<br/>'
+            + 'HTTP Status: '  + resp.status + '<br/>'
+            + 'Error: (' + resp.responseJSON.error + ') '
+            + msg  + '</p>')
+        });
     }
   }
   
@@ -392,14 +369,12 @@ class PageViewer {
       
       this.layout.vertical = true
       this.layout.percentage = perc
-      this.storeViewerLayoutInCookie(this.layout)
-      
-      if (TranscriptionEditor.editors) {
-        for (const te of TranscriptionEditor.editors) {
-          te.resizeContainer()
-          te.numberLines()
-        }
-      }
+      this.storeViewerLayoutInCache(this.layout)
+
+      TranscriptionEditor.editors.forEach( (te) => {
+        te.resizeContainer()
+        te.numberLines()
+      })
   }
   
   doHorizontalLayout(perc) {
@@ -427,51 +402,44 @@ class PageViewer {
     fullPane.removeClass('vertical-percent')
     fullPane.addClass('horizontal-percent')
       
-      this.layout.vertical = false
-      this.layout.percentage = perc
-      this.storeViewerLayoutInCookie(this.layout)
-      
-      if (TranscriptionEditor.editors) {
-        for (const te of TranscriptionEditor.editors) {
-          te.resizeContainer()
-          te.numberLines()
-        }
-      }
+    this.layout.vertical = false
+    this.layout.percentage = perc
+    this.storeViewerLayoutInCache(this.layout)
+
+    TranscriptionEditor.editors.forEach( (te) => {
+      te.resizeContainer()
+      te.numberLines()
+    })
   }
   
   
   genOnVerticalButton()
   {
-    let thisObject = this
-    
-    return function () {
-      thisObject.doVerticalLayout(50)
+    return  ()  => {
+      this.doVerticalLayout(50);
     }
   }
   
   
   genOnHorizontalButton()
   {
-    let thisObject = this
-    
-    return function () {
-      thisObject.doHorizontalLayout(50)
+    return () => {
+      this.doHorizontalLayout(50);
     }
   }
   
   
   genOnClickEditPageButton() {
-    let thisObject = this
-    return function () {
+    return  ()=>  {
 
       let optionsHtml = ''
-      let langDef = thisObject.options.langDef
+      let langDef = this.langDef
       for (const lang in langDef) {
         if (!langDef.hasOwnProperty(lang)) {
           continue
         }
         optionsHtml += '<option value="' + lang + '"'
-        if (thisObject.options.defaultLang === lang) {
+        if (this.options.defaultLang === lang) {
           optionsHtml += ' selected'
         }
         optionsHtml += '>' + langDef[lang].name + '</option>'
@@ -479,9 +447,9 @@ class PageViewer {
       $('#editPage-lang').html(optionsHtml)
 
       let optionsType = ''
-      for (const type of thisObject.options.pageTypeNames) {
+      for (const type of this.options.pageTypeNames) {
         optionsType += '<option value="' + type.id + '"'
-        if (thisObject.options.pageType === parseInt(type.id)) {
+        if (this.options.pageType === parseInt(type.id)) {
           optionsType += ' selected'
         }
         optionsType += '>' + type.descr + '</option>'
@@ -489,9 +457,11 @@ class PageViewer {
       $('#editPage-type').html(optionsType)
 
 
-      $('#editPage-foliation').val(thisObject.options.foliation)
+      $('#editPage-foliation').val(this.options.foliation)
       $('#editPageModal').modal('show')
     }
   }
 
 }
+
+window.PageViewer = PageViewer

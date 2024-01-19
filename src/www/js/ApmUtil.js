@@ -16,7 +16,7 @@
  *  
  */
 
-class ApmUtil {
+export class ApmUtil {
 
   /**
    * Appends an error alert to theDiv according to the error received.

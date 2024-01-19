@@ -27,7 +27,6 @@
 namespace APM\Site;
 
 use APM\FullTranscription\ApmChunkSegmentLocation;
-use APM\System\ApmConfigParameter;
 use APM\System\DataRetrieveHelper;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
@@ -38,7 +37,6 @@ use AverroesProject\Data\DataManager;
 use Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
-use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 
 /**
@@ -269,12 +267,6 @@ class SiteDocuments extends SiteController
             }
 
         }
-
-
-//        $canDefinePages = true;
-//        if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')) {
-//            $canDefinePages = true;
-//        }
 
 
         $pageTypeNames  = $this->dataManager->getPageTypeNames();

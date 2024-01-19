@@ -6,61 +6,45 @@
     <title>{{docInfo.title}} : {{pageNumberFoliation}}</title>
     <link rel="stylesheet" type="text/css" media="screen" href="https://fonts.googleapis.com/css?family=PT+Sans"/>
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/node_modules/bootstrap/dist/css/bootstrap.css">
-    <link rel="stylesheet" href="https://averroes.uni-koeln.de/fonts/fontawesome-free-5.10.1-web/css/all.css">
+    <link rel="stylesheet" type="text/css" href="https://averroes.uni-koeln.de/fonts/fontawesome-free-5.10.1-web/css/all.css">
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/split-pane.css" />
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/styles.css" />
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/pageviewer.css" />
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/transcription-editor.css" />
     
-{#    <script type="application/javascript" src="{{baseurl}}/node_modules/lodash/lodash.js"></script>#}
     <script type="application/javascript" src="{{baseurl}}/node_modules/jquery/dist/jquery.js"></script>
     <script type="application/javascript" src="{{baseurl}}/node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
     <script type="text/javascript" src="{{baseurl}}/node_modules/moment/moment.js"></script>
     <script type="application/javascript" src="{{baseurl}}/node_modules/openseadragon/build/openseadragon/openseadragon.min.js"></script>
     <script type="text/javascript" src="{{baseurl}}/node_modules/twig/twig.min.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/node_modules/quill/dist/quill.min.js"></script>
-    
-    <script type="application/javascript" src="{{baseurl}}/js/split-pane.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/node_modules/js-cookie/dist/js.cookie.js"></script>
 
-    <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/split-pane.js"></script>
+
     <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/Item.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/Element.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/TranscriptionEditor.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/TranscriptionEditorBlots.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/TranscriptionEditorBlotConfig.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/EditorClipboard.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/EditorData.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/PageViewer.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/dist/PageViewer.bundle.js"></script>
 
     <link href='{{baseurl}}/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
     <script>
-    TranscriptionEditor.init('{{baseurl}}')
-    
+
     $( () => {
-        let pv = new PageViewer({
-            baseUrl : '{{ baseurl }}',
-            urlGenerator: new ApmUrlGenerator('{{ baseurl }}'),
-            imageUrl: '{{imageUrl}}',
-            pageType: {{pageInfo.type}},
-            foliation: '{{pageInfo.foliation}}',
-            pageNumber: {{ page }},
-            seq: {{ seq }},
-            pageNumberFoliation:'{{ pageNumberFoliation }}',
-            pageSystemId: {{pageInfo.id}},
-            docId: {{ doc }},
-            activeColumn : JSON.parse('{{activeColumn|json_encode|e('js')}}'),
-            userId: {{ userId }},
-            userTid: {{  userTid }},
-            defaultLang: '{{pageInfo.lang}}',
-            activeWorks: JSON.parse("{{activeWorks|json_encode|e('js')}}"),
-            langDef: ApmUtil.getLangDefFromLanguagesArray(JSON.parse("{{languagesArray|json_encode|e('js')}}")),
-            pageTypeNames : JSON.parse('{{pageTypeNames|json_encode|e('js')}}'),
-            pagePopoverContent : '{{macros.pageviewtablepv(doc, thePages, navByPage)|escape('js')}}',
-            {#osdConfig: { {{openSeaDragonConfig|raw}} },#}
-            deepZoom: '{{ deepZoom }}' === '1'
-        })
+      new PageViewer({
+        commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
+        pageSystemId: {{pageInfo.id}},
+        docId: {{ doc }},
+        imageUrl: '{{imageUrl}}',
+        pageType: {{pageInfo.type}},
+        foliation: '{{pageInfo.foliation}}',
+        pageNumber: {{ page }},
+        seq: {{ seq }},
+        pageNumberFoliation:'{{ pageNumberFoliation }}',
+        activeColumn : JSON.parse('{{activeColumn|json_encode|e('js')}}'),
+        defaultLang: '{{pageInfo.lang}}',
+        activeWorks: JSON.parse("{{activeWorks|json_encode|e('js')}}"),
+        languagesArray: JSON.parse("{{languagesArray|json_encode|e('js')}}"),
+        pageTypeNames : JSON.parse('{{pageTypeNames|json_encode|e('js')}}'),
+        pagePopoverContent : '{{macros.pageviewtablepv(doc, thePages, navByPage)|escape('js')}}',
+        deepZoom: '{{ deepZoom }}' === '1'
+      })
     })
     </script>
 </head>

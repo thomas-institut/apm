@@ -93,7 +93,7 @@ class CollationTableDataProvider implements StandardDataProvider
         return $data;
     }
 
-    public function getUserIdsFromData($data) : array {
+    public function getUserTidsFromData($data) : array {
         // collect userIds in notes
         $people = [];
 

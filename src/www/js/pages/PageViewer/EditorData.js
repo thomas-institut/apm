@@ -16,14 +16,21 @@
  *  
  */
 
-/* global ELEMENT_LINE, ELEMENT_HEAD, ELEMENT_CUSTODES */
-/* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
-/* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
-/* global ITEM_DELETION, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE */
-/* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, ELEMENT_INVALID, ITEM_CHARACTER_GAP, ITEM_PARAGRAPH_MARK, ITEM_MATH_TEXT, TranscriptionEditor, ELEMENT_SUBSTITUTION */
+
 
 /* exported EditorData */
-class EditorData {
+import { TranscriptionEditor } from './TranscriptionEditor'
+import {
+  ELEMENT_ADDITION, ELEMENT_CUSTODES,
+  ELEMENT_GLOSS, ELEMENT_HEAD,
+  ELEMENT_INVALID,
+  ELEMENT_LINE,
+  ELEMENT_LINE_GAP, ELEMENT_PAGE_NUMBER,
+  ELEMENT_SUBSTITUTION
+} from './Element'
+import { ITEM_TEXT } from './Item'
+
+export class EditorData {
   
   static getApiDataFromQuillDelta(delta, editorInfo) {
 
@@ -48,7 +55,6 @@ class EditorData {
     /**
      * Updates item and element sequence numbers and creates a new empty Element object
      * 
-     * @returns {Element} a new Element object
      */
     function createNewElement() {
       currentItemSeq = 0
@@ -69,11 +75,7 @@ class EditorData {
     
     let curElement = createNewElement()
     
-    /**
-     * 
-     * @returns {Item} a new Item object
-     */
-    function createNewItem() {
+      function createNewItem() {
       return {
         id: -1,
         columnElementId: currentElementId,

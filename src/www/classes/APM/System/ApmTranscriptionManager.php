@@ -287,7 +287,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                 $this->cacheTracker->incrementHits();
                 $txWitness = unserialize(gzuncompress($cacheValue));
                 if ($txWitness === false) {
-                    throw new RuntimeException('Error unserializing from witness cache');
+                    throw new RuntimeException('Error un-serializing from witness cache');
                 }
                 return $txWitness;
             }

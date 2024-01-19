@@ -16,13 +16,14 @@
  *  
  */
 
-/* global Quill, TranscriptionEditor */
+import Quill from 'quill/core'
+import { TranscriptionEditor } from './TranscriptionEditor'
 
 const Inline = Quill.import('blots/inline')
 const BlockEmbed = Quill.import('blots/embed')
 const Block = Quill.import('blots/block')
 
-class LangBlot extends Inline {
+export class LangBlot extends Inline {
   static create (lang) {
     const node = super.create()
     node.setAttribute('lang', lang)
@@ -44,10 +45,11 @@ class LangBlot extends Inline {
 LangBlot.blotName = 'lang'
 LangBlot.tagName = 'em'
 LangBlot.className = 'language'
+
 Quill.register(LangBlot)
 
 
-class SimpleBlockBlot extends Block 
+export class SimpleBlockBlot extends Block
 {
   static formats()
   {
@@ -56,7 +58,7 @@ class SimpleBlockBlot extends Block
  }
 SimpleBlockBlot.tagName = 'p'
 
-class MarginalBlockBlot extends SimpleBlockBlot
+export class MarginalBlockBlot extends SimpleBlockBlot
 {
   static create(value) {
     const node = super.create(value)
@@ -92,7 +94,7 @@ class MarginalBlockBlot extends SimpleBlockBlot
   }
 }
 
-class SimpleFormatBlot extends Inline {
+export class SimpleFormatBlot extends Inline {
     static create (value) {
       const node = super.create()
       node.setAttribute('itemid', value.itemid)
@@ -153,7 +155,7 @@ SimpleFormatBlot.tagName = 'b'
 SimpleFormatBlot.title = 'Generic Format'
 
 
-class SimpleImgBlot extends BlockEmbed {
+export class SimpleImgBlot extends BlockEmbed {
   static create (value) {
     const node = super.create()
     if (SimpleImgBlot.lastId===undefined) {

@@ -32,19 +32,19 @@ interface PersonInfoProvider
 {
     /**
      * Returns the normalized version of a person's name
-     * @param int $id
+     * @param int $personTid
      * @return string
      */
-    public function getNormalizedName(int $id) : string;
+    public function getNormalizedName(int $personTid) : string;
 
     /**
      * Returns a short version of a person's name.
      * Normally this is the given name initial and the last name
      * e.g. "J. Smith"  for "Joseph Smith" but it could be something else
      * like "Arist."  for "Aristotle"
-     * @param int $id
+     * @param int $personTid
      * @return string
      */
-    public function getShortName(int $id) : string;
+    public function getShortName(int $personTid) : string;
 
 }

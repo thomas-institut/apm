@@ -17,19 +17,19 @@
  */
 
 /* eslint "no-unused-vars": "off" */
-const ELEMENT_INVALID = -1
-const ELEMENT_LINE = 1
-const ELEMENT_HEAD = 2
-const ELEMENT_GLOSS = 3
-const ELEMENT_PAGE_NUMBER = 4
-const ELEMENT_CUSTODES = 5
-const ELEMENT_NOTE_MARK = 6
-const ELEMENT_SUBSTITUTION = 7
-const ELEMENT_LINE_GAP = 8
-const ELEMENT_ADDITION = 9
+export const ELEMENT_INVALID = -1
+export const ELEMENT_LINE = 1
+export const ELEMENT_HEAD = 2
+export const ELEMENT_GLOSS = 3
+export const ELEMENT_PAGE_NUMBER = 4
+export const ELEMENT_CUSTODES = 5
+export const ELEMENT_NOTE_MARK = 6
+export const ELEMENT_SUBSTITUTION = 7
+export const ELEMENT_LINE_GAP = 8
+export const ELEMENT_ADDITION = 9
 
 
-class Element {
+export class Element {
   static getValidMarginalPlacements () {
     return [
       'margin left',

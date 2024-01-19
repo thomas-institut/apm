@@ -291,13 +291,13 @@ function getNotesHtml(notes, peopleInfo, title = 'Notes') {
 function getNoteHtml(note, peopleInfo) {
   let html = `<div class="${noteDivClass} ${langClassPrefix}en">`
   let authorShortName = 'Unknown'
-  if (peopleInfo[note.authorId] === undefined) {
+  if (peopleInfo[note.authorTid] === undefined) {
     console.warn(`No author info for user Id ${note.authorId}`)
   } else {
-    authorShortName = peopleInfo[note.authorId]['shortName']
+    authorShortName = peopleInfo[note.authorTid]['shortName']
     if (authorShortName === undefined) {
       //console.warn(`No short name defined for author ${note.authorId}`)
-      authorShortName = peopleInfo[note.authorId]['name']
+      authorShortName = peopleInfo[note.authorTid]['name']
     }
   }
 

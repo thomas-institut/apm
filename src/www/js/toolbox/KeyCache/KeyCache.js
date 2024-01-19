@@ -35,7 +35,7 @@ export class KeyCache {
    */
   constructor (dataId = '') {
     this.cache = {};
-    this.dataId = dataId;
+    this.defaultDataId = dataId;
   }
 
   /**
@@ -45,15 +45,19 @@ export class KeyCache {
    * that number of seconds the key/value pair will
    * no longer be accessible.
    *
+   * If the given dataId parameter is null, the default dataId is used,
+   * o
+   *
    * @param {string}key
    * @param {any}data
    * @param {number}ttl
+   * @param {string|null}dataId
    */
-  store(key, data, ttl = 0) {
+  store(key, data, ttl = 0, dataId = null) {
     let now = this.now()
     this.storeItemObject(key, {
       data: data,
-      dataId: this.dataId,
+      dataId: dataId ?? this.defaultDataId,
       expires: ttl > 0 ? now + ttl : -1,
       setAt: now
     })
@@ -62,17 +66,20 @@ export class KeyCache {
   /**
    * Retrieves an item from the cache.
    *
-   * If the key is not defined in the cache, returns null
+   * Returns null if the key is not defined in the cache, the stored data is expired or
+   * the stored data's dataId does not match the given dataId (or the default dataId if the
+   * given one is null)
    *
-   * @param key
+   * @param {string }key
+   * @param {string | null} dataId
    * @return {*|null}
    */
-  retrieve(key) {
+  retrieve(key, dataId = null) {
     let itemData = this.getItemObject(key)
     if (itemData === undefined || itemData === null)  {
       return null
     }
-    if (itemData['dataId'] === this.dataId) {
+    if (itemData['dataId'] === (dataId ?? this.defaultDataId)) {
       if (itemData.expires === -1) {
         return itemData.data
       }
@@ -106,7 +113,7 @@ export class KeyCache {
     let now = this.now();
     this.getKeys().forEach( (key) => {
       let itemObject = this.getItemObject(key)
-      if (itemObject['dataId'] !== this.dataId) {
+      if (itemObject['dataId'] !== this.defaultDataId) {
         this.delete(key);
       }
       if (itemObject.expires < now) {

@@ -29,6 +29,7 @@ import {CollapseToggleButton} from '../widgets/CollapseToggleButton'
 import { ConfirmDialog } from './common/ConfirmDialog'
 import { ApmPage } from './ApmPage'
 import { urlGen } from './common/SiteUrlGen'
+import { ApmUtil } from '../ApmUtil'
 
 
 const convertToEditionIcon = '<i class="fas fa-file-alt"></i>'

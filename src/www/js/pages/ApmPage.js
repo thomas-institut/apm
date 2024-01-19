@@ -2,12 +2,13 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { setBaseUrl } from './common/SiteUrlGen'
 import { ApmDataProxy } from './common/ApmDataProxy'
 import { setSiteLanguage, SiteLang } from './common/SiteLang'
+import { WebStorageKeyCache } from '../toolbox/KeyCache/WebStorageKeyCache'
 
 export class ApmPage {
 
   constructor (options) {
     let optionsChecker = new OptionsChecker({
-      context: 'NormalPage',
+      context: 'ApmPage',
       optionsDefinition: {
         commonData: {
           required: true,
@@ -29,11 +30,19 @@ export class ApmPage {
     let cleanOptions = optionsChecker.getCleanOptions(options)
     this.commonData = cleanOptions.commonData
     setBaseUrl(this.commonData.baseUrl);
+
+    /**
+     * Use userTid instead
+     * @var {int} userId
+     * @deprecated
+     */
     this.userId = this.commonData.userInfo['id'];
     this.userTid = this.commonData.userInfo['tid'];
     this.userName = this.commonData.userInfo.userName;
 
-    this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId)
+    this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId);
+    this.localCache = new WebStorageKeyCache('local', this.commonData.cacheDataId);
+    this.sessionCache = new WebStorageKeyCache('session', this.commonData.cacheDataId);
 
     this.showLanguageSelector = this.commonData.showLanguageSelector
     if (this.showLanguageSelector) {

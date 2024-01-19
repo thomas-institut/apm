@@ -149,24 +149,27 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
      * @param bool $withBaseData
      * @return ResponseInterface
      */
-    protected function renderPage(ResponseInterface $response, string $template, array $data, bool $withBaseData = true): ResponseInterface
+    protected function renderPage(ResponseInterface $response,
+                                  string $template, array $data,
+                                  bool $withBaseData = true, bool $includeLegacyData = true): ResponseInterface
     {
 
         if ($withBaseData) {
-            // legacy data for old code pages
-            // this will disappear eventually
-            $data['copyright']  = $this->getCopyrightNotice();
-            $data['baseurl'] = $this->getBaseUrl();
-            $data['userAuthenticated'] = $this->userAuthenticated;
-            $data['userInfo'] = [];
-            $data['userId'] = -1;
-            $data['userTid'] = -1;
-            if ($this->userAuthenticated) {
-                $data['userInfo'] = $this->userInfo;
-                $data['userId'] = $this->userInfo['id'];
-                $data['userTid'] = $this->userInfo['tid'];
+            if ($includeLegacyData) {
+                // legacy data for old code pages
+                // this will disappear eventually
+                $data['copyright']  = $this->getCopyrightNotice();
+                $data['baseurl'] = $this->getBaseUrl();
+                $data['userAuthenticated'] = $this->userAuthenticated;
+                $data['userInfo'] = [];
+                $data['userId'] = -1;
+                $data['userTid'] = -1;
+                if ($this->userAuthenticated) {
+                    $data['userInfo'] = $this->userInfo;
+                    $data['userId'] = $this->userInfo['id'];
+                    $data['userTid'] = $this->userInfo['tid'];
+                }
             }
-
             // Data for new code pages (e.g. ApmPage js class descendants)
             $commonData = [];
             $commonData['appName'] = $this->config[ApmConfigParameter::APP_NAME];
@@ -174,7 +177,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             $commonData['copyrightNotice'] = $this->config[ApmConfigParameter::COPYRIGHT_NOTICE];
             $commonData['renderTime'] =  date("Y-M-d, H:i:s T");
             $commonData['cacheDataId'] = $this->config[ApmConfigParameter::JS_APP_CACHE_DATA_ID];
-            $commonData['userInfo'] = $data['userInfo'];
+            $commonData['userInfo'] = $this->userInfo;
             $commonData['showLanguageSelector'] = $this->config[ApmConfigParameter::SITE_SHOW_LANGUAGE_SELECTOR];
             $commonData['baseUrl'] = $this->getBaseUrl();
 

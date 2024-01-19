@@ -11,6 +11,7 @@ module.exports = {
     DocDefPages: './pages/DocDefPages.js',
     DocEditPage: './pages/DocEditPage.js',
     DocNewDocPage: './pages/DocNewDocPage.js',
+    PageViewer: './pages/PageViewer/PageViewer.js',
     CollationTableEditor: './pages/CollationTableEditor.js',
     EditionComposer: {
       import: './EditionComposer/EditionComposer.js',
@@ -28,7 +29,6 @@ module.exports = {
     MceComposer: {
       import: './MceComposer/MceComposer.js',
       filename: 'MceComposer.bundle.js',
-      // dependOn: 'QuillPack',
     },
     AutomaticCollationTable: './pages/AutomaticCollationTable/AutomaticCollationTable.js',
     ChunkPage: './pages/ChunkPage.js',

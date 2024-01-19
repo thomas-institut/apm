@@ -16,14 +16,11 @@
  *  
  */
 
-/*eslint-env es6*/
-/*eslint-env jquery*/
 
-/*eslint no-var: "error"*/
-/*eslint default-case: "error"*/
-/*eslint no-console: ["error", { allow: ["warn", "error"] }] */
-
-/* global Twig, Quill, _, EditorData, NoWordBreakBlot */
+import Quill from 'quill/core'
+import { SimpleBlockBlot } from './TranscriptionEditorBlots'
+import { EditorData } from './EditorData'
+import { configureTranscriptionEditorBlots } from './TranscriptionEditorBlotConfig'
 
 const validAppellations = {
   la: [
@@ -76,7 +73,7 @@ const validAppellations = {
  * 
  * Implementation of the transcription editor
  */
-class TranscriptionEditor
+export class TranscriptionEditor
 {
   
   /**
@@ -106,7 +103,7 @@ class TranscriptionEditor
     this.lastSelectedWorkId = this.activeWorks[0].dareId
     this.chunkNumberEntered = 1
     this.containerElement = $('#' + this.options.containerId)
-    // Default hand Id is always 0!
+    // Default hand id is always 0!
     this.handId = 0
     
     this.minItemId = 0
@@ -384,7 +381,6 @@ class TranscriptionEditor
    * parameters not specified by the user.
    * 
    * @param {object} userOptions
-   * @returns {TranscriptionEditor.getOptions.options}
    */
   static getOptions(userOptions) {
     let options = userOptions
@@ -408,7 +404,7 @@ class TranscriptionEditor
       options.people[1] = { name: 'Editor 1'}
     }
     // editorId: int
-    // the Id of the transcriber
+    // the id of the transcriber
     if (options.editorId === undefined) {
       options.editorId = 1 // 
     }
@@ -486,11 +482,11 @@ class TranscriptionEditor
       $('#editor-container-container-' + this.id).removeClass(l + '-text')
     }
 
-    $('#lang-button-' + this.id).attr('title', langDef[lang].name)
-    $('#lang-button-' + this.id).html(lang)
+    $('#lang-button-' + this.id)
+      .attr('title', langDef[lang].name)
+      .html(lang)
     this.defaultLang = lang
     this.setEditorMargin()
-
   }
 
   getParagraphType(p)
@@ -2684,14 +2680,13 @@ class TranscriptionEditor
     TranscriptionEditor.events.push(eventName)
   }
 
+  /**
+   *
+   * @param {number}id
+   * @param {TranscriptionEditor}editorObject
+   */
   static registerEditorInstance(id, editorObject) 
   {
-    if (TranscriptionEditor.editors === undefined) {
-      TranscriptionEditor.editors = []
-    }
-    if (TranscriptionEditor.editorsById === undefined) {
-      TranscriptionEditor.editorsById = []
-    }
     TranscriptionEditor.editors.push(editorObject)
     TranscriptionEditor.editorsById[id] = editorObject
   }
@@ -2827,7 +2822,21 @@ class TranscriptionEditor
   static init(baseUrl)
   {
 
-    TranscriptionEditor.baseUrl = baseUrl
+    /**
+     * @var {string}
+     */
+    TranscriptionEditor.baseUrl = baseUrl;
+    /**
+     *
+     * @type {TranscriptionEditor[]}
+     */
+    TranscriptionEditor.editors = [];
+    /**
+     *
+     * @type {TranscriptionEditor[]}
+     */
+    TranscriptionEditor.editorsById = [];
+
     TranscriptionEditor.registerEvent('editor-enable')
     TranscriptionEditor.registerEvent('editor-disable')
     TranscriptionEditor.registerEvent('editor-save')
@@ -3154,6 +3163,7 @@ class TranscriptionEditor
 </div>
 `
     })
+    configureTranscriptionEditorBlots();
   }
 }
 

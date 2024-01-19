@@ -16,8 +16,6 @@
  *
  */
 
-
-import * as Popper from '@popperjs/core'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { NormalPage } from './NormalPage'
 import { urlGen } from './common/SiteUrlGen'
@@ -27,6 +25,7 @@ import { trimWhiteSpace } from '../toolbox/Util.mjs'
 import { Tid } from '../Tid/Tid'
 import { PageArray } from './common/PageArray'
 import { MultiToggle } from '../widgets/MultiToggle'
+import { ApmUtil } from '../ApmUtil'
 
 export class DocPage extends NormalPage {
   constructor(options) {

@@ -20,6 +20,9 @@
 namespace APM\ToolBox;
 
 
+/**
+ * A collection of methods to analyze modern given names
+ */
 class FullName
 {
     /**
@@ -39,7 +42,7 @@ class FullName
         $names = [];
         for ($i = 0; $i < count($words); $i++) {
             $name = $words[$i];
-            if (array_search($words[$i], $commonPrefixes)!== false){
+            if (in_array($words[$i], $commonPrefixes)){
                 if (isset($words[$i+1])) {
                     $name .= ' ' . $words[$i+1];
                     $i++;

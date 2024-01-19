@@ -190,10 +190,11 @@ class SiteCollationTable extends SiteController
 
         foreach($ctData['witnesses'] as $witness) {
             if ($witness['witnessType'] === WitnessType::FULL_TRANSCRIPTION) {
-                foreach($witness['items']  as $item) {
+                foreach($witness['items']  as $i => $item) {
                     if (isset($item['notes'])) {
+                        $this->logger->debug("Found notes in witness " . $witness['ApmWitnessId'] . ", item $i");
                         foreach($item['notes'] as $note) {
-                            $authors[] = $note['authorTid'];
+                            $authors[] = $note['authorTid'] ?? $note['authorId'] ;
                         }
                     }
                 }

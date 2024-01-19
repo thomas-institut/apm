@@ -42,23 +42,15 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
     const CACHE_TYPE_PAGE_NUMBER = 'PN';
     const CACHE_TYPE_PAGE_SEQUENCE = 'SEQ';
 
-    /**
-     * @var UnitemporalDataTable
-     */
-    private $pagesDataTable;
 
-    /**
-     * @var InMemoryDataCache
-     */
-    private $localMemCache;
+    private UnitemporalDataTable $pagesDataTable;
+    private InMemoryDataCache $localMemCache;
 
     public function __construct(UnitemporalDataTable $pagesDataTable, LoggerInterface $logger)
     {
         $this->setLogger($logger);
         $this->resetError();
-
         $this->pagesDataTable = $pagesDataTable;
-
         $this->localMemCache = new InMemoryDataCache();
     }
 
@@ -73,8 +65,8 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
             $cacheHit = false;
         }
 
-        if ($cacheHit) {
-            return $pageInfo;
+        if ($cacheHit && isset($pageInfo)) {
+            return $pageInfo ;
         }
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
@@ -101,7 +93,7 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
             $cacheHit = false;
         }
 
-        if ($cacheHit) {
+        if ($cacheHit && isset($pageInfo)) {
             return $pageInfo;
         }
 
@@ -140,12 +132,12 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
         uasort($pageInfoArray, function ($a, $b) {
             /** @var $a PageInfo */
             /** @var $b PageInfo */
-            return $this->compareInts($a->sequence, $b->sequence);
+            return $this->compareIntegers($a->sequence, $b->sequence);
         } );
         return $pageInfoArray;
     }
 
-    private function compareInts(int $a, int $b) : int {
+    private function compareIntegers(int $a, int $b) : int {
         if ($a === $b) {
             return 0;
         }

@@ -18,31 +18,31 @@
 
 /* eslint "no-unused-vars": "off" */
 
-const ITEM_TEXT = 1
-const ITEM_RUBRIC = 2
-const ITEM_SIC = 3
-const ITEM_UNCLEAR = 4
-const ITEM_ILLEGIBLE = 5
-const ITEM_GLIPH = 6
-const ITEM_ADDITION = 7
-const ITEM_DELETION = 8
-const ITEM_MARK = 9
-const ITEM_NO_WORD_BREAK = 10
-const ITEM_ABBREVIATION = 11
-const ITEM_LINE_BREAK = 12
-const ITEM_INITIAL = 13
-const ITEM_CHUNK_MARK = 14
-const ITEM_CHARACTER_GAP = 15
-const ITEM_PARAGRAPH_MARK = 16
-const ITEM_MATH_TEXT = 17
-const ITEM_MARGINAL_MARK = 18
-const ITEM_BOLD = 19
-const ITEM_ITALIC = 20
-const ITEM_HEADING = 21
-const ITEM_CHAPTER_MARK = 22
-const ITEM_UNSUPPORTED = 9999
+export const ITEM_TEXT = 1
+export const ITEM_RUBRIC = 2
+export const ITEM_SIC = 3
+export const ITEM_UNCLEAR = 4
+export const ITEM_ILLEGIBLE = 5
+export const ITEM_GLIPH = 6
+export const ITEM_ADDITION = 7
+export const ITEM_DELETION = 8
+export const ITEM_MARK = 9
+export const ITEM_NO_WORD_BREAK = 10
+export const ITEM_ABBREVIATION = 11
+export const ITEM_LINE_BREAK = 12
+export const ITEM_INITIAL = 13
+export const ITEM_CHUNK_MARK = 14
+export const ITEM_CHARACTER_GAP = 15
+export const ITEM_PARAGRAPH_MARK = 16
+export const ITEM_MATH_TEXT = 17
+export const ITEM_MARGINAL_MARK = 18
+export const ITEM_BOLD = 19
+export const ITEM_ITALIC = 20
+export const ITEM_HEADING = 21
+export const ITEM_CHAPTER_MARK = 22
+export const ITEM_UNSUPPORTED = 9999
 
-class Item {
+export class Item {
 
   static getValidDeletionTechniques () {
     return [

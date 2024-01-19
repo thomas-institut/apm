@@ -301,12 +301,15 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
 
     // PAGE VIEWER / TRANSCRIPTION EDITOR
     $group->get('/doc/{doc}/realpage/{page}/view',
-        SitePageViewer::class . ':pageViewerPageByDocPage')
-        ->setName('pageviewer.docpage');
+        function(Request $request, Response $response) use ($container){
+            $c = new SitePageViewer($container);
+            return $c->pageViewerPageByDocPage($request, $response);
+        })->setName('pageviewer.docpage');
 
-    $group->get('/doc/{doc}/page/{seq}/view[/c/{col}]',
-        SitePageViewer::class . ':pageViewerPageByDocSeq')
-        ->setName('pageviewer.docseq');
+    $group->get('/doc/{doc}/page/{seq}/view[/c/{col}]', function(Request $request, Response $response) use ($container){
+        $c = new SitePageViewer($container);
+        return $c->pageViewerPageByDocSeq($request, $response);
+    })->setName('pageviewer.docseq');
 
 })->add( function(Request $request, RequestHandlerInterface $handler) use($container){
     $authenticator = new Authenticator($container);

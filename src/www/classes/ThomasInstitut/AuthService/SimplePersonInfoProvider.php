@@ -31,14 +31,10 @@ class SimplePersonInfoProvider implements PersonInfoProvider
 {
 
     const DEFAULT_PREFIX = 'Person ';
-    /**
-     * @var string
-     */
-    private $prefix;
-    /**
-     * @var string
-     */
-    private $prefixInitial;
+
+    private string $prefix;
+
+    private string $prefixInitial;
 
     public function __construct(string $prefix = self::DEFAULT_PREFIX)
     {
@@ -50,13 +46,13 @@ class SimplePersonInfoProvider implements PersonInfoProvider
         }
     }
 
-    public function getNormalizedName(int $id): string
+    public function getNormalizedName(int $personTid): string
     {
-       return  $this->prefix  . $id;
+       return  $this->prefix  . $personTid;
     }
 
-    public function getShortName(int $id): string
+    public function getShortName(int $personTid): string
     {
-        return $this->prefixInitial . $id;
+        return $this->prefixInitial . $personTid;
     }
 }

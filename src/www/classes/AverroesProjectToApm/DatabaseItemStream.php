@@ -25,10 +25,7 @@ use APM\Core\Item\MarkType;
 use APM\Core\Item\TextualItem;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item as ApItem;
-use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
-use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\CodeDebug\PrintCodeDebugTrait;
 
 

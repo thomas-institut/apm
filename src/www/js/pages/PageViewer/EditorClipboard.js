@@ -19,10 +19,12 @@
 
 /* global Quill */
 
+import Quill from 'quill/core'
+
 const Clipboard = Quill.import('modules/clipboard')
 const Delta = Quill.import('delta')
 
-class EditorClipboard extends Clipboard {
+export class EditorClipboard extends Clipboard {
   convert(html = null) {
     if (typeof html === 'string') {
       this.container.innerHTML = html;

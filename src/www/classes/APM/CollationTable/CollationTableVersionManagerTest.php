@@ -6,6 +6,7 @@ namespace APM\CollationTable;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use ThomasInstitut\TimeString\InvalidTimeZoneException;
 use ThomasInstitut\TimeString\TimeString;
 
 /**
@@ -126,6 +127,9 @@ class CollationTableVersionManagerTest extends TestCase
         $this->assertTrue($exceptionCaught);
     }
 
+    /**
+     * @throws InvalidTimeZoneException
+     */
     public function testRegistrations() {
 
         $testCollationTableId = 102;

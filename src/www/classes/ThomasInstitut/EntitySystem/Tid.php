@@ -3,6 +3,7 @@
 namespace ThomasInstitut\EntitySystem;
 
 use RuntimeException;
+use ThomasInstitut\TimeString\InvalidTimeZoneException;
 use ThomasInstitut\TimeString\TimeString;
 
 /**
@@ -94,8 +95,12 @@ class Tid
         $strTid = strval($tid);
         $secondsTimeStamp = intval(substr($strTid, 0, strlen($strTid) -3));
         $milliseconds = intval(substr($strTid, -3));
-        $ts = TimeString::fromTimeStamp($secondsTimeStamp);
-        return sprintf("%s.%03d000", substr($ts, 0, strlen($ts) -7), $milliseconds);
+        try {
+            $ts = TimeString::fromTimeStamp($secondsTimeStamp);
+        } catch (InvalidTimeZoneException) {
+            // should never happen
+        }
+        return sprintf("%s.%03d000", substr($ts ?? TimeString::TIME_ZERO, 0, strlen($ts ?? TimeString::TIME_ZERO) -7), $milliseconds);
     }
 
     /**

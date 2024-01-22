@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b991e86125e51ef37125caaf10c34cd2",
+    "content-hash": "86a1149ba3f77b8c7be70f40c7f9e8e0",
     "packages": [
         {
             "name": "dflydev/fig-cookies",
@@ -2034,23 +2034,23 @@
         },
         {
             "name": "thomas-institut/timestring",
-            "version": "v1.2",
+            "version": "v1.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thomas-institut/timestring.git",
-                "reference": "6e047be8c99247b0f8030f3c7afbe801ba76370f"
+                "reference": "5868dc0c1893cd080477a8e55a93b2a66099f3e6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thomas-institut/timestring/zipball/6e047be8c99247b0f8030f3c7afbe801ba76370f",
-                "reference": "6e047be8c99247b0f8030f3c7afbe801ba76370f",
+                "url": "https://api.github.com/repos/thomas-institut/timestring/zipball/5868dc0c1893cd080477a8e55a93b2a66099f3e6",
+                "reference": "5868dc0c1893cd080477a8e55a93b2a66099f3e6",
                 "shasum": ""
             },
             "require": {
-                "php": ">=7.1"
+                "php": ">=8.1"
             },
             "require-dev": {
-                "phpunit/phpunit": "^8.4"
+                "phpunit/phpunit": "^10.5.7"
             },
             "type": "library",
             "autoload": {
@@ -2065,8 +2065,7 @@
             "authors": [
                 {
                     "name": "Rafael Nájera",
-                    "email": "rafael.najera@uni-koeln.de",
-                    "homepage": "http://rafaelnajera.com"
+                    "email": "rafael.najera@uni-koeln.de"
                 }
             ],
             "description": "Dealing with MySql datetime strings with microseconds",
@@ -2075,9 +2074,9 @@
             ],
             "support": {
                 "issues": "https://github.com/thomas-institut/timestring/issues",
-                "source": "https://github.com/thomas-institut/timestring/tree/v1.2"
+                "source": "https://github.com/thomas-institut/timestring/tree/v1.3"
             },
-            "time": "2020-03-06T09:38:50+00:00"
+            "time": "2024-01-22T11:17:48+00:00"
         },
         {
             "name": "twig/twig",
@@ -3029,16 +3028,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "10.5.7",
+            "version": "10.5.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "e5c5b397a95cb0db013270a985726fcae93e61b8"
+                "reference": "08f4fa74d5fbfff1ef22abffee47aaedcaea227e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/e5c5b397a95cb0db013270a985726fcae93e61b8",
-                "reference": "e5c5b397a95cb0db013270a985726fcae93e61b8",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/08f4fa74d5fbfff1ef22abffee47aaedcaea227e",
+                "reference": "08f4fa74d5fbfff1ef22abffee47aaedcaea227e",
                 "shasum": ""
             },
             "require": {
@@ -3110,7 +3109,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/10.5.7"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/10.5.8"
             },
             "funding": [
                 {
@@ -3126,7 +3125,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-01-14T16:40:30+00:00"
+            "time": "2024-01-19T07:07:27+00:00"
         },
         {
             "name": "psr/http-client",
@@ -4228,5 +4227,5 @@
         "ext-posix": "*"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.3.0"
 }

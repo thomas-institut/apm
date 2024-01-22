@@ -9,6 +9,7 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\GenericDataTable;
+use ThomasInstitut\TimeString\InvalidTimeZoneException;
 use ThomasInstitut\TimeString\TimeString;
 
 class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
@@ -47,6 +48,7 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
 
     }
 
+
     public function scheduleJob(string $name, string $description, array $payload, int $secondsToWait = 0, int $maxAttempts = 1, int $secondBetweenRetries = 5): int
     {
         if (!$this->isRegistered($name)) {
@@ -54,13 +56,20 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
             return -1;
         }
         $timeStampNow = microtime(true);
+        try {
+            $nextRetry = TimeString::fromTimeStamp($timeStampNow + $secondsToWait);
+            $scheduledAt = TimeString::fromTimeStamp($timeStampNow);
+        } catch (InvalidTimeZoneException $e) {
+            // should never happen!
+        }
+
         $row = [
             'name' => $name,
             'description' => $description,
             'payload' => serialize($payload),
             'state'=> ScheduledJobState::WAITING,
-            'next_retry_at' => TimeString::fromTimeStamp($timeStampNow + $secondsToWait),
-            'scheduled_at' => TimeString::fromTimeStamp($timeStampNow),
+            'next_retry_at' => $nextRetry ?? TimeString::TIME_ZERO,
+            'scheduled_at' => $scheduledAt ?? TimeString::now(),
             'max_attempts' => $maxAttempts,
             'secs_between_retries' => $secondBetweenRetries,
             'completed_runs' => 0
@@ -76,11 +85,17 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
             return -1;
         }
         $timeStampNow = microtime(true);
+        try {
+            $nextRetry = TimeString::fromTimeStamp($timeStampNow + $secondsToWait);
+            $scheduledAt = TimeString::fromTimeStamp($timeStampNow);
+        } catch (InvalidTimeZoneException $e) {
+            // should never happen!
+        }
         $row = [
             'id' => $jobId,
             'state'=> ScheduledJobState::WAITING,
-            'next_retry_at' => TimeString::fromTimeStamp($timeStampNow + $secondsToWait),
-            'scheduled_at' => TimeString::fromTimeStamp($timeStampNow),
+            'next_retry_at' => $nextRetry ?? TimeString::TIME_ZERO,
+            'scheduled_at' => $scheduledAt ?? TimeString::now(),
             'completed_runs' => 0
         ];
 

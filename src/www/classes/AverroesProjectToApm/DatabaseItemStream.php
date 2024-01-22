@@ -27,6 +27,8 @@ use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item as ApItem;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\PrintCodeDebugTrait;
+use ThomasInstitut\TimeString\InvalidTimeZoneException;
+use ThomasInstitut\TimeString\MalformedStringException;
 
 
 /**
@@ -63,6 +65,8 @@ class DatabaseItemStream implements  CodeDebugInterface{
      * @param string $defaultLang
      * @param array $edNotes
      * @param bool $debugMode
+     * @throws InvalidTimeZoneException
+     * @throws MalformedStringException
      */
     public function __construct(int $docId, array $itemSegments, string $defaultLang = 'la', array $edNotes = [], bool $debugMode = false) {
         $this->items = [];
@@ -89,7 +93,7 @@ class DatabaseItemStream implements  CodeDebugInterface{
                 $ceId = intval($row['ce_id']);
                 
                 if ($ceId !== $previousElementId && $address->getTbIndex() === $previousTbIndex) {
-                    // a change of element within the same text box: most of the times
+                    // a change of element within the same text box
                     // this is a change from a line to another line
                     // need to insert a "ghost" item into the item stream to account for line and text box breaks
                     // the address should be fake
@@ -176,12 +180,13 @@ class DatabaseItemStream implements  CodeDebugInterface{
     }
     
     /**
-     * Searches the item stream for an item with the given item Id
+     * Searches the item stream for an item with the given item id
      * 
      * @param int $itemId
      * @return boolean
      */
-    public function getItemById(int $itemId) {
+    public function getItemById(int $itemId): bool
+    {
         foreach($this->items as $item) {
             if ($item->getAddress()->getItemIndex() === $itemId) {
                 return $item->getItem();
@@ -190,7 +195,8 @@ class DatabaseItemStream implements  CodeDebugInterface{
         return false;
     }
     
-    private function findNoteIndexesById(array $noteArrayFromDb, int $id) {
+    private function findNoteIndexesById(array $noteArrayFromDb, int $id): array
+    {
         $indexes = [];
         foreach ($noteArrayFromDb as $index => $note) {
             $noteTarget = isset($note['target']) ? (int) $note['target'] : -1;

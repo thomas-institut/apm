@@ -30,6 +30,8 @@ use AverroesProject\TxText\ChapterMark as AP_ChapterMark;
 use AverroesProject\TxText\Item as AP_Item;
 use AverroesProject\ColumnElement\Element;
 use APM\Core\Item\Note as ItemNote;
+use ThomasInstitut\TimeString\InvalidTimeZoneException;
+use ThomasInstitut\TimeString\MalformedStringException;
 use ThomasInstitut\TimeString\TimeString;
 
 /**
@@ -191,7 +193,11 @@ class ItemStreamItemFactory {
         }
         return $item;
     }
-    
+
+    /**
+     * @throws MalformedStringException
+     * @throws InvalidTimeZoneException
+     */
     public function createItemNoteFromRow(array $row): ItemNote
     {
 

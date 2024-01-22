@@ -6,6 +6,7 @@ namespace APM\FullTranscription;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use ThomasInstitut\TimeString\InvalidTimeZoneException;
 use ThomasInstitut\TimeString\TimeString;
 
 /**
@@ -138,6 +139,9 @@ class ColumnVersionManagerTest extends TestCase
         $this->assertTrue($exceptionCaught);
     }
 
+    /**
+     * @throws InvalidTimeZoneException
+     */
     public function testRegistrations() {
 
         $testPageId = 10;

@@ -17,7 +17,6 @@ export class MetadataEditor {
             callback: {type:'function', required: true},
             theme: {type:'string', required: true},
             backlink: {type:'string', required: false, default: ''},
-            hideSaveButton: {type:'boolean', default: false},
             dialog: {type: 'object', required: false, default: {}},
             dialogRootMetadataEditor: {type: 'object', required: false, default: {}},
             dialogRootInputFormSelector: {type:'string', required: false, default: ''},
@@ -32,7 +31,7 @@ export class MetadataEditor {
         // Globals
         this.entity = {id: '', type: '', keys: [], values: [], types: []}
         this.numKeys = 0
-        this.mode = {create: 'create', edit: 'edit', show: 'show'}
+        this.mode = {create: 'create', edit: 'edit', show: 'show', dialog: 'dialog'}
         this.tagEditor = undefined
         this.singleEdit = false
         this.people = []
@@ -53,6 +52,9 @@ export class MetadataEditor {
                     break
                 case this.mode.show:
                     this.setupShowMode()
+                    break
+                case this.mode.dialog:
+                    this.setupDialogMode()
                     break
             }
         })
@@ -107,10 +109,8 @@ export class MetadataEditor {
         this.buildEntitySchema(() => {
             this.makeTableStructure()
             this.setupTableForDataInput(() => {
-                if (!this.options.hideSaveButton) {
-                    this.setupSaveButton()
-                    this.makeBackButton()
-                }
+                this.setupSaveButton()
+                this.makeBackButton()
                 console.log(`create-mode for new entity of type '${this.entity.type}' activated.`)
             })
         })
@@ -124,6 +124,18 @@ export class MetadataEditor {
             this.setupBackAndEditButton()
             this.showMetadata()
             console.log(`show-mode for metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} activated.`)
+        })
+    }
+
+    setupDialogMode() {
+        this.options.mode = this.mode.dialog
+
+        this.buildEntitySchema(() => {
+            this.makeTableStructure()
+            this.setupSaveButton()
+            this.setupTableForDataInput(() => {
+                console.log(`create-mode for new entity of type '${this.entity.type}' activated.`)
+            })
         })
     }
 
@@ -296,12 +308,13 @@ export class MetadataEditor {
                 $(selector).append(value)
 
             } else if (type.includes('tags')) {
+                let tagEditorId = 'tag-editor-' + (1 + Math.floor( Math.random() * 10000))
                 let te = new TagEditor({
                     containerSelector: selector,
+                    idPrefix: tagEditorId,
                     tags: value,
                     mode: 'show'
                 })
-
             } else if (type.includes('date')) {
                 value = this.formatDate(value)
                 $(selector).append(value)
@@ -358,7 +371,7 @@ export class MetadataEditor {
 
         this.setupInputFormByIndex(keyIndex)
 
-        if (this.options.mode === this.mode.create) {
+        if (this.options.mode === this.mode.create || this.options.mode === this.mode.dialog) {
             callback()
         }
         else {
@@ -453,7 +466,7 @@ export class MetadataEditor {
         inputId = this.options.containerSelector + ' .' + inputId
         paragraphSelector = this.options.containerSelector + ' .' + paragraphSelector
 
-        if (!(this.options.dialog instanceof ConfirmDialog)) {
+        if (!(this.options.mode === this.mode.dialog)) {
             dialog = this.makeDialog(inputId)
         } else {
             $(inputId).on('focus', () => {
@@ -532,7 +545,7 @@ export class MetadataEditor {
             callback: (data, mode, callback) => {
                 this.savePersonData(data, mode, callback)
             },
-            mode: 'create',
+            mode: 'dialog',
             theme: 'vertical',
             dialog: dialog,
             dialogRootMetadataEditor: this,
@@ -713,7 +726,7 @@ export class MetadataEditor {
                     //this.tagEditor.saveTags()
                     this.options.callback(this.entity, this.options.mode, () => {
                         this.logSaveAction(this.options.mode)
-                        if (this.options.dialog instanceof ConfirmDialog) {
+                        if (this.options.mode === this.mode.dialog) {
                             this.copyValueFromDialog(d.id)
                             this.options.dialog.hide()
                             this.options.dialog.destroy()
@@ -872,7 +885,6 @@ export class MetadataEditor {
         } else if (type.includes('tags')) {
             return this.tagEditor.getTags()
         } else if (type.includes('person')) {
-            //this.datalistSelector = this.options.containerSelector + " #entity_attr" + keyIndex + "_form_list"
             let person_id
             try {
                 person_id = $(`${this.datalistSelector} option[value=${value}]`).attr('id')
@@ -1141,7 +1153,7 @@ export class MetadataEditor {
         if (mode === this.mode.edit) {
             console.log(`Saved alterations of entity with ID ${this.entity.id}.`)
         }
-        else if (mode === this.mode.create) {
+        else if (mode === this.mode.create || mode === this.mode.dialog) {
             console.log(`Created new entity of type '${this.entity.type}' with ID ${this.entity.id}.`)
         }
     }

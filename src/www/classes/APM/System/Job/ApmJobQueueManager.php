@@ -206,6 +206,8 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         ], DataTable::SEARCH_OR);
 
         $this->logger->info(sprintf("Deleting %d finished jobs from queue", count($jobsToClean)));
+
+        // TODO: find a way to optimize this
         foreach ($jobsToClean as $jobRow) {
             $this->dataTable->deleteRow($jobRow['id']);
         }

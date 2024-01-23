@@ -4,6 +4,7 @@ namespace APM\CommandLine\Migration31to32;
 
 use APM\CommandLine\CommandLineUtility;
 use APM\System\ApmMySqlTableName;
+use DateTime;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\EntitySystem\Tid;
 
@@ -40,7 +41,7 @@ class GenerateTids extends CommandLineUtility
         $docTableName =  $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_DOCS];
         $dataTablesToCheckForTidUsage[] = new MySqlDataTable($dbConn, $docTableName, true);
 
-        $dt = \DateTime::createFromFormat("Y-m-d H:i:s.u", self::baseTimeString);
+        $dt = DateTime::createFromFormat("Y-m-d H:i:s.u", self::baseTimeString);
         $baseTimestamp1000 = intval($dt->format('Uv'));
         $nowTimestamp1000 = round(microtime(true) * 1000);
         print "Base timestamp is $baseTimestamp1000, now is $nowTimestamp1000\n";

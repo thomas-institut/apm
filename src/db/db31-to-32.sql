@@ -160,6 +160,8 @@ ALTER TABLE `ap_users` MODIFY COLUMN `username` VARCHAR(128) NOT NULL;
 -- reset system cache
 TRUNCATE `ap_system_cache`;
 
+-- Convert all database TimeString fields to UTC : this will take a very long time
+-- RUN: convert_time_strings doIt
 
 -- Finally, update version number
 UPDATE `ap_settings` SET `value` = '32' WHERE `ap_settings`.`setting` = 'DatabaseVersion';

@@ -309,7 +309,7 @@ export class MetadataEditor {
 
             } else if (type.includes('tags')) {
                 let tagEditorId = 'tag-editor-' + (1 + Math.floor( Math.random() * 10000))
-                let te = new TagEditor({
+                this.tagEditor = new TagEditor({
                     containerSelector: selector,
                     idPrefix: tagEditorId,
                     tags: value,
@@ -902,6 +902,7 @@ export class MetadataEditor {
             return this.getDataForYearsRange(selector, value)
 
         } else if (type.includes('tags')) {
+            console.log(this.tagEditor.getTags())
             return this.tagEditor.getTags()
         } else if (type.includes('person')) {
             let person_id

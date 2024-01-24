@@ -1,5 +1,5 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
-import { trimWhiteSpace } from '../toolbox/Util.mjs'
+import {deepCopy, trimWhiteSpace} from '../toolbox/Util.mjs'
 
 
 const cacheKeyPrefix = 'apm-tag_hints'
@@ -31,6 +31,8 @@ export class TagEditor {
 
     this.idPrefix = this.options.idPrefix;
 
+    this.tags = deepCopy(this.options.tags)
+
     switch (this.options.mode) {
       case 'edit':
         this.setupEditMode();
@@ -44,7 +46,7 @@ export class TagEditor {
 
   setTags(tags) {
     console.log(`Setting tags: [ ${tags.join(', ')}]`)
-    this.options.tags = [...tags];
+    this.tags = [...tags];
     switch (this.options.mode) {
       case 'edit':
         this.setupEditMode();
@@ -92,7 +94,7 @@ export class TagEditor {
   }
 
   showGivenTagsInShowMode () {
-    for (let tag of this.options.tags.sort().reverse()) {
+    for (let tag of this.tags.sort().reverse()) {
       let valueForTagId = tag.replace(/ /g, "_")
       $(`#${this.idPrefix}-tag-list`).prepend(`
                <li class="addedTag" value=${valueForTagId}><span class="tag-text">${tag}</span>
@@ -101,7 +103,7 @@ export class TagEditor {
   }
 
   showGivenTagsInEditMode () {
-    for (let tag of this.options.tags.sort().reverse()) {
+    for (let tag of this.tags.sort().reverse()) {
       let valueForTagId = tag.replace(/ /g, "_")
       let tagId = `${this.idPrefix}-${valueForTagId}-id`
 
@@ -126,9 +128,9 @@ export class TagEditor {
       event.preventDefault();
       console.log(`Click on remove tag ${tag_id}`)
       let value = $(this).parent()[0].getAttribute('value').replace('_', ' ')
-      let index = thisObject.options.tags.indexOf(value)
-      thisObject.options.tags.splice(index, 1);
-      thisObject.options.saveTags(thisObject.options.tags)
+      let index = thisObject.tags.indexOf(value)
+      thisObject.tags.splice(index, 1);
+      thisObject.options.saveTags(thisObject.tags)
       $(this).parent().remove()
     })
   }
@@ -152,7 +154,7 @@ export class TagEditor {
         let value = thisObject.formatTag($(this).val())
         let valueForTagId = value.replace(/ /g, "_")
 
-        if (value !== '' && thisObject.isTagValid(value) && thisObject.options.tags.includes(value) === false) {
+        if (value !== '' && thisObject.isTagValid(value) && !thisObject.tags.includes(value)) {
           let tagId = `${thisObject.idPrefix}-${valueForTagId}-id`
           $(`<li class="addedTag" value="${value}"><span class="tag-text">${value}</span> `   +
             `<span class="tagRemove" id="${tagId}">` +
@@ -162,8 +164,8 @@ export class TagEditor {
           ).insertBefore(`${thisObject.options.containerSelector} .tagAdd`)
 
           thisObject.makeRemoveTagEvent(tagId)
-          thisObject.options.tags.push(value)
-          thisObject.options.saveTags(thisObject.options.tags).then ( () => {
+          thisObject.tags.push(value)
+          thisObject.options.saveTags(thisObject.tags).then ( () => {
             // console.log(`Tag ${value} added`)
             $(this).val('')
           })
@@ -200,6 +202,6 @@ export class TagEditor {
 
   getTags() {
     //this.removeTagsFromOptions()
-    return this.options.tags.sort()
+    return this.tags.sort()
   }
 }

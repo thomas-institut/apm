@@ -44,6 +44,11 @@ function makeTable(callback) {
                 console.log(apiResponse)
                 let people = apiResponse.data
 
+                if (people[0].length === 0) {
+                    removeSpinner()
+                    return false
+                }
+
                 for (let person of people) {
                     let row = 'row' + person.id
                     let rowSelector = '#' + row

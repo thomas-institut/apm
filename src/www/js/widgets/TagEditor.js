@@ -135,8 +135,12 @@ export class TagEditor {
 
   makeFocusSearchFieldEvent() {
     $('ul.tags').click(()  => {
-      $(`#${this.idPrefix}-search-field`).focus();
+      this.focus()
     })
+  }
+
+  focus () {
+    $(`#${this.idPrefix}-search-field`).focus();
   }
 
   makeAddTagEvent() {

@@ -421,6 +421,7 @@ export class MetadataEditor {
             default:
                 this.makeTextForm(selectorId, inputId, type)
         }
+        this.focusIfFirstInputForm(inputId)
     }
 
     makeTagsForm(selectorId) {
@@ -511,8 +512,9 @@ export class MetadataEditor {
     makeCreatePersonFromInputFormButtonEvent (buttonSelector, dialog, inputId) {
 
         $(buttonSelector).on('click', () => {
-            this.copyValueToDialog(inputId, dialog)
+            let firstInputFormInDialog = this.copyValueToDialog(inputId, dialog)
             dialog.show()
+            $(firstInputFormInDialog).focus()
         })
     }
 
@@ -520,13 +522,18 @@ export class MetadataEditor {
         let value = $(inputId).val()
         let dialogSelector = dialog.getSelector()
         $(`${dialogSelector} .entity_attr1_form`).val(value)
+        return `${dialogSelector} .entity_attr1_form`
     }
 
-    copyValueFromDialog(id) {
+    copyValueFromDialog() {
         let value = $(`${this.options.containerSelector} .entity_attr1_form`).val()
         let buttonSelector = this.options.dialogRootInputFormSelector + '_create-person-from-datalist-button'
         $(this.options.dialogRootInputFormSelector).val(value)
         $(buttonSelector).remove()
+
+        let keyIndex = this.options.dialogRootInputFormSelector.match(/\d+/)[0]
+        let saveIcon = ".entity_attr" + keyIndex + "_saveButton"
+        $(saveIcon).click();
     }
 
     updateDatalist () {
@@ -618,6 +625,13 @@ export class MetadataEditor {
     makeTextForm(selectorId, inputId, type) {
         $(selectorId).html(
             `<p><input type="text" class="${inputId} form-control" placeholder=${type} style="padding: unset"></p>`)
+    }
+
+    focusIfFirstInputForm(inputForm) {
+        if (inputForm.match(/\d+/)[0] === '1') {
+            let firstInputFormSelector = this.options.containerSelector + " ." + inputForm
+            $(firstInputFormSelector).focus()
+        }
     }
 
      addValueToInputFormByIndex(keyIndex) {
@@ -727,7 +741,7 @@ export class MetadataEditor {
                     this.options.callback(this.entity, this.options.mode, () => {
                         this.logSaveAction(this.options.mode)
                         if (this.options.mode === this.mode.dialog) {
-                            this.copyValueFromDialog(d.id)
+                            this.copyValueFromDialog()
                             this.options.dialog.hide()
                             this.options.dialog.destroy()
                             this.options.dialogRootMetadataEditor.updatePeople(d.id, d.values[0])
@@ -744,8 +758,13 @@ export class MetadataEditor {
             $(selector).on("click", () => {
                 if (!this.singleEdit) {
                     let keyIndex = selector.match(/\d+/)[0]
+                    let inputForm = this.options.containerSelector + " .entity_attr" + keyIndex + "_form"
                     this.setupTableForDataInput(() => {
                         this.replaceEditWithSaveAndAbortIcons(keyIndex)
+                        $(inputForm).focus()
+                        if (this.tagEditor !== undefined) {
+                            this.tagEditor.focus()
+                        }
                         console.log(`'${this.entity.keys[keyIndex-1]}' in edit mode!`)
                     }, keyIndex)
                     this.options.mode = this.mode.edit

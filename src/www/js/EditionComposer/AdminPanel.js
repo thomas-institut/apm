@@ -26,12 +26,13 @@
 
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import * as Util from '../toolbox/Util.mjs'
 
 import { doNothingPromise } from '../toolbox/FunctionUtil.mjs'
 import { ConfirmDialog } from '../pages/common/ConfirmDialog'
 import * as CollationTableType from '../constants/CollationTableType'
 import { Panel } from '../MultiPanelUI/Panel'
+import { ApmFormats } from '../pages/common/ApmFormats'
+import { TimeString } from '../toolbox/TimeString.mjs'
 
 const archiveButtonId = 'archive-table-btn'
 const versionHistoryDiv = 'version-history-div'
@@ -166,7 +167,7 @@ export class AdminPanel extends  Panel {
       html += '<td>' + (i+1) + '</td>'
       html += `<td><a href="${this.urlGen.siteEditCollationTable(this.options.tableId, version['id'])}">${version['id']}</a></td>`
       html += '<td class="author">' + authorName + '</td>'
-      html += '<td class="time">' + Util.formatVersionTime(version['timeFrom']) + '</td>'
+      html += '<td class="time">' + ApmFormats.time(TimeString.toDate(version['timeFrom'])) + '</td>'
       html += '<td>' + version['description'] + '</td>'
 
       html += '<td>'

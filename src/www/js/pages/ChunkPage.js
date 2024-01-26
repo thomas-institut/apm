@@ -30,6 +30,8 @@ import { ConfirmDialog } from './common/ConfirmDialog'
 import { ApmPage } from './ApmPage'
 import { urlGen } from './common/SiteUrlGen'
 import { ApmUtil } from '../ApmUtil'
+import { ApmFormats } from './common/ApmFormats'
+import { TimeString } from '../toolbox/TimeString.mjs'
 
 
 const convertToEditionIcon = '<i class="fas fa-file-alt"></i>'
@@ -291,7 +293,7 @@ export class ChunkPage extends ApmPage {
       for(const ctInfo of tables) {
         let url = this.pathFor.siteEditCollationTable(ctInfo['tableId'])
         html += '<li class="smallpadding"><a title="Open in new tab/window" target="_blank" href="' + url + '">' + ctInfo['title'] +
-          '</a>, <small>last change: ' + ApmUtil.formatVersionTime(ctInfo['lastSave']) +
+          '</a>, <small>last change: ' + ApmFormats.timeString(ctInfo['lastSave']) +
           ' by ' + await this.getAuthorLink(ctInfo['authorTid']) + '</small></li>'
       }
       html += '</ul>'
@@ -484,7 +486,7 @@ export class ChunkPage extends ApmPage {
 
     let lastVersion = witnessInfo.typeSpecificInfo.lastVersion
     if (witnessInfo.isValid) {
-      info['essential'] = '<small>Last change: ' + ApmUtil.formatVersionTime(lastVersion['timeFrom']) + ' by ' + await this.getAuthorLink(lastVersion.authorTid) + '</small>'
+      info['essential'] = '<small>Last change: ' + ApmFormats.time(TimeString.toDate(lastVersion['timeFrom'])) + ' by ' + await this.getAuthorLink(lastVersion.authorTid) + '</small>'
     } else {
       let errorMsg = this.invalidErrorCodes[witnessInfo.errorCode]
       if (errorMsg === undefined) {

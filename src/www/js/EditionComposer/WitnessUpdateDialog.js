@@ -21,6 +21,7 @@ import * as Util from '../toolbox/Util.mjs'
 import { failPromise } from '../toolbox/FunctionUtil.mjs'
 import { WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
 import { CtData } from '../CtData/CtData'
+import { ApmFormats } from '../pages/common/ApmFormats'
 
 export class WitnessUpdateDialog {
 
@@ -70,8 +71,8 @@ export class WitnessUpdateDialog {
     let dialogHtml = this._getDialogHtml(
       witnessIndex,
       this.ctData['witnessTitles'][witnessIndex],
-      Util.formatVersionTime(currentWitness['timeStamp']),
-      Util.formatVersionTime(newWitnessInfo['lastUpdate'])
+      ApmFormats.timeString(currentWitness['timeStamp']),
+      ApmFormats.timeString(newWitnessInfo['lastUpdate'])
     )
 
     let modalSelector = `#update-modal-${witnessIndex}`

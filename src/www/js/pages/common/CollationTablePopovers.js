@@ -19,6 +19,7 @@
 import * as Util from '../../toolbox/Util.mjs'
 import { EDITION, FULL_TX } from '../../Witness/WitnessTokenClass.mjs'
 import * as NormalizationSource from '../../constants/NormalizationSource.mjs'
+import { ApmFormats } from './ApmFormats'
 
 // Classes
 const popoverDivClass = 'ctPopover'
@@ -309,6 +310,7 @@ function getNoteHtml(note, peopleInfo) {
 }
 
 function formatNoteTime(timeStamp) {
-  return moment(timeStamp).format('D MMM YYYY, H:mm')
+  return ApmFormats.timeString(timeStamp, { withSeconds: false});
+  // return moment(timeStamp).format('D MMM YYYY, H:mm')
 }
 

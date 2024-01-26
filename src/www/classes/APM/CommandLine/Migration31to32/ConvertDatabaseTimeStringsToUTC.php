@@ -5,16 +5,9 @@ namespace APM\CommandLine\Migration31to32;
 use APM\CommandLine\CommandLineUtility;
 use APM\System\ApmMySqlTableName;
 use PDO;
-use ThomasInstitut\DataCache\InMemoryDataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
-use ThomasInstitut\DataTable\MySqlDataTable;
-use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
-use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\TimeString\InvalidTimeString;
 use ThomasInstitut\TimeString\InvalidTimeZoneException;
 use ThomasInstitut\TimeString\TimeString;
-use ThomasInstitut\UUID\Uuid;
-use function DeepCopy\deep_copy;
 
 class ConvertDatabaseTimeStringsToUTC extends CommandLineUtility
 {
@@ -23,6 +16,8 @@ class ConvertDatabaseTimeStringsToUTC extends CommandLineUtility
             '2016-06-01 00:00:00.000000',
             TimeString::END_OF_TIMES
         ];
+
+    const queriesPerTransaction = 5000;
 
     /**
      * @throws InvalidTimeString
@@ -46,14 +41,31 @@ class ConvertDatabaseTimeStringsToUTC extends CommandLineUtility
           $tableNames[ApmMySqlTableName::TABLE_VERSIONS_TX]
         ];
 
-        $doIt = $argv[1] === 'doIt';
+        $tablesToFix = [
+            [ 'tableName' => $tableNames[ApmMySqlTableName::TABLE_EDNOTES],  'timeStringColumns' => ['time']]
+        ];
+//        $tablesToFix = [];
 
-        foreach ($unitemporalTableNames as $tableName) {
-            $this->processTable($dbConn, $tableName, true, $doIt);
+        foreach($unitemporalTableNames as $tableName) {
+            $tablesToFix[] = [
+                'tableName' => $tableName,
+                'timeStringColumns' => [ 'valid_from', 'valid_until']
+            ];
         }
 
         foreach($versionTableNames as $tableName) {
-            $this->processTable($dbConn, $tableName, false, $doIt);
+            $tablesToFix[] = [
+                'tableName' => $tableName,
+                'timeStringColumns' => [ 'time_from', 'time_until']
+            ];
+        }
+
+
+
+        $doIt = $argv[1] === 'doIt';
+
+        foreach ($tablesToFix as $table) {
+            $this->processTable($dbConn, $table['tableName'], $table['timeStringColumns'], $doIt);
         }
     }
 
@@ -61,37 +73,66 @@ class ConvertDatabaseTimeStringsToUTC extends CommandLineUtility
      * @throws InvalidTimeZoneException
      * @throws InvalidTimeString
      */
-    private function processTable(PDO $dbConn, string $tableName, bool $uniTemporal, bool $doIt) : void {
+    private function processTable(PDO $dbConn, string $tableName, array $timeStringColumns, bool $doIt) : void {
         $result = $dbConn->query("SELECT * from `$tableName`");
         $numRows =  $result->rowCount();
-        print "-- Processing $numRows rows in table $tableName\n";
-        $fromField = $uniTemporal ? 'valid_from' : 'time_from';
-        $untilField = $uniTemporal ? 'valid_until' : 'time_until';
+        print "-- Processing $numRows rows in table $tableName, fixing columns: " . implode(', ', $timeStringColumns) . "\n";
+
         $rowsProcessed = 0;
+        $queriesInTransaction = 0;
+        if ($doIt) {
+            $dbConn->query("START TRANSACTION;");
+        }
         foreach($result as $row) {
             $id = $row['id'];
-            $currentFrom = $row[$fromField];
-            $currentUntil = $row[$untilField];
+            $updatedColumns = [];
+            foreach($timeStringColumns as $column) {
+                $currentValue = $row[$column];
+                $newValue = !in_array($currentValue, self::timeStringsToIgnore) ?
+                    TimeString::toNewTimeZone($currentValue, 'UTC', 'Europe/Berlin') :
+//                    TimeString::toNewTimeZone($currentValue, 'Europe/Berlin', 'UTC') :
+                    $currentValue;
 
-            $newFrom = !in_array($currentFrom, self::timeStringsToIgnore) ?
-                TimeString::toNewTimeZone($currentFrom, 'UTC', 'Europe/Berlin') :
-                $currentFrom;
+                $updatedColumns[] = [$column, $currentValue, $newValue];
+            }
 
-            $newUntil = !in_array($currentUntil, self::timeStringsToIgnore) ?
-                TimeString::toNewTimeZone($currentUntil, 'UTC', 'Europe/Berlin') :
-                $currentUntil;
-            if ($newFrom !== $currentFrom || $newUntil !== $currentUntil) {
+            $sqlSets = [];
+            foreach($updatedColumns as $update) {
+                [ $col, $currentValue, $newValue] = $update;
+                if ($newValue !== $currentValue) {
+                    $sqlSets[] = "`$col`='$newValue'";
+                }
+            }
+            if (count($sqlSets) > 0) {
                 $rowsProcessed++;
-                $query = "UPDATE `$tableName` SET `$fromField`='$newFrom', `$untilField`='$newUntil' WHERE `id`=$id AND `$fromField`='$currentFrom' AND `$untilField`='$currentUntil';";
+                // there are changes in the column
+                $whereConditions = [ "`id`=$id"];
+                foreach($updatedColumns as $update) {
+                    [ $col, $currentValue, $newValue] = $update;
+                    $whereConditions[] = "`$col`='$currentValue'";
+                }
+                $query = sprintf("UPDATE `$tableName` SET %s WHERE %s;",
+                    implode(', ', $sqlSets),
+                    implode(' AND ', $whereConditions)
+                );
                 if ($doIt) {
-                    if ( ($rowsProcessed % 10) === 0) {
+                    if ( ($rowsProcessed % 100) === 0) {
                         print "   row $rowsProcessed\r";
                     }
                     $dbConn->query($query);
+                    $queriesInTransaction++;
+                    if ($queriesInTransaction > self::queriesPerTransaction) {
+                        $dbConn->query('COMMIT;');
+                        $dbConn->query("START TRANSACTION;");
+                        $queriesInTransaction = 0;
+                    }
                 } else {
                     print "$query\n";
                 }
             }
+        }
+        if ($doIt && $queriesInTransaction !== 0) {
+            $dbConn->query('COMMIT;');
         }
     }
 

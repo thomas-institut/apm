@@ -34,6 +34,8 @@ $config[ConfigParam::APP_NAME] = 'APM';
 $config[ConfigParam::LOG_APP_NAME] = 'APM';
 $config[ConfigParam::BASE_FULL_PATH] = __DIR__;
 $config[ConfigParam::DB_TABLE_PREFIX] = 'ap_';
+$config[ConfigParam::DEFAULT_TIMEZONE] = "UTC";
+
 $config[ConfigParam::LANGUAGES] = [
     [ 'code' => 'ar', 'name' => 'Arabic', 'rtl' => true, 'fontsize' => 5],
     [ 'code' => 'jrb', 'name' => 'Judeo Arabic', 'rtl' => true, 'fontsize' => 3],

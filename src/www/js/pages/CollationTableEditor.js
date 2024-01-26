@@ -64,6 +64,7 @@ import { EditionViewerSvg } from '../Edition/EditionViewerSvg'
 import { Punctuation} from '../defaults/Punctuation.mjs'
 import { ApmPage } from './ApmPage'
 import { urlGen } from './common/SiteUrlGen'
+import { ApmFormats } from './common/ApmFormats'
 
 /** @namespace Twig */
 
@@ -987,8 +988,8 @@ export class CollationTableEditor extends ApmPage{
 
       $('body').append(twigTemplate.render({
         witnessTitle: thisObject.ctData['witnessTitles'][witnessIndex],
-        currentVersion: Util.formatVersionTime(currentWitness['timeStamp']),
-        newVersion: Util.formatVersionTime(newWitnessInfo['lastUpdate']),
+        currentVersion: ApmFormats.timeString(currentWitness['timeStamp']),
+        newVersion: ApmFormats.timeString(newWitnessInfo['lastUpdate']),
       }))
       let modalSelector = `#update-modal-${witnessIndex}`
       let cancelButton = $(`${modalSelector} .cancel-btn`)
@@ -1258,7 +1259,7 @@ export class CollationTableEditor extends ApmPage{
         } else {
           witnessesUpToDate = false
           let warningHtml =  `<span>${this.icons.checkFail} Last version:  `
-          warningHtml += `${Util.formatVersionTime(witnessUpdateInfo['lastUpdate'])} `
+          warningHtml += `${ApmFormats.timeString(witnessUpdateInfo['lastUpdate'])} `
           warningHtml += `<a title="Click to update witness" class="btn btn-outline-secondary btn-sm witness-update-btn witness-update-btn-${i}">Update</a>`
           warningTd.html(warningHtml)
         }
@@ -1273,11 +1274,11 @@ export class CollationTableEditor extends ApmPage{
     if (witnessesUpToDate) {
       infoSpan.removeClass('text-warning')
       infoSpan.addClass('text-success')
-      infoSpan.html(`${this.icons.checkOK} All witnesses are up to date (last checked ${Util.formatVersionTime(apiResponse.timeStamp)})`)
+      infoSpan.html(`${this.icons.checkOK} All witnesses are up to date (last checked ${ApmFormats.timeString(apiResponse.timeStamp)})`)
     } else {
       infoSpan.removeClass('text-success')
       infoSpan.addClass('text-warning')
-      infoSpan.html(`${this.icons.checkFail} One or more witnesses out of date (last checked ${Util.formatVersionTime(apiResponse.timeStamp)})`)
+      infoSpan.html(`${this.icons.checkFail} One or more witnesses out of date (last checked ${ApmFormats.timeString(apiResponse.timeStamp)})`)
     }
 
     button.html('Check now')
@@ -2036,7 +2037,7 @@ export class CollationTableEditor extends ApmPage{
       html += '<td>' + (i+1) + '</td>'
       html += '<td>' + version['id'] + '</td>'
       html += '<td class="author">' + this.options.peopleInfo[version['authorTid']].name + '</td>'
-      html += '<td class="time">' + Util.formatVersionTime(version['timeFrom']) + '</td>'
+      html += '<td class="time">' + ApmFormats.timeString(version['timeFrom']) + '</td>'
       html += '<td>' + version['description'] + '</td>'
 
       html += '<td>'
@@ -2505,7 +2506,7 @@ export class CollationTableEditor extends ApmPage{
       html += '</td>'
 
       html += '<td>' + witnessTitle + '</td>'
-      html += '<td>' + Util.formatVersionTime(witness['timeStamp']) + '</td>'
+      html += '<td>' + ApmFormats.timeString(witness['timeStamp']) + '</td>'
       html += '<td class="' + siglumClass + '">'+ siglum + '</td>'
 
       html += '<td class="' + warningTdClass + '"></td>'
@@ -2525,7 +2526,7 @@ export class CollationTableEditor extends ApmPage{
         .attr('title', 'Already archived')
         .addClass('disabled')
       let lastVersion = this.versionInfo[this.versionInfo.length-1]
-      this.lastSaveSpan.html(Util.formatVersionTime(lastVersion['timeFrom']))
+      this.lastSaveSpan.html(ApmFormats.timeString(lastVersion['timeFrom']))
       return
     }
     let changes = this.changesInCtData()
@@ -2566,7 +2567,7 @@ export class CollationTableEditor extends ApmPage{
     }
 
     let lastVersion = this.versionInfo[this.versionInfo.length-1]
-    this.lastSaveSpan.html(Util.formatVersionTime(lastVersion['timeFrom']))
+    this.lastSaveSpan.html(ApmFormats.timeString(lastVersion['timeFrom']))
   }
 
   changesInCtData() {

@@ -19,6 +19,7 @@
 import { setSiteLanguage, SiteLang, tr } from './common/SiteLang'
 import { urlGen } from './common/SiteUrlGen'
 import { ApmPage } from './ApmPage'
+import { ApmFormats } from './common/ApmFormats'
 
 
 
@@ -107,8 +108,10 @@ export class NormalPage extends ApmPage {
 
 
   async genFooterHtml() {
-    let po = this.commonData
-    return `${po.appName} v${po.appVersion} &bull; &copy ${po.copyrightNotice} &bull; ${po.renderTime}`
+    let cd = this.commonData;
+    let renderTimeString= ApmFormats.time(cd.renderTimestamp, { withTimeZoneOffset: true});
+
+    return `${cd.appName} v${cd.appVersion} &bull; &copy ${cd.copyrightNotice} &bull; ${renderTimeString}`
   }
 
   async genTopNavBarHtml() {

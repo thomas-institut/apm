@@ -163,5 +163,11 @@ TRUNCATE `ap_system_cache`;
 -- Convert all database TimeString fields to UTC : this will take a very long time
 -- RUN: convert_time_strings doIt
 
+
+-- Make time for editorial notes a TimeString
+ALTER TABLE `ap_ednotes` MODIFY COLUMN `time` datetime(6) NOT NULL;
+
+
+
 -- Finally, update version number
 UPDATE `ap_settings` SET `value` = '32' WHERE `ap_settings`.`setting` = 'DatabaseVersion';

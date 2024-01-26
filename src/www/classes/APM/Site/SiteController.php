@@ -175,7 +175,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             $commonData['appName'] = $this->config[ApmConfigParameter::APP_NAME];
             $commonData['appVersion'] = $this->config[ApmConfigParameter::VERSION];
             $commonData['copyrightNotice'] = $this->config[ApmConfigParameter::COPYRIGHT_NOTICE];
-            $commonData['renderTime'] =  date("Y-M-d, H:i:s T");
+            $commonData['renderTimestamp'] =  time();
             $commonData['cacheDataId'] = $this->config[ApmConfigParameter::JS_APP_CACHE_DATA_ID];
             $commonData['userInfo'] = $this->userInfo;
             $commonData['showLanguageSelector'] = $this->config[ApmConfigParameter::SITE_SHOW_LANGUAGE_SELECTOR];

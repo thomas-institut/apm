@@ -68,6 +68,7 @@ import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
 import { PdfDownloadUrl } from './PdfDownloadUrl'
 import { IgnoreHyphen } from '../normalizers/TokenNormalizer/IgnoreHyphen'
 import { ApmPage } from '../pages/ApmPage'
+import { ApmFormats } from '../pages/common/ApmFormats'
 
 // import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS
@@ -1162,7 +1163,7 @@ export class EditionComposer extends ApmPage {
     if (this.ctData['archived']) {
       let lastVersion = this.versionInfo[this.versionInfo.length-1]
       this.saveButtonPopoverTitle = 'Saving is disabled'
-      this.saveButtonPopoverContent = `<p>Edition is archived.</p><p>Last save: ${Util.formatVersionTime(lastVersion['timeFrom'])}</p>`
+      this.saveButtonPopoverContent = `<p>Edition is archived.</p><p>Last save: ${ApmFormats.timeString(lastVersion['timeFrom'])}</p>`
       this.saveButton
         .prop('disabled', true)
       return
@@ -1195,7 +1196,7 @@ export class EditionComposer extends ApmPage {
       this.unsavedChanges = false
       this.adminPanel.allowArchiving()
       let lastVersion = this.versionInfo[this.versionInfo.length-1]
-      this.saveButtonPopoverContent = `Last save: ${Util.formatVersionTime(lastVersion['timeFrom'])}`
+      this.saveButtonPopoverContent = `Last save: ${ApmFormats.timeString(lastVersion['timeFrom'])}`
       this.saveButtonPopoverTitle = 'Nothing to save'
       this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassNoChanges)
       this.saveButton.prop('disabled', true)

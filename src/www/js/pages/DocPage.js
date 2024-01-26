@@ -26,6 +26,8 @@ import { Tid } from '../Tid/Tid'
 import { PageArray } from './common/PageArray'
 import { MultiToggle } from '../widgets/MultiToggle'
 import { ApmUtil } from '../ApmUtil'
+import { ApmFormats } from './common/ApmFormats'
+import { TimeString } from '../toolbox/TimeString.mjs'
 
 export class DocPage extends NormalPage {
   constructor(options) {
@@ -551,7 +553,7 @@ export class DocPage extends NormalPage {
       dataContent = 'Not defined correctly';
     }
     else {
-      let formattedTime = ApmUtil.formatVersionTime(this.versionInfo[work][chunk]['timeFrom'])
+      let formattedTime = ApmFormats.time(TimeString.toDate(this.versionInfo[work][chunk]['timeFrom']))
       let authorName = '';
       if (this.versionInfo[work][chunk].authorId !== 0) {
         let authorData = await this.apmDataProxy.getPersonEssentialData(this.versionInfo[work][chunk]['authorTid'])
@@ -599,7 +601,7 @@ export class DocPage extends NormalPage {
     for (const i in this.lastSaves) {
       let versionInfo = this.lastSaves[i];
       // @ts-ignore
-      let formattedTime = ApmUtil.formatVersionTime(versionInfo['timeFrom']);
+      let formattedTime = ApmFormats.timeString.toDate(versionInfo['timeFrom']);
       let authorLink = await this.getAuthorLink(versionInfo['authorTid']);
       html += '<li> Page ' + this.getPageLink2(versionInfo.pageId, versionInfo.column) + ', ' +
         formattedTime + ' by ' + authorLink + '</li>';

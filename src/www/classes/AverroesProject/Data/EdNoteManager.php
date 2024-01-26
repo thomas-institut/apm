@@ -24,6 +24,7 @@ use AverroesProject\EditorialNote;
 use PDO;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use Psr\Log\LoggerInterface;
+use ThomasInstitut\TimeString\TimeString;
 
 /**
  * Manages editorial notes
@@ -135,6 +136,7 @@ class EdNoteManager {
             'target' => $target,
             'lang' => 'en',
             'author_tid' => $authorTid,
+            'time' => TimeString::now(),
             'text' => $text
         ]);
     }
@@ -145,6 +147,7 @@ class EdNoteManager {
             'type' => $note->type,
             'lang' => 'en',
             'author_tid' => $note->authorTid,
+            'time' => TimeString::now(),
             'text' => $note->text,
             'target' => $note->target
         ]);

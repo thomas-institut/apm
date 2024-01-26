@@ -23,6 +23,7 @@ import * as Util from '../toolbox/Util.mjs'
 import { KeyCache } from '../toolbox/KeyCache/KeyCache'
 import { urlGen } from '../pages/common/SiteUrlGen'
 import { ApmDataProxy } from '../pages/common/ApmDataProxy'
+import { ApmFormats } from '../pages/common/ApmFormats'
 
 const defaultIcons = {
   alert: '<i class="fas fa-exclamation-triangle"></i>',
@@ -206,7 +207,7 @@ export class ChunkSearchPanel extends Panel {
     for(let i = 0; i < infoArray.length; i++) {
       let info = infoArray[i];
       let versionInfo = info['lastVersion']
-      let lastSaveLabel = `${Util.formatVersionTime(versionInfo['timeFrom'])}`
+      let lastSaveLabel = `${ApmFormats.timeString(versionInfo['timeFrom'])}`
       let addButton
       if (tableIdsInMceData.indexOf(info.id) === -1) {
         addButton = `<button class="btn btn-sm btn-outline-secondary add-edition-${info.id}">Add</button>`

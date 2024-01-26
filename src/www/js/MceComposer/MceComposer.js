@@ -46,6 +46,7 @@ import { CtData } from '../CtData/CtData'
 import { WitnessDataItem } from '../Edition/WitnessDataItem.mjs'
 import { urlGen } from '../pages/common/SiteUrlGen'
 import { ApmPage } from '../pages/ApmPage'
+import { ApmFormats } from '../pages/common/ApmFormats'
 
 const defaultIcons = {
   moveUp: '&uarr;',
@@ -458,7 +459,7 @@ export class MceComposer extends ApmPage {
      this.unsavedChanges = false
      let lastSaveMsg = 'Never'
      if (this.lastSave !== '') {
-       lastSaveMsg = Util.formatVersionTime(this.lastSave)
+       lastSaveMsg = ApmFormats.timeString(this.lastSave)
      }
 
      this.saveButtonPopoverContent = `Last save: ${lastSaveMsg}`

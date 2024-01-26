@@ -3,6 +3,7 @@ import { setBaseUrl } from './common/SiteUrlGen'
 import { ApmDataProxy } from './common/ApmDataProxy'
 import { setSiteLanguage, SiteLang } from './common/SiteLang'
 import { WebStorageKeyCache } from '../toolbox/KeyCache/WebStorageKeyCache'
+import { ApmFormats } from './common/ApmFormats'
 
 export class ApmPage {
 
@@ -17,7 +18,7 @@ export class ApmPage {
             appName: { required: true, type: 'string'},
             appVersion: { required: true, type: 'string'},
             copyrightNotice: { required: true, type: 'string'},
-            renderTime: { required: true, type: 'string'},
+            renderTimestamp: { required: true, type: 'number'},
             cacheDataId: { required: true, type: 'string'},
             baseUrl: { required: true, type: 'string'},
             userInfo: { type: 'object'},
@@ -52,13 +53,16 @@ export class ApmPage {
         this.siteLanguage = SiteLang.detectBrowserLanguage();
       }
       setSiteLanguage(this.siteLanguage);
+      ApmFormats.setLanguage(this.siteLanguage);
       console.log(`Site language set to '${this.siteLanguage}'`);
     } else {
       this.siteLanguage = 'en';
     }
 
     this.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    ApmFormats.setTimeZone(this.timeZone);
 
     console.log(`Client timezone is '${this.timeZone}'`);
   }
+
 }

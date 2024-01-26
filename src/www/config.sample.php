@@ -7,9 +7,6 @@ use APM\System\ApmConfigParameter as ConfigParam;
 
 global $config;
 
-// TIME ZONE
-$config[ConfigParam::DEFAULT_TIMEZONE] = "Europe/Berlin";
-
 // DATABASE ACCESS
 $config[ConfigParam::DB]['host'] = "localhost";
 $config[ConfigParam::DB]['user'] = "xxxx";

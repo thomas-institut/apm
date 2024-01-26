@@ -91,25 +91,25 @@ export class ApmUtil {
     }
   }
 
-  static getUserIdFromLongTermCookie () {
-    const rmeCookie = ApmUtil.getCookie('rme')
-    return rmeCookie.split(':').pop()
-  }
+  // static getUserIdFromLongTermCookie () {
+  //   const rmeCookie = ApmUtil.getCookie('rme')
+  //   return rmeCookie.split(':').pop()
+  // }
 
-  /**
-   * Gets a cookie value
-   * (from http://stackoverflow.com/questions/10730362/get-cookie-by-name
-   * @param {string} name  Cookie name
-   * @returns {Cookie|boolean}  a cookie or false
-   */
-  static getCookie (name) {
-    const value = '; ' + document.cookie
-    const parts = value.split('; ' + name + '=')
-    if (parts.length === 2) {
-      return parts.pop().split(';').shift()
-    }
-    return false
-  }
+  // /**
+  //  * Gets a cookie value
+  //  * (from http://stackoverflow.com/questions/10730362/get-cookie-by-name
+  //  * @param {string} name  Cookie name
+  //  * @returns {Cookie|boolean}  a cookie or false
+  //  */
+  // static getCookie (name) {
+  //   const value = '; ' + document.cookie
+  //   const parts = value.split('; ' + name + '=')
+  //   if (parts.length === 2) {
+  //     return parts.pop().split(';').shift()
+  //   }
+  //   return false
+  // }
   
   static setPageTypeSelectOptions(selector, pageTypeNames, pageType = 0) {
     let optionsType = ''
@@ -188,9 +188,9 @@ export class ApmUtil {
     $(selector).on('click', function(e){e.preventDefault()})
   }
 
-  static formatVersionTime(time) {
-    return moment(time).format('D MMM YYYY, H:mm:ss')
-  }
+  // static formatVersionTime(time) {
+  //   return moment(time).format('D MMM YYYY, H:mm:ss')
+  // }
 
 }
 

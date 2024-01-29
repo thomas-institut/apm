@@ -421,6 +421,7 @@ export class MetadataEditor {
             default:
                 this.makeTextForm(selectorId, inputId, type)
         }
+        this.makeMakeEditorialNoteButtonEvent(selectorId, inputId)
         this.focusIfFirstInputForm(inputId)
     }
 
@@ -439,7 +440,7 @@ export class MetadataEditor {
         let listSelector = '#' + list
         let paragraphId = inputId + '_paragraph'
 
-        $(selector).html(`<p class='${paragraphId} embed-create-button'>
+        $(selector).html(`<p class='${paragraphId} embed-button'>
             <input class='${inputId} form-control' list=${list} placeholder="person" autoComplete="off" style="padding: unset">
                 <datalist id=${list}></datalist></p>`)
         this.addNamesToDatalist(this.people, listSelector)
@@ -455,7 +456,8 @@ export class MetadataEditor {
         for (let person of people) {
             id = person.id
             let name = person.values[0]
-            $(listSelector).append(`<option value=${name} id=${id}>${name}</option>`)
+            let nameForValueAttribute = name.replace(' ', '_')
+            $(listSelector).append(`<option value=${nameForValueAttribute} id=${id}>${name}</option>`)
         }
     }
 
@@ -477,9 +479,11 @@ export class MetadataEditor {
 
         $(inputId).on('input', () => {
             let value = $(inputId).val()
+            $(inputId).val(value.replace('_', ' '))
+            let valueForDatalist = value.replace(' ', '_')
             $(buttonSelector).remove()
             if (value !== '') {
-                if ($(`${listSelector} option[value=${value}]`).attr('id') === undefined) {
+                if ($(`${listSelector} option[value=${valueForDatalist}]`).attr('id') === undefined) {
                     $(paragraphSelector).append(`<button class=${buttonId}>Create</button>`)
                     this.makeCreatePersonFromInputFormButtonEvent(buttonSelector, dialog, inputId)
                 }
@@ -536,9 +540,10 @@ export class MetadataEditor {
         $(saveIcon).click();
     }
 
-    updateDatalist () {
+    updateDatalistInRootMetadataEditor () {
         let value = $(`${this.options.containerSelector} .entity_attr1_form`).val()
-        $(this.options.dialogRootMetadataEditor.datalistSelector).append(`<option value=${value} id=${this.people.length}>${value}</option>`)
+        let valueForDatalist = value.replace(' ', '_')
+        $(this.options.dialogRootMetadataEditor.datalistSelector).append(`<option value=${valueForDatalist} id=${this.people.length}>${value}</option>`)
     }
 
     setupMetadataEditorInDialogWindow (entity, selector, dialog, inputId) {
@@ -588,14 +593,14 @@ export class MetadataEditor {
     }
 
     makeDateForm(selectorId, inputId, type) {
-        $(selectorId).html(`<p><input type="date" class="${inputId} form-control" placeholder=${type} style="padding: unset"></p>`)
+        $(selectorId).html(`<p class="embed-button"><input type="date" class="${inputId} form-control" placeholder=${type} style="padding: unset"></p>`)
     }
 
     makeYearForm(selectorId, inputId, type) {
         let inputIdBcAd = inputId + "_" + "year_bc_ad"
         let inputIdBcADSelector = this.options.containerSelector + " ." + inputIdBcAd
 
-        $(selectorId).html(`<p><input type="text" class="${inputId} form-control" placeholder=${type} style="padding: unset">
+        $(selectorId).html(`<p class="embed-button"><input type="text" class="${inputId} form-control" placeholder=${type} style="padding: unset">
                                                                     <select class="${inputIdBcAd} form-control" style="padding: unset"></p>`)
         $(inputIdBcADSelector).append(`<option>BC</option><option selected>AD</option>`)
     }
@@ -624,7 +629,35 @@ export class MetadataEditor {
 
     makeTextForm(selectorId, inputId, type) {
         $(selectorId).html(
-            `<p><input type="text" class="${inputId} form-control" placeholder=${type} style="padding: unset"></p>`)
+            `<p class="embed-button"><input type="text" class="${inputId} form-control" placeholder=${type} style="padding: unset"></p>`)
+    }
+
+    makeMakeEditorialNoteButtonEvent(selectorId, inputId) {
+        let buttonId = inputId + '_editorial-note-button'
+
+        $(this.options.containerSelector + " ." + inputId).on("focusin", () => {
+            this.makeEditorialNoteButton(selectorId, buttonId)
+        })
+        $(this.options.containerSelector + " ." + inputId).on("focusout", () => {
+            this.removeEditorialNoteButton(buttonId)
+        })
+    }
+
+    makeEditorialNoteButton(selectorId, buttonId) {
+        $(selectorId + " .embed-button").append(`<button class=${buttonId}>Note</button>`)
+        let buttonSelector = this.options.containerSelector+ " ." + buttonId
+        console.log(buttonSelector)
+        $(buttonSelector).on("click", () => {
+            console.log('click')
+            $(selectorId).append(`<textarea class="form-control" rows="2" placeholder="note"></textarea>`)
+        })
+    }
+
+    removeEditorialNoteButton(buttonId) {
+        // 50 milliseconds delay, otherwise the button would be removed before the button event could be triggered
+        setTimeout(() => {
+            $("."+buttonId).remove()
+        }, 50);
     }
 
     focusIfFirstInputForm(inputForm) {
@@ -731,25 +764,25 @@ export class MetadataEditor {
             this.clearErrorMessage()
 
             // Get Data To Save
-            this.updateDatalist()
-                let d = this.getEntityDataByIndex()
+            this.updateDatalistInRootMetadataEditor()
+            let d = this.getEntityDataByIndex()
 
-                if (this.validateData(d) && this.validatePasswords()) {
-                    this.makeSpinner(this.buttonsSelectorBottom)
-                    this.updateEntityData(d.id, d.type, d.values)
-                    //this.tagEditor.saveTags()
-                    this.options.callback(this.entity, this.options.mode, () => {
-                        this.logSaveAction(this.options.mode)
-                        if (this.options.mode === this.mode.dialog) {
-                            this.copyValueFromDialog()
-                            this.options.dialog.hide()
-                            this.options.dialog.destroy()
-                            this.options.dialogRootMetadataEditor.updatePeople(d.id, d.values[0])
-                        } else {
-                            this.setupShowMode()
-                        }
-                    })
-                }
+            if (this.validateData(d) && this.validatePasswords()) {
+                this.makeSpinner(this.buttonsSelectorBottom)
+                this.updateEntityData(d.id, d.type, d.values)
+                //this.tagEditor.saveTags()
+                this.options.callback(this.entity, this.options.mode, () => {
+                    this.logSaveAction(this.options.mode)
+                    if (this.options.mode === this.mode.dialog) {
+                        this.copyValueFromDialog()
+                        this.options.dialog.hide()
+                        this.options.dialog.destroy()
+                        this.options.dialogRootMetadataEditor.updatePeople(d.id, d.values[0])
+                    } else {
+                        this.setupShowMode()
+                    }
+                })
+            }
         })
     }
 
@@ -907,8 +940,8 @@ export class MetadataEditor {
         } else if (type.includes('person')) {
             let person_id
             try {
-                person_id = $(`${this.datalistSelector} option[value=${value}]`).attr('id')
-                console.log(person_id)
+                let valueForDatalist = value.replace(' ', '_')
+                person_id = $(`${this.datalistSelector} option[value=${valueForDatalist}]`).attr('id')
             } catch {
                 person_id = ''
             }

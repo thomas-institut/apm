@@ -253,14 +253,14 @@ input[type=number] {
     width: 42px
 }
 
-.embed-create-button {
+.embed-button {
     position: relative;
 }
-.embed-create-button input {
+.embed-button input {
     width: 100%;
     padding: 15px;
 }
-.embed-create-button button {
+.embed-button button {
     color: dodgerblue;
     position: absolute;
     right: 0.3em;
@@ -275,7 +275,7 @@ input[type=number] {
     margin: 0.1em;
     text-align: center;
 }
-.embed-create-button button:hover {
+.embed-button button:hover {
     background-color: white;
     color: blue;
     cursor: pointer;

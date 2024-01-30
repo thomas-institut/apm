@@ -205,14 +205,10 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
     }
     
     public function getPresetById(int $id) : Preset {
-        try {
-            $this->getSqlQueryCounterTracker()->incrementSelect();
-            $row = $this->dataTable->getRow($id);
-        } catch (InvalidArgumentException $e) {
-            if ($e->getCode() === GenericDataTable::ERROR_ROW_DOES_NOT_EXIST) {
-                throw $this->newPresetNotFoundException();
-            }
-            throw $e; // @codeCoverageIgnore
+        $this->getSqlQueryCounterTracker()->incrementSelect();
+        $row = $this->dataTable->getRow($id);
+        if ($row === null) {
+            throw $this->newPresetNotFoundException();
         }
         return $this->createPresetFromDataTableRow($row);
     }
@@ -332,7 +328,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
         if (count($rows) < 1) {
             return [];
         }
-        return $rows[0];
+        return $rows->getFirst();
     }
    
     /**

@@ -66,7 +66,7 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
             throw new MultiChunkEditionDoesNotExist("Multi chunk edition with id $id does not exist");
         }
 
-        $dbData = $rows[0];
+        $dbData = $rows->getFirst();
         $isCompressed = intval($dbData['compressed']) === 1;
 
         if ($isCompressed) {

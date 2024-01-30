@@ -26,7 +26,7 @@ implements LoggerAwareInterface
         if (count($rows) === 0) {
             throw  new InvalidArgumentException("Source $tid not found");
         }
-        return $this->mySqlRowToInfoObject($rows[0]);
+        return $this->mySqlRowToInfoObject($rows->getFirst());
     }
 
     private function mySqlRowToInfoObject($mySqlRow) : array{

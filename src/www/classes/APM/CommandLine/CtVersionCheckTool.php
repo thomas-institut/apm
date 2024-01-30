@@ -5,12 +5,16 @@ namespace APM\CommandLine;
 use APM\System\ApmMySqlTableName;
 use Exception;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
+use ThomasInstitut\DataTable\RowDoesNotExist;
 
 class CtVersionCheckTool extends CommandLineUtility
 {
 
     const USAGE = "usage: ctversioncheck check|fix [<ctId1> <ctId2> ... ]\n";
 
+    /**
+     * @throws RowDoesNotExist
+     */
     public function main($argc, $argv): bool
     {
         if ($argc < 2) {
@@ -134,6 +138,9 @@ class CtVersionCheckTool extends CommandLineUtility
     }
 
 
+    /**
+     * @throws RowDoesNotExist
+     */
     private function bruteForceDataTableConsistencyFix($ctId): void
     {
         $tableName = $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_COLLATION_TABLE];

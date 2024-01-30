@@ -3,12 +3,20 @@
 namespace APM\CommandLine;
 
 use APM\System\ApmMySqlTableName;
+use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\MySqlDataTable;
+use ThomasInstitut\DataTable\RowDoesNotExist;
 use ThomasInstitut\EntitySystem\Tid;
+use ThomasInstitut\TimeString\InvalidTimeZoneException;
 
 class GenerateDocTids extends CommandLineUtility
 {
 
+    /**
+     * @throws InvalidTimeZoneException
+     * @throws RowDoesNotExist
+     * @throws InvalidRowForUpdate
+     */
     public function main($argc, $argv): void
     {
         $dbConn = $this->systemManager->getDbConnection();

@@ -5,8 +5,11 @@ namespace APM\CommandLine\Migration31to32;
 use APM\CommandLine\CommandLineUtility;
 use APM\System\ApmMySqlTableName;
 use DateTime;
+use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\MySqlDataTable;
+use ThomasInstitut\DataTable\RowDoesNotExist;
 use ThomasInstitut\EntitySystem\Tid;
+use ThomasInstitut\TimeString\InvalidTimeZoneException;
 
 class GenerateTids extends CommandLineUtility
 {
@@ -14,6 +17,11 @@ class GenerateTids extends CommandLineUtility
     const baseTimeString = '2016-06-01 07:00:00.000000';
 
 
+    /**
+     * @throws InvalidTimeZoneException
+     * @throws InvalidRowForUpdate
+     * @throws RowDoesNotExist
+     */
     public function main($argc, $argv): void
     {
 
@@ -48,7 +56,7 @@ class GenerateTids extends CommandLineUtility
         foreach ($dataTablesToUpdate as $dataTable) {
             print "Assigning tids to table " . $dataTable->getName() . "\n";
             $rowsWithoutTidAssigned = $dataTable->findRows(['tid' => 0]);
-            if (count($rowsWithoutTidAssigned) === 0) {
+            if ($rowsWithoutTidAssigned->count() === 0) {
                 print "  all rows have tids already\n";
             }
             $maxAttempts = 100;

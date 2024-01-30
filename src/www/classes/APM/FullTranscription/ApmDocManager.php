@@ -55,17 +55,24 @@ class ApmDocManager extends DocManager implements LoggerAwareInterface, ErrorRep
 
     public function getDocInfoById(int $docId): DocInfo
     {
-        $row = [];
-        try {
-            $this->getSqlQueryCounterTracker()->incrementSelect();
-            $row = $this->docDataTable->getRow($docId);
-        } catch (InvalidArgumentException $e) {
+
+        $this->getSqlQueryCounterTracker()->incrementSelect();
+        $row = $this->docDataTable->getRow($docId);
+        if ($row === null) {
             // no such document!
             $this->throwInvalidArgumentException("Document $docId not found in database", self::ERROR_DOC_NOT_FOUND);
         }
-        if ($row === []) {
-            $this->throwRunTimeException('Unknown error occurred', self::ERROR_UNKNOWN);
-        }
         return DocInfo::createFromDatabaseRow($row);
+//        try {
+//            $this->getSqlQueryCounterTracker()->incrementSelect();
+//            $row = $this->docDataTable->getRow($docId);
+//        } catch (InvalidArgumentException $e) {
+//            // no such document!
+//            $this->throwInvalidArgumentException("Document $docId not found in database", self::ERROR_DOC_NOT_FOUND);
+//        }
+//        if ($row === []) {
+//            $this->throwRunTimeException('Unknown error occurred', self::ERROR_UNKNOWN);
+//        }
+//        return DocInfo::createFromDatabaseRow($row);
     }
 }

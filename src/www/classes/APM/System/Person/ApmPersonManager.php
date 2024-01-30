@@ -43,7 +43,7 @@ class ApmPersonManager implements PersonManagerInterface, LoggerAwareInterface
             if (count($rows) === 0) {
                 throw new PersonNotFoundException();
             }
-            $personData = $this->buildPersonEssentialDataFromRow($rows[0]);
+            $personData = $this->buildPersonEssentialDataFromRow($rows->getFirst());
             $this->cache[$personTid] = $personData;
         }
         return $this->cache[$personTid];

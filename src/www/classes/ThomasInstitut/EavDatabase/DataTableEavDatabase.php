@@ -25,6 +25,8 @@ use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataCache\SimpleCacheAware;
 use ThomasInstitut\DataTable\DataTable;
+use ThomasInstitut\DataTable\InvalidRowForUpdate;
+use ThomasInstitut\DataTable\RowAlreadyExists;
 
 class DataTableEavDatabase implements EavDatabase, CacheAware
 {
@@ -120,6 +122,8 @@ class DataTableEavDatabase implements EavDatabase, CacheAware
     /**
      * @inheritDoc
      * @throws KeyNotInCacheException
+     * @throws RowAlreadyExists
+     * @throws InvalidRowForUpdate
      */
     public function set(string $entityId, string $attribute, string $value): void
     {
@@ -214,7 +218,7 @@ class DataTableEavDatabase implements EavDatabase, CacheAware
                 $this->fieldMap[self::FIELD_ATTRIBUTE] => $attribute,
             ]);
             if (count($rows) !== 0) {
-               $this->dataTable->deleteRow($rows[0]['id']);
+               $this->dataTable->deleteRow($rows->getFirst()['id']);
             }
             return;
         }

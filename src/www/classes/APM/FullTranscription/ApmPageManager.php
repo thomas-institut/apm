@@ -75,10 +75,10 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
             'doc_id' => $docId,
             'seq'=> $seq
         ],1);
-        if ($rows === []) {
+        if (count($rows) === 0) {
             $this->throwInvalidArgumentException("Page $docId, seq $seq not found", self::ERROR_PAGE_NOT_FOUND);
         }
-        $pageInfo = PageInfo::createFromDatabaseRow($rows[0]);
+        $pageInfo = PageInfo::createFromDatabaseRow($rows->getFirst());
         $this->storePageInfoInCache($pageInfo);
         return $pageInfo;
     }
@@ -103,10 +103,10 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
             'doc_id' => $docId,
             'page_number'=> $pageNumber
         ],1);
-        if ($rows === []) {
+        if (count($rows) === 0) {
             $this->throwInvalidArgumentException("Page $docId, page $pageNumber not found", self::ERROR_PAGE_NOT_FOUND);
         }
-        $pageInfo = PageInfo::createFromDatabaseRow($rows[0]);
+        $pageInfo = PageInfo::createFromDatabaseRow($rows->getFirst());
         $this->storePageInfoInCache($pageInfo);
 
         return $pageInfo;
@@ -150,28 +150,16 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
     public function getPageInfoById(int $pageId): PageInfo
     {
         $cacheKey = $this->getCacheKey(self::CACHE_TYPE_PAGE_ID, $pageId);
-
-        $cacheHit = true;
         try {
-            $pageInfo = unserialize($this->localMemCache->get($cacheKey));
-        } catch (KeyNotInCacheException $e) {
-            $cacheHit = false;
+            return unserialize($this->localMemCache->get($cacheKey));
+        } catch (KeyNotInCacheException) {
         }
 
-        if ($cacheHit) {
-            return $pageInfo;
-        }
-
-        $row = [];
-        try {
-            $this->getSqlQueryCounterTracker()->incrementSelect();
-            $row = $this->pagesDataTable->getRow($pageId);
-        } catch (InvalidArgumentException $e) {
+        $this->getSqlQueryCounterTracker()->incrementSelect();
+        $row = $this->pagesDataTable->getRow($pageId);
+        if ($row === null) {
             // no such page!
             $this->throwInvalidArgumentException("Page $pageId not found", self::ERROR_PAGE_NOT_FOUND);
-        }
-        if ($row === []) {
-            $this->throwRunTimeException('Unknown error occurred', self::ERROR_UNKNOWN);
         }
         $pageInfo = PageInfo::createFromDatabaseRow($row);
         $this->storePageInfoInCache($pageInfo);

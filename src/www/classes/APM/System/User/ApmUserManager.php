@@ -52,7 +52,7 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
             if (count($rows) === 0) {
                 throw new UserNotFoundException();
             }
-            $this->cache[$userTid] = $this->getUserDataFromTableRow($rows[0]);
+            $this->cache[$userTid] = $this->getUserDataFromTableRow($rows->getFirst());
         }
         return $this->cache[$userTid];
     }
@@ -83,7 +83,7 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
         if (count($rows) === 0) {
             return -1;
         }
-        return $rows[0]['tid'];
+        return $rows->getFirst()['tid'];
     }
 
     /**
@@ -214,7 +214,7 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
             'user_tid' => $userTid,
             'user_agent' => $userAgent
         ]);
-        return $rows[0]['token'] ?? '';
+        return $rows->getFirst()['token'] ?? '';
     }
 
     /**

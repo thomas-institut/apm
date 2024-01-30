@@ -177,12 +177,18 @@ class ApmColumnVersionManager extends ColumnVersionManager
 
     public function getVersionInfo(int $versionId): ColumnVersionInfo
     {
-        try {
-            $row = $this->dataTable->getRow($versionId);
-        } catch(InvalidArgumentException) {
+
+        $row = $this->dataTable->getRow($versionId);
+        if ($row === null) {
             throw new InvalidArgumentException("Version $versionId does not exist");
         }
         return ColumnVersionInfo::createFromDbRow($row);
+//        try {
+//            $row = $this->dataTable->getRow($versionId);
+//        } catch(InvalidArgumentException) {
+//            throw new InvalidArgumentException("Version $versionId does not exist");
+//        }
+//        return ColumnVersionInfo::createFromDbRow($row);
 
     }
 }

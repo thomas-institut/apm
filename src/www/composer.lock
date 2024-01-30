@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "86a1149ba3f77b8c7be70f40c7f9e8e0",
+    "content-hash": "e1b1312b344491bbc882dd78daba87e1",
     "packages": [
         {
             "name": "dflydev/fig-cookies",
@@ -1983,16 +1983,16 @@
         },
         {
             "name": "thomas-institut/datatable",
-            "version": "1.0.0",
+            "version": "2.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thomas-institut/datatable.git",
-                "reference": "25ad19862512a353c18091f622891609da657cb7"
+                "reference": "f51e0c22dd27ae5f10bf5dd3485fa2a77b8af02c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thomas-institut/datatable/zipball/25ad19862512a353c18091f622891609da657cb7",
-                "reference": "25ad19862512a353c18091f622891609da657cb7",
+                "url": "https://api.github.com/repos/thomas-institut/datatable/zipball/f51e0c22dd27ae5f10bf5dd3485fa2a77b8af02c",
+                "reference": "f51e0c22dd27ae5f10bf5dd3485fa2a77b8af02c",
                 "shasum": ""
             },
             "require": {
@@ -2028,9 +2028,9 @@
             ],
             "support": {
                 "issues": "https://github.com/thomas-institut/datatable/issues",
-                "source": "https://github.com/thomas-institut/datatable/tree/1.0.0"
+                "source": "https://github.com/thomas-institut/datatable/tree/2.0.1"
             },
-            "time": "2024-01-05T12:44:31+00:00"
+            "time": "2024-01-30T10:52:42+00:00"
         },
         {
             "name": "thomas-institut/timestring",
@@ -3028,16 +3028,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "10.5.8",
+            "version": "10.5.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "08f4fa74d5fbfff1ef22abffee47aaedcaea227e"
+                "reference": "0bd663704f0165c9e76fe4f06ffa6a1ca727fdbe"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/08f4fa74d5fbfff1ef22abffee47aaedcaea227e",
-                "reference": "08f4fa74d5fbfff1ef22abffee47aaedcaea227e",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/0bd663704f0165c9e76fe4f06ffa6a1ca727fdbe",
+                "reference": "0bd663704f0165c9e76fe4f06ffa6a1ca727fdbe",
                 "shasum": ""
             },
             "require": {
@@ -3109,7 +3109,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/10.5.8"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/10.5.9"
             },
             "funding": [
                 {
@@ -3125,7 +3125,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-01-19T07:07:27+00:00"
+            "time": "2024-01-22T14:35:40+00:00"
         },
         {
             "name": "psr/http-client",

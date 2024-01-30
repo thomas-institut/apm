@@ -22,11 +22,12 @@ namespace AverroesProject\Data;
 
 use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\DataTable\DataTable;
-use ThomasInstitut\DataTable\GenericDataTable;
 use ThomasInstitut\DataTable\InMemoryDataTable;
-use Exception;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\NullLogger;
+use ThomasInstitut\DataTable\InvalidRowForUpdate;
+use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\DataTable\RowDoesNotExist;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
 use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
@@ -77,9 +78,9 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     use LoggerAwareTrait;
     
     private DataTable $userTable;
-    private $relationsTable;
-    private $peopleTable;
-    private $tokensTable;
+    private DataTable $relationsTable;
+    private DataTable $peopleTable;
+    private DataTable $tokensTable;
 
     const ROLE_ROOT = 'root';
 
@@ -89,17 +90,17 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
      * The constructor does not check that the given data tables
      * are properly set up.
      *
-     * @param DataTable $ut
-     * @param DataTable $rt
-     * @param DataTable $pt
-     * @param DataTable $tt
+     * @param DataTable|null $ut
+     * @param DataTable|null $rt
+     * @param DataTable|null $pt
+     * @param DataTable|null $tt
      */
-    public function __construct($ut = NULL, $rt = NULL, $pt = NULL, $tt = NULL)
+    public function __construct(?DataTable $ut = null, ?DataTable $rt = null, ?DataTable $pt = null, ?DataTable $tt = null)
     {
-        $this->userTable = ($ut===NULL) ? new InMemoryDataTable() : $ut;
-        $this->relationsTable = ($rt===NULL) ? new InMemoryDataTable() : $rt;
-        $this->peopleTable = ($pt===NULL) ? new InMemoryDataTable() : $pt;
-        $this->tokensTable = ($tt===NULL) ? new InMemoryDataTable() : $tt;
+        $this->userTable = ($ut===null) ? new InMemoryDataTable() : $ut;
+        $this->relationsTable = ($rt===null) ? new InMemoryDataTable() : $rt;
+        $this->peopleTable = ($pt===null) ? new InMemoryDataTable() : $pt;
+        $this->tokensTable = ($tt===null) ? new InMemoryDataTable() : $tt;
         $this->logger = new NullLogger();
         $this->initSqlQueryCounterTracker();
     }
@@ -147,21 +148,21 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         }
         return false;
     }
-    
+
     /**
-     * Returns the user Id associated with a username
+     * Returns the user id associated with a username
      * or false if the user does not exist
      * @param string $userName
-     * @return int
+     * @return bool|int
      */
-    public function getUserIdFromUserName(string $userName)
+    public function getUserIdFromUserName(string $userName): bool|int
     {
         $this->getSqlQueryCounterTracker()->incrementSelect();
         $userId = $this->userTable->getIdForKeyValue('username', $userName);
-        return  $userId===GenericDataTable::NULL_ROW_ID ? false : $userId;
+        return  $userId=== DataTable::NULL_ROW_ID ? false : $userId;
     }
     
-    public function getPersonInfo(int $personId)
+    public function getPersonInfo(int $personId): ?array
     {
         $this->getSqlQueryCounterTracker()->incrementSelect();
         return $this->peopleTable->getRow($personId);
@@ -172,33 +173,30 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
      * @param int $userid User ID
      * @return array|bool
      */
-    public function getUserInfoByUserId(int $userid)
+    public function getUserInfoByUserId(int $userid): bool|array
     {
-        try {
-            $this->getSqlQueryCounterTracker()->incrementSelect();
-            $pi = $this->peopleTable->getRow($userid);
-        } catch (Exception $e) {
-            return false;
-        }
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
-        try {
-            $ui = $this->userTable->getRow($userid);
-        } catch(\InvalidArgumentException) {
+        $pi = $this->peopleTable->getRow($userid);
+        if ($pi === null) {
+            return false;
+        }
+        $this->getSqlQueryCounterTracker()->incrementSelect();
+        $ui = $this->userTable->getRow($userid);
+        if ($ui === null) {
             $ui = [];
         }
 
-        
         if (!isset($pi['email'])) {
             $pi['email'] = '';
         }
         if ($pi['email']) {
             // from https://en.gravatar.com/site/implement/hash/
-            $emailhash =  md5(strtolower(trim($pi['email']))) ;
+            $emailHash =  md5(strtolower(trim($pi['email']))) ;
         } 
         else {
             $pi['email'] = '';
-            $emailhash =  '';
+            $emailHash =  '';
         }
         
         
@@ -206,11 +204,12 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
                  'username' => $ui['username'] ?? '',
                  'name' => $pi['name'],
                  'email' => $pi['email'], 
-                 'emailhash' => $emailhash
+                 'emailhash' => $emailHash
                 ];
     }
-    
-    public function updateUserInfo(int $userId, string $fullName, string $email = '')
+
+
+    public function updateUserInfo(int $userId, string $fullName, string $email = ''): bool
     {
         if ($fullName === '') {
             return false;
@@ -222,13 +221,18 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
             $newInfo['name'] = $fullName;
             $newInfo['email'] = $email;
             $this->getSqlQueryCounterTracker()->incrementUpdate();
-            return false !== $this->peopleTable->updateRow($newInfo);
+            try {
+                $this->peopleTable->updateRow($newInfo);
+            } catch (InvalidRowForUpdate|RowDoesNotExist) {
+                return false;
+            }
+            return true;
         }
         
         return false;
     }
     
-    public function getUserInfoByUsername(string $username)
+    public function getUserInfoByUsername(string $username): bool|array
     {
         $this->getSqlQueryCounterTracker()->incrementSelect();
         $userid = $this->getUserIdFromUserName($username);
@@ -249,15 +253,16 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     // 
     // User creation
     //
-    
+
     /**
-     * Creates a new user in the system with the given user name
+     * Creates a new user in the system with the given username
      * Returns the user ID of the newly created user
      * or false if the user was not created
      * @param string $userName
-     * @return int
+     * @return bool|int
+     * @throws RowAlreadyExists
      */
-    public function createUserByUsername(string $userName)
+    public function createUserByUsername(string $userName): bool|int
     {
         $this->getSqlQueryCounterTracker()->incrementSelect();
         if ($this->userExistsByUserName($userName)) {
@@ -269,9 +274,10 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
             'id' => $personId,
             'username' => $userName]);
     }
-    
+
     /**
      * Creates a new entry in the people table. Returns the new id
+     * @throws RowAlreadyExists
      */
     private function createPerson() : int
     {
@@ -284,7 +290,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
 
     /**
      * Returns true if a user is explicitly allowed to do $action
-     * @param $userId
+     * @param int $userId
      * @param string $action , the action, normally a verb,
      *                e.g.: 'edit-other-users'
      * @return boolean
@@ -295,8 +301,8 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
             return true;
         }
         $this->getSqlQueryCounterTracker()->incrementSelect();
-        return $this->relationsTable->findRows(['userId' => $userId,
-            'relation' => 'isAllowed', 'attribute' => $action]) !== [];
+        return count($this->relationsTable->findRows(['userId' => $userId,
+            'relation' => 'isAllowed', 'attribute' => $action])) !== 0;
     }
     
     /**
@@ -314,11 +320,17 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
             return false;
         }
         $this->getSqlQueryCounterTracker()->incrementCreate();
-        return $this->relationsTable->createRow(['userId' => $userId, 
-            'relation' => 'isAllowed', 'attribute' => $action]) !== false;
+        try {
+            $this->relationsTable->createRow(['userId' => $userId,
+                'relation' => 'isAllowed', 'attribute' => $action]);
+        } catch (RowAlreadyExists) {
+            // should not happen though
+            return false;
+        }
+        return true;
     }
     
-    public function disallowUserTo(int $userId, string $action)
+    public function disallowUserTo(int $userId, string $action): bool
     {
         if (!$this->userExistsById($userId)) {
             return false;
@@ -329,18 +341,18 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows = $this->relationsTable->findRows(['userId' => $userId,
             'relation' => 'isAllowed', 'attribute' => $action]);
-        if ($rows === []){
+        if (count($rows) === 0){
             return true;
         }
         $this->getSqlQueryCounterTracker()->incrementDelete();
-        return $this->relationsTable->deleteRow($rows[0]['id']) === 1;
+        return $this->relationsTable->deleteRow($rows->getFirst()['id']) === 1;
     }
     
     public function userHasRole(int $userId, string $role): bool
     {
         $this->getSqlQueryCounterTracker()->incrementSelect();
-        return $this->relationsTable->findRows(['userId' => $userId,
-            'relation' => 'hasRole', 'attribute' => $role]) !== [];
+        return count($this->relationsTable->findRows(['userId' => $userId,
+            'relation' => 'hasRole', 'attribute' => $role])) !== 0;
     }
     
     //
@@ -359,9 +371,13 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
             return true;
         }
         $this->getSqlQueryCounterTracker()->incrementCreate();
-        $this->relationsTable->createRow(['userId' => $userId, 
-            'relation' => 'hasRole', 'attribute' => $role]);
-        
+        try {
+            $this->relationsTable->createRow(['userId' => $userId,
+                'relation' => 'hasRole', 'attribute' => $role]);
+        } catch (RowAlreadyExists) {
+            return false;
+        }
+
         return true;
         
     }
@@ -378,28 +394,28 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows = $this->relationsTable->findRows(['userId' => $userId,
             'relation' => 'hasRole', 'attribute' => $role]);
-        if ($rows === []){
+        if (count($rows) === 0){
             return true;
         }
         $this->getSqlQueryCounterTracker()->incrementDelete();
-        return $this->relationsTable->deleteRow($rows[0]['id']) === 1;
+        return $this->relationsTable->deleteRow($rows->getFirst()['id']) === 1;
     }
     
     //
     // root role methods
     //
     
-    public function isRoot(int $userId)
+    public function isRoot(int $userId): bool
     {
         return $this->userHasRole($userId, self::ROLE_ROOT);
     }
     
-    public function makeRoot(int $userId)
+    public function makeRoot(int $userId): bool
     {
         return $this->setUserRole($userId, self::ROLE_ROOT);
     }
     
-    public function revokeRootStatus(int $userId)
+    public function revokeRootStatus(int $userId): bool
     {
         return $this->revokeUserRole($userId, self::ROLE_ROOT);
     }
@@ -407,7 +423,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     // user tokens
 
     /**
-     * Return the token associated with a user Id
+     * Return the token associated with a user id
      * if there's no token, returns an empty string
      * if the user does not exist returns false
      * @param int $userId
@@ -418,9 +434,6 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     {
         if ($this->userExistsById($userId)){
             $tokenRows = $this->getUserTokenRows($userId, $userAgent);
-            if ($tokenRows === false) {
-                return '';
-            }
             if (count($tokenRows) === 0) {
                 return '';
             }
@@ -437,27 +450,25 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         // ignoring IP address to see if that gets rid of unwanted logouts for
         // people on unstable Wi-Fi
         $this->getSqlQueryCounterTracker()->incrementSelect();
-        return $this->tokensTable->findRows( [
+        return iterator_to_array($this->tokensTable->findRows( [
             'user_id' => $userId, 
             'user_agent' => $userAgent
-        ]);
+        ]));
     }
-    public function storeUserToken(int $userId, string $userAgent, string $ipAddress, string $token)
+    public function storeUserToken(int $userId, string $userAgent, string $ipAddress, string $token): bool
     {
         //$this->logger->debug("Storing user token");
         if ($this->userExistsById($userId)){
             // Get the current token
             $tokenRows = $this->getUserTokenRows($userId, $userAgent);
             //$this->logger->debug("Token rows: " . print_r($tokenRows, true));
-            if ($tokenRows !== false) {
-                // Delete current token
-                foreach($tokenRows as $tokenRow) {
-                    $this->getSqlQueryCounterTracker()->incrementDelete();
-                    $this->tokensTable->deleteRow($tokenRow['id']);
-                }
+            // Delete current token
+            foreach($tokenRows as $tokenRow) {
+                $this->getSqlQueryCounterTracker()->incrementDelete();
+                $this->tokensTable->deleteRow($tokenRow['id']);
             }
             // ignoring IP address to see if that gets rid of unwanted logouts for
-            // people on unstable wifi
+            // people on unstable Wi-Fi
             $row = [
                 'user_id' => $userId, 
                 'user_agent' => $userAgent, 
@@ -468,7 +479,12 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
             ];
             //$this->logger->debug("Creating row: " . print_r($row, true));
             $this->getSqlQueryCounterTracker()->incrementCreate();
-            return false !== $this->tokensTable->createRow($row);
+            try {
+                $this->tokensTable->createRow($row);
+            } catch (RowAlreadyExists) {
+                return false;
+            }
+            return true;
         }
         return false;
     }
@@ -477,7 +493,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     // Passwords
     //
     
-    public function verifyUserPassword(string $userName, string $givenPassword)
+    public function verifyUserPassword(string $userName, string $givenPassword): bool
     {
         if (!$this->userExistsByUserName($userName)){
             return false;
@@ -489,8 +505,12 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         }
         return password_verify($givenPassword, $u['password']);
     }
-    
-    public function storeUserPassword(string $userName, string $password)
+
+    /**
+     * @throws RowDoesNotExist
+     * @throws InvalidRowForUpdate
+     */
+    public function storeUserPassword(string $userName, string $password): bool
     {
         if ($password === '') {
             return false;
@@ -499,7 +519,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
 
         if ($this->userExistsByUserName($userName)){
             $userId = $this->getUserIdFromUserName($userName);
-            if ($userId === GenericDataTable::NULL_ROW_ID) {
+            if ($userId === DataTable::NULL_ROW_ID) {
                 return false;
             }
             $this->getSqlQueryCounterTracker()->incrementUpdate();

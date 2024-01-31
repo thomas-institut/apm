@@ -11,7 +11,7 @@ export class MetadataEditor {
             containerSelector: { type:'string', required: true},
             entityId: {type:'string', required: true},
             entityType: {type:'string', required: true},
-            metadata: {type:'array', required: false, default: []},
+            metadata: {type:'object', required: false, default: {values: [], notes: []}},
             metadataSchema: {type: 'object', required: true},
             mode: {type:'string', required: true},
             callback: {type:'function', required: true},
@@ -29,7 +29,7 @@ export class MetadataEditor {
         this.makeEditor()
 
         // Globals
-        this.entity = {id: '', type: '', keys: [], values: [], types: []}
+        this.entity = {id: '', type: '', keys: [], values: [], types: [], notes: []}
         this.numKeys = 0
         this.mode = {create: 'create', edit: 'edit', show: 'show', dialog: 'dialog'}
         this.tagEditor = undefined
@@ -145,8 +145,9 @@ export class MetadataEditor {
             this.entity.id = this.options.entityId
         }
         this.entity.type = this.options.entityType
-        if (this.entity.values.length === 0) { // After having edited and saved values, they get updated via the updateEntityData function
-            this.entity.values = this.options.metadata
+        if (this.entity.values.length === 0) { // After having edited and saved values and notes, they get updated via the updateEntityData function
+            this.entity.values = this.options.metadata.values
+            this.entity.notes = this.options.metadata.notes
         }
         this.entity.keys = this.options.metadataSchema.keys
         this.entity.types = this.options.metadataSchema.types
@@ -291,6 +292,7 @@ export class MetadataEditor {
             let selector = this.options.containerSelector + " .entity_attr" + i
             let value = this.entity.values[i-1]
             let type = this.entity.types[i-1]
+            let note = this.entity.notes[i-1]
 
             if (type.includes('person') && value !== '') {
                 let url = urlGen.sitePerson(value)
@@ -325,6 +327,10 @@ export class MetadataEditor {
                 $(selector).append(value)
             } else {
                 $(selector).append(value)
+            }
+
+            if (note !== '' && !type.includes('tags')) {
+                $(selector).append(` <span title="${note}"><i class="fa fa-info-circle" aria-hidden="true" style="color: cornflowerblue"></i></span>`)
             }
         }
     }
@@ -421,8 +427,16 @@ export class MetadataEditor {
             default:
                 this.makeTextForm(selectorId, inputId, type)
         }
+        this.makeHiddenNoteTextArea(inputId, selectorId)
         this.makeMakeEditorialNoteButtonEvent(selectorId, inputId)
         this.focusIfFirstInputForm(inputId)
+    }
+
+    makeHiddenNoteTextArea(inputId, selectorId) {
+        let noteId = inputId + '_editorial-note'
+        $(selectorId).append(`<textarea class="${noteId} form-control" rows="2" style="font-size: small"></textarea>`)
+        let noteSelector = this.options.containerSelector+" ."+noteId
+        $(noteSelector).hide()
     }
 
     makeTagsForm(selectorId) {
@@ -634,30 +648,34 @@ export class MetadataEditor {
 
     makeMakeEditorialNoteButtonEvent(selectorId, inputId) {
         let buttonId = inputId + '_editorial-note-button'
+        let noteId = inputId + '_editorial-note'
+        let noteSelector = this.options.containerSelector+ " ." + noteId
 
         $(this.options.containerSelector + " ." + inputId).on("focusin", () => {
-            this.makeEditorialNoteButton(selectorId, buttonId)
+            if ($(noteSelector).is(":hidden")) {
+                this.makeEditorialNoteButton(selectorId, buttonId, noteSelector)
+            }
         })
         $(this.options.containerSelector + " ." + inputId).on("focusout", () => {
-            this.removeEditorialNoteButton(buttonId)
+            this.removeEditorialNoteButton(buttonId, 200)
         })
     }
 
-    makeEditorialNoteButton(selectorId, buttonId) {
-        $(selectorId + " .embed-button").append(`<button class=${buttonId}>Note</button>`)
+    makeEditorialNoteButton(selectorId, buttonId, noteSelector) {
+        $(selectorId + " .embed-button").append(`<button class=${buttonId}><i class="fa fa-info-circle" aria-hidden="true" style="color: cornflowerblue"></button>`)
         let buttonSelector = this.options.containerSelector+ " ." + buttonId
         console.log(buttonSelector)
         $(buttonSelector).on("click", () => {
-            console.log('click')
-            $(selectorId).append(`<textarea class="form-control" rows="2" placeholder="note"></textarea>`)
+            $(noteSelector).show()
+            this.removeEditorialNoteButton(buttonId, 0)
         })
     }
 
-    removeEditorialNoteButton(buttonId) {
-        // 50 milliseconds delay, otherwise the button would be removed before the button event could be triggered
+    removeEditorialNoteButton(buttonId, timeout) {
+        // 50 milliseconds delay, otherwise the button would be removed before the button event could    be triggered
         setTimeout(() => {
             $("."+buttonId).remove()
-        }, 50);
+        }, timeout);
     }
 
     focusIfFirstInputForm(inputForm) {
@@ -680,7 +698,9 @@ export class MetadataEditor {
     addValueToInputFormByType(type, index) {
 
         let values = this.entity.values
+        let notes = this.entity.notes
         let entityAttrFormId = this.options.containerSelector + " .entity_attr" + index + "_form"
+        let entityAttrNoteId = this.options.containerSelector + " .entity_attr" + index + "_form_editorial-note"
 
         switch (type) {
             case 'year':
@@ -703,6 +723,13 @@ export class MetadataEditor {
                 break
             default:
                 $(entityAttrFormId).val(values[index-1])
+        }
+
+        if (notes[index-1] !== '') {
+            $(entityAttrNoteId).val(notes[index-1])
+            $(entityAttrNoteId).show()
+            let buttonId = "entity_attr" + index + "_form" + '_editorial-note-button'
+            this.removeEditorialNoteButton(buttonId, 0)
         }
     }
 
@@ -769,7 +796,7 @@ export class MetadataEditor {
 
             if (this.validateData(d) && this.validatePasswords()) {
                 this.makeSpinner(this.buttonsSelectorBottom)
-                this.updateEntityData(d.id, d.type, d.values)
+                this.updateEntityData(d.id, d.type, d.values, d.notes)
                 //this.tagEditor.saveTags()
                 this.options.callback(this.entity, this.options.mode, () => {
                     this.logSaveAction(this.options.mode)
@@ -849,7 +876,8 @@ export class MetadataEditor {
             let keyIndex = selector.match(/\d+/)[0]
             let cellButtonId = "entity_attr" + keyIndex + "_tableCellButton"
             let cellButtonIdSelector = this.options.containerSelector + ' .' + cellButtonId
-            let value = this.getEntityDataByIndex(keyIndex)
+            let value = this.getEntityDataByIndex(keyIndex)[0]
+            let note = this.getEntityDataByIndex(keyIndex)[1]
             if (this.validateData(value, keyIndex)) {
                 this.clearErrorMessage()
                 this.makeSpinner(cellButtonIdSelector, '1.25em')
@@ -857,6 +885,7 @@ export class MetadataEditor {
                     //this.tagEditor.saveTags()
                 }
                 this.entity.values[keyIndex-1] = value // Corresponds to updateEntityData function in global save event
+                this.entity.notes[keyIndex-1] = note // Corresponds to updateEntityData function in global save event
                 this.options.callback(this.entity, this.options.mode, () => {
                     this.logSaveAction(this.options.mode)
                     this.singleEdit = false
@@ -901,23 +930,26 @@ export class MetadataEditor {
         })
     }
 
-    updateEntityData(id, type, values) {
+    updateEntityData(id, type, values, notes) {
         this.entity.id = id
         this.entity.type = type
         this.entity.values = values
+        this.entity.notes = notes
     }
 
     getEntityDataByIndex(keyIndex='all') {
         let id = this.entity.id
         let values = []
+        let notes = []
         let type = this.entity.type
 
         if (keyIndex === 'all') {
             for (let i = 1; i <= this.numKeys; i++) {
-                values.push(this.getEntityDataByType(this.entity.types[i-1], i))
+                let valueAndNote = this.getEntityDataByType(this.entity.types[i-1], i)
+                values.push(valueAndNote[0])
+                notes.push(valueAndNote[1])
             }
-            return {id: id, type: type, values: values}
-
+            return {id: id, type: type, values: values, notes: notes}
         } else {
             return this.getEntityDataByType(this.entity.types[keyIndex-1], keyIndex)
         }
@@ -927,16 +959,18 @@ export class MetadataEditor {
 
         let selector = this.options.containerSelector + " .entity_attr" + keyIndex + "_form"
         let value = $(selector).val()
+        let noteSelector = this.options.containerSelector + " .entity_attr" + keyIndex + "_form_editorial-note"
+        let note = $(noteSelector).val()
+        if (note === undefined) {note = ''}
 
         if (type.includes('year')) {
-            return this.getDataForYear(selector, value)
+            return [this.getDataForYear(selector, value), note]
 
         } else if (type.includes('years_range')) {
-            return this.getDataForYearsRange(selector, value)
+            return [this.getDataForYearsRange(selector, value), note]
 
         } else if (type.includes('tags')) {
-            console.log(this.tagEditor.getTags())
-            return this.tagEditor.getTags()
+            return [this.tagEditor.getTags(), '']
         } else if (type.includes('person')) {
             let person_id
             try {
@@ -945,10 +979,10 @@ export class MetadataEditor {
             } catch {
                 person_id = ''
             }
-            return person_id
+            return [person_id, note]
 
         } else {
-            return value
+            return [value, note]
         }
     }
 
@@ -969,7 +1003,6 @@ export class MetadataEditor {
         name = name + "_year_bc_ad"
         year.push(value)
         year.push($(name).val())
-
         return year
     }
 
@@ -1005,6 +1038,7 @@ export class MetadataEditor {
 
     isValid(key, affordedTypes, givenType, value) {
         if (this.typesNotMatching(givenType, affordedTypes) || value === undefined) {
+            console.log(value)
             this.returnDataTypeError(key, givenType, affordedTypes)
             return false
         } else if (this.inconsistentDates(key, givenType, value)) {

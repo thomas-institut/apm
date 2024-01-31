@@ -76,7 +76,8 @@ class ApiPeople extends ApiController
             'type' => $_POST['type'],
             'keys' => $_POST['keys'],
             'types' => $_POST['types'],
-            'values' => $_POST['values']
+            'values' => $_POST['values'],
+            'notes' => $_POST['notes']
         ];
 
         $this->saveMetadataInSql($data);

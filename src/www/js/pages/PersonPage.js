@@ -49,7 +49,7 @@ function setupMetadataEditor (entity, mode) {
         containerSelector: '#person-metadata-editor-container',
         entityId: entity.id,
         entityType: entity.type,
-        metadata: entity.values,
+        metadata: {values: entity.values, notes: entity.notes},
         metadataSchema: {keys: entity.keys, types: entity.types},
         callback: (data, mode, callback) => {
             savePersonData(data, mode, callback)

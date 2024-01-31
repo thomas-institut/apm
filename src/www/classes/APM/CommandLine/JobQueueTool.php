@@ -127,7 +127,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
     }
 
     private function rescheduleJob(int $jobId) : bool {
-        $result = $this->systemManager->getJobManager()->rescheduleJob($jobId);
+        $result = $this->getSystemManager()->getJobManager()->rescheduleJob($jobId);
         if ($result === -1) {
             $this->printErrorMsg("Job $jobId does not exist");
             return false;
@@ -152,7 +152,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
         }
 
         foreach($statesToList as $state) {
-            $jobs = $this->systemManager->getJobManager()->getJobsByState($state);
+            $jobs = $this->getSystemManager()->getJobManager()->getJobsByState($state);
             $countJobs = count($jobs);
             printf("%s, %d job(s)", $state, $countJobs);
             if ($countJobs === 0) {
@@ -174,7 +174,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
     }
 
     private function info() : void {
-        $jm = $this->systemManager->getJobManager();
+        $jm = $this->getSystemManager()->getJobManager();
 
         $counts = $jm->getJobCountsByState();
 
@@ -200,7 +200,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
 
     private function test(): void
     {
-        $jm = $this->systemManager->getJobManager();
+        $jm = $this->getSystemManager()->getJobManager();
 
         for ($i = 0; $i< self::NUM_TEST_JOBS; $i++) {
             $jm->scheduleJob(ApmJobName::NULL_JOB, "No. $i", [ 'returnValue' => ($i % 2) === 0 ], $i, $i+1, 4*($i + 1));
@@ -209,12 +209,12 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
 
     private function process(): void
     {
-        $this->systemManager->getJobManager()->process();
+        $this->getSystemManager()->getJobManager()->process();
     }
 
     private function clean(): void
     {
-        $this->systemManager->getJobManager()->cleanQueue();
+        $this->getSystemManager()->getJobManager()->cleanQueue();
     }
 
     public function getCommand(): string

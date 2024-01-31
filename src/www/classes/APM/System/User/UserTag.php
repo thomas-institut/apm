@@ -7,6 +7,6 @@ class UserTag
     const ROOT = 'root';
     const DISABLED = 'disabled';
     const READ_ONLY = 'readOnly';
-
-    const CAN_CREATE_DOCUMENTS = 'canCreateDocs';
+    const CREATE_DOCUMENTS = 'canCreateDocs';
+    const MANAGE_USERS = 'canManageUsers';
 }

@@ -22,8 +22,11 @@ namespace AverroesProject\Data;
 
 use AverroesProject\EditorialNote;
 use PDO;
+use ThomasInstitut\DataTable\DataTableResultsIterator;
+use ThomasInstitut\DataTable\DataTableResultsPdoIterator;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use Psr\Log\LoggerInterface;
+use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\TimeString\TimeString;
 
 /**
@@ -56,7 +59,7 @@ class EdNoteManager {
     {
         $rows = $this->edNotesDataTable->findRows(['type' => $type,
             'target' => $target]);
-        return $this->editorialNoteArrayFromDatabaseRows($rows);
+        return $this->editorialNoteArrayFromDatabaseRows(iterator_to_array($rows));
     }
         
     public function getEditorialNotesByDocPageCol($docId, $pageNum, $colNumber=1): array
@@ -98,6 +101,7 @@ class EdNoteManager {
             "AND $elements.valid_from<='$time' AND $elements.valid_until>'$time' " .
             "AND $elements.page_id=$pageId AND $elements.column_number=$colNumber ";
 
+
         $rows = $this->dbh->getAllRows($query);
         return $this->editorialNoteArrayFromDatabaseRows($rows);
     }
@@ -131,14 +135,19 @@ class EdNoteManager {
     
     public function insertNote($type, $target, $authorTid, $text): int
     {
-        return $this->edNotesDataTable->createRow([
-            'type' => $type,
-            'target' => $target,
-            'lang' => 'en',
-            'author_tid' => $authorTid,
-            'time' => TimeString::now(),
-            'text' => $text
-        ]);
+        try {
+            return $this->edNotesDataTable->createRow([
+                'type' => $type,
+                'target' => $target,
+                'lang' => 'en',
+                'author_tid' => $authorTid,
+                'time' => TimeString::now(),
+                'text' => $text
+            ]);
+        } catch (RowAlreadyExists $e) {
+            // should never happen
+            throw new \RuntimeException("Could not create DB row for note");
+        }
     }
     
     public function updateNote(EditorialNote $note) : void {

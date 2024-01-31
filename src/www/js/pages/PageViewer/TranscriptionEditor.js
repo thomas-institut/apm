@@ -98,7 +98,7 @@ export class TranscriptionEditor
     //console.log('Transcription editor options')
     //console.log(this.options)
     this.people = this.options.people
-    this.editorId = this.options.editorId
+    this.editorTid = this.options.editorTid
     this.activeWorks = this.options.activeWorks
     this.lastSelectedWorkId = this.activeWorks[0].dareId
     this.chunkNumberEntered = 1
@@ -405,8 +405,8 @@ export class TranscriptionEditor
     }
     // editorId: int
     // the id of the transcriber
-    if (options.editorId === undefined) {
-      options.editorId = 1 // 
+    if (options.editorTid === undefined) {
+      options.editorTid = 1 //
     }
     
     // startEnabled:  true/false
@@ -2361,7 +2361,7 @@ export class TranscriptionEditor
     console.log('Adding new note ' + noteId)
     this.edNotes.push({
       id: noteId,
-      authorId: this.editorId,
+      authorTid: this.editorTid,
       target: itemId,
       type: 2,
       text: text,
@@ -2517,10 +2517,10 @@ export class TranscriptionEditor
     })
   }
   
-  static setUpPopover (node, title, text, editorid, itemid, noText = false) {
+  static setUpPopover (node, title, text, editorId, itemid, noText = false) {
     $(node).popover({
       content: function () {
-        const editorObject = TranscriptionEditor.editorsById[editorid]
+        const editorObject = TranscriptionEditor.editorsById[editorId]
         const ednotes = editorObject.getEdnotesForItemId(itemid)
         let t = '<h3 class="editor-popover-title">' + title + '</h3>'
         if (!noText) {
@@ -2534,7 +2534,7 @@ export class TranscriptionEditor
         for (const note of ednotes) {
           ednotesHtml += '<blockquote><p>' + note.text + '</p>'
           ednotesHtml += '<footer>' +
-                        editorObject.people[note.authorId].name +
+                        editorObject.people[note.authorTid].name +
                         ' @ ' +
                         note.time + '</footer>'
           ednotesHtml += '</blockquote>'

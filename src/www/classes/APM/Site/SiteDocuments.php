@@ -81,7 +81,7 @@ class SiteDocuments extends SiteController
         $canManageDocuments = false;
         $userManager = $this->systemManager->getUserManager();
         try {
-            if ($userManager->hasTag($this->userTid, UserTag::CAN_CREATE_DOCUMENTS) || $userManager->isRoot($this->userTid)) {
+            if ($userManager->hasTag($this->userTid, UserTag::CREATE_DOCUMENTS) || $userManager->isRoot($this->userTid)) {
                 $canManageDocuments = true;
             }
         } catch (UserNotFoundException) {

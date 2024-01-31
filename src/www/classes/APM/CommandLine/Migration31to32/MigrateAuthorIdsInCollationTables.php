@@ -12,8 +12,8 @@ class MigrateAuthorIdsInCollationTables extends CommandLineUtility
 
     public function main($argc, $argv): void
     {
-        $dbConn = $this->systemManager->getDbConnection();
-        $peopleTableName = $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_PEOPLE];
+        $dbConn = $this->getSystemManager()->getDbConnection();
+        $peopleTableName = $this->getSystemManager()->getTableNames()[ApmMySqlTableName::TABLE_PEOPLE];
         print "Loading new people Tids...";
         $idConversionTable = $this->getId2TidTable($dbConn, $peopleTableName);
         print "done\n";
@@ -21,7 +21,7 @@ class MigrateAuthorIdsInCollationTables extends CommandLineUtility
         $doIt = $argv[1] === 'doIt';
 
         // now migrate collation tables, this is almost brute force!
-        $ctTableName = $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_COLLATION_TABLE];
+        $ctTableName = $this->getSystemManager()->getTableNames()[ApmMySqlTableName::TABLE_COLLATION_TABLE];
 
         print "Loading collations tables...";
         $result = $dbConn->query("select * from `$ctTableName`");

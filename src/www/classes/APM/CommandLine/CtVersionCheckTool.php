@@ -27,7 +27,7 @@ class CtVersionCheckTool extends CommandLineUtility
             $fix = true;
         }
 
-        $ctManager = $this->systemManager->getCollationTableManager();
+        $ctManager = $this->getSystemManager()->getCollationTableManager();
         $versionManager = $ctManager->getCollationTableVersionManager();
         $ctIds = [];
         $reportEveryId = true;
@@ -143,8 +143,8 @@ class CtVersionCheckTool extends CommandLineUtility
      */
     private function bruteForceDataTableConsistencyFix($ctId): void
     {
-        $tableName = $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_COLLATION_TABLE];
-        $dataTable = new MySqlUnitemporalDataTable($this->systemManager->getDbConnection(), $tableName);
+        $tableName = $this->getSystemManager()->getTableNames()[ApmMySqlTableName::TABLE_COLLATION_TABLE];
+        $dataTable = new MySqlUnitemporalDataTable($this->getSystemManager()->getDbConnection(), $tableName);
         $versions = $dataTable->getRowHistory($ctId);
         if (count($versions) < 2) {
             return;

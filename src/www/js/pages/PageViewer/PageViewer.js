@@ -37,7 +37,7 @@ export class PageViewer extends ApmPage {
       optionsDefinition: {
         docId: { type: 'integer', required: true},
         pageSystemId: { type: 'integer', required: true},
-
+        activeColumn: { type: 'integer', required: true},
       }
     });
 
@@ -213,7 +213,7 @@ export class PageViewer extends ApmPage {
             $('#theTabs').append(theDiv)
             const te = new TranscriptionEditor('col' + theCol, theCol,
                 {
-                editorId: this.userTid ,
+                editorTid: this.userTid ,
                 activeWorks: this.options.activeWorks,
                 langDef: this.langDef,
                 defaultLang: this.options.defaultLang,

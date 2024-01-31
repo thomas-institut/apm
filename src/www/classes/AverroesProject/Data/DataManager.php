@@ -650,7 +650,8 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $data;
     }
     
-    function getDocByDareId(string $dareId) {
+    function getDocByDareId(string $dareId): ?array
+    {
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows = $this->docsDataTable->findRows(['image_source_data' => $dareId], 1);

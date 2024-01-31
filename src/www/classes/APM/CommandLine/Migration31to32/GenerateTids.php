@@ -28,7 +28,7 @@ class GenerateTids extends CommandLineUtility
 
         $doIt = ($argv[1] ?? '') === 'doIt';
 
-        $dbConn = $this->systemManager->getDbConnection();
+        $dbConn = $this->getSystemManager()->getDbConnection();
 
         $tablesToUpdate = [
             ApmMySqlTableName::TABLE_PEOPLE,
@@ -38,7 +38,7 @@ class GenerateTids extends CommandLineUtility
 
         $dataTablesToUpdate = [];
         foreach ($tablesToUpdate as $tableName) {
-            $realName = $this->systemManager->getTableNames()[$tableName];
+            $realName = $this->getSystemManager()->getTableNames()[$tableName];
             $dataTablesToUpdate[] = new MySqlDataTable($dbConn, $realName, false);
         }
 
@@ -46,7 +46,7 @@ class GenerateTids extends CommandLineUtility
         foreach ($dataTablesToUpdate as $dt) {
             $dataTablesToCheckForTidUsage[] = $dt;
         }
-        $docTableName =  $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_DOCS];
+        $docTableName =  $this->getSystemManager()->getTableNames()[ApmMySqlTableName::TABLE_DOCS];
         $dataTablesToCheckForTidUsage[] = new MySqlDataTable($dbConn, $docTableName, true);
 
         $dt = DateTime::createFromFormat("Y-m-d H:i:s.u", self::baseTimeString);

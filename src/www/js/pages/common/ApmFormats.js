@@ -7,7 +7,7 @@ let timeZone = 'UTC';
 export class ApmFormats {
 
   /**
-   * Returns a formatted date/time string for the given timestring
+   * Returns a formatted date/time string for the given timeString
    *
    * @param {string}timeString
    * @param options

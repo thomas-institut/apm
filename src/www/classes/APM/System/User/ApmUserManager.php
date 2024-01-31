@@ -2,12 +2,14 @@
 
 namespace APM\System\User;
 
-use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
+use RuntimeException;
 use ThomasInstitut\DataTable\DataTable;
+use ThomasInstitut\DataTable\InvalidRowForUpdate;
+use ThomasInstitut\DataTable\RowAlreadyExists;
 
-class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
+class ApmUserManager implements UserManagerInterface
 {
 
     use LoggerAwareTrait;
@@ -23,6 +25,17 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
         $this->tokensTable = $tokensTable;
         $this->cache = [];
         $this->logger = new NullLogger();
+    }
+
+    public function getAllUsersData() : array
+    {
+        $data = [];
+        foreach ($this->usersTable->getAllRows() as $userRow) {
+            $userTid = $userRow['tid'];
+            $this->cache[$userTid] = $this->getUserDataFromTableRow($userRow);
+            $data[] = $this->cache[$userTid];
+        }
+        return $data;
     }
 
 
@@ -101,7 +114,41 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
         if ($this->isUserNameAlreadyInUse($newUserName)) {
             throw new UserNameAlreadyInUseException();
         }
-        $this->usersTable->updateRow(['id' => $userData->id, 'username' => $newUserName]);
+        try {
+            $this->usersTable->updateRow(['id' => $userData->id, 'username' => $newUserName]);
+        } catch (InvalidRowForUpdate $e) {
+            // should never happen
+            $this->logger->error($e->getMessage());
+            throw new RuntimeException($e->getMessage(), $e->getCode());
+        }
+        unset($this->cache[$userTid]);
+    }
+
+
+    protected function isValidEmailAddress(string $emailAddress) : bool {
+        return str_contains($emailAddress, '@') &&
+            !str_starts_with($emailAddress, '@') &&
+            !str_ends_with($emailAddress, '@');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function changeEmailAddress(int $userTid, string $newEmailAddress): void
+    {
+        $userData = $this->getUserData($userTid);
+
+        if (!$this->isValidEmailAddress($newEmailAddress)) {
+            throw new InvalidEmailAddressException("Email address '$newEmailAddress' is not valid");
+        }
+
+        try {
+            $this->usersTable->updateRow(['id' => $userData->id, 'email_address' => $newEmailAddress]);
+        } catch (InvalidRowForUpdate $e) {
+            // should never happen
+            $this->logger->error($e->getMessage());
+            throw new RuntimeException($e->getMessage(), $e->getCode());
+        }
         unset($this->cache[$userTid]);
     }
 
@@ -125,12 +172,22 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
             throw new UserNameAlreadyInUseException();
         }
 
-        $this->usersTable->createRow([
-            'tid' => $userTid,
-            'username' => $userName,
-            'password' => null,
-            'tags' => ''
-        ]);
+        if (!$this->isStringValidUserName($userName)) {
+            throw new InvalidUserNameException();
+        }
+
+        try {
+            $this->usersTable->createRow([
+                'tid' => $userTid,
+                'username' => $userName,
+                'password' => null,
+                'tags' => ''
+            ]);
+        } catch (RowAlreadyExists $e) {
+            // should never happen
+            $this->logger->error($e->getMessage());
+            throw new RuntimeException($e->getMessage(), $e->getCode());
+        }
     }
 
 
@@ -142,7 +199,12 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
         $userData = $this->getUserData($userTid);
 
         $this->addTag($userTid, UserTag::DISABLED);
-        $this->usersTable->updateRow([ 'id' => $userData->id, 'password' => null]);
+        try {
+            $this->usersTable->updateRow(['id' => $userData->id, 'password' => null]);
+        } catch (InvalidRowForUpdate $e) {
+            // should never happen, but it's not catastrophic, we can continue
+            $this->logger->error($e->getMessage());
+        }
         unset($this->cache[$userTid]);
     }
 
@@ -176,7 +238,13 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
             $userData = $this->getUserData($userTid);
             $newTagArray = $userData->tags;
             $newTagArray[]  = $tag;
-            $this->usersTable->updateRow([ 'id' => $userData->id, 'tags' => implode(',', $newTagArray)]);
+            try {
+                $this->usersTable->updateRow(['id' => $userData->id, 'tags' => implode(',', $newTagArray)]);
+            } catch (InvalidRowForUpdate $e) {
+                // should never happen
+                $this->logger->error($e->getMessage());
+                throw new RuntimeException($e->getMessage(), $e->getCode());
+            }
             unset($this->cache[$userTid]);
         }
     }
@@ -196,7 +264,13 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
                     $newTagArray[] = $currentTag;
                 }
             }
-            $this->usersTable->updateRow([ 'id' => $userData->id, 'tags' => implode(',', $newTagArray)]);
+            try {
+                $this->usersTable->updateRow(['id' => $userData->id, 'tags' => implode(',', $newTagArray)]);
+            } catch (InvalidRowForUpdate $e) {
+                // should never happen
+                $this->logger->error($e->getMessage());
+                throw new RuntimeException($e->getMessage(), $e->getCode());
+            }
             unset($this->cache[$userTid]);
         }
     }
@@ -204,6 +278,9 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
     public function isRoot(int $userTid) : bool {
         return $this->hasTag($userTid, UserTag::ROOT);
     }
+
+
+
 
     /**
      * @inheritDoc
@@ -214,6 +291,9 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
             'user_tid' => $userTid,
             'user_agent' => $userAgent
         ]);
+        if (count($rows) === 0) {
+            return '';
+        }
         return $rows->getFirst()['token'] ?? '';
     }
 
@@ -239,7 +319,7 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
         if (count($tokenRows) === 0) {
             return;
         }
-        $this->tokensTable->deleteRow($tokenRows[0]['id']);
+        $this->tokensTable->deleteRow($tokenRows->getFirst()['id']);
     }
 
     /**
@@ -247,16 +327,21 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
      */
     public function storeToken(int $userTid, string $userAgent, string $ipAddress, string $token): void
     {
-        $userData = $this->getUserData($userTid);
         if ($userAgent === '' || $token === '') {
             return;
         }
         $this->deleteToken($userTid, $userAgent); // this checks if the user exists
-        $this->tokensTable->createRow([
-            'user_tid' => $userTid,
-            'user_agent' => $userAgent,
-            'ip_address' => $ipAddress,
-            'token' => $token]);
+        try {
+            $this->tokensTable->createRow([
+                'user_tid' => $userTid,
+                'user_agent' => $userAgent,
+                'ip_address' => $ipAddress,
+                'token' => $token]);
+        } catch (RowAlreadyExists $e) {
+            // should never happen
+            $this->logger->error($e->getMessage());
+            throw new RuntimeException($e->getMessage(), $e->getCode());
+        }
     }
 
     public function removeToken(int $userTid, string $userAgent) : void
@@ -287,7 +372,7 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
     /**
      * @inheritDoc
      */
-    public function storePassword(int $userTid, string $password): void
+    public function changePassword(int $userTid, string $password): void
     {
         $userData = $this->getUserData($userTid);
         if ($userData->disabled) {
@@ -302,7 +387,38 @@ class ApmUserManager implements UserManagerInterface, LoggerAwareInterface
             }
             $tablePasswordValue = password_hash($password, PASSWORD_BCRYPT);
         }
-        $this->usersTable->updateRow(['id'=> $userData->id, 'password' => $tablePasswordValue ]);
+        try {
+            $this->usersTable->updateRow(['id' => $userData->id, 'password' => $tablePasswordValue]);
+        } catch (InvalidRowForUpdate $e) {
+            // should never happen
+            $this->logger->error($e->getMessage());
+            throw new RuntimeException($e->getMessage(), $e->getCode());
+        }
         unset($this->cache[$userTid]);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function isEnabled(int $userTid): bool
+    {
+        return !$this->hasTag($userTid, UserTag::DISABLED);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function isUserAllowedTo(int $userTid, string $operationTag, bool $writeOperation = true): bool
+    {
+        if (!$this->isEnabled($userTid)) {
+            return false;
+        }
+        if ($this->isRoot($userTid)) {
+            return true;
+        }
+        if ($writeOperation && $this->hasTag($userTid, UserTag::READ_ONLY)){
+            return false;
+        }
+        return $this->hasTag($userTid, $operationTag);
     }
 }

@@ -33,6 +33,7 @@ import { ITEM_TEXT } from './Item'
 export class EditorData {
   
   static getApiDataFromQuillDelta(delta, editorInfo) {
+    console.log(editorInfo)
 
     // Transcription editor settings
     let formatBlots = TranscriptionEditor.formatBlots
@@ -63,7 +64,7 @@ export class EditorData {
         pageId: editorInfo.pageId,
         columnNumber: editorInfo.columnNumber,
         lang: editorInfo.defaultLang,
-        editorId: editorInfo.editorId,
+        editorTid: editorInfo.editorTid,
         handId: editorInfo.handId,
         type: invalidElementType,
         seq: currentElementSeq++,

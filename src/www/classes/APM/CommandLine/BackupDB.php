@@ -59,7 +59,7 @@ class BackupDB extends CommandLineUtility {
         $outputDir = $argv[1];
         $hostName = gethostname();
 
-        $tableNames = $this->systemManager->getTableNames();
+        $tableNames = $this->getSystemManager()->getTableNames();
         $databaseName = $this->config['db']['db'];
         $ignoreTablesCommand = '';
         foreach(self::CACHE_TABLES as $table) {

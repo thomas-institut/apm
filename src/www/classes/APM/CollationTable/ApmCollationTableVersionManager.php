@@ -24,6 +24,7 @@ use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\DataTable\DataTable;
+use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
 use ThomasInstitut\Profiler\SqlQueryCounterTracker;
 use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
@@ -108,7 +109,11 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
             // just create a new entry with timeUntil in the EndOfTimes
             $versionInfo->timeUntil = TimeString::END_OF_TIMES;
             $this->sqlQueryCounterTracker->incrementCreate();
-            $this->columnVersionTable->createRow($versionInfo->getDatabaseRow());
+            try {
+                $this->columnVersionTable->createRow($versionInfo->getDatabaseRow());
+            } catch (RowAlreadyExists $e) {
+                throw new InvalidArgumentException("Version has already existing ID but it should be new");
+            }
             return;
         }
 
@@ -145,7 +150,12 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
         }
 
         $this->sqlQueryCounterTracker->incrementCreate();
-        $this->columnVersionTable->createRow($versionInfo->getDatabaseRow());
+        try {
+            $this->columnVersionTable->createRow($versionInfo->getDatabaseRow());
+        } catch (RowAlreadyExists $e) {
+            // should never happen
+            throw new \RuntimeException("Could not create DB row for version");
+        }
     }
 
     private function rawUpdateVersion(CollationTableVersionInfo $versionInfo): void

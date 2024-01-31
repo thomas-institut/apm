@@ -13,8 +13,8 @@ class ApmDaemon extends CommandLineUtility
 
     public function main($argc, $argv): void
     {
-        $dataManager = $this->systemManager->getDataManager();
-        $personManager = $this->systemManager->getPersonManager();
+        $dataManager = $this->getSystemManager()->getDataManager();
+        $personManager = $this->getSystemManager()->getPersonManager();
 
         $daemon = false;
         if (isset($argv[1]) && $argv[1] === '-d') {
@@ -61,13 +61,13 @@ class ApmDaemon extends CommandLineUtility
                     exit();
                 }
                 $this->reestablishCacheItems($cacheItemsToReestablish);
-                $this->systemManager->getJobManager()->process();
+                $this->getSystemManager()->getJobManager()->process();
                 sleep($secondsToSleep);
             }
 
         } else {
             if(!$this->reestablishCacheItems($cacheItemsToReestablish)){
-                $this->systemManager->getJobManager()->process();
+                $this->getSystemManager()->getJobManager()->process();
                 $this->logger->info("Cache is up to date");
             }
         }
@@ -82,7 +82,7 @@ class ApmDaemon extends CommandLineUtility
     }
 
     private function reestablishCacheItems(array $cacheItemInfo) : bool {
-        $cache = $this->systemManager->getSystemDataCache();
+        $cache = $this->getSystemManager()->getSystemDataCache();
         $dataBuilt = false;
         foreach ($cacheItemInfo as $item) {
             try {

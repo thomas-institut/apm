@@ -2,20 +2,22 @@
 
 namespace APM\CommandLine;
 
+use APM\CollationTable\CollationTableManager;
 use APM\System\ApmConfigParameter;
+use APM\System\Person\PersonNotFoundException;
 use APM\System\PythonLemmatizer;
-use OpenSearch\Client;
+use Exception;
 use OpenSearch\ClientBuilder;
 
 class EditionsIndexManager extends OpenSearchIndexManager
 {
-    protected $ctable;
+    protected CollationTableManager $collationTableManager;
 
 
     public function main($argc, $argv): bool
     {
         // Get collationTableManager
-        $this->ctable = $this->systemManager->getCollationTableManager();
+        $this->collationTableManager = $this->getSystemManager()->getCollationTableManager();
 
         // Instantiate OpenSearch client
         $this->client = (new ClientBuilder())
@@ -32,12 +34,12 @@ class EditionsIndexManager extends OpenSearchIndexManager
             $this->resetIndex($this->client, $index_name);
         }
 
-        // Get the data of up to 20000 editions
+        // Get the data of up to 20 000 editions
         $editions = [];
         foreach (range(1, 20000) as $id) {
             try {
-                $editions[] = $this->getEditionData($this->ctable, $id);
-            } catch (\Exception $e) {
+                $editions[] = $this->getEditionData($this->collationTableManager, $id);
+            } catch (Exception) {
                 $num_editions = $id-1;
                 $this->logger->debug("Found $num_editions potential editions.");
                 break;
@@ -59,10 +61,13 @@ class EditionsIndexManager extends OpenSearchIndexManager
         return true;
     }
 
-    public function getEditionData ($ctable, int $id): array
+    /**
+     * @throws PersonNotFoundException
+     */
+    public function getEditionData (CollationTableManager $ctm, int $id): array
     {
         $edition_data = [];
-        $data = $ctable->getCollationTableById($id);
+        $data = $ctm->getCollationTableById($id);
 
         if ($data['type'] === 'edition') {
             $edition_data['table_id'] = $id; // equals $data['tableId']
@@ -70,8 +75,8 @@ class EditionsIndexManager extends OpenSearchIndexManager
 
             $edition_json = $data['witnesses'][$edition_data['edition_witness_index']];
             $tokens = $edition_json['tokens'];
-            $editor_id = $ctable->getCollationTableVersionManager()->getCollationTableVersionInfo($id, 1)[0]->authorTid;
-            $editor = $this->um->getUserInfoByUserId($editor_id)['name'];
+            $editor_id = $ctm->getCollationTableVersionManager()->getCollationTableVersionInfo($id, 1)[0]->authorTid;
+            $editor = $this->getSystemManager()->getPersonManager()->getPersonEssentialData($editor_id)->name;
 
             $edition_text = "";
 
@@ -86,7 +91,7 @@ class EditionsIndexManager extends OpenSearchIndexManager
             $edition_data['lang'] = $data['lang'];
             $edition_data['chunk_id'] = explode('-', $data['chunkId'])[1];
             $work_id = explode('-', $data['chunkId'])[0];
-            $edition_data['title'] = $this->dm->getWorkInfoByDareId($work_id)['title'];
+            $edition_data['title'] = $this->getDm()->getWorkInfoByDareId($work_id)['title'];
 
         }
 
@@ -154,9 +159,7 @@ class EditionsIndexManager extends OpenSearchIndexManager
         }
 
         // Update keys in editions array and get number of non-empty editions
-        $editions = array_values($editions);
-
-        return $editions;
+        return array_values($editions);
     }
 
 }

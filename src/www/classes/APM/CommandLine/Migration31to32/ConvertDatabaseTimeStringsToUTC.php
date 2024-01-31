@@ -25,8 +25,8 @@ class ConvertDatabaseTimeStringsToUTC extends CommandLineUtility
      */
     public function main($argc, $argv): void
     {
-        $dbConn = $this->systemManager->getDbConnection();
-        $tableNames = $this->systemManager->getTableNames();
+        $dbConn = $this->getSystemManager()->getDbConnection();
+        $tableNames = $this->getSystemManager()->getTableNames();
 
         $unitemporalTableNames = [
             $tableNames[ApmMySqlTableName::TABLE_COLLATION_TABLE],

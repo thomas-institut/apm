@@ -38,7 +38,7 @@ class ChangePageSequence extends CommandLineUtility
 {
 
     const USAGE = "USAGE:  changepagesequence --docId <id> [ --reset | --reverse <from>-<to>]\n";
-    protected function main($argc, $argv)
+    public function main($argc, $argv)
     {
         $options = getopt('', ['docId:', 'reverse:', 'reset', 'doIt'], $index);
 
@@ -55,7 +55,7 @@ class ChangePageSequence extends CommandLineUtility
             return false;
         }
 
-        $docInfo = $this->dm->getDocById($docId);
+        $docInfo = $this->getDm()->getDocById($docId);
         if ($docInfo === false) {
             $this->printErrorMsg("Given docId $docId does not exist.");
             return false;
@@ -63,7 +63,7 @@ class ChangePageSequence extends CommandLineUtility
 
         $this->printStdErr("Doc Id $docId:  " . $docInfo['title'] . "\n");
 
-        $docPageCount = $this->dm->getPageCountByDocId($docId);
+        $docPageCount = $this->getDm()->getPageCountByDocId($docId);
         if ($docPageCount === false) {
             $this->printErrorMsg("Cannot get page count for document.");
             return false;
@@ -110,7 +110,7 @@ class ChangePageSequence extends CommandLineUtility
 
         $thereAreChanges = false;
         foreach($pageSequence as $seq) {
-            $pageInfo = $this->dm->getPageInfoByDocPage($docId, $seq['page']);
+            $pageInfo = $this->getDm()->getPageInfoByDocPage($docId, $seq['page']);
             if ($pageInfo['seq'] === $seq['seq']) {
                 continue;
             }
@@ -118,7 +118,7 @@ class ChangePageSequence extends CommandLineUtility
             $this->printStdErr("Changing sequence for page " . $seq['page'] . " from " . $pageInfo['seq'] . " to " . $seq['seq'] . "\n");
             if ($doIt) {
                 $pageInfo['seq'] = $seq['seq'];
-                $this->dm->updatePageSettings($pageInfo['id'], $pageInfo);
+                $this->getDm()->updatePageSettings($pageInfo['id'], $pageInfo);
             }
         }
 

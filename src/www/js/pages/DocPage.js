@@ -140,29 +140,9 @@ export class DocPage extends NormalPage {
         this.selectPage(this.selectedPage+1)
       }
     })
-
-    let toolbarPageInfoDiv =  $('div.page-info')
+    $('div.page-info')
     this.rebuildPageList()
 
-    // this.pageInfoPopper = Popper.createPopper(
-    //   toolbarPageInfoDiv.get(0),
-    //   this.pageListPopoverDiv.get(0),
-    //   {
-    //     placement: 'bottom',
-    //     modifiers: [ {
-    //       name: 'offset',
-    //       options: { offset: [ 0, 0]}
-    //     }]
-    //   }
-    // )
-    // this.pageInfoPopperShown = false
-    // toolbarPageInfoDiv.on('click', () => {
-    //   if (this.pageInfoPopperShown) {
-    //     this.hidePageListPopover()
-    //   } else {
-    //     this.showPageListPopover()
-    //   }
-    // })
     this.selectPage(this.firstPage)
   }
 
@@ -296,7 +276,7 @@ export class DocPage extends NormalPage {
     }
     items.push(`doc ${this.docInfo.id}`)
 
-    items.push(`entity ${Tid.toBase36String(this.docInfo.tid)}`)
+    items.push(`entity ${Tid.toBase36String(this.docInfo['tid'])}`)
 
     return items.join(', ')
   }
@@ -601,7 +581,7 @@ export class DocPage extends NormalPage {
     for (const i in this.lastSaves) {
       let versionInfo = this.lastSaves[i];
       // @ts-ignore
-      let formattedTime = ApmFormats.timeString.toDate(versionInfo['timeFrom']);
+      let formattedTime = ApmFormats.timeString(versionInfo['timeFrom']);
       let authorLink = await this.getAuthorLink(versionInfo['authorTid']);
       html += '<li> Page ' + this.getPageLink2(versionInfo.pageId, versionInfo.column) + ', ' +
         formattedTime + ' by ' + authorLink + '</li>';

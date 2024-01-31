@@ -79,7 +79,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         }
 
         $dbData = $rows->getFirst();
-        $this->logger->debug("CT data ", [ 'valid_from' => $dbData['valid_from'], 'title' => $dbData['title']]);
+//        $this->logger->debug("CT data ", [ 'valid_from' => $dbData['valid_from'], 'title' => $dbData['title']]);
         $isCompressed = intval($dbData['compressed']) === 1;
         //$this->logger->debug("CT data is compressed: $isCompressed", [ 'dbData' => $dbData]);
 

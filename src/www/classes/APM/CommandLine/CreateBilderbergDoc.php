@@ -76,13 +76,13 @@ class CreateBilderbergDoc extends CommandLineUtility
         print "Creating document with title '$title', $type, $lang, $numPages pages, tid " .
             Tid::toBase36String($tid) . " ( " . Tid::toTimeString($tid) . " )...";
 
-        $doc = $this->systemManager->getDataManager()->getDocByDareId($bilderbergId);
+        $doc = $this->getSystemManager()->getDataManager()->getDocByDareId($bilderbergId);
         if ($doc !== null) {
             print "Document already exists with id " . $doc['id'] . "\n";
             return;
         }
 
-        $docId = $this->systemManager->getDataManager()->newDoc(
+        $docId = $this->getSystemManager()->getDataManager()->newDoc(
             $title,
             $numPages,
             $lang,

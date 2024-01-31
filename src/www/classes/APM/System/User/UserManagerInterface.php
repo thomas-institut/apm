@@ -2,6 +2,8 @@
 
 namespace APM\System\User;
 
+use Psr\Log\LoggerAwareInterface;
+
 /**
  * Interface for the user-related operations
  *
@@ -16,6 +18,9 @@ namespace APM\System\User;
  * such as deciding whether a user is permitted to do a specific action or to
  * make the user have a certain role.
  *
+ * For permissions, the method isUserAllowedTo(someTag) checks the user has
+ * someTag, but also returns true is the user is root
+ *
  * There are three fundamental tags that are always reported explicitly by the
  * system:  root, disabled and readOnly.  Any other tag will be reported
  * as part of an array of set tags.
@@ -24,8 +29,14 @@ namespace APM\System\User;
  * and maintains a list of authentication tokens per user and user agent.
  *
  */
-interface UserManagerInterface
+interface UserManagerInterface extends LoggerAwareInterface
 {
+
+    /**
+     * Returns an array with all the user tids
+     * @return UserData[]
+     */
+    public function getAllUsersData() : array;
 
     /**
      * Returns true if the given tid corresponds to a valid
@@ -97,6 +108,21 @@ interface UserManagerInterface
 
 
     /**
+     * Changes a user's email address
+     *
+     * The email address may be used for authentication purposes, and it's independent of any email
+     * address associated with the user's Person entity.
+     *
+     * @param int $userTid
+     * @param string $newEmailAddress
+     * @return void
+     * @throws UserNotFoundException
+     * @throws InvalidEmailAddressException
+     */
+    public function changeEmailAddress(int $userTid, string $newEmailAddress) : void;
+
+
+    /**
      * Creates a user with the given $tid and username
      *
      * The given $tid must correspond to a valid Person entity in the system
@@ -160,6 +186,28 @@ interface UserManagerInterface
      * @throws UserNotFoundException
      */
     public function isRoot(int $userTid) : bool;
+
+
+    /**
+     * Returns true if the user is enabled
+     * @param int $userTid
+     * @return bool
+     * @throws UserNotFoundException
+     */
+    public function isEnabled(int $userTid): bool;
+
+
+    /**
+     * Returns true if the user is root or the user has the given tag
+     * If $writeOperation is true, returns false is the user is readOnly
+     *
+     * @param int $userTid
+     * @param string $operationTag
+     * @param bool $writeOperation
+     * @return bool
+     * @throws UserNotFoundException
+     */
+    public function isUserAllowedTo(int $userTid, string $operationTag, bool $writeOperation = true): bool;
 
     /**
      * Retrieves the stored user token for the given user agent.
@@ -251,7 +299,7 @@ interface UserManagerInterface
      * @throws UserNotFoundException
      * @throws InvalidPasswordException
      */
-    public function storePassword(int $userTid, string $password) : void;
+    public function changePassword(int $userTid, string $password) : void;
 
 
 }

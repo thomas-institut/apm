@@ -16,8 +16,8 @@ class UnitemporalConsistency extends CommandLineUtility
 
     public function main($argc, $argv)
     {
-        $db = $this->systemManager->getDbConnection();
-        $dbh = $this->dm->getMySqlHelper();
+        $db = $this->getSystemManager()->getDbConnection();
+        $dbh = $this->getSystemManager()->getDataManager()->getMySqlHelper();
 
         if ($argc != 2) {
             print self::USAGE;

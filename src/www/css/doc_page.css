@@ -21,7 +21,7 @@ div.doc-admin {
 
 div.doc-admin a, a:hover {
     padding: 3px;
-    border: 1px solid var(--very-light-gray);
+    /*border: 1px solid var(--very-light-gray);*/
     border-radius: 3px;
     text-decoration: none;
 }

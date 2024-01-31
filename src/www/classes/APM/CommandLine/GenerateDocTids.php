@@ -19,9 +19,9 @@ class GenerateDocTids extends CommandLineUtility
      */
     public function main($argc, $argv): void
     {
-        $dbConn = $this->systemManager->getDbConnection();
+        $dbConn = $this->getSystemManager()->getDbConnection();
 
-        $docTable = $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_DOCS];
+        $docTable = $this->getSystemManager()->getTableNames()[ApmMySqlTableName::TABLE_DOCS];
 
         if ($argc < 2) {
             print "Need bilderberg CSV file name\n";

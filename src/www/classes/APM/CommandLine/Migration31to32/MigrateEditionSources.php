@@ -22,8 +22,8 @@ class MigrateEditionSources extends CommandLineUtility
      */
     public function main($argc, $argv): void
     {
-        $dbConn = $this->systemManager->getDbConnection();
-        $tableName = $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_EDITION_SOURCES];
+        $dbConn = $this->getSystemManager()->getDbConnection();
+        $tableName = $this->getSystemManager()->getTableNames()[ApmMySqlTableName::TABLE_EDITION_SOURCES];
 
         $doIt = $argv[1] === 'doIt';
 
@@ -42,7 +42,7 @@ class MigrateEditionSources extends CommandLineUtility
 
 
         // now migrate collation tables, this is almost brute force!
-        $ctTableName = $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_COLLATION_TABLE];
+        $ctTableName = $this->getSystemManager()->getTableNames()[ApmMySqlTableName::TABLE_COLLATION_TABLE];
 
         $result = $dbConn->query("select * from `$ctTableName` where `witnesses_json` like '%source:%'");
 

@@ -48,7 +48,7 @@ class PublishTranscription extends CommandLineUtility
         $versionId = isset($options['versionId']) ? intval($options['versionId']) : -1;
         $pagesStr = isset($options['pages']) ? $options['pages'] : '';
 
-        $versionManager = $this->systemManager->getTranscriptionManager()->getColumnVersionManager();
+        $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
 
         if ($versionId !== -1) {
             // update single version
@@ -89,10 +89,10 @@ class PublishTranscription extends CommandLineUtility
 
         $this->printStdErr("Publishing latest column version of " . count($pageList) . " pages in document $docId\n");
 
-        $versionManager = $this->systemManager->getTranscriptionManager()->getColumnVersionManager();
+        $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
         foreach($pageList as $pageNumber) {
             $this->printStdErr("Page $pageNumber:\n");
-            $pageInfo = $this->dm->getPageInfoByDocPage($docId, $pageNumber);
+            $pageInfo = $this->getDm()->getPageInfoByDocPage($docId, $pageNumber);
             $numCols = intval($pageInfo['num_cols']);
             if ($numCols === 0) {
                 $this->printStdErr("  No columns defined\n");

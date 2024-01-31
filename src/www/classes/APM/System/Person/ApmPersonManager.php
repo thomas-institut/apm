@@ -7,6 +7,7 @@ use APM\System\User\UserNotFoundException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\DataTable\DataTable;
+use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\EntitySystem\Tid;
 
 /**
@@ -95,7 +96,12 @@ class ApmPersonManager implements PersonManagerInterface, LoggerAwareInterface
 
         $tid = Tid::generateUnique();
 
-        $this->personsTable->createRow([ 'tid' => $tid,  'name' => $name]);
+        try {
+            $this->personsTable->createRow(['tid' => $tid, 'name' => $name, 'sort_name' => $sortName]);
+        } catch (RowAlreadyExists) {
+            $this->logger->error("Row already exists exception creating person with tid $tid, name = '$name'");
+            return -1;
+        }
         return $tid;
     }
 

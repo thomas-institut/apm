@@ -52,4 +52,13 @@ interface PersonManagerInterface
      */
     public function getAllPeopleEssentialData() : array;
 
+
+    /**
+     * Returns the tid of the Person entity with the given slug
+     * or -1 if the slug is not defined.
+     * @param string $slug
+     * @return int
+     */
+    public function getPersonTidFromSlug(string $slug): int;
+
 }

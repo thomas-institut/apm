@@ -131,7 +131,12 @@ UPDATE `ap_users`, `ap_people` SET `ap_users`.`email_address`=`ap_people`.`email
 -- clean up people table: fullname becomes name, add sort_name to the people table and drop email
 ALTER TABLE `ap_people` CHANGE COLUMN `fullname` `name` VARCHAR(1024) NOT NULL;
 ALTER TABLE `ap_people` ADD `sort_name` VARCHAR(1024) DEFAULT NULL AFTER `name`;
+ALTER TABLE `ap_people` ADD `slug` VARCHAR(1024) DEFAULT NULL AFTER `sort_name`;
 ALTER TABLE `ap_people` DROP COLUMN `email`;
+
+-- Generate slugs and sort names
+-- RUN: generate_slugs doIt
+
 
 -- Let MySql handle the id column in ap_works
 ALTER TABLE `ap_works` MODIFY COLUMN `id` int NOT NULL AUTO_INCREMENT;
@@ -154,7 +159,7 @@ ALTER TABLE `ap_versions_ct` DROP COLUMN `author_id`;
 ALTER TABLE `ap_versions_tx` DROP COLUMN `author_id`;
 ALTER TABLE `ap_works` DROP COLUMN `author_id`;
 
--- allow longer username
+-- allow longer usernames
 ALTER TABLE `ap_users` MODIFY COLUMN `username` VARCHAR(128) NOT NULL;
 
 -- reset system cache
@@ -163,10 +168,11 @@ TRUNCATE `ap_system_cache`;
 -- Convert all database TimeString fields to UTC : this will take a very long time
 -- RUN: convert_time_strings doIt
 
-
 -- Make time for editorial notes a TimeString
 ALTER TABLE `ap_ednotes` MODIFY COLUMN `time` datetime(6) NOT NULL;
 
+
+-- Add a slug to people table
 
 
 -- Finally, update version number

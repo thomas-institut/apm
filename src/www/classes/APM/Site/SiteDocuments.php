@@ -48,7 +48,9 @@ class SiteDocuments extends SiteController
 
     const DOCUMENT_DATA_CACHE_KEY = 'SiteDocuments-DocumentData';
 
-    const TEMPLATE_DOCS_PAGE = 'documents.twig';
+//    const TEMPLATE_DOCS_PAGE = 'documents.twig';
+
+    const TEMPLATE_DOCS_PAGE = 'documents-page.twig';
     const TEMPLATE_SHOW_DOCS_PAGE = 'doc-details.twig';
     const TEMPLATE_DOC_EDIT_PAGE = 'doc-edit.twig';
     const TEMPLATE_NEW_DOC_PAGE = 'doc-new.twig';
@@ -94,7 +96,7 @@ class SiteDocuments extends SiteController
         return $this->renderPage($response, self::TEMPLATE_DOCS_PAGE, [
             'docs' => $docs,
             'peopleInfo' => $peopleInfo,
-            'canManageDocuments' => $canManageDocuments
+            'canManageDocuments' => $canManageDocuments ? '1' : '0'
         ]);
     }
 
@@ -121,7 +123,6 @@ class SiteDocuments extends SiteController
                     $personManager->getPersonEssentialData($editorTid);
             }
             $doc['docInfo'] = $dataManager->getDocById($docId);
-            $doc['tableId'] = "doc-$docId-table";
             $docs[] = $doc;
         }
 

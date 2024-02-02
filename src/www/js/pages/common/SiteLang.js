@@ -18,13 +18,11 @@
 
 
 import { Language } from '../../toolbox/Language'
-import {Cookies} from '../../toolbox/Cookies'
 
-const defaultLanguage = 'en'
+export const defaultLanguage = 'en'
 
-const validLanguages = [ 'en', 'es', 'de', 'fr', 'it', 'he', 'ar']
+export const validLanguages = [ 'en', 'es', 'de', 'fr', 'it', 'he', 'ar']
 
-const languageCookieName = 'apm_lang'
 
 const strings = [
   { key: 'Loading data', es: 'Cargando datos'},
@@ -77,7 +75,32 @@ const strings = [
   { key: 'Page Type', es: 'Tipo de página'},
   { key: 'Works', es: 'Obras'},
   { key: 'Click to show chunk list', es: 'Click para mostrar lista de chunks'},
-  { key: 'People', es: 'Personas'}
+  { key: 'People', es: 'Personas'},
+  { key: 'Name', es: 'Nombre'},
+  { key: 'User', es: 'Usuario'},
+  { key: 'Person Details', es: 'Datos personales'},
+  { key: 'Click to see person details', es: 'Click para ver datos de la persona'},
+  { key: 'Entity ID', es: 'Id de entidad'},
+  { key: 'Sort Name', es: 'Nombre para ordenamiento'},
+  { key: 'User Contributions', en: 'User Contributions', es: 'Contribuciones como usuario'},
+  { key: 'UserContributions:None', en: 'None', es: 'Ninguna'},
+  { key: 'Processing', es: 'Procesando'},
+  { key: 'Empty Table', es: 'Tabla vacía'},
+  { key: 'First', es: 'Primero'},
+  { key: 'Previous', es: 'Anterior'},
+  { key: 'Next', es: 'Siguiente'},
+  { key: 'Last', es: 'Último'},
+  { key: 'DataTables:Search', en: 'Search:', es: 'Buscar:'},
+  { key: 'Show _MENU_ entries', es: 'Mostar _MENU_ filas'},
+  { key: 'Showing _START_ to _END_ of _TOTAL_ rows', es: 'Mostrando filas _START_ a _END_ de _TOTAL_'},
+  { key: 'Title', es: 'Título'},
+  { key: 'Type', es: 'Tipo'},
+  { key: 'Language', es: 'Idioma'},
+  { key: 'Pages', es: 'Páginas'},
+  { key: 'Pages:Transcribed', en: 'Transcribed', es: 'Transcritas'},
+  { key: 'Transcribers', es: 'Transcriptores'},
+  { key: 'Create New Document', es: 'Crear nuevo documento'},
+
 ]
 
 export class SiteLang {
@@ -92,36 +115,13 @@ export class SiteLang {
     return this.__languageStringManager.getTranslation(template, data)
   }
 
-  static saveLangInCookie(lang) {
-    Cookies.set(languageCookieName, lang, { SameSite: 'Strict'})
-  }
   /**
-   * Tries to detect the valid language the user prefers the most.
-   * If none of the user languages is available, returns the default language.
-   * @return {string}
+   * Saves the language
+   * @param {string}lang
+   * @param {WebStorageKeyCache} cache
+   *
    */
-  static detectBrowserLanguage() {
-    // First, let's see if there's a cookie
-    let cookieLang = Cookies.get(languageCookieName)
-    if (validLanguages.indexOf(cookieLang) !== -1) {
-      console.log(`Site language detected in cookie`)
-      return cookieLang
-    }
-    // If not, go over browser languages
-    let browserLanguages = navigator.languages
-    for (let i = 0; i < browserLanguages.length; i++) {
-      let lang = browserLanguages[i]
-      if (validLanguages.indexOf(lang) !== -1) {
-        return lang
-      }
-      lang = lang.split('-')[0]  // two-letter code
-      if (validLanguages.indexOf(lang) !== -1) {
-        return lang
-      }
-    }
-    console.log(`Site language not detected, returning default`)
-    return defaultLanguage
-  }
+
 
 }
 

@@ -67,6 +67,15 @@ export class ApmDataProxy {
     return await this.getApmEntityData('Person', 'essential',  personId, 'session');
   }
 
+  async getAllPersonEssentialData(){
+    let data = this.caches.memory.retrieve("allPeopleData");
+    if (data === null) {
+      data = await this.get(urlGen.apiPersonGetEssentialDataAll(), true);
+      this.caches.memory.store('allPeopleData', data, 120);
+    }
+    return data;
+  }
+
   async getWorkData(workDareId) {
     return await this.getApmEntityData('Work', '', workDareId, 'local');
   }

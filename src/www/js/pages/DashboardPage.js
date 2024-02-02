@@ -110,9 +110,7 @@ export class DashboardPage extends NormalPage {
     })
   }
 
-  genLoadingMessageHtml() {
-    return `${tr('Loading data')} <span class="spinner-border spinner-border-sm" role="status"></span>`
-  }
+
 
 }
 

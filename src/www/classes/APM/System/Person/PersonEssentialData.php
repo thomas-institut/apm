@@ -27,6 +27,8 @@ class PersonEssentialData implements Exportable
     public bool $isUser;
     public string $userEmailAddress;
 
+    public string $slug;
+
     public function __construct()
     {
         $this->id = -1;
@@ -38,6 +40,7 @@ class PersonEssentialData implements Exportable
         $this->userEmailAddress = '';
         $this->userTags = [];
         $this->extraAttributes = [];
+        $this->slug = '';
     }
 
     public function getExportObject(): array

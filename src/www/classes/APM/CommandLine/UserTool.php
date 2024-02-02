@@ -77,11 +77,10 @@ class UserTool extends CommandLineUtility implements AdminUtility
         return 1;
     }
 
-    private function changePassword()
-    {
+    private function checkUserName() : array {
         if ($this->argc < 3) {
             print "Please enter a userName\n";
-            return;
+            return ['', -1];
         }
 
         $userName = $this->argv[2];
@@ -91,8 +90,18 @@ class UserTool extends CommandLineUtility implements AdminUtility
 
         if ($userTid === -1) {
             print "$userName is not a user in the system\n";
+            return ['', -1];
+        }
+        return $userName;
+    }
+
+    private function changePassword(): void
+    {
+        [$userName, $userTid]  = $this->checkUserName();
+        if ($userName === '') {
             return;
         }
+        $um = $this->getSystemManager()->getUserManager();
 
         try {
             if (!$um->isEnabled($userTid)) {
@@ -205,10 +214,10 @@ class UserTool extends CommandLineUtility implements AdminUtility
         } catch (UserNameAlreadyInUseException) {
             print "The given username for the new user is already in use: '$userName'\n";
             return;
-        } catch (InvalidEmailAddressException $e) {
+        } catch (InvalidEmailAddressException) {
             print "The given email address for the new user not valid: '$emailAddress'\n";
             return;
-        } catch (UserNotFoundException $e) {
+        } catch (UserNotFoundException) {
             print "ERROR creating user\n";
             return;
         }
@@ -217,20 +226,12 @@ class UserTool extends CommandLineUtility implements AdminUtility
     }
 
     private function enableDisableUser(bool $disable): void{
-        if ($this->argc < 3) {
-            print "Please enter a userName\n";
+        [$userName, $userTid]  = $this->checkUserName();
+        if ($userName === '') {
             return;
         }
 
-        $userName = $this->argv[2];
         $um = $this->getSystemManager()->getUserManager();
-
-        $userTid = $um->getUserTidForUserName($userName);
-
-        if ($userTid === -1) {
-            print "$userName is not a user in the system\n";
-            return;
-        }
 
         try {
             if ($um->isEnabled($userTid)) {
@@ -255,20 +256,12 @@ class UserTool extends CommandLineUtility implements AdminUtility
 
     private function makeRoot() : void {
 
-        if ($this->argc < 3) {
-            print "Please enter a userName to make root\n";
+        [$userName, $userTid]  = $this->checkUserName();
+        if ($userName === '') {
             return;
         }
 
-        $userName = $this->argv[2];
         $um = $this->getSystemManager()->getUserManager();
-
-        $userTid = $um->getUserTidForUserName($userName);
-
-        if ($userTid === -1) {
-            print "$userName is not a user in the system\n";
-            return;
-        }
 
         try {
             if ($um->isRoot($userTid)) {

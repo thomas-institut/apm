@@ -4,13 +4,14 @@ import { tr } from './common/SiteLang'
 import { urlGen } from './common/SiteUrlGen'
 import { CollapsePanel } from '../widgets/CollapsePanel'
 import { compareStrings } from '../toolbox/Util.mjs'
+import { Tid } from '../Tid/Tid'
 
 export class WorksPage extends NormalPage {
   constructor (options) {
     super(options);
 
     let oc = new OptionsChecker({
-      context: 'ChunksPage',
+      context: 'WorksPage',
       optionsDefinition: {
         works: { type: 'array', required: true}
       }
@@ -26,7 +27,7 @@ export class WorksPage extends NormalPage {
     this.collapses = [];
 
     this.initPage().then( () => {
-      console.log(`Chunks Page Initialized`)
+      console.log(`Works Page Initialized`)
     })
   }
 
@@ -38,21 +39,27 @@ export class WorksPage extends NormalPage {
   groupWorksByAuthor(works) {
     let groupedWorks = [];
     works.forEach( (work) => {
-      let authorId = work['work_info']['author_id'];
-      if (groupedWorks[authorId] === undefined) {
-        groupedWorks[authorId] = {
-          authorId: authorId,
+      let authorTid = work['work_info']['author_tid'];
+      if (groupedWorks[authorTid] === undefined) {
+        groupedWorks[authorTid] = {
+          authorTid: authorTid,
           authorName: work['work_info']['author_name'],
           works: []
         }
       }
-      groupedWorks[authorId].works.push(work);
+      groupedWorks[authorTid].works.push(work);
     })
-    return groupedWorks.filter( n => n).sort( (a, b) => {
+    // console.log(groupedWorks);
+    let gwArray = [];
+    Object.keys(groupedWorks).forEach( (key) => {
+      gwArray.push(groupedWorks[key]);
+    })
+    return gwArray.sort( (a, b) => {
      return compareStrings(a.authorName, b.authorName);
-    }).map ( (gw) => {
+    })
+      .map ( (gw) => {
       gw.works = gw.works.sort( (a,b) => {
-        return compareStrings(a['work_info']['title'], b['work_info']['title']);
+        return compareStrings(a['work_info']['id'], b['work_info']['id']);
       });
       return gw;
     });
@@ -63,7 +70,7 @@ export class WorksPage extends NormalPage {
   async genHtml () {
     let html = `<h2>${tr('Works')}</h2>`;
     this.groupedWorks.forEach( (gw, authorIndex) => {
-      html += `<div class="author author-${authorIndex}"><h1>${gw.authorName}</h1>`;
+      html += `<div class="author author-${authorIndex}"><h1><a href="${urlGen.sitePerson(Tid.toBase36String(gw.authorTid))}">${gw.authorName}</a></h1>`;
       gw.works.forEach( (work, index) => {
           html += `<div class="work work-${authorIndex}-${index}"></div>`;
         })

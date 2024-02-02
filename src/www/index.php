@@ -172,11 +172,17 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
     // People and Person Pages
 
     $group->get('/people',
-        SitePeople::class . ':peoplePage')
+        function(Request $request, Response $response) use ($container){
+            $controller = new SitePeople($container);
+            return $controller->peoplePage($request, $response);
+        })
         ->setName('people.manager');
 
-    $group->get('/person/{id}',
-        SitePerson::class . ':personPage')
+    $group->get('/person/{tid}',
+        function(Request $request, Response $response) use ($container){
+            $controller = new SitePeople($container);
+            return $controller->personPage($request, $response);
+        })
         ->setName('person');
 
 

@@ -90,6 +90,10 @@ class ApmUrlGenerator {
         return this.base + '/documents'
     }
 
+    siteDocNewDoc() {
+        return `${this.base}/doc/new`;
+    }
+
     siteChunks() {
         return this.base + '/works'
     }

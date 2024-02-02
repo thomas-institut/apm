@@ -1,0 +1,61 @@
+
+.normal-page-content h1 {
+    margin-bottom: 0.5em;
+}
+
+.normal-page-content h2 {
+    font-size: 1.5em;
+    margin-top: 2em;
+    margin-bottom: 1em;
+}
+
+.normal-page-content h3 {
+    font-size: 1.1rem;
+}
+
+.normal-page-content  h3.first {
+    margin-top: 1em;
+}
+
+div.post-table-div{
+    margin-top: 1em;
+}
+
+
+span.predicate {
+    font-weight: bold;
+}
+
+
+div.user-profile-section {
+    margin-left: 2em;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+div.user-profile-section-content {
+    margin-left: 1em;
+}
+
+p.ct-info {
+    margin-left: 1rem;
+}
+p.doc-title {
+    margin-bottom: 0.25em;
+}
+
+p.page-list {
+    margin-left: 1rem;
+}
+
+
+div.work {
+    margin-bottom: 2rem;
+}
+
+div.work p {
+    margin-bottom: 0.25rem;
+}
+
+
+

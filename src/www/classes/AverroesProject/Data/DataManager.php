@@ -872,8 +872,8 @@ class DataManager implements  SqlQueryCounterTrackerAware
         }
         return $works;
     }
-    
-    
+
+
     /**
      *  Get data for a work
      * @param string $dareId
@@ -886,9 +886,14 @@ class DataManager implements  SqlQueryCounterTrackerAware
             return false;
         }
         $workInfo = $rows->getFirst();
-        $authorInfo = $this->userManager->getPersonInfo((int) $workInfo['author_id']);
-        
-        $workInfo['author_name'] = $authorInfo['name'];
+        try {
+            $authorInfo = $this->pm->getPersonEssentialData($workInfo['author_tid']);
+//            $this->logger->info("Author info retrieved", get_object_vars($authorInfo));
+            $workInfo['author_name'] = $authorInfo->name;
+        } catch (PersonNotFoundException) {
+            $this->logger->error("Author not found " . $workInfo['author_tid']);
+            $workInfo['author_name'] = '';
+        }
         return $workInfo;
     }
 

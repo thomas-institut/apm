@@ -1,9 +1,13 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { setBaseUrl } from './common/SiteUrlGen'
 import { ApmDataProxy } from './common/ApmDataProxy'
-import { setSiteLanguage, SiteLang } from './common/SiteLang'
+import { defaultLanguage, setSiteLanguage, tr, validLanguages } from './common/SiteLang'
 import { WebStorageKeyCache } from '../toolbox/KeyCache/WebStorageKeyCache'
 import { ApmFormats } from './common/ApmFormats'
+
+
+const langCacheKey = 'apmSiteLanguage'
+const langCacheDataId = 'v1';
 
 export class ApmPage {
 
@@ -50,7 +54,7 @@ export class ApmPage {
       this.siteLanguage = this.commonData.siteLanguage;
       if (this.siteLanguage === '' || this.siteLanguage === 'detect') {
         console.log(`No site language given, detecting language`);
-        this.siteLanguage = SiteLang.detectBrowserLanguage();
+        this.siteLanguage = this.detectBrowserLanguage();
       }
       setSiteLanguage(this.siteLanguage);
       ApmFormats.setLanguage(this.siteLanguage);
@@ -63,6 +67,71 @@ export class ApmPage {
     ApmFormats.setTimeZone(this.timeZone);
 
     console.log(`Client timezone is '${this.timeZone}'`);
+  }
+
+
+
+  /**
+   * Generates html for a standard loading message with a spinner
+   * @param msg
+   * @return {string}
+   */
+  genLoadingMessageHtml(msg = 'Loading data') {
+    return `${tr(msg)} <span class="spinner-border spinner-border-sm" role="status"></span>`
+  }
+
+  /**
+   * Returns the object needed to properly set up a DataTables object using
+   * APM's language-aware strings
+   * @return {Object}
+   */
+  getDataTablesLanguageOption() {
+    return {
+      processing:     tr('Processing'),
+        search:         tr('DataTables:Search'),
+        emptyTable:     tr('Empty Table'),
+        paginate: {
+          first:      tr('First'),
+          previous:   tr('Previous'),
+          next:       tr('Next'),
+          last:       tr('Last')
+        },
+      info: tr('Showing _START_ to _END_ of _TOTAL_ rows'),
+      lengthMenu: tr('Show _MENU_ entries')
+    }
+  }
+
+
+  saveLangInCache(lang) {
+    this.localCache.store(langCacheKey, lang, 0, langCacheDataId);
+  }
+
+  /**
+   * Tries to detect the valid language the user prefers the most.
+   * If none of the user languages is available, returns the default language.
+   * @return {string}
+   */
+  detectBrowserLanguage() {
+    // First, let's see if there's something in the cache
+    let cacheLang = this.localCache.retrieve(langCacheKey, langCacheDataId);
+    if (validLanguages.indexOf(cacheLang) !== -1) {
+      console.log(`Site language detected in browser cache`)
+      return cacheLang
+    }
+    // If not, go over browser languages
+    let browserLanguages = navigator.languages
+    for (let i = 0; i < browserLanguages.length; i++) {
+      let lang = browserLanguages[i]
+      if (validLanguages.indexOf(lang) !== -1) {
+        return lang
+      }
+      lang = lang.split('-')[0]  // two-letter code
+      if (validLanguages.indexOf(lang) !== -1) {
+        return lang
+      }
+    }
+    console.log(`Site language not detected, returning default`)
+    return defaultLanguage
   }
 
 }

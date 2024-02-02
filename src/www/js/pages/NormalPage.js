@@ -16,7 +16,7 @@
  *
  */
 
-import { setSiteLanguage, SiteLang, tr } from './common/SiteLang'
+import { setSiteLanguage, tr } from './common/SiteLang'
 import { urlGen } from './common/SiteUrlGen'
 import { ApmPage } from './ApmPage'
 import { ApmFormats } from './common/ApmFormats'
@@ -83,7 +83,7 @@ export class NormalPage extends ApmPage {
   genOnClickLangChange(lang) {
     return (ev) => {
       ev.preventDefault()
-      SiteLang.saveLangInCookie(lang)
+      this.saveLangInCache(lang)
       this.changeLanguage(lang)
     }
   }

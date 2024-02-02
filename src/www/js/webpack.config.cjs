@@ -7,6 +7,7 @@ module.exports = {
       filename: 'Quill.bundle.js'
     },
     DocPage: './pages/DocPage.js',
+    DocumentsPage: './pages/DocumentsPage.js',
     WorksPage: './pages/WorksPage.js',
     DocDefPages: './pages/DocDefPages.js',
     DocEditPage: './pages/DocEditPage.js',
@@ -18,10 +19,8 @@ module.exports = {
       filename: 'EditionComposer.bundle.js',
       dependOn: 'QuillPack',
     },
-    People: {
-      import: './pages/PeoplePage.js',
-      filename: 'PeoplePage.bundle.js'
-    },
+    PeoplePage: './pages/PeoplePage.js',
+    PersonPageNew: './pages/PersonPageNew.js',
     PersonPage: {
       import: './pages/PersonPage.js',
       filename: 'PersonPage.bundle.js'

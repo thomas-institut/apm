@@ -77,6 +77,7 @@ class ApmPersonManager implements PersonManagerInterface, LoggerAwareInterface
         $data->tid = intval($row['tid']);
         $data->name = $row['name'];
         $data->sortName = $row['sort_name'] ?? $data->name;
+        $data->slug = $row['slug'] ?? '';
         $data->extraAttributes = [];
         $data->isUser = false;
         $data->userName = '';
@@ -133,5 +134,14 @@ class ApmPersonManager implements PersonManagerInterface, LoggerAwareInterface
             $tids[] = intval($row['tid']);
         }
         return $tids;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getPersonTidFromSlug(string $slug): int
+    {
+        $rows = $this->personsTable->findRows([ 'slug' => $slug]);
+        return count($rows) === 0 ? -1 : $rows->getFirst()['tid'];
     }
 }

@@ -1,33 +1,26 @@
-{% extends "base.twig" %}
+{% extends "normal-page.twig" %}
 
 {% block title %}Person{% endblock %}
 
+{% block extraCSS %}
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/person_page.css"/>
+{% endblock %}
+
 {% block extraJS %}
-    <script type="application/javascript" src="{{baseurl}}/js/dist/PersonPage.bundle.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/dist/PersonPageNew.bundle.js"></script>
 {% endblock %}
 
 
 {% block finalBodyJS %}
     <script>
-        $(() => {
-            let id = JSON.parse('{{id|json_encode|e('js')}}');
-            if (id === 'create') {
-                setupPersonPage('{{ baseurl }}', '', 'create')
-            }
-            else {
-                setupPersonPage('{{ baseurl }}', id)
-            }
-        })
+      $(() => {
+        new PersonPageNew(( {
+          commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
+          tid: {{ tid }},
+          data: JSON.parse("{{data|json_encode|e('js')}}")
+        }))
+      })
     </script>
-
 {%  endblock %}
-
-{% block content %}
-    <h1 id="person-heading"></h1>
-    <div id="spinner" align="center"></div>
-    <div id="peopleEditor" align="center"></div>
-    <br>
-{% endblock %}
-
 
 

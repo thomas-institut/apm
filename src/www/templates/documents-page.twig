@@ -1,0 +1,27 @@
+{% extends "normal-page.twig" %}
+
+{% block title %}People{% endblock %}
+
+{% block extraCSS %}
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/documents_page.css"/>
+{% endblock %}
+
+{% block extraJS %}
+    <script type="application/javascript" src="{{baseurl}}/js/dist/DocumentsPage.bundle.js"></script>
+{% endblock %}
+
+
+{% block finalBodyJS %}
+    <script>
+
+      $(() => {
+        new DocumentsPage(( {
+          commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
+          docs:  JSON.parse("{{docs|json_encode|e('js')}}"),
+          canManageDocuments: '{{canManageDocuments}}' === '1'
+        }))
+      })
+    </script>
+{%  endblock %}
+
+

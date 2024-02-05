@@ -229,7 +229,7 @@ export class MetadataEditor {
                         $(`${this.options.containerSelector} .row2`).append(`<td><div class=${cellId}></div></td>
                                                 <td class=${cellButtonId} style="width: 3em; text-align: center">
                                                     <button class=${editAttributeButton} style="border: transparent; background-color: transparent">
-                                                        <i class="fas fa-pencil-alt" style="color: gray"></i></button>
+                                                        <i class="fas fa-pencil-alt" style="color: black"></i></button>
                                                 </td>`)
                         this.makeEditIconEvent(editAttributeButton)
                     } else {
@@ -253,8 +253,8 @@ export class MetadataEditor {
                         let cellButtonId = cellId + "_tableCellButton"
                         $(row).append(`<th style="vertical-align: top">${keyName}</th>
                                     <td><div class=${cellId}></div></td>
-                                    <td class=${cellButtonId} style="width: 3em">
-                                        <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: gray"></i></button>
+                                    <td class=${cellButtonId} style="width: 4.75em; text-align: right">
+                                        <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: black"></i></button>
                                     </td>`)
                         this.makeEditIconEvent(editAttributeButton)
                     }
@@ -329,8 +329,9 @@ export class MetadataEditor {
                 $(selector).append(value)
             }
 
-            if (note !== '' && !type.includes('tags')) {
-                $(selector).append(` <span title="${note}"><i class="fa fa-info-circle" aria-hidden="true" style="color: cornflowerblue"></i></span>`)
+            if (note.replaceAll(' ', '') !== '' && !type.includes('tags')) {
+                let cellButtonId = this.options.containerSelector + " .entity_attr" + i + "_tableCellButton"
+                $(cellButtonId).prepend(`<span title="${note}"><i class="fa fa-info-circle" aria-hidden="true" style="color: black; text-align: right"></i></span>`)
             }
         }
     }
@@ -434,9 +435,14 @@ export class MetadataEditor {
 
     makeHiddenNoteTextArea(inputId, selectorId) {
         let noteId = inputId + '_editorial-note'
-        $(selectorId).append(`<textarea class="${noteId} form-control" rows="2" style="font-size: small"></textarea>`)
+        $(selectorId).append(`<textarea class="${noteId} form-control" rows="2" placeholder="info" style="font-size: small"></textarea>`)
         let noteSelector = this.options.containerSelector+" ."+noteId
         $(noteSelector).hide()
+        $(noteSelector).on('focusout', () => {
+            if ($(noteSelector).val().replaceAll(' ', '') === '') {
+                $(noteSelector).hide()
+            }
+        })
     }
 
     makeTagsForm(selectorId) {
@@ -470,7 +476,7 @@ export class MetadataEditor {
         for (let person of people) {
             id = person.id
             let name = person.values[0]
-            let nameForValueAttribute = name.replace(' ', '_')
+            let nameForValueAttribute = name.replaceAll(' ', '_')
             $(listSelector).append(`<option value=${nameForValueAttribute} id=${id}>${name}</option>`)
         }
     }
@@ -493,8 +499,8 @@ export class MetadataEditor {
 
         $(inputId).on('input', () => {
             let value = $(inputId).val()
-            $(inputId).val(value.replace('_', ' '))
-            let valueForDatalist = value.replace(' ', '_')
+            $(inputId).val(value.replaceAll('_', ' '))
+            let valueForDatalist = value.replaceAll(' ', '_')
             $(buttonSelector).remove()
             if (value !== '') {
                 if ($(`${listSelector} option[value=${valueForDatalist}]`).attr('id') === undefined) {
@@ -556,7 +562,7 @@ export class MetadataEditor {
 
     updateDatalistInRootMetadataEditor () {
         let value = $(`${this.options.containerSelector} .entity_attr1_form`).val()
-        let valueForDatalist = value.replace(' ', '_')
+        let valueForDatalist = value.replaceAll(' ', '_')
         $(this.options.dialogRootMetadataEditor.datalistSelector).append(`<option value=${valueForDatalist} id=${this.people.length}>${value}</option>`)
     }
 
@@ -667,6 +673,7 @@ export class MetadataEditor {
         console.log(buttonSelector)
         $(buttonSelector).on("click", () => {
             $(noteSelector).show()
+            $(noteSelector).focus()
             this.removeEditorialNoteButton(buttonId, 0)
         })
     }
@@ -725,7 +732,7 @@ export class MetadataEditor {
                 $(entityAttrFormId).val(values[index-1])
         }
 
-        if (notes[index-1] !== '') {
+        if (notes[index-1].replaceAll(' ', '') !== '') {
             $(entityAttrNoteId).val(notes[index-1])
             $(entityAttrNoteId).show()
             let buttonId = "entity_attr" + index + "_form" + '_editorial-note-button'
@@ -838,7 +845,8 @@ export class MetadataEditor {
         for (let i=1; i<=this.numKeys; i++) {
             let selector = this.options.containerSelector + " .entity_attr" + i + "_tableCellButton"
             if (i !== parseInt(keyIndex)) {
-                $(selector).html(`<i class="fas fa-pencil-alt" style="color: lightgray"></i>`)
+                $(selector+" .fa").css("color", "lightgray"); // make info-icons gray
+                $(selector+" .fas").css("color", "lightgray"); // make pencils gray
             }
         }
     }
@@ -852,8 +860,8 @@ export class MetadataEditor {
         $(editButtonSelector).remove()
         $(cellButtonSelector).html(`<button class="save ${cellSaveButton}" style="border: transparent; background-color: transparent">
                                                     <i class="fa fa-check" style="color: green"></i></button>`)
-        $(cellButtonSelector).append(`<button class="abort ${cellAbortButton}" style="border: transparent; background-color: transparent">
-                                                    <i class="fa fa-times" style="color: darkred; margin-left: 0.15em"></i></button>`)
+        $(cellButtonSelector).append(`<br><button class="abort ${cellAbortButton}" style="border: transparent; background-color: transparent">
+                                                    <i class="fa fa-times" style="color: darkred; margin-right: 0.15em"></i></button>`)
         this.makeSaveIconEvent(cellSaveButton)
         this.makeAbortIconEvent(cellAbortButton)
     }
@@ -865,7 +873,6 @@ export class MetadataEditor {
             let keyIndex = selector.match(/\d+/)[0]
             this.clearErrorMessage()
             this.setupShowMode()
-            this.makeEditIcon(keyIndex)
             console.log(`Editing value for '${this.entity.keys[keyIndex-1]}' aborted.`)
         })
     }
@@ -890,21 +897,10 @@ export class MetadataEditor {
                     this.logSaveAction(this.options.mode)
                     this.singleEdit = false
                     this.setupShowMode()
-                    this.makeEditIcon(keyIndex)
                 })
                 console.log(`Saved value for '${this.entity.keys[keyIndex-1]}'.`)
             }
         })
-    }
-
-    makeEditIcon(i) {
-        let cellButtonId = this.options.containerSelector + " .entity_attr" + i + "_tableCellButton"
-        let editAttributeButton = "entity_attr" + i + "_editButton"
-        let saveButtonSelector = this.options.containerSelector + ' .entity_attr' + i + '_saveButton'
-        $(saveButtonSelector).remove()
-        $(cellButtonId).html(`<button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i
-            class="fas fa-pencil-alt" style="color: gray"></i></button>`)
-        this.makeEditIconEvent(editAttributeButton)
     }
 
     makeEditButtonEvent() {
@@ -974,7 +970,7 @@ export class MetadataEditor {
         } else if (type.includes('person')) {
             let person_id
             try {
-                let valueForDatalist = value.replace(' ', '_')
+                let valueForDatalist = value.replaceAll(' ', '_')
                 person_id = $(`${this.datalistSelector} option[value=${valueForDatalist}]`).attr('id')
             } catch {
                 person_id = ''

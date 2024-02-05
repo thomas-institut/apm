@@ -78,7 +78,7 @@ export class TagEditor {
         $(this.options.containerSelector).html(`
             <ul class="tag-editor-tags-ul" id="${this.idPrefix}-tag-list">
                 <li class="tagAdd taglist">
-                    <input list="${this.idPrefix}-list-of-tags" class="tag-input" id="${this.idPrefix}-search-field" placeholder="+">
+                    <input list="${this.idPrefix}-list-of-tags" class="tag-input" id="${this.idPrefix}-search-field" placeholder="">
                     <datalist id="${this.idPrefix}-list-of-tags"></datalist>
                 </li>
            </ul>`)
@@ -109,7 +109,7 @@ export class TagEditor {
 
       $(`#${this.idPrefix}-tag-list`).prepend(`
                <li class="addedTag" value=${valueForTagId}><span class="tag-text">${tag}</span>
-               <span class="tagRemove" id=${tagId}><sup>x</sup></span>
+               <span class="tagRemove" id=${tagId}><sup><i class="fa fa-times"></i></sup></span>
                <input type="hidden" name="tags[]">
                </li>`)
       this.makeRemoveTagEvent(tagId)
@@ -158,7 +158,7 @@ export class TagEditor {
           let tagId = `${thisObject.idPrefix}-${valueForTagId}-id`
           $(`<li class="addedTag" value="${value}"><span class="tag-text">${value}</span> `   +
             `<span class="tagRemove" id="${tagId}">` +
-            '<sup>x</sup></span>'
+            '<sup><i class="fa fa-times"></i></sup></span>'
             +'<input type="hidden" value="' + value +
             '" name="tags[]"></li>'
           ).insertBefore(`${thisObject.options.containerSelector} .tagAdd`)

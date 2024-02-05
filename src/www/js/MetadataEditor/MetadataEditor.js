@@ -25,23 +25,24 @@ export class MetadataEditor {
         const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "MetadataEditor"})
         this.options = oc.getCleanOptions(options)
 
-        // Fill container with the metadata editor html structure
-        this.makeEditor()
+        // fill container with the html structure of the metadata editor
+        this.makeHtmlStructureForMetadataEditor()
 
-        // Globals
-        this.entity = {id: '', type: '', keys: [], values: [], types: [], notes: []}
+        // globals
+        this.entity = {id: '', type: '', keys: [], values: [], types: [], notes: []} // this object gets always updated with the latest metadata
         this.numKeys = 0
         this.mode = {create: 'create', edit: 'edit', show: 'show', dialog: 'dialog'}
         this.tagEditor = undefined
-        this.singleEdit = false
+        this.singleEditingActive = false
         this.people = []
 
-        // Selectors
+        // selectors
         this.buttonsSelectorTop = `${this.options.containerSelector} .buttons_top`
         this.buttonsSelectorBottom = `${this.options.containerSelector} .buttons_bottom`
         this.datalistSelector = this.options.containerSelector + " #people-datalist"
 
-        // Get list of all people (for handling of entities as values, saving their ids, showing their names) and setup metadata editor in desired mode
+        // get a list of all people (for having the possibility of choosing entities as values, saving their ids, showing their names) 
+        // and setup the metadata editor in the desired mode
         this.getPeople(() => {
             switch (this.options.mode) {
                 case this.mode.edit:
@@ -61,8 +62,9 @@ export class MetadataEditor {
     }
 
     // Editor Setup
-    makeEditor() {
+    makeHtmlStructureForMetadataEditor() {
 
+        // define tableClass depending on the desired theme
         let tableClass
         switch (this.options.theme) {
             case 'vertical':
@@ -71,11 +73,6 @@ export class MetadataEditor {
             case 'horizontal':
                 tableClass = 'dataTable'
                 break
-        }
-
-        // REMOVE?
-        if (this.options.containerSelector.includes('confirm-dialog')) {
-            tableClass = 'table'
         }
 
         this.metadataTableSelector = `${this.options.containerSelector} .metadataTable`
@@ -140,6 +137,8 @@ export class MetadataEditor {
     }
 
     // Entity and Table Management
+    
+    // updates the empty object this.entity with the data from this.options when instantiating a new metadata editor
     buildEntity(callback) {
         if (this.entity.id === '') {
             this.entity.id = this.options.entityId
@@ -152,34 +151,35 @@ export class MetadataEditor {
         this.entity.keys = this.options.metadataSchema.keys
         this.entity.types = this.options.metadataSchema.types
 
-        // Store number of values
+        // store number of keys of the entity
         this.numKeys = this.entity.keys.length
 
         callback()
     }
 
+    // updates the empty object this.entity with the data-schema from this.options when creating a new entity
     buildEntitySchema(callback) {
         this.entity.id = this.options.entityId
         this.entity.type = this.options.entityType
         this.entity.keys = this.options.metadataSchema.keys
         this.entity.types = this.options.metadataSchema.types
 
-        // Store number of values
+        // store number of values
         this.numKeys = this.entity.keys.length
 
         callback()
     }
-
-    getValueByKey(key) {
+    
+    getValueByKeyFromEntity(key) {
         let i = this.entity.keys.indexOf(key)
         return this.entity.values[i]
     }
 
-    getPersonNameById (id) {
+    getPersonNameByIdFromPeople (id) {
         return this.people[id].values[0]
     }
 
-    getPersonNames () {
+    getNamesOfAllThePeople () {
         let names = []
 
         for (let person of this.people) {
@@ -297,7 +297,7 @@ export class MetadataEditor {
             if (type.includes('person') && value !== '') {
                 let url = urlGen.sitePerson(value)
                 let linkId = "linktoperson" + value
-                let name = this.getPersonNameById(value)
+                let name = this.getPersonNameByIdFromPeople(value)
                 value = `<a id=${linkId} href=${url} >${name}</a>`
                 $(selector).append(value)
 
@@ -331,7 +331,7 @@ export class MetadataEditor {
 
             if (note.replaceAll(' ', '') !== '' && !type.includes('tags')) {
                 let cellButtonId = this.options.containerSelector + " .entity_attr" + i + "_tableCellButton"
-                $(cellButtonId).prepend(`<span title="${note}"><i class="fa fa-info-circle" aria-hidden="true" style="color: black; text-align: right"></i></span>`)
+                $(cellButtonId).prepend(`<span title="${note}"><i class="fa fa-info-circle" aria-hidden="true" style="color: green; text-align: right"></i></span>`)
             }
         }
     }
@@ -429,7 +429,7 @@ export class MetadataEditor {
                 this.makeTextForm(selectorId, inputId, type)
         }
         this.makeHiddenNoteTextArea(inputId, selectorId)
-        this.makeMakeEditorialNoteButtonEvent(selectorId, inputId)
+        this.makeEditorialNoteEvent(selectorId, inputId)
         this.focusIfFirstInputForm(inputId)
     }
 
@@ -450,7 +450,7 @@ export class MetadataEditor {
         this.tagEditor = new TagEditor({
             containerSelector: selectorId,
             idPrefix: tagEditorId,
-            tags: this.getValueByKey('Tags'),
+            tags: this.getValueByKeyFromEntity('Tags'),
             mode: 'edit'
         })
     }
@@ -504,7 +504,7 @@ export class MetadataEditor {
             $(buttonSelector).remove()
             if (value !== '') {
                 if ($(`${listSelector} option[value=${valueForDatalist}]`).attr('id') === undefined) {
-                    $(paragraphSelector).append(`<button class=${buttonId}>Create</button>`)
+                    $(paragraphSelector).append(`<button class=${buttonId}><i class="fa fa-plus" style="color: dodgerblue"></i></button>`)
                     this.makeCreatePersonFromInputFormButtonEvent(buttonSelector, dialog, inputId)
                 }
             }
@@ -652,7 +652,7 @@ export class MetadataEditor {
             `<p class="embed-button"><input type="text" class="${inputId} form-control" placeholder=${type} style="padding: unset"></p>`)
     }
 
-    makeMakeEditorialNoteButtonEvent(selectorId, inputId) {
+    makeEditorialNoteEvent(selectorId, inputId) {
         let buttonId = inputId + '_editorial-note-button'
         let noteId = inputId + '_editorial-note'
         let noteSelector = this.options.containerSelector+ " ." + noteId
@@ -724,7 +724,7 @@ export class MetadataEditor {
                 break
             case 'person':
                 if (values[index-1] !== '') {
-                    let name = this.getPersonNameById(values[index-1])
+                    let name = this.getPersonNameByIdFromPeople(values[index-1])
                     $(entityAttrFormId).val(name)
                 }
                 break
@@ -823,7 +823,7 @@ export class MetadataEditor {
     makeEditIconEvent(selector) {
         selector = this.options.containerSelector + ' .' + selector
             $(selector).on("click", () => {
-                if (!this.singleEdit) {
+                if (!this.singleEditingActive) {
                     let keyIndex = selector.match(/\d+/)[0]
                     let inputForm = this.options.containerSelector + " .entity_attr" + keyIndex + "_form"
                     this.setupTableForDataInput(() => {
@@ -835,7 +835,7 @@ export class MetadataEditor {
                         console.log(`'${this.entity.keys[keyIndex-1]}' in edit mode!`)
                     }, keyIndex)
                     this.options.mode = this.mode.edit
-                    this.singleEdit = true
+                    this.singleEditingActive = true
                     this.mutePencilIcons(keyIndex)
                 }
             })
@@ -869,7 +869,7 @@ export class MetadataEditor {
     makeAbortIconEvent(selector) {
         selector = this.options.containerSelector + ' .' + selector
         $(selector).on("click",  () => {
-            this.singleEdit = false
+            this.singleEditingActive = false
             let keyIndex = selector.match(/\d+/)[0]
             this.clearErrorMessage()
             this.setupShowMode()
@@ -895,7 +895,7 @@ export class MetadataEditor {
                 this.entity.notes[keyIndex-1] = note // Corresponds to updateEntityData function in global save event
                 this.options.callback(this.entity, this.options.mode, () => {
                     this.logSaveAction(this.options.mode)
-                    this.singleEdit = false
+                    this.singleEditingActive = false
                     this.setupShowMode()
                 })
                 console.log(`Saved value for '${this.entity.keys[keyIndex-1]}'.`)
@@ -1051,7 +1051,7 @@ export class MetadataEditor {
     }
 
     nameIsDuplicate (key, givenType, value) {
-        let names = this.getPersonNames()
+        let names = this.getNamesOfAllThePeople()
         return givenType === 'text' && names.includes(value) && value !== this.entity.values[0]
     }
 
@@ -1068,13 +1068,13 @@ export class MetadataEditor {
             let date_death = 'z'
 
             // Get dates of birth and death
-            if (key === 'Date of Birth' && value !== '' && this.getValueByKey('Date of Death') !== '') {
+            if (key === 'Date of Birth' && value !== '' && this.getValueByKeyFromEntity('Date of Death') !== '') {
                 date_birth = value
-                date_death = this.getValueByKey('Date of Death')
+                date_death = this.getValueByKeyFromEntity('Date of Death')
             }
-            if (key === 'Date of Death' && value !== '' && this.getValueByKey('Date of Birth') !== '') {
+            if (key === 'Date of Death' && value !== '' && this.getValueByKeyFromEntity('Date of Birth') !== '') {
                 date_death = value
-                date_birth = this.getValueByKey('Date of Birth')
+                date_birth = this.getValueByKeyFromEntity('Date of Birth')
             }
             return date_birth > date_death
         }
@@ -1213,7 +1213,7 @@ export class MetadataEditor {
     }
 
     returnDuplicateInNameError (value) {
-        let names = this.getPersonNames()
+        let names = this.getNamesOfAllThePeople()
         let personId = names.indexOf(value)
         let url = urlGen.sitePerson(personId)
         let linkId = "linktoperson" + personId

@@ -282,9 +282,21 @@ input[type=number] {
 }
 
 input.tag-input {
-    border: none;
-    height: 1.6em;
-    width: 7em;
+    border: 1px solid #c5d2f6;
+    background-color: #e3f4ff;
+    height: 2em;
+    width: 6em;
+    border-radius: 4px;
+}
+
+input.tag-input:focus {
+    border-style: solid;
+    outline: none !important;
+    border-color: black;
+}
+
+input.tag-input:focus::placeholder {
+    color: transparent;
 }
 
 ul.tag-editor-tags-ul {

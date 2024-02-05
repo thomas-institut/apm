@@ -57,5 +57,16 @@ div.work p {
     margin-bottom: 0.25rem;
 }
 
+div.user-data {
+    margin-top: 2em;
+}
+
+div.user-admin{
+    margin-top: 2em;
+}
+
+div.user-profile-item {
+    margin-bottom: 1em;
+}
 
 

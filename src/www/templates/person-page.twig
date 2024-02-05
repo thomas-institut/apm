@@ -17,7 +17,9 @@
         new PersonPageNew(( {
           commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
           tid: {{ tid }},
-          data: JSON.parse("{{data|json_encode|e('js')}}")
+          data: JSON.parse("{{data|json_encode|e('js')}}"),
+          canManageUsers: JSON.parse("{{canManageUsers|json_encode|e('js')}}"),
+          userData: JSON.parse("{{userData|json_encode|e('js')}}"),
         }))
       })
     </script>

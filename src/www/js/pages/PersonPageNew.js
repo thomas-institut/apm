@@ -5,6 +5,8 @@ import { Tid } from '../Tid/Tid'
 import { CollapsePanel } from '../widgets/CollapsePanel'
 import { tr } from './common/SiteLang'
 import { UserDocDataCommon } from './common/UserDocDataCommon'
+import { ApmPage } from './ApmPage'
+import { UserProfileEditor } from './common/UserProfileEditor'
 
 
 const CONTRIBUTION_MCE = 'mcEditions';
@@ -20,7 +22,9 @@ export class PersonPageNew extends NormalPage {
       context: 'PersonPage',
       optionsDefinition: {
         tid: { type: 'number'},
-        data: { type: 'object'}
+        data: { type: 'object'},
+        canManageUsers: { type: 'boolean'},
+        userData: { type: 'object'}
       }
     })
 
@@ -30,6 +34,8 @@ export class PersonPageNew extends NormalPage {
     console.log(cleanOptions);
     this.personData = cleanOptions.data;
     this.personTid = cleanOptions.tid;
+    this.canManageUsers = cleanOptions.canManageUsers;
+    this.userData = cleanOptions.userData;
 
     this.userContributions = [];
 
@@ -42,6 +48,7 @@ export class PersonPageNew extends NormalPage {
     await super.initPage();
     document.title = this.personData.name;
     if (this.personData.isUser) {
+      $('button.edit-user-profile-btn').on('click', this.genOnClickEditUserProfileButton());
       this.mcEditionsCollapse = this.constructCollapse('#multi-chunk-editions', tr('Multi-Chunk Editions'), [ 'first'])
       this.chunkEditionsCollapse = this.constructCollapse('#chunk-editions', tr('Chunk Editions'))
       this.collationTablesCollapse = this.constructCollapse('#collation-tables', tr('Collation Tables'))
@@ -110,7 +117,7 @@ export class PersonPageNew extends NormalPage {
     return new CollapsePanel({
       containerSelector: selector,
       title: title,
-      content: this.genLoadingMessageHtml(),
+      content: ApmPage.genLoadingMessageHtml(),
       contentClasses: [ 'user-profile-section-content'],
       headerClasses: headerClasses,
       iconWhenHidden: '<small><i class="bi bi-caret-right-fill"></i></small>',
@@ -145,8 +152,8 @@ export class PersonPageNew extends NormalPage {
         ${await this.getUserDataHtml(this.personData)}</div>`;
   }
 
-  getPredicateHtml(predicateName, predicateValue) {
-    return `<div class="entity-predicate"><span class="predicate">${predicateName}</span>: ${predicateValue}</div>`
+  getPredicateHtml(predicateName, predicateValue, divClass = 'entity-predicate') {
+    return `<div class="${divClass}"><span class="predicate">${predicateName}</span>: ${predicateValue}</div>`
   }
 
   /**
@@ -158,15 +165,57 @@ export class PersonPageNew extends NormalPage {
     if (!personData.isUser) {
       return '';
     }
+    let userAdminHtml = '';
+    let userPrivateDataHtml = '';
+
+    if (this.canManageUsers || this.userTid === this.personTid) {
+      if (this.canManageUsers || !this.userData.isReadOnly()) {
+        userAdminHtml = `<button class="btn btn-primary edit-user-profile-btn">Edit User Profile</button>`;
+      }
+      let privateDataToDisplay =  [
+        [ tr('Username'), this.personData.userName],
+        [ tr('User Email Address'), this.personData['userEmailAddress']]
+        ];
+
+      if (this.canManageUsers) {
+        privateDataToDisplay.push(...[
+          [ tr('Disabled'), this.userData.disabled ? tr('Yes') : tr('No')],
+          [ tr('Root'), this.userData.root ? tr('Yes') : tr('No')],
+          [ tr('Read Only'), this.userData.readOnly ? tr('Yes') : tr('No')],
+          [ tr('Tags'), '[ ' + this.userData.tags.join(', ') + ' ]'],
+        ])
+      }
+
+      userPrivateDataHtml = privateDataToDisplay.map ( (displayTuple) => {
+        let [ predicateName, predicateValue] = displayTuple;
+        return this.getPredicateHtml(predicateName, predicateValue);
+      }).join('')
+
+
+    }
     return `
-        <div class="user-admin"></div>
+        <div class="user-private-data">${userPrivateDataHtml}</div>
+        <div class="user-admin">${userAdminHtml}</div>
         <h2>${tr('User Contributions')}</h2> 
-        <div class="data-status user-profile-section">${this.genLoadingMessageHtml()}</div>
+        <div class="data-status user-profile-section">${ApmPage.genLoadingMessageHtml()}</div>
         <div id="multi-chunk-editions" class="user-profile-section hidden"></div>
         <div id="chunk-editions" class="user-profile-section hidden"></div>
         <div id="collation-tables" class="user-profile-section hidden"></div>
         <div id="transcriptions" class="user-profile-section hidden"></div>`
   }
+
+  genOnClickEditUserProfileButton() {
+    return () => {
+      let upe = new UserProfileEditor({
+        userData: this.userData,
+        personData: this.personData,
+        canManageUsers: this.canManageUsers
+      });
+      upe.show();
+    }
+  }
+
+
 }
 
 window.PersonPageNew = PersonPageNew;

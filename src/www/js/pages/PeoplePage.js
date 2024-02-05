@@ -2,6 +2,7 @@ import { NormalPage } from './NormalPage'
 import { Tid } from '../Tid/Tid'
 import { urlGen } from './common/SiteUrlGen'
 import { tr } from './common/SiteLang'
+import { ApmPage } from './ApmPage'
 
 export class PeoplePage extends NormalPage {
 
@@ -17,7 +18,7 @@ export class PeoplePage extends NormalPage {
 
     async genHtml() {
         return `<h1>${tr('People')}</h1>
-        <div class="people-page-content">${this.genLoadingMessageHtml()}</div>`;
+        <div class="people-page-content">${ApmPage.genLoadingMessageHtml()}</div>`;
     }
 
     async initPage() {

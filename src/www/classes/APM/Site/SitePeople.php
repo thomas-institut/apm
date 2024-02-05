@@ -3,6 +3,9 @@
 namespace APM\Site;
 
 use APM\System\Person\PersonNotFoundException;
+use APM\System\User\UserNotFoundException;
+use APM\System\User\UserTag;
+use APM\ToolBox\HttpErrorCode;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\EntitySystem\Tid;
@@ -35,14 +38,41 @@ class SitePeople extends SiteController
         } else {
             $tid = Tid::fromString($tid);
             if ($tid === -1) {
-                return $this->getBasicErrorPage($response, 'Error', "Invalid entity id");
+                return $this->getBasicErrorPage($response, 'Error', "Invalid entity id", HttpErrorCode::BAD_REQUEST);
             }
         }
+        $um = $this->systemManager->getUserManager();
+        $canManageUsers = false;
         try {
-            $data = $pm->getPersonEssentialData(intval($tid));
-            return $this->renderPage($response, self::TEMPLATE_PERSON, ['tid' => $tid, 'data' => $data->getExportObject()]);
-        } catch (PersonNotFoundException $e) {
-            return $this->getBasicErrorPage($response, 'Person Not Found', "Person $tid not found");
+            $canManageUsers = $um->isUserAllowedTo($this->userTid, UserTag::MANAGE_USERS);
+        } catch (UserNotFoundException) {
+            // should never happen
+            $this->getSystemErrorPage($response, "User not found", [ 'tid' => $this->userTid]);
+        }
+        try {
+            $data = $pm->getPersonEssentialData($tid);
+            $userData = [];
+            if ($canManageUsers) {
+                $userData = $um->getUserData($tid)->getExportObject();
+                unset($userData['passwordHash']);
+            }
+            return $this->renderPage($response,
+                self::TEMPLATE_PERSON,
+                [   'tid' => $tid,
+                    'data' => $data->getExportObject(),
+                    'canManageUsers' => $canManageUsers,
+                    'userData' => $userData
+                ],
+                true,
+                false);
+        } catch (PersonNotFoundException) {
+            // should never happen
+            return $this->getSystemErrorPage($response, 'Could not get Person essential data', [
+                'tid' => $tid, 'function' => __FUNCTION__]);
+        } catch (UserNotFoundException) {
+            // should never happen
+            return $this->getSystemErrorPage($response, 'Could not get User  data', [
+                'tid' => $tid, 'function' => __FUNCTION__]);
         }
     }
 

@@ -3,6 +3,7 @@ import { tr } from './common/SiteLang'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { Tid } from '../Tid/Tid'
 import { urlGen } from './common/SiteUrlGen'
+import { ApmPage } from './ApmPage'
 
 export class DocumentsPage extends NormalPage {
 
@@ -64,7 +65,7 @@ export class DocumentsPage extends NormalPage {
     }
 
     return `<h1>${tr('Documents')}</h1>
-            <div class="data-status">${this.genLoadingMessageHtml()}</div>
+            <div class="data-status">${ApmPage.genLoadingMessageHtml()}</div>
             <div class="docs-table-div">${await this.getDocumentsTableSkeleton()}</div>
             ${adminDiv}`;
   }

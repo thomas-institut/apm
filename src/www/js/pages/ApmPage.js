@@ -76,7 +76,7 @@ export class ApmPage {
    * @param msg
    * @return {string}
    */
-  genLoadingMessageHtml(msg = 'Loading data') {
+  static genLoadingMessageHtml(msg = 'Loading data') {
     return `${tr(msg)} <span class="spinner-border spinner-border-sm" role="status"></span>`
   }
 

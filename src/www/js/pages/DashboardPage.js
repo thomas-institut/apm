@@ -23,6 +23,7 @@ import { NormalPage } from './NormalPage'
 import { urlGen } from './common/SiteUrlGen'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { TagEditor } from '../widgets/TagEditor'
+import { ApmPage } from './ApmPage'
 
 const newMceEditionIcon = '<i class="bi bi-file-plus"></i>'
 
@@ -98,7 +99,7 @@ export class DashboardPage extends NormalPage {
     return new CollapsePanel({
       containerSelector: selector,
       title: title,
-      content: this.genLoadingMessageHtml(),
+      content: ApmPage.genLoadingMessageHtml(),
       contentClasses: [ 'dashboard-section-content'],
       headerClasses: headerClasses,
       iconWhenHidden: '<small><i class="bi bi-caret-right-fill"></i></small>',

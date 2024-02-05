@@ -20,6 +20,7 @@ import { setSiteLanguage, tr } from './common/SiteLang'
 import { urlGen } from './common/SiteUrlGen'
 import { ApmPage } from './ApmPage'
 import { ApmFormats } from './common/ApmFormats'
+import { Tid } from '../Tid/Tid'
 
 
 
@@ -136,7 +137,7 @@ export class NormalPage extends ApmPage {
                 <li class="nav-item"><a class="nav-link" href="${urlGen.siteDashboard()}" title="${tr('Dashboard')}">${tr('Dashboard')}</a></li>
                 <li class="nav-item"><a class="nav-link" href="${urlGen.siteDocs()}" title="${tr('Documents')}">${tr('Documents')}</a></li>
                 <li class="nav-item"><a class="nav-link" href="${urlGen.siteChunks()}" title="${tr('Works')}">${tr('Works')}</a></li>
-                <li class="nav-item"><a class="nav-link" href="${urlGen.siteUsers()}" title="${tr('Users')}">${tr('Users')}</a></li>
+                <!-- <li class="nav-item"><a class="nav-link" href="${urlGen.siteUsers()}" title="${tr('Users')}">${tr('Users')}</a></li> -->
                 <li class="nav-item"><a class="nav-link" href="${urlGen.sitePeople()}" title="${tr('People')}">${tr('People')}</a></li>
                 <li class="nav-item"><a class="nav-link" href="${urlGen.siteSearch()}" title="${tr('Search')}">${tr('Search')}</a></li>
                 <li class="nav-item">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</li>
@@ -155,8 +156,8 @@ export class NormalPage extends ApmPage {
                     <a class="nav-link dropdown-toggle" href="#"  data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                     <i class="fas fa-user"></i>&nbsp;${this.commonData.userInfo.name}</a>
                     <ul class="dropdown-menu dropdown-menu-right">
-                        <li><a class="nav-link dd-menu-item" href="${urlGen.siteUserProfile(this.userName)}">${tr('My Profile')}</a></li>
-                        <li><a class="nav-link dd-menu-item"  href="${urlGen.siteUserProfile(this.userName)}">${tr('My Settings')}</a></li>
+                        <li><a class="nav-link dd-menu-item" href="${urlGen.sitePerson(Tid.toBase36String(this.userTid))}">${tr('My Profile')}</a></li>
+                        <!-- <li><a class="nav-link dd-menu-item"  href="${urlGen.siteUserProfile(this.userName)}">${tr('My Settings')}</a></li> -->
                         <li role="separator" class="divider"></li>
                         <li><a class="nav-link dd-menu-item" href="${urlGen.siteLogout()}" title="${tr('Logout')}">${tr('Logout')}</a></li>
                     </ul>

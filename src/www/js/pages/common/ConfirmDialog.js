@@ -158,6 +158,18 @@ export class ConfirmDialog {
     }
   }
 
+  hideCancelButton() {
+    if (this.status === STATUS_READY) {
+      this.cancelButton.hide()
+    }
+  }
+
+  showCancelButton() {
+    if (this.status === STATUS_READY) {
+      this.cancelButton.show()
+    }
+  }
+
   showAcceptButton() {
     if (this.status === STATUS_READY) {
       this.acceptButton.show()

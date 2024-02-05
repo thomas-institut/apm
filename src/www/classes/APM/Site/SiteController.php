@@ -31,6 +31,7 @@ use APM\System\ApmConfigParameter;
 use APM\System\ApmImageType;
 use APM\SystemProfiler;
 use APM\System\ApmContainerKey;
+use APM\ToolBox\HttpErrorCode;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -203,19 +204,26 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 
         if ($twigExceptionRaised) {
             $this->logger->error("Error rendering page: " . $errorMessage);
-            return $this->getBasicErrorPage($response, 'APM Error', 'Page rendering error, please report to APM developers.')->withStatus(409);
+            return $this->getSystemErrorPage($response, $errorMessage, []);
         }
         SystemProfiler::lap('Response ready');
         $this->logger->debug("GLOBAL PROFILER", SystemProfiler::getLaps());
         return $responseToReturn;
     }
 
-    protected function getBasicErrorPage(ResponseInterface $response, string $title, string $errorMessage) : ResponseInterface
+    protected function getSystemErrorPage(ResponseInterface $response, string $errorMessage,
+                                          array $errorData, int $httpStatus  = HttpErrorCode::INTERNAL_SERVER_ERROR) :ResponseInterface{
+        $this->logger->error("System Error: " . $errorMessage, $errorData);
+        return $this->getBasicErrorPage($response, "System Error", $errorMessage, $httpStatus);
+
+    }
+
+    protected function getBasicErrorPage(ResponseInterface $response, string $title, string $errorMessage, int $httpStatus) : ResponseInterface
     {
 
         $html = "<!DOCTYPE html><html lang='en'><head><title>$title</title></head><body><h1>APM Error</h1><p>$errorMessage</p></body></html>";
         $response->getBody()->write($html);
-        return $response;
+        return $response->withStatus($httpStatus);
     }
     
     protected function getCopyrightNotice() : string {

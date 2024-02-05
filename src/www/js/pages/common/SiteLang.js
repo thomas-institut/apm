@@ -100,6 +100,18 @@ const strings = [
   { key: 'Pages:Transcribed', en: 'Transcribed', es: 'Transcritas'},
   { key: 'Transcribers', es: 'Transcriptores'},
   { key: 'Create New Document', es: 'Crear nuevo documento'},
+  { key: 'Username', es: 'Usuario'},
+  { key: 'User Email Address', es: 'Email de usuario'},
+  { key: 'Root', es: 'Root'},
+  { key: 'Read Only', es: 'Solo lectura'},
+  { key: 'Yes', es: 'Sí'},
+  { key: 'No', es: 'No'},
+  { key: 'Disabled', es: 'Deshabilitado'},
+  { key: 'Tags', es: 'Tags'},
+  { key: 'Edit User Profile', es: 'Editar perfil de usuario'},
+  { key: 'Save Changes', es: 'Guardar cambios'},
+  { key: 'Cancel', es: 'Cancelar'},
+  { key: 'Saving changes', es: 'Guardando cambios'}
 
 ]
 

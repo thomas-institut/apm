@@ -1056,7 +1056,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             return;
         }
 
-        //$this->codeDebug("Updating page settings", $newSettings->getDatabaseRow());
+//        $this->logger->debug("Updating page settings", $newSettings->getDatabaseRow());
         // Update the database first
         $this->getPageManager()->updatePageSettings($pageId, $newSettings);
 

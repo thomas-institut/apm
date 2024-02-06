@@ -74,6 +74,7 @@ class ApiDocuments extends ApiController
 
         $pageInfo = $this->systemManager->getTranscriptionManager()->getPageManager()->getPageInfoById($pageId);
         $pageInfo->foliation = $foliation;
+        $pageInfo->foliationIsSet = true;
         $pageInfo->type = $type;
         $pageInfo->langCode = $lang;
 

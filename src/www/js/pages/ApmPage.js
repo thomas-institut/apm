@@ -53,7 +53,7 @@ export class ApmPage {
     if (this.showLanguageSelector) {
       this.siteLanguage = this.commonData.siteLanguage;
       if (this.siteLanguage === '' || this.siteLanguage === 'detect') {
-        console.log(`No site language given, detecting language`);
+        // console.log(`No site language given, detecting language`);
         this.siteLanguage = this.detectBrowserLanguage();
       }
       setSiteLanguage(this.siteLanguage);
@@ -66,7 +66,7 @@ export class ApmPage {
     this.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     ApmFormats.setTimeZone(this.timeZone);
 
-    console.log(`Client timezone is '${this.timeZone}'`);
+    console.log(`Client timezone is '${this.timeZone}', currently ${ApmFormats.getTimeZoneOffsetStringForDate(new Date(), false, false)}`);
   }
 
 

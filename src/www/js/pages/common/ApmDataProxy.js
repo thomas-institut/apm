@@ -71,7 +71,7 @@ export class ApmDataProxy {
     let data = this.caches.memory.retrieve("allPeopleData");
     if (data === null) {
       data = await this.get(urlGen.apiPersonGetEssentialDataAll(), true);
-      this.caches.memory.store('allPeopleData', data, 120);
+      this.caches.memory.store('allPeopleData', data, 5);
     }
     return data;
   }
@@ -119,7 +119,28 @@ export class ApmDataProxy {
       foliation: foliation,
       type: type,
       lang: lang
-    }, true)
+    }, true);
+  }
+
+  async updateUserProfile(userTid, email, password1, password2) {
+    return this.post(urlGen.apiUpdateProfile(userTid), {
+      email: email,
+      password1: password1,
+      password2: password2
+    }, true);
+  }
+
+  async createUser(personTid, username) {
+    return this.post(urlGen.apiCreateUser(personTid), {
+      username: username,
+    }, true);
+  }
+
+  async createPerson(name, sortName){
+    return this.post(urlGen.apiPersonCreate(), {
+      name: name,
+      sortName: sortName
+    }, true);
   }
 
 
@@ -163,11 +184,11 @@ export class ApmDataProxy {
   /**
    *
    * @param {string} url
-   * @param {boolean}forceActualFecth
+   * @param {boolean}forceActualFetch
    * @return {Promise<{}>}
    */
-  get(url, forceActualFecth = true) {
-    return this.fetch(url, 'GET', [], forceActualFecth)
+  get(url, forceActualFetch = true) {
+    return this.fetch(url, 'GET', [], forceActualFetch)
   }
 
 

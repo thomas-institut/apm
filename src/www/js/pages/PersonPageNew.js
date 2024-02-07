@@ -6,7 +6,8 @@ import { CollapsePanel } from '../widgets/CollapsePanel'
 import { tr } from './common/SiteLang'
 import { UserDocDataCommon } from './common/UserDocDataCommon'
 import { ApmPage } from './ApmPage'
-import { UserProfileEditor } from './common/UserProfileEditor'
+import { UserProfileEditorDialog } from './common/UserProfileEditorDialog'
+import { MakeUserDialog } from './common/MakeUserDialog'
 
 
 const CONTRIBUTION_MCE = 'mcEditions';
@@ -81,6 +82,10 @@ export class PersonPageNew extends NormalPage {
         })
       }
     }
+    else {
+      $('button.edit-user-profile-btn').on('click', this.genOnClickMakeUserButton());
+    }
+
   }
 
   async fetchMultiChunkEditions() {
@@ -163,6 +168,10 @@ export class PersonPageNew extends NormalPage {
    */
   async getUserDataHtml(personData) {
     if (!personData.isUser) {
+      if (this.canManageUsers) {
+        let userAdminHtml = `<button class="btn btn-primary edit-user-profile-btn">${tr('Make User')}</button>`;
+        return ` <div class="user-admin">${userAdminHtml}</div>`;
+      }
       return '';
     }
     let userAdminHtml = '';
@@ -206,15 +215,31 @@ export class PersonPageNew extends NormalPage {
 
   genOnClickEditUserProfileButton() {
     return () => {
-      let upe = new UserProfileEditor({
+      (new UserProfileEditorDialog({
         userData: this.userData,
         personData: this.personData,
-        canManageUsers: this.canManageUsers
+        canManageUsers: this.canManageUsers,
+        apmDataProxy: this.apmDataProxy,
+      })).show().then( (profileUpdated) => {
+        if (profileUpdated) {
+          window.location.reload();
+        }
       });
-      upe.show();
     }
   }
 
+  genOnClickMakeUserButton () {
+    return () => {
+      (new MakeUserDialog({
+        personData: this.personData,
+        apmDataProxy: this.apmDataProxy,
+      })).show().then( (userCreated) => {
+        if (userCreated) {
+          window.location.reload();
+        }
+      });
+    }
+  }
 
 }
 

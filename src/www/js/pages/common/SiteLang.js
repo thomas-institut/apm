@@ -109,10 +109,17 @@ const strings = [
   { key: 'Disabled', es: 'Deshabilitado'},
   { key: 'Tags', es: 'Tags'},
   { key: 'Edit User Profile', es: 'Editar perfil de usuario'},
-  { key: 'Save Changes', es: 'Guardar cambios'},
+  { key: 'Save Changes', es: 'Salvando cambios'},
   { key: 'Cancel', es: 'Cancelar'},
-  { key: 'Saving changes', es: 'Guardando cambios'}
-
+  { key: 'Saving changes', es: 'Salvando cambios'},
+  { key: 'Make User', es: 'Crear usuario'},
+  { key: 'New Password', es: 'Contraseña'},
+  { key: 'Confirm New Password', es: 'Confirmar contraseña'},
+  { key: 'Saving profile', es: 'Salvando perfil'},
+  { key: 'Profile successfully updated', es: 'Perfil salvado exitosamente'},
+  { key: 'Invalid username', es: 'Nombre de usuario no válido'},
+  { key: 'Making new user', es: 'Creando nuevo usuario'},
+  { key: 'The server found an error', es: 'El servidor encontró un error'},
 ]
 
 export class SiteLang {

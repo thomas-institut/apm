@@ -2126,7 +2126,7 @@ export class CollationTableEditor extends ApmPage{
     for (let i = 0; i < this.ctData['witnesses'].length; i++) {
       new EditableTextField({
         containerSelector: this.witnessesDivSelector + ' .siglum-' + i,
-        initialText: this.ctData['sigla'][i],
+        initialText: this.ctData['sigla'][i] ?? '',
         onConfirm: this.genOnConfirmSiglumEdit(i)
       })
     }

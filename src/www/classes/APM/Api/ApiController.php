@@ -25,6 +25,7 @@ use APM\System\User\UserNotFoundException;
 use APM\SystemProfiler;
 use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
+use APM\ToolBox\HttpStatus;
 use Exception;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
@@ -179,49 +180,59 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 
 
     /**
-     * Checks that the given request contains a 'data' field, which in 
-     * turn contains the given $requiredFields. 
-     * 
+     * Checks that the given request contains a 'data' field, which in
+     * turn contains the given $requiredFields.
+     *
      * If there's any error, returns a Response with the proper error status
      * If everything is OK, returns the input data array
-     * 
+     *
      * @param Request $request
      * @param Response $response
      * @param array $requiredFields
+     * @param bool $errorIfEmpty
+     * @param bool $useRawData
      * @return Response|array
      */
     protected function checkAndGetInputData(Request  $request,
-                                            Response $response, array $requiredFields): array|Response
+                                            Response $response, array $requiredFields, bool $errorIfEmpty = false, bool $useRawData = false): array|Response
     {
-        $rawData = $request->getBody()->getContents();
-        parse_str($rawData, $postData);
-        $inputData = null;
-        
-        if (isset($postData['data'])) {
-            $inputData = json_decode($postData['data'], true);
-        }
-        
-        // Some checks
-        if (is_null($inputData) ) {
-            $this->logger->error("$this->apiCallName: no data in input",
+
+        $postData = $request->getParsedBody();
+        if ($useRawData) {
+            $inputData = $postData;
+        } else {
+            if (!isset($postData['data']) ) {
+                $this->logger->error("$this->apiCallName: no data in input",
                     [ 'apiUserTid' => $this->apiUserTid,
-                      'apiUserTidString' => Tid::toBase36String($this->apiUserTid),
-                      'apiError' => self::API_ERROR_NO_DATA,
-                      'rawdata' => $postData]);
-            return $this->responseWithJson($response, ['error' => self::API_ERROR_NO_DATA], 409);
+                        'apiUserTidString' => Tid::toBase36String($this->apiUserTid),
+                        'apiError' => self::API_ERROR_NO_DATA,
+                        'rawdata' => $postData]);
+                return $this->responseWithJson($response, ['error' => self::API_ERROR_NO_DATA], HttpStatus::BAD_REQUEST);
+            }
+            $inputData = json_decode($postData['data'], true);
+            if (is_null($inputData)) {
+                $this->logger->error("$this->apiCallName: bad JSON in data",
+                    [ 'apiUserTid' => $this->apiUserTid,
+                        'apiUserTidString' => Tid::toBase36String($this->apiUserTid),
+                        'apiError' => self::API_ERROR_NO_DATA,
+                        'rawdata' => $postData]);
+                return $this->responseWithJson($response, ['error' => self::API_ERROR_NO_DATA], HttpStatus::BAD_REQUEST);
+            }
         }
-        
+
         foreach ($requiredFields as $requiredField) {
-            if (!isset($inputData[$requiredField])) {
+            if (!isset($inputData[$requiredField]) || ($errorIfEmpty && $inputData[$requiredField] === '')) {
                 $this->logger->error("$this->apiCallName: missing required field '$requiredField' in input data",
                     [ 'apiUserTid' => $this->apiUserTid,
                       'apiUserTidString' => Tid::toBase36String($this->apiUserTid),
                       'apiError' => self::API_ERROR_MISSING_REQUIRED_FIELD,
                       'rawdata' => $postData]);
-            return $this->responseWithJson($response, ['error' => self::API_ERROR_MISSING_REQUIRED_FIELD], 409);
+            return $this->responseWithJson($response, [
+                'error' => self::API_ERROR_MISSING_REQUIRED_FIELD,
+                'errorMsg' => "Required $requiredField not given"
+            ], HttpStatus::BAD_REQUEST);
             }
         }
-        
         return $inputData;
     }
 

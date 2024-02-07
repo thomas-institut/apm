@@ -31,7 +31,7 @@ use APM\System\ApmConfigParameter;
 use APM\System\ApmImageType;
 use APM\SystemProfiler;
 use APM\System\ApmContainerKey;
-use APM\ToolBox\HttpErrorCode;
+use APM\ToolBox\HttpStatus;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -212,7 +212,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     }
 
     protected function getSystemErrorPage(ResponseInterface $response, string $errorMessage,
-                                          array $errorData, int $httpStatus  = HttpErrorCode::INTERNAL_SERVER_ERROR) :ResponseInterface{
+                                          array $errorData, int $httpStatus  = HttpStatus::INTERNAL_SERVER_ERROR) :ResponseInterface{
         $this->logger->error("System Error: " . $errorMessage, $errorData);
         return $this->getBasicErrorPage($response, "System Error", $errorMessage, $httpStatus);
 

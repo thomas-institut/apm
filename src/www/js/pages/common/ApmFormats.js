@@ -106,14 +106,34 @@ export class ApmFormats {
       timeZoneString = ` ${timeZone}`
     }
     if (opt.withTimeZoneOffset) {
-      let offset = -d.getTimezoneOffset() / 60;
-      if (opt.utc || offset === 0) {
-        timeZoneString = ' UTC';
-      } else {
-        timeZoneString = offset > 0 ? ` UTC&plus;${offset}` : ` UTC&minus;${-offset}`;
-      }
+     timeZoneString = ` ${this.getTimeZoneOffsetStringForDate(d, opt.utc)}`
     }
     return `${day} ${month} ${year}, ${hour}:${min}${secString}${timeZoneString}`
+  }
+
+  /**
+   * Return a UTC+offset string from a date object
+   *
+   * If usingUTC is true, returns 'UTC'
+   * @param {Date}dateObject
+   * @param {boolean} usingUTC
+   * @param {boolean}html
+   * @return {string}
+   */
+  static getTimeZoneOffsetStringForDate(dateObject, usingUTC = false, html = true) {
+    if (usingUTC) {
+      return 'UTC';
+    }
+    let timeZoneString
+    let offset = -dateObject.getTimezoneOffset() / 60;
+    let plus = html ? '&plus;' : '+';
+    let minus = html ? '&minus;' : '-';
+    if (offset === 0) {
+      timeZoneString = 'UTC';
+    } else {
+      timeZoneString = offset > 0 ? `UTC${plus}${offset}` : `UTC${minus}${-offset}`;
+    }
+    return timeZoneString
   }
 
   /**

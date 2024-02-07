@@ -2,7 +2,7 @@
 
 namespace APM\ToolBox;
 
-class HttpErrorCode
+class HttpStatus
 {
 
     const SUCCESS = 200;

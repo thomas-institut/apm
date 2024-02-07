@@ -5,7 +5,7 @@ namespace APM\Site;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
-use APM\ToolBox\HttpErrorCode;
+use APM\ToolBox\HttpStatus;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\EntitySystem\Tid;
@@ -38,7 +38,7 @@ class SitePeople extends SiteController
         } else {
             $tid = Tid::fromString($tid);
             if ($tid === -1) {
-                return $this->getBasicErrorPage($response, 'Error', "Invalid entity id", HttpErrorCode::BAD_REQUEST);
+                return $this->getBasicErrorPage($response, 'Error', "Invalid entity id", HttpStatus::BAD_REQUEST);
             }
         }
         $um = $this->systemManager->getUserManager();
@@ -52,9 +52,11 @@ class SitePeople extends SiteController
         try {
             $data = $pm->getPersonEssentialData($tid);
             $userData = [];
-            if ($canManageUsers) {
-                $userData = $um->getUserData($tid)->getExportObject();
-                unset($userData['passwordHash']);
+            if ($um->isUser($tid)) {
+                if ($canManageUsers) {
+                    $userData = $um->getUserData($tid)->getExportObject();
+                    unset($userData['passwordHash']);
+                }
             }
             return $this->renderPage($response,
                 self::TEMPLATE_PERSON,

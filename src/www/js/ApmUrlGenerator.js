@@ -194,12 +194,13 @@ class ApmUrlGenerator {
     openSeaDragonImagePrefix() {
         return this.base + '/node_modules/openseadragon/build/openseadragon/images/';
     }
-    apiCreateUser() {
-        return this.base + '/api/user/new';
+    apiCreateUser(tid) {
+        return `${this.base}/api/user/create/${tid}`;
     }
-    apiUpdateProfile(id) {
-        return this.base + '/api/user/' + id + '/update';
+    apiUpdateProfile(tid) {
+        return `${this.base}/api/user/${tid}/update`;
     }
+
     apiUserGetInfo(id) {
         return this.base + '/api/user/' + id + '/info';
     }
@@ -210,6 +211,10 @@ class ApmUrlGenerator {
 
     apiPersonGetEssentialDataAll() {
         return `${this.base}/api/person/all/data/essential`
+    }
+
+    apiPersonCreate() {
+        return `${this.base}/api/person/create`
     }
 
 

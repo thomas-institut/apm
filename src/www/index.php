@@ -34,7 +34,6 @@ use APM\Api\ApiWorks;
 
 use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePeople;
-use APM\Site\SitePerson;
 use APM\System\ConfigLoader;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Handler\ErrorLogHandler;
@@ -196,28 +195,28 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
         ->setName('dashboard');
 
     // USER.PROFILE
-    $group->get('/user/{username}',
-        function(Request $request, Response $response, array $args) use ($container){
-            $siteUserManager = new SiteUserManager($container);
-            return $siteUserManager->userProfilePage($request, $response, $args);
-        })
-        ->setName('user.profile');
+//    $group->get('/user/{username}',
+//        function(Request $request, Response $response, array $args) use ($container){
+//            $siteUserManager = new SiteUserManager($container);
+//            return $siteUserManager->userProfilePage($request, $response, $args);
+//        })
+//        ->setName('user.profile');
 
     // USER.SETTINGS
+//
+//    $group->get('/user/{username}/settings',
+//        function(Request $request, Response $response, array $args) use ($container){
+//            $siteUserManager = new SiteUserManager($container);
+//            return $siteUserManager->userSettingsPage($request, $response, $args);
+//        })
+//        ->setName('user.settings');
 
-    $group->get('/user/{username}/settings',
-        function(Request $request, Response $response, array $args) use ($container){
-            $siteUserManager = new SiteUserManager($container);
-            return $siteUserManager->userSettingsPage($request, $response, $args);
-        })
-        ->setName('user.settings');
-
-    $group->get('/users',
-        function(Request $request, Response $response, array $args) use ($container){
-            $siteUserManager = new SiteUserManager($container);
-            return $siteUserManager->userManagerPage($request, $response, $args);
-        })
-        ->setName('user.manager');
+//    $group->get('/users',
+//        function(Request $request, Response $response, array $args) use ($container){
+//            $siteUserManager = new SiteUserManager($container);
+//            return $siteUserManager->userManagerPage($request, $response, $args);
+//        })
+//        ->setName('user.manager');
 
     // WORKS
 
@@ -231,10 +230,10 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
             return $c->singleChunkPage($request, $response);
         })->setName('chunk');
 
-
-    $group->get('/chunks/map[/{timestamp}]',
-        SiteChunks::class . ':fullTxMapPage')
-        ->setName('fullTxMap');
+//
+//    $group->get('/chunks/map[/{timestamp}]',
+//        SiteChunks::class . ':fullTxMapPage')
+//        ->setName('fullTxMap');
 
     // COLLATION TABLES
 
@@ -354,29 +353,29 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         ->setName('search.editors');
 
     // People
-    $group->post('/person/get',
-        ApiPeople::class . ':getData')
-        ->setName('getData');
-
-    $group->post('/person/save',
-        ApiPeople::class . ':saveData')
-        ->setName('saveData');
-
-    $group->post('/person/create',
-        ApiPeople::class . ':saveData')
-        ->setName('createPerson');
-
-    $group->post('/person/schema',
-        ApiPeople::class . ':getSchema')
-        ->setName('getSchema');
-
-    $group->post('/person/newid',
-        ApiPeople::class . ':getNewId')
-        ->setName('getNewId');
-
-    $group->post('/people/all',
-        ApiPeople::class . ':getAllPeople')
-        ->setName('getAllPeople');
+//    $group->post('/person/get',
+//        ApiPeople::class . ':getData')
+//        ->setName('getData');
+//
+//    $group->post('/person/save',
+//        ApiPeople::class . ':saveData')
+//        ->setName('saveData');
+//
+//    $group->post('/person/create',
+//        ApiPeople::class . ':saveData')
+//        ->setName('createPerson');
+//
+//    $group->post('/person/schema',
+//        ApiPeople::class . ':getSchema')
+//        ->setName('getSchema');
+//
+//    $group->post('/person/newid',
+//        ApiPeople::class . ':getNewId')
+//        ->setName('getNewId');
+//
+//    $group->post('/people/all',
+//        ApiPeople::class . ':getAllPeople')
+//        ->setName('getAllPeople');
 
     // LOG
     $group->post('/admin/log',
@@ -497,58 +496,44 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
 
     $group->get('/person/all/data/essential',
         function(Request $request, Response $response) use ($container){
-            $apiUsers = new ApiPeople($container);
-            return $apiUsers->getAllPeopleEssentialData($request, $response);
+            $apiPeople = new ApiPeople($container);
+            return $apiPeople->getAllPeopleEssentialData($request, $response);
         })
-        ->setName('api.person.data.essential');
+        ->setName('api.person.data.essential.all');
 
     $group->get('/person/{tid}/data/essential',
         function(Request $request, Response $response) use ($container){
-            $apiUsers = new ApiPeople($container);
-            return $apiUsers->getPersonEssentialData($request, $response);
+            $apiPeople = new ApiPeople($container);
+            return $apiPeople->getPersonEssentialData($request, $response);
         })
         ->setName('api.person.data.essential');
 
+    $group->post('/person/create',
+        function(Request $request, Response $response) use ($container){
+            $apiPeople = new ApiPeople($container);
+            return $apiPeople->createNewPerson($request, $response);
+        })
+        ->setName('api.person.create');
 
     // USERS
 
-    // API -> user : get profile info
-    $group->get('/user/{userId}/info',
-        function(Request $request, Response $response, array $args) use ($container){
-            $apiUsers = new ApiUsers($container);
-            return $apiUsers->getUserProfileInfo($request, $response, $args);
-        })
-        ->setName('api.user.info');
 
 
-    $group->get('/users/all',
-        function(Request $request, Response $response) use ($container){
-            $apiUsers = new ApiUsers($container);
-            return $apiUsers->getAllUsers($request, $response);
-        })
-        ->setName('api.users.all');
 
     // API -> user : update profile
-    $group->post('/user/{userId}/update',
-        ApiUsers::class . ':updateUserProfile')
+    $group->post('/user/{userTid}/update',
+        function(Request $request, Response $response) use ($container){
+            $apiUsers = new ApiUsers($container);
+            return $apiUsers->updateUserProfile($request, $response);
+        })
         ->setName('api.user.update');
 
-    // API -> user : change password
-    $group->post('/user/{userId}/changepassword',
-        ApiUsers::class . ':changeUserPassword')
-        ->setName('api.user.changepassword');
-
-    // API -> user : make root
-    $group->post('/user/{userId}/makeroot',
-            ApiUsers::class . ':makeUserRoot')
-        ->setName('api.user.makeroot');
-
-    // API -> user : add new user
-    $group->post('/user/new',
-        ApiUsers::class . ':createNewUser')
-        ->setName('api.user.new');
-
-
+    $group->post('/user/create/{personTid}',
+        function(Request $request, Response $response) use ($container){
+            $apiUsers = new ApiUsers($container);
+            return $apiUsers->createNewUser($request, $response);
+        })
+        ->setName('api.user.create');
 
     // API -> user : get collation tables (and chunk edition) by user
     $group->get('/user/{userTid}/collationTables', function(Request $request, Response $response) use ($container){

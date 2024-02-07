@@ -181,30 +181,11 @@ class SiteDocuments extends SiteController
         $doc['docInfo'] = $dataManager->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";
         $doc['pages'] = $this->buildPageArrayNew($pageInfoArray, $transcribedPages, $doc['docInfo']);
-        
-        $docInfoHtml = $this->hookManager->callHookedMethods('get-docinfo-html-' . $doc['docInfo']['image_source'],
-                [ 'imageSourceData' => $doc['docInfo']['image_source_data']]);
-
-        if (!is_string($docInfoHtml)) {
-            $docInfoHtml = 'Image source not supported, please report to administrator.';
-        }
-        $doc['docInfoHtml'] = $docInfoHtml;
 
 
         // TODO: enable metadata when there's a use for it, or when the doc details JS app
         //  would not hang if there's an error with it.
         $metaData = [];
-
-//        $metaData = $this->hookManager->callHookedMethods('get-doc-metadata-' . $doc['docInfo']['image_source'],
-//            [ 'imageSourceData' => $doc['docInfo']['image_source_data']]);
-//
-//        if (!is_array($metaData)) {
-//            $this->logger->debug('Invalid metadata returned for hook get-doc-metadata-' . $doc['docInfo']['image_source'],
-//                [ 'returnedMetadata' =>$metaData]);
-//            $metaData = [];
-//        }
-
-
 
         $chunkLocationMap = $transcriptionManager->getChunkLocationMapForDoc($docId, '');
 
@@ -274,10 +255,10 @@ class SiteDocuments extends SiteController
         }
 
 
-        $canDefinePages = false;
-        if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')) {
-            $canDefinePages = true;
-        }
+//        $canDefinePages = true;
+//        if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')) {
+//            $canDefinePages = true;
+//        }
 
 
         $pageTypeNames  = $this->dataManager->getPageTypeNames();
@@ -288,7 +269,7 @@ class SiteDocuments extends SiteController
 
         return $this->renderPage($response, self::TEMPLATE_SHOW_DOCS_PAGE, [
             'navByPage' => false,
-            'canDefinePages' => $canDefinePages ? '1' : '0',
+            'canDefinePages' => '1',
             'pageTypeNames' => $pageTypeNames,
             'doc' => $doc,
             'chunkInfo' => $chunkInfo,
@@ -316,9 +297,8 @@ class SiteDocuments extends SiteController
             ]);
         }
 
-        $availableImageSources = $this->hookManager->callHookedMethods('get-image-sources', []);
+        $availableImageSources = $this->systemManager->getAvailableImageSources();
         $imageSourceOptions = '';
-        $docImageSourceIsImplemented = false;
         foreach($availableImageSources as $imageSource) {
             $imageSourceOptions .= '<option value="' . $imageSource . '"';
             $imageSourceOptions .= '>' . $imageSource . '</option>';
@@ -354,18 +334,18 @@ class SiteDocuments extends SiteController
     public function editDocPage(Request $request, Response $response): Response
     {
         $this->profiler->start();
-        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'edit-documents')){
-            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to edit a document but is not allowed to do it');
-            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
-                'message' => 'You are not authorized to edit document settings'
-            ]);
-        }
+//        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'edit-documents')){
+//            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to edit a document but is not allowed to do it');
+//            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
+//                'message' => 'You are not authorized to edit document settings'
+//            ]);
+//        }
         
         $docId = $request->getAttribute('id');
         $dataManager = $this->dataManager;
         $docInfo = $dataManager->getDocById($docId);
         
-        $availableImageSources = $this->hookManager->callHookedMethods('get-image-sources', []);
+        $availableImageSources = $this->systemManager->getAvailableImageSources();
         
         $imageSourceOptions = '';
         $docImageSourceIsImplemented = false;
@@ -418,6 +398,8 @@ class SiteDocuments extends SiteController
         
     }
 
+
+
     /**
      * @param Request $request
      * @param Response $response
@@ -427,31 +409,34 @@ class SiteDocuments extends SiteController
     {
         $this->profiler->start();
         
-        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')){
-            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to define document pages  but is not allowed to do it');
-            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
-                'message' => 'You are not authorized to edit document settings'
-            ]);
-        }
+//        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')){
+//            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to define document pages  but is not allowed to do it');
+//            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
+//                'message' => 'You are not authorized to edit document settings'
+//            ]);
+//        }
         
         $docId = $request->getAttribute('id');
         $db = $this->dataManager;
         $doc = [];
         $doc['numPages'] = $db->getPageCountByDocId($docId);
         $transcribedPages = $db->getTranscribedPageListByDocId($docId);
-        $pagesInfo = $db->getDocPageInfo($docId);
-        $pageTypes  = $this->dataManager->getPageTypeNames();
+        $db->getDocPageInfo($docId);
+        $transcriptionManager = $this->systemManager->getTranscriptionManager();
+        $pageManager = $transcriptionManager->getPageManager();
+        $pageInfoArray = $pageManager->getPageInfoArrayForDoc($docId);
         $doc['numTranscribedPages'] = count($transcribedPages);
         $doc['docInfo'] = $db->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";
-        $doc['pages'] = $this->buildPageArray($pagesInfo, 
-                $transcribedPages);
+        $doc['pages'] = $this->buildPageArrayNew($pageInfoArray,
+                $transcribedPages, $doc['docInfo']);
 
         $this->profiler->stop();
         $this->logProfilerData('defineDocPages-' . $docId);
         return $this->renderPage($response, self::TEMPLATE_DEFINE_DOC_PAGES, [
-            'pageTypes' => $pageTypes,
-            'doc' => $doc
+            'doc' => $doc,
+            'userInfo' => $this->userInfo,
+            'userId' => (int) $this->userInfo['id']
         ]);
     }
 }

@@ -24,6 +24,8 @@ import { urlGen } from './common/SiteUrlGen'
 import { tr } from './common/SiteLang'
 import { EditableTextField } from '../widgets/EditableTextField'
 import { trimWhiteSpace } from '../toolbox/Util.mjs'
+import { Tid } from '../Tid/Tid'
+import { PageArray } from './common/PageArray'
 
 export class DocPage extends NormalPage {
   constructor(options) {
@@ -48,7 +50,7 @@ export class DocPage extends NormalPage {
     this.docId = this.docInfo.id
     this.pages = this.doc.pages
     this.pageSeqToPageKeyMap = this.getPageSequenceToPageKeyMap(this.pages)
-    this.pageArray = this.getPageArray(this.pages, 'sequence')
+    this.pageArray = PageArray.getPageArray(this.pages, 'sequence')
 
     console.log(`DocPage for docId ${this.docId}`)
     console.log(options)
@@ -69,7 +71,14 @@ export class DocPage extends NormalPage {
   }
 
   async initPage () {
-    await super.initPage()
+    await super.initPage();
+
+
+    let pageTypesData = await this.apmDataProxy.getAvailablePageTypes();
+    this.pageTypes = [];
+    pageTypesData.forEach( ( ptd) => {
+      this.pageTypes[ptd.id] = ptd.descr;
+    })
 
     this.selectedPage = -1
 
@@ -149,12 +158,33 @@ export class DocPage extends NormalPage {
     return map
   }
 
-  async genHtml() {
+  async getDocInfoHtml() {
     let langName = await this.apmDataProxy.getLangName(this.docInfo.lang)
     let docTypeName = await this.apmDataProxy.getDocTypeName(this.docInfo.doc_type)
-    let docTypeString = tr(`${langName} ${docTypeName}`)
-    let transcribedPagesString = tr('{{num}} of {{total}} pages transcribed',
-      { num:this.doc['numTranscribedPages'], total:  this.doc['numPages']})
+    let items = []
+    items.push(tr(`${langName} ${docTypeName}`))
+    items.push(tr('{{num}} of {{total}} pages transcribed',
+      { num:this.doc['numTranscribedPages'], total:  this.doc['numPages']}));
+
+    switch(this.docInfo.image_source) {
+      case 'averroes-server':
+        items.push('images stored in the Averroes server');
+        break;
+
+      case 'bilderberg':
+        items.push('images stored in Bilderberg');
+        break;
+    }
+    items.push(`doc ${this.docInfo.id}`)
+
+    items.push(`entity ${Tid.toBase36String(this.docInfo.tid)}`)
+
+    return items.join(', ')
+  }
+
+  async genHtml() {
+
+
     return `
        <nav aria-label="breadcumb">
      <ol class="breadcrumb">
@@ -164,8 +194,7 @@ export class DocPage extends NormalPage {
 </nav>
 
 <h2>${this.docInfo.title}</h2>
-        <p class="docinfo">${docTypeString}, ${transcribedPagesString}, ${this.doc['docInfoHtml']}
-        </p>
+        <p class="docinfo"> ${await this.getDocInfoHtml()}</p>
         <div class="viewer-container">
             <div class="page-viewer">
                 <div class="viewer-toolbar">
@@ -199,14 +228,10 @@ export class DocPage extends NormalPage {
   getPageListHtml(docId, pageArray) {
     let divs = []
     pageArray.forEach( (page) => {
-
       let classes = [ 'page-div', `page-div-${page['sequence']}`, `type${page['type']}`]
       if (page['foliationIsSet']) {
         classes.push('foliation-set')
       }
-      // if (page['sequence'] !== page['pageNumber']) {
-      //   classes.push('out-of-sequence')
-      // }
       if (!page['isTranscribed']) {
         classes.push('without-transcription')
       }
@@ -233,6 +258,7 @@ export class DocPage extends NormalPage {
       this.osd.destroy();
     }
 
+
     let osdOptions = {
       id: "osd-div",
       prefixUrl: urlGen.siteOpenSeadragonIconsPrefix(),
@@ -241,7 +267,7 @@ export class DocPage extends NormalPage {
       showRotationControl: true,
       tileSources: {
         type: 'image',
-        url: page['imageUrl'],
+        url: page['jpgUrl'],
         buildPyramid: false,
         homeFillsViewer: true
       },
@@ -312,8 +338,12 @@ export class DocPage extends NormalPage {
     infoItems.push(`<strong>${tr('Page Number')}</strong>: ${page['pageNumber']}`)
     infoItems.push(`<strong>${tr('Image Number')}</strong>: ${page['imageNumber']}`)
     infoItems.push(`<strong>${tr('Sequence Number')}</strong>: ${page['sequence']}`)
+    infoItems.push('&nbsp;')
+    infoItems.push(`<strong>${tr('Image Links')}</strong>: <a class="image-link" 
+        title="${tr('Click to open in new tab/window')}" href="${page['jpgUrl']}" target="_blank">JPG</a>`)
 
     infoItems.push('&nbsp;')
+    infoItems.push(`<strong>${tr('Page Type')}</strong>: ${this.pageTypes[page['type']]}`)
     infoItems.push(`<strong>${tr('Columns Defined')}</strong>: ${page['numCols']}`)
     infoItems.push('&nbsp;')
     infoItems.push(`<a class="btn btn-primary btn-sm" href="${urlGen.sitePageView(this.docId, page['sequence'])}" title="${tr('Click to edit in new tab/window')}" target="_blank">
@@ -422,23 +452,7 @@ export class DocPage extends NormalPage {
       icon + '</a>';
   }
 
-  // loadThumbnails() {
-  //   return new Promise( async (outerResolve) => {
-  //     let pageArray = this.getPageArray(this.pages)
-  //     for (let i = 0; i < pageArray.length; i++) {
-  //       let page = pageArray[i]
-  //       await new Promise( (resolve) => {
-  //         $(`img.thumbnail-${page['pageNumber']}`).attr('src', page['thumbnailUrl'])
-  //           .on('load', () => {
-  //               // console.log(`Finished loading thumbnail for page ${page['pageNumber']}`)
-  //               resolve()
-  //             }
-  //           )
-  //       })
-  //     }
-  //     outerResolve()
-  //   })
-  // }
+
 
   /**
    *
@@ -499,27 +513,6 @@ export class DocPage extends NormalPage {
     }
     // @ts-ignore
     return '<a href="' + url + '" target="_blank" title="' + title + '">' + label + '</a>';
-  }
-
-  getPageArray(pageObject, orderBy = '', asc = true) {
-    let pageArray = []
-    Object.keys(pageObject).forEach( (pageKey) => {
-      pageArray.push(pageObject[pageKey])
-    })
-    if (orderBy === '') {
-      return pageArray
-    }
-    let allowedOrderKeys = [ 'sequence', 'pageNumber', 'imageNumber']
-    if (allowedOrderKeys.indexOf(orderBy) !== -1) {
-      return pageArray.sort( (a, b) => {
-        if (asc) {
-          return a[orderBy] > b[orderBy]
-        }
-        return a[orderBy] < b[orderBy]
-      })
-    }
-    console.warn(`Invalid order key '${orderBy}'`)
-    return pageArray
   }
 }
 

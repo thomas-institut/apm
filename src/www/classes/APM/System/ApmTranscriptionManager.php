@@ -1051,12 +1051,12 @@ class ApmTranscriptionManager extends TranscriptionManager
 
 
         // if there are no changes, do nothing
-        if ($newSettings === $currentSettings) {
+        if (get_object_vars($newSettings) === get_object_vars($currentSettings)) {
             $this->logger->info("UpdatePageSettings with no changes, nothing done.");
             return;
         }
 
-        //$this->codeDebug("Updating page settings", $newSettings->getDatabaseRow());
+//        $this->logger->debug("Updating page settings", $newSettings->getDatabaseRow());
         // Update the database first
         $this->getPageManager()->updatePageSettings($pageId, $newSettings);
 

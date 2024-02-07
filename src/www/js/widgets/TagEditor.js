@@ -16,7 +16,7 @@ export class TagEditor {
       getTagHints: { type: 'function', default: async () => {
           return []
         }
-        },
+      },
       saveTags: { type: 'function', default: async (tags) => {
           console.log(`Tags [${tags.join(', ')}] would be saved now`)
         } },
@@ -39,7 +39,7 @@ export class TagEditor {
         break
 
       case 'show':
-        this.showGivenTagsInShowMode(this.options.tags);
+        this.setupShowMode();
         break
     }
   }
@@ -53,20 +53,24 @@ export class TagEditor {
         break
 
       case 'show':
-        this.showGivenTagsInShowMode(this.options.tags);
+        this.setupShowMode();
         break
     }
 
   }
 
-
   setupEditMode() {
     this.buildStructureOfTagEditor()
     this.options.getTagHints().then( (tags) => {
       this.fillDatalistWithTags(tags)
-      this.showGivenTagsInEditModeInEditMode()
+      this.showGivenTagsInEditMode()
       this.setupEvents()
     })
+  }
+
+  setupShowMode() {
+    this.buildStructureOfTagEditor()
+    this.showGivenTagsInShowMode()
   }
 
   buildStructureOfTagEditor() {
@@ -79,26 +83,22 @@ export class TagEditor {
            </ul>`)
   }
 
-  showGivenTagsInShowMode (tags) {
-
-    let start = '<ul class="tags" id="tag-list">'
-    let end = '</ul>'
-    let mid = ''
-
-    for (let tag of tags.sort()) {
-      mid = mid + `<li class = "showAddedTag">${tag}</li>`
+  showGivenTagsInShowMode () {
+    for (let tag of this.options.tags.sort().reverse()) {
+      let valueForTagId = tag.replace(/ /g, "_")
+      $(`#${this.idPrefix}-tag-list`).prepend(`
+               <li class="addedTag" value=${valueForTagId}><span class="tag-text">${tag}</span>
+               </li>`)
     }
-
-    $(this.options.containerId).html(start + mid + end)
-
-    return true
   }
 
-  showGivenTagsInEditModeInEditMode () {
+  showGivenTagsInEditMode () {
     for (let tag of this.options.tags.sort().reverse()) {
-      let tagId = `${this.idPrefix}-${tag}-id`
+      let valueForTagId = tag.replace(/ /g, "_")
+      let tagId = `${this.idPrefix}-${valueForTagId}-id`
+
       $(`#${this.idPrefix}-tag-list`).prepend(`
-               <li class="addedTag" value=${tag}><span class="tag-text">${tag}</span>
+               <li class="addedTag" value=${valueForTagId}><span class="tag-text">${tag}</span>
                <span class="tagRemove" id=${tagId}><sup>x</sup></span>
                <input type="hidden" name="tags[]">
                </li>`)
@@ -117,8 +117,10 @@ export class TagEditor {
     $(selector).click(function(event) {
       event.preventDefault();
       console.log(`Click on remove tag ${tag_id}`)
-      let value = $(this).parent()[0].getAttribute('value')
+      let value = $(this).parent()[0].getAttribute('value').replace('_', ' ')
+      console.log(value)
       let index = thisObject.options.tags.indexOf(value)
+      console.log(index)
       thisObject.options.tags.splice(index, 1);
       thisObject.options.saveTags(thisObject.options.tags)
       $(this).parent().remove()
@@ -171,7 +173,7 @@ export class TagEditor {
   }
 
   /**
-   * 
+   *
    * @param {string}tag
    * @return {boolean}
    */
@@ -186,4 +188,8 @@ export class TagEditor {
     })
   }
 
+  getTags() {
+    //this.removeTagsFromOptions()
+    return this.options.tags.sort()
+  }
 }

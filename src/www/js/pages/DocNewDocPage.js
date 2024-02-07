@@ -23,7 +23,8 @@ export class DocNewDocPage {
   
   constructor(prefix, baseUrl) {
     
-    this.docInfoFields = ['title', 'short_title', 'doc_type', 'lang', 'image_source', 'image_source_data']
+    // this.docInfoFields = ['title', 'short_title', 'doc_type', 'lang', 'image_source', 'image_source_data']
+    this.docInfoFields = ['title', 'doc_type', 'lang', 'image_source', 'image_source_data']
     this.urlGen = new ApmUrlGenerator(baseUrl)
 
     this.newDocApiUrl = this.urlGen.apiNewDoc()
@@ -41,7 +42,7 @@ export class DocNewDocPage {
     
     this.docInfo = {
       title: 'New doc title',
-      short_title: 'New doc short title',
+      // short_title: 'New doc short title',
       doc_type: 'mss',
       lang: 'la',
       image_source: 'local',
@@ -51,7 +52,7 @@ export class DocNewDocPage {
     this.putDocInfoIntoForm(this.docInfo)
     
     this.titleField.on('keyup', this.genCheckFormFunction())
-    this.shortTitleField.on('keyup', this.genCheckFormFunction())
+    // this.shortTitleField.on('keyup', this.genCheckFormFunction())
     this.typeSelect.on('change', this.genCheckFormFunction())
     this.langSelect.on('change', this.genCheckFormFunction())
     this.imageSourceSelect.on('change', this.genCheckFormFunction())
@@ -130,7 +131,7 @@ export class DocNewDocPage {
      let docInfo = {}
      
      docInfo['title'] = this.titleField.val().trim()
-     docInfo['short_title'] = this.shortTitleField.val().trim()
+     // docInfo['short_title'] = this.shortTitleField.val().trim()
      docInfo['doc_type'] = this.typeSelect.val()
      docInfo['lang'] = this.langSelect.val()
      docInfo['image_source'] = this.imageSourceSelect.val()
@@ -142,7 +143,7 @@ export class DocNewDocPage {
   putDocInfoIntoForm(docInfo)
   {
     this.titleField.val(docInfo['title'])
-    this.shortTitleField.val(docInfo['short_title'])
+    // this.shortTitleField.val(docInfo['short_title'])
     this.typeSelect.val(docInfo['doc_type'])
     this.langSelect.val(docInfo['lang'])
     this.imageSourceSelect.val(docInfo['image_source'])

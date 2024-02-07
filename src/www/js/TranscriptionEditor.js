@@ -103,6 +103,8 @@ class TranscriptionEditor
     this.people = this.options.people
     this.editorId = this.options.editorId
     this.activeWorks = this.options.activeWorks
+    this.lastSelectedWorkId = this.activeWorks[0].dareId
+    this.chunkNumberEntered = 1
     this.containerElement = $('#' + this.options.containerId)
     // Default hand Id is always 0!
     this.handId = 0
@@ -1461,15 +1463,15 @@ class TranscriptionEditor
       $('#chunk-modal-title-' + thisObject.id).html('Chunk ' + typeLabel)
       let workOptionsHtml = ''
       for (const work of thisObject.activeWorks) {
-        workOptionsHtml += '<option value="' + work.dareId + '">'
-           + work.title + '</option>'
+        workOptionsHtml += `<option value="${work.dareId}" ${work.dareId===thisObject.lastSelectedWorkId
+         ? 'selected' : ''}>${work.title}</option>`;
       }
       $('#chunk-modal-dareid-' + thisObject.id).html(workOptionsHtml)
 
       let chunkNumberSelector = '#chunk-modal-chunknumber-' + thisObject.id
       $(chunkNumberSelector).attr('min', 1)
       $(chunkNumberSelector).attr('max', 9999)
-      $(chunkNumberSelector).val(1)
+      $(chunkNumberSelector).val(thisObject.chunkNumberEntered)
 
       let localIdOptionsHtml = ''
       let localIdOptions = [ 'A', 'B', 'C', 'D', 'E']
@@ -1497,7 +1499,9 @@ class TranscriptionEditor
         $('#chunk-modal-' + thisObject.id).modal('hide')
         const itemid = thisObject.getOneItemId()
         const workId = $('#chunk-modal-dareid-' + thisObject.id).val()
-        const chunkno = $('#chunk-modal-chunknumber-' + thisObject.id).val()
+        thisObject.lastSelectedWorkId = workId;
+        const chunkno = $('#chunk-modal-chunknumber-' + thisObject.id).val();
+        thisObject.chunkNumberEntered = parseInt(chunkno);
         const segment = $('#chunk-modal-segment-' + thisObject.id).val()
         const localId = $('#chunk-modal-localid-' + thisObject.id).val()
         quillObject.insertEmbed(range.index, 'chunkmark', {

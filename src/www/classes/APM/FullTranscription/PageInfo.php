@@ -117,7 +117,7 @@ class PageInfo
             'type' => $this->type,
             'lang' => $this->langCode,
             'num_cols' => $this->numCols,
-            'foliation' => $this->foliation
+            'foliation' => $this->foliationIsSet ? $this->foliation : null
         ];
     }
 

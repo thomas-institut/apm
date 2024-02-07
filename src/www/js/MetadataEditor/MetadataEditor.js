@@ -682,7 +682,7 @@ export class MetadataEditor {
     }
 
     makeInfoIconWithEvent(selectorId, buttonId, buttonSelector, noteSelector) {
-        $(selectorId + " .embed-button").append(`<button class=${buttonId}><i class="fa fa-info-circle" aria-hidden="true" style="color: cornflowerblue"></button>`)
+        $(selectorId + " .embed-button").append(`<button class=${buttonId} tabindex="32767"><i class="fa fa-info-circle" aria-hidden="true" style="color: cornflowerblue"></button>`)
         $(buttonSelector).on("click", () => {
             $(noteSelector).show()
             $(noteSelector).focus()

@@ -1,4 +1,4 @@
-{% extends "base.twig" %}
+{% extends "normal-page.twig" %}
 
 {% block title %}Chunk {{work}}-{{chunk}}{% endblock %}
 
@@ -21,27 +21,8 @@
 {% endblock %}
 
 {% block extraJS %}
-    <script type="text/javascript" src="{{baseurl}}/node_modules/twig/twig.min.js"></script>
-{#    <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>#}
+{#    <script type="text/javascript" src="{{baseurl}}/node_modules/twig/twig.min.js"></script>#}
     <script type="application/javascript" src="{{baseurl}}/js/dist/ChunkPage.bundle.js"></script>
-{% endblock %}
-
-{% block content %}
-<nav aria-label="breadcumb">
-     <ol class="breadcrumb">
-         <li class="breadcrumb-item"><a href="{{url_for('works')}}">Works</a></li>
-         <li class="breadcrumb-item">{{ work }}</li>
-        <li class="breadcrumb-item active">Chunk {{ chunk }}</li>
-    </ol>
-</nav>
-    <div id="chunkpageheader"></div>
-    <div id="chunkid"></div>
-    <div id="witnessListNew"></div>
-    <div id="editions" class="collationtablelinks"></div>
-    <div id="savedcollationtables" class="collationtablelinks"></div>
-    <h4 id="ctlinks-header" class="hidden">Automatic Collation Tables</h4>
-    <div id="collationtablelinks" class="collationtablelinks">  </div>
-    <div id="witnesspanels"></div>
 {% endblock %}
 
 {% block finalBodyJS %}

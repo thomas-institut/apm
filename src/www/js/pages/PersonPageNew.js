@@ -134,7 +134,7 @@ export class PersonPageNew extends NormalPage {
     })
   }
 
-  async genHtml() {
+  async genContentHtml() {
     let breadcrumbHtml = this.getBreadcrumbNavHtml([
       { label: tr('People'), url:  urlGen.sitePeople()},
       { label: tr('Person Details'), active: true}

@@ -82,7 +82,7 @@ export class DashboardPage extends NormalPage {
    *
    * @return {Promise<string>}
    */
-  async genHtml() {
+  async genContentHtml() {
     return `<div id="multi-chunk-editions" class="dashboard-section"></div>
         <div id="chunk-editions" class="dashboard-section"></div>
         <div id="collation-tables" class="dashboard-section"></div>

@@ -23,13 +23,15 @@
  */
 
 
+import { tr } from './SiteLang'
+
 const defaultHelpIcon = '<i class="fas fa-info"></i>'
-/* global Twig */
 
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 
 import {arraysHaveTheSameValues} from '../../toolbox/ArrayUtil.mjs'
+import { urlGen } from './SiteUrlGen'
 
 export class AutomaticCollationTableSettingsForm {
 
@@ -52,9 +54,9 @@ export class AutomaticCollationTableSettingsForm {
 
     let optionsDefinition = {
       langDef : { type: 'object', default: {
-          la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3},
-          ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 3},
-          he: { code: 'he', name: 'Hebrew', rtl: true, fontsize: 3}
+          la: { code: 'la', name: tr('Latin'), rtl: false, fontsize: 3},
+          ar: { code: 'ar', name: tr('Arabic'), rtl: true, fontsize: 3},
+          he: { code: 'he', name: tr('Hebrew'), rtl: true, fontsize: 3}
         }
       },
       availableWitnesses: { type: 'Array', default: [] },
@@ -72,8 +74,7 @@ export class AutomaticCollationTableSettingsForm {
       applyButtonText: { type: 'string', default : 'Apply'},
       hideTitle: { type: 'boolean', default: false},
       isPreset: { type: 'boolean', default: false},
-      urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true},
-      userId: { type: 'number', default: -1 },
+      userTid: { type: 'number', default: -1 },
       normalizerData: {type: 'Array', default: []},
       icons : {
         type: 'object', default:  {
@@ -84,7 +85,7 @@ export class AutomaticCollationTableSettingsForm {
       preset: { type: 'object', default: {
           id: -1,
           title: '',
-          userId: -1,
+          userTid: -1,
           userName: 'noUser',
           editable: false
         }
@@ -117,12 +118,8 @@ export class AutomaticCollationTableSettingsForm {
     
     this.container = $(containerSelector)
     this.container.addClass('hidden')
-    this.container.html(this.getFormTemplate().render({
-      title: this.options.formTitle,
-      applyButtonText: this.options.applyButtonText
-    }))
-    
-    
+    this.container.html(this.getFormHtml(this.options.formTitle,this.options.applyButtonText ));
+
     this.formTitle = $(containerSelector + ' .form-title')
     this.normalizersDiv = $(containerSelector + ' .normalizersDiv')
     this.cancelButton = $(containerSelector + ' .cancel-btn')
@@ -505,7 +502,7 @@ export class AutomaticCollationTableSettingsForm {
     if (settings === false) {
       settings = this.getSettings()
     }
-    
+
     let title = ''
     let numWitnesses = settings.witnesses.length
     if (numWitnesses === 0) {
@@ -526,6 +523,7 @@ export class AutomaticCollationTableSettingsForm {
 
       title += ', normalization applied'
     }
+    console.log(`Title: ${title}`);
     return title
   }
 
@@ -673,7 +671,7 @@ export class AutomaticCollationTableSettingsForm {
         let apiCallOptions = {
           command: 'new',
           tool: thisObject.automaticCollationPresetTool,
-          userId: thisObject.options.userId,
+          userTid: thisObject.options.userTid,
           title: newPresetTitle,
           presetId: -1,
           presetData : {
@@ -685,7 +683,7 @@ export class AutomaticCollationTableSettingsForm {
         }
         this.debug && console.log(apiCallOptions)
         $.post(
-          thisObject.options.urlGenerator.apiPostPresets(), 
+          urlGen.apiPostPresets(),
           { data: JSON.stringify(apiCallOptions) }
         ).done(function(data){
           console.log('New preset API call successful')
@@ -696,7 +694,7 @@ export class AutomaticCollationTableSettingsForm {
           thisObject.options.preset = {
             id: data.presetId,
             title: newPresetTitle,
-            userId: thisObject.options.userId,
+            userTid: thisObject.options.userTid,
             userName: 'current user', // TODO: change this
             editable: true
           }
@@ -718,7 +716,7 @@ export class AutomaticCollationTableSettingsForm {
       let apiCallOptions = {
           command: 'update',
           tool: thisObject.automaticCollationPresetTool,
-          userId: thisObject.options.userId,
+          userTid: thisObject.options.userTid,
           title: newPresetTitle,
           presetId: thisObject.options.preset.id,
           presetData : {
@@ -730,7 +728,7 @@ export class AutomaticCollationTableSettingsForm {
         }
         console.log(apiCallOptions)
         $.post(
-          thisObject.options.urlGenerator.apiPostPresets(), 
+          urlGen.apiPostPresets(),
           { data: JSON.stringify(apiCallOptions) }
         ).done((data) => {
           this.verbose && console.log('Preset updated successfully')
@@ -781,7 +779,7 @@ export class AutomaticCollationTableSettingsForm {
       let apiCallOptions = {
         command: 'new',
         tool: thisObject.automaticCollationPresetTool,
-        userId: thisObject.options.userId,
+        userTid: thisObject.options.userTid,
         title: newPresetTitle,
         presetId: -1,
         presetData : {
@@ -793,7 +791,7 @@ export class AutomaticCollationTableSettingsForm {
       }
       this.debug && console.log(apiCallOptions)
       $.post(
-        thisObject.options.urlGenerator.apiPostPresets(), 
+        urlGen.apiPostPresets(),
         { data: JSON.stringify(apiCallOptions) }
       ).done((data) => {
         this.verbose && console.log('New preset API call successful')
@@ -866,16 +864,15 @@ export class AutomaticCollationTableSettingsForm {
   }
   
   genOnDragEnter() {
-    let thisObject = this
-    return function (e) {
-      thisObject.debug && console.log('drag enter')
+    return  (e) => {
+      this.debug && console.log('drag enter')
       // this / e.target is the current hover target.
     }
   }
   
   genOnDragLeave() {
     let thisObject = this
-    return function () {
+    return function () {  // need a function here so that this is bound to the dom element
       thisObject.debug && console.log('drag leave')
       this.classList.remove(thisObject.overClass)  // this / e.target is previous target element.
       return false
@@ -986,18 +983,14 @@ export class AutomaticCollationTableSettingsForm {
   // Form Template
   //----------------------------------------------------------------
   
-  getFormTemplate() {
-    let randomNumber = Math.floor(Math.random() * 1000000) +1
-    return  Twig.twig({
-       id: 'theForm' + randomNumber,
-      data: `
-      <h3 class="form-title">{{title}}</h3>
+  getFormHtml(title, applyButtonText) {
+    return `
+      <h3 class="form-title">${title}</h3>
         <form>
           <table class="table">
           <tr>
            <th>Witnesses Available</th>
            <th>Witnesses To Include 
-              &nbsp;&nbsp;&nbsp;
               <button type="button" class="btn btn-default btn-xs all-btn">All</button>
               <button type="button" class="btn btn-default btn-xs none-btn">None</button>
            </tr>
@@ -1039,17 +1032,13 @@ export class AutomaticCollationTableSettingsForm {
       </span>
       </div>
           <button type="button" class="btn btn-primary btn-sm apply-btn">
-            {{applyButtonText}}
+            ${applyButtonText}
           </button>
           <button type="button" class="btn btn-default btn-sm cancel-btn">
             Cancel
           </button>
-          &nbsp;&nbsp;&nbsp;
-
-        </form>
-      <div class="warningdiv"></div>
-`
-    })
+          </form>
+      <div class="warningdiv"></div>`
   }
 }
 

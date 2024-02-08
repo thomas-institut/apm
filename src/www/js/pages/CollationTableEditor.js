@@ -62,15 +62,13 @@ import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditio
 import { EditionViewerSvg } from '../Edition/EditionViewerSvg'
 
 import { Punctuation} from '../defaults/Punctuation.mjs'
-import { ApmPage } from './ApmPage'
 import { urlGen } from './common/SiteUrlGen'
 import { ApmFormats } from './common/ApmFormats'
-
-/** @namespace Twig */
+import { HeaderAndContentPage } from './HeaderAndContentPage'
 
 // constants
 
-export class CollationTableEditor extends ApmPage{
+export class CollationTableEditor extends HeaderAndContentPage {
 
   constructor(options) {
     super(options);
@@ -183,6 +181,113 @@ export class CollationTableEditor extends ApmPage{
     this.siglaPresets = []
     this.siglaPresetLoaded = ''
 
+    this.initPage().then( () => {
+      console.log(`Collation Table Editor initialized`);
+    })
+
+  }
+
+  async getHeaderHtml () {
+    return ` <div class="row">
+        <div class="col-md-8">
+            <div id="collationtabletitle">
+                <h1><span id="cttitletext"></span></h1>
+            </div>
+            <div id="collationtableinfo"></div>
+            <div id="collationtableactions"></div>
+        </div>
+        <div class="col-md-4 text-right" id="save-area">
+            <h1><button class="btn btn-primary btn-sm hidden" id="savebutton">Save Changes</button></h1>
+            <p><small>Last Save: <span id="lastSave">...</span></small></p>
+            <div class="hidden" id="save-msg"></div>
+        </div>
+    </div>
+
+    <div id="status" class="text-danger"></div>`
+  }
+
+  async genContentHtml() {
+    return ` <ul class="nav nav-tabs" role="tablist" id="tabsUl">
+        <li id="collationTableTabHeader" role="presentation" class="nav-item">
+            <a role="tab" class="nav-link active" data-toggle="tab" href="#collationtablepanel">Collation Table</a>
+        </li>
+        <li id="editionTabHeader" class="nav-item" role="presentation">
+            <a role="tab" class="nav-link" data-toggle="tab" id="edition-tab-title" href="#editiondiv-panel">Quick Edition</a>
+        </li>
+        <li id="witnessesTabHeader" class="nav-item" role="presentation">
+            <a role="tab" class="nav-link" data-toggle="tab" href="#witnessesdiv">Witness Info</a>
+        </li>
+        <li id="versionHistoryTabHeader"  class="nav-item" role="presentation">
+            <a role="tab" class="nav-link" data-toggle="tab" href="#admindiv">Admin</a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div role="tabpanel" class="tab-pane active panetab nomargin-panel" id="collationtablepanel">
+            <div class="ct-toolbar">
+                <div class="ct-toolbar-section">
+                    <div class="ct-toolbar-group" id="mode-toggle">
+                    </div>
+                    <div class="ct-toolbar-group">
+                        <span id="popovers-toggle"></span>
+                    </div>
+                    <div class="ct-toolbar-group">
+                        <span id="normalizations-toggle"></span>
+                        &nbsp;
+                        <a class="tb-button" href="#" title="Click to choose which normalizations to apply" id="normalizations-settings-button"><i class="fas fa-pen"></i></a>
+                    </div>
+
+                </div>
+                <div>
+                    <a id="export-csv-button" class="tb-button"  download="apm-collationtable.csv"
+                       title="Download CSV"><small>CSV</small><i class="fas fa-download"></i></a>
+                </div>
+
+            </div>
+            <div id="collationtablediv"><div class="loading">Loading table...  <i class="fas fa-circle-notch fa-spin"></i></div></div>
+        </div>
+        <div role="tabpanel" class="tab-pane panetab nomargin-panel" id="editiondiv-panel">
+            <div class="ct-toolbar">
+                <div>
+                </div>
+                <div>
+                    <a id="export-svg-button" class="tb-button"  download="apm-quick-edition.svg"
+                       title="Download SVG"><small>SVG</small> <i class="fas fa-download"></i></a>
+                </div>
+            </div>
+            <div id="edition-svg-div">
+
+            </div>
+            <div id="edition-engine-info-div"></div>
+        </div>
+        <div role="tabpanel" class="tab-pane panetab" id="witnessesdiv">
+            <div class="witnessinfotable"></div>
+            <div class="witness-update-div">
+                <span class="witness-update-info"></span>
+                <button class="btn  btn-outline-secondary btn-sm check-witness-update-btn"  title="Click to check for updates to witness transcriptions">Check Now</button>
+            </div>
+            <div id="convert-to-edition-div">
+                <button id="convert-to-edition-btn" class="btn btn-primary" title="Click to add a main text">Add Main Text</button>
+            </div>
+        </div>
+        <div role="tabpanel" class="tab-pane panetab" id="admindiv">
+            <div id="adminopsdiv">
+                <h3>Admin</h3>
+                <ul>
+                    <li><button id="archive-table-btn" class="btn btn-danger" title="Click to archive this table/edition">Archive This Table</button></li>
+                </ul>
+            </div>
+            <h3>Versions</h3>
+            <div id="versionhistorydiv"></div>
+
+        </div>
+    </div>
+</div>`
+  }
+
+  async initPage () {
+    await super.initPage();
+
     this.ctInfoDiv = $('#collationtableinfo')
     this.breadcrumbCtTitleSpan = $('#breadcrumb-cttitle')
     this.witnessesDivSelector = '#witnessesdiv'
@@ -216,7 +321,7 @@ export class CollationTableEditor extends ApmPage{
       onConfirm: this.genOnConfirmTitleField()
     })
 
-      if (this.ctData.type === CollationTableType.COLLATION_TABLE) {
+    if (this.ctData.type === CollationTableType.COLLATION_TABLE) {
       this.breadcrumbCtTitleSpan.html("Saved Collation Table")
       this.editionTabTitle.html('Quick Edition')
     } else {
@@ -831,7 +936,7 @@ export class CollationTableEditor extends ApmPage{
       let modalSelector = '#normalization-settings-modal'
       $('body')
         .remove(modalSelector)
-        .append(thisObject.getTemplateNormalizationSettingsDialog().render())
+        .append(thisObject.getNormalizationSettingsDialogHtml())
 
       let togglesDiv = $(`${modalSelector} .normalization-toggles`)
 
@@ -915,12 +1020,9 @@ export class CollationTableEditor extends ApmPage{
       if (thisObject.ctData.type === CollationTableType.EDITION) {
         return true
       }
-
       let modalSelector = '#convert-to-edition-modal'
-
-      let twigTemplate = thisObject.getTemplateConvertToEditionDialog()
       $('body').remove(modalSelector)
-        .append(twigTemplate.render({ firstWitnessTitle: thisObject.ctData['witnessTitles'][thisObject.ctData.witnessOrder[0]]}))
+        .append(thisObject.getConvertToEditionDialogHtml(thisObject.ctData['witnessTitles'][thisObject.ctData.witnessOrder[0]]));
       let cancelButton = $(`${modalSelector} .cancel-btn`)
       let submitButton = $(`${modalSelector} .submit-btn`)
       let resultSpan = $(`${modalSelector} .result`)
@@ -978,19 +1080,18 @@ export class CollationTableEditor extends ApmPage{
     let thisObject = this
     return function() {
       let profiler = new SimpleProfiler('Witness-Update')
-      let twigTemplate = thisObject.getTemplateUpdateDialog(witnessIndex)
+
       let currentWitness = thisObject.ctData['witnesses'][witnessIndex]
       let newWitnessInfo = thisObject.lastWitnessUpdateCheckResponse['witnesses'][witnessIndex]
       if (newWitnessInfo['upToDate']) {
         console.error(`Attempt to update witness ${witnessIndex}, which is up to date`)
         return false
       }
-
-      $('body').append(twigTemplate.render({
-        witnessTitle: thisObject.ctData['witnessTitles'][witnessIndex],
-        currentVersion: ApmFormats.timeString(currentWitness['timeStamp']),
-        newVersion: ApmFormats.timeString(newWitnessInfo['lastUpdate']),
-      }))
+      $('body').append(thisObject.getTemplateUpdateDialog(witnessIndex,
+        thisObject.ctData['witnessTitles'][witnessIndex],
+        ApmFormats.timeString(currentWitness['timeStamp']),
+        ApmFormats.timeString(newWitnessInfo['lastUpdate'])
+      ));
       let modalSelector = `#update-modal-${witnessIndex}`
       let cancelButton = $(`${modalSelector} .cancel-btn`)
       let acceptButton = $(`${modalSelector} .accept-btn`)
@@ -2156,8 +2257,7 @@ export class CollationTableEditor extends ApmPage{
         console.log('No sigla presets to apply')
         return
       }
-      let dialogTemplate = thisObject.getTemplateLoadSiglaPreset()
-      $('body').append(dialogTemplate.render())
+      $('body').append(thisObject.getLoadSiglaPresetHtml())
       let modalSelector= '#load-sigla-preset-modal'
       let cancelButton = $(`${modalSelector} .cancel-btn`)
       let loadButton = $(`${modalSelector} .load-btn`)
@@ -2234,8 +2334,7 @@ export class CollationTableEditor extends ApmPage{
       console.log('Click on save sigla')
       const overWritePresetButtonLabel = 'Overwrite Preset'
       const createPresetButtonLabel = 'Create New Preset'
-      let dialogTemplate = thisObject.getTemplateSaveSiglaPreset()
-      $('body').append(dialogTemplate.render())
+      $('body').append(thisObject.getSaveSiglaPresetHtml())
 
       let modalSelector= '#save-sigla-preset-modal'
       let cancelButton = $(`${modalSelector} .cancel-btn`)
@@ -2797,9 +2896,8 @@ export class CollationTableEditor extends ApmPage{
     return '"' + text + '"'
   }
 
-  getTemplateSaveSiglaPreset() {
-    return Twig.twig({
-      data: `
+  getSaveSiglaPresetHtml() {
+    return `
 <div id="save-sigla-preset-modal" class="modal" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -2831,16 +2929,13 @@ export class CollationTableEditor extends ApmPage{
             </div>
         </div>
     </div>
-</div>      
-      `
-    })
+</div>`
   }
   
 
 
-  getTemplateLoadSiglaPreset() {
-    return Twig.twig({
-      data: `
+  getLoadSiglaPresetHtml() {
+    return `
 <div id="load-sigla-preset-modal" class="modal" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -2866,14 +2961,11 @@ export class CollationTableEditor extends ApmPage{
             </div>
         </div>
     </div>
-</div>      
-      `
-    })
+</div>`
   }
 
-  getTemplateNormalizationSettingsDialog() {
-    return Twig.twig({
-      data: `
+  getNormalizationSettingsDialogHtml() {
+    return `
 <div id="normalization-settings-modal" class="modal" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -2893,25 +2985,22 @@ export class CollationTableEditor extends ApmPage{
             </div>
         </div>
     </div>
-</div>      
-      `
-    })
+</div>`
   }
 
-  getTemplateUpdateDialog(witnessIndex) {
-    return Twig.twig( {
-      data: `
+  getTemplateUpdateDialog(witnessIndex, witnessTitle, currentVersion, newVersion) {
+    return `
 <div id="update-modal-${witnessIndex}" class="modal" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Update witness {{witnessTitle}}</h5>
+                <h5 class="modal-title">Update witness ${witnessTitle}</h5>
             </div>
             <div class="modal-body">
                 <div class="info">
-                    <p><b>Current version:</b> {{currentVersion}}</p>
+                    <p><b>Current version:</b> ${currentVersion}</p>
                     <p style="margin-left: 30px"><i class="fas fa-long-arrow-alt-down"></i></p>
-                    <p><b>New version:</b> {{newVersion}}</p>
+                    <p><b>New version:</b> ${newVersion}</p>
                 </div>
                 <div class="process">
                     <p class="load status-waiting"></p>
@@ -2927,13 +3016,11 @@ export class CollationTableEditor extends ApmPage{
             </div>
       </div>
     </div>
-</div>    
-    `})
+</div>`
   }
 
-  getTemplateConvertToEditionDialog() {
-    return Twig.twig( {
-      data: `
+  getConvertToEditionDialogHtml(firstWitnessTitle) {
+    return `
 <div id="convert-to-edition-modal" class="modal" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -2952,7 +3039,7 @@ export class CollationTableEditor extends ApmPage{
                     </div>
                     <div class="form-group form-check">
                         <input type="radio" name="init-edition" class="form-check-input top-witness-check" checked>
-                        <label class="form-check-label" for="exampleCheck1">Copy current top witness: <b>{{firstWitnessTitle}}</b></label>
+                        <label class="form-check-label" for="exampleCheck1">Copy current top witness: <b>${firstWitnessTitle}</b></label>
                     </div>
                </div>
             </div>
@@ -2963,8 +3050,7 @@ export class CollationTableEditor extends ApmPage{
             </div>
       </div>
     </div>
-</div>    
-    `})
+</div>`
   }
 
 }

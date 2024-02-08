@@ -75,6 +75,10 @@ class ApmUrlGenerator {
     siteUserProfile(userName) {
         return this.base + '/user/' + userName
     }
+
+    siteWorks() {
+        return `${this.base}/works`
+    }
     siteDocPage(docId) {
         return this.base + '/doc/' + docId + '/details'
     }

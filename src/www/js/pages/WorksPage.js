@@ -67,7 +67,7 @@ export class WorksPage extends NormalPage {
 
 
 
-  async genHtml () {
+  async genContentHtml () {
     let html = `<h2>${tr('Works')}</h2>`;
     this.groupedWorks.forEach( (gw, authorIndex) => {
       html += `<div class="author author-${authorIndex}"><h1><a href="${urlGen.sitePerson(Tid.toBase36String(gw.authorTid))}">${gw.authorName}</a></h1>`;

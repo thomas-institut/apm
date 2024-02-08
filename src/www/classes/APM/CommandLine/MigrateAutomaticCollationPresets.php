@@ -64,7 +64,7 @@ class MigrateAutomaticCollationPresets extends CommandLineUtility
             }
             $newData = $preset->getData();
             $newData['witnesses'] = $newWitnesses;
-            $newPreset = $presetFactory->create(SystemManager::TOOL_AUTOMATIC_COLLATION, $preset->getUserId(), $preset->getTitle(), $newData);
+            $newPreset = $presetFactory->create(SystemManager::TOOL_AUTOMATIC_COLLATION, $preset->getUserTid(), $preset->getTitle(), $newData);
 
             if ($presetManager->addPreset($newPreset)) {
                 print " done\n";

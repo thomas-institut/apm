@@ -23,8 +23,6 @@
  */
 
 
-/* global Twig */
-
 export class AutomaticCollationTableViewSettingsForm {
 
   constructor(containerSelector) {
@@ -36,7 +34,7 @@ export class AutomaticCollationTableViewSettingsForm {
     
     this.container = $(this.containerSelector)
     this.container.addClass('hidden')
-    this.container.html(this.getFormTemplate().render())
+    this.container.html(this.getFormTemplate())
     
     this.cancelButton = $(this.containerSelector + ' .cancel-btn')
     this.applyButton = $(this.containerSelector + ' .apply-btn')
@@ -119,10 +117,7 @@ export class AutomaticCollationTableViewSettingsForm {
   //----------------------------------------------------------------
   
   getFormTemplate() {
-    return Twig.twig({
-       id: 'autocolltableviewsettingsform',
-      // language=HTML
-      data: `
+    return `
       <h3>View Settings</h3>
         <form>
           <div class="checkbox">
@@ -151,8 +146,6 @@ export class AutomaticCollationTableViewSettingsForm {
               Cancel
           </button>
       </form>
-      <div class="warningdiv"></div>
-`
-    })
+      <div class="warningdiv"></div>`
   }
 }

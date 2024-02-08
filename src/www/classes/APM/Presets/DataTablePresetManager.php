@@ -52,8 +52,12 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
     
     /** @var array */
     private array $expandedKeys;
-    
+
+    /**
+     * @deprecated
+     */
     const FIELD_USERID = 'user_id';
+    const FIELD_USER_TID = 'user_tid';
     const FIELD_TOOL = 'tool';
     const FIELD_TITLE = 'title';
     const FIELD_KEY_ARRAY = 'key_array';
@@ -160,13 +164,13 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
      * that match the given $tool, $userId and $keysToMatch
      * 
      * @param string $tool
-     * @param int $userId
+     * @param int $userTid
      * @param array $keysToMatch
      * @return array
      */
-    public function getPresetsByToolUserIdAndKeys(string $tool, int $userId, array $keysToMatch): array {
+    public function getPresetsByToolUserIdAndKeys(string $tool, int $userTid, array $keysToMatch): array {
 
-        $rowToFind = [self::FIELD_TOOL => $tool, self::FIELD_USERID => $userId];
+        $rowToFind = [self::FIELD_TOOL => $tool, self::FIELD_USER_TID => $userTid];
         return $this->getMatchedPresets($keysToMatch, $rowToFind);
     }
 
@@ -250,13 +254,13 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
      * @return array
      */
     protected function createDataTableRowFromPreset(Preset $preset) : array {
-        // In this implementation the preset's key array is stored full in
+        // In this implementation the preset key array is stored full in
         // the self::FIELD_KEY_ARRAY field, and then, copies of the expanded
         // keys are stored in the own fields. 
         $keyArray = $preset->getKeyArray();
         $theRow = [ 
             self::FIELD_TOOL => $preset->getTool(), 
-            self::FIELD_USERID => $preset->getUserId(),
+            self::FIELD_USER_TID => $preset->getUserTid(),
             self::FIELD_TITLE => $preset->getTitle(),
             self::FIELD_KEY_ARRAY => $this->encodeArrayToString($keyArray),
             self::FIELD_DATA => $this->encodeArrayToString($preset->getData())
@@ -279,7 +283,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
         // is stored in the self::FIELD_KEY_ARRAY field
         return new Preset(
                 $theRow[self::FIELD_TOOL], 
-                $theRow[self::FIELD_USERID], 
+                $theRow[self::FIELD_USER_TID],
                 $theRow[self::FIELD_TITLE],
                 $this->decodeStringToArray($theRow[self::FIELD_KEY_ARRAY]),
                 $this->decodeStringToArray($theRow[self::FIELD_DATA]), 
@@ -293,14 +297,14 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
      * exist 
      * 
      * @param string $tool
-     * @param int $userId
+     * @param int $userTid
      * @param string $title
      * @return array
      */
-    protected function getPresetRow(string $tool, int $userId, string $title) : array {
+    protected function getPresetRow(string $tool, int $userTid, string $title) : array {
         $rowToFind = [ 
             self::FIELD_TOOL => $tool, 
-            self::FIELD_USERID => $userId,
+            self::FIELD_USER_TID => $userTid,
             self::FIELD_TITLE => $title
         ];
         $this->getSqlQueryCounterTracker()->incrementSelect();

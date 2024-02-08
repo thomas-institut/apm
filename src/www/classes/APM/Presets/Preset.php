@@ -26,8 +26,8 @@ use InvalidArgumentException;
  * Basic class that represents a system preset
  * 
  * A system preset is essentially some data (an associative array) that is associated with
- * a system tool (identified by a string id), a user Id and some tool-dependent set of key/values. Additionally,
- * it may have a system-wide integer Id.
+ * a system tool (identified by a string id), a user tid and some tool-dependent set of key/values. Additionally,
+ * it may have a system-wide integer id.
  *
  * The tool-dependent set of key/values may be used to further identify or classify the preset among the presets associated
  * with that tool.
@@ -53,11 +53,8 @@ class Preset {
      */
     private array $data;
     
-    /**
-     *
-     * @var int 
-     */
-    private int $userId;
+
+    private int $userTid;
     
     /**
      *
@@ -76,9 +73,9 @@ class Preset {
      */
     private string $title;
     
-    public function __construct(string $tool, int $userId, string $title, array $keys, array $theData, int $id = self::NULL_ID) {
+    public function __construct(string $tool, int $userTid, string $title, array $keys, array $theData, int $id = self::NULL_ID) {
         $this->toolId = $tool;
-        $this->userId = $userId;
+        $this->userTid = $userTid;
         $this->keyArray = $keys;
         $this->data = $theData;
         $this->title = $title;
@@ -103,7 +100,8 @@ class Preset {
      * @param string $key
      * @return mixed
      */
-    public function getKey(string $key) {
+    public function getKey(string $key): mixed
+    {
         if (!isset($this->keyArray[$key])) {
             throw new InvalidArgumentException("Key does not exist");
         }
@@ -121,15 +119,15 @@ class Preset {
      * @param string $key
      * @param mixed $value
      */
-    public function setKey(string $key, $value) : void {
+    public function setKey(string $key, mixed $value) : void {
         $this->keyArray[$key] = $value;
     }
 
     /**
      * @return int
      */
-    public function getUserId() : int {
-        return $this->userId;
+    public function getUserTid() : int {
+        return $this->userTid;
     }
 
     /**
@@ -149,7 +147,8 @@ class Preset {
     /**
      * @param int $id
      */
-    public function setId(int $id) {
+    public function setId(int $id): void
+    {
         $this->id = $id;
     }
 }

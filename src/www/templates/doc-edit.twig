@@ -1,5 +1,4 @@
-{% extends "base.twig" %}
-{% import 'macros.twig' as macros %}
+{% extends "normal-page.twig" %}
 
 {% block title %}Edit Doc: {{docInfo.title}}{% endblock %}
 
@@ -7,7 +6,9 @@
 <script type="application/javascript" src="{{baseurl}}/js/dist/DocEditPage.bundle.js"></script>
 <script>
     $( () => {
-      new DocEditPage('de',
+      new DocEditPage({
+        commonData:  JSON.parse("{{commonData|json_encode|e('js')}}")},
+        'de',
         JSON.parse('{{ docInfo|json_encode|e('js') }}'),
         '{{ url_for('api.doc.update', {'id': docInfo.id}) }}',
         '{{ url_for('doc.showdoc', {'id' : docInfo.id }) }}',
@@ -20,7 +21,6 @@
 {% endblock %}
 
 {% block content %}
-
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{url_for('docs')}}">Documents</a></li>
@@ -44,10 +44,6 @@
             <input type="text" class="form-control" id="de-title" value="{{docInfo.title}}"/>
         </div>
         <div id="de-titlestatus"></div>
-{#        <div id="de-shorttitle-fg" class="form-group">#}
-{#            <label for="de-shorttitle" id="de-shorttitle-label" class="control-label">Short Title:</label>#}
-{#            <input type="text" class="form-control" id="de-shorttitle" value="{{docInfo.short_title}}"/>#}
-{#        </div>#}
         <div id="de-type-fg" class="form-group">
             <label for="de-type" id="de-type-label" class="control-label">Type:</label>
             <select id="de-type">{{docTypesOptions|raw}}</select>

@@ -65,9 +65,11 @@ ALTER TABLE `ap_mc_editions`
 ALTER TABLE `ap_presets` ADD `user_tid` BIGINT UNSIGNED DEFAULT 0 AFTER `user_id`;
 UPDATE  `ap_presets`, `ap_people` SET `ap_presets`.`user_tid` = `ap_people`.`tid` where `ap_presets`.`user_id`=`ap_people`.`id`;
 ALTER TABLE `ap_presets` ADD INDEX (`user_tid`);
+ALTER TABLE `ap_presets` DROP INDEX `ap_presets_useridfk`;
 ALTER TABLE `ap_presets` DROP FOREIGN KEY `ap_presets_useridfk`;
 ALTER TABLE `ap_presets`
     ADD CONSTRAINT `ap_presets_useridfk` FOREIGN KEY (`user_tid`) REFERENCES `ap_people` (`tid`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
 
 -- use new people tids for relations
 ALTER TABLE `ap_relations` ADD `user_tid` BIGINT UNSIGNED DEFAULT 0 AFTER `userId`;

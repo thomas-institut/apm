@@ -25,7 +25,7 @@ use InvalidArgumentException;
 /**
  * A class to manage all things related to system presets.
  * 
- * A preset in the system is uniquely identified by the  triplet (tool, userId, title) and by an integer Id
+ * A preset in the system is uniquely identified by the  triplet (tool, userId, title) and by an integer id
  *
  * Implementations of PresetManager should guarantee that presets are not duplicate in the system.
  *
@@ -44,7 +44,7 @@ abstract class PresetManager {
      // BASIC OPERATIONS
 
     /**
-     * Returns true is the preset associated with the given tool, user Id and title exists
+     * Returns true is the preset associated with the given tool, user tid and title exists
      *
      * @param string $tool
      * @param int $userId
@@ -57,7 +57,7 @@ abstract class PresetManager {
 
     /**
      * Adds a preset to the system identified with the tool, userId and title in the given Preset.
-     * The given Preset's Id is ignored and a new one is assigned.
+     * The given preset id is ignored and a new one is assigned.
      *
      * addPreset must return false if there is already a preset
      * that corresponds to the given $preset.
@@ -105,11 +105,11 @@ abstract class PresetManager {
 
     /**
      * @param string $tool
-     * @param int $userId
+     * @param int $userTid
      * @param array $keysToMatch
      * @return Preset[]
      */
-    abstract public function getPresetsByToolUserIdAndKeys(string $tool, int $userId, array $keysToMatch) : array;
+    abstract public function getPresetsByToolUserIdAndKeys(string $tool, int $userTid, array $keysToMatch) : array;
 
     /**
      * Returns the preset with the given $id.
@@ -133,7 +133,7 @@ abstract class PresetManager {
      * @return bool
      */
     public function correspondingPresetExists(Preset $preset) : bool {
-        return $this->presetExists($preset->getTool(), $preset->getUserId(), $preset->getTitle());
+        return $this->presetExists($preset->getTool(), $preset->getUserTid(), $preset->getTitle());
     }
     
     /**
@@ -143,7 +143,7 @@ abstract class PresetManager {
      * @return bool
      */
     public function eraseCorrespondingPreset(Preset $preset) : bool {
-        return $this->erasePreset($preset->getTool(), $preset->getUserId(), $preset->getTitle());
+        return $this->erasePreset($preset->getTool(), $preset->getUserTid(), $preset->getTitle());
     }
    
     /**

@@ -329,7 +329,7 @@ body.normal-page {
     padding: 0;
 }
 
-div.normal-page-top-bar {
+.normal-page div.page-top-bar {
     padding-left: var(--container-side-padding);
     padding-right: var(--container-side-padding);
     margin-bottom: 0.5rem;
@@ -342,17 +342,62 @@ div.normal-page-top-bar {
     border-bottom: 1px solid var(--very-light-gray);
 }
 
-div.normal-page-content {
+.normal-page  div.page-content {
     padding-left: var(--container-side-padding);
     padding-right: var(--container-side-padding);
     overflow-y: scroll;
 }
 
-div.normal-page-footer {
+.normal-page div.page-footer {
     padding-left: var(--container-side-padding);
     padding-right: var(--container-side-padding);
     margin-top: 0.5rem;
     /*border-top: 1px solid var(--very-light-gray);*/
     font-size: 0.8em;
 }
+
+
+/* HEADER AND CONTENT PAGE */
+
+
+body.h-and-c-page {
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+.h-and-c-page div.page-top-bar {
+    padding-left: var(--container-side-padding);
+    padding-right: var(--container-side-padding);
+    margin-bottom: 0.5rem;
+}
+
+.h-and-c-page div.page-header {
+    padding-left: var(--container-side-padding);
+    padding-right: var(--container-side-padding);
+    margin-bottom: 0.5rem;
+}
+
+.h-and-c-page div.page-content {
+    padding-left: var(--container-side-padding);
+    padding-right: var(--container-side-padding);
+    overflow-y: scroll;
+}
+
+.h-and-c-page div.page-footer {
+    padding-left: var(--container-side-padding);
+    padding-right: var(--container-side-padding);
+    margin-top: 0.5rem;
+    font-size: 0.8em;
+}
+
+.h-and-c-page .navbar {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--very-light-gray);
+}
+
 

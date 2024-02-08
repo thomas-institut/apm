@@ -175,7 +175,7 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
             $controller = new SitePeople($container);
             return $controller->peoplePage($request, $response);
         })
-        ->setName('people.manager');
+        ->setName('people');
 
     $group->get('/person/{tid}',
         function(Request $request, Response $response) use ($container){
@@ -193,30 +193,6 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
             return $dashboard->DashboardPage($request, $response);
         })
         ->setName('dashboard');
-
-    // USER.PROFILE
-//    $group->get('/user/{username}',
-//        function(Request $request, Response $response, array $args) use ($container){
-//            $siteUserManager = new SiteUserManager($container);
-//            return $siteUserManager->userProfilePage($request, $response, $args);
-//        })
-//        ->setName('user.profile');
-
-    // USER.SETTINGS
-//
-//    $group->get('/user/{username}/settings',
-//        function(Request $request, Response $response, array $args) use ($container){
-//            $siteUserManager = new SiteUserManager($container);
-//            return $siteUserManager->userSettingsPage($request, $response, $args);
-//        })
-//        ->setName('user.settings');
-
-//    $group->get('/users',
-//        function(Request $request, Response $response, array $args) use ($container){
-//            $siteUserManager = new SiteUserManager($container);
-//            return $siteUserManager->userManagerPage($request, $response, $args);
-//        })
-//        ->setName('user.manager');
 
     // WORKS
 

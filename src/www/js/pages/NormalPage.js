@@ -36,26 +36,39 @@ export class NormalPage extends ApmPage {
 
   constructor(options) {
     super(options)
-    this.pageContentsDiv = $('div.normal-page-content')
-    this.topBarDiv = $('div.normal-page-top-bar')
-    this.footerDiv = $('div.normal-page-footer')
+
+  }
+
+  async bootstrapHtml() {
+    $('body').html(await this.getBodyHtml()).addClass(await this.getBodyClass());
+  }
+
+  async getBodyHtml() {
+    return `<div class="page-top-bar"></div>
+    <div class="page-content"></div>
+    <div class="page-footer"></div>`;
+  }
+
+  async getBodyClass() {
+    return `normal-page`;
   }
 
   /**
    *
    * @return {Promise<void>}
    */
-  initPage() {
-    return new Promise ( async (resolve) => {
-      this.topBarDiv.html(await this.genTopNavBarHtml());
-      this.pageContentsDiv.addClass(this.getExtraClassesForPageContentDiv().join(' ')).html(await this.genHtml());
-      this.footerDiv.html(await this.genFooterHtml()).addClass('text-muted');
-      if (this.showLanguageSelector) {
-        $('#change-lang-en').on('click', this.genOnClickLangChange('en'));
-        $('#change-lang-es').on('click', this.genOnClickLangChange('es'));
-      }
-      resolve();
-    })
+  async initPage() {
+    await this.bootstrapHtml();
+    this.pageContentsDiv = $('div.page-content')
+    this.topBarDiv = $('div.page-top-bar')
+    this.footerDiv = $('div.page-footer')
+    this.topBarDiv.html(await this.genTopNavBarHtml());
+    this.pageContentsDiv.addClass(this.getExtraClassesForPageContentDiv().join(' ')).html(await this.genContentHtml());
+    this.footerDiv.html(await this.genFooterHtml()).addClass('text-muted');
+    if (this.showLanguageSelector) {
+      $('#change-lang-en').on('click', this.genOnClickLangChange('en'));
+      $('#change-lang-es').on('click', this.genOnClickLangChange('es'));
+    }
   }
 
   getBreadcrumbNavHtml(breadCrumbArray) {
@@ -93,8 +106,8 @@ export class NormalPage extends ApmPage {
    *
    * @return {Promise<string>}
    */
-  genHtml() {
-    return new Promise( (resolve) => { resolve('')})
+  async genContentHtml() {
+    return `Page content will be here...`;
   }
 
   changeLanguage(newLang) {

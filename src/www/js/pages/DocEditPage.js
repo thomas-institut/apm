@@ -17,9 +17,24 @@
  */
 
 
-export class DocEditPage {
+import { NormalPage } from './NormalPage'
+import { tr } from './common/SiteLang'
+import { ApmPage } from './ApmPage'
+import { urlGen } from './common/SiteUrlGen'
+import { OptionsChecker } from '@thomas-inst/optionschecker'
 
-  constructor(prefix, docInfo, docEditApiUrl, cancelUrl, deleteUrl, successDeleteUrl) {
+export class DocEditPage extends NormalPage {
+
+  constructor(options,  prefix, docInfo, docEditApiUrl, cancelUrl, deleteUrl, successDeleteUrl) {
+
+    super(options);
+
+    let oc = new OptionsChecker({
+      context: 'DocEditPage',
+      optionsDefinition: {
+        docInfo: { type: 'object'}
+      }
+    })
 
     this.docInfoFields = ['title', 'doc_type', 'lang', 'image_source', 'image_source_data']
     
@@ -68,6 +83,19 @@ export class DocEditPage {
     this.resetButton.hide()
     this.resetButton.removeClass('hidden')
     this.updating = false
+
+    this.initPage().then( () => {
+      console.log('DocEditPage Initialized')
+    })
+  }
+
+  async genContentHtml() {
+    let breadcrumbHtml = this.getBreadcrumbNavHtml([
+      { label: 'Documents', url:  urlGen.siteDocs()},
+      { label: 'Document Details', active: true}
+    ])
+    return `<h1>${tr('<h1>Edit Document Settings</h1>')}</h1>
+        <div class="people-page-content">${ApmPage.genLoadingMessageHtml()}</div>`;
   }
   
   genSubmitFunction() {

@@ -17,7 +17,7 @@ export class PeoplePage extends NormalPage {
         })
     }
 
-    async genHtml() {
+    async genContentHtml() {
         return `<h1>${tr('People')}</h1>
         <div class="people-page-content">${ApmPage.genLoadingMessageHtml()}</div>`;
     }

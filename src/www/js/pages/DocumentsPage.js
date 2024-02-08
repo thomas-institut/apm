@@ -53,7 +53,7 @@ export class DocumentsPage extends NormalPage {
 
   }
 
-  async genHtml () {
+  async genContentHtml () {
     let adminDiv = '';
     if (this.canManageDocuments) {
       adminDiv = `<div class='doc-admin'><h3>${tr('Admin')}</h3>

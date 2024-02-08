@@ -1,19 +1,19 @@
 
-.normal-page-content h1 {
+.page-content h1 {
     margin-bottom: 0.5em;
 }
 
-.normal-page-content h2 {
+.page-content h2 {
     font-size: 1.5em;
     margin-top: 2em;
     margin-bottom: 1em;
 }
 
-.normal-page-content h3 {
+.page-content h3 {
     font-size: 1.1rem;
 }
 
-.normal-page-content  h3.first {
+.page-content  h3.first {
     margin-top: 1em;
 }
 

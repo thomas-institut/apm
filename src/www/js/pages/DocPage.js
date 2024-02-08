@@ -285,7 +285,7 @@ export class DocPage extends NormalPage {
     return [ 'doc-page'];
   }
 
-  async genHtml() {
+  async genContentHtml() {
 
     let breadcrumbHtml = this.getBreadcrumbNavHtml([
       { label: 'Documents', url:  urlGen.siteDocs()},

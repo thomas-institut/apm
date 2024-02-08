@@ -181,7 +181,7 @@ export class DocDefPages extends NormalPage {
   }
 
 
-  async genHtml () {
+  async genContentHtml () {
     return `
         <nav aria-label="breadcumb">
         <ol class="breadcrumb">

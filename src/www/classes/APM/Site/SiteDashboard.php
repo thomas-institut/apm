@@ -20,6 +20,7 @@
 namespace APM\Site;
 
 use APM\System\ApmConfigParameter;
+use APM\SystemProfiler;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 
@@ -39,11 +40,10 @@ class SiteDashboard extends SiteController
      */
     public function DashboardPage(Request $request, Response $response): Response
     {
-        $userId = (int) $this->userInfo['id'];
-        $this->profiler->start();
-        $this->reportCookieSize();
-        $this->profiler->stop();
-        $this->logProfilerData('Dashboard');
+//        $this->profiler->start();
+//        $this->profiler->stop();
+//        $this->logProfilerData('Dashboard');
+        SystemProfiler::setName(__FUNCTION__);
         return $this->renderPage($response, self::TEMPLATE_DASHBOARD, []);
     }
 }

@@ -274,7 +274,7 @@ class SiteDocuments extends SiteController
 
         $this->profiler->stop();
         $this->logProfilerData('showDocPage-' . $docId);
-        $userId = (int) $this->userInfo['id'];
+        $userId = (int) $this->siteUserInfo['id'];
 
         return $this->renderPage($response, self::TEMPLATE_SHOW_DOCS_PAGE, [
             'navByPage' => false,
@@ -297,8 +297,8 @@ class SiteDocuments extends SiteController
     public function newDocPage(Request $request, Response $response): Response
     {
      
-        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'create-new-documents')){
-            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to add new doc but is not allowed to do it');
+        if (!$this->dataManager->userManager->isUserAllowedTo($this->siteUserInfo['id'], 'create-new-documents')){
+            $this->logger->debug("User " . $this->siteUserInfo['id'] . ' tried to add new doc but is not allowed to do it');
             return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
                 'message' => 'You are not authorized to add new documents in the system'
             ]);
@@ -442,8 +442,8 @@ class SiteDocuments extends SiteController
         $this->logProfilerData('defineDocPages-' . $docId);
         return $this->renderPage($response, self::TEMPLATE_DEFINE_DOC_PAGES, [
             'doc' => $doc,
-            'userInfo' => $this->userInfo,
-            'userId' => (int) $this->userInfo['id']
+            'userInfo' => $this->siteUserInfo,
+            'userId' => (int) $this->siteUserInfo['id']
         ]);
     }
 }

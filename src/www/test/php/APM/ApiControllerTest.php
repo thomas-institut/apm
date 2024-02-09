@@ -483,7 +483,7 @@ class ApiControllerTest extends TestCase {
         $request6 = self::requestWithData($request,
             [   'command' => ApiPresets::COMMAND_NEW,
                 'tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
-                'userId' => self::$container->get(ApmContainerKey::USER_TID),
+                'userId' => self::$container->get(ApmContainerKey::SITE_USER_TID),
                 'title' => $presetTitle,
                 'presetId' => 0,
                 'presetData' => $presetOwnedByNewApiUser
@@ -670,7 +670,7 @@ class ApiControllerTest extends TestCase {
         $data = json_decode($response->getBody(), true);
         $this->assertEquals([], $data['elements']);
         $this->assertEquals([], $data['ednotes']);
-        $this->assertEquals([self::$container->get(ApmContainerKey::USER_TID)], array_keys($data['people'])); // only test UserId
+        $this->assertEquals([self::$container->get(ApmContainerKey::SITE_USER_TID)], array_keys($data['people'])); // only test UserId
         $this->assertEquals(1, $data['info']['col']);
 
         $numElements = 5;

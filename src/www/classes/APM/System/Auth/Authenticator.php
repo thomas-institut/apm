@@ -173,7 +173,7 @@ class Authenticator {
 
 
         $success = false;
-        if (!isset($_SESSION['userid'])){
+        if (!isset($_SESSION['userTid'])){
             // Check for long term cookie
             $this->debug('SITE : No session');
             $userTid = $this->getUserTidFromLongTermCookie($request);
@@ -181,7 +181,7 @@ class Authenticator {
                 $success = true;
             }
         } else {
-            $userTid = intval($_SESSION['userid']);
+            $userTid = intval($_SESSION['userTid']);
             $this->debug('SITE : Session is set, user tid = ' . $userTid);
             if ($this->userManager->isUser($userTid)){
                 $this->debug("Tid $userTid is a user");
@@ -193,21 +193,23 @@ class Authenticator {
         if ($success){
             $this->debug('SITE: Success, go ahead!');
             $_SESSION['userid'] = $userTid;
-            $userData = $this->userManager->getUserData($userTid);
+            $this->container->set(ApmContainerKey::SITE_USER_TID, $userTid);
 
-            $userInfo = $userData->getExportObject();
-            unset($userInfo['passwordHash']);
+//            $userData = $this->userManager->getUserData($userTid);
+//
+//            $userInfo = $userData->getExportObject();
+//            unset($userInfo['passwordHash']);
+//
+//            $personData = $this->systemManager->getPersonManager()->getPersonEssentialData($userTid);
+//            // legacy data
+//            // TODO: get rid of this!
+//            $userInfo['name'] = $personData->name;
+//            $userInfo['email'] = '';
+//            $userInfo['isRoot'] = $userData->root;
+//            $userInfo['manageUsers'] = $userData->root;
+//            $userInfo['tidString'] = Tid::toBase36String($userData->tid);
 
-            $personData = $this->systemManager->getPersonManager()->getPersonEssentialData($userTid);
-            // legacy data
-            // TODO: get rid of this!
-            $userInfo['name'] = $personData->name;
-            $userInfo['email'] = '';
-            $userInfo['isRoot'] = $userData->root;
-            $userInfo['manageUsers'] = $userData->root;
-            $userInfo['tidString'] = Tid::toBase36String($userData->tid);
-
-            $this->container->set(ApmContainerKey::USER_DATA, $userInfo);
+//            $this->container->set(ApmContainerKey::USER_DATA, $userInfo);
             if ($this->debugMode) {
                 $this->profiler->stop();
                 $this->debug("Profiler", $this->profiler->getLaps());

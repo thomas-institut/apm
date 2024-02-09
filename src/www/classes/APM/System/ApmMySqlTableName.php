@@ -37,11 +37,9 @@ class ApmMySqlTableName
     const TABLE_PRESETS = 'presets';
     const TABLE_VERSIONS_TX = 'versions_tx';
     const TABLE_SYSTEM_CACHE = 'system_cache';
-
     const TABLE_JOBS = 'jobs';
     const TABLE_COLLATION_TABLE = 'ctables';
     const TABLE_VERSIONS_CT = 'versions_ct';
     const TABLE_MULTI_CHUNK_EDITIONS = 'mc_editions';
-
     const TABLE_EDITION_SOURCES = 'edition_sources';
 }

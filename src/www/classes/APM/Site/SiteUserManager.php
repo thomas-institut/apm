@@ -61,7 +61,7 @@ class SiteUserManager extends SiteController
 
         $userProfileInfo = 
                 $this->dataManager->userManager->getUserInfoByUsername($profileUsername);
-        $currentUserId = $this->userInfo['id'];
+        $currentUserId = $this->siteUserInfo['id'];
 
         $canEditProfile = $userProfileInfo['id'] === $currentUserId ||
                 $this->dataManager->userManager->isUserAllowedTo($currentUserId, 'manageUsers');
@@ -111,8 +111,8 @@ class SiteUserManager extends SiteController
     public function userSettingsPage(Request $request, Response $response): Response
     {
         $username = $request->getAttribute('username');
-        $curUserName = $this->userInfo['username'];
-        $userId = $this->userInfo['id'];
+        $curUserName = $this->siteUserInfo['username'];
+        $userId = $this->siteUserInfo['id'];
         if ($username !== $curUserName && 
                 !$this->dataManager->userManager->isUserAllowedTo($userId, 'edit-user-settings')){
             return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [

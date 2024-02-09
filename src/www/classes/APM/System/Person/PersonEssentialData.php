@@ -2,7 +2,7 @@
 
 namespace APM\System\Person;
 
-use ThomasInstitut\ObjectData\Exportable;
+use ThomasInstitut\Exportable\Exportable;
 
 class PersonEssentialData implements Exportable
 {

@@ -2,7 +2,7 @@
 
 namespace APM\System\User;
 
-use ThomasInstitut\ObjectData\Exportable;
+use ThomasInstitut\Exportable\Exportable;
 
 class UserData implements Exportable
 {

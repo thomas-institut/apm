@@ -5,7 +5,8 @@ namespace AverroesProjectToApm;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
 use APM\ToolBox\FullName;
-use ThomasInstitut\AuthService\PersonInfoProvider;
+use AverroesProjectToApm\PersonInfoProvider\PersonInfoProvider;
+
 
 /**
  * Temporary class needed to couple the old witness html generation code

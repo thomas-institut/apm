@@ -16,6 +16,13 @@ use ThomasInstitut\DataCache\SimpleCacheAware;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\EntitySystem\Exception\DataConsistencyException;
+use ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException;
+use ThomasInstitut\EntitySystem\Exception\InvalidArgumentException;
+use ThomasInstitut\EntitySystem\Exception\InvalidAttributeException;
+use ThomasInstitut\EntitySystem\Exception\InvalidNameException;
+use ThomasInstitut\EntitySystem\Exception\InvalidRelationException;
+use ThomasInstitut\EntitySystem\Exception\InvalidTypeException;
 use ThomasInstitut\TimeString\TimeString;
 
 
@@ -23,7 +30,7 @@ use ThomasInstitut\TimeString\TimeString;
  * An implementation of an entity system using (existing) DataTable and DataCache object instances as storage.
  *
  * In order to function the system needs at least one DataTable to store statements and a DataCache, but both data
- * can cache can be partitioned based on entity type.
+ * and cache can be partitioned based on entity type.
  *
  * For data security and performance reasons it is generally a good idea to have a dedicated DataTable for system
  * entities (types, attributes, relations, etc.) and one or more DataTable for the other entities. The larger the
@@ -80,9 +87,6 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
     protected ?LoggerInterface $logger = null;
     private InMemoryDataCache $internalInMemoryCache;
 
-
-
-
     /**
      * Constructs an entity system using the given (existing) data tables and cache.
      *
@@ -115,7 +119,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
     public function __construct(array $config, string $cachingPrefix = '', LoggerInterface $logger = null, bool $debug = false)
     {
         /**
-         * The goal is to construct the instance as fast as possible, caching data only when needed.
+         * The goal is to construct the EntitySystem instance as fast as possible, caching data only when needed.
          * For this reason, the only data that is read and checked at construction time is $this->typesConfig.
          * If this data is not available, it is assumed that the entity system is empty and should be bootstrapped.
          */

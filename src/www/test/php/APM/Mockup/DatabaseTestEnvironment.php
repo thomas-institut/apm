@@ -33,7 +33,7 @@ use PDO;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use ThomasInstitut\Container\MinimalContainer;
+use ThomasInstitut\MinimalContainer\MinimalContainer;
 
 
 require_once  __DIR__ .  "./../../test.config.php";
@@ -134,7 +134,7 @@ EOD;
      * @throws Exception
      */
     public function setUserTid($userTid) : void {
-        $this->getContainer()->set(ApmContainerKey::USER_TID, $userTid);
+        $this->getContainer()->set(ApmContainerKey::SITE_USER_TID, $userTid);
     }
 
     /**
@@ -159,7 +159,7 @@ EOD;
         $container = new MinimalContainer();
         $container->addDefinitions([
             ApmContainerKey::SYSTEM_MANAGER => $systemManager,
-            ApmContainerKey::USER_TID => 0,  // invalid user Ids, must be set downstream for some API and Site operations
+            ApmContainerKey::SITE_USER_TID => 0,  // invalid user Ids, must be set downstream for some API and Site operations
             ApmContainerKey::API_USER_TID => 0,
         ]);
 

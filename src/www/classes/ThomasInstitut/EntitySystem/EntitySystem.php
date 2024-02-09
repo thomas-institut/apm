@@ -2,6 +2,16 @@
 
 namespace ThomasInstitut\EntitySystem;
 
+use ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException;
+use ThomasInstitut\EntitySystem\Exception\InvalidAttributeException;
+use ThomasInstitut\EntitySystem\Exception\InvalidNameException;
+use ThomasInstitut\EntitySystem\Exception\InvalidObjectException;
+use ThomasInstitut\EntitySystem\Exception\InvalidPredicateException;
+use ThomasInstitut\EntitySystem\Exception\InvalidRelationException;
+use ThomasInstitut\EntitySystem\Exception\InvalidSubjectException;
+use ThomasInstitut\EntitySystem\Exception\InvalidTypeException;
+
+
 /**
  * This interface describes the entity system to be used across all Thomas-Institut applications: APM, Dare, Bilderberg.
  *
@@ -29,7 +39,7 @@ namespace ThomasInstitut\EntitySystem;
  *
  *       [statementEntity] [subject] [predicate] {[object]|'literalValue'}
  *
- * In principle a complete system can be implemented with just three primitive methods:
+ * In principle a complete entity system can be implemented with just three primitive methods:
  *
  *     - getUniqueTid() : Tid
  *     - storeStatement( subjectTid, predicateTid, objectTid | string, statementTid)
@@ -118,13 +128,16 @@ namespace ThomasInstitut\EntitySystem;
  *   - The following [EntityType:ValueType] entities are predefined:
  * 
  *         [ValueType:number] : a real number (i.e., double/float)
- *         [ValueType:integer], [ValueType:string], [ValueType:boolean]
+ *         [ValueType:integer],
+ *         [ValueType:string],
+ *         [ValueType:boolean] : true/false
  *         [ValueType:timestamp] : a Unix timestamp in seconds
- *         [ValueType:exactDate] : a specific day, month, year
- *         [ValueType:date]: a date that may carry a certain level of vagueness or indeterminacy, 
- *             for example 'c.1920', 'post 1920 ante 1930'. See the class ThomasInstitut\ValueType\Date for details.
+ *         [ValueType:date] : a specific day, month, year
+ *         [ValueType:vagueDate]: a date that may carry a certain level of vagueness or indeterminacy,
+ *             for example 'c.1920', 'post 1920 ante 1930'. See the class ValueType\VagueDate for details.
  *         [ValueType:json]: a JSON string
-
+ *         [ValueType:langCode]: a 2-3 letter code representing a language
+ *
  *   - The following [EntityType:Attribute] entities are predefined and are applicable to all entities:
  *
  *         [Attribute:name]: the name of the entity (only one per entity, but can be an empty string)
@@ -132,7 +145,7 @@ namespace ThomasInstitut\EntitySystem;
  *         [Attribute:alias]: an alternate name for the entity
  *         [Attribute:annotation]: generally a longer text explaining something about the entity that
  *            for some reason cannot or is chosen not to be stated using attributes and relations.
- * 
+ *
  *   - The [EntityType:Relation] entity [Relation:hasType] is predefined and is used to associate an entity with
  *     is type. Every entity in the system has this relation. That is, this relation is guaranteed to be
  *     reported when data for any entity is requested from the system.
@@ -145,7 +158,6 @@ namespace ThomasInstitut\EntitySystem;
  *   - An entity that stands for the system itself is predefined: [system]. It is
  *     used as the author for all the statements concerning the predefined entities, attributes and relations
  *     described here, and may be used for other statements as well.
-
  *   - Attribute values may be restricted to specific types, for example, [Attribute:dateOfBirth] may be restricted
  *     to be of [ValueType:date]. The relation [Relation:valueMustBeOfType] is predefined and is used to state these
  *     restrictions.

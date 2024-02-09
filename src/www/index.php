@@ -73,7 +73,7 @@ use APM\Api\ApiCollationTableConversion;
 use APM\Api\ApiTypesetPdf;
 use APM\Api\ApiWitness;
 use APM\Api\ApiSearch;
-use ThomasInstitut\Container\MinimalContainer;
+use ThomasInstitut\MinimalContainer\MinimalContainer;
 use Twig\Error\LoaderError;
 
 // Load system profiler first
@@ -108,7 +108,8 @@ if ($systemManager->fatalErrorOccurred()) {
 // Build container for Slim
 $container = new MinimalContainer();
 $container->set(ApmContainerKey::SYSTEM_MANAGER, $systemManager);
-$container->set(ApmContainerKey::USER_TID, 0);  // The authentication module will update this with the correct ID
+$container->set(ApmContainerKey::SITE_USER_TID, -1);
+$container->set(ApmContainerKey::API_USER_TID, -1);
 
 // Setup Slim App
 $responseFactory = new ResponseFactory();

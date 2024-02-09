@@ -11,11 +11,22 @@ class SystemProfiler
 
     static private bool $started = false;
 
+    static private string $name = '';
+
 
     static public function start() : void {
         self::$start = self::now();
         self::$laps = [];
         self::$started = true;
+    }
+
+    static public function setName(string $name): void
+    {
+        self::$name = $name;
+    }
+
+    static public function getName() : string {
+        return self::$name;
     }
 
     static public function lap(string $name) : void {

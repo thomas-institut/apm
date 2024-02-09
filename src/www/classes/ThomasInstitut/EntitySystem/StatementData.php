@@ -2,7 +2,7 @@
 
 namespace ThomasInstitut\EntitySystem;
 
-use ThomasInstitut\ObjectData\Exportable;
+use ThomasInstitut\Exportable\Exportable;
 
 class StatementData implements Exportable
 {

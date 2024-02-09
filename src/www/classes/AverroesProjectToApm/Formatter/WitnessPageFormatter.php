@@ -28,8 +28,8 @@ use APM\Core\Item\Item;
 use APM\Core\Item\NoWbMark;
 use APM\Core\Transcription\ItemAddressInDocument;
 use AverroesProjectToApm\DatabaseItemStream;
-use ThomasInstitut\AuthService\PersonInfoProvider;
-use ThomasInstitut\AuthService\SimplePersonInfoProvider;
+use ThomasInstitut\PersonInfoProvider\PersonInfoProvider;
+use ThomasInstitut\PersonInfoProvider\SimplePersonInfoProvider;
 use ThomasInstitut\TimeString\TimeString;
 
 
@@ -81,10 +81,8 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     private $textualClass;
     
     private $dateFormat;
-    /**
-     * @var SimplePersonInfoProvider
-     */
-    private $personInfoProvider;
+
+    private PersonInfoProvider $personInfoProvider;
 
     public function __construct() {
         
@@ -100,11 +98,11 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         $this->markClass = get_class(new Mark());
         $this->noWbClass = get_class(new NoWbMark());
         $this->textualClass = get_class(new TextualItem('stub'));
-
         $this->personInfoProvider = new SimplePersonInfoProvider();
     }
 
-    public function setPersonInfoProvider(PersonInfoProvider $infoProvider) {
+    public function setPersonInfoProvider(PersonInfoProvider $infoProvider): void
+    {
         $this->personInfoProvider = $infoProvider;
     }
 

@@ -55,12 +55,6 @@ class SiteCollationTable extends SiteController
     const ERROR_NO_OPTIONS = 'NoOptions';
     const ERROR_MISSING_REQUIRED_OPTION = 'MissingRequiredOption';
     const ERROR_UNKNOWN_PRESET = 'UnknownPreset';
-    const ERROR_INVALID_LANGUAGE = 'InvalidLanguage';
-    const ERROR_INVALID_WITNESS_TYPE = 'InvalidWitnessType';
-    const ERROR_INVALID_WITNESS_ID = 'InvalidWitnessId';
-    const ERROR_UNRECOGNIZED_OPTION = 'UnrecognizedOption';
-    
-    const TEMPLATE_ERROR = 'chunk-collation-error.twig';
     const TEMPLATE_COLLATION_TABLE = 'collation-table.twig';
     const TEMPLATE_EDIT_COLLATION_TABLE_OLD = 'collation-edit.twig';
     const TEMPLATE_EDITION_COMPOSER = 'edition-composer.twig';
@@ -163,7 +157,7 @@ class SiteCollationTable extends SiteController
         }
 
         return $this->renderPage($response, $template, [
-            'userId' => $this->userInfo['id'],
+            'userId' => $this->siteUserInfo['id'],
             'workId' => $workId,
             'chunkNumber' => $chunkNumber,
             'tableId' => $tableId,
@@ -206,13 +200,6 @@ class SiteCollationTable extends SiteController
 
     protected function getMentionedDocsFromCtData(array $ctData) : array {
         return CtData::getMentionedDocsFromCtData($ctData);
-//        $docs = [];
-//        foreach($ctData['witnesses'] as $witness) {
-//            if ($witness['witnessType'] === WitnessType::FULL_TRANSCRIPTION) {
-//                $docs[] = $witness['docId'];
-//            }
-//        }
-//        return $docs;
     }
 
     /**
@@ -269,12 +256,12 @@ class SiteCollationTable extends SiteController
                     if ($witnessType !== WitnessType::FULL_TRANSCRIPTION) {
                         $msg = 'Non-supported witness type given: ' . $witnessType;
                         $this->logger->error($msg, [ 'args' => $args]);
-                        return $this->renderPage($response, self::TEMPLATE_ERROR, [
+                        return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
                             'work' => $workId,
                             'chunk' => $chunkNumber,
                             'lang' => $language,
-                            'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_INVALID_WITNESS_TYPE,
-                            'message' => $msg
+                            'error' => true,
+                            'errorMessage' => $msg
                         ]);
                     }
                     // for now, only full transcriptions are implemented, so the second field in
@@ -282,12 +269,12 @@ class SiteCollationTable extends SiteController
                     if (!ctype_digit($specs[1])) {
                         $msg = 'Invalid doc id given: ' . $specs[1];
                         $this->logger->error($msg, [ 'args' => $args]);
-                        return $this->renderPage($response, self::TEMPLATE_ERROR, [
+                        return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
                             'work' => $workId,
                             'chunk' => $chunkNumber,
                             'lang' => $language,
-                            'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_INVALID_WITNESS_ID,
-                            'message' => $msg
+                            'error' => true,
+                            'errorMessage' => $msg
                         ]);
                     }
                     $docId = intval($specs[1]);
@@ -307,12 +294,12 @@ class SiteCollationTable extends SiteController
                 //
                 $msg = 'Unrecognized option : ' . $argWitnessSpec;
                 $this->logger->error($msg, [ 'args' => $args]);
-                return $this->renderPage($response, self::TEMPLATE_ERROR, [
+                return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
                     'work' => $workId,
                     'chunk' => $chunkNumber,
                     'lang' => $language,
-                    'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_UNRECOGNIZED_OPTION,
-                    'message' => $msg
+                    'error' => true,
+                    'errorMessage' => $msg
                 ]);
             }
             $collationPageOptions['partialCollation'] = true;
@@ -325,6 +312,7 @@ class SiteCollationTable extends SiteController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws PersonNotFoundException
      */
     public function automaticCollationPagePreset(Request $request, Response $response): Response
     {
@@ -340,12 +328,12 @@ class SiteCollationTable extends SiteController
             $this->logger->error($msg,
                     [ 'presetId' => $presetId]);
             
-            return $this->renderPage($response, self::TEMPLATE_ERROR, [
+            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
                 'work' => $workId,
                 'chunk' => $chunkNumber,
                 'lang' => '??',
-                'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_UNKNOWN_PRESET,
-                'message' => $msg
+                'error' => true,
+                'errorMessage' => $msg
             ]);
         }
 
@@ -354,7 +342,8 @@ class SiteCollationTable extends SiteController
         $lang =  $presetData['lang'];
         $ignorePunctuation = $presetData['ignorePunctuation'];
 
-        $presetUserName = $this->dataManager->userManager->getUserInfoByUserId($preset->getUserTid())['name'];
+
+        $presetUserName = $this->systemManager->getPersonManager()->getPersonEssentialData($preset->getUserTid())->name;
         
         $collationPageOptions = [
             'work' => $workId,
@@ -369,7 +358,7 @@ class SiteCollationTable extends SiteController
                 'title' => $preset->getTitle(),
                 'userId' => $preset->getUserTid(),
                 'userName' => $presetUserName,
-                'editable' => ( intval($this->userInfo['id']) === $preset->getUserTid())
+                'editable' =>  $this->userTid === $preset->getUserTid()
             ]
         ];
         if (isset($presetData['normalizers'])) {
@@ -428,24 +417,24 @@ class SiteCollationTable extends SiteController
             $this->logger->error('Automatic Collation Table:  no data in input',
                     [ 'rawdata' => $postData]);
             $msg = 'Bad request: no data';
-            return $this->renderPage($response, self::TEMPLATE_ERROR, [
+            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
                 'work' => '??',
                 'chunk' => '??',
                 'lang' => '??',
-                'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_NO_DATA,
-                'message' => $msg
+                'error' => true,
+                'errorMessage' => $msg
             ]);
         }
         if (!isset($inputData['options'])) {
             $this->logger->error('Automatic Collation Table:  no options in input',
                     [ 'rawdata' => $postData]);
             $msg = 'Bad request: no options';
-            return $this->renderPage($response, self::TEMPLATE_ERROR, [
+            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
                 'work' => '??',
                 'chunk' => '??',
                 'lang' => '??',
-                'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_NO_OPTIONS,
-                'message' => $msg
+                'error' => true,
+                'errorMessage' => $msg
             ]);
         }
         
@@ -455,19 +444,16 @@ class SiteCollationTable extends SiteController
         foreach ($requiredFields as $requiredField) {
             if (!isset($collationPageOptions[$requiredField])) {
                 $msg = 'Bad request: missing required option ' . $requiredField ;
-                return $this->renderPage($response, self::TEMPLATE_ERROR, [
+                return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
                     'work' => '??',
                     'chunk' => '??',
                     'lang' => '??',
-                    'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_MISSING_REQUIRED_OPTION,
-                    'message' => $msg
+                    'error' => true,
+                    'errorMessage' => $msg
                 ]);
             }
         }
         $collationPageOptions['isPreset'] = false;
-
-        //$this->codeDebug('Options', $collationPageOptions);
-        
         return $this->getCollationTablePage($collationPageOptions, $response);
     }
 
@@ -501,6 +487,7 @@ class SiteCollationTable extends SiteController
         }
 
         $this->codeDebug('apiCallOptions', $apiCallOptions);
+
         $dm = $this->dataManager;
         $pageName = "AutomaticCollation-$workId-$chunkNumber-$language";
         
@@ -509,7 +496,7 @@ class SiteCollationTable extends SiteController
 
         
         // check that language is valid
-        $languages = $this->languages;
+        $languages = $this->getLanguages();
         $langInfo = null;
         foreach($languages as $lang) {
             if ($lang['code'] === $language) {
@@ -519,12 +506,12 @@ class SiteCollationTable extends SiteController
         
         if (is_null($langInfo)) {
             $msg = 'Invalid language <b>' . $language . '</b>';
-            return $this->renderPage($response, self::TEMPLATE_ERROR, [
+            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
                 'work' => $workId,
                 'chunk' => $chunkNumber,
                 'lang' => $language,
-                'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_INVALID_LANGUAGE,
-                'message' => $msg
+                'error' => true,
+                'errorMessage' => $msg
             ]);
         }
         
@@ -568,12 +555,12 @@ class SiteCollationTable extends SiteController
                 }
                 if (!$found) {
                     $msg = 'Requested witness not valid ' . $systemId;
-                    return $this->renderPage($response, self::TEMPLATE_ERROR, [
+                    return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
                         'work' => $workId,
                         'chunk' => $chunkNumber,
                         'lang' => $language,
-                        'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_INVALID_WITNESS_ID,
-                        'message' => $msg
+                        'error' => true,
+                        'errorMessage' => $msg
                     ]);
                 }
             }

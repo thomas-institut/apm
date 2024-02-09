@@ -29,6 +29,8 @@ namespace APM\Site;
 use APM\FullTranscription\PageInfo;
 use APM\System\ApmConfigParameter;
 use APM\System\ApmImageType;
+use APM\System\Person\PersonNotFoundException;
+use APM\System\User\UserNotFoundException;
 use APM\SystemProfiler;
 use APM\System\ApmContainerKey;
 use APM\ToolBox\HttpStatus;
@@ -45,6 +47,7 @@ use Slim\Routing\RouteParser;
 use Slim\Views\Twig;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
+use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\Profiler\SimpleProfiler;
 use ThomasInstitut\Profiler\TimeTracker;
 use Twig\Error\LoaderError;
@@ -70,20 +73,37 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     protected ApmSystemManager $systemManager;
     protected Twig $view;
     protected array $config;
+    /**
+     * @var DataManager
+     * @deprecated get it from $this->systemManager
+     */
     protected DataManager $dataManager;
     protected bool $userAuthenticated;
-    protected array $userInfo;
+    /**
+     * @var array|null
+     * @deprecated use getSiteUserInfo())
+     */
+    protected ?array $siteUserInfo;
     protected RouteParser $router;
+    /**
+     * @var array
+     * @deprecated use getLanguages()
+     */
     protected array $languages;
     protected SimpleProfiler $profiler;
+
+    /**
+     * @var array
+     * @deprecated use getLanguagesByCode();
+     */
     protected array $languagesByCode;
     protected int $userTid;
 
     /**
      * SiteController constructor.
      * @param ContainerInterface $ci
-     * @throws LoaderError
      * @throws ContainerExceptionInterface
+     * @throws LoaderError
      * @throws NotFoundExceptionInterface
      */
     public function __construct(ContainerInterface $ci)
@@ -92,14 +112,15 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
         $this->view = $this->systemManager->getTwig();
         $this->config = $this->systemManager->getConfig();
-        $this->dataManager = $this->systemManager->getDataManager();
         $this->logger = $this->systemManager->getLogger();
         $this->router = $this->systemManager->getRouter();
         $this->userAuthenticated = false;
-        $this->userInfo = [];
-        $this->userTid = -1;
-        $this->languages = $this->config['languages'];
-        $this->languagesByCode = $this->buildLanguageByCodeArray($this->languages);
+
+
+        $this->siteUserInfo = null;
+        $this->dataManager = $this->systemManager->getDataManager();
+        $this->languages = $this->getLanguages();
+        $this->languagesByCode = $this->getLanguagesByCode();
 
         $this->profiler = new SimpleProfiler();
         $this->profiler->registerProperty('time', new TimeTracker());
@@ -109,10 +130,45 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
        
        // Check if the user has been authenticated by the authentication middleware
         //$this->logger->debug('Checking user authentication');
-        if ($ci->has(ApmContainerKey::USER_DATA)) {
+        if ($ci->has(ApmContainerKey::SITE_USER_TID)) {
            $this->userAuthenticated = true;
-           $this->userInfo = $ci->get(ApmContainerKey::USER_DATA);
-           $this->userTid = $this->userInfo['tid'];
+           $this->userTid = $ci->get(ApmContainerKey::SITE_USER_TID);
+           $this->siteUserInfo = $this->getSiteUserInfo();
+        }
+    }
+
+    protected function getLanguagesByCode() : array {
+        return $this->buildLanguageByCodeArray($this->getLanguages());
+    }
+
+    protected function getLanguages() : array {
+        return $this->systemManager->getConfig()[ApmConfigParameter::LANGUAGES];
+    }
+
+    /**
+     *
+     * Gets an array with info about the user.
+     * This is sent to all pages
+     *
+     */
+    protected function getSiteUserInfo(): array
+    {
+        try {
+            $userData = $this->systemManager->getUserManager()->getUserData($this->userTid);
+            $personData = $this->systemManager->getPersonManager()->getPersonEssentialData($this->userTid);
+
+            $userInfo = $userData->getExportObject();
+            unset($userInfo['passwordHash']);
+            $userInfo['name'] = $personData->name;
+            $userInfo['email'] = '';
+            $userInfo['isRoot'] = $userData->root;
+            $userInfo['manageUsers'] = $userData->root;
+            $userInfo['tidString'] = Tid::toBase36String($userData->tid);
+            return $userInfo;
+        } catch (UserNotFoundException|PersonNotFoundException $e) {
+            $this->logger->error("System Error: " . $e->getMessage());
+            // should never happen
+            return [];
         }
     }
 
@@ -148,6 +204,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
      * @param string $template
      * @param array $data
      * @param bool $withBaseData
+     * @param bool $includeLegacyData
      * @return ResponseInterface
      */
     protected function renderPage(ResponseInterface $response,
@@ -162,14 +219,9 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
                 $data['copyright']  = $this->getCopyrightNotice();
                 $data['baseurl'] = $this->getBaseUrl();
                 $data['userAuthenticated'] = $this->userAuthenticated;
-                $data['userInfo'] = [];
                 $data['userId'] = -1;
-                $data['userTid'] = -1;
-                if ($this->userAuthenticated) {
-                    $data['userInfo'] = $this->userInfo;
-                    $data['userId'] = $this->userInfo['id'];
-                    $data['userTid'] = $this->userInfo['tid'];
-                }
+                $data['userTid'] = $this->userTid;
+                $data['userInfo'] = $this->getSiteUserInfo();
             }
             // Data for new code pages (e.g. ApmPage js class descendants)
             $commonData = [];
@@ -178,10 +230,9 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             $commonData['copyrightNotice'] = $this->config[ApmConfigParameter::COPYRIGHT_NOTICE];
             $commonData['renderTimestamp'] =  time();
             $commonData['cacheDataId'] = $this->config[ApmConfigParameter::JS_APP_CACHE_DATA_ID];
-            $commonData['userInfo'] = $this->userInfo;
+            $commonData['userInfo'] = $this->getSiteUserInfo();
             $commonData['showLanguageSelector'] = $this->config[ApmConfigParameter::SITE_SHOW_LANGUAGE_SELECTOR];
             $commonData['baseUrl'] = $this->getBaseUrl();
-
             $data['commonData'] = $commonData;
         }
 
@@ -207,7 +258,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             return $this->getSystemErrorPage($response, $errorMessage, []);
         }
         SystemProfiler::lap('Response ready');
-        $this->logger->debug("GLOBAL PROFILER", SystemProfiler::getLaps());
+        $this->logger->info("SITE PROFILER " . SystemProfiler::getName(), SystemProfiler::getLaps());
         return $responseToReturn;
     }
 
@@ -227,10 +278,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     }
     
     protected function getCopyrightNotice() : string {
-        return $this->config['app_name'] . " v" . 
-               $this->config['version'] . " &bull; &copy; " . 
-               $this->config['copyright_notice'] . " &bull; " .
-              date("Y-M-d, H:i:s T");
+        return '';
     }
     
     protected function getBaseUrl() : string {
@@ -300,7 +348,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     protected function reportCookieSize() : void {
         $cookieString = $_SERVER['HTTP_COOKIE'] ?? 'N/A';
         if (strlen($cookieString) > self::COOKIE_SIZE_THRESHOLD) {
-            $this->codeDebug("Got a cookie string of " . strlen($cookieString) . " bytes for user " . $this->userInfo['id']);
+            $this->codeDebug("Got a cookie string of " . strlen($cookieString) . " bytes for user " . $this->siteUserInfo['id']);
         }
     }
 

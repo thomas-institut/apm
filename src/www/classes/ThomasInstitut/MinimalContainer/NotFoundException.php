@@ -1,7 +1,6 @@
 <?php
-
-/*
- *  Copyright (C) 2019 Universität zu Köln
+/* 
+ *  Copyright (C) 2016-2020 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,25 +14,14 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
+ *  
  */
 
-namespace APM\System;
+namespace ThomasInstitut\MinimalContainer;
 
-/**
- * Constants for Container keys in APM
- *
- * @package APM\System
- */
-class ApmContainerKey
+use Psr\Container\NotFoundExceptionInterface;
+
+class NotFoundException extends ContainerException implements NotFoundExceptionInterface
 {
-
-
-    const SYSTEM_MANAGER = 'systemManager';
-    const SITE_USER_TID = 'siteUserTid';
-    const USER_DATA = 'userData';
-    const API_USER_TID = 'apiUserTid';
-
-
 
 }

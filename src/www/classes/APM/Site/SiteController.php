@@ -63,7 +63,8 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 {
 
     const COOKIE_SIZE_THRESHOLD = 1000;
-    const TEMPLATE_ERROR_NOT_ALLOWED = 'error-not-allowed.twig';
+
+    const TEMPLATE_ERROR_PAGE = 'error-page.twig';
 
 
     use LoggerAwareTrait;
@@ -275,6 +276,18 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         $html = "<!DOCTYPE html><html lang='en'><head><title>$title</title></head><body><h1>APM Error</h1><p>$errorMessage</p></body></html>";
         $response->getBody()->write($html);
         return $response->withStatus($httpStatus);
+    }
+
+    protected function getErrorPage(ResponseInterface $response, string $title, string $errorMessage, int $httpStatus) : ResponseInterface
+    {
+        return $this->renderPage($response, self::TEMPLATE_ERROR_PAGE,
+            [
+                'errorMessage' => $errorMessage,
+                'title' => $title
+            ],
+            true, false)->withStatus($httpStatus);
+
+
     }
     
     protected function getCopyrightNotice() : string {

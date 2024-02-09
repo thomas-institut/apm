@@ -33,6 +33,7 @@ use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
+use APM\ToolBox\HttpStatus;
 use AverroesProject\Data\DataManager;
 use Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -47,8 +48,6 @@ class SiteDocuments extends SiteController
 {
 
     const DOCUMENT_DATA_CACHE_KEY = 'SiteDocuments-DocumentData';
-
-//    const TEMPLATE_DOCS_PAGE = 'documents.twig';
 
     const TEMPLATE_DOCS_PAGE = 'documents-page.twig';
     const TEMPLATE_SHOW_DOCS_PAGE = 'doc-details.twig';
@@ -147,14 +146,6 @@ class SiteDocuments extends SiteController
         $systemManager->getSystemDataCache()->set(self::DOCUMENT_DATA_CACHE_KEY, serialize($data));
         return true;
     }
-
-//    public static function invalidateCache(DataCache $cache) {
-//        try {
-//            $cache->delete(self::DOCUMENT_DATA_CACHE_KEY);
-//        } catch (KeyNotInCacheException $e) {
-//            // no problem!!
-//        }
-//    }
 
     /**
      * @param Request $request
@@ -274,7 +265,7 @@ class SiteDocuments extends SiteController
 
         $this->profiler->stop();
         $this->logProfilerData('showDocPage-' . $docId);
-        $userId = (int) $this->siteUserInfo['id'];
+        $userId = (int) $this->getSiteUserInfo()['id'];
 
         return $this->renderPage($response, self::TEMPLATE_SHOW_DOCS_PAGE, [
             'navByPage' => false,
@@ -293,16 +284,16 @@ class SiteDocuments extends SiteController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws UserNotFoundException
      */
     public function newDocPage(Request $request, Response $response): Response
     {
-     
-        if (!$this->dataManager->userManager->isUserAllowedTo($this->siteUserInfo['id'], 'create-new-documents')){
-            $this->logger->debug("User " . $this->siteUserInfo['id'] . ' tried to add new doc but is not allowed to do it');
-            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
-                'message' => 'You are not authorized to add new documents in the system'
-            ]);
+
+        if (!$this->systemManager->getUserManager()->isUserAllowedTo($this->userTid, 'create-new-documents')) {
+            $this->logger->debug("User $this->userTid tried to add new doc but is not allowed to do it");
+            return $this->getErrorPage($response, 'Error', 'You are not allowed to create documents', HttpStatus::UNAUTHORIZED);
         }
+
 
         $availableImageSources = $this->systemManager->getAvailableImageSources();
         $imageSourceOptions = '';
@@ -312,7 +303,7 @@ class SiteDocuments extends SiteController
         }
         
         
-        $languages = $this->languages;
+        $languages = $this->getLanguages();
         $langOptions = '';
         foreach($languages as $lang) {
             $langOptions .= '<option value="' . $lang['code'] . '"';
@@ -366,7 +357,7 @@ class SiteDocuments extends SiteController
         }
         
         
-        $languages = $this->languages;
+        $languages = $this->getLanguages();
         $langOptions = '';
         foreach($languages as $lang) {
             $langOptions .= '<option value="' . $lang['code'] . '"';

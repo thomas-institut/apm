@@ -178,7 +178,7 @@ export class PersonPageNew extends NormalPage {
     let userPrivateDataHtml = '';
 
     if (this.canManageUsers || this.userTid === this.personTid) {
-      if (this.canManageUsers || !this.userData.isReadOnly()) {
+      if (this.canManageUsers || !this.userData.isReadOnly) {
         userAdminHtml = `<button class="btn btn-primary edit-user-profile-btn">Edit User Profile</button>`;
       }
       let privateDataToDisplay =  [

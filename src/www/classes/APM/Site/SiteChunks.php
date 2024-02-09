@@ -51,7 +51,6 @@ class SiteChunks extends SiteController
 
     const WORK_DATA_CACHE_KEY = 'SiteChunks-WorkData';
     const TEMPLATE_WORKS_PAGE = 'works-page.twig';
-    const TEMPLATE_CHUNK_MAP = 'chunks-map.twig';
     /**
      * @param Request $request
      * @param Response $response
@@ -129,73 +128,6 @@ class SiteChunks extends SiteController
         }
     }
 
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-    public function fullTxMapPage(Request $request, Response $response, $args): Response
-    {
-
-        if (isset($args['timestamp'])) {
-            $timeStamp  = TimeString::compactDecode($args['timestamp']);
-        } else {
-            $timeStamp = TimeString::now();
-        }
-
-        $this->profiler->start();
-
-        // get the map
-        $theMap = $this->systemManager->getTranscriptionManager()->getFullChunkMap($timeStamp);
-
-        $chunkMap = $theMap['chunkLocationMap'];
-
-        $numWitnesses = 0;
-        $numValidWitnesses = 0;
-        $numSegments = 0;
-        $numValidSegments = 0;
-        $numWorks = 0;
-        $numChunks = 0;
-        foreach($chunkMap as $workId => $chunkArray) {
-            $numWorks++;
-            foreach($chunkArray as $chunkNumber => $docArray) {
-                $numChunks++;
-                foreach($docArray as $docId => $lwidArray) {
-                    foreach($lwidArray as $lwid => $segmentArray) {
-                        $numWitnesses++;
-                        $isValid = true;
-                        foreach ($segmentArray as $segmentNumber => $location) {
-                            /** @var ApmChunkSegmentLocation $location */
-                            $numSegments++;
-                            if ($location->isValid()) {
-                                $numValidSegments++;
-                            } else {
-                                $isValid = false;
-                            }
-                        }
-                        if ($isValid) {
-                            $numValidWitnesses++;
-                        }
-                    }
-                }
-            }
-        }
-
-        $this->profiler->lap('full map done');
-        $printOut = $this->prettyPrintFullTxMap($chunkMap);
-        $this->profiler->stop();
-        $this->logProfilerData('fullTxMap');
-
-        $statsHtml = "Time: $timeStamp<br/>";
-        $statsHtml .= "$numWorks works, $numChunks chunks<br/>";
-        $statsHtml .= "$numWitnesses chunk witnesses, $numValidWitnesses valid<br/>";
-        $statsHtml .= "$numSegments chunk segments, $numValidSegments valid<br/>";
-
-
-        return $this->renderPage($response, self::TEMPLATE_CHUNK_MAP, [ 'stats' => $statsHtml, 'theMap' => $printOut] );
-
-    }
 
     private function prettyPrintFullTxMap(array $fullTxMap) : string {
         $html = '';

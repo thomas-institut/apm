@@ -12,6 +12,7 @@ module.exports = {
     DocDefPages: './pages/DocDefPages.js',
     DocEditPage: './pages/DocEditPage.js',
     DocNewDocPage: './pages/DocNewDocPage.js',
+    ErrorPage: './pages/ErrorPage.js',
     PageViewer: './pages/PageViewer/PageViewer.js',
     CollationTableEditor: './pages/CollationTableEditor.js',
     EditionComposer: {
@@ -40,10 +41,10 @@ module.exports = {
       filename: '../../test/js/JasmineTests.bundle.js'
     },
     // FUNCTIONAL TESTS
-    TestMultiPanelUI2: {
-      import: '../test/js/functional/TestMultiPanelUI2.js',
-      filename: '../../test/js/functional/dist/TestMultiPanelUI2.bundle.js'
-    },
+    // TestMultiPanelUI2: {
+    //   import: '../test/js/functional/TestMultiPanelUI2.js',
+    //   filename: '../../test/js/functional/dist/TestMultiPanelUI2.bundle.js'
+    // },
 
   },
   externals: {

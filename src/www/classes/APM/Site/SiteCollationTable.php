@@ -34,6 +34,7 @@ use APM\System\Person\PersonNotFoundException;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
+use APM\ToolBox\HttpStatus;
 use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -58,7 +59,6 @@ class SiteCollationTable extends SiteController
     const TEMPLATE_COLLATION_TABLE = 'collation-table.twig';
     const TEMPLATE_EDIT_COLLATION_TABLE_OLD = 'collation-edit.twig';
     const TEMPLATE_EDITION_COMPOSER = 'edition-composer.twig';
-    const TEMPLATE_EDIT_COLLATION_TABLE_ERROR = 'collation.edit.error.twig';
 
     /**
      * Serves the collation table editor.
@@ -106,10 +106,7 @@ class SiteCollationTable extends SiteController
             $ctData = $ctManager->getCollationTableById($tableId, $timeStamp);
         } catch (InvalidArgumentException $e) {
             $this->logger->info("Table $tableId requested for editing not found");
-            return $this->renderPage($response,self::TEMPLATE_EDIT_COLLATION_TABLE_ERROR, [
-                'tableId' => $tableId,
-                'message' => 'Table not found'
-            ]);
+            return $this->getErrorPage($response, 'Collation Table Error', "Table $tableId not found", HttpStatus::NOT_FOUND);
         }
 
         $versionInfoArray = $ctManager->getCollationTableVersions($tableId);
@@ -151,13 +148,12 @@ class SiteCollationTable extends SiteController
         $this->codeDebug('Editor Type', [$request->getAttribute('type')]);
 
         if ($ctData['type'] === 'edition') {
-            $template = $request->getAttribute('type') !== 'old' ? self::TEMPLATE_EDITION_COMPOSER : self::TEMPLATE_EDIT_COLLATION_TABLE_OLD;
+            $template = self::TEMPLATE_EDITION_COMPOSER;
         } else {
             $template = self::TEMPLATE_EDIT_COLLATION_TABLE_OLD;
         }
 
         return $this->renderPage($response, $template, [
-            'userId' => $this->siteUserInfo['id'],
             'workId' => $workId,
             'chunkNumber' => $chunkNumber,
             'tableId' => $tableId,

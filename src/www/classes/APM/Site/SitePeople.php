@@ -53,7 +53,7 @@ class SitePeople extends SiteController
             $data = $pm->getPersonEssentialData($tid);
             $userData = [];
             if ($um->isUser($tid)) {
-                if ($canManageUsers) {
+                if ($canManageUsers || $this->userTid === $tid) {
                     $userData = $um->getUserData($tid)->getExportObject();
                     unset($userData['passwordHash']);
                 }

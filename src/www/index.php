@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright (C) 2019-2022 Universität zu Köln
+ *  Copyright (C) 2016-2024 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,13 +17,7 @@
  *  
  */
 
-
-/**
- * @brief Dispatcher for site and API
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
- */
 namespace APM;
-
 
 use APM\Api\ApiEditionSources;
 use APM\Api\ApiLog;
@@ -31,13 +25,13 @@ use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiPeople;
 use APM\Api\ApiTranscription;
 use APM\Api\ApiWorks;
-
 use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePeople;
 use APM\System\ConfigLoader;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Logger;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Slim\App;
 use Slim\Psr7\Factory\ResponseFactory;
@@ -52,7 +46,6 @@ use APM\System\ApmSystemManager;
 
 use APM\Site\SiteDashboard;
 use APM\Site\SiteHomePage;
-use APM\Site\SiteUserManager;
 use APM\Site\SiteChunks;
 use APM\Site\SitePageViewer;
 use APM\Site\SiteChunkPage;
@@ -83,24 +76,21 @@ SystemProfiler::start();
 // autoload
 require 'vendor/autoload.php';
 
+// Load configuration
 require 'config_setup.php';
 require 'version.php';
-
-// load configuration file
 if (!ConfigLoader::loadConfig()) {
     exitWithErrorMessage('Config file not found');
 }
-
 global $config;
 
+// Set up logger
 $logger = new Logger('APM');
 $phpLog = new ErrorLogHandler();
 $logger->pushHandler($phpLog);
 
 // Build System Manager
-
 $systemManager = new ApmSystemManager($config);
-
 if ($systemManager->fatalErrorOccurred()) {
     exitWithErrorMessage($systemManager->getErrorMessage());
 }
@@ -114,7 +104,6 @@ $container->set(ApmContainerKey::API_USER_TID, -1);
 // Setup Slim App
 $responseFactory = new ResponseFactory();
 $app = new App($responseFactory, $container);
-
 $subDir = $systemManager->getBaseUrlSubDir();
 if ($subDir !== '') {
     $app->setBasePath("/$subDir");
@@ -130,24 +119,7 @@ try {
     exitWithErrorMessage("Could not set up application, please report to administrators");
 }
 
-// -----------------------------------------------------------------------------
-//  SITE ROUTES
-// -----------------------------------------------------------------------------
- 
-// LOGIN and LOGOUT
-$app->any('/login',
-    function(Request $request, Response $response) use ($container){
-        $authenticator = new Authenticator($container);
-        return $authenticator->login($request, $response);
-    })
-    ->setName('login');
-
-$app->any('/logout',
-    function(Request $request, Response $response) use ($container){
-        $authenticator = new Authenticator($container);
-        return $authenticator->logout($request, $response);
-    })
-    ->setName('logout');
+loginLogoutRoutes($app, $container);
 
 
 // AUTHENTICATED SITE ACCESS
@@ -244,7 +216,7 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
 
     // MULTI-CHUNK EDITION
     $group->get('/edition/multi/new',
-        function(Request $request, Response $response, array $args) use ($container){
+        function(Request $request, Response $response) use ($container){
             $c = new SiteMultiChunkEdition($container);
             return $c->newMultiChunkEdition($response);
         }
@@ -256,8 +228,6 @@ $app->group('', function (RouteCollectorProxy $group) use ($container){
             return $c->getMultiChunkEdition($request, $response);
         }
     )->setName('mce.edit');
-
-
 
     // DOCS
 
@@ -519,9 +489,9 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
     } )->setName('api.user.collationTables');
 
     // API -> user : get multi-chunk editions by user
-    $group->get('/user/{userTid}/multiChunkEditions', function(Request $request, Response $response, array $args) use ($container){
+    $group->get('/user/{userTid}/multiChunkEditions', function(Request $request, Response $response) use ($container){
         $apiUsers = new ApiUsers($container);
-        return $apiUsers->getMultiChunkEditionsByUser($request, $response, $args);
+        return $apiUsers->getMultiChunkEditionsByUser($request, $response);
     } )->setName('api.user.multiChunkEditions');
 
 
@@ -564,7 +534,7 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
         return $apiC->getTable($request, $response);
     })->setName('api.collation.get');
 
-    $group->get('/collation/info/edition/active',  function(Response $response) use ($container){
+    $group->get('/collation/info/edition/active',  function(Request $request, Response $response) use ($container){
         $apiC = new ApiCollation($container);
         return $apiC->getActiveEditions($response);
     })->setName('api.collation.info.edition.active');
@@ -573,16 +543,16 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
     // EDITION SOURCES
 
     $group->get('/edition/sources/all',
-        function(Request $request, Response $response, array $args) use ($container){
+        function(Request $request, Response $response) use ($container){
             $apiC = new ApiEditionSources($container);
-            return $apiC->getAllSources($request, $response, $args);
+            return $apiC->getAllSources($request, $response);
         })->setName('api.edition_sources.get_all');
 
 
     $group->get('/edition/source/get/{tid}',
-        function(Request $request, Response $response, array $args) use ($container){
+        function(Request $request, Response $response) use ($container){
             $apiC = new ApiEditionSources($container);
-            return $apiC->getSourceByTid($request, $response, $args);
+            return $apiC->getSourceByTid($request, $response);
         })->setName('api.edition_sources.get');
 
     // MULTI CHUNK EDITION
@@ -708,14 +678,8 @@ $app->group('/api/data', function(RouteCollectorProxy $group){
 // -----------------------------------------------------------------------------
 //  RUN!
 // -----------------------------------------------------------------------------
-
-
 SystemProfiler::lap('Ready to run');
-
 $app->run();
-
-
-
 
 /**
  * Exits with an error message
@@ -726,4 +690,21 @@ $app->run();
     http_response_code(503);
     print "<pre>ERROR: $msg";
     exit();
+}
+
+
+function loginLogoutRoutes(App $app, ContainerInterface $container) : void {
+    $app->any('/login',
+        function(Request $request, Response $response) use ($container){
+            $authenticator = new Authenticator($container);
+            return $authenticator->login($request, $response);
+        })
+        ->setName('login');
+
+    $app->any('/logout',
+        function(Request $request, Response $response) use ($container){
+            $authenticator = new Authenticator($container);
+            return $authenticator->logout($request, $response);
+        })
+        ->setName('logout');
 }

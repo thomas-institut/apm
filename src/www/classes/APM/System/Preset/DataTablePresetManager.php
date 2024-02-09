@@ -18,7 +18,7 @@
  *  
  */
 
-namespace APM\Presets;
+namespace APM\System\Preset;
 
 use RuntimeException;
 use ThomasInstitut\DataTable\DataTable;

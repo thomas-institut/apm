@@ -28,8 +28,8 @@ use APM\Core\Item\Item;
 use APM\Core\Item\NoWbMark;
 use APM\Core\Transcription\ItemAddressInDocument;
 use AverroesProjectToApm\DatabaseItemStream;
-use ThomasInstitut\PersonInfoProvider\PersonInfoProvider;
-use ThomasInstitut\PersonInfoProvider\SimplePersonInfoProvider;
+use AverroesProjectToApm\PersonInfoProvider\PersonInfoProvider;
+use AverroesProjectToApm\PersonInfoProvider\SimplePersonInfoProvider;
 use ThomasInstitut\TimeString\TimeString;
 
 

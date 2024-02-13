@@ -2,15 +2,22 @@
 
 namespace APM\CommandLine;
 
+use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\EntitySystem\Tid;
+use ThomasInstitut\TimeString\InvalidTimeZoneException;
+use ThomasInstitut\TimeString\TimeString;
 
 class CreateBilderbergDoc extends CommandLineUtility
 {
 
+    /**
+     * @throws RowAlreadyExists
+     * @throws InvalidTimeZoneException
+     */
     public function main($argc, $argv): void
     {
-        if ($argc < 3) {
-            print "Need bilderberg Id and number of pages\n";
+        if ($argc < 4) {
+            print "Need bilderberg Id, number of pages and language code\n";
             return;
         }
 
@@ -27,6 +34,12 @@ class CreateBilderbergDoc extends CommandLineUtility
             return;
         }
 
+        $lang = $argv[3];
+        if (!in_array($lang, [ 'ar', 'he', 'la'])) {
+            print "Invalid language: $lang\n";
+            return;
+        }
+
 
         $title = substr($bilderbergId, 10);
 
@@ -35,43 +48,8 @@ class CreateBilderbergDoc extends CommandLineUtility
             $type = 'print';
         }
 
-
-
-        $lang = 'la';
-
-        if (str_contains($title, 'heb') || str_contains($title, 'ebr') ) {
-            $lang = 'he';
-        } elseif (str_contains($title, 'ara')) {
-            $lang = 'ar';
-        }
-
-
-
-        $creationDate = $argv[3] ?? '';
-        $creationTime = $argv[4] ?? '00:00:00.000000';
-        $creationTimeString = '';
-
-        if ($creationDate !== '') {
-            $creationTimeString = "$creationDate $creationTime";
-        }
-
-
-
-
-
+        $creationTimeString = TimeString::now();
         $tid = Tid::generateUnique();
-        if ($creationTimeString !== '') {
-            try {
-                $dt = \DateTime::createFromFormat("Y-m-d H:i:s.u", $creationTimeString);
-                $ts = intval($dt->format('Uv'))/1000;
-                if (floor($ts) == $ts) {
-                    $ts +=  rand(1,999) / 1000;
-                }
-                $tid = Tid::fromTimestamp($ts);
-            } catch (\Exception) {
-                $tid = Tid::generateUnique();
-            }
-        }
 
         print "Creating document with title '$title', $type, $lang, $numPages pages, tid " .
             Tid::toBase36String($tid) . " ( " . Tid::toTimeString($tid) . " )...";
@@ -97,9 +75,5 @@ class CreateBilderbergDoc extends CommandLineUtility
         } else {
             print "new document id = $docId\n";
         }
-
-//        print "\n";
-
-
     }
 }

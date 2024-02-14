@@ -492,8 +492,10 @@ export class MetadataEditor {
         for (let person of people) {
             id = person.id
             let name = person.values[0]
-            let nameForValueAttribute = name.replaceAll(' ', '_')
-            $(listSelector).append(`<option value=${nameForValueAttribute} id=${id}>${name}</option>`)
+            if (name !== undefined) {
+                let nameForValueAttribute = name.replaceAll(' ', '_')
+                $(listSelector).append(`<option value=${nameForValueAttribute} id=${id}>${name}</option>`)
+            }
         }
     }
 

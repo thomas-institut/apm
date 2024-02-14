@@ -5,10 +5,10 @@ export function setupPeoplePage (baseUrl) {
 
     urlGen.setBase(baseUrl)
 
+    makeCreateButton()
     makeSpinner()
     makeTable(() => {
         removeSpinner()
-        makeCreateButton()
     })
 }
 

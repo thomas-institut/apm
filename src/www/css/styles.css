@@ -293,7 +293,7 @@ input.tag-input:focus {
     border-style: solid;
     outline: none !important;
     border-color: black;
-    width: 10em
+    width: 9em
 }
 
 input.tag-input:focus::placeholder {

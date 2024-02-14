@@ -21,7 +21,6 @@
 namespace APM\Api;
 
 use APM\CollationEngine\CollationEngine;
-use APM\System\User\UserNotFoundException;
 use APM\SystemProfiler;
 use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
@@ -86,19 +85,12 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     const API_ERROR_WRONG_TYPE = 1300;
 
     protected SystemManager $systemManager;
-    /**
-     * Use $apiUserTid
-     * @var int
-     * @deprecated
-     */
-    protected int $apiUserId;
     protected SimpleProfiler $profiler;
     protected array $languages;
     protected RouteParserInterface $router;
 
     private ContainerInterface $container;
     private bool $debugMode;
-    protected DataManager $dataManager;
     protected string $apiCallName;
     protected int $apiUserTid;
 
@@ -108,7 +100,6 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
      * @param ContainerInterface $ci
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
-     * @throws UserNotFoundException
      */
     public function __construct(ContainerInterface $ci)
     {
@@ -117,11 +108,8 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 
        $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
        $this->apiUserTid = $ci->get(ApmContainerKey::API_USER_TID); // this should be set by the authenticator!
-        // this will be removed eventually
-       $this->apiUserId = $this->systemManager->getUserManager()->getUserData($this->apiUserTid)->id;
        $this->languages = $this->systemManager->getConfig()[ApmConfigParameter::LANGUAGES];
        $this->logger = $this->systemManager->getLogger()->withName('API');
-       $this->dataManager = $this->systemManager->getDataManager();
        $this->router = $this->systemManager->getRouter();
        $this->apiCallName = self::CLASS_NAME . ":generic";
        $this->profiler = new SimpleProfiler();
@@ -134,7 +122,11 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
         $this->apiCallName  = $name;
     }
 
-    public function setApiUserId(int $userTid=0): void
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function setApiUserTid(int $userTid=0): void
     {
         if ($userTid === 0) {
             $this->apiUserTid = $this->container->get(ApmContainerKey::API_USER_TID);
@@ -148,7 +140,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
      * @return DataManager
      */
     protected function getDataManager() : DataManager {
-        return $this->dataManager;
+        return $this->systemManager->getDataManager();
     }
 
     /**

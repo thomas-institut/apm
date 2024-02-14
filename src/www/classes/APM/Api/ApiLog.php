@@ -3,6 +3,7 @@
 
 namespace APM\Api;
 
+use Monolog\Level;
 use Monolog\Logger;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -46,26 +47,27 @@ class ApiLog extends ApiController
             return $inputDataObject;
         }
 
-        $logLevel = Logger::INFO;
+        $logLevel = Level::Info;
         switch($inputDataObject['severity']) {
             case self::SEVERITY_DEBUG:
-                $logLevel = Logger::DEBUG;
+                $logLevel = Level::Debug;
                 break;
 
             case self::SEVERITY_ERROR:
-                $logLevel = Logger::ERROR;
+                $logLevel = Level::Error;
                 break;
 
             case self::SEVERITY_INFO:
-                $logLevel = Logger::INFO;
+                // = the default value
+                //$logLevel = Level::Info;
                 break;
 
             case self::SEVERITY_WARNING:
-                $logLevel = Logger::WARNING;
+                $logLevel = Level::Warning;
                 break;
         }
 
-        $inputDataObject['data']['apiUserId'] = $this->apiUserId;
+        $inputDataObject['data']['apiUserTid'] = $this->apiUserTid;
         $logMessage = sprintf("%s:%s : %s", $inputDataObject['module'], $inputDataObject['subModule'], $inputDataObject['description']);
         $this->frontEndLogger->log($logLevel, $logMessage, $inputDataObject['data']);
         return $this->responseWithText($response, 'OK');

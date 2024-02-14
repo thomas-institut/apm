@@ -294,33 +294,10 @@ class SiteDocuments extends SiteController
             return $this->getErrorPage($response, 'Error', 'You are not allowed to create documents', HttpStatus::UNAUTHORIZED);
         }
 
-
-        $availableImageSources = $this->systemManager->getAvailableImageSources();
-        $imageSourceOptions = '';
-        foreach($availableImageSources as $imageSource) {
-            $imageSourceOptions .= '<option value="' . $imageSource . '"';
-            $imageSourceOptions .= '>' . $imageSource . '</option>';
-        }
-        
-        
-        $languages = $this->getLanguages();
-        $langOptions = '';
-        foreach($languages as $lang) {
-            $langOptions .= '<option value="' . $lang['code'] . '"';
-            $langOptions .= '>' . $lang['name'] . '</option>';
-        }
-        
-        $docTypes = [ ['mss', 'Manuscript'], ['print', 'Print']];
-        $docTypesOptions = '';
-        foreach($docTypes as $type) {
-            $docTypesOptions .= '<option value="' . $type[0] . '"';
-            $docTypesOptions .= '>' . $type[1] . '</option>';
-        }
-        
         return $this->renderPage($response, self::TEMPLATE_NEW_DOC_PAGE, [
-            'imageSourceOptions' => $imageSourceOptions,
-            'langOptions' => $langOptions,
-            'docTypesOptions' => $docTypesOptions
+            'imageSources' =>  $this->systemManager->getAvailableImageSources(),
+            'languages' => $this->getLanguages(),
+            'docTypes' =>  [ ['mss', 'Manuscript'], ['print', 'Print']]
         ]);
     }
 
@@ -332,68 +309,25 @@ class SiteDocuments extends SiteController
     public function editDocPage(Request $request, Response $response): Response
     {
         $this->profiler->start();
-//        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'edit-documents')){
-//            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to edit a document but is not allowed to do it');
-//            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
-//                'message' => 'You are not authorized to edit document settings'
-//            ]);
-//        }
-        
+
         $docId = $request->getAttribute('id');
         $dataManager = $this->dataManager;
         $docInfo = $dataManager->getDocById($docId);
-        
+        if ($docInfo === false) {
+            return $this->getBasicErrorPage($response, 'Not found', "Document not found", HttpStatus::NOT_FOUND);
+        }
         $availableImageSources = $this->systemManager->getAvailableImageSources();
-        
-        $imageSourceOptions = '';
-        $docImageSourceIsImplemented = false;
-        foreach($availableImageSources as $imageSource) {
-            $imageSourceOptions .= '<option value="' . $imageSource . '"';
-            if ($docInfo['image_source'] === $imageSource) {
-                $imageSourceOptions .= ' selected';
-                $docImageSourceIsImplemented = true;
-            }
-            $imageSourceOptions .= '>' . $imageSource . '</option>';
-        }
-        
-        
-        $languages = $this->getLanguages();
-        $langOptions = '';
-        foreach($languages as $lang) {
-            $langOptions .= '<option value="' . $lang['code'] . '"';
-            if ($docInfo['lang'] === $lang['code']) {
-                $langOptions  .= ' selected';
-            }
-            $langOptions .= '>' . $lang['name'] . '</option>';
-        }
-        
         $docTypes = [ ['mss', 'Manuscript'], ['print', 'Print']];
-        $docTypesOptions = '';
-        foreach($docTypes as $type) {
-            $docTypesOptions .= '<option value="' . $type[0] . '"';
-            if ($docInfo['doc_type'] === $type[0]) {
-                $docTypesOptions  .= ' selected';
-            }
-            $docTypesOptions .= '>' . $type[1] . '</option>';
-        }
-        
-        $canBeDeleted = false;
-        $nPages = $dataManager->getPageCountByDocIdAllTime($docId);
-        $this->logger->debug("nPages all time: " . $nPages);
-        if ($nPages === 0) {
-            $canBeDeleted = true;
-        }
+        $canBeDeleted = $dataManager->getPageCountByDocIdAllTime($docId) === 0;
         $this->profiler->stop();
         $this->logProfilerData('editDocPage-' . $docId);
         return $this->renderPage($response, self::TEMPLATE_DOC_EDIT_PAGE, [
             'docInfo' => $docInfo,
-            'imageSourceOptions' => $imageSourceOptions,
-            'langOptions' => $langOptions,
-            'docTypesOptions' => $docTypesOptions,
+            'imageSources' => $availableImageSources,
+            'languages' => $this->getLanguages(),
+            'docTypes' => $docTypes,
             'canBeDeleted' => $canBeDeleted
         ]);
-        
-        
     }
 
 
@@ -432,9 +366,7 @@ class SiteDocuments extends SiteController
         $this->profiler->stop();
         $this->logProfilerData('defineDocPages-' . $docId);
         return $this->renderPage($response, self::TEMPLATE_DEFINE_DOC_PAGES, [
-            'doc' => $doc,
-            'userInfo' => $this->siteUserInfo,
-            'userId' => (int) $this->siteUserInfo['id']
+            'doc' => $doc
         ]);
     }
 }

@@ -42,7 +42,7 @@ class ApiTypesetPdf extends ApiController
      *
      * @param Request $request
      * @param Response $response
-     * @return array|Response
+     * @return Response
      */
     public function typesetRawData(Request  $request, Response $response) : Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
@@ -128,7 +128,7 @@ class ApiTypesetPdf extends ApiController
             // Cannot reproduce this condition in testing
             // @codeCoverageIgnoreStart
             $this->logger->error("Cannot create file $tempFileName",
-                [ 'apiUserId' => $this->apiUserId,
+                [ 'apiUserTid' => $this->apiUserTid,
                     'apiError' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE,
                     'data' => $data ]);
             return false;

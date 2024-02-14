@@ -30,7 +30,7 @@ class ApiCollationTableConversion extends  ApiController
     const CLASS_NAME = 'CollationTableConversion';
     const ERROR_CANNOT_CONVERT = 6001;
 
-    public function __invoke(Request $request, Response $response): Response
+    public function convertTable(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':convert');
 //        $this->profiler->start();

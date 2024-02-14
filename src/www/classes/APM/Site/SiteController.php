@@ -361,7 +361,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     protected function reportCookieSize() : void {
         $cookieString = $_SERVER['HTTP_COOKIE'] ?? 'N/A';
         if (strlen($cookieString) > self::COOKIE_SIZE_THRESHOLD) {
-            $this->codeDebug("Got a cookie string of " . strlen($cookieString) . " bytes for user " . $this->siteUserInfo['id']);
+            $this->codeDebug("Got a cookie string of " . strlen($cookieString) . " bytes for user " . $this->getSiteUserInfo()['tid']);
         }
     }
 

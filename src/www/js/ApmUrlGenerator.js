@@ -299,9 +299,19 @@ class ApmUrlGenerator {
         return `${this.base}/api/work/${workId}/info`;
     }
 
-    apiNewDoc() {
+    apiDocumentNew() {
         return `${this.base}/api/doc/new`
     }
+
+    apiDocumentUpdate(id) {
+        return `${this.base}/api/doc/${id}/update`
+    }
+
+    apiDocumentDelete(id) {
+        return `${this.base}/api/doc/${id}/delete`
+    }
+
+
 
 
     siteChunkEdition(tableId) {

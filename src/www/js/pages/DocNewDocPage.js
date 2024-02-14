@@ -18,19 +18,58 @@
 
 
 
-export class DocNewDocPage {
-  
-  
-  constructor(prefix, baseUrl) {
-    
-    // this.docInfoFields = ['title', 'short_title', 'doc_type', 'lang', 'image_source', 'image_source_data']
-    this.docInfoFields = ['title', 'doc_type', 'lang', 'image_source', 'image_source_data']
-    this.urlGen = new ApmUrlGenerator(baseUrl)
+import { NormalPage } from './NormalPage'
+import { urlGen } from './common/SiteUrlGen'
+import { OptionsChecker } from '@thomas-inst/optionschecker'
+import { tr } from './common/SiteLang'
 
-    this.newDocApiUrl = this.urlGen.apiNewDoc()
+export class DocNewDocPage extends  NormalPage{
+  
+  
+  constructor(options) {
+
+    super(options);
+
+    let oc = new OptionsChecker({
+      context: 'DocNewPage',
+      optionsDefinition: {
+        prefix: { type: 'string', default: 'DocNew'},
+        languages: { type: 'array'},
+        imageSources: { type: 'array'},
+         docTypes: {type: 'array'}
+      }
+    });
+
+    this.options = oc.getCleanOptions(options);
+
+    console.log(`Options`)
+    console.log(this.options);
+    this.prefix = this.options.prefix;
+    this.docInfoFields = ['title', 'doc_type', 'lang', 'image_source', 'image_source_data'];
+    this.newDocApiUrl = urlGen.apiDocumentNew();
+    this.docInfo = {
+      title: 'New doc title',
+      // short_title: 'New doc short title',
+      doc_type: 'mss',
+      lang: 'la',
+      image_source: 'bilderberg',
+      image_source_data: 'IMAGE SOURCE DATA'
+    }
+
+
+    this.initPage().then( () => {
+      console.log(`NewPage Initialized`)
+    })
+
+
+  }
+
+  async initPage() {
+    await super.initPage();
+    document.title = tr('New Document');
+    let prefix = this.prefix;
 
     this.titleField = $('#' + prefix + '-title')
-    this.shortTitleField = $('#' + prefix + '-shorttitle')
     this.typeSelect = $('#' + prefix + '-type')
     this.langSelect = $('#' + prefix + '-lang')
     this.imageSourceSelect = $('#' + prefix + '-imagesource')
@@ -39,78 +78,123 @@ export class DocNewDocPage {
     this.cancelButton = $('#' + prefix + '-cancel')
     this.statusDiv = $('#' + prefix + '-status')
     this.titleStatusDiv = $('#' + prefix + '-titlestatus')
-    
-    this.docInfo = {
-      title: 'New doc title',
-      // short_title: 'New doc short title',
-      doc_type: 'mss',
-      lang: 'la',
-      image_source: 'local',
-      image_source_data: 'IMAGE SOURCE DATA'
-    }
-    
+
+
     this.putDocInfoIntoForm(this.docInfo)
-    
+
     this.titleField.on('keyup', this.genCheckFormFunction())
-    // this.shortTitleField.on('keyup', this.genCheckFormFunction())
     this.typeSelect.on('change', this.genCheckFormFunction())
     this.langSelect.on('change', this.genCheckFormFunction())
     this.imageSourceSelect.on('change', this.genCheckFormFunction())
     this.imageSourceDataField.on('keyup', this.genCheckFormFunction())
-    
-    
+
+
     this.submitButton.on('click', this.genSubmitFunction())
-    let thisObject = this
-    this.cancelButton.on('click', function (){ location.replace(thisObject.urlGen.siteDocs())})
-    
+    this.cancelButton.on('click',
+      () => { location.replace(urlGen.siteDocs())
+      })
+
     this.submitButton.hide()
     this.submitButton.removeClass('hidden')
-
   }
+
+  async genContentHtml() {
+    let breadcrumbHtml = this.getBreadcrumbNavHtml([
+      { label: 'Documents', url:  urlGen.siteDocs()},
+      { label: 'New Document', active: true}
+    ]);
+    let docTypesOptions = this.options.docTypes.map( (docType) => {
+      let [type, name] = docType;
+      return `<option value="${type}" ${this.docInfo['doc_type'] === type ? 'selected' : ''}>${tr(name)}</option>`
+    }).join('');
+    let languagesOptions = this.options.languages.map( (langDef) => {
+      return `<option value="${langDef['code']}" ${this.docInfo['lang'] === langDef['code'] ? 'selected' : ''}>${tr(langDef['name'])}</option>`
+    }).join('');
+    let imageSourcesOptions = this.options.imageSources.map((imageSource) => {
+      return `<option value="${imageSource}" ${this.docInfo['image_source'] === imageSource ? 'selected' : ''}>${imageSource}</option>`
+    }).join('');
+
+    return `
+${breadcrumbHtml}
+<h1>New Document</h1>
   
+<div class="row">
+    <div class="col-md-8">    
+<div class="withmarginleft-small">
+    <form id="${this.prefix}-form">
+        <div id="${this.prefix}-title-fg" class="form-group">
+            <label for="${this.prefix}-title" id="${this.prefix}-title-label" class="control-label">Title:</label>
+            <input type="text" class="form-control" id="${this.prefix}-title" value=""/>
+        </div>
+        <div id="${this.prefix}-titlestatus"></div>
+        <div id="${this.prefix}-type-fg" class="form-group">
+            <label for="${this.prefix}-type" id="${this.prefix}-type-label" class="control-label">Type:</label>
+            <select id="${this.prefix}-type">${docTypesOptions}</select>
+        </div>
+        <div id="${this.prefix}-lang-fg" class="form-group">
+            <label for="${this.prefix}-lang" id="${this.prefix}-lang-label" class="control-label">Language:</label>
+            <select id="${this.prefix}-lang">${languagesOptions}</select>
+        </div>
+        <div id="${this.prefix}-imagesource-fg" class="form-group">
+            <label for="${this.prefix}-imagesource" id="${this.prefix}-imagesource-label" class="control-label">Image Source:</label>
+            <select id="${this.prefix}-imagesource">${imageSourcesOptions}</select>
+        </div>
+        <div id="${this.prefix}-imagesourcedata-fg" class="form-group">
+            <label for="${this.prefix}-imagesourcedata" id="${this.prefix}-imagesourcedata-label" class="control-label">Image Source Data:</label>
+            <input type="text" class="form-control" id="${this.prefix}-imagesourcedata" value=""/>
+        </div>
+    </form>
+    
+    <button type="button" class="btn btn-primary" id="${this.prefix}-cancel">Cancel</button>
+    <button type="button" class="btn btn-danger hidden" id="${this.prefix}-submit">Create Document</button>
+    <div id="${this.prefix}-status"></div>
+</div>
+    </div>
+</div>`;
+  }
+
+
   genSubmitFunction() {
-    let thisObject = this
-    return function() {
-      let newInfo = thisObject.getDocInfoFromForm()
-      if (thisObject.docInfosAreDifferent(thisObject.docInfo, newInfo)) {
+    return () => {
+      let newInfo = this.getDocInfoFromForm()
+      if (this.docInfosAreDifferent(this.docInfo, newInfo)) {
         $.post(
-          thisObject.newDocApiUrl, 
+          this.newDocApiUrl,
           { data: JSON.stringify(newInfo) }
         )
-        .done(function (resp) {
+        .done( (resp) => {
           let newDocId = resp.newDocId
-          thisObject.statusDiv.html("Creating... done")
-          thisObject.updating = false
-          location.replace(thisObject.urlGen.siteDocPage(newDocId))
+          this.statusDiv.html("Creating... done")
+          this.updating = false
+          location.replace(urlGen.siteDocPage(newDocId))
         })
-        .fail(function(resp) {
-          thisObject.statusDiv.html("Creating... fail with error code " + resp.status + ' :(')
-          thisObject.updating = false
+        .fail((resp) => {
+          this.statusDiv.html("Creating... fail with error code " + resp.status + ' :(')
+          this.updating = false
         })
         return true
       }
-      thisObject.statusDiv.html('<div class="alert alert-info>No changes, nothing to do</div>')
+      this.statusDiv.html('<div class="alert alert-info>No changes, nothing to do</div>')
     }
   }
   
   
   genCheckFormFunction( ){
-    let thisObject = this
-    return function() {
-      let newInfo = thisObject.getDocInfoFromForm()
+    return () => {
+      let newInfo = this.getDocInfoFromForm()
       if (!newInfo['title'].replace(/\s/g, '').length) {
-        thisObject.titleStatusDiv.html('<p class="text-danger"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Title can\'t be empty</p>')
-        thisObject.submitButton.hide()
+        this.titleStatusDiv.html('<p class="text-danger"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Title can\'t be empty</p>')
+        this.submitButton.hide()
         return true
       } else {
-        thisObject.titleStatusDiv.html('')
+        this.titleStatusDiv.html('')
       }
       
-      if (thisObject.docInfosAreDifferent(thisObject.docInfo, newInfo)) {
-        thisObject.submitButton.show()
+      if (this.docInfosAreDifferent(this.docInfo, newInfo)) {
+        this.submitButton.show()
         return true
       }
-      thisObject.submitButton.hide()
+      this.submitButton.hide()
     }
   }
   
@@ -131,7 +215,6 @@ export class DocNewDocPage {
      let docInfo = {}
      
      docInfo['title'] = this.titleField.val().trim()
-     // docInfo['short_title'] = this.shortTitleField.val().trim()
      docInfo['doc_type'] = this.typeSelect.val()
      docInfo['lang'] = this.langSelect.val()
      docInfo['image_source'] = this.imageSourceSelect.val()
@@ -143,7 +226,6 @@ export class DocNewDocPage {
   putDocInfoIntoForm(docInfo)
   {
     this.titleField.val(docInfo['title'])
-    // this.shortTitleField.val(docInfo['short_title'])
     this.typeSelect.val(docInfo['doc_type'])
     this.langSelect.val(docInfo['lang'])
     this.imageSourceSelect.val(docInfo['image_source'])

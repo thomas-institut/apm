@@ -86,7 +86,7 @@ class ApiDocuments extends ApiController
     public function getPageTypes(Request $request, Response $response): Response
     {
         $this->profiler->start();
-        $pageTypes  = $this->dataManager->getPageTypeNames();
+        $pageTypes  = $this->getDataManager()->getPageTypeNames();
         return $this->responseWithJson($response, $pageTypes);
     }
 

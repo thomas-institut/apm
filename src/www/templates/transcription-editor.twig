@@ -57,7 +57,8 @@
             langDef: ApmUtil.getLangDefFromLanguagesArray(JSON.parse("{{languagesArray|json_encode|e('js')}}")),
             pageTypeNames : JSON.parse('{{pageTypeNames|json_encode|e('js')}}'),
             pagePopoverContent : '{{macros.pageviewtablepv(doc, thePages, navByPage)|escape('js')}}',
-            osdConfig: { {{openSeaDragonConfig|raw}} }
+            {#osdConfig: { {{openSeaDragonConfig|raw}} },#}
+            deepZoom: '{{ deepZoom }}' === '1'
         })
     })
     </script>

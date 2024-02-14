@@ -237,7 +237,7 @@ export class MetadataEditor {
                         $(`${this.options.containerSelector} .row2`).append(`<td><div class=${cellId}></div></td>
                                                 <td class=${cellButtonsAndIconsId} style="width: 3em; text-align: center">
                                                     <button class=${editAttributeButton} style="border: transparent; background-color: transparent">
-                                                        <i class="fas fa-pencil-alt" style="color: black"></i></button>
+                                                        <i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
                                                 </td>`)
                         this.makeEditIconEvent(editAttributeButton)
                     } else {
@@ -262,7 +262,7 @@ export class MetadataEditor {
                         $(row).append(`<th style="vertical-align: top">${keyName}</th>
                                     <td><div class=${cellId}></div></td>
                                     <td class=${cellButtonsAndIconsId} style="width: 4.75em; text-align: right">
-                                        <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: black"></i></button>
+                                        <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
                                     </td>`)
                         this.makeEditIconEvent(editAttributeButton)
                     }
@@ -858,8 +858,8 @@ export class MetadataEditor {
         for (let i=1; i<=this.numKeys; i++) {
             let selector = this.options.containerSelector + " .entity_attr" + i + "_tableCellButton"
             if (i !== parseInt(keyIndex)) {
-                $(selector+" .fa").css("color", "lightgray"); // make info-icons gray
-                $(selector+" .fas").css("color", "lightgray"); // make pencils gray
+                $(selector+" .fa").css("color", "lightgray"); // make info-icons light-gray
+                $(selector+" .fas").css("color", "lightgray"); // make pencils light-gray
             }
         }
     }

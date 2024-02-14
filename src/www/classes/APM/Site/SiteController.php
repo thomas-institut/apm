@@ -27,8 +27,8 @@
 namespace APM\Site;
 
 use APM\FullTranscription\PageInfo;
+use APM\System\ApmImageType;
 use APM\SystemProfiler;
-use APM\Plugin\HookManager;
 use APM\System\ApmContainerKey;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
@@ -88,11 +88,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     protected $userInfo;
 
     /**
-     * @var HookManager
-     */
-    protected HookManager $hookManager;
-
-    /**
      * @var RouteParser
      */
     protected $router;
@@ -124,7 +119,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         $this->view = $this->systemManager->getTwig();
         $this->config = $this->systemManager->getConfig();
         $this->dataManager = $this->systemManager->getDataManager();
-        $this->hookManager = $this->systemManager->getHookManager();
         $this->logger = $this->systemManager->getLogger();
         $this->router = $this->systemManager->getRouter();
         $this->userAuthenticated = false;
@@ -284,18 +278,11 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             $thePage = get_object_vars($pageInfo);
 //            $thePage['classes'] = '';
             $thePage['imageSource'] = $docInfo['image_source'];
-            $thePage['isDeepZoom'] = $docInfo['image_source'] === 'dare-deepzoom';
+            $thePage['isDeepZoom'] = $docInfo['deep_zoom'];
             $thePage['isTranscribed'] = in_array($pageInfo->pageNumber, $transcribedPages);
-            $thePage['imageUrl'] =  $this->hookManager->callHookedMethods('get-image-url-' . $docInfo['image_source'],
-                [
-                    'imageNumber' => $pageInfo->imageNumber,
-                    'imageSourceData' => $docInfo['image_source_data']
-                ]);
-            $thePage['thumbnailUrl'] =  $this->hookManager->callHookedMethods('get-thumbnail-url-' . $docInfo['image_source'],
-                [
-                    'imageNumber' => $pageInfo->imageNumber,
-                    'imageSourceData' => $docInfo['image_source_data']
-                ]);
+            $thePage['imageUrl'] = $this->dataManager->getImageUrl($docInfo['id'], $pageInfo->imageNumber);
+            $thePage['jpgUrl'] = $this->dataManager->getImageUrl($docInfo['id'], $pageInfo->imageNumber, ApmImageType::IMAGE_TYPE_JPG);
+            $thePage['thumbnailUrl'] = $this->dataManager->getImageUrl($docInfo['id'], $pageInfo->imageNumber, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL);
             $thePages[$pageInfo->pageId] = $thePage;
         }
         return $thePages;

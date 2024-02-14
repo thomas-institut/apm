@@ -1,3 +1,4 @@
+#!/usr/bin/php -q
 <?php
 
 /* 
@@ -18,27 +19,21 @@
  *  
  */
 
-class BasicPlugin2 extends APM\Plugin\Plugin 
-{
-   
-    public function init() {
+namespace APM;
 
-    }
-    
-    public function activate()
-    {
-        
-    }
-    
-    public function deactivate() {
-        
-    }
-    
-    public function getMetadata() {
-        return [ 
-            'name' => 'Basic', 
-            'author' => 'Rafael Najera', 
-            'version' => '1.0'
-        ];
-    }
+
+use APM\System\ConfigLoader;
+
+require __DIR__ . '/../vendor/autoload.php';
+
+if (!ConfigLoader::loadConfig([__DIR__ . '/../config.php'])) {
+    print "ERROR: cannot load system configuration file\n";
+    exit();
 }
+
+include_once __DIR__ . '/../setup.php';
+include_once __DIR__ . '/../version.php';
+
+global $config;
+
+(new CommandLine\CreateBilderbergDoc($config, $argc, $argv))->run();

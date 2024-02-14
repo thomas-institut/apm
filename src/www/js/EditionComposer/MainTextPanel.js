@@ -73,6 +73,8 @@ const icons = {
 
 const numberingLabelFmtTextClass = 'numberingLabel'
 
+const FAKE_END_COMMAND = 12345678;
+
 export class MainTextPanel extends PanelWithToolbar {
 
   constructor (options = {}) {
@@ -672,6 +674,8 @@ export class MainTextPanel extends PanelWithToolbar {
         resolve(null)
         return
       }
+      console.log(`Edit script`);
+      console.log(editScript);
       let changeList =this.__getChangeList(workingCurrentWitnessTokens, newWitnessTokens, editScript)
       resolve(changeList)
     })
@@ -766,6 +770,10 @@ export class MainTextPanel extends PanelWithToolbar {
     let tokenMatchScorer = new TokenMatchScorer()
 
 
+    // add a fake END command
+    editScript.push( { command: FAKE_END_COMMAND});
+
+
     editScript.forEach( (editScriptItem, i) => {
 
       switch (state) {
@@ -798,15 +806,25 @@ export class MainTextPanel extends PanelWithToolbar {
               debugStateMachine && console.log(`-- State -> 1`)
               state = 1
               break
+
+            case FAKE_END_COMMAND:
+              debugStateMachine && console.log(`INPUT editScriptItem ${i}: END command in state 0`);
+              break;
           }
           break
 
-        case 1:
+        case 1: // waiting for ADDs and DELs to handle replacements
           switch (editScriptItem.command) {
             case AsyncMyersDiff.KEEP:
+            case FAKE_END_COMMAND:
               debugStateMachine && console.log(`INPUT editScriptItem ${i}:  command ${editScriptItem.command}, index ${editScriptItem.index}, seq ${editScriptItem.seq}`)
-              debugStateMachine && console.log(`KEEP command in edit script (state = 1)`)
+              if (editScriptItem.command === AsyncMyersDiff.KEEP) {
+                debugStateMachine && console.log(`KEEP command in edit script (state = 1)`)
+              } else {
+                debugStateMachine && console.log(`END command in state 1`)
+              }
               debugStateMachine && console.log(`-- processing deleteStack (${deleteStack.length} items) and addStack (${addStack.length} items)`)
+              // try to match deleted token with added tokens
               deleteStack.forEach( (deleteIndex, i) => {
                 debugStateMachine && console.log(`---- deleteIndex ${i}: ${deleteIndex}`)
                 let bestMatch = -1
@@ -868,9 +886,11 @@ export class MainTextPanel extends PanelWithToolbar {
                   newToken: newTokens[addIndex]
                 })
               })
+              addStack = [];
               // now take care of the keep: just update the lastKeptOrReplaced index
-              lastKeptOrReplaced = editScriptItem.index
-
+              if (editScriptItem.command === AsyncMyersDiff.KEEP) {
+                lastKeptOrReplaced = editScriptItem.index
+              }
               debugStateMachine && console.log(`-- State -> 0`)
               state = 0
               break
@@ -888,36 +908,40 @@ export class MainTextPanel extends PanelWithToolbar {
               debugStateMachine && console.log(`ADD command in edit script (state = 1)`)
               addStack.push(editScriptItem.seq)
               debugStateMachine && console.log(`-- adding seq to the addStack, which now has ${addStack.length} item(s)`)
-              // let firstDeletedIndex = deleteStack.shift()
-              // changeList.push({
-              //   change: 'replace',
-              //   index: oldTokens[firstDeletedIndex].originalIndex,
-              //   currentToken: oldTokens[firstDeletedIndex],
-              //   index2: editScriptItem.seq,
-              //   newToken: newTokens[editScriptItem.seq]
-              // })
-              // lastKeptOrReplaced = firstDeletedIndex
-              // if (deleteStack.length === 0) {
-              //   debugStateMachine && console.log(`-- deleteStack is now empty`)
-              //   state = 0
-              // } else {
-              //   debugStateMachine && console.log(`-- deleteStack still has ${deleteStack.length} item(s)`)
-              // }
               break
           }
       }
     })
-    // empty the deleteStack
-    if (deleteStack.length > 0) {
-      debugStateMachine && console.log(`End of script with non-empty deleteStack, flushing ${deleteStack.length} item(s)`)
-      while (deleteStack.length > 0) {
-        let deleteIndex = deleteStack.pop()
-        changeList.push({
-          change: 'delete',
-          index: oldTokens[deleteIndex].originalIndex,
-          currentToken: oldTokens[deleteIndex]})
-      }
+    // State should ALWAYS be zero here, and add/delete stacks should be empty
+    if (state !== 0 || addStack.length !== 0 || deleteStack.length !== 0) {
+      console.error(`Error in get change list logic: state = ${state}, addStack: ${addStack.length}, deleteStack: ${deleteStack.length}`)
     }
+
+    // empty the deleteStack
+    // if (deleteStack.length > 0) {
+    //   debugStateMachine && console.log(`End of script with non-empty deleteStack, flushing ${deleteStack.length} item(s)`)
+    //   while (deleteStack.length > 0) {
+    //     let deleteIndex = deleteStack.pop()
+    //     changeList.push({
+    //       change: 'delete',
+    //       index: oldTokens[deleteIndex].originalIndex,
+    //       currentToken: oldTokens[deleteIndex]})
+    //   }
+    // }
+    //
+    // if (addStack.length > 0) {
+    //   debugStateMachine && console.log(`End of script with non-empty addStack, flush ${addStack.length} item(s)`);
+    //   addStack.forEach( (addIndex, j) => {
+    //     debugStateMachine && console.log(`------ pushing ADD ${j} to change list, addIndex ${addIndex}`)
+    //     changeList.push({
+    //       change: 'add',
+    //       index: lastKeptOrReplaced,
+    //       currentToken: lastKeptOrReplaced >=0 ? oldTokens[lastKeptOrReplaced] : null,
+    //       index2: addIndex,
+    //       newToken: newTokens[addIndex]
+    //     })
+    //   })
+    // }
 
     // now fix the indexes to make them correspond to the original token array
     changeList = changeList.map ( (change) => {

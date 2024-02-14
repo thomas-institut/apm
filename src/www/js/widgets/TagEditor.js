@@ -16,7 +16,7 @@ export class TagEditor {
       getTagHints: { type: 'function', default: async () => {
           return []
         }
-        },
+      },
       saveTags: { type: 'function', default: async (tags) => {
           console.log(`Tags [${tags.join(', ')}] would be saved now`)
         } },
@@ -25,9 +25,6 @@ export class TagEditor {
 
     const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: "TagEditor"});
     this.options = oc.getCleanOptions(options);
-
-    console.log(`Options`)
-    console.log(this.options)
 
     this.idPrefix = this.options.idPrefix;
 
@@ -157,10 +154,10 @@ export class TagEditor {
         if (value !== '' && thisObject.isTagValid(value) && !thisObject.tags.includes(value)) {
           let tagId = `${thisObject.idPrefix}-${valueForTagId}-id`
           $(`<li class="addedTag" value="${value}"><span class="tag-text">${value}</span> `   +
-            `<span class="tagRemove" id="${tagId}">` +
-            '<sup><i class="fa fa-times"></i></sup></span>'
-            +'<input type="hidden" value="' + value +
-            '" name="tags[]"></li>'
+              `<span class="tagRemove" id="${tagId}">` +
+              '<sup><i class="fa fa-times"></i></sup></span>'
+              +'<input type="hidden" value="' + value +
+              '" name="tags[]"></li>'
           ).insertBefore(`${thisObject.options.containerSelector} .tagAdd`)
 
           thisObject.makeRemoveTagEvent(tagId)
@@ -185,7 +182,7 @@ export class TagEditor {
   }
 
   /**
-   * 
+   *
    * @param {string}tag
    * @return {boolean}
    */
@@ -201,7 +198,6 @@ export class TagEditor {
   }
 
   getTags() {
-    //this.removeTagsFromOptions()
     return this.tags.sort()
   }
 }

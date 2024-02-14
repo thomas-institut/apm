@@ -27,7 +27,6 @@ use APM\CollationTable\CollationTableManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\FullTranscription\TranscriptionManager;
-use APM\Plugin\HookManager;
 use APM\Presets\PresetManager;
 use APM\System\Job\JobQueueManager;
 use AverroesProject\Data\DataManager;
@@ -77,7 +76,7 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     /**
      * @var DataManager
      */
-    private DataManager $dataManager;
+    protected DataManager $dataManager;
 
     public function __construct(array $config) {
         $this->resetError();
@@ -129,8 +128,10 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
      * Get methods for the different components
      */
     abstract public function getPresetsManager() : PresetManager;
+
+    abstract public function getAvailableImageSources() : array;
     abstract public function getLogger() : Logger;
-    abstract public function getHookManager() : HookManager;
+//    abstract public function getHookManager() : HookManager;
     abstract public function getSettingsManager() : SettingsManager;
     abstract public function getCollationEngine() : CollationEngine;
     abstract public function getTranscriptionManager() : TranscriptionManager;

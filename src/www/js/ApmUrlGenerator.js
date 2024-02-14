@@ -138,6 +138,10 @@ class ApmUrlGenerator {
         return this.base + '/collation/edit/' + tableId + '/beta'
     }
 
+    siteBlankThumbnail() {
+        return `${this.base}/images/thumbnail-blank.png`
+    }
+
     siteOpenSeadragonIconsPrefix() {
         return `${this.base}/node_modules/openseadragon/build/openseadragon/images/`
     }
@@ -216,6 +220,10 @@ class ApmUrlGenerator {
     }
     apiAddPages(docId) {
         return this.base + '/api/doc/' + docId + '/addpages';
+    }
+
+    apiGetPageTypes() {
+        return `${this.base}/api/page/types`
     }
     apiQuickCollation() {
         return this.base + '/api/public/collation/quick';

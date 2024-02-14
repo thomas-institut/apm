@@ -99,7 +99,13 @@ export class EditionWitnessTokenStringParser {
     if (Punctuation.stringIsAllPunctuation(word, lang)) {
       // all punctuation
       console.log(`Word '${word}' is all punctuation`)
-      return [ (new WitnessToken()).setPunctuation(word)]
+      // add one token per punctuation mark
+      let punctuationTokens = [];
+      for (let i = 0; i < word.length; i++) {
+        punctuationTokens.push( (new WitnessToken()).setPunctuation(word[i]));
+      }
+      return [ ...punctuationTokens];
+      // return [ (new WitnessToken()).setPunctuation(word)];
     }
     if (detectNumberingLabels && this.isNumberingLabel(word)) {
       console.log(`Word '${word}' is a numbering label`)

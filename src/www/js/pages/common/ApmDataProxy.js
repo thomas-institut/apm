@@ -23,7 +23,11 @@ import { CachedFetcher } from '../../toolbox/CachedFetcher'
 import { urlGen } from './SiteUrlGen'
 
 
-const cachePrefix = 'apm'
+const cachePrefix = 'apm';
+
+const shortTtl = 60 // 1 minute
+const mediumTtl = 3600; // 1 hour
+const longTtl = 24 * 3600; // 24 hours
 
 
 const typeNames = {
@@ -40,7 +44,7 @@ const langNames = {
 
 /**
  * Class to wrap most API calls to the APM and provide caching
- * of different types
+ * for different types of data
  */
 export class ApmDataProxy {
 
@@ -50,23 +54,41 @@ export class ApmDataProxy {
       session: new WebStorageKeyCache('session'),
       local: new WebStorageKeyCache('local')
     }
-    this.cachedFetcher = new CachedFetcher(this.caches.memory)
+    this.cachedFetcher = new CachedFetcher(this.caches.memory);
   }
 
   async getPersonData(personId) {
-    return await this.getApmEntityData('Person', personId, 'session')
+    return await this.getApmEntityData('Person', personId, 'session');
   }
 
   async getWorkData(workDareId) {
-    return await this.getApmEntityData('Work', workDareId, 'local')
+    return await this.getApmEntityData('Work', workDareId, 'local');
   }
 
   async getDocTypeName(type) {
-    return typeNames[type]
+    return typeNames[type];
   }
 
   async getLangName(lang) {
-    return langNames[lang]
+    return langNames[lang];
+  }
+
+
+  async getAvailablePageTypes() {
+    return await this.getAlmostStaticData('pageTypes', urlGen.apiGetPageTypes());
+  }
+
+
+  async getAlmostStaticData(name, url) {
+    let cacheKey = `${cachePrefix}-${name}`;
+    let cache = this.caches['local'];
+    let data = cache.retrieve(cacheKey);
+    if (data !== null) {
+      return data;
+    }
+    let serverData = await this.get(url, true);
+    cache.store(cacheKey, serverData, longTtl)
+    return serverData
   }
 
   /**
@@ -176,7 +198,7 @@ export class ApmDataProxy {
             dataToStore  = this.getWorkDataToStoreFromServerData(serverData)
             break
         }
-        cache.store(cacheKey, dataToStore);
+        cache.store(cacheKey, dataToStore, longTtl);
         resolve(dataToStore);
       }).catch( (e) => {
         reject(e);

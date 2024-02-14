@@ -331,7 +331,7 @@ function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) :
         // TRANSCRIPTIONS
 
         // get pages transcribed by user
-        $group->get('/transcriptions/byUser/{userId}/docPageData',
+        $group->get('/transcriptions/byUser/{userTid}/docPageData',
             function(Request $request, Response $response) use ($container){
                 return (new ApiUsers($container))->getTranscribedPages($request, $response);
             })

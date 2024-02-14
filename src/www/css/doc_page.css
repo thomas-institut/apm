@@ -4,6 +4,9 @@ div.doc-page {
     grid-template-rows: auto auto 1fr;
 }
 
+
+
+
 div.doc-page-header {
     display: flex;
     flex-direction: row;
@@ -11,33 +14,68 @@ div.doc-page-header {
     justify-content: space-between;
 }
 
+div.doc-page-content {
+    display: grid;
+    grid-template-columns: 1fr 3px 1fr;
+}
+
+div.divider {
+    cursor: col-resize;
+}
+div.page-viewer {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    /*min-width: 500px;*/
+}
+
+
+div.right-panel {
+    min-width: 25%;
+    padding-right: 1em;
+    display: grid;
+    grid-template-rows: auto 1fr;
+}
+
 div.doc-info-tag {
 
 }
 
 div.doc-admin {
-
+margin-bottom: 2em;
 }
 
-div.doc-admin a, a:hover {
+div.doc-admin a, div.doc-admin a:hover, div.doc-admin a:visited {
     padding: 3px;
-    /*border: 1px solid var(--very-light-gray);*/
     border-radius: 3px;
+    color: white;
     text-decoration: none;
 }
 
-div.doc-page-content {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-}
-
-div.left-pane{
-    max-height: 80vh;
+div.tab-pane {
+    height: 100%;
+    max-height: 85vh;
     overflow-y:auto;
-    max-width: 400px;
-    padding-right: 1em;
+    padding: 0.5em;
+    border-left:  1px solid #dee2e6;
 }
 
+.tab-pane h1 {
+    font-size: 2em;
+}
+
+.tab-pane h2 {
+    font-size: 1.5em;
+}
+
+div.doc-basic-data {
+    margin-bottom: 1em;
+}
+.doc-basic-data p {
+    line-height: 1em;
+    padding: 0;
+    margin-bottom: 0.5em;
+}
 
 div.viewer-container a, div.viewer-container a:visited {
     color: inherit;
@@ -54,11 +92,8 @@ div.viewer-toolbar {
     justify-content: space-between;
 }
 
-
-div.page-viewer {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
+div.thumbnail-selector {
+    margin: 1em;
 }
 
 div.osd-viewer {
@@ -98,8 +133,18 @@ div.page-list-header {
     padding: 0.5em;
 }
 
+div.page-list-tab-pane {
+    display: grid;
+    grid-template-rows: auto 1fr;
+}
+
+div.page-list-right-panel {
+    overflow-y: auto;
+    height: 100%;
+}
+
 div.page-list-contents {
-    overflow-y: scroll;
+    overflow-y: auto;
     width: 100%;
     display: flex;
     flex-direction: row;
@@ -108,7 +153,6 @@ div.page-list-contents {
 }
 
 div.osd-div {
-    border: 1px solid silver;
     height: 100%;
     width: 100%;
 }

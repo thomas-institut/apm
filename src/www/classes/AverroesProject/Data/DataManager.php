@@ -64,7 +64,6 @@ use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\InvalidRowUpdateTime;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
 use ThomasInstitut\DataTable\MySqlDataTable;
-use ThomasInstitut\DataTable\MySqlDataTableWithRandomIds;
 use APM\ToolBox\MyersDiff;
 use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\DataTable\RowDoesNotExist;
@@ -85,9 +84,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
     use SimpleSqlQueryCounterTrackerAware;
 
-    const MIN_USER_ID = 10000;
-    const MAX_USER_ID = 100000;
-    
+
     const ORDER_BY_PAGE_NUMBER = 100;
     const ORDER_BY_SEQ = 101;
 
@@ -102,12 +99,12 @@ class DataManager implements  SqlQueryCounterTrackerAware
     private MySqlHelper $databaseHelper;
     public EdNoteManager $edNoteManager;
     private MySqlUnitemporalDataTable $pagesDataTable;
-    /**
-     * Use new UserManager
-     * @var UserManager
-     * @deprecated
-     */
-    public UserManager $userManager;
+//    /**
+//     * Use new UserManager
+//     * @var UserManager
+//     * @deprecated
+//     */
+//    public UserManager $userManager;
     private MySqlDataTable $docsDataTable;
     private MySqlUnitemporalDataTable $elementsDataTable;
     private MySqlUnitemporalDataTable $itemsDataTable;
@@ -145,16 +142,16 @@ class DataManager implements  SqlQueryCounterTrackerAware
         $this->databaseHelper = new MySqlHelper($dbConn, $logger);
         $this->edNoteManager = new EdNoteManager($dbConn, $this->databaseHelper, $tableNames,
                 $logger);
-        $this->userManager = new UserManager(
-            new MySqlDataTable($dbConn,
-                    $tableNames['users']),
-            new MySqlDataTable($dbConn, $tableNames['relations']),
-            new MySqlDataTableWithRandomIds($dbConn,
-                    $tableNames['people'],
-                    self::MIN_USER_ID, self::MAX_USER_ID),
-            new MySqlDataTable($dbConn, $tableNames['tokens'])
-        );
-        $this->userManager->setLogger($this->logger);
+//        $this->userManager = new UserManager(
+//            new MySqlDataTable($dbConn,
+//                    $tableNames['users']),
+//            new MySqlDataTable($dbConn, $tableNames['relations']),
+//            new MySqlDataTableWithRandomIds($dbConn,
+//                    $tableNames['people'],
+//                    self::MIN_USER_ID, self::MAX_USER_ID),
+//            new MySqlDataTable($dbConn, $tableNames['tokens'])
+//        );
+//        $this->userManager->setLogger($this->logger);
         
         $this->docsDataTable = new MySqlDataTable($this->dbConn, 
                 $tableNames['docs']);
@@ -929,94 +926,94 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $chunks;
     }
 
-    /**
-     * Returns a list of witnesses that include the given work and chunk numbers
-     *
-     * Each element of the resulting array contains two properties:
-     *   type:  witness Type (e.g., 'transcription')
-     *   id:   witness id
-     *
-     * @param string $workId
-     * @param int $chunkNumber
-     * @return array
-     */
-    public function getWitnessesForChunk(string $workId, int $chunkNumber) : array {
+//    /**
+//     * Returns a list of witnesses that include the given work and chunk numbers
+//     *
+//     * Each element of the resulting array contains two properties:
+//     *   type:  witness Type (e.g., 'transcription')
+//     *   id:   witness id
+//     *
+//     * @param string $workId
+//     * @param int $chunkNumber
+//     * @return array
+//     */
+//    public function getWitnessesForChunk(string $workId, int $chunkNumber) : array {
+//
+//        // Get transcriptions
+//        $transcriptionWitnesses = $this->getDocInfosForChunk($workId, $chunkNumber);
+//
+//        // Get texts
+//
+//        // Get other witness types
+//
+//        // Assemble return array
+//        $witnessesForChunk = [];
+//
+//        foreach($transcriptionWitnesses as $tw) {
+//            $witnessesForChunk[] =  [
+//                'type' => self::WITNESS_TRANSCRIPTION,
+//                'id' => $tw->id
+//            ];
+//        }
+//        return $witnessesForChunk;
+//    }
+//
+//    /**
+//     * returns a list of docs
+//     *
+//     * @param string $workId
+//     * @param int $chunkNumber
+//     * @return array
+//     */
+//    public function getDocsForChunk(string $workId, int $chunkNumber) : array
+//    {
+//        $ti = $this->tNames['items'];
+//        $te = $this->tNames['elements'];
+//        $td = $this->tNames['docs'];
+//        $tp = $this->tNames['pages'];
+//
+//
+//        $this->getSqlQueryCounterTracker()->incrementSelect();
+//        $query = "SELECT DISTINCT $td.* FROM $td" .
+//                " JOIN ($te, $ti, $tp)" .
+//                " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id AND $td.id=$tp.doc_id)" .
+//                " WHERE $ti.type=" . Item::CHUNK_MARK .
+//                " AND $ti.text='$workId'" .
+//                " AND $ti.target=$chunkNumber" .
+//                " AND $ti.valid_until='9999-12-31 23:59:59.999999'" .
+//                " AND $te.valid_until='9999-12-31 23:59:59.999999'".
+//                " AND $tp.valid_until='9999-12-31 23:59:59.999999'";
+//
+//        $r = $this->databaseHelper->query($query);
+//
+//        $docs = [];
+//        while ($row = $r->fetch()) {
+//            $docs[] = $row;
+//        }
+//        return $docs;
+//    }
 
-        // Get transcriptions
-        $transcriptionWitnesses = $this->getDocInfosForChunk($workId, $chunkNumber);
-
-        // Get texts
-
-        // Get other witness types
-
-        // Assemble return array
-        $witnessesForChunk = [];
-
-        foreach($transcriptionWitnesses as $tw) {
-            $witnessesForChunk[] =  [
-                'type' => self::WITNESS_TRANSCRIPTION,
-                'id' => $tw->id
-            ];
-        }
-        return $witnessesForChunk;
-    }
-
-    /**
-     * returns a list of docs
-     *
-     * @param string $workId
-     * @param int $chunkNumber
-     * @return array
-     */
-    public function getDocsForChunk(string $workId, int $chunkNumber) : array
-    {
-        $ti = $this->tNames['items'];
-        $te = $this->tNames['elements'];
-        $td = $this->tNames['docs'];
-        $tp = $this->tNames['pages'];
-
-
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        $query = "SELECT DISTINCT $td.* FROM $td" . 
-                " JOIN ($te, $ti, $tp)" . 
-                " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id AND $td.id=$tp.doc_id)" . 
-                " WHERE $ti.type=" . Item::CHUNK_MARK .  
-                " AND $ti.text='$workId'" . 
-                " AND $ti.target=$chunkNumber" . 
-                " AND $ti.valid_until='9999-12-31 23:59:59.999999'" . 
-                " AND $te.valid_until='9999-12-31 23:59:59.999999'".
-                " AND $tp.valid_until='9999-12-31 23:59:59.999999'";
-        
-        $r = $this->databaseHelper->query($query);
-        
-        $docs = [];
-        while ($row = $r->fetch()) {
-            $docs[] = $row;
-        }
-        return $docs;
-    }
-
-    /**
-     * Returns an array of DocInfo structures corresponding to the documents in the
-     * system whose transcription include some chunk mark for the given
-     * workId and chunk number
-     *
-     * @param string $workId
-     * @param int $chunkNumber
-     * @return DocInfo[]
-     */
-    public function getDocInfosForChunk(string $workId, int $chunkNumber) : array {
-
-        $docs = $this->getDocsForChunk($workId, $chunkNumber);
-
-        $docInfos = [];
-
-        foreach($docs as $row) {
-            $docInfos[] = $this->createDocInfoFromDbRow($row);
-        }
-
-        return $docInfos;
-    }
+//    /**
+//     * Returns an array of DocInfo structures corresponding to the documents in the
+//     * system whose transcription include some chunk mark for the given
+//     * workId and chunk number
+//     *
+//     * @param string $workId
+//     * @param int $chunkNumber
+//     * @return DocInfo[]
+//     */
+//    public function getDocInfosForChunk(string $workId, int $chunkNumber) : array {
+//
+//        $docs = $this->getDocsForChunk($workId, $chunkNumber);
+//
+//        $docInfos = [];
+//
+//        foreach($docs as $row) {
+//            $docInfos[] = $this->createDocInfoFromDbRow($row);
+//        }
+//
+//        return $docInfos;
+//    }
 
 
     /**
@@ -1111,26 +1108,26 @@ class DataManager implements  SqlQueryCounterTrackerAware
 //
 //    }
 
-    /**
-     * Returns an array with the chunk start and end locations
-     * for the given document, work and chunk numbers
-     *
-     * Each row has the following fields:
-     *  page_seq : page sequence number within the document
-     *  foliation: page foliation
-     *  column_number: column
-     *  e_seq: element sequence number within the column
-     *  item_seq: item sequence number within the element
-     *  type: 'start' or 'end'
-     *  segment: chunk segment number
-     *
-     * @param int $docId
-     * @param string $workId
-     * @param int $chunkNumber
-     * @param string $localWitnessId
-     * @param string $timeString
-     * @return array
-     */
+//    /**
+//     * Returns an array with the chunk start and end locations
+//     * for the given document, work and chunk numbers
+//     *
+//     * Each row has the following fields:
+//     *  page_seq : page sequence number within the document
+//     *  foliation: page foliation
+//     *  column_number: column
+//     *  e_seq: element sequence number within the column
+//     *  item_seq: item sequence number within the element
+//     *  type: 'start' or 'end'
+//     *  segment: chunk segment number
+//     *
+//     * @param int $docId
+//     * @param string $workId
+//     * @param int $chunkNumber
+//     * @param string $localWitnessId
+//     * @param string $timeString
+//     * @return array
+//     */
 //    public function getChunkLocationsForDocRaw($docId, $workId, $chunkNumber, $localWitnessId = 'A', $timeString = '')
 //    {
 //        $ti = $this->tNames['items'];
@@ -2188,8 +2185,6 @@ class DataManager implements  SqlQueryCounterTrackerAware
                             }
                             else {
                                 if ($oldElements[$index]->reference !== $newItemsIds[$oldElements[$index]->reference]) {
-//                                    $this->logger->debug("... with new reference",
-//                                            [ 'oldref' => $oldElements[$index]->reference, 'newref'=> $newItemsIds[$oldElements[$index]->reference] ]);
                                     $newElements[$index]->reference = $newItemsIds[$oldElements[$index]->reference];
                                 }
                             }
@@ -2221,7 +2216,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
                             else {
                                 if ($newElements[$index]->reference !== $newItemsIds[$newElements[$index]->reference]) {
                                     $this->logger->debug("... with new reference", 
-                                            [ 'oldref' => $newElements[$index]->reference, 'newref'=> $newItemsIds[$newElements[$index]->reference] ]);
+                                            [ 'oldRef' => $newElements[$index]->reference, 'newRef'=> $newItemsIds[$newElements[$index]->reference] ]);
                                     $newElements[$index]->reference = $newItemsIds[$newElements[$index]->reference];
                                 }
                             }
@@ -2594,18 +2589,18 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
     //  Factory functions
 
-    public function createDocInfoFromDbRow(array $row) : DocInfo {
-        $di = new DocInfo();
-
-        $di->id = intval($row['id']);
-        $di->tid = intval($row['tid']);
-        $di->title = $row['title'];
-        $di->shortTitle = $row['short_title'];
-        $di->imageSource = $row['image_source'];
-        $di->imageSourceData = $row['image_source_data'];
-        $di->lang = $row['lang'];
-        $di->docType = $row['doc_type'];
-
-        return $di;
-    }
+//    public function createDocInfoFromDbRow(array $row) : DocInfo {
+//        $di = new DocInfo();
+//
+//        $di->id = intval($row['id']);
+//        $di->tid = intval($row['tid']);
+//        $di->title = $row['title'];
+//        $di->shortTitle = $row['short_title'];
+//        $di->imageSource = $row['image_source'];
+//        $di->imageSourceData = $row['image_source_data'];
+//        $di->lang = $row['lang'];
+//        $di->docType = $row['doc_type'];
+//
+//        return $di;
+//    }
 }

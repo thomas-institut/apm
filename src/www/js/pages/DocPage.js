@@ -28,6 +28,7 @@ import { MultiToggle } from '../widgets/MultiToggle'
 import { ApmUtil } from '../ApmUtil'
 import { ApmFormats } from './common/ApmFormats'
 import { TimeString } from '../toolbox/TimeString.mjs'
+import Split from 'split-grid'
 
 export class DocPage extends NormalPage {
   constructor(options) {
@@ -74,6 +75,7 @@ export class DocPage extends NormalPage {
 
   async initPage () {
     await super.initPage();
+
 
 
     let pageTypesData = await this.apmDataProxy.getAvailablePageTypes();
@@ -142,13 +144,29 @@ export class DocPage extends NormalPage {
     })
     $('div.page-info')
     this.rebuildPageList()
+    this.split = Split( {
+      columnGutters: [{
+        track: 1,
+        element: document.querySelector('div.divider'),
+      }],
+      onDragStart: (direction, track) => { console.log(`Dragging ${direction}:${track}`)},
+      onDragEnd: (direction, track) => {console.log(`Drag end ${direction}:${track}`)}
+    })
+
+    for (let i = this.firstPage; i <= this.lastPage; i++) {
+      $(`.page-select-${i}`).on('click', (ev) => {
+        ev.preventDefault();
+        this.selectPage(i);
+      })
+    }
+
 
     this.selectPage(this.firstPage)
   }
 
   rebuildPageList() {
     // this.pageListPopoverDiv = $('div.page-list-popover')
-    $('div.page-list-left-pane').html(this.getPageListHtml(this.docId, this.pageArray, false))
+    $('div.page-list-right-panel').html(this.getPageListHtml(this.docId, this.pageArray, false))
     // this.pageListPopoverDiv.html(this.getPageListHtml(this.docId, this.pageArray))
     this.setupEventHandlersForPageTable()
   }
@@ -261,24 +279,22 @@ export class DocPage extends NormalPage {
     let langName = await this.apmDataProxy.getLangName(this.docInfo.lang)
     let docTypeName = await this.apmDataProxy.getDocTypeName(this.docInfo.doc_type)
     let items = []
-    items.push(tr(`${langName} ${docTypeName}`))
-    items.push(tr('{{num}} of {{total}} pages transcribed',
+    items.push(tr(`${langName} ${docTypeName}`) + ', ' + tr('{{num}} of {{total}} pages transcribed',
       { num:this.doc['numTranscribedPages'], total:  this.doc['numPages']}));
+
 
     switch(this.docInfo.image_source) {
       case 'averroes-server':
-        items.push('images stored in the Averroes server');
+        items.push('Images stored in the Averroes server');
         break;
 
       case 'bilderberg':
-        items.push('images stored in Bilderberg');
+        items.push('Images stored in Bilderberg');
         break;
     }
-    items.push(`doc ${this.docInfo.id}`)
+    items.push(`Doc ID: ${this.docInfo.id}, Entity ID: ${Tid.toBase36String(this.docInfo['tid'])}`)
 
-    items.push(`entity ${Tid.toBase36String(this.docInfo['tid'])}`)
-
-    return items.join(', ')
+    return `<div class="doc-basic-data">` + items.map( (item) => { return `<p>${item}</p>`}).join('') + '</div>'
   }
 
   getExtraClassesForPageContentDiv () {
@@ -289,32 +305,15 @@ export class DocPage extends NormalPage {
 
     let breadcrumbHtml = this.getBreadcrumbNavHtml([
       { label: 'Documents', url:  urlGen.siteDocs()},
-      { label: 'Document Details', active: true}
+      { label:  this.docInfo.title, active:  true}
     ])
     return `
-    <div>${breadcrumbHtml}</div>
+    <div class="doc-page-breadcrum">${breadcrumbHtml}</div>
     <div class="doc-page-header">
-            <h2>${this.docInfo.title}</h2>
-            <div class="doc-info-tag"> ${await this.getDocInfoHtml()}</div>
-            <div class="doc-admin">${this.getAdminHtml()}</div> 
-        </div>
+    </div>
     <div class="doc-page-content">
-        <div class="left-pane"> 
-         <div>
-            <div class="thumbnail-selector"></div>
-            <div class="page-list-left-pane"></div>
-          </div>
-         <div> 
-            <h4>Works</h4>
-            <div class="worksinfo" id="chunkinfo">${await this.genWorkInfoHtml()}</div>
-        </div>
-            <div>
-            <h4>Last Saves </h4>
-            <div id="lastsaves">${await this.getLastSavesHtml()}</div>
-        </div> 
-        </div>
         <div class="page-viewer">
-                <div class="viewer-toolbar">
+            <div class="viewer-toolbar">
                     <div>
                         <button class="btn first-btn" title="First Page"><i class="fa fa-step-backward" aria-hidden="true"></i></button>
                         <button class="btn prev-btn" title="Previous Page"><i class="fa fa-chevron-left" aria-hidden="true"></i>
@@ -326,36 +325,63 @@ export class DocPage extends NormalPage {
                         <button class="btn last-btn" title="Last Page"><i class="fa fa-step-forward" aria-hidden="true"></i></button>
                     </div>    
                 </div>
-                <div id="osd-div" class="osd-div"></div>
+            <div id="osd-div" class="osd-div"></div>
+        </div>
+        <div class="divider"></div>
+        <div class="right-panel">
+            <div class="tabs">
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-target="#metadata" data-toggle="tab">Info</button>
+                </li>
+               <li class="nav-item" role="presentation">
+                <button class="nav-link" data-target="#page-list" data-toggle="tab">Pages</button>
+            </li>
+             <li class="nav-item">
+                <button class="nav-link" data-target="#page-contents" data-toggle="tab">Contents</button>
+            </li>
+
+            <li class="nav-item">
+                <button class="nav-link" data-target="#last-saves" data-toggle="tab">Last Saves</button>
+            </li>
+             <li class="nav-item">
+                <button class="nav-link page-info-tab-title" data-target="#page-info-tab" data-toggle="tab">Page Info</button>
+             </li>
+            </ul>
             </div>
-        <div class="page-info-panel"></div>
+            <div class="tab-content">
+                <div class="tab-pane page-info-panel" id="page-info-tab"></div>
+                <div class="tab-pane doc-metadata show active" id="metadata">
+                     <h1>${this.docInfo.title}</h1>
+                     <div class="doc-info-tag"> ${await this.getDocInfoHtml()}</div>
+                      <div class="doc-admin">${this.getAdminHtml()}</div> 
+                    <div>
+                        <h2>Metadata</h2>
+                        <p><em>Coming soon...</em></p>
+                    </div>
+                </div>
+                <div class="tab-pane page-list-tab-pane" id="page-list">
+                    <div>
+                        <div class="thumbnail-selector"></div>
+                        <div class="page-list-right-panel"></div>
+                    </div>
+                </div>
+                <div class="tab-pane page-contents" id="page-contents">
+                     <h1>Works</h1>
+                    <div class="worksinfo" id="chunkinfo">${await this.genWorkInfoHtml()}</div>   
+                </div>
+                <div class="tab-pane doc-last-saves" id="last-saves">
+                    <h1>Last Saves </h1>
+                    <div id="lastsaves">${await this.getLastSavesHtml()}</div>
+                </div>
+            </div>
+        </div>
     </div>
-     <!-- Page list menu -->
+     <!-- Page list popover -->
     <div class="page-list-popover"></div>
 `
   }
 
-//   getPageListHtml(docId, pageArray, withHeader = true) {
-//     let divs = []
-//     pageArray.forEach( (page) => {
-//       let classes = [ 'page-div', `page-div-${page['sequence']}`, `type${page['type']}`]
-//       if (page['foliationIsSet']) {
-//         classes.push('foliation-set')
-//       }
-//       if (!page['isTranscribed']) {
-//         classes.push('without-transcription')
-//       }
-//       divs.push( `<div title="Click to select page" class="${classes.join(' ')}">${page['foliation']}</div>`)
-//     })
-//     let header = withHeader ? `<div class="page-list-header">Page List</div>` : ''
-//     return `<div class="page-list">
-//            ${header}
-//            <div class="page-list-contents">
-//             ${divs.join('')}
-//             </div>
-//
-// </div>`
-//   }
 
   /**
    * Loads a page into OpenSeaDragon
@@ -388,6 +414,7 @@ export class DocPage extends NormalPage {
     $('.page-selected').removeClass('page-selected');
     $(`div.page-div-${page['sequence']}`).addClass('page-selected');
     $('div.page-info').html(`<span title="Click to show page list" class="page-info-foliation">${page['foliation']}</span>`);
+    $('.page-info-tab-title').html(`Page ${page['foliation']}`)
     $('div.page-info-panel').html(this.getPageInfoHtml(pageIndex));
     let foliationIsSet = page['foliationIsSet'];
     let foliationWarningElement = $('div.page-info-panel span.foliation-warning');
@@ -468,8 +495,8 @@ export class DocPage extends NormalPage {
     }
     let editDocUrl = urlGen.siteDocEdit(this.docId)
     let defineDocPagesUrl = urlGen.siteDocDefinePages(this.docId)
-    return `<a class="" href="${editDocUrl}">Edit Document</a> 
-        <a class="" href="${defineDocPagesUrl}">Define pages</a>`
+    return `<a class="btn btn-sm btn-primary" href="${editDocUrl}">Edit Document</a> 
+        <a class="btn btn-sm btn-primary" href="${defineDocPagesUrl}">Define pages</a>`
   }
   async genWorkInfoHtml() {
     if (Object.keys(this.chunkInfo).length === 0) {
@@ -483,7 +510,7 @@ export class DocPage extends NormalPage {
       }
       let workData = await this.apmDataProxy.getWorkData(workDareId)
       let authorData = await this.apmDataProxy.getPersonEssentialData(workData['authorTid'])
-      html += '<li>' + authorData['name'] + ', <em>' + workData['title'] + '</em> (' + workDareId + ')';
+      html += `<li><a href="${urlGen.sitePerson(Tid.toBase36String(authorData.tid))}">${authorData.name}</a>, <em>${workData['title']}</em> (${workDareId})`
       html += '<ul><li>';
       let tdArray = [];
       for (const chunkNumber in chunkInfo[workDareId]) {
@@ -499,8 +526,8 @@ export class DocPage extends NormalPage {
           }
           let segmentHtml = '';
           let segmentInfo = chunkInfo[workDareId][chunkNumber][segmentNumber];
-          let startLabel = segmentInfo['start'] === '' ? '???' : this.getPageLink(segmentInfo['start']);
-          let endLabel = segmentInfo['end'] === '' ? '???' : this.getPageLink(segmentInfo['end']);
+          let startLabel = segmentInfo['start'] === '' ? '???' : this.getPageLinkFromSegmentInfo(segmentInfo['start']);
+          let endLabel = segmentInfo['end'] === '' ? '???' : this.getPageLinkFromSegmentInfo(segmentInfo['end']);
           segmentHtml += startLabel + ' &ndash; ' + endLabel;
           if (!segmentInfo['valid']) {
             segmentHtml += ' <a href="#" title="' + segmentInfo['errorMsg'] + '">*</a>';
@@ -572,7 +599,7 @@ export class DocPage extends NormalPage {
       return 'n/a';
     }
     let authorData = await this.apmDataProxy.getPersonEssentialData(authorTid)
-    let url = urlGen.siteUserProfile(authorData['userName']);
+    let url = urlGen.sitePerson(Tid.toBase36String(authorData['tid']));
     return `<a href="${url}" title="View user profile" target="_blank">${authorData['name']}</a>`;
   }
 
@@ -583,44 +610,37 @@ export class DocPage extends NormalPage {
       // @ts-ignore
       let formattedTime = ApmFormats.timeString(versionInfo['timeFrom']);
       let authorLink = await this.getAuthorLink(versionInfo['authorTid']);
-      html += '<li> Page ' + this.getPageLink2(versionInfo.pageId, versionInfo.column) + ', ' +
+      html += '<li> Page ' + this.getPageLinkFromPageId(versionInfo.pageId, versionInfo.column) + ', ' +
         formattedTime + ' by ' + authorLink + '</li>';
     }
     html += '</ol>';
     return html;
   }
-  getPageLink(segmentInfo) {
+  getPageLinkFromSegmentInfo(segmentInfo) {
     let foliation = segmentInfo['foliation'];
     let pageSeq = segmentInfo['seq'];
-    let title = 'View Page ' + segmentInfo['foliation'] + ' in new tab';
     let label = foliation;
-    // @ts-ignore
-    let url = urlGen.sitePageView(this.docId, pageSeq);
     if (segmentInfo['numColumns'] > 1) {
-      title = 'View Page ' + segmentInfo['foliation'] + ' column ' + segmentInfo['column'] + ' in new tab';
-      // @ts-ignore
-      url = urlGen.sitePageView(this.docId, pageSeq, segmentInfo['column']);
       label += ' c' + segmentInfo['column'];
     }
-    // @ts-ignore
-    return '<a href="' + url + '" target="_blank" title="' + title + '">' + label + '</a>';
+    return this.getPageLink(pageSeq, label);
   }
-  getPageLink2(pageId, col) {
+
+  getPageLink(pageSeq, label) {
+    return `<a href="#" title= "${tr('Click to select page')}" class="page-select-${pageSeq}">${label}</a>`
+  }
+
+  getPageLinkFromPageId(pageId, col) {
     let pageInfo = this.pages[pageId];
     let foliation = pageInfo.foliation;
     let pageSeq = pageInfo.sequence;
-    let title = 'View Page ' + foliation + ' in new tab';
     let label = foliation;
     // @ts-ignore
     let url = urlGen.sitePageView(this.docId, pageSeq);
     if (pageInfo.numCols > 1) {
-      title = 'View Page ' + foliation + ' col ' + col + ' in new tab';
-      // @ts-ignore
-      url = urlGen.sitePageView(this.docId, pageSeq, col);
       label += ' c' + col;
     }
-    // @ts-ignore
-    return '<a href="' + url + '" target="_blank" title="' + title + '">' + label + '</a>';
+    return this.getPageLink(pageSeq, label);
   }
 }
 

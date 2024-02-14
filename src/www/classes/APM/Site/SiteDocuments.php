@@ -126,7 +126,7 @@ class SiteDocuments extends SiteController
         }
 
         $helper = new DataRetrieveHelper();
-        $peopleInfoArray = $helper->getAuthorInfoArrayFromList($usersMentioned, $dataManager->userManager);
+        $peopleInfoArray = $helper->getAuthorInfoArrayFromList($usersMentioned, $personManager);
         return [ 'docs' => $docs, 'peopleInfo' => $peopleInfoArray];
     }
 

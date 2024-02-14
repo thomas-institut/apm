@@ -35,7 +35,7 @@ class PublishTranscription extends CommandLineUtility
 
     const USAGE = "usage: publishtranscription [--dryRun] [--versionId vid] | [--docId docId --pages xx,yy,vv-zz]\n";
 
-    protected function main($argc, $argv)
+    public function main($argc, $argv)
     {
 
         error_reporting(E_ALL & ~E_WARNING);

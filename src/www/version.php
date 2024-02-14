@@ -56,7 +56,8 @@ EOD;
 // It is important not to use a PHP function to generate the string because we want to be able to read the actual
 // string sent to the JS app(s). Otherwise it will be impossible to debug potential browser cache problems.
 //
-$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = '80dcda7d63b2d81f99eb4fb90de1c756'; // hash: '2024-02-01 14:39:13'
+$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = 'bafc1be1c7210f790e63fca65ee1ac25'; // hash: '2024-02-14 11:19:31'
+//$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = '80dcda7d63b2d81f99eb4fb90de1c756'; // hash: '2024-02-01 14:39:13'
 //$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = 'ab7b9e1615a55a84b4c7326e1eccf438'; // hash: '2024-01-11 11:40:27'
 
 

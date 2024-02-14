@@ -278,7 +278,6 @@ class ApmSystemManager extends SystemManager {
         $dataManager = new DataManager($this->dbConn, $this->getPersonManager(), $this->tableNames,
             $this->logger, $this->imageSources, $this->config[ApmConfigParameter::LANG_CODES]);
         $dataManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
-        $dataManager->userManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
         $this->dataManager = $dataManager;
 
 

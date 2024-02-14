@@ -197,7 +197,7 @@ class ApiUsers extends ApiController
     public function getTranscribedPages(Request $request, Response $response) : Response
     {
         $this->profiler->start();
-        $userTid =  (int) $request->getAttribute('userId');
+        $userTid =  (int) $request->getAttribute('userTid');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $userTid);
 
         $cacheKey = self::CACHE_KEY_PREFIX_TRANSCRIBED_PAGES . $userTid;

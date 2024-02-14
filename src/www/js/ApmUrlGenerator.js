@@ -181,8 +181,8 @@ class ApmUrlGenerator {
         return `${this.base}/api/transcriptions/${docId}/${pageNumber}/${col}/update`
     }
 
-    apiTranscriptionsByUserDocPageData(userId) {
-        return `${this.base}/api/transcriptions/byUser/${userId}/docPageData`
+    apiTranscriptionsByUserDocPageData(userTid) {
+        return `${this.base}/api/transcriptions/byUser/${userTid}/docPageData`
     }
 
     apiGetNumColumns(docId, pageNumber) {

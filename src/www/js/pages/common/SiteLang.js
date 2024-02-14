@@ -138,6 +138,7 @@ const strings = [
   { key: 'Save Table', es: 'Salvar tabla'},
   { key: 'Last change in data', es: 'Último cambio en datos'},
   { key: 'View person data', es: 'Ver datos de la persona'},
+  { key: 'Click to select page', es: 'Click para seleccionar página'},
 ]
 
 export class SiteLang {

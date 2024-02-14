@@ -13,10 +13,7 @@ export class TagEditor {
       idPrefix: { type: 'string', default: 'tag-editor'},
       inputFormId: {type: 'string', required: false, default: 'nil'},
       tags: {type: 'array', required: false, default: []},
-      getTagHints: { type: 'function', default: async () => {
-          return []
-        }
-      },
+      tagHints: { type: 'array', required:false, default: []},
       saveTags: { type: 'function', default: async (tags) => {
           console.log(`Tags [${tags.join(', ')}] would be saved now`)
         } },
@@ -57,11 +54,9 @@ export class TagEditor {
 
   setupEditMode() {
     this.buildStructureOfTagEditor()
-    this.options.getTagHints().then( (tags) => {
-      this.fillDatalistWithTags(tags)
+      this.fillDatalistWithTags(this.options.tagHints)
       this.showGivenTagsInEditMode()
       this.setupEvents()
-    })
   }
 
   setupShowMode() {
@@ -199,5 +194,10 @@ export class TagEditor {
 
   getTags() {
     return this.tags.sort()
+  }
+
+  setTagHints(tags) {
+    this.options.tagHints = tags
+    this.fillDatalistWithTags(this.options.tagHints)
   }
 }

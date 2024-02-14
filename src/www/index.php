@@ -393,8 +393,8 @@ $app->group('/api', function (RouteCollectorProxy $group) use ($container){
 
     // Tag Editor
     $group->post('/tags/save',
-        ApiTagEditor::class . ':saveTags')
-        ->setName('saveTags');
+        ApiTagEditor::class . ':saveTagsAsHints')
+        ->setName('save');
 
     $group->post('/tags/all',
         ApiTagEditor::class . ':getAllTags')

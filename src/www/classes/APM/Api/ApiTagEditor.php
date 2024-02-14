@@ -9,7 +9,7 @@ use ThomasInstitut\TimeString\TimeString;
 
 class ApiTagEditor extends ApiController
 {
-    public function saveTags(Request $request, Response $response): Response {
+    public function saveTagsAsHints (Request $request, Response $response): Response {
 
         $status = 'OK';
         $now = TimeString::now();
@@ -18,8 +18,6 @@ class ApiTagEditor extends ApiController
         foreach ($tags as $tag) {
             $this->saveTagInSql($tag);
         }
-
-        //$this->saveTagsInSql($tags);
 
         // ApiResponse
         return $this->responseWithJson($response, [

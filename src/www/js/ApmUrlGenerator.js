@@ -360,7 +360,7 @@ class ApmUrlGenerator {
         return `${this.base}/api/people/all`
     }
 
-    apiTagEditorSaveTags() {
+    apiTagEditorSaveTagsAsHints() {
         return `${this.base}/api/tags/save`
     }
 

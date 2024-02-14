@@ -466,6 +466,9 @@ export class MetadataEditor {
             tags: this.getValueByKeyFromEntity('Tags'),
             mode: 'edit'
         })
+        this.getTagHints((tagHints) => {
+            this.tagEditor.setTagHints(tagHints)
+        })
     }
 
     makePersonInputForm(selector, inputFormId) {
@@ -817,7 +820,7 @@ export class MetadataEditor {
             if (this.validateData(d) && this.validatePasswords()) {
                 this.makeSpinner(this.buttonsSelectorBottom)
                 this.updateEntityData(d.id, d.type, d.values, d.notes)
-                //this.tagEditor.saveTags()
+                this.saveTagsAsHints(this.tagEditor.getTags())
                 this.options.callback(this.entity, this.options.mode, () => {
                     this.logSaveAction(this.options.mode)
                     if (this.options.mode === this.mode.dialog) {
@@ -902,7 +905,7 @@ export class MetadataEditor {
                 this.clearErrorMessage()
                 this.makeSpinner(cellButtonsAndIconsSelector, '1.25em')
                 if (this.entity.types[keyIndex-1].includes('tags')) {
-                    //this.tagEditor.saveTags()
+                    this.saveTagsAsHints(value)
                 }
                 this.entity.values[keyIndex-1] = value // Corresponds to updateEntityData function in global save event
                 this.entity.notes[keyIndex-1] = note // Corresponds to updateEntityData function in global save event
@@ -1374,10 +1377,10 @@ export class MetadataEditor {
     }
 
     // Functions for saving and getting tags to/from global tag cache
-    saveTags() {
+    saveTagsAsHints(tags) {
 
         // Make API Call
-        $.post(urlGen.apiTagEditorSaveTags(), {'tags': this.options.tags})
+        $.post(urlGen.apiTagEditorSaveTagsAsHints(), {'tags': tags})
             .done((apiResponse) => {
 
                 // Catch Error
@@ -1396,7 +1399,7 @@ export class MetadataEditor {
             })
     }
 
-    getAllTags() {
+    getTagHints(callback) {
 
         // Make API Call
         $.post(urlGen.apiTagEditorGetAllTags())
@@ -1413,7 +1416,8 @@ export class MetadataEditor {
 
                 // Log API response and change to show mode
                 console.log(apiResponse)
-                return apiResponse.tags
+                callback(apiResponse.tags)
+                return true
             })
             .fail((status) => {
                 console.log(status)

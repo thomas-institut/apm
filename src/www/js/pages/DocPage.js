@@ -16,6 +16,8 @@
  *
  */
 
+
+import * as Popper from '@popperjs/core'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { NormalPage } from './NormalPage'
 import { urlGen } from './common/SiteUrlGen'
@@ -76,8 +78,6 @@ export class DocPage extends NormalPage {
   async initPage () {
     await super.initPage();
 
-
-
     let pageTypesData = await this.apmDataProxy.getAvailablePageTypes();
     this.pageTypes = [];
     pageTypesData.forEach( ( ptd) => {
@@ -86,6 +86,7 @@ export class DocPage extends NormalPage {
 
     this.selectedPage = -1
     this.thumbnails = 'none';
+
 
     this.thumbnailToggle = new MultiToggle({
       containerSelector: 'div.thumbnail-selector',
@@ -136,21 +137,44 @@ export class DocPage extends NormalPage {
       if (this.selectedPage > this.firstPage) {
         this.selectPage(this.selectedPage-1)
       }
-    })
+    });
     $('button.next-btn').on('click', () => {
       if (this.selectedPage < this.lastPage) {
         this.selectPage(this.selectedPage+1)
       }
+    });
+    this.pageListPopoverDiv = $('div.page-list-popover');
+    this.rebuildPageList();
+
+    let pageNumberSpan = $('div.page-info');
+
+    this.pageInfoPopper = Popper.createPopper(
+      pageNumberSpan.get(0),
+      this.pageListPopoverDiv.get(0),
+      {
+        placement: 'bottom',
+        modifiers: [ {
+          name: 'offset',
+          options: { offset: [ 0, 0]}
+        }]
+      }
+    )
+    this.pageInfoPopperShown = false
+    pageNumberSpan.on('click', () => {
+      if (this.pageInfoPopperShown) {
+        this.hidePageListPopover()
+      } else {
+        this.showPageListPopover()
+      }
     })
-    $('div.page-info')
-    this.rebuildPageList()
+
     this.split = Split( {
       columnGutters: [{
         track: 1,
         element: document.querySelector('div.divider'),
       }],
-      onDragStart: (direction, track) => { console.log(`Dragging ${direction}:${track}`)},
-      onDragEnd: (direction, track) => {console.log(`Drag end ${direction}:${track}`)}
+      // onDragStart: (direction, track) => { console.log(`Dragging ${direction}:${track}`)},
+      // onDragEnd: (direction, track) => {console.log(`Drag end ${direction}:${track}`)}
     })
 
     for (let i = this.firstPage; i <= this.lastPage; i++) {
@@ -159,23 +183,42 @@ export class DocPage extends NormalPage {
         this.selectPage(i);
       })
     }
+    this.selectPage(this.firstPage);
+    this.maximizeElementsHeight();
 
+    $(window).on('resize', () => {
+      this.maximizeElementsHeight();
+    });
+  }
 
-    this.selectPage(this.firstPage)
+  maximizeElementsHeight() {
+
+    let rightPanelHeight = $('div.right-panel').height();
+    let tabsHeight = $('div.tabs').height();
+    let panelContentHeight = rightPanelHeight - tabsHeight;
+    // console.log(`Right panel: ${rightPanelHeight}, tabs: ${tabsHeight}, content: ${panelContentHeight}`)
+    $('div.right-panel .tab-pane').outerHeight(panelContentHeight);
+
+    [ 'div.page-list-panel'].forEach( (panelSelector) => {
+      let toolbarHeight = $(`${panelSelector} div.panel-toolbar`).height();
+      // console.log(`Panel ${panelSelector}: toolbar height = ${toolbarHeight}`);
+      $(`${panelSelector} div.panel-content`).outerHeight(panelContentHeight - toolbarHeight -1 );
+    })
+
   }
 
   rebuildPageList() {
-    // this.pageListPopoverDiv = $('div.page-list-popover')
-    $('div.page-list-right-panel').html(this.getPageListHtml(this.docId, this.pageArray, false))
-    // this.pageListPopoverDiv.html(this.getPageListHtml(this.docId, this.pageArray))
+    $('div.page-list-panel .panel-content').html(this.getPageListHtml(true))
+    this.pageListPopoverDiv.html(this.getPageListHtml(false));
     this.setupEventHandlersForPageTable()
   }
 
   hidePageListPopover() {
-    // this.pageListPopoverDiv.get(0).removeAttribute('data-show')
+    this.pageListPopoverDiv.get(0).removeAttribute('data-show')
     this.pageInfoPopperShown = false
   }
-  getPageListHtml() {
+
+  getPageListHtml(withThumbnails = true) {
     let divs = []
     this.pageArray.forEach( (page) => {
       let classes = [ `page-div`, `page-div-${page['sequence']}`, `type${page['type']}`]
@@ -185,11 +228,13 @@ export class DocPage extends NormalPage {
       if (!page['isTranscribed']) {
         classes.push('without-transcription');
       }
-      divs.push(`<div class="page-big-div page-big-div-${page['sequence']}">
-            <div class="thumbnail-div">
+
+      let thumbnailDiv = withThumbnails ? `<div class="thumbnail-div">
             <img src="${urlGen.siteBlankThumbnail()}" class="thumbnail-${page['sequence']} hidden"
                 height="200px" alt="Page ${page['sequence']} thumbnail">
-            </div>
+            </div>` : '';
+      divs.push(`<div class="page-big-div page-big-div-${page['sequence']}">
+            ${thumbnailDiv}
             <div class="${classes.join(' ')}">${page['foliation']}</div>
         </div>`);
     })
@@ -249,12 +294,12 @@ export class DocPage extends NormalPage {
 
 
 
-  // showPageListPopover() {
-  //   this.pageListPopoverDiv.get(0).setAttribute('data-show', '');
-  //   this.pageInfoPopper.update().then( () => {
-  //     this.pageInfoPopperShown = true;
-  //   });
-  // }
+  showPageListPopover() {
+    this.pageListPopoverDiv.get(0).setAttribute('data-show', '');
+    this.pageInfoPopper.update().then( () => {
+      this.pageInfoPopperShown = true;
+    });
+  }
 
   setupEventHandlersForPageTable() {
     this.pageArray.forEach( (page) => {
@@ -332,7 +377,7 @@ export class DocPage extends NormalPage {
             <div class="tabs">
             <ul class="nav nav-tabs" role="tablist">
                 <li class="nav-item">
-                    <button class="nav-link active" data-target="#metadata" data-toggle="tab">Info</button>
+                    <button class="nav-link active" data-target="#metadata" data-toggle="tab">Doc</button>
                 </li>
                <li class="nav-item" role="presentation">
                 <button class="nav-link" data-target="#page-list" data-toggle="tab">Pages</button>
@@ -357,14 +402,16 @@ export class DocPage extends NormalPage {
                       <div class="doc-admin">${this.getAdminHtml()}</div> 
                     <div>
                         <h2>Metadata</h2>
-                        <p><em>Coming soon...</em></p>
+                        <p><em>TDB...</em></p>
                     </div>
                 </div>
-                <div class="tab-pane page-list-tab-pane" id="page-list">
-                    <div>
-                        <div class="thumbnail-selector"></div>
-                        <div class="page-list-right-panel"></div>
-                    </div>
+                <div class="tab-pane panel-with-toolbar page-list-panel" id="page-list">
+                   <div class="panel-toolbar">
+                      <div class="thumbnail-selector"></div>
+                   </div>
+                   <div class="panel-content">
+                    
+                   </div>
                 </div>
                 <div class="tab-pane page-contents" id="page-contents">
                      <h1>Works</h1>
@@ -586,9 +633,6 @@ export class DocPage extends NormalPage {
       work + '-' + chunk + ' in new tab">' +
       icon + '</a>';
   }
-
-
-
   /**
    *
    * @param {int} authorTid
@@ -635,8 +679,6 @@ export class DocPage extends NormalPage {
     let foliation = pageInfo.foliation;
     let pageSeq = pageInfo.sequence;
     let label = foliation;
-    // @ts-ignore
-    let url = urlGen.sitePageView(this.docId, pageSeq);
     if (pageInfo.numCols > 1) {
       label += ' c' + col;
     }

@@ -217,7 +217,7 @@ export class EditionComposer extends ApmPage {
     })
     this.witnessInfoPanel = new WitnessInfoPanel({
       verbose: true,
-      userId: this.userId,
+      userTid: this.userTid,
       containerSelector: `#${witnessInfoTabId}`,
       ctData: this.ctData,
       onWitnessOrderChange: this.genOnWitnessOrderChange(),

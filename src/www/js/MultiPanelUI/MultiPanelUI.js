@@ -664,6 +664,13 @@ ${this.options.topBarRightAreaContent()}
   }
 }
 
+/**
+ * Maximizes the height of the given element within the browser windows.
+ * The max height will be shortened by the given offset.
+ *
+ * @param element
+ * @param offset
+ */
 function maximizeElementHeight(element, offset = 0) {
   let elementTop = element.offset().top
   let windowHeight = document.defaultView.innerHeight

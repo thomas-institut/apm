@@ -318,7 +318,7 @@ ol.breadcrumb {
 /* NORMAL PAGE */
 
 :root {
-    --container-side-padding: 1rem;
+    --container-side-padding: 5px;
 }
 
 body.normal-page {

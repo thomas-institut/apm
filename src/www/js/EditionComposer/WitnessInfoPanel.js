@@ -124,7 +124,7 @@ export class WitnessInfoPanel extends Panel{
         required: true
       },
       onCtDataChange: { type: 'function', default: doNothing},
-      userId: { type: 'NonZeroNumber', required: true},
+      userTid: { type: 'NonZeroNumber', required: true},
       ctData: { type: 'object', required: true}
     }
 

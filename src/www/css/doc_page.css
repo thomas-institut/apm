@@ -5,8 +5,6 @@ div.doc-page {
 }
 
 
-
-
 div.doc-page-header {
     display: flex;
     flex-direction: row;
@@ -16,7 +14,7 @@ div.doc-page-header {
 
 div.doc-page-content {
     display: grid;
-    grid-template-columns: 1fr 3px 1fr;
+    grid-template-columns: 1fr 5px 1fr;
 }
 
 div.divider {
@@ -32,7 +30,6 @@ div.page-viewer {
 
 div.right-panel {
     min-width: 25%;
-    padding-right: 1em;
     display: grid;
     grid-template-rows: auto 1fr;
 }
@@ -45,20 +42,48 @@ div.doc-admin {
 margin-bottom: 2em;
 }
 
-div.doc-admin a, div.doc-admin a:hover, div.doc-admin a:visited {
+div.right-panel a.btn-primary, div.right-panel a.btn-primary:hover, div.right-panel a.btn-primary:visited {
     padding: 3px;
     border-radius: 3px;
     color: white;
     text-decoration: none;
 }
 
-div.tab-pane {
-    height: 100%;
-    max-height: 85vh;
+div.right-panel .tab-pane {
     overflow-y:auto;
+    border-left: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
     padding: 0.5em;
-    border-left:  1px solid #dee2e6;
 }
+
+div.right-panel .panel-with-toolbar {
+    padding:0;
+}
+div.panel-toolbar {
+    height: 2.5em;
+    background: #fafafa;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 0.25em;
+    font-size: 0.9em;
+
+}
+
+
+div.panel-content {
+    padding: 0.5em;
+    overflow-y: auto;
+}
+
+div.osd-div {
+    border: 1px solid #dee2e6;
+}
+.normal-page div.page-footer {
+    margin-top: 3px;
+}
+
 
 .tab-pane h1 {
     font-size: 2em;
@@ -93,7 +118,7 @@ div.viewer-toolbar {
 }
 
 div.thumbnail-selector {
-    margin: 1em;
+
 }
 
 div.osd-viewer {
@@ -112,6 +137,7 @@ div.page-list-popover {
     display: none;
     height: 400px;
     width: 600px;
+    overflow-y: auto;
 }
 div.page-list-popover[data-show] {
     display: block;

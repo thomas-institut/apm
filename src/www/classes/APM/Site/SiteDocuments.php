@@ -265,7 +265,6 @@ class SiteDocuments extends SiteController
 
         $this->profiler->stop();
         $this->logProfilerData('showDocPage-' . $docId);
-        $userId = (int) $this->getSiteUserInfo()['id'];
 
         return $this->renderPage($response, self::TEMPLATE_SHOW_DOCS_PAGE, [
             'navByPage' => false,
@@ -276,7 +275,7 @@ class SiteDocuments extends SiteController
             'lastVersions' => $lastVersions,
             'lastSaves' => $lastSaves,
             'metaData' => $metaData,
-            'userId' => $userId,
+            'userTid' => $this->userTid,
         ]);
     }
 

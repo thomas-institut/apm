@@ -205,62 +205,35 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
      * @param string $template
      * @param array $data
      * @param bool $withBaseData
-     * @param bool $includeLegacyData
      * @return ResponseInterface
      */
     protected function renderPage(ResponseInterface $response,
                                   string $template, array $data,
-                                  bool $withBaseData = true, bool $includeLegacyData = true): ResponseInterface
+                                  bool $withBaseData = true): ResponseInterface
     {
 
         if ($withBaseData) {
-            if ($includeLegacyData) {
-                // legacy data for old code pages
-                // this will disappear eventually
-                $data['copyright']  = $this->getCopyrightNotice();
-                $data['baseurl'] = $this->getBaseUrl();
-                $data['userAuthenticated'] = $this->userAuthenticated;
-                $data['userId'] = -1;
-                $data['userTid'] = $this->userTid;
-                $data['userInfo'] = $this->getSiteUserInfo();
-            }
-            // Data for new code pages (e.g. ApmPage js class descendants)
-            $commonData = [];
-            $commonData['appName'] = $this->config[ApmConfigParameter::APP_NAME];
-            $commonData['appVersion'] = $this->config[ApmConfigParameter::VERSION];
-            $commonData['copyrightNotice'] = $this->config[ApmConfigParameter::COPYRIGHT_NOTICE];
-            $commonData['renderTimestamp'] =  time();
-            $commonData['cacheDataId'] = $this->config[ApmConfigParameter::JS_APP_CACHE_DATA_ID];
-            $commonData['userInfo'] = $this->getSiteUserInfo();
-            $commonData['showLanguageSelector'] = $this->config[ApmConfigParameter::SITE_SHOW_LANGUAGE_SELECTOR];
-            $commonData['baseUrl'] = $this->getBaseUrl();
-            $data['commonData'] = $commonData;
+            $data['commonData'] = [
+                'appName' => $this->config[ApmConfigParameter::APP_NAME],
+                'appVersion' => $this->config[ApmConfigParameter::VERSION],
+                'copyrightNotice' => $this->config[ApmConfigParameter::COPYRIGHT_NOTICE],
+                'renderTimestamp' =>  time(),
+                'cacheDataId' => $this->config[ApmConfigParameter::JS_APP_CACHE_DATA_ID],
+                'userInfo' => $this->getSiteUserInfo(),
+                'showLanguageSelector' => $this->config[ApmConfigParameter::SITE_SHOW_LANGUAGE_SELECTOR],
+                'baseUrl' => $this->getBaseUrl()
+            ];
         }
 
-        $responseToReturn = new Response();
-        $twigExceptionRaised = false;
-        $errorMessage = '';
         try {
             $responseToReturn = $this->view->render($response, $template, $data);
-        } catch (LoaderError $e) {
-            $twigExceptionRaised = true;
-            $errorMessage = 'Twig LoaderError : ' . $e->getMessage();
-
-        } catch (RuntimeError $e) {
-            $twigExceptionRaised = true;
-            $errorMessage = 'Twig RuntimeError : ' . $e->getMessage();
-        } catch (SyntaxError $e) {
-            $twigExceptionRaised = true;
-            $errorMessage = 'Twig SyntaxError : ' . $e->getMessage();
+            SystemProfiler::lap('Response ready');
+            $this->logger->info("SITE PROFILER " . SystemProfiler::getName(), SystemProfiler::getLaps());
+            return $responseToReturn;
+        } catch (LoaderError|RuntimeError|SyntaxError $e) {
+            $this->logger->error("Twig error rendering page: " . $e->getMessage());
+            return $this->getSystemErrorPage($response, "Error rendering page", []);
         }
-
-        if ($twigExceptionRaised) {
-            $this->logger->error("Error rendering page: " . $errorMessage);
-            return $this->getSystemErrorPage($response, $errorMessage, []);
-        }
-        SystemProfiler::lap('Response ready');
-        $this->logger->info("SITE PROFILER " . SystemProfiler::getName(), SystemProfiler::getLaps());
-        return $responseToReturn;
     }
 
     protected function getSystemErrorPage(ResponseInterface $response, string $errorMessage,

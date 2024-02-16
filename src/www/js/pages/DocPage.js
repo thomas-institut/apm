@@ -31,6 +31,7 @@ import { ApmUtil } from '../ApmUtil'
 import { ApmFormats } from './common/ApmFormats'
 import { TimeString } from '../toolbox/TimeString.mjs'
 import Split from 'split-grid'
+import { ApmPage } from './ApmPage'
 
 export class DocPage extends NormalPage {
   constructor(options) {
@@ -279,7 +280,7 @@ export class DocPage extends NormalPage {
             if (currentUrl === page['thumbnailUrl']) {
               resolve();
             } else {
-              console.log(`Fetching thumbnail for page ${page['sequence']}`);
+              // console.log(`Fetching thumbnail for page ${page['sequence']}`);
               thumbnailImg.attr('src', thumbnailUrl).on('load', () => {
                 resolve()
               });
@@ -442,7 +443,6 @@ export class DocPage extends NormalPage {
       this.osd.destroy();
     }
 
-
     let osdOptions = {
       id: "osd-div",
       prefixUrl: urlGen.siteOpenSeadragonIconsPrefix(),
@@ -457,10 +457,17 @@ export class DocPage extends NormalPage {
       },
       preserveImageSizeOnResize: true
     }
+
+    let pageInfoDiv = $('div.page-info');
+    pageInfoDiv.html(`<span class="page-info-foliation">${ApmPage.genLoadingMessageHtml('')}</span>`);
     this.osd = new OpenSeadragon(osdOptions);
+    // console.log(`Loading image...`)
+    this.osd.addHandler('open', () => {
+      // console.log(`Image loaded`);
+      pageInfoDiv.html(`<span title="Click to show page list" class="page-info-foliation">${page['foliation']}</span>`);
+    })
     $('.page-selected').removeClass('page-selected');
     $(`div.page-div-${page['sequence']}`).addClass('page-selected');
-    $('div.page-info').html(`<span title="Click to show page list" class="page-info-foliation">${page['foliation']}</span>`);
     $('.page-info-tab-title').html(`Page ${page['foliation']}`)
     $('div.page-info-panel').html(this.getPageInfoHtml(pageIndex));
     let foliationIsSet = page['foliationIsSet'];

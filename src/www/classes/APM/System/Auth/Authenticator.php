@@ -334,7 +334,7 @@ class Authenticator {
             $userData = $this->userManager->getUserData($userTid);
         } catch (UserNotFoundException) {
             $this->siteLogger->error("Can't get username from user Id at "
-                . "logout attempt", ['userId' => $userTid]);
+                . "logout attempt", ['userTid' => $userTid]);
         }
 
         $userAgent = $request->getHeader('User-Agent')[0];

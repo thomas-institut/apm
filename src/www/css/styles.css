@@ -345,7 +345,7 @@ body.normal-page {
 .normal-page  div.page-content {
     padding-left: var(--container-side-padding);
     padding-right: var(--container-side-padding);
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 .normal-page div.page-footer {

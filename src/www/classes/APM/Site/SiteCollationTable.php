@@ -352,7 +352,7 @@ class SiteCollationTable extends SiteController
             'preset' => [ 
                 'id' => $preset->getId(), 
                 'title' => $preset->getTitle(),
-                'userId' => $preset->getUserTid(),
+                'userTid' => $preset->getUserTid(),
                 'userName' => $presetUserName,
                 'editable' =>  $this->userTid === $preset->getUserTid()
             ]

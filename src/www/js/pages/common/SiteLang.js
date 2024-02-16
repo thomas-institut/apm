@@ -25,6 +25,7 @@ export const validLanguages = [ 'en', 'es', 'de', 'fr', 'it', 'he', 'ar']
 
 
 const strings = [
+  { key: '', es: ''},
   { key: 'Loading data', es: 'Cargando datos'},
   { key: 'Dashboard', es: 'Tablero de mandos'},
   { key: 'Documents', es: 'Documentos'},

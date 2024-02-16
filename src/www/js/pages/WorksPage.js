@@ -69,6 +69,8 @@ export class WorksPage extends NormalPage {
 
   async genContentHtml () {
     let html = `<h2>${tr('Works')}</h2>`;
+    html += `<div class="note">Works with transcription or edition data in the system. 
+       For a full list of works, visit the author's page.</div>`
     this.groupedWorks.forEach( (gw, authorIndex) => {
       html += `<div class="author author-${authorIndex}"><h1><a href="${urlGen.sitePerson(Tid.toBase36String(gw.authorTid))}">${gw.authorName}</a></h1>`;
       gw.works.forEach( (work, index) => {
@@ -107,7 +109,7 @@ export class WorksPage extends NormalPage {
       gw.works.forEach( (work, workIndex) => {
         this.collapses.push(new CollapsePanel({
           containerSelector: `div.work-${authorIndex}-${workIndex}`,
-          title: `<em>${work['work_info']['title']}</em> (${work['work_id']})`,
+          title: `<a href="${urlGen.siteWorkPage(work['work_id'])}">${work['work_id']}: <em>${work['work_info']['title']}</em> </a>`,
           content: this.genWorkDivHtml(work, workIndex),
           contentClasses: [],
           expandLinkTitle: tr('Click to show chunk list'),

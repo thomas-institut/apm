@@ -39,6 +39,7 @@ export class PersonPageNew extends NormalPage {
     this.userData = cleanOptions.userData;
 
     this.userContributions = [];
+    this.works = [];
 
     this.initPage().then( () => {
       console.log(`Page for person ${Tid.toBase36String(this.personTid)} (${this.personTid}) initialized`)
@@ -86,6 +87,9 @@ export class PersonPageNew extends NormalPage {
       $('button.edit-user-profile-btn').on('click', this.genOnClickMakeUserButton());
     }
 
+    let worksApiData = await this.apmDataProxy.getPersonWorks(this.personData.tid);
+    this.works = worksApiData['works'];
+    $('div.works-div').html(this.getWorksDivHtml());
   }
 
   async fetchMultiChunkEditions() {
@@ -153,13 +157,22 @@ export class PersonPageNew extends NormalPage {
      <div class="person-entity-data">
         ${dataHtml}
     </div>
-    <div class="user-data">
-        ${await this.getUserDataHtml(this.personData)}</div>`;
+    <div class="user-data">${await this.getUserDataHtml(this.personData)}</div>
+    <div class="works-div"></div>`;
   }
 
-  getPredicateHtml(predicateName, predicateValue, divClass = 'entity-predicate') {
-    return `<div class="${divClass}"><span class="predicate">${predicateName}</span>: ${predicateValue}</div>`
+  getWorksDivHtml() {
+    if (this.works.length === 0) {
+      return '';
+    }
+    let html = `<h2>Works</h2>`;
+    html += this.works.map( (work, index) => {
+      return `<div class="work-div work-div-${index}"><a href="${urlGen.siteWorkPage(work['dareId'])}">${work['dareId']}: ${work['title']}</a></div>`;
+    }).join('');
+    return html;
   }
+
+
 
   /**
    * Get

@@ -28,6 +28,8 @@ namespace APM\Site;
 
 use APM\FullTranscription\ApmChunkSegmentLocation;
 use APM\System\SystemManager;
+use APM\System\Work\WorkNotFoundException;
+use APM\ToolBox\HttpStatus;
 use AverroesProject\Data\DataManager;
 use Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
@@ -37,6 +39,7 @@ use \Psr\Http\Message\ResponseInterface as Response;
 use AverroesProject\ItemStream\ItemStream;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\TimeString\TimeString;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -46,11 +49,40 @@ use Twig\Error\SyntaxError;
  * Site Controller class
  *
  */
-class SiteChunks extends SiteController
+class SiteWorks extends SiteController
 {
 
     const WORK_DATA_CACHE_KEY = 'SiteChunks-WorkData';
     const TEMPLATE_WORKS_PAGE = 'works-page.twig';
+    const TEMPLATE_WORK_PAGE = 'work-page.twig';
+
+
+    public function workPage(Request $request, Response $response): Response {
+
+        $id = $request->getAttribute('id');
+
+        $workManager = $this->systemManager->getWorkManager();
+
+        try {
+            $workData = $workManager->getWorkDataByDareId($id);
+            return $this->renderPage($response, self::TEMPLATE_WORK_PAGE, [
+                'workData' => $workData
+            ]);
+        } catch ( WorkNotFoundException) {
+            try {
+                $tid = Tid::fromString($id);
+                if ($tid === -1) {
+                    return $this->getErrorPage($response, 'Error', "Invalid work id", HttpStatus::BAD_REQUEST);
+                }
+                $workData = $workManager->getWorkData($tid);
+                return $this->renderPage($response, self::TEMPLATE_WORK_PAGE, [
+                    'workData' => $workData
+                ]);
+            } catch (WorkNotFoundException) {
+                return $this->getErrorPage($response, 'Error', "Work $id not found", HttpStatus::NOT_FOUND);
+            }
+        }
+    }
     /**
      * @param Request $request
      * @param Response $response
@@ -65,7 +97,7 @@ class SiteChunks extends SiteController
         $this->systemManager->getSqlQueryCounterTracker()->incrementSelect();
         try {
             $works = unserialize($cache->get(self::WORK_DATA_CACHE_KEY));
-        } catch (KeyNotInCacheException $e) {
+        } catch (KeyNotInCacheException) {
             // not in cache
             $cacheHit = false;
             $works = self::buildWorkData($dataManager);
@@ -120,34 +152,26 @@ class SiteChunks extends SiteController
         return true;
     }
 
-    public static function invalidateCache(DataCache $cache) {
-        try {
-            $cache->delete(self::WORK_DATA_CACHE_KEY);
-        } catch (KeyNotInCacheException $e) {
-            // no problem!!
-        }
-    }
 
-
-    private function prettyPrintFullTxMap(array $fullTxMap) : string {
-        $html = '';
-        $mapDump = print_r($fullTxMap, true);
-
-        foreach($fullTxMap as $workId => $chunkArray) {
-            $html .= '<h2>' . $workId . '</h2>';
-            foreach($chunkArray as $chunkNumber => $docArray) {
-                $html .= "$workId-$chunkNumber";
-                $html .= '<ul>';
-                foreach($docArray as $docId => $lwidArray) {
-                    foreach($lwidArray as $lwid => $segmentArray) {
-                        $html .= "<li>$docId-$lwid : " . count($segmentArray) . " segment(s)</li>";
-                    }
-                }
-                $html .= '</ul>';
-            }
-        }
-        return $html;
-    }
+//    private function prettyPrintFullTxMap(array $fullTxMap) : string {
+//        $html = '';
+//        $mapDump = print_r($fullTxMap, true);
+//
+//        foreach($fullTxMap as $workId => $chunkArray) {
+//            $html .= '<h2>' . $workId . '</h2>';
+//            foreach($chunkArray as $chunkNumber => $docArray) {
+//                $html .= "$workId-$chunkNumber";
+//                $html .= '<ul>';
+//                foreach($docArray as $docId => $lwidArray) {
+//                    foreach($lwidArray as $lwid => $segmentArray) {
+//                        $html .= "<li>$docId-$lwid : " . count($segmentArray) . " segment(s)</li>";
+//                    }
+//                }
+//                $html .= '</ul>';
+//            }
+//        }
+//        return $html;
+//    }
 
 
     

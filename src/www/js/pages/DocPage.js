@@ -562,7 +562,7 @@ export class DocPage extends NormalPage {
       if (!this.chunkInfo.hasOwnProperty(workDareId)) {
         continue;
       }
-      let workData = await this.apmDataProxy.getWorkData(workDareId)
+      let workData = await this.apmDataProxy.getWorkDataOld(workDareId)
       let authorData = await this.apmDataProxy.getPersonEssentialData(workData['authorTid'])
       html += `<li><a href="${urlGen.sitePerson(Tid.toBase36String(authorData.tid))}">${authorData.name}</a>, <em>${workData['title']}</em> (${workDareId})`
       html += '<ul><li>';

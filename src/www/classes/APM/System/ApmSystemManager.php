@@ -55,6 +55,8 @@ use APM\System\Preset\DataTablePresetManager;
 use APM\System\Preset\PresetManager;
 use APM\System\User\ApmUserManager;
 use APM\System\User\UserManagerInterface;
+use APM\System\Work\DataTableWorkManager;
+use APM\System\Work\WorkManager;
 use APM\ToolBox\BaseUrlDetector;
 use AverroesProject\Data\DataManager;
 use Exception;
@@ -137,6 +139,7 @@ class ApmSystemManager extends SystemManager {
     private ApmJobQueueManager $jobManager;
     protected array $imageSources;
     private ?ApmEditionSourceManager $editionSourceManager;
+    private ?WorkManager $workManager;
 
 
     public function __construct(array $configArray) {
@@ -162,6 +165,7 @@ class ApmSystemManager extends SystemManager {
         $this->editionSourceManager = null;
         $this->userManager = null;
         $this->personManager = null;
+        $this->workManager = null;
 
         // Create logger
         $this->logger = $this->createLogger();
@@ -707,6 +711,16 @@ class ApmSystemManager extends SystemManager {
             );
         }
         return $this->personManager;
+    }
+
+    public function getWorkManager(): WorkManager
+    {
+        if ($this->workManager === null) {
+            $this->workManager = new DataTableWorkManager(
+                new MySqlDataTable($this->dbConn,
+                    $this->tableNames[ApmMySqlTableName::TABLE_WORKS], true));
+        }
+        return $this->workManager;
     }
 
     public function getJobManager(): JobQueueManager

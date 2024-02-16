@@ -31,6 +31,7 @@ use APM\System\Job\JobQueueManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
 use APM\System\User\UserManagerInterface;
+use APM\System\Work\WorkManager;
 use AverroesProject\Data\DataManager;
 use Monolog\Logger;
 use Slim\Interfaces\RouteParserInterface;
@@ -148,6 +149,8 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     abstract public function getJobManager() : JobQueueManager;
     abstract public function getUserManager() : UserManagerInterface;
     abstract public function getPersonManager() : PersonManagerInterface;
+
+    abstract public function getWorkManager() : WorkManager;
 
     public function getFullTxWitnessId(ApmTranscriptionWitness $witness) : string {
         return WitnessSystemId::buildFullTxId(

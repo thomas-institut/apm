@@ -9,6 +9,7 @@ module.exports = {
     DocPage: './pages/DocPage.js',
     DocumentsPage: './pages/DocumentsPage.js',
     WorksPage: './pages/WorksPage.js',
+    WorkPage: './pages/WorkPage.js',
     DocDefPages: './pages/DocDefPages.js',
     DocEditPage: './pages/DocEditPage.js',
     DocNewDocPage: './pages/DocNewDocPage.js',

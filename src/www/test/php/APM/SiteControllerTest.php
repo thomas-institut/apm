@@ -25,7 +25,7 @@ namespace Test\APM;
 use APM\Site\SiteDashboard;
 use APM\Site\SiteDocuments;
 use APM\Site\SiteHomePage;
-use APM\Site\SiteChunks;
+use APM\Site\SiteWorks;
 
 use APM\Site\SiteUserManager;
 use APM\System\ApmContainerKey;
@@ -155,7 +155,7 @@ class SiteControllerTest extends TestCase {
         $request = new ServerRequest('GET', '');
 
         self::$ci->set(ApmContainerKey::USER_DATA, ['id' => 100, 'username' => 'testUser']);
-        $sc = new SiteChunks(self::$ci);
+        $sc = new SiteWorks(self::$ci);
         
         $response = $sc->worksPage($request, new Response());
         

@@ -76,6 +76,10 @@ export class ApmDataProxy {
     return data;
   }
 
+  async getWorkDataOld(workDareId) {
+    return await this.getApmEntityData('WorkOld', '', workDareId, 'local');
+  }
+
   async getWorkData(workDareId) {
     return await this.getApmEntityData('Work', '', workDareId, 'local');
   }
@@ -141,6 +145,10 @@ export class ApmDataProxy {
       name: name,
       sortName: sortName
     }, true);
+  }
+
+  async getPersonWorks(personTid){
+    return this.get(urlGen.apiPersonGetWorks(personTid))
   }
 
 
@@ -213,8 +221,12 @@ export class ApmDataProxy {
           }
           break;
 
+        case 'WorkOld':
+          getUrl = urlGen.apiWorkGetInfoOld(entityId);
+          break;
+
         case 'Work':
-          getUrl = urlGen.apiWorkGetInfo(entityId);
+          getUrl = urlGen.apiWorkGetData(entityId);
           break
       }
       if (getUrl === '') {
@@ -235,9 +247,12 @@ export class ApmDataProxy {
             dataToStore = this.getPersonDataToStoreFromServerData(serverData)
             break
 
-          case 'Work':
+          case 'WorkOld':
             dataToStore  = this.getWorkDataToStoreFromServerData(serverData)
-            break
+            break;
+
+          case 'Work':
+            dataToStore = serverData;
         }
         cache.store(cacheKey, dataToStore, longTtl);
         resolve(dataToStore);

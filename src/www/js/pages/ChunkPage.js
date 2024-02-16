@@ -103,8 +103,8 @@ export class ChunkPage extends HeaderAndContentPage {
     this.savedCollationTablesDiv = $('#savedcollationtables')
     this.editionsDiv = $('#editions')
 
-    this.workInfo = await  this.apmDataProxy.getWorkData(this.options.work);
-    this.authorInfo = await this.apmDataProxy.getPersonEssentialData(this.workInfo.authorTid);
+    this.workData = await  this.apmDataProxy.getWorkData(this.options.work);
+    this.authorInfo = await this.apmDataProxy.getPersonEssentialData(this.workData.authorTid);
     this.headerDiv.html(this.generateHeaderDivHtml());
     this.chunkIdDiv.html(this.generateChunkIdDivHtml());
 
@@ -231,7 +231,7 @@ export class ChunkPage extends HeaderAndContentPage {
   async getHeaderHtml() {
     let breadcrumbHtml = this.getBreadcrumbNavHtml([
       { label: tr('Works'), url:  urlGen.siteWorks()},
-      { label: this.options.work},
+      { label: this.options.work, url: urlGen.siteWorkPage(this.options.work)},
       { label: `Chunk ${this.options.chunk}`, active: true}
     ])
     return `${breadcrumbHtml} <div id="chunkpageheader"></div>`
@@ -354,9 +354,9 @@ export class ChunkPage extends HeaderAndContentPage {
         '">'+ arrowLeft + '</a>'
       html += '&nbsp;&nbsp;'
     }
+    html += `<a href="${urlGen.sitePerson(Tid.toBase36String(this.authorInfo.tid))}">${this.authorInfo.name}</a>, 
+        <em><a href="${urlGen.siteWorkPage(this.workData.dareId)}">${this.workData.title}</a></em>, chunk ${this.options.chunk}`;
 
-    html += this.authorInfo.name + ', <em>' +
-        this.workInfo.title + '</em>, chunk ' + this.options.chunk
     html += '</div>'
 
     html += '<div class="col-md1 cpheader justifyright">'
@@ -556,7 +556,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
     let numWitnesses = this.options.witnessInfo.length
     let numValidWitnesses = this.calculateTotalValidWitnesses()
     html += '<p>'
-    html += '<b>Chunk ID:</b> ' + this.workInfo.dareId + '-' + this.options.chunk
+    html += '<b>Chunk ID:</b> ' + this.workData.dareId + '-' + this.options.chunk
     html += '<br/>'
     if (numWitnesses === 0) {
       html += '<b>Witnesses:</b> none'

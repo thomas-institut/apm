@@ -77,8 +77,13 @@ class ApmUrlGenerator {
     }
 
     siteWorks() {
-        return `${this.base}/works`
+        return `${this.base}/works`;
     }
+
+    siteWorkPage(workId) {
+        return `${this.base}/work/${workId}`;
+    }
+
     siteDocPage(docId) {
         return this.base + '/doc/' + docId + '/details'
     }
@@ -295,8 +300,20 @@ class ApmUrlGenerator {
         return `${this.base}/api/witness/${witnessId}/to/edition`;
     }
 
-    apiWorkGetInfo(workId) {
-        return `${this.base}/api/work/${workId}/info`;
+    apiWorkGetInfoOld(workId) {
+        return `${this.base}/api/work/${workId}/old-info`;
+    }
+
+    apiWorkGetData(workId) {
+        return `${this.base}/api/work/${workId}/data`;
+    }
+
+    apiWorkGetChunksWithTranscription(workId) {
+        return `${this.base}/api/work/${workId}/chunksWithTranscription`;
+    }
+
+    apiPersonGetWorks(personTid) {
+        return `${this.base}/api/person/${personTid}/works`;
     }
 
     apiDocumentNew() {

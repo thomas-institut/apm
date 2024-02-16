@@ -12,6 +12,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
+use ThomasInstitut\Exportable\ExportableObject;
 use ThomasInstitut\TimeString\TimeString;
 
 class ApiPeople extends ApiController
@@ -49,6 +50,21 @@ class ApiPeople extends ApiController
         return $this->responseWithJson($response, $dataToServe);
     }
 
+    public function getWorks(Request $request, Response $response): Response {
+        $this->profiler->start();
+        $personTid =  (int) $request->getAttribute('tid');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . Tid::toBase36String($personTid));
+
+        try {
+            $this->systemManager->getPersonManager()->getPersonEssentialData($personTid);
+        } catch (PersonNotFoundException) {
+            $this->logger->info("Person $personTid not found");
+            return $this->responseWithStatus($response, HttpStatus::NOT_FOUND);
+        }
+        $works = $this->systemManager->getWorkManager()->getWorksByAuthor($personTid);
+
+        return $this->responseWithJson($response, [ 'tid' => $personTid, 'works' => ExportableObject::getArrayExportObject($works)]);
+    }
 
 
     public function createNewPerson(Request $request, Response $response): Response {

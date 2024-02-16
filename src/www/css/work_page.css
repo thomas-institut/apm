@@ -1,32 +1,22 @@
-:root {
-    --work-page-indentation: 1.5em;
+
+
+.page-content h1 {
+    font-weight: normal;
+    font-size: 2.4em;
 }
 
 
-div.note {
-    margin-bottom: 1em;
-
-}
-div.author {
-    margin-left: var(--work-page-indentation);
-    margin-bottom: 2em;
-}
-
-div.author h1 {
+.page-content h2 {
+    font-weight: normal;
     font-size: 1.5em;
 }
 
-div.work {
-    margin: 1em 0 0 var(--work-page-indentation);
+div.work-info {
+    margin-bottom: 1em;
 }
-
-div.work-title {
-    font-size: 1.1em;
-}
-
 div.chunk-list {
-    margin: 1em 0 0.5em var(--work-page-indentation);
-    width: 80%;
+    width: 100%;
+    padding-right: 3em;
     display: grid;
     grid-template-columns: repeat(auto-fill,minmax(2em, 1fr));
     justify-content: end;

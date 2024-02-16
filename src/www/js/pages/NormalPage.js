@@ -180,4 +180,8 @@ export class NormalPage extends ApmPage {
         </div>
         </nav>`
   }
+
+  getPredicateHtml(predicateName, predicateValue, divClass = 'entity-predicate') {
+    return `<div class="${divClass}"><span class="predicate">${predicateName}</span>: ${predicateValue}</div>`
+  }
 }

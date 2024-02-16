@@ -46,7 +46,7 @@ use APM\System\ApmSystemManager;
 
 use APM\Site\SiteDashboard;
 use APM\Site\SiteHomePage;
-use APM\Site\SiteChunks;
+use APM\Site\SiteWorks;
 use APM\Site\SitePageViewer;
 use APM\Site\SiteChunkPage;
 use APM\Site\SiteCollationTable;
@@ -178,9 +178,15 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
 
         $group->get('/works',
             function(Request $request, Response $response) use ($container){
-                return (new SiteChunks($container))->worksPage($request, $response);
+                return (new SiteWorks($container))->worksPage($request, $response);
             })
             ->setName('works');
+
+        $group->get('/work/{id}',
+            function(Request $request, Response $response) use ($container){
+                return (new SiteWorks($container))->workPage($request, $response);
+            })
+            ->setName('work');
 
         $group->get('/work/{work}/chunk/{chunk}',
             function(Request $request, Response $response) use ($container){
@@ -436,11 +442,23 @@ function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) :
         // WORKS
 
         // API -> work : get work info
-        $group->get('/work/{workId}/info',
+        $group->get('/work/{workId}/old-info',
             function(Request $request, Response $response) use ($container){
-                return (new ApiWorks($container))->getWorkInfo($request, $response);
+                return (new ApiWorks($container))->getWorkInfoOld($request, $response);
             })
             ->setName('api.work.info');
+
+        $group->get('/work/{workId}/data',
+            function(Request $request, Response $response) use ($container){
+                return (new ApiWorks($container))->getWorkData($request, $response);
+            })
+            ->setName('api.work.data');
+
+        $group->get('/work/{workId}/chunksWithTranscription',
+            function(Request $request, Response $response) use ($container){
+                return (new ApiWorks($container))->getChunksWithTranscription($request, $response);
+            })
+            ->setName('api.work.chunksWithTranscription');
 
         //  PERSON
 
@@ -455,6 +473,12 @@ function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) :
                 return (new ApiPeople($container))->getPersonEssentialData($request, $response);
             })
             ->setName('api.person.data.essential');
+
+        $group->get('/person/{tid}/works',
+            function(Request $request, Response $response) use ($container){
+                return (new ApiPeople($container))->getWorks($request, $response);
+            })
+            ->setName('api.person.works');
 
         $group->post('/person/create',
             function(Request $request, Response $response) use ($container){

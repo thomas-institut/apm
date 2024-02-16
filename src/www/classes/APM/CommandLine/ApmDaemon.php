@@ -2,7 +2,7 @@
 
 namespace APM\CommandLine;
 
-use APM\Site\SiteChunks;
+use APM\Site\SiteWorks;
 use APM\Site\SiteDocuments;
 use APM\System\ApmConfigParameter;
 use Exception;
@@ -23,8 +23,8 @@ class ApmDaemon extends CommandLineUtility
 
         $cacheItemsToReestablish = [
             [
-                'cacheKey' => SiteChunks::WORK_DATA_CACHE_KEY,
-                'builder' => function () use ($dataManager) { return SiteChunks::buildWorkData($dataManager);}
+                'cacheKey' => SiteWorks::WORK_DATA_CACHE_KEY,
+                'builder' => function () use ($dataManager) { return SiteWorks::buildWorkData($dataManager);}
             ],
             [
                 'cacheKey' => SiteDocuments::DOCUMENT_DATA_CACHE_KEY,

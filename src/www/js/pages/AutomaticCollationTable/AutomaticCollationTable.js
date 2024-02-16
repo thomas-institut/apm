@@ -702,7 +702,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
       { label: tr('Automatic Collation Table')},
       { label: `${tr(this.options.langName)} ${this.options.isPartial ? `(${tr('Partial')})` : ''}`, active: true}
     ])
-    let workInfo = await this.apmDataProxy.getWorkData(this.options.workId);
+    let workInfo = await this.apmDataProxy.getWorkDataOld(this.options.workId);
     let authorInfo = await this.apmDataProxy.getPersonEssentialData(workInfo.authorTid);
     let ctInfoDiv;
     if (this.showError) {

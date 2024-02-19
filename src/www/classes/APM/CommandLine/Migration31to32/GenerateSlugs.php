@@ -25,6 +25,10 @@ class GenerateSlugs extends CommandLineUtility
         ];
 
 
+    /**
+     * @throws RowDoesNotExist
+     * @throws InvalidRowForUpdate
+     */
     public function main($argc, $argv): void
     {
 
@@ -39,12 +43,12 @@ class GenerateSlugs extends CommandLineUtility
         $dt = new MySqlDataTable($dbConn, $tableName);
 
         // fill up current slugs
-        $currentSlugs = [];
-        foreach($dt->getAllRows() as $row) {
-            if ($row['slug'] !== null) {
-                $currentSlugs[] = $row['slug'];
-            }
-        }
+//        $currentSlugs = [];
+//        foreach($dt->getAllRows() as $row) {
+//            if ($row['slug'] !== null) {
+//                $currentSlugs[] = $row['slug'];
+//            }
+//        }
 
 
         $dt->startTransaction();
@@ -62,24 +66,24 @@ class GenerateSlugs extends CommandLineUtility
                 $sortName = $row['sort_name'];
                 print "  sort name is already set: '$sortName'\n";
             }
-            if ($row['slug'] === null) {
-                // generate slug
-                $slug = $this->generateSlug($row['name']);
-                $originalSlug = $slug;
-                if (in_array($slug, $currentSlugs)) {
-                    $i = 1;
-                    while (in_array($slug, $currentSlugs)) {
-                        $slug = $originalSlug . '_' . ++$i;
-                    }
-                } else {
-                    $currentSlugs[] = $slug;
-                }
-                print"  ** generated slug: '$slug'\n";
-                $rowForUpdate['slug'] = $slug;
-            } else {
-                $slug = $row['slug'];
-                print "  slug is already set: '$slug'\n";
-            }
+//            if ($row['slug'] === null) {
+//                // generate slug
+//                $slug = $this->generateSlug($row['name']);
+//                $originalSlug = $slug;
+//                if (in_array($slug, $currentSlugs)) {
+//                    $i = 1;
+//                    while (in_array($slug, $currentSlugs)) {
+//                        $slug = $originalSlug . '_' . ++$i;
+//                    }
+//                } else {
+//                    $currentSlugs[] = $slug;
+//                }
+//                print"  ** generated slug: '$slug'\n";
+//                $rowForUpdate['slug'] = $slug;
+//            } else {
+//                $slug = $row['slug'];
+//                print "  slug is already set: '$slug'\n";
+//            }
 
             if (count(array_keys($rowForUpdate)) > 1) {
                 // we need to update
@@ -93,10 +97,10 @@ class GenerateSlugs extends CommandLineUtility
             $dt->rollBack();
         }
     }
-    private function generateSlug(string $name) : string {
-        $slug = iconv('UTF-8', 'US-ASCII//TRANSLIT', $name);
-        return str_replace(' ', '_', $slug);
-    }
+//    private function generateSlug(string $name) : string {
+//        $slug = iconv('UTF-8', 'US-ASCII//TRANSLIT', $name);
+//        return str_replace(' ', '_', $slug);
+//    }
 
     private function generateSortName(string $name) : string
     {

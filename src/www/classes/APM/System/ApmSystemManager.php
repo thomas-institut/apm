@@ -92,7 +92,7 @@ class ApmSystemManager extends SystemManager {
     const ERROR_CONFIG_ARRAY_IS_NOT_VALID = 1007;
 
     // Database version
-    const DB_VERSION = 31;
+    const DB_VERSION = 32;
 
     const REQUIRED_CONFIG_VARIABLES = [
         ApmConfigParameter::APP_NAME,

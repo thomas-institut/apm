@@ -65,7 +65,6 @@ ALTER TABLE `ap_mc_editions`
 ALTER TABLE `ap_presets` ADD `user_tid` BIGINT UNSIGNED DEFAULT 0 AFTER `user_id`;
 UPDATE  `ap_presets`, `ap_people` SET `ap_presets`.`user_tid` = `ap_people`.`tid` where `ap_presets`.`user_id`=`ap_people`.`id`;
 ALTER TABLE `ap_presets` ADD INDEX (`user_tid`);
-ALTER TABLE `ap_presets` DROP INDEX `ap_presets_useridfk`;
 ALTER TABLE `ap_presets` DROP FOREIGN KEY `ap_presets_useridfk`;
 ALTER TABLE `ap_presets`
     ADD CONSTRAINT `ap_presets_useridfk` FOREIGN KEY (`user_tid`) REFERENCES `ap_people` (`tid`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -136,8 +135,8 @@ ALTER TABLE `ap_people` ADD `sort_name` VARCHAR(1024) DEFAULT NULL AFTER `name`;
 ALTER TABLE `ap_people` ADD `slug` VARCHAR(1024) DEFAULT NULL AFTER `sort_name`;
 ALTER TABLE `ap_people` DROP COLUMN `email`;
 
--- Generate slugs and sort names
--- RUN: generate_slugs doIt
+-- Generate sort names
+-- RUN: generate_slugs doIt    // does not generate slugs actually :)
 
 
 -- Let MySql handle the id column in ap_works
@@ -167,14 +166,13 @@ ALTER TABLE `ap_users` MODIFY COLUMN `username` VARCHAR(128) NOT NULL;
 -- reset system cache
 TRUNCATE `ap_system_cache`;
 
--- Convert all database TimeString fields to UTC : this will take a very long time
--- RUN: convert_time_strings doIt
-
 -- Make time for editorial notes a TimeString
 ALTER TABLE `ap_ednotes` MODIFY COLUMN `time` datetime(6) NOT NULL;
 
+-- Convert all database TimeString fields to UTC : this will take a very long time
+-- RUN: convert_time_strings doIt
 
--- Add a slug to people table
+
 
 
 -- Finally, update version number

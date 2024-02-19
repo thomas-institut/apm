@@ -24,6 +24,7 @@ import { urlGen } from './common/SiteUrlGen'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { TagEditor } from '../widgets/TagEditor'
 import { ApmPage } from './ApmPage'
+import { Tid } from '../Tid/Tid'
 
 const newMceEditionIcon = '<i class="bi bi-file-plus"></i>'
 
@@ -92,7 +93,7 @@ export class DashboardPage extends NormalPage {
 
   genAdminSectionHtml() {
     return `
-        <p><a href="${urlGen.siteUserProfile(this.userName)}">${tr("Edit profile / Change Password")}</a></p>`
+        <p><a href="${urlGen.sitePerson(Tid.toBase36String(this.userTid))}">${tr("Edit profile / Change Password")}</a></p>`
   }
 
   constructCollapse(selector, title, headerClasses = []) {

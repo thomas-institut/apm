@@ -223,6 +223,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
                 'showLanguageSelector' => $this->config[ApmConfigParameter::SITE_SHOW_LANGUAGE_SELECTOR],
                 'baseUrl' => $this->getBaseUrl()
             ];
+            $data['baseUrl'] = $this->getBaseUrl();
         }
 
         try {

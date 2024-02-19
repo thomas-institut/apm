@@ -72,7 +72,7 @@ cp src/www/composer.lock "$TMP_DIR"/www
 cp src/www/config.sample.php "$TMP_DIR"/www
 cp src/www/index.php "$TMP_DIR"/www
 cp src/www/package.json "$TMP_DIR"/www
-cp src/www/setup.php "$TMP_DIR"/www
+cp src/www/config_setup.php "$TMP_DIR"/www
 cp src/www/version.php "$TMP_DIR"/www
 
 mkdir "$TMP_DIR"/www/downloads

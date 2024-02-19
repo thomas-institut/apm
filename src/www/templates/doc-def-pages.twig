@@ -1,11 +1,11 @@
 {% extends "normal-page.twig" %}
 
 {% block extraCSS %}
-    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/doc_page.css"/>
+    <link rel="stylesheet" type="text/css" href="{{baseUrl}}/css/doc_page.css"/>
 {% endblock %}
 
 {% block extraJS %}
-<script type="application/javascript" src="{{baseurl}}/js/dist/DocDefPages.bundle.js"></script>
+<script type="application/javascript" src="{{baseUrl}}/js/dist/DocDefPages.bundle.js"></script>
 <script>
     $( () => {
         new DocDefPages( {

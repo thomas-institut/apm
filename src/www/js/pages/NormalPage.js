@@ -170,7 +170,6 @@ export class NormalPage extends ApmPage {
                     <i class="fas fa-user"></i>&nbsp;${this.commonData.userInfo.name}</a>
                     <ul class="dropdown-menu dropdown-menu-right">
                         <li><a class="nav-link dd-menu-item" href="${urlGen.sitePerson(Tid.toBase36String(this.userTid))}">${tr('My Profile')}</a></li>
-                        <!-- <li><a class="nav-link dd-menu-item"  href="${urlGen.siteUserProfile(this.userName)}">${tr('My Settings')}</a></li> -->
                         <li role="separator" class="divider"></li>
                         <li><a class="nav-link dd-menu-item" href="${urlGen.siteLogout()}" title="${tr('Logout')}">${tr('Logout')}</a></li>
                     </ul>

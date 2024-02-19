@@ -66,15 +66,16 @@ class ApmUrlGenerator {
         }
         return url;
     }
-    sitePageViewRealPage(docId, pageNumber) {
-        return this.base + '/doc/' + docId + '/realpage/' + pageNumber + '/view'
-    }
+    // sitePageViewRealPage(docId, pageNumber) {
+    //     return this.base + '/doc/' + docId + '/realpage/' + pageNumber + '/view'
+    // }
     siteChunkPage(work, chunk) {
         return `${this.base}/work/${work}/chunk/${chunk}`
     }
-    siteUserProfile(userName) {
+
+/*    siteUserProfile(userName) {
         return this.base + '/user/' + userName
-    }
+    }*/
 
     siteWorks() {
         return `${this.base}/works`;
@@ -210,9 +211,9 @@ class ApmUrlGenerator {
         return `${this.base}/api/user/${tid}/update`;
     }
 
-    apiUserGetInfo(id) {
-        return this.base + '/api/user/' + id + '/info';
-    }
+    // apiUserGetInfo(id) {
+    //     return this.base + '/api/user/' + id + '/info';
+    // }
 
     apiPersonGetEssentialData(tid) {
         return `${this.base}/api/person/${tid}/data/essential`
@@ -235,12 +236,12 @@ class ApmUrlGenerator {
         return `${this.base}/api/user/${tid}/multiChunkEditions`
     }
 
-    apiUserPasswordChange(id) {
-        return this.base + '/api/user/' + id + '/changepassword';
-    }
-    apiUserMakeRoot(id) {
-        return this.base + '/api/user/' + id + '/makeroot';
-    }
+    // apiUserPasswordChange(id) {
+    //     return this.base + '/api/user/' + id + '/changepassword';
+    // }
+    // apiUserMakeRoot(id) {
+    //     return this.base + '/api/user/' + id + '/makeroot';
+    // }
     apiBulkPageSettings() {
         return this.base + '/api/page/bulkupdate';
     }
@@ -254,13 +255,13 @@ class ApmUrlGenerator {
     apiQuickCollation() {
         return this.base + '/api/public/collation/quick';
     }
-    apiConvertSvg() {
-        return this.base + '/api/convert/svg2pdf';
-    }
-
-    apiConvertTypesetterData() {
-        return this.base + '/api/convert/ts2pdf'
-    }
+    // apiConvertSvg() {
+    //     return this.base + '/api/convert/svg2pdf';
+    // }
+    //
+    // apiConvertTypesetterData() {
+    //     return this.base + '/api/convert/ts2pdf'
+    // }
 
     apiTypesetRaw() {
         return this.base + '/api/typeset/raw'

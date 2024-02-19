@@ -4,12 +4,12 @@
 {% block title %}Doc: {{doc.docInfo.title}}{% endblock %}
 
 {% block extraCSS %}
-    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/doc_page.css"/>
+    <link rel="stylesheet" type="text/css" href="{{baseUrl}}/css/doc_page.css"/>
 {% endblock %}
 
 {% block extraJS %}
     <script type="application/javascript" src="../../node_modules/openseadragon/build/openseadragon/openseadragon.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/dist/DocPage.bundle.js"></script>
+    <script type="application/javascript" src="{{baseUrl}}/js/dist/DocPage.bundle.js"></script>
     <script>
       $( () => {
         new DocPage({

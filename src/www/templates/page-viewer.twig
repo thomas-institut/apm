@@ -5,25 +5,25 @@
 <head>
     <title>{{docInfo.title}} : {{pageNumberFoliation}}</title>
     <link rel="stylesheet" type="text/css" media="screen" href="https://fonts.googleapis.com/css?family=PT+Sans"/>
-    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/node_modules/bootstrap/dist/css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseUrl}}/node_modules/bootstrap/dist/css/bootstrap.css">
     <link rel="stylesheet" type="text/css" href="https://averroes.uni-koeln.de/fonts/fontawesome-free-5.10.1-web/css/all.css">
-    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/split-pane.css" />
-    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/styles.css" />
-    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/pageviewer.css" />
-    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/transcription-editor.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseUrl}}/css/split-pane.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseUrl}}/css/styles.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseUrl}}/css/pageviewer.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseUrl}}/css/transcription-editor.css" />
     
-    <script type="application/javascript" src="{{baseurl}}/node_modules/jquery/dist/jquery.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
-    <script type="text/javascript" src="{{baseurl}}/node_modules/moment/moment.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/node_modules/openseadragon/build/openseadragon/openseadragon.min.js"></script>
-    <script type="text/javascript" src="{{baseurl}}/node_modules/twig/twig.min.js"></script>
+    <script type="application/javascript" src="{{baseUrl}}/node_modules/jquery/dist/jquery.js"></script>
+    <script type="application/javascript" src="{{baseUrl}}/node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
+    <script type="text/javascript" src="{{baseUrl}}/node_modules/moment/moment.js"></script>
+    <script type="application/javascript" src="{{baseUrl}}/node_modules/openseadragon/build/openseadragon/openseadragon.min.js"></script>
+    <script type="text/javascript" src="{{baseUrl}}/node_modules/twig/twig.min.js"></script>
 
-    <script type="application/javascript" src="{{baseurl}}/js/split-pane.js"></script>
+    <script type="application/javascript" src="{{baseUrl}}/js/split-pane.js"></script>
 
-    <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/dist/PageViewer.bundle.js"></script>
+    <script type="application/javascript" src="{{baseUrl}}/js/ApmUrlGenerator.js"></script>
+    <script type="application/javascript" src="{{baseUrl}}/js/dist/PageViewer.bundle.js"></script>
 
-    <link href='{{baseurl}}/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
+    <link href='{{baseUrl}}/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
     <script>
 
     $( () => {
@@ -53,7 +53,7 @@
     <table width="100%">
         <tr>
             <td width="280px">
-                <a href="{{url_for('home')}}" title="Back to main page"><img src="{{baseurl}}/images/apm-logo-plain.svg" height="50" alt="APM Logo"></a>
+                <a href="{{url_for('home')}}" title="Back to main page"><img src="{{baseUrl}}/images/apm-logo-plain.svg" height="50" alt="APM Logo"></a>
             </td>
             <td>
                 <span class="textonly"><a href="{{url_for('doc.showdoc', {'id' : doc })}}">{{ docInfo.title}}</a></span>
@@ -108,10 +108,10 @@
             </td>
             <td>
                 <button title="Vertical Layout" class="textonly headerbuttonright" id="vertButton">
-                            <img src="{{baseurl}}/images/stack_vertically.png" alt="Stack Vertically"/>
+                            <img src="{{baseUrl}}/images/stack_vertically.png" alt="Stack Vertically"/>
                 </button>
                 <button title="Horizontal Layout" class="textonly headerbuttonright" id="horizButton">
-                    <img src="{{baseurl}}/images/stack_horizontally.png" alt="Stack Horizontally"/>
+                    <img src="{{baseUrl}}/images/stack_horizontally.png" alt="Stack Horizontally"/>
                 </button> 
             </td>
             <td style="text-align: right;">

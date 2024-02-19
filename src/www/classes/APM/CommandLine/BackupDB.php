@@ -36,7 +36,7 @@ class BackupDB extends CommandLineUtility {
     
     public function __construct(array $config, int $argc, array $argv) {
         parent::__construct($config, $argc, $argv);
-        $this->logger = $this->logger->withName('BACKUP');
+//        $this->logger = $this->logger->withName('BACKUP');
     }
     
     public function main($argc, $argv)
@@ -75,8 +75,8 @@ class BackupDB extends CommandLineUtility {
 
         $date = date($dateFormat);
         $outputFileName = "$outputDir/apm-$hostName-$date.sql";
-        $mysqlDumpCommandStructure = $mysqldumpCommandFirstPart . '--no-data ' . $databaseName . ' >' . $outputFileName;
-        $mysqlDumpCommandData = $mysqldumpCommandFirstPart . '--no-create-info' . $ignoreTablesCommand . ' ' . $databaseName . ' >> ' . $outputFileName;
+        $mysqlDumpCommandStructure = $mysqldumpCommandFirstPart . '--no-data --no-tablespaces ' . $databaseName . ' >' . $outputFileName;
+        $mysqlDumpCommandData = $mysqldumpCommandFirstPart . '--no-tablespaces --no-create-info ' . $ignoreTablesCommand . ' ' . $databaseName . ' >> ' . $outputFileName;
 
         $mySqlCommands = [$mysqlDumpCommandStructure, $mysqlDumpCommandData];
 

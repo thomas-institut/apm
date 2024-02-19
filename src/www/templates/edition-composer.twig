@@ -5,27 +5,27 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/bootstrap/dist/css/bootstrap.css"/>
-    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/bootstrap-icons/font/bootstrap-icons.css"/>
-    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules//quill/dist/quill.core.css"/>
-    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/styles.css"/>
-    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collationtable.css" />
-    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/multi-panel-ui/styles.css"/>
-    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/edition-composer.css" />
-    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collation.edit.css" />
+    <link rel="stylesheet" type="text/css" href="{{baseUrl}}/node_modules/bootstrap/dist/css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="{{baseUrl}}/node_modules/bootstrap-icons/font/bootstrap-icons.css"/>
+    <link rel="stylesheet" type="text/css" href="{{baseUrl}}/node_modules//quill/dist/quill.core.css"/>
+    <link rel="stylesheet" type="text/css" href="{{baseUrl}}/css/styles.css"/>
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseUrl}}/css/collationtable.css" />
+    <link rel="stylesheet" type="text/css" href="{{baseUrl}}/css/multi-panel-ui/styles.css"/>
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseUrl}}/css/edition-composer.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseUrl}}/css/collation.edit.css" />
 
-    <link href='{{baseurl}}/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
+    <link href='{{baseUrl}}/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
 
 
     <title></title>
 
-    <script type="text/javascript" src="{{baseurl}}/node_modules/jquery/dist/jquery.js"></script>
-    <script type="text/javascript" src="{{baseurl}}/node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
-    <script type="text/javascript" src="{{baseurl}}/node_modules/moment/moment.js"></script>
-    <script type="text/javascript" src="{{baseurl}}/js/SimpleProfiler.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/dist/Quill.bundle.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/dist/EditionComposer.bundle.js"></script>
+    <script type="text/javascript" src="{{baseUrl}}/node_modules/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="{{baseUrl}}/node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
+    <script type="text/javascript" src="{{baseUrl}}/node_modules/moment/moment.js"></script>
+    <script type="text/javascript" src="{{baseUrl}}/js/SimpleProfiler.js"></script>
+    <script type="application/javascript" src="{{baseUrl}}/js/ApmUrlGenerator.js"></script>
+    <script type="application/javascript" src="{{baseUrl}}/js/dist/Quill.bundle.js"></script>
+    <script type="application/javascript" src="{{baseUrl}}/js/dist/EditionComposer.bundle.js"></script>
 </head>
 <body>
 <div class="text-muted" style="margin: 20px;">
@@ -52,7 +52,7 @@
       workId: '{{ workId }}',
       chunkNumber: {{ chunkNumber }},
       tableId: {{ tableId }},
-      urlGenerator: new ApmUrlGenerator('{{ baseurl }}'),
+      urlGenerator: new ApmUrlGenerator('{{ baseUrl }}'),
       peopleInfo: peopleInfo,
       workInfo: workInfo,
       docInfo: docInfo,

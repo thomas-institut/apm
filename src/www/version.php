@@ -31,7 +31,7 @@ $config[ApmConfigParameter::APP_NAME] = 'APM';
 //   was implemented
 // + Version 0.42.11 still named after Oded, since he also found the bug that caused the update!
 //
-$config[ApmConfigParameter::VERSION] = '0.62.3 (2023-Dec-21)';
+$config[ApmConfigParameter::VERSION] = '0.63.0 (2024-Feb-19)';
 
 //
 // Copyright Notice
@@ -56,9 +56,8 @@ EOD;
 // It is important not to use a PHP function to generate the string because we want to be able to read the actual
 // string sent to the JS app(s). Otherwise it will be impossible to debug potential browser cache problems.
 //
-$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = 'bafc1be1c7210f790e63fca65ee1ac27'; // hash: '2024-02-14 11:19:31'
-//$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = '80dcda7d63b2d81f99eb4fb90de1c756'; // hash: '2024-02-01 14:39:13'
-//$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = 'ab7b9e1615a55a84b4c7326e1eccf438'; // hash: '2024-01-11 11:40:27'
+$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = 'aedaf26975bf4be65e547a88ce8c6188'; // hash: '2024-02-19 09:38:50'
+
 
 
 

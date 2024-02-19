@@ -152,6 +152,7 @@ class SiteDocuments extends SiteController
      * @param Response $response
      * @return Response
      * @throws PersonNotFoundException
+     * @throws UserNotFoundException
      */
     public function showDocPage(Request $request, Response $response): Response
     {
@@ -171,6 +172,7 @@ class SiteDocuments extends SiteController
         $dataManager = $this->dataManager;
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $pageManager = $transcriptionManager->getPageManager();
+        $userManager = $this->systemManager->getUserManager();
 
         $doc = [];
         $doc['numPages'] = $dataManager->getPageCountByDocId($docId);
@@ -268,7 +270,8 @@ class SiteDocuments extends SiteController
 
         return $this->renderPage($response, self::TEMPLATE_SHOW_DOCS_PAGE, [
             'navByPage' => false,
-            'canDefinePages' => '1',
+            'canDefinePages' => true,
+            'canEditDocuments' => $userManager->isUserAllowedTo($this->userTid, UserTag::EDIT_DOCUMENTS),
             'pageTypeNames' => $pageTypeNames,
             'doc' => $doc,
             'chunkInfo' => $chunkInfo,

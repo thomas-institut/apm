@@ -18,7 +18,8 @@
           chunkInfo: JSON.parse('{{chunkInfo|json_encode|e('js')}}'),
           versionInfo: JSON.parse('{{lastVersions|json_encode|e('js')}}'),
           lastSaves: JSON.parse('{{lastSaves|json_encode|e('js')}}'),
-          canDefinePages: '{{ canDefinePages }}' === '1',
+          canDefinePages: JSON.parse('{{canDefinePages|json_encode|e('js')}}'),
+          canEditDocuments: JSON.parse('{{canEditDocuments|json_encode|e('js')}}'),
           metadata: JSON.parse('{{metaData|json_encode|e('js')}}'),
         })
       });

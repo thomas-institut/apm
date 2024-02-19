@@ -44,7 +44,8 @@ export class DocPage extends NormalPage {
         chunkInfo: {type: 'object', required: true},
         versionInfo: { type: 'object', required: true},
         lastSaves: { type: 'object', required: true},
-        canDefinePages: {type: 'boolean', default: false}
+        canDefinePages: {type: 'boolean', default: false},
+        canEditDocuments: { type: 'boolean', default: false}
       }
     })
 
@@ -67,7 +68,8 @@ export class DocPage extends NormalPage {
     this.versionInfo = this.options.versionInfo
     this.authors = this.options.authorInfo;
     this.lastSaves = this.options.lastSaves;
-    this.canDefinePages = this.options.canDefinePages
+    this.canDefinePages = this.options.canDefinePages;
+    this.canEditDocuments = this.options.canEditDocuments;
     this.osd = null
 
     this.initPage().then( () => {
@@ -544,13 +546,16 @@ export class DocPage extends NormalPage {
   }
 
   getAdminHtml() {
-    if (!this.canDefinePages) {
-      return ''
-    }
+
     let editDocUrl = urlGen.siteDocEdit(this.docId)
-    let defineDocPagesUrl = urlGen.siteDocDefinePages(this.docId)
-    return `<a class="btn btn-sm btn-primary" href="${editDocUrl}">Edit Document</a> 
-        <a class="btn btn-sm btn-primary" href="${defineDocPagesUrl}">Define pages</a>`
+    let editDocumentHtml = this.canEditDocuments ?
+      `<a class="btn btn-sm btn-primary" href="${editDocUrl}">Edit Document</a>` : '';
+
+    let defineDocPagesUrl = urlGen.siteDocDefinePages(this.docId);
+    let definePagesHtml = this.canDefinePages ?
+      `<a class="btn btn-sm btn-primary" href="${defineDocPagesUrl}">Define pages</a>` : '';
+
+    return `${editDocumentHtml} ${definePagesHtml}`;
   }
   async genWorkInfoHtml() {
     if (Object.keys(this.chunkInfo).length === 0) {

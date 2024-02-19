@@ -315,7 +315,7 @@ class Authenticator {
         return $this->view->render($response, 'login.twig',
                 [
                     'message' => $msg,
-                    'baseurl' => $this->getBaseUrl(),
+                    'baseUrl' => $this->getBaseUrl(),
                     'signature' => self::LOGIN_PAGE_SIGNATURE
                 ]);
     }

@@ -742,7 +742,7 @@ export class EditionTypesetting {
         case 'fullCustom': {
           let keyword = subEntry['keyword']
           let keywordString = ''
-          console.log(`Full custom entry; keyword: '${keyword}'`)
+          // console.log(`Full custom entry; keyword: '${keyword}'`)
           if (keyword !== '') {
             keywordString = this.ss.getStrings()[keyword]
             let keywordTextBox = await this.ss.apply((new TextBox()).setText(keywordString).setTextDirection(this.textDirection), keywordStyle)
@@ -759,8 +759,8 @@ export class EditionTypesetting {
             items.push((await this.createNormalSpaceGlue(apparatusStyle)).setTextDirection(this.textDirection))
             items.push(...await this.getTsItemsForSigla(subEntry))
           }
-          console.log(`TS item for full custom entry:`)
-          console.log(items)
+          // console.log(`TS item for full custom entry:`)
+          // console.log(items)
           break
         }
       }

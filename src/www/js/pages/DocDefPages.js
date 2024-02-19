@@ -70,7 +70,8 @@ export class DocDefPages extends NormalPage {
         { label: 'Tiny', name: 'tiny'},
         { label: 'Small', name: 'small'},
         { label: 'Medium', name: 'medium'},
-        { label: 'Large', name: 'large'}
+        { label: 'Large', name: 'large'},
+        { label: 'X-Large', name: 'x-large'},
       ],
     })
     this.thumbnailToggle.on( 'toggle', () => {
@@ -89,13 +90,16 @@ export class DocDefPages extends NormalPage {
           break;
 
         case 'large':
-          thumbnailSize = 300;
+          thumbnailSize = 400;
+          break;
+        case 'x-large':
+          thumbnailSize = 800;
           break;
       }
-      let currentOption = this.thumbnails;
+      let previousOption = this.thumbnails;
       this.thumbnails = option;
       this.setThumbnailSize(thumbnailSize);
-      if (currentOption === 'none') {
+      if (previousOption === 'none') {
         this.loadThumbnails();
       }
     })
@@ -139,36 +143,45 @@ export class DocDefPages extends NormalPage {
   }
 
   loadThumbnails() {
+    const parallelRequests = 5;
     return new Promise( async (outerResolve) => {
-      for (let i = 0; i < this.pageArray.length; i++) {
-        let page = this.pageArray[i]
-        if (this.thumbnails === 'none') {
-          console.log(`Thumbnail set to 'none', aborting actual loading of thumbnails at sequence ${page['sequence']}`)
-          outerResolve();
-          return;
-        }
-        await new Promise( (resolve) => {
-          if (page['thumbnailUrl'] === '') {
-            resolve();
+      for (let i = 0; i < this.pageArray.length; i+=parallelRequests) {
+        let promises = [];
+        for (let j = 0; i+j < this.pageArray.length && j < parallelRequests; j++) {
+          let page = this.pageArray[i+j];
+          if (this.thumbnails === 'none') {
+            console.log(`Thumbnail set to 'none', aborting actual loading of thumbnails at sequence ${page['sequence']}`);
+            outerResolve();
             return;
           }
-          let thumbnailImg = $(`img.thumbnail-${page['sequence']}`);
-          let currentUrl = thumbnailImg.attr('src');
-          if (currentUrl === page['thumbnailUrl']) {
-            resolve();
-          } else {
-            thumbnailImg.attr('src', page['thumbnailUrl']).on('load', () => {
-              resolve()
-            });
-          }
-        });
+          promises.push(  new Promise( (resolve) => {
+            let thumbnailUrl = page['thumbnailUrl'];
+            if (thumbnailUrl === '') {
+              thumbnailUrl = page['jpgUrl'];
+              if (thumbnailUrl === '') {
+                resolve();
+                return;
+              }
+            }
+            let thumbnailImg = $(`img.thumbnail-${page['sequence']}`);
+            let currentUrl = thumbnailImg.attr('src');
+            if (currentUrl === page['thumbnailUrl']) {
+              resolve();
+            } else {
+              thumbnailImg.attr('src', thumbnailUrl).on('load', () => {
+                resolve()
+              });
+            }
+          }));
+        }
+        await Promise.all(promises);
       }
       outerResolve()
     })
   }
 
 
-  async genHtml () {
+  async genContentHtml () {
     return `
         <nav aria-label="breadcumb">
         <ol class="breadcrumb">

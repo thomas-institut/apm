@@ -23,9 +23,13 @@ namespace APM\System;
 
 use APM\Core\Token\Token;
 use InvalidArgumentException;
+use RuntimeException;
 use ThomasInstitut\DataTable\InMemoryDataTable;
 use APM\Core\Token\Normalizer\WitnessTokenNormalizer;
 use APM\Core\Token\Normalizer\CompositeNormalizer;
+use ThomasInstitut\DataTable\InvalidRowForUpdate;
+use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\DataTable\RowDoesNotExist;
 
 const FIELD_NAME = 'name';
 const FIELD_LANG = 'lang';
@@ -43,7 +47,8 @@ class ApmNormalizerManager extends NormalizerManager
         $this->dt = new InMemoryDataTable();
     }
 
-    public function registerNormalizer(string $lang, string $category, string $name, WitnessTokenNormalizer $normalizer)
+
+    public function registerNormalizer(string $lang, string $category, string $name, WitnessTokenNormalizer $normalizer): void
     {
         if ($this->isNameAlreadyInUse($name))  {
             throw new InvalidArgumentException("Name '$name' already in use", self::ERROR_NAME_ALREADY_IN_USE);
@@ -53,19 +58,25 @@ class ApmNormalizerManager extends NormalizerManager
             throw new InvalidArgumentException("Category cannot be empty", self::ERROR_CATEGORY_CANNOT_BE_EMPTY);
         }
 
-        $this->dt->createRow([
-            FIELD_NAME => $name,
-            FIELD_LANG => $lang,
-            FIELD_CATEGORY => $category,
-            FIELD_NORMALIZER_OBJECT => $normalizer,
-            FIELD_METADATA => []
-        ]);
+        try {
+            $this->dt->createRow([
+                FIELD_NAME => $name,
+                FIELD_LANG => $lang,
+                FIELD_CATEGORY => $category,
+                FIELD_NORMALIZER_OBJECT => $normalizer,
+                FIELD_METADATA => []
+            ]);
+        } catch (RowAlreadyExists $e) {
+            // should NEVER happen
+            throw new RuntimeException($e->getMessage(), $e->getCode());
+        }
 
     }
 
     /**
      * @param Token $token
      * @param string[] $normalizerNames
+     * @return array
      */
     public function applyNormalizerList(Token $token, array $normalizerNames): array
     {
@@ -95,7 +106,7 @@ class ApmNormalizerManager extends NormalizerManager
         if (count($rows) === 0){
             throw new InvalidArgumentException("Normalized with name '$name' does not exist");
         }
-        return $rows[0][FIELD_NORMALIZER_OBJECT];
+        return $rows->getFirst()[FIELD_NORMALIZER_OBJECT];
     }
 
     private function isNameAlreadyInUse(string $name): bool
@@ -106,7 +117,7 @@ class ApmNormalizerManager extends NormalizerManager
 
     public function getNormalizersByLangAndCategory(string $lang, string $category) : array {
         $rows = $this->dt->findRows([ FIELD_LANG => $lang, FIELD_CATEGORY => $category]);
-        return array_map( fn($row) =>  $row[FIELD_NORMALIZER_OBJECT], $rows);
+        return array_map( fn($row) =>  $row[FIELD_NORMALIZER_OBJECT], iterator_to_array($rows));
     }
 
 
@@ -119,11 +130,16 @@ class ApmNormalizerManager extends NormalizerManager
         if (count($rows) === 0){
             throw new InvalidArgumentException("Normalized with name '$name' does not exist");
         }
-        $id = $rows[0]['id'];
-        $this->dt->updateRow( [
-            'id' => $id,
-            FIELD_METADATA => $metaData
-        ]);
+        $id = $rows->getFirst()['id'];
+        try {
+            $this->dt->updateRow([
+                'id' => $id,
+                FIELD_METADATA => $metaData
+            ]);
+        } catch (InvalidRowForUpdate|RowDoesNotExist $e) {
+            // should NEVER happen
+            throw new RuntimeException($e->getMessage(), $e->getCode());
+        }
     }
 
     public function getNormalizerMetadata(string $name): array
@@ -132,12 +148,12 @@ class ApmNormalizerManager extends NormalizerManager
         if (count($rows) === 0){
             throw new InvalidArgumentException("Normalized with name '$name' does not exist");
         }
-        return $rows[0][FIELD_METADATA];
+        return $rows->getFirst()[FIELD_METADATA];
     }
 
     public function getNormalizerNamesByLangAndCategory(string $lang, string $category): array
     {
         $rows = $this->dt->findRows([ FIELD_LANG => $lang, FIELD_CATEGORY => $category]);
-        return array_map( fn($row) =>  $row[FIELD_NAME], $rows);
+        return array_map( fn($row) =>  $row[FIELD_NAME], iterator_to_array($rows));
     }
 }

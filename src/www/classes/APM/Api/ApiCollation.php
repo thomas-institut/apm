@@ -25,17 +25,17 @@ use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
 use APM\Core\Witness\EditionWitness;
 use APM\StandardData\CollationTableDataProvider;
-use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use APM\ToolBox\SiglumGenerator;
-use AverroesProject\Data\UserManagerUserInfoProvider;
+use AverroesProjectToApm\ApmPersonInfoProvider;
 use Exception;
 use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ResponseInterface as Response;
 use APM\Core\Collation\CollationTable;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\TimeString\TimeString;
 
 
@@ -60,7 +60,7 @@ class ApiCollation extends ApiController
 //    const ERROR_MISSING_VERSION_INFO = 2007;
 
 
-    public function  getActiveEditions(Request $request, Response $response, array $args): Response
+    public function  getActiveEditions(Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $infoArray = $this->systemManager->getCollationTableManager()->getActiveEditionTableInfo();
@@ -68,11 +68,11 @@ class ApiCollation extends ApiController
     }
 
 
-    public function  getTable(Request $request, Response $response): Response
+    public function getTable(Request $request, Response $response): Response
     {
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
         $tableId = intval($request->getAttribute('tableId'));
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":$tableId");
         $timeStamp = '';
         $compactEncodedTimeStamp =  $request->getAttribute('timestamp', '');
         if ($compactEncodedTimeStamp !== '') {
@@ -87,7 +87,7 @@ class ApiCollation extends ApiController
         $ctManager = $this->systemManager->getCollationTableManager();
         try {
             $ctData = $ctManager->getCollationTableById($tableId, $timeStamp);
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException) {
             $this->logger->info("Table $tableId not found");
             return $this->responseWithJson($response,  [
                 'tableId' => $tableId,
@@ -97,11 +97,11 @@ class ApiCollation extends ApiController
 
         $ctInfo = $ctManager->getCollationTableInfo($tableId, $timeStamp);
         $versionInfoArray = $ctManager->getCollationTableVersions($tableId);
-        $authorId = -1;
+        $authorTid = -1;
         $versionId = -1;
         foreach($versionInfoArray as $vi) {
             if ($vi->timeFrom === $ctInfo->timeFrom) {
-                $authorId = $vi->authorId;
+                $authorTid = $vi->authorTid;
                 $versionId = $vi->id;
             }
         }
@@ -118,7 +118,7 @@ class ApiCollation extends ApiController
             'ctInfo' => $ctInfo,
             'timeStamp' => $ctInfo->timeFrom,
             'versions' => $versionInfoArray,
-            'authorId' => $authorId,
+            'authorTid' => $authorTid,
             'versionId' => $versionId,
             'isLatestVersion' => $ctInfo->timeUntil === TimeString::END_OF_TIMES,
             'docInfo' => $docInfoArray
@@ -140,7 +140,7 @@ class ApiCollation extends ApiController
      *          <TYPE> is a valid witness type
      *          <ID ARRAY> is the witness system id (normally relative to its type)
      *                for full transcriptions it is an array with 1 to 3 elements containing
-     *                the document Id, an optional local witness Id (defaults to 'A') and an
+     *                the document id, an optional local witness id (defaults to 'A') and an
      *                optional timeStamp (defaults to TimeString::now())
      *
      *      If the witnesses array is empty, all valid witnesses for the
@@ -199,11 +199,13 @@ class ApiCollation extends ApiController
             foreach($inputDataObject['normalizers'] as $normalizerName) {
                 try {
                     $normalizer = $normalizerManager->getNormalizerByName($normalizerName);
-                } catch(InvalidArgumentException $e) {
+                } catch(InvalidArgumentException) {
                     $this->codeDebug("Unknown normalizer name found: $normalizerName");
                 }
-                $normalizers[] = $normalizer;
-                $normalizerNames[] = $normalizerName;
+                if (isset($normalizer)) {
+                    $normalizers[] = $normalizer;
+                    $normalizerNames[] = $normalizerName;
+                }
             }
         } else {
             $normalizerNames = $normalizerManager->getNormalizerNamesByLangAndCategory($language, 'standard');
@@ -248,7 +250,7 @@ class ApiCollation extends ApiController
 
                     try {
                         $collationTable->addWitness($requestedWitness['title'], $fullTxWitness);
-                    } catch (InvalidArgumentException $e) {
+                    } catch (InvalidArgumentException) {
                         $this->logger->warning('Cannot add fullTx witness to collation table', [$witnessInfo]);
                     }
 
@@ -281,9 +283,10 @@ class ApiCollation extends ApiController
         $cacheHit = true;
         try {
             $cachedData = $cache->get($cacheKey);
-        } catch ( KeyNotInCacheException $e) {
+        } catch ( KeyNotInCacheException) {
             $this->systemManager->getCacheTracker()->incrementMisses();
             $cacheHit = false;
+            $cachedData = '';
         }
 
         if ($cacheHit) {
@@ -327,7 +330,7 @@ class ApiCollation extends ApiController
         if ($collatexOutput === false) {
             $msg = "Automatic Collation: error running collation engine";
             $this->logger->error($msg,
-                        [ 'apiUserId' => $this->apiUserId,
+                        [ 'apiUserTid' => $this->apiUserTid,
                         'apiError' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR,
                         'data' => $collatexInput, 
                         'collationEngineDetails' => $collationEngine->getRunDetails()
@@ -346,7 +349,7 @@ class ApiCollation extends ApiController
         catch(Exception $ex) {
             $msg = 'Error processing collation engine output into collation object';
             $this->logger->error($msg, 
-                    [ 'apiUserId' => $this->apiUserId,
+                    [ 'apiUserTid' => $this->apiUserTid,
                         'apiError' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING,
 //                        'data' => $inputDataObject,
                          'collationEngineDetails' => $collationEngine->getRunDetails(),
@@ -357,7 +360,7 @@ class ApiCollation extends ApiController
         // @codeCoverageIgnoreEnd
         
         $this->profiler->lap('Collation table built from collation engine output');
-        $userDirectory = new UserManagerUserInfoProvider($dataManager->userManager);
+        $personInfoProvider = new ApmPersonInfoProvider($this->systemManager->getPersonManager());
 
         $ctStandardDataProvider = new CollationTableDataProvider($collationTable);
         $standardData = $ctStandardDataProvider->getStandardData();
@@ -382,12 +385,12 @@ class ApiCollation extends ApiController
         $standardData->chunkId = $standardData->witnesses[0]->chunkId;
 
 
-        $userIds = $ctStandardDataProvider->getUserIdsFromData($standardData);
+        $userTids = $ctStandardDataProvider->getUserTidsFromData($standardData);
         $people = [];
-        foreach($userIds as $userId) {
-            $people[$userId] = [
-                'fullName' => $userDirectory->getNormalizedName($userId),
-                'shortName' => $userDirectory->getShortName($userId)
+        foreach($userTids as $userTid) {
+            $people[$userTid] = [
+                'fullName' => $personInfoProvider->getNormalizedName($userTid),
+                'shortName' => $personInfoProvider->getShortName($userTid)
                 ];
         }
 
@@ -434,7 +437,8 @@ class ApiCollation extends ApiController
         $ctManager = $this->systemManager->getCollationTableManager();
 
         $versionInfo = new CollationTableVersionInfo();
-        $versionInfo->authorId = $this->apiUserId;
+//        $versionInfo->authorId = $this->apiUserId;
+        $versionInfo->authorTid = $this->apiUserTid;
         $versionInfo->description = $inputDataObject['descr'] ?? '';
         $versionInfo->isMinor = $inputDataObject['isMinor'] ?? false;
         $versionInfo->isReview = $inputDataObject['isReview'] ?? false;
@@ -447,7 +451,9 @@ class ApiCollation extends ApiController
             if ($collationTableId <= 0) {
                 $msg = 'Invalid collation table ID ' . $collationTableId;
                 $this->logger->error($msg,
-                    [ 'apiUserId' => $this->apiUserId,
+                    [
+                        'apiUserTid' => $this->apiUserTid,
+                        'apiUserTidString' => Tid::toBase36String($this->apiUserTid),
                         'apiError' => self::ERROR_INVALID_COLLATION_TABLE_ID,
                         'data' => $inputDataObject,
                     ]);
@@ -456,10 +462,12 @@ class ApiCollation extends ApiController
             // check that the ct exists
             $versions = $ctManager->getCollationTableVersions($collationTableId);
             if (count($versions) === 0) {
-                // table Id does not exist!
+                // table id does not exist!
                 $msg = "Collation table ID $collationTableId does not exist";
                 $this->logger->error($msg,
-                    [ 'apiUserId' => $this->apiUserId,
+                    [
+                        'apiUserTid' => $this->apiUserTid,
+                        'apiUserTidString' => Tid::toBase36String($this->apiUserTid),
                         'apiError' => self::ERROR_COLLATION_TABLE_DOES_NOT_EXIST,
                         'data' => $inputDataObject,
                     ]);
@@ -484,7 +492,7 @@ class ApiCollation extends ApiController
                 'versionInfo' => $ctManager->getCollationTableVersions($collationTableId)
             ];
 
-            $this->systemManager->onCollationTableSaved($this->apiUserId, $collationTableId);
+            $this->systemManager->onCollationTableSaved($this->apiUserTid, $collationTableId);
             $this->profiler->stop();
             $this->info("Collation Table $collationTableId saved");
             return $this->responseWithJson($response, $responseData);
@@ -499,7 +507,7 @@ class ApiCollation extends ApiController
             'versionInfo' => $ctManager->getCollationTableVersions($collationTableId)
         ];
 
-        $this->systemManager->onCollationTableSaved($this->apiUserId, $collationTableId);
+        $this->systemManager->onCollationTableSaved($this->apiUserTid, $collationTableId);
 
         $this->profiler->stop();
         $this->info("Collation Table $collationTableId saved (new table)");
@@ -546,7 +554,7 @@ class ApiCollation extends ApiController
         $editionWitnessSiglum = '_edition_';
         $collationTable->addWitness($fullTxWitnessSiglum, $fullTxWitness, $witnessTitle, false);
 
-        // save the collation table to get a table Id
+        // save the collation table to get a table id
         $standardData =(new CollationTableDataProvider($collationTable))->getStandardData();
         // add normalizer names to std data
         $standardData->automaticNormalizationsApplied = $normalizerNames;
@@ -554,7 +562,8 @@ class ApiCollation extends ApiController
         $ctManager = $this->systemManager->getCollationTableManager();
 
         $versionInfo = new CollationTableVersionInfo();
-        $versionInfo->authorId = $this->apiUserId;
+        $versionInfo->authorTid = $this->apiUserTid;
+//        $versionInfo->authorId = $this->apiUserId;
         $versionInfo->description = 'Table with single witness registered in the system';
         $versionInfo->isMinor = false;
         $versionInfo->isReview = false;
@@ -595,7 +604,8 @@ class ApiCollation extends ApiController
         $standardData->witnessOrder = [ 1, 0];
 
         $versionInfo = new CollationTableVersionInfo();
-        $versionInfo->authorId = $this->apiUserId;
+        $versionInfo->authorTid = $this->apiUserTid;
+//        $versionInfo->authorId = $this->apiUserId;
         $versionInfo->collationTableId = $collationTableId;
         $versionInfo->description = 'Edition text added by the system to complete creation of edition with a single witness';
         $versionInfo->isMinor = false;
@@ -616,24 +626,24 @@ class ApiCollation extends ApiController
     }
 
 
-    /**
-     * @param string $workId
-     * @param int $chunkNumber
-     * @param string $langCode
-     * @return WitnessInfo[]
-     */
-    protected function getValidWitnessesForChunkLang(string $workId, int $chunkNumber, string $langCode) : array {
-        $this->logger->debug("Getting valid witnesses for $workId, $chunkNumber, $langCode");
-        $tm = $this->systemManager->getTranscriptionManager();
-
-        $vw = $tm->getWitnessesForChunk($workId, $chunkNumber);
-
-        $vWL = [];
-        foreach($vw as $witnessInfo) {
-            if ($witnessInfo->languageCode === $langCode) {
-                $vWL[] = $witnessInfo;
-            }
-        }
-        return $vWL;
-    }
+//    /**
+//     * @param string $workId
+//     * @param int $chunkNumber
+//     * @param string $langCode
+//     * @return WitnessInfo[]
+//     */
+//    protected function getValidWitnessesForChunkLang(string $workId, int $chunkNumber, string $langCode) : array {
+//        $this->logger->debug("Getting valid witnesses for $workId, $chunkNumber, $langCode");
+//        $tm = $this->systemManager->getTranscriptionManager();
+//
+//        $vw = $tm->getWitnessesForChunk($workId, $chunkNumber);
+//
+//        $vWL = [];
+//        foreach($vw as $witnessInfo) {
+//            if ($witnessInfo->languageCode === $langCode) {
+//                $vWL[] = $witnessInfo;
+//            }
+//        }
+//        return $vWL;
+//    }
 }

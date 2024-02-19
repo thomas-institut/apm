@@ -1,6 +1,10 @@
-{% extends "base.twig" %}
+{% extends "normal-page.twig" %}
 
 {% block title %}People{% endblock %}
+
+{% block extraCSS %}
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/people_page.css"/>
+{% endblock %}
 
 {% block extraJS %}
     <script type="application/javascript" src="{{baseurl}}/js/dist/PeoplePage.bundle.js"></script>
@@ -9,25 +13,13 @@
 
 {% block finalBodyJS %}
     <script>
-        $(() => {
-            setupPeoplePage('{{ baseurl }}')
-        })
+
+      $(() => {
+        new PeoplePage(( {
+          commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
+        }))
+      })
     </script>
-
 {%  endblock %}
-
-{% block content %}
-    <h1> People </h1>
-    <br>
-    <div id="table-spinner" align="center"></div>
-    <div id ="div_create_person" align="left"></div>
-    <br>
-    <table id="people-table" class="table-bordered" align="center">
-        <thead id="people-table-head"></thead>
-        <tbody id="people-table-body"></tbody>
-    </table>
-    <br>
-{% endblock %}
-
 
 

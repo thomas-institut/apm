@@ -4,8 +4,7 @@ namespace APM\System;
 
 use APM\FullTranscription\DocManager;
 use APM\FullTranscription\PageManager;
-use AverroesProject\Data\UserManager;
-use Exception;
+use APM\System\Person\PersonManagerInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 
@@ -58,25 +57,16 @@ class DataRetrieveHelper implements LoggerAwareInterface
 
 
 
-    public function getAuthorInfoArrayFromList(array $authorList, UserManager $userManager) : array {
+    public function getAuthorInfoArrayFromList(array $authorList, PersonManagerInterface $personManager) : array {
         return $this->getInfoFromIdList(
             $authorList,
-            function ($id) use ($userManager) {
-
+            function ($tid) use ($personManager) {
                 try {
-                    $info = $userManager->getUserInfoByUserId($id);
-                } catch (Exception $e) {
-                    // not a user, let's try non-users
-                    try {
-                        $info = $userManager->getPersonInfo($id);
-                    } catch (Exception $e) {
-                        // cannot get the info
-                        $this->logger->debug("Person info not found for id $id");
-                        return ['id' => $id, 'fullname' => "Person Unknown $id"];
-                    }
-                    return $info;
+                    $personData = $personManager->getPersonEssentialData($tid);
+                    return [ 'tid' => $tid, 'name' => $personData->name];
+                } catch (Person\PersonNotFoundException $e) {
+                    return [ 'tid' => $tid, 'name' => "Unknown P-$tid}"];
                 }
-                return $info;
             }
         );
     }

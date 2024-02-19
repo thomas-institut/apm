@@ -27,10 +27,10 @@ use APM\System\SystemManager;
 class MigrateAutomaticCollationPresets extends CommandLineUtility
 {
 
-    protected function main($argc, $argv)
+    public function main($argc, $argv)
     {
         $this->logger->debug("Starting preset Migration");
-        $presetManager = $this->systemManager->getPresetsManager();
+        $presetManager = $this->getSystemManager()->getPresetsManager();
 
         $presets = $presetManager->getPresetsByToolAndKeys(SystemManager::TOOL_AUTOMATIC_COLLATION_V1, []);
         $presetFactory = new PresetFactory();
@@ -64,7 +64,7 @@ class MigrateAutomaticCollationPresets extends CommandLineUtility
             }
             $newData = $preset->getData();
             $newData['witnesses'] = $newWitnesses;
-            $newPreset = $presetFactory->create(SystemManager::TOOL_AUTOMATIC_COLLATION, $preset->getUserId(), $preset->getTitle(), $newData);
+            $newPreset = $presetFactory->create(SystemManager::TOOL_AUTOMATIC_COLLATION, $preset->getUserTid(), $preset->getTitle(), $newData);
 
             if ($presetManager->addPreset($newPreset)) {
                 print " done\n";

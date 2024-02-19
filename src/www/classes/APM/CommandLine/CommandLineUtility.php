@@ -22,12 +22,11 @@ namespace APM\CommandLine;
 
 use APM\System\ApmConfigParameter;
 use APM\System\ApmSystemManager;
-use AverroesProject\Data\UserManager;
 use AverroesProject\Data\DataManager;
 use JetBrains\PhpStorm\NoReturn;
-use Monolog\Logger;
 use PDO;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Description of CommandLineUtility
@@ -35,50 +34,15 @@ use Psr\Log\LoggerInterface;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 abstract class CommandLineUtility {
-    
-    /**
-     *
-     * @var PDO
-     */
-    protected PDO $dbConn;
-    
-    /**
-     *
-     * @var UserManager 
-     */
-    protected UserManager $um;
-    
-    /**
-     *
-     * @var Logger 
-     */
-    protected LoggerInterface $logger;
+    protected ?LoggerInterface $logger;
 
-    /**
-     * @var array
-     */
     protected array $config;
 
-    /**
-     * @var ApmSystemManager
-     */
-    protected ApmSystemManager $systemManager;
-    /**
-     * @var DataManager
-     */
-    protected DataManager $dm;
 
-    /**
-     * @var array
-     */
+    private ?ApmSystemManager $systemManager;
     protected array $processUserInfoArray;
-    /**
-     * @var int
-     */
+
     protected int $argc;
-    /**
-     * @var array
-     */
     protected array $argv;
     protected int $pid;
 
@@ -91,42 +55,46 @@ abstract class CommandLineUtility {
         $this->argc = $argc;
         $this->argv = $argv;
 
-        $authorizedUsers = $config[ApmConfigParameter::COMMAND_LINE_USERS];
+        $authorizedUsers = $config[ApmConfigParameter::AUTHORIZED_COMMAND_LINE_USERS];
         $authorizedUsers[] = 'root';
 
         if (!in_array($this->processUserInfoArray['name'], $authorizedUsers)) {
             $this->printErrorMsg("Sorry, you don't have permission to run this command\n");
             exit(1);
         }
+        $this->systemManager = null;
+        $this->logger = new NullLogger();
+    }
 
-        $cmd = $argv[0] ?? 'cmd_not_in_argv';
+    public function getDm() : DataManager {
+        return $this->getSystemManager()->getDataManager();
+    }
 
-        // System Manager 
-        $systemManager = new ApmSystemManager($config);
+    public function getSystemManager() : ApmSystemManager {
 
-        $this->systemManager = $systemManager;
-
-        if ($systemManager->fatalErrorOccurred()) {
-            $this->printErrorMsg($systemManager->getErrorMessage());
-            exit(1);
+        if ($this->systemManager === null) {
+            $systemManager = new ApmSystemManager($this->config);
+            $this->systemManager = $systemManager;
+            if ($systemManager->fatalErrorOccurred()) {
+                $this->printErrorMsg($systemManager->getErrorMessage());
+                exit(1);
+            }
+            $this->logger = $systemManager->getLogger()->withName('CMD');
+            $processUser = $this->processUserInfoArray;
+            $cmd = $this->argv[0] ?? 'cmd_not_in_argv';
+            $this->logger->pushProcessor(
+                function ($record) use($processUser, $cmd) {
+                    $record['extra']['unixUser'] = $processUser['name'];
+                    $record['extra']['pid'] = $this->pid;
+                    $record['extra']['cmd'] = $cmd;
+                    return $record;
+                });
         }
+        return $this->systemManager;
+    }
 
-        $this->logger = $systemManager->getLogger()->withName('CMD');
-        $processUser = $this->processUserInfoArray;
-        $this->logger->pushProcessor(
-            function ($record) use($processUser, $cmd) {
-                $record['extra']['unixuser'] = $processUser['name'];
-                $record['extra']['pid'] = $this->pid;
-                $record['extra']['cmd'] = $cmd;
-                return $record;
-        });
-        $dbConn = $systemManager->getDbConnection();
-        $this->dbConn = $dbConn;
-
-        // Data Manager (will be replaced completely by SystemManager at some point
-        $this->dm = $this->systemManager->getDataManager();
-
-        $this->um = $this->dm->userManager;
+    protected function getDbConn() : PDO {
+        return $this->getSystemManager()->getDbConnection();
     }
     
     #[NoReturn] public function run(): void

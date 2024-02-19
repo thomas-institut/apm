@@ -16,11 +16,11 @@
  *
  */
 
-
-import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { setSiteLanguage, SiteLang, tr } from './common/SiteLang'
-import { setBaseUrl, urlFor } from './common/SiteUrlGen'
-import { ApmDataProxy } from './common/ApmDataProxy'
+import { setSiteLanguage, tr } from './common/SiteLang'
+import { urlGen } from './common/SiteUrlGen'
+import { ApmPage } from './ApmPage'
+import { ApmFormats } from './common/ApmFormats'
+import { Tid } from '../Tid/Tid'
 
 
 
@@ -32,64 +32,72 @@ import { ApmDataProxy } from './common/ApmDataProxy'
  * such as the transcription editor and the edition composer.
  *
  */
-export class NormalPage {
+export class NormalPage extends ApmPage {
 
   constructor(options) {
+    super(options)
 
-    let optionsChecker = new OptionsChecker({
-      context: 'NormalPage',
-      optionsDefinition: {
-        baseUrl: { required: true, type: 'string'},
-        userId: { type: 'number', default: -1 },
-        userInfo: { type: 'object'},
-        siteLanguage: { type: 'string', default: ''},
-        showLanguageSelector: { type: 'boolean', default: false}
-      }
-    })
-    this.normalPageOptions = optionsChecker.getCleanOptions(options)
-    setBaseUrl(this.normalPageOptions.baseUrl)
-    this.userId = this.normalPageOptions.userId
-    this.userName = this.normalPageOptions.userInfo.username
-
-    this.apmDataProxy = new ApmDataProxy()
-
-    this.showLanguageSelector = this.normalPageOptions.showLanguageSelector
-    if (this.showLanguageSelector) {
-      this.siteLanguage = this.normalPageOptions.siteLanguage
-      if (this.siteLanguage === '' || this.siteLanguage === 'detect') {
-        console.log(`No site language given, detecting language`)
-        this.siteLanguage = SiteLang.detectBrowserLanguage()
-      }
-      setSiteLanguage(this.siteLanguage)
-      console.log(`Site language set to '${this.siteLanguage}'`)
-    } else {
-      this.siteLanguage = 'en'
-    }
-    this.container = $('#page-content')
-    this.topNavBarContainer = $('#top-nav-bar')
   }
 
+  async bootstrapHtml() {
+    $('body').html(await this.getBodyHtml()).addClass(await this.getBodyClass());
+  }
+
+  async getBodyHtml() {
+    return `<div class="page-top-bar"></div>
+    <div class="page-content"></div>
+    <div class="page-footer"></div>`;
+  }
+
+  async getBodyClass() {
+    return `normal-page`;
+  }
 
   /**
    *
    * @return {Promise<void>}
    */
-  initPage() {
-    return new Promise ( async (resolve) => {
-      this.container.html(await this.genHtml())
-      this.topNavBarContainer.html(this.genTopNavBarHtml())
-      if (this.showLanguageSelector) {
-        $('#change-lang-en').on('click', this.genOnClickLangChange('en'))
-        $('#change-lang-es').on('click', this.genOnClickLangChange('es'))
+  async initPage() {
+    await this.bootstrapHtml();
+    this.pageContentsDiv = $('div.page-content')
+    this.topBarDiv = $('div.page-top-bar')
+    this.footerDiv = $('div.page-footer')
+    this.topBarDiv.html(await this.genTopNavBarHtml());
+    this.pageContentsDiv.addClass(this.getExtraClassesForPageContentDiv().join(' ')).html(await this.genContentHtml());
+    this.footerDiv.html(await this.genFooterHtml()).addClass('text-muted');
+    if (this.showLanguageSelector) {
+      $('#change-lang-en').on('click', this.genOnClickLangChange('en'));
+      $('#change-lang-es').on('click', this.genOnClickLangChange('es'));
+    }
+  }
+
+  getBreadcrumbNavHtml(breadCrumbArray) {
+    let breadcrumbItemsHtml = breadCrumbArray.map( (breadcrumb) => {
+      let activeClass = breadcrumb.active === true ? 'active' : '';
+      let linkStart = '';
+      let linkEnd = '';
+      if(breadcrumb.url !== undefined && breadcrumb.url !== ''){
+        linkStart = `<a href="${breadcrumb.url}">`;
+        linkEnd = '</a>';
       }
-      resolve()
-    })
+      return `<li class="breadcrumb-item ${activeClass}">${linkStart}${breadcrumb.label}${linkEnd}</li>`;
+    }).join('')
+    return `<nav aria-label="breadcumb"><ol class="breadcrumb">${breadcrumbItemsHtml}</ol></nav>`
+  }
+
+
+  /**
+   * Returns extra classes to add to the page content's div
+   * @return {*[]}
+   */
+  getExtraClassesForPageContentDiv() {
+    return []
   }
 
   genOnClickLangChange(lang) {
     return (ev) => {
       ev.preventDefault()
-      SiteLang.saveLangInCookie(lang)
+      this.saveLangInCache(lang)
       this.changeLanguage(lang)
     }
   }
@@ -98,8 +106,8 @@ export class NormalPage {
    *
    * @return {Promise<string>}
    */
-  genHtml() {
-    return new Promise( (resolve) => { resolve('')})
+  async genContentHtml() {
+    return `Page content will be here...`;
   }
 
   changeLanguage(newLang) {
@@ -112,42 +120,39 @@ export class NormalPage {
     }
   }
 
-  /**
-   *
-   * @param url
-   * @param forceActualFetch
-   * @return {Promise<{}>}
-   */
-  fetch(url, forceActualFetch = false) {
-    let key = encodeURI(url)
-    return this.cachedFetcher.fetch(key, () => {
-      return $.get(url)
-    }, forceActualFetch)
+
+  async genFooterHtml() {
+    let cd = this.commonData;
+    let renderTimeString= ApmFormats.time(cd.renderTimestamp, { withTimeZoneOffset: true});
+
+    return `${cd.appName} v${cd.appVersion} &bull; &copy ${cd.copyrightNotice} &bull; ${renderTimeString}`
   }
 
-  genTopNavBarHtml() {
+  async genTopNavBarHtml() {
     let languageSelectorHtml = ''
     if (this.showLanguageSelector) {
-      languageSelectorHtml = ` <ul class="navbar-nav">
+      languageSelectorHtml = `<ul class="navbar-nav">
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#"  data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                     ${this.siteLanguage.toUpperCase()}</a>
-                    <ul class="dropdown-menu">
+                    <ul class="dropdown-menu dropdown-menu-right">
                         <li><a class="nav-link dd-menu-item" href="#" id="change-lang-en">EN - English</a></li>
                         <li><a class="nav-link dd-menu-item" href="#" id="change-lang-es">ES - Español</a></li>
                     </ul>
                 </li>
             </ul>`
     }
-    return `<div class="container">
-        <a class="navbar-brand" style="padding:0;" href="${urlFor('siteHome')}"><img src="${urlFor('images')}/apm-logo-plain.svg" alt="APM" height="40" ></a>
+    return `
+<nav class="navbar navbar-expand-lg navbar-light">
+<a class="navbar-brand" style="padding:0;" href="${urlGen.siteHome()}"><img src="${urlGen.images()}/apm-logo-plain.svg" alt="APM" height="40" ></a>
         <div id="navbar" class="collapse navbar-collapse">
             <ul class="navbar-nav mr-auto">
-                <li class="nav-item"><a class="nav-link" href="${urlFor('siteDashboard')}" title="${tr('Dashboard')}">${tr('Dashboard')}</a></li>
-                <li class="nav-item"><a class="nav-link" href="${urlFor('siteDocs')}" title="${tr('Documents')}">${tr('Documents')}</a></li>
-                <li class="nav-item"><a class="nav-link" href="${urlFor('siteChunks')}" title="${tr('Chunks')}">${tr('Chunks')}</a></li>
-                <li class="nav-item"><a class="nav-link" href="${urlFor('siteUsers')}" title="${tr('Users')}">${tr('Users')}</a></li>
-                <li class="nav-item"><a class="nav-link" href="${urlFor('siteSearch')}" title="${tr('Search')}">${tr('Search')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlGen.siteDashboard()}" title="${tr('Dashboard')}">${tr('Dashboard')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlGen.siteDocs()}" title="${tr('Documents')}">${tr('Documents')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlGen.siteChunks()}" title="${tr('Works')}">${tr('Works')}</a></li>
+                <!-- <li class="nav-item"><a class="nav-link" href="${urlGen.siteUsers()}" title="${tr('Users')}">${tr('Users')}</a></li> -->
+                <li class="nav-item"><a class="nav-link" href="${urlGen.sitePeople()}" title="${tr('People')}">${tr('People')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlGen.siteSearch()}" title="${tr('Search')}">${tr('Search')}</a></li>
                 <li class="nav-item">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</li>
                 <li class="nav-item dropdown">
                    <a href="/" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">${tr('Useful Links')}</a>
@@ -162,17 +167,21 @@ export class NormalPage {
             <ul class="navbar-nav">
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#"  data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                    <i class="fas fa-user"></i>&nbsp;${this.normalPageOptions.userInfo.fullname}</a>
-                    <ul class="dropdown-menu">
-                        <li><a class="nav-link dd-menu-item" href="${urlFor('siteUserProfile', this.userName)}">${tr('My Profile')}</a></li>
-                        <li><a class="nav-link dd-menu-item"  href="${urlFor('siteUserProfile', this.userName)}">${tr('My Settings')}</a></li>
+                    <i class="fas fa-user"></i>&nbsp;${this.commonData.userInfo.name}</a>
+                    <ul class="dropdown-menu dropdown-menu-right">
+                        <li><a class="nav-link dd-menu-item" href="${urlGen.sitePerson(Tid.toBase36String(this.userTid))}">${tr('My Profile')}</a></li>
+                        <!-- <li><a class="nav-link dd-menu-item"  href="${urlGen.siteUserProfile(this.userName)}">${tr('My Settings')}</a></li> -->
                         <li role="separator" class="divider"></li>
-                        <li><a class="nav-link dd-menu-item" href="${urlFor('siteLogout')}" title="${tr('Logout')}">${tr('Logout')}</a></li>
+                        <li><a class="nav-link dd-menu-item" href="${urlGen.siteLogout()}" title="${tr('Logout')}">${tr('Logout')}</a></li>
                     </ul>
                 </li>
             </ul>
             ${languageSelectorHtml}
         </div>
-        </div>`
+        </nav>`
+  }
+
+  getPredicateHtml(predicateName, predicateValue, divClass = 'entity-predicate') {
+    return `<div class="${divClass}"><span class="predicate">${predicateName}</span>: ${predicateValue}</div>`
   }
 }

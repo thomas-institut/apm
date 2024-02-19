@@ -4,11 +4,16 @@ namespace APM\Jobs;
 
 use APM\CommandLine\EditionsIndexManager;
 use APM\System\Job\JobHandlerInterface;
+use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
+use Exception;
 
 class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
 {
 
+    /**
+     * @throws PersonNotFoundException
+     */
     public function run(SystemManager $sm, array $payload): bool
     {
         $logger = $sm->getLogger();
@@ -16,7 +21,7 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateOpenSearchIndex implem
 
         try {
             $this->initializeOpenSearchClient($config);
-        } catch (\Exception $e) {
+        } catch (Exception) {
             $logger->debug('Connecting to OpenSearch server failed.');
             return false;
         }
@@ -27,8 +32,7 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateOpenSearchIndex implem
         $table_id = $payload[0];
 
         // Fetch indexing-relevant data from the SQL database
-        $cTableManager = $sm->getCollationTableManager();
-        $data = $eic->getEditionData($cTableManager, $table_id);
+        $data = $eic->getEditionData($sm->getCollationTableManager(), $table_id);
 
         if (!empty($data)) {
             

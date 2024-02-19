@@ -5,6 +5,7 @@ namespace ThomasInstitut\EntitySystem;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use RuntimeException;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\DataCache\DataCache;
@@ -13,6 +14,15 @@ use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataCache\SimpleCacheAware;
 use ThomasInstitut\DataTable\DataTable;
+use ThomasInstitut\DataTable\InvalidRowForUpdate;
+use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\EntitySystem\Exception\DataConsistencyException;
+use ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException;
+use ThomasInstitut\EntitySystem\Exception\InvalidArgumentException;
+use ThomasInstitut\EntitySystem\Exception\InvalidAttributeException;
+use ThomasInstitut\EntitySystem\Exception\InvalidNameException;
+use ThomasInstitut\EntitySystem\Exception\InvalidRelationException;
+use ThomasInstitut\EntitySystem\Exception\InvalidTypeException;
 use ThomasInstitut\TimeString\TimeString;
 
 
@@ -20,7 +30,7 @@ use ThomasInstitut\TimeString\TimeString;
  * An implementation of an entity system using (existing) DataTable and DataCache object instances as storage.
  *
  * In order to function the system needs at least one DataTable to store statements and a DataCache, but both data
- * can cache can be partitioned based on entity type.
+ * and cache can be partitioned based on entity type.
  *
  * For data security and performance reasons it is generally a good idea to have a dedicated DataTable for system
  * entities (types, attributes, relations, etc.) and one or more DataTable for the other entities. The larger the
@@ -77,9 +87,6 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
     protected ?LoggerInterface $logger = null;
     private InMemoryDataCache $internalInMemoryCache;
 
-
-
-
     /**
      * Constructs an entity system using the given (existing) data tables and cache.
      *
@@ -112,7 +119,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
     public function __construct(array $config, string $cachingPrefix = '', LoggerInterface $logger = null, bool $debug = false)
     {
         /**
-         * The goal is to construct the instance as fast as possible, caching data only when needed.
+         * The goal is to construct the EntitySystem instance as fast as possible, caching data only when needed.
          * For this reason, the only data that is read and checked at construction time is $this->typesConfig.
          * If this data is not available, it is assumed that the entity system is empty and should be bootstrapped.
          */
@@ -352,13 +359,13 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
                 'predicate' => EntitySystem::ATTRIBUTE_NAME,
                 'cancelled' => 0
             ]);
-            if (count($rows) === 0 || $rows[0]['value'] === '') {
+            if (count($rows) === 0 || $rows->getFirst()['value'] === '') {
                 throw new DataConsistencyException("No name for '$typeName' entity $entity");
             }
             if (count($rows) > 1 ) {
                 throw new DataConsistencyException("Multiple names for '$typeName' entity $entity");
             }
-            $tids[$rows[0]['value']] = $entity;
+            $tids[$rows->getFirst()['value']] = $entity;
         }
         return $tids;
     }
@@ -491,7 +498,12 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             $row['value'] = $valueOrObject;
         }
 
-        $statementsTable->createRow($row);
+        try {
+            $statementsTable->createRow($row);
+        } catch (RowAlreadyExists $e) {
+            // should never happen
+            throw new RuntimeException($e->getMessage());
+        }
         return $statementTid;
     }
 
@@ -797,7 +809,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
                 return [
                     'subjectDataType' => $subjectType,
                     'dataTable' => $table,
-                    'statementRow' => $rows[0]
+                    'statementRow' => $rows->getFirst()
                 ];
             }
             if (count($rows) > 1) {
@@ -817,18 +829,18 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
                     $rows =  $table->findRows(['tid' => $statementTid]);
                     if (count($rows) === 1) {
                         try {
-                            $subjectType = $this->getEntityType($rows[0]['subject']);
-                        } catch (EntityDoesNotExistException $e) {
+                            $subjectType = $this->getEntityType($rows->getFirst()['subject']);
+                        } catch (EntityDoesNotExistException) {
                             // should never happen!
                             $msg = "EntityDoesNotExist exception looking for subject type for statement";
-                            $this->codeDebug( $msg, ['statementRow' => $rows[0] ]);
+                            $this->codeDebug( $msg, ['statementRow' => $rows->getFirst() ]);
                             throw new DataConsistencyException($msg);
                         }
                         // found it!
                         return [
                             'subjectDataType' => $subjectType,
                             'dataTable' => $table,
-                            'statementRow' => $rows[0]
+                            'statementRow' => $rows->getFirst()
                         ];
                     }
                     if (count($rows) > 1) {
@@ -851,7 +863,13 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         $statementRow['cancelledBy'] = $cancelledBy;
         $statementRow['cancellationNote'] = $cancellationNote;
         $statementRow['cancellationTimestamp'] = $timestamp;
-        $table->updateRow($statementRow);
+        try {
+            $table->updateRow($statementRow);
+        } catch (InvalidRowForUpdate $e) {
+            // should never happen
+            $this->codeDebug("Invalid row for update: " . $e->getMessage());
+            throw new RuntimeException($e->getMessage());
+        }
         // delete entity caches for subject and/or object
         $this->deleteEntityDataInCache($statementRow['subject'], $subjectDataCache);
         if ($statementRow['object'] !== -1 && $statementRow['object'] !== null) {
@@ -904,10 +922,10 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             if (!in_array($table, $tablesSearched)) {
                 $rows = $table->findRows([ 'subject' => $entityTid, 'predicate' => EntitySystem::RELATION_HAS_TYPE, 'cancelled' => 0]);
                 if (count($rows) === 1) {
-                    return $rows[0]['object'];
+                    return $rows->getFirst()['object'];
                 }
                 if (count($rows) > 1) {
-                    $this->logger->error("Found more than one type-assignment statement for entity $entityTid", $rows);
+                    $this->logger->error("Found more than one type-assignment statement for entity $entityTid", iterator_to_array($rows));
                 }
                 $tablesSearched[] = $table;
             }
@@ -996,13 +1014,13 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             $table =$this->typeConfig[$typeName]['statementsTable'];
             $rows = $table->findRows([ 'subject' => $entityTid, 'predicate' => EntitySystem::ATTRIBUTE_NAME, 'cancelled' => 0]);
             if (count($rows) === 1) {
-                return $rows[0]['value'];
+                return $rows->getFirst()['value'];
             }
             if (count($rows) > 1) {
                 // a data error
                 $this->logger->error("Found more than one name for entity $entityTid of type $typeName");
                 // but this should not break the system
-                return $rows[0]['value'];
+                return $rows->getFirst()['value'];
             }
         }
         throw new EntityDoesNotExistException();
@@ -1236,6 +1254,11 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         return $statements;
     }
 
+    /**
+     * @throws InvalidTypeException
+     * @throws EntityDoesNotExistException
+     * @throws DataConsistencyException
+     */
     protected function getEntityStatementsAsObject(int $entityTid, string $entityTypeName) : array {
         // for now, a brute force search in all statement tables
         $tablesSearched = [];
@@ -1496,7 +1519,8 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
     }
 
     private function getUpdatedPredicateConfig(string $type, string $attributeName) : array {
-
+        // TODO: implement this
+        return [];
     }
 
     /**

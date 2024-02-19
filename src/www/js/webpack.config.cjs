@@ -7,19 +7,22 @@ module.exports = {
       filename: 'Quill.bundle.js'
     },
     DocPage: './pages/DocPage.js',
+    DocumentsPage: './pages/DocumentsPage.js',
+    WorksPage: './pages/WorksPage.js',
+    WorkPage: './pages/WorkPage.js',
     DocDefPages: './pages/DocDefPages.js',
     DocEditPage: './pages/DocEditPage.js',
     DocNewDocPage: './pages/DocNewDocPage.js',
+    ErrorPage: './pages/ErrorPage.js',
+    PageViewer: './pages/PageViewer/PageViewer.js',
     CollationTableEditor: './pages/CollationTableEditor.js',
     EditionComposer: {
       import: './EditionComposer/EditionComposer.js',
       filename: 'EditionComposer.bundle.js',
       dependOn: 'QuillPack',
     },
-    People: {
-      import: './pages/PeoplePage.js',
-      filename: 'PeoplePage.bundle.js'
-    },
+    PeoplePage: './pages/PeoplePage.js',
+    PersonPageNew: './pages/PersonPageNew.js',
     PersonPage: {
       import: './pages/PersonPage.js',
       filename: 'PersonPage.bundle.js'
@@ -27,25 +30,22 @@ module.exports = {
     MceComposer: {
       import: './MceComposer/MceComposer.js',
       filename: 'MceComposer.bundle.js',
-      // dependOn: 'QuillPack',
     },
     AutomaticCollationTable: './pages/AutomaticCollationTable/AutomaticCollationTable.js',
     ChunkPage: './pages/ChunkPage.js',
     ApmLogPage: './pages/ApmLogPage.js',
     DashboardPage: './pages/DashboardPage.js',
     SearchPage: './pages/SearchPage.js',
-    UserManagerPage: './pages/UserManagerPage.js',
-    UserProfilePage:  './pages/UserProfilePage.js',
     // JASMINE TESTS
     JasmineTests: {
       import: '../test/js/modules-to-test.js',
       filename: '../../test/js/JasmineTests.bundle.js'
     },
     // FUNCTIONAL TESTS
-    TestMultiPanelUI2: {
-      import: '../test/js/functional/TestMultiPanelUI2.js',
-      filename: '../../test/js/functional/dist/TestMultiPanelUI2.bundle.js'
-    },
+    // TestMultiPanelUI2: {
+    //   import: '../test/js/functional/TestMultiPanelUI2.js',
+    //   filename: '../../test/js/functional/dist/TestMultiPanelUI2.bundle.js'
+    // },
 
   },
   externals: {

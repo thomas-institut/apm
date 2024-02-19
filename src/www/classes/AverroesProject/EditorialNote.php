@@ -1,7 +1,7 @@
 <?php
 
 /* 
- *  Copyright (C) 2019 Universität zu Köln
+ *  Copyright (C) 2019-204 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,140 +18,58 @@
  *  
  */
 
-/**
- *
- * EditorialNote: 
- *      type:  offline | inline 
- *      target: offline note mark or inline node id
- *      text: markup 
- *      author: Person = SQL people.id with 'annotator' in the person's role.
- *      creationTime : DateTime
- *      language:  ar | he | la | de | en | fr
- *
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
- */
-
 namespace AverroesProject;
 
 class EditorialNote {
     
-    /**
-     *
-     * @var int
-     */
-    public $id = 0;
-    
-    /**
-     *
-     * @var int
-     */
-    public $type;
+
+    public int $id = 0;
+    public int $type;
     
     const OFFLINE = 1;
     const INLINE = 2;
-    
-    
-    /**
-     *
-     * @var int
-     */
-    public $target = 0;
-    /**
-     *
-     * @var int
-     */
-    public $authorId = 0;
-    
-    /**
-     *
-     * @var string
-     */
-    public $text = '';
-    
-    /**
-     *
-     * @var string(datetime)
-     */
-    public $time = '';
-    
-    /**
-     *
-     * @var string
-     */
-    public $lang = 'en';
+    public int $target = 0;
+    public int $authorTid = 0;
+    public string $text = '';
+    public string $time = '';
+    public string $lang = '';
     
     public function __construct() {
         $this->type = self::INLINE;
     }
     
     
-    public static function constructEdNoteFromRow($theRow) 
+    public static function constructEdNoteFromDatabaseRow(array $theRow): EditorialNote|bool
     {
-        
-        $en = new EditorialNote();
-        
-        if (!isset($theRow['type'])) {
+        $editorialNote = self::constructEdNoteFromArray($theRow);
+        if ($editorialNote === false) {
             return false;
         }
-        $type = (int) $theRow['type'];
-        if (!$en->isGivenTypeValid($type)) {
-            return false;
-        }
-        $en->setType($type);
-        if (isset($theRow['id'])) {
-            $en->id = (int) $theRow['id'];
-        }
-        if (isset($theRow['author_id'])) {
-            $en->authorId = (int) $theRow['author_id'];    
-        }
-        if (isset($theRow['lang'])) {
-            $en->lang =  (string) $theRow['lang'];
-        }
-        if (isset($theRow['target'])) {
-            $en->target =  (int) $theRow['target'];
-        }
-        if (isset($theRow['time'])) {
-            $en->time =  (string) $theRow['time'];
-        }
-        if (isset($theRow['text'])) {
-            $en->setText($theRow['text']);
-        }
-
-        return $en;
+        $editorialNote->authorTid = intval($theRow['author_tid']) ?? 0;
+        return $editorialNote;
     }
     
-    public static function constructEdNoteFromArray($theArray) 
+    public static function constructEdNoteFromArray($theArray): EditorialNote|bool
     {
-        $en = new EditorialNote();
-        
+        $editorialNote = new EditorialNote();
+
         if (!isset($theArray['type'])) {
             return false;
         }
         $type = (int) $theArray['type'];
-        if (!$en->isGivenTypeValid($type)) {
+        if (!$editorialNote->isTypeValid($type)) {
             return false;
         }
-        $en->setType($type);
-        if (isset($theArray['id'])) {
-            $en->id = (int) $theArray['id'];
-        }
-        if (isset($theArray['authorId'])) {
-            $en->authorId = (int) $theArray['authorId'];    
-        }
-        if (isset($theArray['lang'])) {
-            $en->lang =  (string) $theArray['lang'];
-        }
-        if (isset($theArray['target'])) {
-            $en->target =  (int) $theArray['target'];
-        }
-        if (isset($theArray['time'])) {
-            $en->time =  (string) $theArray['time'];
-        }
-        if (isset($theArray['text'])) {
-            $en->setText($theArray['text']);
-        }
+        $editorialNote->setType($type);
 
-        return $en;
+        $editorialNote->id = intval($theArray['id']) ?? 0;
+        $editorialNote->authorTid = intval($theArray['authorTid']) ?? 0;
+        $editorialNote->lang = $theArray['lang'] ?? '';
+        $editorialNote->target = intval($theArray['target']) ?? 0;
+        $editorialNote->time = $theArray['time'] ?? '';
+        $editorialNote->text = self::normalizeTextValue($theArray['text'] ?? '');
+
+        return $editorialNote;
     }
 
     /**
@@ -160,26 +78,26 @@ class EditorialNote {
      *   - converts all whitespace inside the string to a single space
      *
      * @param string $str
-     * @return string|string[]|null
+     * @return string
      */
-    private function normalizeString(string $str)
+    private static function normalizeTextValue(string $str) : string
     {
         return preg_replace('/\s+/', ' ', trim($str));
     }
     
-    public function setText(string $text) 
-    {
-        $this->text = $this->normalizeString($text);
-    }
+//    public function setText(string $text): void
+//    {
+//        $this->text = self::normalizeTextValue($text);
+//    }
     
-    public function setType($type) 
+    public function setType($type): void
     {
-        if ($this->isGivenTypeValid($type)) {
+        if ($this->isTypeValid($type)) {
             $this->type = $type;
         }
     }
     
-    private function isGivenTypeValid($type) 
+    private function isTypeValid($type): bool
     {
         return $type === self::OFFLINE || $type === self::INLINE;
     }

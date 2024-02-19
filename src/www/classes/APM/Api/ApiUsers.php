@@ -21,12 +21,21 @@
 namespace APM\Api;
 
 use APM\System\DataRetrieveHelper;
+use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
+use APM\System\User\InvalidEmailAddressException;
+use APM\System\User\InvalidPasswordException;
+use APM\System\User\InvalidUserNameException;
+use APM\System\User\UserNameAlreadyInUseException;
+use APM\System\User\UserNotFoundException;
+use APM\System\User\UserTag;
+use APM\ToolBox\HttpStatus;
 use Exception;
 use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\EntitySystem\Tid;
 
 /**
  * API Controller class
@@ -43,324 +52,141 @@ class ApiUsers extends ApiController
     const CACHE_KEY_PREFIX_CT_INFO = 'ApiUsers-CollationTableInfoData-';
 
     const CACHE_TTL_CT_INFO = 7 * 24 * 3600;  // 7 days
-
-
-    public function getAllUsers(Request $request, Response $response) : Response {
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
-        $um = $this->getDataManager()->userManager;
-
-        $users = $um->getUserInfoForAllUsers();
-        $origin = $request->getHeaders()["Origin"];
-        // TODO: check origin against list of valid origins
-        $response = $response->withHeader("Access-Control-Allow-Origin", $origin)->withHeader("Access-Control-Allow-Credentials", "true");
-        return $this->responseWithJson($response, $users);
-    }
-
-
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
-     */
-    public function getUserProfileInfo(Request $request, Response $response): Response
-    {
-        $this->profiler->start();
-        $profileUserId =  (int) $request->getAttribute('userId');
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $profileUserId);
-
-        $um = $this->getDataManager()->userManager;
-        $userProfileInfo = $um->getUserInfoByUserId($profileUserId);
-        if ($userProfileInfo === false ) {
-            $this->logger->error("Error getting info from user ID",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-            return $this->responseWithStatus($response, 409);
-        }
-        $userProfileInfo['isroot'] = $um->isRoot($profileUserId);
-        return $this->responseWithJson($response,$userProfileInfo);
-    }
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
+     * @throws UserNotFoundException
      */
     public function updateUserProfile(Request $request, Response $response): Response
     {
-        $profileUserId =  (int) $request->getAttribute('userId');
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $profileUserId);
+        $profileUserTid =  (int) $request->getAttribute('userTid');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $profileUserTid);
 
-        $um = $this->getDataManager()->userManager;
+        $newUserManager = $this->systemManager->getUserManager();
+
+        if ($profileUserTid === $this->apiUserTid) {
+            $this->logger->info("User $profileUserTid is changing their own user profile");
+        } else {
+            if (!$newUserManager->isUserAllowedTo($this->apiUserTid, UserTag::MANAGE_USERS)) {
+                $this->logger->error("Api user $this->apiUserTid not allowed to update user profile $profileUserTid");
+                return $this->responseWithStatus($response, HttpStatus::UNAUTHORIZED);
+            }
+            $this->logger->info("User $this->apiUserTid is changing user profile $profileUserTid");
+        }
+
         $postData = $request->getParsedBody();
-        $fullname = $postData['fullname'];
-        $email = $postData['email'];
-        $profileUserInfo = $um->getUserInfoByUserId($profileUserId);
+        $email = trim($postData['email']) ?? '';
+        $password1 = trim($postData['password1']) ?? '';
+        $password2 = trim($postData['password2']) ?? '';
 
-        if ($profileUserInfo === false ) {
-            $this->logger->error("Error getting info from user ID",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-            return $this->responseWithStatus($response, 409);
-        }
-       
-        if ($fullname == '') {
-            $this->logger->warning("No fullname given", 
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-            return $this->responseWithStatus($response, 409);
-        }
-        
-        $profileUserName = $profileUserInfo['username'];
-        $updaterInfo = $um->getUserInfoByUserId($this->apiUserId);
-        $updater = $updaterInfo['username'];
-        if ($updater != $profileUserName && 
-                !$um->isUserAllowedTo($updaterInfo['id'], 'manageUsers')) {
-            $this->logger->warning("$updater tried to update "
-                    . "$profileUserName's profile but she/he is not allowed", 
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-            return  $this->responseWithStatus($response, 403);
-        }
-        if ($fullname === $profileUserInfo['fullname'] && 
-                $email === $profileUserInfo['email']) {
-            $this->logger->notice("$updater tried to update "
-                    . "$profileUserName's profile, but without new information", 
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-            return  $this->responseWithStatus($response, 200);
-        }
-        
-        if ($um->updateUserInfo($profileUserId, $fullname, $email) !== false) {
-            
-            $this->logger->info("$updater updated $profileUserName's "
-                    . "profile with fullname '$fullname', email '$email'", 
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-            return $this->responseWithStatus($response, 200);
+        try {
+            $userData = $newUserManager->getUserData($profileUserTid);
+        } catch (UserNotFoundException) {
+            $this->logger->error("User $profileUserTid not found");
+            return $this->responseWithJson($response, [ 'errorMsg' => 'User not found' ], HttpStatus::NOT_FOUND);
         }
 
-        $this->logger->error("Could not update user $profileUserId with "
-                . "fullname '$fullname', email '$email'", 
-                [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-        return $this->responseWithStatus($response, 409);
+        $changesMade = false;
+
+        // update email address, if it's different from current one
+        if ($email !== '' && $email !== $userData->emailAddress) {
+            try {
+                $newUserManager->changeEmailAddress($profileUserTid, $email);
+                $changesMade = true;
+            } catch (InvalidEmailAddressException) {
+                $this->logger->error("Invalid email address '$email' updating user profile $profileUserTid");
+                return $this->responseWithJson($response, [ 'errorMsg' => 'Invalid email address' ], HttpStatus::BAD_REQUEST);
+            } catch (Exception $e) {
+                $this->logException($e, "SystemError");
+                return $this->responseWithJson($response, [ 'errorMsg' => 'System Error' ], HttpStatus::INTERNAL_SERVER_ERROR);
+            }
+        }
+
+        if ($password1 !== '' && $password2 !== $password1) {
+            $this->logger->error("Passwords do not match in request to update user profile $profileUserTid");
+            return $this->responseWithJson($response, [ 'errorMsg' => 'Passwords do not match' ], HttpStatus::BAD_REQUEST);
+        }
+
+        if ($password1 !== '') {
+            try {
+                $newUserManager->changePassword($profileUserTid, $password1);
+                $changesMade = true;
+            } catch (InvalidPasswordException) {
+                $this->logger->error("Invalid password updating user profile $profileUserTid");
+                return $this->responseWithJson($response, [ 'errorMsg' => 'Invalid password' ], HttpStatus::BAD_REQUEST);
+            } catch (Exception $e) {
+                $this->logException($e, "SystemError");
+                return $this->responseWithJson($response, [ 'errorMsg' => 'System Error' ], HttpStatus::INTERNAL_SERVER_ERROR);
+            }
+        }
+        if (!$changesMade) {
+            $this->logger->info("No changes to profile $profileUserTid in a valid API call");
+        }
+
+        return $this->responseWithStatus($response, HttpStatus::SUCCESS);
     }
 
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
-     */
-    public function changeUserPassword(Request $request, Response $response): Response
-    {
-        $this->profiler->start();
-        $profileUserId =  (int) $request->getAttribute('userId');
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $profileUserId);
-
-        $um = $this->getDataManager()->userManager;
-        $postData = $request->getParsedBody();
-        $password1 = $postData['password1'];
-        $password2 = $postData['password2'];
-        $profileUserInfo = $um->getUserInfoByUserId($profileUserId);
-        
-        if ($profileUserInfo === false ) {
-            $this->logger->error("Error getting info for user ID", 
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-            return $this->responseWithStatus($response, 409);
-        }
-        $profileUserName = $profileUserInfo['username'];
-
-
-        $updaterInfo = $um->getUserInfoByUserId($this->apiUserId);
-        $updater = $updaterInfo['username'];
-        if ($updater != $profileUserName && 
-                !$um->isUserAllowedTo($updaterInfo['id'], 'manageUsers')) {
-            $this->logger->warning("$updater tried to changer "
-                    . "$profileUserName's password but she/he is not allowed", 
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-            return $this->responseWithStatus($response, 403);
-        }
-        if ($password1 == '') {
-             $this->logger->warning("Empty password for user "
-                     . "$profileUserName, change attempted by $updater", 
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-            return $this->responseWithStatus($response, 409);
-        }
-        if ($password1 !== $password2) {
-            $this->logger->warning("Passwords do not match for user "
-                    . "$profileUserName, change attempted by $updater", 
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-            return $this->responseWithStatus($response, 409);
-        }
-
-        if ($um->storeUserPassword($profileUserName, $password1)) {
-            $this->logger->info("$updater changed "
-                    . "$profileUserName's password", 
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-            return $this->responseWithStatus($response, 200);
-        }
-
-        $this->logger->error("Error storing new password for "
-                . "$profileUserName, change attempted by $updater", 
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-        return $this->responseWithStatus($response, 409);
-    }
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-    public function makeUserRoot(Request $request, Response $response): Response
-    {
-        $profileUserId =  (int) $request->getAttribute('userId');
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $profileUserId);
-
-        $postData = $request->getParsedBody();
-        $confirmroot = $postData['confirmroot'];
-        if ($confirmroot !== 'on') {
-            $this->logger->warning("No confirmation in make root request", 
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-            return $this->responseWithStatus($response, 409);
-        }
-        $um = $this->getDataManager()->userManager;
-        
-        $profileUserInfo = $um->getUserInfoByUserId($profileUserId);
-        if ($profileUserInfo === false ) {
-            $this->logger->error("Error getting info for user ID", 
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-            return $this->responseWithStatus($response, 409);
-        }
-        $profileUserName = $profileUserInfo['username'];
-        $updaterInfo = $um->getUserInfoByUserId($this->apiUserId);
-        $updater = $updaterInfo['username'];
-        if (!$um->isRoot($updaterInfo['id'])) {
-            $this->logger->warning("$updater tried to make $profileUserName "
-                    . "root but she/he is not allowed", 
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-            return $this->responseWithStatus($response, 403);
-        }
-        
-       if ($um->makeRoot($profileUserId)) {
-            $this->logger->info("$updater gave root status to $profileUserName", 
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-            return $this->responseWithStatus($response, 200);
-        }
-        
-        $this->logger->error("Error making $profileUserName root, change "
-                . "attempted by $updater", 
-                    [ 'apiUserId' => $this->apiUserId,
-                      'userId' => $profileUserId]);
-        return $this->responseWithStatus($response, 409);
-    }
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
+     * @throws UserNotFoundException
      */
     public function createNewUser(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $um = $this->getDataManager()->userManager;
+
+        $apmUserManager = $this->systemManager->getUserManager();
+        $personManager = $this->systemManager->getPersonManager();
+
+        $personTid = intval($request->getAttribute('personTid'));
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $personTid);
+
+        if (!$apmUserManager->isUserAllowedTo($this->apiUserTid, UserTag::MANAGE_USERS)) {
+            $this->logger->error("Api user $this->apiUserTid not allowed to create users");
+            return $this->responseWithStatus($response, HttpStatus::UNAUTHORIZED);
+        }
+        $this->logger->info("User $this->apiUserTid is making user $personTid");
+
+        try {
+            $personData = $personManager->getPersonEssentialData($personTid);
+        } catch (PersonNotFoundException) {
+            $this->logger->error("Person $personTid not found");
+            return $this->responseWithJson($response, [ 'errorMsg' => 'Person not found' ], HttpStatus::NOT_FOUND);
+        }
+
+        if ($personData->isUser) {
+            $this->logger->info("Person $personTid is already a user");
+            return $this->responseWithJson($response, [ 'info' => 'Person already a user' ], HttpStatus::SUCCESS);
+        }
+
         $postData = $request->getParsedBody();
-        $username = $postData['username'];
-        $fullname = $postData['fullname'];
-        $email = $postData['email'];
-        $password1 = $postData['password1'];
-        $password2 = $postData['password2'];
-        
-        $updaterInfo = $um->getUserInfoByUserId($this->apiUserId);
-        if ($updaterInfo === false) {
-            $this->logger->error("Can't read updater info from DB", 
-                    ['apiUserId' => $this->apiUserId]);
-            return $this->responseWithStatus($response, 404);
+
+        $userName = trim($postData['username']) ?? '';
+        $requiredData = [
+            'username' => $userName,
+        ];
+
+        foreach($requiredData as $key => $value) {
+            if ($value === '') {
+                $this->logger->error("No $key given for user creation");
+                return $this->responseWithJson($response, [ 'errorMsg' => "$key not given"], HttpStatus::BAD_REQUEST);
+            }
         }
-        $updater = $updaterInfo['username'];
-        
-        if (!$um->isUserAllowedTo($updaterInfo['id'], 'manageUsers')) {
-            $this->logger->warning("$updater tried to create a user, "
-                    . "but she/he is not allowed", 
-                    ['apiUserId' => $this->apiUserId]);
-            return $this->responseWithStatus($response, 401);
+
+        // attempt to create the user
+        try {
+            $apmUserManager->createUser($personTid, $userName);
+        } catch (InvalidUserNameException) {
+            $this->logger->error("Invalid username creating user $personTid");
+            return $this->responseWithJson($response, [ 'errorMsg' => 'Invalid username' ], HttpStatus::BAD_REQUEST);
+        } catch (UserNameAlreadyInUseException) {
+            $this->logger->error("Username already exists creating user $personTid");
+            return $this->responseWithJson($response, [ 'errorMsg' => 'Username already in use' ], HttpStatus::CONFLICT);
         }
-        
-        if ($username == '') {
-            $this->logger->warning("No username given for user creation, "
-                    . "change attempted by $updater", 
-                    ['apiUserId' => $this->apiUserId]);
-            return $this->responseWithStatus($response, 409);
-        }
-        if ($fullname == '') {
-            $this->logger->warning("No fullname given for user creation, "
-                    . "change attempted by $updater", 
-                    ['apiUserId' => $this->apiUserId]);
-            return $this->responseWithStatus($response, 409);
-        }
-        
-        if ($password1 == '') {
-            $this->logger->warning("No password given for user creation, "
-                    . "change attempted by $updater", 
-                    ['apiUserId' => $this->apiUserId]);
-            return $this->responseWithStatus($response, 409);
-        }
-        if ($password1 !== $password2) {
-            $this->logger->warning("Passwords do not match for user creation, "
-                    . "change attempted by $updater", 
-                    ['apiUserId' => $this->apiUserId]);
-            return $this->responseWithStatus($response, 409);
-        }
-        
-        // Create the user
-        if ($um->userExistsByUserName($username)) {
-             $this->logger->error("$username already exists, "
-                     . "creation attempted by $updater", 
-                    ['apiUserId' => $this->apiUserId]);
-            return $this->responseWithStatus($response, 409);
-        }
-        $newUserId = $um->createUserByUserName($username);
-        if ($newUserId === false) {
-            $this->logger->error("Can't create user $username, "
-                    . "creation attempted by $updater", 
-                    ['apiUserId' => $this->apiUserId]);
-            return $this->responseWithStatus($response, 409);
-        }
-        
-        // Try to update info, will not return an error to the user, but 
-        // will log if there's any problem
-        
-        // Update the profile info
-        if ($um->updateUserInfo($newUserId, $fullname, $email) === false) {
-            $this->logger->error("Can't update info for user $username, "
-                    . "change attempted by $updater", 
-                    ['apiUserId' => $this->apiUserId ,
-                     'userId' => $newUserId]);
-            return $this->responseWithStatus($response, 200);
-        }
-        
-        // Update password
-        if (!$um->storeUserPassword($username, $password1)) {
-            $this->logger->error("Can't change password for user $username, "
-                    . "change attempted by $updater", 
-                    ['apiUserId' => $this->apiUserId ,
-                     'userId' => $newUserId]);
-            return $this->responseWithStatus($response, 200);
-        }
-        
-        $this->logger->info("$username successfully created by $updater", 
-                    ['apiUserId' => $this->apiUserId ,
-                     'userId' => $newUserId]);
-        return $this->responseWithStatus($response, 200);
+        // the user has been created
+        return $this->responseWithStatus($response, HttpStatus::SUCCESS);
     }
 
     /**
@@ -371,10 +197,10 @@ class ApiUsers extends ApiController
     public function getTranscribedPages(Request $request, Response $response) : Response
     {
         $this->profiler->start();
-        $userId =  (int) $request->getAttribute('userId');
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $userId);
+        $userTid =  (int) $request->getAttribute('userTid');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $userTid);
 
-        $cacheKey = self::CACHE_KEY_PREFIX_TRANSCRIBED_PAGES . $userId;
+        $cacheKey = self::CACHE_KEY_PREFIX_TRANSCRIBED_PAGES . $userTid;
         $cacheHit = true;
         $dataCache = $this->systemManager->getSystemDataCache();
         $this->systemManager->getSqlQueryCounterTracker()->incrementSelect();
@@ -382,7 +208,7 @@ class ApiUsers extends ApiController
             $data = unserialize($dataCache->get($cacheKey));
         } catch (KeyNotInCacheException) {
             $cacheHit = false;
-            $data = self::buildTranscribedPagesData($this->systemManager, $userId);
+            $data = self::buildTranscribedPagesData($this->systemManager, $userTid);
             $dataCache->set($cacheKey, serialize($data), self::CACHE_TTL_TRANSCRIBED_PAGES);
         }
 
@@ -411,19 +237,19 @@ class ApiUsers extends ApiController
         return true;
     }
 
-    static public function buildTranscribedPagesData(SystemManager $systemManager, int $userId) : array {
+    static public function buildTranscribedPagesData(SystemManager $systemManager, int $userTid) : array {
         $dm = $systemManager->getDataManager();
         $docManager = $systemManager->getTranscriptionManager()->getDocManager();
         $pageManager = $systemManager->getTranscriptionManager()->getPageManager();
 
         $helper = new DataRetrieveHelper();
         $helper->setLogger($systemManager->getLogger());
-        $docIds = $dm->getDocIdsTranscribedByUser($userId);
+        $docIds = $dm->getDocIdsTranscribedByUser($userTid);
         $docInfoArray = $helper->getDocInfoArrayFromList($docIds, $docManager);
         $allPageIds = [];
 
         foreach($docIds as $docId) {
-            $pageIds = $dm->getPageIdsTranscribedByUser($userId, $docId);
+            $pageIds = $dm->getPageIdsTranscribedByUser($userTid, $docId);
             $docInfoArray[$docId]->pageIds = $pageIds;
             foreach($pageIds as $pageId) {
                 $allPageIds[] = $pageId;
@@ -442,10 +268,10 @@ class ApiUsers extends ApiController
     public function getCollationTableInfo(Request $request, Response $response) : Response
     {
         $this->profiler->start();
-        $userId =  (int) $request->getAttribute('userId');
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $userId);
+        $userTid =  (int) $request->getAttribute('userTid');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . Tid::toBase36String($userTid));
 
-        $cacheKey = self::CACHE_KEY_PREFIX_CT_INFO . $userId;
+        $cacheKey = self::CACHE_KEY_PREFIX_CT_INFO . $userTid;
 
         $cacheHit = true;
         $dataCache = $this->systemManager->getSystemDataCache();
@@ -454,7 +280,7 @@ class ApiUsers extends ApiController
             $data = unserialize($dataCache->get($cacheKey));
         } catch (KeyNotInCacheException) {
             $cacheHit = false;
-            $data = self::buildCollationTableInfoForUser($this->systemManager, $userId);
+            $data = self::buildCollationTableInfoForUser($this->systemManager, $userTid);
             $dataCache->set($cacheKey, serialize($data), self::CACHE_TTL_CT_INFO);
         }
 
@@ -466,13 +292,12 @@ class ApiUsers extends ApiController
         return $this->responseWithJson($response, $data);
     }
 
-    static public function buildCollationTableInfoForUser(SystemManager $systemManager, int $userId) : array {
+    static public function buildCollationTableInfoForUser(SystemManager $systemManager, int $userTid) : array {
         $ctManager = $systemManager->getCollationTableManager();
-        $tableIds = $ctManager->getCollationTableVersionManager()->getActiveCollationTableIdsForUserId($userId);
+        $tableIds = $ctManager->getCollationTableVersionManager()->getActiveCollationTableIdsForUser($userTid);
         $logger = $systemManager->getLogger();
         $tableInfo = [];
         $worksCited = [];
-        //$this->debug("Getting collation table info for user $userId", [ 'tableIds' => $tableIds]);
         foreach($tableIds as $tableId) {
             try {
                 $ctData = $ctManager->getCollationTableById($tableId);
@@ -499,32 +324,32 @@ class ApiUsers extends ApiController
         }
         $workInfo = [];
         foreach (array_keys($worksCited) as $work) {
-            $workInfo[$work] = $systemManager->getDataManager()->getWorkInfo($work);
+            $workInfo[$work] = $systemManager->getDataManager()->getWorkInfoByDareId($work);
         }
 
         return ['tableInfo' => $tableInfo, 'workInfo' => $workInfo];
     }
 
-    static public function updateCtInfoData(SystemManager $systemManager, int $userId) : bool {
+    static public function updateCtInfoData(SystemManager $systemManager, int $userTid) : bool {
         try {
-            $data = self::buildCollationTableInfoForUser($systemManager, $userId);
+            $data = self::buildCollationTableInfoForUser($systemManager, $userTid);
         } catch(Exception $e) {
-            $systemManager->getLogger()->error("Exception while building CollationTable Data for user $userId",
+            $systemManager->getLogger()->error("Exception while building CollationTable Data for user $userTid",
                 [
                     'code' => $e->getCode(),
                     'msg' => $e->getMessage()
                 ]);
             return false;
         }
-        $systemManager->getSystemDataCache()->set(self::CACHE_KEY_PREFIX_CT_INFO . $userId,
+        $systemManager->getSystemDataCache()->set(self::CACHE_KEY_PREFIX_CT_INFO . $userTid,
             serialize($data), self::CACHE_TTL_CT_INFO);
         return true;
     }
 
-    public function getMultiChunkEditionInfo(Request $request, Response $response) : Response {
-        $userId =  (int) $request->getAttribute('userId');
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $userId);
-        $editionInfo = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionInfoForUserId($userId);
+    public function getMultiChunkEditionsByUser(Request $request, Response $response) : Response {
+        $userTid =  (int) $request->getAttribute('userTid');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . Tid::toBase36String($userTid));
+        $editionInfo = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionsByUser($userTid);
         return $this->responseWithJson($response, $editionInfo);
     }
 }

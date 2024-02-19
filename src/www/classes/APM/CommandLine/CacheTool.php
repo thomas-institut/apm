@@ -7,20 +7,21 @@ namespace APM\CommandLine;
 use APM\System\ApmMySqlTableName;
 use PDO;
 
-class CacheTool extends  CommandLineUtility implements AdminUtility
+class CacheTool extends CommandLineUtility implements AdminUtility
 {
     const CMD = 'cache';
 
     const USAGE = self::CMD . " <option>\n\nOptions:\n  info: print cache size, length, etc\n  flush: erases all cache entries\n  clean: removes all expired entries\n";
     const DESCRIPTION = "Cache management functions: info, clean, etc";
     const FLUSH_SAFE_WORD = 'IKnowWhatImDoing';
-    private string $cacheTable;
 
     public function __construct(array $config, int $argc, array $argv)
     {
         parent::__construct($config, $argc, $argv);
+    }
 
-        $this->cacheTable = $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_SYSTEM_CACHE];
+    private function getCacheTableName() : string {
+        return $this->getSystemManager()->getTableNames()[ApmMySqlTableName::TABLE_SYSTEM_CACHE];
     }
 
     public function main($argc, $argv) : int
@@ -53,8 +54,10 @@ class CacheTool extends  CommandLineUtility implements AdminUtility
     private function printCacheInfo(): void
     {
 
-        $cacheSizeQuery = "SELECT sum(length(`value`)) AS size from `$this->cacheTable`";
-        $cacheLengthQuery = "SELECT count(*) as length FROM `$this->cacheTable`";
+        $cacheTable = $this->getCacheTableName();
+
+        $cacheSizeQuery = "SELECT sum(length(`value`)) AS size from `$cacheTable`";
+        $cacheLengthQuery = "SELECT count(*) as length FROM `$cacheTable`";
 
         $cacheSize = $this->getSingleValue($cacheSizeQuery, 'size');
         $cacheLength = $this->getSingleValue($cacheLengthQuery, 'length');
@@ -76,15 +79,15 @@ class CacheTool extends  CommandLineUtility implements AdminUtility
             return;
         }
 
-        $query = 'TRUNCATE ' . $this->cacheTable;
-        $this->dbConn->query($query);
+        $query = 'TRUNCATE ' . $this->getCacheTableName();
+        $this->getDbConn()->query($query);
 
         $this->logger->info("Cache flushed");
 
     }
 
     private function  getSingleValue(string $query, string $name) {
-        $r = $this->dbConn->query($query);
+        $r = $this->getDbConn()->query($query);
 
         $rows = [];
         while ($row = $r->fetch(PDO::FETCH_ASSOC)){
@@ -101,7 +104,7 @@ class CacheTool extends  CommandLineUtility implements AdminUtility
 
     private function cleanCache() : void
     {
-        $this->systemManager->getSystemDataCache()->clean();
+        $this->getSystemManager()->getSystemDataCache()->clean();
         $this->logger->info('Cache cleaned');
     }
 

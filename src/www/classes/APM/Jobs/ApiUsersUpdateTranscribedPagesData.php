@@ -11,10 +11,10 @@ class ApiUsersUpdateTranscribedPagesData implements JobHandlerInterface
 
     public function run(SystemManager $sm, array $payload): bool
     {
-        if (!isset($payload['userId'])) {
+        if (!isset($payload['userTid'])) {
             return false;
         }
-        return ApiUsers::updateTranscribedPagesData($sm, $payload['userId']);
+        return ApiUsers::updateTranscribedPagesData($sm, $payload['userTid']);
     }
 
     public function mustBeUnique(): bool

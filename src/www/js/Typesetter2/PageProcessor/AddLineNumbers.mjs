@@ -92,8 +92,8 @@ export class AddLineNumbers extends PageProcessor {
 
      this.debug && console.log(`MainTextBlock at index ${mainTextIndex}`)
      let mainTextList = page.getItems()[mainTextIndex]
-     console.log(`mainTextList  (index ${mainTextIndex}`)
-     console.log(mainTextList)
+     // console.log(`mainTextList  (index ${mainTextIndex}`)
+     // console.log(mainTextList)
      let mainTextListItems = mainTextList.getList()
      let lineNumberList = new ItemList(TypesetterItemDirection.VERTICAL)
      lineNumberList

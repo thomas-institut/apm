@@ -20,13 +20,13 @@ implements LoggerAwareInterface
         $this->table = $sqlTable;
     }
 
-    function getSourceInfoByUuid($uuid): array
+    function getSourceByTid(int $tid): array
     {
-        $rows = $this->table->findRows(['uuid' => Uuid::str2bin($uuid)]);
+        $rows = $this->table->findRows(['tid' => $tid]);
         if (count($rows) === 0) {
-            throw  new InvalidArgumentException("Source $uuid not found");
+            throw  new InvalidArgumentException("Source $tid not found");
         }
-        return $this->mySqlRowToInfoObject($rows[0]);
+        return $this->mySqlRowToInfoObject($rows->getFirst());
     }
 
     private function mySqlRowToInfoObject($mySqlRow) : array{
@@ -34,7 +34,7 @@ implements LoggerAwareInterface
             'title' => $mySqlRow['title'],
             'description' => $mySqlRow['description'],
             'defaultSiglum' => $mySqlRow['default_siglum'],
-            'uuid' => Uuid::bin2str($mySqlRow['uuid'])
+            'tid' => $mySqlRow['tid']
         ];
     }
 

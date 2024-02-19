@@ -51,7 +51,7 @@ class ApmSystemManagerTest extends TestCase {
         // Set proper logging for testing environment
         $config[ApmConfigParameter::LOG_FILENAME] = 'test.log';
         $config[ApmConfigParameter::LOG_IN_PHP_ERROR_HANDLER] = false;
-        $config[ApmConfigParameter::LOG_DEBUG] = true;
+        $config[ApmConfigParameter::LOG_INCLUDE_DEBUG_INFO] = true;
 
         // non-string database parameters
         
@@ -85,7 +85,7 @@ class ApmSystemManagerTest extends TestCase {
         $config[ApmConfigParameter::DB]['pwd'] = $apmTestConfig['db']['pwd'];
         
         // Bad prefix: results in system manager reporting a badly configured database
-        $config[ApmConfigParameter::TABLE_PREFIX] = 'bad_prefix';
+        $config[ApmConfigParameter::DB_TABLE_PREFIX] = 'bad_prefix';
         $sm5 = new ApmSystemManager($config);
         $this->assertTrue($sm5->fatalErrorOccurred());
         $this->assertEquals(ApmSystemManager::ERROR_DATABASE_IS_NOT_INITIALIZED, $sm5->getErrorCode());
@@ -95,7 +95,7 @@ class ApmSystemManagerTest extends TestCase {
         $dbConn = $sm5->getDbConnection();
         $dbBadVersion = $sm5->getDatabaseVersion() - 1;
         $dbConn->query('update ap_settings set `value`=' . $dbBadVersion . ' where `setting`=\'dbversion\'');
-        $config[ApmConfigParameter::TABLE_PREFIX] = 'ap_';
+        $config[ApmConfigParameter::DB_TABLE_PREFIX] = 'ap_';
         $sm6 = new ApmSystemManager($config);
         $this->assertTrue($sm6->fatalErrorOccurred());
         $this->assertEquals(ApmSystemManager::ERROR_DATABASE_SCHEMA_NOT_UP_TO_DATE, $sm6->getErrorCode());
@@ -103,15 +103,8 @@ class ApmSystemManagerTest extends TestCase {
         // restore good database version
         $dbConn->query('update ap_settings set `value`=' . $sm6->getDatabaseVersion() . ' where `setting`=\'dbversion\'');
         
-        // Bad plugin
-        $config[ApmConfigParameter::PLUGINS] = [ 'badplugin'];
-        $sm7 = new ApmSystemManager($config);
-        $this->assertTrue($sm7->fatalErrorOccurred());
-        $this->assertEquals(ApmSystemManager::ERROR_CANNOT_LOAD_PLUGIN, $sm7->getErrorCode());
 
         // All good
-        $config[ApmConfigParameter::PLUGIN_DIR] = 'test-plugins/basic';
-        $config[ApmConfigParameter::PLUGINS] = [ 'BasicPlugin'];
         $sm8= new ApmSystemManager($config);
         $this->assertFalse($sm8->fatalErrorOccurred());
         $this->assertEquals('', $sm8->getErrorMessage());

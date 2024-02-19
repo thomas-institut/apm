@@ -66,30 +66,30 @@ abstract class OpenSearchIndexManager extends CommandLineUtility {
         }
 
         // Remove repetitions of hashtags
-        while (strpos($text_clean, '##') !== false) {
+        while (str_contains($text_clean, '##')) {
             $text_clean = str_replace('##', '#', $text_clean);
         }
 
         // Remove repetitions of periods
-        while (strpos($text_clean, '.#.') !== false) {
+        while (str_contains($text_clean, '.#.')) {
             $text_clean = str_replace('.#.', '', $text_clean);
         }
 
-        while (strpos($text_clean, '..') !== false) {
+        while (str_contains($text_clean, '..')) {
             $text_clean = str_replace('..', '', $text_clean);
         }
 
-        // Remove repetitions of hashtags again (in the foregoing steps could be originated new ones..)
-        while (strpos($text_clean, '##') !== false) {
+        // Remove repetitions of hashtags again (in the foregoing steps could be originated new ones.)
+        while (str_contains($text_clean, '##')) {
             $text_clean = str_replace('##', '#', $text_clean);
         }
 
         // text should not begin or end with hashtag
-        if (substr($text_clean, 0, 1) === '#') {
+        if (str_starts_with($text_clean, '#')) {
             $text_clean = substr($text_clean, 1);
         }
 
-        if (substr($text_clean, -1, 1) === '#') {
+        if (str_ends_with($text_clean, '#')) {
             $text_clean = substr($text_clean, 0, -1);
         }
 
@@ -104,7 +104,7 @@ abstract class OpenSearchIndexManager extends CommandLineUtility {
                 'index' => $index
             ]);
             $this->logger->debug("Existing index *$index* was deleted!\n");
-        };
+        }
 
         // Create new index
         $client->indices()->create([

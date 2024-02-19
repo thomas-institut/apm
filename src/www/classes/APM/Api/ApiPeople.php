@@ -4,182 +4,94 @@
 
 namespace APM\Api;
 
+use APM\System\Person\InvalidPersonNameException;
+use APM\System\Person\PersonNotFoundException;
+use APM\ToolBox\HttpStatus;
 use PHPUnit\Util\Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\EntitySystem\Tid;
+use ThomasInstitut\Exportable\ExportableObject;
 use ThomasInstitut\TimeString\TimeString;
 
 class ApiPeople extends ApiController
 {
 
-    public function getAllPeople(Request $request, Response $response): Response
-    {
+    public function getPersonEssentialData(Request $request, Response $response): Response {
+        $this->profiler->start();
+        $personTid =  (int) $request->getAttribute('tid');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . Tid::toBase36String($personTid));
 
-        $status = 'OK';
-        $now = TimeString::now();
-        $data = [];
+        $pm = $this->systemManager->getPersonManager();
 
-        // Get number of people
-        $cache = $this->systemManager->getSystemDataCache();
-        $cacheKey = 'Next_Entity_ID';
-        $num_people = unserialize($cache->get($cacheKey))-1;
-
-
-        for ($id=0; $id<=$num_people; $id++) {
-            $data[] = $this->getMetadataFromSql($id);
-        }
-
-        if ($data === []) {
-            $status = 'Error in Cache!';
-        }
-
-        // ApiResponse
-        return $this->responseWithJson($response, [
-            'data' => $data,
-            'serverTime' => $now,
-            'status' => $status]);
-    }
-
-    public function getData(Request $request, Response $response): Response
-    {
-        $status = 'OK';
-        $now = TimeString::now();
-        $id = $_POST['id'];
-
-        $data = $this->getMetadataFromSql($id);
-
-        if ($data === []) {
-            $status = 'Error in Cache!';
-        }
-
-        // ApiResponse
-        return $this->responseWithJson($response, [
-            'data' => $data,
-            'serverTime' => $now,
-            'status' => $status]);
-    }
-
-
-    public function saveData(Request $request, Response $response): Response
-    {
-        $status = 'OK';
-        $now = TimeString::now();
-
-        $data = [
-            'id' => $_POST['id'],
-            'type' => $_POST['type'],
-            'keys' => $_POST['keys'],
-            'types' => $_POST['types'],
-            'values' => $_POST['values']
-        ];
-
-        $this->saveMetadataInSql($data);
-
-        // ApiResponse
-        return $this->responseWithJson($response, [
-            'status' => $status,
-            'now' => $now,
-            'data' => $data,
-        ]);
-    }
-
-    public function getSchema(Request $request, Response $response): Response
-    {
-        $status = 'OK';
-        $now = TimeString::now();
-
-        // POSSIBLE TYPES OF ENTITIES CAN EITHER BE HARD-CODED HERE OR ABSTRACTED FROM DATA STORED IN A SQL TABLE
-
-        //$data = $this->getEntitySchemaFromSql();
-        $data = [
-            'id' => '',
-            'type' => 'person',
-            'keys' => ['Display Name', 'Date of Birth', 'Place of Birth', 'Date of Death', 'Place of Death', 'URL'],
-            'types' => ['text', 'date', 'text', 'date', 'text', 'url']
-        ];
-
-        // ApiResponse
-        return $this->responseWithJson($response, [
-            'data' => $data,
-            'serverTime' => $now,
-            'status' => $status]);
-    }
-
-    public function getNewId (Request $request, Response $response): Response {
-
-        $status = 'OK';
-        $now = TimeString::now();
-
-        $cache = $this->systemManager->getSystemDataCache();
-        $cacheKey = 'Next_Entity_ID';
-
-        try { // Check for cached id
-
-            $id = unserialize($cache->get($cacheKey));
-            // $id = $this->getIdForNewPersonFromSql();
-
-        } catch (KeyNotInCacheException $e) { // Get id from sql database and set cache
-
-            $id = 0;
-
-        }
-
-        // Set cache
-        $cache->set($cacheKey, serialize($id+1));
-
-        // ApiResponse
-        return $this->responseWithJson($response, [
-            'id' => strval($id),
-            'serverTime' => $now,
-            'status' => $status]);
-    }
-
-    private function getMetadataFromSql(string $id): array {
-
-        // TO DO | PLACE HERE A FUNCTION WHICH GETS DATA BY ID FROM A SQL TABLE
-
-        $cache = $this->systemManager->getSystemDataCache();
-        $cacheKey = 'person' . $id;
         try {
-            $data = unserialize($cache->get($cacheKey));
-        } catch (KeyNotInCacheException) {
-            $data = [
-                'id' => $id,
-                'type' => 'person',
-                'keys' => ['Display Name', 'Date of Birth', 'Place of Birth', 'Date of Death', 'Place of Death', 'URL'],
-                'types' => ['text', 'date', 'text', 'date', 'text', 'url'],
-                'values' => ['Hans', '1992-01-21', 'Karlsruhe', '1982-07-22', 'Toronto', 'www.wikipedia.com']
-            ];
+            $data = $pm->getPersonEssentialData($personTid);
+        } catch (PersonNotFoundException $e) {
+            $this->logger->info("Person does not exist: $personTid");
+            $this->logProfilers('errorEncountered');
+            return $this->responseWithStatus($response, 404);
+        }
+        $this->logProfilers('normalFinish');
+        return $this->responseWithJson($response, $data->getExportObject());
+    }
+
+    public function getAllPeopleEssentialData(Request $request, Response $response): Response {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
+        $pm = $this->systemManager->getPersonManager();
+
+        $data = $pm->getAllPeopleEssentialData();
+
+        $dataToServe = [];
+        foreach($data as $essentialData) {
+            $dataToServe[] = $essentialData->getExportObject();
         }
 
-        return $data;
+        return $this->responseWithJson($response, $dataToServe);
     }
 
-    private function saveMetadataInSql(array $data): bool {
+    public function getWorks(Request $request, Response $response): Response {
+        $this->profiler->start();
+        $personTid =  (int) $request->getAttribute('tid');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . Tid::toBase36String($personTid));
 
-        // TO DO | PLACE HERE A FUNCTION WHICH WRITES THE DATA GIVEN AS ARGUMENTS INTO A SQL TABLE
+        try {
+            $this->systemManager->getPersonManager()->getPersonEssentialData($personTid);
+        } catch (PersonNotFoundException) {
+            $this->logger->info("Person $personTid not found");
+            return $this->responseWithStatus($response, HttpStatus::NOT_FOUND);
+        }
+        $works = $this->systemManager->getWorkManager()->getWorksByAuthor($personTid);
 
-        $cache = $this->systemManager->getSystemDataCache();
-        $cacheKey = 'person' . $data['id'];
-        $cache->set($cacheKey, serialize($data));
-
-        return true;
+        return $this->responseWithJson($response, [ 'tid' => $personTid, 'works' => ExportableObject::getArrayExportObject($works)]);
     }
 
-    private function getIdForNewPersonFromSql(): bool {
 
-        // TO DO | PLACE HERE A FUNCTION WHICH GETS THE HIGHEST ID IN A SQL TABLE AND RETURNS ID+1
+    public function createNewPerson(Request $request, Response $response): Response {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
 
 
-        return true;
+        $inputData = $this->checkAndGetInputData($request, $response, [ 'name', 'sortName'], true, true);
+        if (!is_array($inputData)) {
+            return $inputData;
+        }
+
+        $name = $inputData['name'];
+        $sortName = $inputData['sortName'];
+
+        $pm = $this->systemManager->getPersonManager();
+
+        try {
+            $tid = $pm->createPerson($name, $sortName);
+        } catch (InvalidPersonNameException $e) {
+            $this->logger->error("Invalid name creating person");
+            return $this->responseWithJson($response, [ 'errorMsg' => 'Invalid name' ], HttpStatus::BAD_REQUEST);
+        }
+
+        // the person has been created
+        return $this->responseWithJson($response, [ 'tid' => $tid ], HttpStatus::SUCCESS);
+
+
     }
 
-    private function getEntitySchemaFromSql(): bool {
-
-        // TO DO | PLACE HERE A FUNCTION WHICH GETS THE METADATA SCHEMA OF AN ENTITY FROM A SQL TABLE
-
-
-        return true;
-    }
 }

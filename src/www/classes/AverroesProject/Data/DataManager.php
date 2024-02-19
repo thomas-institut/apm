@@ -21,8 +21,9 @@
 namespace AverroesProject\Data;
 
 use APM\System\ApmImageType;
-use APM\System\ImageSource\ImageSourceInterface;
 use APM\System\ImageSource\NullImageSource;
+use APM\System\Person\PersonManagerInterface;
+use APM\System\Person\PersonNotFoundException;
 use APM\ToolBox\ArraySort;
 use AverroesProject\ColumnElement\Custodes;
 use AverroesProject\ColumnElement\Gloss;
@@ -55,16 +56,21 @@ use AverroesProject\TxText\Rubric;
 use AverroesProject\TxText\Sic;
 use AverroesProject\TxText\Text;
 use AverroesProject\TxText\Unclear;
+use Psr\Log\LoggerInterface;
+use RuntimeException;
 use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataTable\InvalidRowForUpdate;
+use ThomasInstitut\DataTable\InvalidRowUpdateTime;
+use ThomasInstitut\DataTable\InvalidTimeStringException;
 use ThomasInstitut\DataTable\MySqlDataTable;
-use ThomasInstitut\DataTable\MySqlDataTableWithRandomIds;
 use APM\ToolBox\MyersDiff;
+use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\DataTable\RowDoesNotExist;
 use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
 use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 use ThomasInstitut\TimeString\TimeString;
 use Exception;
-use Monolog\Logger;
 
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use PDO;
@@ -78,9 +84,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
     use SimpleSqlQueryCounterTrackerAware;
 
-    const MIN_USER_ID = 10000;
-    const MAX_USER_ID = 100000;
-    
+
     const ORDER_BY_PAGE_NUMBER = 100;
     const ORDER_BY_SEQ = 101;
 
@@ -88,94 +92,29 @@ class DataManager implements  SqlQueryCounterTrackerAware
     const WITNESS_TRANSCRIPTION = 'transcription';
     const WITNESS_PLAINTEXT = 'plaintext';
 
-    const VALID_WITNESS_TYPES = [ self::WITNESS_TRANSCRIPTION, self::WITNESS_PLAINTEXT];
-    
-    /**
-     *
-     * @var array
-     * Array of table names
-     */
+
     private array $tNames;
-    /**
-     *
-     * @var PDO
-     */
     private PDO $dbConn;
-    /**
-     *
-     * @var Logger
-     */
-    private $logger;
-    
-    /**
-     *
-     * @var MySqlHelper
-     */
+    private LoggerInterface $logger;
     private MySqlHelper $databaseHelper;
-    
-    /**
-     *
-     * @var EdNoteManager 
-     */
     public EdNoteManager $edNoteManager;
-
-    /**
-     *
-     * @var MySqlUnitemporalDataTable
-     */
     private MySqlUnitemporalDataTable $pagesDataTable;
-    
-    /**
-     *
-     * @var UserManager
-     */
-    public UserManager $userManager;
-    
-    
-     /**
-     *
-     * @var MySqlUnitemporalDataTable
-     */
-    private $docsDataTable;
-    
-    /**
-     *
-     * @var MySqlUnitemporalDataTable
-     */
+//    /**
+//     * Use new UserManager
+//     * @var UserManager
+//     * @deprecated
+//     */
+//    public UserManager $userManager;
+    private MySqlDataTable $docsDataTable;
     private MySqlUnitemporalDataTable $elementsDataTable;
-    
-    /**
-     *
-     * @var MySqlUnitemporalDataTable
-     */
     private MySqlUnitemporalDataTable $itemsDataTable;
-    
-    
-    /**
-     *
-     * @var MySqlDataTable
-     */
     private MySqlDataTable $pageTypesTable;
-    
-    /**
-     *
-     * @var MySqlDataTable
-     */
     private MySqlDataTable $worksTable;
-
-    /**
-     * @var MySqlDataTable
-     */
     private MySqlDataTable $txVersionsTable;
-
-
-
-    /**
-     * @var array
-     */
     private array $langCodes;
     private InMemoryDataCache $cache;
     private array $imageSources;
+    private PersonManagerInterface $pm;
 
     /**
      * Tries to initialize and connect to the MySQL database.
@@ -183,13 +122,15 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * Throws an error if there's no connection
      * or if the database is not setup properly.
      * @param PDO $dbConn
+     * @param PersonManagerInterface $pm
      * @param array $tableNames
-     * @param Logger $logger
+     * @param LoggerInterface $logger
      * @param array $imageSources
      * @param array $langCodes
      */
-    function __construct(PDO $dbConn, array $tableNames, Logger $logger, array $imageSources, array $langCodes = [])
+    function __construct(PDO $dbConn, PersonManagerInterface $pm, array $tableNames, LoggerInterface $logger, array $imageSources, array $langCodes = [])
     {
+        $this->pm = $pm;
         $this->dbConn = $dbConn;
         $this->tNames = $tableNames;
         $this->logger = $logger;
@@ -201,16 +142,16 @@ class DataManager implements  SqlQueryCounterTrackerAware
         $this->databaseHelper = new MySqlHelper($dbConn, $logger);
         $this->edNoteManager = new EdNoteManager($dbConn, $this->databaseHelper, $tableNames,
                 $logger);
-        $this->userManager = new UserManager(
-            new MySqlDataTable($dbConn, 
-                    $tableNames['users']),
-            new MySqlDataTable($dbConn, $tableNames['relations']), 
-            new MySqlDataTableWithRandomIds($dbConn, 
-                    $tableNames['people'], 
-                    self::MIN_USER_ID, self::MAX_USER_ID), 
-            new MySqlDataTable($dbConn, $tableNames['tokens'])
-        );
-        $this->userManager->setLogger($this->logger);
+//        $this->userManager = new UserManager(
+//            new MySqlDataTable($dbConn,
+//                    $tableNames['users']),
+//            new MySqlDataTable($dbConn, $tableNames['relations']),
+//            new MySqlDataTableWithRandomIds($dbConn,
+//                    $tableNames['people'],
+//                    self::MIN_USER_ID, self::MAX_USER_ID),
+//            new MySqlDataTable($dbConn, $tableNames['tokens'])
+//        );
+//        $this->userManager->setLogger($this->logger);
         
         $this->docsDataTable = new MySqlDataTable($this->dbConn, 
                 $tableNames['docs']);
@@ -242,17 +183,13 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param bool $asc
      * @return array
      */
-    public function getDocIdList($order = '', $asc=true): array
+    public function getDocIdList(string $order = '', bool $asc=true): array
     {
-        switch ($order){
-            case 'title':
-                $orderby = ' ORDER BY `title` ' . ($asc ? ' ASC' : ' DESC');
-                break;
-            
-            default:
-                $orderby = '';
-        }
-        $query = "SELECT `id` FROM  " . $this->tNames['docs'] . $orderby;
+        $orderBy = match ($order) {
+            'title' => ' ORDER BY `title` ' . ($asc ? ' ASC' : ' DESC'),
+            default => '',
+        };
+        $query = "SELECT `id` FROM  " . $this->tNames['docs'] . $orderBy;
         $this->getSqlQueryCounterTracker()->incrementSelect();
         $r = $this->databaseHelper->query($query);
         
@@ -262,24 +199,25 @@ class DataManager implements  SqlQueryCounterTrackerAware
         }
         return $docIds;
     }
-   
+
     /**
      * Creates a new document in the system.
-     * Returns the doc Id of the newly created document or false
+     * Returns the doc id of the newly created document or false
      * if the document could not be created
-     * 
+     *
      * @param string $title
-     * @param string $shortTitle
      * @param int $pageCount
      * @param string $lang
      * @param string $type
      * @param string $imageSource
      * @param string $imageSourceData
+     * @param int $tid
      * @return int|boolean
+     * @throws RowAlreadyExists
      */
-    public function newDoc(string $title, string $shortTitle, int $pageCount, 
-            string $lang, string $type, 
-            string $imageSource, string $imageSourceData, int $tid = 0): bool|int
+    public function newDoc(string $title, int $pageCount,
+                           string $lang, string $type,
+                           string $imageSource, string $imageSourceData, int $tid = 0): bool|int
     {
         
         $doc = [ 
@@ -293,23 +231,16 @@ class DataManager implements  SqlQueryCounterTrackerAware
         
         $this->getSqlQueryCounterTracker()->incrementCreate();
         $docId = $this->docsDataTable->createRow($doc);
-        if ($docId === false) {
-            // This means a database error
-            // Can't reproduce in testing for now
-            return false; // @codeCoverageIgnore
-        }
         for ($i = 1; $i <= $pageCount; $i++) {
-            $pageId = $this->newPage($docId, $i, $lang);
-            if ($pageId === false) {
-                // This means a database error
-                // Can't reproduce in testing for now
-                return false; // @codeCoverageIgnore
-            }
+            $this->newPage($docId, $i, $lang);
         }
         return $docId;
     }
-    
-    public function newPage($docId,  $pageNumber, $lang, $type=0)
+
+    /**
+     * @throws RowAlreadyExists
+     */
+    public function newPage($docId, $pageNumber, $lang, $type=0): int
     {
         
         $page = [
@@ -331,17 +262,17 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * Returns the number of columns a given page
      * 
      * @param int $docId
-     * @param int $page
+     * @param int $pageNumber
      * @return int
      */
-    function getNumColumns($docId, $page)
+    function getNumColumns(int $docId, int $pageNumber): int
     {
-        $pInfo = $this->getPageInfoByDocPage($docId, $page);
+        $pInfo = $this->getPageInfoByDocPage($docId, $pageNumber);
         if ($pInfo === false) {
             // Page or doc not found
             return 0;
         }
-        return (int) $pInfo['num_cols'];
+        return intval($pInfo['num_cols']);
     }
     
     /**
@@ -351,20 +282,18 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $pageNumber
      * @return boolean
      */
-    function addNewColumn($docId, $pageNumber)
+    function addNewColumn(int $docId, int $pageNumber): bool
     {
         $pageId = $this->getPageIdByDocPage($docId, $pageNumber);
-        if ($pageId === false) {
+        if ($pageId === -1) {
             return false;
         }
         $this->getSqlQueryCounterTracker()->incrementSelect();
-        try {
-            $pageInfo = $this->pagesDataTable->getRow($pageId);
-        } catch (Exception $e) {
-            $this->reportException('addNewColumn, get row ' . $pageId, $e);
+        $pageInfo = $this->pagesDataTable->getRow($pageId);
+        if ($pageInfo === null) {
+            $this->logger->error("page not found $pageId");
             return false;
         }
-
         $this->getSqlQueryCounterTracker()->incrementUpdate();
         try {
             $this->pagesDataTable->updateRow([
@@ -385,13 +314,13 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $pageNumber
      * @return array|bool
      */
-    function getPageInfoByDocPage(int $docId, int $pageNumber)
+    function getPageInfoByDocPage(int $docId, int $pageNumber): bool|array
     {
-        $id = $this->getPageIdByDocPage($docId, $pageNumber);
-        if ($id === false) {
+        $pageId = $this->getPageIdByDocPage($docId, $pageNumber);
+        if ($pageId === -1) {
             return false;
         }
-        return $this->getPageInfo($id);
+        return $this->getPageInfo($pageId);
     }
 
 
@@ -399,21 +328,18 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $pageId
      * @return array|bool
      */
-    public function getPageInfo(int $pageId)
+    public function getPageInfo(int $pageId): bool|array
     {
         $this->getSqlQueryCounterTracker()->incrementSelect();
-        try {
-            $row = $this->pagesDataTable->getRow($pageId);
-        } catch (Exception $e) {
-            $this->reportException('getPageInfo ' . $pageId, $e );
+        $row = $this->pagesDataTable->getRow($pageId);
+        if ($row === null) {
+            $this->logger->error("Page id $pageId not found");
             return false;
         }
-
         // Sanitize types!
-        $row['id'] = (int) $row['id'];
-        $row['page_number'] = (int) $row['page_number'];
-        $row['seq'] = (int) $row['seq'];
-        $row['num_cols'] = (int) $row['num_cols'];
+        $row['page_number'] = intval($row['page_number']);
+        $row['seq'] = intval($row['seq']);
+        $row['num_cols'] = intval($row['num_cols']);
         return $row;
     }
     
@@ -422,7 +348,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $docId
      * @return boolean|int
      */
-    function getPageCountByDocId($docId)
+    function getPageCountByDocId(int $docId): bool|int
     {
         $this->getSqlQueryCounterTracker()->incrementSelect();
         
@@ -438,7 +364,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $res->fetch(PDO::FETCH_NUM)[0];
     }
     
-    function getPageCountByDocIdAllTime($docId)
+    function getPageCountByDocIdAllTime($docId): bool|int
     {
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
@@ -457,7 +383,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
     /**
      * Gets the page types table into an array
      */
-    function getPageTypeNames()
+    function getPageTypeNames(): bool|array
     {
         $query = 'SELECT * FROM ' . $this->tNames['types_page'];
 
@@ -472,10 +398,10 @@ class DataManager implements  SqlQueryCounterTrackerAware
     }
     
     // TODO: fix maxChunk!
-    public function getActiveWorks()
+    public function getActiveWorks(): bool|array
     {
-         $query = 'SELECT dare_id, p.fullname, short_title FROM ' . $this->tNames['works'] . 
-                 ' AS w JOIN (' . $this->tNames['people'] . ' AS p) ON (p.id=w.author_id) WHERE enabled=1' ;
+         $query = 'SELECT dare_id, people.name, title FROM ' . $this->tNames['works'] .
+                 ' AS works JOIN (' . $this->tNames['people'] . ' AS people) ON (people.tid=works.author_tid) WHERE enabled=1' ;
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
         $res = $this->databaseHelper->query($query);
@@ -490,7 +416,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         foreach($data as $work) {
             //$this->logger->debug('Work', $work);
             $theWorks[] =  [ 
-                'title' => '(' . $work['dare_id'] . ') ' . $work['fullname'] . ' - ' . $work['short_title'], 
+                'title' => '(' . $work['dare_id'] . ') ' . $work['name'],
                 'dareId' => $work['dare_id'], 
                 'maxChunk' => 500
                 ];
@@ -498,8 +424,12 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $theWorks;
 
     }
-    
-    public function updateDocSettings($docId, $newSettings): bool
+
+    /**
+     * @throws InvalidRowForUpdate
+     * @throws RowDoesNotExist
+     */
+    public function updateDocSettings(int $docId, array $newSettings): bool
     {
         $row['id'] = $docId;
 
@@ -571,10 +501,9 @@ class DataManager implements  SqlQueryCounterTrackerAware
         
         if (isset($settings['type'])) {
             $row['type'] = $settings['type'];
-            try {
-                $this->pageTypesTable->getRow($row['type']);
-            } catch (Exception $e) {
-                $this->reportException('updatePageSetting, get TypeInfo ' . $row['type'], $e);
+            $typeRow = $this->pageTypesTable->getRow($row['type']);
+            if ($typeRow === null) {
+                $this->logger->error("Unknown page type " . $row['type']);
                 return false;
             }
             // so, the type is good, carry on
@@ -606,7 +535,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $docId
      * @return array
      */
-    function getEditorsByDocId(int $docId)
+    function getEditorTidsByDocId(int $docId): array
     {
         $te = $this->tNames['elements'];
         $tu = $this->tNames['users'];
@@ -614,9 +543,9 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
-        $query = "SELECT DISTINCT $tu.`id`" . 
+        $query = "SELECT DISTINCT $tu.`tid`" .
             " FROM `$tu` JOIN (`$te`,  `$tp`)" . 
-            " ON ($tu.id=$te.editor_id AND $tp.id=$te.page_id)" . 
+            " ON ($tu.tid=$te.editor_tid AND $tp.id=$te.page_id)" .
             " WHERE $tp.doc_id=" . $docId . 
             " AND $tp.`valid_until`='9999-12-31 23:59:59.999999'" .
             " AND $te.`valid_until`='9999-12-31 23:59:59.999999'";
@@ -625,29 +554,27 @@ class DataManager implements  SqlQueryCounterTrackerAware
         
         $editors = [];
         while ($row = $r->fetch()) {
-            $editors[] = $row['id'];
+            $editors[] = $row['tid'];
         }
         return $editors;
     }
 
     /**
      * Returns the page numbers of the pages with transcription
-     * data for a document Id
+     * data for a document id
      * @param int $docId
      * @param int $order
      * @return array
      */
-    function getTranscribedPageListByDocId(int $docId, $order = self::ORDER_BY_PAGE_NUMBER)
+    function getTranscribedPageListByDocId(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER) : array
     {
         $te = $this->tNames['elements'];
         $tp = $this->tNames['pages'];
         
-        $orderby = 'page_number';
+        $orderBy = 'page_number';
         if ($order === self::ORDER_BY_SEQ) {
-            $orderby = 'seq';
+            $orderBy = 'seq';
         }
-
-
         $this->getSqlQueryCounterTracker()->incrementSelect();
         $query =  'SELECT DISTINCT p.`page_number` AS page_number FROM ' . 
                 $tp . ' AS p' .
@@ -655,11 +582,11 @@ class DataManager implements  SqlQueryCounterTrackerAware
                 ' WHERE p.doc_id=' . $docId . 
                 " AND `e`.`valid_until`='9999-12-31 23:59:59.999999'" . 
                 " AND `p`.`valid_until`='9999-12-31 23:59:59.999999'" . 
-                " ORDER BY p.`$orderby`";
+                " ORDER BY p.`$orderBy`";
         $r = $this->databaseHelper->query($query);
         $pages = array();
          while ($row = $r->fetch(PDO::FETCH_ASSOC)){
-            array_push($pages, $row['page_number']);
+            $pages[] = $row['page_number'];
         }
         return $pages;
     }
@@ -672,32 +599,33 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $order
      * @return array
      */
-    function getDocPageInfo($docId, $order = self::ORDER_BY_PAGE_NUMBER) {
+    function getDocPageInfo(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER): array
+    {
         $tp = $this->tNames['pages'];
         $td = $this->tNames['docs'];
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
         
-        $orderby = 'page_number';
+        $orderBy = 'page_number';
         if ($order === self::ORDER_BY_SEQ) {
-            $orderby = 'seq';
+            $orderBy = 'seq';
         }
         
         $query = "SELECT `$tp`.* FROM `$tp` JOIN `$td` " .
                  "ON (`$td`.id=`$tp`.doc_id) WHERE " . 
                  "`$tp`.`valid_until`='9999-12-31 23:59:59.999999' AND `$td`.id=$docId " . 
-                 "ORDER BY `$tp`.$orderby";
+                 "ORDER BY `$tp`.$orderBy";
         $res = $this->databaseHelper->query($query);
         
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
-     * @param $docId
+     * @param int $docId
      * @return bool|int
-     * @throws Exception
      */
-    function deleteDocById($docId) {
+    function deleteDocById(int $docId): bool|int
+    {
         $this->getSqlQueryCounterTracker()->incrementDelete();
         if ($this->getPageCountByDocIdAllTime($docId) !== 0) {
             return false;
@@ -705,12 +633,12 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $this->docsDataTable->deleteRow($docId);
     }
 
-    function getDocById($docId)
+    function getDocById(int $docId)
     {
         $cacheKey = "doc-$docId";
         try {
             $data = unserialize($this->cache->get($cacheKey));
-        } catch (KeyNotInCacheException $e) {
+        } catch (KeyNotInCacheException) {
             $this->getSqlQueryCounterTracker()->incrementSelect();
             $docInfo =  $this->databaseHelper->getRowById($this->tNames['docs'], $docId);
             $this->cache->set($cacheKey, serialize($docInfo));
@@ -719,7 +647,8 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $data;
     }
     
-    function getDocByDareId($dareId) {
+    function getDocByDareId(string $dareId): ?array
+    {
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows = $this->docsDataTable->findRows(['image_source_data' => $dareId], 1);
@@ -727,16 +656,16 @@ class DataManager implements  SqlQueryCounterTrackerAware
             return null;
         }
 
-        return $rows[0];
+        return $rows->getFirst();
     }
 
     /**
      * Returns an array of document Ids for the documents
      * in which a user has done some transcription work
-     * @param int $userId
+     * @param int $userTid
      * @return array
      */
-    public function getDocIdsTranscribedByUser(int $userId) : array
+    public function getDocIdsTranscribedByUser(int $userTid) : array
     {
         $tp = $this->tNames['pages'];
         $td = $this->tNames['docs'];
@@ -748,7 +677,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         
         $query = "SELECT DISTINCT $td.id, $td.title FROM $td " . 
                  "JOIN ($te, $tp) ON ($te.page_id=$tp.id and $td.id=$tp.doc_id) " . 
-                 "WHERE $te.editor_id=$userId " . 
+                 "WHERE $te.editor_tid=$userTid " .
                  "AND $te.valid_until='$eot' AND $tp.valid_until='$eot'" . 
                  "ORDER BY $td.title";
 
@@ -767,11 +696,11 @@ class DataManager implements  SqlQueryCounterTrackerAware
     /**
      * Returns the page Ids transcribed by a user in a given document
      *
-     * @param int $userId
+     * @param int $userTid
      * @param int $docId
      * @return array
      */
-    public function getPageIdsTranscribedByUser(int $userId, int $docId) : array
+    public function getPageIdsTranscribedByUser(int $userTid, int $docId) : array
     {
         $tp = $this->tNames['pages'];
         $td = $this->tNames['docs'];
@@ -783,7 +712,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         
         $query = "SELECT DISTINCT $tp.id, $tp.seq FROM $tp " . 
                  "JOIN ($td, $te) ON ($te.page_id=$tp.id and $td.id=$tp.doc_id) " . 
-                 "WHERE $te.editor_id=$userId " . 
+                 "WHERE $te.editor_tid=$userTid " .
                  "AND $td.id=$docId " .
                  "AND $te.valid_until='$eot' AND $tp.valid_until='$eot' " . 
                  "ORDER BY $tp.seq";
@@ -808,7 +737,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param string $type
      * @return string|boolean
      */
-    public function getImageUrl(int $docId, int $imageNumber, $type = ''): bool|string
+    public function getImageUrl(int $docId, int $imageNumber, string $type = ''): bool|string
     {
         $doc = $this->getDocById($docId);
         if ($doc === false) {
@@ -833,53 +762,67 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $doc['deep_zoom'];
     }
 
-    public function getColumnElementsByPageId($pageId, $col,$time = false) {
+
+    /**
+     * @param int $pageId
+     * @param int $col
+     * @param string $timeString
+     * @return Element[]
+     * @throws InvalidTimeStringException
+     */
+    public function getColumnElementsByPageId(int $pageId, int $col, string $timeString = ''): array
+    {
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
-        if ($time === false) {
-            $time = TimeString::now();
+        if ($timeString === '') {
+            $timeString = TimeString::now();
         }
         $rows = $this->elementsDataTable->findRowsWithTime([
             'page_id' => $pageId,
             'column_number' => $col
-        ], 0, $time);
-
-        ArraySort::byKey($rows, 'seq');
+        ], 0, $timeString);
+        $theRows = iterator_to_array($rows);
+        ArraySort::byKey($theRows, 'seq');
 
 
         $elements = [];
-        foreach($rows as $row) {
+        foreach($theRows as $row) {
             $e = $this->createElementObjectFromRow($row);
-            $e->items = $this->getItemsForElement($e, $time);
-            array_push($elements, $e);
+            $e->items = $this->getItemsForElement($e, $timeString);
+            $elements[] = $e;
         }
         return $elements;
     }
 
     /**
      *
-     * @param string $docId
+     * @param int $docId
      * @param int $page
      * @param int $col
-     * @param bool $time
-     * @return array of ColumnElement properly initialized
+     * @param string $time
+     * @return Element[]
+     * @throws InvalidTimeStringException
      */
     
-    public function getColumnElements($docId, $page, $col, $time = false){
-        if ($time === false) {
+    public function getColumnElements(int $docId, int $page, int $col, string $time = ''): array
+    {
+        if ($time === '') {
             $time = TimeString::now();
         }
         //$this->logger->debug('Getting elements for time = ' . $time);
         $pageId = $this->getPageIdByDocPage($docId, $page);
-        if ($pageId === false) {
+        if ($pageId === -1) {
             // Non-existent page
             return [];
         }
         return $this->getColumnElementsByPageId($pageId, $col, $time);
         
     }
-    
-    function getItemsForElement($element, $time = false)
+
+    /**
+     * @throws InvalidTimeStringException
+     */
+    function getItemsForElement($element, $time = false): array
     {
         if ($time === false) {
             $time = TimeString::now();
@@ -890,20 +833,20 @@ class DataManager implements  SqlQueryCounterTrackerAware
         $rows = $this->itemsDataTable->findRowsWithTime([
             'ce_id' => $element->id
         ], 0, $time);
-        
-        //Utility::arraySortByKey($rows, 'seq');
-        ArraySort::byKey($rows, 'seq');
-        
+
+        $theRows = iterator_to_array($rows);
+        ArraySort::byKey($theRows, 'seq');
+
         $tt=[];
         
-        foreach ($rows as $row) {
+        foreach ($theRows as $row) {
             $item = self::createItemObjectFromRow($row);
             ItemArray::addItem($tt, $item, true);
         }
         return $tt;
     }
     
-    public function getWorksWithTranscriptions()
+    public function getWorksWithTranscriptions(): array
     {
         $ti = $this->tNames['items'];
         $te = $this->tNames['elements'];
@@ -926,23 +869,28 @@ class DataManager implements  SqlQueryCounterTrackerAware
         }
         return $works;
     }
-    
-    
+
+
     /**
      *  Get data for a work
-     * @param string $work
-     * @return boolean
+     * @param string $dareId
+     * @return bool|array
      */
-    public function getWorkInfo($work)
+    public function getWorkInfoByDareId(string $dareId) : bool|array
     {
-        $rows = $this->worksTable->findRows(['dare_id' => $work], 1);
+        $rows = $this->worksTable->findRows(['dare_id' => $dareId], 1);
         if (count($rows)===0) {
             return false;
         }
-        $workInfo = $rows[0];
-        $authorInfo = $this->userManager->getPersonInfo((int) $workInfo['author_id']);
-        
-        $workInfo['author_name'] = $authorInfo['fullname'];
+        $workInfo = $rows->getFirst();
+        try {
+            $authorInfo = $this->pm->getPersonEssentialData($workInfo['author_tid']);
+//            $this->logger->info("Author info retrieved", get_object_vars($authorInfo));
+            $workInfo['author_name'] = $authorInfo->name;
+        } catch (PersonNotFoundException) {
+            $this->logger->error("Author not found " . $workInfo['author_tid']);
+            $workInfo['author_name'] = '';
+        }
         return $workInfo;
     }
 
@@ -978,94 +926,94 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $chunks;
     }
 
-    /**
-     * Returns a list of witnesses that include the given work and chunk numbers
-     *
-     * Each element of the resulting array contains two properties:
-     *   type:  witness Type (e.g., 'transcription')
-     *   id:   witness Id
-     *
-     * @param string $workId
-     * @param int $chunkNumber
-     * @return array
-     */
-    public function getWitnessesForChunk(string $workId, int $chunkNumber) : array {
+//    /**
+//     * Returns a list of witnesses that include the given work and chunk numbers
+//     *
+//     * Each element of the resulting array contains two properties:
+//     *   type:  witness Type (e.g., 'transcription')
+//     *   id:   witness id
+//     *
+//     * @param string $workId
+//     * @param int $chunkNumber
+//     * @return array
+//     */
+//    public function getWitnessesForChunk(string $workId, int $chunkNumber) : array {
+//
+//        // Get transcriptions
+//        $transcriptionWitnesses = $this->getDocInfosForChunk($workId, $chunkNumber);
+//
+//        // Get texts
+//
+//        // Get other witness types
+//
+//        // Assemble return array
+//        $witnessesForChunk = [];
+//
+//        foreach($transcriptionWitnesses as $tw) {
+//            $witnessesForChunk[] =  [
+//                'type' => self::WITNESS_TRANSCRIPTION,
+//                'id' => $tw->id
+//            ];
+//        }
+//        return $witnessesForChunk;
+//    }
+//
+//    /**
+//     * returns a list of docs
+//     *
+//     * @param string $workId
+//     * @param int $chunkNumber
+//     * @return array
+//     */
+//    public function getDocsForChunk(string $workId, int $chunkNumber) : array
+//    {
+//        $ti = $this->tNames['items'];
+//        $te = $this->tNames['elements'];
+//        $td = $this->tNames['docs'];
+//        $tp = $this->tNames['pages'];
+//
+//
+//        $this->getSqlQueryCounterTracker()->incrementSelect();
+//        $query = "SELECT DISTINCT $td.* FROM $td" .
+//                " JOIN ($te, $ti, $tp)" .
+//                " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id AND $td.id=$tp.doc_id)" .
+//                " WHERE $ti.type=" . Item::CHUNK_MARK .
+//                " AND $ti.text='$workId'" .
+//                " AND $ti.target=$chunkNumber" .
+//                " AND $ti.valid_until='9999-12-31 23:59:59.999999'" .
+//                " AND $te.valid_until='9999-12-31 23:59:59.999999'".
+//                " AND $tp.valid_until='9999-12-31 23:59:59.999999'";
+//
+//        $r = $this->databaseHelper->query($query);
+//
+//        $docs = [];
+//        while ($row = $r->fetch()) {
+//            $docs[] = $row;
+//        }
+//        return $docs;
+//    }
 
-        // Get transcriptions
-        $transcriptionWitnesses = $this->getDocInfosForChunk($workId, $chunkNumber);
-
-        // Get texts
-
-        // Get other witness types
-
-        // Assemble return array
-        $witnessesForChunk = [];
-
-        foreach($transcriptionWitnesses as $tw) {
-            $witnessesForChunk[] =  [
-                'type' => self::WITNESS_TRANSCRIPTION,
-                'id' => $tw->id
-            ];
-        }
-        return $witnessesForChunk;
-    }
-
-    /**
-     * returns a list of docs
-     *
-     * @param string $workId
-     * @param int $chunkNumber
-     * @return array
-     */
-    public function getDocsForChunk(string $workId, int $chunkNumber) : array
-    {
-        $ti = $this->tNames['items'];
-        $te = $this->tNames['elements'];
-        $td = $this->tNames['docs'];
-        $tp = $this->tNames['pages'];
-
-
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        $query = "SELECT DISTINCT $td.* FROM $td" . 
-                " JOIN ($te, $ti, $tp)" . 
-                " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id AND $td.id=$tp.doc_id)" . 
-                " WHERE $ti.type=" . Item::CHUNK_MARK .  
-                " AND $ti.text='$workId'" . 
-                " AND $ti.target=$chunkNumber" . 
-                " AND $ti.valid_until='9999-12-31 23:59:59.999999'" . 
-                " AND $te.valid_until='9999-12-31 23:59:59.999999'".
-                " AND $tp.valid_until='9999-12-31 23:59:59.999999'";
-        
-        $r = $this->databaseHelper->query($query);
-        
-        $docs = [];
-        while ($row = $r->fetch()) {
-            $docs[] = $row;
-        }
-        return $docs;
-    }
-
-    /**
-     * Returns an array of DocInfo structures corresponding to the documents in the
-     * system whose transcription include some chunk mark for the given
-     * workId and chunk number
-     *
-     * @param string $workId
-     * @param int $chunkNumber
-     * @return DocInfo[]
-     */
-    public function getDocInfosForChunk(string $workId, int $chunkNumber) : array {
-
-        $docs = $this->getDocsForChunk($workId, $chunkNumber);
-
-        $docInfos = [];
-
-        foreach($docs as $row) {
-            $docInfos[] = $this->createDocInfoFromDbRow($row);
-        }
-
-        return $docInfos;
-    }
+//    /**
+//     * Returns an array of DocInfo structures corresponding to the documents in the
+//     * system whose transcription include some chunk mark for the given
+//     * workId and chunk number
+//     *
+//     * @param string $workId
+//     * @param int $chunkNumber
+//     * @return DocInfo[]
+//     */
+//    public function getDocInfosForChunk(string $workId, int $chunkNumber) : array {
+//
+//        $docs = $this->getDocsForChunk($workId, $chunkNumber);
+//
+//        $docInfos = [];
+//
+//        foreach($docs as $row) {
+//            $docInfos[] = $this->createDocInfoFromDbRow($row);
+//        }
+//
+//        return $docInfos;
+//    }
 
 
     /**
@@ -1124,7 +1072,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
 //            }
 //        }
 //
-//        $lastTime = '0000-00-00 00:00:00.000000';  // times will be compared as strings, this works because MySQL stores times as 'YYYY-MM-DD HH:MM:SS.mmmmmmm'
+//        $lastTime = '0000-00-00 00:00:00.000000';  // times will be compared as strings, this works because MySQL stores times as 'YYYY-MM-DD HH:MM:SS.mmmmmm'
 //        $lastAuthorName = '';
 //        $lastAuthorId = 0;
 //        $lastAuthorUsername = '';
@@ -1160,26 +1108,26 @@ class DataManager implements  SqlQueryCounterTrackerAware
 //
 //    }
 
-    /**
-     * Returns a an array with the chunk start and end locations
-     * for the given document, work and chunk numbers
-     *
-     * Each row has the following fields:
-     *  page_seq : page sequence number within the document
-     *  foliation: page foliation
-     *  column_number: column
-     *  e_seq: element sequence number within the column
-     *  item_seq: item sequence number within the element
-     *  type: 'start' or 'end'
-     *  segment: chunk segment number
-     *
-     * @param int $docId
-     * @param string $workId
-     * @param int $chunkNumber
-     * @param string $localWitnessId
-     * @param string $timeString
-     * @return array
-     */
+//    /**
+//     * Returns an array with the chunk start and end locations
+//     * for the given document, work and chunk numbers
+//     *
+//     * Each row has the following fields:
+//     *  page_seq : page sequence number within the document
+//     *  foliation: page foliation
+//     *  column_number: column
+//     *  e_seq: element sequence number within the column
+//     *  item_seq: item sequence number within the element
+//     *  type: 'start' or 'end'
+//     *  segment: chunk segment number
+//     *
+//     * @param int $docId
+//     * @param string $workId
+//     * @param int $chunkNumber
+//     * @param string $localWitnessId
+//     * @param string $timeString
+//     * @return array
+//     */
 //    public function getChunkLocationsForDocRaw($docId, $workId, $chunkNumber, $localWitnessId = 'A', $timeString = '')
 //    {
 //        $ti = $this->tNames['items'];
@@ -1241,7 +1189,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param array $loc2
      * @return bool
      */
-    private function isAfter($loc1, $loc2) 
+    private function isAfter(array $loc1, array $loc2): bool
     {
         
         $loc1Nr = $loc1['page_seq']*100000000 + 
@@ -1276,7 +1224,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param array $locationRows
      * @return array
      */
-    public function getChunkLocationArrayFromRawLocations($locationRows)
+    public function getChunkLocationArrayFromRawLocations(array $locationRows): array
     {
         $chunkLocations = [];
         
@@ -1342,7 +1290,8 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $r->fetch(PDO::FETCH_ASSOC);
     }
     
-    public function getAdditionElementIdWithGivenReference(int $reference) {
+    public function getAdditionElementIdWithGivenReference(int $reference): bool|int
+    {
         $te = $this->tNames['elements'];
 
         $query = "SELECT id from $te where type=" . Element::SUBSTITUTION . " AND reference=$reference AND valid_until='9999-12-31 23:59:59.999999' LIMIT 1";
@@ -1355,7 +1304,8 @@ class DataManager implements  SqlQueryCounterTrackerAware
     }
             
     
-    public function getItemStreamForElementId(int $elementId) {
+    public function getItemStreamForElementId(int $elementId): array
+    {
         $ti = $this->tNames['items'];
         $te = $this->tNames['elements'];
         $tp = $this->tNames['pages'];
@@ -1401,7 +1351,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param array $loc2
      * @return array
      */
-    public function getItemStreamBetweenLocations($docId, $loc1, $loc2)
+    public function getItemStreamBetweenLocations(int $docId, array $loc1, array $loc2): array
     {
         $ti = $this->tNames['items'];
         $te = $this->tNames['elements'];
@@ -1478,8 +1428,17 @@ class DataManager implements  SqlQueryCounterTrackerAware
         }
         return $items;
     }
-    
-    public function getPageIdByDocPage($docId, $pageNum)
+
+    /**
+     * Looks up the page id for a document and page number.
+     *
+     * Returns -1 if the page does not exist
+     *
+     * @param $docId
+     * @param $pageNum
+     * @return int
+     */
+    public function getPageIdByDocPage($docId, $pageNum) : int
     {
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
@@ -1487,10 +1446,10 @@ class DataManager implements  SqlQueryCounterTrackerAware
             'doc_id' => $docId, 
             'page_number'=> $pageNum
             ],1);
-        if ($rows === []) {
-            return false;
+        if (count($rows) === 0) {
+            return -1;
         }
-        return $rows[0]['id'];
+        return $rows->getFirst()['id'];
     }
     
      public function getPageIdByDocSeq($docId, $seq)
@@ -1501,15 +1460,15 @@ class DataManager implements  SqlQueryCounterTrackerAware
             'doc_id' => $docId, 
             'seq'=> $seq
             ],1);
-        if ($rows === []) {
+        if (count($rows) === 0) {
             return false;
         }
-        return $rows[0]['id'];
+        return $rows->getFirst()['id'];
     }
 
     /**
      * Gets page information from the database for the given doc and sequences
-     * If there's an error, it returns false. Otherwise it returns an array with
+     * If there's an error, it returns false. Otherwise, it returns an array with
      * the following fields:
      *   id
      *   doc_id
@@ -1520,21 +1479,22 @@ class DataManager implements  SqlQueryCounterTrackerAware
      *   lang
      *   num_cols
      *   foliation  (a string or null)
-     * @param $docId
-     * @param $seq
+     * @param int $docId
+     * @param int $seq
      * @return bool|array
      */
-    public function getPageInfoByDocSeq($docId, $seq) {
+    public function getPageInfoByDocSeq(int $docId, int $seq): bool|array
+    {
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows = $this->pagesDataTable->findRows([
             'doc_id' => $docId,
             'seq'=> $seq
         ],1);
-        if ($rows === []) {
+        if (count($rows) === 0) {
             return false;
         }
-        return $rows[0];
+        return $rows->getFirst();
     }
 
     public function getPageFoliationByDocSeq(int $docId, int $pageSeq) : string {
@@ -1557,41 +1517,44 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param Element $element
      * @param boolean $insertAtEnd
      * @param array $itemIds new Item Ids (so that addition targets can be set)
-     * @param bool $time
+     * @param string $time
      * @return bool|Element
+     * @throws InvalidRowUpdateTime
+     * @throws InvalidTimeStringException
+     * @throws RowAlreadyExists
+     * @throws RowDoesNotExist
      */
-    public function insertNewElement(Element $element, $insertAtEnd = true, $itemIds = [], $time = false) 
+    public function insertNewElement(Element $element, bool $insertAtEnd = true, array $itemIds = [], string $time = ''): bool|Element
     {
-        
-        if (!$time) {
+        if ($time === '') {
             $time = TimeString::now();
         }
-        
-        if (is_null($element->pageId)) {
+
+        if ($element->pageId === -1) {
             $this->logger->error('Element being inserted in '
-                    . 'null page', ['pageid' => $element->pageId]);
+                    . 'null page', ['pageId' => $element->pageId]);
             return false;
         }
         
         if ($element->columnNumber <= 0) {
             $this->logger->error('Element being inserted in '
-                    . 'column <= 0', ['pageid' => $element->pageId]);
+                    . 'column <= 0', ['pageId' => $element->pageId]);
             return false;
         }
         
         if ($element->type !== Element::LINE_GAP && count($element->items) === 0) {
             $this->logger->error('Empty element being inserted', 
-                    ['pageid' => $element->pageId, 
-                        'colnum' => $element->columnNumber, 
-                        'editor' => $element->editorId]);
+                    [ 'pageId' => $element->pageId,
+                        'colNum' => $element->columnNumber,
+                        'editorTid' => $element->editorTid]);
             return false;
         }
         
         if (!in_array($element->lang, $this->langCodes)) {
             $this->logger->error('Element with invalid language being inserted', 
-                    ['pageid' => $element->pageId, 
-                        'colnum' => $element->columnNumber, 
-                        'editor' => $element->editorId, 
+                    [   'pageId' => $element->pageId,
+                        'colNum' => $element->columnNumber,
+                        'editorTid' => $element->editorTid,
                         'lang' => $element->lang]);
             return false;
         }
@@ -1601,24 +1564,33 @@ class DataManager implements  SqlQueryCounterTrackerAware
         
         if ($pageInfo === false) {
             $this->logger->error('Element being inserted in '
-                    . 'non-existent page', ['pageid' => $element->pageId]);
+                    . 'non-existent page', ['pageId' => $element->pageId]);
             return false;
         }
 
         if ($element->columnNumber > $pageInfo['num_cols']) {
             $this->logger->error('Element being inserted in '
                     . 'non-existent colum', 
-                    ['pageid' => $element->pageId, 
-                        'colnum' => $element->columnNumber]);
+                    [' pageId' => $element->pageId,
+                        'colNum' => $element->columnNumber]);
             return false;
         }
-        
-        if (!$this->userManager->userExistsById($element->editorId)) {
+
+        try {
+            $userData = $this->pm->getPersonEssentialData($element->editorTid);
+            $editorIsUser = $userData->isUser;
+        } catch (PersonNotFoundException) {
+            $editorIsUser = false;
+        }
+
+
+
+        if (!$editorIsUser) {
             $this->logger->error('Element being inserted by '
                     . 'non-existent editor', 
-                    ['pageid' => $element->pageId, 
-                        'colnum' => $element->columnNumber, 
-                        'editor' => $element->editorId]);
+                    ['pageId' => $element->pageId,
+                        'colNum' => $element->columnNumber,
+                        'editorTid' => $element->editorTid]);
             return false;
         }
         
@@ -1653,15 +1625,15 @@ class DataManager implements  SqlQueryCounterTrackerAware
         // Now just create the new element
         $newId = $this->createNewElementInDB($newElement, $time);
 //        $this->logger->debug("New element Id = $newId, type = " . $newElement->type);
-        if ($newId === false) {
-            // This means a database error
+        if ($newId === 0) {
+            // This means a database error, but it should generate an exception!
             // Can't reproduce in testing for now
             // @codeCoverageIgnoreStart
             $this->logger->error('Can\'t save new element in DB', 
-                ['pageid' => $element->pageId, 
+                ['pageId' => $element->pageId,
                     'seq' => $newElement->seq,
-                    'colnum' => $element->columnNumber, 
-                    'editor' => $element->editorId]);
+                    'colNum' => $element->columnNumber,
+                    'editorTid' => $element->editorTid]);
             return false;
             // @codeCoverageIgnoreEnd
         }
@@ -1682,17 +1654,17 @@ class DataManager implements  SqlQueryCounterTrackerAware
                 $item->target = $itemIds[$item->target];
             }
             $newItemId = $this->createNewItemInDB($item, $time);
-            if ($newItemId === false ) {
+            if ($newItemId === -1 ) {
                 // This means a database error
                 // Can't reproduce in testing for now
                 // @codeCoverageIgnoreStart
                 $this->logger->error('Can\'t save new items in DB', 
-                ['pageid' => $element->pageId, 
+                ['pageId' => $element->pageId,
                     'seq' => $newElement->seq,
-                    'colnum' => $element->columnNumber, 
-                    'editor' => $element->editorId, 
-                    'itemtype' => $item->type,
-                    'itemseq' => $item->seq
+                    'colNum' => $element->columnNumber,
+                    'editorTid' => $element->editorTid,
+                    'itemType' => $item->type,
+                    'itemSeq' => $item->seq
                     ]); 
                 return false;
                 // @codeCoverageIgnoreEnd
@@ -1702,52 +1674,69 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $this->getElementById($newId);
     }
         
-    private function createNewItemInDB($item, $time = false) 
+    private function createNewItemInDB(Item $item, $time = false): int
     {
         
         if (!$time) {
             $time = TimeString::now();
         }
         $this->getSqlQueryCounterTracker()->incrementCreate();
-        return $this->itemsDataTable->createRowWithTime([
-            'ce_id'=> $item->columnElementId,
-            'type' => $item->type,
-            'seq' => $item->seq,
-            'lang' => $item->lang,
-            'hand_id' => $item->handId,
-            'text' => $item->theText,
-            'alt_text' => $item->altText,
-            'extra_info' => $item->extraInfo,
-            'length' => $item->length,
-            'target' => $item->target
-        ], $time);
+        try {
+            return $this->itemsDataTable->createRowWithTime([
+                'ce_id' => $item->columnElementId,
+                'type' => $item->type,
+                'seq' => $item->seq,
+                'lang' => $item->lang,
+                'hand_id' => $item->handId,
+                'text' => $item->theText,
+                'alt_text' => $item->altText,
+                'extra_info' => $item->extraInfo,
+                'length' => $item->length,
+                'target' => $item->target
+            ], $time);
+        } catch (InvalidTimeStringException|RowAlreadyExists $e) {
+            $this->logger->error("Exception creating new item in DB: " . $e->getMessage());
+            return -1;
+        }
     }
     
-    private function updateItemInDB($item, $time = false)
+    private function updateItemInDB($item, $time = false): bool
     {
         if (!$time) {
             $time = TimeString::now();
         }
 
         $this->getSqlQueryCounterTracker()->incrementUpdate();
-        $this->itemsDataTable->realUpdateRowWithTime([
-            'id' => $item->id,
-            'ce_id'=> $item->columnElementId,
-            'type' => $item->type,
-            'seq' => $item->seq,
-            'lang' => $item->lang,
-            'hand_id' => $item->handId,
-            'text' => $item->theText,
-            'alt_text' => $item->altText,
-            'extra_info' => $item->extraInfo,
-            'length' => $item->length,
-            'target' => $item->target
-        ], $time);
+        try {
+            $this->itemsDataTable->realUpdateRowWithTime([
+                'id' => $item->id,
+                'ce_id' => $item->columnElementId,
+                'type' => $item->type,
+                'seq' => $item->seq,
+                'lang' => $item->lang,
+                'hand_id' => $item->handId,
+                'text' => $item->theText,
+                'alt_text' => $item->altText,
+                'extra_info' => $item->extraInfo,
+                'length' => $item->length,
+                'target' => $item->target
+            ], $time);
+        } catch (InvalidRowUpdateTime|RowDoesNotExist|InvalidTimeStringException $e) {
+            throw new RuntimeException($e->getMessage(), $e->getCode());
+        }
         return true;
     }
-    private function createNewElementInDB($element, $time = false) 
+
+    /**
+     * @param Element $element
+     * @param string $time
+     * @return int
+     * @throws InvalidTimeStringException
+     * @throws RowAlreadyExists
+     */
+    private function createNewElementInDB(Element $element, string $time = ''): int
     {
-         if (!$time) {
+         if ($time === '') {
             $time = TimeString::now();
         }
         $this->getSqlQueryCounterTracker()->incrementCreate();
@@ -1757,14 +1746,22 @@ class DataManager implements  SqlQueryCounterTrackerAware
                 'column_number' => $element->columnNumber,
                 'seq' => $element->seq,
                 'lang' => $element->lang,
-                'editor_id' => $element->editorId,
+                'editor_tid' => $element->editorTid,
                 'hand_id' => $element->handId,
                 'reference' => $element->reference,
                 'placement' => $element->placement
             ], $time);
     }
-    
-    private function updateElementInDB($element,  $time = false) 
+
+    /**
+     * @param Element $element
+     * @param bool|string $time
+     * @return bool
+     * @throws InvalidRowUpdateTime
+     * @throws InvalidTimeStringException
+     * @throws RowDoesNotExist
+     */
+    private function updateElementInDB(Element $element, bool|string $time = false): bool
     {
         if (!$time) {
             $time = TimeString::now();
@@ -1778,7 +1775,8 @@ class DataManager implements  SqlQueryCounterTrackerAware
                 'column_number' => $element->columnNumber,
                 'seq' => $element->seq,
                 'lang' => $element->lang,
-                'editor_id' => $element->editorId,
+//                'editor_id' => 0,
+                'editor_tid' => $element->editorTid,
                 'hand_id' => $element->handId,
                 'reference' => $element->reference,
                 'placement' => $element->placement
@@ -1787,7 +1785,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
     }
     
        
-    private function getMaxElementSeq($pageId, $col)
+    private function getMaxElementSeq(int $pageId, int $col): int
     {
        
         $te = $this->tNames['elements'];
@@ -1803,40 +1801,39 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return -1;
     }
     
-    public function getItemById($itemId)
+    public function getItemById(int $itemId): Item|bool
     {
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
-        try {
-            $row = $this->itemsDataTable->getRow($itemId);
-        } catch(Exception $e) {
-            $this->reportException('getItemById ' . $itemId, $e);
+        $row = $this->itemsDataTable->getRow($itemId);
+        if ($row === null) {
+            $this->logger->error("Item id $itemId not found");
             return false;
         }
-
         return self::createItemObjectFromRow($row);
     }
 
 
-    public function getElementById($elementId) {
+    public function getElementById($elementId): bool|Element
+    {
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
-
-        $row = false;
-        try {
-            $row = $this->elementsDataTable->getRow($elementId);
-        } catch (Exception $e) {
-            $this->reportException('getElementById, getRow ' . $elementId, $e);
-        }
-        if ($row=== false) {
+        $row = $this->elementsDataTable->getRow($elementId);
+        if ($row === null) {
             return false;
         }
         $e = $this->createElementObjectFromRow($row);
-        $e->items = $this->getItemsForElement($e);
+
+        try {
+            $e->items = $this->getItemsForElement($e);
+        } catch (InvalidTimeStringException $e) {
+            // should NEVER happen
+            throw new RuntimeException($e->getMessage());
+        }
         return $e;
     }
     
-    public static function createElementObjectFromArbitraryRow($fields, $row) {
+    public static function createElementObjectFromArbitraryRow($fields, $row) : Element {
         
         switch ($row[$fields['type']]){
             case Element::LINE:
@@ -1872,14 +1869,15 @@ class DataManager implements  SqlQueryCounterTrackerAware
             case Element::SUBSTITUTION:
                 $e = new Substitution();
                 break;
-
-//            default:
-//                continue;
+        }
+        if (!isset($e)) {
+            throw new RuntimeException("Unknown Element type in $row", $row);
         }
         $e->columnNumber = (int) $row[$fields['column_number']];
         $e->pageId = (int) $row[$fields['page_id']];
         $e->seq = (int) $row[$fields['seq']];
-        $e->editorId = (int) $row[$fields['editor_id']];
+//        $e->editorId = (int) $row[$fields['editor_id']];
+        $e->editorTid = intval($row[$fields['editor_tid']]);
         $e->handId = (int) $row[$fields['hand_id']];
         $e->id = (int) $row[$fields['id']];
         $e->lang = $row[$fields['lang']];
@@ -1894,7 +1892,8 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param array $theArray
      * @return array
      */
-    public static function createElementArrayFromArray(array $theArray) {
+    public static function createElementArrayFromArray(array $theArray): array
+    {
         $elements = [];
         //print "Creating element array from array";
         foreach($theArray as $elementArray) {
@@ -1909,7 +1908,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $elements;
     }
     
-    private function createElementObjectFromRow($row) 
+    private function createElementObjectFromRow($row): Element
     {
         $fields = [ 
             'id' => 'id',
@@ -1918,7 +1917,8 @@ class DataManager implements  SqlQueryCounterTrackerAware
             'column_number' => 'column_number',
             'seq' => 'seq',
             'lang' => 'lang',
-            'editor_id' => 'editor_id',
+//            'editor_id' => 'editor_id',
+            'editor_tid' => 'editor_tid',
             'hand_id' => 'hand_id',
             'reference' => 'reference',
             'placement' => 'placement'
@@ -1926,7 +1926,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return self::createElementObjectFromArbitraryRow($fields, $row);
     }
     
-    public static function createElementObjectFromArray($theArray) 
+    public static function createElementObjectFromArray($theArray): Element
     {
         $fields = [ 
             'id' => 'id',
@@ -1935,7 +1935,8 @@ class DataManager implements  SqlQueryCounterTrackerAware
             'column_number' => 'columnNumber',
             'seq' => 'seq',
             'lang' => 'lang',
-            'editor_id' => 'editorId',
+//            'editor_id' => 'editorId',
+            'editor_tid' => 'editorTid',
             'hand_id' => 'handId',
             'reference' => 'reference',
             'placement' => 'placement'
@@ -1943,7 +1944,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return self::createElementObjectFromArbitraryRow($fields, $theArray);
     }
     
-    public static function createItemObjectFromArbitraryRow($fields, $row) {
+    public static function createItemObjectFromArbitraryRow($fields, $row) : Item{
         switch ($row[$fields['type']]){
             case Item::TEXT:
                 $item = new Text($row[$fields['id']],
@@ -2089,13 +2090,16 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
 
         }
+        if (!isset($item)) {
+            throw new RuntimeException("Unknown item type found in row", $row);
+        }
         $item->lang = $row[$fields['lang']];
         $item->handId = $row[$fields['hand_id']];
         $item->setColumnElementId($row[$fields['ce_id']]);
         return $item;
     }
     
-    public static function createItemObjectFromRow($row)
+    public static function createItemObjectFromRow($row) : Item
     {
         $fields = [ 
             'id' => 'id',
@@ -2113,7 +2117,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return self::createItemObjectFromArbitraryRow($fields, $row);
     }
     
-    public static function createItemObjectFromArray($theArray)
+    public static function createItemObjectFromArray($theArray)  : Item
     {
         $fields = [ 
             'id' => 'id',
@@ -2134,30 +2138,29 @@ class DataManager implements  SqlQueryCounterTrackerAware
     /**
      * Updates column elements in the database
      *
-     * @param $pageId
-     * @param $columnNumber
+     * @param int $pageId
+     * @param int $columnNumber
      * @param array $newElements
-     * @param bool $time
+     * @param string $time
      * @return array|bool
      * @throws Exception
      */
-    public function updateColumnElements($pageId, $columnNumber, array $newElements, $time = false)
+    public function updateColumnElements(int $pageId, int $columnNumber, array $newElements, string $time = ''): bool|array
     {
-//        $this->logger->debug("Updating column elements, pageId=$pageId, col=$columnNumber");
+        $this->logger->debug("UPDATING COLUMN ELEMENTS, pageId=$pageId, col=$columnNumber");
         // force pageId and columnNumber in the elements in $newElements
-        foreach($newElements as $element ) {
+        foreach ($newElements as $element ) {
             $element->pageId = $pageId;
             $element->columnNumber = $columnNumber;
         }
-        //$this->logger->debug("The elements", $newElements);
-        
+
         $oldElements = $this->getColumnElementsByPageId($pageId, $columnNumber);
         $editScript = ElementArray::getEditScript(
             $oldElements,
             $newElements
         );
 
-        if ($time === false) {
+        if ($time === '') {
             $time = TimeString::now();
         }
         $newItemsIds = [];
@@ -2166,11 +2169,11 @@ class DataManager implements  SqlQueryCounterTrackerAware
             list ($index, $cmd, $newSeq) = $editInstruction;
             switch ($cmd) {
                 case MyersDiff::KEEP:
-//                    $this->logger->debug("KEEPING element @ pos " . $index . ", id=" . $oldElements[$index]->id);
+                    $this->logger->debug("KEEPING element @ pos " . $index . ", id=" . $oldElements[$index]->id);
                     if ($oldElements[$index]->seq 
                             !== $newSeq) {
-//                        $this->logger->debug("... with new seq $newSeq");
-//                        $this->logger->debug("... seq was " . $oldElements[$index]->seq );
+                        $this->logger->debug("... with new seq $newSeq");
+                        $this->logger->debug("... seq was " . $oldElements[$index]->seq );
                         $newElements[$newElementsIndex]->seq =
                                 $newSeq;
                     }
@@ -2182,14 +2185,12 @@ class DataManager implements  SqlQueryCounterTrackerAware
                             }
                             else {
                                 if ($oldElements[$index]->reference !== $newItemsIds[$oldElements[$index]->reference]) {
-//                                    $this->logger->debug("... with new reference",
-//                                            [ 'oldref' => $oldElements[$index]->reference, 'newref'=> $newItemsIds[$oldElements[$index]->reference] ]);
                                     $newElements[$index]->reference = $newItemsIds[$oldElements[$index]->reference];
                                 }
                             }
                         }
                     }
-                    list ($elementId, $ids) = $this->updateElement($newElements[$newElementsIndex], $oldElements[$index], $newItemsIds, $time);
+                    list (, $ids) = $this->updateElement($newElements[$newElementsIndex], $oldElements[$index], $newItemsIds, $time);
                     foreach($ids as $oldId => $newId) {
                         $newItemsIds[$oldId] = $newId;
                     }
@@ -2197,13 +2198,13 @@ class DataManager implements  SqlQueryCounterTrackerAware
                     break;
                     
                 case MyersDiff::DELETE:
-//                    $this->logger->debug("DELETING element @ " . $index . ", id=" . $oldElements[$index]->id);
+                    $this->logger->debug("DELETING element @ " . $index . ", id=" . $oldElements[$index]->id);
 //                    $this->logger->debug("... .... time=" . $time);
                     $this->deleteElement($oldElements[$index]->id, $time);
                     break;
                 
                 case MyersDiff::INSERT:
-//                    $this->logger->debug("INSERTING element @ " . $index);
+                    $this->logger->debug("INSERTING element @ " . $index);
 //                    $this->logger->debug("...New Seq: " . $newSeq);
                     $newElements[$newElementsIndex]->seq = $newSeq;
                     if ($newElements[$index]->type === Element::SUBSTITUTION || $newElements[$index]->type === Element::ADDITION) {
@@ -2215,7 +2216,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
                             else {
                                 if ($newElements[$index]->reference !== $newItemsIds[$newElements[$index]->reference]) {
                                     $this->logger->debug("... with new reference", 
-                                            [ 'oldref' => $newElements[$index]->reference, 'newref'=> $newItemsIds[$newElements[$index]->reference] ]);
+                                            [ 'oldRef' => $newElements[$index]->reference, 'newRef'=> $newItemsIds[$newElements[$index]->reference] ]);
                                     $newElements[$index]->reference = $newItemsIds[$newElements[$index]->reference];
                                 }
                             }
@@ -2234,11 +2235,12 @@ class DataManager implements  SqlQueryCounterTrackerAware
                         $givenId = $newElements[$newElementsIndex]->items[$j]->id;
                         $newItemsIds[$givenId] = $element->items[$j]->id;
                     }
-//                    $this->logger->debug("...element id = " . $element->id);
+                    $this->logger->debug("...element id = " . $element->id);
                     $newElementsIndex++;
                     break;
             }
         }
+        $this->logger->debug(":: finished UPDATING COLUMN ELEMENTS, pageId=$pageId, col=$columnNumber");
         return $newItemsIds;
     }
 
@@ -2259,15 +2261,17 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @return array
      * @throws Exception
      */
-    public function updateElement(Element $newElement, Element $oldElement, $itemIds = [], $time = false)
+    public function updateElement(Element $newElement, Element $oldElement, array $itemIds = [], bool|string $time = false): array
     {
         if (!$time) {
             $time = TimeString::now();
         }
         // Force element IDs to be same, we're only dealing with the element's data
         if ($newElement->id !== $oldElement->id) {
-                $newElement->id = $oldElement->id;
+            $newElement->id = $oldElement->id;
         }
+
+        $this->logger->debug("   UPDATING ELEMENT $oldElement->id");
         
         // Force columnElementId in new element's items
         foreach ($newElement->items as $item) {
@@ -2286,10 +2290,10 @@ class DataManager implements  SqlQueryCounterTrackerAware
             list ($index, $cmd, $newSeq) = $editInstruction;
             switch ($cmd) {
                 case MyersDiff::KEEP:
-//                    $this->logger->debug("Keeping item $index");
+                    $this->logger->debug("   Keeping item $index");
                     if ($oldElement->items[$index]->seq 
                             !== $newSeq) {
-                        //print "... with new seq $newSeq\n";
+                        $this->logger->debug("   ... with new seq $newSeq");
                         $oldElement->items[$index]->seq =
                                 $newSeq;
                         $this->updateItemInDB(
@@ -2299,17 +2303,17 @@ class DataManager implements  SqlQueryCounterTrackerAware
                     }
                     
                     if ($oldElement->items[$index]->type === Item::ADDITION) {
-//                        $this->logger->debug("Keeping an addition",get_object_vars($oldElement->items[$index]));
+                        $this->logger->debug("   Keeping an addition",get_object_vars($oldElement->items[$index]));
                         if ($oldElement->items[$index]->target !== 0) {
-//                            $this->logger->debug("...with non-zero target", [ 'target'=>$oldElement->items[$index]->target]);
+                            $this->logger->debug("   ...with non-zero target", [ 'target'=>$oldElement->items[$index]->target]);
                             if (!isset($itemIds[$oldElement->items[$index]->target])) {
                                 $this->logger->warning("Addition without valid target @ pos $index", get_object_vars($oldElement->items[$index]));
                             } 
                             else {
                                 if ($oldElement->items[$index]->target !== $itemIds[$oldElement->items[$index]->target]) {
                                     $oldElement->items[$index]->target = $itemIds[$oldElement->items[$index]->target];
-//                                    $this->logger->debug("...with new target", [ 'target'=>$oldElement->items[$index]->target]);
-//                                    $this->logger->debug("... .... time=" . $time);
+                                    $this->logger->debug("   ...with new target", [ 'target'=>$oldElement->items[$index]->target]);
+//                                    $this->logger->debug("  ... .... time=" . $time);
                                     $this->updateItemInDB(
                                         $oldElement->items[$index],
                                         $time
@@ -2323,7 +2327,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
                     break;
                     
                 case MyersDiff::DELETE:
-//                    $this->logger->debug("...deleting item @ pos $index");
+                    $this->logger->debug("  Deleting item $index");
                     $this->getSqlQueryCounterTracker()->incrementDelete();
 //                    $this->logger->debug("... .... time=" . $time);
                     $this->itemsDataTable->deleteRowWithTime(
@@ -2334,7 +2338,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
                     break;
                 
                 case MyersDiff::INSERT:
-//                    $this->logger->debug("...inserting item with seq $newSeq");
+                    $this->logger->debug("   Inserting new item with seq $newSeq");
                     // This takes care of new addition with targets that
                     // come earlier in the item sequence in the same element,
                     // which is the most usual case
@@ -2343,33 +2347,36 @@ class DataManager implements  SqlQueryCounterTrackerAware
                         if (!isset($itemIds[$newElement->items[$index]->target])) {
                             $this->logger->warning("Addition without valid target @ pos $index", get_object_vars($newElement->items[$index]));
                         } else {
-//                            $this->logger->debug("Setting addition target " .
-//                                $newElement->items[$index]->target .
-//                                " => " .
-//                                $itemIds[$newElement->items[$index]->target]);
+                            $this->logger->debug("   Setting addition target " .
+                                $newElement->items[$index]->target .
+                                " => " .
+                                $itemIds[$newElement->items[$index]->target]);
                             $newElement->items[$index]->target = 
                                 $itemIds[$newElement->items[$index]->target];
                         }
                         
                     }
-//                    $this->logger->debug("... .... time=" . $time);
                     $newItemId = $this->createNewItemInDB(
                         $newElement->items[$index], 
                         $time
                     );
-                    //print "...with item Id = ";
-                    //var_dump($newItemId);
+                    if ($newItemId === -1) {
+                        $this->logger->error("Could not create new item in DB", [ 'class' => __CLASS__, 'function' => __FUNCTION__]);
+                        throw new RuntimeException("Could not add new item in DB");
+                    }
+                    $this->logger->debug("   ... with item Id = $newItemId");
+
                     $itemIds[$newElement->items[$newItemsIndex]->id] = $newItemId;
                     $newItemsIndex++;
                     $ignoreNewEditor = false;
                     break;
             }
         }
-        if (!$ignoreNewEditor && $newElement->editorId !== $oldElement->editorId) {
-//            $this->logger->debug('...changes by new editor!');
+        if (!$ignoreNewEditor && $newElement->editorTid !== $oldElement->editorTid) {
+            $this->logger->debug("   ...changes by new editor: $newElement->editorTid");
         }
         if (!Element::isElementDataEqual($newElement, $oldElement, true, $ignoreNewEditor, false)) {
-//            $this->logger->debug("...updating element in DB");
+            $this->logger->debug("   ...updating element in DB");
 //            $this->logger->debug("... .... time=" . $time);
             $this->updateElementInDB($newElement, $time);
         }
@@ -2380,12 +2387,14 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
     /**
      * @param int $elementId
-     * @param bool $time
+     * @param bool $timeString
      * @return bool
      * @throws Exception
      */
-    public function deleteElement(int $elementId, $time=false)
+    public function deleteElement(int $elementId, bool|string $timeString=false): bool
     {
+
+        // TODO: do all deletes within a transaction
         /**
          * Could there be a timing problem here? The deletes of element
          * and items will not have all the same valid_to value. There
@@ -2394,22 +2403,22 @@ class DataManager implements  SqlQueryCounterTrackerAware
          * interval maybe)
          */
         
-        if (!$time) {
-            $time = TimeString::now();
+        if (!$timeString) {
+            $timeString = TimeString::now();
         }
         $element = $this->getElementById($elementId);
         $this->getSqlQueryCounterTracker()->incrementDelete();
-        $res = $this->elementsDataTable->deleteRowWithTime($element->id, $time);
-        if ($res === false) {
-            return false;
-        }
+        $this->elementsDataTable->deleteRowWithTime($element->id, $timeString);
+//        if ($res === false) {
+//            return false;
+//        }
         
         foreach ($element->items as $item) {
             $this->getSqlQueryCounterTracker()->incrementDelete();
-            $res2 = $this->itemsDataTable->deleteRowWithTime($item->id, $time);
-            if ($res2 === false) {
-                return false;
-            }
+            $this->itemsDataTable->deleteRowWithTime($item->id, $timeString);
+//            if ($res2 === false) {
+//                return false;
+//            }
         }
         return true;
     }
@@ -2420,14 +2429,19 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $pageId
      * @return bool
      */
-    public function isPageEmpty($pageId) 
+    public function isPageEmpty(int $pageId): bool
     {
         $pageInfo = $this->getPageInfo($pageId);
         if ($pageInfo['num_cols'] === 0) {
             return true;
         }
         for ($i = 1; $i <= $pageInfo['num_cols']; $i++) {
-            $elements = $this->getColumnElementsByPageId($pageId, $i);
+            try {
+                $elements = $this->getColumnElementsByPageId($pageId, $i);
+            } catch (InvalidTimeStringException $e) {
+                // should NEVER happen
+                throw new RuntimeException($e->getMessage());
+            }
             if (count($elements) > 0) {
                 return false;
             }
@@ -2441,9 +2455,12 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @return bool
      * @throws Exception
      */
-    public function deletePage($docId, $pageNum) 
+    public function deletePage($docId, $pageNum): bool
     {
         $pageId = $this->getPageIdByDocPage($docId, $pageNum);
+        if ($pageId === -1) {
+            return true;
+        }
         if (!$this->isPageEmpty($pageId)) {
             return false;
         }
@@ -2515,124 +2532,75 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $col
      * @return array|bool
      */
-    public function getTranscriptionVersions(int $pageId, int $col) {
+    public function getTranscriptionVersions(int $pageId, int $col): bool|array
+    {
         $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows =  $this->txVersionsTable->findRows(['page_id' => $pageId, 'col' => $col]);
-        if ($rows === false) {
-            $this->logger->error("Cannot get transcription versions for page $pageId column $col");
-            return false;
-        }
         if (count($rows) === 0) {
-            return $rows;
+            return [];
         }
-        $timeFroms = array_column($rows, 'time_from');
-        array_multisort($timeFroms, SORT_ASC, $rows);
-        return $rows;
+        $theRows = iterator_to_array($rows);
+
+        $timeFromArray = array_column($theRows, 'time_from');
+        array_multisort($timeFromArray, SORT_ASC, $theRows);
+        return $theRows;
     }
 
 
-    public function getTranscriptionVersionsWithAuthorInfo(int $pageId, int $col) {
+    public function getTranscriptionVersionsWithAuthorInfo(int $pageId, int $col): bool|array
+    {
 
         $versions = $this->getTranscriptionVersions($pageId, $col);
 
-        $authors = array_unique(array_column($versions, 'author_id'));
+        $authorTids = array_unique(array_column($versions, 'author_tid'));
         $authorInfo = [];
-        foreach ($authors as $author) {
-            $authorInfo[$author] = $this->userManager->getUserInfoByUserId(intval($author));
+        foreach ($authorTids as $authorTid) {
+            try {
+                $authorData = $this->pm->getPersonEssentialData($authorTid)->getExportObject();
+            } catch (PersonNotFoundException) {
+                $authorData = null;
+            }
+            if ($authorData !== null) {
+                $authorInfo[$authorTid] = $authorData;
+            }
         }
 
         $versionNumber = 1;
         foreach($versions as &$version) {
-            $version['author_name'] = $authorInfo[$version['author_id']]['fullname'];
+            $version['author_name'] = $authorInfo[$version['author_tid']]['name'];
             $version['number'] = $versionNumber++;
-            $version['minor'] = intval($version['minor']) === 1 ? true : false;
-            $version['review'] = intval($version['review']) === 1 ? true : false;
-            $version['is_published'] = intval($version['is_published']) === 1 ? true : false;
-            $version['author_username'] = $authorInfo[$version['author_id']]['username'];
+            $version['minor'] = intval($version['minor']) === 1;
+            $version['review'] = intval($version['review']) === 1;
+            $version['is_published'] = intval($version['is_published']) === 1;
+            $version['author_username'] = $authorInfo[$version['author_tid']]['userName'];
         }
         return $versions;
     }
 
-    public function updateVersionUntilTime(int $versionId, string $newTimeUntil) {
-        $this->getSqlQueryCounterTracker()->incrementUpdate();
-        $this->txVersionsTable->updateRow(['id' => $versionId, 'time_until' => $newTimeUntil]);
-        return true;
-    }
-
-    public  function  getMySqlHelper() {
+    public function getMySqlHelper(): MySqlHelper
+    {
         return $this->databaseHelper;
     }
 
-    public function isWitnessTypeValid(string $witnessType) : bool {
-        return array_search($witnessType, self::VALID_WITNESS_TYPES) !== false;
-    }
-
-
-//    public function getValidWitnessLocationsForWorkChunkLang(string $workId, int $chunkNumber, string $language) : array {
-//
-//        $witnessList = $this->getWitnessesForChunk($workId, $chunkNumber);
-//
-//        $witnessesForLang = [];
-//
-//        foreach($witnessList as $witness) {
-//            switch($witness['type']) {
-//                case DataManager::WITNESS_TRANSCRIPTION:
-//                    $docInfo = $this->getDocById($witness['id']);
-//                    if ($docInfo['lang'] !== $language) {
-//                        // not the right language
-//                        continue;
-//                    }
-//                    $locations = $this->getChunkLocationsForDoc($witness['id'], $workId, $chunkNumber);
-//                    if (count($locations)===0) {
-//                        // No data for this witness, this would only happen
-//                        // if somebody erased the chunk marks from the document
-//                        // in the few milliseconds between getDocsForChunk() and
-//                        // getChunkLocationsForDoc()
-//                        continue; // @codeCoverageIgnore
-//                    }
-//                    // Check if there's an invalid segment
-//                    $invalidSegment = false;
-//                    foreach($locations as $segment) {
-//                        if (!$segment['valid']) {
-//                            $invalidSegment = true;
-//                            break;
-//                        }
-//                    }
-//                    if ($invalidSegment) {
-//                        continue; // nothing to do with this witness
-//                    }
-//                    $witnessesForLang[] = [
-//                        'id' => $witness['id'],
-//                        'type' => DataManager::WITNESS_TRANSCRIPTION,
-//                        'locations' => $locations
-//                    ];
-//                    break;
-//
-//                case DataManager::WITNESS_PLAINTEXT:
-//
-//            }
-//        }
-//        return $witnessesForLang;
-//    }
-
-
-    private function reportException(string $context, Exception $e) {
+    private function reportException(string $context, Exception $e): void
+    {
         $this->logger->error('Exception caught in ' . $context, [ 'errorCode' => $e->getCode(), 'errorMessage' => $e->getMessage()]);
     }
 
     //  Factory functions
 
-    public function createDocInfoFromDbRow(array $row) : DocInfo {
-        $di = new DocInfo();
-
-        $di->id = intval($row['id']);
-        $di->title = $row['title'];
-        $di->shortTitle = $row['short_title'];
-        $di->imageSource = $row['image_source'];
-        $di->imageSourceData = $row['image_source_data'];
-        $di->lang = $row['lang'];
-        $di->docType = $row['doc_type'];
-
-        return $di;
-    }
+//    public function createDocInfoFromDbRow(array $row) : DocInfo {
+//        $di = new DocInfo();
+//
+//        $di->id = intval($row['id']);
+//        $di->tid = intval($row['tid']);
+//        $di->title = $row['title'];
+//        $di->shortTitle = $row['short_title'];
+//        $di->imageSource = $row['image_source'];
+//        $di->imageSourceData = $row['image_source_data'];
+//        $di->lang = $row['lang'];
+//        $di->docType = $row['doc_type'];
+//
+//        return $di;
+//    }
 }

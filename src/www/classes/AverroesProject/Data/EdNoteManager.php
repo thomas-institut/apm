@@ -21,8 +21,13 @@
 namespace AverroesProject\Data;
 
 use AverroesProject\EditorialNote;
+use PDO;
+use ThomasInstitut\DataTable\DataTableResultsIterator;
+use ThomasInstitut\DataTable\DataTableResultsPdoIterator;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use Psr\Log\LoggerInterface;
+use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\TimeString\TimeString;
 
 /**
  * Manages editorial notes
@@ -31,134 +36,145 @@ use Psr\Log\LoggerInterface;
  */
 class EdNoteManager {
     
-    private $dbh;
-    private $tNames;
-    private $logger;
-    private $edNotesDataTable;
+    private MySqlHelper $dbh;
+    private array $tNames;
+    private LoggerInterface $logger;
+    private MySqlDataTable $edNotesDataTable;
             
-    public function __construct($dbConn, $dbh, $tableNames, LoggerInterface $logger)
+    public function __construct(PDO $dbConn, MySqlHelper $dbh, array $tableNames, LoggerInterface $logger)
     {
         $this->dbh = $dbh;
         $this->tNames = $tableNames;
         $this->logger = $logger;
         $this->edNotesDataTable = new MySqlDataTable($dbConn, 
                 $tableNames['ednotes']);
-        
-        if ($this->edNotesDataTable === false) {
-            $this->logger->error('Cannot construct EdNotes data table');
-        }
     }
-    
-    public function getEditorialNotesByTypeAndTarget($type, $target){
-        
-//        $query = 'SELECT * FROM `' . $this->tNames['ednotes'] . 
-//                '` WHERE `type`=' . $type . ' AND ' . 
-//                '`target`=' . $target; 
-        //$rows = $this->dbh->getAllRows($query);
+
+    /**
+     * @param int $type
+     * @param int $target
+     * @return EditorialNote[]
+     */
+    public function getEditorialNotesByTypeAndTarget(int $type, int $target): array
+    {
         $rows = $this->edNotesDataTable->findRows(['type' => $type,
             'target' => $target]);
-        return $this->editorialNoteArrayFromRows($rows);
+        return $this->editorialNoteArrayFromDatabaseRows(iterator_to_array($rows));
     }
         
-    public function getEditorialNotesByDocPageCol($docId, $pageNum, $colNumber=1){
-        $ted = $this->tNames['ednotes'];
-        $ti = $this->tNames['items'];
-        $te = $this->tNames['elements'];
-        $tp = $this->tNames['pages'];
+    public function getEditorialNotesByDocPageCol($docId, $pageNum, $colNumber=1): array
+    {
+        $edNotesTable = $this->tNames['ednotes'];
+        $itemsTable = $this->tNames['items'];
+        $elementsTable = $this->tNames['elements'];
+        $pagesTable = $this->tNames['pages'];
         
-        $query = "SELECT `$ted`.* from `$ted` " . 
-                "JOIN `$ti` on `$ted`.`target`=`$ti`.`id` " . 
-                "JOIN `$te` on `$te`.`id`= `$ti`.`ce_id` " . 
-                "JOIN `$tp` on `$tp`.`id`= `$te`.`page_id` " . 
-                "WHERE `$tp`.`doc_id`=$docId and `$tp`.`page_number`=$pageNum " . 
-                "AND `$te`.`column_number`=$colNumber " . 
-                "AND `$te`.`valid_until`='9999-12-31 23:59:59.999999' " .
-                "AND `$tp`.`valid_until`='9999-12-31 23:59:59.999999' " .
-                "AND `$ti`.`valid_until`='9999-12-31 23:59:59.999999'";
+        $query = "SELECT `$edNotesTable`.* from `$edNotesTable` " .
+                "JOIN `$itemsTable` on `$edNotesTable`.`target`=`$itemsTable`.`id` " .
+                "JOIN `$elementsTable` on `$elementsTable`.`id`= `$itemsTable`.`ce_id` " .
+                "JOIN `$pagesTable` on `$pagesTable`.`id`= `$elementsTable`.`page_id` " .
+                "WHERE `$pagesTable`.`doc_id`=$docId and `$pagesTable`.`page_number`=$pageNum " .
+                "AND `$elementsTable`.`column_number`=$colNumber " .
+                "AND `$elementsTable`.`valid_until`='9999-12-31 23:59:59.999999' " .
+                "AND `$pagesTable`.`valid_until`='9999-12-31 23:59:59.999999' " .
+                "AND `$itemsTable`.`valid_until`='9999-12-31 23:59:59.999999'";
         
         $rows = $this->dbh->getAllRows($query);
-        return $this->editorialNoteArrayFromRows($rows);
+        return $this->editorialNoteArrayFromDatabaseRows($rows);
     }
 
-    public function getEditorialNotesByPageIdColWithTime(int $pageId, int $colNumber, string $time){
-        $ted = $this->tNames['ednotes'];
-        $ti = $this->tNames['items'];
-        $te = $this->tNames['elements'];
-        $tp = $this->tNames['pages'];
+    /**
+     * @param int $pageId
+     * @param int $colNumber
+     * @param string $time
+     * @return EditorialNote[]
+     */
+    public function getEditorialNotesByPageIdColWithTime(int $pageId, int $colNumber, string $time): array
+    {
+        $edNotes = $this->tNames['ednotes'];
+        $items = $this->tNames['items'];
+        $elements = $this->tNames['elements'];
 
+        $query = "SELECT  $edNotes.* from $edNotes, $items, $elements " .
+            "WHERE $edNotes.target=$items.id AND $elements.id=$items.ce_id " .
+            "AND $items.valid_from<='$time' AND $items.valid_until>'$time' " .
+            "AND $elements.valid_from<='$time' AND $elements.valid_until>'$time' " .
+            "AND $elements.page_id=$pageId AND $elements.column_number=$colNumber ";
 
-
-        $query = "SELECT  $ted.* from $ted, $ti, $te where $ted.target=$ti.id AND $te.id=$ti.ce_id AND $ti.valid_from<='$time' AND $ti.valid_until>'$time' " .
-          " AND $te.valid_from<='$time' AND $te.valid_until>'$time' " .
-          " AND $te.page_id=$pageId AND $te.column_number=$colNumber ";
 
         $rows = $this->dbh->getAllRows($query);
-        return $this->editorialNoteArrayFromRows($rows);
+        return $this->editorialNoteArrayFromDatabaseRows($rows);
     }
     
-    
-    public function getEditorialNotesForListOfItems(array $itemIds) {
-       return self::editorialNoteArrayFromRows($this->rawGetEditorialNotesForListOfItems($itemIds));
-    }
-    
-    public function rawGetEditorialNotesForListOfItems(array $itemIds) {
-        $ted = $this->tNames['ednotes'];
-        $ti = $this->tNames['items'];
-        
-        if ($itemIds === []) {
+
+    public function rawGetEditorialNotesForListOfItems(array $itemIds) : array | false{
+
+        if (count($itemIds) === 0) {
             return [];
         }
-        
         $idSet = implode(',', $itemIds);
-        
-        $query = "SELECT `$ted`.* FROM `$ted` WHERE target IN ($idSet)";
-        $rows = $this->dbh->getAllRows($query);
-        return $rows;
+        $edNotes = $this->tNames['ednotes'];
+        $query = "SELECT `$edNotes`.* FROM `$edNotes` WHERE target IN ($idSet)";
+        return $this->dbh->getAllRows($query);
     }
 
 
     /**
      * Inserts a new note for item $target
-     * The item and the authorId must exist in the DB, they are not checked
+     * The item and the authorId must exist in the DB, they are not checked here
      *
      * @param int $target
-     * @param int $authorId
+     * @param int $authorTid
      * @param string $text
      * @return int
      */
-    public function insertInlineNote($target, $authorId, $text ) {
-        return $this->insertNote(EditorialNote::INLINE, $target, $authorId, $text);
+    public function insertInlineNote(int $target, int $authorTid, string $text ): int
+    {
+        return $this->insertNote(EditorialNote::INLINE, $target, $authorTid, $text);
     }
     
-    public function insertNote($type, $target, $authorId, $text) {
-        return $this->edNotesDataTable->createRow([
-            'type' => $type,
-            'target' => $target,
-            'lang' => 'en',
-            'author_id' => $authorId,
-            'text' => $text
-        ]);
+    public function insertNote($type, $target, $authorTid, $text): int
+    {
+        try {
+            return $this->edNotesDataTable->createRow([
+                'type' => $type,
+                'target' => $target,
+                'lang' => 'en',
+                'author_tid' => $authorTid,
+                'time' => TimeString::now(),
+                'text' => $text
+            ]);
+        } catch (RowAlreadyExists $e) {
+            // should never happen
+            throw new \RuntimeException("Could not create DB row for note");
+        }
     }
     
-    public function updateNote($note) {
-        return $this->edNotesDataTable->updateRow([
+    public function updateNote(EditorialNote $note) : void {
+        $this->edNotesDataTable->updateRow([
             'id' => $note->id,
             'type' => $note->type,
             'lang' => 'en',
-            'author_id' => $note->authorId,
+            'author_tid' => $note->authorTid,
+            'time' => TimeString::now(),
             'text' => $note->text,
             'target' => $note->target
-                ]);
+        ]);
     }
-    
-    public function updateNotesFromArray(array $edNotes) {
+
+    /**
+     * @param EditorialNote[] $edNotes
+     * @return void
+     */
+    public function updateNotesFromArray(array $edNotes): void
+    {
         // First, group the notes by target and type
         $theNotes = [];
         $theNotes[EditorialNote::OFFLINE] = [];
         $theNotes[EditorialNote::INLINE] = [];
         foreach ($edNotes as $edNote) {
             if (!isset($theNotes[$edNote->type])) {
-                $this->logger->error('Bad ed note type while updating notes from array', $edNote);
+                $this->logger->error('Bad ed note type while updating notes from array', get_object_vars($edNote));
                 continue;
             }
             $theNotes[$edNote->type][$edNote->target][] = $edNote;
@@ -169,6 +185,7 @@ class EdNoteManager {
             foreach ($notesForType as $target => $notesForTarget) {
                 $currentNotes = $this->getEditorialNotesByTypeAndTarget($type, $target);
                 foreach ($notesForTarget as $note) {
+                    /** @var EditorialNote $note */
                     if ($this->isNoteIdInArray($note->id, $currentNotes)) {
                         // Update the given note
                         $this->updateNote($note);
@@ -176,7 +193,7 @@ class EdNoteManager {
                     }
                     if (!self::isNoteInArray($note, $currentNotes)) {
                         // Not a duplicate, insert it
-                        $res = $this->insertNote($type, $target, $note->authorId, $note->text);
+                        $res = $this->insertNote($type, $target, $note->authorTid, $note->text);
                         $this->logger->debug("Note inserted, new id = " . $res);
                     }
                 }
@@ -185,7 +202,7 @@ class EdNoteManager {
     }
     
     
-    private function isNoteIdInArray($noteId, $theArray) 
+    private function isNoteIdInArray(int $noteId, array $theArray): bool
     {
         foreach ($theArray as $note) {
             if ($noteId === $note->id) {
@@ -195,8 +212,10 @@ class EdNoteManager {
         return false;
     }
     
-    private static function isNoteInArray($theNote, $theArray) {
+    private static function isNoteInArray(EditorialNote $theNote, array $theArray): bool
+    {
         foreach ($theArray as $note) {
+            /** @var EditorialNote $note */
             if (self::isNoteDataEqual($note, $theNote)) {
                return true;
             }
@@ -204,7 +223,8 @@ class EdNoteManager {
         return false;
     }
     
-    static private function isNoteDataEqual($a, $b) {
+    static private function isNoteDataEqual(EditorialNote $a, EditorialNote $b): bool
+    {
         $dataA = get_object_vars($a);
         $dataB = get_object_vars($b);
         
@@ -215,10 +235,11 @@ class EdNoteManager {
         return $dataA == $dataB;
     }
     
-    public function editorialNoteArrayFromRows($rows) {
+    public function editorialNoteArrayFromDatabaseRows(array $rows): array
+    {
         $notes = [];
         foreach ($rows as $row) {
-            $edNote = EditorialNote::constructEdNoteFromRow($row);
+            $edNote = EditorialNote::constructEdNoteFromDatabaseRow($row);
             if ($edNote === false) {
                 $this->logger->error('Bad editorial note row', $row);
                 continue;
@@ -228,12 +249,13 @@ class EdNoteManager {
         return $notes;
     }
     
-    static public function editorialNoteArrayFromArray(array $theArray, $logger) {
+    static public function buildEdNoteArrayFromInputArray(array $theArray, $logger): array
+    {
         $notes = [];
-        foreach ($theArray as $element) {
-            $edNote = EditorialNote::constructEdNoteFromArray($element);
+        foreach ($theArray as $arrayElement) {
+            $edNote = EditorialNote::constructEdNoteFromArray($arrayElement);
             if ($edNote === false) {
-                $logger->error('Bad editorial note in array', $element);
+                $logger->error('Bad editorial note in array', $arrayElement);
                 continue;
             }
             $notes[] = $edNote;

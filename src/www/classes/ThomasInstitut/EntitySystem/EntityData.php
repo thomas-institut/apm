@@ -2,8 +2,8 @@
 
 namespace ThomasInstitut\EntitySystem;
 
-use ThomasInstitut\ObjectData\Exportable;
-use ThomasInstitut\ObjectData\ExportableObject;
+use ThomasInstitut\Exportable\Exportable;
+use ThomasInstitut\Exportable\ExportableObject;
 
 class EntityData implements Exportable
 {

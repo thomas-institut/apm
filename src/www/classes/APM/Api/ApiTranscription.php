@@ -21,17 +21,19 @@ namespace APM\Api;
 
 
 use APM\FullTranscription\ColumnVersionInfo;
+use APM\System\Person\PersonNotFoundException;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
-use Psr\Container\ContainerInterface;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
+use ThomasInstitut\DataTable\InvalidTimeStringException;
 use ThomasInstitut\TimeString\TimeString;
 
 class ApiTranscription extends ApiController
 {
 
     const CLASS_NAME = 'Transcriptions';
+
     public function getList(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
@@ -82,6 +84,10 @@ class ApiTranscription extends ApiController
 
     }
 
+    /**
+     * @throws InvalidTimeStringException
+     * @throws PersonNotFoundException
+     */
     public function getTranscription(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
@@ -119,7 +125,7 @@ class ApiTranscription extends ApiController
         }
 
 
-        $transcriberIds = [];
+        $transcriberTids = [];
         $columns = [];
 
         $versionManager = $this->systemManager->getTranscriptionManager()->getColumnVersionManager();
@@ -127,7 +133,7 @@ class ApiTranscription extends ApiController
             $versions = $versionManager->getColumnVersionInfoByPageCol($pageId, $col);
             // for the moment, find the first published version in the array
             foreach($versions as $version) {
-                $transcriberIds[$version->authorId] = 1;
+                $transcriberTids[$version->authorTid] = 1;
                 if ($version->isPublished) {
                     $columnData = [ 'column' => $col];
                     $elements = $this->getDataManager()->getColumnElementsByPageId($pageId, $col, $version->timeFrom);
@@ -135,7 +141,7 @@ class ApiTranscription extends ApiController
                     $columnData['text'] = $this->getExportDataFromElements($elements);
                     $columnData['version'] = $version->timeFrom;
                     $columnData['isLatestVersion'] = $version->timeUntil === TimeString::END_OF_TIMES;
-                    $columnData['versionTranscriberId'] = $version->authorId;
+                    $columnData['versionTranscriberId'] = $version->authorTid;
                     $columns[] = $columnData;
                 }
             }
@@ -150,11 +156,11 @@ class ApiTranscription extends ApiController
 
         // get transcriber info
         $transcriberInfo = [];
-        foreach(array_keys($transcriberIds) as $userId) {
-            $userInfo = $this->getDataManager()->userManager->getUserInfoByUserId($userId);
+        foreach(array_keys($transcriberTids) as $userTid) {
+            $userInfo = $this->systemManager->getPersonManager()->getPersonEssentialData($userTid);
             $transcriberInfo[] = [
-                'ApmId' => $userId,
-                'FullName' => $userInfo['fullname']
+                'ApmId' => $userTid,
+                'FullName' => $userInfo->name
                 ];
         }
 
@@ -216,7 +222,7 @@ class ApiTranscription extends ApiController
             switch($element->type) {
                 case Element::LINE:
                     foreach($element->items as $item) {
-                        if (array_search($item->type, array_keys($itemToType)) !== false) {
+                        if (in_array($item->type, array_keys($itemToType))) {
                             $mainText[] = [
                                 'type' => $itemToType[$item->type],
                                 'text' => $item->getText(),
@@ -377,7 +383,7 @@ class ApiTranscription extends ApiController
             } else {
                 if ($inputItem['type'] !== 'text') {
                     $outputItems[] = $inputItem;
-                    $collectingText = false;
+//                    $collectingText = false;
                 } else {
                     $currentText = $inputItem['text'];
                     $currentLang = $inputItem['lang'];

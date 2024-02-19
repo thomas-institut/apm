@@ -22,6 +22,7 @@ namespace APM\FullTranscription;
 
 use InvalidArgumentException;
 use ThomasInstitut\DataTable\DataTable;
+use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\TimeString\TimeString;
 
 class ApmColumnVersionManager extends ColumnVersionManager
@@ -30,7 +31,7 @@ class ApmColumnVersionManager extends ColumnVersionManager
     /**
      * @var DataTable
      */
-    private $dataTable;
+    private DataTable $dataTable;
 
     public function __construct(DataTable $columnVersionTable)
     {
@@ -75,7 +76,7 @@ class ApmColumnVersionManager extends ColumnVersionManager
             throw new InvalidArgumentException("Column in info does not correspond to given column");
         }
 
-        if ($versionInfo->authorId === 0) {
+        if ($versionInfo->authorTid === 0) {
             throw new InvalidArgumentException("Version author must not be 0");
         }
 
@@ -89,7 +90,11 @@ class ApmColumnVersionManager extends ColumnVersionManager
             // first version
             // just create a new entry with timeUntil in the EndOfTimes
             $versionInfo->timeUntil = TimeString::END_OF_TIMES;
-            $this->dataTable->createRow($versionInfo->getDatabaseRow());
+            try {
+                $this->dataTable->createRow($versionInfo->getDatabaseRow());
+            } catch (RowAlreadyExists) {
+                throw new InvalidArgumentException("New version with already existing ID");
+            }
             return;
         }
 
@@ -125,7 +130,11 @@ class ApmColumnVersionManager extends ColumnVersionManager
             $versionInfo->timeUntil = TimeString::END_OF_TIMES;
         }
 
-        $this->dataTable->createRow($versionInfo->getDatabaseRow());
+        try {
+            $this->dataTable->createRow($versionInfo->getDatabaseRow());
+        } catch (RowAlreadyExists $e) {
+            throw new \RuntimeException("Already existing id in version info");
+        }
     }
 
     public function getPublishedVersions() : array {
@@ -139,7 +148,8 @@ class ApmColumnVersionManager extends ColumnVersionManager
 
 
 
-    private function rawUpdateVersion(ColumnVersionInfo $versionInfo) {
+    private function rawUpdateVersion(ColumnVersionInfo $versionInfo): void
+    {
         $this->dataTable->updateRow($versionInfo->getDatabaseRow());
     }
 
@@ -147,7 +157,7 @@ class ApmColumnVersionManager extends ColumnVersionManager
     /**
      * Marks a version as published
      * @param int $versionId
-     * @return mixed
+     * @return void
      */
     public function publishVersion(int $versionId): void
     {
@@ -164,7 +174,7 @@ class ApmColumnVersionManager extends ColumnVersionManager
      * Marks a version as unpublished
      * @param int $versionId
      */
-    public function unpublishVersion(int $versionId): void
+    public function unPublishVersion(int $versionId): void
     {
         $versionInfo = $this->getVersionInfo($versionId);
         if (!$versionInfo->isPublished) {
@@ -176,12 +186,18 @@ class ApmColumnVersionManager extends ColumnVersionManager
 
     public function getVersionInfo(int $versionId): ColumnVersionInfo
     {
-        try {
-            $row = $this->dataTable->getRow($versionId);
-        } catch( \InvalidArgumentException $e) {
-            throw new \InvalidArgumentException("Version $versionId does not exist");
+
+        $row = $this->dataTable->getRow($versionId);
+        if ($row === null) {
+            throw new InvalidArgumentException("Version $versionId does not exist");
         }
         return ColumnVersionInfo::createFromDbRow($row);
+//        try {
+//            $row = $this->dataTable->getRow($versionId);
+//        } catch(InvalidArgumentException) {
+//            throw new InvalidArgumentException("Version $versionId does not exist");
+//        }
+//        return ColumnVersionInfo::createFromDbRow($row);
 
     }
 }

@@ -40,6 +40,7 @@ import { flatten } from '../toolbox/ArrayUtil.mjs'
 import { trimWhiteSpace } from '../toolbox/Util.mjs'
 import { SiglaGroupsUI } from './SiglaGroupsUI'
 import { ConfirmDialog, LARGE_DIALOG, MEDIUM_DIALOG } from '../pages/common/ConfirmDialog'
+import { ApmFormats } from '../pages/common/ApmFormats'
 
 const icons = {
   moveUp: '<i class="bi bi-arrow-up-short"></i>',
@@ -93,6 +94,7 @@ export class WitnessInfoPanel extends Panel{
       updateWitness: {
         type: 'function',
         required: true
+        // (witnessIndex, changeData, newWitness) => Promise()
       },
       fetchSiglaPresets: {
         // a function that fetches the sigla presets from the server.
@@ -122,7 +124,7 @@ export class WitnessInfoPanel extends Panel{
         required: true
       },
       onCtDataChange: { type: 'function', default: doNothing},
-      userId: { type: 'NonZeroNumber', required: true},
+      userTid: { type: 'NonZeroNumber', required: true},
       ctData: { type: 'object', required: true}
     }
 
@@ -140,12 +142,14 @@ export class WitnessInfoPanel extends Panel{
     this.ctData = CtData.copyFromObject(newData)
     if (reRender) {
       this.verbose && console.log(`New ctData, re-rendering panel`)
-      this.reRender()
+      this.reRender().then( () => {
+        this.verbose && console.log(`Finished re-rendering panel`)
+      })
     }
   }
 
-  reRender() {
-    $(this.containerSelector).html(this.generateHtml())
+  async reRender() {
+    $(this.containerSelector).html(await this.generateHtml())
     this.postRender()
   }
 
@@ -157,7 +161,7 @@ export class WitnessInfoPanel extends Panel{
     return SiglaGroupsUI.genSiglaGroupsTable(this.ctData['siglaGroups'], this.ctData['sigla'], icons)
   }
 
-  generateHtml() {
+  async generateHtml() {
     return `<div class="witnessinfotable">${this._genWitnessTableHtml()}</div>
         <div class="witness-update-div">
             <span class="witness-update-info"></span>
@@ -774,7 +778,7 @@ export class WitnessInfoPanel extends Panel{
         } else {
           witnessesUpToDate = false
           let warningHtml =  `<span>${icons.checkFail} Last version:  `
-          warningHtml += `${Util.formatVersionTime(witnessUpdateInfo['lastUpdate'])} `
+          warningHtml += `${ApmFormats.timeString(witnessUpdateInfo['lastUpdate'])} `
           warningHtml += `<a title="Click to update witness" class="btn btn-outline-secondary btn-sm witness-update-btn witness-update-btn-${i}">Update</a>`
           warningTd.html(warningHtml)
           $(`${this.containerSelector} .witness-update-btn-${i}`).on('click', this.genOnClickWitnessUpdate(i))
@@ -784,7 +788,7 @@ export class WitnessInfoPanel extends Panel{
         if (witnessUpdateInfo['justUpdated']) {
           let warningHtml =  `<span>${icons.checkOK} Just updated. Don't forget to save!`
           warningTd.html(warningHtml)
-          $(`${this.containerSelector} td.timestamp-td-${i}`).html(Util.formatVersionTime(this.ctData['witnesses'][i]['timeStamp']))
+          $(`${this.containerSelector} td.timestamp-td-${i}`).html(ApmFormats.timeString(this.ctData['witnesses'][i]['timeStamp']))
         } else {
           // witness up to date, not just updated
           warningTd.html('')
@@ -795,11 +799,11 @@ export class WitnessInfoPanel extends Panel{
     if (witnessesUpToDate) {
       infoSpan.removeClass('text-warning')
       infoSpan.addClass('text-success')
-      infoSpan.html(`${icons.checkOK} All witnesses are up to date (last checked ${Util.formatVersionTime(this.currentWitnessUpdateData.timeStamp)})`)
+      infoSpan.html(`${icons.checkOK} All witnesses are up to date (last checked ${ApmFormats.timeString(this.currentWitnessUpdateData.timeStamp)})`)
     } else {
       infoSpan.removeClass('text-success')
       infoSpan.addClass('text-warning')
-      infoSpan.html(`${icons.checkFail} One or more witnesses out of date (last checked ${Util.formatVersionTime(this.currentWitnessUpdateData.timeStamp)})`)
+      infoSpan.html(`${icons.checkFail} One or more witnesses out of date (last checked ${ApmFormats.timeString(this.currentWitnessUpdateData.timeStamp)})`)
     }
 
     button.html('Check now')
@@ -959,7 +963,7 @@ export class WitnessInfoPanel extends Panel{
                 </td>
                 <td>${witnessTitle}</td>
                 <td class="info-td-${witnessIndex}"></td>
-                <td class="timestamp-td-${witnessIndex}">${Util.formatVersionTime(witness['timeStamp'])}</td>
+                <td class="timestamp-td-${witnessIndex}">${ApmFormats.timeString(witness['timeStamp'])}</td>
                 <td class="siglum-${witnessIndex}">${siglum}</td>
                 <td class="warning-td-${witnessIndex}"></td>
                 <td class="outofdate-td-${witnessIndex}"></td>

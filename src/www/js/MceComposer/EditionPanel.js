@@ -28,6 +28,8 @@ import { transientAlert } from '../widgets/TransientAlert'
 import { ConfirmDialog, SMALL_DIALOG } from '../pages/common/ConfirmDialog'
 import { SiglaGroupsUI } from '../EditionComposer/SiglaGroupsUI'
 import { MultiToggle } from '../widgets/MultiToggle'
+import { urlGen } from '../pages/common/SiteUrlGen'
+import { ApmFormats } from '../pages/common/ApmFormats'
 
 const defaultIcons = {
   alert: '<i class="fas fa-exclamation-triangle"></i>',
@@ -105,11 +107,11 @@ export class EditionPanel extends Panel {
             return resolvedPromise()
           }
         },
-        urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true },
       }
     })
 
     this.options = oc.getCleanOptions(options)
+    this.loading = this.options.showLoadingDataMessage;
 
     this.mceData = this.options.mceData
     this.options.getUpdateStatuses().then( (statuses) => {
@@ -118,21 +120,26 @@ export class EditionPanel extends Panel {
     this.icons = this.options.icons
   }
 
-  showLoadingDataMessage(yes) {
-    this.options.showLoadingDataMessage = yes
+  /**
+   *
+   * @param {boolean}loadingStatus
+   */
+  setLoadingStatus(loadingStatus) {
+    this.loading = loadingStatus
   }
 
   updateLoadingMessage(newMessage) {
-    if (MceData.isEmpty(this.mceData) && this.options.showLoadingDataMessage)
+    if (MceData.isEmpty(this.mceData) && this.loading)
     {
       $(this.getContainerSelector()).html(this.__genLoadingStateHtml(newMessage))
     }
   }
 
 
-  generateHtml() {
+  async generateHtml() {
+
     if (MceData.isEmpty(this.mceData)) {
-      if (this.options.showLoadingDataMessage) {
+      if (this.loading) {
         return this.__genLoadingStateHtml('Loading')
       }else {
         return `<div class='empty-chunks-info'>
@@ -141,6 +148,7 @@ export class EditionPanel extends Panel {
 </div>`
       }
     }
+    console.log(`Generating EditionPanel html with actual chunk table`)
     return `<div class="chunk-table">
                 ${this.__genChunksTable()}
             </div>
@@ -236,8 +244,8 @@ export class EditionPanel extends Panel {
       html += `<tr>
         <td>${upButton}&nbsp;${downButton}</td>
         <td>${chunk.chunkId}</td>
-        <td><a href="${this.options.urlGenerator.siteChunkEdition(chunk.chunkEditionTableId)}" title="Open in new tab" target="_blank">${chunk.title}</a></td>
-        <td>${Util.formatVersionTime(chunk.version)}</td>
+        <td><a href="${urlGen.siteChunkEdition(chunk.chunkEditionTableId)}" title="Open in new tab" target="_blank">${chunk.title}</a></td>
+        <td>${ApmFormats.timeString(chunk.version)}</td>
         <td class="chunk-break-td chunk-break-td-${chunkIndex}">${this._getBreakLabel(chunk.break)}</td>
         <td class="chunk-actions-td chunk-actions-td-${chunkIndex}">
             ${deleteButton}
@@ -272,9 +280,9 @@ export class EditionPanel extends Panel {
     this.mceData = mceData
     console.log(`Updating mceData, ${this.mceData.chunks.length} chunks`)
 
-    this.options.getUpdateStatuses().then( (statuses) => {
+    this.options.getUpdateStatuses().then( async (statuses) => {
       this.updateStatuses = statuses
-      $(this.containerSelector).html(this.generateHtml())
+      $(this.containerSelector).html(await this.generateHtml())
       this._setupEventHandlers()
    })
   }

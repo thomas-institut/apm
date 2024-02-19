@@ -1,3 +1,15 @@
+div.dashboard {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: start;
+
+}
+
+div.dashboard-section {
+    padding-bottom: 2rem;
+  }
+
 
 /* Turn off transition in collapses */
 
@@ -33,7 +45,6 @@ article h2 {
 
 div.dashboard h1 {
     font-size: 1.2rem;
-    margin-top: 2rem;
 }
 
 div.dashboard h1.first {

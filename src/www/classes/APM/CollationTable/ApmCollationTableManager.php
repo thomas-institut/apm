@@ -25,6 +25,8 @@ use PDO;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
+use ThomasInstitut\DataTable\DataTableResultsPdoIterator;
+use ThomasInstitut\DataTable\InvalidWhereClauseException;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use ThomasInstitut\DataTable\UnitemporalDataTable;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
@@ -76,8 +78,8 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             throw new InvalidArgumentException("Collation table id does not exist");
         }
 
-        $dbData = $rows[0];
-        $this->logger->debug("CT data ", [ 'valid_from' => $dbData['valid_from'], 'title' => $dbData['title']]);
+        $dbData = $rows->getFirst();
+//        $this->logger->debug("CT data ", [ 'valid_from' => $dbData['valid_from'], 'title' => $dbData['title']]);
         $isCompressed = intval($dbData['compressed']) === 1;
         //$this->logger->debug("CT data is compressed: $isCompressed", [ 'dbData' => $dbData]);
 
@@ -232,6 +234,9 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         return $idArray;
     }
 
+    /**
+     * @throws InvalidWhereClauseException
+     */
     public function getCollationTableInfo(int $id, string $timeStamp = ''): CollationTableInfo
     {
         $mySqlDataTableClass = MySqlUnitemporalDataTable::class;
@@ -251,7 +256,9 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
                 '',
                 "getCollationTableInfo");
 
-            $rows = $result->fetchAll(PDO::FETCH_ASSOC);
+            $rows = new DataTableResultsPdoIterator($result, 'id');
+
+//            $rows = $result->fetchAll(PDO::FETCH_ASSOC);
         } else {
             $rows = $this->ctTable->findRowsWithTime(['id' => $id], 0,  $timeStamp);
         }
@@ -259,9 +266,8 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         if (count($rows)=== 0) {
             throw new InvalidArgumentException("Table does not exist");
         }
-//        $this->logger->debug('dbrows', $rows);
 
-        return CollationTableInfo::createFromDbRow($rows[0]);
+        return CollationTableInfo::createFromDbRow($rows->getFirst());
     }
 
 

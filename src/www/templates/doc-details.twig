@@ -1,5 +1,5 @@
-{% extends "base.twig" %}
-{% import 'macros.twig' as macros %}
+{% extends "normal-page.twig" %}
+
 
 {% block title %}Doc: {{doc.docInfo.title}}{% endblock %}
 
@@ -9,21 +9,17 @@
 
 {% block extraJS %}
     <script type="application/javascript" src="../../node_modules/openseadragon/build/openseadragon/openseadragon.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/dist/DocPage.bundle.js"></script>
     <script>
       $( () => {
         new DocPage({
-          baseUrl: '{{baseurl}}',
+          commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
           doc: JSON.parse('{{doc|json_encode|e('js')}}'),
           chunkInfo: JSON.parse('{{chunkInfo|json_encode|e('js')}}'),
           versionInfo: JSON.parse('{{lastVersions|json_encode|e('js')}}'),
           lastSaves: JSON.parse('{{lastSaves|json_encode|e('js')}}'),
           canDefinePages: '{{ canDefinePages }}' === '1',
           metadata: JSON.parse('{{metaData|json_encode|e('js')}}'),
-          userId: parseInt('{{ userId }}'),
-          userInfo: JSON.parse("{{userInfo|json_encode|e('js')}}"),
-          showLanguageSelector: parseInt('{{ showLanguageSelector }}') === 1
         })
       });
     </script>

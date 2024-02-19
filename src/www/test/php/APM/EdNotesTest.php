@@ -43,7 +43,7 @@ class EdNotesTest extends TestCase {
             'type' => 100
         ];
         
-        $this->assertFalse(EditorialNote::constructEdNoteFromRow($array1));
+        $this->assertFalse(EditorialNote::constructEdNoteFromDatabaseRow($array1));
         
         // no type
         $array2 = [ 
@@ -52,7 +52,7 @@ class EdNotesTest extends TestCase {
             'target' => 1500,
             'time' => '2017-01-02'
         ];
-        $this->assertFalse(EditorialNote::constructEdNoteFromRow($array2));
+        $this->assertFalse(EditorialNote::constructEdNoteFromDatabaseRow($array2));
         
         // minimal array
         $array3 = [ 
@@ -60,7 +60,7 @@ class EdNotesTest extends TestCase {
         ];
         
         $defaultEdNote = new EditorialNote();
-        $builtEdNote = EditorialNote::constructEdNoteFromRow($array3);
+        $builtEdNote = EditorialNote::constructEdNoteFromDatabaseRow($array3);
         $this->assertNotFalse($builtEdNote);
         
         $defaultEdNote->setType(EditorialNote::OFFLINE);
@@ -72,19 +72,19 @@ class EdNotesTest extends TestCase {
         $array4 = [ 
             'id' => '100',
             'type' => EditorialNote::OFFLINE,
-            'author_id' => 500,
+            'author_tid' => 500,
             'lang' => 'fr',
             'target' => 1500,
             'time' => '2017-01-02',
-            'text' => '   sometext'
+            'text' => '   someText'
         ];
-        $builtEdNote = EditorialNote::constructEdNoteFromRow($array4);
+        $builtEdNote = EditorialNote::constructEdNoteFromDatabaseRow($array4);
         $this->assertNotFalse($builtEdNote);
         
         $this->assertSame(100, $builtEdNote->id);
-        $this->assertSame(500, $builtEdNote->authorId);
+        $this->assertSame(500, $builtEdNote->authorTid);
         $this->assertSame(1500, $builtEdNote->target);
-        $this->assertEquals('sometext', $builtEdNote->text);
+        $this->assertEquals('someText', $builtEdNote->text);
     }
     
     
@@ -124,7 +124,7 @@ class EdNotesTest extends TestCase {
         $array4 = [ 
             'id' => '100',
             'type' => EditorialNote::OFFLINE,
-            'authorId' => 500,
+            'authorTid' => 500,
             'lang' => 'fr',
             'target' => 1500,
             'time' => '2017-01-02',
@@ -134,7 +134,7 @@ class EdNotesTest extends TestCase {
         $this->assertNotFalse($builtEdNote);
         
         $this->assertSame(100, $builtEdNote->id);
-        $this->assertSame(500, $builtEdNote->authorId);
+        $this->assertSame(500, $builtEdNote->authorTid);
         $this->assertSame(1500, $builtEdNote->target);
         $this->assertEquals('sometext', $builtEdNote->text);
     }

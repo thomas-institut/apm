@@ -2,7 +2,7 @@
 
 namespace APM\CommandLine;
 
-use APM\Site\SiteChunks;
+use APM\Site\SiteWorks;
 use APM\Site\SiteDocuments;
 use APM\System\ApmConfigParameter;
 use Exception;
@@ -13,7 +13,8 @@ class ApmDaemon extends CommandLineUtility
 
     public function main($argc, $argv): void
     {
-        $dataManager = $this->systemManager->getDataManager();
+        $dataManager = $this->getSystemManager()->getDataManager();
+        $personManager = $this->getSystemManager()->getPersonManager();
 
         $daemon = false;
         if (isset($argv[1]) && $argv[1] === '-d') {
@@ -22,12 +23,14 @@ class ApmDaemon extends CommandLineUtility
 
         $cacheItemsToReestablish = [
             [
-                'cacheKey' => SiteChunks::WORK_DATA_CACHE_KEY,
-                'builder' => function () use ($dataManager) { return SiteChunks::buildWorkData($dataManager);}
+                'cacheKey' => SiteWorks::WORK_DATA_CACHE_KEY,
+                'builder' => function () use ($dataManager) { return SiteWorks::buildWorkData($dataManager);}
             ],
             [
                 'cacheKey' => SiteDocuments::DOCUMENT_DATA_CACHE_KEY,
-                'builder' => function () use ($dataManager) { return SiteDocuments::buildDocumentData($dataManager);}
+                'builder' => function () use ($dataManager, $personManager) {
+                        return SiteDocuments::buildDocumentData($dataManager, $personManager);
+                }
             ]
         ];
 
@@ -58,13 +61,13 @@ class ApmDaemon extends CommandLineUtility
                     exit();
                 }
                 $this->reestablishCacheItems($cacheItemsToReestablish);
-                $this->systemManager->getJobManager()->process();
+                $this->getSystemManager()->getJobManager()->process();
                 sleep($secondsToSleep);
             }
 
         } else {
             if(!$this->reestablishCacheItems($cacheItemsToReestablish)){
-                $this->systemManager->getJobManager()->process();
+                $this->getSystemManager()->getJobManager()->process();
                 $this->logger->info("Cache is up to date");
             }
         }
@@ -79,7 +82,7 @@ class ApmDaemon extends CommandLineUtility
     }
 
     private function reestablishCacheItems(array $cacheItemInfo) : bool {
-        $cache = $this->systemManager->getSystemDataCache();
+        $cache = $this->getSystemManager()->getSystemDataCache();
         $dataBuilt = false;
         foreach ($cacheItemInfo as $item) {
             try {

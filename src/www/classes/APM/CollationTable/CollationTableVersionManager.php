@@ -49,11 +49,11 @@ abstract class CollationTableVersionManager
 
     /**
      * Returns an array with the collation table ids of the tables currently active for the given
-     * user Id
-     * @param int $userId
+     * user tid
+     * @param int $userTid
      * @return int[]
      */
-    abstract public function getActiveCollationTableIdsForUserId(int $userId) : array;
+    abstract public function getActiveCollationTableIdsForUser(int $userTid) : array;
 
     /**
      * Returns an array with all the ctIds in the system
@@ -62,13 +62,13 @@ abstract class CollationTableVersionManager
     abstract public function getAllCollationTableIds() : array;
 
 
-    /**
-     * Enforces a correct version sequence for the given collation table
-
-     * @param int $ctId
-     * @return array
-     */
-    abstract public function fixVersionSequence(int $ctId) : array;
+//    /**
+//     * Enforces a correct version sequence for the given collation table
+//
+//     * @param int $ctId
+//     * @return array
+//     */
+//    abstract public function fixVersionSequence(int $ctId) : array;
 
     /**
      * @param int $versionId

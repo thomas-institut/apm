@@ -6,6 +6,7 @@ namespace APM\FullTranscription;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use ThomasInstitut\TimeString\InvalidTimeZoneException;
 use ThomasInstitut\TimeString\TimeString;
 
 /**
@@ -55,7 +56,7 @@ class ColumnVersionManagerTest extends TestCase
         $versionInfo1->pageId = 1;
         $versionInfo1->column = 1;
         $versionInfo1->description = 'Test version';
-        $versionInfo1->authorId = 1;
+        $versionInfo1->authorTid = 1;
 
         $this->columnVersionManager->registerNewColumnVersion(1, 1, $versionInfo1);
 
@@ -66,7 +67,7 @@ class ColumnVersionManagerTest extends TestCase
 
         $this->assertEquals($versionInfo1->timeFrom, $systemVersion->timeFrom);
         $this->assertEquals($versionInfo1->description, $systemVersion->description);
-        $this->assertEquals($versionInfo1->authorId, $systemVersion->authorId);
+        $this->assertEquals($versionInfo1->authorTid, $systemVersion->authorTid);
         $this->assertEquals($versionInfo1->isMinor, $systemVersion->isMinor);
         $this->assertEquals($versionInfo1->isReview, $systemVersion->isReview);
         $this->assertEquals(TimeString::END_OF_TIMES, $systemVersion->timeUntil);
@@ -84,7 +85,7 @@ class ColumnVersionManagerTest extends TestCase
         $goodVersionInfo->pageId = $testPageId;
         $goodVersionInfo->column = $testColumnNumber;
         $goodVersionInfo->description = 'Test version';
-        $goodVersionInfo->authorId = $testAuthorId;
+        $goodVersionInfo->authorTid = $testAuthorId;
 
         // wrong  page Id
         $exceptionCaught = false;
@@ -107,7 +108,7 @@ class ColumnVersionManagerTest extends TestCase
 
         // wrong authorID
         $badVersionInfo = clone $goodVersionInfo;
-        $badVersionInfo->authorId = 0;
+        $badVersionInfo->authorTid = 0;
         $exceptionCaught = false;
         try {
             $this->columnVersionManager->registerNewColumnVersion($testPageId, $testColumnNumber, $badVersionInfo);
@@ -117,7 +118,7 @@ class ColumnVersionManagerTest extends TestCase
         $this->assertTrue($exceptionCaught);
 
         // wrong timeFrom
-        $badVersionInfo->authorId = $testAuthorId;
+        $badVersionInfo->authorTid = $testAuthorId;
         $badVersionInfo->timeFrom = TimeString::TIME_ZERO;
         $exceptionCaught = false;
         try {
@@ -138,6 +139,9 @@ class ColumnVersionManagerTest extends TestCase
         $this->assertTrue($exceptionCaught);
     }
 
+    /**
+     * @throws InvalidTimeZoneException
+     */
     public function testRegistrations() {
 
         $testPageId = 10;
@@ -155,7 +159,7 @@ class ColumnVersionManagerTest extends TestCase
             $versionInfo->pageId = $testPageId;
             $versionInfo->column = $testColumnNumber;
             $versionInfo->description = "Initial test version $i";
-            $versionInfo->authorId = $testAuthorId;
+            $versionInfo->authorTid = $testAuthorId;
             $versionInfo->isMinor = true;
             $versionInfo->isReview = true;
             $versionInfo->timeFrom = TimeString::fromTimeStamp($initialTimestamp + ($timeStampFrequency * $i));
@@ -180,7 +184,7 @@ class ColumnVersionManagerTest extends TestCase
             $versionInfo->pageId = $testPageId;
             $versionInfo->column = $testColumnNumber;
             $versionInfo->description = "Pre-version $i";
-            $versionInfo->authorId = $testAuthorId;
+            $versionInfo->authorTid = $testAuthorId;
             $versionInfo->timeFrom = TimeString::fromTimeStamp($initialTimestamp - ($timeStampFrequency * ($i+1)));
             $this->columnVersionManager->registerNewColumnVersion($testPageId, $testColumnNumber, $versionInfo);
             $versions = $this->columnVersionManager->getColumnVersionInfoByPageCol($testPageId, $testColumnNumber);
@@ -196,7 +200,7 @@ class ColumnVersionManagerTest extends TestCase
             $versionInfo->pageId = $testPageId;
             $versionInfo->column = $testColumnNumber;
             $versionInfo->description = "In the middle version $i";
-            $versionInfo->authorId = $testAuthorId;
+            $versionInfo->authorTid = $testAuthorId;
             $versionInfo->timeFrom = TimeString::fromTimeStamp($initialTimestamp + ($timeStampFrequency*$i) + $timeStampFrequency/2);
             $this->columnVersionManager->registerNewColumnVersion($testPageId, $testColumnNumber, $versionInfo);
             $versions = $this->columnVersionManager->getColumnVersionInfoByPageCol($testPageId, $testColumnNumber);

@@ -16,17 +16,19 @@
  *  
  */
 
-/* eslint-env jquery */
-
-/** @namespace Twig */
-/** @namespace DataTable */
-
 import { AutomaticCollationTableSettingsForm } from './common/AutoCollTableSettingsForm'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import * as WitnessType from '../Witness/WitnessType'
 
 import {CollapseToggleButton} from '../widgets/CollapseToggleButton'
 import { ConfirmDialog } from './common/ConfirmDialog'
+import { urlGen } from './common/SiteUrlGen'
+import { ApmFormats } from './common/ApmFormats'
+import { TimeString } from '../toolbox/TimeString.mjs'
+import { NormalPage } from './NormalPage'
+import { tr } from './common/SiteLang'
+import { HeaderAndContentPage } from './HeaderAndContentPage'
+import { Tid } from '../Tid/Tid'
 
 
 const convertToEditionIcon = '<i class="fas fa-file-alt"></i>'
@@ -37,47 +39,60 @@ const convertToEditionLinkClass =  'cte-link'
 /**
  * Mini JS app running in the Chunk Page
  */
-export class ChunkPage {
+export class ChunkPage extends HeaderAndContentPage {
 
   constructor(options) {
-
+    super(options);
     let optionsChecker = new OptionsChecker({
       context: 'ChunkPage',
       optionsDefinition: {
         work : { required: true, type: 'string'},
         chunk : { required: true, type: 'NumberGreaterThanZero' },
         showAdminInfo : { type: 'boolean', default: false},
-        urlGenerator: { required: true, type: 'object'},
-        userId: { type: 'number', default: -1 },
         witnessInfo :{ type: 'Array', default: []},
-        authorInfo:  { type: 'object', default: []},
         pageInfo:  { type: 'object', default: []},
         languageInfo : { type: 'object', default: []},
-        workInfo : { type: 'object', default: []},
         validChunks : {type: 'Array', default: []},
         savedCollationTables: { type: 'Array', default: []}
       }
     })
-    this.options = optionsChecker.getCleanOptions(options)
-    console.log('Chunk Page options')
-    console.log(this.options)
+    this.options = optionsChecker.getCleanOptions(options);
+    console.log('Chunk Page options');
+    console.log(this.options);
 
     // some constant labels
-    this.witnessTypeLabels = {}
-    this.witnessTypeLabels[WitnessType.FULL_TX] = 'Full Transcription'
+    this.witnessTypeLabels = {};
+    this.witnessTypeLabels[WitnessType.FULL_TX] = tr('Full Transcription');
 
     this.docTypes = {
-      'mss' : 'Manuscript',
-      'print' : 'Print'
+      'mss' : tr('Manuscript'),
+      'print' : tr('Print')
     }
 
     this.invalidErrorCodes = {
-      1: 'Chunk start not defined',
-      2: 'Chunk end not defined',
-      3: 'Chunk start after chunk end',
-      4: 'Duplicate chunk start marks',
-      5: 'Duplicate chunk end marks'
+      1: tr('Chunk start not defined'),
+      2: tr('Chunk end not defined'),
+      3: tr('Chunk start after chunk end'),
+      4: tr('Duplicate chunk start marks'),
+      5: tr('Duplicate chunk end marks')
     }
+
+    // // shortcuts to options
+    // this.pathFor = urlGen;
+
+    this.getPresetsUrl = urlGen.apiGetAutomaticCollationPresets()
+    this.witnessesByLang = {}
+
+
+
+    this.initPage().then( () => {
+      console.log(`ChunkPage initialized`)
+    })
+  }
+
+  async initPage() {
+
+    await super.initPage();
 
     // selectors and classes
     this.ctLinksElement = $('#collationtablelinks')
@@ -88,19 +103,16 @@ export class ChunkPage {
     this.savedCollationTablesDiv = $('#savedcollationtables')
     this.editionsDiv = $('#editions')
 
-    // shortcuts to options
-    this.pathFor = this.options.urlGenerator
+    this.workData = await  this.apmDataProxy.getWorkData(this.options.work);
+    this.authorInfo = await this.apmDataProxy.getPersonEssentialData(this.workData.authorTid);
+    this.headerDiv.html(this.generateHeaderDivHtml());
+    this.chunkIdDiv.html(this.generateChunkIdDivHtml());
 
-    this.getPresetsUrl = this.pathFor.apiGetAutomaticCollationPresets()
+    this.witnessListNewDiv.html(await this.generateWitnessListNew());
 
-    this.headerDiv.html(this.generateHeaderDivHtml())
-    this.chunkIdDiv.html(this.generateChunkIdDivHtml())
-    this.witnessListNewDiv.html(this.generateWitnessListNew())
-
-   this.options.witnessInfo.forEach( (info, i) => {
-     $(`.${convertToEditionLinkClass}-${i}`).on('click', this.genOnClickConvertToEditionButton(i, info))
-   })
-
+    this.options.witnessInfo.forEach( (info, i) => {
+      $(`.${convertToEditionLinkClass}-${i}`).on('click', this.genOnClickConvertToEditionButton(i, info))
+    });
     $("#witnessTableNew").DataTable({
       paging: false,
       searching : false,
@@ -115,7 +127,7 @@ export class ChunkPage {
         { orderable: false}, // actions
         { orderable: false} // admin
       ]
-    })
+    });
 
     // build witness data by language
     this.witnessesByLang = {}
@@ -146,23 +158,26 @@ export class ChunkPage {
       //   systemId: witnessInfo.systemId
       // }
       if (witnessInfo.isValid) {
-        if (this.witnessesByLang[witnessInfo.languageCode] === undefined) {
-          this.witnessesByLang[witnessInfo.languageCode] = []
+        if (this.witnessesByLang[witnessInfo['languageCode']] === undefined) {
+          this.witnessesByLang[witnessInfo['languageCode']] = []
         }
-        this.witnessesByLang[witnessInfo.languageCode].push(witness)
+        this.witnessesByLang[witnessInfo['languageCode']].push(witness)
         new CollapseToggleButton($('#texttoggle-' + witness.systemId), $('#text-' + witness.systemId))
       }
     }
-    console.log('Witnesses by lang')
-    console.log(this.witnessesByLang)
+    console.log('Witnesses by lang');
+    console.log(this.witnessesByLang);
 
-    this.savedCollationTablesDiv.html(this.genSavedCollationTablesDivHtml('ctable'))
-    this.editionsDiv.html(this.genSavedCollationTablesDivHtml('edition'))
+
+
+    this.savedCollationTablesDiv.html(await this.genSavedCollationTablesDivHtml('ctable'))
+    this.editionsDiv.html(await this.genSavedCollationTablesDivHtml('edition'))
 
 
     this.updateCollationTableLinks()
 
     this.witnessPanelsDiv.html(this.generateWitnessPanelHtml())
+
 
     // load good witnesses into panels
 
@@ -176,7 +191,7 @@ export class ChunkPage {
       }
       switch (witnessInfo.type) {
         case WitnessType.FULL_TX:
-          let witnessUrl = this.pathFor.apiWitnessGet(witnessInfo.systemId, 'html')
+          let witnessUrl = urlGen.apiWitnessGet(witnessInfo.systemId, 'html')
           console.log('Loading witness ' + witnessInfo.systemId)
           let formattedSelector = '#formatted-' + witnessInfo.systemId
           $(formattedSelector).html('Loading text, this might take a while <i class="fas fa-spinner fa-spin fa-fw"></i> ...')
@@ -202,14 +217,35 @@ export class ChunkPage {
     }
 
     $('body').popover({
-            container: 'body', 
-            html: true,
-            trigger: 'hover', 
-            selector: '.withformatpopover',
-            delay: {show: 500, hide: 0},
-            placement: 'auto',
-            sanitize: false
-         })
+      container: 'body',
+      html: true,
+      trigger: 'hover',
+      selector: '.withformatpopover',
+      delay: {show: 500, hide: 0},
+      placement: 'auto',
+      sanitize: false
+    })
+
+  }
+
+  async getHeaderHtml() {
+    let breadcrumbHtml = this.getBreadcrumbNavHtml([
+      { label: tr('Works'), url:  urlGen.siteWorks()},
+      { label: this.options.work, url: urlGen.siteWorkPage(this.options.work)},
+      { label: `Chunk ${this.options.chunk}`, active: true}
+    ])
+    return `${breadcrumbHtml} <div id="chunkpageheader"></div>`
+  }
+
+  async genContentHtml () {
+    return `
+    <div id="chunkid"></div>
+    <div id="witnessListNew"></div>
+    <div id="editions" class="collationtablelinks"></div>
+    <div id="savedcollationtables" class="collationtablelinks"></div>
+    <h4 id="ctlinks-header" class="hidden">${tr('Automatic Collation Tables')}</h4>
+    <div id="collationtablelinks" class="collationtablelinks">  </div>
+    <div id="witnesspanels"></div>`
   }
 
   genOnClickConvertToEditionButton(index, info) {
@@ -260,12 +296,12 @@ export class ChunkPage {
     }
   }
 
-  genSavedCollationTablesDivHtml(type) {
+  async genSavedCollationTablesDivHtml(type) {
     let html = ''
 
     const titles = {
-      ctable : 'Saved Collation Tables',
-      edition : 'Editions'
+      ctable : tr('Saved Collation Tables'),
+      edition : tr('Editions')
     }
 
     let tables = this.options.savedCollationTables.filter( savedCt => savedCt.type === type)
@@ -274,10 +310,10 @@ export class ChunkPage {
       html += `<h4>${titles[type]}</h4>`
       html += '<ul>'
       for(const ctInfo of tables) {
-        let url = this.pathFor.siteEditCollationTable(ctInfo['tableId'])
+        let url = urlGen.siteEditCollationTable(ctInfo['tableId'])
         html += '<li class="smallpadding"><a title="Open in new tab/window" target="_blank" href="' + url + '">' + ctInfo['title'] +
-          '</a>, <small>last change: ' + ApmUtil.formatVersionTime(ctInfo['lastSave']) +
-          ' by ' + this.getAuthorLink(ctInfo['authorId']) + '</small></li>'
+          '</a>, <small>last change: ' + ApmFormats.timeString(ctInfo['lastSave']) +
+          ' by ' + await this.getAuthorLink(ctInfo['authorTid']) + '</small></li>'
       }
       html += '</ul>'
 
@@ -313,20 +349,20 @@ export class ChunkPage {
 
     let prevChunk = this.getPreviousChunk(this.options.chunk, this.options.validChunks)
     if (prevChunk !== -1) {
-      let url = this.pathFor.siteChunkPage(this.options.work, prevChunk)
+      let url = urlGen.siteChunkPage(this.options.work, prevChunk)
       html += '<a role="button" class="btn-default" title="Go to chunk ' + prevChunk + '" href="' + url +
         '">'+ arrowLeft + '</a>'
       html += '&nbsp;&nbsp;'
     }
+    html += `<a href="${urlGen.sitePerson(Tid.toBase36String(this.authorInfo.tid))}">${this.authorInfo.name}</a>, 
+        <em><a href="${urlGen.siteWorkPage(this.workData.dareId)}">${this.workData.title}</a></em>, chunk ${this.options.chunk}`;
 
-    html += this.options.workInfo['author_name'] + ', <em>' +
-        this.options.workInfo['title'] + '</em>, chunk ' + this.options.chunk
     html += '</div>'
 
     html += '<div class="col-md1 cpheader justifyright">'
     let nextChunk = this.getNextChunk(this.options.chunk, this.options.validChunks)
     if (nextChunk !== -1) {
-      let url = this.pathFor.siteChunkPage(this.options.work, nextChunk)
+      let url = urlGen.siteChunkPage(this.options.work, nextChunk)
       html += '<a role="button" class="btn-default" title="Go to chunk ' + nextChunk + '" href="' + url +
         '">'+ arrowRight + '</a>'
     }
@@ -337,27 +373,6 @@ export class ChunkPage {
   }
 
   generateWitnessPanelHtml() {
-
-    let twigTemplate = Twig.twig({
-      id: 'witnessPanels',
-      data: `
-  <div class="card witness-card">
-      <div class="card-header">
-      <p>{{title}}
-        &nbsp;&nbsp;&nbsp;
-    <a role="button" title="Click to show/hide text" data-toggle="collapse" href="#text-{{witnessSystemId}}" aria-expanded="true" aria-controls="text-{{witnessSystemId}}">
-      <span id="texttoggle-{{witnessSystemId}}"><i class="fas fa-angle-right" aria-hidden="true"></i></span>
-    </a></p>
-    </div>
-    <div class="collapse" id="text-{{witnessSystemId}}">
-      <div class="card-body">
-      <p class="formattedchunktext text-{{lang}}" id="formatted-{{witnessSystemId}}"></p>
-      </div>
-      </div>
-      </div>
-`
-    })
-
     let html = ''
     for (const w in this.options.witnessInfo) {
       if (!this.options.witnessInfo.hasOwnProperty(w)) {
@@ -369,38 +384,55 @@ export class ChunkPage {
       }
       switch (witnessInfo.type) {
         case WitnessType.FULL_TX:
-          let lwid = witnessInfo["typeSpecificInfo"].localWitnessId
+          let localWitnessId = witnessInfo["typeSpecificInfo"].localWitnessId
           let title =  witnessInfo["typeSpecificInfo"].docInfo.title
-          if (lwid !== 'A') {
-            title += ' (' + lwid + ')'
+          if (localWitnessId !== 'A') {
+            title += ' (' + localWitnessId + ')'
           }
-          html += twigTemplate.render({
-            title: title,
-            witnessSystemId : witnessInfo.systemId,
-            lang: witnessInfo["typeSpecificInfo"].docInfo.languageCode
-          })
+          html += this.getWitnessCard(witnessInfo.systemId, title, witnessInfo["typeSpecificInfo"].docInfo['languageCode']);
           break
       }
     }
     return html
   }
 
-  generateWitnessListNew() {
-    let html = ''
+  /**
+   * 
+   * @param {string}witnessSystemId
+   * @param {string}title
+   * @param {string}lang
+   * @return {string}
+   * @private
+   */
+  getWitnessCard(witnessSystemId, title, lang) {
+    return `<div class="card witness-card">
+      <div class="card-header">
+      <p>${title} &nbsp;&nbsp;&nbsp; <a role="button" title="Click to show/hide text" data-toggle="collapse" 
+            href="#text-${witnessSystemId}" aria-expanded="true" aria-controls="text-${witnessSystemId}">
+      <span id="texttoggle-${witnessSystemId}"><i class="fas fa-angle-right" aria-hidden="true"></i></span>
+    </a></p>
+    </div>
+    <div class="collapse" id="text-${witnessSystemId}">
+      <div class="card-body">
+      <p class="formattedchunktext text-${lang}" id="formatted-${witnessSystemId}"></p>
+      </div>
+      </div>
+      </div>`
+  }
 
-    html += '<table id="witnessTableNew" class="stripe">'
-    html += '<thead>'
-    html += '<tr>'
-    html += '<th>Title</th>'
-    html += '<th>Witness Type</th>'
-    html += '<th>Doc Type</th>'
-    html += '<th>Language</th>'
-    html += '<th>Pages</th>'
-    html += '<th>Info</th>'
-    html += '<th></th>'   // Actions
-    html += '<th></th>'  // admin
-    html += '</tr>'
-    html += '</thead>'
+  async generateWitnessListNew() {
+    let html = `<table id="witnessTableNew" class="stripe">
+        <thead><tr>
+            <th>${tr('Title')}</th>
+            <th>${tr('Witness Type')}</th>
+            <th>${tr('Doc Type')}</th>
+            <th>${tr('Language')}</th>
+            <th>${tr('Pages')}</th>
+            <th>${tr('Info')}</th>
+            <th></th>
+            <th></th>
+        </tr>
+        </thead>`
 
     for(const i in this.options.witnessInfo) {
       if (!this.options.witnessInfo.hasOwnProperty(i)) {
@@ -409,7 +441,7 @@ export class ChunkPage {
       let witnessInfo = this.options.witnessInfo[i]
       html += '<tr>'
       let docInfo = witnessInfo["typeSpecificInfo"].docInfo
-      let lwid = witnessInfo.typeSpecificInfo.localWitnessId
+      let lwid = witnessInfo['typeSpecificInfo'].localWitnessId
       html += '<td>' + this.getDocLink(docInfo)
       if (lwid !== 'A') {
         html += ' (' + lwid + ')'
@@ -417,11 +449,11 @@ export class ChunkPage {
       html += '</td>'
       html += '<td>' + this.witnessTypeLabels[witnessInfo.type] + '</td>'
       html += '<td>' + this.docTypes[docInfo.type] + '</td>'
-      html += '<td>' + this.options.languageInfo[witnessInfo.languageCode]['name'] + '</td>'
+      html += '<td>' + this.options.languageInfo[witnessInfo['languageCode']]['name'] + '</td>'
       let info = ''
       switch (witnessInfo.type) {
         case WitnessType.FULL_TX:
-          info = this.genFullTxInfo(witnessInfo, i)
+          info = await this.genFullTxInfo(witnessInfo, i)
           break
 
         case WitnessType.PARTIAL_TX:
@@ -447,11 +479,11 @@ export class ChunkPage {
     return html
   }
 
-  genFullTxInfo(witnessInfo, index) {
+  async genFullTxInfo(witnessInfo, index) {
 
     let info = []
     let docInfo = witnessInfo["typeSpecificInfo"].docInfo
-    let segments = witnessInfo["typeSpecificInfo"].segments
+    let segments = witnessInfo["typeSpecificInfo"]["segments"]
 
     let segmentHtmlArray = []
     for(const s in segments) {
@@ -467,9 +499,9 @@ export class ChunkPage {
     }
     info['location'] = segmentHtmlArray.join(', ')
 
-    let lastVersion = witnessInfo.typeSpecificInfo.lastVersion
+    let lastVersion = witnessInfo['typeSpecificInfo'].lastVersion
     if (witnessInfo.isValid) {
-      info['essential'] = '<small>Last change: ' + ApmUtil.formatVersionTime(lastVersion.timeFrom) + ' by ' + this.getAuthorLink(lastVersion.authorId) + '</small>'
+      info['essential'] = '<small>Last change: ' + ApmFormats.time(TimeString.toDate(lastVersion['timeFrom'])) + ' by ' + await this.getAuthorLink(lastVersion.authorTid) + '</small>'
     } else {
       let errorMsg = this.invalidErrorCodes[witnessInfo.errorCode]
       if (errorMsg === undefined) {
@@ -481,7 +513,7 @@ export class ChunkPage {
      if (witnessInfo.isValid) {
        info['actions'] = `<a href="" class="${convertToEditionLinkClass} ${convertToEditionLinkClass}-${index}" 
 title="Click to create edition with only this witness">${convertToEditionIcon}</a>`
-       info['admin'] = `<a href="${this.pathFor.apiWitnessGet(witnessInfo.systemId, 'full')}" 
+       info['admin'] = `<a href="${urlGen.apiWitnessGet(witnessInfo.systemId, 'full')}" 
        title="Show witness details for witness ${witnessInfo.systemId}" target="_blank">${showWitnessInfoIcon}</a>`
      } else {
        info['actions'] = ''
@@ -490,10 +522,10 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
     return info
   }
 
-  getAuthorLink(authorId) {
-    return '<a href="' + this.pathFor.siteUserProfile(this.options.authorInfo[authorId].username) +
-      '" title="View user profile" target="_blank">' +
-      this.options.authorInfo[authorId].fullname + '</a>'
+  async getAuthorLink(authorTid) {
+    let userData = await this.apmDataProxy.getPersonEssentialData(authorTid);
+    return `<a href="${urlGen.sitePerson(Tid.toBase36String(userData.tid))}" 
+    title="${tr('View person data')}" target="_blank">${userData.name}</a>`
   }
 
   genPageLink(docId, pageId, column) {
@@ -508,13 +540,13 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
     if (numColumns > 1) {
       label += ' c' + column
     }
-    let url = this.pathFor.sitePageView(docId, sequence , column)
+    let url = urlGen.sitePageView(docId, sequence , column)
 
     return '<a href="' + url + '" title="View page ' + foliation + ' col ' + column + ' in new tab" target="_blank">' + label + '</a>'
   }
 
   getDocLink(docInfo) {
-    return '<a href="' + this.pathFor.siteDocPage(docInfo.id) + '" title="View document page" target="_blank">' +
+    return '<a href="' + urlGen.siteDocPage(docInfo.id) + '" title="View document page" target="_blank">' +
       docInfo.title + '</a>'
   }
 
@@ -524,7 +556,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
     let numWitnesses = this.options.witnessInfo.length
     let numValidWitnesses = this.calculateTotalValidWitnesses()
     html += '<p>'
-    html += '<b>Chunk ID:</b> ' + this.options.workInfo['dare_id'] + '-' + this.options.chunk
+    html += '<b>Chunk ID:</b> ' + this.workData.dareId + '-' + this.options.chunk
     html += '<br/>'
     if (numWitnesses === 0) {
       html += '<b>Witnesses:</b> none'
@@ -571,7 +603,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
       if (!langInfo.hasOwnProperty(l)) {
         continue
       }
-      if (langInfo[l].validWitnesses >= 2) {
+      if (langInfo[l]['validWitnesses'] >= 2) {
         $('#ctlinks-header').removeClass('hidden')
         let urls = []
         let langName = langInfo[l].name
@@ -582,7 +614,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
              { 
                lang: l,
                name: langName,
-               url:  this.pathFor.siteCollationTable(this.options.work, this.options.chunk, l),
+               url:  urlGen.siteCollationTable(this.options.work, this.options.chunk, l),
                urltext: 'All witnesses',
                urltitle: 'Open automatic collation table in new tab',
                availableWitnesses: this.witnessesByLang[l],
@@ -600,7 +632,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
         let thisObject = this
         let apiCallOptions = {
           lang: langInfo[l].code,
-          userId: false,
+          userTid: -1,
           witnesses: []
         }
         for(const w in this.witnessesByLang[l]) {
@@ -611,10 +643,10 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
           // TODO: support other localWitnessId
           let witness = this.witnessesByLang[l][w]
           if (witness.type === 'fullTx') {
-            // if (witness.typeSpecificInfo.localWitnessId === 'A') {
-            //   apiCallOptions.witnesses.push(witness.typeSpecificInfo.docId)
+            // if (witness['typeSpecificInfo'].localWitnessId === 'A') {
+            //   apiCallOptions.witnesses.push(witness['typeSpecificInfo'].docId)
             // }
-            apiCallOptions.witnesses.push('fullTx-' + witness.typeSpecificInfo.docId + '-' +witness.typeSpecificInfo.localWitnessId)
+            apiCallOptions.witnesses.push('fullTx-' + witness['typeSpecificInfo'].docId + '-' +witness['typeSpecificInfo'].localWitnessId)
           }
         }
         console.log('Getting presets')
@@ -624,7 +656,6 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
           { data: JSON.stringify(apiCallOptions) }
         )
         .done(function (data) { 
-          console.log('Presets retrieved for ' + langName + ' in ' + data.runTime + 'ms')
           console.log('Got ' + data.presets.length + ' presets')
           console.log(data.presets)
           for(const pr of data.presets) {
@@ -637,7 +668,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
               let presetWitnessLwid = fields[2]
               for(const w of thisObject.witnessesByLang[l]) {
                 // match only fullTx witnesses with localWitnessId === 'A'
-                if (w.type=== presetWitnessType && w.typeSpecificInfo.docId === presetWitnessDocId && w.typeSpecificInfo.localWitnessId === presetWitnessLwid) {
+                if (w.type=== presetWitnessType && w['typeSpecificInfo'].docId === presetWitnessDocId && w['typeSpecificInfo'].localWitnessId === presetWitnessLwid) {
                   witness = w
                 }
               }
@@ -651,7 +682,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
              { 
                lang: l,
                name: langName,
-               url:  thisObject.pathFor.siteCollationTablePreset(thisObject.options.work, thisObject.options.chunk, pr.presetId),
+               url:  urlGen.siteCollationTablePreset(thisObject.options.work, thisObject.options.chunk, pr.presetId),
                urltext: pr.title + ' <small><i>(' + pr.userName + ')</i></small>',
                urltitle:  'Open collation table in new tab', 
                availableWitnesses: thisObject.witnessesByLang[l],
@@ -722,7 +753,6 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
           continue
         }
         let liId = containerId + '-' +  u
-        //console.log('Creating new ACTS form on html ID ' + liId)
         let ctSettingsFormManager =  new AutomaticCollationTableSettingsForm({
           containerSelector : '#' + liId + '-div', 
           initialSettings: urls[u].actSettings,
@@ -731,7 +761,6 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
           isPreset: urls[u].isPreset,
           preset: urls[u].preset,
           applyButtonText: 'Generate Collation',
-          urlGenerator: this.options.urlGenerator,
           userId: this.options.userId,
           normalizerData: this.options.languageInfo[urls[u].lang]['normalizerData'],
           debug: true
@@ -753,7 +782,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
           })
           $(divSelector +  ' .button-yes').on('click', function(){
             $.get(
-              thisObject.pathFor.apiDeletePreset(urls[u].preset.id)
+              urlGen.apiDeletePreset(urls[u].preset.id)
             )
             .done( function (){
               thisObject.updateCollationTableLinks()
@@ -794,7 +823,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
           }
           //console.log('Adding hidden form')
           $('body').append('<form id="theform" class="hidden" method="POST" target="_blank" action="' +
-                  thisObject.pathFor.siteCollationTableCustom(thisObject.options.work, thisObject.options.chunk, urls[u].lang) + '">' +
+                  urlGen.siteCollationTableCustom(thisObject.options.work, thisObject.options.chunk, urls[u].lang) + '">' +
                   '<input type="text" name="data" value=\'' + JSON.stringify({options: e.detail})  + '\'></form>')
           //console.log('Submitting')
           document.getElementById('theform').submit()

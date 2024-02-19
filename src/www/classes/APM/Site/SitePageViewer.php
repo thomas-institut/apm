@@ -26,11 +26,8 @@
 namespace APM\Site;
 
 use AverroesProject\Data\DataManager;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
-use Twig\Error\LoaderError;
-use Twig\Error\RuntimeError;
-use Twig\Error\SyntaxError;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 
 /**
  * Site Controller class
@@ -39,14 +36,14 @@ use Twig\Error\SyntaxError;
 class SitePageViewer extends SiteController
 {
 
-    const TEMPLATE_TRANSCRIPTION_EDITOR = 'transcription-editor.twig';
+    const PAGE_VIEWER_TWIG = 'page-viewer.twig';
 
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    function pageViewerPageByDocPage(Request $request, Response $response)
+    function pageViewerPageByDocPage(Request $request, Response $response): Response
     {
         $docId = $request->getAttribute('doc');
         $pageNumber = $request->getAttribute('page');
@@ -58,11 +55,10 @@ class SitePageViewer extends SiteController
         $pageInfo = $this->dataManager->getPageInfoByDocPage($docId, $pageNumber);
 
         $docPageCount = $this->dataManager->getPageCountByDocId($docId);
-        $pagesInfo = $this->dataManager->getDocPageInfo($docId, DataManager::ORDER_BY_PAGE_NUMBER);
+        $pagesInfo = $this->dataManager->getDocPageInfo($docId);
         $transcribedPages = $this->dataManager->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $this->dataManager->getImageUrl($docId, $pageInfo['img_number']);
-//        $osdConfig = $this->dataManager->getOpenSeaDragonConfig($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->dataManager->getPageTypeNames();
         $activeWorks = $this->dataManager->getActiveWorks();
         $pageNumberFoliation = $pageNumber;
@@ -73,7 +69,7 @@ class SitePageViewer extends SiteController
             $pageNumberFoliation = $pageInfo['foliation'];
         }
 
-        return $this->renderPage($response, self::TEMPLATE_TRANSCRIPTION_EDITOR, [
+        return $this->renderPage($response, self::PAGE_VIEWER_TWIG, [
             'navByPage' => true,
             'doc' => $docId,
             'docInfo' => $docInfo,
@@ -97,7 +93,7 @@ class SitePageViewer extends SiteController
      * @param Response $response
      * @return Response
      */
-    function pageViewerPageByDocSeq(Request $request, Response $response)
+    function pageViewerPageByDocSeq(Request $request, Response $response): Response
     {
         $docId = $request->getAttribute('doc');
         $seq = $request->getAttribute('seq');
@@ -115,7 +111,6 @@ class SitePageViewer extends SiteController
         $transcribedPages = $this->dataManager->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $this->dataManager->getImageUrl($docId, $pageInfo['img_number']);
-//        $osdConfig = $this->dataManager->getOpenSeaDragonConfig($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->dataManager->getPageTypeNames();
         $activeWorks = $this->dataManager->getActiveWorks();
         $languagesArray = $this->languages;
@@ -127,7 +122,7 @@ class SitePageViewer extends SiteController
 
         $deepZoom = $this->dataManager->isImageDeepZoom($docId) ? '1' : '0';
 
-        return $this->renderPage($response, self::TEMPLATE_TRANSCRIPTION_EDITOR, [
+        return $this->renderPage($response, self::PAGE_VIEWER_TWIG, [
             'navByPage' => false,  // i.e., navigate by sequence
             'doc' => $docId,
             'docInfo' => $docInfo,
@@ -141,10 +136,9 @@ class SitePageViewer extends SiteController
             'activeWorks' => $activeWorks,
             'thePages' => $thePages,
             'imageUrl' => $imageUrl,
-//            'openSeaDragonConfig' => $osdConfig,
             'languagesArray' => $languagesArray,
             'deepZoom' => $deepZoom
-        ]);
+        ], true, false);
     }
 
 }

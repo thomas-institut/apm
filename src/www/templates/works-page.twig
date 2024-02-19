@@ -1,0 +1,21 @@
+{% extends "normal-page.twig" %}
+
+{% block title %}Works{% endblock %}
+
+
+{% block extraCSS %}
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/works_page.css"/>
+{% endblock %}
+
+
+{% block extraJS %}
+    <script type="application/javascript" src="{{baseurl}}/js/dist/WorksPage.bundle.js"></script>
+    <script>
+      $( () => {
+        new WorksPage({
+          commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
+          works: JSON.parse('{{works|json_encode|e('js')}}'),
+        })
+      });
+    </script>
+{% endblock %}

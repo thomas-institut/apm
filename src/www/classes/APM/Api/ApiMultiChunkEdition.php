@@ -32,10 +32,10 @@ class ApiMultiChunkEdition extends ApiController
         return $this->responseWithJson($response, $data);
     }
 
-    public function saveEdition(Request $request, Response $response, array $args): Response
+    public function saveEdition(Request $request, Response $response): Response
     {
 
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+
         $requiredFields = [ 'editionId', 'mceData', 'description'];
         $inputDataObject = $this->checkAndGetInputData($request, $response, $requiredFields);
         if (!is_array($inputDataObject)) {
@@ -43,16 +43,17 @@ class ApiMultiChunkEdition extends ApiController
         }
 
         $editionId = intval($inputDataObject['editionId']);
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $editionId);
         $description = $inputDataObject['description'];
         $mceData = $inputDataObject['mceData'];
-        $authorId = $this->apiUserId;
+        $authorTid = $this->apiUserTid;
 
         try {
-            $editionId = $this->systemManager->getMultiChunkEditionManager()->saveMultiChunkEdition($editionId, $mceData, $authorId, $description);
+            $editionId = $this->systemManager->getMultiChunkEditionManager()->saveMultiChunkEdition($editionId, $mceData, $authorTid, $description);
         } catch (\Exception $e) {
             $this->logger->error("Error saving multi chunk edition", [
                 'id' => $editionId,
-                'author'=> $authorId,
+                'author'=> $authorTid,
                 'description' => $description
                 ]);
             return $this->responseWithJson($response,  [

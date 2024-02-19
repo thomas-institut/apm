@@ -3,17 +3,25 @@
 namespace APM\CommandLine;
 
 use APM\System\ApmMySqlTableName;
+use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\MySqlDataTable;
+use ThomasInstitut\DataTable\RowDoesNotExist;
 use ThomasInstitut\EntitySystem\Tid;
+use ThomasInstitut\TimeString\InvalidTimeZoneException;
 
 class GenerateDocTids extends CommandLineUtility
 {
 
+    /**
+     * @throws InvalidTimeZoneException
+     * @throws RowDoesNotExist
+     * @throws InvalidRowForUpdate
+     */
     public function main($argc, $argv): void
     {
-        $dbConn = $this->systemManager->getDbConnection();
+        $dbConn = $this->getSystemManager()->getDbConnection();
 
-        $docTable = $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_DOCS];
+        $docTable = $this->getSystemManager()->getTableNames()[ApmMySqlTableName::TABLE_DOCS];
 
         if ($argc < 2) {
             print "Need bilderberg CSV file name\n";

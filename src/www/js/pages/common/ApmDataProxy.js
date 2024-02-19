@@ -48,21 +48,40 @@ const langNames = {
  */
 export class ApmDataProxy {
 
-  constructor () {
+  /**
+   *
+   * @param {string}cacheDataId
+   */
+  constructor (cacheDataId) {
+    this.cacheDataId = cacheDataId;
     this.caches = {
       memory: new KeyCache(),
-      session: new WebStorageKeyCache('session'),
-      local: new WebStorageKeyCache('local')
+      session: new WebStorageKeyCache('session', this.cacheDataId),
+      local: new WebStorageKeyCache('local', this.cacheDataId)
     }
+
     this.cachedFetcher = new CachedFetcher(this.caches.memory);
   }
 
-  async getPersonData(personId) {
-    return await this.getApmEntityData('Person', personId, 'session');
+  async getPersonEssentialData(personId) {
+    return await this.getApmEntityData('Person', 'essential',  personId, 'session');
+  }
+
+  async getAllPersonEssentialData(){
+    let data = this.caches.memory.retrieve("allPeopleData");
+    if (data === null) {
+      data = await this.get(urlGen.apiPersonGetEssentialDataAll(), true);
+      this.caches.memory.store('allPeopleData', data, 5);
+    }
+    return data;
+  }
+
+  async getWorkDataOld(workDareId) {
+    return await this.getApmEntityData('WorkOld', '', workDareId, 'local');
   }
 
   async getWorkData(workDareId) {
-    return await this.getApmEntityData('Work', workDareId, 'local');
+    return await this.getApmEntityData('Work', '', workDareId, 'local');
   }
 
   async getDocTypeName(type) {
@@ -104,7 +123,32 @@ export class ApmDataProxy {
       foliation: foliation,
       type: type,
       lang: lang
-    }, true)
+    }, true);
+  }
+
+  async updateUserProfile(userTid, email, password1, password2) {
+    return this.post(urlGen.apiUpdateProfile(userTid), {
+      email: email,
+      password1: password1,
+      password2: password2
+    }, true);
+  }
+
+  async createUser(personTid, username) {
+    return this.post(urlGen.apiCreateUser(personTid), {
+      username: username,
+    }, true);
+  }
+
+  async createPerson(name, sortName){
+    return this.post(urlGen.apiPersonCreate(), {
+      name: name,
+      sortName: sortName
+    }, true);
+  }
+
+  async getPersonWorks(personTid){
+    return this.get(urlGen.apiPersonGetWorks(personTid))
   }
 
 
@@ -148,38 +192,47 @@ export class ApmDataProxy {
   /**
    *
    * @param {string} url
-   * @param {boolean}forceActualFecth
+   * @param {boolean}forceActualFetch
    * @return {Promise<{}>}
    */
-  get(url, forceActualFecth = true) {
-    return this.fetch(url, 'GET', [], forceActualFecth)
+  get(url, forceActualFetch = true) {
+    return this.fetch(url, 'GET', [], forceActualFetch)
   }
 
 
   /**
    *
    * @param {string} entityType
+   * @param {string} dataType
    * @param {string|number}entityId
    * @param {string}cacheName
    * @return {Promise<any>}
    * @private
    */
-  getApmEntityData(entityType, entityId, cacheName = 'session') {
+  getApmEntityData(entityType, dataType, entityId, cacheName = 'session') {
     return new Promise ( (resolve, reject) => {
       let getUrl = '';
       switch(entityType) {
         case 'Person':
-          getUrl =  urlGen.apiUserGetInfo(entityId);
+          if (dataType === 'essential') {
+            getUrl =  urlGen.apiPersonGetEssentialData(entityId);
+          } else {
+            reject(`Invalid data type for Person data: ${dataType}`)
+          }
+          break;
+
+        case 'WorkOld':
+          getUrl = urlGen.apiWorkGetInfoOld(entityId);
           break;
 
         case 'Work':
-          getUrl = urlGen.apiWorkGetInfo(entityId);
+          getUrl = urlGen.apiWorkGetData(entityId);
           break
       }
       if (getUrl === '') {
-        reject(`Invalid entity type ${entityType}`)
+        reject(`Invalid entity type ${entityType} : ${dataType}`)
       }
-      let cacheKey = this.getCacheKey(entityType, entityId);
+      let cacheKey = this.getCacheKey(entityType, dataType, entityId);
       let cache = this.caches[cacheName];
       let cachedInfo = cache.retrieve(cacheKey);
       if (cachedInfo !== null) {
@@ -194,9 +247,12 @@ export class ApmDataProxy {
             dataToStore = this.getPersonDataToStoreFromServerData(serverData)
             break
 
-          case 'Work':
+          case 'WorkOld':
             dataToStore  = this.getWorkDataToStoreFromServerData(serverData)
-            break
+            break;
+
+          case 'Work':
+            dataToStore = serverData;
         }
         cache.store(cacheKey, dataToStore, longTtl);
         resolve(dataToStore);
@@ -213,11 +269,7 @@ export class ApmDataProxy {
    * @private
    */
   getPersonDataToStoreFromServerData(serverData) {
-    return {
-      id: serverData['id'],
-      username: serverData['username'],
-      name: serverData['fullname']
-    }
+    return serverData
   }
 
   /**
@@ -231,20 +283,25 @@ export class ApmDataProxy {
       id: serverData['id'],
       dareId: serverData['dare_id'],
       authorId: serverData['author_id'],
+      authorTid: serverData['author_tid'],
       title: serverData['title']
     }
   }
 
   /**
    *
-   * @param entityType
-   * @param entityId
-   * @param attribute
+   * @param {string}entityType
+   * @param {string}dataType
+   * @param {int}entityId
+   * @param {string}attribute
    * @return {string}
    * @private
    */
-  getCacheKey(entityType, entityId, attribute = '') {
-    return `${cachePrefix}-${entityType}-${entityId}${attribute === '' ? '' : '-' + attribute}`
+  getCacheKey(entityType, dataType, entityId, attribute = '') {
+    if (dataType === '') {
+      dataType = 'default';
+    }
+    return `${cachePrefix}-${entityType}-${dataType}-${entityId}${attribute === '' ? '' : '-' + attribute}`;
   }
 
 

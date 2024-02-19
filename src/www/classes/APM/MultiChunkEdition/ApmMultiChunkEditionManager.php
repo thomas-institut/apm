@@ -32,12 +32,12 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
         $this->setLogger($logger);
     }
 
-    public function getMultiChunkEditionInfoForUserId(int $userId): array
+    public function getMultiChunkEditionsByUser(int $userTid): array
     {
         $ids = [];
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
-        $rows = $this->mceTable->findRowsWithTime([ 'author_id' => $userId], 0, TimeString::now());
+        $rows = $this->mceTable->findRowsWithTime([ 'author_tid' => $userTid], 0, TimeString::now());
 
         foreach($rows as $row) {
             $ids[] =  [
@@ -66,7 +66,7 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
             throw new MultiChunkEditionDoesNotExist("Multi chunk edition with id $id does not exist");
         }
 
-        $dbData = $rows[0];
+        $dbData = $rows->getFirst();
         $isCompressed = intval($dbData['compressed']) === 1;
 
         if ($isCompressed) {
@@ -81,7 +81,7 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
         $mceData['archived'] = intval($dbData['archived']) === 1;
 
         return [
-            'authorId' => $dbData['author_id'],
+            'authorTid' => $dbData['author_tid'],
             'chunks' => explode(',', $dbData['chunks']),
             'versionDescription' => $dbData['version_description'],
             'validFrom' => $dbData['valid_from'],
@@ -95,18 +95,18 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
      * @throws MultiChunkEditionDoesNotExist
      * @throws Exception
      */
-    public function saveMultiChunkEdition(int $id, array $mceData, int $authorId, string $versionDescription): int
+    public function saveMultiChunkEdition(int $id, array $mceData, int $authorTid, string $versionDescription): int
     {
         $timeString = TimeString::now();
-        if ($authorId <= 0){
-            throw new InvalidArgumentException("Invalid author id $authorId");
+        if ($authorTid <= 0){
+            throw new InvalidArgumentException("Invalid author tid $authorTid");
         }
         $isNew = $id === -1;
         if (!$isNew) {
             // get the edition so that an exception is thrown if it does not exist
             $this->getMultiChunkEditionById($id);
         }
-        $dbRow = $this->getDbRowFromMceData($mceData, $authorId, $versionDescription);
+        $dbRow = $this->getDbRowFromMceData($mceData, $authorTid, $versionDescription);
         if ($isNew) {
             $id = $this->mceTable->createRowWithTime($dbRow, $timeString);
         } else {
@@ -127,13 +127,13 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
 
     /**
      * @param array $mceData
-     * @param int $authorId
+     * @param int $authorTid
      * @param string $versionDescription
      * @param bool $compress
      * @return array
      * @throws Exception
      */
-    private function getDbRowFromMceData(array $mceData, int $authorId, string $versionDescription, bool $compress = false): array
+    private function getDbRowFromMceData(array $mceData, int $authorTid, string $versionDescription, bool $compress = false): array
     {
 
         if (!isset($mceData['chunks'])) {
@@ -154,7 +154,7 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
 
         return [
             'title' => $title,
-            'author_id' => $authorId,
+            'author_tid' => $authorTid,
             'version_description' => $versionDescription,
             'chunks' => $chunkDbString,
             'compressed' => $compress ? 1 : 0,

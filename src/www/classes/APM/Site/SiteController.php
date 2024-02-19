@@ -27,29 +27,33 @@
 namespace APM\Site;
 
 use APM\FullTranscription\PageInfo;
+use APM\System\ApmConfigParameter;
 use APM\System\ApmImageType;
+use APM\System\Person\PersonNotFoundException;
+use APM\System\User\UserNotFoundException;
 use APM\SystemProfiler;
 use APM\System\ApmContainerKey;
+use APM\ToolBox\HttpStatus;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use Psr\Http\Message\RequestInterface;
-use \Psr\Http\Message\ResponseInterface as Response;
 use APM\System\ApmSystemManager;
 use AverroesProject\Data\DataManager;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Slim\Psr7\Response;
 use Slim\Routing\RouteParser;
 use Slim\Views\Twig;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
+use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\Profiler\SimpleProfiler;
 use ThomasInstitut\Profiler\TimeTracker;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 
-use \Psr\Http\Message\ServerRequestInterface as Request;
 
 /**
  * Site Controller class
@@ -59,57 +63,48 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 {
 
     const COOKIE_SIZE_THRESHOLD = 1000;
-    const TEMPLATE_ERROR_NOT_ALLOWED = 'error-not-allowed.twig';
+
+    const TEMPLATE_ERROR_PAGE = 'error-page.twig';
 
 
     use LoggerAwareTrait;
     use CodeDebugWithLoggerTrait;
-    /**
-     * @var ContainerInterface
-     */
+
     protected ContainerInterface $container;
-    
-    /** @var ApmSystemManager */
-    protected $systemManager;
-    
-    /** @var Twig */
-    protected $view;
-    
-    /** @var array */
-    protected $config;
-    
-    /** @var DataManager */
-    protected $dataManager;
-    
-    /** @var bool */
+    protected ApmSystemManager $systemManager;
+    protected Twig $view;
+    protected array $config;
+    /**
+     * @var DataManager
+     * @deprecated get it from $this->systemManager
+     */
+    protected DataManager $dataManager;
     protected bool $userAuthenticated;
-    
-    /** @var array */
-    protected $userInfo;
-
     /**
-     * @var RouteParser
+     * @var array|null
+     * @deprecated use getSiteUserInfo())
      */
-    protected $router;
-
+    protected ?array $siteUserInfo;
+    protected RouteParser $router;
     /**
      * @var array
+     * @deprecated use getLanguages()
      */
-    protected $languages;
-    /**
-     * @var SimpleProfiler
-     */
+    protected array $languages;
     protected SimpleProfiler $profiler;
+
     /**
      * @var array
+     * @deprecated use getLanguagesByCode();
      */
     protected array $languagesByCode;
+    protected int $userTid;
 
     /**
      * SiteController constructor.
      * @param ContainerInterface $ci
-     * @throws LoaderError
      * @throws ContainerExceptionInterface
+     * @throws LoaderError
      * @throws NotFoundExceptionInterface
      */
     public function __construct(ContainerInterface $ci)
@@ -118,13 +113,15 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
         $this->view = $this->systemManager->getTwig();
         $this->config = $this->systemManager->getConfig();
-        $this->dataManager = $this->systemManager->getDataManager();
         $this->logger = $this->systemManager->getLogger();
         $this->router = $this->systemManager->getRouter();
         $this->userAuthenticated = false;
-        $this->userInfo = [];
-        $this->languages = $this->config['languages'];
-        $this->languagesByCode = $this->buildLanguageByCodeArray($this->languages);
+
+
+        $this->siteUserInfo = null;
+        $this->dataManager = $this->systemManager->getDataManager();
+        $this->languages = $this->getLanguages();
+        $this->languagesByCode = $this->getLanguagesByCode();
 
         $this->profiler = new SimpleProfiler();
         $this->profiler->registerProperty('time', new TimeTracker());
@@ -134,9 +131,45 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
        
        // Check if the user has been authenticated by the authentication middleware
         //$this->logger->debug('Checking user authentication');
-        if ($ci->has(ApmContainerKey::USER_INFO)) {
+        if ($ci->has(ApmContainerKey::SITE_USER_TID)) {
            $this->userAuthenticated = true;
-           $this->userInfo = $ci->get(ApmContainerKey::USER_INFO);
+           $this->userTid = $ci->get(ApmContainerKey::SITE_USER_TID);
+           $this->siteUserInfo = $this->getSiteUserInfo();
+        }
+    }
+
+    protected function getLanguagesByCode() : array {
+        return $this->buildLanguageByCodeArray($this->getLanguages());
+    }
+
+    protected function getLanguages() : array {
+        return $this->systemManager->getConfig()[ApmConfigParameter::LANGUAGES];
+    }
+
+    /**
+     *
+     * Gets an array with info about the user.
+     * This is sent to all pages
+     *
+     */
+    protected function getSiteUserInfo(): array
+    {
+        try {
+            $userData = $this->systemManager->getUserManager()->getUserData($this->userTid);
+            $personData = $this->systemManager->getPersonManager()->getPersonEssentialData($this->userTid);
+
+            $userInfo = $userData->getExportObject();
+            unset($userInfo['passwordHash']);
+            $userInfo['name'] = $personData->name;
+            $userInfo['email'] = '';
+            $userInfo['isRoot'] = $userData->root;
+            $userInfo['manageUsers'] = $userData->root;
+            $userInfo['tidString'] = Tid::toBase36String($userData->tid);
+            return $userInfo;
+        } catch (UserNotFoundException|PersonNotFoundException $e) {
+            $this->logger->error("System Error: " . $e->getMessage());
+            // should never happen
+            return [];
         }
     }
 
@@ -166,85 +199,80 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return $lapInfo[count($lapInfo)-1]['time']['cumulative'];
     }
 
-//    protected function responseWithText(Response $response, string $text, int $status=200) : Response {
-//        $response->getBody()->write($text);
-//        return $response->withStatus($status);
-//    }
 
     /**
-     * @param Response $response
+     * @param ResponseInterface $response
      * @param string $template
      * @param array $data
      * @param bool $withBaseData
-     * @return \Slim\Psr7\Response|Response
+     * @return ResponseInterface
      */
-    protected function renderPage(Response $response, string $template, array $data, bool $withBaseData = true): \Slim\Psr7\Response|Response
+    protected function renderPage(ResponseInterface $response,
+                                  string $template, array $data,
+                                  bool $withBaseData = true): ResponseInterface
     {
 
-
-
         if ($withBaseData) {
-            $data['copyright']  = $this->getCopyrightNotice();
-            $data['baseurl'] = $this->getBaseUrl();
-            $data['userAuthenticated'] = $this->userAuthenticated;
-            if ($this->userAuthenticated) {
-                $data['userinfo'] = $this->userInfo;
-            }
+            $data['commonData'] = [
+                'appName' => $this->config[ApmConfigParameter::APP_NAME],
+                'appVersion' => $this->config[ApmConfigParameter::VERSION],
+                'copyrightNotice' => $this->config[ApmConfigParameter::COPYRIGHT_NOTICE],
+                'renderTimestamp' =>  time(),
+                'cacheDataId' => $this->config[ApmConfigParameter::JS_APP_CACHE_DATA_ID],
+                'userInfo' => $this->getSiteUserInfo(),
+                'showLanguageSelector' => $this->config[ApmConfigParameter::SITE_SHOW_LANGUAGE_SELECTOR],
+                'baseUrl' => $this->getBaseUrl()
+            ];
         }
 
-        $responseToReturn = new \Slim\Psr7\Response();
-        $twigExceptionRaised = false;
-        $errorMessage = '';
         try {
             $responseToReturn = $this->view->render($response, $template, $data);
-        } catch (LoaderError $e) {
-            $twigExceptionRaised = true;
-            $errorMessage = 'Twig LoaderError : ' . $e->getMessage();
-
-        } catch (RuntimeError $e) {
-            $twigExceptionRaised = true;
-            $errorMessage = 'Twig RuntimeError : ' . $e->getMessage();
-        } catch (SyntaxError $e) {
-            $twigExceptionRaised = true;
-            $errorMessage = 'Twig SyntaxError : ' . $e->getMessage();
+            SystemProfiler::lap('Response ready');
+            $this->logger->info("SITE PROFILER " . SystemProfiler::getName(), SystemProfiler::getLaps());
+            return $responseToReturn;
+        } catch (LoaderError|RuntimeError|SyntaxError $e) {
+            $this->logger->error("Twig error rendering page: " . $e->getMessage());
+            return $this->getSystemErrorPage($response, "Error rendering page", []);
         }
-
-        if ($twigExceptionRaised) {
-            $this->logger->error("Error rendering page: " . $errorMessage);
-            return $this->getBasicErrorPage($response, 'APM Error', 'Page rendering error, please report to APM developers.')->withStatus(409);
-        }
-        SystemProfiler::lap('Response ready');
-        $this->logger->debug("GLOBAL PROFILER", SystemProfiler::getLaps());
-        return $responseToReturn;
     }
 
-    protected function getBasicErrorPage(Response $response, string $title, string $errorMessage) : Response
+    protected function getSystemErrorPage(ResponseInterface $response, string $errorMessage,
+                                          array $errorData, int $httpStatus  = HttpStatus::INTERNAL_SERVER_ERROR) :ResponseInterface{
+        $this->logger->error("System Error: " . $errorMessage, $errorData);
+        return $this->getBasicErrorPage($response, "System Error", $errorMessage, $httpStatus);
+
+    }
+
+    protected function getBasicErrorPage(ResponseInterface $response, string $title, string $errorMessage, int $httpStatus) : ResponseInterface
     {
 
         $html = "<!DOCTYPE html><html lang='en'><head><title>$title</title></head><body><h1>APM Error</h1><p>$errorMessage</p></body></html>";
         $response->getBody()->write($html);
-        return $response;
+        return $response->withStatus($httpStatus);
+    }
+
+    protected function getErrorPage(ResponseInterface $response, string $title, string $errorMessage, int $httpStatus) : ResponseInterface
+    {
+        return $this->renderPage($response, self::TEMPLATE_ERROR_PAGE,
+            [
+                'errorMessage' => $errorMessage,
+                'title' => $title
+            ],
+            true, false)->withStatus($httpStatus);
+
+
     }
     
     protected function getCopyrightNotice() : string {
-        return $this->config['app_name'] . " v" . 
-               $this->config['version'] . " &bull; &copy; " . 
-               $this->config['copyright_notice'] . " &bull; " .
-              date("Y-M-d, H:i:s T");
+        return '';
     }
     
     protected function getBaseUrl() : string {
         return $this->systemManager->getBaseUrl();
     }
 
-    protected function getAbsoluteBaseUrlFromRequest(RequestInterface $request) : string{
-        $path = $request->getUri();
-
-        return rtrim($path, '/');
-    }
-
     // Utility function
-    protected function buildPageArray($pagesInfo, $transcribedPages, $navByPage = true): array
+    protected function buildPageArray($pagesInfo, $transcribedPages): array
     {
         $thePages = array();
         foreach ($pagesInfo as $page) {
@@ -259,12 +287,12 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             }
 
             $thePage['classes'] = '';
-            if (array_search($page['page_number'], $transcribedPages) === FALSE){
+            if (!in_array($page['page_number'], $transcribedPages)){
                 $thePage['classes'] =
                     $thePage['classes'] . ' withouttranscription';
             }
             $thePage['classes'] .= ' type' . $page['type'];
-            array_push($thePages, $thePage);
+            $thePages[] = $thePage;
         }
         return $thePages;
     }
@@ -288,34 +316,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return $thePages;
     }
 
-//    protected function genDocPagesListForUser($userId, $docId): string
-//    {
-//        $docInfo = $this->dataManager->getDocById($docId);
-//        $url = $this->router->urlFor('doc.showdoc', ['id' => $docId]);
-//        $title = $docInfo['title'];
-//        $docListHtml = '<li>';
-//        $docListHtml .= "<a href=\"$url\" title=\"View Document\">$title</a>";
-//        $docListHtml .= '<br/><span style="font-size: 0.9em">';
-//        $pageIds = $this->dataManager->getPageIdsTranscribedByUser($userId, $docId);
-//
-//        $nPagesInLine = 0;
-//        $maxPagesInLine = 25;
-//        foreach($pageIds as $pageId) {
-//            $nPagesInLine++;
-//            if ($nPagesInLine > $maxPagesInLine) {
-//                $docListHtml .= "<br/>";
-//                $nPagesInLine = 1;
-//            }
-//            $pageInfo = $this->dataManager->getPageInfo($pageId);
-//            $pageNum = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
-//            $pageUrl = $this->router->urlFor('pageviewer.docseq', ['doc' => $docId, 'seq'=>$pageInfo['seq']]);
-//            $docListHtml .= "<a href=\"$pageUrl\" title=\"View page in new tab\" target=\"_blank\">$pageNum</a>&nbsp;&nbsp;";
-//        }
-//        $docListHtml .= '</span></li>';
-//
-//        return $docListHtml;
-//    }
-
 
     protected function getNormalizerData(string $language, string $category) : array {
         $normalizerManager = $this->systemManager->getNormalizerManager();
@@ -331,10 +331,10 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return $normalizerData;
     }
 
-    protected function reportCookieSize() {
+    protected function reportCookieSize() : void {
         $cookieString = $_SERVER['HTTP_COOKIE'] ?? 'N/A';
         if (strlen($cookieString) > self::COOKIE_SIZE_THRESHOLD) {
-            $this->codeDebug("Got a cookie string of " . strlen($cookieString) . " bytes for user " . $this->userInfo['id']);
+            $this->codeDebug("Got a cookie string of " . strlen($cookieString) . " bytes for user " . $this->getSiteUserInfo()['tid']);
         }
     }
 

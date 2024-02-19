@@ -21,7 +21,8 @@
 namespace APM\Api;
 
 use APM\FullTranscription\ColumnVersionInfo;
-use APM\System\SystemManager;
+use APM\System\Person\PersonNotFoundException;
+use APM\System\User\UserTag;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\Data\DataManager;
 use AverroesProject\Data\EdNoteManager;
@@ -49,15 +50,15 @@ class ApiElements extends ApiController
      */
     public function updateElementsByDocPageCol(Request $request, Response $response): Response
     {
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+
         $dataManager = $this->getDataManager();
         $this->profiler->start();
 
-        $userManager = $dataManager->userManager;
+        $userManager = $this->systemManager->getUserManager();
          
-        if ($userManager->userHasRole($this->apiUserId, SystemManager::ROLE_READ_ONLY)) {
+        if ($userManager->hasTag($this->apiUserTid, UserTag::READ_ONLY)) {
             $this->logger->error("User is not authorized to update elements",
-                    [ 'apiUserId' => $this->apiUserId,
+                    [ 'apiUserTid' => $this->apiUserTid,
                       'apiError' => ApiController::API_ERROR_NOT_AUTHORIZED,
                     ]);
             return $this->responseWithJson($response,
@@ -67,14 +68,13 @@ class ApiElements extends ApiController
         }
         
         
-        $docId = (int) $request->getAttribute('document');
-        $pageNumber = (int) $request->getAttribute('page');
-        $columnNumber = (int) $request->getAttribute('column');
+        $docId = intval($request->getAttribute('document'));
+        $pageNumber = intval($request->getAttribute('page'));
+        $columnNumber = intval($request->getAttribute('column'));
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . "$docId:$pageNumber:$columnNumber");
         $rawData = $request->getBody()->getContents();
         parse_str($rawData, $postData);
         $inputDataObject = null;
-        
-
 
         if (isset($postData['data'])) {
             $inputDataObject = json_decode($postData['data'], true);
@@ -83,14 +83,14 @@ class ApiElements extends ApiController
         // Some checks: all required arrays, data with given docId, pageNo and colNumber
         if (is_null($inputDataObject) ) {
             $this->logger->error("Element update: no data in input",
-                    [ 'apiUserId' => $this->apiUserId,
+                    [ 'apiUserTid' => $this->apiUserTid,
                       'apiError' => ApiController::API_ERROR_NO_DATA,
                       'data' => $postData]);
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_DATA], 409);
         }
         if (!isset($inputDataObject['elements']) ) {
             $this->logger->error("Input data array does not contain elements",
-                    [ 'apiUserId' => $this->apiUserId,
+                    [ 'apiUserTid' => $this->apiUserTid,
                        'apiError' => ApiController::API_ERROR_NO_ELEMENT_ARRAY, 
                         'inputDataObject' => $inputDataObject
                     ]);
@@ -99,7 +99,7 @@ class ApiElements extends ApiController
         
         if (!isset($inputDataObject['ednotes']) ) {
             $this->logger->error("Input data array does not contain ednote array",
-                    [ 'apiUserId' => $this->apiUserId,
+                    [ 'apiUserTid' => $this->apiUserTid,
                        'apiError' => ApiController::API_ERROR_NO_EDNOTES,  
                         'inputDataObject' => $inputDataObject]);
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_EDNOTES], 409);
@@ -107,7 +107,7 @@ class ApiElements extends ApiController
         
         if (count($inputDataObject['elements'])===0 ) {
             $this->logger->error("Empty element array to update column",
-                    [ 'apiUserId' => $this->apiUserId,
+                    [ 'apiUserTid' => $this->apiUserTid,
                        'apiError' => ApiController::API_ERROR_ZERO_ELEMENTS,   
                         'inputDataObject' => $inputDataObject]);
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_ZERO_ELEMENTS], 409);
@@ -136,9 +136,9 @@ class ApiElements extends ApiController
         $newElementsArray = $inputDataObject['elements'];
         $edNotes = $inputDataObject['ednotes'];
         
-        $requiredElementKeys = ['id', 'pageId', 'columnNumber', 'seq' , 'lang', 'handId', 'editorId', 'type', 'items', 'reference', 'placement'];
+        $requiredElementKeys = ['id', 'pageId', 'columnNumber', 'seq' , 'lang', 'handId', 'editorTid', 'type', 'items', 'reference', 'placement'];
         $requiredItemProperties = ['id', 'type', 'seq', 'lang', 'theText', 'altText', 'extraInfo', 'target', 'columnElementId'];
-        $requiredEdNoteKeys = ['id', 'type', 'target', 'authorId', 'text'];
+        $requiredEdNoteKeys = ['id', 'type', 'target', 'authorTid', 'text'];
         $givenItemIds = [];
         
         //print "Checking " . count($newElementsArray) . " elements\n";
@@ -147,7 +147,7 @@ class ApiElements extends ApiController
             foreach ($requiredElementKeys as $reqKey) {
                 if (!array_key_exists($reqKey, $newElementsArray[$i])) {
                      $this->logger->error("Missing key in element: " . $reqKey,
-                    [ 'apiUserId' => $this->apiUserId,
+                    [ 'apiUserTid' => $this->apiUserTid,
                       'apiError' => ApiController::API_ERROR_MISSING_ELEMENT_KEY, 
                       'docId' => $docId,
                       'pageNumber' => $pageNumber,
@@ -161,7 +161,7 @@ class ApiElements extends ApiController
             // check page ID
             if ($newElementsArray[$i]['pageId'] !== $pageId) {
                 $this->logger->error("Element with wrong pageId in input array",
-                    [ 'apiUserId' => $this->apiUserId,
+                    [ 'apiUserTid' => $this->apiUserTid,
                       'apiError' => ApiController::API_ERROR_WRONG_PAGE_ID, 
                       'docId' => $docId,
                       'pageNumber' => $pageNumber,
@@ -174,7 +174,7 @@ class ApiElements extends ApiController
             // check columnNumber
             if ($newElementsArray[$i]['columnNumber'] !== $columnNumber) {
                 $this->logger->error("Element with wrong columnNumber in input array",
-                    [ 'apiUserId' => $this->apiUserId,
+                    [ 'apiUserTid' => $this->apiUserTid,
                       'apiError' => ApiController::API_ERROR_WRONG_COLUMN_NUMBER,
                       'docId' => $docId,
                       'pageNumber' => $pageNumber,
@@ -184,9 +184,9 @@ class ApiElements extends ApiController
                 return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_WRONG_COLUMN_NUMBER], 409);
             }
             // check EditorId
-            if (!$dataManager->userManager->userExistsById($newElementsArray[$i]['editorId'])) {
+            if (!$userManager->isUser($newElementsArray[$i]['editorTid'])) {
                 $this->logger->error("Non existent editorId in input array",
-                    [ 'apiUserId' => $this->apiUserId,
+                    [ 'apiUserTid' => $this->apiUserTid,
                       'apiError' => ApiController::API_ERROR_WRONG_EDITOR_ID,
                       'docId' => $docId,
                       'pageNumber' => $pageNumber,
@@ -199,7 +199,7 @@ class ApiElements extends ApiController
             // Check that there are items, no empty elements allowed
             if ($newElementsArray[$i]['type'] !== Element::LINE_GAP &&  count($newElementsArray[$i]['items']) === 0) {
                 $this->logger->error("Empty element in input array",
-                    [ 'apiUserId' => $this->apiUserId,
+                    [ 'apiUserTid' => $this->apiUserTid,
                         'apiError' => ApiController::API_ERROR_EMPTY_ELEMENT,
                       'docId' => $docId,
                       'pageNumber' => $pageNumber,
@@ -216,7 +216,7 @@ class ApiElements extends ApiController
                 foreach ($requiredItemProperties as $reqKey) {
                     if (!array_key_exists($reqKey, $newElementsArray[$i]['items'][$j])) {
                         $this->logger->error("Missing key in item: " . $reqKey,
-                            [ 'apiUserId' => $this->apiUserId,
+                            [ 'apiUserTid' => $this->apiUserTid,
                               'apiError' => ApiController::API_ERROR_MISSING_ITEM_KEY,
                               'docId' => $docId,
                               'pageNumber' => $pageNumber,
@@ -233,7 +233,7 @@ class ApiElements extends ApiController
                     // Check for duplicate item Ids
                     if (isset($givenItemIds[$id])) {
                         $this->logger->error("Duplicate Item id : " . $id,
-                        [ 'apiUserId' => $this->apiUserId,
+                        [ 'apiUserTid' => $this->apiUserTid,
                           'apiError' => ApiController::API_ERROR_DUPLICATE_ITEM_ID,
                           'docId' => $docId,
                           'pageNumber' => $pageNumber,
@@ -256,7 +256,7 @@ class ApiElements extends ApiController
             foreach ($requiredEdNoteKeys as $reqKey) {
                 if (!array_key_exists($reqKey, $edNotes[$i])) {
                     $this->logger->error("Missing key in editorial note: " . $reqKey,
-                        [ 'apiUserId' => $this->apiUserId,
+                        [ 'apiUserTid' => $this->apiUserTid,
                           'apiError' => ApiController::API_ERROR_MISSING_EDNOTE_KEY,
                           'docId' => $docId,
                           'pageNumber' => $pageNumber,
@@ -269,7 +269,7 @@ class ApiElements extends ApiController
             }
             if (!isset($givenItemIds[$edNotes[$i]['target']])) {
                 $this->logger->error("Bad target for editorial note: " . $edNotes[$i]['target'],
-                    [ 'apiUserId' => $this->apiUserId,
+                    [ 'apiUserTid' => $this->apiUserTid,
                       'apiError' => ApiController::API_ERROR_WRONG_TARGET_FOR_EDNOTE,
                       'docId' => $docId,
                       'pageNumber' => $pageNumber,
@@ -279,9 +279,9 @@ class ApiElements extends ApiController
                     ]);
                 return $this->responseWithJson($response,['error' => ApiController::API_ERROR_WRONG_TARGET_FOR_EDNOTE], 409);
             }
-            if (!$dataManager->userManager->userExistsById($edNotes[$i]['authorId'])) {
-                $this->logger->error("Nonexistent author Id for editorial note: " . $edNotes[$i]['authorId'],
-                    [ 'apiUserId' => $this->apiUserId,
+            if (!$userManager->isUser($edNotes[$i]['authorTid'])) {
+                $this->logger->error("Nonexistent author Tid for editorial note: " . $edNotes[$i]['authorTid'],
+                    [ 'apiUserTid' => $this->apiUserTid,
                       'apiError' => ApiController::API_ERROR_WRONG_AUTHOR_ID,
                       'docId' => $docId,
                       'pageNumber' => $pageNumber,
@@ -296,7 +296,7 @@ class ApiElements extends ApiController
         $this->profiler->lap('Checks Done');
         $updateTime = TimeString::now();
         $this->logger->info("UPDATE elements", 
-                            [ 'apiUserId' => $this->apiUserId,
+                            [ 'apiUserTid' => $this->apiUserTid,
                               'pageId' => $pageId,
                               'docId' => $docId,
                               'pageNumber' => $pageNumber,
@@ -306,7 +306,7 @@ class ApiElements extends ApiController
 
         $newElements = DataManager::createElementArrayFromArray($newElementsArray);
         // Get the editorial notes
-        $edNotes  = EdNoteManager::editorialNoteArrayFromArray($inputDataObject['ednotes'], $this->logger);
+        $edNotes  = EdNoteManager::buildEdNoteArrayFromInputArray($inputDataObject['ednotes'], $this->logger);
 
         
         $newItemIds = $dataManager->updateColumnElements($pageId, $columnNumber, $newElements, $updateTime);
@@ -328,7 +328,7 @@ class ApiElements extends ApiController
         $versionInfo = new ColumnVersionInfo();
         $versionInfo->pageId = $pageId;
         $versionInfo->column = $columnNumber;
-        $versionInfo->authorId = $this->apiUserId;
+        $versionInfo->authorTid = $this->apiUserTid;
         $versionInfo->description = $versionDescr;
         $versionInfo->isMinor = $versionIsMinor;
         $versionInfo->isReview = $versionIsReview;
@@ -340,7 +340,7 @@ class ApiElements extends ApiController
             $this->logger->error("Cannot register version: " . $e->getMessage());
         }
 
-        $this->systemManager->onTranscriptionUpdated($this->apiUserId, $docId, $pageNumber, $columnNumber);
+        $this->systemManager->onTranscriptionUpdated($this->apiUserTid, $docId, $pageNumber, $columnNumber);
         return $this->responseWithStatus($response, 200);
     }
 
@@ -349,15 +349,17 @@ class ApiElements extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws PersonNotFoundException
      */
     public function getElementsByDocPageCol(Request $request, Response $response): Response
     {
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');
         $columnNumber = $request->getAttribute('column');
         $versionId = $request->getAttribute('version');
 
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":$docId:$pageNumber:$columnNumber");
         $dataManager = $this->getDataManager();
 
         // Get a list of versions
@@ -386,7 +388,7 @@ class ApiElements extends ApiController
                 }
                 if (!$requestVersionIsAValidVersion) {
                     $this->logger->error("Requested version ID is not in this page/col versions",
-                        [ 'apiUserId' => $this->apiUserId,
+                        [ 'apiUserTid' => $this->apiUserTid,
                             'apiError' => self::API_ERROR_INVALID_VERSION_REQUESTED,
                             'docId' => $docId,
                             'pageNumber' => $pageNumber,
@@ -415,26 +417,25 @@ class ApiElements extends ApiController
         // in the elements and editorial notes
         $people = [];
         foreach ($elements as $e){
-            if (!isset($people[$e->editorId])){
-                $people[$e->editorId] = 
-                        $dataManager->userManager->getUserInfoByUserId($e->editorId);
+            if (!isset($people[$e->editorTid])){
+                $people[$e->editorTid] =
+                    $this->systemManager->getPersonManager()->getPersonEssentialData($e->editorTid)->getExportObject();
             }
         }
         foreach($ednotes as $e){
-            if (!isset($people[$e->authorId])){
-                $people[$e->authorId] = 
-                        $dataManager->userManager->getUserInfoByUserId($e->authorId);
+            if (!isset($people[$e->authorTid])){
+                $people[$e->authorTid] =
+                    $this->systemManager->getPersonManager()->getPersonEssentialData($e->authorTid)->getExportObject();
             }
         }
         // Add API user info as well
-        if (!isset($people[$this->apiUserId])){
-            //print "API User ID: " . $this->userId . "\n";
-            $people[$this->apiUserId] =
-                    $dataManager->userManager->getUserInfoByUserId($this->apiUserId);
+        if (!isset($people[$this->apiUserTid])){
+            $people[$this->apiUserTid] =
+                $this->systemManager->getPersonManager()->getPersonEssentialData($this->apiUserTid)->getExportObject();
         }
 
         $this->logger->info("QUERY Page Data", [ 
-            'apiUserId'=> $this->apiUserId,
+            'apiUserTid'=> $this->apiUserTid,
             'col' => (int) $columnNumber,
             'docId' => $docId,
             'pageNumber' => $pageNumber,

@@ -27,14 +27,17 @@
 namespace APM\Site;
 
 use APM\FullTranscription\ApmChunkSegmentLocation;
-use APM\System\ApmConfigParameter;
 use APM\System\DataRetrieveHelper;
+use APM\System\Person\PersonManagerInterface;
+use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
+use APM\System\User\UserNotFoundException;
+use APM\System\User\UserTag;
+use APM\ToolBox\HttpStatus;
 use AverroesProject\Data\DataManager;
 use Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
-use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 
 /**
@@ -46,15 +49,17 @@ class SiteDocuments extends SiteController
 
     const DOCUMENT_DATA_CACHE_KEY = 'SiteDocuments-DocumentData';
 
-    const TEMPLATE_DOCS_PAGE = 'documents.twig';
+    const TEMPLATE_DOCS_PAGE = 'documents-page.twig';
     const TEMPLATE_SHOW_DOCS_PAGE = 'doc-details.twig';
     const TEMPLATE_DOC_EDIT_PAGE = 'doc-edit.twig';
     const TEMPLATE_NEW_DOC_PAGE = 'doc-new.twig';
     const TEMPLATE_DEFINE_DOC_PAGES = 'doc-def-pages.twig';
+
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws PersonNotFoundException
      */
     public function documentsPage(Request $request, Response $response): Response
     {
@@ -68,15 +73,20 @@ class SiteDocuments extends SiteController
         } catch (KeyNotInCacheException $e) {
             // not in cache
             $this->logger->debug("Cache miss for SiteDocuments document data");
-            $data = self::buildDocumentData($dataManager);
+            $data = self::buildDocumentData($dataManager, $this->systemManager->getPersonManager());
             $cache->set(self::DOCUMENT_DATA_CACHE_KEY, serialize($data));
         }
         $docs = $data['docs'];
         $peopleInfo = $data['peopleInfo'];
 
         $canManageDocuments = false;
-        if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'docs-create-new')) {
-            $canManageDocuments = true;
+        $userManager = $this->systemManager->getUserManager();
+        try {
+            if ($userManager->hasTag($this->userTid, UserTag::CREATE_DOCUMENTS) || $userManager->isRoot($this->userTid)) {
+                $canManageDocuments = true;
+            }
+        } catch (UserNotFoundException) {
+            // should never happen though
         }
 
         $this->profiler->stop();
@@ -85,11 +95,14 @@ class SiteDocuments extends SiteController
         return $this->renderPage($response, self::TEMPLATE_DOCS_PAGE, [
             'docs' => $docs,
             'peopleInfo' => $peopleInfo,
-            'canManageDocuments' => $canManageDocuments
+            'canManageDocuments' => $canManageDocuments ? '1' : '0'
         ]);
     }
 
-    static public function buildDocumentData(DataManager $dataManager): array
+    /**
+     * @throws PersonNotFoundException
+     */
+    static public function buildDocumentData(DataManager $dataManager, PersonManagerInterface $personManager): array
     {
         $docs = [];
         $usersMentioned = [];
@@ -101,20 +114,19 @@ class SiteDocuments extends SiteController
             $doc['numPages'] = $dataManager->getPageCountByDocId($docId);
             $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
             $doc['numTranscribedPages'] = count($transcribedPages);
-            $editorsIds = $dataManager->getEditorsByDocId($docId);
+            $editorTids = $dataManager->getEditorTidsByDocId($docId);
             $doc['editors'] = [];
-            foreach ($editorsIds as $edId){
-                $usersMentioned[] = $edId;
+            foreach ($editorTids as $editorTid){
+                $usersMentioned[] = $editorTid;
                 $doc['editors'][] =
-                    $dataManager->userManager->getUserInfoByUserId($edId);
+                    $personManager->getPersonEssentialData($editorTid);
             }
             $doc['docInfo'] = $dataManager->getDocById($docId);
-            $doc['tableId'] = "doc-$docId-table";
             $docs[] = $doc;
         }
 
         $helper = new DataRetrieveHelper();
-        $peopleInfoArray = $helper->getAuthorInfoArrayFromList($usersMentioned, $dataManager->userManager);
+        $peopleInfoArray = $helper->getAuthorInfoArrayFromList($usersMentioned, $personManager);
         return [ 'docs' => $docs, 'peopleInfo' => $peopleInfoArray];
     }
 
@@ -122,7 +134,7 @@ class SiteDocuments extends SiteController
     public static function updateDataCache(SystemManager $systemManager): bool
     {
         try {
-            $data = self::buildDocumentData($systemManager->getDataManager());
+            $data = self::buildDocumentData($systemManager->getDataManager(), $systemManager->getPersonManager());
         } catch(Exception $e) {
             $systemManager->getLogger()->error("Exception while building DocumentData",
                 [
@@ -135,18 +147,11 @@ class SiteDocuments extends SiteController
         return true;
     }
 
-//    public static function invalidateCache(DataCache $cache) {
-//        try {
-//            $cache->delete(self::DOCUMENT_DATA_CACHE_KEY);
-//        } catch (KeyNotInCacheException $e) {
-//            // no problem!!
-//        }
-//    }
-
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws PersonNotFoundException
      */
     public function showDocPage(Request $request, Response $response): Response
     {
@@ -173,10 +178,10 @@ class SiteDocuments extends SiteController
         $pageInfoArray = $pageManager->getPageInfoArrayForDoc($docId);
 
         $doc['numTranscribedPages'] = count($transcribedPages);
-        $editorsIds = $dataManager->getEditorsByDocId($docId);
-        $doc['editors'] = array();
-        foreach ($editorsIds as $edId){
-            $doc['editors'][] = $this->dataManager->userManager->getUserInfoByUserId($edId);
+        $editorTids = $dataManager->getEditorTidsByDocId($docId);
+        $doc['editors'] = [];
+        foreach ($editorTids as $editorTid){
+            $doc['editors'][] = $this->systemManager->getPersonManager()->getPersonEssentialData($editorTid);
         }
         $doc['docInfo'] = $dataManager->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";
@@ -198,8 +203,9 @@ class SiteDocuments extends SiteController
         $authorInfo = [];
 
         foreach($lastSaves as $saveVersionInfo) {
-            if (!isset($authorInfo[$saveVersionInfo->authorId])) {
-                $authorInfo[$saveVersionInfo->authorId] = $dataManager->userManager->getUserInfoByUserId($saveVersionInfo->authorId);
+            if (!isset($authorInfo[$saveVersionInfo->authorTid])) {
+                $authorInfo[$saveVersionInfo->authorTid] =
+                    $this->systemManager->getPersonManager()->getPersonEssentialData($saveVersionInfo->authorTid);
             }
         }
 
@@ -210,8 +216,8 @@ class SiteDocuments extends SiteController
                     foreach($witnessLocalIdArray as $witnessLocalId => $segmentArray) {
                         $lastChunkVersion = $lastChunkVersions[$workId][$chunkNumber][$docIdInMap][$witnessLocalId];
                         $lastVersions[$workId][$chunkNumber] = $lastChunkVersion;
-                        if ($lastChunkVersion->authorId !== 0 && !isset($authorInfo[$lastChunkVersion->authorId])) {
-                            $authorInfo[$lastChunkVersion->authorId] = $dataManager->userManager->getUserInfoByUserId($lastChunkVersion->authorId);
+                        if ($lastChunkVersion->authorTid !== 0 && !isset($authorInfo[$lastChunkVersion->authorTid])) {
+                            $authorInfo[$lastChunkVersion->authorTid] = $this->systemManager->getPersonManager()->getPersonEssentialData($lastChunkVersion->authorTid);
                         }
                         foreach ($segmentArray as $segmentNumber => $location) {
                             /** @var $location ApmChunkSegmentLocation */
@@ -255,17 +261,10 @@ class SiteDocuments extends SiteController
         }
 
 
-//        $canDefinePages = true;
-//        if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')) {
-//            $canDefinePages = true;
-//        }
-
-
         $pageTypeNames  = $this->dataManager->getPageTypeNames();
 
         $this->profiler->stop();
         $this->logProfilerData('showDocPage-' . $docId);
-        $userId = (int) $this->userInfo['id'];
 
         return $this->renderPage($response, self::TEMPLATE_SHOW_DOCS_PAGE, [
             'navByPage' => false,
@@ -276,9 +275,7 @@ class SiteDocuments extends SiteController
             'lastVersions' => $lastVersions,
             'lastSaves' => $lastSaves,
             'metaData' => $metaData,
-            'userId' => $userId,
-            'userInfo' => $this->userInfo,
-            'showLanguageSelector' => $this->config[ApmConfigParameter::SHOW_LANG_SELECTOR] ? '1' : 0
+            'userTid' => $this->userTid,
         ]);
     }
 
@@ -286,43 +283,20 @@ class SiteDocuments extends SiteController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws UserNotFoundException
      */
     public function newDocPage(Request $request, Response $response): Response
     {
-     
-        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'create-new-documents')){
-            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to add new doc but is not allowed to do it');
-            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
-                'message' => 'You are not authorized to add new documents in the system'
-            ]);
+
+        if (!$this->systemManager->getUserManager()->isUserAllowedTo($this->userTid, 'create-new-documents')) {
+            $this->logger->debug("User $this->userTid tried to add new doc but is not allowed to do it");
+            return $this->getErrorPage($response, 'Error', 'You are not allowed to create documents', HttpStatus::UNAUTHORIZED);
         }
 
-        $availableImageSources = $this->systemManager->getAvailableImageSources();
-        $imageSourceOptions = '';
-        foreach($availableImageSources as $imageSource) {
-            $imageSourceOptions .= '<option value="' . $imageSource . '"';
-            $imageSourceOptions .= '>' . $imageSource . '</option>';
-        }
-        
-        
-        $languages = $this->languages;
-        $langOptions = '';
-        foreach($languages as $lang) {
-            $langOptions .= '<option value="' . $lang['code'] . '"';
-            $langOptions .= '>' . $lang['name'] . '</option>';
-        }
-        
-        $docTypes = [ ['mss', 'Manuscript'], ['print', 'Print']];
-        $docTypesOptions = '';
-        foreach($docTypes as $type) {
-            $docTypesOptions .= '<option value="' . $type[0] . '"';
-            $docTypesOptions .= '>' . $type[1] . '</option>';
-        }
-        
         return $this->renderPage($response, self::TEMPLATE_NEW_DOC_PAGE, [
-            'imageSourceOptions' => $imageSourceOptions,
-            'langOptions' => $langOptions,
-            'docTypesOptions' => $docTypesOptions
+            'imageSources' =>  $this->systemManager->getAvailableImageSources(),
+            'languages' => $this->getLanguages(),
+            'docTypes' =>  [ ['mss', 'Manuscript'], ['print', 'Print']]
         ]);
     }
 
@@ -334,68 +308,25 @@ class SiteDocuments extends SiteController
     public function editDocPage(Request $request, Response $response): Response
     {
         $this->profiler->start();
-//        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'edit-documents')){
-//            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to edit a document but is not allowed to do it');
-//            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
-//                'message' => 'You are not authorized to edit document settings'
-//            ]);
-//        }
-        
+
         $docId = $request->getAttribute('id');
         $dataManager = $this->dataManager;
         $docInfo = $dataManager->getDocById($docId);
-        
+        if ($docInfo === false) {
+            return $this->getBasicErrorPage($response, 'Not found', "Document not found", HttpStatus::NOT_FOUND);
+        }
         $availableImageSources = $this->systemManager->getAvailableImageSources();
-        
-        $imageSourceOptions = '';
-        $docImageSourceIsImplemented = false;
-        foreach($availableImageSources as $imageSource) {
-            $imageSourceOptions .= '<option value="' . $imageSource . '"';
-            if ($docInfo['image_source'] === $imageSource) {
-                $imageSourceOptions .= ' selected';
-                $docImageSourceIsImplemented = true;
-            }
-            $imageSourceOptions .= '>' . $imageSource . '</option>';
-        }
-        
-        
-        $languages = $this->languages;
-        $langOptions = '';
-        foreach($languages as $lang) {
-            $langOptions .= '<option value="' . $lang['code'] . '"';
-            if ($docInfo['lang'] === $lang['code']) {
-                $langOptions  .= ' selected';
-            }
-            $langOptions .= '>' . $lang['name'] . '</option>';
-        }
-        
         $docTypes = [ ['mss', 'Manuscript'], ['print', 'Print']];
-        $docTypesOptions = '';
-        foreach($docTypes as $type) {
-            $docTypesOptions .= '<option value="' . $type[0] . '"';
-            if ($docInfo['doc_type'] === $type[0]) {
-                $docTypesOptions  .= ' selected';
-            }
-            $docTypesOptions .= '>' . $type[1] . '</option>';
-        }
-        
-        $canBeDeleted = false;
-        $nPages = $dataManager->getPageCountByDocIdAllTime($docId);
-        $this->logger->debug("nPages all time: " . $nPages);
-        if ($nPages === 0) {
-            $canBeDeleted = true;
-        }
+        $canBeDeleted = $dataManager->getPageCountByDocIdAllTime($docId) === 0;
         $this->profiler->stop();
         $this->logProfilerData('editDocPage-' . $docId);
         return $this->renderPage($response, self::TEMPLATE_DOC_EDIT_PAGE, [
             'docInfo' => $docInfo,
-            'imageSourceOptions' => $imageSourceOptions,
-            'langOptions' => $langOptions,
-            'docTypesOptions' => $docTypesOptions,
+            'imageSources' => $availableImageSources,
+            'languages' => $this->getLanguages(),
+            'docTypes' => $docTypes,
             'canBeDeleted' => $canBeDeleted
         ]);
-        
-        
     }
 
 
@@ -434,9 +365,7 @@ class SiteDocuments extends SiteController
         $this->profiler->stop();
         $this->logProfilerData('defineDocPages-' . $docId);
         return $this->renderPage($response, self::TEMPLATE_DEFINE_DOC_PAGES, [
-            'doc' => $doc,
-            'userInfo' => $this->userInfo,
-            'userId' => (int) $this->userInfo['id']
+            'doc' => $doc
         ]);
     }
 }

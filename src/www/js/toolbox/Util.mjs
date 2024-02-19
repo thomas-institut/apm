@@ -23,9 +23,9 @@ export function deepCopy(someVariable) {
   return JSON.parse(JSON.stringify(someVariable))
 }
 
-export function formatVersionTime(time) {
-  return moment(time).format('D MMM YYYY, H:mm:ss')
-}
+// export function formatVersionTime(time) {
+//   return moment(time).format('D MMM YYYY, H:mm:ss')
+// }
 
 export function removeWhiteSpace(someString) {
   return someString.replace(/\s/g, '')
@@ -46,6 +46,23 @@ export function trimWhiteSpace(someString) {
 
 export function rTrimWhiteSpace(someString) {
   return someString.replace(/\s+$/, '')
+}
+
+/**
+ * Compares two strings a and b, and return 1 is a>b, -1 if b<a or
+ * 0 if the strings are equal
+ * @param {string}a
+ * @param {string}b
+ * @return {number}
+ */
+export function compareStrings(a, b) {
+  if (a < b) {
+    return -1;
+  }
+  if (a > b) {
+    return 1;
+  }
+  return 0;
 }
 
 /**

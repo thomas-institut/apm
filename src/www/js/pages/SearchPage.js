@@ -1,7 +1,9 @@
 import { wait } from '../toolbox/FunctionUtil.mjs'
 import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
+import { urlGen } from './common/SiteUrlGen'
+import { NormalPage } from './NormalPage'
+import { tr } from './common/SiteLang'
 
-let urlGen = new ApmUrlGenerator('')
 let data_for_zooming = []
 
 const STATE_INIT = 0
@@ -13,9 +15,108 @@ let state = STATE_INIT
 const spinnerHtml = '<div class="spinner-border" role="status"></div>'
 
 
-export function setupSearchPage(baseUrl) {
 
-  urlGen.setBase(baseUrl)
+export class SearchPage extends NormalPage {
+
+  constructor (options) {
+    super(options)
+
+    this.initPage().then( () => {
+      console.log(`Search Page initialized`);
+    })
+  }
+
+  async initPage () {
+    await super.initPage();
+    document.title = tr('Search');
+    setupSearchPage();
+  }
+
+  async genContentHtml() {
+    return `    <h1> Search </h1>
+
+  <br>
+  <table class="docTable dataTable" id="searchTable">
+    <tr>
+        <th class="text-center"><span title="Choose transcriptions (T) or editions (E) as the target corpus of your search.">Corpus</span></th>
+        <th><span title="Enter words to search. You can use the wildcard '*' to search for words with a specific part, like 'philosoph*', '*losophus' or '*soph*'.">Keywords</span></th>
+        <th id="doc-or-edition"><span title="Choose a specific document to search">Document</span></th>
+        <th id="transcriber-or-editor"><span title="Limit your search to transcriptions by a specific transcriber.">Transcriber</span></th>
+        <th style="text-align: center"><span title="Number of tokens, i. e. words or punctuation marks, that are allowed to occur between your first keyword and the following ones. A value of 0 means that only the occurrence of directly consecutive keywords counts as a match.">Keyword Distance</span></th>
+        <th class="text-center"><span title="If checked, all conjugated or declined forms of your keywords will count as matches.">Lemmatization</span></th>
+    </tr>
+    <tr>
+        <td>
+            <div id="corpus-select" class="text-center">
+                <select name="corpus-select" id="corpus-select" style="border: 0; background-color: white; padding: unset; -webkit-appearance: none">
+                <option value="transcriptions">T</option>
+                <option value="editions">E</option>
+            </select>
+            </div>
+        </td>
+        <td>
+            <div id="search_form">
+            <label for="keywordBox"></label>
+            <input type="text" id="keywordBox" placeholder="" style="padding: unset">
+            </div>
+        </td>
+        <td>
+          <div id="doc_form">
+            <label for="titleBox"></label>
+            <input list="titleList" id="titleBox" placeholder="" autocomplete="off" style="padding: unset">
+            <datalist id="titleList">
+            </datalist>
+          </div>
+        </td>
+        <td>
+          <div id="transcriber_form">
+            <label for="creatorBox"></label>
+            <input list="creatorList" id="creatorBox" placeholder="" autocomplete="off" style="padding: unset">
+            <datalist id="creatorList">
+            </datalist>
+          </div>
+        </td>
+      <td style="text-align: center">
+        <form>
+          <label for="keywordDistanceValue"></label>
+          <input type="number" id="keywordDistanceValue" name="keywordDistanceValue" min="0" max="80" value="10" style="padding: unset">
+        </form>
+      </td>
+      <td>
+        <div class="text-center">
+          <input type="checkbox" label="lemmatize" id="lemmatize" name="lemmatize" style="padding: unset">
+        </div>
+      </td>
+      <td>
+        <button type="submit" class="btn btn-primary" label="Search" id="searchButton" name="Search">Search</button>
+      </td>
+    </tr>
+</table>
+
+  <div id="error_message">
+  </div>
+
+  <div id="spinner" class="text-muted" style="margin: 20px; text-align: center;">
+  </div>
+
+    <div id="noMatchesDiv">
+    </div>
+
+    <table class="doctable dataTable no-footer" id="resultsTable">
+        <thead></thead>
+        <tbody></tbody>
+    </table>
+
+    <p></p>`
+  }
+}
+
+
+window.SearchPage = SearchPage;
+
+
+export function setupSearchPage() {
+
   // Get selectors for catching user input
   let keywords_box = $("#keywordBox")
   let lemmatization_box = $("#lemmatize")
@@ -99,7 +200,6 @@ export function setupSearchPage(baseUrl) {
   })
 }
 
-window.setupSearchPage = setupSearchPage
 
 // Function to get list of indexed values, i.e. titles or transcribers, via an API call
 function getCreatorsAndTitles(category, errorMessageDiv) {

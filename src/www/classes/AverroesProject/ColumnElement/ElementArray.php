@@ -40,7 +40,7 @@ class ElementArray {
      * @param Element[] $newArray
      * @return array|array[]
      */
-    public static function getEditScript($oldArray, $newArray) 
+    public static function getEditScript(array $oldArray, array $newArray): array
     {
         return MyersDiff::calculate(
             $oldArray,

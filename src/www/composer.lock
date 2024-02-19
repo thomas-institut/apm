@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4dde8e02f19879408d14a779bffce88f",
+    "content-hash": "e1b1312b344491bbc882dd78daba87e1",
     "packages": [
         {
             "name": "dflydev/fig-cookies",
@@ -1983,16 +1983,16 @@
         },
         {
             "name": "thomas-institut/datatable",
-            "version": "0.9.0",
+            "version": "2.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thomas-institut/datatable.git",
-                "reference": "b1f9e117c356429667a76e9c337e7f4c34f0ade2"
+                "reference": "f51e0c22dd27ae5f10bf5dd3485fa2a77b8af02c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thomas-institut/datatable/zipball/b1f9e117c356429667a76e9c337e7f4c34f0ade2",
-                "reference": "b1f9e117c356429667a76e9c337e7f4c34f0ade2",
+                "url": "https://api.github.com/repos/thomas-institut/datatable/zipball/f51e0c22dd27ae5f10bf5dd3485fa2a77b8af02c",
+                "reference": "f51e0c22dd27ae5f10bf5dd3485fa2a77b8af02c",
                 "shasum": ""
             },
             "require": {
@@ -2028,9 +2028,9 @@
             ],
             "support": {
                 "issues": "https://github.com/thomas-institut/datatable/issues",
-                "source": "https://github.com/thomas-institut/datatable/tree/0.9.0"
+                "source": "https://github.com/thomas-institut/datatable/tree/2.0.1"
             },
-            "time": "2023-03-15T10:43:58+00:00"
+            "time": "2024-01-30T10:52:42+00:00"
         },
         {
             "name": "thomas-institut/timestring",

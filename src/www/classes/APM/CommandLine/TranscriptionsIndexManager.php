@@ -55,7 +55,7 @@ class TranscriptionsIndexManager extends OpenSearchIndexManager {
         }
         
         // Get a list of all docIDs in the sql-database
-        $doc_list = $this->dm->getDocIdList('title');
+        $doc_list = $this->getDm()->getDocIdList('title');
 
         // Download hebrew language model for lemmatization
         exec("python3 ../../python/download_model_he.py", $model_status);
@@ -79,20 +79,20 @@ class TranscriptionsIndexManager extends OpenSearchIndexManager {
         $title = $this->getTitle($doc_id);
 
         // Get a list of transcribed pages of the document
-        $pages_transcribed = $this->dm->getTranscribedPageListByDocId($doc_id);
+        $pages_transcribed = $this->getDm()->getTranscribedPageListByDocId($doc_id);
 
         // Iterate over transcribed pages
         foreach ($pages_transcribed as $page) {
 
             // Get pageID, number of columns and sequence number of the page
             $page_id = $this->getPageID($doc_id, $page);
-            $page_info = $this->dm->getPageInfo($page_id);
+            $page_info = $this->getDm()->getPageInfo($page_id);
             $num_cols = $page_info['num_cols'];
             $seq = $this->getSeq($doc_id, $page);
 
             // Iterate over all columns of the page and get the corresponding transcripts and transcribers
             for ($col = 1; $col <= $num_cols; $col++) {
-                $versions = $this->dm->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
+                $versions = $this->getDm()->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
                 if (count($versions) === 0) {
                     // no transcription in this column
                     continue;
@@ -147,30 +147,30 @@ class TranscriptionsIndexManager extends OpenSearchIndexManager {
     }
 
     public function getPageID (int $doc_id, int $page): int {
-        return $this->dm->getpageIDByDocPage($doc_id, $page);
+        return $this->getDm()->getpageIDByDocPage($doc_id, $page);
     }
 
     public function getTitle(int $doc_id): string {
-        $doc_info = $this->dm->getDocById($doc_id);
+        $doc_info = $this->getDm()->getDocById($doc_id);
         return $doc_info['title'];
     }
 
     public function getSeq(int $doc_id, int $page): string {
-        $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
-        $page_info = $this->dm->getPageInfo($page_id);
+        $page_id = $this->getDm()->getpageIDByDocPage($doc_id, $page);
+        $page_info = $this->getDm()->getPageInfo($page_id);
         return $page_info['seq'];
     }
 
     public function getTranscription(int $doc_id, int $page, int $col): string
     {
-        $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
-        $elements = $this->dm->getColumnElementsBypageID($page_id, $col);
+        $page_id = $this->getDm()->getpageIDByDocPage($doc_id, $page);
+        $elements = $this->getDm()->getColumnElementsBypageID($page_id, $col);
         return $this->getPlainTextFromElements($elements);
     }
 
     public function getTranscriber(int $doc_id, int $page, int $col): string {
-        $page_id = $this->dm->getpageIDByDocPage($doc_id, $page);
-        $versions = $this->dm->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
+        $page_id = $this->getDm()->getpageIDByDocPage($doc_id, $page);
+        $versions = $this->getDm()->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
         if ($versions === []) {
             return '';
         }
@@ -182,13 +182,13 @@ class TranscriptionsIndexManager extends OpenSearchIndexManager {
 
     public function getLang(int $doc_id, int $page): string {
         $seq = $this->getSeq($doc_id, $page);
-        return $this->dm->getPageInfoByDocSeq($doc_id, $seq)['lang'];
+        return $this->getDm()->getPageInfoByDocSeq($doc_id, $seq)['lang'];
     }
 
     public function getFoliation(int $doc_id, int $page): string
     {
         $seq = $this->getSeq($doc_id, $page);
-        return $this->dm->getPageFoliationByDocSeq($doc_id,  $seq);
+        return $this->getDm()->getPageFoliationByDocSeq($doc_id,  $seq);
     }
 
     // Function to add pages to the OpenSearch index

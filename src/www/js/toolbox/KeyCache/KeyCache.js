@@ -17,7 +17,11 @@
  */
 
 /**
- * A generic cache with expiration times
+ * A generic cache with expiration times and dataId
+ *
+ * Each cache entry is tagged with an expiration date and a dataId
+ * Only stored entries that match the given dataId and are not expired
+ * are returned when querying the cache.
  *
  * Normally, descendant of this class only need to implement
  * the protected methods: storeItemObject, getItemObject,
@@ -25,8 +29,13 @@
  */
 export class KeyCache {
 
-  constructor () {
-    this.cache = {}
+  /**
+   *
+   * @param {string} dataId
+   */
+  constructor (dataId = '') {
+    this.cache = {};
+    this.defaultDataId = dataId;
   }
 
   /**
@@ -36,14 +45,19 @@ export class KeyCache {
    * that number of seconds the key/value pair will
    * no longer be accessible.
    *
+   * If the given dataId parameter is null, the default dataId is used,
+   * o
+   *
    * @param {string}key
    * @param {any}data
    * @param {number}ttl
+   * @param {string|null}dataId
    */
-  store(key, data, ttl = 0) {
+  store(key, data, ttl = 0, dataId = null) {
     let now = this.now()
     this.storeItemObject(key, {
       data: data,
+      dataId: dataId ?? this.defaultDataId,
       expires: ttl > 0 ? now + ttl : -1,
       setAt: now
     })
@@ -52,24 +66,30 @@ export class KeyCache {
   /**
    * Retrieves an item from the cache.
    *
-   * If the key is not defined in the cache, returns null
+   * Returns null if the key is not defined in the cache, the stored data is expired or
+   * the stored data's dataId does not match the given dataId (or the default dataId if the
+   * given one is null)
    *
-   * @param key
+   * @param {string }key
+   * @param {string | null} dataId
    * @return {*|null}
    */
-  retrieve(key) {
+  retrieve(key, dataId = null) {
     let itemData = this.getItemObject(key)
     if (itemData === undefined || itemData === null)  {
       return null
     }
-    if (itemData.expires === -1) {
-      return itemData.data
+    if (itemData['dataId'] === (dataId ?? this.defaultDataId)) {
+      if (itemData.expires === -1) {
+        return itemData.data
+      }
+
+      if (itemData.expires > this.now()) {
+        return itemData.data
+      }
     }
 
-    if (itemData.expires > this.now()) {
-        return itemData.data
-    }
-    // item is expired, so completely delete it from cache
+    // item is expired or its dataId does not math the cache's dataId, so completely delete it from cache
     this.delete(key)
     return null
   }
@@ -84,30 +104,30 @@ export class KeyCache {
 
   /**
    * Deletes all expired items as well as all items
-   * set before the given date.
-   *
-   * The 'before' argument allows clients to invalidate
-   * old data without having to comply with the expiration
-   * date of the items.
+   * set before the given date and, if a dataId is given,
+   * also items which do not have a matching
    *
    * @param before
    */
   cleanCache(before = -1) {
-    let now = this.now()
+    let now = this.now();
     this.getKeys().forEach( (key) => {
       let itemObject = this.getItemObject(key)
+      if (itemObject['dataId'] !== this.defaultDataId) {
+        this.delete(key);
+      }
       if (itemObject.expires < now) {
-        this.delete(key)
+        this.delete(key);
       }
       if (itemObject.setAt <= before) {
-        this.delete(key)
+        this.delete(key);
       }
     })
 
   }
 
   now() {
-    return Date.now() / 1000
+    return Date.now() / 1000;
   }
 
   /**
@@ -117,7 +137,7 @@ export class KeyCache {
    * @protected
    */
   getKeys() {
-    return Object.keys(this.cache)
+    return Object.keys(this.cache);
   }
 
   /**
@@ -128,7 +148,7 @@ export class KeyCache {
    * @protected
    */
   getItemObject(key) {
-    return this.cache[key]
+    return this.cache[key];
   }
 
   /**
@@ -137,7 +157,7 @@ export class KeyCache {
    * @param { {data, expires, setAt}}itemObject
    */
   storeItemObject(key, itemObject) {
-    this.cache[key] = itemObject
+    this.cache[key] = itemObject;
   }
 
   /**
@@ -146,7 +166,7 @@ export class KeyCache {
    * @protected
    */
   deleteItemObject(key) {
-    delete this.cache[key]
+    delete this.cache[key];
   }
 
 }

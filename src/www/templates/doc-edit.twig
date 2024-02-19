@@ -1,5 +1,4 @@
-{% extends "base.twig" %}
-{% import 'macros.twig' as macros %}
+{% extends "normal-page.twig" %}
 
 {% block title %}Edit Doc: {{docInfo.title}}{% endblock %}
 
@@ -7,108 +6,15 @@
 <script type="application/javascript" src="{{baseurl}}/js/dist/DocEditPage.bundle.js"></script>
 <script>
     $( () => {
-      new DocEditPage('de',
-        JSON.parse('{{ docInfo|json_encode|e('js') }}'),
-        '{{ url_for('api.doc.update', {'id': docInfo.id}) }}',
-        '{{ url_for('doc.showdoc', {'id' : docInfo.id }) }}',
-        '{{ url_for('api.doc.delete', {'id' : docInfo.id }) }}',
-        '{{ url_for('docs') }}',
-      )
-    })
-    
+      new DocEditPage({
+        commonData: JSON.parse("{{ commonData|json_encode|e('js') }}"),
+        docInfo: JSON.parse('{{ docInfo|json_encode|e('js') }}'),
+        languages: JSON.parse('{{ languages|json_encode|e('js') }}'),
+        docTypes: JSON.parse('{{ docTypes|json_encode|e('js') }}'),
+        imageSources: JSON.parse('{{ imageSources|json_encode|e('js') }}'),
+        canBeDeleted: JSON.parse('{{ canBeDeleted|json_encode|e('js') }}')
+      })
+    });
+
 </script>
 {% endblock %}
-
-{% block content %}
-
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{url_for('docs')}}">Documents</a></li>
-            <li class="breadcrumb-item"><a href="{{url_for('doc.showdoc', {'id' : docInfo.id })}}">{{ docInfo.title}}</a></li>
-            <li class="breadcrumb-item active">Edit Document</li>
-        </ol>
-    </nav>
-
-<h1>Edit Document Settings</h1>
-  
-<div class="row">
-    <div class="col-md-8">    
-<div class="with-margin-left-sm">
-    <form id="de-form">
-        <div id="de-id-fg" class="form-group">
-            <label for="de-id" id="de-title-label" class="control-label">Doc Id:</label>
-            {{docInfo.id}}
-        </div>
-        <div id="de-title-fg" class="form-group">
-            <label for="de-title" id="de-title-label" class="control-label">Title:</label>
-            <input type="text" class="form-control" id="de-title" value="{{docInfo.title}}"/>
-        </div>
-        <div id="de-titlestatus"></div>
-{#        <div id="de-shorttitle-fg" class="form-group">#}
-{#            <label for="de-shorttitle" id="de-shorttitle-label" class="control-label">Short Title:</label>#}
-{#            <input type="text" class="form-control" id="de-shorttitle" value="{{docInfo.short_title}}"/>#}
-{#        </div>#}
-        <div id="de-type-fg" class="form-group">
-            <label for="de-type" id="de-type-label" class="control-label">Type:</label>
-            <select id="de-type">{{docTypesOptions|raw}}</select>
-        </div>
-        <div id="de-lang-fg" class="form-group">
-            <label for="de-lang" id="de-lang-label" class="control-label">Language:</label>
-            <select id="de-lang">{{langOptions|raw}}</select>
-        </div>
-        <div id="de-imagesource-fg" class="form-group">
-            <label for="de-imagesource" id="de-imagesource-label" class="control-label">Image Source:</label>
-            <select id="de-imagesource">{{imageSourceOptions|raw}}</select>
-        </div>
-        <div id="de-imagesourcedata-fg" class="form-group">
-            <label for="de-imagesourcedata" id="de-imagesourcedata-label" class="control-label">Image Source Data:</label>
-            <input type="text" class="form-control" id="de-imagesourcedata" value="{{docInfo.image_source_data}}"/>
-        </div>
-    </form>
-    
-    <button type="button" class="btn btn-primary" id="de-cancel">Cancel</button>
-    <button type="button" class="btn btn-primary hidden" id="de-reset">Reset</button>
-    <button type="button" class="btn btn-danger hidden" id="de-submit">Submit Changes</button>
-    
-    <div id="de-status"></div>
-</div>
-    </div>
-</div>
-        
-
-    
-<div class="row" style="margin-top: 50px">
-    <div class="col-md-8"> 
- 
-        {%if canBeDeleted %}
-            <p class="text-warning">This document has never had any pages defined, it can be safely deleted.</p>
-            <p><button type="button" class="btn btn-danger" id="de-delete">Delete This Document</button> </p>
-        {% else %}
-            <p class="text-warning">This document has pages defined, it cannot be deleted.</p>
-        {% endif %}
-    </div>
-</div>
-    
-
-
-
-<!-- ALERT modal -->             
-<div id="de-alert-modal" class="modal" role="dialog">
-    <div class="modal-dialog modal-sm " role="document">
-        <div class="modal-content bg-info">
-            <div class="modal-header">
-                <h4 id="alert-modal-title">Please confirm</h4>
-            </div>
-            <div class="modal-body" id="de-alert-modal-body">
-                <p id="de-alert-modal-text"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" id="de-alert-modal-cancel-button" data-dismiss="modal">No</button>
-                <button type="button" class="btn btn-danger" id="de-alert-modal-submit-button">Yes</button>
-            </div>
-      </div>
-    </div>
-</div>
-    
-{% endblock %}
-

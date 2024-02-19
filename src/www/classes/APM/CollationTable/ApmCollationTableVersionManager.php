@@ -24,6 +24,7 @@ use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\DataTable\DataTable;
+use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
 use ThomasInstitut\Profiler\SqlQueryCounterTracker;
 use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
@@ -40,11 +41,11 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
     /**
      * @var DataTable
      */
-    private DataTable $dataTable;
+    private DataTable $columnVersionTable;
 
     public function __construct(DataTable $columnVersionTable)
     {
-        $this->dataTable = $columnVersionTable;
+        $this->columnVersionTable = $columnVersionTable;
         $this->setSqlQueryCounterTracker(new SqlQueryCounterTracker());
     }
 
@@ -54,7 +55,7 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
     public function getCollationTableVersionInfo(int $collationTableId, int $numVersions = 0): array
     {
         $this->sqlQueryCounterTracker->incrementSelect();
-        $versionRows  = $this->dataTable->findRows([ 'ct_id' => $collationTableId]);
+        $versionRows  = $this->columnVersionTable->findRows([ 'ct_id' => $collationTableId]);
 
         $versions = [];
         foreach($versionRows as $row) {
@@ -75,7 +76,7 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
     }
 
     public function updateTimesForVersion(int $versionId, string $timeFrom, string $timeUntil) : void {
-        $versionInfo = CollationTableVersionInfo::createFromDbRow($this->dataTable->getRow($versionId));
+        $versionInfo = CollationTableVersionInfo::createFromDbRow($this->columnVersionTable->getRow($versionId));
         $versionInfo->timeFrom = $timeFrom;
         $versionInfo->timeUntil = $timeUntil;
         $this->rawUpdateVersion($versionInfo);
@@ -89,8 +90,8 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
         if ($versionInfo->collationTableId !== $collationTableId) {
             throw new InvalidArgumentException("Collation table Id in info does not correspond to given collation table id");
         }
-        if ($versionInfo->authorId === 0) {
-            throw new InvalidArgumentException("Version author must not be 0");
+        if ($versionInfo->authorTid === 0) {
+            throw new InvalidArgumentException("Version author tid must not be 0");
         }
 
         if ($versionInfo->timeFrom === TimeString::TIME_ZERO) {
@@ -108,7 +109,11 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
             // just create a new entry with timeUntil in the EndOfTimes
             $versionInfo->timeUntil = TimeString::END_OF_TIMES;
             $this->sqlQueryCounterTracker->incrementCreate();
-            $this->dataTable->createRow($versionInfo->getDatabaseRow());
+            try {
+                $this->columnVersionTable->createRow($versionInfo->getDatabaseRow());
+            } catch (RowAlreadyExists $e) {
+                throw new InvalidArgumentException("Version has already existing ID but it should be new");
+            }
             return;
         }
 
@@ -145,19 +150,25 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
         }
 
         $this->sqlQueryCounterTracker->incrementCreate();
-        $this->dataTable->createRow($versionInfo->getDatabaseRow());
+        try {
+            $this->columnVersionTable->createRow($versionInfo->getDatabaseRow());
+        } catch (RowAlreadyExists $e) {
+            // should never happen
+            throw new \RuntimeException("Could not create DB row for version");
+        }
     }
 
-    private function rawUpdateVersion(CollationTableVersionInfo $versionInfo) {
+    private function rawUpdateVersion(CollationTableVersionInfo $versionInfo): void
+    {
         $this->sqlQueryCounterTracker->incrementUpdate();
-        $this->dataTable->updateRow($versionInfo->getDatabaseRow());
+        $this->columnVersionTable->updateRow($versionInfo->getDatabaseRow());
     }
 
-    public function getActiveCollationTableIdsForUserId(int $userId): array
+    public function getActiveCollationTableIdsForUser(int $userTid): array
     {
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
-         $rows = $this->dataTable->findRows(['author_id' => $userId, 'time_until' => TimeString::END_OF_TIMES]);
+         $rows = $this->columnVersionTable->findRows(['author_tid' => $userTid, 'time_until' => TimeString::END_OF_TIMES]);
 
          $ids = [];
          foreach($rows as $row) {
@@ -180,7 +191,7 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
 
         // TODO: fix this, I'm just using a trick here
         $this->getSqlQueryCounterTracker()->incrementSelect();
-        $maxCtId = $this->dataTable->getMaxValueInColumn('ct_id');
+        $maxCtId = $this->columnVersionTable->getMaxValueInColumn('ct_id');
         $ids = [];
         for ($i=1; $i<= $maxCtId; $i++) {
             $ids[] = $i;
@@ -188,8 +199,8 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
         return $ids;
     }
 
-    public function fixVersionSequence(int $ctId): array
-    {
-        return [];
-    }
+//    public function fixVersionSequence(int $ctId): array
+//    {
+//        return [];
+//    }
 }

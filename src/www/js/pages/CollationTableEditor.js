@@ -43,7 +43,7 @@ import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Matrix } from '@thomas-inst/matrix'
 import { ConfirmDialog } from './common/ConfirmDialog'
-import { VERBOSITY_DEBUG_PLUS, WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
+import { WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
 import { FULL_TX } from '../Witness/WitnessTokenClass.mjs'
 
 // Normalizations
@@ -62,24 +62,24 @@ import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditio
 import { EditionViewerSvg } from '../Edition/EditionViewerSvg'
 
 import { Punctuation} from '../defaults/Punctuation.mjs'
-
-/** @namespace Twig */
+import { urlGen } from './common/SiteUrlGen'
+import { ApmFormats } from './common/ApmFormats'
+import { HeaderAndContentPage } from './HeaderAndContentPage'
 
 // constants
 
-export class CollationTableEditor {
+export class CollationTableEditor extends HeaderAndContentPage {
 
   constructor(options) {
+    super(options);
 
     let optionsDefinition = {
-      userId: { type:'NonZeroNumber', required: true},
       collationTableData : { type: 'object', required: true},
       workId : { type: 'string', required: true},
       chunkNumber: {type: 'NonZeroNumber', required: true},
       tableId: { type: 'NonZeroNumber', required: true},
       langDef : { type: 'object', default: defaultLanguageDefinition },
       availableWitnesses: { type: 'Array', default: [] },
-      urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true},
       workInfo: { type: 'object', default: {} },
       peopleInfo: { type: 'object', default: {} },
       docInfo: { type: 'object', default: {} },
@@ -88,6 +88,8 @@ export class CollationTableEditor {
 
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "EditCollationTable"})
     this.options = oc.getCleanOptions(options)
+    console.log(`CollationTableEditor options`);
+    console.log(this.options);
 
     // icons
     this.icons = {
@@ -111,7 +113,7 @@ export class CollationTableEditor {
     this.rtlClass = 'rtltext'
     this.ltrClass = 'ltrtext'
 
-    this.apiSaveCollationUrl = this.options.urlGenerator.apiSaveCollation()
+    this.apiSaveCollationUrl = urlGen.apiSaveCollation()
 
     let originalCtData = deepCopy(this.options['collationTableData'])
     console.log('Original CtData')
@@ -155,10 +157,6 @@ export class CollationTableEditor {
     // consistency check
     this.checkCollationTableConsistency()
 
-    // console.log(`Original CT Data`)
-    // console.log(originalCtData)
-    // console.log(`CT Data after fixes`)
-    // console.log(this.ctData)
     console.groupEnd()
 
     // by default, the table is not archived
@@ -183,9 +181,112 @@ export class CollationTableEditor {
     this.siglaPresets = []
     this.siglaPresetLoaded = ''
 
-    // DOM elements
-    // this.ctTitleDiv = $('#collationtabletitle')
-    // this.ctTitleEditButton = $('#cttitleedit')
+    this.initPage().then( () => {
+      console.log(`Collation Table Editor initialized`);
+    })
+
+  }
+
+  async getHeaderHtml () {
+    return ` <div class="row">
+        <div class="col-md-8">
+            <div id="collationtabletitle">
+                <h1><span id="cttitletext"></span></h1>
+            </div>
+            <div id="collationtableinfo"></div>
+            <div id="collationtableactions"></div>
+        </div>
+        <div class="col-md-4 text-right" id="save-area">
+            <h1><button class="btn btn-primary btn-sm hidden" id="savebutton">Save Changes</button></h1>
+            <p><small>Last Save: <span id="lastSave">...</span></small></p>
+            <div class="hidden" id="save-msg"></div>
+        </div>
+    </div>
+
+    <div id="status" class="text-danger"></div>`
+  }
+
+  async genContentHtml() {
+    return ` <ul class="nav nav-tabs" role="tablist" id="tabsUl">
+        <li id="collationTableTabHeader" role="presentation" class="nav-item">
+            <a role="tab" class="nav-link active" data-toggle="tab" href="#collationtablepanel">Collation Table</a>
+        </li>
+        <li id="editionTabHeader" class="nav-item" role="presentation">
+            <a role="tab" class="nav-link" data-toggle="tab" id="edition-tab-title" href="#editiondiv-panel">Quick Edition</a>
+        </li>
+        <li id="witnessesTabHeader" class="nav-item" role="presentation">
+            <a role="tab" class="nav-link" data-toggle="tab" href="#witnessesdiv">Witness Info</a>
+        </li>
+        <li id="versionHistoryTabHeader"  class="nav-item" role="presentation">
+            <a role="tab" class="nav-link" data-toggle="tab" href="#admindiv">Admin</a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div role="tabpanel" class="tab-pane active panetab nomargin-panel" id="collationtablepanel">
+            <div class="ct-toolbar">
+                <div class="ct-toolbar-section">
+                    <div class="ct-toolbar-group" id="mode-toggle">
+                    </div>
+                    <div class="ct-toolbar-group">
+                        <span id="popovers-toggle"></span>
+                    </div>
+                    <div class="ct-toolbar-group">
+                        <span id="normalizations-toggle"></span>
+                        &nbsp;
+                        <a class="tb-button" href="#" title="Click to choose which normalizations to apply" id="normalizations-settings-button"><i class="fas fa-pen"></i></a>
+                    </div>
+
+                </div>
+                <div>
+                    <a id="export-csv-button" class="tb-button"  download="apm-collationtable.csv"
+                       title="Download CSV"><small>CSV</small><i class="fas fa-download"></i></a>
+                </div>
+
+            </div>
+            <div id="collationtablediv"><div class="loading">Loading table...  <i class="fas fa-circle-notch fa-spin"></i></div></div>
+        </div>
+        <div role="tabpanel" class="tab-pane panetab nomargin-panel" id="editiondiv-panel">
+            <div class="ct-toolbar">
+                <div>
+                </div>
+                <div>
+                    <a id="export-svg-button" class="tb-button"  download="apm-quick-edition.svg"
+                       title="Download SVG"><small>SVG</small> <i class="fas fa-download"></i></a>
+                </div>
+            </div>
+            <div id="edition-svg-div">
+
+            </div>
+            <div id="edition-engine-info-div"></div>
+        </div>
+        <div role="tabpanel" class="tab-pane panetab" id="witnessesdiv">
+            <div class="witnessinfotable"></div>
+            <div class="witness-update-div">
+                <span class="witness-update-info"></span>
+                <button class="btn  btn-outline-secondary btn-sm check-witness-update-btn"  title="Click to check for updates to witness transcriptions">Check Now</button>
+            </div>
+            <div id="convert-to-edition-div">
+                <button id="convert-to-edition-btn" class="btn btn-primary" title="Click to add a main text">Add Main Text</button>
+            </div>
+        </div>
+        <div role="tabpanel" class="tab-pane panetab" id="admindiv">
+            <div id="adminopsdiv">
+                <h3>Admin</h3>
+                <ul>
+                    <li><button id="archive-table-btn" class="btn btn-danger" title="Click to archive this table/edition">Archive This Table</button></li>
+                </ul>
+            </div>
+            <h3>Versions</h3>
+            <div id="versionhistorydiv"></div>
+
+        </div>
+    </div>
+</div>`
+  }
+
+  async initPage () {
+    await super.initPage();
 
     this.ctInfoDiv = $('#collationtableinfo')
     this.breadcrumbCtTitleSpan = $('#breadcrumb-cttitle')
@@ -201,7 +302,7 @@ export class CollationTableEditor {
     this.lastSaveSpan = $('#lastSave')
     this.exportCsvButton = $('#export-csv-button')
     this.exportSvgButton = $('#export-svg-button')
-    this.exportPdfButton = $('#export-pdf-button')
+    // this.exportPdfButton = $('#export-pdf-button')
     this.convertToEditionDiv = $('#convert-to-edition-div')
     this.convertToEditionButton = $('#convert-to-edition-btn')
     this.archiveTableButton = $('#archive-table-btn')
@@ -220,7 +321,7 @@ export class CollationTableEditor {
       onConfirm: this.genOnConfirmTitleField()
     })
 
-      if (this.ctData.type === CollationTableType.COLLATION_TABLE) {
+    if (this.ctData.type === CollationTableType.COLLATION_TABLE) {
       this.breadcrumbCtTitleSpan.html("Saved Collation Table")
       this.editionTabTitle.html('Quick Edition')
     } else {
@@ -356,7 +457,7 @@ export class CollationTableEditor {
     this.unsavedChanges = false
 
     // Export PDF
-    this.exportPdfButton.on('click', this.genOnClickExportPdfButton())
+    // this.exportPdfButton.on('click', this.genOnClickExportPdfButton())
 
     let label = this.ctData.type === CollationTableType.EDITION ? 'Edition' : 'Collation Table'
     this.archiveTableButton.html(`Archive This ${label}`)
@@ -489,7 +590,7 @@ export class CollationTableEditor {
           if (t === null) {
             console.log(`Found null token in witness ${wIndex}, index ${i}`)
             return {
-              tokenType: TokenType.WORD,
+              tokenType: TranscriptionTokenType.WORD,
               text: '',
               tokenClass: TokenClass.FULL_TX,
               sourceItems: [],
@@ -743,38 +844,38 @@ export class CollationTableEditor {
     // }
   }
 
-  genOnClickExportPdfButton() {
-    let thisObject = this
-    return function() {
-      console.log('Export PDF clicked')
-      let buttonHtml = thisObject.exportPdfButton.html()
-      thisObject.exportPdfButton.html(`Generating PDF...` + thisObject.icons.busy)
-      let svg = thisObject.editionSvgDiv.html()
-      if (svg === '') {
-        return false
-      }
-      console.log('Calling API')
-      let apiUrl = thisObject.options.urlGenerator.apiConvertSvg()
-      $.post(
-        apiUrl,
-        {data: JSON.stringify({
-            pdfId: `ct-${thisObject.options.tableId}`,
-            svg: svg
-        })}
-      ).done(
-        apiResponse => {
-          window.open(apiResponse.url)
-          thisObject.exportPdfButton.html(buttonHtml)
-        }
-      ).fail (
-        error => {
-          console.error('API error')
-          console.log(error)
-        }
-      )
-      return false
-    }
-  }
+  // genOnClickExportPdfButton() {
+  //   let thisObject = this
+  //   return function() {
+  //     console.log('Export PDF clicked')
+  //     let buttonHtml = thisObject.exportPdfButton.html()
+  //     thisObject.exportPdfButton.html(`Generating PDF...` + thisObject.icons.busy)
+  //     let svg = thisObject.editionSvgDiv.html()
+  //     if (svg === '') {
+  //       return false
+  //     }
+  //     console.log('Calling API')
+  //     let apiUrl = urlGen.apiConvertSvg()
+  //     $.post(
+  //       apiUrl,
+  //       {data: JSON.stringify({
+  //           pdfId: `ct-${thisObject.options.tableId}`,
+  //           svg: svg
+  //       })}
+  //     ).done(
+  //       apiResponse => {
+  //         window.open(apiResponse.url)
+  //         thisObject.exportPdfButton.html(buttonHtml)
+  //       }
+  //     ).fail (
+  //       error => {
+  //         console.error('API error')
+  //         console.log(error)
+  //       }
+  //     )
+  //     return false
+  //   }
+  // }
 
   checkForWitnessUpdates() {
     let profiler = new SimpleProfiler('Check-Witness-Updates')
@@ -784,7 +885,7 @@ export class CollationTableEditor {
     button.attr('title', '')
     let thisObject = this
 
-    let apiUrl = this.options.urlGenerator.apiWitnessCheckUpdates()
+    let apiUrl = urlGen.apiWitnessCheckUpdates()
     let apiCallOptions = {
       witnesses: []
     }
@@ -835,7 +936,7 @@ export class CollationTableEditor {
       let modalSelector = '#normalization-settings-modal'
       $('body')
         .remove(modalSelector)
-        .append(thisObject.getTemplateNormalizationSettingsDialog().render())
+        .append(thisObject.getNormalizationSettingsDialogHtml())
 
       let togglesDiv = $(`${modalSelector} .normalization-toggles`)
 
@@ -919,12 +1020,9 @@ export class CollationTableEditor {
       if (thisObject.ctData.type === CollationTableType.EDITION) {
         return true
       }
-
       let modalSelector = '#convert-to-edition-modal'
-
-      let twigTemplate = thisObject.getTemplateConvertToEditionDialog()
       $('body').remove(modalSelector)
-        .append(twigTemplate.render({ firstWitnessTitle: thisObject.ctData['witnessTitles'][thisObject.ctData.witnessOrder[0]]}))
+        .append(thisObject.getConvertToEditionDialogHtml(thisObject.ctData['witnessTitles'][thisObject.ctData.witnessOrder[0]]));
       let cancelButton = $(`${modalSelector} .cancel-btn`)
       let submitButton = $(`${modalSelector} .submit-btn`)
       let resultSpan = $(`${modalSelector} .result`)
@@ -946,7 +1044,7 @@ export class CollationTableEditor {
         resultSpan.html(`Waiting for server's response... ${thisObject.icons.busy}`).addClass('text-warning')
         thisObject.convertingToEdition = true
         $.post(
-            thisObject.options.urlGenerator.apiConvertCollationTable(thisObject.tableId),
+            urlGen.apiConvertCollationTable(thisObject.tableId),
             { data: JSON.stringify({
                 tableId: thisObject.tableId,
                 initStrategy: initStrategy
@@ -982,19 +1080,18 @@ export class CollationTableEditor {
     let thisObject = this
     return function() {
       let profiler = new SimpleProfiler('Witness-Update')
-      let twigTemplate = thisObject.getTemplateUpdateDialog(witnessIndex)
+
       let currentWitness = thisObject.ctData['witnesses'][witnessIndex]
       let newWitnessInfo = thisObject.lastWitnessUpdateCheckResponse['witnesses'][witnessIndex]
       if (newWitnessInfo['upToDate']) {
         console.error(`Attempt to update witness ${witnessIndex}, which is up to date`)
         return false
       }
-
-      $('body').append(twigTemplate.render({
-        witnessTitle: thisObject.ctData['witnessTitles'][witnessIndex],
-        currentVersion: Util.formatVersionTime(currentWitness['timeStamp']),
-        newVersion: Util.formatVersionTime(newWitnessInfo['lastUpdate']),
-      }))
+      $('body').append(thisObject.getTemplateUpdateDialog(witnessIndex,
+        thisObject.ctData['witnessTitles'][witnessIndex],
+        ApmFormats.timeString(currentWitness['timeStamp']),
+        ApmFormats.timeString(newWitnessInfo['lastUpdate'])
+      ));
       let modalSelector = `#update-modal-${witnessIndex}`
       let cancelButton = $(`${modalSelector} .cancel-btn`)
       let acceptButton = $(`${modalSelector} .accept-btn`)
@@ -1034,7 +1131,7 @@ export class CollationTableEditor {
         loadP.removeClass('status-waiting')
         loadP.addClass('status-running')
         // 1.2. actually load the new version
-        let apiUrl = thisObject.options.urlGenerator.apiWitnessGet(newWitnessInfo['updatedWitnessId'], 'standardData')
+        let apiUrl = urlGen.apiWitnessGet(newWitnessInfo['updatedWitnessId'], 'standardData')
         $.get(apiUrl)
           .then(
             // Load new version success
@@ -1263,7 +1360,7 @@ export class CollationTableEditor {
         } else {
           witnessesUpToDate = false
           let warningHtml =  `<span>${this.icons.checkFail} Last version:  `
-          warningHtml += `${Util.formatVersionTime(witnessUpdateInfo['lastUpdate'])} `
+          warningHtml += `${ApmFormats.timeString(witnessUpdateInfo['lastUpdate'])} `
           warningHtml += `<a title="Click to update witness" class="btn btn-outline-secondary btn-sm witness-update-btn witness-update-btn-${i}">Update</a>`
           warningTd.html(warningHtml)
         }
@@ -1278,11 +1375,11 @@ export class CollationTableEditor {
     if (witnessesUpToDate) {
       infoSpan.removeClass('text-warning')
       infoSpan.addClass('text-success')
-      infoSpan.html(`${this.icons.checkOK} All witnesses are up to date (last checked ${Util.formatVersionTime(apiResponse.timeStamp)})`)
+      infoSpan.html(`${this.icons.checkOK} All witnesses are up to date (last checked ${ApmFormats.timeString(apiResponse.timeStamp)})`)
     } else {
       infoSpan.removeClass('text-success')
       infoSpan.addClass('text-warning')
-      infoSpan.html(`${this.icons.checkFail} One or more witnesses out of date (last checked ${Util.formatVersionTime(apiResponse.timeStamp)})`)
+      infoSpan.html(`${this.icons.checkFail} One or more witnesses out of date (last checked ${ApmFormats.timeString(apiResponse.timeStamp)})`)
     }
 
     button.html('Check now')
@@ -2040,8 +2137,8 @@ export class CollationTableEditor {
       html += '<tr>'
       html += '<td>' + (i+1) + '</td>'
       html += '<td>' + version['id'] + '</td>'
-      html += '<td class="author">' + this.options.peopleInfo[version['authorId']].fullname + '</td>'
-      html += '<td class="time">' + Util.formatVersionTime(version['timeFrom']) + '</td>'
+      html += '<td class="author">' + this.options.peopleInfo[version['authorTid']].name + '</td>'
+      html += '<td class="time">' + ApmFormats.timeString(version['timeFrom']) + '</td>'
       html += '<td>' + version['description'] + '</td>'
 
       html += '<td>'
@@ -2130,7 +2227,7 @@ export class CollationTableEditor {
     for (let i = 0; i < this.ctData['witnesses'].length; i++) {
       new EditableTextField({
         containerSelector: this.witnessesDivSelector + ' .siglum-' + i,
-        initialText: this.ctData['sigla'][i],
+        initialText: this.ctData['sigla'][i] ?? '',
         onConfirm: this.genOnConfirmSiglumEdit(i)
       })
     }
@@ -2160,8 +2257,7 @@ export class CollationTableEditor {
         console.log('No sigla presets to apply')
         return
       }
-      let dialogTemplate = thisObject.getTemplateLoadSiglaPreset()
-      $('body').append(dialogTemplate.render())
+      $('body').append(thisObject.getLoadSiglaPresetHtml())
       let modalSelector= '#load-sigla-preset-modal'
       let cancelButton = $(`${modalSelector} .cancel-btn`)
       let loadButton = $(`${modalSelector} .load-btn`)
@@ -2238,8 +2334,7 @@ export class CollationTableEditor {
       console.log('Click on save sigla')
       const overWritePresetButtonLabel = 'Overwrite Preset'
       const createPresetButtonLabel = 'Create New Preset'
-      let dialogTemplate = thisObject.getTemplateSaveSiglaPreset()
-      $('body').append(dialogTemplate.render())
+      $('body').append(thisObject.getSaveSiglaPresetHtml())
 
       let modalSelector= '#save-sigla-preset-modal'
       let cancelButton = $(`${modalSelector} .cancel-btn`)
@@ -2338,7 +2433,7 @@ export class CollationTableEditor {
 
         console.log('About to call save preset API')
         console.log(apiCallData)
-        let apiUrl = thisObject.options.urlGenerator.apiSaveSiglaPreset()
+        let apiUrl = urlGen.apiSaveSiglaPreset()
         footInfoLabel.html('Saving....')
         saveButton.addClass('hidden')
         $.post(apiUrl, { data: JSON.stringify(apiCallData)}).done( () =>{
@@ -2510,7 +2605,7 @@ export class CollationTableEditor {
       html += '</td>'
 
       html += '<td>' + witnessTitle + '</td>'
-      html += '<td>' + Util.formatVersionTime(witness['timeStamp']) + '</td>'
+      html += '<td>' + ApmFormats.timeString(witness['timeStamp']) + '</td>'
       html += '<td class="' + siglumClass + '">'+ siglum + '</td>'
 
       html += '<td class="' + warningTdClass + '"></td>'
@@ -2530,7 +2625,7 @@ export class CollationTableEditor {
         .attr('title', 'Already archived')
         .addClass('disabled')
       let lastVersion = this.versionInfo[this.versionInfo.length-1]
-      this.lastSaveSpan.html(Util.formatVersionTime(lastVersion['timeFrom']))
+      this.lastSaveSpan.html(ApmFormats.timeString(lastVersion['timeFrom']))
       return
     }
     let changes = this.changesInCtData()
@@ -2571,7 +2666,7 @@ export class CollationTableEditor {
     }
 
     let lastVersion = this.versionInfo[this.versionInfo.length-1]
-    this.lastSaveSpan.html(Util.formatVersionTime(lastVersion['timeFrom']))
+    this.lastSaveSpan.html(ApmFormats.timeString(lastVersion['timeFrom']))
   }
 
   changesInCtData() {
@@ -2632,7 +2727,7 @@ export class CollationTableEditor {
 
   fetchSiglaPresets() {
     console.log('Fetching sigla presets')
-    let apiSiglaPresetsUrl = this.options.urlGenerator.apiGetSiglaPresets()
+    let apiSiglaPresetsUrl = urlGen.apiGetSiglaPresets()
     let apiCallOptions = {
       lang: this.ctData['lang'],
       witnesses: this.ctData['witnesses'].filter( w => { return w['witnessType'] === 'fullTx'}).map( w => w['ApmWitnessId'])
@@ -2737,10 +2832,10 @@ export class CollationTableEditor {
   genCtInfoDiv() {
     let html = ''
     let workTitle = this.options.workInfo['title']
-    let workAuthorId = this.options.workInfo['authorId']
-    let workAuthorName = this.options.peopleInfo[workAuthorId]['fullname']
+    let workAuthorId = this.options.workInfo['authorTid']
+    let workAuthorName = this.options.peopleInfo[workAuthorId]['name']
     let newEditorHtml = this.ctData['type'] === CollationTableType.EDITION
-      ? `... <a href="${this.options.urlGenerator.siteEditCollationTableBeta(this.tableId)}" title="Click to load new editor">New Editor</a>`
+      ? `... <a href="${urlGen.siteEditCollationTableBeta(this.tableId)}" title="Click to load new editor">New Editor</a>`
       : ''
     return `<p>${workAuthorName}, <i>${workTitle}</i>, chunk ${this.options.chunkNumber}  (${this.options.workId}-${this.options.chunkNumber})</p>
 <p>Table ID: ${this.tableId}  ${newEditorHtml} `
@@ -2801,9 +2896,8 @@ export class CollationTableEditor {
     return '"' + text + '"'
   }
 
-  getTemplateSaveSiglaPreset() {
-    return Twig.twig({
-      data: `
+  getSaveSiglaPresetHtml() {
+    return `
 <div id="save-sigla-preset-modal" class="modal" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -2835,16 +2929,13 @@ export class CollationTableEditor {
             </div>
         </div>
     </div>
-</div>      
-      `
-    })
+</div>`
   }
   
 
 
-  getTemplateLoadSiglaPreset() {
-    return Twig.twig({
-      data: `
+  getLoadSiglaPresetHtml() {
+    return `
 <div id="load-sigla-preset-modal" class="modal" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -2870,14 +2961,11 @@ export class CollationTableEditor {
             </div>
         </div>
     </div>
-</div>      
-      `
-    })
+</div>`
   }
 
-  getTemplateNormalizationSettingsDialog() {
-    return Twig.twig({
-      data: `
+  getNormalizationSettingsDialogHtml() {
+    return `
 <div id="normalization-settings-modal" class="modal" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -2897,25 +2985,22 @@ export class CollationTableEditor {
             </div>
         </div>
     </div>
-</div>      
-      `
-    })
+</div>`
   }
 
-  getTemplateUpdateDialog(witnessIndex) {
-    return Twig.twig( {
-      data: `
+  getTemplateUpdateDialog(witnessIndex, witnessTitle, currentVersion, newVersion) {
+    return `
 <div id="update-modal-${witnessIndex}" class="modal" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Update witness {{witnessTitle}}</h5>
+                <h5 class="modal-title">Update witness ${witnessTitle}</h5>
             </div>
             <div class="modal-body">
                 <div class="info">
-                    <p><b>Current version:</b> {{currentVersion}}</p>
+                    <p><b>Current version:</b> ${currentVersion}</p>
                     <p style="margin-left: 30px"><i class="fas fa-long-arrow-alt-down"></i></p>
-                    <p><b>New version:</b> {{newVersion}}</p>
+                    <p><b>New version:</b> ${newVersion}</p>
                 </div>
                 <div class="process">
                     <p class="load status-waiting"></p>
@@ -2931,13 +3016,11 @@ export class CollationTableEditor {
             </div>
       </div>
     </div>
-</div>    
-    `})
+</div>`
   }
 
-  getTemplateConvertToEditionDialog() {
-    return Twig.twig( {
-      data: `
+  getConvertToEditionDialogHtml(firstWitnessTitle) {
+    return `
 <div id="convert-to-edition-modal" class="modal" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -2956,7 +3039,7 @@ export class CollationTableEditor {
                     </div>
                     <div class="form-group form-check">
                         <input type="radio" name="init-edition" class="form-check-input top-witness-check" checked>
-                        <label class="form-check-label" for="exampleCheck1">Copy current top witness: <b>{{firstWitnessTitle}}</b></label>
+                        <label class="form-check-label" for="exampleCheck1">Copy current top witness: <b>${firstWitnessTitle}</b></label>
                     </div>
                </div>
             </div>
@@ -2967,8 +3050,7 @@ export class CollationTableEditor {
             </div>
       </div>
     </div>
-</div>    
-    `})
+</div>`
   }
 
 }

@@ -18,15 +18,14 @@
 
 
 import { Language } from '../../toolbox/Language'
-import {Cookies} from '../../toolbox/Cookies'
 
-const defaultLanguage = 'en'
+export const defaultLanguage = 'en'
 
-const validLanguages = [ 'en', 'es', 'de', 'fr', 'it', 'he', 'ar']
+export const validLanguages = [ 'en', 'es', 'de', 'fr', 'it', 'he', 'ar']
 
-const languageCookieName = 'apm_lang'
 
 const strings = [
+  { key: '', es: ''},
   { key: 'Loading data', es: 'Cargando datos'},
   { key: 'Dashboard', es: 'Tablero de mandos'},
   { key: 'Documents', es: 'Documentos'},
@@ -74,7 +73,73 @@ const strings = [
   { key: 'Foliation not set, using sequence number', es: 'Foliación no definida, usando número de secuencia'},
   { key: 'Image Links', es: "Enlaces de imágenes"},
   { key: 'Click to open in new tab/window', es: 'Click para abrir en nueva tab/ventana'},
-  { key: 'Page Type', es: 'Tipo de página'}
+  { key: 'Page Type', es: 'Tipo de página'},
+  { key: 'Works', es: 'Obras'},
+  { key: 'Click to show chunk list', es: 'Click para mostrar lista de chunks'},
+  { key: 'People', es: 'Personas'},
+  { key: 'Name', es: 'Nombre'},
+  { key: 'User', es: 'Usuario'},
+  { key: 'Person Details', es: 'Datos personales'},
+  { key: 'Click to see person details', es: 'Click para ver datos de la persona'},
+  { key: 'Entity ID', es: 'Id de entidad'},
+  { key: 'Sort Name', es: 'Nombre para ordenamiento'},
+  { key: 'User Contributions', en: 'User Contributions', es: 'Contribuciones como usuario'},
+  { key: 'UserContributions:None', en: 'None', es: 'Ninguna'},
+  { key: 'Processing', es: 'Procesando'},
+  { key: 'Empty Table', es: 'Tabla vacía'},
+  { key: 'First', es: 'Primero'},
+  { key: 'Previous', es: 'Anterior'},
+  { key: 'Next', es: 'Siguiente'},
+  { key: 'Last', es: 'Último'},
+  { key: 'DataTables:Search', en: 'Search:', es: 'Buscar:'},
+  { key: 'Show _MENU_ entries', es: 'Mostar _MENU_ filas'},
+  { key: 'Showing _START_ to _END_ of _TOTAL_ rows', es: 'Mostrando filas _START_ a _END_ de _TOTAL_'},
+  { key: 'Title', es: 'Título'},
+  { key: 'Type', es: 'Tipo'},
+  { key: 'Language', es: 'Idioma'},
+  { key: 'Pages', es: 'Páginas'},
+  { key: 'Pages:Transcribed', en: 'Transcribed', es: 'Transcritas'},
+  { key: 'Transcribers', es: 'Transcriptores'},
+  { key: 'Create New Document', es: 'Crear nuevo documento'},
+  { key: 'Username', es: 'Usuario'},
+  { key: 'User Email Address', es: 'Email de usuario'},
+  { key: 'Root', es: 'Root'},
+  { key: 'Read Only', es: 'Solo lectura'},
+  { key: 'Yes', es: 'Sí'},
+  { key: 'No', es: 'No'},
+  { key: 'Disabled', es: 'Deshabilitado'},
+  { key: 'Tags', es: 'Tags'},
+  { key: 'Edit User Profile', es: 'Editar perfil de usuario'},
+  { key: 'Save Changes', es: 'Salvando cambios'},
+  { key: 'Cancel', es: 'Cancelar'},
+  { key: 'Saving changes', es: 'Salvando cambios'},
+  { key: 'Make User', es: 'Crear usuario'},
+  { key: 'New Password', es: 'Contraseña'},
+  { key: 'Confirm New Password', es: 'Confirmar contraseña'},
+  { key: 'Saving profile', es: 'Salvando perfil'},
+  { key: 'Profile successfully updated', es: 'Perfil salvado exitosamente'},
+  { key: 'Invalid username', es: 'Nombre de usuario no válido'},
+  { key: 'Making new user', es: 'Creando nuevo usuario'},
+  { key: 'The server found an error', es: 'El servidor encontró un error'},
+  { key: 'Full Transcription', es: 'Transcripción'},
+  { key: 'Manuscript', es: 'Manuscrito'},
+  { key: 'Print', es: 'Libro impreso'},
+  { key: 'Chunk start not defined', es: 'Inicio de chunk no definido'},
+  { key: 'Chunk end not defined', es: 'Fin de chunk no definido'},
+  { key: 'Chunk start after chunk end', es: 'Inicio de chunk después de fin de chunk'},
+  { key: 'Duplicate chunk start marks', es: 'Marcas de inicio de chunk duplicadas'},
+  { key: 'Duplicate chunk end marks', es: 'Marcas de find de chunk duplicadas'},
+  { key: 'Automatic Collation Tables', es: 'Tablas de colación automáticas'},
+  { key: 'Automatic Collation Table', es: 'Tabla de colación automática'},
+  { key: 'Witness Type', es: 'Tipo de testigo'},
+  { key: 'Doc Type', es: 'Tipo de documento'},
+  { key: 'Info', es: 'Info'},
+  { key: 'Saved Collation Tables', es: 'Tablas de colación salvadas'},
+  { key: 'Editions', es: 'Ediciones'},
+  { key: 'Save Table', es: 'Salvar tabla'},
+  { key: 'Last change in data', es: 'Último cambio en datos'},
+  { key: 'View person data', es: 'Ver datos de la persona'},
+  { key: 'Click to select page', es: 'Click para seleccionar página'},
 ]
 
 export class SiteLang {
@@ -89,36 +154,13 @@ export class SiteLang {
     return this.__languageStringManager.getTranslation(template, data)
   }
 
-  static saveLangInCookie(lang) {
-    Cookies.set(languageCookieName, lang, { SameSite: 'Strict'})
-  }
   /**
-   * Tries to detect the valid language the user prefers the most.
-   * If none of the user languages is available, returns the default language.
-   * @return {string}
+   * Saves the language
+   * @param {string}lang
+   * @param {WebStorageKeyCache} cache
+   *
    */
-  static detectBrowserLanguage() {
-    // First, let's see if there's a cookie
-    let cookieLang = Cookies.get(languageCookieName)
-    if (validLanguages.indexOf(cookieLang) !== -1) {
-      console.log(`Site language detected in cookie`)
-      return cookieLang
-    }
-    // If not, go over browser languages
-    let browserLanguages = navigator.languages
-    for (let i = 0; i < browserLanguages.length; i++) {
-      let lang = browserLanguages[i]
-      if (validLanguages.indexOf(lang) !== -1) {
-        return lang
-      }
-      lang = lang.split('-')[0]  // two-letter code
-      if (validLanguages.indexOf(lang) !== -1) {
-        return lang
-      }
-    }
-    console.log(`Site language not detected, returning default`)
-    return defaultLanguage
-  }
+
 
 }
 

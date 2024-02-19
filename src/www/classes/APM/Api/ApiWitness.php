@@ -26,7 +26,7 @@ use APM\StandardData\FullTxWitnessDataProvider;
 use APM\System\ApmTranscriptionManager;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
-use AverroesProject\Data\UserManagerUserInfoProvider;
+use AverroesProjectToApm\ApmPersonInfoProvider;
 use AverroesProjectToApm\Formatter\WitnessPageFormatter;
 use Exception;
 use InvalidArgumentException;
@@ -68,7 +68,7 @@ class ApiWitness extends ApiController
             case WitnessType::PARTIAL_TRANSCRIPTION:
                 $msg = 'Witness type ' . WitnessType::PARTIAL_TRANSCRIPTION . ' not implemented yet';
                 $this->logger->error($msg, [
-                    'apiUserId' => $this->apiUserId,
+                    'apiUserTid' => $this->apiUserTid,
                     'apiError' => self::ERROR_WITNESS_TYPE_NOT_IMPLEMENTED
                 ]);
                 return $this->responseWithJson($response, [ 'error' => $msg ], 409);
@@ -76,7 +76,7 @@ class ApiWitness extends ApiController
             default:
                 $msg = "Unknown witness type $witnessType";
                 $this->logger->error($msg, [
-                    'apiUserId' => $this->apiUserId,
+                    'apiUserTid' => $this->apiUserTid,
                     'apiError' => self::ERROR_UNKNOWN_WITNESS_TYPE
                 ]);
                 return $this->responseWithJson($response, [ 'error' => $msg ], 409);
@@ -105,7 +105,7 @@ class ApiWitness extends ApiController
             if (!isset($witness['id'])) {
                 $msg = "No witness id given in witness $i" ;
                 $this->logger->error($msg, [
-                    'apiUserId' => $this->apiUserId,
+                    'apiUserTid' => $this->apiUserTid,
                     'apiError' => self::ERROR_UNKNOWN_WITNESS_TYPE
                 ]);
                 return $this->responseWithJson($response, [ 'error' => $msg ], 409);
@@ -174,7 +174,7 @@ class ApiWitness extends ApiController
                 case WitnessType::PARTIAL_TRANSCRIPTION:
                     $msg = 'Witness type ' . WitnessType::PARTIAL_TRANSCRIPTION . ' not implemented yet';
                     $this->logger->error($msg, [
-                        'apiUserId' => $this->apiUserId,
+                        'apiUserTid' => $this->apiUserTid,
                         'apiError' => self::ERROR_WITNESS_TYPE_NOT_IMPLEMENTED
                     ]);
                     return $this->responseWithJson($response, [ 'error' => $msg ], 409);
@@ -185,7 +185,7 @@ class ApiWitness extends ApiController
                 default:
                     $msg = "Unknown witness type $witnessType";
                     $this->logger->error($msg, [
-                        'apiUserId' => $this->apiUserId,
+                        'apiUserTid' => $this->apiUserTid,
                         'apiError' => self::ERROR_UNKNOWN_WITNESS_TYPE
                     ]);
                     return $this->responseWithJson($response, [ 'error' => $msg ], 409);
@@ -201,7 +201,7 @@ class ApiWitness extends ApiController
         } catch (InvalidArgumentException $e) {
             $msg = "Cannot get fullTx witness info from system Id. Error: " . $e->getMessage();
             $this->logger->error($msg, [
-                'apiUserId' => $this->apiUserId,
+                'apiUserTid' => $this->apiUserTid,
                 'apiError' => self::ERROR_SYSTEM_ID_ERROR,
                 'exceptionErrorCode' => $e->getCode(),
                 'exceptionErrorMsg' => $e->getMessage()
@@ -245,7 +245,7 @@ class ApiWitness extends ApiController
             if ($cacheHit) {
                 $this->codeDebug("Cache hit!!");
                 $cacheTracker->incrementHits();
-                return $this->responseWithText($response, $cachedHtml);
+                return $this->responseWithText($response, $cachedHtml ?? 'Error');
             }
         }
 
@@ -255,7 +255,7 @@ class ApiWitness extends ApiController
             $cacheKey = $this->getWitnessDataCacheKey($requestedWitnessId);
             try {
                 $cachedBlob = $systemCache->get($cacheKey);
-            } catch (KeyNotInCacheException $e) {
+            } catch (KeyNotInCacheException) {
                 $cacheTracker->incrementMisses();
                 $cacheHit = false;
             }
@@ -402,8 +402,8 @@ class ApiWitness extends ApiController
 
     private function getWitnessHtml(ApmTranscriptionWitness $apmWitness) : string {
         $formatter = new WitnessPageFormatter();
-        $uip = new UserManagerUserInfoProvider($this->getDataManager()->userManager);
-        $formatter->setPersonInfoProvider($uip);
+        $personInfoProvider = new ApmPersonInfoProvider($this->systemManager->getPersonManager());
+        $formatter->setPersonInfoProvider($personInfoProvider);
         return $formatter->formatItemStream($apmWitness->getDatabaseItemStream());
     }
 

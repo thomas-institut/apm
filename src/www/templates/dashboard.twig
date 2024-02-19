@@ -1,4 +1,4 @@
-{% extends "base.twig" %}
+{% extends "normal-page.twig" %}
 
 {% block title %}Dashboard{% endblock %}
 
@@ -16,10 +16,7 @@
 
   $(() => {
     new DashboardPage(( {
-      baseUrl: '{{ baseurl }}',
-      userId: parseInt('{{ userId }}'),
-      userInfo: JSON.parse("{{userInfo|json_encode|e('js')}}"),
-      showLanguageSelector: parseInt('{{ showLanguageSelector }}') === 1
+      commonData:  JSON.parse("{{commonData|json_encode|e('js')}}")
     }))
   })
 </script>

@@ -88,7 +88,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
   }
 
 
-  generateContentHtml (tabId, mode, visible) {
+  async generateContentHtml (tabId, mode, visible) {
     return `<canvas id="${canvasId}"></canvas>`
   }
 

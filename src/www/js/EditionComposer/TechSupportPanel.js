@@ -48,7 +48,7 @@ export class TechSupportPanel extends Panel {
   }
 
 
-  generateHtml(tabId, mode, visible) {
+  async generateHtml(tabId, mode, visible) {
     return `<h3>Tech Support</h3>
        <div class="panel-toolbar"><div class="panel-toolbar-group data-view-toggle"></div></div>
        <div id="json-editor-div"></div>`

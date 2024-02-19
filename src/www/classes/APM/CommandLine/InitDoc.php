@@ -56,7 +56,7 @@ class InitDoc extends CommandLineUtility {
             return false;
         }
         
-        $docInfo = $this->dm->getDocById($docId);
+        $docInfo = $this->getDm()->getDocById($docId);
         
         if ($docInfo === false) {
             $this->printErrorMsg("Can't get doc info for docId $docId");
@@ -65,18 +65,18 @@ class InitDoc extends CommandLineUtility {
         
         print "Creating $numPages  pages for doc Id $docId (" . $docInfo['title'] . ")...\n";
         for ($i = 0; $i < $numPages; $i++) {
-            $curPageId = $this->dm->getPageIdByDocPage($docId, $i+1);
-            if ($curPageId !== false) {
+            $curPageId = $this->getDm()->getPageIdByDocPage($docId, $i+1);
+            if ($curPageId !== -1) {
                 $this->printWarningMsg("Page " . ($i+1) . " already exists, skipping.");
                 continue;
             }
-            $pageId = $this->dm->newPage($docId, $i+1, $docInfo['lang']);
+            $pageId = $this->getDm()->newPage($docId, $i+1, $docInfo['lang']);
             if ($pageId === false) {
                 $this->printErrorMsg("Can't create page " . ($i+1));
                 return false;
             }
             for ($j = 0; $j < $colsPerPage; $j++) {
-                $result = $this->dm->addNewColumn($docId, $i+1);
+                $result = $this->getDm()->addNewColumn($docId, $i+1);
                 if ($result === false) {
                     $this->printErrorMsg("Can't add column " . ($j+1) . " to page " . ($i+1));
                     return false;

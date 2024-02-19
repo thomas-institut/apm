@@ -1,77 +1,54 @@
 <?php
+/**
+ * Configuration file for the APM
+ */
+
+use APM\System\ApmConfigParameter as ConfigParam;
 
 global $config;
 
-// SUPPORT
-$config['support_contact_name'] = 'Rafael Nájera';
-$config['support_contact_email'] = 'rafael.najera@uni-koeln.de';
-
 // DATABASE ACCESS
-$config['db']['host'] = "localhost";
-$config['db']['user'] = "apmadmin";
-$config['db']['pwd'] = "REAL_PASSWORD";
-$config['db']['db'] = "real_db_name";
+$config[ConfigParam::DB]['host'] = "localhost";
+$config[ConfigParam::DB]['user'] = "xxxx";
+$config[ConfigParam::DB]['pwd'] = "xxxx";
+$config[ConfigParam::DB]['db'] = "apm";
+$config[ConfigParam::DB_TABLE_PREFIX] = 'ap_';
 
 // SUB_DIR: APM url after /,
 //  e.g. if APM runs in https://test.com/apm,  sub_dir = 'apm'
 //       if it runs in https://test.com,  sub_dir = '';
-$config['sub_dir'] = '';
+$config[ConfigParam::SUB_DIR] = '';
 
-// TIME ZONE
-$config['default_timezone'] = "Europe/Berlin";
+// APM DAEMON
+$config[ConfigParam::APM_DAEMON_PID_FILE] = '/path/to/apmd.pid';
 
 // LOG FILE
-$config['log_filename'] = '/path/to/logfile/apm.log';
-$config['log_include_debug_info'] = true;
-$config['log_in_php_error_handler'] = true;
+$config[ConfigParam::LOG_FILENAME] = '/path/to/apm.log';
+$config[ConfigParam::LOG_INCLUDE_DEBUG_INFO] = true;
+$config[ConfigParam::LOG_IN_PHP_ERROR_HANDLER] = true;
 
-// LANGUAGES
-$config['languages'] = [
-    [ 'code' => 'ar', 'name' => 'Arabic', 'rtl' => true, 'fontsize' => 5],
-    [ 'code' => 'jrb', 'name' => 'Judeo Arabic', 'rtl' => true, 'fontsize' => 3],
-    [ 'code' => 'he', 'name' => 'Hebrew', 'rtl' => true, 'fontsize' => 3],
-    [ 'code' => 'la', 'name' => 'Latin', 'rtl' => false, 'fontsize' => 3]
-];
+// OPENSEARCH ACCESS
+$config[ConfigParam::OPENSEARCH_HOSTS] = ['https://localhost:9200'];
+$config[ConfigParam::OPENSEARCH_USER] = 'admin';
+$config[ConfigParam::OPENSEARCH_PASSWORD] = 'admin';
 
-// COLLATION ENGINE
-$config['collation_engine'] = 'Collatex';
-//$config['collation_engine'] = 'DoNothing';
+// TMP directory locations
+$config[ConfigParam::COLLATEX_TEMP_DIR] = '/path/to/tmp';
+$config[ConfigParam::PDF_RENDERER_TEMP_DIR]  = '/path/to/typesetting-tmp';
 
-// COLLATEX
-$config['collatex_temp_dir'] = 'collatex/tmp';
-$config['java_executable'] = '/usr/bin/java';
+// JAVA
+$config[ConfigParam::JAVA_EXECUTABLE] = '/usr/bin/java';
 
+// COMMAND LINE UTILITIES
+$config[ConfigParam::AUTHORIZED_COMMAND_LINE_USERS] = [ 'theuser'];
 
-// IMAGE SOURCE PLUGINS
+// BILDERBERG
+//
+//$config[ConfigParam::BILDERBERG_URL] = 'http://localhost:7777';
 
-$config['plugins'][] = 'LocalImageSource';
-$config['plugins'][] = 'DareImageSource';
-$config['plugins'][] = 'DareDeepZoomImageSource';
-$config['plugins'][] = 'AverroesServerImageSource';
-
-
-$config['DareImageSource']['BilderbergBaseUrl'] = 'https://oldsire.uni-koeln.de';
-$config['DareImageSource']['NewStylePaths'] = true;
-
-$config['DareDeepZoomImageSource']['BilderbergBaseUrl'] = 'https://oldsire.uni-koeln.de';
-$config['DareDeepZoomImageSource']['NewStylePaths'] = true;
-
-
-// Python PDF
-$config['pdf-renderer'] = '/installation/path/apm/python/pdf-renderer.py';
-$config['pdf-renderer_temp_dir']  = '/path/to/typesetting-tmp';
-
-// Nodejs Typesetter
-$config['typesetter'] = 'node /installation/path/node/typesetStdinJson.mjs';
-
-
-$config['dareApiBaseUri'] = 'https://dare.uni-koeln.de/app/api/db/';
-
-// Opensearch
-$config['opensearch_hosts'] = ['https://localhost:9200'];
-$config['opensearch_user'] = 'admin';
-$config['opensearch_password'] = 'admin';
+// Site App Options
+$config[ConfigParam::SITE_SHOW_LANGUAGE_SELECTOR] = true;
+$config[ConfigParam::TWIG_USE_CACHE] = false;
 
 
 
-$config['commandLineUsers'] = [ 'user1', 'user2'];

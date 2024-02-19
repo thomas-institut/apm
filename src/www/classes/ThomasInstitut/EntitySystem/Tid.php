@@ -3,6 +3,7 @@
 namespace ThomasInstitut\EntitySystem;
 
 use RuntimeException;
+use ThomasInstitut\TimeString\InvalidTimeZoneException;
 use ThomasInstitut\TimeString\TimeString;
 
 /**
@@ -88,13 +89,16 @@ class Tid
         }
     }
 
-    public static function toTimeString(int $tid) : string {
+    /**
+     * @throws InvalidTimeZoneException
+     */
+    public static function toTimeString(int $tid, string $timeZone = '') : string {
         // need to do this trick with strings because if the TID is a very big number
         // the time string from $tid/1000 will be inaccurate
         $strTid = strval($tid);
         $secondsTimeStamp = intval(substr($strTid, 0, strlen($strTid) -3));
         $milliseconds = intval(substr($strTid, -3));
-        $ts = TimeString::fromTimeStamp($secondsTimeStamp);
+        $ts = TimeString::fromTimeStamp($secondsTimeStamp, $timeZone);
         return sprintf("%s.%03d000", substr($ts, 0, strlen($ts) -7), $milliseconds);
     }
 

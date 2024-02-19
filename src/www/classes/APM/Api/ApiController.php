@@ -24,6 +24,7 @@ use APM\CollationEngine\CollationEngine;
 use APM\SystemProfiler;
 use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
+use APM\ToolBox\HttpStatus;
 use Exception;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
@@ -37,9 +38,9 @@ use APM\System\SystemManager;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Slim\Interfaces\RouteParserInterface;
-use Slim\Routing\RouteParser;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
+use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\Profiler\SimpleProfiler;
 use ThomasInstitut\Profiler\TimeTracker;
 
@@ -84,15 +85,14 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     const API_ERROR_WRONG_TYPE = 1300;
 
     protected SystemManager $systemManager;
-    protected int $apiUserId;
     protected SimpleProfiler $profiler;
     protected array $languages;
     protected RouteParserInterface $router;
 
     private ContainerInterface $container;
     private bool $debugMode;
-    protected DataManager $dataManager;
     protected string $apiCallName;
+    protected int $apiUserTid;
 
 
     /**
@@ -107,10 +107,9 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
        $this->debugMode = false;
 
        $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
-       $this->apiUserId = $ci->get(ApmContainerKey::API_USER_ID); // this should be set by the authenticator!
+       $this->apiUserTid = $ci->get(ApmContainerKey::API_USER_TID); // this should be set by the authenticator!
        $this->languages = $this->systemManager->getConfig()[ApmConfigParameter::LANGUAGES];
        $this->logger = $this->systemManager->getLogger()->withName('API');
-       $this->dataManager = $this->systemManager->getDataManager();
        $this->router = $this->systemManager->getRouter();
        $this->apiCallName = self::CLASS_NAME . ":generic";
        $this->profiler = new SimpleProfiler();
@@ -123,12 +122,17 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
         $this->apiCallName  = $name;
     }
 
-    public function setApiUserId(int $userId=0) {
-        if ($userId === 0) {
-            $this->apiUserId = $this->container->get(ApmContainerKey::API_USER_ID);
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function setApiUserTid(int $userTid=0): void
+    {
+        if ($userTid === 0) {
+            $this->apiUserTid = $this->container->get(ApmContainerKey::API_USER_TID);
         } else {
-            $this->container->set(ApmContainerKey::API_USER_ID, $userId);
-            $this->apiUserId = $userId;
+            $this->container->set(ApmContainerKey::API_USER_TID, $userTid);
+            $this->apiUserTid = $userTid;
         }
     }
 
@@ -136,7 +140,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
      * @return DataManager
      */
     protected function getDataManager() : DataManager {
-        return $this->dataManager;
+        return $this->systemManager->getDataManager();
     }
 
     /**
@@ -154,60 +158,73 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
      * @param string $msg
      * @param array $data
      */
-    protected function debug(string $msg, array $data=[])
+    protected function debug(string $msg, array $data=[]): void
     {
         if ($this->debugMode){
             $this->logger->debug($msg, $data);
         }
     }
 
-    protected function info(string $msg, array $data=[]) {
+    protected function info(string $msg, array $data=[]): void
+    {
         $this->logger->info($msg, $data);
     }
 
 
     /**
-     * Checks that the given request contains a 'data' field, which in 
-     * turn contains the given $requiredFields. 
-     * 
+     * Checks that the given request contains a 'data' field, which in
+     * turn contains the given $requiredFields.
+     *
      * If there's any error, returns a Response with the proper error status
      * If everything is OK, returns the input data array
-     * 
+     *
      * @param Request $request
      * @param Response $response
      * @param array $requiredFields
+     * @param bool $errorIfEmpty
+     * @param bool $useRawData
      * @return Response|array
      */
     protected function checkAndGetInputData(Request  $request,
-                                            Response $response, array $requiredFields): array|Response
+                                            Response $response, array $requiredFields, bool $errorIfEmpty = false, bool $useRawData = false): array|Response
     {
-        $rawData = $request->getBody()->getContents();
-        parse_str($rawData, $postData);
-        $inputData = null;
-        
-        if (isset($postData['data'])) {
+
+        $postData = $request->getParsedBody();
+        if ($useRawData) {
+            $inputData = $postData;
+        } else {
+            if (!isset($postData['data']) ) {
+                $this->logger->error("$this->apiCallName: no data in input",
+                    [ 'apiUserTid' => $this->apiUserTid,
+                        'apiUserTidString' => Tid::toBase36String($this->apiUserTid),
+                        'apiError' => self::API_ERROR_NO_DATA,
+                        'rawdata' => $postData]);
+                return $this->responseWithJson($response, ['error' => self::API_ERROR_NO_DATA], HttpStatus::BAD_REQUEST);
+            }
             $inputData = json_decode($postData['data'], true);
-        }
-        
-        // Some checks
-        if (is_null($inputData) ) {
-            $this->logger->error("$this->apiCallName: no data in input",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_NO_DATA,
-                      'rawdata' => $postData]);
-            return $this->responseWithJson($response, ['error' => self::API_ERROR_NO_DATA], 409);
-        }
-        
-        foreach ($requiredFields as $requiredField) {
-            if (!isset($inputData[$requiredField])) {
-                $this->logger->error("$this->apiCallName: missing required field '$requiredField' in input data",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_MISSING_REQUIRED_FIELD,
-                      'rawdata' => $postData]);
-            return $this->responseWithJson($response, ['error' => self::API_ERROR_MISSING_REQUIRED_FIELD], 409);
+            if (is_null($inputData)) {
+                $this->logger->error("$this->apiCallName: bad JSON in data",
+                    [ 'apiUserTid' => $this->apiUserTid,
+                        'apiUserTidString' => Tid::toBase36String($this->apiUserTid),
+                        'apiError' => self::API_ERROR_NO_DATA,
+                        'rawdata' => $postData]);
+                return $this->responseWithJson($response, ['error' => self::API_ERROR_NO_DATA], HttpStatus::BAD_REQUEST);
             }
         }
-        
+
+        foreach ($requiredFields as $requiredField) {
+            if (!isset($inputData[$requiredField]) || ($errorIfEmpty && $inputData[$requiredField] === '')) {
+                $this->logger->error("$this->apiCallName: missing required field '$requiredField' in input data",
+                    [ 'apiUserTid' => $this->apiUserTid,
+                      'apiUserTidString' => Tid::toBase36String($this->apiUserTid),
+                      'apiError' => self::API_ERROR_MISSING_REQUIRED_FIELD,
+                      'rawdata' => $postData]);
+            return $this->responseWithJson($response, [
+                'error' => self::API_ERROR_MISSING_REQUIRED_FIELD,
+                'errorMsg' => "Required $requiredField not given"
+            ], HttpStatus::BAD_REQUEST);
+            }
+        }
         return $inputData;
     }
 
@@ -250,7 +267,8 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
         return $this->responseWithText($response, '', $status);
     }
 
-    protected function logProfilers(string $endLapName) {
+    protected function logProfilers(string $endLapName): void
+    {
         if ($this->profiler->isRunning()) {
             $this->profiler->stop();
             $this->logMethodProfilerData();
@@ -261,7 +279,8 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
             SystemProfiler::getLaps());
     }
 
-    protected function logException(Exception $e, $msg) {
+    protected function logException(Exception $e, $msg): void
+    {
         $this->logger->error("Exception caught: $msg", [
             'errorMsg' => $e->getMessage(),
             'errorCode' => $e->getCode(),

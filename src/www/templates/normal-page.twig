@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/bootstrap/dist/css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/bootstrap-icons/font/bootstrap-icons.css"/>
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/datatables.net-dt/css/jquery.dataTables.min.css"/>
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/styles.css"/>
+
+    {% block extraCSS %}{% endblock %}
+
+    <link href='{{baseurl}}/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
+
+    <title>{% block title %}{% endblock %}</title>
+
+    <script type="text/javascript" src="{{baseurl}}/node_modules/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/node_modules/moment/moment.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/node_modules/datatables.net/js/jquery.dataTables.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/node_modules/datatables.net-dt/js/dataTables.dataTables.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/js/SimpleProfiler.js"></script>
+
+    {% block extraJS %}{% endblock %}
+</head>
+<body>
+Page will be here
+</body>
+{% block finalBodyJS %}{% endblock %}
+</html>

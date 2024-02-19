@@ -74,7 +74,8 @@ export class CollapsePanel {
     this.iconSpan = $(`${this.containerSelector} span.cp-icon`)
     this.headerLink = $(`${this.containerSelector} a.cp-a`)
     this.contentDiv = $(`${this.containerSelector} div.cp-content`)
-    $(`${this.containerSelector} .cp-a`).on('click', () => {
+    $(`${this.containerSelector} .cp-a`).on('click', (ev) => {
+      ev.preventDefault();
       this.toggle()
     })
   }

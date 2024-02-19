@@ -67,6 +67,8 @@ import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
 
 import { PdfDownloadUrl } from './PdfDownloadUrl'
 import { IgnoreHyphen } from '../normalizers/TokenNormalizer/IgnoreHyphen'
+import { ApmPage } from '../pages/ApmPage'
+import { ApmFormats } from '../pages/common/ApmFormats'
 
 // import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS
@@ -88,9 +90,12 @@ const saveButtonTextClassSaving = 'text-warning'
 const saveButtonTextClassError = 'text-danger'
 
 
-export class EditionComposer {
+export class EditionComposer extends ApmPage {
 
   constructor(options) {
+    super(options)
+    console.log(`Common Apm Page Data`)
+    console.log(this.commonData)
     console.log(`Initializing Edition Composer`)
 
     // first load the fonts!
@@ -104,7 +109,6 @@ export class EditionComposer {
     // })
 
     let optionsDefinition = {
-      userId: { type:'NonZeroNumber', required: true},
       isTechSupport: { type: 'boolean', default: false},
       lastVersion: { type: 'boolean'},
       collationTableData : { type: 'object', required: true},
@@ -122,6 +126,9 @@ export class EditionComposer {
 
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "EditionComposer"})
     this.options = oc.getCleanOptions(options)
+
+    console.log(`EditionComposer Options`)
+    console.log(this.options)
 
     // icons
     this.icons = {
@@ -210,7 +217,7 @@ export class EditionComposer {
     })
     this.witnessInfoPanel = new WitnessInfoPanel({
       verbose: true,
-      userId: this.options.userId,
+      userTid: this.userTid,
       containerSelector: `#${witnessInfoTabId}`,
       ctData: this.ctData,
       onWitnessOrderChange: this.genOnWitnessOrderChange(),
@@ -229,6 +236,7 @@ export class EditionComposer {
     })
 
     this.adminPanel = new AdminPanel({
+      apmDataProxy: this.apmDataProxy,
       urlGen: this.options.urlGenerator,
       tableId: this.tableId,
       verbose: false,
@@ -527,13 +535,13 @@ export class EditionComposer {
     }
   }
 
-  _updateDataInPanels(updateWitnessInfo = false) {
+  async _updateDataInPanels(updateWitnessInfo = false) {
     if (this.errorDetected) {
       console.log(`Not updating data in panels because of error`)
       return
     }
 
-    this.mainTextPanel.updateData(this.ctData, this.edition)  // mainTextPanel takes care of updating the apparatus panels
+    await this.mainTextPanel.updateData(this.ctData, this.edition)  // mainTextPanel takes care of updating the apparatus panels
     this.collationTablePanel.updateCtData(this.ctData, 'EditionComposer')
     // this.editionPreviewPanel.updateData(this.ctData, this.edition)
     this.editionPreviewPanelNew.updateData(this.edition)
@@ -737,7 +745,7 @@ export class EditionComposer {
   }
 
   genGetPdfDownloadUrlForPreviewPanel() {
-    return PdfDownloadUrl.genGetPdfDownloadUrlForPreviewPanel(this.options.urlGenerator)
+    return PdfDownloadUrl.genGetPdfDownloadUrlForPreviewPanel()
     // return (rawData) => {
     //   return new Promise( (resolve, reject) => {
     //     let apiUrl = this.options.urlGenerator.apiTypesetRaw()
@@ -843,13 +851,13 @@ export class EditionComposer {
         $.post(
           this.apiSaveCollationUrl,
           {data: JSON.stringify(apiCallOptions)}
-        ).done(  (apiResponse) => {
+        ).done(  async (apiResponse) => {
           console.log("Success saving table")
           console.log(apiResponse)
           this.saveButton.html(this.icons.saveEdition)
           this.lastSavedCtData = Util.deepCopy(this.ctData)
           this.versionInfo = apiResponse.versionInfo
-          this.adminPanel.updateVersionInfo(this.versionInfo)
+          await this.adminPanel.updateVersionInfo(this.versionInfo)
           this.witnessUpdates = []
           this.witnessInfoPanel.onDataSave()
           this.unsavedChanges = false
@@ -896,7 +904,7 @@ export class EditionComposer {
   }
 
   genUpdateWitness() {
-    return (witnessIndex, changeData, newWitness) => {
+    return async (witnessIndex, changeData, newWitness) => {
 
       console.log(`Updating witness ${witnessIndex} (${this.ctData['witnessTitles'][witnessIndex]})`)
 
@@ -975,7 +983,7 @@ export class EditionComposer {
       })
       this._updateSaveArea()
       this._reGenerateEdition(`Witness Update`)
-      this._updateDataInPanels(false)
+      await this._updateDataInPanels(false)
       this.witnessInfoPanel.markWitnessAsJustUpdated(witnessIndex)
       return true
     }
@@ -1054,7 +1062,7 @@ export class EditionComposer {
         this.ctData.witnesses.push( {
           witnessType: WitnessType.SOURCE,
           title: sourceData.title,
-          ApmWitnessId: 'source:' + sourceData.uuid
+          ApmWitnessId: 'source:' + sourceData['tid']
         })
         this.ctData.witnessTitles.push(sourceData.title)
         this.ctData.witnessOrder.push(currentNumWitnesses + index)
@@ -1068,16 +1076,28 @@ export class EditionComposer {
     }
   }
 
+  filterOutUsedSources(sourceInfoArray) {
+    return sourceInfoArray.filter( (sourceInfo)=> {
+      let sourceApmId = `source:${sourceInfo['tid']}`;
+      for (let i = 0; i < this.ctData.witnesses.length; i++) {
+        if (this.ctData.witnesses[i]['ApmWitnessId'] === sourceApmId) {
+          return false;
+        }
+      }
+      return true;
+    })
+  }
+
   genFetchSources() {
     return () => {
       return new Promise( (resolve, reject) => {
         if (this.editionSources !== null) {
-          resolve(this.editionSources)
+          resolve(this.filterOutUsedSources(this.editionSources))
         }
         $.get(this.options.urlGenerator.apiEditionSourcesGetAll())
           .done( (apiResponse) => {
             this.editionSources = apiResponse
-            resolve(apiResponse)
+            resolve(this.filterOutUsedSources(this.editionSources))
           })
           .fail ( (resp) => {
             reject(resp)
@@ -1143,7 +1163,7 @@ export class EditionComposer {
     if (this.ctData['archived']) {
       let lastVersion = this.versionInfo[this.versionInfo.length-1]
       this.saveButtonPopoverTitle = 'Saving is disabled'
-      this.saveButtonPopoverContent = `<p>Edition is archived.</p><p>Last save: ${Util.formatVersionTime(lastVersion['timeFrom'])}</p>`
+      this.saveButtonPopoverContent = `<p>Edition is archived.</p><p>Last save: ${ApmFormats.timeString(lastVersion['timeFrom'])}</p>`
       this.saveButton
         .prop('disabled', true)
       return
@@ -1176,7 +1196,7 @@ export class EditionComposer {
       this.unsavedChanges = false
       this.adminPanel.allowArchiving()
       let lastVersion = this.versionInfo[this.versionInfo.length-1]
-      this.saveButtonPopoverContent = `Last save: ${Util.formatVersionTime(lastVersion['timeFrom'])}`
+      this.saveButtonPopoverContent = `Last save: ${ApmFormats.timeString(lastVersion['timeFrom'])}`
       this.saveButtonPopoverTitle = 'Nothing to save'
       this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassNoChanges)
       this.saveButton.prop('disabled', true)
@@ -1327,8 +1347,8 @@ export class EditionComposer {
 
   genCtInfoDiv() {
     let workTitle = this.options.workInfo['title']
-    let workAuthorId = this.options.workInfo['authorId']
-    let workAuthorName = this.options.peopleInfo[workAuthorId]['fullname']
+    let workAuthorTid = this.options.workInfo['authorTid']
+    let workAuthorName = this.options.peopleInfo[workAuthorTid]['name']
     let warningSign = ''
     return `<div id="ct-info" title="${workAuthorName}, ${workTitle}; table ID: ${this.tableId}">${this.options.workId}-${this.options.chunkNumber}</div>`
   }

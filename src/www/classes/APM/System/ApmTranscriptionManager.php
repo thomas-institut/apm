@@ -287,7 +287,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                 $this->cacheTracker->incrementHits();
                 $txWitness = unserialize(gzuncompress($cacheValue));
                 if ($txWitness === false) {
-                    throw new RuntimeException('Error unserializing from witness cache');
+                    throw new RuntimeException('Error un-serializing from witness cache');
                 }
                 return $txWitness;
             }
@@ -1041,7 +1041,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     /**
      * @inheritDoc
      */
-    public function updatePageSettings(int $pageId, PageInfo $newSettings, int $userId): void
+    public function updatePageSettings(int $pageId, PageInfo $newSettings, int $userTid): void
     {
 
 
@@ -1072,7 +1072,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                     $versionInfo->column = $i;
                     $versionInfo->isReview = false;
                     $versionInfo->isMinor = true;
-                    $versionInfo->authorId = $userId;
+                    $versionInfo->authorTid = $userTid;
                     $versionInfo->description = 'New page foliation: ' . $newSettings->foliation;
                     $versionInfo->timeFrom = TimeString::now();
                     $this->codeDebug("VersionInfo", $versionInfo->getDatabaseRow());

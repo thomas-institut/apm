@@ -70,11 +70,20 @@ class ApmUrlGenerator {
         return this.base + '/doc/' + docId + '/realpage/' + pageNumber + '/view'
     }
     siteChunkPage(work, chunk) {
-        return this.base + '/chunk/' + work + '/' + chunk
+        return `${this.base}/work/${work}/chunk/${chunk}`
     }
     siteUserProfile(userName) {
         return this.base + '/user/' + userName
     }
+
+    siteWorks() {
+        return `${this.base}/works`;
+    }
+
+    siteWorkPage(workId) {
+        return `${this.base}/work/${workId}`;
+    }
+
     siteDocPage(docId) {
         return this.base + '/doc/' + docId + '/details'
     }
@@ -90,8 +99,12 @@ class ApmUrlGenerator {
         return this.base + '/documents'
     }
 
+    siteDocNewDoc() {
+        return `${this.base}/doc/new`;
+    }
+
     siteChunks() {
-        return this.base + '/chunks'
+        return this.base + '/works'
     }
 
     siteUsers() {
@@ -173,8 +186,8 @@ class ApmUrlGenerator {
         return `${this.base}/api/transcriptions/${docId}/${pageNumber}/${col}/update`
     }
 
-    apiTranscriptionsByUserDocPageData(userId) {
-        return `${this.base}/api/transcriptions/byUser/${userId}/docPageData`
+    apiTranscriptionsByUserDocPageData(userTid) {
+        return `${this.base}/api/transcriptions/byUser/${userTid}/docPageData`
     }
 
     apiGetNumColumns(docId, pageNumber) {
@@ -190,14 +203,27 @@ class ApmUrlGenerator {
     openSeaDragonImagePrefix() {
         return this.base + '/node_modules/openseadragon/build/openseadragon/images/';
     }
-    apiCreateUser() {
-        return this.base + '/api/user/new';
+    apiCreateUser(tid) {
+        return `${this.base}/api/user/create/${tid}`;
     }
-    apiUpdateProfile(id) {
-        return this.base + '/api/user/' + id + '/update';
+    apiUpdateProfile(tid) {
+        return `${this.base}/api/user/${tid}/update`;
     }
+
     apiUserGetInfo(id) {
         return this.base + '/api/user/' + id + '/info';
+    }
+
+    apiPersonGetEssentialData(tid) {
+        return `${this.base}/api/person/${tid}/data/essential`
+    }
+
+    apiPersonGetEssentialDataAll() {
+        return `${this.base}/api/person/all/data/essential`
+    }
+
+    apiPersonCreate() {
+        return `${this.base}/api/person/create`
     }
 
 
@@ -205,8 +231,8 @@ class ApmUrlGenerator {
     apiUserGetCollationTableInfo(id) {
         return this.base + '/api/user/' + id + '/collationTables';
     }
-    apiUserGetMultiChunkEditionInfo(id) {
-        return this.base + '/api/user/' + id + '/multiChunkEditions';
+    apiUserGetMultiChunkEditionInfo(tid) {
+        return `${this.base}/api/user/${tid}/multiChunkEditions`
     }
 
     apiUserPasswordChange(id) {
@@ -274,13 +300,35 @@ class ApmUrlGenerator {
         return `${this.base}/api/witness/${witnessId}/to/edition`;
     }
 
-    apiWorkGetInfo(workId) {
-        return `${this.base}/api/work/${workId}/info`;
+    apiWorkGetInfoOld(workId) {
+        return `${this.base}/api/work/${workId}/old-info`;
     }
 
-    apiNewDoc() {
+    apiWorkGetData(workId) {
+        return `${this.base}/api/work/${workId}/data`;
+    }
+
+    apiWorkGetChunksWithTranscription(workId) {
+        return `${this.base}/api/work/${workId}/chunksWithTranscription`;
+    }
+
+    apiPersonGetWorks(personTid) {
+        return `${this.base}/api/person/${personTid}/works`;
+    }
+
+    apiDocumentNew() {
         return `${this.base}/api/doc/new`
     }
+
+    apiDocumentUpdate(id) {
+        return `${this.base}/api/doc/${id}/update`
+    }
+
+    apiDocumentDelete(id) {
+        return `${this.base}/api/doc/${id}/delete`
+    }
+
+
 
 
     siteChunkEdition(tableId) {

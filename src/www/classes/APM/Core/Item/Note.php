@@ -34,28 +34,29 @@ use ThomasInstitut\TimeString\TimeString;
 class Note {
 
     const DEFAULT_TEXT = 'No text';
-    const DEFAULT_AUTHOR_ID = -1;
+    const DEFAULT_AUTHOR_TID = -1;
     const DEFAULT_TIMESTAMP = TimeString::TIME_ZERO;
 
     /**
      * @var int
      */
-    protected $authorId;
+    protected int $authorTid;
 
     /** @var string */
-    protected $text;
+    protected string $text;
 
     /** @var string */
-    protected $time;
+    protected string $time;
 
     
-    public function __construct(string $text = self::DEFAULT_TEXT, int $authorId = self::DEFAULT_AUTHOR_ID, string $timeStamp = self::DEFAULT_TIMESTAMP) {
-        $this->setAuthorId($authorId);
+    public function __construct(string $text = self::DEFAULT_TEXT, int $authorTid = self::DEFAULT_AUTHOR_TID, string $timeStamp = self::DEFAULT_TIMESTAMP) {
+        $this->setAuthorTid($authorTid);
         $this->setTime($timeStamp);
         $this->setText($text);
     }
     
-    public function getText() {
+    public function getText(): string
+    {
         return $this->text;
     }
     
@@ -66,12 +67,12 @@ class Note {
         $this->text = $text;
     }
     
-    public function getAuthorId() : int {
-        return $this->authorId;
+    public function getAuthorTid() : int {
+        return $this->authorTid;
     }
     
-    public function setAuthorId(int $authorId): void{
-        $this->authorId = $authorId;
+    public function setAuthorTid(int $authorTid): void{
+        $this->authorTid = $authorTid;
     }
     
     public function getTimestamp() : string {
@@ -87,7 +88,7 @@ class Note {
 
     public function getData() : array {
         return [
-            'authorId' => $this->getAuthorId(),
+            'authorTid' => $this->getAuthorTid(),
             'text' => $this->getText(),
             'timeStamp' => $this->getTimestamp()
         ];

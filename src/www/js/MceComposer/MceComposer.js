@@ -44,7 +44,9 @@ import { TimeString } from '../toolbox/TimeString.mjs'
 import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
 import { CtData } from '../CtData/CtData'
 import { WitnessDataItem } from '../Edition/WitnessDataItem.mjs'
-import { SystemStyleSheet } from '../Typesetter2/Style/SystemStyleSheet.mjs'
+import { urlGen } from '../pages/common/SiteUrlGen'
+import { ApmPage } from '../pages/ApmPage'
+import { ApmFormats } from '../pages/common/ApmFormats'
 
 const defaultIcons = {
   moveUp: '&uarr;',
@@ -81,16 +83,15 @@ const saveButtonTextClassSaving = 'text-warning'
 const saveButtonTextClassError = 'text-danger'
 
 
-export class MceComposer {
+export class MceComposer extends ApmPage {
 
   constructor (options) {
+    super(options);
     let oc = new OptionsChecker({
       context: 'Mce Composer',
       optionsDefinition: {
-        userId: { type: 'number', required: true },
         editionId: { type: 'number', required: true },
         langDef : { type: 'object', default: defaultLanguageDefinition },
-        urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true },
       }
     })
 
@@ -147,14 +148,14 @@ export class MceComposer {
       if (this.editionId === -1) {
         // create empty MceEdition
         this.editionId = -1
-        this.editionPanel.showLoadingDataMessage(false)
+        this.editionPanel.setLoadingStatus(false)
         this.editionPanel.updateData(this.mceData)
         resolve()
       } else {
         // load Mce Edition
         console.log(`Loading edition ${this.editionId}`)
         this.editionPanel.updateLoadingMessage(`Loading multi-chunk edition`)
-        let apiUrl = this.options.urlGenerator.apiGetMultiChunkEdition(this.editionId)
+        let apiUrl = urlGen.apiGetMultiChunkEdition(this.editionId)
         $.get(apiUrl).then( (data) => {
           console.log(`Got data from server`)
           console.log(data)
@@ -166,9 +167,10 @@ export class MceComposer {
             this.regenerateEdition().then( () => {
               this.previewPanel.updateData(this.edition)
               this.editionPanel.updateData(this.mceData)
-              this.chunkSearchPanel.updateData(this.mceData)
-              this.updateSaveUI()
-              resolve()
+              this.chunkSearchPanel.updateData(this.mceData).then( () => {
+                this.updateSaveUI();
+                resolve();
+              })
             }, (error) => {
               console.error(error)
               reject(`Cannot regenerate edition from data`)
@@ -182,12 +184,16 @@ export class MceComposer {
     })
  }
 
+  /**
+   *
+   * @return {Promise<boolean>}
+   * @private
+   */
  _init_setupUi() {
     // construct panels
    this.editionPanel = new EditionPanel({
      containerSelector:  `#${editionPanelId}`,
      mceData: this.mceData,
-     urlGenerator: this.options.urlGenerator,
      getUpdateStatuses: this._genGetUpdateStatuses(),
      updateChunk: (chunkIndex) => { return this.chunkUpdate(chunkIndex)},
      deleteChunk: (chunkIndex)=> { return this.chunkDelete(chunkIndex)},
@@ -200,8 +206,7 @@ export class MceComposer {
    this.chunkSearchPanel = new ChunkSearchPanel({
      containerSelector: `#${chunkSearchPanelId}`,
      mceData: this.mceData,
-     userId: this.options.userId,
-     urlGenerator: this.options.urlGenerator,
+     apmDataProxy: this.apmDataProxy,
      addEdition: (id, timestamp) => {
        return this.chunkAdd(id, timestamp)
      },
@@ -229,8 +234,8 @@ export class MceComposer {
    ]
 
    this.multiPanelUI = new MultiPanelUI({
-       logo: `<a href="${this.options.urlGenerator.siteHome()}" title="Home">
-<img src="${this.options.urlGenerator.images()}/apm-logo-plain.svg" height="40px" alt="logo"/></a>`,
+       logo: `<a href="${urlGen.siteHome()}" title="Home">
+<img src="${urlGen.images()}/apm-logo-plain.svg" height="40px" alt="logo"/></a>`,
        topBarContent: () => {
          return `<div class="top-bar-item top-bar-title" id="${editionTitleId}">${this.mceData.title}</div>`
        },
@@ -240,8 +245,8 @@ export class MceComposer {
        },
        icons: {
          closePanel: '&times;',
-         horizontalMode: `<img src="${this.options.urlGenerator.images()}/horizontal-mode.svg" alt="Horizontal Mode"/>`,
-         verticalMode: `<img src="${this.options.urlGenerator.images()}/vertical-mode.svg" alt="Vertical Mode"/>`
+         horizontalMode: `<img src="${urlGen.images()}/horizontal-mode.svg" alt="Horizontal Mode"/>`,
+         verticalMode: `<img src="${urlGen.images()}/vertical-mode.svg" alt="Vertical Mode"/>`
        },
        panels: [
          {
@@ -364,7 +369,7 @@ export class MceComposer {
       }
 
       this.saving = true
-      let url = this.options.urlGenerator.apiSaveMultiChunkEdition()
+      let url = urlGen.apiSaveMultiChunkEdition()
       let description = changes.join('. ')
       this.saveButton.popover('hide')
       this.saveButton.html(this.icons.busy)
@@ -386,7 +391,7 @@ export class MceComposer {
         if (this.editionId === -1) {
           // redirect to new edition's page
           this.unsavedChanges = false
-          window.location.href = this.options.urlGenerator.siteEditMultiChunkEdition(apiResponse.id)
+          window.location.href = urlGen.siteEditMultiChunkEdition(apiResponse.id)
         } else {
           this.saveButton.html(this.icons.saveEdition)
           this.lastSavedMceData = Util.deepCopy(this.mceData)
@@ -454,7 +459,7 @@ export class MceComposer {
      this.unsavedChanges = false
      let lastSaveMsg = 'Never'
      if (this.lastSave !== '') {
-       lastSaveMsg = Util.formatVersionTime(this.lastSave)
+       lastSaveMsg = ApmFormats.timeString(this.lastSave)
      }
 
      this.saveButtonPopoverContent = `Last save: ${lastSaveMsg}`
@@ -577,12 +582,13 @@ export class MceComposer {
       console.log(`New MceData`)
       console.log(this.mceData)
       this.editionPanel.updateData(this.mceData)
-      this.chunkSearchPanel.updateData(this.mceData)
-      this.updateSaveUI()
-      this.regenerateEdition().then( () => {
-        this.previewPanel.updateData(this.edition)
-        resolve()
-      }, (error) => { reject(error)})
+      this.chunkSearchPanel.updateData(this.mceData).then ( () => {
+        this.updateSaveUI();
+        this.regenerateEdition().then( () => {
+          this.previewPanel.updateData(this.edition)
+          resolve()
+        }, (error) => { reject(error)})
+      })
     })
   }
 
@@ -613,16 +619,16 @@ export class MceComposer {
           return
         }
         console.log(`Generated edition for table ${tableId}, chunk ${ctData.chunkId}`)
-        console.log(edition)
-        this.editions[chunkIndex] = edition
-        this.editionPanel.updateData(this.mceData)
-        this.chunkSearchPanel.updateData(this.mceData)
-        this.updateSaveUI()
-        this.regenerateEdition().then( () => {
-          this.previewPanel.updateData(this.edition)
-          resolve()
-        }, (error) => { reject(error)})
-
+        console.log(edition);
+        this.editions[chunkIndex] = edition;
+        this.editionPanel.updateData(this.mceData);
+        this.chunkSearchPanel.updateData(this.mceData).then ( () => {
+          this.updateSaveUI();
+          this.regenerateEdition().then( () => {
+            this.previewPanel.updateData(this.edition);
+            resolve();
+          }, (error) => { reject(error)})
+        })
       }, (error) => { reject(error)})
     })
   }
@@ -635,7 +641,7 @@ export class MceComposer {
   chunkAdd(tableId, timeStamp) {
     return new Promise ( (resolve, reject) => {
       // first, get the table from the server
-      this.getSingleChunkDataFromServer(tableId, timeStamp).then( (data) => {
+      this.getSingleChunkDataFromServer(tableId, timeStamp).then( async (data) => {
         let ctData = data['ctData']
         if (ctData.type !== 'edition') {
           reject(`Table ${tableId} is not an edition`)
@@ -645,7 +651,7 @@ export class MceComposer {
           reject(`Table ${tableId} is archived`)
           return
         }
-        if (!this.addChunkToMceData(tableId, ctData, data['timeStamp'])){
+        if (! await this.addChunkToMceData(tableId, ctData, data['timeStamp'])){
           reject(this.errorDetail)
           return
         }
@@ -727,7 +733,7 @@ export class MceComposer {
         }
       }
       // really get from server
-      let url = this.options.urlGenerator.apiGetCollationTable(tableId, TimeString.compactEncode(timeStamp))
+      let url = urlGen.apiGetCollationTable(tableId, TimeString.compactEncode(timeStamp))
       $.get(url).then( (data) => {
         console.log(`Got data from server for table ${tableId}, timeStamp '${timeStamp}'`)
         console.log(data)
@@ -883,7 +889,7 @@ export class MceComposer {
     })
   }
 
-  addChunkToMceData(tableId, ctData, timeStamp) {
+  async addChunkToMceData(tableId, ctData, timeStamp) {
     // first, see if the exact chunk edition is already in
     for (let chunkIndex = 0; chunkIndex < this.mceData.chunks.length; chunkIndex++) {
       let chunk = this.mceData.chunks[chunkIndex]
@@ -983,13 +989,13 @@ export class MceComposer {
     // console.log(edition)
     this.editions.push(edition)
     this.editionPanel.updateData(this.mceData)
-    this.chunkSearchPanel.updateData(this.mceData)
+    await this.chunkSearchPanel.updateData(this.mceData)
     this.updateSaveUI()
     return true
   }
 
   genGetPdfDownloadUrlForPreviewPanel() {
-    return PdfDownloadUrl.genGetPdfDownloadUrlForPreviewPanel(this.options.urlGenerator)
+    return PdfDownloadUrl.genGetPdfDownloadUrlForPreviewPanel()
   }
 
 

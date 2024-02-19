@@ -1,12 +1,11 @@
-
-
+import { urlGen } from '../pages/common/SiteUrlGen'
 
 export class PdfDownloadUrl {
 
-  static genGetPdfDownloadUrlForPreviewPanel(urlGenerator) {
+  static genGetPdfDownloadUrlForPreviewPanel() {
     return (rawData) => {
       return new Promise( (resolve, reject) => {
-        let apiUrl = urlGenerator.apiTypesetRaw()
+        let apiUrl = urlGen.apiTypesetRaw()
         let dataJson = JSON.stringify(rawData)
         console.log(`About to make API call for PDF download url, data size is ${dataJson.length}`)
         console.log(`Calling typeset API at ${apiUrl}`)

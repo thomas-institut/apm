@@ -93,7 +93,7 @@ class CollationTableDataProvider implements StandardDataProvider
         return $data;
     }
 
-    public function getUserIdsFromData($data) : array {
+    public function getUserTidsFromData($data) : array {
         // collect userIds in notes
         $people = [];
 
@@ -101,8 +101,8 @@ class CollationTableDataProvider implements StandardDataProvider
             foreach($witness->items as $itemData) {
                 if (isset($itemData->notes)) {
                     foreach($itemData->notes as $note) {
-                        if (!isset($people[$note['authorId']])) {
-                            $people[$note['authorId']] = true;
+                        if (!isset($people[$note['authorTid']])) {
+                            $people[$note['authorTid']] = true;
                         }
                     }
                 }

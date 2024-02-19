@@ -72,7 +72,7 @@ abstract class ColumnVersionManager
      * Marks a version as unpulished
      * @param int $versionId
      */
-    abstract public function unpublishVersion(int $versionId) : void;
+    abstract public function unPublishVersion(int $versionId) : void;
 
 
     /**

@@ -1,5 +1,4 @@
-{% extends "base.twig" %}
-{% import 'macros.twig' as macros %}
+{% extends "normal-page.twig" %}
 
 {% block title %}
     ACT {{work}}-{{chunk}}-{{lang}}{%if isPartial %}-partial{%endif%}
@@ -11,107 +10,31 @@
 {% endblock %}
 
 {% block extraJS %}
-    <script type="text/javascript" src="{{baseurl}}/node_modules/twig/twig.min.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/dist/AutomaticCollationTable.bundle.js"></script>
 {% endblock %}
 
 {% block finalBodyJS %}
-<script type="module">
+<script>
   $(() =>  {
-    let apiCallOptions = JSON.parse("{{apiCallOptions|json_encode|e('js')}}")
-    let availableWitnesses = JSON.parse("{{availableWitnesses|json_encode|e('js')}}")
-    let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
-    let isPreset = JSON.parse({{ isPreset|json_encode }})
-    let suppressTimeStampsInApiCalls = JSON.parse({{ suppressTimestampsInApiCalls|json_encode }})
-    let normalizerData = JSON.parse("{{ normalizerData|json_encode|e('js') }}")
-
     let actOptions =  {
-        workId: '{{ work }}',
-        chunkNumber : parseInt({{ chunk }}),
-        urlGenerator: urlGenerator,
-        availableWitnesses: availableWitnesses,
-        loadNow: true, 
-        userId: parseInt({{userinfo.id}}),
-        isPreset:  isPreset,
-        suppressTimestampsInApiCalls: suppressTimeStampsInApiCalls,
-        normalizerData: normalizerData
+      commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
+      workId: '{{ work }}',
+      chunkNumber : parseInt({{ chunk }}),
+      availableWitnesses: JSON.parse("{{availableWitnesses|json_encode|e('js')}}"),
+      loadNow: true,
+      langName: '{{ langName }}',
+      isPreset:  JSON.parse({{ isPreset|json_encode }}),
+      isPartial: JSON.parse({{ isPartial|json_encode }}),
+      suppressTimestampsInApiCalls: JSON.parse({{ suppressTimestampsInApiCalls|json_encode }}),
+      normalizerData: JSON.parse("{{ normalizerData|json_encode|e('js') }}")
     }
     
     if (actOptions.isPreset) {
         actOptions.preset = JSON.parse("{{preset|json_encode|e('js')}}")
     }
     
-    let miniApp = new AutomaticCollationTable(actOptions, apiCallOptions)
+    new AutomaticCollationTable(actOptions, JSON.parse("{{apiCallOptions|json_encode|e('js')}}"))
   })
 
 </script>
-{% endblock %}
-{% block content %}
-    <nav aria-label="breadcrumb">
-     <ol class="breadcrumb">
-         <li class="breadcrumb-item"><a href="{{url_for('chunks')}}">Chunks</a></li>
-         <li class="breadcrumb-item"><a href="{{url_for('chunk', {'work' : work, 'chunk': chunk})}}">{{work}}-{{chunk}}</a></li>
-         <li class="breadcrumb-item">Automatic Collation Table</li>
-         <li class="breadcrumb-item active">{{langName}} {%if isPartial %}(partial){%endif%}</li>
-    </ol>
-    </nav>
-    <h1>Automatic Collation Table</h1> 
-    <div class="row">
-        <div class="col-md-9">
-            <div id="collationtableinfo">
-                <p>{{work_info.author_name}}, <em>{{work_info.title}}</em>, chunk {{chunk}} ({{work}}-{{chunk}})</p>
-
-                <p><span id="act-title"></span>
-                    <button title="Click to edit the automatic collation settings" 
-                        id="editsettingsbutton" class="btn btn-default btn-sm noborder ">
-                        <i class="fas fa-pencil-alt" aria-hidden="true"></i>
-                    </button>
-                </p>
-                <div id="editsettingsform" class="inlineform">
-                </div>
-                <p>Last change in data: <span id="lastTimeLabel">{{ versionInfo.lastTime }}</span>
-                    <button title="Click to show/hide witness info" id="versioninfobutton" class="btn btn-default btn-sm noborder">
-                        <i class="fas fa-angle-right" aria-hidden="true"></i>
-                    </button>
-                 </p>
-                <div id="versioninfo" class="ct-versioninfo">
-                </div>
-                <div id="collationTableActions">
-                    <button id="savetablebutton" class="btn btn-primary" title="Save table to edit later">Save Table</button>
-                </div>
-            </div>
-
-        </div>
-        <div class="col-md-3 text-right">
-            <div id="collationtablebuttons" >
-                <button title="Toggle Edition"
-                    id="quickedbutton" class="btn btn-default btn-lg noborder">
-                    <i class="fas fa-align-left" aria-hidden="true"></i>
-                </button>
-
-                <button title="Reload the collation table with the most recent data" 
-                    id="redobutton" class="btn btn-default btn-lg noborder">
-                    <i class="fas fa-sync" aria-hidden="true"></i>
-                </button>
-                <button title="Change view settings" 
-                    id="viewsettingsbutton" class="btn btn-default btn-lg noborder">
-                    <i class="fas fa-cog" aria-hidden="true"></i>
-                </button>
-                <a title="Download CSV file" href="data:text/csv,This%2Cis%2Ca%2Ctest" download="apm-collationtable.csv"
-                    id="exportcsvbutton" class="btn btn-default noborder">
-                     <small>CSV</small> <i class="fas fa-download" aria-hidden="true"></i>
-                </a>
-            </div>
-            <div id="viewsettingsform" class="ctdropdownform text-left" ></div>
-        </div>
-    </div>
-    
-    <div id="status" class="text-danger"></div>
-    <div id="editiondiv">
-        <div id="theedition"></div>
-        <div id="sigla"></div>
-    </div>
-    <div id="collationtablediv" class="ctdiv">Collation table goes here</div>
-    <div id="collationEngineDetails" class="text-muted small"> </div>
-
 {% endblock %}

@@ -31,7 +31,7 @@ if (!ConfigLoader::loadConfig([__DIR__ . '/../www/config.php'])) {
     exit();
 }
 
-include_once __DIR__ . '/../www/setup.php';
+include_once __DIR__ . '/../www/config_setup.php';
 include_once __DIR__ . '/../www/version.php';
 
 global $config;

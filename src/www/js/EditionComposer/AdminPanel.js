@@ -26,12 +26,13 @@
 
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import * as Util from '../toolbox/Util.mjs'
 
 import { doNothingPromise } from '../toolbox/FunctionUtil.mjs'
 import { ConfirmDialog } from '../pages/common/ConfirmDialog'
 import * as CollationTableType from '../constants/CollationTableType'
 import { Panel } from '../MultiPanelUI/Panel'
+import { ApmFormats } from '../pages/common/ApmFormats'
+import { TimeString } from '../toolbox/TimeString.mjs'
 
 const archiveButtonId = 'archive-table-btn'
 const versionHistoryDiv = 'version-history-div'
@@ -40,6 +41,7 @@ export class AdminPanel extends  Panel {
   constructor (options = {}) {
     super(options)
     let optionsSpec = {
+      apmDataProxy: { type: 'object'},
       urlGen: { type: 'object'},
       tableId: { type: 'number'},
       ctType: { type: 'string', required: true},
@@ -57,12 +59,12 @@ export class AdminPanel extends  Panel {
     this.urlGen = this.options.urlGen
   }
 
-  updateVersionInfo(newVersionInfo) {
+  async updateVersionInfo(newVersionInfo) {
     this.versionInfo = newVersionInfo
-    $(`#${versionHistoryDiv}`).html(this._genVersionTableHtml())
+    $(`#${versionHistoryDiv}`).html(await this._genVersionTableHtml())
   }
 
-  generateHtml() {
+  async generateHtml() {
     let label = this.options.ctType === CollationTableType.EDITION ? 'edition' : 'collation table'
     let labelUpperCase = this.options.ctType === CollationTableType.EDITION ? 'Edition' : 'Collation Table'
     return `
@@ -73,7 +75,7 @@ export class AdminPanel extends  Panel {
        </ul>
     </div>
     <h3>Versions</h3>
-    <div id="${versionHistoryDiv}">${this._genVersionTableHtml()}</div>`
+    <div id="${versionHistoryDiv}">${await this._genVersionTableHtml()}</div>`
   }
 
   allowArchiving() {
@@ -147,27 +149,25 @@ export class AdminPanel extends  Panel {
       .prop('disabled', true)
   }
 
-  _showUpdatedVersionInfo() {
-    $(`#${versionHistoryDiv}`).html(this._genVersionTableHtml())
+  async _showUpdatedVersionInfo() {
+    $(`#${versionHistoryDiv}`).html(await this._genVersionTableHtml())
   }
 
-  _genVersionTableHtml() {
+  async _genVersionTableHtml() {
     let html = ''
 
-    html += '<table class="versioninfo">'
+    html += '<table class="version-info">'
     html += '<tr><th>N</th><th>Id</th><th>Author</th><th>Time</th><th>Description</th></tr>'
 
     for(let i=this.versionInfo.length-1; i >= 0; i--)   {
-      let version = this.versionInfo[i]
-      let authorName = 'N/A... please reload'
-      if (this.options.peopleInfo[version['authorId']] !== undefined) {
-        authorName = this.options.peopleInfo[version['authorId']].fullname
-      }
+      let version = this.versionInfo[i];
+      let authorData = await this.options.apmDataProxy.getPersonEssentialData(version['authorTid']);
+      let authorName = authorData.name;
       html += '<tr>'
       html += '<td>' + (i+1) + '</td>'
       html += `<td><a href="${this.urlGen.siteEditCollationTable(this.options.tableId, version['id'])}">${version['id']}</a></td>`
       html += '<td class="author">' + authorName + '</td>'
-      html += '<td class="time">' + Util.formatVersionTime(version['timeFrom']) + '</td>'
+      html += '<td class="time">' + ApmFormats.time(TimeString.toDate(version['timeFrom'])) + '</td>'
       html += '<td>' + version['description'] + '</td>'
 
       html += '<td>'
@@ -182,11 +182,10 @@ export class AdminPanel extends  Panel {
 
 
   _genOnClickArchiveTable() {
-    let thisObject = this
     let label = this.options.ctType === CollationTableType.EDITION ? 'edition' : 'collation table'
     return () => {
-      if (thisObject.options.archived || !thisObject.options.canArchive) {
-        thisObject.verbose && console.log(`Click on archive button, but cannot archive`)
+      if (this.options.archived || !this.options.canArchive) {
+        this.verbose && console.log(`Click on archive button, but cannot archive`)
         return
       }
 
@@ -197,17 +196,19 @@ export class AdminPanel extends  Panel {
         acceptButtonLabel: 'Archive',
         cancelButtonLabel: 'Cancel',
         acceptFunction: () => {
-          thisObject._showAsArchiving()
-          thisObject.options.onConfirmArchive().then( (newVersionInfo) => {
+          this._showAsArchiving()
+          this.options.onConfirmArchive().then( (newVersionInfo) => {
             console.log("Success archiving table")
-            thisObject.options.archived = true
-            thisObject.options.versionInfo = newVersionInfo
-            thisObject._showAsArchived()
-            thisObject._showUpdatedVersionInfo()
+            this.options.archived = true
+            this.options.versionInfo = newVersionInfo
+            this._showAsArchived()
+            this._showUpdatedVersionInfo().then( () => {
+              this.verbose && console.log(`Finished archiving table`);
+            })
           }).catch( () => {
-            thisObject.verbose && console.log(`Error archiving table`)
+            this.verbose && console.log(`Error archiving table`)
             this.options.archived = false
-            thisObject.archiveButton.html(`Error archiving, click to try again`)
+            this.archiveButton.html(`Error archiving, click to try again`)
           })
         }
       })

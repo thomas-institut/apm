@@ -23,6 +23,7 @@ import { NormalPage } from './NormalPage'
 import { urlGen } from './common/SiteUrlGen'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { TagEditor } from '../widgets/TagEditor'
+import { ApmPage } from './ApmPage'
 
 const newMceEditionIcon = '<i class="bi bi-file-plus"></i>'
 
@@ -54,7 +55,7 @@ export class DashboardPage extends NormalPage {
   }
 
   async fetchMultiChunkEditions() {
-    let data = await this.apmDataProxy.get(urlGen.apiUserGetMultiChunkEditionInfo(this.userId))
+    let data = await this.apmDataProxy.get(urlGen.apiUserGetMultiChunkEditionInfo(this.userTid))
     let html = UserDocDataCommon.generateMultiChunkEditionsListHtml(data)
     let newMceUrl = urlGen.siteMultiChunkEditionNew()
     html += `<p class="new-mce"><a href="${newMceUrl}" title="${tr('Click to start a new multi-chunk edition')}" target="_blank">${newMceEditionIcon} ${tr('Create new multi-chunk edition')}</a></p>`
@@ -62,29 +63,31 @@ export class DashboardPage extends NormalPage {
   }
 
   async fetchCollationTablesAndEditions() {
-   let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.userId))
+   let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.userTid))
    let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo'])
    this.chunkEditionsCollapse.setContent(listHtml.editions)
    this.collationTablesCollapse.setContent(listHtml.cTables)
   }
 
   async fetchTranscriptions() {
-    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.userId))
+    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.userTid))
     this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data))
+  }
+
+  getExtraClassesForPageContentDiv () {
+    return [ 'dashboard'];
   }
 
   /**
    *
    * @return {Promise<string>}
    */
-  async genHtml() {
-    return `<div class="dashboard">
-        <div id="multi-chunk-editions" class="dashboard-section"></div>
+  async genContentHtml() {
+    return `<div id="multi-chunk-editions" class="dashboard-section"></div>
         <div id="chunk-editions" class="dashboard-section"></div>
         <div id="collation-tables" class="dashboard-section"></div>
         <div id="transcriptions" class="dashboard-section"></div>
-        <div id="admin" class="dashboard-section"></div>
-       </div>`
+        <div id="admin" class="dashboard-section"></div> `
   }
 
   genAdminSectionHtml() {
@@ -96,7 +99,7 @@ export class DashboardPage extends NormalPage {
     return new CollapsePanel({
       containerSelector: selector,
       title: title,
-      content: this.genLoadingMessageHtml(),
+      content: ApmPage.genLoadingMessageHtml(),
       contentClasses: [ 'dashboard-section-content'],
       headerClasses: headerClasses,
       iconWhenHidden: '<small><i class="bi bi-caret-right-fill"></i></small>',
@@ -108,9 +111,7 @@ export class DashboardPage extends NormalPage {
     })
   }
 
-  genLoadingMessageHtml() {
-    return `${tr('Loading data')} <span class="spinner-border spinner-border-sm" role="status"></span>`
-  }
+
 
 }
 

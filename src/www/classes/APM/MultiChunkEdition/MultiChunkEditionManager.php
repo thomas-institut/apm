@@ -25,11 +25,11 @@ abstract class MultiChunkEditionManager
      *
      * @param int $id,  if === -1, creates a new edition
      * @param array $mceData
-     * @param int $authorId
+     * @param int $authorTid
      * @param string $versionDescription
      * @return int
      */
-    abstract public function saveMultiChunkEdition(int $id, array $mceData, int $authorId, string $versionDescription) : int;
+    abstract public function saveMultiChunkEdition(int $id, array $mceData, int $authorTid, string $versionDescription) : int;
 
 
     /**
@@ -40,7 +40,17 @@ abstract class MultiChunkEditionManager
      */
     abstract public function getMultiChunkEditionIdsByWorkChunk(string $workId, int $chunkId) : array;
 
-    abstract public function getMultiChunkEditionInfoForUserId(int $userId): array;
+    /**
+     * Returns a list of all multi-chunk editions by the given user.
+     *
+     * The return array elements are associative arrays of the form:
+     *
+     *   [ 'id' => multiChunkEditionId,  'title' => editionTitle ]
+     *
+     * @param int $userTid
+     * @return array
+     */
+    abstract public function getMultiChunkEditionsByUser(int $userTid): array;
 
 
 }

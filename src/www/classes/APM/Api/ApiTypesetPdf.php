@@ -42,7 +42,7 @@ class ApiTypesetPdf extends ApiController
      *
      * @param Request $request
      * @param Response $response
-     * @return array|Response
+     * @return Response
      */
     public function typesetRawData(Request  $request, Response $response) : Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
@@ -128,7 +128,7 @@ class ApiTypesetPdf extends ApiController
             // Cannot reproduce this condition in testing
             // @codeCoverageIgnoreStart
             $this->logger->error("Cannot create file $tempFileName",
-                [ 'apiUserId' => $this->apiUserId,
+                [ 'apiUserTid' => $this->apiUserTid,
                     'apiError' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE,
                     'data' => $data ]);
             return false;
@@ -197,131 +197,131 @@ class ApiTypesetPdf extends ApiController
         return [ 'status' => 'OK', 'cached' => false,  'url' => $baseUrl . '/' . $fileToDownload];
     }
 
-    public function convertTypesetterDataToPdf(Request  $request, Response $response): Response
-    {
-        $apiCall = 'ConvertTypesetterDataToPDF';
-        $requiredFields = [
-            'typesetterData',
-        ];
-
-        $inputData = $this->checkAndGetInputData($request, $response, $requiredFields);
-        if (!is_array($inputData)) {
-            return $inputData;
-        }
-        $this->profiler->start();
-
-        $pdfId = '';
-        // Check if there's a PDF Id
-        if (isset($inputData['pdfId'])) {
-            $pdfId = $inputData['pdfId'];
-        }
-
-        $useCache = true;
-
-        if (isset($inputData['noCache'])) {
-            $useCache = false;
-        }
-
-        $result = $this->renderPdfFromJsonData($inputData['typesetterData'], $pdfId, $useCache);
-        if ($result['status'] === 'error') {
-            return $this->responseWithJson($response, ['error' => $result['errorCode']], 409);
-        }
-        return $this->responseWithJson($response, [
-            'status' =>  'OK',
-            'cached'=> $result['cached'],
-            'url' => $result['url']
-        ]);
-    }
-
-    public function convertSVGtoPDF(Request $request,  Response $response): Response
-    {
-        // TODO: Check if this is actually used right now
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $requiredFields = [
-            'svg',
-        ];
-
-        $inputData = $this->checkAndGetInputData($request, $response, $requiredFields);
-        if (!is_array($inputData)) {
-            return $inputData;
-        }
-        $this->profiler->start();
-
-
-        $pdfId = '';
-        // Check if there's a PDF Id
-        if (isset($inputData['pdfId'])) {
-            $pdfId = $inputData['pdfId'];
-        }
-
-        $svgHash = hash('sha256', $inputData['svg']);
-
-        $fileToDownload = self::PDF_DOWNLOAD_SUBDIR . '/' . self::PDF_FILE_PREFIX . $pdfId . '-'. $svgHash . '.pdf';
-        $baseUrl = $this->systemManager->getBaseUrl();
-        if (file_exists($fileToDownload)) {
-            $this->codeDebug('Serving already converted file');
-            return $this->responseWithJson($response, [ 'status' => 'OK (Cached)', 'url' => $baseUrl . '/' . $fileToDownload]);
-        }
-
-
-        // File is not there, do the conversion
-
-        $inkscapeExec = $this->systemManager->getConfig()[ApmConfigParameter::INKSCAPE_EXECUTABLE];
-        $inkscapeVersion = $this->systemManager->getConfig()[ApmConfigParameter::INKSCAPE_VERSION];
-        $tempDir = $this->systemManager->getConfig()[ApmConfigParameter::INKSCAPE_TEMP_DIR];
-        $apmFullPath = $this->systemManager->getConfig()[ApmConfigParameter::BASE_FULL_PATH];
-
-        // 1. Create a temporary file and put the SVG in it
-        $tmpInputFileName =  $tempDir . '/' . self::TEMP_SVG_FILE_PREFIX .  $svgHash . '.svg';
-        $outputFileName = "$apmFullPath/$fileToDownload";
-
-        $handle = fopen($tmpInputFileName, "w");
-        if ($handle === false) {
-            // Cannot reproduce this condition in testing
-            // @codeCoverageIgnoreStart
-            $this->logger->error("Cannot create temporary SVG file",
-                [ 'apiUserId' => $this->apiUserId,
-                    'apiError' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE,
-                    'data' => $inputData ]);
-            return $this->responseWithJson($response, ['error' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE], 409);
-            // @codeCoverageIgnoreEnd
-        }
-
-        fwrite($handle, $inputData['svg']);
-        fclose($handle);
-
-        $this->codeDebug("About to call inkscape, input: $tmpInputFileName, output $outputFileName");
-
-        if ($inkscapeVersion >= 1) {
-            $commandLine = "$inkscapeExec --export-filename=$outputFileName $tmpInputFileName 2>&1";
-        } else {
-            $commandLine = "$inkscapeExec --export-pdf=$outputFileName $tmpInputFileName 2>&1";
-        }
-
-        $returnValue = false;
-        $returnArray = [];
-
-        // run Inkscape
-        exec($commandLine, $returnArray, $returnValue);
-
-
-        $this->logger->debug('Inkscape return', $returnArray);
-
-        $inkscapeErrors = [];
-        foreach($returnArray as $returnLine) {
-            if (preg_match('/Gtk-Message/', $returnLine) === false) {
-                $inkscapeErrors[] = $returnLine;
-            }
-        }
-
-        if (count($inkscapeErrors) !== 0) {
-            // there are errors!
-            $this->logger->debug('Inkscape error', [ 'array' => $returnArray, 'value' => $returnValue]);
-            return $this->responseWithJson($response, ['status' => 'Errors'], 409);
-        }
-
-        return $this->responseWithJson($response, [ 'status' => 'OK', 'url' => $baseUrl . '/' . $fileToDownload]);
-
-    }
+//    public function convertTypesetterDataToPdf(Request  $request, Response $response): Response
+//    {
+//        $apiCall = 'ConvertTypesetterDataToPDF';
+//        $requiredFields = [
+//            'typesetterData',
+//        ];
+//
+//        $inputData = $this->checkAndGetInputData($request, $response, $requiredFields);
+//        if (!is_array($inputData)) {
+//            return $inputData;
+//        }
+//        $this->profiler->start();
+//
+//        $pdfId = '';
+//        // Check if there's a PDF Id
+//        if (isset($inputData['pdfId'])) {
+//            $pdfId = $inputData['pdfId'];
+//        }
+//
+//        $useCache = true;
+//
+//        if (isset($inputData['noCache'])) {
+//            $useCache = false;
+//        }
+//
+//        $result = $this->renderPdfFromJsonData($inputData['typesetterData'], $pdfId, $useCache);
+//        if ($result['status'] === 'error') {
+//            return $this->responseWithJson($response, ['error' => $result['errorCode']], 409);
+//        }
+//        return $this->responseWithJson($response, [
+//            'status' =>  'OK',
+//            'cached'=> $result['cached'],
+//            'url' => $result['url']
+//        ]);
+//    }
+//
+//    public function convertSVGtoPDF(Request $request,  Response $response): Response
+//    {
+//        // TODO: Check if this is actually used right now
+//        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+//        $requiredFields = [
+//            'svg',
+//        ];
+//
+//        $inputData = $this->checkAndGetInputData($request, $response, $requiredFields);
+//        if (!is_array($inputData)) {
+//            return $inputData;
+//        }
+//        $this->profiler->start();
+//
+//
+//        $pdfId = '';
+//        // Check if there's a PDF Id
+//        if (isset($inputData['pdfId'])) {
+//            $pdfId = $inputData['pdfId'];
+//        }
+//
+//        $svgHash = hash('sha256', $inputData['svg']);
+//
+//        $fileToDownload = self::PDF_DOWNLOAD_SUBDIR . '/' . self::PDF_FILE_PREFIX . $pdfId . '-'. $svgHash . '.pdf';
+//        $baseUrl = $this->systemManager->getBaseUrl();
+//        if (file_exists($fileToDownload)) {
+//            $this->codeDebug('Serving already converted file');
+//            return $this->responseWithJson($response, [ 'status' => 'OK (Cached)', 'url' => $baseUrl . '/' . $fileToDownload]);
+//        }
+//
+//
+//        // File is not there, do the conversion
+//
+//        $inkscapeExec = $this->systemManager->getConfig()[ApmConfigParameter::INKSCAPE_EXECUTABLE];
+//        $inkscapeVersion = $this->systemManager->getConfig()[ApmConfigParameter::INKSCAPE_VERSION];
+//        $tempDir = $this->systemManager->getConfig()[ApmConfigParameter::INKSCAPE_TEMP_DIR];
+//        $apmFullPath = $this->systemManager->getConfig()[ApmConfigParameter::BASE_FULL_PATH];
+//
+//        // 1. Create a temporary file and put the SVG in it
+//        $tmpInputFileName =  $tempDir . '/' . self::TEMP_SVG_FILE_PREFIX .  $svgHash . '.svg';
+//        $outputFileName = "$apmFullPath/$fileToDownload";
+//
+//        $handle = fopen($tmpInputFileName, "w");
+//        if ($handle === false) {
+//            // Cannot reproduce this condition in testing
+//            // @codeCoverageIgnoreStart
+//            $this->logger->error("Cannot create temporary SVG file",
+//                [ 'apiUserId' => $this->apiUserId,
+//                    'apiError' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE,
+//                    'data' => $inputData ]);
+//            return $this->responseWithJson($response, ['error' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE], 409);
+//            // @codeCoverageIgnoreEnd
+//        }
+//
+//        fwrite($handle, $inputData['svg']);
+//        fclose($handle);
+//
+//        $this->codeDebug("About to call inkscape, input: $tmpInputFileName, output $outputFileName");
+//
+//        if ($inkscapeVersion >= 1) {
+//            $commandLine = "$inkscapeExec --export-filename=$outputFileName $tmpInputFileName 2>&1";
+//        } else {
+//            $commandLine = "$inkscapeExec --export-pdf=$outputFileName $tmpInputFileName 2>&1";
+//        }
+//
+//        $returnValue = false;
+//        $returnArray = [];
+//
+//        // run Inkscape
+//        exec($commandLine, $returnArray, $returnValue);
+//
+//
+//        $this->logger->debug('Inkscape return', $returnArray);
+//
+//        $inkscapeErrors = [];
+//        foreach($returnArray as $returnLine) {
+//            if (preg_match('/Gtk-Message/', $returnLine) === false) {
+//                $inkscapeErrors[] = $returnLine;
+//            }
+//        }
+//
+//        if (count($inkscapeErrors) !== 0) {
+//            // there are errors!
+//            $this->logger->debug('Inkscape error', [ 'array' => $returnArray, 'value' => $returnValue]);
+//            return $this->responseWithJson($response, ['status' => 'Errors'], 409);
+//        }
+//
+//        return $this->responseWithJson($response, [ 'status' => 'OK', 'url' => $baseUrl . '/' . $fileToDownload]);
+//
+//    }
 
 }

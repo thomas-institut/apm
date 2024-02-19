@@ -27,12 +27,26 @@ body, .popover {
     text-align: inherit;
 }
 
-
-@media (min-width: 1200px) {
-    .container {
-        max-width: 1170px;   /* To make it the same as bs3, in bs4 it's 1140px*/
-    }
+.container {
+    width: 100% !important;
+    max-width: 100% !important;
 }
+
+.navbar {
+    padding: 0 !important;
+}
+
+/*@media (min-width: 1200px) {*/
+/*    .container {*/
+/*        max-width: 1170px;   !* To make it the same as bs3, in bs4 it's 1140px*!*/
+/*    }*/
+/*}*/
+
+/*@media (min-width: 1900px) {*/
+/*    .container {*/
+/*        max-width: 1800px;   !* To make it the same as bs3, in bs4 it's 1140px*!*/
+/*    }*/
+/*}*/
 
 .bottom-border-light { /* To make it the same as bs3, no border in bs4*/
     border-bottom-color: var(--very-light-gray);
@@ -299,3 +313,91 @@ nav {
 ol.breadcrumb {
     padding:0;
 }
+
+
+/* NORMAL PAGE */
+
+:root {
+    --container-side-padding: 5px;
+}
+
+body.normal-page {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+.normal-page div.page-top-bar {
+    padding-left: var(--container-side-padding);
+    padding-right: var(--container-side-padding);
+    margin-bottom: 0.5rem;
+}
+
+.normal-page .navbar {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--very-light-gray);
+}
+
+.normal-page  div.page-content {
+    padding-left: var(--container-side-padding);
+    padding-right: var(--container-side-padding);
+    overflow-y: auto;
+}
+
+.normal-page div.page-footer {
+    padding-left: var(--container-side-padding);
+    padding-right: var(--container-side-padding);
+    margin-top: 0.5rem;
+    /*border-top: 1px solid var(--very-light-gray);*/
+    font-size: 0.8em;
+}
+
+
+/* HEADER AND CONTENT PAGE */
+
+
+body.h-and-c-page {
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+.h-and-c-page div.page-top-bar {
+    padding-left: var(--container-side-padding);
+    padding-right: var(--container-side-padding);
+    margin-bottom: 0.5rem;
+}
+
+.h-and-c-page div.page-header {
+    padding-left: var(--container-side-padding);
+    padding-right: var(--container-side-padding);
+    margin-bottom: 0.5rem;
+}
+
+.h-and-c-page div.page-content {
+    padding-left: var(--container-side-padding);
+    padding-right: var(--container-side-padding);
+    overflow-y: scroll;
+}
+
+.h-and-c-page div.page-footer {
+    padding-left: var(--container-side-padding);
+    padding-right: var(--container-side-padding);
+    margin-top: 0.5rem;
+    font-size: 0.8em;
+}
+
+.h-and-c-page .navbar {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--very-light-gray);
+}
+
+

@@ -312,6 +312,7 @@ div.itemspopover {
 
 .te-table {
     border-collapse: collapse;
+    margin-bottom: 2em;
 }
 
 .te-table a {
@@ -380,8 +381,8 @@ div.ltrtext td.group-next {
     border-right: var(--cell-grouped-border);
 }
 #collationtablediv {
-    overflow-y: scroll;
-    height: 800px;
+    /*overflow-y: scroll;*/
+    /*height: 800px;*/
     padding: 2px;
 }
 

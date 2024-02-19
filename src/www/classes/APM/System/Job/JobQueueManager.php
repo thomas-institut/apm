@@ -20,7 +20,10 @@ abstract class JobQueueManager
 
     /**
      * Schedules a new job
-     * Returns the newly scheduled job's id
+     * Returns the newly scheduled job's id.
+     *
+     * If there's any problem, returns -1 and logs the error
+     *
      * @param string $name
      * @param string $description
      * @param array $payload

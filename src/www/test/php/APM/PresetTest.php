@@ -44,7 +44,7 @@ class PresetTest extends TestCase {
         
         $pr = new Preset($toolId, $userId, $title, [ $keyName => $testKeyValue], $testData);
         $this->assertEquals($toolId, $pr->getTool());
-        $this->assertEquals($userId, $pr->getUserId());
+        $this->assertEquals($userId, $pr->getUserTid());
         $this->assertEquals($title, $pr->getTitle());
 
         $exceptionCaught = false;

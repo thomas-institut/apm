@@ -44,11 +44,11 @@ class ItemStats extends CommandLineUtility
     {
         parent::__construct($config, $argc, $argv);
 
-        $this->dbHelper = new MySqlHelper($this->dbConn, $this->logger);
-        $this->itemsTableName = $this->systemManager->getTableNames()[ApmMySqlTableName::TABLE_ITEMS];
+        $this->dbHelper = new MySqlHelper($this->getDbConn(), $this->logger);
+        $this->itemsTableName = $this->getSystemManager()->getTableNames()[ApmMySqlTableName::TABLE_ITEMS];
     }
 
-    protected function main($argc, $argv)
+    public function main($argc, $argv)
     {
 
         $doCharMap = false;

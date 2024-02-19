@@ -30,18 +30,10 @@ class ApmContainerKey
 
 
     const SYSTEM_MANAGER = 'systemManager';
-    const USER_ID = 'userId';
-    const USER_INFO = 'userInfo';
-    const API_USER_ID = 'apiUserId';
+    const SITE_USER_TID = 'siteUserTid';
+    const USER_DATA = 'userData';
+    const API_USER_TID = 'apiUserTid';
 
 
-
-    // Not used in APM
-    //const CONFIG = 'config';
-    //const LOGGER = 'logger';
-    //const VIEW = 'view';
-    //const ROUTER = 'router';
-    //const DATA_MANAGER = 'dataManager';
-    const IS_PROXIED = 'isProxied';
 
 }

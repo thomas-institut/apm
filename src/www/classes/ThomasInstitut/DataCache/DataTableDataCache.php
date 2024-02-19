@@ -21,10 +21,16 @@ namespace ThomasInstitut\DataCache;
 
 
 use InvalidArgumentException;
+use Iterator;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
+use RuntimeException;
 use ThomasInstitut\DataTable\DataTable;
+use ThomasInstitut\DataTable\DataTableResultsIterator;
+use ThomasInstitut\DataTable\InvalidRowForUpdate;
+use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\TimeString\InvalidTimeZoneException;
 use ThomasInstitut\TimeString\TimeString;
 
 class DataTableDataCache implements DataCache, LoggerAwareInterface
@@ -75,10 +81,10 @@ class DataTableDataCache implements DataCache, LoggerAwareInterface
     public function get(string $key): string
     {
         $rows =  $this->getRowsForKey($key);
-        if ($rows === []) {
+        if (count($rows) === 0) {
             throw new KeyNotInCacheException();
         }
-        $row = $rows[0];
+        $row = $rows->getFirst();
         $now = TimeString::now();
         if ($row[$this->expiresColumn] !== TimeString::END_OF_TIMES && $row[$this->expiresColumn] < $now) {
             // expired!
@@ -99,26 +105,40 @@ class DataTableDataCache implements DataCache, LoggerAwareInterface
         $now = microtime(true);
         $expires = TimeString::END_OF_TIMES;
         if ($ttl > 0) {
-            $expires = TimeString::fromTimeStamp($now + $ttl);
+            try {
+                $expires = TimeString::fromTimeStamp($now + $ttl);
+            } catch (InvalidTimeZoneException $e) {
+                // should never happen
+                throw new RuntimeException($e->getMessage(), $e->getCode());
+            }
         }
 
-        if ($rows === []) {
-            $this->dataTable->createRow([
+        if (count($rows) === 0) {
+            try {
+                $this->dataTable->createRow([
+                    $this->keyColumn => $key,
+                    $this->valueColumn => $value,
+                    $this->setColumn => TimeString::fromTimeStamp($now),
+                    $this->expiresColumn => $expires
+                ]);
+            } catch (RowAlreadyExists|InvalidTimeZoneException $e) {
+                // catastrophic error
+                throw new RuntimeException($e->getMessage(), $e->getCode());
+            }
+            return;
+        }
+        $rowId = $rows->getFirst()['id'];
+        try {
+            $this->dataTable->updateRow([
+                'id' => $rowId,
                 $this->keyColumn => $key,
                 $this->valueColumn => $value,
                 $this->setColumn => TimeString::fromTimeStamp($now),
                 $this->expiresColumn => $expires
             ]);
-            return;
+        } catch (InvalidRowForUpdate|InvalidTimeZoneException $e) {
+            throw new RuntimeException($e->getMessage(), $e->getCode());
         }
-        $rowId = $rows[0]['id'];
-        $this->dataTable->updateRow([
-            'id' => $rowId,
-            $this->keyColumn => $key,
-            $this->valueColumn => $value,
-            $this->setColumn => TimeString::fromTimeStamp($now),
-            $this->expiresColumn => $expires
-        ]);
     }
 
     /**
@@ -127,15 +147,15 @@ class DataTableDataCache implements DataCache, LoggerAwareInterface
     public function delete(string $key): void
     {
         $rows = $this->getRowsForKey($key);
-        if ($rows === []) {
+        if (count($rows) === 0) {
             return;
         }
-        $rowId = $rows[0]['id'];
+        $rowId = $rows->getFirst()['id'];
         $this->dataTable->deleteRow($rowId);
     }
 
 
-    private function getRowsForKey(string $key) : array {
+    private function getRowsForKey(string $key) : DataTableResultsIterator {
         return $this->dataTable->findRows([ $this->keyColumn => $key]);
     }
 
@@ -144,14 +164,32 @@ class DataTableDataCache implements DataCache, LoggerAwareInterface
         return count($this->getRowsForKey($key))!==0;
     }
 
-    public function clear(): void
-    {
-        // TODO: make a special version for MySqlDataTable
-        //  need a truncate option in DataTable!
-        $ids = $this->dataTable->getUniqueIds();
-        foreach ($ids as $id) {
+    /**
+     * Deletes a list of ids using a transaction is supported
+     * @param array|Iterator $rowIds
+     * @return void
+     */
+    private function deleteMultipleRows(array|Iterator $rowIds) : void {
+        $inTransaction = false;
+        if($this->dataTable->supportsTransactions()) {
+            $inTransaction = $this->dataTable->startTransaction();
+        }
+        foreach ($rowIds as $id) {
             $this->dataTable->deleteRow($id);
         }
+        if ($inTransaction) {
+            $result = $this->dataTable->commit();
+            if (!$result) {
+                // major problem
+                throw new RuntimeException("Could not commit multiple cache rows deletion");
+            }
+        }
+    }
+
+    public function clear(): void
+    {
+        $ids = $this->dataTable->getUniqueIds();
+        $this->deleteMultipleRows($ids);
     }
 
     public function clean(): void
@@ -178,9 +216,6 @@ class DataTableDataCache implements DataCache, LoggerAwareInterface
         if ($numIdsToDelete !== 0) {
             $this->logger->info("Deleting $numIdsToDelete expired item(s) from cache");
         }
-
-        foreach ($idsToDelete as $id) {
-            $this->dataTable->deleteRow($id);
-        }
+        $this->deleteMultipleRows($idsToDelete);
     }
 }

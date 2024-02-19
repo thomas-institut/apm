@@ -20,8 +20,12 @@
 
 namespace APM\System;
 
+use RuntimeException;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\InMemoryDataTable;
+use ThomasInstitut\DataTable\InvalidRowForUpdate;
+use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\DataTable\RowDoesNotExist;
 use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
 use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 
@@ -33,11 +37,8 @@ use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 class SettingsManager implements SqlQueryCounterTrackerAware {
 
     use SimpleSqlQueryCounterTrackerAware;
-    /**
-     *
-     * @var DataTable
-     */
-    private $settingsTable;
+
+    private DataTable $settingsTable;
     
     public function __construct($table = false) {
         $this->initSqlQueryCounterTracker();
@@ -51,29 +52,39 @@ class SettingsManager implements SqlQueryCounterTrackerAware {
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows = $this->settingsTable->findRows(['setting' => $setting], 1);
-        if ($rows === []) {
+        if (count($rows) === 0) {
             return false;
         }
-        return $rows[0]['value'];
+        return $rows->getFirst()['value'];
     }
     
-    public function setSetting(string $setting, string $value)
+    public function setSetting(string $setting, string $value) : bool
     {
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows = $this->settingsTable->findRows(['setting' => $setting], 1);
-        if ($rows === []) {
+        if (count($rows) === 0) {
             $this->getSqlQueryCounterTracker()->incrementCreate();
-            return false !== $this->settingsTable->createRow([
+            try {
+                $this->settingsTable->createRow([
                     'setting' => $setting,
                     'value' => $value]);
+            } catch (RowAlreadyExists $e) {
+                // should NEVER happen
+                throw new RuntimeException($e->getMessage(), $e->getCode());
+            }
+            return true;
         }
         $this->getSqlQueryCounterTracker()->incrementUpdate();
-        $this->settingsTable->updateRow([
-            'id' => $rows[0]['id'],
-            'setting' => $setting,
-            'value' => $value]);
-
+        try {
+            $this->settingsTable->updateRow([
+                'id' => $rows->getFirst()['id'],
+                'setting' => $setting,
+                'value' => $value]);
+        } catch (InvalidRowForUpdate|RowDoesNotExist $e) {
+            // should NEVER happen
+            throw new RuntimeException($e->getMessage(), $e->getCode());
+        }
         return true;
 
     }

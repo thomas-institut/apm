@@ -1,0 +1,39 @@
+
+
+.page-content h1 {
+    font-weight: normal;
+    font-size: 2.4em;
+}
+
+
+.page-content h2 {
+    font-weight: normal;
+    font-size: 1.5em;
+}
+
+div.work-info {
+    margin-bottom: 1em;
+}
+div.chunk-list {
+    width: 100%;
+    padding-right: 3em;
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(2em, 1fr));
+    justify-content: end;
+    column-gap: 0.25em;
+    row-gap: 0.25em;
+}
+
+div.chunk-list-medium {
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(2.5em, 1fr));
+}
+
+div.chunk-list-large {
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(3em, 1fr));
+}
+
+div.chunk-div {
+    text-align: end;
+}

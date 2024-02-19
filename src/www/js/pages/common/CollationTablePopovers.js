@@ -19,6 +19,7 @@
 import * as Util from '../../toolbox/Util.mjs'
 import { EDITION, FULL_TX } from '../../Witness/WitnessTokenClass.mjs'
 import * as NormalizationSource from '../../constants/NormalizationSource.mjs'
+import { ApmFormats } from './ApmFormats'
 
 // Classes
 const popoverDivClass = 'ctPopover'
@@ -291,13 +292,13 @@ function getNotesHtml(notes, peopleInfo, title = 'Notes') {
 function getNoteHtml(note, peopleInfo) {
   let html = `<div class="${noteDivClass} ${langClassPrefix}en">`
   let authorShortName = 'Unknown'
-  if (peopleInfo[note.authorId] === undefined) {
+  if (peopleInfo[note.authorTid] === undefined) {
     console.warn(`No author info for user Id ${note.authorId}`)
   } else {
-    authorShortName = peopleInfo[note.authorId]['shortName']
+    authorShortName = peopleInfo[note.authorTid]['shortName']
     if (authorShortName === undefined) {
       //console.warn(`No short name defined for author ${note.authorId}`)
-      authorShortName = peopleInfo[note.authorId]['fullname']
+      authorShortName = peopleInfo[note.authorTid]['name']
     }
   }
 
@@ -309,6 +310,7 @@ function getNoteHtml(note, peopleInfo) {
 }
 
 function formatNoteTime(timeStamp) {
-  return moment(timeStamp).format('D MMM YYYY, H:mm')
+  return ApmFormats.timeString(timeStamp, { withSeconds: false});
+  // return moment(timeStamp).format('D MMM YYYY, H:mm')
 }
 

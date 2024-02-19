@@ -62,7 +62,7 @@ export class Panel {
     return []
   }
 
-  generateHtml(tabId, mode, visible) {
+  async generateHtml(tabId, mode, visible) {
     this.visible = visible
     this.mode = mode
     return `Panel id ${tabId}, mode ${mode}, ${visible ? 'visible' : 'hidden'}`

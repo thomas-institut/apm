@@ -11,10 +11,10 @@ class ApiUsersUpdateCtDataForUser implements JobHandlerInterface
 
     public function run(SystemManager $sm, array $payload): bool
     {
-        if (!isset($payload['userId'])) {
+        if (!isset($payload['userTid'])) {
             return false;
         }
-        return ApiUsers::updateCtInfoData($sm, $payload['userId']);
+        return ApiUsers::updateCtInfoData($sm, $payload['userTid']);
     }
 
     public function mustBeUnique(): bool

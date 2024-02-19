@@ -27,8 +27,11 @@ use APM\CollationTable\CollationTableManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\FullTranscription\TranscriptionManager;
-use APM\Presets\PresetManager;
 use APM\System\Job\JobQueueManager;
+use APM\System\Person\PersonManagerInterface;
+use APM\System\Preset\PresetManager;
+use APM\System\User\UserManagerInterface;
+use APM\System\Work\WorkManager;
 use AverroesProject\Data\DataManager;
 use Monolog\Logger;
 use Slim\Interfaces\RouteParserInterface;
@@ -144,6 +147,10 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     abstract public function getNormalizerManager() : NormalizerManager;
     abstract public function getEditionSourceManager(): EditionSourceManager;
     abstract public function getJobManager() : JobQueueManager;
+    abstract public function getUserManager() : UserManagerInterface;
+    abstract public function getPersonManager() : PersonManagerInterface;
+
+    abstract public function getWorkManager() : WorkManager;
 
     public function getFullTxWitnessId(ApmTranscriptionWitness $witness) : string {
         return WitnessSystemId::buildFullTxId(
@@ -162,26 +169,26 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     // the system.
     // By default, don't do anything
 
-    public function onTranscriptionUpdated(int $userId, int $docId, int $pageNumber, int $columnNumber) : void {
+    public function onTranscriptionUpdated(int $userTid, int $docId, int $pageNumber, int $columnNumber) : void {
     }
 
-    public function onDocumentAdded(int $userId, int $docId) : void {
+    public function onDocumentAdded(int $userTid, int $docId) : void {
 
     }
-    public function onDocumentDeleted(int $userId, int $docId) : void {
-
-    }
-
-    public function onDocumentUpdated(int $userId, int $docId) : void {
-    }
-
-    public function onUpdatePageSettings(int $userId, int $pageId) : void {
+    public function onDocumentDeleted(int $userTid, int $docId) : void {
 
     }
 
+    public function onDocumentUpdated(int $userTid, int $docId) : void {
+    }
+
+    public function onUpdatePageSettings(int $userTid, int $pageId) : void {
+
+    }
 
 
-    public function onCollationTableSaved(int $userId, int $ctId) : void {
+
+    public function onCollationTableSaved(int $userTid, int $ctId) : void {
 
     }
 }

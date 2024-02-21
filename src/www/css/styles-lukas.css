@@ -1,0 +1,359 @@
+/*
+ *  Copyright (C) 2019-20 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+@import url('fonts.css');
+@import url('defaults.css');
+
+
+body, .popover {
+    font-family:  var(--default-font-family);
+    font-size: var(--default-font-size);
+    color: var(--default-font-color);
+    text-align: inherit;
+}
+
+
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1170px;   /* To make it the same as bs3, in bs4 it's 1140px*/
+    }
+}
+
+.bottom-border-light { /* To make it the same as bs3, no border in bs4*/
+    border-bottom-color: var(--very-light-gray);
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+}
+
+.navbar {
+    margin-bottom: 20px;  /* To make it the same as bs3, in bs4 it's 0 */
+}
+.dd-menu-item {
+    font-size: 0.85em;
+}
+
+.breadcrumb {
+    background: white; /* to make it the same as bs3, in bs4 it's some sort of gray */
+}
+
+.text-warning {
+    color: #8a6d3b !important;  /* Fix BS4's awful warning colour! */
+}
+
+.hidden {
+    display: none;
+}
+
+/* Dimmed down links*/
+
+a, a:visited {
+    text-decoration: none;
+    color: var(--dimmed-blue-color);
+}
+a:hover{
+    color: blue;
+}
+
+/* Indented list, for example for documents and chunks in the dashboard */
+
+ul.list-indented {
+    list-style-type: none;
+    padding: 0;
+    margin-left: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+ul.list-indented li {
+    padding: 0;
+    margin-bottom: 1rem;
+    margin-left: 1.5rem;
+    text-indent: -1.5rem;  /* Hanging indentation on list items */
+}
+
+/* PAGE TABLES, e.g. in document pages */
+table.pagetable td {
+    padding: 3px;
+}
+
+/* Page Type: Not set */
+/*table.pagetable td.type0 {*/
+/*    background-color: #EFFEEF;*/
+/*}*/
+
+/*!* Page Type: Normal text *!*/
+/*table.pagetable td.type1 {*/
+/*    background-color: white;*/
+/*}*/
+
+/*!* Page Type: Front Matter *!*/
+/*table.pagetable td.type2 {*/
+/*    background-color: #f9f9f9;*/
+/*}*/
+
+/*!* Page Type: Back Matter *!*/
+/*table.pagetable td.type3 {*/
+/*    background-color: #f9f9f9;*/
+
+/*}*/
+table.pagetable a {
+    color: var(--default-font-color);
+}
+
+td.withouttranscription a {
+    color: silver;
+}
+
+td.without-transcription a{
+    color:silver
+}
+
+.foliation-set {
+    font-weight: bold;
+}
+.out-of-sequence {
+    background-color: #f5f0e7;
+}
+div.page-table-div {
+    margin-bottom: 1em;
+}
+
+div.page-table-legend {
+    font-size: 0.8em;
+    color: #8d8d8d;
+    margin-left: 3em;
+    margin-bottom: 2em;
+}
+.in-text {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.with-top-margin {
+    margin-top: 2rem;
+}
+
+.with-bottom-margin {
+    margin-bottom: 2rem;
+}
+
+.with-margin-left-sm {
+    margin-left: 1rem;
+}
+
+.with-margin-left-lg {
+    margin-left: 4rem;
+}
+
+.without-margin-left {
+    margin-left: 0;
+}
+
+.without-padding-left {
+    padding-left: 0;
+}
+
+
+ul.chunk-list {
+    list-style: none;
+    margin: 20px 0 20px 0;
+    padding: 0;
+}
+
+ul.chunk-list  li {
+    padding:0;
+    margin: 5px 0 30px 10px;
+}
+
+ul.chunk-list ul {
+    list-style: none;
+    margin: 0 0 0 20px;
+    padding: 0;
+}
+
+a.chunk-link {
+    display: inline-block;
+    min-width: 1rem;
+}
+
+ul.doc-list {
+    list-style-type: none;
+    padding: 0;
+    margin-left: 20px;
+    margin-bottom: 25px;
+}
+
+ul.doc-list li {
+    padding: 0;
+    margin-bottom: 1.5em;
+    margin-left: 20px;
+    text-indent: -20px;
+}
+
+ul.ctlist {
+    list-style-type: none;
+    padding: 0;
+    margin-left: 20px;
+    margin-bottom: 25px;
+}
+
+ul.ctlist li {
+    padding: 0;
+    margin-bottom: 1em;
+    margin-left: 20px;
+    text-indent: -20px;
+}
+
+
+/* General stuff */
+
+.blink {
+    animation: blink 1s linear infinite;
+}
+
+@keyframes blink {
+    0% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 0;
+    }
+    51% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+mark {
+    background-color: rgba(255, 219, 75, 0.7);
+    color: black;
+}
+
+input[type=number] {
+    background-color: white;
+    border: none;
+    padding: 1px;
+    font-size: 14px;
+    width: 42px
+}
+
+.embed-button {
+    position: relative;
+}
+.embed-button input {
+    width: 100%;
+    padding: 15px;
+}
+.embed-button button {
+    color: dodgerblue;
+    position: absolute;
+    right: 0.3em;
+    top: 0.3em;
+    background: white;
+    border: none;
+    border-color: dodgerblue;
+    padding: 0.6em;
+    padding-bottom: 0.2em;
+    padding-top: 0.2em;
+    transition: all 0.2s;
+    margin: 0.1em;
+    text-align: center;
+}
+.embed-button button:hover {
+    background-color: white;
+    color: blue;
+    cursor: pointer;
+}
+
+input.tag-input {
+    border: 1px solid black;
+    background-color: #e3f4ff;
+    height: 2em;
+    width: 6em;
+    border-radius: 4px;
+}
+
+input.tag-input:focus {
+    border-style: solid;
+    outline: none !important;
+    border-color: black;
+    width: 9em
+}
+
+input.tag-input:focus::placeholder {
+    color: transparent;
+}
+
+ul.tag-editor-tags-ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+div.aei-form ul.tag-editor-tags-ul {
+    font-size: 0.9em;
+}
+
+ul.tag-editor-tags-ul li {
+    display: inline;
+    line-height: 2.5em;
+    margin-right: 0.5em;
+    line-height: 2.5em;
+}
+
+span.tag-text {
+    border: 1px solid #c5d2f6;
+    background-color: #e3f4ff;
+    border-radius: 4px;
+    padding: 3px;
+}
+
+span.tagRemove {
+    cursor: pointer;
+}
+
+.tags {
+    background: none repeat scroll 0 0 #fff;
+    border: 0px solid #ccc;
+    padding: 0.5em;
+    width: 100%;
+    display: table
+}
+
+li.addedTag {
+    white-space: nowrap;
+}
+
+.personCreatorDialog {
+    overflow: auto;
+    max-height: 400px;
+}
+
+div.def-pages-edit-div input[type="number"] {
+    border: 1px solid silver;
+    padding: 3px;
+}
+
+nav {
+    padding:0;
+    line-height: 1em;
+}
+
+ol.breadcrumb {
+    padding:0;
+}

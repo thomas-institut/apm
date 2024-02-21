@@ -245,27 +245,29 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   onShown () {
-    super.onShown()
+    super.onShown();
     //this.verbose && console.log(`Edition Panel shown`)
     if (this.mainTextNeedsToBeRedrawnOnNextOnShownEvent) {
-      this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = false
-      $(this.getContentAreaSelector()).html(this.generateContentHtml('', '', true))
-      switch(this.currentEditMode) {
-        case EDIT_MODE_OFF:
-        // case EDIT_MODE_TEXT_OLD:
-        case EDIT_MODE_APPARATUS:
-          this._setupMainTextDivEventHandlers()
-          this._updateLineNumbersAndApparatuses()
-            .then( () => { this.verbose && console.log(`Finished generating edition panel on shown`) })
-          break
+      this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = false;
+      this.generateContentHtml('', '', true).then( (html) => {
+        $(this.getContentAreaSelector()).html(html);
+        switch(this.currentEditMode) {
+          case EDIT_MODE_OFF:
+          // case EDIT_MODE_TEXT_OLD:
+          case EDIT_MODE_APPARATUS:
+            this._setupMainTextDivEventHandlers()
+            this._updateLineNumbersAndApparatuses()
+              .then( () => { this.verbose && console.log(`Finished generating edition panel on shown`) })
+            break
 
-        case EDIT_MODE_TEXT:
-          this.verbose && console.log(`Beta editor shown`)
-          break
+          case EDIT_MODE_TEXT:
+            this.verbose && console.log(`Beta editor shown`)
+            break
 
-        default:
-          console.error(`Unknown edit mode ${this.currentEditMode}`)
-      }
+          default:
+            console.error(`Unknown edit mode ${this.currentEditMode}`)
+        }
+      })
     }
   }
 
@@ -634,7 +636,7 @@ export class MainTextPanel extends PanelWithToolbar {
   _genOnChangeMainTextFreeTextEditor() {
     let throttle = new EventThrottle( () => {
       console.log(`Handling change in main text free text editor`)
-      this.__detectAndReportChangesInEditedMainText()
+      this.__detectAndReportChangesInEditedMainText(true)
     }, 'OnChangeMainTextFreeTextEditor', 500)
     return throttle.getHandler()
   }
@@ -691,12 +693,12 @@ export class MainTextPanel extends PanelWithToolbar {
       }
       this.verbose && console.log(`Committing changes`)
       let newFmtText = this.freeTextEditor.getFmtText()
-      if (varsAreEqual(this.commitedFreeText, newFmtText)) {
-        this.verbose && console.log(`No changes, nothing to do`)
-        this.textEditRevertDiv.addClass('hidden')
-        this.textEditCommitDiv.addClass('hidden')
-        return
-      }
+      // if (varsAreEqual(this.commitedFreeText, newFmtText)) {
+      //   this.verbose && console.log(`No changes, nothing to do`)
+      //   this.textEditRevertDiv.addClass('hidden')
+      //   this.textEditCommitDiv.addClass('hidden')
+      //   return
+      // }
       this.verbose && console.log(`There are changes, now it's almost for real`)
       this.textEditRevertDiv.addClass('hidden')
       let newWitnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText)
@@ -992,6 +994,10 @@ export class MainTextPanel extends PanelWithToolbar {
       // other types: word, space, punctuation, numbering label
       if (a.text !== b.text) {
         return false
+      }
+
+      if (a.tokenType === WitnessTokenType.WORD && (a.normalizedText !== b.normalizedText)) {
+        return false;
       }
       if (a.fmtText === undefined && b.fmtText === undefined) {
         return true

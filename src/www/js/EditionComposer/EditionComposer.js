@@ -69,6 +69,7 @@ import { PdfDownloadUrl } from './PdfDownloadUrl'
 import { IgnoreHyphen } from '../normalizers/TokenNormalizer/IgnoreHyphen'
 import { ApmPage } from '../pages/ApmPage'
 import { ApmFormats } from '../pages/common/ApmFormats'
+import { urlGen } from '../pages/common/SiteUrlGen'
 
 // import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS
@@ -110,11 +111,12 @@ export class EditionComposer extends ApmPage {
 
     let optionsDefinition = {
       isTechSupport: { type: 'boolean', default: false},
-      lastVersion: { type: 'boolean'},
+      lastVersion: { type: 'boolean', required: true},
       collationTableData : { type: 'object', required: true},
       workId : { type: 'string', required: true},
       chunkNumber: {type: 'NonZeroNumber', required: true},
       tableId: { type: 'NonZeroNumber', required: true},
+      versionId: { type: 'NonZeroNumber', required: true},
       langDef : { type: 'object', default: defaultLanguageDefinition },
       availableWitnesses: { type: 'Array', default: [] },
       urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true},
@@ -173,10 +175,11 @@ export class EditionComposer extends ApmPage {
     // this.availableNormalizers = this.normalizerRegister.getRegisteredNormalizers()
 
     this.lastSavedCtData = Util.deepCopy(this.ctData)
-    this.tableId = this.options['tableId']
-    this.ctData['tableId'] = this.tableId
-    this.versionInfo = this.options.versionInfo
-    this.lastVersion= this.options.lastVersion
+    this.tableId = this.options.tableId;
+    this.ctData['tableId'] = this.tableId;
+    this.versionInfo = this.options.versionInfo;
+    this.lastVersion= this.options.lastVersion;
+    this.versionId = this.options.versionId;
 
     if (!this.lastVersion) {
       console.warn('Working on an older version of the Edition/CollationTable')
@@ -196,9 +199,8 @@ export class EditionComposer extends ApmPage {
     this.witnessUpdates = []
     this.editionSources = null
 
-    $(window).on('beforeunload', function() {
-      if (thisObject.unsavedChanges || thisObject.convertingToEdition) {
-        //console.log("There are changes in editor")
+    $(window).on('beforeunload', () => {
+      if (this.unsavedChanges || this.convertingToEdition) {
         return false // make the browser ask if the user wants to leave
       }
     })
@@ -837,10 +839,8 @@ export class EditionComposer extends ApmPage {
         this.saveButtonPopoverTitle = ''
         this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassSaving)
         console.log('Saving table via API call to ' + this.apiSaveCollationUrl)
-        let description = ''
-        for (let change of changes) {
-          description += change + '. '
-        }
+        let description = this.lastVersion ? '' : `From version ${this.versionId}: `;
+        description += changes.join('. ');
         let apiCallOptions = {
           collationTableId: this.tableId,
           collationTable: this.ctData,
@@ -854,16 +854,21 @@ export class EditionComposer extends ApmPage {
         ).done(  async (apiResponse) => {
           console.log("Success saving table")
           console.log(apiResponse)
-          this.saveButton.html(this.icons.saveEdition)
-          this.lastSavedCtData = Util.deepCopy(this.ctData)
-          this.versionInfo = apiResponse.versionInfo
-          await this.adminPanel.updateVersionInfo(this.versionInfo)
-          this.witnessUpdates = []
-          this.witnessInfoPanel.onDataSave()
-          this.unsavedChanges = false
-          this.saveErrors = false
-          this.saving = false
-          this._updateSaveArea()
+          if (!this.lastVersion) {
+            this.unsavedChanges = false;
+            location.replace(urlGen.siteEditCollationTable(this.tableId));
+          } else {
+            this.saveButton.html(this.icons.saveEdition)
+            this.lastSavedCtData = Util.deepCopy(this.ctData)
+            this.versionInfo = apiResponse.versionInfo
+            await this.adminPanel.updateVersionInfo(this.versionInfo)
+            this.witnessUpdates = []
+            this.witnessInfoPanel.onDataSave()
+            this.unsavedChanges = false
+            this.saveErrors = false
+            this.saving = false
+            this._updateSaveArea()
+          }
         }).fail((resp) => {
           this.saveErrors = true
           this.saving = false
@@ -1226,6 +1231,10 @@ export class EditionComposer extends ApmPage {
     }
   }
 
+  /**
+   *
+   * @return {string[]}
+   */
   getChangesInCtData() {
     let changes = []
 

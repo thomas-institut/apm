@@ -26,10 +26,10 @@ class UnitemporalConsistency extends CommandLineUtility
 
         $table = $argv[1];
 
-        if (!preg_match('/^ap_[a-z]+$/', $table)) {
-            $this->printErrorMsg('Invalid table name');
-            return false;
-        }
+//        if (!preg_match('/^ap_[a-z]+$/', $table)) {
+//            $this->printErrorMsg('Invalid table name');
+//            return false;
+//        }
 
         $allRows = $dbh->getAllRows("SELECT * from `$table` ORDER BY id, valid_from ASC");
 

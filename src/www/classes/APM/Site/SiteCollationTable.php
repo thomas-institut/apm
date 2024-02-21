@@ -31,6 +31,7 @@ use APM\CollationTable\CtData;
 use APM\FullTranscription\DocInfo;
 use APM\System\DataRetrieveHelper;
 use APM\System\Person\PersonNotFoundException;
+use APM\System\User\UserNotFoundException;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
@@ -68,6 +69,7 @@ class SiteCollationTable extends SiteController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws UserNotFoundException
      */
     public function editCollationTable(Request $request, Response $response) : Response{
         $tableId = intval($request->getAttribute('tableId'));
@@ -83,7 +85,7 @@ class SiteCollationTable extends SiteController
             $versionId = 0;
         }
         $timeStamp = TimeString::now();
-        $lastVersion = true;
+        $isLastVersion = true;
         if ($versionId !== 0) {
             // find timestamp for given versionId
             $found = false;
@@ -91,7 +93,7 @@ class SiteCollationTable extends SiteController
                 if ($versionInfo->id == $versionId) {
                     $timeStamp = $versionInfo->timeFrom;
                     if ($versionInfo->timeUntil !== TimeString::END_OF_TIMES) {
-                        $lastVersion = false;
+                        $isLastVersion = false;
                     }
                     $found = true;
                     $this->logger->debug("Version timestamp: $timeStamp");
@@ -102,6 +104,17 @@ class SiteCollationTable extends SiteController
                 $this->logger->info("Version ID does exist or does not correspond to given table, defaulting to latest version");
             }
         }
+
+        if ($isLastVersion) {
+            // find version Id
+            foreach ( $versionInfoArray as $versionInfo) {
+                if ($versionInfo->timeUntil === TimeString::END_OF_TIMES) {
+                    $versionId = $versionInfo->id;
+                    break;
+                }
+            }
+        }
+
         try {
             $ctData = $ctManager->getCollationTableById($tableId, $timeStamp);
         } catch (InvalidArgumentException $e) {
@@ -162,7 +175,9 @@ class SiteCollationTable extends SiteController
             'peopleInfo' => $peopleInfo,
             'docInfo' => $docInfo,
             'versionInfo' => $versionInfoArray,
-            'lastVersion' => $lastVersion ? 'yes' : 'no'
+            'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userTid),
+            'versionId' => $versionId,
+            'lastVersion' => $isLastVersion
         ]);
     }
 

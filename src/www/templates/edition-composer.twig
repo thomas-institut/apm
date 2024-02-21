@@ -41,8 +41,8 @@
     let workInfo = JSON.parse("{{workInfo|json_encode|e('js')}}")
     let docInfo = JSON.parse("{{docInfo|json_encode|e('js')}}")
     let versionInfo = JSON.parse("{{versionInfo|json_encode|e('js')}}")
-    let isTechSupport = '{{isTechSupport }}' === 'yes';
-    let lastVersion = '{{lastVersion }}' === 'yes';
+    let isTechSupport = JSON.parse("{{isTechSupport|json_encode|e('js')}}")
+    let lastVersion =JSON.parse("{{lastVersion|json_encode|e('js')}}");
 
     let te = new EditionComposer({
       commonData: JSON.parse("{{commonData|json_encode|e('js')}}"),
@@ -56,7 +56,8 @@
       peopleInfo: peopleInfo,
       workInfo: workInfo,
       docInfo: docInfo,
-      versionInfo: versionInfo
+      versionInfo: versionInfo,
+      versionId:  JSON.parse("{{versionId|json_encode|e('js')}}")
     })
   })
 </script>

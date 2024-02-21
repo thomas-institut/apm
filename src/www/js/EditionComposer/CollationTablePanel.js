@@ -58,6 +58,7 @@ import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
 import { FmtText } from '../FmtText/FmtText.mjs'
 import { Punctuation } from '../defaults/Punctuation.mjs'
+import { toolbarCharacters} from '../defaults/ToolbarCharacters'
 
 export class CollationTablePanel extends PanelWithToolbar {
   constructor (options = {}) {
@@ -83,7 +84,8 @@ export class CollationTablePanel extends PanelWithToolbar {
     this.icons = this.options.icons
     this.textDirection = this.options.langDef[this.ctData['lang']].rtl ? 'rtl' : 'ltr'
     this.resetTokenDataCache()
-    this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes()
+    this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes();
+    this.toolbarCharacters = Object.values(toolbarCharacters[this.ctData.lang]);
 
     // viewSettings
     this.viewSettings = {
@@ -134,6 +136,17 @@ export class CollationTablePanel extends PanelWithToolbar {
       return `<a class="dropdown-item add-entry-apparatus-${index}" href="">${capitalizeFirstLetter(app.type)}</a>`
     }).join('')
 
+
+
+    let tbChars = this.toolbarCharacters;
+    if (this.ctData.lang === 'he' || this.ctData.lang === 'ar') {
+      tbChars = tbChars.reverse();
+    }
+
+    let toolbarCharactersHtml = tbChars.map( (chData, index) => {
+      return `<a class="tb-button tb-ch-button-${index} text-${this.ctData.lang}" title="${chData.title} (click to copy to clipboard)" href="#"> ${chData.character} </a>`
+    }).join('&nbsp;')
+
     return `<div class="panel-toolbar-group">
        <div class="panel-toolbar-group" id="mode-toggle"></div>
        <div class="panel-toolbar-group"><span id="popovers-toggle"></span></div>
@@ -155,7 +168,11 @@ export class CollationTablePanel extends PanelWithToolbar {
         
         <div class="panel-toolbar-group" id="table-ops-group">
          <a class="tb-button" href="#" title="Delete all empty columns" id="compact-table-button"><i class="bi bi-eraser-fill"></i></a>
-</div>
+        </div>
+        <div class="panel-toolbar-group">
+            ${toolbarCharactersHtml}
+        </div>
+        
 </div>
 <div class="panel-toolbar-group leftmost">
     <div class="panel-toolbar-item">
@@ -283,6 +300,14 @@ export class CollationTablePanel extends PanelWithToolbar {
     // COMPACT TABLE
     this.compactTableButton = $('#compact-table-button')
     this.compactTableButton.on('click', this.genOnClickCompactTable())
+
+    // toolbar characters
+    this.toolbarCharacters.forEach( (chData, index) => {
+      $(`.tb-ch-button-${index}`).on('click', async (ev) => {
+        ev.preventDefault();
+        await navigator.clipboard.writeText(chData.character);
+      })
+    })
 
     // EXPORT CSV
     this.exportCsvButton = $('#export-csv-button')
@@ -1004,17 +1029,27 @@ export class CollationTablePanel extends PanelWithToolbar {
         }
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = tokenType
         if (tokenType === TranscriptionTokenType.WORD) {
+          let norm
+          let normSource
           if (this.ctData['automaticNormalizationsApplied'].length !== 0) {
             // apply normalizations for this token
-            let norm = this.normalizerRegister.applyNormalizerList(this.ctData['automaticNormalizationsApplied'], newText)
-            if (norm !== newText) {
-              this.verbose && console.log(`New text normalized:  ${newText} => ${norm}`)
-              this.ctData['witnesses'][witnessIndex]['tokens'][ref]['normalizedText'] = norm
-              this.ctData['witnesses'][witnessIndex]['tokens'][ref]['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
-            }
+            norm = this.normalizerRegister.applyNormalizerList(this.ctData['automaticNormalizationsApplied'], newText);
+            normSource = NormalizationSource.COLLATION_EDITOR_AUTOMATIC;
+          }
+          let normalizedTokens = EditionWitnessTokenStringParser.parse(newText, this.ctData.lang, true, true);
+          console.log(`Parser normalized tokens`);
+          console.log(normalizedTokens);
+          if (normalizedTokens.length === 1) {
+            // we can use the parsed result
+            norm = normalizedTokens[0].normalizedText;
+            normSource = NormalizationSource.PARSER_NORMALIZER;
+          }
+          if (newText !== norm) {
+            this.verbose && console.log(`New text normalized:  ${newText} => ${norm}`)
+            this.ctData['witnesses'][witnessIndex]['tokens'][ref]['normalizedText'] = norm;
+            this.ctData['witnesses'][witnessIndex]['tokens'][ref]['normalizationSource'] = normSource;
           }
         }
-
       }
 
       this.invalidateTokenDataCacheForToken(witnessIndex, ref)
@@ -1239,6 +1274,12 @@ export class CollationTablePanel extends PanelWithToolbar {
       let isPunctuationAllowed = areAllOtherRowsEmpty(this.tableEditor.getMatrix().getColumn(col), tableRow)
       if (Punctuation.stringIsAllPunctuation(trimmedText, this.lang) && isPunctuationAllowed) {
         return returnObject
+      }
+      // deal parsable word tokens
+      let normalizedTokens = EditionWitnessTokenStringParser.parse(currentText, this.ctData.lang, true, true);
+      if (normalizedTokens.length === 1 && normalizedTokens[0].tokenType === WitnessTokenType.WORD) {
+        // all good
+        return returnObject;
       }
       returnObject.isValid = false
       if (isPunctuationAllowed) {

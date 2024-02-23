@@ -42,23 +42,27 @@ export class MetadataEditor {
     this.datalistSelector = this.options.containerSelector + " #people-datalist"
 
     // get a list of all people (for having the possibility of choosing entities as values, saving their ids, showing their names)
-    // and setup the metadata editor in the desired mode
-    this.getPeople(() => {
+    // and set up the metadata editor in the desired mode
+    this.getPeople().then( () => {
+      let setupPromise;
       switch (this.options.mode) {
         case this.mode.edit:
-          this.setupEditMode()
+          setupPromise = this.setupEditMode()
           break
         case this.mode.create:
-          this.setupCreateMode()
+          setupPromise = this.setupCreateMode();
           break
         case this.mode.show:
-          this.setupShowMode()
+          setupPromise = this.setupShowMode()
           break
         case this.mode.dialog:
-          this.setupDialogMode()
+          setupPromise = this.setupDialogMode()
           break
       }
-    })
+      setupPromise.then( () => {
+        console.log("MetadataEditor initialized");
+      })
+    });
   }
 
   // Editor Setup
@@ -75,7 +79,7 @@ export class MetadataEditor {
         break
     }
 
-    this.metadataTableSelector = `${this.options.containerSelector} .metadataTable`
+    this.metadataTableSelector = `${this.options.containerSelector} .metadataTable`;
 
     $(this.options.containerSelector).html(
       `<br>
@@ -88,58 +92,49 @@ export class MetadataEditor {
                             <br>`)
   }
 
-  setupEditMode() {
+  async setupEditMode() {
     this.options.mode = this.mode.edit
-    this.buildEntity(() => {
-      this.makeTableStructure()
-      this.setupTableForUserInput(() => {
-        this.setupCancelButton()
-        this.setupSaveButton()
-        console.log(`edit-mode for metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} activated.`)
-      })
-    })
+    await this.buildEntity();
+    this.makeTableStructure()
+    this.setupTableForUserInput();
+    this.setupCancelButton();
+    this.setupSaveButton();
+    console.log(`edit-mode for metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} activated.`)
   }
 
-  setupCreateMode() {
+  async setupCreateMode() {
     this.options.mode = this.mode.create
-
-    this.buildEntitySchema(() => {
-      this.makeTableStructure()
-      this.setupTableForUserInput(() => {
-        this.setupSaveButton()
-        this.makeBackButton()
-        console.log(`create-mode for new entity of type '${this.entity.type}' activated.`)
-      })
-    })
+    await this.buildEntitySchema();
+    this.makeTableStructure()
+    this.setupTableForUserInput();
+    this.setupSaveButton()
+    this.makeBackButton()
+    console.log(`create-mode for new entity of type '${this.entity.type}' activated.`)
   }
 
-  setupShowMode() {
+  async setupShowMode() {
     this.options.mode = this.mode.show
     this.removeSpinner()
-    this.buildEntity(() => {
-      this.makeTableStructure()
-      this.setupBackAndEditButton()
-      this.showMetadata()
-      console.log(`show-mode for metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} activated.`)
-    })
+    await this.buildEntity();
+    this.makeTableStructure()
+    this.setupBackAndEditButton()
+    this.showMetadata()
+    console.log(`show-mode for metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} activated.`)
   }
 
-  setupDialogMode() {
+  async setupDialogMode() {
     this.options.mode = this.mode.dialog
-
-    this.buildEntitySchema(() => {
-      this.makeTableStructure()
-      this.setupSaveButton()
-      this.setupTableForUserInput(() => {
-        console.log(`create-mode for new entity of type '${this.entity.type}' activated.`)
-      })
-    })
+    await this.buildEntitySchema();
+    this.makeTableStructure()
+    this.setupSaveButton()
+    this.setupTableForUserInput();
+    console.log(`create-mode for new entity of type '${this.entity.type}' activated.`);
   }
 
   // Entity and Table Management
 
   // updates the empty object this.entity with the data from this.options when instantiating a new metadata editor
-  buildEntity(callback) {
+  async buildEntity() {
     if (this.entity.id === '') {
       this.entity.id = this.options.entityId
     }
@@ -153,21 +148,17 @@ export class MetadataEditor {
 
     // store number of keys of the entity
     this.numKeys = this.entity.keys.length
-
-    callback()
   }
 
   // updates the empty object this.entity with the data-schema from this.options when creating a new entity
-  buildEntitySchema(callback) {
-    this.entity.id = this.options.entityId
-    this.entity.type = this.options.entityType
-    this.entity.keys = this.options.metadataSchema.keys
-    this.entity.types = this.options.metadataSchema.types
+  async buildEntitySchema() {
+      this.entity.id = this.options.entityId
+      this.entity.type = this.options.entityType
+      this.entity.keys = this.options.metadataSchema.keys
+      this.entity.types = this.options.metadataSchema.types
 
-    // store number of values
-    this.numKeys = this.entity.keys.length
-
-    callback()
+      // store number of values
+      this.numKeys = this.entity.keys.length
   }
 
   getValueByKeyFromEntity(key) {
@@ -384,16 +375,15 @@ export class MetadataEditor {
     }
   }
 
-  setupTableForUserInput(callback, keyIndex='all') {
+  setupTableForUserInput(keyIndex='all') {
 
     this.setupInputFormByIndex(keyIndex)
 
     if (this.options.mode === this.mode.create || this.options.mode === this.mode.dialog) {
-      callback()
+
     }
     else {
       this.addValueToInputFormByIndex(keyIndex)
-      callback()
     }
   }
 
@@ -1275,29 +1265,32 @@ export class MetadataEditor {
   }
 
   // API Calls
-  getPeople(callback) {
-    $.post(urlGen.apiPeopleGetAllPeople())
-      .done((apiResponse) => {
+  getPeople() {
+    return new Promise ( (resolve, reject) => {
+      $.post(urlGen.apiPeopleGetAllPeople())
+        .done((apiResponse) => {
 
-        // Catch Error
-        if (apiResponse.status !== 'OK') {
-          console.log(`Error in query`);
-          if (apiResponse.errorData !== undefined) {
-            console.log(apiResponse.errorData);
+          // Catch Error
+          if (apiResponse.status !== 'OK') {
+            console.log(`Error in query`);
+            if (apiResponse.errorData !== undefined) {
+              console.log(apiResponse.errorData);
+            }
+            return false
           }
-          return false
-        }
-        else {
-          console.log(apiResponse)
-          this.people = apiResponse.data
-          callback()
-        }
+          else {
+            console.log(apiResponse)
+            this.people = apiResponse.data
+            resolve()
+          }
+        })
+        .fail((status) => {
+          console.log(status);
+          reject();
+        })
+    })
 
-      })
-      .fail((status) => {
-        console.log(status);
-        return false
-      })
+
   }
 
   getPersonSchema (setupMetadataEditor) {
@@ -1427,6 +1420,3 @@ export class MetadataEditor {
       })
   }
 }
-
-// Load as global variable so that it can be referenced in the Twig template
-window.MetadataEditor = MetadataEditor

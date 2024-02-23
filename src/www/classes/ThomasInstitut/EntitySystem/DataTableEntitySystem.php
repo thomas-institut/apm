@@ -2,7 +2,6 @@
 
 namespace ThomasInstitut\EntitySystem;
 
-use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -38,10 +37,11 @@ use ThomasInstitut\TimeString\TimeString;
  * will be needed if storage is changed.
  *
  *
- * A statements table must have the following columns:
+ * A statements table must have at least the following columns:
  *
  *    id:  int, normally with AUTO INC if the datatable is an SQL table, not null
  *    tid: int64  (i.e., an integer of at least 64 bits), not null
+ *    statementGroup: int64, not null
  *    subject: int64, not null
  *    predicate: int64, not null
  *    object: int64, default -1 or null
@@ -56,7 +56,6 @@ use ThomasInstitut\TimeString\TimeString;
  *    cancelledBy: int64, default -1 or null
  *    cancelTimestamp:  int/timestamp, default 0 or null
  *    cancelNote: text, default '' or null
- *    statementGroup: int64, default -1 or null
  *
  * A particular statements table can be shared among entities of different types.
  *
@@ -64,7 +63,7 @@ use ThomasInstitut\TimeString\TimeString;
  * entries for a particular entity system, so the DataCache can be shared among different applications.
  *
  */
-class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInterface, CodeDebugInterface
+class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterface
 {
 
     use SimpleCacheAware, CodeDebugWithLoggerTrait;
@@ -131,7 +130,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         } else {
             $this->setLogger($logger);
         }
-        $this->systemTid = EntitySystem::ENTITY_SYSTEM;
+        $this->systemTid = EntitySystem::SystemEntity;
         $this->debugCode = $debug;
 
         $this->debugMsg("Constructing instance of " . get_class($this));
@@ -188,79 +187,78 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
 
         // Build skeleton typesConfig array with standard types and default configuration
         $this->typeConfig = [
-            StandardNames::TYPE_ENTITY_TYPE => [
-                'typeTid' => EntitySystem::ENTITY_TYPE__ENTITY_TYPE,
+            EntitySystem::Name_Type_EntityType => [
+                'typeTid' => EntitySystem::Type_EntityType,
                 'uniqueNames' => true,
                 'statementsTable' => $this->systemStatementsTable,
                 'dataCache' => $this->systemDataCache,
                 'defaultCacheTtl' => 0,
                 'internalCache' => true,  // if true, entities of this type will be cached in the internal mem cache
             ],
-            StandardNames::TYPE_ATTRIBUTE => [
-                'typeTid' => EntitySystem::ENTITY_TYPE__ATTRIBUTE,
+            EntitySystem::Name_Type_Attribute => [
+                'typeTid' => EntitySystem::Type_Attribute,
                 'uniqueNames' => true,
                 'statementsTable' => $this->systemStatementsTable,
                 'dataCache' => $this->systemDataCache,
                 'defaultCacheTtl' => 0,
                 'internalCache' => true
             ],
-            StandardNames::TYPE_RELATION => [
-                'typeTid' => EntitySystem::ENTITY_TYPE__RELATION,
+            EntitySystem::Name_Type_Relation => [
+                'typeTid' => EntitySystem::Type_Relation,
                 'uniqueNames' => true,
                 'statementsTable' => $this->systemStatementsTable,
                 'dataCache' => $this->systemDataCache,
                 'defaultCacheTtl' => 0,
                 'internalCache' => true
             ],
-            StandardNames::TYPE_DATA_TYPE => [
-                'typeTid' => -1,
+            EntitySystem::Name_Type_DataType => [
+                'typeTid' => EntitySystem::Type_DataType,
                 'uniqueNames' => true,
                 'statementsTable' => $this->systemStatementsTable,
                 'dataCache' => $this->systemDataCache,
                 'defaultCacheTtl' => 0,
                 'internalCache' => true
             ],
-            StandardNames::TYPE_STATEMENT => [
-                'typeTid' => -1,
+            EntitySystem::Name_Type_Statement => [
+                'typeTid' => EntitySystem::Type_Statement,
                 'uniqueNames' => false,
                 'statementsTable' => $this->defaultStatementsTable,
                 'dataCache' => $this->systemDataCache,
                 'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
                 'internalCache' => false
             ],
-
-            StandardNames::TYPE_STATEMENT_GROUP=> [
-                'typeTid' => -1,
+            EntitySystem::Name_Type_Person => [
+                'typeTid' => EntitySystem::Type_Person,
                 'uniqueNames' => false,
                 'statementsTable' => $this->defaultStatementsTable,
                 'dataCache' => $this->systemDataCache,
                 'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
                 'internalCache' => false
             ],
-            StandardNames::TYPE_PERSON=> [
-                'typeTid' => -1,
+            EntitySystem::Name_Type_Language => [
+                'typeTid' => EntitySystem::Type_Language,
                 'uniqueNames' => false,
                 'statementsTable' => $this->defaultStatementsTable,
                 'dataCache' => $this->systemDataCache,
                 'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
                 'internalCache' => false
             ],
-            StandardNames::TYPE_PLACE=> [
-                'typeTid' => -1,
+            EntitySystem::Name_Type_Place => [
+                'typeTid' => EntitySystem::Type_Place,
                 'uniqueNames' => false,
                 'statementsTable' => $this->defaultStatementsTable,
                 'dataCache' => $this->systemDataCache,
                 'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
                 'internalCache' => false
             ],
-            StandardNames::TYPE_AREA=> [
-                'typeTid' => -1,
+            EntitySystem::Name_Type_Area => [
+                'typeTid' => EntitySystem::Type_Area,
                 'uniqueNames' => false,
                 'statementsTable' => $this->defaultStatementsTable,
                 'dataCache' => $this->systemDataCache,
                 'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
                 'internalCache' => false
-            ],
+            ]
         ];
 
         // Fill in data table and cache configuration from constructor parameters
@@ -292,7 +290,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             }
         }
 
-        $entityTypeNameToTidMap = $this->getEntityNameToTidMap(StandardNames::TYPE_ENTITY_TYPE);
+        $entityTypeNameToTidMap = $this->getEntityNameToTidMap(EntitySystem::Name_Type_EntityType);
         $entityTypes = array_keys($entityTypeNameToTidMap);
         if (count($entityTypes) === 0) {
             $this->debugMsg("No entity types found, need to bootstrap the system");
@@ -341,7 +339,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
      */
     private function getNameToTidMapFromStatements(DataTable $statementsTable, int $typeTid, string $typeName) : array {
         $rows = $statementsTable->findRows([
-                'predicate' => EntitySystem::RELATION_HAS_TYPE,
+                'predicate' => EntitySystem::Relation_IsOfType,
                 'object' => $typeTid,
                 'cancelled' => 0
             ]);
@@ -356,7 +354,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         foreach($typeEntities as $entity) {
             $rows = $statementsTable->findRows([
                 'subject' => $entity,
-                'predicate' => EntitySystem::ATTRIBUTE_NAME,
+                'predicate' => EntitySystem::Attribute_Name,
                 'cancelled' => 0
             ]);
             if (count($rows) === 0 || $rows->getFirst()['value'] === '') {
@@ -469,9 +467,21 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
 
     protected function storeStatement(DataTable $statementsTable,
                                       int $subject, int $predicate, int|string $valueOrObject,
-                                      int $editedBy, int $timestamp, string $editorialNote) : int {
+                                      int $editedBy, int $timestamp, string $editorialNote,
+                                      array $qualifications = [], array $extraMetadata = []) : int {
 
         $statementTid = $this->getUniqueTid();
+        $qualificationsString= '';
+        $extraMetadataString = '';
+
+        if (count($qualifications) > 0) {
+            $qualificationsString = json_encode($qualifications);
+        }
+
+        if (count($extraMetadata) > 0) {
+            $extraMetadataString = json_encode($extraMetadata);
+        }
+
         $row = [
             'id' => 0,
             'tid' => $statementTid,
@@ -482,9 +492,8 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             'editedBy' => $editedBy,
             'editTimestamp' => $timestamp,
             'editorialNote' => $editorialNote,
-            'fromDate' => '',
-            'untilDate' => '',
-            'seq' => 0,
+            'qualifications' => $qualificationsString,
+            'extraMetadata' => $extraMetadataString,
             'cancelled' => 0,
             'cancelledBy' => -1,
             'cancellationTimestamp' => 0,
@@ -507,23 +516,27 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         return $statementTid;
     }
 
+    private function getBooleanValueString(bool $value) : string {
+        return $value ? EntitySystem::Value_True : EntitySystem::Value_False;
+    }
+
     private function setupEntityInStatementsTable(DataTable $statementsTable, int $tid, int $typeTid,
                                                   string $name, string  $description, string $editorialNote, int $ts, int $editedBy) : void {
         $this->storeStatement($statementsTable,
             $tid,
-            EntitySystem::RELATION_HAS_TYPE,
+            EntitySystem::Relation_IsOfType,
             $typeTid,
             $editedBy, $ts, $editorialNote
         );
         $this->storeStatement($statementsTable,
             $tid,
-            EntitySystem::ATTRIBUTE_NAME,
+            EntitySystem::Attribute_Name,
             $name,
             $editedBy, $ts, $editorialNote
         );
         $this->storeStatement($statementsTable,
             $tid,
-            EntitySystem::ATTRIBUTE_DESCRIPTION,
+            EntitySystem::Attribute_Description,
             $description,
             $editedBy, $ts, $editorialNote
         );
@@ -532,11 +545,11 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
     private function setupTypeInStatementsTable(DataTable $statementsTable, int $typeTid, string $name, string $description, bool $hasUniqueNames, int $ts, int $editedBy) : void {
         $typeNameString = sprintf("%s:%s", StandardNames::TYPE_ENTITY_TYPE, $name);
         $editorialNote = "Setting up $typeNameString";
-        $this->setupEntityInStatementsTable($statementsTable, $typeTid, self::ENTITY_TYPE__ENTITY_TYPE, $name, $typeNameString, $editorialNote, $ts, $editedBy);
+        $this->setupEntityInStatementsTable($statementsTable, $typeTid, self::Type_EntityType, $name, $description, $editorialNote, $ts, $editedBy);
         $this->storeStatement($statementsTable,
             $typeTid,
-            EntitySystem::ATTRIBUTE_HAS_UNIQUE_NAMES,
-            $hasUniqueNames ? StandardNames::VALUE_TRUE : StandardNames::VALUE_FALSE,
+            EntitySystem::Attribute_MustHaveUniqueNames,
+            $this->getBooleanValueString($hasUniqueNames),
             $editedBy, $ts, $editorialNote
         );
     }
@@ -554,153 +567,77 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         $now = TimeString::now();
         $bootstrapEditorialNote = "Bootstrapping the entity system at $now server time";
         $this->logger->info($bootstrapEditorialNote);
-        $entityTypeStatementsTable = $this->getStatementsTableForType(StandardNames::TYPE_ENTITY_TYPE);
 
-        $this->setupTypeInStatementsTable($entityTypeStatementsTable,
-            EntitySystem::ENTITY_TYPE__ENTITY_TYPE,
-            StandardNames::TYPE_ENTITY_TYPE,
-            'an entity type',
-            true,
-            $bootstrapTimestamp,
-            $this->systemTid
-        );
+        $typesToSetup = [
+            [ EntitySystem::Type_EntityType, EntitySystem::Name_Type_EntityType, 'an entity type', true],
+            [ EntitySystem::Type_Attribute, EntitySystem::Name_Type_Attribute, 'a predicate that has literal values as its object', true],
+            [ EntitySystem::Type_Relation, EntitySystem::Name_Type_Relation, 'a predicate that has entities as its object', true],
+            [ EntitySystem::Type_DataType, EntitySystem::Name_Type_DataType, 'e.g, integer, string, etc', true],
+            [ EntitySystem::Type_Statement, EntitySystem::Name_Type_Statement, "a subject-predicate-object assertion done by a person in the system", false],
+            [ EntitySystem::Type_Person, EntitySystem::Name_Type_Person, 'Normally a human being', false],
+            [ EntitySystem::Type_Place, EntitySystem::Name_Type_Place, 'A geographical place with a definite location', false],
+            [ EntitySystem::Type_Area, EntitySystem::Name_Type_Area, 'A geographical area, e.g. a country, a city', false],
+        ];
 
-        $this->setupTypeInStatementsTable($entityTypeStatementsTable,
-            EntitySystem::ENTITY_TYPE__ATTRIBUTE,
-            StandardNames::TYPE_ATTRIBUTE,
-            'a predicate that has literal values as its object',
-            true,
-            $bootstrapTimestamp,
-            $this->systemTid
-        );
+        $entityTypeStatementsTable = $this->getStatementsTableForType(EntitySystem::Type_EntityType);
+        foreach($typesToSetup as $setupTuple) {
+            [ $typeTid, $name, $description, $hasUniqueNames ] = $setupTuple;
+            $this->setupTypeInStatementsTable($entityTypeStatementsTable,
+                $typeTid,
+                $name,
+                $description,
+                $hasUniqueNames,
+                $bootstrapTimestamp,
+                $this->systemTid
+            );
+        }
 
-        $this->setupTypeInStatementsTable($entityTypeStatementsTable,
-            EntitySystem::ENTITY_TYPE__RELATION,
-            StandardNames::TYPE_RELATION,
-            'a predicate that has entities as its object',
-            true,
-            $bootstrapTimestamp,
-            $this->systemTid
-        );
+        $attributesToSetup = [
+            [ EntitySystem::Attribute_Name, EntitySystem::Name_Attribute_Name, "The entity's name" ],
+            [ EntitySystem::Attribute_Description, EntitySystem::Name_Attribute_Description, "A short description of the entity" ],
+            [ EntitySystem::Attribute_MustHaveUniqueNames, EntitySystem::Name_Attribute_MustHaveUniqueNames, "Indicates if a type has entities with unique names" ],
+            [ EntitySystem::Attribute_OnlyOneAllowed, EntitySystem::Name_Attribute_OnlyOneAllowed, "Indicates if only one value or object is allowed for a specific predicate" ],
+            [ EntitySystem::Attribute_CreationTimestamp, EntitySystem::Name_Attribute_CreationTimestamp, "Timestamp when the entity was created" ],
+            [ EntitySystem::Attribute_StatementTimestamp, EntitySystem::Name_Attribute_StatementTimestamp, "Timestamp when a statement was made"],
+            [ EntitySystem::Attribute_StatementEditorialNote, EntitySystem::Name_Attribute_StatementEditorialNote, "Editorial note for a statement"],
+            [ EntitySystem::Attribute_Qualification_fromDate, EntitySystem::Name_Attribute_Qualification_fromDate, "Date from which the value/object of a statement applies"],
+            [ EntitySystem::Attribute_Qualification_untilDate, EntitySystem::Name_Attribute_Qualification_untilDate, "Date until which the value/object of a statement applies"],
+            [ EntitySystem::Attribute_Qualification_SequenceNumber, EntitySystem::Name_Attribute_Qualification_SequenceNumber, "The sequence number of a statement within statements of the same predicate"],
+            [ EntitySystem::Attribute_MergeTimestamp, EntitySystem::Name_Attribute_MergeTimestamp, "The timestamp when a merge operation was performed"],
 
-        // Create standard entity types
-        $this->createEntityType(
-            StandardNames::TYPE_DATA_TYPE,
-            'e.g, integer, string, etc', true,
-            $this->systemTid, $bootstrapTimestamp);
-        $this->createEntityType(
-            StandardNames::TYPE_STATEMENT,
-            "a subject-predicate-object assertion done by a person in the system", false,
-            $this->systemTid, $bootstrapTimestamp);
-        $this->createEntityType(
-            StandardNames::TYPE_STATEMENT_GROUP,
-            "a group of statements", false,
-            $this->systemTid, $bootstrapTimestamp);
-        $this->createEntityType(
-            StandardNames::TYPE_PERSON,
-            'Normally a human being', false,
-            $this->systemTid, $bootstrapTimestamp);
-        $this->createEntityType(
-            StandardNames::TYPE_PLACE,
-            'A geographical place', false,
-            $this->systemTid, $bootstrapTimestamp);
-        $this->createEntityType(
-            StandardNames::TYPE_AREA,
-            'A geographical area', false,
-            $this->systemTid, $bootstrapTimestamp);
+        ];
+        $attributeStatementsTable = $this->getStatementsTableForType(EntitySystem::Type_Attribute);
+        foreach($attributesToSetup as $setupTuple) {
+            [ $entityTid, $name, $description] = $setupTuple;
+            $this->setupEntityInStatementsTable($attributeStatementsTable,
+                $entityTid,
+                EntitySystem::Type_Attribute,
+                $name,
+                $description,
+                $bootstrapEditorialNote,
+                $this->systemTid, $bootstrapTimestamp);
+        }
 
-        // Set up the fundamental attributes
-        $attributeStatementsTable = $this->getStatementsTableForType(StandardNames::TYPE_ATTRIBUTE);
-        $this->setupEntityInStatementsTable($attributeStatementsTable,
-            EntitySystem::ATTRIBUTE_NAME,
-            EntitySystem::ENTITY_TYPE__ATTRIBUTE,
-            StandardNames::ATTRIBUTE_NAME,
-            "The entity's name",
-            $bootstrapEditorialNote,
-            $this->systemTid, $bootstrapTimestamp);
-        $this->setupEntityInStatementsTable($attributeStatementsTable,
-            EntitySystem::ATTRIBUTE_DESCRIPTION,
-            EntitySystem::ENTITY_TYPE__ATTRIBUTE,
-            StandardNames::ATTRIBUTE_DESCRIPTION,
-            "A short description of the entity",
-            $bootstrapEditorialNote,
-            $this->systemTid, $bootstrapTimestamp);
+        $relationsToSetup = [
+            [ EntitySystem::Relation_IsOfType, EntitySystem::Name_Relation_IsOfType, "The type of an entity"],
+            [ EntitySystem::Relation_ObjectTypeMustBe, EntitySystem::Name_Relation_ObjectTypeMustBe, "An entity type that is allowed for the object of a particular relation"],
+            [ EntitySystem::Relation_StatementEditor, EntitySystem::Name_Relation_StatementEditor, "The editor of a statement"],
+            [ EntitySystem::Relation_Qualification_Language, EntitySystem::Name_Relation_Qualification_Language, "The language of a value"],
+            [ EntitySystem::Relation_MergedInto, EntitySystem::Name_Relation_MergedInto, "The entity into which the entity is merged"],
+            [ EntitySystem::Relation_MergedBy, EntitySystem::Name_Relation_MergedBy, "The Person entity who performed a merge operation"],
+        ];
 
-        $this->setupEntityInStatementsTable($attributeStatementsTable,
-            EntitySystem::ATTRIBUTE_HAS_UNIQUE_NAMES,
-            EntitySystem::ENTITY_TYPE__ATTRIBUTE,
-            StandardNames::ATTRIBUTE_HAS_UNIQUE_NAMES,
-            "Indicates if a type has entities with unique names",
-            $bootstrapEditorialNote,
-            $this->systemTid, $bootstrapTimestamp);
-
-        $this->setupEntityInStatementsTable($attributeStatementsTable,
-            EntitySystem::ATTRIBUTE_ONLY_ONE_ALLOWED,
-            EntitySystem::ENTITY_TYPE__ATTRIBUTE,
-            StandardNames::ATTRIBUTE_ONLY_ONE_ALLOWED,
-            "Indicates if only one value or object is allowed for a specific predicate",
-            $bootstrapEditorialNote,
-            $this->systemTid, $bootstrapTimestamp);
-
-        // Create standard attributes
-        $this->createEntity(StandardNames::TYPE_ATTRIBUTE,
-            StandardNames::ATTRIBUTE_ALIAS,
-            "An entity's alias",
-            $this->systemTid, $bootstrapTimestamp);
-        $this->createEntity(StandardNames::TYPE_ATTRIBUTE,
-            StandardNames::ATTRIBUTE_EDIT_TIMESTAMP,
-            "A statement's edit timestamp",
-            $this->systemTid, $bootstrapTimestamp);
-        $this->createEntity(StandardNames::TYPE_ATTRIBUTE,
-            StandardNames::ATTRIBUTE_EDITORIAL_NOTE,
-            "A note about a statement",
-            $this->systemTid, $bootstrapTimestamp);
-        $this->createEntity(StandardNames::TYPE_ATTRIBUTE,
-            StandardNames::ATTRIBUTE_ANNOTATION,
-            "Free text information about an entity",
-            $this->systemTid, $bootstrapTimestamp);
-        $this->createEntity(StandardNames::TYPE_ATTRIBUTE,
-            StandardNames::ATTRIBUTE_IS_MERGED,
-            "Indicates whether an entity has been merged into another or not",
-            $this->systemTid, $bootstrapTimestamp);
-
-        $this->createEntity(StandardNames::TYPE_ATTRIBUTE,
-            StandardNames::ATTRIBUTE_MERGE_TIMESTAMP,
-            "timestamp for the merge operation",
-            $this->systemTid, $bootstrapTimestamp);
-
-        // Set up the fundamental relations
-        $relationStatementsTable = $this->getStatementsTableForType(StandardNames::TYPE_RELATION);
-
-        $this->setupEntityInStatementsTable($relationStatementsTable,
-            EntitySystem::RELATION_HAS_TYPE,
-            EntitySystem::ENTITY_TYPE__RELATION,
-            StandardNames::RELATION_HAS_TYPE,
-            "The entity's type",
-            $bootstrapEditorialNote,
-            $this->systemTid, $bootstrapTimestamp);
-
-        $this->setupEntityInStatementsTable($relationStatementsTable,
-            EntitySystem::RELATION_OBJECT_TYPE_ALLOWED,
-            EntitySystem::ENTITY_TYPE__RELATION,
-            StandardNames::RELATION_OBJECT_TYPE_ALLOWED,
-            "Adds an entity type to the types allowed for the object of a particular relation",
-            $bootstrapEditorialNote,
-            $this->systemTid, $bootstrapTimestamp);
-
-        // Create standard relations
-        $this->createEntity(StandardNames::TYPE_RELATION,
-            StandardNames::RELATION_MERGED_INTO,
-        "The entity into which an entity has been merged",
-            $this->systemTid, $bootstrapTimestamp);
-        $this->createEntity(StandardNames::TYPE_RELATION,
-            StandardNames::RELATION_EDITED_BY,
-            "The author of a statement",
-            $this->systemTid, $bootstrapTimestamp);
-        $this->createEntity(StandardNames::TYPE_RELATION,
-            StandardNames::RELATION_MERGED_BY,
-            "The author of a merge operation",
-            $this->systemTid, $bootstrapTimestamp);
+        $relationStatementsTable = $this->getStatementsTableForType(EntitySystem::Type_Relation);
+        foreach($relationsToSetup as $setupTuple) {
+            [ $entityTid, $name, $description] = $setupTuple;
+            $this->setupEntityInStatementsTable($relationStatementsTable,
+                $entityTid,
+                EntitySystem::Type_Relation,
+                $name,
+                $description,
+                $bootstrapEditorialNote,
+                $this->systemTid, $bootstrapTimestamp);
+        }
 
         // Create standard data types
         $this->createEntity(StandardNames::TYPE_DATA_TYPE,
@@ -733,25 +670,25 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
             $this->systemTid, $bootstrapTimestamp);
 
         // Set up constraints in standard attributes
-        $this->makeStatement(EntitySystem::ATTRIBUTE_NAME,
-            EntitySystem::ATTRIBUTE_ONLY_ONE_ALLOWED, StandardNames::VALUE_TRUE, [],
+        $this->makeStatement(EntitySystem::Attribute_Name,
+            EntitySystem::Attribute_OnlyOneAllowed, StandardNames::VALUE_TRUE, [],
             $this->systemTid, $bootstrapEditorialNote, [], -1, $bootstrapTimestamp);
 
-        $this->makeStatement(EntitySystem::ATTRIBUTE_DESCRIPTION,
-            EntitySystem::ATTRIBUTE_ONLY_ONE_ALLOWED, StandardNames::VALUE_TRUE, [],
+        $this->makeStatement(EntitySystem::Attribute_Description,
+            EntitySystem::Attribute_OnlyOneAllowed, StandardNames::VALUE_TRUE, [],
             $this->systemTid, $bootstrapEditorialNote, [], -1, $bootstrapTimestamp);
 
-        $this->makeStatement(EntitySystem::ATTRIBUTE_ONLY_ONE_ALLOWED,
-            EntitySystem::ATTRIBUTE_ONLY_ONE_ALLOWED, StandardNames::VALUE_TRUE, [],
+        $this->makeStatement(EntitySystem::Attribute_OnlyOneAllowed,
+            EntitySystem::Attribute_OnlyOneAllowed, StandardNames::VALUE_TRUE, [],
             $this->systemTid, $bootstrapEditorialNote, [], -1, $bootstrapTimestamp);
 
         // Set up constraints in standard relations
-        $this->makeStatement(EntitySystem::RELATION_HAS_TYPE,
-            EntitySystem::ATTRIBUTE_ONLY_ONE_ALLOWED, StandardNames::VALUE_TRUE, [],
+        $this->makeStatement(EntitySystem::Relation_IsOfType,
+            EntitySystem::Attribute_OnlyOneAllowed, StandardNames::VALUE_TRUE, [],
             $this->systemTid, $bootstrapEditorialNote, [], -1, $bootstrapTimestamp);
 
-        $this->makeStatement(EntitySystem::RELATION_HAS_TYPE,
-            EntitySystem::RELATION_OBJECT_TYPE_ALLOWED, EntitySystem::ENTITY_TYPE__ENTITY_TYPE, [],
+        $this->makeStatement(EntitySystem::Relation_IsOfType,
+            EntitySystem::Relation_ObjectTypeMustBe, EntitySystem::Type_EntityType, [],
             $this->systemTid, $bootstrapEditorialNote, [], -1, $bootstrapTimestamp);
 
         $this->logger->info("Finished bootstrapping the entity system");
@@ -915,12 +852,12 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         foreach ($this->typeConfig as $typeConfig) {
             if ($entityTid === $typeConfig['typeTid']) {
                 // it's a type
-                return EntitySystem::ENTITY_TYPE__ENTITY_TYPE;
+                return EntitySystem::Type_EntityType;
             }
             /** @var DataTable $table */
             $table = $typeConfig['statementsTable'];
             if (!in_array($table, $tablesSearched)) {
-                $rows = $table->findRows([ 'subject' => $entityTid, 'predicate' => EntitySystem::RELATION_HAS_TYPE, 'cancelled' => 0]);
+                $rows = $table->findRows([ 'subject' => $entityTid, 'predicate' => EntitySystem::Relation_IsOfType, 'cancelled' => 0]);
                 if (count($rows) === 1) {
                     return $rows->getFirst()['object'];
                 }
@@ -967,7 +904,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
      */
     public function getEntityName(int $entityTid, string|int $type = '') : string {
         // quick processing for entity types
-        if ($type === StandardNames::TYPE_ENTITY_TYPE || $type === EntitySystem::ENTITY_TYPE__ENTITY_TYPE) {
+        if ($type === StandardNames::TYPE_ENTITY_TYPE || $type === EntitySystem::Type_EntityType) {
             // look into type config
             foreach ($this->typeConfig as $typeName => $typeConfig) {
                 if ($entityTid === $typeConfig['typeTid']) {
@@ -1012,7 +949,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         } else {
             // look into statements
             $table =$this->typeConfig[$typeName]['statementsTable'];
-            $rows = $table->findRows([ 'subject' => $entityTid, 'predicate' => EntitySystem::ATTRIBUTE_NAME, 'cancelled' => 0]);
+            $rows = $table->findRows([ 'subject' => $entityTid, 'predicate' => EntitySystem::Attribute_Name, 'cancelled' => 0]);
             if (count($rows) === 1) {
                 return $rows->getFirst()['value'];
             }
@@ -1104,13 +1041,13 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
 
 
         switch ($predicateType) {
-            case  EntitySystem::ENTITY_TYPE__ATTRIBUTE:
+            case  EntitySystem::Type_Attribute:
                 $value = strval($valueOrObject);
                 $this->storeStatement($table, $subjectTid, $predicateTid, $value,
                     $editedByPersonTid, $ts, $editorialNote);
                 break;
 
-            case EntitySystem::ENTITY_TYPE__RELATION:
+            case EntitySystem::Type_Relation:
                 $objectTid = $valueOrObject;
                 if (is_string($valueOrObject)) {
                     $objectTid = $this->getTidByTypeAndName($valueOrObject);
@@ -1226,7 +1163,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
      */
     protected function getAttributeValue(int|string $entityTid, int|string $attribute) : string {
         $attributeTid = $this->getTidByTypeAndName($attribute);
-        if ($this->getEntityType($attributeTid) !== EntitySystem::ENTITY_TYPE__ATTRIBUTE) {
+        if ($this->getEntityType($attributeTid) !== EntitySystem::Type_Attribute) {
             throw new InvalidArgumentException("Given attribute $attribute not an attribute");
         }
         $statements = $this->getEntityStatements($entityTid, $attribute);
@@ -1329,7 +1266,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
     public function getTidByTypeAndName(string|int $typeNameOrType, string $name = ''): int
     {
         // quick processing for entity types
-        if ($name !== '' && ($typeNameOrType === StandardNames::TYPE_ENTITY_TYPE || $typeNameOrType === EntitySystem::ENTITY_TYPE__ENTITY_TYPE)){
+        if ($name !== '' && ($typeNameOrType === StandardNames::TYPE_ENTITY_TYPE || $typeNameOrType === EntitySystem::Type_EntityType)){
             try {
                 $this->getTypeTid($name);
             } catch( InvalidTypeException) {
@@ -1511,7 +1448,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, LoggerAwareInte
         $tids = [];
         /** @var DataTable $table */
         $table = $this->typeConfig[$typeName]['statementsTable'];
-        $rows = $table->findRows( ['predicate' => EntitySystem::RELATION_HAS_TYPE, 'object' => $typeTid, 'cancelled' => 0]);
+        $rows = $table->findRows( ['predicate' => EntitySystem::Relation_IsOfType, 'object' => $typeTid, 'cancelled' => 0]);
         foreach($rows as $row) {
             $tids[] = $row['subject'];
         }

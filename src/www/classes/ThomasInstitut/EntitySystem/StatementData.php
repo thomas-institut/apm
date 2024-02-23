@@ -7,27 +7,17 @@ use ThomasInstitut\Exportable\Exportable;
 class StatementData implements Exportable
 {
     public int $tid = -1;
-    public bool $isAttribute = true;
-
+    public int $statementGroup = -1;
     public int $subject = -1;
-    public string $predicate = '';
-    public string $value = '';
+    public int $predicate = -1;
     public int $object = -1;
-    public string $dateFrom = '';
-    public string $dateUntil  = '';
-    public int $seq = -1;
-
-    public int $editedBy = -1;
-    public int $timestamp = 0;
-    public string $note = '';
-
+    public string $value = '';
+    public array $qualifications;
+    public array $metadata;
     public bool $isCancelled = false;
     public int $cancelledBy = -1;
     public int $cancellationTimestamp = 0;
     public string $cancellationNote = '';
-
-    public array $metadata;
-
 
     public function getExportObject(): array
     {

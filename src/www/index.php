@@ -20,6 +20,7 @@
 namespace APM;
 
 use APM\Api\ApiEditionSources;
+use APM\Api\ApiEntity;
 use APM\Api\ApiLog;
 use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiPeople;
@@ -296,6 +297,7 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
 function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) : void {
     $app->group('/api', function (RouteCollectorProxy $group) use ($container){
 
+        createApiEntityRoutes($group, 'entity', $container);
         // SEARCH
         $group->post('/search/keyword',
             function(Request $request, Response $response) use ($container){
@@ -647,67 +649,80 @@ function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) :
             })
             ->setName('api.presets.post');
 
-        //  ICONS
-
-        // API -> images : Mark Icon
-        $group->get('/images/mark/{size}',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiIcons($container))->generateMarkIcon($request, $response);
-            })
-            ->setName('api.images.mark');
-
-        // API -> images : No Word Break Icon
-        $group->get('/images/nowb/{size}',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiIcons($container))->generateNoWordBreakIcon($request, $response);
-            })
-            ->setName('api.images.nowb');
-
-        // API -> images : Illegible Icon
-        $group->get('/images/illegible/{size}/{length}',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiIcons($container))->generateIllegibleIcon($request, $response);
-            })
-            ->setName('api.images.illegible');
-
-        // API -> images : ChunkMark Icon
-        $group->get('/images/chunkmark/{dareid}/{chunkno}/{lwid}/{segment}/{type}/{dir}/{size}',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiIcons($container))->generateChunkMarkIcon($request, $response);
-            })
-            ->setName('api.images.chunkmark');
-
-        // API -> images : ChapterMark Icon
-        $group->get('/images/chaptermark/{work}/{level}/{number}/{type}/{dir}/{size}',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiIcons($container))->generateChapterMarkIcon($request, $response);
-            })
-            ->setName('api.images.chaptermark');
-
-        // API -> images : Line Gap Mark
-        $group->get('/images/linegap/{count}/{size}',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiIcons($container))->generateLineGapImage($request, $response);
-            })
-            ->setName('api.images.linegap');
-
-        // API -> images : Character Gap Mark
-        $group->get('/images/charactergap/{length}/{size}',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiIcons($container))->generateCharacterGapImage($request, $response);
-            })
-            ->setName('api.images.charactergap');
-
-        // API -> images : Paragraph Mark
-        $group->get('/images/paragraphmark/{size}',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiIcons($container))->generateParagraphMarkIcon($request, $response);
-            })
-            ->setName('api.images.charactergap');
+        createApiImageRoutes($group, 'images', $container);
 
     })->add( function(Request $request, RequestHandlerInterface $handler) use($container){
         return (new Authenticator($container))->authenticateApiRequest($request, $handler);
     });
+}
+
+function createApiEntityRoutes(RouteCollectorProxy $group, string $prefix, ContainerInterface $container) : void
+{
+    $group->get("/$prefix/type/{entityType}/schema",function(Request $request, Response $response) use ($container){
+        return (new ApiEntity($container))->getEntitySchema($request, $response);
+    })->setName("api.$prefix.type.schema");
+
+}
+
+function createApiImageRoutes(RouteCollectorProxy $group, string $prefix, ContainerInterface $container) : void
+{
+
+    // API -> images : Mark Icon
+    $group->get("/$prefix/mark/{size}",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiIcons($container))->generateMarkIcon($request, $response);
+        })
+        ->setName("api.$prefix.mark");
+
+    // API -> images : No Word Break Icon
+    $group->get("/$prefix/nowb/{size}",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiIcons($container))->generateNoWordBreakIcon($request, $response);
+        })
+        ->setName("api.$prefix.nowb");
+
+    // API -> images : Illegible Icon
+    $group->get("/$prefix/illegible/{size}/{length}",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiIcons($container))->generateIllegibleIcon($request, $response);
+        })
+        ->setName("api.$prefix.illegible");
+
+    // API -> images : ChunkMark Icon
+    $group->get("/$prefix/chunkmark/{dareid}/{chunkno}/{lwid}/{segment}/{type}/{dir}/{size}",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiIcons($container))->generateChunkMarkIcon($request, $response);
+        })
+        ->setName("api.$prefix.chunkmark");
+
+    // API -> images : ChapterMark Icon
+    $group->get("/$prefix/chaptermark/{work}/{level}/{number}/{type}/{dir}/{size}",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiIcons($container))->generateChapterMarkIcon($request, $response);
+        })
+        ->setName("api.$prefix.chaptermark");
+
+    // API -> images : Line Gap Mark
+    $group->get("/$prefix/linegap/{count}/{size}",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiIcons($container))->generateLineGapImage($request, $response);
+        })
+        ->setName("api.$prefix.linegap");
+
+    // API -> images : Character Gap Mark
+    $group->get("/$prefix/charactergap/{length}/{size}",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiIcons($container))->generateCharacterGapImage($request, $response);
+        })
+        ->setName("api.$prefix.charactergap");
+
+    // API -> images : Paragraph Mark
+    $group->get("/$prefix/paragraphmark/{size}",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiIcons($container))->generateParagraphMarkIcon($request, $response);
+        })
+        ->setName("api.$prefix.charactergap");
+
 }
 
 function createLoginRoutes(App $app, ContainerInterface $container) : void {

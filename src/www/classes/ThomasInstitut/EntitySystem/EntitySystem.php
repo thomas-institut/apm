@@ -2,6 +2,7 @@
 
 namespace ThomasInstitut\EntitySystem;
 
+use Psr\Log\LoggerAwareInterface;
 use ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException;
 use ThomasInstitut\EntitySystem\Exception\InvalidAttributeException;
 use ThomasInstitut\EntitySystem\Exception\InvalidNameException;
@@ -54,45 +55,34 @@ use ThomasInstitut\EntitySystem\Exception\InvalidTypeException;
  *     value it is an attribute statement and its predicate is simply called 'attribute'; if the object is an entity,
  *     the statement is a relation statement and its predicate is called 'relation'.
  *
- *        Attribute statement:  [subject] [attribute]  'value' [statement1]
+ *        Attribute statement:  [subject] [attribute] 'value' [statement1]
  *        Relation statement:  [subject] [relation] [object] [statement2]
  *
- *   - A statement may be qualified with a date period (from and to dates). This makes it easy to state data
- *     like:
+ *   - Every statement in the system is itself an entity, and, as such, may be the subject of other statements.
  *
- *          [s1] [Averroes] [wrote] [SomeWork] from '1150' until '1151'
+ *   - Every statement in the system is part of exactly one statement group. Statement groups are identified by a tid, but
+ *     they are not entities in the system.
  *
- *     Without this mechanism, such a common statement would have to be expressed by several statements. For example:
+ *   - Statements in the system are completely specified by a 6-tuple:
  *
- *         [s1] [Averroes] [isTheAuthorOf] [QualifiedAuthorshipStatement1]
- *         [s2] [QualifiedAuthorshipStatement1] [isAbout] [SomeWork]
- *         [s3] [QualifiedAuthorshipStatement1] [fromDate] '1150'
- *         [s4] [QualifiedAuthorshipStatement1] [untilDate] '1151'
+ *       [statement] statementGroupTid [subject] [predicate] [object] value
  *
- *     This, however, is only one of the ways in which this can be captured, which makes it problematic to leave
- *     it to a user's will. With the built-in mechanism, editors must not assume any particular way of unpacking
- *     qualified statements. Attribute or relation qualifications are just parts of the statement itself.
+ *     if the statement is a relation statement, object is a valid entity and value is '',
+ *     if the statement is an attribute statement, object is -1
  *
- *   - A statement may be qualified also with a sequence number to make it easier to work with ordered attributes
- *     and relations. For example:
+ *   - A statement can be given an arbitrary number of qualifications. For example, for a given attribute value, we
+ *     may want to also state its language:  [subject] [attribute] 'value' ([Language])
  *
- *        [s1] [Manuscript1] [hasWork] [SomeWork] seq 1
- *        [s2] [Manuscript1] [hasWork] [OtherWork] seq 2
+ *     In general, this is accomplished by stating the qualifications as applying to the statement itself:
  *
- *   - A relation may be qualified with a referredAs label, representing the way the object is referenced in the context
- *     in which the statement is valid. For example, in a manuscript description, a person may be referred by
- *     a name different from their "official" name in the database:
+ *     [s1] sg1 [subject] [predicate] [object] value
+ *     [s2] sg1 [s1] [qualificationPredicate1]  [qualificationObject1] qualificationValue1
+ *     [s3] sg1 [s2] [qualificationPredicate2] [qualificationObject2] qualificationValue2
+ *      ...
+ *     [sn] sg1 [sn] [qualificationPredicateN] [qualificationObjectN] qualificationValueN
  *
- *     [s1] [Manuscript2] [hasScribe] [PetrusScribanus] referredAs 'Petrus'
- *
- *   - Statements may be qualified with any combination of dates, sequences and labels :
- *
- *          [s1] [Averroes] [wrote] [SomeWork] from '1150' until '1151' seq 1 referredAs 'The first work'
- *          [s2] [Averroes] [wrote] [OtherWork] from '1152' until '1152' seq 2 referredAs 'The other work'
- *
- *     Taking into account qualifications, statement quads in the system become 8-tuples when fully qualified:
- *
- *        [statementEntity] [subject] [predicate] [object]|'value' 'fromDate' 'untilDate' sequenceNumber referredAs
+ *     The convenience methods makeQualifiedStatement and getQualifiedStatement makes it unnecessary to manually
+ *     generate or read individual qualifications.
  *
  *   - All entities have textual name and description attributes by default, which can be empty depending on the
  *     entity type.
@@ -118,8 +108,6 @@ use ThomasInstitut\EntitySystem\Exception\InvalidTypeException;
  *     or any name at all:
  *     
  *          [EntityType:Statement]: statements
- *          [EntityType:StatementGroup]: set of [EntityType:Statement] entities that for some reason go together, 
- *             for example, because all the corresponding statements were made in the same editing operation.
  *          [EntityType:Person]: normally a human being, but in general, an agent that can be an author, editor, etc.
  *          [EntityType:Place]: a definite place that can be located with a set of lat/long coordinates and that
  *             normally has a given name, for example: the Cologne Cathedral, the Thomas-Institut building.
@@ -150,14 +138,15 @@ use ThomasInstitut\EntitySystem\Exception\InvalidTypeException;
  *     is type. Every entity in the system has this relation. That is, this relation is guaranteed to be
  *     reported when data for any entity is requested from the system.
  *
- *   - All statements in the system have an author and a timestamp stated with the following predicates
+ *   - All statements in the system are qualified with an author and a timestamp stated with the following predicates
  *
- *          [Relation:editedBy]: the object must be an [EntityType:Person] entity
- *          [Attribute:editTimestamp]: the value must be of [ValueType:timestamp]
+ *          [Relation:statementAuthor]: the object must be an [EntityType:Person] entity
+ *          [Attribute:statementTimestamp]: the value must be of [ValueType:timestamp]
  *
  *   - An entity that stands for the system itself is predefined: [system]. It is
  *     used as the author for all the statements concerning the predefined entities, attributes and relations
  *     described here, and may be used for other statements as well.
+ *
  *   - Attribute values may be restricted to specific types, for example, [Attribute:dateOfBirth] may be restricted
  *     to be of [ValueType:date]. The relation [Relation:valueMustBeOfType] is predefined and is used to state these
  *     restrictions.
@@ -186,49 +175,143 @@ use ThomasInstitut\EntitySystem\Exception\InvalidTypeException;
  *            process, but this is not something that a user should decide.
  *
  *        (2) the entity, entity A, is found to be a duplicate of another entity, entity B, which has more or better
- *            data. Data editors may be tempted to change all relations including A to B and then delete A.
+ *            data. Data editors may be tempted to re-state all statements including A to B and then delete A.
  *            The problem is that after deleting A, any internal and external references to A will break.
  *
  *            The correct solution is for the system to provide a merge operation of A into B after which A's
  *            data will not be accessible and any reference to A will be directed to B.
  *
  *     The system captures the person who performed the merge, as well as the time in which it was done. After
- *     an entity is merged, the entity will not be allowed to be a subject or and object in a statement. If the data
- *     for that entity is queried, only the following predicates will be reported:
+ *     an entity is merged, the entity will not be allowed to be a subject or and object in a statement.
  *
- *       [Attribute:isMerged]: with the value 'true'
+ *     The system does not provide a method to automatically copy A's data into B's data because there might be conflicts
+ *     that cannot be resolved. It is up to the applications to provide users with a way to perform correct data
+ *     merges.
+ *
+ *     If the data for a merged entity is queried, only the following predicates will be reported:
+ *
  *       [Relation:mergedInto]: the "new" entity
  *       [Relation:mergedBy]: with an [EntityType:Person] entity as its object
  *       [Attribute:mergeTimestamp]
  *       [Attribute:editorialNote]: a note left by the person who merged the entity.
  *
+ *     It is up to the applications to query the data of the mergedInto entity.
+ *
  *
  */
-interface EntitySystem
+interface EntitySystem extends LoggerAwareInterface
 {
+
+    /**
+     * Undefined entity
+     */
+    const UndefinedEntity = -1;
 
     /**
      * The system entity tid
      */
-    const ENTITY_SYSTEM = 1;
+    const SystemEntity = 1;
+    /**
+     * Fundamental types
+     */
+    const Type_EntityType = 10;
+    const Name_Type_EntityType = 'EntityType';
+    const Type_Attribute = 11;
+    const Name_Type_Attribute = 'Attribute';
+    const Type_Relation = 12;
+    const Name_Type_Relation = 'Relation';
+    const Type_DataType = 13;
+    const Name_Type_DataType = 'DataType';
+    const Type_Statement = 14;
+    const Name_Type_Statement = 'Statement';
+    const Type_Person = 15;
+    const Name_Type_Person = 'Person';
+    const Type_Language = 16;
+    const Name_Type_Language = 'Language';
+    const Type_Place = 17;
+    const Name_Type_Place = 'Place';
+    const Type_Area = 18;
+    const Name_Type_Area = 'Area';
+
 
     /**
      * Fundamental predicates
      */
-    const RELATION_HAS_TYPE = 1001;
-    const RELATION_OBJECT_TYPE_ALLOWED = 1002;
+    const Relation_IsOfType = 100;
+    const Name_Relation_IsOfType = 'IsOfType';
 
-    const ATTRIBUTE_HAS_UNIQUE_NAMES = 2001;
-    const ATTRIBUTE_NAME = 2002;
-    const ATTRIBUTE_DESCRIPTION = 2003;
-    const ATTRIBUTE_ONLY_ONE_ALLOWED = 2004;
 
-    /**
-     * Fundamental types
-     */
-    const ENTITY_TYPE__ENTITY_TYPE = 500001;
-    const ENTITY_TYPE__ATTRIBUTE = 500002;
-    const ENTITY_TYPE__RELATION = 500003;
+
+    const Attribute_Name = 200;
+    const Name_Attribute_Name = 'Name';
+    const Attribute_Description = 201;
+    const Name_Attribute_Description = 'Description';
+    const Attribute_MustHaveUniqueNames = 202;
+    const Name_Attribute_MustHaveUniqueNames = 'MustHaveUniqueNames';
+    const Attribute_OnlyOneAllowed = 203;
+    const Name_Attribute_OnlyOneAllowed = 'OnlyOneAllowed';
+    const Attribute_CreationTimestamp = 204;
+    const Name_Attribute_CreationTimestamp = 'CreationTimestamp';
+
+    const Relation_StatementEditor = 301;
+    const Name_Relation_StatementEditor = 'StatementEditor';
+    const Attribute_StatementTimestamp = 302;
+    const Name_Attribute_StatementTimestamp = 'StatementTimestamp';
+    const Attribute_StatementEditorialNote = 303;
+    const Name_Attribute_StatementEditorialNote = 'StatementEditorialNote';
+
+
+    const Attribute_Qualification_fromDate = 401;
+    const Name_Attribute_Qualification_fromDate = 'StatementQualification_fromDate';
+    const Attribute_Qualification_untilDate = 402;
+    const Name_Attribute_Qualification_untilDate = 'StatementQualification_untilDate';
+    const Attribute_Qualification_SequenceNumber = 403;
+    const Name_Attribute_Qualification_SequenceNumber = 'StatementQualification_SequenceNumber';
+    const Relation_Qualification_Language = 404;
+    const Name_Relation_Qualification_Language = 'StatementQualification_Language';
+
+
+    const Relation_MergedInto = 501;
+    const Name_Relation_MergedInto = 'MergedInto';
+    const Relation_MergedBy = 502;
+    const Name_Relation_MergedBy = 'MergedBy';
+    const Attribute_MergeTimestamp = 503;
+    const Name_Attribute_MergeTimestamp = 'MergeTimestamp';
+
+
+
+    // Fundamental Predicates about predicates
+
+    const Relation_SubjectTypeMustBe = 601;
+    const Name_Relation_SubjectTypeMustBe = 'SubjectTypeMustBe';
+    const Relation_ObjectTypeMustBe = 602;
+    const Name_Relation_ObjectTypeMustBe = 'ObjectTypeMustBe';
+    const Relation_ValueTypeMustBe = 603;
+    const Name_Relation_ValueTypeMustBe = 'ValueTypeMustBe';
+
+    const Relation_ReverseRelation = 604;
+    const Name_Relation_Reverse = 'ReverseRelation';
+
+    const Relation_IsReverseOf = 605;
+    const Name_Relation_IsReverseOf = 'IsReverseOf';
+
+
+    // Fundamental Value Types
+
+    const ValueType_Boolean = 1001;
+    const ValueType_Integer = 1002;
+    const ValueType_Float = 1003;
+    const ValueType_Timestamp = 1004;
+    const ValueType_Date = 1005;
+    const ValueType_VagueDate = 1006;
+    const ValueType_TimeString = 1007;
+    const ValueType_JsonString = 1008;
+
+
+
+    const Value_Empty = '';
+    const Value_True = '1';
+    const Value_False = '0';
 
     /**
      * Creates an entity type with the given name and description
@@ -262,7 +345,10 @@ interface EntitySystem
     public function createEntity(string|int $type, string $name = '', string $description = '', int $createdBy = -1, int $timestamp = -1) : int;
 
     /**
-     * Makes a statement and returns the Tid of the associated statement entity.
+     * Makes a statement and returns a tuple with the tid of the associated statement entity and the tid of the
+     * statement group to which the statement belongs:
+     *
+     *   [ statementTid, statementGroupTid ]
      *
      * $predicate can be a tid or a 'Attribute:attributeName' / 'Relation:relationName'  string
      *
@@ -270,40 +356,34 @@ interface EntitySystem
      * it will be interpreted as a 'Type:name' entity identifier. If the predicate is an attribute and an integer
      * is given, it will be converted to a string
      *
-     * The $qualifications array can include 'dateFrom', 'dateUntil', 'seq' and 'referredAs' properties.
+     * The $statementMetadata and the $qualifications array are arrays of tuples of the form
      *
-     * The statement can be accompanied by data about the statement itself, for example, a
-     * source attribution, a consultation date, etc., with the parameter $extraStatementMetadata, which is of the form:
-     *   [  attribute|relation => value|object ]
-     * where attribute|relation can be a Tid, 'Attribute:attrName' or 'Relation:relationName'
+     *     [ PredicateTid_or_PredicateString , ObjectTid_or_StringValue ]
      *
-     * An optional statement group tid can be given, it needs to be a EntityType:StatementGroup entity previously
-     * created with createEntity
+     * which represent metadata or qualifications statements with the statement itself as their subject.
+     *
+     * $statementGroupTid is a previously generated (unique) Tid. If -1 is given a new tid will be generated.
      *
      *
      * @param int $subjectTid
      * @param string|int $predicate
      * @param string|int $valueOrObject
-     * @param array $qualifications
      * @param int $editedByPersonTid
-     * @param string $editorialNote
-     * @param array $extraStatementMetadata
+     * @param array $statementMetadata
+     * @param array $qualifications
      * @param int $statementGroupTid
-     * @param int $ts the statement's timestamp, if -1, the current time will be used
-     * @return int
+     * @return int[]
      * @throws InvalidSubjectException
      * @throws InvalidPredicateException
      * @throws InvalidAttributeException
      * @throws InvalidRelationException
      * @throws InvalidObjectException
      */
-    public function makeStatement(int  $subjectTid, string|int $predicate, string|int $valueOrObject,
-                                           array $qualifications,
+    public function makeStatement(int            $subjectTid, string|int $predicate, string|int $valueOrObject,
                                            int   $editedByPersonTid,
-                                           string $editorialNote,
-                                           array $extraStatementMetadata = [],
-                                           int $statementGroupTid = -1,
-                                           int $ts = -1 ) : int;
+                                           array $statementMetadata = [],
+                                           array $qualifications = [],
+                                           int   $statementGroupTid = -1) : array;
 
     /**
      * Cancels a statement.
@@ -320,54 +400,54 @@ interface EntitySystem
      */
     public function cancelStatement(int $statementTid, int $cancelledBy, string $cancellationNote, string|int $subjectType = '', int $ts = -1) : void;
 
-    /**
-     * Sets multiple attributes and relations for an entity.
-     *
-     * The keys of the array parameter $predicates identify the attributes and relations to
-     * set, with the corresponding value. Keys can be a mix of (numerical) tids and 'Type:name' strings.
-     *
-     * Anywhere a value or an object is required an integer, a string or an array can be used:
-     *
-     *    - an integer is taken to be a tid. If a literal value is required, the integer will be converted
-     *      to a string.
-     *    - a string is taken to be either the required literal value for an attribute or a 'Type:name' string
-     *      that identifies the object of a relation.
-     *    - an array can be:
-     *        + an associative array defining a statement with keys ['value', 'object', 'from', 'until,
-     *           'seq', 'editorialNote', 'extraStatementMetadata']
-     *        + a (normal) array with numerical keys, with each element being an associative array like the
-     *          previous case.
-     *
-     * For example:
-     * 
-     *    $predicates = [
-     *       123123124123 => '1980-04-20',
-     *       123124242343 =>  'ValueType:string',
-     *      'Attribute:name' => 'Joe',
-     *      'Attribute:occupation' => [
-     *          [ 'value' => 'plumber', 'from' => 'c. 1985', 'until => '1990-06', 'seq' => 1  ],
-     *          [ 'value' => 'baker', 'from' => '1990-07', 'until => '1995-12-31', 'seq' => 2,
-     *             editorialNote: "From Joe's autobiography"  ]
-     *       ],
-     *     'Relation:hasValueType' => 'ValueType:boolean'
-     *    ];
-     *
-     * Returns the tid of the statement group that contains all the different statements.
-     *
-     * All attributes and relations must correspond to existing, pre-registered entities, and all values and
-     * objects should be valid. Otherwise, an exception will be thrown and no change will be made to the database.
-     *
-     * @param string|int $entityTid
-     * @param array $predicates
-     * @param int $editedBy
-     * @param int $ts timestamp, if -1, the current time will be used
-     * @return int
-     * @throws InvalidTypeException ,
-     * @throws InvalidAttributeException ,
-     * @throws InvalidRelationException ,
-     * @throws InvalidNameException
-     */
-    public function setEntityData(string|int $entityTid, array $predicates, int $editedBy, int $ts = -1) : int;
+//    /**
+//     * Sets multiple attributes and relations for an entity.
+//     *
+//     * The keys of the array parameter $predicates identify the attributes and relations to
+//     * set, with the corresponding value. Keys can be a mix of (numerical) tids and 'Type:name' strings.
+//     *
+//     * Anywhere a value or an object is required an integer, a string or an array can be used:
+//     *
+//     *    - an integer is taken to be a tid. If a literal value is required, the integer will be converted
+//     *      to a string.
+//     *    - a string is taken to be either the required literal value for an attribute or a 'Type:name' string
+//     *      that identifies the object of a relation.
+//     *    - an array can be:
+//     *        + an associative array defining a statement with keys ['value', 'object', 'from', 'until,
+//     *           'seq', 'editorialNote', 'extraStatementMetadata']
+//     *        + a (normal) array with numerical keys, with each element being an associative array like the
+//     *          previous case.
+//     *
+//     * For example:
+//     *
+//     *    $predicates = [
+//     *       123123124123 => '1980-04-20',
+//     *       123124242343 =>  'ValueType:string',
+//     *      'Attribute:name' => 'Joe',
+//     *      'Attribute:occupation' => [
+//     *          [ 'value' => 'plumber', 'from' => 'c. 1985', 'until => '1990-06', 'seq' => 1  ],
+//     *          [ 'value' => 'baker', 'from' => '1990-07', 'until => '1995-12-31', 'seq' => 2,
+//     *             editorialNote: "From Joe's autobiography"  ]
+//     *       ],
+//     *     'Relation:hasValueType' => 'ValueType:boolean'
+//     *    ];
+//     *
+//     * Returns the tid of the statement group that contains all the different statements.
+//     *
+//     * All attributes and relations must correspond to existing, pre-registered entities, and all values and
+//     * objects should be valid. Otherwise, an exception will be thrown and no change will be made to the database.
+//     *
+//     * @param string|int $entityTid
+//     * @param array $predicates
+//     * @param int $editedBy
+//     * @param int $ts timestamp, if -1, the current time will be used
+//     * @return int
+//     * @throws InvalidTypeException ,
+//     * @throws InvalidAttributeException ,
+//     * @throws InvalidRelationException ,
+//     * @throws InvalidNameException
+//     */
+//    public function setEntityData(string|int $entityTid, array $predicates, int $editedBy, int $ts = -1) : int;
 
     /**
      * Merges an entity into another.
@@ -382,37 +462,15 @@ interface EntitySystem
 
 
     /**
-     *  Returns an array of arrays representing the current statements where the given entity is referenced as
-     *  subject or object.  Each element in the returning array is of the form:
+     *  Returns an array of StatementData objects with all statements
      *
-     *   [
-     *     'tid' => statementTid,
-     *
-     *     'subject' => subjectTid,
-     *     'predicate' => predicateTid,
-     *     'predicateType' =>  'Attribute' | 'Relation'
-     *     'predicateName' => 'attrName' | 'relationName'
-     *
-     *     'object' => objectTid | -1 // for relations
-     *     'value' => 'literalValue'  // for attributes
-     *
-     *     // qualifications, only the ones actually present in the statement
-     *     'from' => 'fromDate',
-     *     'until' => 'untilDate',
-     *     'seq' => sequenceNumber
-     *     'referredAs'  =>  'someLabel'
-     *
-     *     'editedBy' => editorTid
-     *     'editTimestamp' => statementTimestamp
-     *     'editorialNote' => 'someNote'
-     *   ]
      *
      * Providing the entity's type may greatly improve the response time, but it must be the actual
      * type of the entity or else an EntityDoesNotExistException may be thrown.
      *
      * @param string|int $entityId
      * @param string|int $entityType
-     * @return array
+     * @return StatementData[]
      * @throws EntityDoesNotExistException
      */
     public function getEntityStatements(string|int $entityId, string|int $entityType = '') : array;

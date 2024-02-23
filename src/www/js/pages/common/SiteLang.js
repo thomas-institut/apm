@@ -21,7 +21,8 @@ import { Language } from '../../toolbox/Language'
 
 export const defaultLanguage = 'en'
 
-export const validLanguages = [ 'en', 'es', 'de', 'fr', 'it', 'he', 'ar']
+// export const validLanguages = [ 'en', 'es', 'de', 'fr', 'it', 'he', 'ar']
+export const validLanguages = [ 'en', 'es']
 
 
 const strings = [

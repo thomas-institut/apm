@@ -679,6 +679,8 @@ export class MainTextPanel extends PanelWithToolbar {
       console.log(`Edit script`);
       console.log(editScript);
       let changeList =this.__getChangeList(workingCurrentWitnessTokens, newWitnessTokens, editScript)
+      console.log(`Change List`);
+      console.log(changeList);
       resolve(changeList)
     })
 
@@ -996,8 +998,12 @@ export class MainTextPanel extends PanelWithToolbar {
         return false
       }
 
-      if (a.tokenType === WitnessTokenType.WORD && (a.normalizedText !== b.normalizedText)) {
-        return false;
+      if (a.tokenType === WitnessTokenType.WORD) {
+        let normalizationA = a.normalizedText ?? '';
+        let normalizationB = b.normalizedText ?? '';
+        if (normalizationA !== normalizationB) {
+          return false;
+        }
       }
       if (a.fmtText === undefined && b.fmtText === undefined) {
         return true

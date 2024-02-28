@@ -27,6 +27,8 @@ export class DocumentsPage extends NormalPage {
 
     this.initPage().then( async () => {
       this.dataTablesData = await this.makeDataForDataTables();
+      $('div.docs-table-div').removeClass('hidden');
+
       // console.log(this.dataTablesData);
       $('table.docs-table').DataTable({
         data: this.dataTablesData,
@@ -66,7 +68,7 @@ export class DocumentsPage extends NormalPage {
 
     return `<h1>${tr('Documents')}</h1>
             <div class="data-status">${ApmPage.genLoadingMessageHtml()}</div>
-            <div class="docs-table-div">${await this.getDocumentsTableSkeleton()}</div>
+            <div class="docs-table-div hidden">${await this.getDocumentsTableSkeleton()}</div>
             ${adminDiv}`;
   }
 
@@ -74,15 +76,19 @@ export class DocumentsPage extends NormalPage {
     let data = [];
     for (let i = 0; i  < this.docs.length; i++) {
       let doc = this.docs[i];
+      let transcribersHtmlArray = [];
+      for (let tIndex = 0; tIndex < doc['transcribers'].length; tIndex++) {
+        let transcriberTid = parseInt(doc['transcribers'][tIndex]);
+        let transcriberData = await this.apmDataProxy.getPersonEssentialData(transcriberTid);
+        transcribersHtmlArray.push(`<a href="${urlGen.sitePerson(Tid.toBase36String(transcriberTid))}" title="Click to view person details">${transcriberData.name}</a>`)
+      }
       data.push({
         title: `<a href="${urlGen.siteDocPage(doc['docInfo']['id'])}">${doc['docInfo']['title']}</a>`,
         type:  await this.apmDataProxy.getDocTypeName(doc.docInfo.doc_type),
         lang: await this.apmDataProxy.getLangName(doc['docInfo']['lang']),
         numPages: doc['numPages'],
         numTranscribedPages: doc['numTranscribedPages'],
-        transcribers: doc['editors'].map( (transcriber) => {
-          return ` <a href="${urlGen.sitePerson(Tid.toBase36String(transcriber['tid']))}" title="Click to view person details">${transcriber['name']}</a>`
-        }).join(', '),
+        transcribers: transcribersHtmlArray.join(', '),
       })
     }
     return data;

@@ -633,9 +633,12 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $this->docsDataTable->deleteRow($docId);
     }
 
-    function getDocById(int $docId)
+    function getDocById(int $docId, bool $useCache = true)
     {
         $cacheKey = "doc-$docId";
+        if (!$useCache) {
+            return  $this->databaseHelper->getRowById($this->tNames['docs'], $docId);
+        }
         try {
             $data = unserialize($this->cache->get($cacheKey));
         } catch (KeyNotInCacheException) {

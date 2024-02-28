@@ -1061,8 +1061,8 @@ export class MainTextPanel extends PanelWithToolbar {
   __fmtTextToEditionWitnessTokens(fmtText) {
     const attributesToCopy = [ 'fontWeight', 'fontStyle']
     let witnessTokens = []
-    // console.log(`Processing fmtText`)
-    // console.log(fmtText)
+    console.log(`Processing fmtText`)
+    console.log(fmtText)
 
     // Get all tokens
     fmtText.forEach( (fmtTextToken) => {

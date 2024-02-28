@@ -10,8 +10,8 @@ class StatementData implements Exportable
     public int $statementGroup = -1;
     public int $subject = -1;
     public int $predicate = -1;
-    public int $object = -1;
-    public string $value = '';
+    public ?int $object = null;
+    public ?string $value = '';
     public array $qualifications;
     public array $metadata;
     public bool $isCancelled = false;

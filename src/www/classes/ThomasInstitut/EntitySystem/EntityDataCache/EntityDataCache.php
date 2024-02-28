@@ -22,7 +22,7 @@ interface EntityDataCache extends LoggerAwareInterface
      * @return EntityData
      * @throws EntityNotInCacheException
      */
-    public function getData(int $tid, string $dataId = '') : EntityData;
+    public function getData(int $tid, string $dataId) : EntityData;
 
     /**
      * Sets the data for the given entity.
@@ -35,12 +35,12 @@ interface EntityDataCache extends LoggerAwareInterface
      * setData call.
      *
      * @param int $tid
-     * @param EntityData $data
+     * @param EntityData $entityData
      * @param int $ttl
      * @param string $dataId
      * @return void
      */
-    public function setData(int $tid, EntityData $data, int $ttl = -1, string $dataId = '') : void;
+    public function setData(int $tid, EntityData $entityData, string $dataId,  int $ttl = -1) : void;
 
     /**
      * Invalidates the data for the given entity.
@@ -54,17 +54,21 @@ interface EntityDataCache extends LoggerAwareInterface
     public function invalidateData(int $tid): void;
 
     /**
-     * Removes invalid data from the cache
+     * Removes invalid data from the cache.
+     *
+     * If null is given for $dataId, the dataId will NOT be checked when
+     * determining if a cache entry is valid or not
+     *
+     * @param string|null $dataId
+     * @return void
+     */
+    public function clean(?string $dataId): void;
+
+    /**
+     * Invalidates all entries in the cache and calls the clean method.
      *
      * @return void
      */
-    public function clean(): void;
-
-    /**
-     * Invalidates data for all entities in the cache
-     * and calls the cache's clean method
-     * @return void
-     */
-    public function flush(): void;
+    public function clear(): void;
 
 }

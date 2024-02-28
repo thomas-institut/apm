@@ -47,6 +47,12 @@ class EntityData implements Exportable
         return null;
     }
 
+    /**
+     * @param int $predicateTid
+     * @param bool $includeStatementsAsObject
+     * @param bool $includeCancelled
+     * @return StatementData[]
+     */
     public function getPredicateStatements(int $predicateTid, bool $includeStatementsAsObject = false, bool $includeCancelled = false) : array {
         $statements = [];
         foreach ($this->statements as $statement) {
@@ -62,6 +68,21 @@ class EntityData implements Exportable
             }
         }
         return $statements;
+    }
+
+    /**
+     * Returns the value of the first non-cancelled statement for the given attribute or
+     * null if the attribute is not set
+     *
+     * @param int $attributeTid
+     * @return string|null
+     */
+    public function getFirstAttributeValue(int $attributeTid) : string|null {
+        $statements = $this->getPredicateStatements($attributeTid);
+        if (count($statements) === 0) {
+            return null;
+        }
+        return $statements[0]->value;
     }
 
 }

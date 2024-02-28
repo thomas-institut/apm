@@ -15,6 +15,8 @@ use ThomasInstitut\DataCache\SimpleCacheAware;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\EntitySystem\EntityDataCache\DataCacheEntityDataCache;
+use ThomasInstitut\EntitySystem\EntityDataCache\EntityDataCache;
 use ThomasInstitut\EntitySystem\Exception\DataConsistencyException;
 use ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException;
 use ThomasInstitut\EntitySystem\Exception\InvalidArgumentException;
@@ -26,16 +28,15 @@ use ThomasInstitut\TimeString\TimeString;
 
 
 /**
- * An implementation of an entity system using (existing) DataTable and DataCache object instances as storage.
+ * An implementation of an entity system using (existing) DataTable and EntityDataCache objects as storage.
  *
- * In order to function the system needs at least one DataTable to store statements and a DataCache, but both data
- * and cache can be partitioned based on entity type.
+ * In order to function the system needs at least one DataTable to store statements and an EntityDataCache, but both
+ * data and cache can be partitioned based on entity type.
  *
  * For data security and performance reasons it is generally a good idea to have a dedicated DataTable for system
  * entities (types, attributes, relations, etc.) and one or more DataTable for the other entities. The larger the
  * number of entities of a given type, the most pressing the need to have its data its own table. Data migration
  * will be needed if storage is changed.
- *
  *
  * A statements table must have at least the following columns:
  *
@@ -49,31 +50,29 @@ use ThomasInstitut\TimeString\TimeString;
  *    editedBy: int64, not null
  *    editTimestamp: int/timestamp, not null
  *    editorialNote: text, default '' or null
- *    fromDate: text  (not Date in SQL, because it will store vague dates), default '' or null
- *    untilDate: text (not Date), default '' or null
- *    seq: int, default -1 or null
- *    cancelled: int (actually boolean, with 0 meaning false, 1 meaning true), not null, default 0
+ *    qualifications: text (JSON)
+ *    extraMetadata: text (JSON)
+ *    cancelled: boolean, default false
  *    cancelledBy: int64, default -1 or null
- *    cancelTimestamp:  int/timestamp, default 0 or null
+ *    cancelTimestamp:  int/timestamp, default -1 or null
  *    cancelNote: text, default '' or null
  *
  * A particular statements table can be shared among entities of different types.
  *
- * A DataCache object is required for general caching. A caching prefix will be used to distinguish cache
- * entries for a particular entity system, so the DataCache can be shared among different applications.
+ * At least one EntityDataCache object is required for general caching.
  *
  */
 class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterface
 {
 
-    use SimpleCacheAware, CodeDebugWithLoggerTrait;
+    use CodeDebugWithLoggerTrait, SimpleCacheAware;
 
     const DEFAULT_CACHE_TTL = 14*24*3600;  // 2 weeks
 
     const CACHE_KEY_PREFIX_NAME_TO_TID = 'NameToTidMap-';
     const CACHE_KEY_PREFIX_ENTITY_DATA = 'EntityData-';
 
-    private DataTable $defaultStatementsTable;
+
     private array $namedTypesTables;
     private int $systemTid;
 
@@ -81,10 +80,12 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
     private array $typeConfig;
     private ?array $attributeConfig;
     private ?array $relationConfig;
+    private DataTable $defaultStatementsTable;
     private DataTable $systemStatementsTable;
-    private DataCache $systemDataCache;
+    private EntityDataCache $defaultEntityDataCache;
+    private EntityDataCache $systemEntityDataCache;
     protected ?LoggerInterface $logger = null;
-    private InMemoryDataCache $internalInMemoryCache;
+    private EntityDataCache $internalInMemoryCache;
 
     /**
      * Constructs an entity system using the given (existing) data tables and cache.
@@ -105,17 +106,15 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
      *
      *
      * @param array $config
-     * @param string $cachingPrefix
      * @param LoggerInterface|null $logger
      * @param bool $debug
      * @throws DataConsistencyException
+     * @throws EntityDoesNotExistException
      * @throws InvalidArgumentException
-     * @throws InvalidAttributeException
      * @throws InvalidNameException
-     * @throws InvalidRelationException
      * @throws InvalidTypeException
      */
-    public function __construct(array $config, string $cachingPrefix = '', LoggerInterface $logger = null, bool $debug = false)
+    public function __construct(array $config, string $dataCachePrefix = '', LoggerInterface $logger = null, bool $debug = false)
     {
         /**
          * The goal is to construct the EntitySystem instance as fast as possible, caching data only when needed.
@@ -123,8 +122,8 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
          * If this data is not available, it is assumed that the entity system is empty and should be bootstrapped.
          */
 
-        $this->internalInMemoryCache = new InMemoryDataCache();
-        $this->cachingPrefix = $cachingPrefix;
+        $this->internalInMemoryCache = new DataCacheEntityDataCache(new InMemoryDataCache());
+        $this->cachingPrefix = $dataCachePrefix;
         if ($logger === null) {
             $this->setLogger(new NullLogger());
         } else {
@@ -168,6 +167,10 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
             throw new InvalidArgumentException("No default data cache found in configuration array");
         }
 
+        if (!isset($defaultConfig['entityDataCache'])) {
+            throw new InvalidArgumentException("No default entity data cache found in configuration array");
+        }
+
         if(!is_a($defaultConfig['statementsTable'], DataTable::class)){
             throw new InvalidArgumentException("Default statements table not a DataTable object");
         }
@@ -175,15 +178,21 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
         $this->defaultStatementsTable = $defaultConfig['statementsTable'];
 
         if(!is_a($defaultConfig['dataCache'], DataCache::class)){
-            throw new InvalidArgumentException("Default data cache not a DataCache object");
+            throw new InvalidArgumentException("Default data cache not an DataCache object");
         }
-
         $this->setCache($defaultConfig['dataCache']);
         $this->useCache();
 
+        if(!is_a($defaultConfig['entityDataCache'], EntityDataCache::class)){
+            throw new InvalidArgumentException("Default entity data cache not an EntityDataCache object");
+        }
+
+        $this->defaultEntityDataCache = $defaultConfig['entityDataCache'];
+
+
         // TODO: check that system table and cache are the right class objects
         $this->systemStatementsTable = $systemConfig['statementsTable'] ?? $this->defaultStatementsTable;
-        $this->systemDataCache = $systemConfig['dataCache'] ?? $this->dataCache;
+        $this->systemEntityDataCache = $systemConfig['entityDataCache'] ?? $this->defaultEntityDataCache;
 
         // Build skeleton typesConfig array with standard types and default configuration
         $this->typeConfig = [
@@ -191,7 +200,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
                 'typeTid' => EntitySystem::Type_EntityType,
                 'uniqueNames' => true,
                 'statementsTable' => $this->systemStatementsTable,
-                'dataCache' => $this->systemDataCache,
+                'entityDataCache' => $this->systemEntityDataCache,
                 'defaultCacheTtl' => 0,
                 'internalCache' => true,  // if true, entities of this type will be cached in the internal mem cache
             ],
@@ -199,7 +208,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
                 'typeTid' => EntitySystem::Type_Attribute,
                 'uniqueNames' => true,
                 'statementsTable' => $this->systemStatementsTable,
-                'dataCache' => $this->systemDataCache,
+                'entityDataCache' => $this->systemEntityDataCache,
                 'defaultCacheTtl' => 0,
                 'internalCache' => true
             ],
@@ -207,7 +216,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
                 'typeTid' => EntitySystem::Type_Relation,
                 'uniqueNames' => true,
                 'statementsTable' => $this->systemStatementsTable,
-                'dataCache' => $this->systemDataCache,
+                'entityDataCache' => $this->systemEntityDataCache,
                 'defaultCacheTtl' => 0,
                 'internalCache' => true
             ],
@@ -215,7 +224,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
                 'typeTid' => EntitySystem::Type_DataType,
                 'uniqueNames' => true,
                 'statementsTable' => $this->systemStatementsTable,
-                'dataCache' => $this->systemDataCache,
+                'entityDataCache' => $this->systemEntityDataCache,
                 'defaultCacheTtl' => 0,
                 'internalCache' => true
             ],
@@ -223,7 +232,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
                 'typeTid' => EntitySystem::Type_Statement,
                 'uniqueNames' => false,
                 'statementsTable' => $this->defaultStatementsTable,
-                'dataCache' => $this->systemDataCache,
+                'entityDataCache' => $this->defaultEntityDataCache,
                 'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
                 'internalCache' => false
             ],
@@ -231,7 +240,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
                 'typeTid' => EntitySystem::Type_Person,
                 'uniqueNames' => false,
                 'statementsTable' => $this->defaultStatementsTable,
-                'dataCache' => $this->systemDataCache,
+                'entityDataCache' => $this->defaultEntityDataCache,
                 'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
                 'internalCache' => false
             ],
@@ -239,7 +248,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
                 'typeTid' => EntitySystem::Type_Language,
                 'uniqueNames' => false,
                 'statementsTable' => $this->defaultStatementsTable,
-                'dataCache' => $this->systemDataCache,
+                'entityDataCache' => $this->defaultEntityDataCache,
                 'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
                 'internalCache' => false
             ],
@@ -247,7 +256,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
                 'typeTid' => EntitySystem::Type_Place,
                 'uniqueNames' => false,
                 'statementsTable' => $this->defaultStatementsTable,
-                'dataCache' => $this->systemDataCache,
+                'entityDataCache' => $this->defaultEntityDataCache,
                 'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
                 'internalCache' => false
             ],
@@ -255,7 +264,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
                 'typeTid' => EntitySystem::Type_Area,
                 'uniqueNames' => false,
                 'statementsTable' => $this->defaultStatementsTable,
-                'dataCache' => $this->systemDataCache,
+                'entityDataCache' => $this->defaultEntityDataCache,
                 'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
                 'internalCache' => false
             ]
@@ -268,7 +277,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
                     'typeTid' => -1,
                     'uniqueNames'=> false,
                     'statementsTable' => $this->defaultStatementsTable,
-                    'dataCache' => $this->systemDataCache,
+                    'entityDataCache' => $this->defaultEntityDataCache,
                     'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
                     'internalCache' => false
                 ];
@@ -279,11 +288,11 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
                 }
                 $this->typeConfig[$typeName]['statementsTable'] = $typeConfig['statementsTable'];
             }
-            if (isset($typeConfig['dataCache'])) {
-                if(!is_a($typeConfig['dataCache'], DataCache::class)){
-                    throw new InvalidArgumentException("Data cache for type '$typeName' not a DataCache object");
+            if (isset($typeConfig['entityDataCache'])) {
+                if(!is_a($typeConfig['entityDataCache'], EntityDataCache::class)){
+                    throw new InvalidArgumentException("Data cache for type '$typeName' not an EntityDataCache object");
                 }
-                $this->typeConfig[$typeName]['dataCache'] = $typeConfig['dataCache'];
+                $this->typeConfig[$typeName]['entityDataCache'] = $typeConfig['entityDataCache'];
             }
             if (isset($typeConfig['defaultCacheTtl'])) {
                 $this->typeConfig[$typeName]['defaultCacheTtl'] = intval($typeConfig['defaultCacheTtl']);
@@ -305,9 +314,9 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
                 $this->typeConfig[$typeName] = [
                     'uniqueNames'=> false,
                     'statementsTable' => $this->defaultStatementsTable,
-                    'dataCache' => $this->systemDataCache,
+                    'entityDataCache' => $this->systemEntityDataCache,
                     'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
-                    'cacheAll' => false
+                    'internalCache' => false
                 ];
             }
             $this->typeConfig[$typeName]['typeTid'] = $typeTid;
@@ -394,21 +403,21 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
 
         $cacheKey = $this->genCacheKey(self::CACHE_KEY_PREFIX_NAME_TO_TID . $typeName);
         try {
-            $map = unserialize($this->systemDataCache->get($cacheKey));
+            $map = unserialize($this->dataCache->get($cacheKey));
         } catch (KeyNotInCacheException) {
 //            $this->debugMsg("EntityNameToTidMap for $typeName not in cache, building from statements");
             $table = $this->getStatementsTableForType($typeName);
             $typeTid = $this->getTypeTid($typeName);
             $map = $this->getNameToTidMapFromStatements($table, $typeTid, $typeName);
 //            $this->codeDebug("map", $map);
-            $this->systemDataCache->set($cacheKey, serialize($map));
+            $this->dataCache->set($cacheKey, serialize($map));
         }
         return $map;
     }
 
     private function deleteEntityNameToTidMapFromCache(string $typeName) : void {
         $cacheKey = $this->genCacheKey(self::CACHE_KEY_PREFIX_NAME_TO_TID . $typeName);
-        $this->systemDataCache->delete($cacheKey);
+        $this->dataCache->delete($cacheKey);
     }
 
 
@@ -465,40 +474,40 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
         throw new InvalidTypeException();
     }
 
-    protected function storeStatement(DataTable $statementsTable,
-                                      int $subject, int $predicate, int|string $valueOrObject,
-                                      int $editedBy, int $timestamp, string $editorialNote,
-                                      array $qualifications = [], array $extraMetadata = []) : int {
+    protected function storeStatement(DataTable $statementsTable, int $statementGroup,
+                                      int       $subject, int $predicate, int|string $valueOrObject,
+                                      int       $editedBy, int $timestamp,
+                                      array     $qualifications = [], array $statementMetadata = []) : int {
 
         $statementTid = $this->getUniqueTid();
         $qualificationsString= '';
-        $extraMetadataString = '';
+        $statementMetadataString = '';
 
         if (count($qualifications) > 0) {
             $qualificationsString = json_encode($qualifications);
         }
 
-        if (count($extraMetadata) > 0) {
-            $extraMetadataString = json_encode($extraMetadata);
+        if (count($statementMetadata) > 0) {
+            $statementMetadataString = json_encode($statementMetadata);
         }
 
         $row = [
             'id' => 0,
             'tid' => $statementTid,
+            'statementGroup' => $statementGroup,
             'subject' => $subject,
             'predicate' => $predicate,
-            'object' => -1,
-            'value' => '',
+            'object' => null,
+            'value' => null,
             'editedBy' => $editedBy,
             'editTimestamp' => $timestamp,
-            'editorialNote' => $editorialNote,
             'qualifications' => $qualificationsString,
-            'extraMetadata' => $extraMetadataString,
+            'statementMetadata' => $statementMetadataString,
             'cancelled' => 0,
             'cancelledBy' => -1,
-            'cancellationTimestamp' => 0,
+            'cancellationTimestamp' => null,
             'cancellationNote' => '',
-            'statementGroup' => -1,
+
         ];
 
         if (is_int($valueOrObject)) {
@@ -521,36 +530,47 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
     }
 
     private function setupEntityInStatementsTable(DataTable $statementsTable, int $tid, int $typeTid,
-                                                  string $name, string  $description, string $editorialNote, int $ts, int $editedBy) : void {
-        $this->storeStatement($statementsTable,
+                                                  string $name, string  $description, string $editorialNote, int $ts, int $editedBy) : int {
+
+        $entitySetupStatementGroup = $this->getUniqueTid();
+        $statementMetadata = [];
+        if ($editorialNote !== '') {
+            $statementMetadata[] = [ EntitySystem::Attribute_StatementEditorialNote, $editorialNote];
+        }
+
+        $this->storeStatement($statementsTable, $entitySetupStatementGroup,
             $tid,
             EntitySystem::Relation_IsOfType,
             $typeTid,
-            $editedBy, $ts, $editorialNote
+            $editedBy, $ts, [],  $statementMetadata
         );
-        $this->storeStatement($statementsTable,
+        $this->storeStatement($statementsTable,$entitySetupStatementGroup,
             $tid,
             EntitySystem::Attribute_Name,
             $name,
-            $editedBy, $ts, $editorialNote
+            $editedBy, $ts, [], $statementMetadata
         );
-        $this->storeStatement($statementsTable,
+        $this->storeStatement($statementsTable,$entitySetupStatementGroup,
             $tid,
             EntitySystem::Attribute_Description,
             $description,
-            $editedBy, $ts, $editorialNote
+            $editedBy, $ts, [], $statementMetadata
         );
+        return $entitySetupStatementGroup;
     }
 
     private function setupTypeInStatementsTable(DataTable $statementsTable, int $typeTid, string $name, string $description, bool $hasUniqueNames, int $ts, int $editedBy) : void {
         $typeNameString = sprintf("%s:%s", StandardNames::TYPE_ENTITY_TYPE, $name);
         $editorialNote = "Setting up $typeNameString";
-        $this->setupEntityInStatementsTable($statementsTable, $typeTid, self::Type_EntityType, $name, $description, $editorialNote, $ts, $editedBy);
-        $this->storeStatement($statementsTable,
+        $statementMetadata = [ [EntitySystem::Attribute_StatementEditorialNote, $editorialNote]];
+
+        $statementGroup =  $this->setupEntityInStatementsTable($statementsTable, $typeTid,
+            self::Type_EntityType, $name, $description, $editorialNote, $ts, $editedBy);
+        $this->storeStatement($statementsTable, $statementGroup,
             $typeTid,
             EntitySystem::Attribute_MustHaveUniqueNames,
             $this->getBooleanValueString($hasUniqueNames),
-            $editedBy, $ts, $editorialNote
+            $editedBy, $ts, [], $statementMetadata
         );
     }
 
@@ -670,26 +690,29 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
             $this->systemTid, $bootstrapTimestamp);
 
         // Set up constraints in standard attributes
+
+        $constraintsStatementGroup = $this->getUniqueTid();
+        $bootstrapStatementMetadata = [ EntitySystem::Attribute_StatementEditorialNote, $bootstrapEditorialNote ];
         $this->makeStatement(EntitySystem::Attribute_Name,
-            EntitySystem::Attribute_OnlyOneAllowed, StandardNames::VALUE_TRUE, [],
-            $this->systemTid, $bootstrapEditorialNote, [], -1, $bootstrapTimestamp);
+            EntitySystem::Attribute_OnlyOneAllowed, EntitySystem::Value_True,
+            $this->systemTid, $bootstrapStatementMetadata, [], $constraintsStatementGroup, $bootstrapTimestamp);
 
         $this->makeStatement(EntitySystem::Attribute_Description,
-            EntitySystem::Attribute_OnlyOneAllowed, StandardNames::VALUE_TRUE, [],
-            $this->systemTid, $bootstrapEditorialNote, [], -1, $bootstrapTimestamp);
+            EntitySystem::Attribute_OnlyOneAllowed, EntitySystem::Value_True,
+            $this->systemTid, $bootstrapStatementMetadata, [], -1, $bootstrapTimestamp);
 
         $this->makeStatement(EntitySystem::Attribute_OnlyOneAllowed,
-            EntitySystem::Attribute_OnlyOneAllowed, StandardNames::VALUE_TRUE, [],
-            $this->systemTid, $bootstrapEditorialNote, [], -1, $bootstrapTimestamp);
+            EntitySystem::Attribute_OnlyOneAllowed, EntitySystem::Value_True,
+            $this->systemTid, $bootstrapStatementMetadata, [], -1, $bootstrapTimestamp);
 
         // Set up constraints in standard relations
         $this->makeStatement(EntitySystem::Relation_IsOfType,
-            EntitySystem::Attribute_OnlyOneAllowed, StandardNames::VALUE_TRUE, [],
-            $this->systemTid, $bootstrapEditorialNote, [], -1, $bootstrapTimestamp);
+            EntitySystem::Attribute_OnlyOneAllowed, EntitySystem::Value_True,
+            $this->systemTid, $bootstrapStatementMetadata, [], -1, $bootstrapTimestamp);
 
         $this->makeStatement(EntitySystem::Relation_IsOfType,
-            EntitySystem::Relation_ObjectTypeMustBe, EntitySystem::Type_EntityType, [],
-            $this->systemTid, $bootstrapEditorialNote, [], -1, $bootstrapTimestamp);
+            EntitySystem::Relation_ObjectTypeMustBe, EntitySystem::Type_EntityType,
+            $this->systemTid, $bootstrapStatementMetadata, [], -1, $bootstrapTimestamp);
 
         $this->logger->info("Finished bootstrapping the entity system");
     }
@@ -1001,13 +1024,15 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
      * @throws InvalidArgumentException
      * @throws DataConsistencyException
      */
-    public function makeStatement(int $subjectTid, int|string $predicate, int|string $valueOrObject, array $qualifications, int $editedByPersonTid, string $editorialNote, array $extraStatementMetadata = [], int $statementGroupTid = -1, int $ts = -1): int
+    public function makeStatement(int   $subjectTid, string|int $predicate, string|int $valueOrObject,
+                                  int   $editedByPersonTid,
+                                  array $statementMetadata = [],
+                                  array $qualifications = [],
+                                  int   $statementGroup = -1, int $timestamp = -1) : array
     {
-        // TODO: implement qualifications
         if ($subjectTid === -1) {
             throw new InvalidArgumentException("Subject entity does not exist");
         }
-        $predicateTid = -1;
         if (is_int($predicate)) {
             $predicateTid = $predicate;
         } else {
@@ -1025,26 +1050,42 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
         }
 
         $statementTid = $this->getUniqueTid();
-        $entityTypeTid = -1;
+
         try {
             $entityTypeTid = $this->getEntityType($subjectTid);
         } catch(EntityDoesNotExistException) {
             throw new InvalidArgumentException("Subject entity does not exist");
         }
 
-        $table = $this->getStatementsTableForType($entityTypeTid);
-        if ($ts === -1) {
-            $ts = time();
+        if ($timestamp === -1) {
+            $timestamp = time();
         }
 
+        $cleanedUpMetadata = [];
+        $cleanedUpMetadata[] = [ EntitySystem::Attribute_StatementTimestamp, $timestamp];
+        $cleanedUpMetadata[] = [ EntitySystem::Relation_StatementEditor, $editedByPersonTid];
+
+        // clean up statement metadata
+        foreach($statementMetadata as $metadataTuple) {
+            [$metadataPredicate,] = $metadataTuple;
+            // TODO: check system config for allowed metadata predicates
+            if ($metadataPredicate === EntitySystem::Attribute_StatementEditorialNote) {
+                $cleanedUpMetadata[] = $metadataTuple;
+            }
+        }
+
+        if ($statementGroup === -1) {
+            $statementGroup = $this->getUniqueTid();
+        }
+        $table = $this->getStatementsTableForType($entityTypeTid);
+
+
         // check restrictions on the predicate
-
-
         switch ($predicateType) {
             case  EntitySystem::Type_Attribute:
                 $value = strval($valueOrObject);
-                $this->storeStatement($table, $subjectTid, $predicateTid, $value,
-                    $editedByPersonTid, $ts, $editorialNote);
+                $this->storeStatement($table, $statementGroup, $subjectTid, $predicateTid, $value,
+                    $editedByPersonTid, $timestamp, $qualifications, $cleanedUpMetadata);
                 break;
 
             case EntitySystem::Type_Relation:
@@ -1053,13 +1094,14 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
                     $objectTid = $this->getTidByTypeAndName($valueOrObject);
                 }
                 try {
-                    $objectTypeTid = $this->getEntityType($objectTid);
+                    // check if the entity exists
+                    $this->getEntityType($objectTid);
                 } catch (EntityDoesNotExistException) {
                     throw new InvalidArgumentException("Object entity $valueOrObject does not exist");
                 }
                 // TODO: check type restrictions for relation
-                $this->storeStatement($table, $subjectTid, $predicateTid, $objectTid,
-                    $editedByPersonTid, $ts, $editorialNote);
+                $this->storeStatement($table, $statementGroup, $subjectTid, $predicateTid, $objectTid,
+                    $editedByPersonTid, $timestamp, $qualifications, $cleanedUpMetadata);
                 break;
 
             default:
@@ -1067,7 +1109,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
 
         }
 
-        return $statementTid;
+        return [$statementTid, $statementGroup];
     }
 
     /**
@@ -1365,7 +1407,7 @@ class DataTableEntitySystem implements EntitySystem, CacheAware, CodeDebugInterf
                 'typeTid' => $tid,
                 'uniqueNames' => $uniqueNames,
                 'statementsTable' => $this->defaultStatementsTable,
-                'dataCache' => $this->systemDataCache,
+                'dataCache' => $this->systemEntityDataCache,
                 'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
                 'internalCache' => false
             ];

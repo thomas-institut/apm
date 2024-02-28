@@ -371,7 +371,8 @@ interface EntitySystem extends LoggerAwareInterface
      * @param int $editedByPersonTid
      * @param array $statementMetadata
      * @param array $qualifications
-     * @param int $statementGroupTid
+     * @param int $statementGroup
+     * @param int $timestamp
      * @return int[]
      * @throws InvalidSubjectException
      * @throws InvalidPredicateException
@@ -379,11 +380,11 @@ interface EntitySystem extends LoggerAwareInterface
      * @throws InvalidRelationException
      * @throws InvalidObjectException
      */
-    public function makeStatement(int            $subjectTid, string|int $predicate, string|int $valueOrObject,
-                                           int   $editedByPersonTid,
-                                           array $statementMetadata = [],
-                                           array $qualifications = [],
-                                           int   $statementGroupTid = -1) : array;
+    public function makeStatement(int   $subjectTid, string|int $predicate, string|int $valueOrObject,
+                                  int   $editedByPersonTid,
+                                  array $statementMetadata = [],
+                                  array $qualifications = [],
+                                  int   $statementGroup = -1, int $timestamp = -1) : array;
 
     /**
      * Cancels a statement.

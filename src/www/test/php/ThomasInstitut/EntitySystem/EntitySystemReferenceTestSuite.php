@@ -6,12 +6,12 @@ use PHPUnit\Framework\TestCase;
 use ThomasInstitut\EntitySystem\Exception\InvalidStatementException;
 use ThomasInstitut\EntitySystem\Exception\StatementAlreadyCancelledException;
 use ThomasInstitut\EntitySystem\Exception\StatementNotFoundException;
-use ThomasInstitut\EntitySystem\MinimalEntitySystem;
+use ThomasInstitut\EntitySystem\EntitySystem;
 
-abstract class MinimalEntitySystemTestCase extends TestCase
+abstract class EntitySystemReferenceTestSuite extends TestCase
 {
 
-    abstract public function getEntitySystem() : MinimalEntitySystem;
+    abstract public function getEntitySystem() : EntitySystem;
 
 
     /**
@@ -26,7 +26,7 @@ abstract class MinimalEntitySystemTestCase extends TestCase
         $pName = 101;
         $pType = 10;
         $tPerson = 1001;
-        $this->fillUpEntitySystem($es, $pName);
+//        $this->fillUpEntitySystem($es, $pName);
 
 
         $p1 = $es->generateUniqueEntityId();
@@ -93,7 +93,7 @@ abstract class MinimalEntitySystemTestCase extends TestCase
     /**
      * @throws InvalidStatementException
      */
-    private function fillUpEntitySystem(MinimalEntitySystem $es, int $aName) : void {
+    private function fillUpEntitySystem(EntitySystem $es, int $aName) : void {
         $numAttributes = 5;
         $numRelations = 5;
         $statementPerEntity = 3;

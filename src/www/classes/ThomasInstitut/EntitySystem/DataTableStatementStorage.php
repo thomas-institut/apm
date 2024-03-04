@@ -66,18 +66,22 @@ class DataTableStatementStorage implements StatementStorage
     private array $columnMap;
     private bool $optimizeMetadataColumns;
 
-    private array $metadataPredicateToColumnMap;
+
 
 
     /**
      * Constructs a StatementStorage using the given DataTable as storage.
      *
      * $extraColumnMap is an associative array that maps a column to the value of a metadata entry for
-     * a given predicate id or to a callable that generates the value. For example:
+     * a given predicate id or to a callable that generates the value. By default, predicates will be reported
+     * a part of the statement metadata. Instead of a predicate, an associative array can be given indicating
+     * whether the predicate is to be reported in the cancellation metadata instead
+     * For example:
      *
      * ```
      * [
      *      'extraColumn1' => somePredicateId,
+     *      'anotherColumn' => [  'predicate' => somePredicateId, 'cancellationMetadata' => true],
      *      'someOtherExtraColumn' =>  function (int $subject, int $predicate,
      *          int $object,
      *          bool $isCancellation, array $metadata) : int|string|null|bool {
@@ -107,6 +111,7 @@ class DataTableStatementStorage implements StatementStorage
      * @param DataTable $dataTable
      * @param array $extraColumnMap
      * @param array $columnNames
+     * @param bool $optimizeMetadataColumns
      */
     public function __construct(DataTable $dataTable, array $extraColumnMap, array $columnNames = [], bool $optimizeMetadataColumns = true)
     {
@@ -125,15 +130,7 @@ class DataTableStatementStorage implements StatementStorage
         $this->columnMap = $this->getCleanColumnMap($extraColumnMap);
 
         $this->optimizeMetadataColumns = $optimizeMetadataColumns;
-        $this->metadataPredicateToColumnMap = [];
 
-        if ($this->optimizeMetadataColumns) {
-            foreach($this->columnMap as $columnName => $generator) {
-                if (is_int($generator)) {
-                    $this->metadataPredicateToColumnMap[$generator] = $columnName;
-                }
-            }
-        }
     }
 
     private function getCleanColumnMap(array $extraColumnMap) : array {
@@ -146,10 +143,30 @@ class DataTableStatementStorage implements StatementStorage
                 $this->logger->alert("Ignoring system column name $columnName in extra column map");
                 continue;
             }
-            if (is_int($extraColumnMap[$columnName]) || is_callable($extraColumnMap[$columnName])) {
-                $cleanMap[$columnName] = $extraColumnMap[$columnName];
-            } else {
-                throw new InvalidArgumentException("Value in extra column map is neither int nor callable");
+            $colValue = $extraColumnMap[$columnName];
+            $goodValue = false;
+            if (is_int($colValue)) {
+                $cleanMap[$columnName] = [
+                    'predicate' => $colValue,
+                    'cancellationMetadata' => false
+                ];
+                $goodValue = true;
+            }
+            if (is_array($colValue) && isset($colValue['predicate']) && is_int($colValue['predicate'])) {
+                $cleanMap[$columnName] = [
+                    'predicate' => $colValue['predicate'],
+                    'cancellationMetadata' => $colValue['cancellationMetadata'] ?? false
+                ];
+                $goodValue = true;
+            }
+            if (is_callable($colValue)) {
+                $cleanMap[$columnName] = [
+                    'callable' => $colValue
+                ];
+                $goodValue = true;
+            }
+            if (!$goodValue) {
+                throw new InvalidArgumentException("Predicate or callable not found in extra column map");
             }
         }
         return $cleanMap;
@@ -229,28 +246,19 @@ class DataTableStatementStorage implements StatementStorage
 
 
         $extraColumnValues = $this->getExtraColumnValues($subject, $predicate, $object, false, $statementMetadata);
+        foreach(array_keys($extraColumnValues) as $extraColumn) {
+            $newRow[$extraColumn] = $extraColumnValues[$extraColumn];
+        }
 
         if (count($statementMetadata) !== 0) {
-
             if ($this->optimizeMetadataColumns) {
-
-                $optimizedMetadata = [];
-                $predicatesInExtraColumns = array_keys($this->metadataPredicateToColumnMap);
-                foreach ($statementMetadata as $statementMetadatum) {
-                    [ $metadataPredicate, ] = $statementMetadatum;
-                    if (!in_array($metadataPredicate, $predicatesInExtraColumns)) {
-                        $optimizedMetadata[] = $statementMetadatum;
-                    }
+                $optimizedMetadata = $this->getOptimizedMetadata($statementMetadata, false);
+                if (count($optimizedMetadata) !== 0) {
+                    $newRow[$this->statementMetadataCol] = json_encode($optimizedMetadata);
                 }
-                $newRow[$this->statementMetadataCol] = json_encode($optimizedMetadata);
             } else {
                 $newRow[$this->statementMetadataCol] = json_encode($statementMetadata);
             }
-
-        }
-
-        foreach(array_keys($extraColumnValues) as $extraColumn) {
-            $newRow[$extraColumn] = $extraColumnValues[$extraColumn];
         }
 
         try {
@@ -259,6 +267,32 @@ class DataTableStatementStorage implements StatementStorage
             // should never happen
             throw new RuntimeException("RowAlreadyExists exception");
         }
+    }
+
+    private function getOptimizedMetadata(array $metadata, bool $cancellationMetadata) : array {
+        $optimizedMetadata = [];
+        $extraColumns  = array_keys($this->columnMap);
+        $predicatesInExtraColumns = [];
+        foreach($extraColumns as $columnName) {
+            $mapEntry = $this->columnMap[$columnName];
+            if (!isset($mapEntry['predicate'])) {
+                continue;
+            }
+            if ($mapEntry['cancellationMetadata'] === $cancellationMetadata) {
+                $predicatesInExtraColumns[] = $mapEntry['predicate'];
+            }
+        }
+//        if ($cancellationMetadata) {
+//            print "Cancellation metadata predicates in extra columns : " . implode(', ', $predicatesInExtraColumns) . "\n";
+//            var_dump($this->columnMap);
+//        }
+        foreach ($metadata as $metadatum) {
+            [ $predicate,] = $metadatum;
+            if (!in_array($predicate, $predicatesInExtraColumns)) {
+                $optimizedMetadata[] = $metadatum;
+            }
+        }
+        return $optimizedMetadata;
     }
 
     /**
@@ -291,13 +325,22 @@ class DataTableStatementStorage implements StatementStorage
         }
 
         $row[$this->cancellationIdCol] = $cancellationId;
-        if (count($cancellationMetadata) !== 0) {
-            $row[$this->cancellationMetadataCol] = json_encode($cancellationMetadata);
-        }
+
         $extraColumnValues = $this->getExtraColumnValues($subject, $predicate, $object, true, $cancellationMetadata);
 
         foreach(array_keys($extraColumnValues) as $extraColumn) {
             $row[$extraColumn] = $extraColumnValues[$extraColumn];
+        }
+
+        if (count($cancellationMetadata) !== 0) {
+            if ($this->optimizeMetadataColumns) {
+                $optimizedMetadata = $this->getOptimizedMetadata($cancellationMetadata, true);
+                if (count($optimizedMetadata) !== 0) {
+                    $row[$this->cancellationMetadataCol] = json_encode($optimizedMetadata);
+                }
+            } else {
+                $row[$this->cancellationMetadataCol] = json_encode($cancellationMetadata);
+            }
         }
 
         try {
@@ -356,29 +399,37 @@ class DataTableStatementStorage implements StatementStorage
         ];
 
         if ($withMetadata) {
-            if ($row[$this->statementMetadataCol] !== null) {
-                $statementMetadata = json_decode($row[$this->statementMetadataCol], false);
-
-                foreach(array_keys($this->metadataPredicateToColumnMap) as $metadataPredicate) {
-                    $statementMetadata[] = [
-                        $metadataPredicate,
-                        $row[$this->metadataPredicateToColumnMap[$metadataPredicate]]
-                    ];
-                }
-                $statement[5] = $statementMetadata;
-            }
-            if ($row[$this->cancellationMetadataCol] !== null) {
-                $cancellationMetadata = json_decode($row[$this->cancellationMetadataCol], false);
-
-                $statement[6] = $cancellationMetadata;
-            }
-
-
-
-
+            $statement[5] = $this->getMetadataFromRow($row, $this->statementMetadataCol, false);
+            $statement[6] = $this->getMetadataFromRow($row, $this->cancellationMetadataCol, true);
         }
 
         return $statement;
+    }
+
+    private function getMetadataFromRow(array $row, string $metadataCol, bool $cancellationMetadata) : array {
+        $metadata = [];
+        foreach(array_keys($this->columnMap) as $columName) {
+            $mapEntry = $this->columnMap[$columName];
+            if (!isset($mapEntry['predicate'])) {
+                continue;
+            }
+            if ($mapEntry['cancellationMetadata'] === $cancellationMetadata) {
+                if ($row[$columName] !== null) {
+                    $metadata[] = [
+                        $mapEntry['predicate'],
+                        $row[$columName]
+                    ];
+                }
+            }
+        }
+        if ($row[$metadataCol] !== null) {
+            $additionalMetadata = json_decode($row[$metadataCol], false);
+            foreach($additionalMetadata as $additionalMetadatum) {
+                $metadata[] = $additionalMetadatum;
+            }
+        }
+
+        return $metadata;
     }
 
 
@@ -389,13 +440,22 @@ class DataTableStatementStorage implements StatementStorage
      */
     public function storeMultipleStatementsAndCancellations(array $statementsAndCancellations): void
     {
+
+        $debug = false;
+
+        $debug && print("Storing " . count($statementsAndCancellations) . " statements/cancellations at once\n");
+        $debug && var_dump($statementsAndCancellations);
+
         $inLocalTransaction = false;
         if (!$this->dataTable->isInTransaction()) {
             $inLocalTransaction = $this->dataTable->startTransaction();
         }
 
+        $debug && print("Local transaction: " . ($inLocalTransaction ? 'true' : 'false') . "\n");
+
         foreach($statementsAndCancellations as $index => $command) {
             $commandName = $command[0];
+            $debug && print("Command $index: $commandName\n");
             switch($commandName) {
                 case self::StoreStatementCommand:
                     [ ,$statementId, $subject, $predicate, $object, $metadata ] = $command;
@@ -460,23 +520,30 @@ class DataTableStatementStorage implements StatementStorage
                         $this->dataTable->rollBack();
                         throw new StatementNotFoundException($e->getMessage() . " in $commandName command $index");
                     }
+                    break;
+
+                default:
+                    $this->dataTable->rollBack();
+                    throw new \InvalidArgumentException("Invalid command '$commandName'");
             }
         }
 
-
         if ($inLocalTransaction) {
+            $debug && print "Committing...";
             $commitResult = $this->dataTable->commit();
             if ($this->dataTable->supportsTransactions() && !$commitResult) {
                 throw new RuntimeException("Could not commit local transaction when storing/cancelling statements");
             }
         }
+
+        $debug && print("Done\n");
     }
 
     private function getExtraColumnValues(int $subject, int $predicate, int|string $object, bool $isCancellation, array $metadata) : array {
         $extraColumnValues = [];
         foreach(array_keys($this->columnMap) as $extraColumnName) {
-            if (is_int($this->columnMap[$extraColumnName])) {
-                $predicateToFind = $this->columnMap[$extraColumnName];
+            if (isset($this->columnMap[$extraColumnName]['predicate'])) {
+                $predicateToFind = $this->columnMap[$extraColumnName]['predicate'];
                 $value = false;
                 foreach($metadata as $metadataEntry) {
                     [ $metadataPredicate, $metadataObject ] = $metadataEntry;
@@ -486,7 +553,7 @@ class DataTableStatementStorage implements StatementStorage
                     }
                 }
             } else {
-                $value = $this->columnMap[$extraColumnName]($subject, $predicate, $object, $isCancellation, $metadata);
+                $value = $this->columnMap[$extraColumnName]['callable']($subject, $predicate, $object, $isCancellation, $metadata);
             }
             if ($value !== false) {
                 $extraColumnValues[$extraColumnName] = $value;

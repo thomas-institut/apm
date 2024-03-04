@@ -33,12 +33,14 @@ class MultiStorageEntitySystemTest extends EntitySystemWithMetadataReferenceTest
             `predicate` bigint,
             `object` bigint,
             `value` text,
-            `author` bigint,
-            `timestamp` int,
-            `editorialNote` text, 
+            `lang` bigint default null,
+            `author` bigint default null,
+            `ts` int default null,
+            `edNote` text default null, 
+            `extraStMetadata` text default null,
             `cancellationId` bigint default null,
-            `statementMetadata` text default null,
-            `cancellationMetadata` text default null
+            `cancelledBy` bigint default null,
+            `extraCancMetadata` text default null
             );
 
         create index subject on `$table`(subject);
@@ -47,10 +49,17 @@ EOD;
 
         $pdo->query($creationQuery);
         $storage = new DataTableStatementStorage(new MySqlDataTable($pdo, $table, true), [
-            'author' => 201,
-            "timestamp" => 202,
-            'editorialNote'=> 203
-        ]);
+            'lang' => self::pQualificationLang,
+            'author' => self::pStatementAuthor,
+            "ts" => self::pStatementTimeStamp,
+            'edNote'=> self::pEditorialNote,
+            'cancelledBy' => [ 'predicate' => self::pCancellationAuthor, 'cancellationMetadata' => true ]
+            ],
+            [
+                DataTableStatementStorage::StatementMetadataCol => 'extraStMetadata',
+                DataTableStatementStorage::CancellationMetadataCol => 'extraCancMetadata'
+            ]
+        );
         return new MultiStorageEntitySystem($storage);
     }
 }

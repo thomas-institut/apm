@@ -23,8 +23,21 @@ abstract class EntitySystemWithMetadataReferenceTestSuite extends EntitySystemRe
     const pStatementTimeStamp = 202;
     const pEditorialNote = 203;
 
+
+    const pCancellationAuthor = 301;
+    const pCancellationTimestamp = 302;
+    const pCancellationNote= 303;
+
+
+    const pQualificationLang = 401;
+
     const pType = 501;
     const pName = 502;
+
+    const pAlias = 503;
+
+
+    const pSource = 10001;
 
 
 
@@ -42,38 +55,58 @@ abstract class EntitySystemWithMetadataReferenceTestSuite extends EntitySystemRe
 
         $es = $this->getEntitySystemWithMetadata();
 
+        $ts = time();
 
-        $editor = $this->createEntity($es, self::tPerson, 'Test Editor', self::eSystem);
+        $editor = $this->createEntity($es, self::tPerson, 'Test Editor', self::eSystem, $ts);
 
-        $john = $this->createEntity($es, self::tPerson, 'John Lennon', $editor);
-        $paul = $this->createEntity($es, self::tPerson, 'Paul McCartney', $editor);
-        $george = $this->createEntity($es, self::tPerson, 'George Harrison', $editor);
-        $ringo = $this->createEntity($es, self::tPerson, 'Ringo Starr', $editor);
+        $john = $this->createEntity($es, self::tPerson, 'John Lennon', $editor, $ts);
+        $paul = $this->createEntity($es, self::tPerson, 'Paul McCartney', $editor, $ts);
+        $george = $this->createEntity($es, self::tPerson, 'George Harrison', $editor, $ts);
+        $ringo = $this->createEntity($es, self::tPerson, 'Ringo Starr', $editor, $ts);
 
-        $english = $this->createEntity($es, self::tLang, 'English', $editor);
+        $english = $this->createEntity($es, self::tLang, 'English', $editor, $ts);
+        $spanish = $this->createEntity($es, self::tLang, 'Spanish', $editor, $ts);
 
-        $pSpeaks = $this->createEntity($es, self::tRelation, 'speaks', $editor);
+        $pSpeaks = $this->createEntity($es, self::tRelation, 'speaks', $editor, $ts);
 
-        $tBand = $this->createEntity($es, self::tEntityType, 'band', $editor);
-        $pMemberOf = $this->createEntity($es, self::tRelation, 'memberOf', $editor);
-        $theBeatles = $this->createEntity($es, $tBand, 'The Beatles', $editor);
+        $tBand = $this->createEntity($es, self::tEntityType, 'band', $editor, $ts);
+        $pMemberOf = $this->createEntity($es, self::tRelation, 'memberOf', $editor, $ts);
+        $theBeatles = $this->createEntity($es, $tBand, 'The Beatles', $editor, $ts);
+
+        $theSource = 'My own knowledge';
+
+        $memberOfStatementIds = [];
+        $speaksStatementIds = [];
+
+
+
+
+        $es->makeStatementWithMetadata($theBeatles, self::pAlias, 'Los Beatles', [
+            [ self::pStatementAuthor, $editor],
+            [ self::pStatementTimeStamp, $ts],
+            [ self::pEditorialNote, "Se sabe en todo el mundo"],
+            [ self::pQualificationLang, $spanish]
+        ]);
 
         foreach( [ $john, $paul, $george, $ringo] as $beatle) {
-            $es->makeStatementWithMetadata($beatle, $pMemberOf, $theBeatles, [
+            $memberOfStatementIds[] = $es->makeStatementWithMetadata($beatle, $pMemberOf, $theBeatles, [
                     [ self::pStatementAuthor, $editor],
-                    [ self::pStatementTimeStamp, time()],
-                    [ self::pEditorialNote, "Well known fact"]
+                    [ self::pStatementTimeStamp, $ts],
+                    [ self::pEditorialNote, "Well known fact"],
+                    [ self::pSource, $theSource]
             ]);
-            $es->makeStatementWithMetadata($beatle, $pSpeaks, $english, [
+            $speaksStatementIds[] = $es->makeStatementWithMetadata($beatle, $pSpeaks, $english, [
                 [ self::pStatementAuthor, $editor],
-                [ self::pStatementTimeStamp, time()],
-                [ self::pEditorialNote, "Comes from England"]
+                [ self::pStatementTimeStamp, $ts],
+                [ self::pEditorialNote, "Comes from England"],
+                [ self::pSource, $theSource]
             ]);
         }
         $entitiesToTest = [ $john, $paul, $george, $ringo, $english, $tBand, $pMemberOf, $theBeatles, $pSpeaks];
         $predicatesToAssert = [ self::pName, self::pType ];
         $metadataToAssert = [ self::pStatementAuthor, self::pStatementTimeStamp];
 
+        // Test entities
         foreach ($entitiesToTest as $index => $entity) {
             $context = "Testing entity index $index";
 
@@ -86,8 +119,18 @@ abstract class EntitySystemWithMetadataReferenceTestSuite extends EntitySystemRe
                 foreach($metadata as $metadataItem) {
                     [ $metadataPredicate, $metadataItemObject ] = $metadataItem;
                     $metadataPredicates[] = $metadataPredicate;
-                    if ($metadataPredicate === self::pStatementAuthor) {
-                        $this->assertEquals($editor, $metadataItemObject, $context);
+                    switch($metadataPredicate) {
+                        case self::pStatementAuthor:
+                            $this->assertEquals($editor, $metadataItemObject, $context);
+                            break;
+
+                        case self::pStatementTimeStamp:
+                            $this->assertEquals($ts, intval($metadataItemObject));
+                            break;
+
+                        case self::pSource:
+                            $this->assertEquals($theSource, $metadataItemObject);
+                            break;
                     }
                 }
             }
@@ -98,14 +141,66 @@ abstract class EntitySystemWithMetadataReferenceTestSuite extends EntitySystemRe
                 $this->assertContains($metadataPredicate, $metadataPredicates, $context);
             }
         }
+
+        // test statement Ids
+
+        $memberOfStatements = $es->getStatements(null, $pMemberOf, null);
+        $this->assertCount(count($memberOfStatementIds), $memberOfStatements);
+        foreach($memberOfStatements as $statement) {
+            [ $statementId, $subject, $predicate, $object, $cancellationId ] = $statement;
+            $this->assertContains($statementId, $memberOfStatementIds);
+            $this->assertEquals($pMemberOf, $predicate);
+            $this->assertIsInt($subject);
+            $this->assertIsInt($object);
+            $this->assertNull($cancellationId);
+        }
+
+        $speaksStatements = $es->getStatements(null, $pSpeaks, null);
+        $this->assertCount(count($speaksStatementIds), $speaksStatements);
+
+        $cancellationCommands = [];
+
+        foreach($speaksStatementIds as $index => $statementId) {
+            $metadata = [
+                [ self::pCancellationAuthor, $editor],
+                [ self::pCancellationTimestamp, time()],
+                [ self::pCancellationNote, "Cancellation $index just for testing"]
+            ];
+            $cancellationCommands[] = [ EntitySystem::CancelStatementCommand, $statementId,  $metadata ];
+
+        }
+        $cancellationIds = $es->makeMultipleStatementAndCancellations($cancellationCommands);
+        $this->assertCount(count($cancellationCommands), $cancellationIds);
+
+        $speaksStatements = $es->getStatements(null, $pSpeaks, null);
+        $this->assertCount(0, $speaksStatements);
+        $metadataToAssert = [ self::pCancellationAuthor, self::pCancellationTimestamp, self::pCancellationNote];
+
+        $speaksStatements = $es->getStatements(null, $pSpeaks, null, true);
+        $this->assertCount(count($speaksStatementIds), $speaksStatements);
+        foreach($speaksStatements as $statement) {
+            [, , $predicate, , $cancellationId, , $cancellationMetadata ] = $statement;
+            $this->assertEquals($pSpeaks, $predicate);
+            $this->assertNotNull($cancellationId);
+            $this->assertContains($cancellationId, $cancellationIds);
+            $this->assertNotNull($cancellationMetadata);
+            $metadataPredicates = [];
+            foreach($cancellationMetadata as $metadatum) {
+                $metadataPredicates[] = $metadatum[0];
+            }
+            $this->assertCount(count($metadataToAssert), $metadataPredicates);
+            foreach ($metadataPredicates as $metadataPredicate) {
+                $this->assertContains($metadataPredicate, $metadataToAssert);
+            }
+        }
     }
 
-    private function createEntity(EntitySystemWithMetadata $es, int $type, string $name, int $author) : int {
+    private function createEntity(EntitySystemWithMetadata $es, int $type, string $name, int $author, int $ts) : int {
         $id = $es->generateUniqueEntityId();
 
         $metadata = [
             [ self::pStatementAuthor, $author],
-            [ self::pStatementTimeStamp, time()],
+            [ self::pStatementTimeStamp, $ts],
             [ self::pEditorialNote, "Entity Creation: $type:$name"]
         ];
 

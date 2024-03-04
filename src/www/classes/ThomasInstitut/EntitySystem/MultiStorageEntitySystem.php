@@ -129,7 +129,7 @@ class MultiStorageEntitySystem implements EntitySystemWithMetadata
                     }
                     $storageIndex = array_search($storage, $storagesInvolved);
                     $cancellationId = $this->generateUniqueEntityId();
-                    $commandsPerStorage[$storageIndex] = [ StatementStorage::CancelStatementCommand ,
+                    $commandsPerStorage[$storageIndex][] = [ StatementStorage::CancelStatementCommand ,
                         $statementId, $cancellationId, $metadata];
                     $returnArray[] = $cancellationId;
                     break;

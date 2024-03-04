@@ -23,6 +23,7 @@ use APM\Api\ApiEditionSources;
 use APM\Api\ApiLog;
 use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiPeople;
+use APM\Api\ApiPeopleLukas;
 use APM\Api\ApiTranscription;
 use APM\Api\ApiWorks;
 use APM\Site\SiteMultiChunkEdition;
@@ -485,6 +486,12 @@ function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) :
                 return (new ApiPeople($container))->createNewPerson($request, $response);
             })
             ->setName('api.person.create');
+
+        $group->get('/api/people/matching',
+            function(Request $request, Response $response) use ($container){
+                return (new ApiPeopleLukas($container))->getMatchingPeople($request, $response);
+            })
+            ->setName('api.people.matching');
 
         // USERS
         // API -> user : update profile

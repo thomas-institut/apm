@@ -409,6 +409,10 @@ class ApmUrlGenerator {
         return `${this.base}/api/people/all`
     }
 
+    apiPeopleGetMatchingPeople() {
+        return `${this.base}/api/people/matching`
+    }
+
     images() {
         return this.base + '/images'
     }

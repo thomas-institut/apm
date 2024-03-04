@@ -471,16 +471,57 @@ export class MetadataEditor {
     })
   }
 
+  // makePersonInputForm(selector, inputFormId) {
+  //   let list = "people-datalist"
+  //   let listSelector = '#' + list
+  //   let paragraphId = inputFormId + '_paragraph'
+  //
+  //   $(selector).html(`<p class='${paragraphId} embed-button'>
+  //           <input class='${inputFormId} form-control' list=${list} placeholder="person" autoComplete="off" style="padding: unset">
+  //               <datalist id=${list}></datalist></p>`)
+  //   this.addNamesToDatalistForPersonsAsValues(this.people, listSelector)
+  //   this.makePersonInputFormEvent(inputFormId, listSelector, paragraphId)
+  // }
+
   makePersonInputForm(selector, inputFormId) {
     let list = "people-datalist"
     let listSelector = '#' + list
+    let inputSelector = this.options.containerSelector + '.' + inputFormId
     let paragraphId = inputFormId + '_paragraph'
 
     $(selector).html(`<p class='${paragraphId} embed-button'>
             <input class='${inputFormId} form-control' list=${list} placeholder="person" autoComplete="off" style="padding: unset">
                 <datalist id=${list}></datalist></p>`)
-    this.addNamesToDatalistForPersonsAsValues(this.people, listSelector)
+
+    $(inputSelector).on('input', () => {
+      let matchedPeople = this.getMatchingPeople(inputSelector.val())
+      this.addNamesToDatalistForPersonsAsValues(matchedPeople, listSelector)
+    })
+
     this.makePersonInputFormEvent(inputFormId, listSelector, paragraphId)
+  }
+
+  getMatchingPeople(value) {
+    $.post(urlGen.apiPeopleGetMatchingPeople(), {'value': value})
+        .done((apiResponse) => {
+
+          // Catch Error
+          if (apiResponse.status !== 'OK') {
+            console.log(`Error in query`);
+            if (apiResponse.errorData !== undefined) {
+              console.log(apiResponse.errorData);
+            }
+            return false
+          }
+          else {
+            console.log(apiResponse)
+            return apiResponse.data
+          }
+        })
+        .fail((status) => {
+          console.log(status);
+          return false
+        })
   }
 
   addNamesToDatalistForPersonsAsValues(people, listSelector) {

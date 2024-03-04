@@ -35,6 +35,51 @@ class ApiPeopleLukas extends ApiController
             $data[] = $this->getMetadataFromSql($id);
         }
 
+
+        if ($data === []) {
+            $status = 'Error in Cache!';
+        }
+
+        // ApiResponse
+        return $this->responseWithJson($response, [
+            'data' => $data,
+            'serverTime' => $now,
+            'status' => $status]);
+    }
+
+
+    public function getMatchingPeople(Request $request, Response $response): Response
+    {
+
+        $status = 'OK';
+        $now = TimeString::now();
+        $people = [];
+        $data = [];
+        $stringToMatch = $_POST['value'];
+
+        // Get number of people
+        $cache = $this->systemManager->getSystemDataCache();
+        $cacheKey = 'Next_Entity_ID';
+
+        try {
+            $num_people = unserialize($cache->get($cacheKey)) - 1;
+        }
+        catch (KeyNotInCacheException) {
+            $num_people = 0;
+        }
+
+        for ($id=0; $id<=$num_people; $id++) {
+            $people[] = $this->getMetadataFromSql($id);
+        }
+
+        foreach ($people as $person) {
+            if (similar_text($person['values'][0], $stringToMatch) > 3) {
+                $data[] = $person;
+            }
+        }
+
+        // OR: MAKE SQL QUERY WITH 'LIKE'
+
         if ($data === []) {
             $status = 'Error in Cache!';
         }

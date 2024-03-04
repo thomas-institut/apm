@@ -1,6 +1,6 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
 import {urlGen} from "../pages/common/SiteUrlGen";
-import {TagEditor} from "../widgets/TagEditor";
+import {TagEditor} from "../widgets/TagEditorLukas";
 import {ConfirmDialog} from "../pages/common/ConfirmDialog";
 
 export class MetadataEditor {

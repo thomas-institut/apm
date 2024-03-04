@@ -27,6 +27,10 @@ module.exports = {
       import: './pages/PersonPage.js',
       filename: 'PersonPage.bundle.js'
     },
+    MetadataEditorPage: {
+      import: './pages/MetadataEditorPage.js',
+      filename: 'MetadataEditorPage.bundle.js'
+    },
     MceComposer: {
       import: './MceComposer/MceComposer.js',
       filename: 'MceComposer.bundle.js',

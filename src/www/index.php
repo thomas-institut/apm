@@ -24,10 +24,13 @@ use APM\Api\ApiLog;
 use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiPeople;
 use APM\Api\ApiPeopleLukas;
+use APM\Api\ApiTagEditorLukas;
 use APM\Api\ApiTranscription;
 use APM\Api\ApiWorks;
+use APM\Site\SiteMetadataEditor;
 use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePeople;
+use APM\Site\SitePersonLukas;
 use APM\System\ConfigLoader;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Handler\ErrorLogHandler;
@@ -167,6 +170,13 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
                 return (new SitePeople($container))->personPage($request, $response);
             })
             ->setName('person');
+
+        // Metadata Editor Test Page
+        $group->get('/metadataeditor/{id}',
+            function(Request $request, Response $response) use ($container){
+                return (new SiteMetadataEditor($container))->metadataEditorPage($request, $response);
+            })
+            ->setName('metadataeditor');
 
         // DASHBOARD
         $group->get('/dashboard',
@@ -487,11 +497,54 @@ function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) :
             })
             ->setName('api.person.create');
 
-        $group->get('/api/people/matching',
+        // Metadata Editor Test Page
+        $group->post('/people/matching',
             function(Request $request, Response $response) use ($container){
                 return (new ApiPeopleLukas($container))->getMatchingPeople($request, $response);
             })
             ->setName('api.people.matching');
+
+        $group->post('/people/all',
+            function(Request $request, Response $response) use ($container){
+                return (new ApiPeopleLukas($container))->getAllPeople($request, $response);
+            })
+            ->setName('api.people.all');
+
+        $group->post('/person/schema',
+            function(Request $request, Response $response) use ($container){
+                return (new ApiPeopleLukas($container))->getSchema($request, $response);
+            })
+            ->setName('api.person.schema');
+
+        $group->post('/person/get',
+            function(Request $request, Response $response) use ($container){
+                return (new ApiPeopleLukas($container))->getData($request, $response);
+            })
+            ->setName('api.person.get');
+
+        $group->post('/person/newid',
+            function(Request $request, Response $response) use ($container){
+                return (new ApiPeopleLukas($container))->getNewId($request, $response);
+            })
+            ->setName('api.person.newid');
+
+        $group->post('/person/save',
+            function(Request $request, Response $response) use ($container){
+                return (new ApiPeopleLukas($container))->saveData($request, $response);
+            })
+            ->setName('api.person.save');
+
+        $group->post('/tags/save',
+            function(Request $request, Response $response) use ($container){
+                return (new ApiTagEditorLukas($container))->saveTagsAsHints($request, $response);
+            })
+            ->setName('api.tags.save');
+
+        $group->post('/tags/all',
+            function(Request $request, Response $response) use ($container){
+                return (new ApiTagEditorLukas($container))->getAllTags($request, $response);
+            })
+            ->setName('api.tags.all');
 
         // USERS
         // API -> user : update profile

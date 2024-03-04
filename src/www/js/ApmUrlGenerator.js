@@ -413,6 +413,14 @@ class ApmUrlGenerator {
         return `${this.base}/api/people/matching`
     }
 
+    apiTagEditorSaveTagsAsHints() {
+        return `${this.base}/api/tags/save`
+    }
+
+    apiTagEditorGetAllTags() {
+        return `${this.base}/api/tags/all`
+    }
+
     images() {
         return this.base + '/images'
     }

@@ -100,6 +100,7 @@ class ApiTagEditorLukas extends ApiController
         try {
             $tag = unserialize($cache->get($cacheKey));
         } catch (KeyNotInCacheException) {
+            $tag = "";
             $this->logger->debug($id);
         }
 

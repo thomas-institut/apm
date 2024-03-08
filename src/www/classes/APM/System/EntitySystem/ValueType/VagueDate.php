@@ -2,7 +2,7 @@
 
 namespace ThomasInstitut\EntitySystem\ValueType;
 
-class VagueDate
+class VagueDate implements ValueTypeValidator
 {
 
     const INTRA_SEP = '.';
@@ -55,5 +55,21 @@ class VagueDate
 
     public static function fromCompactString(string $str) : VagueDate {
         return (new VagueDate())->setFromCompactString($str);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    static public function stringIsValid(string $str): bool
+    {
+        $testDate = self::fromCompactString($str);
+
+        if ($testDate->post[0] === 0 && $testDate->ante[0] === 0) {
+            return false;
+        }
+
+        // TODO: check that post < ante
+        return true;
+
     }
 }

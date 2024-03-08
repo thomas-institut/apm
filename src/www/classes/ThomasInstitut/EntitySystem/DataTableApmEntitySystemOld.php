@@ -62,7 +62,7 @@ use ThomasInstitut\TimeString\TimeString;
  * At least one EntityDataCache object is required for general caching.
  *
  */
-class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebugInterface
+class DataTableApmEntitySystemOld implements ApmEntitySystemOld, CacheAware, CodeDebugInterface
 {
 
     use CodeDebugWithLoggerTrait, SimpleCacheAware;
@@ -129,7 +129,7 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
         } else {
             $this->setLogger($logger);
         }
-        $this->systemTid = ApmEntitySystem::SystemEntity;
+        $this->systemTid = ApmEntitySystemOld::SystemEntity;
         $this->debugCode = $debug;
 
         $this->debugMsg("Constructing instance of " . get_class($this));
@@ -196,72 +196,72 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
 
         // Build skeleton typesConfig array with standard types and default configuration
         $this->typeConfig = [
-            ApmEntitySystem::Name_Type_EntityType => [
-                'typeTid' => ApmEntitySystem::Type_EntityType,
+            ApmEntitySystemOld::Name_Type_EntityType => [
+                'typeTid' => ApmEntitySystemOld::Type_EntityType,
                 'uniqueNames' => true,
                 'statementsTable' => $this->systemStatementsTable,
                 'entityDataCache' => $this->systemEntityDataCache,
                 'defaultCacheTtl' => 0,
                 'internalCache' => true,  // if true, entities of this type will be cached in the internal mem cache
             ],
-            ApmEntitySystem::Name_Type_Attribute => [
-                'typeTid' => ApmEntitySystem::Type_Attribute,
+            ApmEntitySystemOld::Name_Type_Attribute => [
+                'typeTid' => ApmEntitySystemOld::Type_Attribute,
                 'uniqueNames' => true,
                 'statementsTable' => $this->systemStatementsTable,
                 'entityDataCache' => $this->systemEntityDataCache,
                 'defaultCacheTtl' => 0,
                 'internalCache' => true
             ],
-            ApmEntitySystem::Name_Type_Relation => [
-                'typeTid' => ApmEntitySystem::Type_Relation,
+            ApmEntitySystemOld::Name_Type_Relation => [
+                'typeTid' => ApmEntitySystemOld::Type_Relation,
                 'uniqueNames' => true,
                 'statementsTable' => $this->systemStatementsTable,
                 'entityDataCache' => $this->systemEntityDataCache,
                 'defaultCacheTtl' => 0,
                 'internalCache' => true
             ],
-            ApmEntitySystem::Name_Type_DataType => [
-                'typeTid' => ApmEntitySystem::Type_DataType,
+            ApmEntitySystemOld::Name_Type_DataType => [
+                'typeTid' => ApmEntitySystemOld::Type_DataType,
                 'uniqueNames' => true,
                 'statementsTable' => $this->systemStatementsTable,
                 'entityDataCache' => $this->systemEntityDataCache,
                 'defaultCacheTtl' => 0,
                 'internalCache' => true
             ],
-            ApmEntitySystem::Name_Type_Statement => [
-                'typeTid' => ApmEntitySystem::Type_Statement,
+            ApmEntitySystemOld::Name_Type_Statement => [
+                'typeTid' => ApmEntitySystemOld::Type_Statement,
                 'uniqueNames' => false,
                 'statementsTable' => $this->defaultStatementsTable,
                 'entityDataCache' => $this->defaultEntityDataCache,
                 'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
                 'internalCache' => false
             ],
-            ApmEntitySystem::Name_Type_Person => [
-                'typeTid' => ApmEntitySystem::Type_Person,
+            ApmEntitySystemOld::Name_Type_Person => [
+                'typeTid' => ApmEntitySystemOld::Type_Person,
                 'uniqueNames' => false,
                 'statementsTable' => $this->defaultStatementsTable,
                 'entityDataCache' => $this->defaultEntityDataCache,
                 'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
                 'internalCache' => false
             ],
-            ApmEntitySystem::Name_Type_Language => [
-                'typeTid' => ApmEntitySystem::Type_Language,
+            ApmEntitySystemOld::Name_Type_Language => [
+                'typeTid' => ApmEntitySystemOld::Type_Language,
                 'uniqueNames' => false,
                 'statementsTable' => $this->defaultStatementsTable,
                 'entityDataCache' => $this->defaultEntityDataCache,
                 'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
                 'internalCache' => false
             ],
-            ApmEntitySystem::Name_Type_Place => [
-                'typeTid' => ApmEntitySystem::Type_Place,
+            ApmEntitySystemOld::Name_Type_Place => [
+                'typeTid' => ApmEntitySystemOld::Type_Place,
                 'uniqueNames' => false,
                 'statementsTable' => $this->defaultStatementsTable,
                 'entityDataCache' => $this->defaultEntityDataCache,
                 'defaultCacheTtl' => self::DEFAULT_CACHE_TTL,
                 'internalCache' => false
             ],
-            ApmEntitySystem::Name_Type_Area => [
-                'typeTid' => ApmEntitySystem::Type_Area,
+            ApmEntitySystemOld::Name_Type_Area => [
+                'typeTid' => ApmEntitySystemOld::Type_Area,
                 'uniqueNames' => false,
                 'statementsTable' => $this->defaultStatementsTable,
                 'entityDataCache' => $this->defaultEntityDataCache,
@@ -299,7 +299,7 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
             }
         }
 
-        $entityTypeNameToTidMap = $this->getEntityNameToTidMap(ApmEntitySystem::Name_Type_EntityType);
+        $entityTypeNameToTidMap = $this->getEntityNameToTidMap(ApmEntitySystemOld::Name_Type_EntityType);
         $entityTypes = array_keys($entityTypeNameToTidMap);
         if (count($entityTypes) === 0) {
             $this->debugMsg("No entity types found, need to bootstrap the system");
@@ -348,7 +348,7 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
      */
     private function getNameToTidMapFromStatements(DataTable $statementsTable, int $typeTid, string $typeName) : array {
         $rows = $statementsTable->findRows([
-                'predicate' => ApmEntitySystem::Relation_IsOfType,
+                'predicate' => ApmEntitySystemOld::Relation_IsOfType,
                 'object' => $typeTid,
                 'cancelled' => 0
             ]);
@@ -363,7 +363,7 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
         foreach($typeEntities as $entity) {
             $rows = $statementsTable->findRows([
                 'subject' => $entity,
-                'predicate' => ApmEntitySystem::Attribute_Name,
+                'predicate' => ApmEntitySystemOld::Attribute_Name,
                 'cancelled' => 0
             ]);
             if (count($rows) === 0 || $rows->getFirst()['value'] === '') {
@@ -526,7 +526,7 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
     }
 
     private function getBooleanValueString(bool $value) : string {
-        return $value ? ApmEntitySystem::Value_True : ApmEntitySystem::Value_False;
+        return $value ? ApmEntitySystemOld::Value_True : ApmEntitySystemOld::Value_False;
     }
 
     private function setupEntityInStatementsTable(DataTable $statementsTable, int $tid, int $typeTid,
@@ -535,24 +535,24 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
         $entitySetupStatementGroup = $this->getUniqueTid();
         $statementMetadata = [];
         if ($editorialNote !== '') {
-            $statementMetadata[] = [ ApmEntitySystem::Attribute_StatementEditorialNote, $editorialNote];
+            $statementMetadata[] = [ ApmEntitySystemOld::Attribute_StatementEditorialNote, $editorialNote];
         }
 
         $this->storeStatement($statementsTable, $entitySetupStatementGroup,
             $tid,
-            ApmEntitySystem::Relation_IsOfType,
+            ApmEntitySystemOld::Relation_IsOfType,
             $typeTid,
             $editedBy, $ts, [],  $statementMetadata
         );
         $this->storeStatement($statementsTable,$entitySetupStatementGroup,
             $tid,
-            ApmEntitySystem::Attribute_Name,
+            ApmEntitySystemOld::Attribute_Name,
             $name,
             $editedBy, $ts, [], $statementMetadata
         );
         $this->storeStatement($statementsTable,$entitySetupStatementGroup,
             $tid,
-            ApmEntitySystem::Attribute_Description,
+            ApmEntitySystemOld::Attribute_Description,
             $description,
             $editedBy, $ts, [], $statementMetadata
         );
@@ -562,13 +562,13 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
     private function setupTypeInStatementsTable(DataTable $statementsTable, int $typeTid, string $name, string $description, bool $hasUniqueNames, int $ts, int $editedBy) : void {
         $typeNameString = sprintf("%s:%s", StandardNames::TYPE_ENTITY_TYPE, $name);
         $editorialNote = "Setting up $typeNameString";
-        $statementMetadata = [ [ApmEntitySystem::Attribute_StatementEditorialNote, $editorialNote]];
+        $statementMetadata = [ [ApmEntitySystemOld::Attribute_StatementEditorialNote, $editorialNote]];
 
         $statementGroup =  $this->setupEntityInStatementsTable($statementsTable, $typeTid,
             self::Type_EntityType, $name, $description, $editorialNote, $ts, $editedBy);
         $this->storeStatement($statementsTable, $statementGroup,
             $typeTid,
-            ApmEntitySystem::Attribute_MustHaveUniqueNames,
+            ApmEntitySystemOld::Attribute_MustHaveUniqueNames,
             $this->getBooleanValueString($hasUniqueNames),
             $editedBy, $ts, [], $statementMetadata
         );
@@ -589,17 +589,17 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
         $this->logger->info($bootstrapEditorialNote);
 
         $typesToSetup = [
-            [ ApmEntitySystem::Type_EntityType, ApmEntitySystem::Name_Type_EntityType, 'an entity type', true],
-            [ ApmEntitySystem::Type_Attribute, ApmEntitySystem::Name_Type_Attribute, 'a predicate that has literal values as its object', true],
-            [ ApmEntitySystem::Type_Relation, ApmEntitySystem::Name_Type_Relation, 'a predicate that has entities as its object', true],
-            [ ApmEntitySystem::Type_DataType, ApmEntitySystem::Name_Type_DataType, 'e.g, integer, string, etc', true],
-            [ ApmEntitySystem::Type_Statement, ApmEntitySystem::Name_Type_Statement, "a subject-predicate-object assertion done by a person in the system", false],
-            [ ApmEntitySystem::Type_Person, ApmEntitySystem::Name_Type_Person, 'Normally a human being', false],
-            [ ApmEntitySystem::Type_Place, ApmEntitySystem::Name_Type_Place, 'A geographical place with a definite location', false],
-            [ ApmEntitySystem::Type_Area, ApmEntitySystem::Name_Type_Area, 'A geographical area, e.g. a country, a city', false],
+            [ ApmEntitySystemOld::Type_EntityType, ApmEntitySystemOld::Name_Type_EntityType, 'an entity type', true],
+            [ ApmEntitySystemOld::Type_Attribute, ApmEntitySystemOld::Name_Type_Attribute, 'a predicate that has literal values as its object', true],
+            [ ApmEntitySystemOld::Type_Relation, ApmEntitySystemOld::Name_Type_Relation, 'a predicate that has entities as its object', true],
+            [ ApmEntitySystemOld::Type_DataType, ApmEntitySystemOld::Name_Type_DataType, 'e.g, integer, string, etc', true],
+            [ ApmEntitySystemOld::Type_Statement, ApmEntitySystemOld::Name_Type_Statement, "a subject-predicate-object assertion done by a person in the system", false],
+            [ ApmEntitySystemOld::Type_Person, ApmEntitySystemOld::Name_Type_Person, 'Normally a human being', false],
+            [ ApmEntitySystemOld::Type_Place, ApmEntitySystemOld::Name_Type_Place, 'A geographical place with a definite location', false],
+            [ ApmEntitySystemOld::Type_Area, ApmEntitySystemOld::Name_Type_Area, 'A geographical area, e.g. a country, a city', false],
         ];
 
-        $entityTypeStatementsTable = $this->getStatementsTableForType(ApmEntitySystem::Type_EntityType);
+        $entityTypeStatementsTable = $this->getStatementsTableForType(ApmEntitySystemOld::Type_EntityType);
         foreach($typesToSetup as $setupTuple) {
             [ $typeTid, $name, $description, $hasUniqueNames ] = $setupTuple;
             $this->setupTypeInStatementsTable($entityTypeStatementsTable,
@@ -613,25 +613,25 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
         }
 
         $attributesToSetup = [
-            [ ApmEntitySystem::Attribute_Name, ApmEntitySystem::Name_Attribute_Name, "The entity's name" ],
-            [ ApmEntitySystem::Attribute_Description, ApmEntitySystem::Name_Attribute_Description, "A short description of the entity" ],
-            [ ApmEntitySystem::Attribute_MustHaveUniqueNames, ApmEntitySystem::Name_Attribute_MustHaveUniqueNames, "Indicates if a type has entities with unique names" ],
-            [ ApmEntitySystem::Attribute_OnlyOneAllowed, ApmEntitySystem::Name_Attribute_OnlyOneAllowed, "Indicates if only one value or object is allowed for a specific predicate" ],
-            [ ApmEntitySystem::Attribute_CreationTimestamp, ApmEntitySystem::Name_Attribute_CreationTimestamp, "Timestamp when the entity was created" ],
-            [ ApmEntitySystem::Attribute_StatementTimestamp, ApmEntitySystem::Name_Attribute_StatementTimestamp, "Timestamp when a statement was made"],
-            [ ApmEntitySystem::Attribute_StatementEditorialNote, ApmEntitySystem::Name_Attribute_StatementEditorialNote, "Editorial note for a statement"],
-            [ ApmEntitySystem::Attribute_Qualification_fromDate, ApmEntitySystem::Name_Attribute_Qualification_fromDate, "Date from which the value/object of a statement applies"],
-            [ ApmEntitySystem::Attribute_Qualification_untilDate, ApmEntitySystem::Name_Attribute_Qualification_untilDate, "Date until which the value/object of a statement applies"],
-            [ ApmEntitySystem::Attribute_Qualification_SequenceNumber, ApmEntitySystem::Name_Attribute_Qualification_SequenceNumber, "The sequence number of a statement within statements of the same predicate"],
-            [ ApmEntitySystem::Attribute_MergeTimestamp, ApmEntitySystem::Name_Attribute_MergeTimestamp, "The timestamp when a merge operation was performed"],
+            [ ApmEntitySystemOld::Attribute_Name, ApmEntitySystemOld::Name_Attribute_Name, "The entity's name" ],
+            [ ApmEntitySystemOld::Attribute_Description, ApmEntitySystemOld::Name_Attribute_Description, "A short description of the entity" ],
+            [ ApmEntitySystemOld::Attribute_MustHaveUniqueNames, ApmEntitySystemOld::Name_Attribute_MustHaveUniqueNames, "Indicates if a type has entities with unique names" ],
+            [ ApmEntitySystemOld::Attribute_OnlyOneAllowed, ApmEntitySystemOld::Name_Attribute_OnlyOneAllowed, "Indicates if only one value or object is allowed for a specific predicate" ],
+            [ ApmEntitySystemOld::Attribute_CreationTimestamp, ApmEntitySystemOld::Name_Attribute_CreationTimestamp, "Timestamp when the entity was created" ],
+            [ ApmEntitySystemOld::Attribute_StatementTimestamp, ApmEntitySystemOld::Name_Attribute_StatementTimestamp, "Timestamp when a statement was made"],
+            [ ApmEntitySystemOld::Attribute_StatementEditorialNote, ApmEntitySystemOld::Name_Attribute_StatementEditorialNote, "Editorial note for a statement"],
+            [ ApmEntitySystemOld::Attribute_Qualification_fromDate, ApmEntitySystemOld::Name_Attribute_Qualification_fromDate, "Date from which the value/object of a statement applies"],
+            [ ApmEntitySystemOld::Attribute_Qualification_untilDate, ApmEntitySystemOld::Name_Attribute_Qualification_untilDate, "Date until which the value/object of a statement applies"],
+            [ ApmEntitySystemOld::Attribute_Qualification_SequenceNumber, ApmEntitySystemOld::Name_Attribute_Qualification_SequenceNumber, "The sequence number of a statement within statements of the same predicate"],
+            [ ApmEntitySystemOld::Attribute_MergeTimestamp, ApmEntitySystemOld::Name_Attribute_MergeTimestamp, "The timestamp when a merge operation was performed"],
 
         ];
-        $attributeStatementsTable = $this->getStatementsTableForType(ApmEntitySystem::Type_Attribute);
+        $attributeStatementsTable = $this->getStatementsTableForType(ApmEntitySystemOld::Type_Attribute);
         foreach($attributesToSetup as $setupTuple) {
             [ $entityTid, $name, $description] = $setupTuple;
             $this->setupEntityInStatementsTable($attributeStatementsTable,
                 $entityTid,
-                ApmEntitySystem::Type_Attribute,
+                ApmEntitySystemOld::Type_Attribute,
                 $name,
                 $description,
                 $bootstrapEditorialNote,
@@ -639,20 +639,20 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
         }
 
         $relationsToSetup = [
-            [ ApmEntitySystem::Relation_IsOfType, ApmEntitySystem::Name_Relation_IsOfType, "The type of an entity"],
-            [ ApmEntitySystem::Relation_ObjectTypeMustBe, ApmEntitySystem::Name_Relation_ObjectTypeMustBe, "An entity type that is allowed for the object of a particular relation"],
-            [ ApmEntitySystem::Relation_StatementEditor, ApmEntitySystem::Name_Relation_StatementEditor, "The editor of a statement"],
-            [ ApmEntitySystem::Relation_Qualification_Language, ApmEntitySystem::Name_Relation_Qualification_Language, "The language of a value"],
-            [ ApmEntitySystem::Relation_MergedInto, ApmEntitySystem::Name_Relation_MergedInto, "The entity into which the entity is merged"],
-            [ ApmEntitySystem::Relation_MergedBy, ApmEntitySystem::Name_Relation_MergedBy, "The Person entity who performed a merge operation"],
+            [ ApmEntitySystemOld::Relation_IsOfType, ApmEntitySystemOld::Name_Relation_IsOfType, "The type of an entity"],
+            [ ApmEntitySystemOld::Relation_ObjectTypeMustBe, ApmEntitySystemOld::Name_Relation_ObjectTypeMustBe, "An entity type that is allowed for the object of a particular relation"],
+            [ ApmEntitySystemOld::Relation_StatementEditor, ApmEntitySystemOld::Name_Relation_StatementEditor, "The editor of a statement"],
+            [ ApmEntitySystemOld::Relation_Qualification_Language, ApmEntitySystemOld::Name_Relation_Qualification_Language, "The language of a value"],
+            [ ApmEntitySystemOld::Relation_MergedInto, ApmEntitySystemOld::Name_Relation_MergedInto, "The entity into which the entity is merged"],
+            [ ApmEntitySystemOld::Relation_MergedBy, ApmEntitySystemOld::Name_Relation_MergedBy, "The Person entity who performed a merge operation"],
         ];
 
-        $relationStatementsTable = $this->getStatementsTableForType(ApmEntitySystem::Type_Relation);
+        $relationStatementsTable = $this->getStatementsTableForType(ApmEntitySystemOld::Type_Relation);
         foreach($relationsToSetup as $setupTuple) {
             [ $entityTid, $name, $description] = $setupTuple;
             $this->setupEntityInStatementsTable($relationStatementsTable,
                 $entityTid,
-                ApmEntitySystem::Type_Relation,
+                ApmEntitySystemOld::Type_Relation,
                 $name,
                 $description,
                 $bootstrapEditorialNote,
@@ -692,26 +692,26 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
         // Set up constraints in standard attributes
 
         $constraintsStatementGroup = $this->getUniqueTid();
-        $bootstrapStatementMetadata = [ ApmEntitySystem::Attribute_StatementEditorialNote, $bootstrapEditorialNote ];
-        $this->makeStatement(ApmEntitySystem::Attribute_Name,
-            ApmEntitySystem::Attribute_OnlyOneAllowed, ApmEntitySystem::Value_True,
+        $bootstrapStatementMetadata = [ ApmEntitySystemOld::Attribute_StatementEditorialNote, $bootstrapEditorialNote ];
+        $this->makeStatement(ApmEntitySystemOld::Attribute_Name,
+            ApmEntitySystemOld::Attribute_OnlyOneAllowed, ApmEntitySystemOld::Value_True,
             $this->systemTid, $bootstrapStatementMetadata, [], $constraintsStatementGroup, $bootstrapTimestamp);
 
-        $this->makeStatement(ApmEntitySystem::Attribute_Description,
-            ApmEntitySystem::Attribute_OnlyOneAllowed, ApmEntitySystem::Value_True,
+        $this->makeStatement(ApmEntitySystemOld::Attribute_Description,
+            ApmEntitySystemOld::Attribute_OnlyOneAllowed, ApmEntitySystemOld::Value_True,
             $this->systemTid, $bootstrapStatementMetadata, [], -1, $bootstrapTimestamp);
 
-        $this->makeStatement(ApmEntitySystem::Attribute_OnlyOneAllowed,
-            ApmEntitySystem::Attribute_OnlyOneAllowed, ApmEntitySystem::Value_True,
+        $this->makeStatement(ApmEntitySystemOld::Attribute_OnlyOneAllowed,
+            ApmEntitySystemOld::Attribute_OnlyOneAllowed, ApmEntitySystemOld::Value_True,
             $this->systemTid, $bootstrapStatementMetadata, [], -1, $bootstrapTimestamp);
 
         // Set up constraints in standard relations
-        $this->makeStatement(ApmEntitySystem::Relation_IsOfType,
-            ApmEntitySystem::Attribute_OnlyOneAllowed, ApmEntitySystem::Value_True,
+        $this->makeStatement(ApmEntitySystemOld::Relation_IsOfType,
+            ApmEntitySystemOld::Attribute_OnlyOneAllowed, ApmEntitySystemOld::Value_True,
             $this->systemTid, $bootstrapStatementMetadata, [], -1, $bootstrapTimestamp);
 
-        $this->makeStatement(ApmEntitySystem::Relation_IsOfType,
-            ApmEntitySystem::Relation_ObjectTypeMustBe, ApmEntitySystem::Type_EntityType,
+        $this->makeStatement(ApmEntitySystemOld::Relation_IsOfType,
+            ApmEntitySystemOld::Relation_ObjectTypeMustBe, ApmEntitySystemOld::Type_EntityType,
             $this->systemTid, $bootstrapStatementMetadata, [], -1, $bootstrapTimestamp);
 
         $this->logger->info("Finished bootstrapping the entity system");
@@ -875,12 +875,12 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
         foreach ($this->typeConfig as $typeConfig) {
             if ($entityTid === $typeConfig['typeTid']) {
                 // it's a type
-                return ApmEntitySystem::Type_EntityType;
+                return ApmEntitySystemOld::Type_EntityType;
             }
             /** @var DataTable $table */
             $table = $typeConfig['statementsTable'];
             if (!in_array($table, $tablesSearched)) {
-                $rows = $table->findRows([ 'subject' => $entityTid, 'predicate' => ApmEntitySystem::Relation_IsOfType, 'cancelled' => 0]);
+                $rows = $table->findRows([ 'subject' => $entityTid, 'predicate' => ApmEntitySystemOld::Relation_IsOfType, 'cancelled' => 0]);
                 if (count($rows) === 1) {
                     return $rows->getFirst()['object'];
                 }
@@ -927,7 +927,7 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
      */
     public function getEntityName(int $entityTid, string|int $type = '') : string {
         // quick processing for entity types
-        if ($type === StandardNames::TYPE_ENTITY_TYPE || $type === ApmEntitySystem::Type_EntityType) {
+        if ($type === StandardNames::TYPE_ENTITY_TYPE || $type === ApmEntitySystemOld::Type_EntityType) {
             // look into type config
             foreach ($this->typeConfig as $typeName => $typeConfig) {
                 if ($entityTid === $typeConfig['typeTid']) {
@@ -972,7 +972,7 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
         } else {
             // look into statements
             $table =$this->typeConfig[$typeName]['statementsTable'];
-            $rows = $table->findRows([ 'subject' => $entityTid, 'predicate' => ApmEntitySystem::Attribute_Name, 'cancelled' => 0]);
+            $rows = $table->findRows([ 'subject' => $entityTid, 'predicate' => ApmEntitySystemOld::Attribute_Name, 'cancelled' => 0]);
             if (count($rows) === 1) {
                 return $rows->getFirst()['value'];
             }
@@ -1062,14 +1062,14 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
         }
 
         $cleanedUpMetadata = [];
-        $cleanedUpMetadata[] = [ ApmEntitySystem::Attribute_StatementTimestamp, $timestamp];
-        $cleanedUpMetadata[] = [ ApmEntitySystem::Relation_StatementEditor, $editedByPersonTid];
+        $cleanedUpMetadata[] = [ ApmEntitySystemOld::Attribute_StatementTimestamp, $timestamp];
+        $cleanedUpMetadata[] = [ ApmEntitySystemOld::Relation_StatementEditor, $editedByPersonTid];
 
         // clean up statement metadata
         foreach($statementMetadata as $metadataTuple) {
             [$metadataPredicate,] = $metadataTuple;
             // TODO: check system config for allowed metadata predicates
-            if ($metadataPredicate === ApmEntitySystem::Attribute_StatementEditorialNote) {
+            if ($metadataPredicate === ApmEntitySystemOld::Attribute_StatementEditorialNote) {
                 $cleanedUpMetadata[] = $metadataTuple;
             }
         }
@@ -1082,13 +1082,13 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
 
         // check restrictions on the predicate
         switch ($predicateType) {
-            case  ApmEntitySystem::Type_Attribute:
+            case  ApmEntitySystemOld::Type_Attribute:
                 $value = strval($valueOrObject);
                 $this->storeStatement($table, $statementGroup, $subjectTid, $predicateTid, $value,
                     $editedByPersonTid, $timestamp, $qualifications, $cleanedUpMetadata);
                 break;
 
-            case ApmEntitySystem::Type_Relation:
+            case ApmEntitySystemOld::Type_Relation:
                 $objectTid = $valueOrObject;
                 if (is_string($valueOrObject)) {
                     $objectTid = $this->getTidByTypeAndName($valueOrObject);
@@ -1205,7 +1205,7 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
      */
     protected function getAttributeValue(int|string $entityTid, int|string $attribute) : string {
         $attributeTid = $this->getTidByTypeAndName($attribute);
-        if ($this->getEntityType($attributeTid) !== ApmEntitySystem::Type_Attribute) {
+        if ($this->getEntityType($attributeTid) !== ApmEntitySystemOld::Type_Attribute) {
             throw new InvalidArgumentException("Given attribute $attribute not an attribute");
         }
         $statements = $this->getEntityStatements($entityTid, $attribute);
@@ -1308,7 +1308,7 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
     public function getTidByTypeAndName(string|int $typeNameOrType, string $name = ''): int
     {
         // quick processing for entity types
-        if ($name !== '' && ($typeNameOrType === StandardNames::TYPE_ENTITY_TYPE || $typeNameOrType === ApmEntitySystem::Type_EntityType)){
+        if ($name !== '' && ($typeNameOrType === StandardNames::TYPE_ENTITY_TYPE || $typeNameOrType === ApmEntitySystemOld::Type_EntityType)){
             try {
                 $this->getTypeTid($name);
             } catch( InvalidTypeException) {
@@ -1490,7 +1490,7 @@ class DataTableApmEntitySystem implements ApmEntitySystem, CacheAware, CodeDebug
         $tids = [];
         /** @var DataTable $table */
         $table = $this->typeConfig[$typeName]['statementsTable'];
-        $rows = $table->findRows( ['predicate' => ApmEntitySystem::Relation_IsOfType, 'object' => $typeTid, 'cancelled' => 0]);
+        $rows = $table->findRows( ['predicate' => ApmEntitySystemOld::Relation_IsOfType, 'object' => $typeTid, 'cancelled' => 0]);
         foreach($rows as $row) {
             $tids[] = $row['subject'];
         }

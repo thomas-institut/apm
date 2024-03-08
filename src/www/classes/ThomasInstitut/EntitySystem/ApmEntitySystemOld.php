@@ -199,7 +199,7 @@ use ThomasInstitut\EntitySystem\Exception\InvalidTypeException;
  *
  *
  */
-interface ApmEntitySystem extends LoggerAwareInterface
+interface ApmEntitySystemOld extends LoggerAwareInterface
 {
 
     /**

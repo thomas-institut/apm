@@ -319,7 +319,15 @@ class ApmSystemManager extends SystemManager {
             ApmMySqlTableName::TABLE_COLLATION_TABLE,
             ApmMySqlTableName::TABLE_VERSIONS_CT,
             ApmMySqlTableName::TABLE_MULTI_CHUNK_EDITIONS,
-            ApmMySqlTableName::TABLE_EDITION_SOURCES
+            ApmMySqlTableName::TABLE_EDITION_SOURCES,
+            ApmMySqlTableName::ES_Statements_Default,
+            ApmMySqlTableName::ES_Statements_Person,
+            ApmMySqlTableName::ES_Statements_Document,
+            ApmMySqlTableName::ES_Statements_Work,
+            ApmMySqlTableName::ES_Cache_Default,
+            ApmMySqlTableName::ES_Cache_Person,
+            ApmMySqlTableName::ES_Cache_Document,
+            ApmMySqlTableName::ES_Cache_Work,
         ];
         
         $tables = [];

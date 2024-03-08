@@ -32,6 +32,8 @@ interface EntitySystem
     const MakeStatementCommand = 'makeStatement';
     const CancelStatementCommand = 'cancelStatement';
 
+
+
     /**
      * Makes a statement and returns the statement's entity id
      *

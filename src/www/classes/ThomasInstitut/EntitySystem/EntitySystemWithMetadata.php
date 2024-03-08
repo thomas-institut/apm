@@ -113,4 +113,15 @@ interface EntitySystemWithMetadata extends EntitySystem
      */
     public function getStatements(int|null $subject, int|null $predicate, string|int|null $object, bool $includeCancelled = false) : array;
 
+
+    /**
+     * @param int|null $subject
+     * @param int|null $predicate
+     * @param string|int|null $object
+     * @param bool $includeCancelled
+     * @return StatementData[]
+     */
+    public function getStatementsData(int|null $subject, int|null $predicate, string|int|null $object, bool $includeCancelled = false) : array;
+    public function getEntityData(int $entity) : EntityData;
+
 }

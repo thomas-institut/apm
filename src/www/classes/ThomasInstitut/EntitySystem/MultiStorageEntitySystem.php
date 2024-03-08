@@ -183,4 +183,44 @@ class MultiStorageEntitySystem implements EntitySystemWithMetadata
         }
         throw  new StatementNotFoundException();
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getStatementsData(?int $subject, ?int $predicate, int|string|null $object, bool $includeCancelled = false): array
+    {
+        $statements = $this->getStatements($subject, $predicate, $object, $includeCancelled);
+
+        $statementsData = [];
+        foreach($statements as $statement) {
+            $statementsData[] = $this->getStatementDataFromStatementArray($statement);
+        }
+
+        return $statementsData;
+    }
+
+    protected function getStatementDataFromStatementArray($statement) : StatementData {
+        [ $stId, $stSubject, $stPredicate, $stObject, $stCancId, $stMetadata, $stCancMetadata] = $statement;
+        $data = new StatementData();
+        $data->id = $stId;
+        $data->subject = $stSubject;
+        $data->predicate = $stPredicate;
+        $data->object = $stObject;
+        $data->cancellationId  = $stCancId ?? -1;
+        $data->statementMetadata = $stMetadata ?? [];
+        $data->cancellationMetadata = $stCancMetadata ?? [];
+        return $data;
+    }
+
+    public function getEntityData(int $entity): EntityData
+    {
+
+        $data = new EntityData();
+
+        $data->id = $entity;
+        $data->statements = $this->getStatementsData($entity, null, null);
+        $data->statementsAsObject = $this->getStatementsData(null, null, $entity);
+
+        return $data;
+    }
 }

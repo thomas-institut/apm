@@ -46,6 +46,7 @@ export class ConfirmDialog {
       body: { type: 'string', default: 'Please confirm.'},
       acceptFunction: { type: 'function', default: (id, formObject) => { }},
       hideOnAccept: { type: 'boolean', default: true},
+      metadataEditor: { type: 'boolean', default: false},
       cancelFunction: { type: 'function', default: (id, formObject) => { }},
       // TODO: change this to reuseForm
       reuseDialog: { type: 'boolean', default: false }
@@ -152,21 +153,9 @@ export class ConfirmDialog {
     }
   }
 
-  hideAcceptButton() {
+  metadataEditor() {
     if (this.status === STATUS_READY) {
       this.acceptButton.hide()
-    }
-  }
-
-  hideCancelButton() {
-    if (this.status === STATUS_READY) {
-      this.cancelButton.hide()
-    }
-  }
-
-  showCancelButton() {
-    if (this.status === STATUS_READY) {
-      this.cancelButton.show()
     }
   }
 
@@ -229,7 +218,15 @@ export class ConfirmDialog {
       postHtml = `</div></div></div>`
     }
 
-    return `${preHtml}
+    if (this.options.metadataEditor) {
+      return `${preHtml}
+            <div class="form-body ${bodyExtraClass}" align="right">
+                <a class="cancel_button card-link cancel-btn">${this.options.cancelButtonLabel}</a>
+                ${this.options.body}
+            </div>           
+            ${postHtml}`
+    } else {
+      return `${preHtml}
             <div class="form-header ${headerExtraClass}">
                 <h5 class="form-title ${titleExtraClass}">${this.options.title}</h5>
             </div>
@@ -241,5 +238,6 @@ export class ConfirmDialog {
                 <button type="button" class="btn btn-primary cancel-btn">${this.options.cancelButtonLabel}</button>
             </div>
             ${postHtml}`
+    }
   }
 }

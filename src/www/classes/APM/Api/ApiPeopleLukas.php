@@ -4,7 +4,6 @@
 
 namespace APM\Api;
 
-use PHPUnit\Util\Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
@@ -53,7 +52,6 @@ class ApiPeopleLukas extends ApiController
 
         $status = 'OK';
         $now = TimeString::now();
-        $people = [];
         $data = [];
         $stringToMatch = $_POST['value'];
 
@@ -69,20 +67,14 @@ class ApiPeopleLukas extends ApiController
         }
 
         for ($id=0; $id<=$num_people; $id++) {
-            $people[] = $this->getMetadataFromSql($id);
-        }
-
-        foreach ($people as $person) {
-            if (similar_text($person['values'][0], $stringToMatch) > 3) {
+            $person = $this->getMetadataFromSql($id);
+            //if (str_contains(strtolower($person['values'][0]), strtolower($stringToMatch))) {
+            if (levenshtein(strtolower($stringToMatch), strtolower($person['values'][0])) < 4) {
                 $data[] = $person;
             }
         }
 
         // OR: MAKE SQL QUERY WITH 'LIKE'
-
-        if ($data === []) {
-            $status = 'Error in Cache!';
-        }
 
         // ApiResponse
         return $this->responseWithJson($response, [

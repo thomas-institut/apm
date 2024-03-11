@@ -41,8 +41,7 @@ export class MetadataEditor {
     this.buttonsSelectorBottom = `${this.options.containerSelector} .buttons_bottom`
     this.datalistSelector = this.options.containerSelector + " #people-datalist"
 
-    // get a list of all people (for having the possibility of choosing entities as values, saving their ids, showing their names)
-    // and setup the metadata editor in the desired mode
+    // get a list of all people (for blocking the creation of entities with a name that already exists)
     this.getPeople(() => {
       switch (this.options.mode) {
         case this.mode.edit:
@@ -486,22 +485,29 @@ export class MetadataEditor {
   makePersonInputForm(selector, inputFormId) {
     let list = "people-datalist"
     let listSelector = '#' + list
-    let inputSelector = this.options.containerSelector + '.' + inputFormId
+    let inputSelector = this.options.containerSelector + ' .' + inputFormId
     let paragraphId = inputFormId + '_paragraph'
 
     $(selector).html(`<p class='${paragraphId} embed-button'>
-            <input class='${inputFormId} form-control' list=${list} placeholder="person" autoComplete="off" style="padding: unset">
-                <datalist id=${list}></datalist></p>`)
+            <input class='${inputFormId} form-control' placeholder="person" autoComplete="off" style="padding: unset">
+                <ul id=${list}></ul></p>`)
 
-    $(inputSelector).on('input', () => {
-      let matchedPeople = this.getMatchingPeople(inputSelector.val())
-      this.addNamesToDatalistForPersonsAsValues(matchedPeople, listSelector)
-    })
-
-    this.makePersonInputFormEvent(inputFormId, listSelector, paragraphId)
+    this.makePersonInputFormEvent(inputFormId, listSelector, paragraphId, inputSelector)
   }
 
-  getMatchingPeople(value) {
+  delay(callback, ms) {
+    let timer = 0;
+    return function() {
+      let context = this, args = arguments;
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        callback.apply(context, args);
+      }, ms || 0);
+    };
+  }
+
+
+  getMatchingPeople(value, callback) {
     $.post(urlGen.apiPeopleGetMatchingPeople(), {'value': value})
         .done((apiResponse) => {
 
@@ -515,7 +521,8 @@ export class MetadataEditor {
           }
           else {
             console.log(apiResponse)
-            return apiResponse.data
+            callback(apiResponse.data)
+            return true
           }
         })
         .fail((status) => {
@@ -535,18 +542,22 @@ export class MetadataEditor {
       let name = person.values[0]
       if (name !== undefined) {
         let nameForValueAttribute = name.replaceAll(' ', '_')
-        $(listSelector).append(`<option value=${nameForValueAttribute} id=${id}>${name}</option>`)
+        $(listSelector).append(`<li value=${nameForValueAttribute} id=${id}><button class="matched-person">${name}</button></li>`)
       }
+
+      // MAKE BUTTON EVENT HERE!!! Remove +-icon, fill input form with button-value, hide people-datalist
     }
+
+    $(listSelector).show()
   }
 
-  makePersonInputFormEvent(inputFormId, listSelector, paragraphSelector) {
+  makePersonInputFormEvent(inputFormId, listSelector, paragraphId, inputSelector) {
 
     let dialog = ''
     let buttonId = inputFormId + '_create-person-from-datalist-button'
     let buttonSelector = this.options.containerSelector + ' .' + buttonId
     inputFormId = this.options.containerSelector + ' .' + inputFormId
-    paragraphSelector = this.options.containerSelector + ' .' + paragraphSelector
+    let paragraphSelector = this.options.containerSelector + ' .' + paragraphId
 
     if (!(this.options.mode === this.mode.dialog)) {
       dialog = this.makeDialog(inputFormId)
@@ -556,18 +567,22 @@ export class MetadataEditor {
       })
     }
 
-    $(inputFormId).on('input', () => {
-      let value = $(inputFormId).val()
-      $(inputFormId).val(value.replaceAll('_', ' '))
-      let valueForDatalist = value.replaceAll(' ', '_')
-      $(buttonSelector).remove()
-      if (value !== '') {
-        if ($(`${listSelector} option[value=${valueForDatalist}]`).attr('id') === undefined) {
-          $(paragraphSelector).append(`<button class=${buttonId}><i class="fa fa-plus" style="color: dodgerblue"></i></button>`)
-          this.makeCreatePersonFromInputFormButtonEvent(buttonSelector, dialog, inputFormId)
-        }
-      }
-    })
+    $(inputFormId).on('input', this.delay(() => {
+          this.getMatchingPeople($(inputSelector).val(), (people) => {
+            this.addNamesToDatalistForPersonsAsValues(people, listSelector)
+            let value = $(inputFormId).val()
+            $(inputFormId).val(value.replaceAll('_', ' '))
+            let valueForDatalist = value.replaceAll(' ', '_')
+            $(buttonSelector).remove()
+            if (value !== '') {
+              if ($(`${listSelector} option[value=${valueForDatalist}]`).attr('id') === undefined) {
+                $(paragraphSelector).append(`<button class=${buttonId}><i class="fa fa-plus" style="color: dodgerblue"></i></button>`)
+                this.makeCreatePersonFromInputFormButtonEvent(buttonSelector, dialog, inputFormId)
+              }
+            }
+          })
+    }, 250)
+    )
   }
 
   makeDialog(inputFormId) {

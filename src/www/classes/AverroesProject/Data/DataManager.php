@@ -1685,19 +1685,23 @@ class DataManager implements  SqlQueryCounterTrackerAware
         }
         $this->getSqlQueryCounterTracker()->incrementCreate();
         try {
+            $handId = $item->handId;
+            if (!is_int($handId)) {
+                $handId = 0;
+            }
             return $this->itemsDataTable->createRowWithTime([
                 'ce_id' => $item->columnElementId,
                 'type' => $item->type,
                 'seq' => $item->seq,
                 'lang' => $item->lang,
-                'hand_id' => $item->handId,
+                'hand_id' => $handId,
                 'text' => $item->theText,
                 'alt_text' => $item->altText,
                 'extra_info' => $item->extraInfo,
                 'length' => $item->length,
                 'target' => $item->target
             ], $time);
-        } catch (InvalidTimeStringException|RowAlreadyExists $e) {
+        } catch (Exception $e) {
             $this->logger->error("Exception creating new item in DB: " . $e->getMessage());
             return -1;
         }
@@ -2279,6 +2283,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         // Force columnElementId in new element's items
         foreach ($newElement->items as $item) {
             $item->columnElementId = $newElement->id;
+
         }
         
         $editScript = ItemArray::getEditScript(

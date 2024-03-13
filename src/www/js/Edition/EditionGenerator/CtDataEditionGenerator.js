@@ -60,6 +60,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
     edition.infoText = `Edition from ctData, chunkId ${this.ctData['chunkId']}, baseWitnessIndex: ${baseWitnessIndex}`
     edition.info = {
       source: 'ctData',
+      tableId: this.ctData['tableId'],
       singleChunk: true,
       chunkId: this.ctData['chunkId'],
       baseWitnessIndex: baseWitnessIndex

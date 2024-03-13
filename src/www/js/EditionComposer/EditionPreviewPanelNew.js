@@ -30,6 +30,7 @@ import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
 import { CanvasTextBoxMeasurer } from '../Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer.mjs'
 import { Dimension } from '../Typesetter2/Dimension.mjs'
 import { SystemStyleSheet } from '../Typesetter2/Style/SystemStyleSheet.mjs'
+import { WebStorageKeyCache } from '../toolbox/KeyCache/WebStorageKeyCache'
 
 const defaultIcons = {
   busy: '<i class="fas fa-circle-notch fa-spin"></i>',
@@ -39,12 +40,13 @@ const defaultIcons = {
 const canvasId = 'edition-preview-canvas-new'
 const downloadPdfButtonId = 'export-pdf-btn-new'
 
+const webCacheDataId = 'epp-20240312.103420';
+
 export class EditionPreviewPanelNew extends PanelWithToolbar {
 
   constructor (options = {}) {
-    super(options)
+    super(options);
     let optionsSpec = {
-      // ctData: { type: 'object', required: true},
       edition: { type: 'object', objectClass: Edition, required: true},
       langDef: { type: 'object', required: true},
       automaticUpdate: { type: 'boolean', default: false},
@@ -59,18 +61,41 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
           return resolvedPromise('')}
         }
     }
-    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'Edition Preview Panel New'})
-    this.options = oc.getCleanOptions(options)
-    // this.ctData = this.options.ctData
-    this.edition = this.options.edition
-    this.measurer = new CanvasTextBoxMeasurer()
-    this.__reloadStyleSheets()
-  }
-
-  __reloadStyleSheets() {
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'Edition Preview Panel New'});
+    this.options = oc.getCleanOptions(options);
+    this.edition = this.options.edition;
+    this.measurer = new CanvasTextBoxMeasurer();
+    this.webCache = new WebStorageKeyCache('local', webCacheDataId);
+    this.cacheKey = this.getStorageKeyFromEdition();
     this.styleSheets = SystemStyleSheet.getStyleSheetsForLanguage(this.edition.lang)
     this.styleSheetIds = Object.keys(this.styleSheets)
-    this.currentStyleSheetId = this.styleSheetIds[0]
+    const initialViewSettings = this.webCache.retrieve(this.cacheKey) ?? {
+      styleSheetId: this.styleSheetIds[0]
+    }
+    this.currentStyleSheetId = initialViewSettings.styleSheetId;
+    this.currentStyleSheet = SystemStyleSheet.getStyleSheet(this.edition.lang, this.currentStyleSheetId)
+  }
+
+  /**
+   * Returns a string that identifies the edition for the
+   * purposes of saving data in web storages.
+   * @return {string}
+   * @private
+   */
+  getStorageKeyFromEdition() {
+    if (this.edition.info.singleChunk) {
+      return `ct-${this.edition.info.tableId}`;
+    } else {
+      return `multiChunk-${this.edition.info.editionId}`
+    }
+  }
+
+  /**
+   * @private
+   */
+  reloadStyleSheets() {
+    this.styleSheets = SystemStyleSheet.getStyleSheetsForLanguage(this.edition.lang)
+    this.styleSheetIds = Object.keys(this.styleSheets)
     this.currentStyleSheet = SystemStyleSheet.getStyleSheet(this.edition.lang, this.currentStyleSheetId)
   }
 
@@ -123,27 +148,36 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
 
 
   setupStyleSelector(){
-    $(`${this.containerSelector} div.styles-div`).html(this.__genStyleDropdownHtml())
+    $(`${this.containerSelector} div.styles-div`).html(this.genStyleDropdownHtml(this.currentStyleSheetId))
     this.styleSelect = $('#style-select')
     this.styleSelect.on("change", () => {
       console.log(`Current option: '${this.styleSelect.val()}'`)
-      this.currentStyleSheetId = this.styleSelect.val()
+      this.currentStyleSheetId = this.styleSelect.val().toString()
       this.currentStyleSheet = SystemStyleSheet.getStyleSheet(this.edition.lang, this.currentStyleSheetId)
+      this.webCache.store(this.cacheKey, {
+        styleSheetId: this.currentStyleSheetId
+      })
       this.updatePreviewButton.removeClass('hidden')
     })
   }
 
-  __genStyleDropdownHtml() {
+  /**
+   * @param {string} currentStyleId
+   * @return {string}
+   * @private
+   */
+  genStyleDropdownHtml(currentStyleId) {
     let optionsHtml = this.styleSheetIds.map( (styleId) => {
-      return `<option value="${styleId}">${this.styleSheets[styleId]['_metaData']['name']}`
-    }).join('')
+      let selected = styleId === currentStyleId ? 'selected' : '';
+      return `<option value="${styleId}" ${selected}>${this.styleSheets[styleId]['_metaData']['name']}`;
+    }).join('');
 
     return `<label for="style-select">Style:</label><select name="style" id="style-select">
         ${optionsHtml}
-    </select>`
+    </select>`;
   }
 
-  __getViewerOptions() {
+  __getViewerOptions(initialScale = 1) {
     // for now, just use the first stylesheet
     let strings = this.currentStyleSheet.getStrings()
     let defaultStyleDef = this.currentStyleSheet.getStyleDef('default')
@@ -166,7 +200,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       editionStyleSheet: this.currentStyleSheet,
       canvasElement: document.getElementById(`${canvasId}`),
       fontFamily:  defaultStyleDef.text.fontFamily,
-      scale: 1,
+      scale: initialScale,
       entrySeparator: strings['entrySeparator'],
       apparatusLineSeparator: strings['lineRangeSeparator'],
       pageWidthInCm: Dimension.str2cm(defaultStyleDef.page.width, defaultFontSize),
@@ -231,26 +265,31 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
   }
 
   updateData(edition) {
-    this.verbose && console.log(`Updating data`)
+    this.verbose && console.log(`Updating data`);
     // this.ctData = ctData
-    this.edition = edition
-    this.__reloadStyleSheets()
-    this.setupStyleSelector()
+    this.edition = edition;
+    this.cacheKey = this.getStorageKeyFromEdition();
+    const savedViewSettings = this.webCache.retrieve(this.cacheKey) ?? {
+      styleSheetId: this.styleSheetIds[0]
+    }
+    this.currentStyleSheetId = savedViewSettings.styleSheetId;
+    this.reloadStyleSheets();
+    this.setupStyleSelector();
     if (this.options.automaticUpdate) {
-      this.updatePreview()
+      this.updatePreview();
     } else {
-      this.updatePreviewButton.removeClass('hidden')
+      this.updatePreviewButton.removeClass('hidden');
     }
   }
 
   updatePreview() {
     let currentButtonHtml = this.updatePreviewButton.html()
-    this.updatePreviewButton.html(`Updating preview... ${this.options.icons.busy}`)
+    this.updatePreviewButton.html(`Updating preview... ${this.options.icons.busy}`);
     // wait for browser to update toolbar span and button
     wait(100).then( () => {
       let profiler = new BasicProfiler('Update preview')
-      profiler.start()
-      this.viewer = new EditionViewerCanvas(this.__getViewerOptions())
+      profiler.start();
+      this.viewer = new EditionViewerCanvas(this.__getViewerOptions(this.viewer.getCurrentScale()));
       this.viewer.render().then( () => {
         profiler.stop()
         this.updatePreviewButton.html(currentButtonHtml).addClass('hidden')

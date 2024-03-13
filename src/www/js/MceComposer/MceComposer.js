@@ -214,16 +214,12 @@ export class MceComposer extends ApmPage {
    })
    this.previewPanel = new EditionPreviewPanelNew({
      containerSelector: `#${previewPanelId}`,
-     // ctData: this.ctData,
      edition: this.edition,
      langDef: this.options.langDef,
      getPdfDownloadUrl: this.genGetPdfDownloadUrlForPreviewPanel(),
      debug: true
    })
-   // this.previewPanel = new PreviewPanel({
-   //   containerSelector:  `#${previewPanelId}`,
-   //   debug: true
-   // })
+
    // tab arrays
    let panelOneTabs = [
      TabConfig.createTabConfig(editionPanelId, 'Edition', this.editionPanel),
@@ -789,6 +785,7 @@ export class MceComposer extends ApmPage {
       this.edition.info = {
         singleChunk: false,
         source: 'multiChunk',
+        editionId: this.editionId,
         chunkId: '',
         baseWitnessIndex: 0
       }

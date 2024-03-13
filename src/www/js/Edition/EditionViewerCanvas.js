@@ -104,6 +104,7 @@ export class EditionViewerCanvas {
     BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(this.geometry.pageWidth), Math.round(this.geometry.pageHeight))
     this.canvasRenderer.setScale(this.options.scale).setPageMargin(pageMarginInCanvas)
     this.canvasMeasurer = new CanvasTextBoxMeasurer()
+    this.currentScale = this.options.scale;
     this.editionDoc = null
   }
 
@@ -139,12 +140,17 @@ export class EditionViewerCanvas {
       this.canvasRenderer.setScale(newScale)
       // this.debug && console.log(`Scale set to ${newScale}`)
       this.render().then( () => {
+        this.currentScale = newScale;
         resolve(newScale)
       }).catch( (err) => {
         console.error(`Error rendering canvas`)
         console.log(err)
       })
     })
+  }
+
+  getCurrentScale() {
+    return this.currentScale;
   }
 
 

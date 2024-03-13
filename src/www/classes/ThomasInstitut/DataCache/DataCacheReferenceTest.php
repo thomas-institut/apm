@@ -22,6 +22,7 @@ namespace ThomasInstitut\DataCache;
 
 use Exception;
 use PHPUnit\Framework\TestCase;
+use Random\RandomException;
 use ThomasInstitut\TimeString\TimeString;
 
 
@@ -32,7 +33,7 @@ use ThomasInstitut\TimeString\TimeString;
  *
  * @package ThomasInstitut\DataCache
  */
-class DataCacheTest extends TestCase
+class DataCacheReferenceTest extends TestCase
 {
 
     const NUM_KEYS_TO_TEST = 100;
@@ -56,7 +57,7 @@ class DataCacheTest extends TestCase
      * @param string $testClassName
      * @throws Exception
      */
-    protected function setDataCache(DataCache $dc, string $testClassName) {
+    protected function setDataCache(DataCache $dc, string $testClassName) : void {
         $this->dataCache = $dc;
         $this->testClassName = $testClassName;
         $this->keyPrefix = 'DataCacheTest:' . $testClassName . ':' . TimeString::compactEncode(TimeString::now()) . ':' . random_int(1,1000) . ':';
@@ -68,17 +69,16 @@ class DataCacheTest extends TestCase
      * @throws KeyNotInCacheException
      * @throws Exception
      */
-    public function runAllTests(DataCache $dc, string $testClassName){
+    public function runAllTests(DataCache $dc, string $testClassName) : void{
         $this->setDataCache($dc, $testClassName);
         $this->basicTest();
         $this->expirationTest();
     }
 
     /**
-     * @throws KeyNotInCacheException
      * @throws Exception
      */
-    public function basicTest() {
+    public function basicTest() : void{
 
         // try to get a value for a non-existent key
         $exceptionCaught= false;
@@ -131,7 +131,7 @@ class DataCacheTest extends TestCase
         }
     }
 
-    public function expirationTest() {
+    public function expirationTest() : void {
 
         $ttl = 1;
         $waitTime = 2;
@@ -156,6 +156,7 @@ class DataCacheTest extends TestCase
     }
 
 
+
     protected function buildTestSet(string $keyPrefix, string $valuePrefix, int $numKeys) : array {
         $valuesTestSet = [];
         for($i = 0; $i < $numKeys; $i++) {
@@ -167,7 +168,8 @@ class DataCacheTest extends TestCase
         return $valuesTestSet;
     }
 
-    protected function randomRead(array $valuesTestSet, $numKeys) {
+    protected function randomRead(array $valuesTestSet, $numKeys): void
+    {
         // read the cache randomly
         for($i = 0; $i < self::READ_ITERATIONS; $i++){
             $testCase = $valuesTestSet[random_int(0, $numKeys-1)];

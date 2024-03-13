@@ -56,14 +56,14 @@ export const arabicDeGruyterAmiri = {
         resetLineNumbersEachPage: true
       },
       paragraph: {
-        lineSkip: "18 pt",
+        lineSkip: "20 pt",
         indent: "0",
         align: 'justified',
         spaceBefore: "0",
         spaceAfter: "0"
       },
       text: {
-        fontFamily: "Amiri",
+        fontFamily: "ApmAmiri",
         fontSize: "12 pt",
         fontStyle: "",
         fontWeight: "",
@@ -147,7 +147,7 @@ export const arabicDeGruyterAmiri = {
         fontSize: "9 pt",
       },
       paragraph: {
-        lineSkip: "15 pt"
+        lineSkip: "16 pt"
       },
       glue: {
         width: "0.35 em",
@@ -157,7 +157,7 @@ export const arabicDeGruyterAmiri = {
     },
     lineRangeSeparator: {
       text: {
-        fontFamily: 'Amiri'
+        fontFamily: 'FreeSerif'
       }
     },
   postLineRangeSeparator: {

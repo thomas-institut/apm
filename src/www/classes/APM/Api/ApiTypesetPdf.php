@@ -20,6 +20,7 @@
 namespace APM\Api;
 
 use APM\System\ApmConfigParameter;
+use APM\ToolBox\HttpStatus;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -50,24 +51,32 @@ class ApiTypesetPdf extends ApiController
             'jsonData',
         ];
         // jsonData should parse into an object with two fields: options and mainTextList,
-        // but it's no use checking it here when the nodejs app will do it and
+        // but it's no use checking it here when the node js app will do it and
         // generate an error if there's any problem
 
-        $inputData = $this->checkAndGetInputData($request, $response, $requiredFields);
-        if (!is_array($inputData)) {
-            return $inputData;
+//        $inputData = $this->checkAndGetInputData($request, $response, $requiredFields);
+//        if (!is_array($inputData)) {
+//            return $inputData;
+//        }
+
+        $inputData = $request->getParsedBody()['jsonData'] ?? null;
+
+        if (is_null($inputData)) {
+            $this->logger->error("$this->apiCallName: No data in request");
+            return $this->responseWithStatus($response, HttpStatus::BAD_REQUEST);
         }
 
-        $this->codeDebug('Json data', [ 'length' => strlen($inputData['jsonData']) ]);
+        $this->codeDebug('Json data', [ 'length' => strlen($inputData) ]);
 
-        $jsonDataHash = hash('sha256', $inputData['jsonData']);
+        $jsonDataHash = hash('sha256', $inputData);
         $tempDir = $this->systemManager->getConfig()[ApmConfigParameter::PDF_RENDERER_TEMP_DIR];
         $tempTypesetterInputFileName = "$tempDir/$jsonDataHash-ts-input.json";
         $tempTypesetterOutputFileName = "$tempDir/$jsonDataHash-ts-output.json";
         $tempTypesetterCmdLineOutputFileName = "$tempDir/$jsonDataHash-ts-cmd_output.txt";
 
-        if (! $this->saveStringToFile($tempTypesetterInputFileName, $inputData['jsonData'])) {
-            return [ 'status' => 'Error', 'error' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE];
+        if (! $this->saveStringToFile($tempTypesetterInputFileName, $inputData)) {
+            $errorData = [ 'status' => 'Error', 'error' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE];
+            return $this->responseWithJson($response, $errorData, HttpStatus::INTERNAL_SERVER_ERROR);
         }
 
         $typesetter = $this->systemManager->getConfig()[ApmConfigParameter::TYPESETTER];
@@ -90,7 +99,8 @@ class ApiTypesetPdf extends ApiController
 
         if ($returnValue !== 1) {
             $this->logger->debug('Typesetter error', [ 'array' => $returnArray, 'value' => $returnValue]);
-            return [ 'status' => 'Error', 'error' => self::API_TYPESETTER_ERROR];
+            $errorData =  [ 'status' => 'Error', 'error' => self::API_TYPESETTER_ERROR];
+            return $this->responseWithJson($response, $errorData, HttpStatus::INTERNAL_SERVER_ERROR);
         }
         $typesetterReturnData = [];
         try {

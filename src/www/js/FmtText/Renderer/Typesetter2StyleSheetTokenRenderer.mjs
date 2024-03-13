@@ -185,7 +185,7 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
     parts.push(...finalsChars)
 
     let returnArray =  this.buildTextBoxArrayFromStringArray(parts, textBox)
-    console.log(`Splitting text box '${theText}' into ${returnArray.length}: ${returnArray.map( tb => `'${tb.getText()}'`).join(' | ')}`)
+    // console.log(`Splitting text box '${theText}' into ${returnArray.length}: ${returnArray.map( tb => `'${tb.getText()}'`).join(' | ')}`)
     return returnArray
   }
 

@@ -3,16 +3,26 @@
 namespace Test\ThomasInstitut\EntitySystem;
 
 use PDO;
+use ThomasInstitut\DataCache\InMemoryDataCache;
+use ThomasInstitut\DataTable\InMemoryDataTable;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\EntitySystem\DataTableStatementStorage;
+use ThomasInstitut\EntitySystem\EntityDataCache\DataTableEntityDataCache;
 use ThomasInstitut\EntitySystem\EntitySystemWithMetadata;
+use ThomasInstitut\EntitySystem\Exception\InvalidArgumentException;
 use ThomasInstitut\EntitySystem\MultiStorageEntitySystem;
+use ThomasInstitut\EntitySystem\Tid;
+use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
+use ThomasInstitut\EntitySystem\TypeStorageConfig;
 
 require_once  __DIR__ .  "./../../test.config.php";
 
 class MultiStorageEntitySystemTest extends EntitySystemWithMetadataReferenceTestSuite
 {
 
+    /**
+     * @throws InvalidArgumentException
+     */
     public function getEntitySystemWithMetadata(): EntitySystemWithMetadata
     {
         global $testConfig;
@@ -60,6 +70,17 @@ EOD;
                 DataTableStatementStorage::CancellationMetadataCol => 'extraCancMetadata'
             ]
         );
-        return new MultiStorageEntitySystem($storage);
+        $entityDataCache = new DataTableEntityDataCache(new InMemoryDataTable());
+        $memCache = new InMemoryDataCache();
+        $defaultConfig = new TypeStorageConfig();
+        $defaultConfig->withType(0)
+            ->withStorage($storage)
+            ->withDataCache($entityDataCache);
+
+        $someInt = Tid::generateUnique();
+        $dataId = "td$someInt-";
+        $prefix = "ms$someInt-";
+
+        return new TypedMultiStorageEntitySystem(self::pEntityType, [ $defaultConfig], $dataId, $memCache, $prefix);
     }
 }

@@ -12,6 +12,8 @@ abstract class EntitySystemWithMetadataReferenceTestSuite extends EntitySystemRe
 
     const eSystem = 1;
 
+    const pEntityType = 5;
+
     const tEntityType = 10;
     const tRelation = 11;
     const tAttribute = 12;

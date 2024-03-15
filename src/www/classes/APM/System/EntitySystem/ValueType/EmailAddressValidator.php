@@ -1,8 +1,8 @@
 <?php
 
-namespace APM\System\EntitySystem\ValueType;
+namespace ThomasInstitut\EntitySystem\ValueType;
 
-use APM\System\EntitySystem\ValueTypeValidator;
+use ThomasInstitut\EntitySystem\ValueTypeValidator;
 
 class EmailAddressValidator implements ValueTypeValidator
 {

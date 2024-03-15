@@ -2,16 +2,16 @@
 
 namespace APM\System\EntitySystem;
 
-use APM\System\EntitySystem\ValueType\BooleanValidator;
-use APM\System\EntitySystem\ValueType\DateValidator;
-use APM\System\EntitySystem\ValueType\EmailAddressValidator;
-use APM\System\EntitySystem\ValueType\GpsCoordinatesValidator;
-use APM\System\EntitySystem\ValueType\IntegerValidator;
-use APM\System\EntitySystem\ValueType\NumberValidator;
-use APM\System\EntitySystem\ValueType\TextValidator;
-use APM\System\EntitySystem\ValueType\TimestampValidator;
-use APM\System\EntitySystem\ValueType\TimeStringValidator;
-use APM\System\EntitySystem\ValueType\UrlValidator;
+use ThomasInstitut\EntitySystem\ValueType\BooleanValidator;
+use ThomasInstitut\EntitySystem\ValueType\DateValidator;
+use ThomasInstitut\EntitySystem\ValueType\EmailAddressValidator;
+use ThomasInstitut\EntitySystem\ValueType\GpsCoordinatesValidator;
+use ThomasInstitut\EntitySystem\ValueType\IntegerValidator;
+use ThomasInstitut\EntitySystem\ValueType\NumberValidator;
+use ThomasInstitut\EntitySystem\ValueType\TextValidator;
+use ThomasInstitut\EntitySystem\ValueType\TimestampValidator;
+use ThomasInstitut\EntitySystem\ValueType\TimeStringValidator;
+use ThomasInstitut\EntitySystem\ValueType\UrlValidator;
 use ThomasInstitut\EntitySystem\ValueType\VagueDate;
 
 /**

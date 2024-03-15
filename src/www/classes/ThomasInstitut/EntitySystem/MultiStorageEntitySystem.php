@@ -2,48 +2,30 @@
 
 namespace ThomasInstitut\EntitySystem;
 
+use ThomasInstitut\EntitySystem\EntityDataCache\EntityNotInCacheException;
 use ThomasInstitut\EntitySystem\Exception\StatementNotFoundException;
 
 /**
- * A minimal entity system with DataTable storage.
- *
+ * An EntitySystemWithMetadata with multiple statement storages and entity data caches
  */
-class MultiStorageEntitySystem implements EntitySystemWithMetadata
+abstract class MultiStorageEntitySystem implements EntitySystemWithMetadata
 {
-    protected StatementStorage $defaultStorage;
 
-    /**
-     * Constructs an entity system instance that stores statements in a set of
-     * StatementStorage objects.
-     *
-     * The
-     *
-     * @param StatementStorage $defaultStorage
-     */
-    public function __construct(StatementStorage $defaultStorage)
-    {
-        $this->defaultStorage = $defaultStorage;
-    }
 
     /**
      * @inheritDoc
      */
-    public function makeStatement(int $subject, int $predicate, int|string $object): int
-    {
-       return $this->makeStatementWithMetadata($subject, $predicate, $object, []);
-    }
+    abstract public function generateUniqueEntityId() : int;
 
     /**
-     * Returns the statement data table in which the given statement must be stored
+     * Returns the statement storage where the given statement must be stored
      *
      * @param int $subject
      * @param int $predicate
      * @param int|string $object
      * @return StatementStorage
      */
-    protected function getStorageForStatement(int $subject, int $predicate, int|string $object) : StatementStorage {
-        return $this->defaultStorage;
-    }
+    abstract protected function getStorageForStatement(int $subject, int $predicate, int|string $object) : StatementStorage;
 
 
     /**
@@ -51,8 +33,31 @@ class MultiStorageEntitySystem implements EntitySystemWithMetadata
      *
      * @return StatementStorage[]
      */
-    protected function getAllStorages() : array {
-        return [ $this->defaultStorage ];
+    abstract protected function getAllStorages(): array;
+
+
+    /**
+     * @throws StatementNotFoundException
+     */
+    abstract protected function getStorageForStatementId(int $statementId) : StatementStorage;
+
+    /**
+     * @param int $entityId
+     * @return EntityData
+     * @throws EntityNotInCacheException
+     */
+    abstract protected function getEntityDataFromCache(int $entityId) : EntityData;
+
+
+    abstract protected function storeEntityDataInCache(int $entityId, EntityData $entityData) : void;
+
+
+    /**
+     * @inheritDoc
+     */
+    public function makeStatement(int $subject, int $predicate, int|string $object): int
+    {
+       return $this->makeStatementWithMetadata($subject, $predicate, $object, []);
     }
 
     /**
@@ -70,10 +75,6 @@ class MultiStorageEntitySystem implements EntitySystemWithMetadata
         return $statements;
     }
 
-    public function generateUniqueEntityId(): int
-    {
-        return Tid::generateUnique();
-    }
 
     /**
      * @inheritDoc
@@ -103,7 +104,7 @@ class MultiStorageEntitySystem implements EntitySystemWithMetadata
                     if (!isset($metadata)) {
                         $metadata = [];
                     }
-                    $storage = $this->getStorageForStatement($subject, $predicate, $object) ?? $this->defaultStorage;
+                    $storage = $this->getStorageForStatement($subject, $predicate, $object);
                     if (!in_array($storage, $storagesInvolved)) {
                         $storagesInvolved[] = $storage;
                     }
@@ -120,7 +121,7 @@ class MultiStorageEntitySystem implements EntitySystemWithMetadata
                         $metadata = [];
                     }
                     try {
-                        $storage = $this->findStorageForStatementId($statementId);
+                        $storage = $this->getStorageForStatementId($statementId);
                     } catch (StatementNotFoundException) {
                         throw new StatementNotFoundException("Statement $statementId not found, in cancel statement command $index");
                     }
@@ -148,7 +149,7 @@ class MultiStorageEntitySystem implements EntitySystemWithMetadata
      */
     public function makeStatementWithMetadata(int $subject, int $predicate, int|string $object, array $metadata): int
     {
-        $storage = $this->getStorageForStatement($subject, $predicate, $object) ?? $this->defaultStorage;
+        $storage = $this->getStorageForStatement($subject, $predicate, $object);
         $statementId = $this->generateUniqueEntityId();
         $storage->storeStatement($statementId, $subject,$predicate, $object, $metadata);
         return $statementId;
@@ -170,19 +171,7 @@ class MultiStorageEntitySystem implements EntitySystemWithMetadata
         throw new StatementNotFoundException();
     }
 
-    /**
-     * @throws StatementNotFoundException
-     */
-    protected function findStorageForStatementId(int $statementId) : StatementStorage {
-        foreach ($this->getAllStorages() as $storage) {
-            try {
-                $storage->retrieveStatement($statementId);
-                return $storage;
-            } catch (StatementNotFoundException $e) {
-            }
-        }
-        throw  new StatementNotFoundException();
-    }
+
 
     /**
      * @inheritDoc
@@ -200,27 +189,29 @@ class MultiStorageEntitySystem implements EntitySystemWithMetadata
     }
 
     protected function getStatementDataFromStatementArray($statement) : StatementData {
-        [ $stId, $stSubject, $stPredicate, $stObject, $stCancId, $stMetadata, $stCancMetadata] = $statement;
+        [ $stId, $stSubject, $stPredicate, $stObject, $stCancellationId, $stMetadata, $stCancellationMetadata] = $statement;
         $data = new StatementData();
         $data->id = $stId;
         $data->subject = $stSubject;
         $data->predicate = $stPredicate;
         $data->object = $stObject;
-        $data->cancellationId  = $stCancId ?? -1;
+        $data->cancellationId  = $stCancellationId ?? -1;
         $data->statementMetadata = $stMetadata ?? [];
-        $data->cancellationMetadata = $stCancMetadata ?? [];
+        $data->cancellationMetadata = $stCancellationMetadata ?? [];
         return $data;
     }
 
     public function getEntityData(int $entity): EntityData
     {
-
-        $data = new EntityData();
-
-        $data->id = $entity;
-        $data->statements = $this->getStatementsData($entity, null, null);
-        $data->statementsAsObject = $this->getStatementsData(null, null, $entity);
-
-        return $data;
+        try {
+            return $this->getEntityDataFromCache($entity);
+        } catch (EntityNotInCacheException) {
+            $data = new EntityData();
+            $data->id = $entity;
+            $data->statements = $this->getStatementsData($entity, null, null);
+            $data->statementsAsObject = $this->getStatementsData(null, null, $entity);
+            $this->storeEntityDataInCache($entity, $data);
+            return $data;
+        }
     }
 }

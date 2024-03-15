@@ -159,9 +159,10 @@ export class ApmDataProxy {
    * @param {{}}payload
    * @param {boolean}forceActualFetch
    * @param {boolean}useRawData
+   * @param {number} ttl
    * @return {Promise<{}>}
    */
-  fetch(url, method = 'GET', payload = [] , forceActualFetch = false, useRawData = false) {
+  fetch(url, method = 'GET', payload = [] , forceActualFetch = false, useRawData = false, ttl = -1) {
     let key = encodeURI(url)
     return this.cachedFetcher.fetch(key, () => {
       switch(method) {
@@ -175,7 +176,7 @@ export class ApmDataProxy {
           return $.post(url, {data: JSON.stringify(payload)})
       }
 
-    }, forceActualFetch)
+    }, forceActualFetch, ttl)
   }
 
   /**
@@ -302,6 +303,14 @@ export class ApmDataProxy {
       dataType = 'default';
     }
     return `${cachePrefix}-${entityType}-${dataType}-${entityId}${attribute === '' ? '' : '-' + attribute}`;
+  }
+
+  /**
+   * Gets edition source information from server
+   * @param tid
+   */
+  getEditionSource(tid) {
+    return this.fetch(urlGen.apiEditionSourcesGet(tid), 'GET', {}, false, false, 600);
   }
 
 

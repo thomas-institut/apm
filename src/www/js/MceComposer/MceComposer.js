@@ -632,12 +632,12 @@ export class MceComposer extends ApmPage {
   /**
    * Adds a single chunk edition to the multi chunk edition
    * @param {number}tableId
-   * @param {string}timeStamp
+   * @param {string}timeString
    */
-  chunkAdd(tableId, timeStamp) {
+  chunkAdd(tableId, timeString) {
     return new Promise ( (resolve, reject) => {
       // first, get the table from the server
-      this.getSingleChunkDataFromServer(tableId, timeStamp).then( async (data) => {
+      this.getSingleChunkDataFromServer(tableId, timeString).then( async (data) => {
         let ctData = data['ctData']
         if (ctData.type !== 'edition') {
           reject(`Table ${tableId} is not an edition`)
@@ -719,6 +719,13 @@ export class MceComposer extends ApmPage {
     })
   }
 
+  /**
+   * Fetches a chunk edition from server
+   * @param tableId
+   * @param timeStamp
+   * @param useCache
+   * @return {Promise<{}>}
+   */
   getSingleChunkDataFromServer(tableId, timeStamp = '', useCache = true) {
     return new Promise( (resolve, reject) => {
       let cacheKey = `SERVER-CHUNK-DATA-${tableId}-${timeStamp}`
@@ -882,89 +889,124 @@ export class MceComposer extends ApmPage {
       }
 
       profiler.stop()
+      console.log(`New Edition`)
+      console.log(this.edition)
       resolve()
     })
   }
 
-  async addChunkToMceData(tableId, ctData, timeStamp) {
+  /**
+   * Adds a chunk to the multi-chunk edition
+   * @param {number}tableId
+   * @param {{}}ctData
+   * @param {string}chunkTimeString
+   * @return {Promise<boolean>}
+   * @private
+   */
+  async addChunkToMceData(tableId, ctData, chunkTimeString) {
     // first, see if the exact chunk edition is already in
     for (let chunkIndex = 0; chunkIndex < this.mceData.chunks.length; chunkIndex++) {
-      let chunk = this.mceData.chunks[chunkIndex]
-      if (chunk.chunkEditionTableId === tableId && chunk.version === timeStamp) {
-        this.errorDetail = `Table ${tableId} already included`
-        return false
+      let chunk = this.mceData.chunks[chunkIndex];
+      if (chunk.chunkEditionTableId === tableId && chunk.version === chunkTimeString) {
+        this.errorDetail = `Table ${tableId} already included`;
+        return false;
       }
     }
 
     // new chunk, check if it's the same language
     if (this.mceData.chunks.length !== 0 && this.mceData.lang !== ctData['lang']) {
-      this.errorDetail = `Wrong language (${ctData['lang']})`
-      return false
+      this.errorDetail = `Wrong language (${ctData['lang']})`;
+      return false;
     }
 
-    // create new chunk
     if (this.mceData.chunks.length === 0) {
       // the first chunk in the edition
-      this.mceData.lang = ctData.lang
+      this.mceData.lang = ctData.lang;
     }
 
     let newChunk =  {
       chunkId: ctData.chunkId,
       chunkEditionTableId: tableId,
-      version: timeStamp,
+      version: chunkTimeString,
       break: defaultChunkBreak,
       lineNumbersRestart: false,
       witnessIndices: [],
       title: ctData.title
     }
-    this.mceData.chunks.push(newChunk)
+    this.mceData.chunks.push(newChunk);
 
     // add it to the end of the list
-    this.mceData.chunkOrder.push(this.mceData.chunks.length -1)
+    this.mceData.chunkOrder.push(this.mceData.chunks.length -1);
 
     // add new witnesses and sigla
     for (let ctDataWitnessIndex = 0; ctDataWitnessIndex < ctData.witnesses.length; ctDataWitnessIndex++) {
-      let ctDataWitnessInfo = ctData.witnesses[ctDataWitnessIndex]
-      if (ctDataWitnessInfo['witnessType'] === 'edition') {
-        newChunk.witnessIndices.push(-1)
-        continue
+      let ctDataWitnessInfo = ctData.witnesses[ctDataWitnessIndex];
+      let witnessId
+      let witnessIndex
+      switch(ctDataWitnessInfo['witnessType']) {
+        case 'edition':
+          newChunk.witnessIndices.push(-1);
+          continue;
+
+        case 'fullTx':
+          witnessId = `${ctDataWitnessInfo['witnessType']}-${ctDataWitnessInfo.docId}-${ctDataWitnessInfo.localWitnessId}`;
+          witnessIndex = this.getWitnessIndexByWitnessId(witnessId);
+          if (witnessIndex === -1) {
+            // new witness
+            let docInfo = this.cache.retrieve(`DOC-${ctDataWitnessInfo.docId}`)
+            let title = `Doc ${ctDataWitnessInfo.docId}`
+            if (docInfo !== null) {
+              title = docInfo.title
+            }
+            let newWitnessSiglum = ctData.sigla[ctDataWitnessIndex];
+            let newWitnessIndex = this.addNewWitnessInfo( {
+              type: 'fullTx',
+              witnessId: witnessId,
+              docId: ctDataWitnessInfo.docId,
+              localWitnessId: ctDataWitnessInfo.localWitnessId,
+              title: title
+            }, newWitnessSiglum);
+            newChunk.witnessIndices.push(newWitnessIndex);
+          } else {
+            // witness already exists
+            newChunk.witnessIndices.push(witnessIndex)
+          }
+          break;
+
+        case 'source':
+          witnessId = ctDataWitnessInfo['ApmWitnessId'];
+          witnessIndex = this.getWitnessIndexByWitnessId(witnessId);
+          if (witnessIndex === -1) {
+            // new witness
+            let [ , tid] = witnessId.split(':');
+            tid = parseInt(tid);
+            let sourceInfo = await this.apmDataProxy.getEditionSource(tid);
+            console.log(`Source info`)
+            console.log(sourceInfo);
+
+            let title = sourceInfo.title;
+
+            let newWitnessSiglum = ctData.sigla[ctDataWitnessIndex];
+            let newWitnessIndex = this.addNewWitnessInfo( {
+              type: 'source',
+              witnessId: witnessId,
+              tid: tid,
+              title: title
+            }, newWitnessSiglum);
+            newChunk.witnessIndices.push(newWitnessIndex);
+          } else {
+            // witness already exists
+            newChunk.witnessIndices.push(witnessIndex)
+          }
+          break;
+
+        default:
+          console.warn(`Unknown witness type '${ctDataWitnessInfo['witnessType']}' found in ctData, witness index ${ctDataWitnessIndex}`);
+          console.log(ctData);
       }
-      let currentWitnessIndex = -1
-      let witnessId = `${ctDataWitnessInfo['witnessType']}-${ctDataWitnessInfo.docId}-${ctDataWitnessInfo.localWitnessId}`
-      for (let cwIndex = 0; cwIndex < this.mceData.witnesses.length; cwIndex++) {
-        let mceWitness = this.mceData.witnesses[cwIndex]
-        if (witnessId === mceWitness.witnessId) {
-          currentWitnessIndex = cwIndex
-          break
-        }
-      }
-      if (currentWitnessIndex === -1) {
-        // new witness
-        let docInfo = this.cache.retrieve(`DOC-${ctDataWitnessInfo.docId}`)
-        let title = `Doc ${ctDataWitnessInfo.docId}`
-        if (docInfo !== null) {
-          title = docInfo.title
-        }
-        this.mceData.witnesses.push( {
-          witnessId: witnessId,
-          docId: ctDataWitnessInfo.docId,
-          localWitnessId: ctDataWitnessInfo.localWitnessId,
-          title: title
-        })
-        currentWitnessIndex = this.mceData.witnesses.length-1
-        newChunk.witnessIndices.push(currentWitnessIndex)
-        // add new siglum
-        let newWitnessSiglum = ctData.sigla[ctDataWitnessIndex]
-        if (this.mceData.sigla.indexOf(newWitnessSiglum) !== -1) {
-          // siglum already exists, just create a new one
-          this.mceData.sigla.push(`W${currentWitnessIndex}`)
-        } else {
-          this.mceData.sigla.push(newWitnessSiglum)
-        }
-      } else {
-        // witness already exists
-        newChunk.witnessIndices.push(currentWitnessIndex)
-      }
+
+
+
     }
     console.log(`MceData updated`)
     console.log(this.mceData)
@@ -980,7 +1022,7 @@ export class MceComposer extends ApmPage {
       console.error(`Error generating edition`)
       console.error(e)
       this.errorDetail = `Error generating edition for table id ${tableId}, chunk ${ctData.chunkId}`
-      return
+      return false;
     }
     // console.log(`Generated edition for table ${tableId}, chunk ${ctData.chunkId}`)
     // console.log(edition)
@@ -991,16 +1033,52 @@ export class MceComposer extends ApmPage {
     return true
   }
 
+  /**
+   * Adds a witness siglum to the multi-chunk edition.
+   *
+   * @param {{}} witnessInfo
+   * @param {string}siglum
+   * @return {number}
+   * @private
+   */
+  addNewWitnessInfo(witnessInfo, siglum)  {
+    this.mceData.witnesses.push(witnessInfo);
+    let witnessIndex = this.mceData.witnesses.length-1;
+
+    // add witness siglum at the end of this.mceData.sigla
+    if (this.mceData.sigla.indexOf(siglum) !== -1) {
+      // siglum already exists, since we don't want duplicate sigla,
+      // we need to create a new unique one that the user will surely
+      // change later on
+      this.mceData.sigla.push(`W${witnessIndex}`)
+    } else {
+      // just push it
+      this.mceData.sigla.push(siglum)
+    }
+    return witnessIndex;
+  }
+
+  /**
+   * Get the witness index for the given witness id
+   *
+   * Return -1 if the witness in not in the multi-chunk edition witness list
+   *
+   * @param {string}witnessId
+   * @return {number}
+   * @private
+   */
+  getWitnessIndexByWitnessId(witnessId) {
+    for (let i = 0; i < this.mceData.witnesses.length; i++) {
+      if (witnessId === this.mceData.witnesses[i]['witnessId']) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
   genGetPdfDownloadUrlForPreviewPanel() {
     return PdfDownloadUrl.genGetPdfDownloadUrlForPreviewPanel()
   }
-
-
-
-
-
-
-
 
 }
 

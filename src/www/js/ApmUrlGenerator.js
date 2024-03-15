@@ -297,6 +297,10 @@ class ApmUrlGenerator {
         return `${this.base}/api/edition/sources/all`
     }
 
+    apiEditionSourcesGet(tid) {
+        return `${this.base}/api/edition/source/get/${tid}`;
+    }
+
     apiWitnessToEdition(witnessId) {
         return `${this.base}/api/witness/${witnessId}/to/edition`;
     }

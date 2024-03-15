@@ -38,7 +38,7 @@ class ApiEditionSources extends ApiController
         try {
             $data = $mgr->getSourceByTid($tid);
         } catch (\InvalidArgumentException $e) {
-            $this->logger->error("Source with UUID  '$tidString' not found", [ 'error' => $e->getMessage()]);
+            $this->logger->error("Source with tid '$tidString' not found", [ 'error' => $e->getMessage()]);
             return $this->responseWithJson($response,  [
                 'tidString' => $tidString,
                 'tid' => $tid,

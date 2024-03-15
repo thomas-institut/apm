@@ -56,6 +56,7 @@ export class AddMarginalia extends PageProcessor {
         resolve(page)
         return
       }
+
       let pageMarginalia = page.getMetadata(MetadataKey.PAGE_MARGINALIA)
       if (pageMarginalia.length === 0) {
         resolve(page)
@@ -66,10 +67,14 @@ export class AddMarginalia extends PageProcessor {
         resolve(page)
         return
       }
-      let mainTextLineData = page.getMetadata(MetadataKey.MAIN_TEXT_LINE_DATA)
+      this.debug && console.log(`Processing marginalia for page ${page.getMetadata(MetadataKey.PAGE_NUMBER)}`);
+      let mainTextLineData = page.getMetadata(MetadataKey.MAIN_TEXT_LINE_DATA);
+      this.debug && console.log(`MainTextLineData`);
+      this.debug && console.log(mainTextLineData);
       let mainTextIndex = mainTextLineData.mainTextListIndex
       if (mainTextIndex === -1) {
         // no main text block, nothing to do
+        this.debug && console.log(`No main text block, nothing to do`)
         resolve(page)
         return
       }

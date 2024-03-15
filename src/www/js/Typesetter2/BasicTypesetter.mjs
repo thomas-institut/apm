@@ -135,7 +135,7 @@ export class BasicTypesetter extends Typesetter2 {
     this.textAreaHeight = this.options.pageHeight - this.options.marginTop - this.options.marginBottom
     this.lineSkip = this.options.lineSkip
     this.minLineSkip = this.options.minLineSkip
-    this.debug = this.options.debug
+    this.debug = this.options.debug;
     // this.debug && console.log(`Options`)
     // this.debug && console.log(this.options)
     this.pageOutputProcessors = []
@@ -651,7 +651,7 @@ export class BasicTypesetter extends Typesetter2 {
                   // Eject the best page we have found
                   this.debug && console.log(`EJECTING Page ${currentPage.pageNumber}`)
                   this.debug && console.log(`===================`)
-                  thePages.push(this.ejectPage(bestPage.list, currentPage.pageNumber, currentPage.firstLine, currentLine))
+                  thePages.push(this.ejectPage(bestPage.list, currentPage.pageNumber, bestPage.firstLine, bestPage.lastLine))
                   pageTypesettingData.push({ firstLine: bestPage.firstLine, lastLine: bestPage.lastLine, badness: bestPage.badness, linesLookedAhead: linesLookedAhead})
                   // backtrack the current line to the best page's last line
                   // the for loop will increment it by 1, so the next line tested will be the one after
@@ -727,6 +727,7 @@ export class BasicTypesetter extends Typesetter2 {
    * @return {TypesetterPage}
    */
   ejectPage(verticalList, pageNumber, firstLine, lastLine) {
+    console.log(`Ejecting page ${pageNumber}: lines ${firstLine} to ${lastLine}`);
     verticalList
       .setShiftX(this.options.marginLeft)
       .setShiftY(this.options.marginTop)

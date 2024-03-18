@@ -76,7 +76,7 @@ export class CriticalApparatusGenerator {
 
       if (ctColumns.every(col => this._isCtTableColumnEmpty(col))) {
         // skip groups consisting of only empty columns
-        this.verbose && console.log(`Group ${columnGroup.from}-${columnGroup.to} consists of empty columns, skipping.`)
+        // this.verbose && console.log(`Group ${columnGroup.from}-${columnGroup.to} consists of empty columns, skipping.`)
         return
       }
 

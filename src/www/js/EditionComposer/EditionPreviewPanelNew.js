@@ -265,7 +265,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
   }
 
   updateData(edition) {
-    this.verbose && console.log(`Updating data`);
+    // this.verbose && console.log(`Updating data`);
     // this.ctData = ctData
     this.edition = edition;
     this.cacheKey = this.getStorageKeyFromEdition();

@@ -281,8 +281,8 @@ export class MceComposer extends ApmPage {
           // here we should actually load data from the server
           console.log(`Can't force right now`)
         }
-        console.log(`Update statuses`)
-        console.log(this.chunksToUpdateStatuses)
+        // console.log(`Update statuses`)
+        // console.log(this.chunksToUpdateStatuses)
         resolve(this.chunksToUpdateStatuses)
       })
     }
@@ -479,7 +479,7 @@ export class MceComposer extends ApmPage {
 
  detectChanges() {
    if (varsAreEqual(this.lastSavedMceData, this.mceData)) {
-     console.log(`No changes`)
+     // console.log(`No changes`)
      return []
    }
    let changes = []

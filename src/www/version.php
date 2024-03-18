@@ -32,7 +32,7 @@ $config[ApmConfigParameter::APP_NAME] = 'APM';
 //   was implemented
 // + Version 0.42.11 still named after Oded, since he also found the bug that caused the update!
 //
-$config[ApmConfigParameter::VERSION] = '0.63.4 (2024-Feb-29)';
+$config[ApmConfigParameter::VERSION] = '0.63.5 (2024-Mar-18)';
 
 //
 // Copyright Notice

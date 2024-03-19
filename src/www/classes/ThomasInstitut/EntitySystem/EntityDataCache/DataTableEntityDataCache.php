@@ -50,7 +50,8 @@ class DataTableEntityDataCache implements EntityDataCache
     protected string $dataIdCol;
     protected string $setAtCol;
     protected string $expiresCol;
-    protected bool $deleteOnInvalidating;
+    protected bool $deleteRowsWhenInvalidating;
+    private bool $nullifyColumnsWhenInvalidating;
 
     /**
      * Constructs a new entity data cache object
@@ -75,11 +76,16 @@ class DataTableEntityDataCache implements EntityDataCache
      * @param array $extraColumnsMap
      * @param array $columnNames
      */
-    public function __construct(DataTable $dataTable, bool $deleteRowsWhenInvalidating = false, array $extraColumnsMap = [], array $columnNames = [])
+    public function __construct(DataTable $dataTable,
+                                array     $extraColumnsMap = [],
+                                bool      $deleteRowsWhenInvalidating = false,
+                                bool      $nullifyColumnsWhenInvalidating = false,
+                                array     $columnNames = [])
     {
         $this->dataTable = $dataTable;
         $this->setLogger(new NullLogger());
-        $this->deleteOnInvalidating = $deleteRowsWhenInvalidating;
+        $this->deleteRowsWhenInvalidating = $deleteRowsWhenInvalidating;
+        $this->nullifyColumnsWhenInvalidating = $nullifyColumnsWhenInvalidating;
 
         $this->idCol = self::IdColumn;
         $this->dataCol = self::DataColumn;
@@ -180,7 +186,10 @@ class DataTableEntityDataCache implements EntityDataCache
         ];
 
         foreach($this->columnMap as $colName => $generator) {
-            $row[$colName] = $generator($entityData);
+//            print "Getting value for entity $tid, column $colName...";
+            $value = $generator($entityData);
+//            print "value is $value\n";
+            $row[$colName] = $value;
         }
 
         if ($createNewRow) {
@@ -238,12 +247,14 @@ class DataTableEntityDataCache implements EntityDataCache
             // already invalidated, nothing to do
             return;
         }
-        if ($this->deleteOnInvalidating) {
+        if ($this->deleteRowsWhenInvalidating) {
             $this->dataTable->deleteRow($theRow[$this->idCol]);
             return;
         }
-        foreach(array_keys($this->columnMap) as $columnName) {
-            $theRow[$columnName] = null;
+        if ($this->nullifyColumnsWhenInvalidating) {
+            foreach(array_keys($this->columnMap) as $columnName) {
+                $theRow[$columnName] = null;
+            }
         }
         $theRow[$this->dataIdCol] = null;
         try {
@@ -264,7 +275,7 @@ class DataTableEntityDataCache implements EntityDataCache
         $now = time();
         foreach($allRows as $row) {
             if (!$this->isDataInRowValid($row, $dataId, $now)) {
-                if ($this->deleteOnInvalidating) {
+                if ($this->deleteRowsWhenInvalidating) {
                     $this->dataTable->deleteRow($row[$this->idCol]);
                 } else {
                     foreach(array_keys($this->columnMap) as $columnName) {

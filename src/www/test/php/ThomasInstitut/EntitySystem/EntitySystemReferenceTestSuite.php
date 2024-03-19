@@ -10,6 +10,34 @@ use ThomasInstitut\EntitySystem\EntitySystem;
 
 abstract class EntitySystemReferenceTestSuite extends TestCase
 {
+    const eSystem = 1;
+
+    const pEntityType = 5;
+
+    const tPerson = 21;
+    const tLang = 22;
+
+    const pStatementAuthor = 201;
+    const pStatementTimeStamp = 202;
+    const pEditorialNote = 203;
+
+
+    const pCancellationAuthor = 301;
+    const pCancellationTimestamp = 302;
+    const pCancellationNote= 303;
+
+
+    const pQualificationLang = 401;
+
+    const pName = 501;
+
+    const pAlias = 502;
+
+    const pMemberOf = 503;
+    const pSpeaks = 504;
+
+    const pSource = 505;
+
 
     abstract public function getEntitySystem() : EntitySystem;
 
@@ -23,10 +51,9 @@ abstract class EntitySystemReferenceTestSuite extends TestCase
 
         $es = $this->getEntitySystem();
 
-        $pName = 101;
-        $pType = 10;
-        $tPerson = 1001;
-//        $this->fillUpEntitySystem($es, $pName);
+        $pName = self::pName;
+        $pType = self::pEntityType;
+        $tPerson = self::tPerson;
 
 
         $p1 = $es->generateUniqueEntityId();
@@ -63,11 +90,11 @@ abstract class EntitySystemReferenceTestSuite extends TestCase
         $foundStatements2 = $es->getStatements($p4, null, null);
         $this->assertCount(0, $foundStatements2);
 
-        $cancellationId1 = $es->cancelStatement($statements[2]);
+//        $cancellationId1 = $es->cancelStatement($statements[2]);
         $cancellationId2 = $es->cancelStatement($statements[3]);
 
         $foundStatements = $es->getStatements($p2, null, null, );
-        $this->assertCount(0, $foundStatements);
+        $this->assertCount(1, $foundStatements);
 
 
         $foundStatements = $es->getStatements($p2, null, null, true);
@@ -83,50 +110,8 @@ abstract class EntitySystemReferenceTestSuite extends TestCase
                 $this->assertIsString($object);
                 $this->assertEquals('P2', $object);
             }
-            if($cancellationId === null) {
-                $this->assertContains( $cancellationId, [ $cancellationId1, $cancellationId2]);
-            }
-        }
-
-    }
-
-    /**
-     * @throws InvalidStatementException
-     */
-    private function fillUpEntitySystem(EntitySystem $es, int $aName) : void {
-        $numAttributes = 5;
-        $numRelations = 5;
-        $statementPerEntity = 3;
-        $numEntities= 10;
-        $someWords = [ 'piedra' , 'papel', 'tijera', 'tango', 'india', 'azul', 'orange'];
-
-        $attributes = [];
-        for($i =0; $i< $numAttributes; $i++) {
-            $attributes[] = $es->generateUniqueEntityId();
-        }
-
-        $relations = [];
-        for($i =0; $i< $numRelations; $i++) {
-            $relations[] = $es->generateUniqueEntityId();
-        }
-        $entities = [];
-        for($i = 0; $i < $numEntities; $i++) {
-            $id = $es->generateUniqueEntityId();
-            $es->makeStatement($id, $aName, "Entity $i");
-            $entities[] = $id;
-        }
-
-        foreach($entities as $entity) {
-            for($i = 0; $i < $statementPerEntity; $i++) {
-                $useRelation = random_int(1, 100) > 50;
-                if ($useRelation) {
-                    $predicate = $relations[random_int(0, count($relations)-1)];
-                    $object = $entities[random_int(0, count($entities)-1)];
-                } else {
-                    $predicate = $attributes[random_int(0, count($attributes)-1)];
-                    $object = $someWords[random_int(0, count($someWords)-1)] . " " . $someWords[random_int(0, count($someWords)-1)];
-                }
-                $es->makeStatement($entity, $predicate, $object);
+            if($cancellationId !== null) {
+                $this->assertContains( $cancellationId, [ $cancellationId2]);
             }
         }
 

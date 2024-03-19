@@ -36,4 +36,14 @@ class EntityData
         return null;
     }
 
+    public function getAllObjectsForPredicate(int $predicate) : array {
+        $objects = [];
+        foreach($this->statements as $statement) {
+            if ($statement->predicate === $predicate) {
+                $objects[] =  $statement->object;
+            }
+        }
+        return $objects;
+    }
+
 }

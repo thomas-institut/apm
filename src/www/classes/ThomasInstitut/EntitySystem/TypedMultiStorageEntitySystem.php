@@ -3,7 +3,6 @@
 namespace ThomasInstitut\EntitySystem;
 
 
-use LogicException;
 use RuntimeException;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
@@ -20,14 +19,15 @@ use ThomasInstitut\EntitySystem\Exception\StatementNotFoundException;
  * according to the object of a specific relation that each entity
  * has.
  *
- * In the context of this class, this predicate is called
+ * In the context of this class, this defining predicate is called
  * the entity's type, but in principle it can be any predicate.
  *
  * In the constructor, the different statement storages and entity caches are
  * assigned to individual types, with a default storage and cache for unassigned
  * types.
  *
- *
+ * An entity is considered to exist in the system if it is the subject of any
+ * statement.
  *
  */
 class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
@@ -52,7 +52,7 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
 
     /**
      * Constructs an entity system using the given $typePredicate as the predicate
-     * that assigns a type to an entity and storage and cache configuration
+     * that assigns a type to an entity and using the storage and cache configuration
      * given in the config array.
      *
      * The $config array consists of an element for each entity type that should be stored in a different storage or
@@ -63,8 +63,8 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
      *
      * All caches use the given $cacheDataId.
      *
-     * The class requires also a fast in-memory cache for efficient entity type lookups, which can be with other
-     * classes by given a unique prefix for all entries.
+     * The class requires also a fast in-memory cache for efficient entity type lookups. This cache can be
+     * shared among classes or applications.
      *
      * @param int $typePredicate
      * @param TypeStorageConfig[] $typeConfig
@@ -84,6 +84,8 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
 
 
     /**
+     * Checks and cleans up the configuration array.
+     *
      * @param TypeStorageConfig[] $config
      * @return array
      * @throws InvalidArgumentException
@@ -92,34 +94,32 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
         /** @var TypeStorageConfig[] $typeConfig */
         $typeConfig = [];
         foreach ($config as $configEntry) {
-            $typeConfig[$configEntry->type] = $config;
+            $typeConfig[$configEntry->type] = $configEntry;
         }
         if (!isset($typeConfig[0])) {
             throw new InvalidArgumentException("No default configuration found");
         }
         $defaultConfig = $typeConfig[0];
-
-        $defaultTtl = 0;
-        if (!is_null($defaultConfig->ttl)) {
-            $defaultTtl = $defaultConfig->ttl;
+        if ($defaultConfig->ttl === null) {
+            $defaultConfig->ttl = 0;
         }
+
+        $defaultTtl = $defaultConfig->ttl;
 
         foreach(array_keys($typeConfig) as $type) {
             if ($type === 0 || !$typeConfig[$type]->useCache) {
                 continue;
             }
-
             if (is_null($typeConfig[$type]->ttl)) {
                 $typeConfig[$type]->withTtl($defaultTtl);
             }
         }
-
         return $typeConfig;
     }
 
 
     private function getMemCacheKey(int $tid) : string {
-        return "$this->memCachePrefix-T-$tid";
+        return  $this->memCachePrefix !== '' ?  "$this->memCachePrefix-T-$tid" : "T-$tid";
     }
 
     /**
@@ -150,7 +150,7 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
      *
      *   [  predicate, objectOrValue ]
      *
-     * the subject is the newly created entity.
+     * The subject of these statements is the newly created entity.
      *
      * The given $metadata is used for all statements.
      *
@@ -234,7 +234,9 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
     protected function getAllStorages() : array {
         $storages = [];
         foreach($this->typeConfig as $config) {
-            $storages[] = $config->storage;
+            if (!in_array($config->storage, $storages, true)) {
+                $storages[] = $config->storage;
+            }
         }
         return $storages;
     }
@@ -262,7 +264,7 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
        $entityData = parent::getEntityData($entity);
 
        if(count($entityData->statements) === 0) {
-           throw new EntityDoesNotExistException();
+           throw new EntityDoesNotExistException("Entity $entity does not exist");
        }
        return $entityData;
    }
@@ -281,7 +283,8 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
      */
     protected function getStorageForStatement(int $subject, int $predicate, int|string $object): StatementStorage
     {
-        $subjectType = $this->getEntityType($subject);
+
+        $subjectType = $predicate ===  $this->typePredicate ? $object : $this->getEntityType($subject);
         $typeConfig = $this->typeConfig[$subjectType] ?? $this->typeConfig[0];
         return $typeConfig->storage;
     }
@@ -300,7 +303,7 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
        throw new StatementNotFoundException();
   }
 
-  public function getAllTidsForType(int $type) : array {
+  public function getAllEntitiesForType(int $type) : array {
        $storage = $this->getStatementStorageForType($type);
        $statements = $storage->findStatements(null, $this->typePredicate, $type);
        $tids = [];
@@ -318,29 +321,156 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
     public function cancelStatementWithMetadata(int $statementId, $metadata): int
   {
       $statementDataBeforeCancellation = $this->getStatementById($statementId);
-
       $cancellationId = parent::cancelStatementWithMetadata($statementId, $metadata);
-      try {
-          $subjectType = $this->getEntityType($statementDataBeforeCancellation->subject);
 
-          $subjectCache = $this->getEntityDataCacheForType($subjectType);
-          if (!is_null($subjectCache)) {
-              $subjectCache->invalidateData($statementDataBeforeCancellation->subject);
-          }
-          if (is_int($statementDataBeforeCancellation->object)) {
-              $objectType = $this->getEntityType($statementDataBeforeCancellation->object);
-              $objectCache = $this->getEntityDataCacheForType($objectType);
-              if (!is_null($objectCache)) {
-                  $objectCache->invalidateData($statementDataBeforeCancellation->object);
-              }
-          }
-      } catch (EntityDoesNotExistException $e) {
-          // should never happen
-          throw new RuntimeException("Entity does not exist exception: " . $e->getMessage());
+      $entitiesInvolved = [ $statementDataBeforeCancellation->subject];
+      if (is_int($statementDataBeforeCancellation->object)) {
+          $entitiesInvolved[] = $statementDataBeforeCancellation->object;
       }
+      $this->invalidateCacheForMultipleEntities($entitiesInvolved);
 
       return  $cancellationId;
   }
+
+    public function makeStatementWithMetadata(int $subject, int $predicate, int|string $object, array $metadata): int
+    {
+       $statementId = parent::makeStatementWithMetadata($subject, $predicate, $object, $metadata);
+
+       $entitiesInvolved = [ $subject];
+       if (is_int($object)) {
+           $entitiesInvolved[] = $object;
+       }
+
+       $this->invalidateCacheForMultipleEntities($entitiesInvolved);
+
+       return $statementId;
+    }
+
+
+    /**
+     * @inheritDoc
+     * @throws StatementNotFoundException
+     * @throws EntityDoesNotExistException
+     */
+    public function makeMultipleStatementAndCancellations(array $statementsAndCancellations): array
+    {
+        $storagesInvolved = [];
+        $commandsPerStorage = [];
+        $returnArray = [];
+        $entitiesInvolved = [];
+
+        foreach ($statementsAndCancellations as $index => $command) {
+            $commandName = $command[0];
+
+            switch($commandName) {
+
+                case EntitySystem::MakeStatementCommand:
+                    [ , $subject, $predicate, $object, $metadata] = $command;
+                    if (!isset($metadata)) {
+                        $metadata = [];
+                    }
+                    try {
+                        $storage = $this->getStorageForStatement($subject, $predicate, $object);
+                    } catch (EntityDoesNotExistException $e) {
+                        throw new EntityDoesNotExistException("Entity $subject in statement index $index does not exist");
+                    }
+                    if (!in_array($storage, $storagesInvolved)) {
+                        $storagesInvolved[] = $storage;
+                    }
+                    $storageIndex = array_search($storage, $storagesInvolved);
+                    $statementId = $this->generateUniqueEntityId();
+                    $commandsPerStorage[$storageIndex][] = [ StatementStorage::StoreStatementCommand,
+                        $statementId, $subject, $predicate, $object, $metadata];
+                    $returnArray[] = $statementId;
+                    if (!in_array($subject, $entitiesInvolved)) {
+                        $entitiesInvolved[] = $subject;
+                    }
+
+                    if (is_int($object) && !in_array($object, $entitiesInvolved)) {
+                        $entitiesInvolved[] = $object;
+                    }
+                    break;
+
+                case EntitySystem::CancelStatementCommand:
+                    [ , $statementId, $metadata] = $command;
+                    if (!isset($metadata)) {
+                        $metadata = [];
+                    }
+                    $statementToCancel = null;
+                    $storage = null;
+                    foreach ($this->getAllStorages() as $storageToTry) {
+                        try {
+                            $statementToCancel = $storageToTry->retrieveStatement($statementId);
+                            $storage = $storageToTry;
+                        } catch (StatementNotFoundException) {
+                        }
+                    }
+
+                    if ($statementToCancel === null) {
+                        throw new StatementNotFoundException("Statement $statementId not found, in cancel statement command $index");
+                    }
+
+                    if ($storage === null) {
+                        // should never happen
+                        throw new RuntimeException("Null storage for cancel statement index $index");
+                    }
+
+                    if (!in_array($storage, $storagesInvolved)) {
+                        $storagesInvolved[] = $storage;
+                    }
+                    $storageIndex = array_search($storage, $storagesInvolved);
+                    $cancellationId = $this->generateUniqueEntityId();
+                    $commandsPerStorage[$storageIndex][] = [ StatementStorage::CancelStatementCommand ,
+                        $statementId, $cancellationId, $metadata];
+                    $returnArray[] = $cancellationId;
+                    [ , $subject, ,$object] = $statementToCancel;
+                    if (!in_array($subject, $entitiesInvolved)) {
+                        $entitiesInvolved[] = $subject;
+                    }
+
+                    if (is_int($object) && !in_array($object, $entitiesInvolved)) {
+                        $entitiesInvolved[] = $object;
+                    }
+                    break;
+            }
+        }
+
+        foreach($storagesInvolved as $storageIndex => $storage) {
+            $storage->storeMultipleStatementsAndCancellations($commandsPerStorage[$storageIndex]);
+        }
+
+        $this->invalidateCacheForMultipleEntities($entitiesInvolved);
+
+        return $returnArray;
+    }
+
+
+    /**
+     * @param int[] $entities
+     * @return void
+     */
+    protected function invalidateCacheForMultipleEntities(array $entities) : void {
+        foreach ($entities as $entity) {
+            try {
+                $type = $this->getEntityType($entity);
+            } catch (EntityDoesNotExistException) {
+                continue;
+            }
+            $typeConfig = $this->typeConfig[$type] ?? $this->typeConfig[0];
+            if ($typeConfig->useCache) {
+                $typeConfig->entityDataCache->invalidateData($entity);
+            }
+        }
+
+        // get the data again to refresh the cache
+//        foreach ($entities as $entity) {
+//            try {
+//                $this->getEntityData($entity);
+//            } catch (EntityDoesNotExistException $e) {
+//                // normally won't happen, but no problem if it does
+//            }
+//        }
+    }
 
 
     public function generateUniqueEntityId(): int
@@ -370,6 +500,10 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
             return;
         }
         $type = $entityData->getObjectForPredicate($this->typePredicate);
+
+        if ($type === null) {
+            return;
+        }
 
         $typeConfig = $this->typeConfig[$type] ?? $this->typeConfig[0];
         if ($typeConfig->useCache) {

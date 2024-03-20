@@ -1,8 +1,9 @@
 <?php
+namespace APM\System\EntitySystem\ValueType;
 
-namespace ThomasInstitut\EntitySystem\ValueType;
 
-use ThomasInstitut\EntitySystem\ValueTypeValidator;
+
+use APM\System\EntitySystem\ValueTypeValidator;
 use ThomasInstitut\TimeString\TimeString;
 
 class TimeStringValidator implements ValueTypeValidator

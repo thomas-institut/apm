@@ -4,11 +4,17 @@ namespace APM\System\EntitySystem;
 
 class PredicateDefinition
 {
-
     public int $tid = -1;
     public int $type = -1;
-
     public string $name = '';
+
+    /**
+     * If true, only one object/value for this predicate is allowed for each entity.
+     * For example, the predicate EntityName.
+     *
+     * @var bool
+     */
+    public bool $singleProperty = false;
 
     /**
      * List of strings allowed as values. If null, any value is allowed.
@@ -47,6 +53,11 @@ class PredicateDefinition
      */
     public ?array $allowedSubjectTypes = null;
 
+    /**
+     * Reverse predicate. E.g. for  rChild the reverse is rParent
+     * @var int|null
+     */
+    public ?int $reversePredicate = null;
 
     /**
      * If true and the predicate has a reverse, this predicate is the only one that must be
@@ -54,17 +65,20 @@ class PredicateDefinition
      *
      * Normally the relation that can be stated more than once for an entity should be the primary.
      * For example in the rChild / rParent pair, rChild should be primary so that all children
-     * for a Person are statement with that person as subject.
+     * for a Person are statements with that person as subject. One possible exception is
+     * geographical relations such as the pair rInsideOf / rContains, in which it seems more logical
+     * to have rInsideOf as primary.
+     *
      * @var bool
      */
     public bool $isPrimaryRelation = true;
 
     /**
-     * Reverse predicate. E.g. for  rChild the reverse is rParent
-     * @var int|null
+     * If true, statement with this predicate can be cancelled, which is the norm.
+     *
+     * However, some predicates like EntityType should never be cancelled.
+     * @var bool
      */
-    public ?int $reversePredicate = null;
-
     public bool $canBeCancelled = true;
 
 

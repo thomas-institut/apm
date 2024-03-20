@@ -12,6 +12,7 @@ use ThomasInstitut\EntitySystem\EntitySystemWithMetadata;/**
  *
  *   - System entities cannot be subjects in normal statements. All data about system entities is predefined
  *     and cannot be modified by normal methods.
+ *
  *   - Only predefined predicates are allowed in statements. Furthermore, a distinction is made between
  *     relations and attributes. A relation is a predicate whose object is an entity, and an attribute is
  *     a predicate whose object is a literal value. The system will enforce the correct object.
@@ -64,19 +65,18 @@ use ThomasInstitut\EntitySystem\EntitySystemWithMetadata;/**
  *          [Relation:statementAuthor]: the object must be an [EntityType:Person] entity (required)
  *          [Attribute:statementTimestamp]: the value must be of [ValueType:timestamp] (required)
  *          [Attribute:statementEditorialNote]: a textual note to the statement
+ *
  *   - An entity that stands for the system itself is predefined: [system]. It is
  *     used as the author for all the statements concerning the predefined entities, attributes and relations
- *     described here, and may be used for other statements as well.
+ *     described here, and may be used for other statements as well. These "system" statements, however, are
+ *     mostly inferred from constants in the code, not stored in the normal statement storages.
  *
  *   - Attribute values may be restricted to specific types, for example, [Attribute:dateOfBirth] may be restricted
  *     to be of [ValueType:date]. The relation [Relation:valueMustBeOfType] is predefined and is used to state these
  *     restrictions.
  *
  *   - Specific attributes and relations can be restricted to have a single value or object. For example,
- *     there can be only one current [Attribute:name] statement for every entity. This restriction is stated
- *     with the attribute [Attribute:onlyOneAllowed] (applied to the attribute entity), which has a
- *     [ValueType:boolean] value. By default, all attributes can have multiple values, with or without date and
- *     sequence qualifications.
+ *     there can be only one current [Attribute:name] statement for every entity.
  *
  *   - Entities cannot be deleted, but can be merged into others.
  *
@@ -104,19 +104,86 @@ interface ApmEntitySystemInterface
     const ValueFalse = '0';
     const ValueTrue = '1';
 
-    public function createEntity(int $entityType, string $name, int $authorTid, string $description = '', int $ts = -1): int;
+    const SystemEntity = 1;
 
+    /**
+     * Creates an entity of the given type, name and description.
+     *
+     * @param int $entityType
+     * @param string $name
+     * @param int $authorTid
+     * @param string $description
+     * @param int $ts
+     * @return int
+     * @throws InvalidEntityTypeException
+     */
+    public function createEntity(int $entityType, string $name, string $description, int $authorTid, int $ts = -1): int;
+
+    /**
+     * Returns entity data for the given entity
+     * @param int $entity
+     * @return EntityData
+     * @throws EntityDoesNotExistException
+     */
     public function getEntityData(int $entity) : EntityData;
 
-    public function makeStatement(int    $subject, int $predicate, int|string $object, int $author,
+
+    /**
+     * Returns an entity's type
+     * @param int $entity
+     * @return int
+     * @throws EntityDoesNotExistException
+     */
+    public function getEntityType(int $entity) : int;
+
+
+    /**
+     * Makes a statement
+     *
+     * @param int $subject
+     * @param int $predicate
+     * @param int|string $object
+     * @param int $author
+     * @param string $editorialNote
+     * @param array $extraMetadata
+     * @param int $ts
+     * @return int
+     */
+    public function makeStatement(int $subject, int $predicate, int|string $object, int $author,
                                   string $editorialNote = '', array $extraMetadata = [], int $ts = -1) : int;
 
+    /**
+     * Cancels a statement
+     * @param int $statementId
+     * @param int $author
+     * @param int $ts
+     * @param string $editorialNote
+     * @return int
+     * @throws StatementNotFoundException
+     * @throws StatementAlreadyCancelledException
+     * @throws PredicateCannotBeCancelledException
+ */
     public function cancelStatement(int $statementId, int $author, int $ts = -1, string $editorialNote = '') : int;
+
+
+    /**
+     * Merges an entity into another
+     *
+     * @param int $entity
+     * @param int $mergeInto
+     * @param int $author
+     * @param string $editorialNote
+     * @param int $ts
+     * @return void
+     * @throws EntityDoesNotExistException
+     * @throws EntityAlreadyMergedException
+     */
+    public function mergeEntity(int $entity, int $mergeInto, int $author, string $editorialNote, int $ts = -1) : void;
 
     /**
      * @param int $type
      * @return int[]
      */
-    public function getEntityTidsByType(int $type) : array;
+    public function getAllEntitiesForType(int $type) : array;
 
 }

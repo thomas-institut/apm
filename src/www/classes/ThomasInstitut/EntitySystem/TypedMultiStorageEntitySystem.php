@@ -186,35 +186,6 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
             ];
         }
 
-//        $commands[] = [
-//            StatementStorage::StoreStatementCommand,
-//            $this->generateUniqueEntityId(),
-//            $newEntityTid,
-//            SystemPredicate::EntityName,
-//            $name,
-//            $metadata
-//        ];
-//
-//        $commands[] = [
-//            StatementStorage::StoreStatementCommand,
-//            $this->generateUniqueEntityId(),
-//            $newEntityTid,
-//            SystemPredicate::EntityCreationTimestamp,
-//            $ts,
-//            $metadata
-//        ];
-//
-//        if ($description !== '') {
-//            $commands[] = [
-//                StatementStorage::StoreStatementCommand,
-//                $this->generateUniqueEntityId(),
-//                $newEntityTid,
-//                SystemPredicate::EntityDescription,
-//                $description,
-//                $metadata
-//            ];
-//        }
-
         $typeConfig = $this->typeConfig[$entityType] ?? $this->typeConfig[0];
         $typeConfig->storage->storeMultipleStatementsAndCancellations($commands);
 

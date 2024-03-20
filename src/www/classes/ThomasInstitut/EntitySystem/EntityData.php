@@ -29,7 +29,7 @@ class EntityData
      */
     public function getObjectForPredicate(int $predicate) : int|string|null {
         foreach($this->statements as $statement) {
-            if ($statement->predicate === $predicate) {
+            if ($statement->predicate === $predicate && !$statement->isCancelled()) {
                 return $statement->object;
             }
         }
@@ -39,7 +39,7 @@ class EntityData
     public function getAllObjectsForPredicate(int $predicate) : array {
         $objects = [];
         foreach($this->statements as $statement) {
-            if ($statement->predicate === $predicate) {
+            if ($statement->predicate === $predicate && !$statement->isCancelled()) {
                 $objects[] =  $statement->object;
             }
         }

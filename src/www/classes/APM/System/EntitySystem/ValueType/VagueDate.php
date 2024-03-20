@@ -1,6 +1,10 @@
 <?php
 
-namespace ThomasInstitut\EntitySystem\ValueType;
+namespace APM\System\EntitySystem\ValueType;
+
+
+
+use APM\System\EntitySystem\ValueTypeValidator;
 
 class VagueDate implements ValueTypeValidator
 {
@@ -60,7 +64,7 @@ class VagueDate implements ValueTypeValidator
     /**
      * @inheritDoc
      */
-    static public function stringIsValid(string $str): bool
+    public function stringIsValid(string $str): bool
     {
         $testDate = self::fromCompactString($str);
 

@@ -9,7 +9,7 @@ class GeoPredicate implements PredicateDefiner
     //
     // Tids 2001-2999
     //
-    const InsideOf = 2001;  // e.g. ThomasInstitutBuilding (place) isIn Cologne (area)
+    const InsideOf = 2001;  // e.g. ThomasInstitutBuilding (place) InsideOf Cologne (area)
     const Contains = 2002;
     const Address = 2003;
     const Gps = 2004;
@@ -42,6 +42,7 @@ class GeoPredicate implements PredicateDefiner
             case self::Gps:
                 $def->type = EntityType::Attribute;
                 $def->allowedObjectTypes = [ ValueType::GpsCoordinates];
+                $def->singleProperty = true;
                 break;
 
 

@@ -50,6 +50,9 @@ class ApmEntitySystemKernel
             $tids = $definer::getDefinedTids();
             foreach($tids as $name => $tid) {
                 $def = $definer->getPredicateDefinition($tid);
+                if ($def === null) {
+                    throw new LogicException("Definer for predicate '$name' is null");
+                }
                 $def->name = $name;
                 $this->predicateDefinitions[$tid]  = $def;
             }
@@ -57,9 +60,12 @@ class ApmEntitySystemKernel
 
         $this->entityTypeDefinitions = [];
         foreach(EntityType::getDefinedTids() as $tid) {
-            $this->entityTypeDefinitions[$tid] = EntityType::getEntityTypeDefinition($tid);
+            $def = EntityType::getEntityTypeDefinition($tid);
+            if ($def === null) {
+                throw new LogicException("Definer for type $tid is null");
+            }
+            $this->entityTypeDefinitions[$tid] = $def;
         }
-
 
         $this->valueTypeValidators = [];
         foreach(ValueType::getDefinedTids() as $tid) {
@@ -108,13 +114,15 @@ class ApmEntitySystemKernel
      * @param int $subjectType
      * @param int $predicate
      * @param string|int $object
-     * @param int $objectType
+     * @param int|null $objectType
      * @param array $statementMetadata
      * @return void
+     * @throws InvalidPredicateException
      * @throws InvalidStatementException
+     * @throws InvalidSubjectException
      */
     public function validateStatement(int $subject, int $subjectType, int $predicate,
-                                      string|int $object, int $objectType, array $statementMetadata) : void {
+                                      string|int $object, ?int $objectType, array $statementMetadata) : void {
 
         if ($this->isSystemEntity($subject)) {
             throw new InvalidSubjectException("System entities are not allowed as subjects");
@@ -151,6 +159,13 @@ class ApmEntitySystemKernel
             }
             $this->validatePredicate($metadataPredicate, $def, null, $metadataObject, null);
         }
+    }
+
+
+    public function isPredicateSingleProperty(int $predicate) : bool {
+        $predicateDef = $this->predicateDefinitions[$predicate];
+
+        return $predicateDef->singleProperty;
     }
 
     /**

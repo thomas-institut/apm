@@ -1,9 +1,10 @@
 <?php
 
-namespace ThomasInstitut\EntitySystem\ValueType;
+namespace APM\System\EntitySystem\ValueType;
 
-use ThomasInstitut\EntitySystem\ValueTypeValidator;
 
+
+use APM\System\EntitySystem\ValueTypeValidator;
 class GpsCoordinatesValidator implements ValueTypeValidator
 {
 

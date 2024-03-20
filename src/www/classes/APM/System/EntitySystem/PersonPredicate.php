@@ -30,9 +30,14 @@ class PersonPredicate implements PredicateDefiner
         $def->tid = $tid;
 
         switch ($tid) {
-            case self::AltName:
-            case self::NameInOriginalScript:
+
             case self::SortName:
+            case self::NameInOriginalScript:
+                $def->type = EntityType::Attribute;
+                $def->singleProperty = true;
+                break;
+
+            case self::AltName:
             case self::ExternalId:
             case self::Occupation:
                 $def->type = EntityType::Attribute;
@@ -56,6 +61,7 @@ class PersonPredicate implements PredicateDefiner
             case self::DateOfDeath:
                 $def->type = EntityType::Attribute;
                 $def->allowedObjectTypes = [ ValueType::VagueDate];
+                $def->singleProperty = true;
                 break;
 
             default:

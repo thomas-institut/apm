@@ -1,9 +1,11 @@
 <?php
 
-namespace ThomasInstitut\EntitySystem\ValueType;
+namespace APM\System\EntitySystem\ValueType;
 
-use ThomasInstitut\EntitySystem\ApmEntitySystemInterface;
-use ThomasInstitut\EntitySystem\ValueTypeValidator;
+
+
+use APM\System\EntitySystem\ApmEntitySystemInterface;
+use APM\System\EntitySystem\ValueTypeValidator;
 
 class BooleanValidator implements ValueTypeValidator
 {

@@ -62,17 +62,31 @@ class SystemPredicate implements PredicateDefiner
                 $def->type = EntityType::Relation;
                 $def->allowedObjectTypes = [ EntityType::EntityType];
                 $def->canBeCancelled = false;
+                $def->singleProperty = true;
                 break;
 
             case self::EntityName:
+            case self::IsMergePredicate:
+            case self::IsCancellationPredicate:
+            case self::IsStatementMetadataPredicate:
+
+                $def->type = EntityType::Attribute;
+                $def->canBeCancelled = false;
+                $def->singleProperty = true;
+                break;
+
+
             case self::EntityDescription:
                 $def->type = EntityType::Attribute;
+                $def->canBeCancelled = true;
+                $def->singleProperty = true;
                 break;
 
             case self::EntityCreationTimestamp:
                 $def->type = EntityType::Attribute;
                 $def->allowedObjectTypes = [ ValueType::Timestamp];
                 $def->canBeCancelled = false;
+                $def->singleProperty = true;
                 break;
 
             case self::StatementAuthor:
@@ -138,6 +152,7 @@ class SystemPredicate implements PredicateDefiner
                 $def->type = EntityType::Relation;
                 $def->flags = [ self::IsMergePredicate];
                 $def->canBeCancelled = false;
+                $def->singleProperty = true;
                 break;
 
             case self::MergedBy:
@@ -145,6 +160,7 @@ class SystemPredicate implements PredicateDefiner
                 $def->flags = [ self::IsMergePredicate];
                 $def->allowedObjectTypes = [ EntityType::Person];
                 $def->canBeCancelled = false;
+                $def->singleProperty = true;
                 break;
 
             case self::MergeTimestamp:
@@ -152,13 +168,16 @@ class SystemPredicate implements PredicateDefiner
                 $def->flags = [ self::IsMergePredicate];
                 $def->allowedObjectTypes = [ ValueType::Timestamp ];
                 $def->canBeCancelled = false;
+                $def->singleProperty = true;
                 break;
 
             case self::MergeEditorialNote:
                 $def->type = EntityType::Attribute;
                 $def->flags = [ self::IsMergePredicate];
                 $def->canBeCancelled = false;
+                $def->singleProperty = true;
                 break;
+
 
             default:
                 return null;

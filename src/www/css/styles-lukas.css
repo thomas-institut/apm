@@ -358,23 +358,17 @@ ol.breadcrumb {
     padding:0;
 }
 
-#people-datalist {
-    list-style-type: none;
-    padding-left: 0;
-}
-
-#people-datalist li {
-    display: inline;
-}
-
-button.matched-person {
+button.matched-entity {
     background-color: transparent;
     color: black;
-    border: solid black 0.5px;
-    margin-right: 0.5em;
-    border-radius: 4px;
+    border: none;
 }
 
-button.matched-person:hover {
+button.matched-entity:hover {
     color:dodgerblue;
+}
+
+.dropdown-menu-right {
+    margin-top: -13%;
+    margin-right: 12px;
 }

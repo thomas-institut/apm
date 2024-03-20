@@ -449,10 +449,14 @@ export class MetadataEditor {
     let noteId = inputFormId + '_info-note'
     $(selectorId).append(`<textarea class="${noteId} form-control" rows="2" placeholder="info" style="font-size: small"></textarea>`)
     let noteSelector = this.options.containerSelector+" ."+noteId
+    let buttonId = inputFormId + '_info-note-button'
+    let buttonSelector = this.options.containerSelector+ " ." + buttonId
+
     $(noteSelector).hide()
     $(noteSelector).on('focusout', () => {
       if ($(noteSelector).val().replaceAll(' ', '') === '') {
         $(noteSelector).hide()
+        this.makeInfoIconWithEvent(selectorId, buttonId, buttonSelector, noteSelector)
       }
     })
   }
@@ -479,20 +483,19 @@ export class MetadataEditor {
   //           <input class='${inputFormId} form-control' list=${list} placeholder="person" autoComplete="off" style="padding: unset">
   //               <datalist id=${list}></datalist></p>`)
   //   this.addNamesToDatalistForPersonsAsValues(this.people, listSelector)
-  //   this.makePersonInputFormEvent(inputFormId, listSelector, paragraphId)
+  //   this.makePersonInputFormEvents(inputFormId, listSelector, paragraphId)
   // }
 
   makePersonInputForm(selector, inputFormId) {
     let list = "people-datalist"
     let listSelector = '#' + list
-    let inputSelector = this.options.containerSelector + ' .' + inputFormId
     let paragraphId = inputFormId + '_paragraph'
 
     $(selector).html(`<p class='${paragraphId} embed-button'>
             <input class='${inputFormId} form-control' placeholder="person" autoComplete="off" style="padding: unset">
-                <ul id=${list}></ul></p>`)
+                <ul class="dropdown-menu dropdown-menu-right" id=${list}></ul></p>`)
 
-    this.makePersonInputFormEvent(inputFormId, listSelector, paragraphId, inputSelector)
+    this.makePersonInputFormEvents(inputFormId, listSelector, paragraphId)
   }
 
   delay(callback, ms) {
@@ -533,7 +536,7 @@ export class MetadataEditor {
 
   addNamesToDatalistForPersonsAsValues(people, listSelector) {
 
-    let id = 0
+    let id = 'none'
 
     $(listSelector).empty()
 
@@ -542,46 +545,73 @@ export class MetadataEditor {
       let name = person.values[0]
       if (name !== undefined) {
         let nameForValueAttribute = name.replaceAll(' ', '_')
-        $(listSelector).append(`<li value=${nameForValueAttribute} id=${id}><button class="matched-person">${name}</button></li>`)
+        $(listSelector).append(`<li class="dd-menu-item" value=${nameForValueAttribute} id=${id}><button class="matched-entity" value="${nameForValueAttribute}">${name}</button></li>`)
       }
-
-      // MAKE BUTTON EVENT HERE!!! Remove +-icon, fill input form with button-value, hide people-datalist
     }
 
-    $(listSelector).show()
+    if (id !== 'none') {
+      $(listSelector).show()
+    } else {
+      $(listSelector).hide()
+    }
   }
 
-  makePersonInputFormEvent(inputFormId, listSelector, paragraphId, inputSelector) {
+  makeMatchedEntityButtonEvent(inputSelector, plusIcon) {
+
+    let keyIndex = inputSelector.match(/\d+/)[0]
+    let selectorId = this.options.containerSelector+"_entity_attr"+keyIndex
+    let inputFormId = "entity_attr"+keyIndex+"_form"
+    let buttonId = inputFormId + '_info-note-button'
+    let buttonSelector = this.options.containerSelector+ " ." + buttonId
+    let noteId = inputFormId + '_info-note'
+    let noteSelector = this.options.containerSelector+ " ." + noteId
+
+    $(this.options.containerSelector+" .matched-entity").on("click", (e) => {
+      let value = $(e.target).val().replaceAll('_', ' ')
+      $(inputSelector).val(value)
+      $(plusIcon).remove()
+      this.makeShowAndHideInfoEvents(selectorId, inputFormId)
+      this.makeInfoIconWithEvent(selectorId, buttonId, buttonSelector, noteSelector)
+      $(inputSelector).focus()
+      $(this.options.containerSelector+" .dropdown-menu").hide()
+    })
+  }
+
+  makePersonInputFormEvents(inputFormId, listSelector, paragraphId) {
 
     let dialog = ''
     let buttonId = inputFormId + '_create-person-from-datalist-button'
     let buttonSelector = this.options.containerSelector + ' .' + buttonId
-    inputFormId = this.options.containerSelector + ' .' + inputFormId
+    let inputSelector = this.options.containerSelector + ' .' + inputFormId
     let paragraphSelector = this.options.containerSelector + ' .' + paragraphId
 
     if (!(this.options.mode === this.mode.dialog)) {
-      dialog = this.makeDialog(inputFormId)
+      dialog = this.makeDialog(inputSelector)
     } else {
-      $(inputFormId).on('focus', () => {
-        dialog = this.makeDialog(inputFormId)
+      $(inputSelector).on('focus', () => {
+        dialog = this.makeDialog(inputSelector)
       })
     }
 
-    $(inputFormId).on('input', this.delay(() => {
-          this.getMatchingPeople($(inputSelector).val(), (people) => {
-            this.addNamesToDatalistForPersonsAsValues(people, listSelector)
-            let value = $(inputFormId).val()
-            $(inputFormId).val(value.replaceAll('_', ' '))
-            let valueForDatalist = value.replaceAll(' ', '_')
-            $(buttonSelector).remove()
-            if (value !== '') {
-              if ($(`${listSelector} option[value=${valueForDatalist}]`).attr('id') === undefined) {
-                $(paragraphSelector).append(`<button class=${buttonId}><i class="fa fa-plus" style="color: dodgerblue"></i></button>`)
-                this.makeCreatePersonFromInputFormButtonEvent(buttonSelector, dialog, inputFormId)
-              }
+    $(inputSelector).on('input', this.delay(() => {
+
+      let value = $(inputSelector).val()
+      if (value.trim().length === 0) {
+        $(this.options.containerSelector + " .dropdown-menu").hide()
+      } else {
+        this.getMatchingPeople(value, (people) => {
+          this.addNamesToDatalistForPersonsAsValues(people, listSelector)
+          this.makeMatchedEntityButtonEvent(inputSelector, buttonSelector)
+          $(inputSelector).val(value.replaceAll('_', ' '))
+          let valueForDatalist = value.replaceAll(' ', '_')
+          $(buttonSelector).remove()
+            if ($(`${listSelector} li[value=${valueForDatalist}]`).attr('id') === undefined) {
+              $(paragraphSelector).append(`<button class=${buttonId}><i class="fa fa-plus" style="color: dodgerblue"></i></button>`)
+              this.makeCreatePersonFromInputFormButtonEvent(buttonSelector, dialog, inputSelector)
             }
-          })
-    }, 250)
+        })
+      }
+    }, 200)
     )
   }
 
@@ -732,14 +762,9 @@ export class MetadataEditor {
     let noteId = inputFormId + '_info-note'
     let noteSelector = this.options.containerSelector+ " ." + noteId
 
-    $(this.options.containerSelector + " ." + inputFormId).on("focusin", () => {
-      if ($(noteSelector).is(":hidden")) {
-        this.makeInfoIconWithEvent(selectorId, buttonId, buttonSelector, noteSelector)
-      }
-    })
-    $(this.options.containerSelector + " ." + inputFormId).on("focusout", () => {
-      this.removeInfoIcon(buttonSelector, 200)
-    })
+    if ($(noteSelector).is(":hidden")) {
+      this.makeInfoIconWithEvent(selectorId, buttonId, buttonSelector, noteSelector)
+    }
   }
 
   makeInfoIconWithEvent(selectorId, buttonId, buttonSelector, noteSelector) {
@@ -872,7 +897,7 @@ export class MetadataEditor {
 
       // get data to save
       this.updateDatalistInRootMetadataEditor()
-      let d = this.getEntityDataByIndexFromInputForm()
+      let d = this.getEntityDataFromInputFormByIndex()
 
       // validate and save data, execute the callback-function given in the options, check if working in dialog window
       if (this.validateData(d) && this.validatePasswords()) {
@@ -957,8 +982,8 @@ export class MetadataEditor {
       let keyIndex = selector.match(/\d+/)[0]
       let cellButtonsAndIconsId = "entity_attr" + keyIndex + "_tableCellButton"
       let cellButtonsAndIconsSelector = this.options.containerSelector + ' .' + cellButtonsAndIconsId
-      let value = this.getEntityDataByIndexFromInputForm(keyIndex)['value']
-      let note = this.getEntityDataByIndexFromInputForm(keyIndex)['note']
+      let value = this.getEntityDataFromInputFormByIndex(keyIndex)['value']
+      let note = this.getEntityDataFromInputFormByIndex(keyIndex)['note']
       if (this.validateData(value, keyIndex)) {
         this.clearErrorMessage()
         this.makeSpinner(cellButtonsAndIconsSelector, '1.25em')
@@ -1007,7 +1032,7 @@ export class MetadataEditor {
     this.entity.notes = notes
   }
 
-  getEntityDataByIndexFromInputForm(keyIndex='all') {
+  getEntityDataFromInputFormByIndex(keyIndex='all') {
     let id = this.entity.id
     let values = []
     let notes = []
@@ -1015,17 +1040,17 @@ export class MetadataEditor {
 
     if (keyIndex === 'all') {
       for (let i = 1; i <= this.numKeys; i++) {
-        let valueAndNote = this.getEntityDataByTypeFromInputForm(this.entity.types[i-1], i)
+        let valueAndNote = this.getEntityDataFromInputFormByType(this.entity.types[i-1], i)
         values.push(valueAndNote['value'])
         notes.push(valueAndNote['note'])
       }
       return {id: id, type: type, values: values, notes: notes}
     } else {
-      return this.getEntityDataByTypeFromInputForm(this.entity.types[keyIndex-1], keyIndex)
+      return this.getEntityDataFromInputFormByType(this.entity.types[keyIndex-1], keyIndex)
     }
   }
 
-  getEntityDataByTypeFromInputForm (type, keyIndex) {
+  getEntityDataFromInputFormByType (type, keyIndex) {
 
     let selector = this.options.containerSelector + " .entity_attr" + keyIndex + "_form"
     let value = $(selector).val()
@@ -1055,7 +1080,7 @@ export class MetadataEditor {
       let person_id
       try { // get person id for given person name, therefore remove blanks, which are not contained in the datalist values
         let valueForDatalist = value.replaceAll(' ', '_')
-        person_id = $(`${this.datalistSelector} option[value=${valueForDatalist}]`).attr('id')
+        person_id = $(`${this.datalistSelector} li[value=${valueForDatalist}]`).attr('id')
       } catch {
         person_id = ''
       }

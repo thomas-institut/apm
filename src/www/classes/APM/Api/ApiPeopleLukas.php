@@ -68,8 +68,8 @@ class ApiPeopleLukas extends ApiController
 
         for ($id=0; $id<=$num_people; $id++) {
             $person = $this->getMetadataFromSql($id);
-            //if (str_contains(strtolower($person['values'][0]), strtolower($stringToMatch))) {
-            if (levenshtein(strtolower($stringToMatch), strtolower($person['values'][0])) < 4) {
+            if (levenshtein(strtolower($stringToMatch), strtolower($person['values'][0])) < 4 ||
+                (str_contains(strtolower($person['values'][0]), strtolower($stringToMatch))) && strlen($stringToMatch) > 2) {
                 $data[] = $person;
             }
         }

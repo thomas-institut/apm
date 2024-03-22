@@ -44,7 +44,9 @@ use APM\Jobs\SiteChunksUpdateDataCache;
 use APM\Jobs\SiteDocumentsUpdateDataCache;
 use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
+use APM\System\EntitySystem\ApmEntitySystem;
 use APM\System\EntitySystem\ApmEntitySystemInterface;
+use APM\System\EntitySystem\SystemPredicate;
 use APM\System\ImageSource\BilderbergImageSource;
 use APM\System\ImageSource\OldBilderbergStyleRepository;
 use APM\System\Job\ApmJobQueueManager;
@@ -73,9 +75,17 @@ use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\DataTableDataCache;
+use ThomasInstitut\DataCache\MemcachedDataCache;
+use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
+use ThomasInstitut\EntitySystem\DataTableStatementStorage;
+use ThomasInstitut\EntitySystem\EntityData;
+use ThomasInstitut\EntitySystem\EntityDataCache\DataTableEntityDataCache;
+use ThomasInstitut\EntitySystem\Exception\InvalidArgumentException;
+use ThomasInstitut\EntitySystem\StatementStorage;
 use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
+use ThomasInstitut\EntitySystem\TypeStorageConfig;
 use Twig\Error\LoaderError;
 
 
@@ -96,6 +106,11 @@ class ApmSystemManager extends SystemManager {
 
     // Database version
     const DB_VERSION = 32;
+
+    const ES_DATA_ID = '001';
+
+    const MemCachePrefix_Apm_ES = 'apm_es';
+    const MemCachePrefix_TypedMultiStorage_ES = 'apm_msEs';
 
     const REQUIRED_CONFIG_VARIABLES = [
         ApmConfigParameter::APP_NAME,
@@ -148,6 +163,9 @@ class ApmSystemManager extends SystemManager {
     private ?ApmEditionSourceManager $editionSourceManager;
     private ?WorkManager $workManager;
     private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem;
+    private ?DataCache $memDataCache;
+
+    private ?ApmEntitySystem $apmEntitySystem;
 
 
     public function __construct(array $configArray) {
@@ -200,11 +218,8 @@ class ApmSystemManager extends SystemManager {
         $this->transcriptionManager = null;
         $this->collationTableManager = null;
         $this->dataManager = null;
-
-
-
-
-
+        $this->memDataCache = null;
+        $this->apmEntitySystem = null;
     }
 
 
@@ -273,7 +288,7 @@ class ApmSystemManager extends SystemManager {
             ApmMySqlTableName::TABLE_ITEMS,
             ApmMySqlTableName::TABLE_USERS,
             ApmMySqlTableName::TABLE_TOKENS,
-            ApmMySqlTableName::TABLE_RELATIONS,
+//            ApmMySqlTableName::TABLE_RELATIONS,
             ApmMySqlTableName::TABLE_DOCS,
             ApmMySqlTableName::TABLE_PEOPLE,
             ApmMySqlTableName::TABLE_PAGES,
@@ -287,11 +302,12 @@ class ApmSystemManager extends SystemManager {
             ApmMySqlTableName::TABLE_VERSIONS_CT,
             ApmMySqlTableName::TABLE_MULTI_CHUNK_EDITIONS,
             ApmMySqlTableName::TABLE_EDITION_SOURCES,
-//            ApmMySqlTableName::ES_Statements_Default,
+            ApmMySqlTableName::ES_Statements_Default,
+            ApmMySqlTableName::ES_Cache_Default,
+            ApmMySqlTableName::ES_Merges
 //            ApmMySqlTableName::ES_Statements_Person,
 //            ApmMySqlTableName::ES_Statements_Document,
 //            ApmMySqlTableName::ES_Statements_Work,
-//            ApmMySqlTableName::ES_Cache_Default,
 //            ApmMySqlTableName::ES_Cache_Person,
 //            ApmMySqlTableName::ES_Cache_Document,
 //            ApmMySqlTableName::ES_Cache_Work,
@@ -316,7 +332,15 @@ class ApmSystemManager extends SystemManager {
         
         return $dbh;
     }
-    
+
+    public function getMemDataCache(): DataCache
+    {
+        if ($this->memDataCache === null) {
+            $this->memDataCache = new MemcachedDataCache();
+        }
+        return $this->memDataCache;
+    }
+
     public function getPresetsManager() : PresetManager {
         if ($this->presetsManager === null) {
             // Set up PresetsManager
@@ -770,15 +794,75 @@ class ApmSystemManager extends SystemManager {
 
     public function getEntitySystem(): ApmEntitySystemInterface
     {
-        // TODO: Implement getEntitySystem() method.
+        $thisObject = $this;
+        if ($this->apmEntitySystem === null) {
+            $this->apmEntitySystem = new ApmEntitySystem(
+                function () use ($thisObject): TypedMultiStorageEntitySystem{
+                    return $thisObject->getRawEntitySystem();
+                },
+                function () use($thisObject): DataTable {
+                    return new MySqlDataTable($thisObject->getDbConnection(), $thisObject->tableNames[ApmMySqlTableName::ES_Merges], true);
+                },
+                $this->getMemDataCache(),
+                self::MemCachePrefix_Apm_ES
+            );
+        }
+        return $this->apmEntitySystem;
     }
+
+    public function createDefaultStatementStorage() : StatementStorage {
+        $defaultStatementDataTable = new MySqlDataTable($this->getDbConnection(),
+            $this->tableNames[ApmMySqlTableName::ES_Statements_Default]);
+        return new DataTableStatementStorage($defaultStatementDataTable, [
+            'author' => SystemPredicate::StatementAuthor,
+            "timestamp" => SystemPredicate::StatementTimestamp,
+            'edNote'=> SystemPredicate::StatementEditorialNote,
+            'cancelledBy' => [ 'predicate' => SystemPredicate::CancelledBy, 'cancellationMetadata' => true ],
+            'cancellationTs' => [ 'predicate' => SystemPredicate::CancellationTimestamp, 'cancellationMetadata' => true ],
+        ]);
+    }
+
+
 
     /**
      * @inheritDoc
      */
     public function getRawEntitySystem(): TypedMultiStorageEntitySystem
     {
+        if ($this->typedMultiStorageEntitySystem === null) {
 
+            $defaultEntityDataCacheDataTable = new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::ES_Cache_Default]);
+            $defaultStorage = $this->createDefaultStatementStorage();
+            $defaultEntityDataCache = new DataTableEntityDataCache(
+                $defaultEntityDataCacheDataTable,
+                [
+                    'name' => function(EntityData $entityData) {
+                        return $entityData->getObjectForPredicate(SystemPredicate::EntityName);
+                        },
+                    'type' =>
+                        function (EntityData $entityData) {
+                            return $entityData->getObjectForPredicate(SystemPredicate::EntityType);
+                        }
+                ]
+            );
+
+            $defaultConfig = new TypeStorageConfig();
+            $defaultConfig->withType(0)
+                ->withStorage($defaultStorage)
+                ->withDataCache($defaultEntityDataCache);
+
+            try {
+                $this->typedMultiStorageEntitySystem = new TypedMultiStorageEntitySystem(
+                    SystemPredicate::EntityType, [$defaultConfig],
+                    self::ES_DATA_ID,
+                    $this->getMemDataCache(),
+                    self::MemCachePrefix_TypedMultiStorage_ES
+                );
+            } catch (InvalidArgumentException) {
+                throw new RuntimeException("Bad entity system configuration");
+            }
+        }
+        return $this->typedMultiStorageEntitySystem;
     }
 
     /**

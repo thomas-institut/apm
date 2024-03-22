@@ -28,7 +28,7 @@ class ApmMySqlTableName
     const TABLE_ITEMS = 'items';
     const TABLE_USERS = 'users';
     const TABLE_TOKENS = 'tokens';
-    const TABLE_RELATIONS = 'relations';
+//    const TABLE_RELATIONS = 'relations';
     const TABLE_DOCS = 'docs';
     const TABLE_PEOPLE = 'people';
     const TABLE_PAGES = 'pages';
@@ -43,16 +43,17 @@ class ApmMySqlTableName
     const TABLE_MULTI_CHUNK_EDITIONS = 'mc_editions';
     const TABLE_EDITION_SOURCES = 'edition_sources';
 
-
     // Entity system tables:
 
-    const ES_Statements_Default = 'es_st_default';
-    const ES_Statements_Person = 'es_st_person';
-    const ES_Statements_Document = 'es_st_doc';
-    const ES_Statements_Work = 'es_st_work';
+    const ES_Statements_Default = 'es_default_st';
+//    const ES_Statements_Person = 'es_st_person';
+//    const ES_Statements_Document = 'es_st_doc';
+//    const ES_Statements_Work = 'es_st_work';
 
-    const ES_Cache_Default = 'es_cache_default';
-    const ES_Cache_Person = 'es_cache_person';
-    const ES_Cache_Document = 'es_cache_document';
-    const ES_Cache_Work =  'es_cache_work';
+    const ES_Cache_Default = 'es_default_cache';
+//    const ES_Cache_Person = 'es_cache_person';
+//    const ES_Cache_Document = 'es_cache_document';
+//    const ES_Cache_Work =  'es_cache_work';
+
+    const ES_Merges = 'es_merges';
 }

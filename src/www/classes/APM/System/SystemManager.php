@@ -27,7 +27,6 @@ use APM\CollationTable\CollationTableManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\FullTranscription\TranscriptionManager;
-use APM\System\EntitySystem\ApmEntitySystem;
 use APM\System\EntitySystem\ApmEntitySystemInterface;
 use APM\System\Job\JobQueueManager;
 use APM\System\Person\PersonManagerInterface;
@@ -66,7 +65,7 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     const ERROR_NO_ERROR = 0;
 
     // User roles
-    const ROLE_READ_ONLY = 'readOnly';
+//    const ROLE_READ_ONLY = 'readOnly';
 
 
     // Tool Ids (for presets)
@@ -125,6 +124,8 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     abstract public function getCollationTableManager() : CollationTableManager;
     abstract public function getMultiChunkEditionManager() : MultiChunkEditionManager;
     abstract public function getSystemDataCache() : DataCache;
+
+    abstract public function getMemDataCache() : DataCache;
     abstract public function getBaseUrl(): string;
     abstract public function getTwig() : Twig;
     abstract public function getRouter() : RouteParserInterface;

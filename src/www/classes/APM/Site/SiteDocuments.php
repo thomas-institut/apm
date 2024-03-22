@@ -63,7 +63,7 @@ class SiteDocuments extends SiteController
     public function documentsPage(Request $request, Response $response): Response
     {
 
-        $dataManager = $this->dataManager;
+        $dataManager = $this->systemManager->getDataManager();
         $this->profiler->start();
 
         $cache = $this->systemManager->getSystemDataCache();
@@ -154,7 +154,7 @@ class SiteDocuments extends SiteController
 
 
         $this->profiler->start();
-        $dataManager = $this->dataManager;
+        $dataManager = $this->systemManager->getDataManager();
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $pageManager = $transcriptionManager->getPageManager();
         $userManager = $this->systemManager->getUserManager();
@@ -247,8 +247,7 @@ class SiteDocuments extends SiteController
 
         }
 
-
-        $pageTypeNames  = $this->dataManager->getPageTypeNames();
+        $pageTypeNames  = $this->systemManager->getDataManager()->getPageTypeNames();
 
         $this->profiler->stop();
         $this->logProfilerData('showDocPage-' . $docId);
@@ -298,7 +297,7 @@ class SiteDocuments extends SiteController
         $this->profiler->start();
 
         $docId = $request->getAttribute('id');
-        $dataManager = $this->dataManager;
+        $dataManager = $this->systemManager->getDataManager();
         $docInfo = $dataManager->getDocById($docId);
         if ($docInfo === false) {
             return $this->getBasicErrorPage($response, 'Not found', "Document not found", HttpStatus::NOT_FOUND);
@@ -336,16 +335,16 @@ class SiteDocuments extends SiteController
 //        }
         
         $docId = $request->getAttribute('id');
-        $db = $this->dataManager;
+        $dataManager = $this->systemManager->getDataManager();
         $doc = [];
-        $doc['numPages'] = $db->getPageCountByDocId($docId);
-        $transcribedPages = $db->getTranscribedPageListByDocId($docId);
-        $db->getDocPageInfo($docId);
+        $doc['numPages'] = $dataManager->getPageCountByDocId($docId);
+        $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
+        $dataManager->getDocPageInfo($docId);
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $pageManager = $transcriptionManager->getPageManager();
         $pageInfoArray = $pageManager->getPageInfoArrayForDoc($docId);
         $doc['numTranscribedPages'] = count($transcribedPages);
-        $doc['docInfo'] = $db->getDocById($docId);
+        $doc['docInfo'] = $dataManager->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";
         $doc['pages'] = $this->buildPageArrayNew($pageInfoArray,
                 $transcribedPages, $doc['docInfo']);

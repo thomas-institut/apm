@@ -51,19 +51,20 @@ class SitePageViewer extends SiteController
         if ($activeColumn === 0) {
             $activeColumn = 1;
         }
-        $docInfo = $this->dataManager->getDocById($docId);
-        $pageInfo = $this->dataManager->getPageInfoByDocPage($docId, $pageNumber);
+        $dataManager = $this->systemManager->getDataManager();
+        $docInfo = $dataManager->getDocById($docId);
+        $pageInfo = $dataManager->getPageInfoByDocPage($docId, $pageNumber);
 
-        $docPageCount = $this->dataManager->getPageCountByDocId($docId);
-        $pagesInfo = $this->dataManager->getDocPageInfo($docId);
-        $transcribedPages = $this->dataManager->getTranscribedPageListByDocId($docId);
+        $docPageCount = $dataManager->getPageCountByDocId($docId);
+        $pagesInfo = $dataManager->getDocPageInfo($docId);
+        $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
-        $imageUrl = $this->dataManager->getImageUrl($docId, $pageInfo['img_number']);
-        $pageTypeNames  = $this->dataManager->getPageTypeNames();
-        $activeWorks = $this->dataManager->getActiveWorks();
+        $imageUrl = $dataManager->getImageUrl($docId, $pageInfo['img_number']);
+        $pageTypeNames  = $dataManager->getPageTypeNames();
+        $activeWorks = $dataManager->getActiveWorks();
         $pageNumberFoliation = $pageNumber;
-        $languagesArray = $this->languages;
-        $deepZoom = $this->dataManager->isImageDeepZoom($docId) ? '1' : '0';
+        $languagesArray = $this->getLanguages();
+        $deepZoom = $dataManager->isImageDeepZoom($docId) ? '1' : '0';
 
         if ($pageInfo['foliation'] !== NULL) {
             $pageNumberFoliation = $pageInfo['foliation'];
@@ -101,26 +102,27 @@ class SitePageViewer extends SiteController
         if ($activeColumn === 0) {
             $activeColumn = 1;
         }
+        $dataManager = $this->systemManager->getDataManager();
         
-        $docInfo = $this->dataManager->getDocById($docId);
-        $pageId = $this->dataManager->getPageIdByDocSeq($docId, $seq);
-        $pageInfo = $this->dataManager->getPageInfo($pageId);
+        $docInfo = $dataManager->getDocById($docId);
+        $pageId = $dataManager->getPageIdByDocSeq($docId, $seq);
+        $pageInfo = $dataManager->getPageInfo($pageId);
         $pageNumber = $pageInfo['page_number'];
-        $docPageCount = $this->dataManager->getPageCountByDocId($docId);
-        $pagesInfo = $this->dataManager->getDocPageInfo($docId, DataManager::ORDER_BY_SEQ);
-        $transcribedPages = $this->dataManager->getTranscribedPageListByDocId($docId);
+        $docPageCount = $dataManager->getPageCountByDocId($docId);
+        $pagesInfo = $dataManager->getDocPageInfo($docId, DataManager::ORDER_BY_SEQ);
+        $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
-        $imageUrl = $this->dataManager->getImageUrl($docId, $pageInfo['img_number']);
-        $pageTypeNames  = $this->dataManager->getPageTypeNames();
-        $activeWorks = $this->dataManager->getActiveWorks();
-        $languagesArray = $this->languages;
+        $imageUrl = $dataManager->getImageUrl($docId, $pageInfo['img_number']);
+        $pageTypeNames  = $dataManager->getPageTypeNames();
+        $activeWorks = $dataManager->getActiveWorks();
+        $languagesArray = $this->getLanguages();
 
         $pageNumberFoliation = $pageInfo['seq'];
         if ($pageInfo['foliation'] !== NULL) {
             $pageNumberFoliation = $pageInfo['foliation'];
         }
 
-        $deepZoom = $this->dataManager->isImageDeepZoom($docId) ? '1' : '0';
+        $deepZoom = $this->systemManager->getDataManager()->isImageDeepZoom($docId) ? '1' : '0';
 
         return $this->renderPage($response, self::PAGE_VIEWER_TWIG, [
             'navByPage' => false,  // i.e., navigate by sequence

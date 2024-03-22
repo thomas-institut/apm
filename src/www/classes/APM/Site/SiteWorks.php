@@ -90,7 +90,7 @@ class SiteWorks extends SiteController
      */
     public function worksPage(Request $request, Response $response): Response
     {
-        $dataManager = $this->dataManager;
+        $dataManager = $this->systemManager->getDataManager();
         $this->profiler->start();
         $cache = $this->systemManager->getSystemDataCache();
         $cacheHit = true;

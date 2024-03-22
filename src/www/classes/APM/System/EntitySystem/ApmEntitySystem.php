@@ -18,11 +18,12 @@ use ThomasInstitut\EntitySystem\StatementData;
 use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 
 
+
 class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    const dataId = '20240305145831';
+    const dataId = '001';
 
     const kernelCacheKey = 'ApmEntitySystemKernel';
 
@@ -39,13 +40,19 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
      * @var callable
      */
     private $getInnerEntitySystemCallable;
-    private DataTable $mergesDataTable;
+
+
+    /**
+     * @var callable
+     */
+    private $getMergesDataTableCallable;
+    private ?DataTable $mergesDataTable;
 
     /**
      * Constructs the ApmEntitySystem
      *
      * $getTypedMultiStorageEntitySystem is a function that takes no arguments and returns a TypeMultiStorageEntitySystem
-     * object
+     * object.
      *
      * $mergesDataTable is the table where merge data will be stored. It should at least the following three columns:
      *   id: int
@@ -53,20 +60,28 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
      *   mergedInto: big int (a Tid)
      *
      * @param callable $getTypedMultiStorageEntitySystem
-     * @param DataTable $mergesDataTable
+     * @param callable $getMergesDataTable
      * @param DataCache $memDataCache
      * @param string $memCachePrefix
      */
-    public function __construct(callable  $getTypedMultiStorageEntitySystem,
-                                DataTable $mergesDataTable, DataCache $memDataCache, string $memCachePrefix)
+    public function __construct(callable  $getTypedMultiStorageEntitySystem, callable $getMergesDataTable,
+                                DataCache $memDataCache, string $memCachePrefix)
     {
         $this->getInnerEntitySystemCallable = $getTypedMultiStorageEntitySystem;
-        $this->innerEntitySystem = null;
-        $this->kernel = null;
+        $this->getMergesDataTableCallable = $getMergesDataTable;
         $this->memCache = $memDataCache;
         $this->cachePrefix = $memCachePrefix;
+        $this->innerEntitySystem = null;
+        $this->kernel = null;
+        $this->mergesDataTable = null;
         $this->logger = new NullLogger();
-        $this->mergesDataTable = $mergesDataTable;
+    }
+
+    private function getMergesDataTable() : DataTable {
+        if ($this->mergesDataTable === null) {
+            $this->mergesDataTable = call_user_func($this->getMergesDataTableCallable);
+        }
+        return  $this->mergesDataTable;
     }
 
     private function getKernelCacheKey() : string {
@@ -114,7 +129,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         try {
             $mergedInto = $this->memCache->get($cacheKey);
         } catch (KeyNotInCacheException) {
-            $rows = $this->mergesDataTable->findRows([ self::ColEntity => $entity]);
+            $rows = $this->getMergesDataTable()->findRows([ self::ColEntity => $entity]);
             if ($rows->count() === 0) {
                 $mergedInto = 'null';
             } else {
@@ -557,7 +572,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 
     private function registerMerge(int $entity, int $mergeInfo) : void {
         try {
-            $this->mergesDataTable->createRow([self::ColEntity => $entity, self::ColMergedInto => $mergeInfo]);
+            $this->getMergesDataTable()->createRow([self::ColEntity => $entity, self::ColMergedInto => $mergeInfo]);
         } catch (RowAlreadyExists) {
             // should never happen
         }

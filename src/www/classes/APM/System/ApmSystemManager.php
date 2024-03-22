@@ -44,6 +44,7 @@ use APM\Jobs\SiteChunksUpdateDataCache;
 use APM\Jobs\SiteDocumentsUpdateDataCache;
 use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
+use APM\System\EntitySystem\ApmEntitySystemInterface;
 use APM\System\ImageSource\BilderbergImageSource;
 use APM\System\ImageSource\OldBilderbergStyleRepository;
 use APM\System\Job\ApmJobQueueManager;
@@ -67,12 +68,14 @@ use Monolog\Logger;
 use Monolog\Processor\WebProcessor;
 use PDO;
 use PDOException;
+use RuntimeException;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\DataTableDataCache;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
+use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 use Twig\Error\LoaderError;
 
 
@@ -112,7 +115,7 @@ class ApmSystemManager extends SystemManager {
     
     const REQUIRED_CONFIG_VARIABLES_DB = [ 'host', 'db', 'user', 'pwd'];
 
-    protected array $serverLoggerFields = [
+    private array $serverLoggerFields = [
         'method' => 'REQUEST_METHOD',
         'url'         => 'REQUEST_URI',
         'ip'          => 'REMOTE_ADDR',
@@ -121,25 +124,30 @@ class ApmSystemManager extends SystemManager {
     
     /** @var string[] */
     private array $tableNames;
-
-    private DataTablePresetManager $presetsManager;
-    private SettingsManager $settingsMgr;
-    private CollationEngine $collationEngine;
-    private PDO $dbConn;
+    private array $imageSources;
     private Logger $logger;
-    private ApmTranscriptionManager $transcriptionManager;
-    private DataTableDataCache $systemDataCache;
-    private ApmCollationTableManager $collationTableManager;
+    private RouteParserInterface $router;
+
+    //
+    // Components
+    //
+    private ?DataTablePresetManager $presetsManager;
+    private ?DataManager $dataManager;
+    private ?SettingsManager $settingsMgr;
+    private ?CollationEngine $collationEngine;
+    private ?PDO $dbConn;
+    private ?ApmTranscriptionManager $transcriptionManager;
+    private ?DataTableDataCache $systemDataCache;
+    private ?ApmCollationTableManager $collationTableManager;
     private ?ApmMultiChunkEditionManager $multiChunkEditionManager;
     private ?Twig $twig;
-    private RouteParserInterface $router;
     private ?ApmNormalizerManager $normalizerManager;
     private ?ApmUserManager $userManager;
     private ?ApmPersonManager $personManager;
-    private ApmJobQueueManager $jobManager;
-    protected array $imageSources;
+    private ?ApmJobQueueManager $jobManager;
     private ?ApmEditionSourceManager $editionSourceManager;
     private ?WorkManager $workManager;
+    private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem;
 
 
     public function __construct(array $configArray) {
@@ -158,18 +166,7 @@ class ApmSystemManager extends SystemManager {
             return; // @codeCoverageIgnore
         }
 
-
-        $this->twig = null;
-        $this->normalizerManager = null;
-        $this->multiChunkEditionManager = null;
-        $this->editionSourceManager = null;
-        $this->userManager = null;
-        $this->personManager = null;
-        $this->workManager = null;
-
-        // Create logger
         $this->logger = $this->createLogger();
-
         // Dump configuration warnings in the log
         foreach($this->config[ApmConfigParameter::WARNINGS] as $warning) {
             $this->logger->debug($warning);
@@ -179,112 +176,82 @@ class ApmSystemManager extends SystemManager {
         date_default_timezone_set($this->config[ApmConfigParameter::DEFAULT_TIMEZONE]);
 
         // Create table names
-        $this->tableNames = 
-                $this->createTableNames($this->config[ApmConfigParameter::DB_TABLE_PREFIX]);
-        
-        // Set up database connection
-        try {
-            $this->dbConn = $this->setUpDbConnection();
-        } catch (PDOException $e) {
-            $this->logAndSetError(self::ERROR_DATABASE_CONNECTION_FAILED,
-                    "Database connection failed: " . $e->getMessage());
-            return;
-        }
-
-
-         // Check that the database is initialized
-        // TODO: Is this check necessary?
-        if (!$this->isDatabaseInitialized()) {
-            $this->logAndSetError(self::ERROR_DATABASE_IS_NOT_INITIALIZED,
-                    "Database is not initialized");
-            return;
-        }
-
-        // Set up SettingsManager
-        try {
-            $settingsTable = new MySqlDataTable($this->dbConn,
-                $this->tableNames[ApmMySqlTableName::TABLE_SETTINGS]);
-        } catch (Exception $e) {
-            // Cannot replicate this in testing, yet
-            // @codeCoverageIgnoreStart
-            $this->logAndSetError(self::ERROR_CANNOT_READ_SETTINGS_FROM_DB,
-                "Cannot read settings from database: [ " . $e->getCode() . '] ' . $e->getMessage());
-            return;
-            // @codeCoverageIgnoreEnd
-        }
-
-        $this->settingsMgr = new SettingsManager($settingsTable);
-        $this->settingsMgr->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
-        
-        // Check that the database is up-to-date
-        if (!$this->isDatabaseUpToDate()) {
-            $this->logAndSetError(self::ERROR_DATABASE_SCHEMA_NOT_UP_TO_DATE, 
-                    "Database schema not up to date");
-            return;
-        }
-
-        // set up system data cache
-        $this->systemDataCache = new DataTableDataCache(new MySqlDataTable($this->dbConn,
-            $this->tableNames[ApmMySqlTableName::TABLE_SYSTEM_CACHE], true));
-        $this->systemDataCache->setLogger($this->getLogger()->withName('CACHE'));
-        
-        // Set up Collation Engine
-        switch($this->config[ApmConfigParameter::COLLATION_ENGINE]) {
-            case ApmCollationEngine::COLLATEX:
-                $this->collationEngine = new Collatex(
-                    $this->config[ApmConfigParameter::COLLATEX_JAR_FILE],
-                    $this->config[ApmConfigParameter::COLLATEX_TEMP_DIR],
-                    $this->config[ApmConfigParameter::JAVA_EXECUTABLE]
-                );
-                break;
-            case ApmCollationEngine::DO_NOTHING:
-                $this->collationEngine = new DoNothingCollationEngine();
-                break;
-        }
-
-        $this->jobManager = new ApmJobQueueManager($this,
-            new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_JOBS], true));
-        $this->jobManager->setLogger($this->logger->withName('JOB_QUEUE'));
-
-        $this->registerSystemJobs();
-
-//        $globalProfiler->lap("System jobs registered");
-       
-        // Set up PresetsManager
-        $presetsManagerDataTable = new MySqlDataTable($this->dbConn,
-                        $this->tableNames[ApmMySqlTableName::TABLE_PRESETS]);
-        $this->presetsManager = 
-                new DataTablePresetManager($presetsManagerDataTable, ['lang' => 'key1']);
-        $this->presetsManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
-
-        // Set up TranscriptionManager
-        $this->transcriptionManager = new ApmTranscriptionManager($this->dbConn, $this->tableNames, $this->logger);
-        $this->transcriptionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
-        $this->transcriptionManager->setCacheTracker($this->getCacheTracker());
-        $this->transcriptionManager->setCache($this->getSystemDataCache());
-
-//        $globalProfiler->lap("Transcription Manager ready");
-
-        // Set up collation table manager
-        $ctTable = new MySqlUnitemporalDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_COLLATION_TABLE]);
-        $ctVersionsTable = new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_VERSIONS_CT]);
-        $ctVersionManager = new ApmCollationTableVersionManager($ctVersionsTable);
-        $ctVersionManager->setLogger($this->logger);
-        $ctVersionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
-        $this->collationTableManager = new ApmCollationTableManager($ctTable, $ctVersionManager, $this->logger);
-        $this->collationTableManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
+        $this->tableNames = $this->createTableNames($this->config[ApmConfigParameter::DB_TABLE_PREFIX]);
 
         $this->imageSources = [
             'bilderberg' => new BilderbergImageSource($this->config[ApmConfigParameter::BILDERBERG_URL]),
             'averroes-server' => new OldBilderbergStyleRepository('https://averroes.uni-koeln.de/localrep')
         ];
 
-        $dataManager = new DataManager($this->dbConn, $this->getPersonManager(), $this->tableNames,
-            $this->logger, $this->imageSources, $this->config[ApmConfigParameter::LANG_CODES]);
-        $dataManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
-        $this->dataManager = $dataManager;
+
+        // Initialize all components to null
+        $this->twig = null;
+        $this->normalizerManager = null;
+        $this->multiChunkEditionManager = null;
+        $this->editionSourceManager = null;
+        $this->userManager = null;
+        $this->personManager = null;
+        $this->workManager = null;
+        $this->typedMultiStorageEntitySystem = null;
+        $this->dbConn = null;
+        $this->systemDataCache = null;
+        $this->jobManager = null;
+        $this->presetsManager = null;
+        $this->transcriptionManager = null;
+        $this->collationTableManager = null;
+        $this->dataManager = null;
 
 
+
+
+
+    }
+
+
+    public function getDbConnection() : PDO {
+        if ($this->dbConn === null) {
+            // Set up database connection
+            try {
+                $this->dbConn = $this->setUpDbConnection();
+            } catch (PDOException $e) {
+                $this->logAndSetError(self::ERROR_DATABASE_CONNECTION_FAILED,
+                    "Database connection failed: " . $e->getMessage());
+                throw new RuntimeException("Database connection failed");
+            }
+
+
+            // Check that the database is initialized
+            if (!$this->isDatabaseInitialized()) {
+                $this->logAndSetError(self::ERROR_DATABASE_IS_NOT_INITIALIZED,
+                    "Database is not initialized");
+                throw new RuntimeException("Database not initialized");
+            }
+
+            // Set up SettingsManager
+            try {
+                $settingsTable = new MySqlDataTable($this->dbConn,
+                    $this->tableNames[ApmMySqlTableName::TABLE_SETTINGS]);
+            } catch (Exception $e) {
+                // Cannot replicate this in testing, yet
+                // @codeCoverageIgnoreStart
+                $this->logAndSetError(self::ERROR_CANNOT_READ_SETTINGS_FROM_DB,
+                    "Cannot read settings from database: [ " . $e->getCode() . '] ' . $e->getMessage());
+                throw new RuntimeException("Cannot read settings from database");
+                // @codeCoverageIgnoreEnd
+            }
+
+            $this->settingsMgr = new SettingsManager($settingsTable);
+            $this->settingsMgr->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
+
+
+            // Check that the database is up-to-date
+            if (!$this->isDatabaseUpToDate()) {
+                $this->logAndSetError(self::ERROR_DATABASE_SCHEMA_NOT_UP_TO_DATE,
+                    "Database schema not up to date");
+                throw new RuntimeException("Database not up to date");
+            }
+        }
+        return $this->dbConn;
     }
 
     public function getAvailableImageSources(): array
@@ -351,23 +318,42 @@ class ApmSystemManager extends SystemManager {
     }
     
     public function getPresetsManager() : PresetManager {
+        if ($this->presetsManager === null) {
+            // Set up PresetsManager
+            $presetsManagerDataTable = new MySqlDataTable($this->getDbConnection(),
+                $this->tableNames[ApmMySqlTableName::TABLE_PRESETS]);
+            $this->presetsManager =
+                new DataTablePresetManager($presetsManagerDataTable, ['lang' => 'key1']);
+            $this->presetsManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
+        }
         return $this->presetsManager;
     }
 
     public function getLogger() : Logger {
         return $this->logger;
     }
-        
-    public function getDbConnection(): PDO
-    {
-        return $this->dbConn;
-    }
-    
+
     public function getSettingsManager() : SettingsManager {
         return $this->settingsMgr;
     }
     
     public function getCollationEngine() : CollationEngine {
+
+        if ($this->collationEngine === null) {
+            // Set up Collation Engine
+            switch($this->config[ApmConfigParameter::COLLATION_ENGINE]) {
+                case ApmCollationEngine::COLLATEX:
+                    $this->collationEngine = new Collatex(
+                        $this->config[ApmConfigParameter::COLLATEX_JAR_FILE],
+                        $this->config[ApmConfigParameter::COLLATEX_TEMP_DIR],
+                        $this->config[ApmConfigParameter::JAVA_EXECUTABLE]
+                    );
+                    break;
+                case ApmCollationEngine::DO_NOTHING:
+                    $this->collationEngine = new DoNothingCollationEngine();
+                    break;
+            }
+        }
         return $this->collationEngine;
     }
     
@@ -426,7 +412,7 @@ class ApmSystemManager extends SystemManager {
     protected function isDatabaseUpToDate(): bool
     {
         
-        $dbVersion = $this->settingsMgr->getSetting('DatabaseVersion');
+        $dbVersion = $this->getSettingsManager()->getSetting('DatabaseVersion');
         if ($dbVersion === false) {
             return false; // @codeCoverageIgnore
         }
@@ -435,7 +421,7 @@ class ApmSystemManager extends SystemManager {
     
     private function tableExists($table): bool
     {
-        $r = $this->dbConn->query("show tables like '" . $table . "'");
+        $r = $this->getDbConnection()->query("show tables like '" . $table . "'");
         if ($r === false) {
             // This is reached only if the query above has a mistake,
             // which can't be attained solely by testing
@@ -510,17 +496,41 @@ class ApmSystemManager extends SystemManager {
 
     public function getTranscriptionManager(): TranscriptionManager
     {
+        if ($this->transcriptionManager === null) {
+            // Set up TranscriptionManager
+            $this->transcriptionManager = new ApmTranscriptionManager($this->getDbConnection(), $this->tableNames, $this->logger);
+            $this->transcriptionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
+            $this->transcriptionManager->setCacheTracker($this->getCacheTracker());
+            $this->transcriptionManager->setCache($this->getSystemDataCache());
+
+        }
         return $this->transcriptionManager;
     }
 
 
     public function getSystemDataCache(): DataCache
     {
+        if ($this->systemDataCache === null) {
+            // set up system data cache
+            $this->systemDataCache = new DataTableDataCache(new MySqlDataTable($this->getDbConnection(),
+                $this->tableNames[ApmMySqlTableName::TABLE_SYSTEM_CACHE], true));
+            $this->systemDataCache->setLogger($this->getLogger()->withName('CACHE'));
+        }
         return $this->systemDataCache;
     }
 
     public function getCollationTableManager(): CollationTableManager
     {
+        if ($this->collationTableManager === null) {
+            // Set up collation table manager
+            $ctTable = new MySqlUnitemporalDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_COLLATION_TABLE]);
+            $ctVersionsTable = new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_VERSIONS_CT]);
+            $ctVersionManager = new ApmCollationTableVersionManager($ctVersionsTable);
+            $ctVersionManager->setLogger($this->logger);
+            $ctVersionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
+            $this->collationTableManager = new ApmCollationTableManager($ctTable, $ctVersionManager, $this->logger);
+            $this->collationTableManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
+        }
         return $this->collationTableManager;
     }
 
@@ -530,7 +540,7 @@ class ApmSystemManager extends SystemManager {
      */
     public function getTwig(): Twig
     {
-        if (is_null($this->twig)) {
+        if ($this->twig === null) {
             $this->twig = Twig::create($this->config[ApmConfigParameter::TWIG_TEMPLATE_DIR],
                 ['cache' => $this->config[ApmConfigParameter::TWIG_USE_CACHE]]);
         }
@@ -539,7 +549,7 @@ class ApmSystemManager extends SystemManager {
 
     public function getNormalizerManager(): NormalizerManager
     {
-        if (is_null($this->normalizerManager)) {
+        if ($this->normalizerManager === null) {
             $this->normalizerManager = new ApmNormalizerManager();
             // Add standard normalizers
             $this->normalizerManager->registerNormalizer('la', 'standard',
@@ -613,7 +623,7 @@ class ApmSystemManager extends SystemManager {
     public function getMultiChunkEditionManager(): MultiChunkEditionManager
     {
         if ($this->multiChunkEditionManager === null) {
-            $mceTable = new MySqlUnitemporalDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_MULTI_CHUNK_EDITIONS]);
+            $mceTable = new MySqlUnitemporalDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_MULTI_CHUNK_EDITIONS]);
             $this->multiChunkEditionManager = new ApmMultiChunkEditionManager($mceTable, $this->logger);
             $this->multiChunkEditionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
         }
@@ -623,7 +633,7 @@ class ApmSystemManager extends SystemManager {
     public function getEditionSourceManager(): EditionSourceManager
     {
         if (is_null($this->editionSourceManager)) {
-            $table = new MySqlDataTable($this->dbConn,
+            $table = new MySqlDataTable($this->getDbConnection(),
                 $this->tableNames[ApmMySqlTableName::TABLE_EDITION_SOURCES], true);
             $this->editionSourceManager = new ApmEditionSourceManager($table);
         }
@@ -634,43 +644,46 @@ class ApmSystemManager extends SystemManager {
     {
         parent::onTranscriptionUpdated($userTid, $docId, $pageNumber, $columnNumber);
 
+        $jobManager = $this->getJobManager();
+
         $this->logger->debug("Scheduling update of SiteChunks cache");
-        $this->jobManager->scheduleJob(ApmJobName::SITE_CHUNKS_UPDATE_DATA_CACHE,
+        $jobManager->scheduleJob(ApmJobName::SITE_CHUNKS_UPDATE_DATA_CACHE,
             '', [],0, 3, 20);
 
         $this->logger->debug("Scheduling update of SiteDocuments cache");
-        $this->jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
+        $jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '',[],0, 3, 20);
 
         $this->logger->debug("Scheduling update of TranscribedPages cache for user $userTid");
-        $this->jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE,
+        $jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE,
             "User $userTid", ['userTid' => $userTid],0, 3, 20);
 
         $this->logger->debug("Scheduling update of open search index");
-        $this->jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_OPENSEARCH_INDEX,
+        $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_OPENSEARCH_INDEX,
             '', ['doc_id' => $docId, 'page' => $pageNumber, 'col' => $columnNumber],0, 3, 20);
 
         $this->logger->debug("Scheduling update of Transcribers cache and Titles cache");
-        $this->jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE,
+        $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE,
             '', [], 0, 3, 20);
     }
 
     public function onUpdatePageSettings(int $userTid, int $pageId) : void {
         parent::onUpdatePageSettings($userTid, $pageId);
         $this->logger->debug("Scheduling update of TranscribedPages cache for user $userTid after update of page $pageId");
-        $this->jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE,
+        $this->getJobManager()->scheduleJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE,
             "User $userTid", ['userTid' => $userTid],0, 3, 20);
     }
 
     public function onCollationTableSaved(int $userTid, int $ctId): void
     {
         parent::onCollationTableSaved($userTid, $ctId);
+        $jobManager = $this->getJobManager();
         $this->logger->debug("Invalidating CollationTablesInfo cache for user $userTid");
-        $this->jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE,
+        $jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE,
             "User $userTid", ['userTid' => $userTid],0, 3, 20);
-        $this->jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_OPENSEARCH_INDEX,
+        $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_OPENSEARCH_INDEX,
             '', [$ctId],0, 3, 20);
-        $this->jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITORS_AND_TITLES_CACHE,
+        $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITORS_AND_TITLES_CACHE,
             '', [],0, 3, 20);
     }
 
@@ -679,7 +692,7 @@ class ApmSystemManager extends SystemManager {
         parent::onDocumentDeleted($userTid, $docId);
 
         $this->logger->debug("Scheduling update of SiteDocuments cache");
-        $this->jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
+        $this->getJobManager()->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '', [],0, 3, 20);
 
     }
@@ -688,7 +701,7 @@ class ApmSystemManager extends SystemManager {
     {
         parent::onDocumentUpdated($userTid, $docId);
         $this->logger->debug("Scheduling update of SiteDocuments cache");
-        $this->jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
+        $this->getJobManager()->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '', [],0, 3, 20);
     }
 
@@ -696,15 +709,15 @@ class ApmSystemManager extends SystemManager {
     {
         parent::onDocumentAdded($userTid, $docId);
         $this->logger->debug("Scheduling update of SiteDocuments cache");
-        $this->jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
+        $this->getJobManager()->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '', [],0, 3, 20);
     }
 
     public function getUserManager() : UserManagerInterface {
         if ($this->userManager === null) {
             $this->userManager = new ApmUserManager(
-                new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_USERS], false),
-                new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_TOKENS], true)
+                new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_USERS], false),
+                new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_TOKENS], true)
             );
         }
         return $this->userManager;
@@ -714,7 +727,7 @@ class ApmSystemManager extends SystemManager {
     {
         if ($this->personManager === null) {
             $this->personManager = new ApmPersonManager(
-                new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_PEOPLE], false),
+                new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_PEOPLE], false),
                 $this->getUserManager()
             );
         }
@@ -725,7 +738,7 @@ class ApmSystemManager extends SystemManager {
     {
         if ($this->workManager === null) {
             $this->workManager = new DataTableWorkManager(
-                new MySqlDataTable($this->dbConn,
+                new MySqlDataTable($this->getDbConnection(),
                     $this->tableNames[ApmMySqlTableName::TABLE_WORKS], true));
         }
         return $this->workManager;
@@ -733,6 +746,12 @@ class ApmSystemManager extends SystemManager {
 
     public function getJobManager(): JobQueueManager
     {
+        if ($this->jobManager === null) {
+            $this->jobManager = new ApmJobQueueManager($this,
+                new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_JOBS], true));
+            $this->jobManager->setLogger($this->logger->withName('JOB_QUEUE'));
+            $this->registerSystemJobs();
+        }
         return $this->jobManager;
     }
 
@@ -747,5 +766,32 @@ class ApmSystemManager extends SystemManager {
         $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_OPENSEARCH_INDEX, new ApiSearchUpdateTranscriptionsIndex());
         $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_EDITORS_AND_TITLES_CACHE, new ApiSearchUpdateEditorsAndEditionsCache());
         $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_OPENSEARCH_INDEX, new ApiSearchUpdateEditionsIndex());
+    }
+
+    public function getEntitySystem(): ApmEntitySystemInterface
+    {
+        // TODO: Implement getEntitySystem() method.
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getRawEntitySystem(): TypedMultiStorageEntitySystem
+    {
+
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getDataManager(): DataManager
+    {
+        if ($this->dataManager === null) {
+            $dataManager = new DataManager($this->getDbConnection(), $this->getPersonManager(), $this->tableNames,
+                $this->logger, $this->imageSources, $this->config[ApmConfigParameter::LANG_CODES]);
+            $dataManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
+            $this->dataManager = $dataManager;
+        }
+        return $this->dataManager;
     }
 }

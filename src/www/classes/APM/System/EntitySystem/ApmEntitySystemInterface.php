@@ -181,9 +181,14 @@ interface ApmEntitySystemInterface
     public function mergeEntity(int $entity, int $mergeInto, int $author, string $editorialNote, int $ts = -1) : void;
 
     /**
+     * Returns all the entities in the system for the given type.
+     *
+     * By default, merged entities are not returned.
+     *
      * @param int $type
+     * @param bool $includeMerged
      * @return int[]
      */
-    public function getAllEntitiesForType(int $type) : array;
+    public function getAllEntitiesForType(int $type, bool $includeMerged = false) : array;
 
 }

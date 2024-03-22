@@ -122,7 +122,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             }
             $this->memCache->set($cacheKey, $mergedInto);
         }
-        // at this pint $mergedInto is either the string 'null', a numerical string or an integer
+        // at this point $mergedInto is either the string 'null', a numerical string or an integer
         if ($mergedInto === 'null') {
             return null;
         }
@@ -132,7 +132,8 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         if ($mergedIntoOfMergeInto === null) {
            return $mergedInto;
         } else {
-           return $mergedIntoOfMergeInto;
+            $this->memCache->set($cacheKey, $mergedIntoOfMergeInto);
+            return $mergedIntoOfMergeInto;
         }
     }
 
@@ -206,7 +207,13 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         } catch (\ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException) {
             throw new EntityDoesNotExistException("Entity $entity does not exits");
         }
-        // TODO: consider using caching here
+
+        $entityData->mergedInto = $this->getMergedIntoEntity($entity);
+
+        if ($entityData->isMerged()) {
+            return $entityData;
+        }
+        // TODO: consider using caching here (if/when we have tons of merges)
         // use merged entities in all statements
         $newStatements = [];
         foreach ($entityData->statements as $statement) {
@@ -406,7 +413,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 
         $metadata = [
             [ SystemPredicate::CancelledBy, $author],
-            [ SystemPredicate::CancellationTimestamp, $ts]
+            [ SystemPredicate::CancellationTimestamp, strval($ts)]
         ];
 
         $editorialNote = trim($editorialNote);
@@ -439,7 +446,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
     /**
      * @inheritDoc
      */
-    public function getAllEntitiesForType(int $type): array
+    public function getAllEntitiesForType(int $type, bool $includeMerged = false) : array
     {
         if (!$this->getKernel()->isValidEntityType($type)) {
             throw new InvalidArgumentException("Entity $type is not a type");
@@ -449,7 +456,19 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             return [];
         }
 
-        return $this->getInnerEntitySystem()->getAllEntitiesForType($type);
+        $entities =  $this->getInnerEntitySystem()->getAllEntitiesForType($type);
+
+        if ($includeMerged) {
+            return $entities;
+        }
+
+        $filteredEntities = [];
+        foreach ($entities as $entity) {
+            if ($this->getMergedIntoEntity($entity) === null) {
+                $filteredEntities[] = $entity;
+            }
+        }
+        return $filteredEntities;
     }
 
     /**
@@ -506,7 +525,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 
         $cancellationMetadata = [
             [ SystemPredicate::CancelledBy, $author],
-            [ SystemPredicate::CancellationTimestamp, $ts],
+            [ SystemPredicate::CancellationTimestamp, strval($ts)],
             [ SystemPredicate::CancellationEditorialNote, "Merging entity into $mergeInto"]
         ];
 
@@ -518,7 +537,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 
         $commands[] = [ EntitySystem::MakeStatementCommand, $entity, SystemPredicate::MergedInto, $mergeInto];
         $commands[] = [ EntitySystem::MakeStatementCommand, $entity, SystemPredicate::MergedBy, $author];
-        $commands[] = [ EntitySystem::MakeStatementCommand, $entity, SystemPredicate::MergeTimestamp, $ts];
+        $commands[] = [ EntitySystem::MakeStatementCommand, $entity, SystemPredicate::MergeTimestamp, strval($ts)];
         $commands[] = [ EntitySystem::MakeStatementCommand, $entity, SystemPredicate::MergeEditorialNote, $editorialNote];
 
         try {
@@ -532,6 +551,8 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         }
 
         $this->registerMerge($entity, $mergeInto);
+        $this->memCache->delete($this->getMergedIntoCacheKey($entity));
+
     }
 
     private function registerMerge(int $entity, int $mergeInfo) : void {

@@ -19,6 +19,19 @@ class EntityData
 
 
     /**
+     * Null is the entity is not merged.
+     *
+     * If the entity is merged, the currently non-merged entity into which this entity resolves.
+     * This may not be the same as the entity into which this entity was merged into originally.
+     * If A was merged into B, and later B was merged into C, the value here is C, not B.
+     * The original mergeInto entity can found as the object of the predicate MergedInto in the statements.
+     *
+     * @var int|null
+     */
+    public ?int $mergedInto = null;
+
+
+    /**
      * Returns the object of the first encountered
      * statement with the entity as subject and the given predicate.
      *
@@ -44,6 +57,10 @@ class EntityData
             }
         }
         return $objects;
+    }
+
+    public function isMerged() : bool {
+        return $this->mergedInto !== null;
     }
 
 }

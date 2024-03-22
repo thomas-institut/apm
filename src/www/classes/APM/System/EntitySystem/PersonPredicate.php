@@ -2,6 +2,8 @@
 
 namespace APM\System\EntitySystem;
 
+use FastRoute\RouteParser;
+
 class PersonPredicate implements PredicateDefiner
 {
     use TidDefinerTrait;
@@ -19,6 +21,12 @@ class PersonPredicate implements PredicateDefiner
 
     const DateOfBirth = 1009;
     const DateOfDeath = 1010;
+
+    const FatherOf = 1011;
+    const HasFather = 1012;
+
+    const MotherOf = 1011;
+    const HasMother = 1013;
 
 
     /**
@@ -62,6 +70,34 @@ class PersonPredicate implements PredicateDefiner
                 $def->type = EntityType::Attribute;
                 $def->allowedObjectTypes = [ ValueType::VagueDate];
                 $def->singleProperty = true;
+                break;
+
+            case self::FatherOf:
+                $def->type = EntityType::Relation;
+                $def->allowedObjectTypes = [ EntityType::Person];
+                $def->reversePredicate = self::HasFather;
+                $def->isPrimaryRelation = true;
+                break;
+
+            case self::HasFather:
+                $def->type = EntityType::Relation;
+                $def->allowedObjectTypes = [ EntityType::Person];
+                $def->reversePredicate = self::FatherOf;
+                $def->isPrimaryRelation = false;
+                break;
+
+            case self::MotherOf:
+                $def->type = EntityType::Relation;
+                $def->allowedObjectTypes = [ EntityType::Person];
+                $def->reversePredicate = self::HasMother;
+                $def->isPrimaryRelation = true;
+                break;
+
+            case self::HasMother:
+                $def->type = EntityType::Relation;
+                $def->allowedObjectTypes = [ EntityType::Person];
+                $def->reversePredicate = self::MotherOf;
+                $def->isPrimaryRelation = false;
                 break;
 
             default:

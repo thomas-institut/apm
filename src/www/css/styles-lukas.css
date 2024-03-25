@@ -313,7 +313,6 @@ ul.tag-editor-tags-ul li {
     display: inline;
     line-height: 2.5em;
     margin-right: 0.5em;
-    line-height: 2.5em;
 }
 
 span.tag-text {
@@ -361,14 +360,24 @@ ol.breadcrumb {
 button.matched-entity {
     background-color: transparent;
     color: black;
-    border: none;
+    border: solid 1px lightgray;
+    border-radius: 4px;
+    font-family:  var(--default-font-family);
+    font-size: var(--default-font-size);
 }
 
 button.matched-entity:hover {
     color:dodgerblue;
 }
 
-.dropdown-menu-right {
-    margin-top: -13%;
-    margin-right: 12px;
+ul.matched-persons {
+    position: relative;
+    width: 100% !important;
+    border: none;
+    margin-top: 0px;
+}
+
+ul.matched-persons li {
+    display: inline;
+    margin-right: 0.5em;
 }

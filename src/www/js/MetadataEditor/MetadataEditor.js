@@ -35,6 +35,7 @@ export class MetadataEditor {
     this.tagEditor = undefined
     this.singleEditingActive = false
     this.people = []
+    this.apiCallIdGetMatchingPeople = 0
 
     // selectors
     this.buttonsSelectorTop = `${this.options.containerSelector} .buttons_top`
@@ -493,7 +494,7 @@ export class MetadataEditor {
 
     $(selector).html(`<p class='${paragraphId} embed-button'>
             <input class='${inputFormId} form-control' placeholder="person" autoComplete="off" style="padding: unset">
-                <ul class="dropdown-menu dropdown-menu-right" id=${list}></ul></p>`)
+                <ul class="matched-persons dropdown-menu dropdown-menu-right" data-display="static" id=${list}></ul></p>`)
 
     this.makePersonInputFormEvents(inputFormId, listSelector, paragraphId)
   }
@@ -511,6 +512,9 @@ export class MetadataEditor {
 
 
   getMatchingPeople(value, callback) {
+
+    let apiCallIdGetMatchingPeople = this.apiCallIdGetMatchingPeople
+
     $.post(urlGen.apiPeopleGetMatchingPeople(), {'value': value})
         .done((apiResponse) => {
 
@@ -524,7 +528,7 @@ export class MetadataEditor {
           }
           else {
             console.log(apiResponse)
-            callback(apiResponse.data)
+            callback(apiResponse.data, apiCallIdGetMatchingPeople)
             return true
           }
         })
@@ -545,8 +549,7 @@ export class MetadataEditor {
       let name = person.values[0]
       if (name !== undefined) {
         let nameForValueAttribute = name.replaceAll(' ', '_')
-        $(listSelector).append(`<li class="dd-menu-item" value=${nameForValueAttribute} id=${id}><button class="matched-entity" value="${nameForValueAttribute}">${name}</button></li>`)
-      }
+        $(listSelector).append(`<li class="dd-menu-item" value=${nameForValueAttribute} id=${id}><button class="matched-entity" value="${nameForValueAttribute}">${name}</button></li>`)}
     }
 
     if (id !== 'none') {
@@ -599,16 +602,19 @@ export class MetadataEditor {
       if (value.trim().length === 0) {
         $(this.options.containerSelector + " .dropdown-menu").hide()
       } else {
-        this.getMatchingPeople(value, (people) => {
-          this.addNamesToDatalistForPersonsAsValues(people, listSelector)
-          this.makeMatchedEntityButtonEvent(inputSelector, buttonSelector)
-          $(inputSelector).val(value.replaceAll('_', ' '))
-          let valueForDatalist = value.replaceAll(' ', '_')
-          $(buttonSelector).remove()
+        this.apiCallIdGetMatchingPeople = (1 + Math.floor(Math.random() * 10000))
+        this.getMatchingPeople(value, (people, apiCallIdGetMatchingPeople) => {
+          if (this.apiCallIdGetMatchingPeople === apiCallIdGetMatchingPeople) { // This ensures, that only the data of the latest api call are shown, if there have been multiple requests following another in a short amount of time
+            this.addNamesToDatalistForPersonsAsValues(people, listSelector)
+            this.makeMatchedEntityButtonEvent(inputSelector, buttonSelector)
+            $(inputSelector).val(value.replaceAll('_', ' '))
+            let valueForDatalist = value.replaceAll(' ', '_')
+            $(buttonSelector).remove()
             if ($(`${listSelector} li[value=${valueForDatalist}]`).attr('id') === undefined) {
               $(paragraphSelector).append(`<button class=${buttonId}><i class="fa fa-plus" style="color: dodgerblue"></i></button>`)
               this.makeCreatePersonFromInputFormButtonEvent(buttonSelector, dialog, inputSelector)
             }
+          }
         })
       }
     }, 200)

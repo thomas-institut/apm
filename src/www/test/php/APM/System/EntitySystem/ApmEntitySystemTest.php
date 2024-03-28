@@ -2,17 +2,17 @@
 
 namespace Test\APM\System\EntitySystem;
 
-use APM\System\EntitySystem\ApmEntitySystem;
-use APM\System\EntitySystem\ApmEntitySystemInterface;
-use APM\System\EntitySystem\EntityAlreadyMergedException;
-use APM\System\EntitySystem\EntityDoesNotExistException;
-use APM\System\EntitySystem\EntityType;
-use APM\System\EntitySystem\InvalidEntityTypeException;
-use APM\System\EntitySystem\InvalidObjectException;
-use APM\System\EntitySystem\InvalidStatementException;
-use APM\System\EntitySystem\InvalidSubjectException;
-use APM\System\EntitySystem\PersonPredicate;
-use APM\System\EntitySystem\SystemPredicate;
+use APM\System\EntitySystem\Exception\Exception\Exception\ApmEntitySystem;
+use APM\System\EntitySystem\Exception\Exception\Exception\ApmEntitySystemInterface;
+use APM\System\EntitySystem\Exception\Exception\Exception\EntityAlreadyMergedException;
+use APM\System\EntitySystem\Exception\Exception\Exception\EntityDoesNotExistException;
+use APM\System\EntitySystem\Exception\Exception\Exception\EntityType;
+use APM\System\EntitySystem\Exception\Exception\Exception\InvalidEntityTypeException;
+use APM\System\EntitySystem\Exception\Exception\Exception\InvalidObjectException;
+use APM\System\EntitySystem\Exception\Exception\Exception\InvalidStatementException;
+use APM\System\EntitySystem\Exception\Exception\Exception\InvalidSubjectException;
+use APM\System\EntitySystem\Exception\Exception\Exception\PersonPredicate;
+use APM\System\EntitySystem\Exception\Exception\Exception\SystemPredicate;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use ThomasInstitut\DataCache\InMemoryDataCache;

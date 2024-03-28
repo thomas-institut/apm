@@ -32,14 +32,9 @@ class SitePeople extends SiteController
 
         $pm = $this->systemManager->getPersonManager();
 
-        $tidFromSlug = $pm->getPersonTidFromSlug($tid);
-        if ($tidFromSlug !== -1) {
-            $tid = $tidFromSlug;
-        } else {
-            $tid = Tid::fromString($tid);
-            if ($tid === -1) {
-                return $this->getBasicErrorPage($response, 'Error', "Invalid entity id", HttpStatus::BAD_REQUEST);
-            }
+        $tid = Tid::fromString($tid);
+        if ($tid === -1) {
+            return $this->getBasicErrorPage($response, 'Error', "Invalid entity id", HttpStatus::BAD_REQUEST);
         }
         $um = $this->systemManager->getUserManager();
         $canManageUsers = false;

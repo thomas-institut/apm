@@ -27,7 +27,7 @@ use APM\CollationTable\CollationTableManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\FullTranscription\TranscriptionManager;
-use APM\System\EntitySystem\ApmEntitySystemInterface;
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\System\Job\JobQueueManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;

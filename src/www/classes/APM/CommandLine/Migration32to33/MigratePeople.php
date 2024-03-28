@@ -3,12 +3,9 @@
 namespace APM\CommandLine\Migration32to33;
 
 use APM\CommandLine\CommandLineUtility;
+use APM\EntitySystem\Schema\Entity;
 use APM\System\ApmMySqlTableName;
-use APM\System\EntitySystem\ApmEntitySystemInterface;
-use APM\System\EntitySystem\EntityDoesNotExistException;
-use APM\System\EntitySystem\EntityType;
-use APM\System\EntitySystem\PersonPredicate;
-use APM\System\EntitySystem\SystemPredicate;
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\EntitySystem\StatementStorage;
 use ThomasInstitut\EntitySystem\Tid;
@@ -30,8 +27,8 @@ class MigratePeople extends CommandLineUtility
         $creationTimestamp = strval(time());
 
         $statementMetadata = [
-            [SystemPredicate::StatementAuthor, ApmEntitySystemInterface::SystemEntity],
-            [SystemPredicate::StatementTimestamp, $creationTimestamp]
+            [Entity::pStatementAuthor, Entity::System],
+            [Entity::pStatementTimestamp, $creationTimestamp]
         ];
 
         $createdPeople = [];
@@ -47,16 +44,16 @@ class MigratePeople extends CommandLineUtility
             $commands = [];
 
             $commands[] = [ StatementStorage::StoreStatementCommand, Tid::generateUnique(),
-                            $personTid, SystemPredicate::EntityType, EntityType::Person, $statementMetadata];
+                            $personTid, Entity::pEntityType, Entity::tPerson, $statementMetadata];
 
             $commands[] = [ StatementStorage::StoreStatementCommand, Tid::generateUnique(),
-                $personTid, SystemPredicate::EntityName, $name, $statementMetadata];
+                $personTid, Entity::pEntityName, $name, $statementMetadata];
 
             $commands[] = [ StatementStorage::StoreStatementCommand, Tid::generateUnique(),
-                $personTid, SystemPredicate::EntityCreationTimestamp, $creationTimestamp, $statementMetadata];
+                $personTid, Entity::pEntityCreationTimestamp, $creationTimestamp, $statementMetadata];
 
             $commands[] = [ StatementStorage::StoreStatementCommand, Tid::generateUnique(),
-                $personTid, PersonPredicate::SortName, $sortName, $statementMetadata];
+                $personTid, Entity::pSortName, $sortName, $statementMetadata];
             $statementStorage->storeMultipleStatementsAndCancellations($commands);
             $createdPeople[] = $personTid;
             print "\n";
@@ -71,7 +68,7 @@ class MigratePeople extends CommandLineUtility
 
         foreach ($createdPeople as $createdPerson) {
             try {
-                $data = $es->getEntityData($createdPerson);
+                $es->getEntityData($createdPerson);
 //                print "Person $data->id: " . $data->getObjectForPredicate(SystemPredicate::EntityName) . "\n";
             } catch (EntityDoesNotExistException) {
                 print "ERROR: person $createdPerson not found in entity system\n";

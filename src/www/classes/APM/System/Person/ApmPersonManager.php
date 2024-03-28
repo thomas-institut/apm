@@ -72,12 +72,9 @@ class ApmPersonManager implements PersonManagerInterface, LoggerAwareInterface
 
     private function getPersonDataFromPeopleTableRow(array $row) : PersonEssentialData {
         $data = new PersonEssentialData();
-
-        $data->id = intval($row['id']);
         $data->tid = intval($row['tid']);
         $data->name = $row['name'];
         $data->sortName = $row['sort_name'] ?? $data->name;
-        $data->slug = $row['slug'] ?? '';
         $data->extraAttributes = [];
         $data->isUser = false;
         $data->userName = '';
@@ -87,9 +84,12 @@ class ApmPersonManager implements PersonManagerInterface, LoggerAwareInterface
     }
 
     /**
+     * @param string $name
+     * @param string $sortName
+     * @param int $creatorTid
      * @inheritDoc
      */
-    public function createPerson(string $name, string $sortName): int
+    public function createPerson(string $name, string $sortName, int $creatorTid = -1): int
     {
         if ($name === '') {
             throw  new InvalidPersonNameException();
@@ -136,12 +136,4 @@ class ApmPersonManager implements PersonManagerInterface, LoggerAwareInterface
         return $tids;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function getPersonTidFromSlug(string $slug): int
-    {
-        $rows = $this->personsTable->findRows([ 'slug' => $slug]);
-        return count($rows) === 0 ? -1 : $rows->getFirst()['tid'];
-    }
 }

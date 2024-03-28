@@ -1,0 +1,177 @@
+<?php
+
+namespace APM\EntitySystem\Schema;
+
+use APM\EntitySystem\Kernel\TidDefiner;
+use APM\EntitySystem\Kernel\TidDefinerTrait;
+
+/**
+ * Constants that define tids for all system entities.
+ *
+ * The constant prefix indicate the kind of entity:
+ *    eXXXX:  a particular entity
+ *    tXXXX:  an entity type
+ *    pXXXX:  a predicate
+ *    ValueTypeXXXXX:  a value type
+ *
+ * Any tid under 100 million (< 100000000) can be used as
+ * a system entity
+ */
+class Entity implements TidDefiner
+{
+    use TidDefinerTrait;
+
+    // System Entity
+    const System = 1;
+
+    // Entity Types
+
+    const tRelation = 101;
+    const tAttribute = 102;
+    const tEntityType = 103;
+    const tValueType = 104;
+    const tStatement = 105;
+    const tStatementGroup = 106;
+    const tPerson = 107;
+    const tPlace = 108;
+    const tArea = 109;
+    const tLang = 110;
+    const tUrlType = 111;
+    const tIdType = 112;
+    const tWork = 113;
+    const tAreaType = 114;
+    const tOrganization = 115;
+    const tOrganizationType = 116;
+    const tOccupation = 117;
+    const tOrganizationalRole = 118;
+
+
+
+
+    // Value types
+
+    const ValueTypeText = 1001;
+    const ValueTypeNumber = 1002;
+    const ValueTypeInteger = 1003;
+    const ValueTypeBoolean = 1004;
+    const ValueTypeTimestamp = 1005;
+    const ValueTypeDate = 1006;
+    const ValueTypeVagueDate = 1007;
+    const ValueTypeTimeString = 1008;
+    const ValueTypeGpsCoordinates = 1009;
+    const ValueTypeUrl = 1010;
+    const ValueTypeEmailAddress = 1111;
+
+    // Basic entity predicates
+
+    const pEntityType = 2001;
+    const pEntityName = 2002;
+    const pEntityDescription = 2003;
+    const pEntityCreationTimestamp = 2004;
+    const pSortName = 2005;
+    const pNameInOriginalLanguage = 2006;
+    const pAlias = 2007;
+    const pExternalId = 2008;
+    const pUrl = 2009;
+    const pEmailAddress = 2010;
+    const pMember = 2011;
+    const pMemberOf = 2012;
+
+    // Basic statement metadata predicates
+
+    const pStatementAuthor = 3001;
+    const pStatementTimestamp = 3002;
+    const pStatementEditorialNote = 3003;
+
+    // Statement qualification predicates
+    const pStLang = 4001;
+    const pStSeq = 4002;
+    const pStFrom = 4003;
+    const pStUntil = 4004;
+    const pStUrlType = 4005;
+    const pStIdType = 4006;
+
+    // Cancellation predicates
+    const pCancelledBy = 5001;
+    const pCancellationTimestamp = 5002;
+    const pCancellationEditorialNote = 5003;
+
+    // Merge predicates
+    const pMergedInto = 6001;
+    const pMergedBy = 6002;
+    const pMergeTimestamp = 6003;
+    const pMergeEditorialNote = 6004;
+
+
+
+    const pOccupation = 7008;
+    const pDateOfBirth = 7009;
+    const pPlaceOfBirth = 7010;
+    const pDateOfDeath = 7011;
+    const pPlaceOfDeath = 7012;
+
+//    const pFather = 7013;
+//    const pFatherOf = 7014
+//    const pMother = 7015;
+//    const pMotherOf = 7016;
+
+    // Geographical Predicates
+    const pContainedBy = 8001;
+    const pContains = 8002;
+    const pCivicAddress = 8003;
+    const pGpsCoordinates = 8004;
+//    const pRadius = 8005;
+
+//    const pPoliticalDivisionOf = 8006;
+//    const pPoliticalDivision = 8007;
+
+
+    // Url Types
+
+    const UrlTypeGeneric = 9000;
+    const UrlTypeViaf = 9001;
+    const UrlTypeDb = 9002;
+    const UrlTypeDnb = 9003;
+    const UrlTypeWikipedia = 9004;
+
+    // ID types
+    const IdTypeWikiData = 10001;
+    const IdTypeViaf = 10002;
+
+
+    // Area types
+
+//    const AreaTypeCountry = 11001;
+//    const AreaTypeProvince = 11002;
+//    const AreaTypeState = 11003;
+//    const AreaTypeCity = 11004;
+//    const AreaTypeCounty = 11005;
+//    const AreaTypeCanton = 11006;
+
+
+    // Organization types
+//    const OrgUniversity = 12001;
+//    const OrgDepartment = 12002;
+//    const OrgInstitute = 12003;
+//    const OrgLibrary = 12004;
+//    const OrgReligiousOrder = 12005;
+//    const OrgPublishingHouse = 12006;
+//    const OrgEditorialBoard = 12007;
+
+
+    // Occupation types
+//    const OccupationPhilosopher = 13001;
+//    const OccupationTranslator = 13002;
+//    const OccupationProfessor = 13003;
+//    const OccupationScholar = 13004;
+//    const OccupationPoet = 13005;
+//    const OccupationRabbi = 13006;
+//    const OccupationMonk = 13007;
+//    const OccupationPriest = 13008;
+//    const OccupationStudent = 13009;
+//    const OccupationEditor = 13010;
+
+
+
+
+}

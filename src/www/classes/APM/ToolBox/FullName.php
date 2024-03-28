@@ -109,4 +109,18 @@ class FullName
 
         return implode('', $subStrings);
     }
+
+    static public function getSortName(string $name, bool $normalizeName) : string {
+        if ($normalizeName) {
+            $name = iconv('UTF-8', 'US-ASCII//TRANSLIT', $name);
+        }
+        $fullName = FullName::analyze($name);
+        $sortName = implode(' ', $fullName['lastNames']);
+        if (count($fullName['firstNames']) > 0) {
+           $sortName .= ', ';
+           $sortName .= implode(' ', $fullName['firstNames']);
+        }
+        return $sortName;
+    }
 }
+

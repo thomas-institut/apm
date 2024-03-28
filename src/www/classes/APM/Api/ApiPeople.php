@@ -6,6 +6,8 @@ namespace APM\Api;
 
 use APM\System\Person\InvalidPersonNameException;
 use APM\System\Person\PersonNotFoundException;
+use APM\System\User\UserNotFoundException;
+use APM\System\User\UserTag;
 use APM\ToolBox\HttpStatus;
 use PHPUnit\Util\Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -27,12 +29,23 @@ class ApiPeople extends ApiController
 
         try {
             $data = $pm->getPersonEssentialData($personTid);
-        } catch (PersonNotFoundException $e) {
+        } catch (PersonNotFoundException) {
             $this->logger->info("Person does not exist: $personTid");
             $this->logProfilers('errorEncountered');
             return $this->responseWithStatus($response, 404);
         }
         $this->logProfilers('normalFinish');
+        try {
+            if ($data->isUser && !$this->systemManager->getUserManager()->isUserAllowedTo($this->apiUserTid, UserTag::MANAGE_USERS)) {
+                $data->userEmailAddress = "N/A";
+                $data->userName = 'N/A';
+                $data->userTags = [];
+            }
+        } catch (UserNotFoundException) {
+            // should never happen
+            $this->logger->error("User not found: $this->apiUserTid");
+            return $this->responseWithStatus($response, HttpStatus::INTERNAL_SERVER_ERROR);
+        }
         return $this->responseWithJson($response, $data->getExportObject());
     }
 
@@ -82,7 +95,7 @@ class ApiPeople extends ApiController
         $pm = $this->systemManager->getPersonManager();
 
         try {
-            $tid = $pm->createPerson($name, $sortName);
+            $tid = $pm->createPerson($name, $sortName, $this->apiUserTid);
         } catch (InvalidPersonNameException $e) {
             $this->logger->error("Invalid name creating person");
             return $this->responseWithJson($response, [ 'errorMsg' => 'Invalid name' ], HttpStatus::BAD_REQUEST);

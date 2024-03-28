@@ -32,6 +32,7 @@ use APM\Core\Token\Normalizer\IgnoreShaddaNormalizer;
 use APM\Core\Token\Normalizer\IgnoreTatwilNormalizer;
 use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
 use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
+use APM\EntitySystem\Schema\Entity;
 use APM\FullTranscription\TranscriptionManager;
 use APM\Jobs\ApiSearchUpdateEditionsIndex;
 use APM\Jobs\ApiSearchUpdateEditorsAndEditionsCache;
@@ -44,15 +45,14 @@ use APM\Jobs\SiteChunksUpdateDataCache;
 use APM\Jobs\SiteDocumentsUpdateDataCache;
 use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
-use APM\System\EntitySystem\ApmEntitySystem;
-use APM\System\EntitySystem\ApmEntitySystemInterface;
-use APM\System\EntitySystem\SystemPredicate;
+use APM\EntitySystem\ApmEntitySystem;
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\System\ImageSource\BilderbergImageSource;
 use APM\System\ImageSource\OldBilderbergStyleRepository;
 use APM\System\Job\ApmJobQueueManager;
 use APM\System\Job\JobQueueManager;
 use APM\System\Job\NullJobHandler;
-use APM\System\Person\ApmPersonManager;
+use APM\System\Person\EntitySystemPersonManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\DataTablePresetManager;
 use APM\System\Preset\PresetManager;
@@ -158,7 +158,7 @@ class ApmSystemManager extends SystemManager {
     private ?Twig $twig;
     private ?ApmNormalizerManager $normalizerManager;
     private ?ApmUserManager $userManager;
-    private ?ApmPersonManager $personManager;
+    private ?PersonManagerInterface $personManager;
     private ?ApmJobQueueManager $jobManager;
     private ?ApmEditionSourceManager $editionSourceManager;
     private ?WorkManager $workManager;
@@ -750,10 +750,7 @@ class ApmSystemManager extends SystemManager {
     public function getPersonManager(): PersonManagerInterface
     {
         if ($this->personManager === null) {
-            $this->personManager = new ApmPersonManager(
-                new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_PEOPLE], false),
-                $this->getUserManager()
-            );
+            $this->personManager = new EntitySystemPersonManager($this->getEntitySystem(), $this->getUserManager());
         }
         return $this->personManager;
     }
@@ -814,11 +811,11 @@ class ApmSystemManager extends SystemManager {
         $defaultStatementDataTable = new MySqlDataTable($this->getDbConnection(),
             $this->tableNames[ApmMySqlTableName::ES_Statements_Default]);
         return new DataTableStatementStorage($defaultStatementDataTable, [
-            'author' => SystemPredicate::StatementAuthor,
-            "timestamp" => SystemPredicate::StatementTimestamp,
-            'edNote'=> SystemPredicate::StatementEditorialNote,
-            'cancelledBy' => [ 'predicate' => SystemPredicate::CancelledBy, 'cancellationMetadata' => true ],
-            'cancellationTs' => [ 'predicate' => SystemPredicate::CancellationTimestamp, 'cancellationMetadata' => true ],
+            'author' => Entity::pStatementAuthor,
+            "timestamp" => Entity::pStatementTimestamp,
+            'edNote'=> Entity::pStatementEditorialNote,
+            'cancelledBy' => [ 'predicate' => Entity::pCancelledBy, 'cancellationMetadata' => true ],
+            'cancellationTs' => [ 'predicate' => Entity::pCancellationTimestamp, 'cancellationMetadata' => true ],
         ]);
     }
 
@@ -837,11 +834,11 @@ class ApmSystemManager extends SystemManager {
                 $defaultEntityDataCacheDataTable,
                 [
                     'name' => function(EntityData $entityData) {
-                        return $entityData->getObjectForPredicate(SystemPredicate::EntityName);
+                        return $entityData->getObjectForPredicate(Entity::pEntityName);
                         },
                     'type' =>
                         function (EntityData $entityData) {
-                            return $entityData->getObjectForPredicate(SystemPredicate::EntityType);
+                            return $entityData->getObjectForPredicate(Entity::pEntityType);
                         }
                 ]
             );
@@ -853,7 +850,7 @@ class ApmSystemManager extends SystemManager {
 
             try {
                 $this->typedMultiStorageEntitySystem = new TypedMultiStorageEntitySystem(
-                    SystemPredicate::EntityType, [$defaultConfig],
+                    Entity::pEntityType, [$defaultConfig],
                     self::ES_DATA_ID,
                     $this->getMemDataCache(),
                     self::MemCachePrefix_TypedMultiStorage_ES

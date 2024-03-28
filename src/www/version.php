@@ -58,5 +58,5 @@ EOD;
 // string sent to the JS app(s). Otherwise it will be impossible to debug potential browser cache problems.
 //
 
-//$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = 'aedaf26975bf4be65e547a88ce8c6188'; // hash: '2024-02-19 09:38:50'
 $config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = '93ba9f336a0dc3838c3024f2d75541bc'; // hash: '2024-02-29 08:30:00'
+$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = '20240325-002'; // hash: '2024-02-29 08:30:00'

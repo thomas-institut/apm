@@ -7,6 +7,7 @@ use APM\EntitySystem\Exception\InvalidPredicateException;
 use APM\EntitySystem\Exception\InvalidStatementException;
 use APM\EntitySystem\Exception\InvalidSubjectException;
 use APM\EntitySystem\Exception\InvalidValueException;
+use APM\EntitySystem\Schema\DarePredicates;
 use APM\EntitySystem\Schema\Entity;
 use APM\EntitySystem\Schema\EntityTypes;
 use APM\EntitySystem\Schema\GeoPredicates;
@@ -76,7 +77,8 @@ class ApmEntitySystemKernel
         $predicateDefiners = [
             new SystemPredicates(),
             new PersonPredicates(),
-            new GeoPredicates()
+            new GeoPredicates(),
+            new DarePredicates()
         ];
 
         $valueTypeDefiners = [

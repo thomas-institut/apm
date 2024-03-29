@@ -107,7 +107,7 @@ class ApmSystemManager extends SystemManager {
     // Database version
     const DB_VERSION = 32;
 
-    const ES_DATA_ID = '001';
+    const ES_DATA_ID = '002';
 
     const MemCachePrefix_Apm_ES = 'apm_es';
     const MemCachePrefix_TypedMultiStorage_ES = 'apm_msEs';

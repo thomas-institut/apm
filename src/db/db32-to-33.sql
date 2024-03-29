@@ -3,6 +3,10 @@
 # Drop foreign key that ties users to rows in the people table
 #  (the people table will disappear soon)
 ALTER TABLE `ap_users` DROP FOREIGN KEY fk_user_people;
+ALTER TABLE `ap_tokens` DROP FOREIGN KEY ap_tokens_ibfk_1;
+
+ALTER TABLE `ap_tokens` ADD CONSTRAINT `ap_user_id` FOREIGN KEY (`user_tid`) REFERENCES `ap_users`(`tid`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
 
 
 # Create default statement table
@@ -46,5 +50,9 @@ CREATE TABLE `ap_es_merges` (
 );
 
 CREATE INDEX entity on `ap_es_merges` (entity);
+
+# Run:
+#     migrate_people
+#     apmctl user updateEntitySystem doIt
 
 UPDATE `ap_settings` SET `value` = '33' WHERE `ap_settings`.`setting` = 'DatabaseVersion';

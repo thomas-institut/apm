@@ -2,10 +2,13 @@
 
 namespace APM\CommandLine;
 
+use APM\EntitySystem\Schema\Entity;
 use APM\System\Person\InvalidPersonNameException;
+use APM\System\Person\PersonNotFoundException;
 use APM\System\User\InvalidEmailAddressException;
 use APM\System\User\InvalidPasswordException;
 use APM\System\User\InvalidUserNameException;
+use APM\System\User\UserEntityDataUpdater;
 use APM\System\User\UserNameAlreadyInUseException;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
@@ -19,7 +22,7 @@ class UserTool extends CommandLineUtility implements AdminUtility
     const USAGE = self::CMD . " <option> [<username>]\n\n" .
        "Options:\n  list: list all users\n  create: creates a new user\n" .
        "  makeRoot: make a user root\n  changePassword: changes a user's password\n  disable: disables a user\n" .
-       "  enable: enables a user";
+       "  enable: enables a user\n  updateEntitySystem: updates user-related data in the entity system";
     const DESCRIPTION = "User management functions";
 
 
@@ -70,11 +73,46 @@ class UserTool extends CommandLineUtility implements AdminUtility
                 $this->makeRoot();
                 break;
 
+            case 'updateEntitySystem':
+                $hotRun = isset($argv[2]) && $argv[2] === 'doIt';
+                $this->updateEntitySystem($hotRun);
+                break;
+
             default:
                 print "Unrecognized option: "  . $argv[1] ."\n";
                 return 0;
         }
         return 1;
+    }
+
+    private function updateEntitySystem(bool $hotRun) : void {
+        $es = $this->getSystemManager()->getEntitySystem();
+
+        $peopleTids = $es->getAllEntitiesForType(Entity::tPerson);
+
+        print "Updating entity system for " . count($peopleTids) . " people:\n";
+
+        $updater = new UserEntityDataUpdater($this->getSystemManager());
+
+        $changes = false;
+
+        foreach ($peopleTids as $tid) {
+            try {
+               $info = $updater->updateUserEntityData($tid, $hotRun);
+               if (count($info) !== 0) {
+                   $changes = true;
+                  $name = $this->getSystemManager()->getPersonManager()->getPersonEssentialData($tid)->name;
+                   print "  $name, tid $tid (" . Tid::toBase36String($tid) . "): ";
+                   print (implode(",   ", $info) . "\n");
+               }
+            } catch (PersonNotFoundException) {
+                print "ERROR: person $tid not found... this should NEVER happen\n";
+            }
+        }
+
+        if (!$changes) {
+            print "No changes\n";
+        }
     }
 
     private function checkUserName() : array {

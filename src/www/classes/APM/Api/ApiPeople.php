@@ -59,7 +59,6 @@ class ApiPeople extends ApiController
         foreach($data as $essentialData) {
             $dataToServe[] = $essentialData->getExportObject();
         }
-
         return $this->responseWithJson($response, $dataToServe);
     }
 

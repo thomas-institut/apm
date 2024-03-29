@@ -36,7 +36,7 @@ class DefsFromArray
     }
 
     /**
-     * Builds an array of EntityTypeDefintion objects from an array.
+     * Builds an array of EntityTypeDefinition objects from an array.
      *
      * Each element in the array corresponds to an entity definition:
      *

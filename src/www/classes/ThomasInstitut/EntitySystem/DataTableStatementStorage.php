@@ -365,16 +365,19 @@ class DataTableStatementStorage implements StatementStorage
             $findSpec = [
                 $this->subjectCol => $subject,
                 $this->predicateCol => $predicate,
-                $this->objectCol => $object,
             ];
+            if (!is_null($object)) {
+                if (is_string($object)) {
+                    $findSpec[$this->valueCol] = $object;
+                } else {
+                    $findSpec[$this->objectCol] = $object;
+                }
+            }
             if ($subject === null) {
                 unset($findSpec[$this->subjectCol]);
             }
             if ($predicate === null) {
                 unset($findSpec[$this->predicateCol]);
-            }
-            if ($object === null) {
-                unset($findSpec[$this->objectCol]);
             }
             $rows = $this->dataTable->findRows($findSpec);
         }

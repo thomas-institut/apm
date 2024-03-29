@@ -2,7 +2,8 @@
 
 namespace APM\EntitySystem\Kernel;
 
-use APM\EntitySystem\EntityType;
+
+use APM\EntitySystem\Schema\Entity;
 
 class PredicateDefinition extends EntityDefinition
 {
@@ -84,7 +85,7 @@ class PredicateDefinition extends EntityDefinition
 
 
     public function isRelation() : bool {
-        return $this->type === EntityType::Relation;
+        return $this->type === Entity::tRelation;
     }
 
     public function hasFlag(int $flagTid): bool {

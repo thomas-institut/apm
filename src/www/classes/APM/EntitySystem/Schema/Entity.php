@@ -104,11 +104,15 @@ class Entity implements TidDefiner
 
 
 
+    // Person predicates
     const pOccupation = 7008;
     const pDateOfBirth = 7009;
     const pPlaceOfBirth = 7010;
     const pDateOfDeath = 7011;
     const pPlaceOfDeath = 7012;
+    const pIsUser = 7013;
+    const pIsEnabledUser = 7014;
+
 
 //    const pFather = 7013;
 //    const pFatherOf = 7014
@@ -172,6 +176,9 @@ class Entity implements TidDefiner
 //    const OccupationEditor = 13010;
 
 
+    // Dare stuff
+
+    const pDarePersonId = 14001;
 
 
 }

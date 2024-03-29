@@ -73,8 +73,28 @@ const PersonPredicateDefs = [
         'singleProperty' => true,
         'flags' => []
     ],
-
-
+    [
+        'tid' => Entity::pIsUser,
+        'type' => Entity::tAttribute,
+        'name' => 'IsUser',
+        'descr' => "True if the person is a user in the system",
+        'allowedSubjectTypes' => [ Entity::tPerson],
+        'allowedObjectTypes'=> [ Entity::ValueTypeBoolean],
+        'canBeCancelled' => true,
+        'singleProperty' => true,
+        'flags' => []
+    ],
+    [
+        'tid' => Entity::pIsEnabledUser,
+        'type' => Entity::tAttribute,
+        'name' => 'IsEnabledUser',
+        'descr' => "True if the person is a user in the system and is enabled",
+        'allowedSubjectTypes' => [ Entity::tPerson],
+        'allowedObjectTypes'=> [ Entity::ValueTypeBoolean],
+        'canBeCancelled' => true,
+        'singleProperty' => true,
+        'flags' => []
+    ]
 ];
 
 class PersonPredicates implements PredicateDefiner

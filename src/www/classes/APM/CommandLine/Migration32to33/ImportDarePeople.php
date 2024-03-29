@@ -3,17 +3,14 @@
 namespace APM\CommandLine\Migration32to33;
 
 use APM\CommandLine\CommandLineUtility;
-use APM\System\ApmMySqlTableName;
-use APM\System\EntitySystem\Exception\Exception\Exception\ApmEntitySystemInterface;
-use APM\System\EntitySystem\Exception\Exception\Exception\EntityDoesNotExistException;
-use APM\System\EntitySystem\Exception\Exception\Exception\EntityType;
-use APM\System\EntitySystem\Exception\Exception\Exception\PersonPredicate;
-use APM\System\EntitySystem\Exception\Exception\Exception\SystemPredicate;
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
+use APM\EntitySystem\Schema\Entity;
 use APM\System\Person\InvalidPersonNameException;
+use APM\System\Person\PersonNotFoundException;
 use APM\ToolBox\FullName;
 use ThomasInstitut\DataTable\MySqlDataTable;
-use ThomasInstitut\EntitySystem\StatementStorage;
 use ThomasInstitut\EntitySystem\Tid;
+
 
 class ImportDarePeople extends CommandLineUtility
 {
@@ -23,24 +20,43 @@ class ImportDarePeople extends CommandLineUtility
       $dbConn = $systemManager->getDbConnection();
       $es = $systemManager->getEntitySystem();
       $pm = $systemManager->getPersonManager();
-      $darePeopleTable = new MySqlDataTable($dbConn, 'dare_people_to_import');
+      $darePeopleTable = new MySqlDataTable($dbConn, 'dare_people_to_import', false, 'dare_id');
+
+      $hotRun = false;
+      if (isset($argv[1]) && $argv[1] === 'doIt') {
+          $hotRun = true;
+      }
 
       $creationTimestamp = strval(time());
 
       $statementMetadata = [
-        [SystemPredicate::StatementAuthor, ApmEntitySystemInterface::SystemEntity],
-        [SystemPredicate::StatementTimestamp, $creationTimestamp]
+        [Entity::pStatementAuthor,  Entity::System],
+        [Entity::pStatementTimestamp, $creationTimestamp]
       ];
 
-      $createdPeople = [];
-
-      $dbConn->beginTransaction();
+//      $dbConn->beginTransaction();
 
       foreach ($darePeopleTable->getAllRows() as $row) {
         $name = $row['full_name'];
         print "Importing person '$name'...";
+        $personTid = null;
 
-        $personTid = $this->getPersonTidByName($name);
+        if ($row['tid'] !== null) {
+            $personTid = $row['tid'];
+            try {
+                $this->getSystemManager()->getPersonManager()->getPersonEntityData($personTid);
+                print "using tid $personTid in import table...";
+            } catch (PersonNotFoundException) {
+                print "... tid $personTid given in import table is not a person in Apm\n";
+                $personTid = null;
+            }
+        }
+        if ($personTid === null) {
+            $personTid = $this->getPersonTidByName($name);
+            if ($personTid !== null) {
+                print "found person with same name in APM, tid $personTid (" . Tid::toBase36String($personTid) . ")";
+            }
+        }
         if ($personTid === null) {
             // get sort name
             $lastName = $row['last_name'] ?? '';
@@ -53,26 +69,40 @@ class ImportDarePeople extends CommandLineUtility
             } else {
                $sortName = FullName::getSortName($name, true);
             }
-            try {
-                $personTid = $pm->createPerson($name, $sortName);
-            } catch (InvalidPersonNameException $e) {
-                print "Invalid name, skipping\n";
-                continue;
+            print "creating new with name '$name', sortName '$sortName'... ";
+            if ($hotRun) {
+                try {
+                    $personTid = $pm->createPerson($name, $sortName);
+                    print "tid $personTid (" . Tid::toBase36String($personTid) . ")... ";
+                } catch (InvalidPersonNameException $e) {
+                    print "Invalid name, skipping\n";
+                    continue;
+                }
             }
         }
-        try {
-            $currentData = $es->getEntityData($personTid);
-        } catch (EntityDoesNotExistException $e) {
-            print "Unexpected error: entity does not exist\n";
-            return;
+
+        print "importing data... ";
+
+        $dareId = $row['dare_id'];
+        $viafUrl = $row['viaf_url'] ?? '';
+
+        $viafId = 0;
+        if ($viafUrl !== '') {
+            $fields = explode('/', $viafUrl);
+            $viafId = intval($fields[count($fields)-1]);
         }
 
+        $dbUrl = $row['db_url'] ?? '';
+        $dnbUrl = $row['dnb_url'] ?? '';
 
-
-        print "\n";
+        print "DARE=$dareId ";
+        if ($viafId !== 0) {
+            print "VIAF=$viafId";
+        }
+        print " ...done\n";
       }
 
-      $dbConn->commit();
+//      $dbConn->commit();
 
 
   }
@@ -82,11 +112,13 @@ class ImportDarePeople extends CommandLineUtility
 
       $es = $this->getSystemManager()->getRawEntitySystem();
 
-      $statements = $es->getStatements(null, SystemPredicate::EntityName, $name);
+      $statements = $es->getStatements(null, Entity::pEntityName, trim($name));
 
       if (count($statements) === 0) {
           return null;
       }
+
+//      var_dump($statements);
 
       [ , $tid] = $statements[0];
 

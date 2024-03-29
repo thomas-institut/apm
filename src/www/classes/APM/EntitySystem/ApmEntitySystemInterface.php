@@ -196,4 +196,7 @@ interface ApmEntitySystemInterface
      */
     public function getAllEntitiesForType(int $type, bool $includeMerged = false) : array;
 
+
+
+
 }

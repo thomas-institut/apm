@@ -133,4 +133,37 @@ class EntitySystemPersonManager implements PersonManagerInterface, LoggerAwareIn
 
     }
 
+    /**
+     * @inheritDoc
+     */
+    public function getPersonEntityData(int $tid): EntityData
+    {
+        try {
+            $type = $this->es->getEntityType($tid);
+            if ($type !== Entity::tPerson) {
+                throw new PersonNotFoundException("Entity $tid not a person");
+            }
+            return $this->es->getEntityData($tid);
+        } catch (EntityDoesNotExistException) {
+            throw new PersonNotFoundException("Person $tid not found");
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getAllPeopleEntityData(): array
+    {
+        $peopleTids = $this->es->getAllEntitiesForType(Entity::tPerson);
+        $dataArray = [];
+        foreach ($peopleTids as $tid) {
+            try {
+                $dataArray[] = $this->es->getEntityData($tid);
+            } catch (EntityDoesNotExistException $e) {
+                // should never happen
+                throw new RuntimeException("Person $tid reported in all people tids not found");
+            }
+        }
+        return $dataArray;
+    }
 }

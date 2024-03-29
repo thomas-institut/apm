@@ -63,7 +63,7 @@ export const arabicDeGruyterAmiri = {
         spaceAfter: "0"
       },
       text: {
-        fontFamily: "ApmAmiri",
+        fontFamily: "Amiri",
         fontSize: "12 pt",
         fontStyle: "",
         fontWeight: "",
@@ -157,7 +157,7 @@ export const arabicDeGruyterAmiri = {
     },
     lineRangeSeparator: {
       text: {
-        fontFamily: 'FreeSerif'
+        fontFamily: 'ApmAmiri'
       }
     },
   postLineRangeSeparator: {
@@ -176,7 +176,7 @@ export const arabicDeGruyterAmiri = {
   },
   entrySeparator: {
     text: {
-      fontFamily: 'FreeSerif'
+      fontFamily: 'ApmAmiri'
     }
   },
   postEntrySeparator: {

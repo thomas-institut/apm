@@ -81,7 +81,7 @@ class CacheTool extends CommandLineUtility implements AdminUtility
 
         $query = 'TRUNCATE ' . $this->getCacheTableName();
         $this->getDbConn()->query($query);
-
+        $this->getSystemManager()->getMemDataCache()->clear();
         $this->logger->info("Cache flushed");
 
     }

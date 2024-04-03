@@ -8,4 +8,5 @@ interface JobHandlerInterface
 {
     public function run(SystemManager $sm, array $payload) : bool;
     public function mustBeUnique() : bool;
+    public function minTimeBetweenSchedules() : int;
 }

@@ -82,4 +82,12 @@ class MemcachedDataCache implements DataCache
     {
        // not supported by MemCached
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getRemainingTtl(string $key): int
+    {
+        return -1;
+    }
 }

@@ -3,8 +3,10 @@
 namespace ThomasInstitut\DataCache;
 
 use InvalidArgumentException;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\NullLogger;
 use RuntimeException;
-use const APM\EntitySystem\Schema\PersonPredicateDefs;
 
 /**
  * A DataCache that uses multiple data caches to store items.
@@ -12,8 +14,9 @@ use const APM\EntitySystem\Schema\PersonPredicateDefs;
  * The intended purpose is to have a cache that first looks into a memory cache
  * and, if the item is not found, looks into a datatable cache
  */
-class MultiCacheDataCache implements DataCache
+class MultiCacheDataCache implements DataCache, LoggerAwareInterface
 {
+    use LoggerAwareTrait;
     /**
      * @var DataCache[]
      */
@@ -28,7 +31,7 @@ class MultiCacheDataCache implements DataCache
 
     /**
      *
-     * @param DataCache|callable[] $caches DataCaches object or callables that generate a DataCache object
+     * @param DataCache[]|callable[] $caches DataCaches object or callables that generate a DataCache object
      * @param string[] $cachePrefixes  Prefixes to attach to the key for each cache
      * @param bool $strict  If true (default), throws an exception if a data cache cannot be constructed otherwise
      *    just continues with a null cache in its place
@@ -47,6 +50,7 @@ class MultiCacheDataCache implements DataCache
             }
         }
         $this->strict = $strict;
+        $this->logger = new NullLogger();
     }
 
     private function getDataCache(int $index) : DataCache {
@@ -67,11 +71,24 @@ class MultiCacheDataCache implements DataCache
      */
     public function get(string $key): string
     {
-        foreach ($this->caches as $i => $dataCache) {
+        $cachesWithoutData = [];
+        foreach(array_keys($this->caches) as $i) {
+            $dataCache = $this->getDataCache($i);
             try {
-                return $dataCache->get($this->prefixes[$i] . $key);
+                $data = $dataCache->get($this->prefixes[$i] . $key);
+                if (count($cachesWithoutData) > 0) {
+                    $remainingTtl = $dataCache->getRemainingTtl($key);
+                    if ($remainingTtl >= 0) {
+                        $this->logger->debug("Reestablishing cache for '$key' with ttl $remainingTtl in caches ["
+                            . implode(", ", $cachesWithoutData) . "]");
+                        foreach ($cachesWithoutData as $cacheIndex) {
+                            $this->getDataCache($cacheIndex)->set($this->prefixes[$cacheIndex] . $key, $data, $remainingTtl);
+                        }
+                    }
+                }
+                return $data;
             } catch (KeyNotInCacheException) {
-                // just continue
+                $cachesWithoutData[] = $i;
             }
         }
         throw new KeyNotInCacheException("Key '$key' not in multi-cache");
@@ -83,11 +100,10 @@ class MultiCacheDataCache implements DataCache
     public function isInCache(string $key): bool
     {
         try {
-            $this->get($key);
+            return is_string($this->get($key));
         } catch (KeyNotInCacheException) {
             return false;
         }
-        return true;
     }
 
     /**
@@ -128,5 +144,13 @@ class MultiCacheDataCache implements DataCache
         foreach($this->caches as $dataCache) {
             $dataCache->clean();
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getRemainingTtl(string $key): int
+    {
+        return -1;
     }
 }

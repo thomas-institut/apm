@@ -138,4 +138,8 @@ class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateOpenSearchIndex 
     {
         return true;
     }
+
+    public function minTimeBetweenSchedules() : int {
+        return 2;
+    }
 }

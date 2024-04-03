@@ -34,7 +34,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    const dataId = '004';
+    const dataId = '005';
 
     const kernelCacheKey = 'ApmEntitySystemKernel';
 
@@ -140,12 +140,15 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         try {
             $mergedInto = $this->memCache->get($cacheKey);
         } catch (KeyNotInCacheException) {
+//            $this->logger->debug("MergedInto info for $entity not in mem cache");
             $rows = $this->getMergesDataTable()->findRows([ self::ColEntity => $entity]);
             if ($rows->count() === 0) {
                 $mergedInto = 'null';
             } else {
                 $mergedInto = $rows->getFirst()[self::ColMergedInto];
             }
+//            $this->logger->debug("Storing MergedInto = '$mergedInto' for $entity in mem cache");
+
             $this->memCache->set($cacheKey, $mergedInto);
         }
         // at this point $mergedInto is either the string 'null', a numerical string or an integer
@@ -228,17 +231,23 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             $data->id = $entity;
             return $data;
         }
+//        $this->logger->debug("ApmEntitySystem: Getting entity data for $entity");
         try {
             $entityData =  $this->getInnerEntitySystem()->getEntityData($entity);
         } catch (\ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException) {
             throw new EntityDoesNotExistException("Entity $entity does not exits");
         }
 
+//        $this->logger->debug("Getting merged into for $entity");
         $entityData->mergedInto = $this->getMergedIntoEntity($entity);
 
         if ($entityData->isMerged()) {
             return $entityData;
         }
+        // get type and name
+        $entityData->type = $entityData->getObjectForPredicate(Entity::pEntityType);
+        $entityData->name = $entityData->getObjectForPredicate(Entity::pEntityName);
+
         // TODO: consider using caching here (if/when we have tons of merges)
         // use merged entities in all statements
         $newStatements = [];

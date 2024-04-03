@@ -5,10 +5,13 @@
 namespace APM\Api;
 
 use APM\System\Person\InvalidPersonNameException;
+use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
+use APM\System\SystemManager;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use APM\ToolBox\HttpStatus;
+use PHPUnit\Event\Telemetry\System;
 use PHPUnit\Util\Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -19,6 +22,9 @@ use ThomasInstitut\TimeString\TimeString;
 
 class ApiPeople extends ApiController
 {
+
+    const AllPeopleEssentialDataCacheKey = 'ApiPeople_AllPeopleEssentialData';
+    const AllPeopleEssentialDataTtl = 8 * 24 * 3600;
 
     public function getPersonEssentialData(Request $request, Response $response): Response {
         $this->profiler->start();
@@ -51,15 +57,39 @@ class ApiPeople extends ApiController
 
     public function getAllPeopleEssentialData(Request $request, Response $response): Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
-        $pm = $this->systemManager->getPersonManager();
+        $cache = $this->systemManager->getSystemDataCache();
+        try {
+            return $this->responseWithJson($response, unserialize($cache->get(self::AllPeopleEssentialDataCacheKey)));
+        } catch (KeyNotInCacheException) {
+            $dataToServe = self::buildAllPeopleEssentialData($this->systemManager->getPersonManager());
+            $cache->set(self::AllPeopleEssentialDataCacheKey, serialize($dataToServe), self::AllPeopleEssentialDataTtl);
+            return $this->responseWithJson($response, $dataToServe);
+        }
+    }
 
+    public static function buildAllPeopleEssentialData(PersonManagerInterface $pm) : array {
         $data = $pm->getAllPeopleEssentialData();
-
         $dataToServe = [];
         foreach($data as $essentialData) {
             $dataToServe[] = $essentialData->getExportObject();
         }
-        return $this->responseWithJson($response, $dataToServe);
+        return $dataToServe;
+    }
+
+    public static function updateCachedAllPeopleEssentialData(SystemManager $systemManager) : bool {
+        try {
+            $data = self::buildAllPeopleEssentialData($systemManager->getPersonManager());
+            $systemManager->getSystemDataCache()->set(self::AllPeopleEssentialDataCacheKey,
+                serialize($data), self::AllPeopleEssentialDataTtl);
+        } catch (\Exception $e) {
+            $systemManager->getLogger()->error("Exception while updating cached AllPeopleEssentialData",
+                [
+                    'code' => $e->getCode(),
+                    'msg' => $e->getMessage()
+                ]);
+            return false;
+        }
+        return true;
     }
 
     public function getWorks(Request $request, Response $response): Response {
@@ -99,10 +129,9 @@ class ApiPeople extends ApiController
             $this->logger->error("Invalid name creating person");
             return $this->responseWithJson($response, [ 'errorMsg' => 'Invalid name' ], HttpStatus::BAD_REQUEST);
         }
-
+        $this->systemManager->onPersonDataChanged($tid);
         // the person has been created
         return $this->responseWithJson($response, [ 'tid' => $tid ], HttpStatus::SUCCESS);
-
 
     }
 

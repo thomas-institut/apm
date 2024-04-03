@@ -34,8 +34,6 @@ class EntitySystemPersonManager implements PersonManagerInterface, LoggerAwareIn
      */
     public function getPersonEssentialData(int $personTid): PersonEssentialData
     {
-
-
         try {
             $personData = $this->es->getEntityData($personTid);
         } catch (EntityDoesNotExistException) {

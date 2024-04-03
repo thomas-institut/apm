@@ -12,6 +12,7 @@ use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\InvalidSearchSpec;
 use ThomasInstitut\DataTable\InvalidSearchType;
 use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\TimeString\InvalidTimeString;
 use ThomasInstitut\TimeString\InvalidTimeZoneException;
 use ThomasInstitut\TimeString\TimeString;
 
@@ -22,6 +23,9 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
 
 
     private DataTable $dataTable;
+    /**
+     * @var JobHandlerInterface[]
+     */
     private array $registeredJobs;
     private SystemManager $systemManager;
 
@@ -38,11 +42,11 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
             throw new InvalidArgumentException("Empty name given");
         }
 
-        $this->registeredJobs[$name] = [ 'handler' => $job];
+        $this->registeredJobs[$name] = $job;
         return true;
     }
 
-    private function getScheduledJobSignature(string $name, string $description) : string {
+    private function getScheduledJobTitle(string $name, string $description) : string {
         if ($description === '') {
             return $name;
         }
@@ -52,12 +56,56 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
     }
 
 
+    private function getJobSignature(string $name, string $description, array $payload) : string {
+
+        $id = $name . $description . json_encode($payload);
+
+        return hash('md2', $id);
+    }
+
+    private function getLastScheduledTimeForJob(string $signature) : int {
+
+        $rows = $this->dataTable->findRows([ 'signature' => $signature]);
+
+        if ($rows->count() === 0) {
+            return -1;
+        }
+        $timestamps = [];
+        foreach($rows as $row) {
+            if ($row['state'] !== ScheduledJobState::ERROR) {
+                try {
+                    $timestamps[] = TimeString::toTimeStamp($row['scheduled_at']);
+                } catch (InvalidTimeString|InvalidTimeZoneException $e) {
+                    // should never happen
+                    throw new \RuntimeException("Exception converting timeString to timestamp: " . $row['scheduled_at']);
+                }
+            }
+        }
+        if (count($timestamps) === 0) {
+            return -1;
+        }
+        return max($timestamps);
+    }
+
     public function scheduleJob(string $name, string $description, array $payload, int $secondsToWait = 0, int $maxAttempts = 1, int $secondBetweenRetries = 5): int
     {
         if (!$this->isRegistered($name)) {
             $this->logger->error("Attempt to schedule non-registered job '$name'");
             return -1;
         }
+        $signature = $this->getJobSignature($name, $description, $payload);
+
+        $minSecsBetweenSchedules = $this->registeredJobs[$name]->minTimeBetweenSchedules();
+
+        if ($minSecsBetweenSchedules !== 0) {
+            $timeSinceLastSchedule = time() - $this->getLastScheduledTimeForJob($signature);
+            if ($timeSinceLastSchedule < $minSecsBetweenSchedules) {
+                $this->logger->info("Rejecting schedule for job $name, only $timeSinceLastSchedule seconds has passed since last schedule");
+                return -1;
+            }
+        }
+
+
         $timeStampNow = microtime(true);
         try {
             $nextRetry = TimeString::fromTimeStamp($timeStampNow + $secondsToWait);
@@ -69,6 +117,7 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         }
 
         $row = [
+            'signature' => $signature,
             'name' => $name,
             'description' => $description,
             'payload' => serialize($payload),
@@ -86,7 +135,7 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
             $this->logger->error($e->getMessage());
             return -1;
         }
-        $this->logger->info(sprintf("Job '%s' scheduled with id %d", $this->getScheduledJobSignature($name, $description), $rowId));
+        $this->logger->info(sprintf("Job '%s' scheduled with id %d", $this->getScheduledJobTitle($name, $description), $rowId));
         return $rowId;
     }
 
@@ -172,7 +221,7 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         $jobId = $jobRow['id'];
         $jobName = $jobRow['name'];
         $jobDescription = $jobRow['description'];
-        $jobSignature = $this->getScheduledJobSignature($jobName, $jobDescription);
+        $jobTitle = $this->getScheduledJobTitle($jobName, $jobDescription);
         $completedRuns = intval($jobRow['completed_runs']) + 1;
         $maxRetries = intval($jobRow['max_attempts']);
 
@@ -187,14 +236,14 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
             $this->logger->error($e->getMessage());
             return;
         }
-        $handler = $this->registeredJobs[$jobRow['name']]['handler'];
+        $handler = $this->registeredJobs[$jobRow['name']];
         $payload = unserialize($jobRow['payload']);
         $secondsBetweenRetries = intval($jobRow['secs_between_retries']);
         $start = microtime(true);
         try {
             $result = $handler->run($this->systemManager, $payload);
         } catch (Exception $e) {
-            $this->logger->info("Job '$jobSignature' caused an exception", [ 'class' => get_class($e), 'code' => $e->getCode(), 'msg' => $e->getMessage()]);
+            $this->logger->info("Job '$jobTitle' caused an exception", [ 'class' => get_class($e), 'code' => $e->getCode(), 'msg' => $e->getMessage()]);
             $result = false;
         }
         $runTimeInMs = intval((microtime(true) - $start)*1000);
@@ -213,13 +262,13 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
                 $this->logger->error($e->getMessage());
                 return;
             }
-            $this->logger->info("Job '$jobSignature' (id $jobId) finished successfully in $runTimeInMs ms");
+            $this->logger->info("Job '$jobTitle' (id $jobId) finished successfully in $runTimeInMs ms");
             return;
         }
 
         if ($completedRuns < $maxRetries) {
             // schedule next retry
-            $this->logger->info("Job '$jobSignature' (id $jobId) finished with error, next attempt due $secondsBetweenRetries sec from now");
+            $this->logger->info("Job '$jobTitle' (id $jobId) finished with error, next attempt due $secondsBetweenRetries sec from now");
             $timeStampNow = microtime(true);
             try {
                 $this->dataTable->updateRow([
@@ -237,7 +286,7 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
             return;
         }
         // fail
-        $this->logger->error("Job '$jobSignature' (id $jobId) finished with error, no more retries left");
+        $this->logger->error("Job '$jobTitle' (id $jobId) finished with error, no more retries left");
         try {
             $this->dataTable->updateRow([
                 'id' => $jobRow['id'],

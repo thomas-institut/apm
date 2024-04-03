@@ -182,4 +182,8 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     public function onCollationTableSaved(int $userTid, int $ctId) : void {
 
     }
+
+    public function onPersonDataChanged(int $personTid) : void {
+
+    }
 }

@@ -2,18 +2,23 @@
 
 namespace APM\Jobs;
 
-use APM\Site\SiteWorks;
+use APM\Api\ApiPeople;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
 
-class SiteChunksUpdateDataCache implements JobHandlerInterface
+class ApiPeopleUpdateAllPeopleEssentialData implements JobHandlerInterface
 {
+
     public function run(SystemManager $sm, array $payload): bool
     {
-        return SiteWorks::updateDataCache($sm);
+        return ApiPeople::updateCachedAllPeopleEssentialData($sm);
     }
+
     public function mustBeUnique(): bool
     {
         return true;
+    }
+    public function minTimeBetweenSchedules() : int {
+        return 2;
     }
 }

@@ -2,15 +2,18 @@
 
 namespace ThomasInstitut\EntitySystem;
 
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\EntitySystem\EntityDataCache\EntityNotInCacheException;
 use ThomasInstitut\EntitySystem\Exception\StatementNotFoundException;
 
 /**
  * An EntitySystemWithMetadata with multiple statement storages and entity data caches
  */
-abstract class MultiStorageEntitySystem implements EntitySystemWithMetadata
+abstract class MultiStorageEntitySystem implements EntitySystemWithMetadata, LoggerAwareInterface
 {
 
+    use LoggerAwareTrait;
 
     /**
      * @inheritDoc
@@ -206,6 +209,7 @@ abstract class MultiStorageEntitySystem implements EntitySystemWithMetadata
         try {
             return $this->getEntityDataFromCache($entity);
         } catch (EntityNotInCacheException) {
+//            $this->logger->debug("MSES: entity data for $entity not in cache");
             $data = new EntityData();
             $data->id = $entity;
             $data->statements = $this->getStatementsData($entity, null, null);

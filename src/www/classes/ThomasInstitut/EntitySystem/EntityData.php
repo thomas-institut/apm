@@ -7,7 +7,24 @@ use ThomasInstitut\Exportable\ExportableObject;
 
 class EntityData
 {
+    /**
+     * Entity id
+     * @var int
+     */
     public int $id = -1;
+
+
+    /**
+     * The entity's type
+     * @var int
+     */
+    public int $type = -1;
+
+    /**
+     * The entity's name)
+     * @var string
+     */
+    public string $name = '';
     /**
      * @var StatementData[]
      */
@@ -38,12 +55,26 @@ class EntityData
      * Returns null if no such statement is found.
      *
      * @param int $predicate
+     * @param int|null $qualificationPredicate
+     * @param string|int|null $qualification
      * @return int|string|null
      */
-    public function getObjectForPredicate(int $predicate) : int|string|null {
+    public function getObjectForPredicate(int $predicate, int $qualificationPredicate = null, string|int|null $qualification = null) : int|string|null {
         foreach($this->statements as $statement) {
             if ($statement->predicate === $predicate && !$statement->isCancelled()) {
-                return $statement->object;
+                if ($qualificationPredicate !== null) {
+                    foreach ($statement->statementMetadata as $statementMetadatum) {
+                        [ $pred, $obj ] = $statementMetadatum;
+                        if ($pred === $qualificationPredicate) {
+                           if ($qualification === null || $qualification === $obj) {
+                               return $statement->object;
+                           }
+                        }
+                    }
+                } else {
+                    return $statement->object;
+                }
+
             }
         }
         return null;
@@ -58,6 +89,8 @@ class EntityData
         }
         return $objects;
     }
+
+
 
     public function isMerged() : bool {
         return $this->mergedInto !== null;

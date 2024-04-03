@@ -34,15 +34,15 @@ class FullName
      */
     static public function analyze(string $fullName) : array {
 
-        $commonPrefixes = ['de', 'la', 'von', 'van', 'della', 'al', 'ben', 'bin'];
+        $commonPrefixes = ['de', 'la', 'von', 'van', 'della', 'al', 'ben', 'bin', 'of', 'abd'];
 
-        $words = explode(' ', $fullName);
+        $words = explode(' ', trim($fullName));
 
         // First, join common prefixes
         $names = [];
         for ($i = 0; $i < count($words); $i++) {
             $name = $words[$i];
-            if (in_array($words[$i], $commonPrefixes)){
+            if (in_array(strtolower($words[$i]), $commonPrefixes)){
                 if (isset($words[$i+1])) {
                     $name .= ' ' . $words[$i+1];
                     $i++;

@@ -2,14 +2,28 @@
 
 namespace APM\Api;
 
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\ToolBox\HttpStatus;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\EntitySystem\StandardNames;
+use ThomasInstitut\EntitySystem\Tid;
 
 class ApiEntity extends ApiController
 {
 
+    public function getEntityData(Request $request, Response $response): Response {
+        $tid = Tid::fromString($request->getAttribute('tid'));
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':'  . $tid);
+
+        try {
+            $data = $this->systemManager->getEntitySystem()->getEntityData($tid);
+        } catch (EntityDoesNotExistException $e) {
+            $this->logger->info("Entity $tid not found");
+            return $this->responseWithStatus($response, HttpStatus::NOT_FOUND);
+        }
+        return $this->responseWithJson($response, $data);
+    }
 
 
     public function getEntitySchema(Request $request, Response $response): Response {

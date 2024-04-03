@@ -34,6 +34,7 @@ use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
 use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
 use APM\EntitySystem\Schema\Entity;
 use APM\FullTranscription\TranscriptionManager;
+use APM\Jobs\ApiPeopleUpdateAllPeopleEssentialData;
 use APM\Jobs\ApiSearchUpdateEditionsIndex;
 use APM\Jobs\ApiSearchUpdateEditorsAndEditionsCache;
 use APM\Jobs\ApiSearchUpdateTranscriptionsIndex;
@@ -41,7 +42,7 @@ use APM\Jobs\ApiSearchUpdateTranscribersAndTranscriptionsCache;
 use APM\Jobs\ApiUsersUpdateCtDataForUser;
 use APM\Jobs\ApiUsersUpdateTranscribedPagesData;
 use APM\Jobs\ApmJobName;
-use APM\Jobs\SiteChunksUpdateDataCache;
+use APM\Jobs\SiteWorksUpdateDataCache;
 use APM\Jobs\SiteDocumentsUpdateDataCache;
 use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
@@ -76,6 +77,7 @@ use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\DataTableDataCache;
 use ThomasInstitut\DataCache\MemcachedDataCache;
+use ThomasInstitut\DataCache\MultiCacheDataCache;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
@@ -152,7 +154,7 @@ class ApmSystemManager extends SystemManager {
     private ?CollationEngine $collationEngine;
     private ?PDO $dbConn;
     private ?ApmTranscriptionManager $transcriptionManager;
-    private ?DataTableDataCache $systemDataCache;
+    private ?MultiCacheDataCache $systemDataCache;
     private ?ApmCollationTableManager $collationTableManager;
     private ?ApmMultiChunkEditionManager $multiChunkEditionManager;
     private ?Twig $twig;
@@ -225,6 +227,7 @@ class ApmSystemManager extends SystemManager {
 
     public function getDbConnection() : PDO {
         if ($this->dbConn === null) {
+            $this->logger->debug("Getting DB connection");
             // Set up database connection
             try {
                 $this->dbConn = $this->setUpDbConnection();
@@ -532,13 +535,26 @@ class ApmSystemManager extends SystemManager {
     }
 
 
+
+
     public function getSystemDataCache(): DataCache
     {
         if ($this->systemDataCache === null) {
-            // set up system data cache
-            $this->systemDataCache = new DataTableDataCache(new MySqlDataTable($this->getDbConnection(),
-                $this->tableNames[ApmMySqlTableName::TABLE_SYSTEM_CACHE], true));
-            $this->systemDataCache->setLogger($this->getLogger()->withName('CACHE'));
+            $this->systemDataCache = new MultiCacheDataCache(
+                [
+                    $this->getMemDataCache(),
+                    function ()  {
+                        $this->logger->info("Creating datatable cache");
+                        $dataTableCache = new DataTableDataCache(new MySqlDataTable($this->getDbConnection(),
+                            $this->tableNames[ApmMySqlTableName::TABLE_SYSTEM_CACHE], true));
+                        $dataTableCache->setLogger($this->getLogger()->withName('CACHE'));
+                        return $dataTableCache;
+                    }
+                ],
+                [ 'ApmSystem_', ''],
+                true
+            );
+            $this->systemDataCache->setLogger($this->getLogger());
         }
         return $this->systemDataCache;
     }
@@ -721,6 +737,13 @@ class ApmSystemManager extends SystemManager {
 
     }
 
+    public function onPersonDataChanged(int $personTid): void
+    {
+        parent::onPersonDataChanged($personTid);
+        $this->logger->debug("Scheduling update to ApiPeople cache");
+        $this->getJobManager()->scheduleJob(ApmJobName::API_PEOPLE_UPDATE_CACHE, '', [], 0, 3, 20);
+    }
+
     public function onDocumentUpdated(int $userTid, int $docId): void
     {
         parent::onDocumentUpdated($userTid, $docId);
@@ -739,9 +762,18 @@ class ApmSystemManager extends SystemManager {
 
     public function getUserManager() : UserManagerInterface {
         if ($this->userManager === null) {
+//            $this->logger->debug("Creating UserManager");
             $this->userManager = new ApmUserManager(
-                new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_USERS], false),
-                new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_TOKENS], true)
+                function () {
+//                    $this->logger->debug("Creating Users DataTable");
+                    return new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_USERS], false);
+                },
+                function () {
+//                    $this->logger->debug("Creating UserTokens DataTable");
+                    return new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_TOKENS], true);
+                },
+                $this->getSystemDataCache(),
+                'ApmUM_'
             );
         }
         return $this->userManager;
@@ -750,6 +782,7 @@ class ApmSystemManager extends SystemManager {
     public function getPersonManager(): PersonManagerInterface
     {
         if ($this->personManager === null) {
+//            $this->logger->debug("Creating PersonManager");
             $this->personManager = new EntitySystemPersonManager($this->getEntitySystem(), $this->getUserManager());
         }
         return $this->personManager;
@@ -758,6 +791,7 @@ class ApmSystemManager extends SystemManager {
     public function getWorkManager(): WorkManager
     {
         if ($this->workManager === null) {
+//            $this->logger->debug("Creating WorkManager");
             $this->workManager = new DataTableWorkManager(
                 new MySqlDataTable($this->getDbConnection(),
                     $this->tableNames[ApmMySqlTableName::TABLE_WORKS], true));
@@ -768,6 +802,7 @@ class ApmSystemManager extends SystemManager {
     public function getJobManager(): JobQueueManager
     {
         if ($this->jobManager === null) {
+//            $this->logger->debug("Creating Job manager");
             $this->jobManager = new ApmJobQueueManager($this,
                 new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_JOBS], true));
             $this->jobManager->setLogger($this->logger->withName('JOB_QUEUE'));
@@ -779,8 +814,9 @@ class ApmSystemManager extends SystemManager {
     private function registerSystemJobs() : void
     {
         $this->jobManager->registerJob(ApmJobName::NULL_JOB, new NullJobHandler());
-        $this->jobManager->registerJob(ApmJobName::SITE_CHUNKS_UPDATE_DATA_CACHE, new SiteChunksUpdateDataCache());
+        $this->jobManager->registerJob(ApmJobName::SITE_CHUNKS_UPDATE_DATA_CACHE, new SiteWorksUpdateDataCache());
         $this->jobManager->registerJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE, new SiteDocumentsUpdateDataCache());
+        $this->jobManager->registerJob(ApmJobName::API_PEOPLE_UPDATE_CACHE, new ApiPeopleUpdateAllPeopleEssentialData());
         $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE, new ApiUsersUpdateTranscribedPagesData());
         $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE, new ApiUsersUpdateCtDataForUser());
         $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE, new ApiSearchUpdateTranscribersAndTranscriptionsCache());
@@ -791,18 +827,20 @@ class ApmSystemManager extends SystemManager {
 
     public function getEntitySystem(): ApmEntitySystemInterface
     {
-        $thisObject = $this;
         if ($this->apmEntitySystem === null) {
+//            $this->logger->debug("Creating entity system");
             $this->apmEntitySystem = new ApmEntitySystem(
-                function () use ($thisObject): TypedMultiStorageEntitySystem{
-                    return $thisObject->getRawEntitySystem();
+                function () : TypedMultiStorageEntitySystem{
+                    return $this->getRawEntitySystem();
                 },
-                function () use($thisObject): DataTable {
-                    return new MySqlDataTable($thisObject->getDbConnection(), $thisObject->tableNames[ApmMySqlTableName::ES_Merges], true);
+                function () : DataTable {
+//                    $this->logger->debug("Creating merges datatable");
+                    return new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::ES_Merges], true);
                 },
                 $this->getMemDataCache(),
                 self::MemCachePrefix_Apm_ES
             );
+            $this->apmEntitySystem->setLogger($this->logger);
         }
         return $this->apmEntitySystem;
     }
@@ -827,26 +865,33 @@ class ApmSystemManager extends SystemManager {
     public function getRawEntitySystem(): TypedMultiStorageEntitySystem
     {
         if ($this->typedMultiStorageEntitySystem === null) {
-
-            $defaultEntityDataCacheDataTable = new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::ES_Cache_Default]);
-            $defaultStorage = $this->createDefaultStatementStorage();
-            $defaultEntityDataCache = new DataTableEntityDataCache(
-                $defaultEntityDataCacheDataTable,
-                [
-                    'name' => function(EntityData $entityData) {
-                        return $entityData->getObjectForPredicate(Entity::pEntityName);
-                        },
-                    'type' =>
-                        function (EntityData $entityData) {
-                            return $entityData->getObjectForPredicate(Entity::pEntityType);
-                        }
-                ]
-            );
+//            $this->logger->debug("Creating inner entity system");
 
             $defaultConfig = new TypeStorageConfig();
-            $defaultConfig->withType(0)
-                ->withStorage($defaultStorage)
-                ->withDataCache($defaultEntityDataCache);
+            $defaultConfig->withType(0);
+            $defaultConfig->statementStorageCallable = function () {
+//                $this->logger->debug("Creating default statement storage");
+                return $this->createDefaultStatementStorage();
+            };
+            $defaultConfig->useCache = true;
+            $defaultConfig->entityDataCacheCallable = function () {
+//                $this->logger->debug("Creating default entity data cache datatable");
+                $defaultEntityDataCacheDataTable = new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::ES_Cache_Default]);
+                return new DataTableEntityDataCache(
+                    $defaultEntityDataCacheDataTable,
+                    [
+                        'name' => function(EntityData $entityData) {
+                            return $entityData->getObjectForPredicate(Entity::pEntityName);
+                        },
+                        'type' =>
+                            function (EntityData $entityData) {
+                                return $entityData->getObjectForPredicate(Entity::pEntityType);
+                            }
+                    ]
+                );
+            };
+
+            $defaultConfig->useMemCache = true;
 
             try {
                 $this->typedMultiStorageEntitySystem = new TypedMultiStorageEntitySystem(
@@ -855,6 +900,7 @@ class ApmSystemManager extends SystemManager {
                     $this->getMemDataCache(),
                     self::MemCachePrefix_TypedMultiStorage_ES
                 );
+                $this->typedMultiStorageEntitySystem->setLogger($this->logger);
             } catch (InvalidArgumentException) {
                 throw new RuntimeException("Bad entity system configuration");
             }
@@ -868,6 +914,7 @@ class ApmSystemManager extends SystemManager {
     public function getDataManager(): DataManager
     {
         if ($this->dataManager === null) {
+//            $this->logger->debug("Creating DataManager");
             $dataManager = new DataManager($this->getDbConnection(), $this->getPersonManager(), $this->tableNames,
                 $this->logger, $this->imageSources, $this->config[ApmConfigParameter::LANG_CODES]);
             $dataManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());

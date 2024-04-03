@@ -662,6 +662,9 @@ function createApiEntityRoutes(RouteCollectorProxy $group, string $prefix, Conta
         return (new ApiEntity($container))->getEntitySchema($request, $response);
     })->setName("api.$prefix.type.schema");
 
+    $group->get("/$prefix/data/{tid}",function(Request $request, Response $response) use ($container){
+        return (new ApiEntity($container))->getEntityData($request, $response);
+    })->setName("api.$prefix.data");
 }
 
 function createApiImageRoutes(RouteCollectorProxy $group, string $prefix, ContainerInterface $container) : void

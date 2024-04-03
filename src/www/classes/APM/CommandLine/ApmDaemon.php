@@ -2,6 +2,7 @@
 
 namespace APM\CommandLine;
 
+use APM\Api\ApiPeople;
 use APM\Site\SiteWorks;
 use APM\Site\SiteDocuments;
 use APM\System\ApmConfigParameter;
@@ -14,7 +15,6 @@ class ApmDaemon extends CommandLineUtility
     public function main($argc, $argv): void
     {
         $dataManager = $this->getSystemManager()->getDataManager();
-//        $personManager = $this->getSystemManager()->getPersonManager();
 
         $daemon = false;
         if (isset($argv[1]) && $argv[1] === '-d') {
@@ -24,12 +24,21 @@ class ApmDaemon extends CommandLineUtility
         $cacheItemsToReestablish = [
             [
                 'cacheKey' => SiteWorks::WORK_DATA_CACHE_KEY,
-                'builder' => function () use ($dataManager) { return SiteWorks::buildWorkData($dataManager);}
+                'ttl' => SiteWorks::WORK_DATA_TTL,
+                'builder' => function () { return SiteWorks::buildWorkData($this->getSystemManager()->getDataManager());}
             ],
             [
                 'cacheKey' => SiteDocuments::DOCUMENT_DATA_CACHE_KEY,
-                'builder' => function () use ($dataManager) {
-                        return SiteDocuments::buildDocumentData($dataManager);
+                'ttl' => SiteDocuments::DOCUMENT_DATA_TTL,
+                'builder' => function () {
+                        return SiteDocuments::buildDocumentData($this->getSystemManager()->getDataManager());
+                }
+            ],
+            [
+                'cacheKey' => ApiPeople::AllPeopleEssentialDataCacheKey,
+                'ttl' => ApiPeople::AllPeopleEssentialDataTtl,
+                'builder' => function () {
+                    return ApiPeople::buildAllPeopleEssentialData($this->getSystemManager()->getPersonManager());
                 }
             ]
         ];
@@ -98,7 +107,7 @@ class ApmDaemon extends CommandLineUtility
                     $this->logger->error("Exception trying to build data for $key", [ 'code'=> $e->getCode(), 'msg' => $e->getMessage()]);
                     continue;
                 }
-                $cache->set($item['cacheKey'], serialize($data));
+                $cache->set($item['cacheKey'], serialize($data), $item['ttl'] ?? 0);
                 $dataBuilt = true;
                 $end = microtime(true);
                 $this->logger->info(sprintf("Data for %s built and cached successfully in %.3f seconds", $key, $end - $start));

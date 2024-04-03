@@ -19,4 +19,8 @@ class ApiSearchUpdateTranscribersAndTranscriptionsCache implements JobHandlerInt
         return true;
     }
 
+    public function minTimeBetweenSchedules() : int {
+        return 2;
+    }
+
 }

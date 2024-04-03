@@ -48,6 +48,7 @@ class SiteDocuments extends SiteController
 {
 
     const DOCUMENT_DATA_CACHE_KEY = 'SiteDocuments-DocumentData';
+    const DOCUMENT_DATA_TTL = 8 * 24 * 3600;
 
     const TEMPLATE_DOCS_PAGE = 'documents-page.twig';
     const TEMPLATE_SHOW_DOCS_PAGE = 'doc-details.twig';
@@ -63,7 +64,7 @@ class SiteDocuments extends SiteController
     public function documentsPage(Request $request, Response $response): Response
     {
 
-        $dataManager = $this->systemManager->getDataManager();
+
         $this->profiler->start();
 
         $cache = $this->systemManager->getSystemDataCache();
@@ -72,6 +73,7 @@ class SiteDocuments extends SiteController
         } catch (KeyNotInCacheException $e) {
             // not in cache
             $this->logger->debug("Cache miss for SiteDocuments document data");
+            $dataManager = $this->systemManager->getDataManager();
             $data = self::buildDocumentData($dataManager);
             $cache->set(self::DOCUMENT_DATA_CACHE_KEY, serialize($data));
         }

@@ -52,7 +52,8 @@ use Twig\Error\SyntaxError;
 class SiteWorks extends SiteController
 {
 
-    const WORK_DATA_CACHE_KEY = 'SiteChunks-WorkData';
+    const WORK_DATA_CACHE_KEY = 'SiteWorks-WorkData';
+    const WORK_DATA_TTL = 8 * 24 * 3600;
     const TEMPLATE_WORKS_PAGE = 'works-page.twig';
     const TEMPLATE_WORK_PAGE = 'work-page.twig';
 
@@ -90,27 +91,20 @@ class SiteWorks extends SiteController
      */
     public function worksPage(Request $request, Response $response): Response
     {
-        $dataManager = $this->systemManager->getDataManager();
         $this->profiler->start();
         $cache = $this->systemManager->getSystemDataCache();
         $cacheHit = true;
-        $this->systemManager->getSqlQueryCounterTracker()->incrementSelect();
         try {
             $works = unserialize($cache->get(self::WORK_DATA_CACHE_KEY));
         } catch (KeyNotInCacheException) {
             // not in cache
             $cacheHit = false;
+            $dataManager = $this->systemManager->getDataManager();
             $works = self::buildWorkData($dataManager);
-            $cache->set(self::WORK_DATA_CACHE_KEY, serialize($works));
+            $cache->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
         }
-        if ($cacheHit) {
-            $this->systemManager->getCacheTracker()->incrementHits();
-        } else {
-            $this->systemManager->getCacheTracker()->incrementMisses();
-        }
-
         $this->profiler->stop();
-        $this->logProfilerData('chunksPage');
+        $this->logProfilerData('worksPage');
         return $this->renderPage($response, self::TEMPLATE_WORKS_PAGE, [
             'works' => $works
         ]);
@@ -136,19 +130,19 @@ class SiteWorks extends SiteController
         return $works;
     }
 
-    public static function updateDataCache(SystemManager $systemManager): bool
+    public static function updateCachedWorkData(SystemManager $systemManager): bool
     {
         try {
             $works = self::buildWorkData( $systemManager->getDataManager());
+            $systemManager->getSystemDataCache()->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
         } catch(Exception $e) {
-            $systemManager->getLogger()->error("Exception while building ChunkData",
+            $systemManager->getLogger()->error("Exception while updating cached WorkData",
                 [
                     'code' => $e->getCode(),
                     'msg' => $e->getMessage()
                 ]);
             return false;
         }
-        $systemManager->getSystemDataCache()->set(self::WORK_DATA_CACHE_KEY, serialize($works));
         return true;
     }
 

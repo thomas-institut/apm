@@ -39,6 +39,16 @@ interface DataCache
 
 
     /**
+     * Returns the number of seconds until the item expires.
+     * If the cache cannot determine this.
+     * @param string $key
+     * @return int
+     * @throws KeyNotInCacheException
+     */
+    public function getRemainingTtl(string $key) : int;
+
+
+    /**
      * Returns true if the given key is stored in the cache
      * @param string $key
      * @return bool

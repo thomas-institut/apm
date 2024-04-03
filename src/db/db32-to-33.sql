@@ -7,7 +7,7 @@ ALTER TABLE `ap_tokens` DROP FOREIGN KEY ap_tokens_ibfk_1;
 
 ALTER TABLE `ap_tokens` ADD CONSTRAINT `ap_user_id` FOREIGN KEY (`user_tid`) REFERENCES `ap_users`(`tid`) ON DELETE RESTRICT ON UPDATE RESTRICT;
 
-
+ALTER TABLE `ap_jobs` ADD `signature` VARCHAR(128) NOT NULL DEFAULT '\'\'' AFTER `id`;
 
 # Create default statement table
 CREATE TABLE `ap_es_default_st` (

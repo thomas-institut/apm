@@ -6,7 +6,7 @@ namespace ThomasInstitut\EntitySystem;
 use RuntimeException;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
-use ThomasInstitut\EntitySystem\EntityDataCache\EntityDataCache;
+use ThomasInstitut\DataTable\NullLogger;
 use ThomasInstitut\EntitySystem\EntityDataCache\EntityNotInCacheException;
 use ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException;
 use ThomasInstitut\EntitySystem\Exception\InvalidArgumentException;
@@ -51,6 +51,11 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
     const MemCacheTypeTtl = 90 * 24 * 3600; // 3 months
 
     /**
+     * TTL for cached entity data
+     */
+    const MemCacheDataTtl = 24*3600; // 1 day
+
+    /**
      * Constructs an entity system using the given $typePredicate as the predicate
      * that assigns a type to an entity and using the storage and cache configuration
      * given in the config array.
@@ -80,6 +85,7 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
         $this->typeConfig = $this->getCleanTypeConfig($typeConfig);
         $this->memCache = $memCache;
         $this->memCachePrefix = $memCachePrefix;
+        $this->logger = new NullLogger();
     }
 
 
@@ -118,8 +124,8 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
     }
 
 
-    private function getMemCacheKey(int $tid) : string {
-        return  $this->memCachePrefix !== '' ?  "$this->memCachePrefix-T-$tid" : "T-$tid";
+    private function getMemCacheKey(int $tid, string $postfix = '') : string {
+        return  $this->memCachePrefix !== '' ?  "$this->memCachePrefix-T-$tid-$postfix" : "T-$tid-$postfix";
     }
 
     /**
@@ -187,7 +193,7 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
         }
 
         $typeConfig = $this->typeConfig[$entityType] ?? $this->typeConfig[0];
-        $typeConfig->storage->storeMultipleStatementsAndCancellations($commands);
+        $typeConfig->getStatementStorage()->storeMultipleStatementsAndCancellations($commands);
 
         // get the data so that it gets cached
         try {
@@ -205,8 +211,8 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
     protected function getAllStorages() : array {
         $storages = [];
         foreach($this->typeConfig as $config) {
-            if (!in_array($config->storage, $storages, true)) {
-                $storages[] = $config->storage;
+            if (!in_array($config->getStatementStorage(), $storages, true)) {
+                $storages[] = $config->getStatementStorage();
             }
         }
         return $storages;
@@ -232,6 +238,9 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
      */
     public function getEntityData(int $entity): EntityData
    {
+
+//       $this->logger->debug("TypedMSES: getEntityData for $entity");
+
        $entityData = parent::getEntityData($entity);
 
        if(count($entityData->statements) === 0) {
@@ -240,13 +249,8 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
        return $entityData;
    }
 
-   private function getEntityDataCacheForType(int $type) : ?EntityDataCache {
-        $typeConfig = $this->typeConfig[$type] ?? $this->typeConfig[0];
-        return $typeConfig->useCache ? $typeConfig->entityDataCache : null;
-    }
-
     private function getStatementStorageForType(int $type) : StatementStorage {
-        return isset($this->typeConfig[$type]) ? $this->typeConfig[$type]->storage : $this->typeConfig[0]->storage;
+        return isset($this->typeConfig[$type]) ? $this->typeConfig[$type]->getStatementStorage() : $this->typeConfig[0]->getStatementStorage();
     }
 
     /**
@@ -257,7 +261,7 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
 
         $subjectType = $predicate ===  $this->typePredicate ? $object : $this->getEntityType($subject);
         $typeConfig = $this->typeConfig[$subjectType] ?? $this->typeConfig[0];
-        return $typeConfig->storage;
+        return $typeConfig->getStatementStorage();
     }
 
     /**
@@ -342,7 +346,7 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
                     }
                     try {
                         $storage = $this->getStorageForStatement($subject, $predicate, $object);
-                    } catch (EntityDoesNotExistException $e) {
+                    } catch (EntityDoesNotExistException) {
                         throw new EntityDoesNotExistException("Entity $subject in statement index $index does not exist");
                     }
                     if (!in_array($storage, $storagesInvolved)) {
@@ -429,18 +433,12 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
             }
             $typeConfig = $this->typeConfig[$type] ?? $this->typeConfig[0];
             if ($typeConfig->useCache) {
-                $typeConfig->entityDataCache->invalidateData($entity);
+                $typeConfig->getEntityDataCache()->invalidateData($entity);
+            }
+            if ($typeConfig->useMemCache) {
+                $this->memCache->delete($this->getMemCacheKey($entity, 'data'));
             }
         }
-
-        // get the data again to refresh the cache
-//        foreach ($entities as $entity) {
-//            try {
-//                $this->getEntityData($entity);
-//            } catch (EntityDoesNotExistException $e) {
-//                // normally won't happen, but no problem if it does
-//            }
-//        }
     }
 
 
@@ -456,9 +454,21 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
     {
         foreach ($this->typeConfig as $typeConfig) {
             if ($typeConfig->useCache) {
+                if ($typeConfig->useMemCache) {
+                    try {
+                        return unserialize($this->memCache->get($this->getMemCacheKey($entityId, 'data')));
+                    } catch (KeyNotInCacheException) {
+                    }
+                }
+//                $this->logger->debug("TypedMSESS: entity data for $entityId not in mem cache");
                 try {
-                    return $typeConfig->entityDataCache->getData($entityId, $this->cacheDataId);
-                }catch (EntityNotInCacheException) {
+                    $data =  $typeConfig->getEntityDataCache()->getData($entityId, $this->cacheDataId);
+                    if ($typeConfig->useMemCache) {
+//                        $this->logger->debug("TypedMSESS: storing entity data for $entityId in mem cache");
+                        $this->memCache->set($this->getMemCacheKey($entityId, 'data'), serialize($data), self::MemCacheDataTtl);
+                    }
+                    return $data;
+                } catch (EntityNotInCacheException) {
                 }
             }
         }
@@ -478,9 +488,14 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
 
         $typeConfig = $this->typeConfig[$type] ?? $this->typeConfig[0];
         if ($typeConfig->useCache) {
-            $typeConfig->entityDataCache->setData($entityId, $entityData, $this->cacheDataId, $typeConfig->ttl);
+            $typeConfig->getEntityDataCache()->setData($entityId, $entityData, $this->cacheDataId, $typeConfig->ttl);
         }
+        if ($typeConfig->useMemCache) {
+            $this->memCache->set($this->getMemCacheKey($entityId, 'data'), serialize($entityData), self::MemCacheDataTtl);
+        }
+
         // cache the type
         $this->memCache->set($this->getMemCacheKey($entityId), $type, self::MemCacheTypeTtl);
+
     }
 }

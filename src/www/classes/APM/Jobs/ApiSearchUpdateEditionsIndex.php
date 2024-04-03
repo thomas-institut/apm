@@ -121,4 +121,8 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateOpenSearchIndex implem
     {
         return true;
     }
+
+    public function minTimeBetweenSchedules() : int {
+        return 2;
+    }
 }

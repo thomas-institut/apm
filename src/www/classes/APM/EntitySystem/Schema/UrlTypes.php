@@ -7,35 +7,35 @@ const UrlTypeDefinition = [
 
     [
         Entity::UrlTypeGeneric,
-        'Generic Url',
+        'Generic',
         'A generic url',
         [],
         []
     ],
     [
         Entity::UrlTypeViaf,
-        'VIAF url',
+        'VIAF',
         'An url in the VIAF website',
         [],
         []
     ],
     [
         Entity::UrlTypeDb,
-        'DB url',
-        'An url in the DB website',
+        'DB',
+        'An url in the Deutsche Bibliothek website',
         [],
         []
     ],
     [
         Entity::UrlTypeDnb,
-        'DNB url',
+        'DNB',
         'An url in the DNB website',
         [],
         []
     ],
     [
         Entity::UrlTypeWikipedia,
-        'Wikipedia url',
+        'Wikipedia',
         'A url in any wikipedia',
         [],
         []

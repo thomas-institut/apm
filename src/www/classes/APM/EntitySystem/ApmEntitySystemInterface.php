@@ -197,6 +197,14 @@ interface ApmEntitySystemInterface
     public function getAllEntitiesForType(int $type, bool $includeMerged = false) : array;
 
 
+    /**
+     * Return an entity id from a string or -1 if the string does not represent a valid entity id
+     * @param string $tidString
+     * @return int
+     */
+    public function getEntityIdFromString(string $tidString) : int;
+
+
 
 
 }

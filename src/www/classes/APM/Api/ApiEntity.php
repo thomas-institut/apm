@@ -13,12 +13,14 @@ class ApiEntity extends ApiController
 {
 
     public function getEntityData(Request $request, Response $response): Response {
-        $tid = Tid::fromString($request->getAttribute('tid'));
+        $tidString = $request->getAttribute('tid');
+        $tid = $this->systemManager->getEntitySystem()->getEntityIdFromString($tidString);
+
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':'  . $tid);
 
         try {
             $data = $this->systemManager->getEntitySystem()->getEntityData($tid);
-        } catch (EntityDoesNotExistException $e) {
+        } catch (EntityDoesNotExistException) {
             $this->logger->info("Entity $tid not found");
             return $this->responseWithStatus($response, HttpStatus::NOT_FOUND);
         }

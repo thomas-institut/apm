@@ -10,8 +10,8 @@ const BasicEntityPredicateDefs = [
     [
         'tid' => Entity::pEntityType,
         'type' => Entity::tRelation,
-        'name' => 'EntityType',
-        'descr' => 'Defines the entity type for an Entity',
+        'name' => 'Entity Type',
+        'descr' => 'The type for an Entity',
         'allowedSubjectTypes' => null,
         'allowedObjectTypes'=> [ Entity::tEntityType],
         'canBeCancelled' => false,
@@ -22,7 +22,7 @@ const BasicEntityPredicateDefs = [
         'tid' => Entity::pEntityName,
         'type' => Entity::tAttribute,
         'name' => 'Entity Name',
-        'descr' => "Defines the entity's name",
+        'descr' => "The entity's name",
         'allowedSubjectTypes' => null,
         'allowedObjectTypes'=> null,
         'canBeCancelled' => false,
@@ -33,7 +33,7 @@ const BasicEntityPredicateDefs = [
         'tid' => Entity::pEntityDescription,
         'type' => Entity::tAttribute,
         'name' => 'Entity Descriptions',
-        'descr' => "Describes the entity",
+        'descr' => "The entity's description",
         'allowedSubjectTypes' => null,
         'allowedObjectTypes'=> null,
         'canBeCancelled' => true,
@@ -63,7 +63,7 @@ const BasicEntityPredicateDefs = [
         'flags' => []
     ],
     [
-        'tid' => Entity::pAlias,
+        'tid' => Entity::pAlternateName,
         'type' => Entity::tAttribute,
         'name' => 'Alias',
         'descr' => "An alternate name for the entity, normally qualified with a language",
@@ -133,6 +133,17 @@ const BasicEntityPredicateDefs = [
         'singleProperty' => false,
         'flags' => []
     ],
+    [
+        'tid' => Entity::pDeprecated,
+        'type' => Entity::tAttribute,
+        'name' => 'Deprecated',
+        'descr' => "If true, the entity (normally a predicate or a type) is deprecated and should not be used any more",
+        'allowedSubjectTypes' => null,
+        'allowedObjectTypes'=> [ Entity::ValueTypeBoolean],
+        'canBeCancelled' => true,
+        'singleProperty' => true,
+        'flags' => []
+    ],
 
 ];
 const StatementMetadataPredicateDefs = [
@@ -172,70 +183,70 @@ const StatementMetadataPredicateDefs = [
 ];
 const StatementQualificationPredicateDefs = [
     [
-        'tid' => Entity::pStLang,
+        'tid' => Entity::pObjectLang,
         'type' => Entity::tRelation,
-        'name' => 'Language Statement Qualification',
+        'name' => 'Language',
         'descr' => "The language of the statement's object",
         'allowedSubjectTypes' => null,
-        'allowedObjectTypes'=> [ Entity::tLang],
+        'allowedObjectTypes'=> [Entity::tLang],
         'canBeCancelled' => false,
         'singleProperty' => true,
-        'flags' => [ PredicateFlag::StatementMetadata ]
+        'flags' => [ PredicateFlag::StatementMetadata, PredicateFlag::QualificationPredicate ]
     ],
     [
-        'tid' => Entity::pStSeq,
+        'tid' => Entity::pObjectSequence,
         'type' => Entity::tAttribute,
-        'name' => 'Sequence Statement Qualification',
-        'descr' => "A sequence number that indicates the position of the statement among statements of the same kind",
+        'name' => 'Sequence',
+        'descr' => "A sequence number that indicates the position of the statement's object among statements with the same predicate",
         'allowedSubjectTypes' => null,
         'allowedObjectTypes'=> [ Entity::ValueTypeInteger],
         'canBeCancelled' => false,
         'singleProperty' => true,
-        'flags' => [ PredicateFlag::StatementMetadata ]
+        'flags' => [ PredicateFlag::StatementMetadata, PredicateFlag::QualificationPredicate ]
     ],
     [
-        'tid' => Entity::pStFrom,
+        'tid' => Entity::pObjectFrom,
         'type' => Entity::tAttribute,
-        'name' => 'Date From Statement Qualification',
+        'name' => 'From',
         'descr' => "The date from which the statement obtains",
         'allowedSubjectTypes' => null,
         'allowedObjectTypes'=> [ Entity::ValueTypeVagueDate],
         'canBeCancelled' => false,
         'singleProperty' => true,
-        'flags' => [ PredicateFlag::StatementMetadata ]
+        'flags' => [ PredicateFlag::StatementMetadata, PredicateFlag::QualificationPredicate ]
     ],
     [
-        'tid' => Entity::pStUntil,
+        'tid' => Entity::pObjectUntil,
         'type' => Entity::tAttribute,
-        'name' => 'Date Until Statement Qualification',
+        'name' => 'Until',
         'descr' => "The date until which the statement obtains",
         'allowedSubjectTypes' => null,
         'allowedObjectTypes'=> [ Entity::ValueTypeVagueDate],
         'canBeCancelled' => false,
         'singleProperty' => true,
-        'flags' => [ PredicateFlag::StatementMetadata ]
+        'flags' => [ PredicateFlag::StatementMetadata, PredicateFlag::QualificationPredicate ]
     ],
     [
-        'tid' => Entity::pStUrlType,
+        'tid' => Entity::pObjectUrlType,
         'type' => Entity::tRelation,
-        'name' => 'Url Type Statement Qualification',
+        'name' => 'Url Type',
         'descr' => "If the object of the statement is a URL, the URL type",
         'allowedSubjectTypes' => null,
         'allowedObjectTypes'=> [ Entity::tUrlType],
         'canBeCancelled' => false,
         'singleProperty' => true,
-        'flags' => [ PredicateFlag::StatementMetadata ]
+        'flags' => [ PredicateFlag::StatementMetadata, PredicateFlag::QualificationPredicate ]
     ],
     [
-        'tid' => Entity::pStIdType,
+        'tid' => Entity::pObjectIdType,
         'type' => Entity::tRelation,
-        'name' => 'ID Type Statement Qualification',
+        'name' => 'ID Type',
         'descr' => "If the object of the statement is an id, the id type",
         'allowedSubjectTypes' => null,
         'allowedObjectTypes'=> [ Entity::tIdType],
         'canBeCancelled' => false,
         'singleProperty' => true,
-        'flags' => [ PredicateFlag::StatementMetadata ]
+        'flags' => [ PredicateFlag::StatementMetadata, PredicateFlag::QualificationPredicate ]
     ],
 ];
 const StatementCancellationPredicateDefs = [

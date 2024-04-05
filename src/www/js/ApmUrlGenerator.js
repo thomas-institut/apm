@@ -219,8 +219,8 @@ class ApmUrlGenerator {
         return `${this.base}/api/person/${tid}/data/essential`
     }
 
-    apiPersonGetEssentialDataAll() {
-        return `${this.base}/api/person/all/data/essential`
+    apiPersonGetDataForPeoplePage() {
+        return `${this.base}/api/person/all/dataForPeoplePage`
     }
 
     apiPersonCreate() {
@@ -269,6 +269,14 @@ class ApmUrlGenerator {
 
     apiConvertCollationTable(tableId) {
         return `${this.base}/api/collation/convert/${tableId}`;
+    }
+
+    apiEntityGetData(tid) {
+        return `${this.base}/api/entity/${tid}/data`
+    }
+
+    siteEntity(tid) {
+        return `${this.base}/entity/${tid}`;
     }
 
     apiGetCollationTable(tableId, compactEncodedTimeString = '') {

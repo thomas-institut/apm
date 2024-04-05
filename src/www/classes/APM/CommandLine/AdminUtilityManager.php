@@ -8,39 +8,30 @@ namespace APM\CommandLine;
 class AdminUtilityManager extends CommandLineUtility
 {
 
-    const DESC = 'APM Admin Utility';
-
     /**
      * @var array
      */
     private array $commands;
     private string $calledScriptName;
-    private array $commandArgv;
-    private int $commandArgc;
+    protected array $commandArgv;
+    protected int $commandArgc;
+    private string $description;
 
-    public function __construct(array $config, int $argc, array $argv)
+    public function __construct(array $config, int $argc, array $argv, $description)
     {
         parent::__construct($config, $argc, $argv);
 
         $this->calledScriptName = basename($argv[0]);
-
-        $this->commands = [];
-
         $this->commandArgv = array_slice($argv, 1);
         $this->commandArgc = $argc -1;
 
-        $utilityObjects = [
-            new CacheTool($config, $this->commandArgc, $this->commandArgv),
-            new JobQueueTool($config, $this->commandArgc, $this->commandArgv),
-            new EntityTool($config, $this->commandArgc, $this->commandArgv),
-            new UserTool($config, $this->commandArgc, $this->commandArgv)
-        ];
-
-        $this->commands = $this->getCommandObjectFromUtilityObjectArray($utilityObjects);
+        $this->description = $description;
+        $this->setCommands([]);
 
     }
 
-    private function getCommandObjectFromUtilityObjectArray(array $utilityObjectArray) : array {
+
+    protected function setCommands(array $utilityObjectArray) : void {
         $commandObject = [];
         foreach ($utilityObjectArray as $utilityObject) {
             /** @var AdminUtility $utilityObject */
@@ -50,7 +41,7 @@ class AdminUtilityManager extends CommandLineUtility
                 'object' => $utilityObject
             ];
         }
-        return $commandObject;
+        $this->commands = $commandObject;
     }
 
 
@@ -90,7 +81,7 @@ class AdminUtilityManager extends CommandLineUtility
 
     private function printGeneralHelp() : void {
 
-        printf("APM admin utility\n");
+        printf("$this->description\n");
         printf("   %s <command> [<command arguments>]  : Runs the given command\n", $this->calledScriptName);
         printf("   %s help <command>: Prints help message for the given command\n", $this->calledScriptName);
         print("\n");

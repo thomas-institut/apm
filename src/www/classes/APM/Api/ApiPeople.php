@@ -23,8 +23,8 @@ use ThomasInstitut\TimeString\TimeString;
 class ApiPeople extends ApiController
 {
 
-    const AllPeopleEssentialDataCacheKey = 'ApiPeople_AllPeopleEssentialData';
-    const AllPeopleEssentialDataTtl = 8 * 24 * 3600;
+    const AllPeopleDataForPeoplePageCacheKey = 'ApiPeople_AllPeopleDataForPeoplePage';
+    const AllPeopleDataForPeoplePageTtl = 8 * 24 * 3600;
 
     public function getPersonEssentialData(Request $request, Response $response): Response {
         $this->profiler->start();
@@ -55,19 +55,19 @@ class ApiPeople extends ApiController
         return $this->responseWithJson($response, $data->getExportObject());
     }
 
-    public function getAllPeopleEssentialData(Request $request, Response $response): Response {
+    public function getAllPeopleDataForPeoplePage(Request $request, Response $response): Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
         $cache = $this->systemManager->getSystemDataCache();
         try {
-            return $this->responseWithJson($response, unserialize($cache->get(self::AllPeopleEssentialDataCacheKey)));
+            return $this->responseWithJson($response, unserialize($cache->get(self::AllPeopleDataForPeoplePageCacheKey)));
         } catch (KeyNotInCacheException) {
-            $dataToServe = self::buildAllPeopleEssentialData($this->systemManager->getPersonManager());
-            $cache->set(self::AllPeopleEssentialDataCacheKey, serialize($dataToServe), self::AllPeopleEssentialDataTtl);
+            $dataToServe = self::buildAllPeopleDataForPeoplePage($this->systemManager->getPersonManager());
+            $cache->set(self::AllPeopleDataForPeoplePageCacheKey, serialize($dataToServe), self::AllPeopleDataForPeoplePageTtl);
             return $this->responseWithJson($response, $dataToServe);
         }
     }
 
-    public static function buildAllPeopleEssentialData(PersonManagerInterface $pm) : array {
+    public static function buildAllPeopleDataForPeoplePage(PersonManagerInterface $pm) : array {
         $data = $pm->getAllPeopleEssentialData();
         $dataToServe = [];
         foreach($data as $essentialData) {
@@ -76,11 +76,11 @@ class ApiPeople extends ApiController
         return $dataToServe;
     }
 
-    public static function updateCachedAllPeopleEssentialData(SystemManager $systemManager) : bool {
+    public static function updateCachedAllPeopleDataForPeoplePage(SystemManager $systemManager) : bool {
         try {
-            $data = self::buildAllPeopleEssentialData($systemManager->getPersonManager());
-            $systemManager->getSystemDataCache()->set(self::AllPeopleEssentialDataCacheKey,
-                serialize($data), self::AllPeopleEssentialDataTtl);
+            $data = self::buildAllPeopleDataForPeoplePage($systemManager->getPersonManager());
+            $systemManager->getSystemDataCache()->set(self::AllPeopleDataForPeoplePageCacheKey,
+                serialize($data), self::AllPeopleDataForPeoplePageTtl);
         } catch (\Exception $e) {
             $systemManager->getLogger()->error("Exception while updating cached AllPeopleEssentialData",
                 [

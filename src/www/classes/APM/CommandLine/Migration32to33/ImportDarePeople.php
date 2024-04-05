@@ -88,7 +88,7 @@ class ImportDarePeople extends CommandLineUtility
                 'name' => 'DB url',
                 'predicate' => Entity::pUrl,
                 'object' => strval($dbUrl),
-                'metadata' => [Entity::pStUrlType, Entity::UrlTypeDb],
+                'metadata' => [Entity::pObjectUrlType, Entity::UrlTypeDb],
                 'overwrite' => true
             ];
 
@@ -97,7 +97,7 @@ class ImportDarePeople extends CommandLineUtility
                 'name' => 'DNB url',
                 'predicate' => Entity::pUrl,
                 'object' => strval($dnbUrl),
-                'metadata' => [Entity::pStUrlType, Entity::UrlTypeDnb],
+                'metadata' => [Entity::pObjectUrlType, Entity::UrlTypeDnb],
                 'overwrite' => true
             ];
 
@@ -114,7 +114,7 @@ class ImportDarePeople extends CommandLineUtility
                 'name' => 'VIAF url',
                 'predicate' => Entity::pUrl,
                 'object' => strval($viafUrl),
-                'metadata' => [Entity::pStUrlType, Entity::UrlTypeViaf],
+                'metadata' => [Entity::pObjectUrlType, Entity::UrlTypeViaf],
                 'overwrite' => true
             ];
 
@@ -128,7 +128,7 @@ class ImportDarePeople extends CommandLineUtility
                 'name' => 'VIAF id',
                 'predicate' => Entity::pExternalId,
                 'object' => strval($viafId),
-                'metadata' => [Entity::pStIdType, Entity::IdTypeViaf],
+                'metadata' => [Entity::pObjectIdType, Entity::IdTypeViaf],
                 'overwrite' => true
             ];
 

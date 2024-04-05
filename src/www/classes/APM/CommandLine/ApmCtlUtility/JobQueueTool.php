@@ -1,7 +1,9 @@
 <?php
 
-namespace APM\CommandLine;
+namespace APM\CommandLine\ApmCtlUtility;
 
+use APM\CommandLine\AdminUtility;
+use APM\CommandLine\CommandLineUtility;
 use APM\Jobs\ApmJobName;
 use APM\System\Job\ScheduledJobState;
 

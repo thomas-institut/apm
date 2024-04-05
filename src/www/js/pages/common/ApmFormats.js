@@ -18,7 +18,7 @@ export class ApmFormats {
   }
   /**
    * Returns a formatted date/time string from the given input variable,
-   * which can a timestamp in seconds, a string that can be parsed into
+   * which can be a timestamp in seconds, a string that can be parsed into
    * a date/time (in local time) or a Date object.
    *
    * Note: use TimeString.toDate() to convert a TimeString into a date object.

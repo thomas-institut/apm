@@ -27,6 +27,7 @@ use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\EntitySystem\EntityData;
 use ThomasInstitut\EntitySystem\EntitySystem;
 use ThomasInstitut\EntitySystem\StatementData;
+use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 
 
@@ -34,7 +35,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    const dataId = '005';
+    const dataId = '006';
 
     const kernelCacheKey = 'ApmEntitySystemKernel';
 
@@ -227,18 +228,15 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
     public function getEntityData(int $entity): EntityData
     {
         if ($this->getKernel()->isSystemEntity($entity)) {
-            $data = new EntityData();
-            $data->id = $entity;
-            return $data;
+           return $this->getKernel()->getEntityData($entity);
         }
-//        $this->logger->debug("ApmEntitySystem: Getting entity data for $entity");
+
         try {
             $entityData =  $this->getInnerEntitySystem()->getEntityData($entity);
         } catch (\ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException) {
             throw new EntityDoesNotExistException("Entity $entity does not exits");
         }
 
-//        $this->logger->debug("Getting merged into for $entity");
         $entityData->mergedInto = $this->getMergedIntoEntity($entity);
 
         if ($entityData->isMerged()) {
@@ -613,4 +611,14 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
     }
 
 
+    /**
+     * @inheritDoc
+     */
+    public function getEntityIdFromString(string $tidString): int
+    {
+        if (strlen($tidString) < 8 && intval($tidString) !== 0) {
+            return intval($tidString);
+        }
+        return Tid::fromString($tidString);
+    }
 }

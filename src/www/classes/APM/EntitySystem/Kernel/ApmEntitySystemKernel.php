@@ -2,6 +2,7 @@
 
 namespace APM\EntitySystem\Kernel;
 
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Exception\InvalidObjectException;
 use APM\EntitySystem\Exception\InvalidPredicateException;
 use APM\EntitySystem\Exception\InvalidStatementException;
@@ -19,22 +20,13 @@ use APM\EntitySystem\Schema\SystemPredicates;
 use APM\EntitySystem\Schema\UrlTypes;
 use APM\EntitySystem\Schema\ValueTypes;
 use LogicException;
+use ThomasInstitut\EntitySystem\EntityData;
 
 /**
- * The "schema" heart of the Apm entity system
+ * The heart of the Apm entity system
  *
- * Defines all system entities, types, value types and predicates
+ * Manages all system entities, types, value types and predicates
  *
- * System Entities:
- *
- *    1: System
- *
- *   11-100: EntityTypes
- *   101-200: Value Types
- *   201-1000: System Predicates
- *   1001-5000: Other Predicates
- *
- *   5001-9999: Various entities
  *
  */
 class ApmEntitySystemKernel
@@ -179,6 +171,86 @@ class ApmEntitySystemKernel
                 throw new LogicException("System entity $tid is defined $definitionCount times");
             }
         }
+    }
+
+    /**
+     * @throws EntityDoesNotExistException
+     */
+    public function getEntityData(int $entity): EntityData {
+
+        try {
+            return $this->getEntityDataFromEntityArray($this->entityTypes, $entity, function ($def){
+                return $this->genEntityDataForEntityType($def);
+            });
+        } catch (EntityDoesNotExistException) {
+        }
+
+        try {
+            return $this->getEntityDataFromEntityArray($this->predicates, $entity, function ($def){
+                return $this->genEntityDataForPredicate($def);
+            });
+        } catch (EntityDoesNotExistException) {
+        }
+
+        try {
+            return $this->getEntityDataFromEntityArray($this->valueTypes, $entity, function ($def){
+                return $this->genEntityDataForValueType($def);
+            });
+        } catch (EntityDoesNotExistException) {
+        }
+
+        try {
+            return $this->getEntityDataFromEntityArray($this->otherEntities, $entity, function ($def){
+                return $this->genEntityDataForOtherEntity($def);
+            });
+        } catch (EntityDoesNotExistException) {
+        }
+
+        throw  new EntityDoesNotExistException();
+    }
+
+
+    private function genEntityDataFromEntityDefinition(EntityDefinition $def) : EntityData {
+        $data = new EntityData();
+        $data->type = Entity::tEntityType;
+        $data->name = $def->name;
+        $data->id = $def->tid;
+        return $data;
+    }
+
+    private function genEntityDataForEntityType(EntityTypeDefinition $def) : EntityData {
+        return $this->genEntityDataFromEntityDefinition($def);
+    }
+
+    private function genEntityDataForPredicate(PredicateDefinition $def) : EntityData {
+        return $this->genEntityDataFromEntityDefinition($def);
+    }
+
+    private function genEntityDataForValueType(EntityTypeDefinition $def) : EntityData {
+        return $this->genEntityDataFromEntityDefinition($def);
+    }
+
+    private function genEntityDataForOtherEntity(EntityDefinition $def) : EntityData {
+        return $this->genEntityDataFromEntityDefinition($def);
+    }
+
+
+
+    /**
+     * @param EntityDefinition[] $entityDefArray
+     * @param int $entity
+     * @param callable $generator
+     * @return EntityData
+     * @throws EntityDoesNotExistException
+     */
+
+    private function getEntityDataFromEntityArray(array $entityDefArray, int $entity, callable $generator) : EntityData {
+        foreach($entityDefArray as $entityDef) {
+            if ($entityDef->tid === $entity) {
+                return call_user_func($generator, $entityDef);
+            }
+        }
+        throw new EntityDoesNotExistException();
     }
 
     public function predicateCanBeCancelled($tid): bool {

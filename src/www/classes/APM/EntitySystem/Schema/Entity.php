@@ -45,9 +45,6 @@ class Entity implements TidDefiner
     const tOccupation = 117;
     const tOrganizationalRole = 118;
 
-
-
-
     // Value types
 
     const ValueTypeText = 1001;
@@ -70,12 +67,13 @@ class Entity implements TidDefiner
     const pEntityCreationTimestamp = 2004;
     const pSortName = 2005;
     const pNameInOriginalLanguage = 2006;
-    const pAlias = 2007;
+    const pAlternateName = 2007;
     const pExternalId = 2008;
     const pUrl = 2009;
     const pEmailAddress = 2010;
     const pMember = 2011;
     const pMemberOf = 2012;
+    const pDeprecated = 2013;
 
     // Basic statement metadata predicates
 
@@ -83,13 +81,13 @@ class Entity implements TidDefiner
     const pStatementTimestamp = 3002;
     const pStatementEditorialNote = 3003;
 
-    // Statement qualification predicates
-    const pStLang = 4001;
-    const pStSeq = 4002;
-    const pStFrom = 4003;
-    const pStUntil = 4004;
-    const pStUrlType = 4005;
-    const pStIdType = 4006;
+    // Object qualification predicates
+    const pObjectLang = 4001;
+    const pObjectSequence = 4002;
+    const pObjectFrom = 4003;
+    const pObjectUntil = 4004;
+    const pObjectUrlType = 4005;
+    const pObjectIdType = 4006;
 
     // Cancellation predicates
     const pCancelledBy = 5001;
@@ -141,6 +139,7 @@ class Entity implements TidDefiner
     // ID types
     const IdTypeWikiData = 10001;
     const IdTypeViaf = 10002;
+    const IdTypeGnd = 10003;
 
 
     // Area types

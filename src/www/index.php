@@ -26,6 +26,7 @@ use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiPeople;
 use APM\Api\ApiTranscription;
 use APM\Api\ApiWorks;
+use APM\Site\SiteEntity;
 use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePeople;
 use APM\System\ConfigLoader;
@@ -167,6 +168,12 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
                 return (new SitePeople($container))->personPage($request, $response);
             })
             ->setName('person');
+
+        $group->get('/entity/{tid}',
+            function(Request $request, Response $response) use ($container){
+                return (new SiteEntity($container))->entityPage($request, $response);
+            })
+            ->setName('entity');
 
         // DASHBOARD
         $group->get('/dashboard',
@@ -464,9 +471,9 @@ function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) :
 
         //  PERSON
 
-        $group->get('/person/all/data/essential',
+        $group->get('/person/all/dataForPeoplePage',
             function(Request $request, Response $response) use ($container){
-                return (new ApiPeople($container))->getAllPeopleEssentialData($request, $response);
+                return (new ApiPeople($container))->getAllPeopleDataForPeoplePage($request, $response);
             })
             ->setName('api.person.data.essential.all');
 
@@ -658,11 +665,11 @@ function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) :
 
 function createApiEntityRoutes(RouteCollectorProxy $group, string $prefix, ContainerInterface $container) : void
 {
-    $group->get("/$prefix/type/{entityType}/schema",function(Request $request, Response $response) use ($container){
+    $group->get("/$prefix/{entityType}/schema",function(Request $request, Response $response) use ($container){
         return (new ApiEntity($container))->getEntitySchema($request, $response);
     })->setName("api.$prefix.type.schema");
 
-    $group->get("/$prefix/data/{tid}",function(Request $request, Response $response) use ($container){
+    $group->get("/$prefix/{tid}/data",function(Request $request, Response $response) use ($container){
         return (new ApiEntity($container))->getEntityData($request, $response);
     })->setName("api.$prefix.data");
 }

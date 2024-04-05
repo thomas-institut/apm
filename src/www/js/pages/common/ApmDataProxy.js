@@ -60,7 +60,7 @@ export class ApmDataProxy {
       local: new WebStorageKeyCache('local', this.cacheDataId)
     }
 
-    this.cachedFetcher = new CachedFetcher(this.caches.memory);
+    this.cachedFetcher = new CachedFetcher(this.caches.session);
   }
 
   async getPersonEssentialData(personId) {
@@ -70,7 +70,7 @@ export class ApmDataProxy {
   async getAllPersonEssentialData(){
     let data = this.caches.memory.retrieve("allPeopleData");
     if (data === null) {
-      data = await this.get(urlGen.apiPersonGetEssentialDataAll(), true);
+      data = await this.get(urlGen.apiPersonGetDataForPeoplePage(), true);
       this.caches.memory.store('allPeopleData', data, 5);
     }
     return data;
@@ -198,6 +198,10 @@ export class ApmDataProxy {
    */
   get(url, forceActualFetch = true) {
     return this.fetch(url, 'GET', [], forceActualFetch)
+  }
+
+  getEntityData(tid) {
+    return this.fetch(urlGen.apiEntityGetData(tid), 'GET', {},false, false, shortTtl);
   }
 
 

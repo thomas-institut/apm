@@ -36,4 +36,4 @@ include_once __DIR__ . '/../version.php';
 
 global $config;
 
-(new CommandLine\JobQueueTool($config, $argc, $argv))->run();
+(new CommandLine\ApmCtlUtility\JobQueueTool($config, $argc, $argv))->run();

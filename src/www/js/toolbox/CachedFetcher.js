@@ -9,7 +9,8 @@ export class CachedFetcher {
    */
   constructor (cache, defaultTtl = 0) {
     this.cache = cache
-    this.debug = true
+    this.debug = false;
+    this.verbose = true;
     this.defaultTtl = defaultTtl
   }
 
@@ -36,7 +37,7 @@ export class CachedFetcher {
         resolve(cachedData)
         return
       }
-      this.debug && console.log(`Doing actual fetch for '${key}'`)
+      this.verbose && console.log(`Doing actual fetch for '${key}'`)
       fetcher().then( (data) => {
         this.cache.store(key, data, ttl === -1 ? this.defaultTtl : ttl)
         resolve(data)

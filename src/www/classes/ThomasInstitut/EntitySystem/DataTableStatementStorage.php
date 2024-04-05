@@ -148,20 +148,23 @@ class DataTableStatementStorage implements StatementStorage
             if (is_int($colValue)) {
                 $cleanMap[$columnName] = [
                     'predicate' => $colValue,
-                    'cancellationMetadata' => false
+                    'cancellationMetadata' => false,
+                    'forceLiteralValue' => false
                 ];
                 $goodValue = true;
             }
             if (is_array($colValue) && isset($colValue['predicate']) && is_int($colValue['predicate'])) {
                 $cleanMap[$columnName] = [
                     'predicate' => $colValue['predicate'],
-                    'cancellationMetadata' => $colValue['cancellationMetadata'] ?? false
+                    'cancellationMetadata' => $colValue['cancellationMetadata'] ?? false,
+                    'forceLiteralValue' => $colValue['forceLiteralValue'] ?? false
                 ];
                 $goodValue = true;
             }
             if (is_callable($colValue)) {
                 $cleanMap[$columnName] = [
-                    'callable' => $colValue
+                    'callable' => $colValue,
+                    'forceLiteralValue' => $colValue['forceLiteralValue'] ?? false
                 ];
                 $goodValue = true;
             }
@@ -282,10 +285,6 @@ class DataTableStatementStorage implements StatementStorage
                 $predicatesInExtraColumns[] = $mapEntry['predicate'];
             }
         }
-//        if ($cancellationMetadata) {
-//            print "Cancellation metadata predicates in extra columns : " . implode(', ', $predicatesInExtraColumns) . "\n";
-//            var_dump($this->columnMap);
-//        }
         foreach ($metadata as $metadatum) {
             [ $predicate,] = $metadatum;
             if (!in_array($predicate, $predicatesInExtraColumns)) {
@@ -409,18 +408,18 @@ class DataTableStatementStorage implements StatementStorage
         return $statement;
     }
 
-    private function getMetadataFromRow(array $row, string $metadataCol, bool $cancellationMetadata) : array {
+    private function getMetadataFromRow(array $row, string $metadataCol, bool $isCancellationMetadata) : array {
         $metadata = [];
         foreach(array_keys($this->columnMap) as $columName) {
             $mapEntry = $this->columnMap[$columName];
             if (!isset($mapEntry['predicate'])) {
                 continue;
             }
-            if ($mapEntry['cancellationMetadata'] === $cancellationMetadata) {
+            if ($mapEntry['cancellationMetadata'] === $isCancellationMetadata) {
                 if ($row[$columName] !== null) {
                     $metadata[] = [
                         $mapEntry['predicate'],
-                        $row[$columName]
+                        $mapEntry['forceLiteralValue'] ? strval($row[$columName]) : $row[$columName]
                     ];
                 }
             }

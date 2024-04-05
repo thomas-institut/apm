@@ -19,4 +19,6 @@ class PredicateFlag
      * When set, the predicate can only be used in a merge operation
      */
     const MergePredicate = 3;
+
+    const QualificationPredicate = 4;
 }

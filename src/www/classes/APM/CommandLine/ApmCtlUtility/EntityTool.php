@@ -1,10 +1,9 @@
 <?php
 
-namespace APM\CommandLine;
+namespace APM\CommandLine\ApmCtlUtility;
 
 use APM\CommandLine\AdminUtility;
 use APM\CommandLine\CommandLineUtility;
-use http\Exception\RuntimeException;
 use ThomasInstitut\EntitySystem\Tid;
 
 class EntityTool extends CommandLineUtility implements AdminUtility

@@ -11,7 +11,7 @@ class ApiPeopleUpdateAllPeopleEssentialData implements JobHandlerInterface
 
     public function run(SystemManager $sm, array $payload): bool
     {
-        return ApiPeople::updateCachedAllPeopleEssentialData($sm);
+        return ApiPeople::updateCachedAllPeopleDataForPeoplePage($sm);
     }
 
     public function mustBeUnique(): bool

@@ -114,7 +114,7 @@ const EntityTypeDefinitions = [
     ],
     [
         Entity::tAreaType,
-        'AreaType',
+        'Area Type',
         'An area type, e.g., country, province, state, district',
         [],
         [],

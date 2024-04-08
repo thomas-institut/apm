@@ -19,4 +19,7 @@ class ApiSearchUpdateEditorsAndEditionsCache implements JobHandlerInterface
         return true;
     }
 
+    public function minTimeBetweenSchedules() : int {
+        return 2;
+    }
 }

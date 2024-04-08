@@ -34,15 +34,15 @@ class FullName
      */
     static public function analyze(string $fullName) : array {
 
-        $commonPrefixes = ['de', 'la', 'von', 'van', 'della', 'al', 'ben', 'bin'];
+        $commonPrefixes = ['de', 'la', 'von', 'van', 'della', 'al', 'ben', 'bin', 'of', 'abd'];
 
-        $words = explode(' ', $fullName);
+        $words = explode(' ', trim($fullName));
 
         // First, join common prefixes
         $names = [];
         for ($i = 0; $i < count($words); $i++) {
             $name = $words[$i];
-            if (in_array($words[$i], $commonPrefixes)){
+            if (in_array(strtolower($words[$i]), $commonPrefixes)){
                 if (isset($words[$i+1])) {
                     $name .= ' ' . $words[$i+1];
                     $i++;
@@ -109,4 +109,18 @@ class FullName
 
         return implode('', $subStrings);
     }
+
+    static public function getSortName(string $name, bool $normalizeName) : string {
+        if ($normalizeName) {
+            $name = iconv('UTF-8', 'US-ASCII//TRANSLIT', $name);
+        }
+        $fullName = FullName::analyze($name);
+        $sortName = implode(' ', $fullName['lastNames']);
+        if (count($fullName['firstNames']) > 0) {
+           $sortName .= ', ';
+           $sortName .= implode(' ', $fullName['firstNames']);
+        }
+        return $sortName;
+    }
 }
+

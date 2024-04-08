@@ -35,6 +35,9 @@ export class EditionWitnessTokenStringParser {
    */
   static parse (str, lang, detectNumberingLabels = true, detectIntraWordQuotationMarks = false) {
     let debug = false
+    // if (str.includes('...')) {
+    //   debug = true;
+    // }
     debug && console.log(`Parsing string '${str}', lang='${lang}'`)
     // debug && console.trace()
     let state = 0
@@ -76,6 +79,8 @@ export class EditionWitnessTokenStringParser {
       let wordTokens = this.parseNonWhiteSpaceCharacters(currentWordCharacters, lang, detectNumberingLabels, detectIntraWordQuotationMarks)
       pushArray(tokenArray, wordTokens)
     }
+    debug && console.log('Output token array');
+    debug && console.log(tokenArray);
     return tokenArray
   }
 
@@ -130,9 +135,9 @@ export class EditionWitnessTokenStringParser {
   }
 
   static parseStringWithPunctuation(theString, lang, debug = false) {
-    if (theString.charAt(0) === '<' || theString.charAt(0) === '〈') {
-      console.log(`Parsing string '${theString}', lang '${lang}'`)
-    }
+    // if (theString.charAt(0) === '<' || theString.charAt(0) === '〈') {
+    //   console.log(`Parsing string '${theString}', lang '${lang}'`)
+    // }
     // TODO: detect matching square brackets and don't generate punctuation for the closing one
     //  e.g:  'Roma[m]' should be a single word
     let chars = theString.split('')
@@ -183,17 +188,23 @@ export class EditionWitnessTokenStringParser {
             break
           }
           if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
-            // emit dots
+            // emit periods
             let periodString = '.'
-            tokenArray.push( (new WitnessToken()).setPunctuation(periodString.repeat(nPeriods)))
+            for(let i = 0; i < nPeriods; i++) {
+              tokenArray.push( (new WitnessToken()).setPunctuation(periodString));
+            }
+            // tokenArray.push( (new WitnessToken()).setPunctuation(periodString.repeat(nPeriods)))
             nPeriods = 0
             // emit punctuation
             tokenArray.push( (new WitnessToken()).setPunctuation(char))
             state = 0
           } else { // word character
-            // emit dots
+            // emit periods
             let periodString = '.'
-            tokenArray.push( (new WitnessToken()).setPunctuation(periodString.repeat(nPeriods)))
+            for(let i = 0; i < nPeriods; i++) {
+              tokenArray.push( (new WitnessToken()).setPunctuation(periodString));
+            }
+            // tokenArray.push( (new WitnessToken()).setPunctuation(periodString.repeat(nPeriods)))
             nPeriods = 0
             // accumulate
             curWord += char
@@ -215,7 +226,7 @@ export class EditionWitnessTokenStringParser {
             // emit word
             tokenArray.push( (new WitnessToken()).setWord(curWord))
             curWord = ''
-            // emit single dot
+            // emit single period
             tokenArray.push( (new WitnessToken()).setPunctuation('.'))
             nPeriods = 0
             // emit punctuation
@@ -242,9 +253,12 @@ export class EditionWitnessTokenStringParser {
         break
 
       case 2:
-        // emit dots
-        let dotString = '.'
-        tokenArray.push( (new WitnessToken()).setPunctuation(dotString.repeat(nPeriods)))
+        // emit periods
+        let periodString = '.'
+        for(let i = 0; i < nPeriods; i++) {
+          tokenArray.push( (new WitnessToken()).setPunctuation(periodString));
+        }
+        // tokenArray.push( (new WitnessToken()).setPunctuation(dotString.repeat(nPeriods)))
         break
 
       case 3:

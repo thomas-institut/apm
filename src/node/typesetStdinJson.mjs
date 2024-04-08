@@ -33,6 +33,11 @@ import { SystemStyleSheet } from '../www/js/Typesetter2/Style/SystemStyleSheet.m
 
 const debug = true
 
+// const pdfFontsConversions = [
+//   [ 'ApmAmiri', 'Amiri']
+// ];
+
+
 if (process.argv.length < 3) {
   console.log(`Usage: node typesetStdinJson.mjs outputFileName`)
   process.exit(0)
@@ -72,12 +77,30 @@ data.options.textBoxMeasurer = new PangoMeasurerNodeGTK()
 
 if (data.helperOptions !== undefined) {
   debug && console.log(`Helper options given, so this is an edition!`)
-  // debug && console.log(`Extra data`)
-  // debug && console.log(data.extraData)
+
   data.helperOptions.textBoxMeasurer = data.options.textBoxMeasurer
-  // debug && console.log(data.helperOptions, data.helperOptions.styleId)
-  debug && console.log(`Edition lang: '${data.helperOptions.edition.lang}', style Id = ${data.helperOptions.styleId}`)
-  data.helperOptions.editionStyleSheet = SystemStyleSheet.getStyleSheet(data.helperOptions.edition.lang, data.helperOptions.styleId)
+    debug && console.log(`Edition lang: '${data.helperOptions.edition.lang}', style Id = ${data.helperOptions.styleId}`)
+  let stylesheet = SystemStyleSheet.getStyleSheet(data.helperOptions.edition.lang, data.helperOptions.styleId);
+  // pdfFontsConversions.forEach( (conv) => {
+  //   let [ fromFont, toFont] = conv;
+  //   if (stylesheet.styles.default.text.fontFamily === fromFont) {
+  //     stylesheet.styles.default.text.fontFamily = toFont;
+  //   }
+  //   if (data.helperOptions.edition.defaultFontFamily === fromFont) {
+  //     data.helperOptions.edition.defaultFontFamily = toFont;
+  //   }
+  //   if (data.options.defaultFontFamily === fromFont) {
+  //     data.options.defaultFontFamily = toFont;
+  //   }
+  //   if (data.options.lineNumbersOptions.fontFamily === fromFont) {
+  //     data.options.lineNumbersOptions.fontFamily = toFont;
+  //   }
+  //   if (data.options.pageNumbersOptions.fontFamily === fromFont) {
+  //     data.options.pageNumbersOptions.fontFamily = toFont;
+  //   }
+  // })
+
+  data.helperOptions.editionStyleSheet = stylesheet;
   let editionTypesettingHelper = new EditionTypesetting(data.helperOptions)
   data.options.getApparatusListToTypeset = (mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine) => {
     return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine)
@@ -128,6 +151,7 @@ function exitNormally() {
   console.log(JSON.stringify(info))
   process.exit(1)
 }
+
 
 
 

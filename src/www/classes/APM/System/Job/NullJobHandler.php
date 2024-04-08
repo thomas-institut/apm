@@ -19,4 +19,9 @@ class NullJobHandler implements JobHandlerInterface
     {
        return true;
     }
+
+    public function minTimeBetweenSchedules(): int
+    {
+        return 0;
+    }
 }

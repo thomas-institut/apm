@@ -53,6 +53,22 @@ class InMemoryDataCache implements DataCache
     /**
      * @inheritDoc
      */
+    public function getRemainingTtl(string $key): int
+    {
+        $now = time();
+        $this->get($key);
+        if ($this->theCache[$key]['expires'] === -1){
+            return 0;
+        }
+
+        // if we get here, the key is in the cache
+        $ttl = $this->theCache[$key]['expires'] - $now;
+        return $ttl > 0 ? $ttl : -1;
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function set(string $key, string $value, int $ttl = 0): void
     {
         $expires = -1;
@@ -99,4 +115,6 @@ class InMemoryDataCache implements DataCache
     public function getKeys() : array {
         return array_keys($this->theCache);
     }
+
+
 }

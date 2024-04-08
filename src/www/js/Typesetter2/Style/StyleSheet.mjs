@@ -70,7 +70,6 @@ export class StyleSheet {
     this.debug = true
   }
 
-
   getStrings(style = 'default'){
     let defaultStrings = this.getStyleDef(style).strings
     return defaultStrings === undefined ? {} : defaultStrings

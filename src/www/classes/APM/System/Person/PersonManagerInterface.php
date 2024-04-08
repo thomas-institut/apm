@@ -2,12 +2,14 @@
 
 namespace APM\System\Person;
 
+use ThomasInstitut\EntitySystem\EntityData;
+
 /**
- * Common person data methods
+ * Common person data methods.
  *
- * Person creation and full data management will be handled eventually by the Entity System.
+ * A person is an entity in the underlying Apm EntitySystem.
  *
- * This interface is meant to provide also basic person data for general display in the APM website,
+ * This interface  is meant to provide also basic person data for general display in the APM website,
  * for example, when listing works, transcribers, etc.
  *
  * Normally, implementations will make use of a UserManagerInterface class
@@ -29,10 +31,11 @@ interface PersonManagerInterface
      *
      * @param string $name
      * @param string $sortName
+     * @param int $creatorTid
      * @return int
      * @throws InvalidPersonNameException
      */
-    public function createPerson(string $name, string $sortName) : int;
+    public function createPerson(string $name, string $sortName, int $creatorTid = -1) : int;
 
 
     /**
@@ -54,11 +57,19 @@ interface PersonManagerInterface
 
 
     /**
-     * Returns the tid of the Person entity with the given slug
-     * or -1 if the slug is not defined.
-     * @param string $slug
-     * @return int
+     * Returns the EntityData for the given person
+     * @param int $tid
+     * @return EntityData
+     * @throws PersonNotFoundException
      */
-    public function getPersonTidFromSlug(string $slug): int;
+    public function getPersonEntityData(int $tid) : EntityData;
+
+    /**
+     * Returns an array with entity data for every person defined in the system
+     * (excluding merged people)
+     * @return EntityData[]
+     */
+    public function getAllPeopleEntityData() : array;
+
 
 }

@@ -78,7 +78,7 @@ export class MetadataEditor {
     this.metadataTableSelector = `${this.options.containerSelector} .metadataTable`
 
     $(this.options.containerSelector).html(
-      `<br>
+        `<br>
                             <div class="buttons_top" align="right"></div>
                             <br>
                             <table class='${tableClass} metadataTable' style="table-layout:fixed;">
@@ -598,26 +598,26 @@ export class MetadataEditor {
 
     $(inputSelector).on('input', this.delay(() => {
 
-      let value = $(inputSelector).val()
-      if (value.trim().length === 0) {
-        $(this.options.containerSelector + " .dropdown-menu").hide()
-      } else {
-        this.apiCallIdGetMatchingPeople = (1 + Math.floor(Math.random() * 10000))
-        this.getMatchingPeople(value, (people, apiCallIdGetMatchingPeople) => {
-          if (this.apiCallIdGetMatchingPeople === apiCallIdGetMatchingPeople) { // This ensures, that only the data of the latest api call are shown, if there have been multiple requests following another in a short amount of time
-            this.addNamesToDatalistForPersonsAsValues(people, listSelector)
-            this.makeMatchedEntityButtonEvent(inputSelector, buttonSelector)
-            $(inputSelector).val(value.replaceAll('_', ' '))
-            let valueForDatalist = value.replaceAll(' ', '_')
-            $(buttonSelector).remove()
-            if ($(`${listSelector} li[value=${valueForDatalist}]`).attr('id') === undefined) {
-              $(paragraphSelector).append(`<button class=${buttonId}><i class="fa fa-plus" style="color: dodgerblue"></i></button>`)
-              this.makeCreatePersonFromInputFormButtonEvent(buttonSelector, dialog, inputSelector)
-            }
+          let value = $(inputSelector).val()
+          if (value.trim().length === 0) {
+            $(this.options.containerSelector + " .dropdown-menu").hide()
+          } else {
+            this.apiCallIdGetMatchingPeople = (1 + Math.floor(Math.random() * 10000))
+            this.getMatchingPeople(value, (people, apiCallIdGetMatchingPeople) => {
+              if (this.apiCallIdGetMatchingPeople === apiCallIdGetMatchingPeople) { // This ensures, that only the data of the latest api call are shown, if there have been multiple requests following another in a short amount of time
+                this.addNamesToDatalistForPersonsAsValues(people, listSelector)
+                this.makeMatchedEntityButtonEvent(inputSelector, buttonSelector)
+                $(inputSelector).val(value.replaceAll('_', ' '))
+                let valueForDatalist = value.replaceAll(' ', '_')
+                $(buttonSelector).remove()
+                if ($(`${listSelector} li[value=${valueForDatalist}]`).attr('id') === undefined) {
+                  $(paragraphSelector).append(`<button class=${buttonId}><i class="fa fa-plus" style="color: dodgerblue"></i></button>`)
+                  this.makeCreatePersonFromInputFormButtonEvent(buttonSelector, dialog, inputSelector)
+                }
+              }
+            })
           }
-        })
-      }
-    }, 200)
+        }, 200)
     )
   }
 
@@ -701,7 +701,7 @@ export class MetadataEditor {
     this.password2Selector = this.options.containerSelector + " .password2"
 
     $(selector).html(
-      `<form data-toggle="validator" role="form" id="theChangePasswordForm">
+        `<form data-toggle="validator" role="form" id="theChangePasswordForm">
         <!-- Password -->
         <div class="form-group has-feedback">
             <input type="password" 
@@ -759,7 +759,7 @@ export class MetadataEditor {
 
   makeTextInputForm(selectorId, inputFormId, type) {
     $(selectorId).html(
-      `<p class="embed-button"><input type="text" class="${inputFormId} form-control" placeholder=${type} style="padding: unset"></p>`)
+        `<p class="embed-button"><input type="text" class="${inputFormId} form-control" placeholder=${type} style="padding: unset"></p>`)
   }
 
   makeShowAndHideInfoEvents(selectorId, inputFormId) {
@@ -848,7 +848,7 @@ export class MetadataEditor {
   setupSaveButton () {
     this.clearBottomButtons()
     $(this.buttonsSelectorBottom).prepend(
-      `<button type="submit" class="save-button btn btn-primary save">Save</button>`)
+        `<button type="submit" class="save-button btn btn-primary save">Save</button>`)
     this.makeSaveButtonEvent()
   }
 
@@ -870,20 +870,20 @@ export class MetadataEditor {
 
   makeEditButton(){
     $(this.buttonsSelectorTop).append(
-      `<a class='edit_button card-link'>Edit</a>`)
+        `<a class='edit_button card-link'>Edit</a>`)
     this.makeEditButtonEvent()
   }
 
   makeCancelButton(){
     $(this.buttonsSelectorTop).append(
-      `<a class="cancel_button card-link">Cancel</a>`)
+        `<a class="cancel_button card-link">Cancel</a>`)
     this.makeCancelButtonEvent()
   }
 
   makeBackButton() {
     if (this.options.backlink !== '') {
       $(this.buttonsSelectorTop).append(
-        `<a class="back_button card-link" href = ${this.options.backlink}>Back</a>`)
+          `<a class="back_button card-link" href = ${this.options.backlink}>Back</a>`)
     }
   }
 
@@ -1202,7 +1202,7 @@ export class MetadataEditor {
 
   inconsistentYearsRange(affordedTypes, value) {
     return affordedTypes.includes('years_range') &&
-      (parseInt(value[0]) > parseInt(value[1]) || (value[0] === '' && value[1] !== '') || (value[0] === '' && value[2] !== ''))
+        (parseInt(value[0]) > parseInt(value[1]) || (value[0] === '' && value[1] !== '') || (value[0] === '' && value[2] !== ''))
   }
 
   validatePasswords() {
@@ -1364,60 +1364,6 @@ export class MetadataEditor {
   // API Calls
   getPeople(callback) {
     $.post(urlGen.apiPeopleGetAllPeople())
-      .done((apiResponse) => {
-
-        // Catch Error
-        if (apiResponse.status !== 'OK') {
-          console.log(`Error in query`);
-          if (apiResponse.errorData !== undefined) {
-            console.log(apiResponse.errorData);
-          }
-          return false
-        }
-        else {
-          console.log(apiResponse)
-          this.people = apiResponse.data
-          callback()
-        }
-
-      })
-      .fail((status) => {
-        console.log(status);
-        return false
-      })
-  }
-
-  getPersonSchema (setupMetadataEditor) {
-    // Make API Call
-    $.post(urlGen.apiPeopleGetSchema())
-      .done((apiResponse) => {
-
-        // Catch Error
-        if (apiResponse.status !== 'OK') {
-          console.log(`Error in query`);
-          if (apiResponse.errorData !== undefined) {
-            console.log(apiResponse.errorData);
-          }
-          return false
-        }
-        else {
-          console.log(apiResponse)
-          setupMetadataEditor(apiResponse.data)
-          return true
-        }
-
-      })
-      .fail((status) => {
-        console.log(status);
-        return false
-      })
-  }
-
-  savePersonData (data, mode, callback) {
-
-    this.getIdForNewPerson(data, (newData) => {
-      // Make API Call
-      $.post(urlGen.apiPeopleSaveData(), newData)
         .done((apiResponse) => {
 
           // Catch Error
@@ -1426,43 +1372,97 @@ export class MetadataEditor {
             if (apiResponse.errorData !== undefined) {
               console.log(apiResponse.errorData);
             }
-            return;
+            return false
+          }
+          else {
+            console.log(apiResponse)
+            this.people = apiResponse.data
+            callback()
           }
 
-          // Log API response and change to show mode
-          console.log(apiResponse);
-          callback()
-          return true
         })
         .fail((status) => {
           console.log(status);
+          return false
         })
+  }
+
+  getPersonSchema (setupMetadataEditor) {
+    // Make API Call
+    $.post(urlGen.apiPeopleGetSchema())
+        .done((apiResponse) => {
+
+          // Catch Error
+          if (apiResponse.status !== 'OK') {
+            console.log(`Error in query`);
+            if (apiResponse.errorData !== undefined) {
+              console.log(apiResponse.errorData);
+            }
+            return false
+          }
+          else {
+            console.log(apiResponse)
+            setupMetadataEditor(apiResponse.data)
+            return true
+          }
+
+        })
+        .fail((status) => {
+          console.log(status);
+          return false
+        })
+  }
+
+  savePersonData (data, mode, callback) {
+
+    this.getIdForNewPerson(data, (newData) => {
+      // Make API Call
+      $.post(urlGen.apiPeopleSaveData(), newData)
+          .done((apiResponse) => {
+
+            // Catch Error
+            if (apiResponse.status !== 'OK') {
+              console.log(`Error in query`);
+              if (apiResponse.errorData !== undefined) {
+                console.log(apiResponse.errorData);
+              }
+              return;
+            }
+
+            // Log API response and change to show mode
+            console.log(apiResponse);
+            callback()
+            return true
+          })
+          .fail((status) => {
+            console.log(status);
+          })
     })
   }
 
   getIdForNewPerson(data, saveEntity) {
     $.post(urlGen.apiPeopleGetNewId())
-      .done((apiResponse) => {
+        .done((apiResponse) => {
 
-        // Catch Error
-        if (apiResponse.status !== 'OK') {
-          console.log(`Error in query`);
-          if (apiResponse.errorData !== undefined) {
-            console.log(apiResponse.errorData);
+          // Catch Error
+          if (apiResponse.status !== 'OK') {
+            console.log(`Error in query`);
+            if (apiResponse.errorData !== undefined) {
+              console.log(apiResponse.errorData);
+            }
+            return false
           }
-          return false
-        }
-        else {
-          console.log(apiResponse)
-          data.id = apiResponse.id
-          saveEntity(data)
-        }
+          else {
+            console.log(apiResponse)
+            data.id = apiResponse.id
+            saveEntity(data)
+          }
 
-      })
-      .fail((status) => {
-        console.log(status);
-        return false
-      })
+        })
+        .fail((status) => {
+          console.log(status);
+          return false
+        })
   }
 
   // Functions for saving and getting tags to/from global tag cache
@@ -1470,48 +1470,48 @@ export class MetadataEditor {
 
     // Make API Call
     $.post(urlGen.apiTagEditorSaveTagsAsHints(), {'tags': tags})
-      .done((apiResponse) => {
+        .done((apiResponse) => {
 
-        // Catch Error
-        if (apiResponse.status !== 'OK') {
-          console.log(`Error in query`);
-          if (apiResponse.errorData !== undefined) {
-            console.log(apiResponse.errorData);
+          // Catch Error
+          if (apiResponse.status !== 'OK') {
+            console.log(`Error in query`);
+            if (apiResponse.errorData !== undefined) {
+              console.log(apiResponse.errorData);
+            }
+            return
           }
-          return
-        }
 
-        return true
-      })
-      .fail((status) => {
-        console.log(status);
-      })
+          return true
+        })
+        .fail((status) => {
+          console.log(status);
+        })
   }
 
   getTagHints(callback) {
 
     // Make API Call
     $.post(urlGen.apiTagEditorGetAllTags())
-      .done((apiResponse) => {
+        .done((apiResponse) => {
 
-        // Catch Error
-        if (apiResponse.status !== 'OK') {
-          console.log(`Error in query`);
-          if (apiResponse.errorData !== undefined) {
-            console.log(apiResponse.errorData);
+          // Catch Error
+          if (apiResponse.status !== 'OK') {
+            console.log(`Error in query`);
+            if (apiResponse.errorData !== undefined) {
+              console.log(apiResponse.errorData);
+            }
+            return []
           }
-          return []
-        }
 
-        // Log API response and change to show mode
-        console.log(apiResponse)
-        callback(apiResponse.tags)
-        return true
-      })
-      .fail((status) => {
-        console.log(status)
-        return []
-      })
+          // Log API response and change to show mode
+          console.log(apiResponse)
+          callback(apiResponse.tags)
+          return true
+        })
+        .fail((status) => {
+          console.log(status)
+          return []
+        })
   }
 }
 

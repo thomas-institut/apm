@@ -60,7 +60,7 @@ export class ApmDataProxy {
       local: new WebStorageKeyCache('local', this.cacheDataId)
     }
 
-    this.cachedFetcher = new CachedFetcher(this.caches.memory);
+    this.cachedFetcher = new CachedFetcher(this.caches.session);
   }
 
   async getPersonEssentialData(personId) {
@@ -70,7 +70,7 @@ export class ApmDataProxy {
   async getAllPersonEssentialData(){
     let data = this.caches.memory.retrieve("allPeopleData");
     if (data === null) {
-      data = await this.get(urlGen.apiPersonGetEssentialDataAll(), true);
+      data = await this.get(urlGen.apiPersonGetDataForPeoplePage(), true);
       this.caches.memory.store('allPeopleData', data, 5);
     }
     return data;
@@ -159,9 +159,10 @@ export class ApmDataProxy {
    * @param {{}}payload
    * @param {boolean}forceActualFetch
    * @param {boolean}useRawData
+   * @param {number} ttl
    * @return {Promise<{}>}
    */
-  fetch(url, method = 'GET', payload = [] , forceActualFetch = false, useRawData = false) {
+  fetch(url, method = 'GET', payload = [] , forceActualFetch = false, useRawData = false, ttl = -1) {
     let key = encodeURI(url)
     return this.cachedFetcher.fetch(key, () => {
       switch(method) {
@@ -175,7 +176,7 @@ export class ApmDataProxy {
           return $.post(url, {data: JSON.stringify(payload)})
       }
 
-    }, forceActualFetch)
+    }, forceActualFetch, ttl)
   }
 
   /**
@@ -197,6 +198,10 @@ export class ApmDataProxy {
    */
   get(url, forceActualFetch = true) {
     return this.fetch(url, 'GET', [], forceActualFetch)
+  }
+
+  getEntityData(tid) {
+    return this.fetch(urlGen.apiEntityGetData(tid), 'GET', {},false, false, shortTtl);
   }
 
 
@@ -302,6 +307,14 @@ export class ApmDataProxy {
       dataType = 'default';
     }
     return `${cachePrefix}-${entityType}-${dataType}-${entityId}${attribute === '' ? '' : '-' + attribute}`;
+  }
+
+  /**
+   * Gets edition source information from server
+   * @param tid
+   */
+  getEditionSource(tid) {
+    return this.fetch(urlGen.apiEditionSourcesGet(tid), 'GET', {}, false, false, 600);
   }
 
 

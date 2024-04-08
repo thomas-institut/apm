@@ -190,6 +190,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     {
 
         $postData = $request->getParsedBody();
+        $this->logger->debug("Post data keys: " . implode(', ', array_keys($postData)));
         if ($useRawData) {
             $inputData = $postData;
         } else {

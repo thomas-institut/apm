@@ -48,6 +48,7 @@ class SiteDocuments extends SiteController
 {
 
     const DOCUMENT_DATA_CACHE_KEY = 'SiteDocuments-DocumentData';
+    const DOCUMENT_DATA_TTL = 8 * 24 * 3600;
 
     const TEMPLATE_DOCS_PAGE = 'documents-page.twig';
     const TEMPLATE_SHOW_DOCS_PAGE = 'doc-details.twig';
@@ -59,12 +60,11 @@ class SiteDocuments extends SiteController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws PersonNotFoundException
      */
     public function documentsPage(Request $request, Response $response): Response
     {
 
-        $dataManager = $this->dataManager;
+
         $this->profiler->start();
 
         $cache = $this->systemManager->getSystemDataCache();
@@ -73,11 +73,11 @@ class SiteDocuments extends SiteController
         } catch (KeyNotInCacheException $e) {
             // not in cache
             $this->logger->debug("Cache miss for SiteDocuments document data");
-            $data = self::buildDocumentData($dataManager, $this->systemManager->getPersonManager());
+            $dataManager = $this->systemManager->getDataManager();
+            $data = self::buildDocumentData($dataManager);
             $cache->set(self::DOCUMENT_DATA_CACHE_KEY, serialize($data));
         }
         $docs = $data['docs'];
-        $peopleInfo = $data['peopleInfo'];
 
         $canManageDocuments = false;
         $userManager = $this->systemManager->getUserManager();
@@ -94,18 +94,13 @@ class SiteDocuments extends SiteController
 
         return $this->renderPage($response, self::TEMPLATE_DOCS_PAGE, [
             'docs' => $docs,
-            'peopleInfo' => $peopleInfo,
             'canManageDocuments' => $canManageDocuments ? '1' : '0'
         ]);
     }
 
-    /**
-     * @throws PersonNotFoundException
-     */
-    static public function buildDocumentData(DataManager $dataManager, PersonManagerInterface $personManager): array
+    static public function buildDocumentData(DataManager $dataManager): array
     {
         $docs = [];
-        $usersMentioned = [];
 
         $docIds = $dataManager->getDocIdList('title');
         foreach ($docIds as $docId){
@@ -114,27 +109,19 @@ class SiteDocuments extends SiteController
             $doc['numPages'] = $dataManager->getPageCountByDocId($docId);
             $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
             $doc['numTranscribedPages'] = count($transcribedPages);
-            $editorTids = $dataManager->getEditorTidsByDocId($docId);
-            $doc['editors'] = [];
-            foreach ($editorTids as $editorTid){
-                $usersMentioned[] = $editorTid;
-                $doc['editors'][] =
-                    $personManager->getPersonEssentialData($editorTid);
-            }
-            $doc['docInfo'] = $dataManager->getDocById($docId);
+            $doc['transcribers'] = $dataManager->getEditorTidsByDocId($docId);
+            $doc['docInfo'] = $dataManager->getDocById($docId, false);
             $docs[] = $doc;
         }
 
-        $helper = new DataRetrieveHelper();
-        $peopleInfoArray = $helper->getAuthorInfoArrayFromList($usersMentioned, $personManager);
-        return [ 'docs' => $docs, 'peopleInfo' => $peopleInfoArray];
+        return [ 'docs' => $docs];
     }
 
 
     public static function updateDataCache(SystemManager $systemManager): bool
     {
         try {
-            $data = self::buildDocumentData($systemManager->getDataManager(), $systemManager->getPersonManager());
+            $data = self::buildDocumentData($systemManager->getDataManager());
         } catch(Exception $e) {
             $systemManager->getLogger()->error("Exception while building DocumentData",
                 [
@@ -169,7 +156,7 @@ class SiteDocuments extends SiteController
 
 
         $this->profiler->start();
-        $dataManager = $this->dataManager;
+        $dataManager = $this->systemManager->getDataManager();
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $pageManager = $transcriptionManager->getPageManager();
         $userManager = $this->systemManager->getUserManager();
@@ -262,8 +249,7 @@ class SiteDocuments extends SiteController
 
         }
 
-
-        $pageTypeNames  = $this->dataManager->getPageTypeNames();
+        $pageTypeNames  = $this->systemManager->getDataManager()->getPageTypeNames();
 
         $this->profiler->stop();
         $this->logProfilerData('showDocPage-' . $docId);
@@ -313,7 +299,7 @@ class SiteDocuments extends SiteController
         $this->profiler->start();
 
         $docId = $request->getAttribute('id');
-        $dataManager = $this->dataManager;
+        $dataManager = $this->systemManager->getDataManager();
         $docInfo = $dataManager->getDocById($docId);
         if ($docInfo === false) {
             return $this->getBasicErrorPage($response, 'Not found', "Document not found", HttpStatus::NOT_FOUND);
@@ -351,16 +337,16 @@ class SiteDocuments extends SiteController
 //        }
         
         $docId = $request->getAttribute('id');
-        $db = $this->dataManager;
+        $dataManager = $this->systemManager->getDataManager();
         $doc = [];
-        $doc['numPages'] = $db->getPageCountByDocId($docId);
-        $transcribedPages = $db->getTranscribedPageListByDocId($docId);
-        $db->getDocPageInfo($docId);
+        $doc['numPages'] = $dataManager->getPageCountByDocId($docId);
+        $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
+        $dataManager->getDocPageInfo($docId);
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $pageManager = $transcriptionManager->getPageManager();
         $pageInfoArray = $pageManager->getPageInfoArrayForDoc($docId);
         $doc['numTranscribedPages'] = count($transcribedPages);
-        $doc['docInfo'] = $db->getDocById($docId);
+        $doc['docInfo'] = $dataManager->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";
         $doc['pages'] = $this->buildPageArrayNew($pageInfoArray,
                 $transcribedPages, $doc['docInfo']);

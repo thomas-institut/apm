@@ -32,4 +32,7 @@ abstract class ApiSearchUpdateOpenSearchIndex
 //        exec("python3 ../../python/Lemmatizer_Indexing.py $lang $text_encoded", $tokens_and_lemmata);
         return $tokens_and_lemmata;
     }
+    public function minTimeBetweenSchedules() : int {
+        return 2;
+    }
 }

@@ -21,8 +21,6 @@ import { UserDocDataCommon } from './common/UserDocDataCommon'
 import { tr } from './common/SiteLang'
 import { NormalPage } from './NormalPage'
 import { urlGen } from './common/SiteUrlGen'
-import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
-import { TagEditor } from '../widgets/TagEditor'
 import { ApmPage } from './ApmPage'
 import { Tid } from '../Tid/Tid'
 

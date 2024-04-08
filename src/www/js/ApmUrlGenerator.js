@@ -219,8 +219,8 @@ class ApmUrlGenerator {
         return `${this.base}/api/person/${tid}/data/essential`
     }
 
-    apiPersonGetEssentialDataAll() {
-        return `${this.base}/api/person/all/data/essential`
+    apiPersonGetDataForPeoplePage() {
+        return `${this.base}/api/person/all/dataForPeoplePage`
     }
 
     apiPersonCreate() {
@@ -271,6 +271,14 @@ class ApmUrlGenerator {
         return `${this.base}/api/collation/convert/${tableId}`;
     }
 
+    apiEntityGetData(tid) {
+        return `${this.base}/api/entity/${tid}/data`
+    }
+
+    siteEntity(tid) {
+        return `${this.base}/entity/${tid}`;
+    }
+
     apiGetCollationTable(tableId, compactEncodedTimeString = '') {
         if (compactEncodedTimeString !== '') {
             return `${this.base}/api/collation/get/${tableId}/${compactEncodedTimeString}`
@@ -295,6 +303,10 @@ class ApmUrlGenerator {
 
     apiEditionSourcesGetAll() {
         return `${this.base}/api/edition/sources/all`
+    }
+
+    apiEditionSourcesGet(tid) {
+        return `${this.base}/api/edition/source/get/${tid}`;
     }
 
     apiWitnessToEdition(witnessId) {

@@ -26,7 +26,8 @@
         "thomas-institut/timestring" : "^1.3",
         "monolog/monolog": "^3.0",
         "swaggest/json-schema": "^0.12.29",
-        "opensearch-project/opensearch-php": "^2.0"
+        "opensearch-project/opensearch-php": "^2.0",
+        "ext-memcached": "*"
     },
     
     "require-dev": {

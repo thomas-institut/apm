@@ -2,39 +2,22 @@
 
 namespace ThomasInstitut\EntitySystem;
 
-use ThomasInstitut\Exportable\Exportable;
 
-class StatementData implements Exportable
+class StatementData
 {
-    public int $tid = -1;
-    public bool $isAttribute = true;
-
+    public int $id = -1;
     public int $subject = -1;
-    public string $predicate = '';
-    public string $value = '';
-    public int $object = -1;
-    public string $dateFrom = '';
-    public string $dateUntil  = '';
-    public int $seq = -1;
+    public int $predicate = -1;
+    public int|string $object = -1;
+    public array $statementMetadata = [];
 
-    public int $editedBy = -1;
-    public int $timestamp = 0;
-    public string $note = '';
-
-    public bool $isCancelled = false;
-    public int $cancelledBy = -1;
-    public int $cancellationTimestamp = 0;
-    public string $cancellationNote = '';
-
-    public array $metadata;
+    public int $cancellationId = -1;
+    public array $cancellationMetadata = [];
 
 
-    public function getExportObject(): array
+    public function isCancelled() : bool
     {
-       $exportObject = get_object_vars($this);
-       $exportObject['className'] = ExportClasses::STATEMENT_DATA;
-       return $exportObject;
+        return $this->cancellationId !== -1;
     }
-
 
 }

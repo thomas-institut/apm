@@ -51,7 +51,7 @@ class SiteChunkPage extends SiteController
     public function singleChunkPage(Request $request, Response $response): Response
     {
        
-        $dm = $this->dataManager;
+        $dm = $this->systemManager->getDataManager();
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $ctManager = $this->systemManager->getCollationTableManager();
         $workId = $request->getAttribute('work');
@@ -93,7 +93,7 @@ class SiteChunkPage extends SiteController
                 case WitnessType::FULL_TRANSCRIPTION:
                     $docInfo = $witnessInfo->typeSpecificInfo['docInfo'];
                     if (!isset($languageInfoArray[$docInfo->languageCode])) {
-                        $languageInfoArray[$docInfo->languageCode] = $this->languagesByCode[$docInfo->languageCode];
+                        $languageInfoArray[$docInfo->languageCode] = $this->getLanguagesByCode()[$docInfo->languageCode];
                         $languageInfoArray[$docInfo->languageCode]['totalWitnesses'] = 0;
                         $languageInfoArray[$docInfo->languageCode]['validWitnesses'] = 0;
                     }
@@ -134,7 +134,7 @@ class SiteChunkPage extends SiteController
             $showAdminInfo = true;
         }
 
-        $validChunks = $this->dataManager->getChunksWithTranscriptionForWorkId($workId);
+        $validChunks = $this->systemManager->getDataManager()->getChunksWithTranscriptionForWorkId($workId);
 
         $this->profiler->stop();
         $this->logProfilerData("ChunkPage-$workId-$chunkNumber");

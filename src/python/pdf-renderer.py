@@ -85,7 +85,13 @@ def print_vertical_list(context, x, y, vertical_list):
 
     for some_item in vertical_list['list']:
         print_item(context, tmp_x, tmp_y, some_item)
-        tmp_y += px2pt(some_item['height'])
+        some_item_height = some_item.get('height')
+        if (some_item_height == None):
+            debug_msg('Item in vertical list without height:')
+            print(vertical_list.get('metadata'))
+            print(some_item.get('class'))
+        else:
+            tmp_y += px2pt(some_item_height)
 
 
 def print_item_list(context, x, y, the_list_item):

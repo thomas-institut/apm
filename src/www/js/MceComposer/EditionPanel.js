@@ -148,7 +148,7 @@ export class EditionPanel extends Panel {
 </div>`
       }
     }
-    console.log(`Generating EditionPanel html with actual chunk table`)
+    // console.log(`Generating EditionPanel html with actual chunk table`)
     return `<div class="chunk-table">
                 ${this.__genChunksTable()}
             </div>
@@ -278,7 +278,7 @@ export class EditionPanel extends Panel {
 
   updateData(mceData) {
     this.mceData = mceData
-    console.log(`Updating mceData, ${this.mceData.chunks.length} chunks`)
+    // console.log(`Updating mceData, ${this.mceData.chunks.length} chunks`)
 
     this.options.getUpdateStatuses().then( async (statuses) => {
       this.updateStatuses = statuses

@@ -21,7 +21,6 @@
 
 namespace APM;
 
-
 use APM\System\ConfigLoader;
 
 require __DIR__ . '/../www/vendor/autoload.php';
@@ -36,4 +35,5 @@ include_once __DIR__ . '/../www/version.php';
 
 global $config;
 
-(new CommandLine\AdminUtilityManager($config, $argc, $argv))->run();
+
+(new CommandLine\ApmCtl($config, $argc, $argv))->run();

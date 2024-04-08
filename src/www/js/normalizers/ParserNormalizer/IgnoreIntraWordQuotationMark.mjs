@@ -13,7 +13,7 @@ export class IgnoreIntraWordQuotationMark extends ParserNormalizer {
       String.fromCodePoint(0x2018), String.fromCodePoint(0x2019), // single quotation marks left + right
       String.fromCodePoint(0x201c), String.fromCodePoint(0x201d), // double quotation marks left + right
     ];
-    this.debug = true
+    this.debug = false
   }
 
   normalizeString(str, lang) {
@@ -55,7 +55,7 @@ export class IgnoreIntraWordQuotationMark extends ParserNormalizer {
 
     if (str.charAt(1) === '\u2019' || str.charAt(1) === '\u201d') {
       isApplicable = true
-      console.log(`IIWQM for '${str}': ${isApplicable}`)
+      // console.log(`IIWQM for '${str}': ${isApplicable}`)
     }
 
     return isApplicable

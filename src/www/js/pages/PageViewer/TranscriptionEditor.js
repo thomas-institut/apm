@@ -21,6 +21,7 @@ import Quill from 'quill/core'
 import { SimpleBlockBlot } from './TranscriptionEditorBlots'
 import { EditorData } from './EditorData'
 import { configureTranscriptionEditorBlots } from './TranscriptionEditorBlotConfig'
+import Delta from 'quill'
 
 const validAppellations = {
   la: [
@@ -129,6 +130,22 @@ export class TranscriptionEditor
     })
     this.quillObject.on('text-change', this.genOnQuillChange());
     this.quillObject.on('selection-change', this.genOnSelectionChange())
+    this.quillObject.clipboard.addMatcher('B', (node, delta)=> {
+      console.log(`Pasting bold text`);
+      console.log(delta);
+      return { ops: [  {
+        insert: delta.ops[0].insert,
+          attributes: {
+           boldtext: {
+             handid: 0,
+             editorid: this.id ,
+             itemid: this.getOneItemId()
+           }
+          }
+
+      }
+        ]};
+    });
     
     // TOP TOOLBAR
     $('#zoom-in-button-' + id).on('click', this.genOnClickZoomButton('in'))

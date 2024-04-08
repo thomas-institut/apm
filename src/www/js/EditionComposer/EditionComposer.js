@@ -290,7 +290,6 @@ export class EditionComposer extends ApmPage {
 
     this.editionPreviewPanelNew = new EditionPreviewPanelNew({
       containerSelector: `#${editionPreviewNewTabId}`,
-      // ctData: this.ctData,
       edition: this.edition,
       langDef: this.options.langDef,
       onEditionTypeset: (typesetEdition) => { this.techSupportPanel.updateTypesetEdition(typesetEdition)},
@@ -748,36 +747,6 @@ export class EditionComposer extends ApmPage {
 
   genGetPdfDownloadUrlForPreviewPanel() {
     return PdfDownloadUrl.genGetPdfDownloadUrlForPreviewPanel()
-    // return (rawData) => {
-    //   return new Promise( (resolve, reject) => {
-    //     let apiUrl = this.options.urlGenerator.apiTypesetRaw()
-    //     let dataJson = JSON.stringify(rawData)
-    //     console.log(`About to make API call for PDF download url, data size is ${dataJson.length}`)
-    //     console.log(`Calling typeset API at ${apiUrl}`)
-    //     $.post(
-    //       apiUrl,
-    //       {data: JSON.stringify({
-    //           jsonData: dataJson
-    //         })}
-    //     ).done(
-    //       apiResponse => {
-    //         console.log(`Got response from the server:`)
-    //         console.log(apiResponse)
-    //         if (apiResponse.url === undefined) {
-    //           console.error('No url given by server')
-    //           reject()
-    //         }
-    //         resolve(apiResponse.url)
-    //       }
-    //     ).fail (
-    //       error => {
-    //         console.error('PDF API error')
-    //         console.log(error)
-    //         reject()
-    //       }
-    //     )
-    //   })
-    // }
   }
 
 
@@ -1224,7 +1193,6 @@ export class EditionComposer extends ApmPage {
       if (source !== 'collationTablePanel') {
         this.collationTablePanel.updateCtData(newCtData, 'EditionComposer')
       }
-      // this.editionPreviewPanel.updateData(this.ctData, this.edition)
       this.editionPreviewPanelNew.updateData(this.edition)
       this.witnessInfoPanel.updateCtData(this.ctData, true)
       this._updateSaveArea()

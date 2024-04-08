@@ -126,7 +126,7 @@ class SiteCollationTable extends SiteController
         $chunkId = $ctData['chunkId'] ?? $ctData['witnesses'][0]['chunkId'];
         [ $workId, $chunkNumber] = explode('-', $chunkId);
 
-        $dm = $this->dataManager;
+        $dm = $this->systemManager->getDataManager();
         $rawWorkInfo = $dm->getWorkInfoByDareId($workId);
         $workInfo = [
             'authorTid' => intval($rawWorkInfo['author_tid']),
@@ -499,7 +499,7 @@ class SiteCollationTable extends SiteController
 
         $this->codeDebug('apiCallOptions', $apiCallOptions);
 
-        $dm = $this->dataManager;
+        $dm = $this->systemManager->getDataManager();
         $pageName = "AutomaticCollation-$workId-$chunkNumber-$language";
         
         $this->profiler->start();

@@ -63,27 +63,34 @@ export class AddMainTextLinePositionMetadata extends PageProcessor {
         return
       }
 
+      this.debug && console.log(`Adding line position metadata for page ${page.getMetadata(MetadataKey.PAGE_NUMBER)}`);
       this.debug && console.log(`MainTextBlock at index ${mainTextIndex}`)
-      let mainTextList = pageItems[mainTextIndex]
+
+      let mainTextList = pageItems[mainTextIndex];
+      this.debug && console.log(mainTextList);
       if (mainTextList instanceof ItemList) {
         let linesWithNumberIndices = []
         let mainTextListItems = mainTextList.getList()
         mainTextListItems.forEach((item, itemIndex) => {
           if (!item.hasMetadata(MetadataKey.LIST_TYPE)) {
+            this.debug && console.log(`Main text item ${itemIndex} not a list`);
             // no list type =>  do nothing
             return
           }
           if (item.getMetadata(MetadataKey.LIST_TYPE) !== ListType.LINE) {
             // not a line => do nothing
+            this.debug && console.log(`Main text item ${itemIndex} is list but not a line: ${item.getMetadata(MetadataKey.LIST_TYPE)}`);
             return
           }
 
           if (this.options.lineTypeToNumber !== '' && item.getMetadata(MetadataKey.LINE_TYPE) !== this.options.lineTypeToNumber) {
             // not the right line type => do nothing
+            this.debug && console.log(`Main text item ${itemIndex} is a line but of the right type: ${item.getMetadata(MetadataKey.LIST_TYPE)}`);
             return
           }
           // a line of the right type
           let lineNumber = item.getMetadata(MetadataKey.LINE_NUMBER)
+          this.debug && console.log(`MAIN TEXT item ${itemIndex} is line ${lineNumber}`);
           if (lineNumber !== undefined) {
             linesWithNumberIndices.push(itemIndex)
           }

@@ -5,6 +5,8 @@ namespace APM\System\User;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use ThomasInstitut\DataCache\DataCache;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\RowAlreadyExists;
@@ -14,23 +16,75 @@ class ApmUserManager implements UserManagerInterface
 
     use LoggerAwareTrait;
 
-    private DataTable $usersTable;
-    private DataTable $tokensTable;
-    private array $cache;
+    const DataId = 'um001';
+    const DefaultTtl = 24 * 3600;
 
 
-    public function __construct(DataTable $usersTable, DataTable $tokensTable)
+    /**
+     * @var callable
+     */
+    private $usersTableCallable;
+    /**
+     * @var callable
+     */
+    private $tokensTableCallable;
+
+    private ?DataTable $usersTable;
+    private ?DataTable $tokensTable;
+    private DataCache $cache;
+    private string $cachePrefix;
+
+
+    public function __construct(callable|DataTable $usersTable, callable|DataTable $tokensTable, DataCache $dataCache, string $cachePrefix)
     {
-        $this->usersTable = $usersTable;
-        $this->tokensTable = $tokensTable;
-        $this->cache = [];
+
+        if (is_callable($usersTable)) {
+            $this->usersTableCallable = $usersTable;
+            $this->usersTable = null;
+        } else {
+            $this->usersTable = $usersTable;
+        }
+        if (is_callable($tokensTable)) {
+            $this->tokensTableCallable = $tokensTable;
+            $this->tokensTable = null;
+        } else {
+            $this->tokensTable = $tokensTable;
+        }
+        $this->cache = $dataCache;
+        $this->cachePrefix = $cachePrefix;
         $this->logger = new NullLogger();
     }
+
+    private function getDataCacheKey(int $tid) : string {
+        return "$this->cachePrefix$tid-" . self::DataId;
+    }
+
+    private function getTokensCacheKey(int $tid) : string {
+        return "$this->cachePrefix$tid-tokens-" . self::DataId;
+    }
+
+
+    private function getUsersTable() : DataTable {
+
+        if (is_null($this->usersTable)) {
+            $this->usersTable = call_user_func($this->usersTableCallable);
+        }
+        return $this->usersTable;
+    }
+
+    private function getTokensTable() : DataTable {
+        if (is_null($this->tokensTable)) {
+            $this->tokensTable = call_user_func($this->tokensTableCallable);
+        }
+        return $this->tokensTable;
+    }
+
+
 
     public function getAllUsersData() : array
     {
         $data = [];
-        foreach ($this->usersTable->getAllRows() as $userRow) {
+        foreach ($this->getUsersTable()->getAllRows() as $userRow) {
             $userTid = $userRow['tid'];
             $this->cache[$userTid] = $this->getUserDataFromTableRow($userRow);
             $data[] = $this->cache[$userTid];
@@ -60,14 +114,18 @@ class ApmUserManager implements UserManagerInterface
         if ($userTid <= 0) {
             throw new UserNotFoundException();
         }
-        if (!isset($this->cache[$userTid])) {
-            $rows = $this->usersTable->findRows(['tid' => $userTid]);
+        $cacheKey = $this->getDataCacheKey($userTid);
+        try {
+            return unserialize($this->cache->get($cacheKey));
+        } catch (KeyNotInCacheException) {
+            $rows = $this->getUsersTable()->findRows(['tid' => $userTid]);
             if (count($rows) === 0) {
                 throw new UserNotFoundException();
             }
-            $this->cache[$userTid] = $this->getUserDataFromTableRow($rows->getFirst());
+            $data =  $this->getUserDataFromTableRow($rows->getFirst());
+            $this->cache->set($cacheKey, serialize($data), self::DefaultTtl);
+            return $data;
         }
-        return $this->cache[$userTid];
     }
 
     private function getUserDataFromTableRow(array $row) : UserData
@@ -92,7 +150,7 @@ class ApmUserManager implements UserManagerInterface
      */
     public function getUserTidForUserName(string $userName): int
     {
-        $rows = $this->usersTable->findRows(['username' => $userName]);
+        $rows = $this->getUsersTable()->findRows(['username' => $userName]);
         if (count($rows) === 0) {
             return -1;
         }
@@ -115,13 +173,13 @@ class ApmUserManager implements UserManagerInterface
             throw new UserNameAlreadyInUseException();
         }
         try {
-            $this->usersTable->updateRow(['id' => $userData->id, 'username' => $newUserName]);
+            $this->getUsersTable()->updateRow(['id' => $userData->id, 'username' => $newUserName]);
         } catch (InvalidRowForUpdate $e) {
             // should never happen
             $this->logger->error($e->getMessage());
             throw new RuntimeException($e->getMessage(), $e->getCode());
         }
-        unset($this->cache[$userTid]);
+        $this->cache->delete($this->getDataCacheKey($userTid));
     }
 
 
@@ -143,20 +201,20 @@ class ApmUserManager implements UserManagerInterface
         }
 
         try {
-            $this->usersTable->updateRow(['id' => $userData->id, 'email_address' => $newEmailAddress]);
+            $this->getUsersTable()->updateRow(['id' => $userData->id, 'email_address' => $newEmailAddress]);
         } catch (InvalidRowForUpdate $e) {
             // should never happen
             $this->logger->error($e->getMessage());
             throw new RuntimeException($e->getMessage(), $e->getCode());
         }
-        unset($this->cache[$userTid]);
+        $this->cache->delete($this->getDataCacheKey($userTid));
     }
 
     /**
      * @inheritDoc
      */
     public function isUserNameAlreadyInUse(string $userName) : bool {
-        return count($this->usersTable->findRows(['username' => $userName])) !== 0;
+        return count($this->getUsersTable()->findRows(['username' => $userName])) !== 0;
     }
 
     /**
@@ -177,7 +235,7 @@ class ApmUserManager implements UserManagerInterface
         }
 
         try {
-            $this->usersTable->createRow([
+            $this->getUsersTable()->createRow([
                 'tid' => $userTid,
                 'username' => $userName,
                 'password' => null,
@@ -200,12 +258,12 @@ class ApmUserManager implements UserManagerInterface
 
         $this->addTag($userTid, UserTag::DISABLED);
         try {
-            $this->usersTable->updateRow(['id' => $userData->id, 'password' => null]);
+            $this->getUsersTable()->updateRow(['id' => $userData->id, 'password' => null]);
         } catch (InvalidRowForUpdate $e) {
             // should never happen, but it's not catastrophic, we can continue
             $this->logger->error($e->getMessage());
         }
-        unset($this->cache[$userTid]);
+        $this->cache->delete($this->getDataCacheKey($userTid));
     }
 
     /**
@@ -239,13 +297,13 @@ class ApmUserManager implements UserManagerInterface
             $newTagArray = $userData->tags;
             $newTagArray[]  = $tag;
             try {
-                $this->usersTable->updateRow(['id' => $userData->id, 'tags' => implode(',', $newTagArray)]);
+                $this->getUsersTable()->updateRow(['id' => $userData->id, 'tags' => implode(',', $newTagArray)]);
             } catch (InvalidRowForUpdate $e) {
                 // should never happen
                 $this->logger->error($e->getMessage());
                 throw new RuntimeException($e->getMessage(), $e->getCode());
             }
-            unset($this->cache[$userTid]);
+            $this->cache->delete($this->getDataCacheKey($userTid));
         }
     }
 
@@ -265,13 +323,13 @@ class ApmUserManager implements UserManagerInterface
                 }
             }
             try {
-                $this->usersTable->updateRow(['id' => $userData->id, 'tags' => implode(',', $newTagArray)]);
+                $this->getUsersTable()->updateRow(['id' => $userData->id, 'tags' => implode(',', $newTagArray)]);
             } catch (InvalidRowForUpdate $e) {
                 // should never happen
                 $this->logger->error($e->getMessage());
                 throw new RuntimeException($e->getMessage(), $e->getCode());
             }
-            unset($this->cache[$userTid]);
+            $this->cache->delete($this->getDataCacheKey($userTid));
         }
     }
 
@@ -280,6 +338,21 @@ class ApmUserManager implements UserManagerInterface
     }
 
 
+    private function getAllUserTokenRows(int $userTid) {
+        try {
+            return unserialize($this->cache->get($this->getTokensCacheKey($userTid)));
+        } catch (KeyNotInCacheException) {
+            $rows =  $this->getTokensTable()->findRows( [
+                'user_tid' => $userTid,
+            ]);
+            $tokens = [];
+            foreach($rows as $row) {
+                $tokens[] = $row;
+            }
+            $this->cache->set($this->getTokensCacheKey($userTid), serialize($tokens), self::DefaultTtl);
+            return $tokens;
+        }
+    }
 
 
     /**
@@ -287,14 +360,13 @@ class ApmUserManager implements UserManagerInterface
      */
     public function getTokenByUserAgent(int $userTid, string $userAgent): string
     {
-        $rows =  $this->tokensTable->findRows( [
-            'user_tid' => $userTid,
-            'user_agent' => $userAgent
-        ]);
-        if (count($rows) === 0) {
-            return '';
+        $rows = $this->getAllUserTokenRows($userTid);
+        foreach ($rows as $row) {
+            if ($row['user_agent'] === $userAgent) {
+                return $row['token'];
+            }
         }
-        return $rows->getFirst()['token'] ?? '';
+        return '';
     }
 
     /**
@@ -302,7 +374,7 @@ class ApmUserManager implements UserManagerInterface
      */
     public function getAllTokens(int $userTid): array
     {
-        $rows =  $this->tokensTable->findRows( [
+        $rows =  $this->getTokensTable()->findRows( [
             'user_tid' => $userTid,
         ]);
         $tokenTuples = [];
@@ -315,11 +387,12 @@ class ApmUserManager implements UserManagerInterface
     public function deleteToken(int $userTid, string $userAgent) : void {
         $this->getUserData($userTid); // just to check if the user exists
 
-        $tokenRows = $this->tokensTable->findRows([ 'user_tid' => $userTid, 'user_agent' => $userAgent]);
+        $tokenRows = $this->getTokensTable()->findRows([ 'user_tid' => $userTid, 'user_agent' => $userAgent]);
         if (count($tokenRows) === 0) {
             return;
         }
-        $this->tokensTable->deleteRow($tokenRows->getFirst()['id']);
+        $this->getTokensTable()->deleteRow($tokenRows->getFirst()['id']);
+        $this->cache->delete($this->getTokensCacheKey($userTid));
     }
 
     /**
@@ -332,11 +405,12 @@ class ApmUserManager implements UserManagerInterface
         }
         $this->deleteToken($userTid, $userAgent); // this checks if the user exists
         try {
-            $this->tokensTable->createRow([
+            $this->getTokensTable()->createRow([
                 'user_tid' => $userTid,
                 'user_agent' => $userAgent,
                 'ip_address' => $ipAddress,
                 'token' => $token]);
+            $this->cache->delete($this->getTokensCacheKey($userTid));
         } catch (RowAlreadyExists $e) {
             // should never happen
             $this->logger->error($e->getMessage());
@@ -346,10 +420,11 @@ class ApmUserManager implements UserManagerInterface
 
     public function removeToken(int $userTid, string $userAgent) : void
     {
-        $rows = $this->tokensTable->findRows([ 'user_tid' => $userTid, 'user_agent' => $userAgent]);
+        $rows = $this->getTokensTable()->findRows([ 'user_tid' => $userTid, 'user_agent' => $userAgent]);
         foreach($rows as $row) {
-            $this->tokensTable->deleteRow($row['id']);
+            $this->getTokensTable()->deleteRow($row['id']);
         }
+        $this->cache->delete($this->getTokensCacheKey($userTid));
     }
 
     public function isStringValidPassword(string $someStr) : bool {
@@ -388,13 +463,13 @@ class ApmUserManager implements UserManagerInterface
             $tablePasswordValue = password_hash($password, PASSWORD_BCRYPT);
         }
         try {
-            $this->usersTable->updateRow(['id' => $userData->id, 'password' => $tablePasswordValue]);
+            $this->getUsersTable()->updateRow(['id' => $userData->id, 'password' => $tablePasswordValue]);
         } catch (InvalidRowForUpdate $e) {
             // should never happen
             $this->logger->error($e->getMessage());
             throw new RuntimeException($e->getMessage(), $e->getCode());
         }
-        unset($this->cache[$userTid]);
+        $this->cache->delete($this->getDataCacheKey($userTid));
     }
 
     /**

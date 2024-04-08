@@ -114,8 +114,9 @@ export class EditionTypesetting {
     if (this.consolidatedMarginalia === undefined) {
       this.consolidateMarginalia()
     }
+    console.log(`Getting marginalia for line range ${lineFrom} to ${lineTo}`);
     return this.consolidatedMarginalia.filter( (m) => {
-      return m.lineNumber >= lineFrom && m.lineNumber <= lineTo
+      return m.lineNumber >= lineFrom && m.lineNumber <= lineTo;
     })
   }
 
@@ -138,15 +139,22 @@ export class EditionTypesetting {
       })
     })
 
-    this.consolidatedMarginalia = []
+   let marginaliaMap = [];
     marginalia.forEach( (marginaliaEntry) => {
-      if (this.consolidatedMarginalia[marginaliaEntry.lineNumber] === undefined) {
-        this.consolidatedMarginalia[marginaliaEntry.lineNumber] = marginaliaEntry
+      if (marginaliaMap[marginaliaEntry.lineNumber] === undefined) {
+        marginaliaMap[marginaliaEntry.lineNumber] = marginaliaEntry
       } else {
-        this.consolidatedMarginalia[marginaliaEntry.lineNumber].marginalSubEntries.push(...marginaliaEntry.marginalSubEntries)
+        marginaliaMap[marginaliaEntry.lineNumber].marginalSubEntries.push(...marginaliaEntry.marginalSubEntries)
       }
     })
-    this.consolidatedMarginalia.sort( (a, b) => { return a.lineNumber - b.lineNumber})
+    this.consolidatedMarginalia = [];
+    marginaliaMap.forEach( (marginaliaElement) => {
+      this.consolidatedMarginalia.push(marginaliaElement);
+    })
+    this.consolidatedMarginalia.sort( (a, b) => { return a.lineNumber - b.lineNumber});
+
+    console.log(`Consolidated marginalia`);
+    console.log(deepCopy(this.consolidatedMarginalia));
   }
 
   /**

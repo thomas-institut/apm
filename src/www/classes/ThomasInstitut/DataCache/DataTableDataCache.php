@@ -30,6 +30,7 @@ use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\DataTableResultsIterator;
 use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\TimeString\InvalidTimeString;
 use ThomasInstitut\TimeString\InvalidTimeZoneException;
 use ThomasInstitut\TimeString\TimeString;
 
@@ -92,6 +93,28 @@ class DataTableDataCache implements DataCache, LoggerAwareInterface
             throw new KeyNotInCacheException("Key '$key' not in cache");
         }
         return $row[$this->valueColumn];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getRemainingTtl(string $key): int
+    {
+        $this->get($key);
+        $rows =  $this->getRowsForKey($key);
+        $row = $rows->getFirst();
+        if ($row[$this->expiresColumn] === TimeString::END_OF_TIMES) {
+            return 0;
+        }
+        $now = time();
+        try {
+            $expiresTs = intval(TimeString::toTimeStamp($row[$this->expiresColumn]));
+            $ttl = $expiresTs - $now;
+            return $ttl > 0 ? $ttl : -1;
+        } catch (InvalidTimeString|InvalidTimeZoneException $e) {
+            // should never happen
+            throw new \RuntimeException("Exception getting timestamp from timeString");
+        }
     }
 
     /**
@@ -218,4 +241,6 @@ class DataTableDataCache implements DataCache, LoggerAwareInterface
         }
         $this->deleteMultipleRows($idsToDelete);
     }
+
+
 }

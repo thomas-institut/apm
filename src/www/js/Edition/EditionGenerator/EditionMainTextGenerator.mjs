@@ -80,7 +80,7 @@ export class EditionMainTextGenerator {
       }
 
       if (tokenType === WitnessTokenType.NUMBERING_LABEL) {
-        console.log(`Generating main text token for numbering label '${witnessToken.text}'`)
+        // console.log(`Generating main text token for numbering label '${witnessToken.text}'`)
         mainTextTokens.push( MainTextTokenFactory.createSimpleText(MainTextTokenType.NUMBERING_LABEL, witnessToken.text, i, lang))
         continue
       }

@@ -36,7 +36,6 @@ export class NormalPage extends ApmPage {
 
   constructor(options) {
     super(options)
-
   }
 
   async bootstrapHtml() {

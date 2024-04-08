@@ -20,7 +20,7 @@
 namespace Test\ThomasInstitut\DataCache;
 
 use PHPUnit\Framework\TestCase;
-use ThomasInstitut\DataCache\DataCacheTest;
+use ThomasInstitut\DataCache\DataCacheReferenceTest;
 use ThomasInstitut\DataCache\DataTableDataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataTable\InMemoryDataTable;
@@ -34,7 +34,7 @@ class DataTableDataCacheTest extends TestCase
      */
     public function testStandardTests() {
 
-        $tester = new DataCacheTest('DataTable');
+        $tester = new DataCacheReferenceTest('DataTable');
 
         $tester->runAllTests(new DataTableDataCache(new InMemoryDataTable()), 'DataTableDataCache');
     }

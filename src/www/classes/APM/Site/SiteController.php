@@ -38,13 +38,10 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use APM\System\ApmSystemManager;
-use AverroesProject\Data\DataManager;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
-use Slim\Psr7\Response;
 use Slim\Routing\RouteParser;
-use Slim\Views\Twig;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\EntitySystem\Tid;
@@ -62,8 +59,6 @@ use Twig\Error\SyntaxError;
 class SiteController implements LoggerAwareInterface, CodeDebugInterface
 {
 
-    const COOKIE_SIZE_THRESHOLD = 1000;
-
     const TEMPLATE_ERROR_PAGE = 'error-page.twig';
 
 
@@ -72,56 +67,27 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 
     protected ContainerInterface $container;
     protected ApmSystemManager $systemManager;
-    protected Twig $view;
     protected array $config;
-    /**
-     * @var DataManager
-     * @deprecated get it from $this->systemManager
-     */
-    protected DataManager $dataManager;
-    protected bool $userAuthenticated;
-    /**
-     * @var array|null
-     * @deprecated use getSiteUserInfo())
-     */
-    protected ?array $siteUserInfo;
-    protected RouteParser $router;
-    /**
-     * @var array
-     * @deprecated use getLanguages()
-     */
-    protected array $languages;
-    protected SimpleProfiler $profiler;
 
-    /**
-     * @var array
-     * @deprecated use getLanguagesByCode();
-     */
-    protected array $languagesByCode;
+    protected bool $userAuthenticated;
+    protected RouteParser $router;
+    protected SimpleProfiler $profiler;
     protected int $userTid;
 
     /**
      * SiteController constructor.
      * @param ContainerInterface $ci
      * @throws ContainerExceptionInterface
-     * @throws LoaderError
      * @throws NotFoundExceptionInterface
      */
     public function __construct(ContainerInterface $ci)
     {
         $this->container = $ci;
         $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
-        $this->view = $this->systemManager->getTwig();
         $this->config = $this->systemManager->getConfig();
         $this->logger = $this->systemManager->getLogger();
         $this->router = $this->systemManager->getRouter();
         $this->userAuthenticated = false;
-
-
-        $this->siteUserInfo = null;
-        $this->dataManager = $this->systemManager->getDataManager();
-        $this->languages = $this->getLanguages();
-        $this->languagesByCode = $this->getLanguagesByCode();
 
         $this->profiler = new SimpleProfiler();
         $this->profiler->registerProperty('time', new TimeTracker());
@@ -134,7 +100,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         if ($ci->has(ApmContainerKey::SITE_USER_TID)) {
            $this->userAuthenticated = true;
            $this->userTid = $ci->get(ApmContainerKey::SITE_USER_TID);
-           $this->siteUserInfo = $this->getSiteUserInfo();
         }
     }
 
@@ -227,7 +192,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         }
 
         try {
-            $responseToReturn = $this->view->render($response, $template, $data);
+            $responseToReturn = $this->systemManager->getTwig()->render($response, $template, $data);
             SystemProfiler::lap('Response ready');
             $this->logger->info("SITE PROFILER " . SystemProfiler::getName(), SystemProfiler::getLaps());
             return $responseToReturn;
@@ -258,16 +223,11 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             [
                 'errorMessage' => $errorMessage,
                 'title' => $title
-            ],
-            true, false)->withStatus($httpStatus);
+            ])->withStatus($httpStatus);
 
 
     }
-    
-    protected function getCopyrightNotice() : string {
-        return '';
-    }
-    
+
     protected function getBaseUrl() : string {
         return $this->systemManager->getBaseUrl();
     }
@@ -302,6 +262,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     protected function buildPageArrayNew(array $pagesInfo, array $transcribedPages, $docInfo): array
     {
         $thePages = [];
+        $dm  = $this->systemManager->getDataManager();
         foreach ($pagesInfo as $pageInfo) {
             /** @var $pageInfo PageInfo */
             $thePage = get_object_vars($pageInfo);
@@ -309,9 +270,9 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             $thePage['imageSource'] = $docInfo['image_source'];
             $thePage['isDeepZoom'] = $docInfo['deep_zoom'];
             $thePage['isTranscribed'] = in_array($pageInfo->pageNumber, $transcribedPages);
-            $thePage['imageUrl'] = $this->dataManager->getImageUrl($docInfo['id'], $pageInfo->imageNumber);
-            $thePage['jpgUrl'] = $this->dataManager->getImageUrl($docInfo['id'], $pageInfo->imageNumber, ApmImageType::IMAGE_TYPE_JPG);
-            $thePage['thumbnailUrl'] = $this->dataManager->getImageUrl($docInfo['id'], $pageInfo->imageNumber, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL);
+            $thePage['imageUrl'] = $dm->getImageUrl($docInfo['id'], $pageInfo->imageNumber);
+            $thePage['jpgUrl'] = $dm->getImageUrl($docInfo['id'], $pageInfo->imageNumber, ApmImageType::IMAGE_TYPE_JPG);
+            $thePage['thumbnailUrl'] = $dm->getImageUrl($docInfo['id'], $pageInfo->imageNumber, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL);
             $thePages[$pageInfo->pageId] = $thePage;
         }
         return $thePages;
@@ -330,13 +291,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             ];
         }
         return $normalizerData;
-    }
-
-    protected function reportCookieSize() : void {
-        $cookieString = $_SERVER['HTTP_COOKIE'] ?? 'N/A';
-        if (strlen($cookieString) > self::COOKIE_SIZE_THRESHOLD) {
-            $this->codeDebug("Got a cookie string of " . strlen($cookieString) . " bytes for user " . $this->getSiteUserInfo()['tid']);
-        }
     }
 
 

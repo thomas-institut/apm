@@ -501,7 +501,7 @@ export class CtData  {
       newApp.entries = app.entries.map( (entry) => {
         let newEntry = deepCopy(entry)
         if (entry.from > col) {
-          console.log(`Shifting entry from=${entry.from}, new from = ${entry.from + numCols}`)
+          // console.log(`Shifting entry from=${entry.from}, new from = ${entry.from + numCols}`)
         }
         newEntry.from = entry.from > col ? entry.from + numCols : entry.from
         newEntry.to = entry.to > col ? entry.to + numCols : entry.to

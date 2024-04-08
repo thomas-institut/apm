@@ -1,0 +1,39 @@
+
+
+p.property {
+    margin: 0 0 0 2em;
+    padding: 0;
+}
+
+table.statements {
+    margin-left: 2em;
+}
+
+table.statements td {
+    padding: 2px 4px;
+    border: 1px solid silver;
+    vertical-align: top;
+}
+
+span.literal-value  {
+    font-family: monospace;
+    color: #4f4f4f;
+}
+
+h3 {
+    margin-top: 1em;
+}
+
+div.entity-data-dump {
+    margin-top: 2em;
+}
+
+.timestamp-value {
+    font-size: 0.9em;
+    border-bottom: 1px dotted #c9c8c8;
+}
+
+.active-notice {
+    font-size: 0.9em;
+    color: green;
+}

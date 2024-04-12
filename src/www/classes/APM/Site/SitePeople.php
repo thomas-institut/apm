@@ -2,6 +2,8 @@
 
 namespace APM\Site;
 
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
+use APM\EntitySystem\Schema\Entity;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
@@ -45,7 +47,10 @@ class SitePeople extends SiteController
             $this->getSystemErrorPage($response, "User not found", [ 'tid' => $this->userTid]);
         }
         try {
-            $data = $pm->getPersonEssentialData($tid);
+            $rawEntityData = $this->systemManager->getEntitySystem()->getEntityData($tid);
+
+
+
             $userData = [];
             if ($um->isUser($tid)) {
                 if ($canManageUsers || $this->userTid === $tid) {
@@ -53,10 +58,53 @@ class SitePeople extends SiteController
                     unset($userData['passwordHash']);
                 }
             }
+
+            $data = [];
+
+            $data['tid'] = $tid;
+            $data['name'] = $rawEntityData->name;
+
+            $data['sections'] = [
+                [
+                    'name' => 'general',
+
+
+                ]
+            ];
+            $data['sortName'] = $rawEntityData->getObjectForPredicate(Entity::pSortName);
+            $data['description'] = $rawEntityData->getObjectForPredicate(Entity::pEntityDescription);
+            $data['dateOfBirth'] = $rawEntityData->getObjectForPredicate(Entity::pDateOfBirth);
+            $data['dateOfDeath'] = $rawEntityData->getObjectForPredicate(Entity::pDateOfDeath);
+            $data['viafId'] = $rawEntityData->getObjectForPredicate(Entity::pViafId);
+            $data['gndId'] = $rawEntityData->getObjectForPredicate(Entity::pGNDId);
+            $data['wikiDataId'] = $rawEntityData->getObjectForPredicate(Entity::pWikiDataId);
+            $data['orcidId'] = $rawEntityData->getObjectForPredicate(Entity::pOrcid);
+            $data['locId'] = $rawEntityData->getObjectForPredicate(Entity::pLocId);
+            $data['gndId'] =  $rawEntityData->getObjectForPredicate(Entity::pGNDId);
+
+            $data['urls']  = [];
+
+            $urlObjectArray = $rawEntityData->getAllObjectsForPredicateByQualificationPredicate(Entity::pUrl, Entity::pObjectUrlType, 0);
+
+            foreach($urlObjectArray as $key => $value) {
+                if ($key === 0) {
+                    $name = "Other";
+                } else {
+                    try {
+                        $name = $this->systemManager->getEntitySystem()->getEntityData($key)->name;
+                    } catch (EntityDoesNotExistException) {
+                        $this->logger->error("Found undefined url type $key in data");
+                        $name = "Other";
+                    }
+                }
+                $data['urls'][] = [ 'name' => $name, 'url' => $value];
+            }
+
+
             return $this->renderPage($response,
                 self::TEMPLATE_PERSON,
                 [   'tid' => $tid,
-                    'data' => $data->getExportObject(),
+                    'data' => $data,
                     'canManageUsers' => $canManageUsers,
                     'userData' => $userData
                 ],
@@ -70,6 +118,8 @@ class SitePeople extends SiteController
             // should never happen
             return $this->getSystemErrorPage($response, 'Could not get User  data', [
                 'tid' => $tid, 'function' => __FUNCTION__]);
+        } catch (EntityDoesNotExistException $e) {
+
         }
     }
 

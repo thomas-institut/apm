@@ -46,6 +46,7 @@ export class PersonPageNew extends NormalPage {
     })
   }
 
+
   async initPage () {
     await super.initPage();
     document.title = this.personData.name;
@@ -143,22 +144,99 @@ export class PersonPageNew extends NormalPage {
       { label: tr('People'), url:  urlGen.sitePeople()},
       { label: tr('Person Details'), active: true}
     ])
+    let entityAdminHtml = '';
+    if (this.isUserRoot()) {
+      entityAdminHtml = `<div class="entity-admin">
+                <a class="entity-page-button" href="${urlGen.siteEntity(this.personData.tid)}">[ ${tr('Entity Page')} ]</a>
+                </div>`
+    }
+
+    let idsHtml = [
+      {
+        name: 'ORCiD',
+        value: this.personData['orcidId'] ?? '',
+        url: urlGen.orcidPage(this.personData['orcidId']),
+        title: 'ORCiD',
+        logoUrl: urlGen.logoOrcid()
+      },
+      {
+        name: 'VIAF',
+        value: this.personData['viafId'] ?? '',
+        url: urlGen.viafPage(this.personData['viafId']),
+        logoUrl: urlGen.logoViaf(),
+        title: 'VIAF ID'
+      },
+      {
+        name: 'GND',
+        value: this.personData['gndId'] ?? '',
+        url: urlGen.gndExplorePage(this.personData['gndId']),
+        logoUrl: urlGen.logoGnd(),
+        title: 'Gemeinsame Normdatei (GND) ID'
+      },
+      {
+        name: 'WikiData',
+        value: this.personData['wikiDataId'] ?? '',
+        url: urlGen.wikiDataPage(this.personData['wikiDataId']),
+        logoUrl: urlGen.logoWikiData(),
+        title: 'WikiData Id'
+      },
+      {
+        name: 'LoC',
+        value: this.personData['locId'] ?? '',
+        url: '',
+        logoUrl: urlGen.logoLoc(),
+        title: "US Library of Congress ID"
+      }
+    ].map( (idDef) => {
+      if (idDef.value === '') {
+        return '';
+      }
+      let html = '<div class="person-id">';
+      let logoUrl = idDef.logoUrl ?? '';
+      let logoHtml
+      if (logoUrl === '') {
+        logoHtml = `<span class="id-name" title="${idDef.title}">${idDef.name}</span>`
+      } else {
+        logoHtml = `<img class="id-logo" src="${logoUrl}" alt="${idDef.name}" title="${idDef.title}">`;
+      }
+
+      if (idDef.url !== '') {
+        html += `${logoHtml}<a href="${idDef.url}" target="_blank" title="${idDef.title}"><span class="literal-value">${idDef.value}</span> <i class="bi bi-link-45deg"></i></a>`
+      } else {
+        html += `${logoHtml}<span class="literal-value" title="${idDef.title ?? ''}">${idDef.value}</span>`;
+      }
+      html += '</div>'
+      return html;
+    }).join('')
+
     let dataHtml = [
-      [ tr('Entity ID'), Tid.toBase36String(this.personData.tid)],
-      [ tr('Sort Name'), this.personData['sortName']]
+      [ tr('Sort Name'), this.personData['sortName']],
+      [ tr('Date of Birth'), this.personData['dateOfBirth']],
+      [ tr('Date of Death'), this.personData['dateOfDeath']],
     ].map ( (displayTuple) => {
       let [ predicateName, predicateValue] = displayTuple;
       return this.getPredicateHtml(predicateName, predicateValue);
-    }).join('')
+    }).join('');
+
+    let urlsHtml = this.personData.urls.map( (urlDef) => {
+        return `<div class="person-url">${urlDef.name}: <a href="${urlDef.url}" target="_blank">${urlDef.url} <i class="bi bi-link-45deg"></i></a></div>`
+    }).join('');
+
+
+
     return `
     <div>${breadcrumbHtml}</div>
      <h1 class="">${this.personData.name}</h1>
      
-     <div class="person-entity-data">
-        ${dataHtml}
-    </div>
-    <div class="user-data">${await this.getUserDataHtml(this.personData)}</div>
-    <div class="works-div"></div>`;
+     <div class="section person-entity-data">${dataHtml}</div>
+     <div class="section person-ids">${idsHtml}</div>
+     <div class="section person-urls">
+        ${urlsHtml !== '' ? "<h4>External Links</h4>" : ''}
+        ${urlsHtml}
+      </div>
+     <div class="section person-admin">${entityAdminHtml}</div>
+     <div class="section user-data">${await this.getUserDataHtml(this.personData)}</div>
+     <div class="section works-div"></div>`;
   }
 
   getWorksDivHtml() {

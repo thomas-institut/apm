@@ -181,6 +181,8 @@ export class NormalPage extends ApmPage {
   }
 
   getPredicateHtml(predicateName, predicateValue, divClass = 'entity-predicate') {
-    return `<div class="${divClass}"><span class="predicate">${predicateName}</span>: ${predicateValue}</div>`
+    let val = predicateValue ?? '';
+
+    return val === '' ? '' :  `<div class="${divClass}"><span class="predicate">${predicateName}</span>: ${predicateValue ?? ''}</div>`
   }
 }

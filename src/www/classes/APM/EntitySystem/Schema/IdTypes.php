@@ -10,21 +10,36 @@ const IdTypeDefinitions = [
         'VIAF',
         'A VIAF id',
         [],
-        []
+        [],
+        true,
+        'Use pViafId'
     ],
     [
         Entity::IdTypeWikiData,
         'WikiData',
         'A WikiData Id',
         [],
-        []
+        [],
+        true,
+        'Use pWikiDataId'
     ],
     [
         Entity::IdTypeGnd,
         'GND',
-        'Gemeinsame Normdatei (GND) ',
+        'Gemeinsame Normdatei (GND)',
         [],
-        []
+        [],
+        true,
+        'Use pGND'
+    ],
+    [
+        Entity::IdTypeOrcid,
+        'ORCID',
+        'ORCID iD',
+        [],
+        [],
+        true,
+        'Use pOrcid'
     ]
 ];
 

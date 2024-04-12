@@ -33,9 +33,9 @@ class Entity implements TidDefiner
     const tStatement = 105;
     const tStatementGroup = 106;
     const tPerson = 107;
-    const tPlace = 108;
-    const tArea = 109;
-    const tLang = 110;
+    const tGeographicalPlace = 108;
+    const tGeographicalArea = 109;
+    const tLanguage = 110;
     const tUrlType = 111;
     const tIdType = 112;
     const tWork = 113;
@@ -75,6 +75,13 @@ class Entity implements TidDefiner
     const pMemberOf = 2012;
     const pDeprecated = 2013;
 
+    // ID predicates that apply to different types of entities
+    const pViafId = 2901;
+    const pWikiDataId = 2902;
+    const pGNDId = 2093;
+    const pLocId = 2094;
+
+
     // Basic statement metadata predicates
 
     const pStatementAuthor = 3001;
@@ -110,6 +117,7 @@ class Entity implements TidDefiner
     const pPlaceOfDeath = 7012;
     const pIsUser = 7013;
     const pIsEnabledUser = 7014;
+    const pOrcid = 7015;
 
 
 //    const pFather = 7013;
@@ -140,6 +148,7 @@ class Entity implements TidDefiner
     const IdTypeWikiData = 10001;
     const IdTypeViaf = 10002;
     const IdTypeGnd = 10003;
+    const IdTypeOrcid = 10004;
 
 
     // Area types

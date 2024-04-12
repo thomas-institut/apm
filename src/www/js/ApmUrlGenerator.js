@@ -426,4 +426,45 @@ class ApmUrlGenerator {
     }
 
 
+    // logos
+
+    logoOrcid() {
+        return `${this.images()}/orcid-logo.svg`
+    }
+
+    logoWikiData() {
+        return `${this.images()}/wikidata-logo.svg`
+    }
+
+    logoGnd() {
+        return `${this.images()}/gnd-logo.svg`
+    }
+
+    logoViaf() {
+        return `${this.images()}/viaf-logo.svg`
+    }
+
+    logoLoc() {
+        return `${this.images()}/loc-logo2.svg`
+    }
+
+    // External
+
+    viafPage(viafId) {
+        return `https://viaf.org/viaf/${viafId}`;
+    }
+
+    wikiDataPage(wikiDataId) {
+        return `https://www.wikidata.org/wiki/${wikiDataId}`;
+    }
+
+    orcidPage(orcidId) {
+        return `https://orcid.org/${orcidId}`;
+    }
+
+    gndExplorePage(gndId) {
+        return `https://explore.gnd.network/gnd/${gndId}`;
+    }
+
+
 }

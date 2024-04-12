@@ -4,6 +4,9 @@
 
 namespace APM\Api;
 
+use APM\EntitySystem\ApmEntitySystemInterface;
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
+use APM\EntitySystem\Schema\Entity;
 use APM\System\Person\InvalidPersonNameException;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
@@ -19,6 +22,7 @@ use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\Exportable\ExportableObject;
 use ThomasInstitut\TimeString\TimeString;
+use function PHPUnit\Framework\throwException;
 
 class ApiPeople extends ApiController
 {
@@ -61,24 +65,42 @@ class ApiPeople extends ApiController
         try {
             return $this->responseWithJson($response, unserialize($cache->get(self::AllPeopleDataForPeoplePageCacheKey)));
         } catch (KeyNotInCacheException) {
-            $dataToServe = self::buildAllPeopleDataForPeoplePage($this->systemManager->getPersonManager());
+            $dataToServe = self::buildAllPeopleDataForPeoplePage($this->systemManager->getEntitySystem());
             $cache->set(self::AllPeopleDataForPeoplePageCacheKey, serialize($dataToServe), self::AllPeopleDataForPeoplePageTtl);
             return $this->responseWithJson($response, $dataToServe);
         }
     }
 
-    public static function buildAllPeopleDataForPeoplePage(PersonManagerInterface $pm) : array {
-        $data = $pm->getAllPeopleEssentialData();
-        $dataToServe = [];
-        foreach($data as $essentialData) {
-            $dataToServe[] = $essentialData->getExportObject();
+    public static function buildAllPeopleDataForPeoplePage(ApmEntitySystemInterface $es) : array {
+
+        $tids = $es->getAllEntitiesForType(Entity::tPerson);
+        $dataArray = [];
+        foreach ($tids as $tid) {
+
+            try {
+                $personData = $es->getEntityData($tid);
+            } catch (EntityDoesNotExistException) {
+                // should never happen
+                throw new \RuntimeException("Entity from all people list does not exist: $tid");
+            }
+
+            $dataArray[] = [
+                'tid' => $tid,
+                'name' => $personData->name,
+                'sortName' => $personData->getObjectForPredicate(Entity::pSortName) ?? '',
+                'dateOfBirth' => $personData->getObjectForPredicate(Entity::pDateOfBirth) ?? '',
+                'dateOfDeath' => $personData->getObjectForPredicate(Entity::pDateOfDeath) ?? '',
+                'isUser' => ($personData->getObjectForPredicate(Entity::pIsUser) ?? '0') === '1',
+            ];
         }
-        return $dataToServe;
+
+
+        return $dataArray;
     }
 
     public static function updateCachedAllPeopleDataForPeoplePage(SystemManager $systemManager) : bool {
         try {
-            $data = self::buildAllPeopleDataForPeoplePage($systemManager->getPersonManager());
+            $data = self::buildAllPeopleDataForPeoplePage($systemManager->getEntitySystem());
             $systemManager->getSystemDataCache()->set(self::AllPeopleDataForPeoplePageCacheKey,
                 serialize($data), self::AllPeopleDataForPeoplePageTtl);
         } catch (\Exception $e) {

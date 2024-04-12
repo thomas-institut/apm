@@ -11,7 +11,7 @@ class DefsFromArray
      *
      * Each element in the array corresponds to an entity definition:
      *
-     *   ``[ tid, name, description, translatedNames, translatedDescriptions ]``
+     *   ``[ tid, name, description, translatedNames, translatedDescriptions, deprecated, deprecationNotice]``
      *
      * @param array $definitionsArray
      * @param int $entityType
@@ -22,13 +22,15 @@ class DefsFromArray
 
         foreach ($definitionsArray as $type) {
             $def = new EntityDefinition();
-            [ $tid, $name, $description, $trNames, $trDescriptions] = $type;
+            [ $tid, $name, $description, $trNames, $trDescriptions, $deprecated, $deprecationNotice] = $type;
             $def->tid = $tid;
             $def->type = $entityType;
             $def->name = $name;
             $def->description = $description;
-            $def->translatedNames = $trNames;
-            $def->translatedDescriptions =  $trDescriptions;
+            $def->translatedNames = $trNames ?? [];
+            $def->translatedDescriptions =  $trDescriptions ?? [];
+            $def->deprecated = $deprecated ?? false;
+            $def->deprecationNotice = $deprecationNotice ?? '';
             $defs[] = $def;
         }
 
@@ -84,6 +86,8 @@ class DefsFromArray
             $def->isPrimaryRelation = $definitionObject['isPrimaryRelation'] ?? true;
             $def->canBeCancelled = $definitionObject['canBeCancelled'] ?? true;
             $def->flags = $definitionObject['flags'] ?? null;
+            $def->deprecated = $definitionObject['deprecated'] ?? false;
+            $def->deprecationNotice = $definitionObject['deprecationNotice'] ?? '';
             $defs[] = $def;
         }
 

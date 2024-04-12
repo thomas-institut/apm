@@ -109,7 +109,7 @@ class ApmSystemManager extends SystemManager {
     // Database version
     const DB_VERSION = 32;
 
-    const ES_DATA_ID = '003';
+    const ES_DATA_ID = 'es001';
 
     const MemCachePrefix_Apm_ES = 'apm_es';
     const MemCachePrefix_TypedMultiStorage_ES = 'apm_msEs';
@@ -853,7 +853,7 @@ class ApmSystemManager extends SystemManager {
             "timestamp" => [ 'predicate' => Entity::pStatementTimestamp, 'forceLiteralValue' => true ],
             'edNote'=> Entity::pStatementEditorialNote,
             'cancelledBy' => [ 'predicate' => Entity::pCancelledBy, 'cancellationMetadata' => true ],
-            'cancellationTs' => [ 'predicate' => Entity::pCancellationTimestamp, 'cancellationMetadata' => true ],
+            'cancellationTs' => [ 'predicate' => Entity::pCancellationTimestamp, 'cancellationMetadata' => true, 'forceLiteralValue' => true  ],
         ]);
     }
 

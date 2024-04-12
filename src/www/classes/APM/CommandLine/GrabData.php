@@ -4,6 +4,7 @@ namespace APM\CommandLine;
 
 
 use APM\CommandLine\DataGrabber\ViafIdGrabber;
+use APM\CommandLine\DataGrabber\WikiDataGrabber;
 
 class GrabData extends AdminUtilityManager
 {
@@ -12,7 +13,8 @@ class GrabData extends AdminUtilityManager
         parent::__construct($config, $argc, $argv, "Grab Data Tools");
 
         $utilities = [
-            new ViafIdGrabber($config, $this->commandArgc, $this->commandArgv)
+            new ViafIdGrabber($config, $this->commandArgc, $this->commandArgv),
+            new WikiDataGrabber($config, $this->commandArgc, $this->commandArgv)
         ];
         $this->setCommands($utilities);
     }

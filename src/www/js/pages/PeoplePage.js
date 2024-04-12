@@ -39,6 +39,8 @@ export class PeoplePage extends NormalPage {
             columns: [
               { data: 'name', render: { _: 'display', sort: 'sort'}},
               { data: 'sortName'},
+              { data: 'dateOfBirth', type: 'date'},
+              { data: 'dateOfDeath', type: 'date'},
               { data: 'tid'},
               { data: 'other'}
             ],
@@ -73,7 +75,9 @@ export class PeoplePage extends NormalPage {
             },
             sortName: person['sortName'],
             tid: Tid.toBase36String(person.tid),
-            other: person.isUser ? tr('User') : ''
+            other: person.isUser ? tr('User') : '',
+            dateOfBirth: person['dateOfBirth'] ?? '',
+            dateOfDeath: person['dateOfDeath'] ?? ''
         };
         })
     }
@@ -83,6 +87,8 @@ export class PeoplePage extends NormalPage {
                 <thead><tr>
                       <th>${tr('Name')}</th>
                       <th>${tr('Sort Name')}</th>
+                      <th>${tr('Date of Birth')}</th>
+                      <th>${tr('Date of Death')}</th>
                       <th>${tr('Entity ID')}</th>
                       <th></th></tr>
                 </thead>

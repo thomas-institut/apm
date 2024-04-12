@@ -79,7 +79,7 @@ const BasicEntityPredicateDefs = [
         'type' => Entity::tAttribute,
         'name' => 'Name in original language',
         'descr' => "The entity's name in original language and script",
-        'allowedSubjectTypes' => [ Entity::tPerson, Entity::tPlace, Entity::tArea, Entity::tWork],
+        'allowedSubjectTypes' => [ Entity::tPerson, Entity::tGeographicalPlace, Entity::tGeographicalArea, Entity::tWork],
         'allowedObjectTypes'=> null,
         'canBeCancelled' => true,
         'singleProperty' => false,
@@ -101,7 +101,7 @@ const BasicEntityPredicateDefs = [
         'type' => Entity::tAttribute,
         'name' => 'URL',
         'descr' => "A URL to a resource that directly and explicitly describes or represents the entity, e.g. a Wikipedia entry",
-        'allowedSubjectTypes' => [ Entity::tPerson, Entity::tPlace, Entity::tArea, Entity::tWork],
+        'allowedSubjectTypes' => [ Entity::tPerson, Entity::tGeographicalPlace, Entity::tGeographicalArea, Entity::tWork],
         'allowedObjectTypes'=> null,
         'canBeCancelled' => true,
         'singleProperty' => false,
@@ -188,7 +188,7 @@ const StatementQualificationPredicateDefs = [
         'name' => 'Language',
         'descr' => "The language of the statement's object",
         'allowedSubjectTypes' => null,
-        'allowedObjectTypes'=> [Entity::tLang],
+        'allowedObjectTypes'=> [Entity::tLanguage],
         'canBeCancelled' => false,
         'singleProperty' => true,
         'flags' => [ PredicateFlag::StatementMetadata, PredicateFlag::QualificationPredicate ]
@@ -246,7 +246,9 @@ const StatementQualificationPredicateDefs = [
         'allowedObjectTypes'=> [ Entity::tIdType],
         'canBeCancelled' => false,
         'singleProperty' => true,
-        'flags' => [ PredicateFlag::StatementMetadata, PredicateFlag::QualificationPredicate ]
+        'flags' => [ PredicateFlag::StatementMetadata, PredicateFlag::QualificationPredicate ],
+        'deprecated' => true,
+        'deprecationNotice' => "Use the individual id predicate instead"
     ],
 ];
 const StatementCancellationPredicateDefs = [
@@ -332,6 +334,52 @@ const MergePredicateDefs = [
     ]
 ];
 
+const IdPredicatesDefs = [
+    [
+        'tid' => Entity::pViafId,
+        'type' => Entity::tAttribute,
+        'name' => 'VIAF ID',
+        'descr' => 'VIAF ID',
+        'allowedSubjectTypes' => [ Entity::tPerson, Entity::tGeographicalArea, Entity::tGeographicalPlace],
+        'allowedObjectTypes'=> null,
+        'canBeCancelled' => true,
+        'singleProperty' => true,
+        'flags' => [ ]
+    ],
+    [
+        'tid' => Entity::pWikiDataId,
+        'type' => Entity::tAttribute,
+        'name' => 'WikiData ID',
+        'descr' => 'WikiData ID',
+        'allowedSubjectTypes' => null,
+        'allowedObjectTypes'=> null,
+        'canBeCancelled' => true,
+        'singleProperty' => true,
+        'flags' => [ ]
+    ],
+    [
+        'tid' => Entity::pGNDId,
+        'type' => Entity::tAttribute,
+        'name' => 'GND ID',
+        'descr' => "GND (Gemeinsame Normdatei) id",
+        'allowedSubjectTypes' => null,
+        'allowedObjectTypes'=> null,
+        'canBeCancelled' => true,
+        'singleProperty' => true,
+        'flags' => [ ]
+    ],
+    [
+        'tid' => Entity::pLocId,
+        'type' => Entity::tAttribute,
+        'name' => 'LoC ID',
+        'descr' => "US Library of Congress Id",
+        'allowedSubjectTypes' => [ Entity::tPerson, Entity::tGeographicalArea, Entity::tGeographicalPlace],
+        'allowedObjectTypes'=> null,
+        'canBeCancelled' => true,
+        'singleProperty' => true,
+        'flags' => [ ]
+    ],
+];
 
 class SystemPredicates implements PredicateDefiner
 {
@@ -354,7 +402,8 @@ class SystemPredicates implements PredicateDefiner
             MergePredicateDefs,
             StatementCancellationPredicateDefs,
             StatementMetadataPredicateDefs,
-            StatementQualificationPredicateDefs
+            StatementQualificationPredicateDefs,
+            IdPredicatesDefs
         ];
 
         $totalDefs = [];

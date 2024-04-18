@@ -81,8 +81,8 @@ export class MetadataEditor {
         `<br>
                             <div class="buttons_top" align="right"></div>
                             <br>
-                            <table class='${tableClass} metadataTable' style="table-layout:fixed;">
-                            </table>
+                            <div class='metadataTable'>
+                            </div>
                             <div class="buttons_bottom" align="left"></div>
                             <div class="errorMessage" style="font-style: oblique"></div>
                             <br>`)
@@ -212,12 +212,17 @@ export class MetadataEditor {
   makeTableRows() {
     switch (this.options.theme) {
       case 'horizontal':
-        $(this.metadataTableSelector).append(`<tr class="row1"></tr><tr class="row2"></tr>`)
+        $(this.metadataTableSelector).append(`<div class="row1"></div><div class="row2"></div>`)
         break
       case 'vertical':
         for (let i=1; i<=this.numKeys; i++) {
           let className = "row" + i
-          $(this.metadataTableSelector).append(`<tr class=${className}></tr>`)
+          $(this.metadataTableSelector).append(`<div class="${className}" 
+            style="display: grid; 
+                    grid-row-start: ${i}; 
+                    grid-row-end: ${i};
+                    grid-template-areas: 'header main';
+                    grid-template-columns: 2fr 4fr 2fr;"></div>`)
         }
         break
     }
@@ -233,16 +238,16 @@ export class MetadataEditor {
           if (this.options.mode === this.mode.show) {
             let cellButtonsAndIconsId = cellId + "_tableCellButton"
             let editAttributeButton = "entity_attr" + i + "_editButton"
-            $(`${this.options.containerSelector} .row1`).append(`<th>${this.entity.keys[i-1]}</th><th></th>`)
-            $(`${this.options.containerSelector} .row2`).append(`<td><div class=${cellId}></div></td>
-                                                <td class=${cellButtonsAndIconsId} style="width: 3em; text-align: center">
+            $(`${this.options.containerSelector} .row1`).append(`<div>${this.entity.keys[i-1]}</div><div></div>`)
+            $(`${this.options.containerSelector} .row2`).append(`<div><div class=${cellId}></div></div>
+                                                <div class=${cellButtonsAndIconsId} style="width: 3em; text-align: center">
                                                     <button class=${editAttributeButton} style="border: transparent; background-color: transparent">
                                                         <i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
-                                                </td>`)
+                                                </div>`)
             this.makeEditIconEvent(editAttributeButton)
           } else {
-            $(`${this.options.containerSelector} .row1`).append(`<th>${this.entity.keys[i-1]}</th>`)
-            $(`${this.options.containerSelector} .row2`).append(`<td><div class=${cellId}></div></td>`)
+            $(`${this.options.containerSelector} .row1`).append(`<div>${this.entity.keys[i-1]}</div>`)
+            $(`${this.options.containerSelector} .row2`).append(`<div><div class=${cellId}></div></div>`)
           }
         }
         break
@@ -255,15 +260,15 @@ export class MetadataEditor {
           let keyName = this.entity.keys[i-1] + "&emsp;&emsp;"
 
           if (this.options.mode !== this.mode.show) {
-            $(row).append(`<th style="vertical-align: top">${keyName}</th>
-                                    <td><div class=${cellId}></div></td>`)
+            $(row).append(`<div class="grid-header">${keyName}</div>
+                                    <div class="${cellId} grid-main"></div>`)
           } else {
             let cellButtonsAndIconsId = cellId + "_tableCellButton"
-            $(row).append(`<th style="vertical-align: top">${keyName}</th>
-                                    <td><div class=${cellId}></div></td>
-                                    <td class=${cellButtonsAndIconsId} style="width: 4.75em; text-align: right">
+            $(row).append(`<div class="grid-header">${keyName}</div>
+                                    <div class="${cellId} grid-main"></div>
+                                    <div class="${cellButtonsAndIconsId}" style="text-align: right">
                                         <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
-                                    </td>`)
+                                    </div>`)
             this.makeEditIconEvent(editAttributeButton)
           }
         }
@@ -405,6 +410,10 @@ export class MetadataEditor {
         let type = this.entity.types[i-1][0] // first possible type of data, set in the corresponding schema, determines type of input form
 
         this.setupInputFormByType(type, selectorId, inputFormId)
+
+        // adjust sizing
+        let rowSelector = this.options.containerSelector + " .row" + i
+        $(rowSelector).css("grid-template-columns", "2fr 6fr")
       }
     } else {
       let selectorId = this.options.containerSelector + " .entity_attr" + keyIndex
@@ -412,6 +421,11 @@ export class MetadataEditor {
       let type = this.entity.types[keyIndex-1][0] // first possible type of data, set in the corresponding schema, determines type of input form
 
       this.setupInputFormByType(type, selectorId, inputFormId)
+
+      // adjust sizing
+      let rowSelector = this.options.containerSelector + " .row" + keyIndex
+      $(rowSelector).css("grid-template-columns", "2fr 6fr 1fr")
+
     }
   }
 
@@ -587,6 +601,7 @@ export class MetadataEditor {
     let buttonSelector = this.options.containerSelector + ' .' + buttonId
     let inputSelector = this.options.containerSelector + ' .' + inputFormId
     let paragraphSelector = this.options.containerSelector + ' .' + paragraphId
+    let keyIndex = inputSelector.match(/\d+/)[0]
 
     if (!(this.options.mode === this.mode.dialog)) {
       dialog = this.makeDialog(inputSelector)
@@ -595,6 +610,14 @@ export class MetadataEditor {
         dialog = this.makeDialog(inputSelector)
       })
     }
+
+    // This ensures, that existing data will be validated correctly, because validation compares the user input to datalist entries
+    this.addValueToInputFormByIndex(keyIndex)
+    this.getMatchingPeople($(inputSelector).val(), (people) => {
+      this.addNamesToDatalistForPersonsAsValues(people, listSelector)
+      $(listSelector).hide()
+    })
+
 
     $(inputSelector).on('input', this.delay(() => {
 
@@ -802,6 +825,7 @@ export class MetadataEditor {
         this.addValueToInputFormByType(this.entity.types[i-1][0], i)
       }
     } else {
+      console.log(keyIndex)
       this.addValueToInputFormByType(this.entity.types[keyIndex-1][0], keyIndex)
     }
   }

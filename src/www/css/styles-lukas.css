@@ -303,6 +303,7 @@ input.tag-input:focus::placeholder {
 ul.tag-editor-tags-ul {
     list-style-type: none;
     padding-left: 0;
+    text-align: left;
 }
 
 div.aei-form ul.tag-editor-tags-ul {
@@ -371,7 +372,7 @@ button.matched-entity:hover {
 }
 
 ul.matched-persons {
-    position: relative;
+    position: static;
     width: 100% !important;
     border: none;
     margin-top: 0px;
@@ -380,4 +381,25 @@ ul.matched-persons {
 ul.matched-persons li {
     display: inline;
     margin-right: 0.5em;
+}
+
+div.metadataTable {
+    display: grid;
+}
+
+#person-metadata-editor-container {
+    margin-left: 350px;
+    margin-right: 350px;
+    min-width: 500px;
+}
+
+div.grid-header {
+    grid-area: header;
+    text-align: left;
+}
+
+
+div.grid-main {
+    grid-area: main;
+    text-align: left;
 }

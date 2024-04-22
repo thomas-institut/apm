@@ -75,13 +75,13 @@ export class MetadataEditor {
         break
     }
 
-    this.metadataTableSelector = `${this.options.containerSelector} .metadataTable`
+    this.metadataGridSelector = `${this.options.containerSelector} .metadataEditorGridContainer`
 
     $(this.options.containerSelector).html(
         `<br>
                             <div class="buttons_top" align="right"></div>
                             <br>
-                            <div class='metadataTable'>
+                            <div class='metadataEditorGridContainer'>
                             </div>
                             <div class="buttons_bottom" align="left"></div>
                             <div class="errorMessage" style="font-style: oblique"></div>
@@ -205,19 +205,19 @@ export class MetadataEditor {
   // Table Design Management
   makeTableStructure() {
     this.clearTable()
-    this.makeTableRows()
+    //this.makeTableRows()
     this.makeTableCells()
   }
 
   makeTableRows() {
     switch (this.options.theme) {
       case 'horizontal':
-        $(this.metadataTableSelector).append(`<div class="row1"></div><div class="row2"></div>`)
+        $(this.metadataGridSelector).append(`<div class="row1"></div><div class="row2"></div>`)
         break
       case 'vertical':
         for (let i=1; i<=this.numKeys; i++) {
           let className = "row" + i
-          $(this.metadataTableSelector).append(`<div class="${className}" 
+          $(this.metadataGridSelector).append(`<div class="${className}" 
             style="display: grid; 
                     grid-row-start: ${i}; 
                     grid-row-end: ${i};
@@ -260,13 +260,13 @@ export class MetadataEditor {
           let keyName = this.entity.keys[i-1] + "&emsp;&emsp;"
 
           if (this.options.mode !== this.mode.show) {
-            $(row).append(`<div class="grid-header">${keyName}</div>
-                                    <div class="${cellId} grid-main"></div>`)
+            $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i}; grid-row-end: ${i};">${keyName}</div>
+                                    <div class="${cellId} grid-main" style="grid-row-start: ${i}; grid-row-end: ${i};"></div>`)
           } else {
             let cellButtonsAndIconsId = cellId + "_tableCellButton"
-            $(row).append(`<div class="grid-header">${keyName}</div>
-                                    <div class="${cellId} grid-main"></div>
-                                    <div class="${cellButtonsAndIconsId}" style="text-align: right">
+            $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i}; grid-row-end: ${i};">${keyName}</div>
+                                    <div class="${cellId} grid-main" style="grid-row-start: ${i}; grid-row-end: ${i};"></div>
+                                    <div class="${cellButtonsAndIconsId}" style="text-align: right; grid-row-start: ${i}; grid-row-end: ${i};">
                                         <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
                                     </div>`)
             this.makeEditIconEvent(editAttributeButton)
@@ -292,7 +292,7 @@ export class MetadataEditor {
   }
 
   clearTable() {
-    $(this.metadataTableSelector).empty()
+    $(this.metadataGridSelector).empty()
   }
 
   // Table Data Management
@@ -412,8 +412,7 @@ export class MetadataEditor {
         this.setupInputFormByType(type, selectorId, inputFormId)
 
         // adjust sizing
-        let rowSelector = this.options.containerSelector + " .row" + i
-        $(rowSelector).css("grid-template-columns", "2fr 6fr")
+        $(this.metadataGridSelector).css("grid-template-columns", "2fr 6fr")
       }
     } else {
       let selectorId = this.options.containerSelector + " .entity_attr" + keyIndex
@@ -423,8 +422,7 @@ export class MetadataEditor {
       this.setupInputFormByType(type, selectorId, inputFormId)
 
       // adjust sizing
-      let rowSelector = this.options.containerSelector + " .row" + keyIndex
-      $(rowSelector).css("grid-template-columns", "2fr 6fr 1fr")
+      $(this.metadataGridSelector).css("grid-template-columns", "2fr 6fr 1fr")
 
     }
   }
@@ -601,7 +599,7 @@ export class MetadataEditor {
     let buttonSelector = this.options.containerSelector + ' .' + buttonId
     let inputSelector = this.options.containerSelector + ' .' + inputFormId
     let paragraphSelector = this.options.containerSelector + ' .' + paragraphId
-    let keyIndex = inputSelector.match(/\d+/)[0]
+    let keyIndex = inputFormId.match(/\d+/)[0]
 
     if (!(this.options.mode === this.mode.dialog)) {
       dialog = this.makeDialog(inputSelector)
@@ -825,7 +823,6 @@ export class MetadataEditor {
         this.addValueToInputFormByType(this.entity.types[i-1][0], i)
       }
     } else {
-      console.log(keyIndex)
       this.addValueToInputFormByType(this.entity.types[keyIndex-1][0], keyIndex)
     }
   }
@@ -860,11 +857,13 @@ export class MetadataEditor {
         $(entityAttrFormId).val(values[index-1])
     }
 
-    if (notes[index-1].replaceAll(' ', '') !== '') {
-      $(entityAttrNoteId).val(notes[index-1])
-      $(entityAttrNoteId).show()
-      let buttonId = "entity_attr" + index + "_form" + '_info-note-button'
-      this.removeInfoIcon(buttonId, 0)
+    if (notes[index-1] !== undefined) {
+      if (notes[index - 1].replaceAll(' ', '') !== '') {
+        $(entityAttrNoteId).val(notes[index - 1])
+        $(entityAttrNoteId).show()
+        let buttonId = "entity_attr" + index + "_form" + '_info-note-button'
+        this.removeInfoIcon(buttonId, 0)
+      }
     }
   }
 

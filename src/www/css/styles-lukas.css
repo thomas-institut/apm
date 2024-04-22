@@ -383,8 +383,11 @@ ul.matched-persons li {
     margin-right: 0.5em;
 }
 
-div.metadataTable {
+div.metadataEditorGridContainer {
     display: grid;
+    grid-template-areas: 'header main';
+    grid-template-columns: 2fr 4fr 2fr;
+    grid-row-gap: 5px;
 }
 
 #person-metadata-editor-container {

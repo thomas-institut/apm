@@ -25,7 +25,6 @@ export class PersonPageNew extends NormalPage {
         tid: { type: 'number'},
         data: { type: 'object'},
         canManageUsers: { type: 'boolean'},
-        userData: { type: 'object'}
       }
     })
 
@@ -36,7 +35,7 @@ export class PersonPageNew extends NormalPage {
     this.personData = cleanOptions.data;
     this.personTid = cleanOptions.tid;
     this.canManageUsers = cleanOptions.canManageUsers;
-    this.userData = cleanOptions.userData;
+    this.userData = this.personData.userData;
 
     this.userContributions = [];
     this.works = [];

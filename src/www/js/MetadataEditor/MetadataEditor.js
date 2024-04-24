@@ -16,6 +16,7 @@ export class MetadataEditor {
       mode: {type:'string', required: true},
       callback: {type:'function', required: true},
       theme: {type:'string', required: true},
+      sections: {type:'array', required: false, default: ['column']},
       backlink: {type:'string', required: false, default: ''},
       dialog: {type: 'object', required: false, default: {}},
       dialogRootMetadataEditor: {type: 'object', required: false, default: {}},
@@ -31,12 +32,14 @@ export class MetadataEditor {
     // globals
     this.entity = {id: '', type: '', keys: [], values: [], types: [], notes: []} // this object gets always updated with the latest metadata
     this.numKeys = 0
+    this.numSections = this.options.sections.length
     this.mode = {create: 'create', edit: 'edit', show: 'show', dialog: 'dialog'}
     this.tagEditor = undefined
     this.singleEditingActive = false
     this.people = []
     this.apiCallIdGetMatchingPeople = 0
 
+    console.log(this.numSections)
     // selectors
     this.buttonsSelectorTop = `${this.options.containerSelector} .buttons_top`
     this.buttonsSelectorBottom = `${this.options.containerSelector} .buttons_bottom`
@@ -501,14 +504,25 @@ export class MetadataEditor {
 
   makePersonInputForm(selector, inputFormId) {
     let list = "people-datalist"
-    let listSelector = '#' + list
     let paragraphId = inputFormId + '_paragraph'
+    let inputSelector = this.options.containerSelector + ' .' + inputFormId
+    let keyIndex = inputFormId.match(/\d+/)[0]
 
     $(selector).html(`<p class='${paragraphId} embed-button'>
             <input class='${inputFormId} form-control' placeholder="person" autoComplete="off" style="padding: unset">
                 <ul class="matched-persons dropdown-menu dropdown-menu-right" data-display="static" id=${list}></ul></p>`)
 
-    this.makePersonInputFormEvents(inputFormId, listSelector, paragraphId)
+    // This ensures, that existing data will be validated correctly, because validation compares the user input to datalist entries
+    if (!(this.options.mode === 'dialog' || this.options.mode === 'create')) {
+      console.log(this.mode)
+      this.addValueToInputFormByIndex(keyIndex)
+      this.getMatchingPeople($(inputSelector).val(), (people) => {
+        this.addNamesToDatalistForPersonsAsValues(people, this.datalistSelector)
+        $(this.datalistSelector).hide()
+      })
+    }
+
+    this.makePersonInputFormEvents(inputFormId, paragraphId)
   }
 
   delay(callback, ms) {
@@ -592,14 +606,13 @@ export class MetadataEditor {
     })
   }
 
-  makePersonInputFormEvents(inputFormId, listSelector, paragraphId) {
+  makePersonInputFormEvents(inputFormId, paragraphId) {
 
     let dialog = ''
     let buttonId = inputFormId + '_create-person-from-datalist-button'
     let buttonSelector = this.options.containerSelector + ' .' + buttonId
     let inputSelector = this.options.containerSelector + ' .' + inputFormId
     let paragraphSelector = this.options.containerSelector + ' .' + paragraphId
-    let keyIndex = inputFormId.match(/\d+/)[0]
 
     if (!(this.options.mode === this.mode.dialog)) {
       dialog = this.makeDialog(inputSelector)
@@ -608,14 +621,6 @@ export class MetadataEditor {
         dialog = this.makeDialog(inputSelector)
       })
     }
-
-    // This ensures, that existing data will be validated correctly, because validation compares the user input to datalist entries
-    this.addValueToInputFormByIndex(keyIndex)
-    this.getMatchingPeople($(inputSelector).val(), (people) => {
-      this.addNamesToDatalistForPersonsAsValues(people, listSelector)
-      $(listSelector).hide()
-    })
-
 
     $(inputSelector).on('input', this.delay(() => {
 
@@ -626,12 +631,12 @@ export class MetadataEditor {
             this.apiCallIdGetMatchingPeople = (1 + Math.floor(Math.random() * 10000))
             this.getMatchingPeople(value, (people, apiCallIdGetMatchingPeople) => {
               if (this.apiCallIdGetMatchingPeople === apiCallIdGetMatchingPeople) { // This ensures, that only the data of the latest api call are shown, if there have been multiple requests following another in a short amount of time
-                this.addNamesToDatalistForPersonsAsValues(people, listSelector)
+                this.addNamesToDatalistForPersonsAsValues(people, this.datalistSelector)
                 this.makeMatchedEntityButtonEvent(inputSelector, buttonSelector)
                 $(inputSelector).val(value.replaceAll('_', ' '))
                 let valueForDatalist = value.replaceAll(' ', '_')
                 $(buttonSelector).remove()
-                if ($(`${listSelector} li[value=${valueForDatalist}]`).attr('id') === undefined) {
+                if ($(`${this.datalistSelector} li[value=${valueForDatalist}]`).attr('id') === undefined) {
                   $(paragraphSelector).append(`<button class=${buttonId}><i class="fa fa-plus" style="color: dodgerblue"></i></button>`)
                   this.makeCreatePersonFromInputFormButtonEvent(buttonSelector, dialog, inputSelector)
                 }

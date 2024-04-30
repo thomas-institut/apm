@@ -16,7 +16,7 @@ export class MetadataEditor {
       mode: {type:'string', required: true},
       callback: {type:'function', required: true},
       theme: {type:'string', required: true},
-      sections: {type:'array', required: false, default: ['column']},
+      sections: {type:'array', required: false, default: ['c']},
       backlink: {type:'string', required: false, default: ''},
       dialog: {type: 'object', required: false, default: {}},
       dialogRootMetadataEditor: {type: 'object', required: false, default: {}},
@@ -39,7 +39,6 @@ export class MetadataEditor {
     this.people = []
     this.apiCallIdGetMatchingPeople = 0
 
-    console.log(this.numSections)
     // selectors
     this.buttonsSelectorTop = `${this.options.containerSelector} .buttons_top`
     this.buttonsSelectorBottom = `${this.options.containerSelector} .buttons_bottom`
@@ -218,16 +217,30 @@ export class MetadataEditor {
         $(this.metadataGridSelector).append(`<div class="row1"></div><div class="row2"></div>`)
         break
       case 'vertical':
-        for (let i=1; i<=this.numKeys; i++) {
-          let className = "row" + i
-          $(this.metadataGridSelector).append(`<div class="${className}" 
+        console.log('vertical')
+          for (let i = 1; i <= this.numKeys; i++) {
+            if (this.options.sections[i-1] === 'c') {
+              console.log(this.options.sections[i-1])
+              let className = "row" + i
+            $(this.metadataGridSelector).append(`<div class="${className}" 
             style="display: grid; 
                     grid-row-start: ${i}; 
                     grid-row-end: ${i};
                     grid-template-areas: 'header main';
                     grid-template-columns: 2fr 4fr 2fr;"></div>`)
-        }
-        break
+          } else if (this.options.sections[i-1] === 'r') {
+              console.log(this.options.sections[i-1])
+              let className = "row" + i
+              $(this.metadataGridSelector).append(`<div class="${className}" 
+            style="display: grid; 
+                    grid-row-start: 6; 
+                    grid-row-end: 6;
+                    grid-template-areas: 'header main';
+                    grid-template-columns: 2fr 4fr 2fr;"></div>`)
+
+            }
+          }
+          break
     }
   }
 
@@ -255,26 +268,51 @@ export class MetadataEditor {
         }
         break
       case 'vertical':
-        for (let i = 1; i <= this.numKeys; i++) {
+          for (let i = 1; i <= this.numKeys; i++) {
 
-          let row = this.options.containerSelector + " .row" + i
-          let cellId = "entity_attr" + i
-          let editAttributeButton = "entity_attr" + i + "_editButton"
-          let keyName = this.entity.keys[i-1] + "&emsp;&emsp;"
+            if (this.options.sections[i-1] === 'c') {
 
-          if (this.options.mode !== this.mode.show) {
-            $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i}; grid-row-end: ${i};">${keyName}</div>
+              var rowSectionStartIndex = 'null';
+              let cellId = "entity_attr" + i
+              let editAttributeButton = "entity_attr" + i + "_editButton"
+              let keyName = this.entity.keys[i - 1] + "&emsp;&emsp;"
+
+              if (this.options.mode !== this.mode.show) {
+                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i}; grid-row-end: ${i};">${keyName}</div>
                                     <div class="${cellId} grid-main" style="grid-row-start: ${i}; grid-row-end: ${i};"></div>`)
-          } else {
-            let cellButtonsAndIconsId = cellId + "_tableCellButton"
-            $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i}; grid-row-end: ${i};">${keyName}</div>
+              } else {
+                let cellButtonsAndIconsId = cellId + "_tableCellButton"
+                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i}; grid-row-end: ${i};">${keyName}</div>
                                     <div class="${cellId} grid-main" style="grid-row-start: ${i}; grid-row-end: ${i};"></div>
                                     <div class="${cellButtonsAndIconsId}" style="text-align: right; grid-row-start: ${i}; grid-row-end: ${i};">
                                         <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
                                     </div>`)
-            this.makeEditIconEvent(editAttributeButton)
+                this.makeEditIconEvent(editAttributeButton)
+              }
+            } else if (this.options.sections[i-1] === 'r') {
+
+              if (rowSectionStartIndex === 'null') {rowSectionStartIndex=i; var j=1;} else {j=j+3}
+
+              $(this.metadataGridSelector).css("grid-template-columns", "2fr 6fr 2fr 2fr 2fr 2fr")
+
+              let cellId = "entity_attr" + i
+              let editAttributeButton = "entity_attr" + i + "_editButton"
+              let keyName = this.entity.keys[i - 1] + "&emsp;&emsp;"
+
+              if (this.options.mode !== this.mode.show) {
+                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: 6; grid-row-end: 6;">${keyName}</div>
+                                    <div class="${cellId} grid-main" style="grid-row-start: 6; grid-row-end: 6;"></div>`)
+              } else {
+                let cellButtonsAndIconsId = cellId + "_tableCellButton"
+                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j}; grid-column-end: ${j};">${keyName}</div>
+                                    <div class="${cellId} grid-main" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j+1}; grid-column-end: ${j+1};"></div>
+                                    <div class="${cellButtonsAndIconsId}" style="text-align: right; grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j+2}; grid-column-end: ${j+2};">
+                                        <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
+                                    </div>`)
+                this.makeEditIconEvent(editAttributeButton)
+              }
+            }
           }
-        }
         break
     }
   }

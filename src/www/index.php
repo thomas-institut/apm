@@ -665,11 +665,11 @@ function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) :
 
 function createApiEntityRoutes(RouteCollectorProxy $group, string $prefix, ContainerInterface $container) : void
 {
-    $group->get("/$prefix/{entityType}/schema",function(Request $request, Response $response) use ($container){
+    $group->get("/$prefix/{entityType}/schema", function(Request $request, Response $response) use ($container){
         return (new ApiEntity($container))->getEntitySchema($request, $response);
     })->setName("api.$prefix.type.schema");
 
-    $group->get("/$prefix/{tid}/data",function(Request $request, Response $response) use ($container){
+    $group->get("/$prefix/{tid}/data", function(Request $request, Response $response) use ($container){
         return (new ApiEntity($container))->getEntityData($request, $response);
     })->setName("api.$prefix.data");
 }

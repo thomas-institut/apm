@@ -107,7 +107,7 @@ class ApmSystemManager extends SystemManager {
     const ERROR_CONFIG_ARRAY_IS_NOT_VALID = 1007;
 
     // Database version
-    const DB_VERSION = 32;
+    const DB_VERSION = 33;
 
     const ES_DATA_ID = 'es001';
 

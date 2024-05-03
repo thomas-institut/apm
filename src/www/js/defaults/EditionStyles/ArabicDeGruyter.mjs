@@ -18,8 +18,8 @@
 
 export const arabicDeGruyter = {
   _metaData: {
-    name: 'De Gruyter',
-    description: 'De Gruyter format'
+    name: 'De Gruyter AdobeArabic',
+    description: 'De Gruyter format with Adobe Arabic as default font'
   },
   fontConversions : [
     {

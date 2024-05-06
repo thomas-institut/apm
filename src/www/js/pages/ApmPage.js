@@ -69,6 +69,10 @@ export class ApmPage {
     console.log(`Client timezone is '${this.timeZone}', currently ${ApmFormats.getTimeZoneOffsetStringForDate(new Date(), false, false)}`);
   }
 
+  isUserRoot() {
+    return this.commonData.userInfo['isRoot'];
+  }
+
 
 
   /**

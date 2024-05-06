@@ -285,7 +285,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             if ($inCache) {
                 // cache hit!
                 $this->cacheTracker->incrementHits();
-                $txWitness = unserialize(gzuncompress($cacheValue));
+                $txWitness = unserialize(gzuncompress(base64_decode($cacheValue)));
                 if ($txWitness === false) {
                     throw new RuntimeException('Error un-serializing from witness cache');
                 }
@@ -348,9 +348,9 @@ class ApmTranscriptionManager extends TranscriptionManager
 
         if ($this->cacheOn) {
             //$this->codeDebug("Saving witness to cache with cache key '$cacheKey'");
-            $serialized = serialize($txWitness);
+
             //$this->codeDebug("Size of serialized witness data: " . strlen($serialized));
-            $dataToSave = gzcompress($serialized);
+            $dataToSave = base64_encode(gzcompress(serialize($txWitness)));
             //$this->codeDebug("Size of compressed witness data: " . strlen($dataToSave));
             try {
                 $this->dataCache->set($cacheKey, $dataToSave,self::CACHE_TTL);

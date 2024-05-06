@@ -4,11 +4,15 @@ namespace APM\CommandLine\Migration32to33;
 
 use APM\CommandLine\CommandLineUtility;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
+use APM\EntitySystem\Exception\PredicateCannotBeCancelledException;
+use APM\EntitySystem\Exception\StatementAlreadyCancelledException;
+use APM\EntitySystem\Exception\StatementNotFoundException;
 use APM\EntitySystem\Schema\Entity;
 use APM\System\Person\InvalidPersonNameException;
 use APM\System\Person\PersonNotFoundException;
 use APM\ToolBox\FullName;
 use ThomasInstitut\DataTable\MySqlDataTable;
+use ThomasInstitut\EntitySystem\EntityData;
 use ThomasInstitut\EntitySystem\Tid;
 
 
@@ -110,28 +114,28 @@ class ImportDarePeople extends CommandLineUtility
             ];
 
             $viafUrl = $row['viaf_url'] ?? '';
+            $viafUrl = rtrim(trim($viafUrl), '/');
             $dataToImport[] = [
                 'name' => 'VIAF url',
                 'predicate' => Entity::pUrl,
-                'object' => strval($viafUrl),
+                'object' => $viafUrl,
                 'metadata' => [Entity::pObjectUrlType, Entity::UrlTypeViaf],
                 'overwrite' => true
             ];
 
-            $viafId = 0;
+            $viafId = '0';
             if ($viafUrl !== '') {
                 $fields = explode('/', $viafUrl);
-                $viafId = intval($fields[count($fields) - 1]);
+                $viafId = $fields[count($fields) - 1];
             }
-
-            $dataToImport[] = [
-                'name' => 'VIAF id',
-                'predicate' => Entity::pExternalId,
-                'object' => strval($viafId),
-                'metadata' => [Entity::pObjectIdType, Entity::IdTypeViaf],
-                'overwrite' => true
-            ];
-
+            if ($viafId !== '0') {
+                $dataToImport[] = [
+                    'name' => 'VIAF id',
+                    'predicate' => Entity::pViafId,
+                    'object' => $viafId,
+                    'overwrite' => true
+                ];
+            }
 
 
 
@@ -150,11 +154,9 @@ class ImportDarePeople extends CommandLineUtility
                 if ($data['object'] === '' || $data['object'] === 'NULL') {
                     continue;
                 }
-                if (!isset($data['metadata'])) {
-                    $currentObject = $currentData?->getObjectForPredicate($data['predicate']);
-                } else {
-                    $currentObject = $currentData?->getObjectForPredicate($data['predicate'], $data['metadata'][0], $data['metadata'][1]);
-                }
+
+                $currentObject = $currentData?->getObjectForPredicate($data['predicate'],
+                    $data['metadata'][0] ?? null, $data['metadata'][1] ?? null);
 
                 if ($currentObject !== $data['object']) {
                     print "   " . $data['name'] . ' (' . $data['predicate'] . ') : ' . $data['object'];
@@ -164,16 +166,29 @@ class ImportDarePeople extends CommandLineUtility
                     if ($data['overwrite']) {
                         print ", overwriting current value $currentObject";
                     }
-                    print "\n";
-                    if ($hotRun) {
-                        $metadata = isset($data['metadata']) ? [ $data['metadata']] : [];
-                        if ($currentObject === null) {
-                            $es->makeStatement($personTid, $data['predicate'], $data['object'],
-                                Entity::System, 'Importing from DARE', $metadata);
-                        } else {
-                            // TODO: implement this!
+                    $metadata = isset($data['metadata']) ? [ $data['metadata']] : [];
+                    if ($currentObject !== null) {
+                        $statementId = $this->getStatementId($currentData, $data['predicate'],
+                            $data['metadata'][0] ?? null, $data['metadata'][1] ?? null);
+                        if ($statementId === -1) {
+                            print "  Error: could not find statement id\n";
+                            continue;
+                        }
+                        print ", statement id $statementId";
+                        if ($hotRun) {
+                            try {
+                                $es->cancelStatement($statementId, Entity::System, -1, "Value updated during DARE import");
+                            } catch (PredicateCannotBeCancelledException|StatementAlreadyCancelledException|StatementNotFoundException) {
+                                print "  Error: could not cancel statement $statementId\n";
+                                continue;
+                            }
                         }
                     }
+                    if ($hotRun) {
+                        $es->makeStatement($personTid, $data['predicate'], $data['object'],
+                            Entity::System, 'Imported from DARE', $metadata);
+                    }
+                    print "\n";
                 }
             }
         }
@@ -181,6 +196,23 @@ class ImportDarePeople extends CommandLineUtility
 //      $dbConn->commit();
 
 
+    }
+
+    private function getStatementId(EntityData $entityData, int $predicate, ?int $qPredicate, ?int $qObject) : int {
+        foreach($entityData->statements as $statement) {
+            if ($statement->predicate === $predicate) {
+                if ($qPredicate !== null && $qObject !== null) {
+                    foreach($statement->statementMetadata as [ $metadataPredicate, $metadataObject ]) {
+                        if ($metadataPredicate === $qPredicate && $metadataObject === $qObject) {
+                            return $statement->id;
+                        }
+                    }
+                } else {
+                    return $statement->id;
+                }
+            }
+        }
+        return -1;
     }
 
 

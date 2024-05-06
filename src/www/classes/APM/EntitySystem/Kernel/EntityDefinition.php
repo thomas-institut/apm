@@ -49,4 +49,18 @@ class EntityDefinition
      * @var array
      */
     public array $translatedDescriptions = [];
+
+
+    /**
+     * If true, the entity should not be used anymore.
+     *
+     * @var bool
+     */
+    public bool $deprecated = false;
+
+    /**
+     * A short notice about what to do if the entity is deprecated.
+     * @var string
+     */
+    public string $deprecationNotice = '';
 }

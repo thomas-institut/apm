@@ -265,10 +265,10 @@ export class ChunkPage extends HeaderAndContentPage {
         cancelButtonLabel: 'Cancel',
         acceptFunction: (id, dialogObject) => {
           $.get(
-            thisObject.options.urlGenerator.apiWitnessToEdition(info.systemId)
+            urlGen.apiWitnessToEdition(info.systemId)
           ).done( function (apiResponse){
             console.log("Success")
-            let tableUrl = thisObject.options.urlGenerator.siteEditCollationTable(apiResponse.tableId)
+            let tableUrl = urlGen.siteEditCollationTable(apiResponse.tableId)
             dialogObject.setTitle('Success')
             dialogObject.setBody(`
 <p>The edition with witness ${info.title} was successfully created.<p><p>Click <a href="${tableUrl}" target="_blank" >here to open it on a new tab</a></p>

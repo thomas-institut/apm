@@ -35,7 +35,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    const dataId = '006';
+    const dataId = '007';
 
     const kernelCacheKey = 'ApmEntitySystemKernel';
 
@@ -436,14 +436,16 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             throw new StatementNotFoundException();
         }
 
-        try {
-            $authorType = $innerEs->getEntityType($author);
-        } catch (\ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException) {
-            throw new InvalidArgumentException("Author $author not defined in the system");
-        }
+        if ($author !== Entity::System) {
+            try {
+                $authorType = $innerEs->getEntityType($author);
+            } catch (\ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException) {
+                throw new InvalidArgumentException("Author $author not defined in the system");
+            }
 
-        if ($authorType !== Entity::tPerson) {
-            throw new InvalidArgumentException("Author $author not a Person entity");
+            if ($authorType !== Entity::tPerson) {
+                throw new InvalidArgumentException("Author $author not a Person entity");
+            }
         }
 
         $metadata = [

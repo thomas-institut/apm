@@ -74,3 +74,40 @@ div.work-div {
     margin-bottom: 0.25em;
 }
 
+div.entity-admin {
+    margin-bottom: 2em;
+}
+
+div.section {
+    margin-top: 2em;
+}
+
+div.person-ids {
+    display: flex;
+    flex-direction: row;
+}
+div.person-id {
+    margin-right: 2em;
+}
+
+
+div.person-url {
+    margin-left: 1em;
+}
+
+span.literal-value {
+    font-family: monospace;
+}
+
+span.id-name {
+    /*border: 1px solid #e1e1e1;*/
+    border-radius: 4px;
+    padding: 2px;
+    margin-right: 2px;
+    background-color: #f3f7fd;
+}
+
+img.id-logo {
+    height: 1.5em;
+    margin-right: 0.25em;
+}

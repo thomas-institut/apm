@@ -1,15 +1,19 @@
+#
+# Before running this script, stop the APM daemon, flush the system cache and make sure there are no
+# jobs in 'waiting' state
+#
 
+ALTER TABLE `ap_jobs` ADD `signature` VARCHAR(128) NOT NULL DEFAULT '\'\'' AFTER `id`;
+ALTER TABLE `ap_system_cache` MODIFY COLUMN `value` LONGTEXT;
 
 # Drop foreign key that ties users to rows in the people table
 #  (the people table will disappear soon)
 ALTER TABLE `ap_users` DROP FOREIGN KEY fk_user_people;
 ALTER TABLE `ap_tokens` DROP FOREIGN KEY ap_tokens_ibfk_1;
-
 ALTER TABLE `ap_tokens` ADD CONSTRAINT `ap_user_id` FOREIGN KEY (`user_tid`) REFERENCES `ap_users`(`tid`) ON DELETE RESTRICT ON UPDATE RESTRICT;
 
-ALTER TABLE `ap_jobs` ADD `signature` VARCHAR(128) NOT NULL DEFAULT '\'\'' AFTER `id`;
-
 # Create default statement table
+
 CREATE TABLE `ap_es_default_st` (
     `id` int not null auto_increment primary key ,
     `statementId` bigint not null,
@@ -50,6 +54,8 @@ CREATE TABLE `ap_es_merges` (
 );
 
 CREATE INDEX entity on `ap_es_merges` (entity);
+
+
 
 # Run:
 #     migrate_people

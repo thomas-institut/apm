@@ -65,7 +65,7 @@ const EntityTypeDefinitions = [
         false
     ],
     [
-        Entity::tPlace,
+        Entity::tGeographicalPlace,
         'Place',
         'A specific geographical point, in general any point that can have a physical address or a set of GPS coordinates',
         [],
@@ -73,7 +73,7 @@ const EntityTypeDefinitions = [
         false
     ],
     [
-        Entity::tArea,
+        Entity::tGeographicalArea,
         'Area',
         'A geographical area, e.g., a country, a city, a district',
         [],
@@ -81,7 +81,7 @@ const EntityTypeDefinitions = [
         false
     ],
     [
-        Entity::tLang,
+        Entity::tLanguage,
         'Language',
         'A human language, e.g. German, French',
         [],

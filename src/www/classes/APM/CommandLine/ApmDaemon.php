@@ -7,6 +7,7 @@ use APM\Site\SiteWorks;
 use APM\Site\SiteDocuments;
 use APM\System\ApmConfigParameter;
 use Exception;
+use Monolog\Logger;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 
 class ApmDaemon extends CommandLineUtility
@@ -14,7 +15,6 @@ class ApmDaemon extends CommandLineUtility
 
     public function main($argc, $argv): void
     {
-        $dataManager = $this->getSystemManager()->getDataManager();
 
         $daemon = false;
         if (isset($argv[1]) && $argv[1] === '-d') {
@@ -38,13 +38,16 @@ class ApmDaemon extends CommandLineUtility
                 'cacheKey' => ApiPeople::AllPeopleDataForPeoplePageCacheKey,
                 'ttl' => ApiPeople::AllPeopleDataForPeoplePageTtl,
                 'builder' => function () {
-                    return ApiPeople::buildAllPeopleDataForPeoplePage($this->getSystemManager()->getPersonManager());
+                    return ApiPeople::buildAllPeopleDataForPeoplePage($this->getSystemManager()->getEntitySystem());
                 }
             ]
         ];
 
         if ($daemon) {
-            $this->logger = $this->logger->withName('APM_D');
+            if (is_a($this->logger, Logger::class)) {
+                $this->logger = $this->logger->withName('APM_D');
+            }
+
             $this->logger->info("Starting as a (pseudo) daemon, pid is $this->pid");
             if (!$this->writePidFile()) {
                 $this->logger->error("Could not write PID file, exiting");
@@ -66,7 +69,7 @@ class ApmDaemon extends CommandLineUtility
                     $this->logger->info("Exiting cleanly");
                     if (!$this->erasePidFile()){
                         $this->logger->warning("Could not erase daemon pid file");
-                    };
+                    }
                     exit();
                 }
                 $this->reestablishCacheItems($cacheItemsToReestablish);

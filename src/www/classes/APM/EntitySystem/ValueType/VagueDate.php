@@ -69,9 +69,9 @@ class VagueDate implements ValueTypeValidator
     {
         $testDate = self::fromCompactString($str);
 
-        if ($testDate->post[0] === 0 && $testDate->ante[0] === 0) {
-            return false;
-        }
+//        if ($testDate->post[0] === 0 && $testDate->ante[0] === 0) {
+//            return false;
+//        }
 
         // TODO: check that post < ante
         return true;

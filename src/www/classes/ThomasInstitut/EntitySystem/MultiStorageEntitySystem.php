@@ -212,8 +212,8 @@ abstract class MultiStorageEntitySystem implements EntitySystemWithMetadata, Log
 //            $this->logger->debug("MSES: entity data for $entity not in cache");
             $data = new EntityData();
             $data->id = $entity;
-            $data->statements = $this->getStatementsData($entity, null, null);
-            $data->statementsAsObject = $this->getStatementsData(null, null, $entity);
+            $data->statements = $this->getStatementsData($entity, null, null, true);
+            $data->statementsAsObject = $this->getStatementsData(null, null, $entity, true);
             $this->storeEntityDataInCache($entity, $data);
             return $data;
         }

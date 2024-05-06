@@ -84,6 +84,8 @@ class PredicateDefinition extends EntityDefinition
     public bool $canBeCancelled = true;
 
 
+
+
     public function isRelation() : bool {
         return $this->type === Entity::tRelation;
     }

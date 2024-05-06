@@ -6,7 +6,7 @@ import { urlGen } from './common/SiteUrlGen'
 import { ApmFormats } from './common/ApmFormats'
 
 
-const TimestampPredicates = [ 2004, 3002];
+const TimestampPredicates = [ 2004, 3002, 5002];
 const UrlPredicates = [ 2009];
 
 export class EntityPage extends NormalPage {

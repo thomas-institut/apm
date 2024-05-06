@@ -46,7 +46,7 @@ const PersonPredicateDefs = [
         'name' => 'Place of Birth',
         'descr' => "A person's place of birth",
         'allowedSubjectTypes' => [ Entity::tPerson],
-        'allowedObjectTypes'=> [ Entity::tArea, Entity::tPlace],
+        'allowedObjectTypes'=> [ Entity::tGeographicalArea, Entity::tGeographicalPlace],
         'canBeCancelled' => true,
         'singleProperty' => true,
         'flags' => []
@@ -68,7 +68,7 @@ const PersonPredicateDefs = [
         'name' => 'Place of Death',
         'descr' => "A person's place of death",
         'allowedSubjectTypes' => [ Entity::tPerson],
-        'allowedObjectTypes'=> [ Entity::tArea, Entity::tPlace],
+        'allowedObjectTypes'=> [ Entity::tGeographicalArea, Entity::tGeographicalPlace],
         'canBeCancelled' => true,
         'singleProperty' => true,
         'flags' => []
@@ -94,7 +94,19 @@ const PersonPredicateDefs = [
         'canBeCancelled' => true,
         'singleProperty' => true,
         'flags' => []
+    ],
+    [
+        'tid' => Entity::pOrcid,
+        'type' => Entity::tAttribute,
+        'name' => 'ORCID id',
+        'descr' => 'ORCID id',
+        'allowedSubjectTypes' => [ Entity::tPerson],
+        'allowedObjectTypes'=> null,
+        'canBeCancelled' => true,
+        'singleProperty' => true,
+        'flags' => []
     ]
+
 ];
 
 class PersonPredicates implements PredicateDefiner

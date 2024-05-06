@@ -49,8 +49,43 @@ class EntityData
 
 
     /**
+     * Returns the first statement with the given predicate, and, optionally,
+     * with the given qualification predicate and qualification object/value
+     *
+     * @param int $predicate
+     * @param int|null $qualificationPredicate
+     * @param string|int|null $qualification
+     * @return StatementData|null
+     */
+    public function getStatementForPredicate(int $predicate, int $qualificationPredicate = null, string|int|null $qualification = null) : StatementData|null {
+        foreach($this->statements as $statement) {
+            if ($statement->predicate === $predicate && !$statement->isCancelled()) {
+                if ($qualificationPredicate !== null) {
+                    foreach ($statement->statementMetadata as $statementMetadatum) {
+                        [ $pred, $obj ] = $statementMetadatum;
+                        if ($pred === $qualificationPredicate) {
+                            if ($qualification === null || $qualification === $obj) {
+                                return $statement;
+                            }
+                        }
+                    }
+                } else {
+                    return $statement;
+                }
+
+            }
+        }
+        return null;
+
+    }
+
+
+    /**
      * Returns the object of the first encountered
      * statement with the entity as subject and the given predicate.
+     *
+     * Optionally, matches only objects in statements with the given qualification predicate
+     * and qualification object/value.
      *
      * Returns null if no such statement is found.
      *
@@ -59,35 +94,91 @@ class EntityData
      * @param string|int|null $qualification
      * @return int|string|null
      */
-    public function getObjectForPredicate(int $predicate, int $qualificationPredicate = null, string|int|null $qualification = null) : int|string|null {
+    public function getObjectForPredicate(int $predicate, int|null $qualificationPredicate = null, string|int|null $qualification = null) : int|string|null {
+        $statement = $this->getStatementForPredicate($predicate, $qualificationPredicate, $qualification);
+        return $statement?->object;
+    }
+
+
+    /**
+     * Returns the all statements with the given predicate, and, optionally,
+     * also with the given qualification predicate and qualification object/value
+     *
+     * @param int $predicate
+     * @param int|null $qualificationPredicate
+     * @param string|int|null $qualification
+     * @return StatementData[]
+     */
+    public function getAllStatementsForPredicate(int $predicate, int|null $qualificationPredicate = null,string|int|null $qualification = null ) : array {
+        $statements = [];
         foreach($this->statements as $statement) {
             if ($statement->predicate === $predicate && !$statement->isCancelled()) {
                 if ($qualificationPredicate !== null) {
                     foreach ($statement->statementMetadata as $statementMetadatum) {
                         [ $pred, $obj ] = $statementMetadatum;
                         if ($pred === $qualificationPredicate) {
-                           if ($qualification === null || $qualification === $obj) {
-                               return $statement->object;
-                           }
+                            if ($qualification === null || $qualification === $obj) {
+                                $statements[] = $statement;
+                            }
                         }
                     }
                 } else {
-                    return $statement->object;
+                    $statements[] = $statement;
                 }
 
             }
         }
-        return null;
+        return $statements;
     }
 
-    public function getAllObjectsForPredicate(int $predicate) : array {
+    /**
+     * @param int $predicate
+     * @param int|null $qualificationPredicate
+     * @param string|int|null $qualification
+     * @return int[]|string[]
+     */
+    public function getAllObjectsForPredicate(int $predicate, int|null $qualificationPredicate = null,string|int|null $qualification = null ): array {
         $objects = [];
-        foreach($this->statements as $statement) {
-            if ($statement->predicate === $predicate && !$statement->isCancelled()) {
-                $objects[] =  $statement->object;
-            }
+        foreach($this->getAllStatementsForPredicate($predicate, $qualificationPredicate, $qualification) as $statement) {
+            $objects[] =  $statement->object;
         }
         return $objects;
+    }
+
+    /**
+     * Returns all objects for statements of the given predicate, grouped by the values of the qualification predicate.
+     *
+     * Statements where the qualification predicate is not set are grouped under the given $noQualificationKey
+     *
+     *  [  qualificationPredicateValue1 => [ obj1, obj2, ... ],
+     *     qualificationPredicateValue2 => [ obj1, obj2, ...],
+     *
+     *     noQualificationKey => [ obj1, obj2, ... ]
+     *
+     * @param int $
+     * @param int $qualificationPredicate
+     * @param string $noQualificationKey
+     * @return array
+     */
+    public function getAllObjectsForPredicateByQualificationPredicate(int $predicate, int $qualificationPredicate, string $noQualificationKey) : array {
+
+        $returnArray = [ ];
+        $statements = $this->getAllStatementsForPredicate($predicate);
+        foreach($statements as $statement) {
+            $key = $noQualificationKey;
+            foreach($statement->statementMetadata as $metadatum) {
+                [ $metadataPredicate, $qualificationObject ] = $metadatum;
+                if ($metadataPredicate === $qualificationPredicate) {
+                   $key = $qualificationObject;
+                   break;
+                }
+            }
+            if (!isset($returnArray[$key])) {
+                $returnArray[$key] = [];
+            }
+            $returnArray[$key][] = $statement->object;
+        }
+        return $returnArray;
     }
 
 

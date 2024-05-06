@@ -100,7 +100,7 @@ setupMetadataEditor (entity, mode) {
     },
     mode: mode,
     theme: 'vertical',
-    sections: ['c', 'c', 'c', 'c', 'c', 'r', 'r']
+    sections: ['c', 'c', 'c', 'c', 'c', 'c', 'c']
   })
 }
 

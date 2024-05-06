@@ -96,6 +96,7 @@ class ApiEntity extends ApiController
         $externalLinksSection = new Section();
         $externalLinksSection->title= 'External Links';
         $externalLinksSection->type = SectionType::UrlList;
+        $externalLinksSection->singlePredicate = true;
 
         $urlPredicate = new Predicate();
         $urlPredicate->id = Entity::pUrl;

@@ -32,6 +32,7 @@ class MigratePeople extends CommandLineUtility
         ];
 
         $createdPeople = [];
+        $es = $this->getSystemManager()->getEntitySystem();
 
         $dbConn->beginTransaction();
 
@@ -41,35 +42,35 @@ class MigratePeople extends CommandLineUtility
             $sortName = $row['sort_name'];
 
             print "Importing person $personTid: '$name'";
-            $commands = [];
 
-            $commands[] = [ StatementStorage::StoreStatementCommand, Tid::generateUnique(),
-                            $personTid, Entity::pEntityType, Entity::tPerson, $statementMetadata];
+            try {
+                $data = $es->getEntityData($personTid);
+                print "... person $data->id already exists: " . $data->getObjectForPredicate(Entity::pEntityName) . "\n";
+            } catch (EntityDoesNotExistException) {
+                $commands = [];
+                $commands[] = [ StatementStorage::StoreStatementCommand, Tid::generateUnique(),
+                    $personTid, Entity::pEntityType, Entity::tPerson, $statementMetadata];
 
-            $commands[] = [ StatementStorage::StoreStatementCommand, Tid::generateUnique(),
-                $personTid, Entity::pEntityName, $name, $statementMetadata];
+                $commands[] = [ StatementStorage::StoreStatementCommand, Tid::generateUnique(),
+                    $personTid, Entity::pEntityName, $name, $statementMetadata];
 
-            $commands[] = [ StatementStorage::StoreStatementCommand, Tid::generateUnique(),
-                $personTid, Entity::pEntityCreationTimestamp, $creationTimestamp, $statementMetadata];
+                $commands[] = [ StatementStorage::StoreStatementCommand, Tid::generateUnique(),
+                    $personTid, Entity::pEntityCreationTimestamp, $creationTimestamp, $statementMetadata];
 
-            $commands[] = [ StatementStorage::StoreStatementCommand, Tid::generateUnique(),
-                $personTid, Entity::pSortName, $sortName, $statementMetadata];
-            $statementStorage->storeMultipleStatementsAndCancellations($commands);
-            $createdPeople[] = $personTid;
+                $commands[] = [ StatementStorage::StoreStatementCommand, Tid::generateUnique(),
+                    $personTid, Entity::pSortName, $sortName, $statementMetadata];
+                $statementStorage->storeMultipleStatementsAndCancellations($commands);
+                $createdPeople[] = $personTid;
+            }
             print "\n";
         }
 
         $dbConn->commit();
-
-
-        $es = $this->getSystemManager()->getEntitySystem();
-
         print "Checking data:\n";
 
         foreach ($createdPeople as $createdPerson) {
             try {
                 $es->getEntityData($createdPerson);
-//                print "Person $data->id: " . $data->getObjectForPredicate(SystemPredicate::EntityName) . "\n";
             } catch (EntityDoesNotExistException) {
                 print "ERROR: person $createdPerson not found in entity system\n";
             }

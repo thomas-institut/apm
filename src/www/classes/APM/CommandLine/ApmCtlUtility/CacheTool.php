@@ -46,6 +46,10 @@ class CacheTool extends CommandLineUtility implements AdminUtility
                $this->cleanCache();
                break;
 
+           case 'delete':
+               $this->deleteKey();
+               break;
+
            default:
                print "Unrecognized option: "  . $argv[1] ."\n";
                return 0;
@@ -67,6 +71,18 @@ class CacheTool extends CommandLineUtility implements AdminUtility
 
         $this->logger->info($msg);
 
+    }
+
+    private function deleteKey() : void {
+        if ($this->argc < 3) {
+            print "Need a cache key to delete\n";
+            return;
+        }
+
+        $cacheKey = $this->argv[2];
+
+        $this->getSystemManager()->getSystemDataCache()->delete($cacheKey);
+        $this->logger->info("Cache key deleted: " . $cacheKey);
     }
 
     private function flushCache(): void

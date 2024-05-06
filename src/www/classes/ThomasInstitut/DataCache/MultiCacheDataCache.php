@@ -111,8 +111,8 @@ class MultiCacheDataCache implements DataCache, LoggerAwareInterface
      */
     public function set(string $key, string $value, int $ttl = 0): void
     {
-        foreach ($this->caches as $i => $dataCache) {
-            $dataCache->set($this->prefixes[$i] . $key, $value, $ttl);
+        foreach(array_keys($this->caches) as $i) {
+            $this->getDataCache($i)->set($this->prefixes[$i] . $key, $value, $ttl);
         }
     }
 
@@ -121,8 +121,8 @@ class MultiCacheDataCache implements DataCache, LoggerAwareInterface
      */
     public function delete(string $key): void
     {
-        foreach($this->caches as $i => $dataCache) {
-            $dataCache->delete($this->prefixes[$i] . $key);
+        foreach(array_keys($this->caches) as $i) {
+            $this->getDataCache($i)->delete($this->prefixes[$i] . $key);
         }
     }
 
@@ -131,8 +131,8 @@ class MultiCacheDataCache implements DataCache, LoggerAwareInterface
      */
     public function clear(): void
     {
-        foreach($this->caches as $dataCache) {
-            $dataCache->clear();
+        foreach(array_keys($this->caches) as $i) {
+            $this->getDataCache($i)->clear();
         }
     }
 
@@ -141,8 +141,8 @@ class MultiCacheDataCache implements DataCache, LoggerAwareInterface
      */
     public function clean(): void
     {
-        foreach($this->caches as $dataCache) {
-            $dataCache->clean();
+        foreach(array_keys($this->caches) as $i) {
+            $this->getDataCache($i)->clean();
         }
     }
 

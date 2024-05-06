@@ -2,6 +2,7 @@ import {MetadataEditor} from "../MetadataEditor/MetadataEditor";
 import {NormalPage} from "./NormalPage";
 import {tr} from "./common/SiteLang";
 import {OptionsChecker} from "@thomas-inst/optionschecker";
+import {ApmDataProxy} from "./common/ApmDataProxy";
 
 let urlGen = new ApmUrlGenerator('')
 let entity = {}
@@ -46,11 +47,22 @@ setupMetadataEditorPage () {
     })
   }
   else {
-      this.getPerson(this.id, (entity) => {
-          this.removeSpinner()
-          this.makePage(entity.values[0])
-          this.setupMetadataEditor(entity, 'show')
-    })
+      this.getEntitySchema((genericSchema) => {
+          this.getEntityData((genericEntityData) => {
+              this.getPerson(this.id, (entity) => {
+                  this.removeSpinner()
+                  this.makePage(entity.values[0])
+                  this.setupMetadataEditor(entity, 'show', genericSchema, genericEntityData)
+              })
+          })
+      })
+
+
+    //   this.getPerson(this.id, (entity) => {
+    //       this.removeSpinner()
+    //       this.makePage(entity.values[0])
+    //       this.setupMetadataEditor(entity, 'show')
+    // })
   }
 
   return true;
@@ -86,7 +98,7 @@ removeSpinner() {
 }
 
 
-setupMetadataEditor (entity, mode) {
+setupMetadataEditor (entity, mode, genericSchema, genericEntityData) {
 
     this.removeMetadataEditor()
   let mde = new MetadataEditor({
@@ -100,7 +112,9 @@ setupMetadataEditor (entity, mode) {
     },
     mode: mode,
     theme: 'vertical',
-    sections: ['c', 'c', 'c', 'c', 'c', 'c', 'c']
+    sections: ['c', 'c', 'c', 'c', 'c', 'c', 'c'],
+    genericSchema: genericSchema,
+    genericEntityData: genericEntityData
   })
 }
 
@@ -136,6 +150,30 @@ getPerson (id, setupMetadataEditor) {
       return false
     })
 }
+
+async getEntityData(callback) {
+        let adp = new ApmDataProxy(0)
+        let tid = 1638491084282
+        let data = await adp.fetch(urlGen.apiEntityGetData(tid), 'GET', {},false, false);
+        console.log(data)
+        callback(data)
+    }
+
+    getEntitySchema (callback) {
+        // Make API Call
+        $.get(urlGen.apiGetEntitySchema(107))
+            .done((apiResponse) => {
+
+                console.log(apiResponse)
+                callback(apiResponse)
+                return apiResponse
+
+            })
+            .fail((status) => {
+                console.log(status);
+                return false
+            })
+    }
 
 getIdForNewPerson(data, saveEntity) {
   $.post(urlGen.apiPeopleGetNewId())

@@ -275,6 +275,11 @@ class ApmUrlGenerator {
         return `${this.base}/api/entity/${tid}/data`
     }
 
+    apiGetEntitySchema(entityType) {
+        return `${this.base}/api/entity/${entityType}/schema`
+    }
+
+
     siteEntity(tid) {
         return `${this.base}/entity/${tid}`;
     }

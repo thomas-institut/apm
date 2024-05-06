@@ -2,6 +2,7 @@ import {OptionsChecker} from "@thomas-inst/optionschecker";
 import {urlGen} from "../pages/common/SiteUrlGen";
 import {TagEditor} from "../widgets/TagEditorLukas";
 import {ConfirmDialog} from "../pages/common/ConfirmDialog";
+import {tPerson} from "../constants/Entity";
 
 export class MetadataEditor {
 
@@ -21,6 +22,8 @@ export class MetadataEditor {
       dialog: {type: 'object', required: false, default: {}},
       dialogRootMetadataEditor: {type: 'object', required: false, default: {}},
       dialogRootInputFormSelector: {type:'string', required: false, default: ''},
+      genericSchema: {type: 'object', required: false, default: {}},
+      genericEntityData: {type: 'object', required: false, default: {}}
     }
 
     const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "MetadataEditor"})
@@ -142,6 +145,14 @@ export class MetadataEditor {
 
   // updates the empty object this.entity with the data from this.options when instantiating a new metadata editor
   buildEntity(callback) {
+
+    console.log(this.options.genericSchema)
+    console.log(this.options.genericEntityData)
+
+    if (this.options.genericSchema.typeId === tPerson) {
+      console.log('YES')
+    }
+
     if (this.entity.id === '') {
       this.entity.id = this.options.entityId
     }

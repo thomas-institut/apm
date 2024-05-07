@@ -27,10 +27,12 @@ class InMemoryDataCache implements DataCache
      * @var array
      */
     private array $theCache;
+    private int $defaultTtl;
 
     public function __construct()
     {
         $this->theCache = [];
+        $this->defaultTtl = 0;
     }
 
     /**
@@ -69,8 +71,11 @@ class InMemoryDataCache implements DataCache
     /**
      * @inheritDoc
      */
-    public function set(string $key, string $value, int $ttl = 0): void
+    public function set(string $key, string $value, int $ttl = -1): void
     {
+        if ($ttl < 0) {
+            $ttl = $this->defaultTtl;
+        }
         $expires = -1;
         if ($ttl > 0) {
             $expires = time() + $ttl;
@@ -117,4 +122,11 @@ class InMemoryDataCache implements DataCache
     }
 
 
+    /**
+     * @inheritDoc
+     */
+    public function setDefaultTtl(int $ttl): void
+    {
+        $this->defaultTtl = max(0, $ttl);
+    }
 }

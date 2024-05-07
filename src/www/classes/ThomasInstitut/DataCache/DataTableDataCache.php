@@ -61,6 +61,7 @@ class DataTableDataCache implements DataCache, LoggerAwareInterface
     private string $expiresColumn;
 
     private string $setColumn;
+    private int $defaultTtl;
 
     public function __construct(DataTable $dt,
                                 string $keyColumn = self::COLUMN_KEY,
@@ -74,6 +75,12 @@ class DataTableDataCache implements DataCache, LoggerAwareInterface
         $this->expiresColumn = $expiresColumn;
         $this->setColumn = $setColumn;
         $this->logger = new NullLogger();
+        $this->defaultTtl = 0;
+    }
+
+    public function setDefaultTtl(int $ttl): void
+    {
+        $this->defaultTtl = max(0, $ttl);
     }
 
     /**
@@ -120,9 +127,11 @@ class DataTableDataCache implements DataCache, LoggerAwareInterface
     /**
      * @inheritDoc
      */
-    public function set(string $key, string $value, int $ttl = 0): void
+    public function set(string $key, string $value, int $ttl = -1): void
     {
-
+        if ($ttl < 0) {
+            $ttl = $this->defaultTtl;
+        }
         $rows = $this->getRowsForKey($key);
 
         $now = microtime(true);

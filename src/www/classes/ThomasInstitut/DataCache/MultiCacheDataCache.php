@@ -53,6 +53,14 @@ class MultiCacheDataCache implements DataCache, LoggerAwareInterface
         $this->logger = new NullLogger();
     }
 
+    public function setDefaultTtl(int $ttl): void
+    {
+        foreach(array_keys($this->caches) as $i) {
+            $dataCache = $this->getDataCache($i);
+            $dataCache->setDefaultTtl($ttl);
+        }
+    }
+
     private function getDataCache(int $index) : DataCache {
         if (is_callable($this->caches[$index])) {
             $this->caches[$index] = call_user_func($this->caches[$index]);
@@ -109,7 +117,7 @@ class MultiCacheDataCache implements DataCache, LoggerAwareInterface
     /**
      * @inheritDoc
      */
-    public function set(string $key, string $value, int $ttl = 0): void
+    public function set(string $key, string $value, int $ttl = -1): void
     {
         foreach(array_keys($this->caches) as $i) {
             $this->getDataCache($i)->set($this->prefixes[$i] . $key, $value, $ttl);

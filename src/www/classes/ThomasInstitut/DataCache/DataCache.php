@@ -57,13 +57,23 @@ interface DataCache
 
     /**
      * Sets the value for the given key with the given TTL
-     * If $ttl === 0, the cache item never expires
+     * If $ttl === 0, the cache item never expires.
+     * If $ttl < 0, the default ttl is used
      * @param string $key
      * @param string $value
      * @param int $ttl
      * @return void
      */
-    public function set(string $key, string $value, int $ttl = 0) : void;
+    public function set(string $key, string $value, int $ttl = -1) : void;
+
+
+    /**
+     * Sets the default ttl.
+     *
+     * @param int $ttl
+     * @return void
+     */
+    public function setDefaultTtl(int $ttl) : void;
 
     /**
      * Deletes the cache entry for the given key

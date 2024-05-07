@@ -11,11 +11,13 @@ class MemcachedDataCache implements DataCache
     const defaultHost = '127.0.0.1';
     const defaultWeight = 0;
     private Memcached $memCached;
+    private int $defaultTtl;
 
     public function __construct(string $connectionId = null, array $servers = [])
     {
 
         $this->memCached = new Memcached($connectionId);
+        $this->defaultTtl = 0;
 
         if (count($this->memCached->getServerList()) === 0) {
             if (count($servers) === 0) {
@@ -51,11 +53,19 @@ class MemcachedDataCache implements DataCache
         }
     }
 
+    public function setDefaultTtl(int $ttl): void
+    {
+        $this->defaultTtl = max(0, $ttl);
+    }
+
     /**
      * @inheritDoc
      */
-    public function set(string $key, string $value, int $ttl = 0): void
+    public function set(string $key, string $value, int $ttl = -1): void
     {
+        if ($ttl < 0) {
+            $ttl = $this->defaultTtl;
+        }
         $this->memCached->set($key, $value, $ttl);
     }
 

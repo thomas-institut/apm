@@ -21,10 +21,15 @@ class NullDataCache implements DataCache
         return false;
     }
 
+    public function setDefaultTtl(int $ttl): void
+    {
+
+    }
+
     /**
      * @inheritDoc
      */
-    public function set(string $key, string $value, int $ttl = 0): void
+    public function set(string $key, string $value, int $ttl = -1): void
     {
         // do nothing
     }

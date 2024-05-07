@@ -114,6 +114,8 @@ class ApmSystemManager extends SystemManager {
     const MemCachePrefix_Apm_ES = 'apm_es';
     const MemCachePrefix_TypedMultiStorage_ES = 'apm_msEs';
 
+    const DefaultSystemCacheTtl = 30 * 24 * 3600;  // 30 days
+
     const REQUIRED_CONFIG_VARIABLES = [
         ApmConfigParameter::APP_NAME,
         ApmConfigParameter::VERSION,
@@ -556,7 +558,11 @@ class ApmSystemManager extends SystemManager {
                 true
             );
             $this->systemDataCache->setLogger($this->getLogger());
+            $this->systemDataCache->setDefaultTtl(self::DefaultSystemCacheTtl);
         }
+
+
+
         return $this->systemDataCache;
     }
 

@@ -213,6 +213,7 @@ class ApmSystemManager extends SystemManager {
         $this->personManager = null;
         $this->workManager = null;
         $this->typedMultiStorageEntitySystem = null;
+        $this->collationEngine = null;
         $this->dbConn = null;
         $this->systemDataCache = null;
         $this->jobManager = null;

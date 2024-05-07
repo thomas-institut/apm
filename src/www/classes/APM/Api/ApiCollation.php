@@ -34,6 +34,7 @@ use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use APM\Core\Collation\CollationTable;
+use ThomasInstitut\DataCache\DataCacheToolBox;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\TimeString\TimeString;
@@ -292,8 +293,7 @@ class ApiCollation extends ApiController
         if ($cacheHit) {
             $this->systemManager->getCacheTracker()->incrementHits();
             $this->profiler->lap('Before decoding from cache');
-            $responseData = json_decode(gzuncompress($cachedData), true);
-            //$responseData = json_decode($cachedData, true);
+            $responseData = DataCacheToolBox::getVarFromCachedString($cachedData, true);
             $this->profiler->lap("Data decoded from cache");
             if (!is_null($responseData)) {
                 if (!isset($responseData['collationTableCacheId'])) {
@@ -409,11 +409,11 @@ class ApiCollation extends ApiController
         ];
 
         // let's cache it!
+
+        $dataToCache = DataCacheToolBox::getStringToCache($responseData, true);
+        $this->logger->debug("Caching automatic collation, " . strlen($dataToCache) . " bytes");
+        $cache->set($cacheKey,$dataToCache);
         $jsonToCache = json_encode($responseData, JSON_UNESCAPED_UNICODE);
-        // gzip it, just for fun
-        $zipped = gzcompress($jsonToCache);
-        $this->logger->debug("Caching automatic collation, JSON size = " . strlen($jsonToCache) . " bytes; gzipped : " . strlen($zipped));
-        $cache->set($cacheKey,$zipped);
 
         $this->profiler->stop();
         $this->info("Automatic Collation Table generated", ['workId'=>$workId, 'chunk' => $chunkNumber, 'lang' => $lang]);

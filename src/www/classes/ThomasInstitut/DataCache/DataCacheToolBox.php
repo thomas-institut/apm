@@ -5,20 +5,37 @@ namespace ThomasInstitut\DataCache;
 class DataCacheToolBox
 {
 
-    static public function getStringToCache(array|object $object, bool $compressed = false) : string {
 
-        $data = json_encode($object);
+    /**
+     * @param mixed $var
+     * @param bool $compressed
+     * @return string
+     */
+    static public function toStringToCache(mixed $var, bool $compressed = false) : string {
+        $stringToCache = serialize($var);
         if ($compressed) {
-            $data = gzencode($data);
+            $compressedString = gzencode($stringToCache);
+            if ($compressedString === false) {
+                throw new \RuntimeException("Could not compress serialized string");
+            }
+            return base64_encode($compressedString);
         }
-        return base64_encode($data);
+        return $stringToCache;
     }
 
-    static public function getVarFromCachedString(string $cachedString, bool $compressed = false) : object|array {
-        $cachedData = base64_decode($cachedString);
+    static public function fromCachedString(string $cachedString, bool $compressed = false) : mixed {
         if ($compressed) {
-            $cachedData = gzdecode($cachedData);
+            $decodedString = base64_decode($cachedString);
+            if ($decodedString === false) {
+                throw new \RuntimeException("Could not decode cached string");
+            }
+            $uncompressedString = gzdecode($decodedString);
+            if ($uncompressedString === false) {
+                throw new \RuntimeException("Could not decompress cached string");
+            }
+            return unserialize($uncompressedString);
+        } else {
+            return unserialize($cachedString);
         }
-        return json_decode($cachedData, true);
     }
 }

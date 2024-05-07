@@ -293,7 +293,7 @@ class ApiCollation extends ApiController
         if ($cacheHit) {
             $this->systemManager->getCacheTracker()->incrementHits();
             $this->profiler->lap('Before decoding from cache');
-            $responseData = DataCacheToolBox::getVarFromCachedString($cachedData, true);
+            $responseData = DataCacheToolBox::fromCachedString($cachedData, true);
             $this->profiler->lap("Data decoded from cache");
             if (!is_null($responseData)) {
                 if (!isset($responseData['collationTableCacheId'])) {
@@ -410,9 +410,9 @@ class ApiCollation extends ApiController
 
         // let's cache it!
 
-        $dataToCache = DataCacheToolBox::getStringToCache($responseData, true);
-        $this->logger->debug("Caching automatic collation, " . strlen($dataToCache) . " bytes");
-        $cache->set($cacheKey,$dataToCache);
+        $stringToCache = DataCacheToolBox::toStringToCache($responseData, true);
+        $this->logger->debug("Caching automatic collation, " . strlen($stringToCache) . " bytes");
+        $cache->set($cacheKey, $stringToCache);
         $jsonToCache = json_encode($responseData, JSON_UNESCAPED_UNICODE);
 
         $this->profiler->stop();
@@ -437,7 +437,6 @@ class ApiCollation extends ApiController
         $ctManager = $this->systemManager->getCollationTableManager();
 
         $versionInfo = new CollationTableVersionInfo();
-//        $versionInfo->authorId = $this->apiUserId;
         $versionInfo->authorTid = $this->apiUserTid;
         $versionInfo->description = $inputDataObject['descr'] ?? '';
         $versionInfo->isMinor = $inputDataObject['isMinor'] ?? false;

@@ -42,6 +42,7 @@ use RuntimeException;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\DataCache\CacheAware;
+use ThomasInstitut\DataCache\DataCacheToolBox;
 use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataCache\SimpleCacheAware;
@@ -285,7 +286,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             if ($inCache) {
                 // cache hit!
                 $this->cacheTracker->incrementHits();
-                $txWitness = unserialize(gzuncompress(base64_decode($cacheValue)));
+                $txWitness = DataCacheToolBox::fromCachedString($cacheValue, true);
                 if ($txWitness === false) {
                     throw new RuntimeException('Error un-serializing from witness cache');
                 }
@@ -347,11 +348,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         $txWitness->setInitialLineNumberForTextBox($firstPageId, $firstColumn, $firstLineNumber);
 
         if ($this->cacheOn) {
-            //$this->codeDebug("Saving witness to cache with cache key '$cacheKey'");
-
-            //$this->codeDebug("Size of serialized witness data: " . strlen($serialized));
-            $dataToSave = base64_encode(gzcompress(serialize($txWitness)));
-            //$this->codeDebug("Size of compressed witness data: " . strlen($dataToSave));
+            $dataToSave = DataCacheToolBox::toStringToCache($txWitness, true);
             try {
                 $this->dataCache->set($cacheKey, $dataToSave,self::CACHE_TTL);
             } catch(Exception $e) {

@@ -275,8 +275,8 @@ class ApmUrlGenerator {
         return `${this.base}/api/entity/${tid}/data`
     }
 
-    siteEntity(tid) {
-        return `${this.base}/entity/${tid}`;
+    siteAdminEntity(tid) {
+        return `${this.base}/entity/${tid}/admin`;
     }
 
     apiGetCollationTable(tableId, compactEncodedTimeString = '') {

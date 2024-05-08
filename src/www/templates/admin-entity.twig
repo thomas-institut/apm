@@ -1,0 +1,27 @@
+{% extends "normal-page.twig" %}
+
+{% block title %}{% endblock %}
+
+{% block extraCSS %}
+    <link rel="stylesheet" type="text/css" href="{{baseUrl}}/css/admin-entity.css"/>
+{% endblock %}
+
+{% block extraJS %}
+    <script type="application/javascript" src="{{baseUrl}}/js/dist/AdminEntityPage.bundle.js"></script>
+{% endblock %}
+
+
+{% block finalBodyJS %}
+    <script>
+
+      $(() => {
+        new AdminEntityPage(( {
+          commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
+          entityData: JSON.parse("{{entityData|json_encode|e('js')}}"),
+          predicatesAllowedAsSubject: JSON.parse("{{predicatesAllowedAsSubject|json_encode|e('js')}}"),
+          predicatesAllowedAsObject: JSON.parse("{{predicatesAllowedAsObject|json_encode|e('js')}}"),
+          predicateDefs: JSON.parse("{{predicateDefs|json_encode|e('js')}}"),
+        }))
+      })
+    </script>
+{%  endblock %}

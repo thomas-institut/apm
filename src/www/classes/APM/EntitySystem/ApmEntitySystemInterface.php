@@ -8,6 +8,7 @@ use APM\EntitySystem\Exception\InvalidEntityTypeException;
 use APM\EntitySystem\Exception\PredicateCannotBeCancelledException;
 use APM\EntitySystem\Exception\StatementAlreadyCancelledException;
 use APM\EntitySystem\Exception\StatementNotFoundException;
+use APM\EntitySystem\Kernel\PredicateDefinition;
 use ThomasInstitut\EntitySystem\EntityData;
 
 /**
@@ -203,6 +204,36 @@ interface ApmEntitySystemInterface
      * @return int
      */
     public function getEntityIdFromString(string $tidString) : int;
+
+
+    /**
+     * Returns the definition of the given predicate.
+     *
+     * @param int $predicate
+     * @return PredicateDefinition
+     * @throws EntityDoesNotExistException
+     */
+    public function getPredicateDefinition(int $predicate) : PredicateDefinition;
+
+
+    /**
+     * Returns a list of predicates that allow the given type as subject in a statement
+     *
+     * @param int $type
+     * @param bool $includeReverseRelations
+     * @return int[]
+     */
+    public function getValidPredicatesAsSubjectForType(int $type, bool $includeReverseRelations = false) : array;
+
+
+    /**
+     * Returns a list of predicates that allow the given type as subject in a statement
+     *
+     * @param int $type
+     * @param bool $includeReverseRelations
+     * @return int[]
+     */
+    public function getValidPredicatesAsObjectForType(int $type, bool $includeReverseRelations = false) : array;
 
 
 

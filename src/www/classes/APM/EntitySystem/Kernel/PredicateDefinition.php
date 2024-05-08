@@ -17,12 +17,16 @@ class PredicateDefinition extends EntityDefinition
     public bool $singleProperty = false;
 
     /**
-     * List of strings allowed as values. If null, any value is allowed.
+     * List of strings allowed as values. If null, checking is deferred to
+     * $allowedObjectTypes
      *
      * Must be null if $isRelation is true
      * @var string[]|null
      */
     public ?array $allowedValues = null;
+
+
+
 
 
 
@@ -95,6 +99,16 @@ class PredicateDefinition extends EntityDefinition
     }
 
     public function isTypeAllowedAsObject(int $typeTid) : bool {
+        if (in_array(PredicateFlag::QualificationPredicate, $this->flags)) {
+            return false;
+        }
+
+        if (in_array(PredicateFlag::CancellationPredicate, $this->flags)) {
+            return false;
+        }
+        if (in_array(PredicateFlag::StatementMetadata, $this->flags)) {
+            return false;
+        }
         if ($this->allowedObjectTypes === null) {
             return true;
         }
@@ -102,6 +116,16 @@ class PredicateDefinition extends EntityDefinition
     }
 
     public function isTypeAllowedAsSubject(int $typeTid) : bool {
+        if (in_array(PredicateFlag::QualificationPredicate, $this->flags)) {
+            return false;
+        }
+
+        if (in_array(PredicateFlag::CancellationPredicate, $this->flags)) {
+            return false;
+        }
+        if (in_array(PredicateFlag::StatementMetadata, $this->flags)) {
+            return false;
+        }
         if ($this->allowedSubjectTypes === null) {
             return true;
         }

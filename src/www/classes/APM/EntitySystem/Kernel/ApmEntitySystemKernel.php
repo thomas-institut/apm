@@ -60,6 +60,7 @@ class ApmEntitySystemKernel
     private array $otherEntities;
 
 
+
     public function __construct()
     {
         $typeDefiners = [
@@ -87,7 +88,7 @@ class ApmEntitySystemKernel
         $this->entityTypes = [];
         foreach($typeDefiners as $definer) {
             foreach($definer->getEntityTypeDefinitions() as $entityTypeDefinition) {
-                $tid = $entityTypeDefinition->tid;
+                $tid = $entityTypeDefinition->id;
                 if (isset($this->entityTypes[$tid])) {
                     throw new LogicException("Type $tid is defined twice: " . get_class($definer));
                 }
@@ -98,7 +99,7 @@ class ApmEntitySystemKernel
         $this->predicates = [];
         foreach ($predicateDefiners as $predicateDefiner) {
             foreach($predicateDefiner->getPredicateDefinitions() as $predicateDefinition) {
-                $tid = $predicateDefinition->tid;
+                $tid = $predicateDefinition->id;
                 if (isset($this->predicates[$tid])) {
                     throw new LogicException("Predicate $tid is defined twice: " . get_class($predicateDefiner));
                 }
@@ -108,7 +109,7 @@ class ApmEntitySystemKernel
 
         foreach($valueTypeDefiners as $valueTypeDefiner) {
             foreach($valueTypeDefiner->getEntityDefinitions() as $entityDefinition) {
-                $tid = $entityDefinition->tid;
+                $tid = $entityDefinition->id;
                 if (isset($this->valueTypes[$tid])) {
                     throw new LogicException("Value type $tid is defined twice");
                 }
@@ -136,7 +137,7 @@ class ApmEntitySystemKernel
         $this->otherEntities = [];
         foreach ($otherEntityDefiners as $entityDefiner) {
             foreach($entityDefiner->getEntityDefinitions() as $entityDefinition) {
-                $tid = $entityDefinition->tid;
+                $tid = $entityDefinition->id;
                 if (isset($this->otherEntities[$tid])) {
                     throw new LogicException("Entity $tid is defined twice");
                 }
@@ -157,7 +158,7 @@ class ApmEntitySystemKernel
         array_push($allDefinedEntities, ...$this->otherEntities);
 
         foreach($allDefinedEntities as $entityDefinition) {
-            $tid = $entityDefinition->tid;
+            $tid = $entityDefinition->id;
             if (!isset($systemTidMap[$tid])) {
                 throw new LogicException("Defined entity $tid not part of general system entity list");
             }
@@ -171,6 +172,21 @@ class ApmEntitySystemKernel
                 throw new LogicException("System entity $tid is defined $definitionCount times");
             }
         }
+    }
+
+
+    /**
+     * Returns the definition of the given predicate.
+     *
+     * @param int $predicate
+     * @return PredicateDefinition
+     * @throws EntityDoesNotExistException
+     */
+    public function getPredicateDefinition(int $predicate): PredicateDefinition {
+        if (isset($this->predicates[$predicate])) {
+            return $this->predicates[$predicate];
+        }
+        throw new EntityDoesNotExistException();
     }
 
     /**
@@ -212,9 +228,9 @@ class ApmEntitySystemKernel
 
     private function genEntityDataFromEntityDefinition(EntityDefinition $def) : EntityData {
         $data = new EntityData();
-        $data->type = Entity::tEntityType;
+        $data->type = $def->type;
         $data->name = $def->name;
-        $data->id = $def->tid;
+        $data->id = $def->id;
         return $data;
     }
 
@@ -246,7 +262,7 @@ class ApmEntitySystemKernel
 
     private function getEntityDataFromEntityArray(array $entityDefArray, int $entity, callable $generator) : EntityData {
         foreach($entityDefArray as $entityDef) {
-            if ($entityDef->tid === $entity) {
+            if ($entityDef->id === $entity) {
                 return call_user_func($generator, $entityDef);
             }
         }
@@ -416,5 +432,66 @@ class ApmEntitySystemKernel
                 }
             }
         }
+    }
+
+
+    /**
+     * Returns a list of predicates that allow the given type as subject in a statement
+     *
+     * @param int $type
+     * @param bool $includeReverseRelations
+     * @return int[]
+     */
+    public function getValidPredicatesAsSubjectForType(int $type, bool $includeReverseRelations = false) : array {
+        if (!isset($this->entityTypes[$type])) {
+            throw new \InvalidArgumentException("Entity $type is not a type");
+        }
+
+        $typeDef = $this->entityTypes[$type];
+        if ($typeDef->isSystemType) {
+            return [];
+        }
+        $validPredicates = [];
+        foreach($this->predicates as $predicateDef) {
+            if ($predicateDef->isTypeAllowedAsSubject($type)) {
+                if ($predicateDef->isRelation()) {
+                    if ($predicateDef->isPrimaryRelation || $includeReverseRelations) {
+                        $validPredicates[] = $predicateDef->id;
+                    }
+                } else {
+                    $validPredicates[] = $predicateDef->id;
+                }
+            }
+        }
+        return $validPredicates;
+    }
+
+
+    /**
+     * Returns a list of predicates that allow the given type as subject in a statement
+     *
+     * @param int $type
+     * @param bool $includeReverseRelations
+     * @return int[]
+     */
+    public function getValidPredicatesAsObjectForType(int $type, bool $includeReverseRelations = false) : array{
+        if (!isset($this->entityTypes[$type])) {
+            throw new \InvalidArgumentException("Entity $type is not a type");
+        }
+
+        $typeDef = $this->entityTypes[$type];
+        if ($typeDef->isSystemType) {
+            return [];
+        }
+        $validPredicates = [];
+        foreach($this->predicates as $predicateDef) {
+
+            if ($predicateDef->isRelation() && $predicateDef->isTypeAllowedAsObject($type)) {
+                if ($predicateDef->isPrimaryRelation || $includeReverseRelations) {
+                    $validPredicates[] = $predicateDef->id;
+                }
+            }
+        }
+        return $validPredicates;
     }
 }

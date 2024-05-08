@@ -12,9 +12,9 @@ use ThomasInstitut\EntitySystem\Tid;
 
 class SiteEntity extends SiteController
 {
-    const Template_Entity = 'entity.twig';
+    const Template_AdminEntity = 'admin-entity.twig';
 
-    public function entityPage(Request $request, Response $response): Response
+    public function adminEntityPage(Request $request, Response $response): Response
     {
         $tidString = $request->getAttribute('tid');
         $tid = $this->systemManager->getEntitySystem()->getEntityIdFromString($tidString);
@@ -24,13 +24,29 @@ class SiteEntity extends SiteController
         try {
             $es = $this->systemManager->getEntitySystem();
             $entityData = $es->getEntityData($tid);
-            return $this->renderPage($response, self::Template_Entity, [
-                'entityData' => $entityData
+            $predicatesAllowedAsSubject = $es->getValidPredicatesAsSubjectForType($entityData->type);
+            sort($predicatesAllowedAsSubject, SORT_NUMERIC);
+            $predicatesAllowedAsObject = $es->getValidPredicatesAsObjectForType($entityData->type);
+            sort($predicatesAllowedAsObject, SORT_NUMERIC);
+            $predicateDefs = [];
+            foreach ($predicatesAllowedAsSubject as $predicate) {
+                if (!isset($predicateDefs[$predicate])) {
+                    $predicateDefs[$predicate] = $es->getPredicateDefinition($predicate);
+                }
+            }
+            foreach ($predicatesAllowedAsObject as $predicate) {
+                if (!isset($predicateDefs[$predicate])) {
+                    $predicateDefs[$predicate] = $es->getPredicateDefinition($predicate);
+                }
+            }
+            return $this->renderPage($response, self::Template_AdminEntity, [
+                'entityData' => $entityData,
+                'predicatesAllowedAsSubject' => $predicatesAllowedAsSubject,
+                'predicatesAllowedAsObject' => $predicatesAllowedAsObject,
+                'predicateDefs' => $predicateDefs,
             ]);
         } catch (EntityDoesNotExistException) {
             return $this->getBasicErrorPage($response,  "Not found", "Entity $tid not found", HttpStatus::NOT_FOUND);
         }
     }
-
-
 }

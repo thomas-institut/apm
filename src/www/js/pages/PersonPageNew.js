@@ -146,7 +146,7 @@ export class PersonPageNew extends NormalPage {
     let entityAdminHtml = '';
     if (this.isUserRoot()) {
       entityAdminHtml = `<div class="entity-admin">
-                <a class="entity-page-button" href="${urlGen.siteEntity(this.personData.tid)}">[ ${tr('Entity Page')} ]</a>
+                <a class="entity-page-button" href="${urlGen.siteAdminEntity(this.personData.tid)}">[ ${tr('Entity Page')} ]</a>
                 </div>`
     }
 

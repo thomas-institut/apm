@@ -21,4 +21,10 @@ class PredicateFlag
     const MergePredicate = 3;
 
     const QualificationPredicate = 4;
+
+    /**
+     * When set, the predicate is meant to be used by the entity system internally
+     * and therefore should not be available for users when making statements
+     */
+    const SystemPredicate = 5;
 }

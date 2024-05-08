@@ -14,7 +14,7 @@ class SystemEntity implements EntityDefiner
     public function getEntityDefinitions(): array
     {
         $def = new EntityDefinition();
-        $def->tid = Entity::System;
+        $def->id = Entity::System;
         $def->name = 'System';
         $def->description = "The system itself, normally used as the author of automatically generated statements";
         return [ $def];

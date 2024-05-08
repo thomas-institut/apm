@@ -14,7 +14,7 @@ module.exports = {
     DocEditPage: './pages/DocEditPage.js',
     DocNewDocPage: './pages/DocNewDocPage.js',
     ErrorPage: './pages/ErrorPage.js',
-    EntityPage: './pages/EntityPage.js',
+    AdminEntityPage: './pages/AdminEntityPage/AdminEntityPage.js',
     PageViewer: './pages/PageViewer/PageViewer.js',
     CollationTableEditor: './pages/CollationTableEditor.js',
     EditionComposer: {

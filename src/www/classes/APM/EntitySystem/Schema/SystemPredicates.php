@@ -8,7 +8,7 @@ use APM\EntitySystem\Kernel\PredicateFlag;
 
 const BasicEntityPredicateDefs = [
     [
-        'tid' => Entity::pEntityType,
+        'id' => Entity::pEntityType,
         'type' => Entity::tRelation,
         'name' => 'Entity Type',
         'descr' => 'The type for an Entity',
@@ -16,10 +16,10 @@ const BasicEntityPredicateDefs = [
         'allowedObjectTypes'=> [ Entity::tEntityType],
         'canBeCancelled' => false,
         'singleProperty' => true,
-        'flags' => []
+        'flags' => [ PredicateFlag::SystemPredicate]
     ],
     [
-        'tid' => Entity::pEntityName,
+        'id' => Entity::pEntityName,
         'type' => Entity::tAttribute,
         'name' => 'Entity Name',
         'descr' => "The entity's name",
@@ -30,18 +30,18 @@ const BasicEntityPredicateDefs = [
         'flags' => []
     ],
     [
-        'tid' => Entity::pEntityDescription,
+        'id' => Entity::pEntityDescription,
         'type' => Entity::tAttribute,
-        'name' => 'Entity Descriptions',
-        'descr' => "The entity's description",
+        'name' => 'Entity Description',
+        'descr' => "A one or two-sentence description of the entity",
         'allowedSubjectTypes' => null,
         'allowedObjectTypes'=> null,
         'canBeCancelled' => true,
-        'singleProperty' => false,
+        'singleProperty' => true,
         'flags' => []
     ],
     [
-        'tid' => Entity::pEntityCreationTimestamp,
+        'id' => Entity::pEntityCreationTimestamp,
         'type' => Entity::tAttribute,
         'name' => 'Entity Creation Timestamp',
         'descr' => "The entity's creation timestamp",
@@ -49,10 +49,10 @@ const BasicEntityPredicateDefs = [
         'allowedObjectTypes'=> [ Entity::ValueTypeTimestamp],
         'canBeCancelled' => false,
         'singleProperty' => true,
-        'flags' => []
+        'flags' => [ PredicateFlag::SystemPredicate]
     ],
     [
-        'tid' => Entity::pSortName,
+        'id' => Entity::pSortName,
         'type' => Entity::tAttribute,
         'name' => 'Sort Name',
         'descr' => "The name to be used for sort purposes",
@@ -63,7 +63,7 @@ const BasicEntityPredicateDefs = [
         'flags' => []
     ],
     [
-        'tid' => Entity::pAlternateName,
+        'id' => Entity::pAlternateName,
         'type' => Entity::tAttribute,
         'name' => 'Alias',
         'descr' => "An alternate name for the entity, normally qualified with a language",
@@ -75,7 +75,7 @@ const BasicEntityPredicateDefs = [
     ],
 
     [
-        'tid' => Entity::pNameInOriginalLanguage,
+        'id' => Entity::pNameInOriginalLanguage,
         'type' => Entity::tAttribute,
         'name' => 'Name in original language',
         'descr' => "The entity's name in original language and script",
@@ -86,7 +86,7 @@ const BasicEntityPredicateDefs = [
         'flags' => []
     ],
     [
-        'tid' => Entity::pExternalId,
+        'id' => Entity::pExternalId,
         'type' => Entity::tAttribute,
         'name' => 'External Id',
         'descr' => "The entity's id in some external system, normally qualified with an IdType",
@@ -97,18 +97,18 @@ const BasicEntityPredicateDefs = [
         'flags' => []
     ],
     [
-        'tid' => Entity::pUrl,
+        'id' => Entity::pUrl,
         'type' => Entity::tAttribute,
         'name' => 'URL',
         'descr' => "A URL to a resource that directly and explicitly describes or represents the entity, e.g. a Wikipedia entry",
         'allowedSubjectTypes' => [ Entity::tPerson, Entity::tGeographicalPlace, Entity::tGeographicalArea, Entity::tWork],
-        'allowedObjectTypes'=> null,
+        'allowedObjectTypes'=> [ Entity::ValueTypeUrl],
         'canBeCancelled' => true,
         'singleProperty' => false,
         'flags' => []
     ],
     [
-        'tid' => Entity::pMember,
+        'id' => Entity::pMember,
         'type' => Entity::tRelation,
         'name' => 'Member',
         'descr' => "A person or group that is a member of the entity",
@@ -121,7 +121,7 @@ const BasicEntityPredicateDefs = [
         'flags' => []
     ],
     [
-        'tid' => Entity::pMemberOf,
+        'id' => Entity::pMemberOf,
         'type' => Entity::tRelation,
         'name' => 'Member Of',
         'descr' => "An institution, or group the entity of which the entity is a member",
@@ -134,7 +134,7 @@ const BasicEntityPredicateDefs = [
         'flags' => []
     ],
     [
-        'tid' => Entity::pDeprecated,
+        'id' => Entity::pDeprecated,
         'type' => Entity::tAttribute,
         'name' => 'Deprecated',
         'descr' => "If true, the entity (normally a predicate or a type) is deprecated and should not be used any more",
@@ -142,13 +142,13 @@ const BasicEntityPredicateDefs = [
         'allowedObjectTypes'=> [ Entity::ValueTypeBoolean],
         'canBeCancelled' => true,
         'singleProperty' => true,
-        'flags' => []
+        'flags' => [ PredicateFlag::SystemPredicate]
     ],
 
 ];
 const StatementMetadataPredicateDefs = [
     [
-        'tid' => Entity::pStatementAuthor,
+        'id' => Entity::pStatementAuthor,
         'type' => Entity::tRelation,
         'name' => 'Statement Author',
         'descr' => "The author of a statement",
@@ -159,7 +159,7 @@ const StatementMetadataPredicateDefs = [
         'flags' => [ PredicateFlag::StatementMetadata ]
     ],
     [
-        'tid' => Entity::pStatementTimestamp,
+        'id' => Entity::pStatementTimestamp,
         'type' => Entity::tAttribute,
         'name' => 'Statement Timestamp',
         'descr' => "The timestamp of a statement",
@@ -170,7 +170,7 @@ const StatementMetadataPredicateDefs = [
         'flags' => [ PredicateFlag::StatementMetadata ]
     ],
     [
-        'tid' => Entity::pStatementEditorialNote,
+        'id' => Entity::pStatementEditorialNote,
         'type' => Entity::tAttribute,
         'name' => 'Statement Editorial Note',
         'descr' => "An editorial note attached to a statement",
@@ -183,7 +183,7 @@ const StatementMetadataPredicateDefs = [
 ];
 const StatementQualificationPredicateDefs = [
     [
-        'tid' => Entity::pObjectLang,
+        'id' => Entity::pObjectLang,
         'type' => Entity::tRelation,
         'name' => 'Language',
         'descr' => "The language of the statement's object",
@@ -194,7 +194,7 @@ const StatementQualificationPredicateDefs = [
         'flags' => [ PredicateFlag::StatementMetadata, PredicateFlag::QualificationPredicate ]
     ],
     [
-        'tid' => Entity::pObjectSequence,
+        'id' => Entity::pObjectSequence,
         'type' => Entity::tAttribute,
         'name' => 'Sequence',
         'descr' => "A sequence number that indicates the position of the statement's object among statements with the same predicate",
@@ -205,7 +205,7 @@ const StatementQualificationPredicateDefs = [
         'flags' => [ PredicateFlag::StatementMetadata, PredicateFlag::QualificationPredicate ]
     ],
     [
-        'tid' => Entity::pObjectFrom,
+        'id' => Entity::pObjectFrom,
         'type' => Entity::tAttribute,
         'name' => 'From',
         'descr' => "The date from which the statement obtains",
@@ -216,7 +216,7 @@ const StatementQualificationPredicateDefs = [
         'flags' => [ PredicateFlag::StatementMetadata, PredicateFlag::QualificationPredicate ]
     ],
     [
-        'tid' => Entity::pObjectUntil,
+        'id' => Entity::pObjectUntil,
         'type' => Entity::tAttribute,
         'name' => 'Until',
         'descr' => "The date until which the statement obtains",
@@ -227,7 +227,7 @@ const StatementQualificationPredicateDefs = [
         'flags' => [ PredicateFlag::StatementMetadata, PredicateFlag::QualificationPredicate ]
     ],
     [
-        'tid' => Entity::pObjectUrlType,
+        'id' => Entity::pObjectUrlType,
         'type' => Entity::tRelation,
         'name' => 'Url Type',
         'descr' => "If the object of the statement is a URL, the URL type",
@@ -238,7 +238,7 @@ const StatementQualificationPredicateDefs = [
         'flags' => [ PredicateFlag::StatementMetadata, PredicateFlag::QualificationPredicate ]
     ],
     [
-        'tid' => Entity::pObjectIdType,
+        'id' => Entity::pObjectIdType,
         'type' => Entity::tRelation,
         'name' => 'ID Type',
         'descr' => "If the object of the statement is an id, the id type",
@@ -254,7 +254,7 @@ const StatementQualificationPredicateDefs = [
 const StatementCancellationPredicateDefs = [
 
     [
-        'tid' => Entity::pCancelledBy,
+        'id' => Entity::pCancelledBy,
         'type' => Entity::tRelation,
         'name' => 'Cancelled By',
         'descr' => "The author of a statement cancellation",
@@ -265,7 +265,7 @@ const StatementCancellationPredicateDefs = [
         'flags' => [ PredicateFlag::CancellationPredicate ]
     ],
     [
-        'tid' => Entity::pCancellationTimestamp,
+        'id' => Entity::pCancellationTimestamp,
         'type' => Entity::tAttribute,
         'name' => 'Cancellation Timestamp',
         'descr' => "The timestamp of a statement cancellation",
@@ -276,7 +276,7 @@ const StatementCancellationPredicateDefs = [
         'flags' => [ PredicateFlag::CancellationPredicate ]
     ],
     [
-        'tid' => Entity::pCancellationEditorialNote,
+        'id' => Entity::pCancellationEditorialNote,
         'type' => Entity::tAttribute,
         'name' => 'Cancellation Editorial Note',
         'descr' => "An editorial note attached to a statement cancellation",
@@ -289,7 +289,7 @@ const StatementCancellationPredicateDefs = [
 ];
 const MergePredicateDefs = [
     [
-        'tid' => Entity::pMergedInto,
+        'id' => Entity::pMergedInto,
         'type' => Entity::tRelation,
         'name' => 'Merged Into',
         'descr' => "The entity into which the subject is merged",
@@ -300,7 +300,7 @@ const MergePredicateDefs = [
         'flags' => [ PredicateFlag::MergePredicate ]
     ],
     [
-        'tid' => Entity::pMergedBy,
+        'id' => Entity::pMergedBy,
         'type' => Entity::tRelation,
         'name' => 'Merged By',
         'descr' => "The author of a merge",
@@ -311,7 +311,7 @@ const MergePredicateDefs = [
         'flags' => [ PredicateFlag::MergePredicate ]
     ],
     [
-        'tid' => Entity::pMergeTimestamp,
+        'id' => Entity::pMergeTimestamp,
         'type' => Entity::tAttribute,
         'name' => 'Merge Timestamp',
         'descr' => "The timestamp of a merge",
@@ -322,7 +322,7 @@ const MergePredicateDefs = [
         'flags' => [ PredicateFlag::MergePredicate ]
     ],
     [
-        'tid' => Entity::pMergeEditorialNote,
+        'id' => Entity::pMergeEditorialNote,
         'type' => Entity::tAttribute,
         'name' => 'Merge Editorial Note',
         'descr' => "An editorial note attached to a merge",
@@ -336,7 +336,7 @@ const MergePredicateDefs = [
 
 const IdPredicatesDefs = [
     [
-        'tid' => Entity::pViafId,
+        'id' => Entity::pViafId,
         'type' => Entity::tAttribute,
         'name' => 'VIAF ID',
         'descr' => 'VIAF ID',
@@ -347,7 +347,7 @@ const IdPredicatesDefs = [
         'flags' => [ ]
     ],
     [
-        'tid' => Entity::pWikiDataId,
+        'id' => Entity::pWikiDataId,
         'type' => Entity::tAttribute,
         'name' => 'WikiData ID',
         'descr' => 'WikiData ID',
@@ -358,18 +358,18 @@ const IdPredicatesDefs = [
         'flags' => [ ]
     ],
     [
-        'tid' => Entity::pGNDId,
+        'id' => Entity::pGNDId,
         'type' => Entity::tAttribute,
         'name' => 'GND ID',
         'descr' => "GND (Gemeinsame Normdatei) id",
-        'allowedSubjectTypes' => null,
+        'allowedSubjectTypes' => [ Entity::tPerson, Entity::tGeographicalArea, Entity::tGeographicalPlace],
         'allowedObjectTypes'=> null,
         'canBeCancelled' => true,
         'singleProperty' => true,
         'flags' => [ ]
     ],
     [
-        'tid' => Entity::pLocId,
+        'id' => Entity::pLocId,
         'type' => Entity::tAttribute,
         'name' => 'LoC ID',
         'descr' => "US Library of Congress Id",

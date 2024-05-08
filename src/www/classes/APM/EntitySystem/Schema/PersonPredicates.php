@@ -4,11 +4,12 @@ namespace APM\EntitySystem\Schema;
 
 use APM\EntitySystem\Kernel\DefsFromArray;
 use APM\EntitySystem\Kernel\PredicateDefiner;
+use APM\EntitySystem\Kernel\PredicateFlag;
 
 
 const PersonPredicateDefs = [
     [
-        'tid' => Entity::pEmailAddress,
+        'id' => Entity::pEmailAddress,
         'type' => Entity::tAttribute,
         'name' => 'Email Address',
         'descr' => "An email address that belongs to the entity",
@@ -19,7 +20,7 @@ const PersonPredicateDefs = [
         'flags' => []
     ],
     [
-        'tid' => Entity::pOccupation,
+        'id' => Entity::pOccupation,
         'type' => Entity::tRelation,
         'name' => 'Occupation',
         'descr' => "A person's occupation, e.g., philosopher, translator. Normally only the occupations the person is known for should be captured",
@@ -30,7 +31,7 @@ const PersonPredicateDefs = [
         'flags' => []
     ],
     [
-        'tid' => Entity::pDateOfBirth,
+        'id' => Entity::pDateOfBirth,
         'type' => Entity::tAttribute,
         'name' => 'Date of Birth',
         'descr' => "The person's date of birth",
@@ -41,7 +42,7 @@ const PersonPredicateDefs = [
         'flags' => []
     ],
     [
-        'tid' => Entity::pPlaceOfBirth,
+        'id' => Entity::pPlaceOfBirth,
         'type' => Entity::tRelation,
         'name' => 'Place of Birth',
         'descr' => "A person's place of birth",
@@ -52,7 +53,7 @@ const PersonPredicateDefs = [
         'flags' => []
     ],
     [
-        'tid' => Entity::pDateOfDeath,
+        'id' => Entity::pDateOfDeath,
         'type' => Entity::tAttribute,
         'name' => 'Date of Death',
         'descr' => "The person's date of death",
@@ -63,7 +64,7 @@ const PersonPredicateDefs = [
         'flags' => []
     ],
     [
-        'tid' => Entity::pPlaceOfDeath,
+        'id' => Entity::pPlaceOfDeath,
         'type' => Entity::tRelation,
         'name' => 'Place of Death',
         'descr' => "A person's place of death",
@@ -74,7 +75,7 @@ const PersonPredicateDefs = [
         'flags' => []
     ],
     [
-        'tid' => Entity::pIsUser,
+        'id' => Entity::pIsUser,
         'type' => Entity::tAttribute,
         'name' => 'IsUser',
         'descr' => "True if the person is a user in the system",
@@ -82,10 +83,10 @@ const PersonPredicateDefs = [
         'allowedObjectTypes'=> [ Entity::ValueTypeBoolean],
         'canBeCancelled' => true,
         'singleProperty' => true,
-        'flags' => []
+        'flags' => [ PredicateFlag::SystemPredicate]
     ],
     [
-        'tid' => Entity::pIsEnabledUser,
+        'id' => Entity::pIsEnabledUser,
         'type' => Entity::tAttribute,
         'name' => 'IsEnabledUser',
         'descr' => "True if the person is a user in the system and is enabled",
@@ -93,10 +94,10 @@ const PersonPredicateDefs = [
         'allowedObjectTypes'=> [ Entity::ValueTypeBoolean],
         'canBeCancelled' => true,
         'singleProperty' => true,
-        'flags' => []
+        'flags' => [ PredicateFlag::SystemPredicate]
     ],
     [
-        'tid' => Entity::pOrcid,
+        'id' => Entity::pOrcid,
         'type' => Entity::tAttribute,
         'name' => 'ORCID id',
         'descr' => 'ORCID id',

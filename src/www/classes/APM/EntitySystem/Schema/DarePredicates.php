@@ -4,11 +4,12 @@ namespace APM\EntitySystem\Schema;
 
 use APM\EntitySystem\Kernel\DefsFromArray;
 use APM\EntitySystem\Kernel\PredicateDefiner;
+use APM\EntitySystem\Kernel\PredicateFlag;
 
 
 const DarePredicateDef = [
     [
-        'tid' => Entity::pDarePersonId,
+        'id' => Entity::pDarePersonId,
         'type' => Entity::tAttribute,
         'name' => 'DARE person id',
         'descr' => "Row id in DARE's person_normalised table",
@@ -16,7 +17,7 @@ const DarePredicateDef = [
         'allowedObjectTypes'=> [ Entity::ValueTypeInteger],
         'canBeCancelled' => true,
         'singleProperty' => false,
-        'flags' => []
+        'flags' => [ PredicateFlag::SystemPredicate]
     ],
 
 ];

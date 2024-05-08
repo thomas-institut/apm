@@ -5,10 +5,10 @@ namespace APM\EntitySystem\Kernel;
 class EntityDefinition
 {
     /**
-     * The entity's tid
+     * The entity's id
      * @var int
      */
-    public int $tid = -1;
+    public int $id = -1;
 
     /**
      * The entity's type

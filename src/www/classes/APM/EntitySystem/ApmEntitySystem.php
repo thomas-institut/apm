@@ -12,6 +12,7 @@ use APM\EntitySystem\Exception\InvalidSubjectException;
 use APM\EntitySystem\Exception\PredicateCannotBeCancelledException;
 use APM\EntitySystem\Exception\StatementAlreadyCancelledException;
 use APM\EntitySystem\Exception\StatementNotFoundException;
+use APM\EntitySystem\Kernel\PredicateDefinition;
 use APM\EntitySystem\Kernel\PredicateFlag;
 use APM\EntitySystem\Schema\Entity;
 use InvalidArgumentException;
@@ -35,7 +36,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    const dataId = '007';
+    const dataId = '010';
 
     const kernelCacheKey = 'ApmEntitySystemKernel';
 
@@ -622,5 +623,25 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             return intval($tidString);
         }
         return Tid::fromString($tidString);
+    }
+
+    public function getPredicateDefinition(int $predicate) : PredicateDefinition {
+        return $this->getKernel()->getPredicateDefinition($predicate);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getValidPredicatesAsSubjectForType(int $type, bool $includeReverseRelations = false): array
+    {
+        return $this->getKernel()->getValidPredicatesAsSubjectForType($type, $includeReverseRelations);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getValidPredicatesAsObjectForType(int $type, bool $includeReverseRelations = false): array
+    {
+        return $this->getKernel()->getValidPredicatesAsObjectForType($type, $includeReverseRelations);
     }
 }

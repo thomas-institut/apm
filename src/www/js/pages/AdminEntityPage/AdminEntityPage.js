@@ -1,31 +1,38 @@
-import { NormalPage } from './NormalPage'
+import { NormalPage } from '../NormalPage'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { Tid } from '../Tid/Tid'
-import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
-import { urlGen } from './common/SiteUrlGen'
-import { ApmFormats } from './common/ApmFormats'
+import { Tid } from '../../Tid/Tid'
+import { capitalizeFirstLetter } from '../../toolbox/Util.mjs'
+import { urlGen } from '../common/SiteUrlGen'
+import { ApmFormats } from '../common/ApmFormats'
 
 
 const TimestampPredicates = [ 2004, 3002, 5002];
 const UrlPredicates = [ 2009];
 
-export class EntityPage extends NormalPage {
+export class AdminEntityPage extends NormalPage {
 
   constructor (options) {
     super(options)
 
     let oc = new OptionsChecker({
-      context: 'EntityPage',
+      context: 'AdminEntityPage',
       optionsDefinition: {
         entityData: { type: 'Object', required: true},
+        predicatesAllowedAsSubject: { type: 'Object', required: true },
+        predicatesAllowedAsObject: { type: 'Object', required: true },
+        predicateDefs: { type: 'Object', required: true}
       }
     })
 
-    let cleanOptions = oc.getCleanOptions(options);
+    this.options = oc.getCleanOptions(options);
+    console.log('Options', this.options);
 
-    this.data = cleanOptions.entityData;
-    this.tid = this.data['id'];
-    this.title = `Ent. ${this.tid}`;
+
+    this.data = this.options.entityData;
+    this.predicateDefs = this.options.predicateDefs;
+
+    this.entityId = this.data['id'];
+    this.title = `Ent. ${this.entityId}`;
     this.initPage().then( () => {});
   }
 
@@ -34,27 +41,81 @@ export class EntityPage extends NormalPage {
     document.title = this.title;
   }
 
+  /**
+   * Return an array of predicates that the used as new statements for the entity
+   * either because they allowed and are not yet used in any statement or
+   * because the predicate allows multiple statements for the same entity
+   *
+   * @param asSubject
+   * @return {int[]}
+   */
+  getPredicatesAvailableForAdding(asSubject = true) {
+     let predicateArray = asSubject ? this.options.predicatesAllowedAsSubject : this.options.predicatesAllowedAsObject;
+
+     return predicateArray.filter( (predicate) => {
+       let def = this.predicateDefs[predicate];
+       if (def['flags'].length > 0) {
+         return false;
+       }
+       let isUsed = this.data.statements.filter( (statement) => {
+         return statement['predicate'] === predicate;
+       }).length > 0;
+       return !(asSubject && def['singleProperty'] && isUsed);
+     })
+
+  }
+
+  /**
+   *
+   * @param {int[]}predicates
+   * @param {boolean}asSubject
+   */
+  async getPredicatesAvailableSection(predicates, asSubject) {
+    let html = '';
+    html += `<div class="available-predicates">`;
+    html += '<h4>Predicates Available</h4>'
+    html += '<table class="available-predicates">';
+    for(let i = 0; i < predicates.length; i++) {
+      html += `<tr>
+        <td>${await this.getEntityHtml(predicates[i])}</td>
+        <td><a class="btn btn-primary btn-sm new-statement-btn ${asSubject ? 'as-subject' : 'as-object'} predicate-${predicates[i]}"
+        title="Click to create a new statement with the entity as ${asSubject ? 'subject' : 'object'}">
+        New Statement</a></td>
+        </tr>`;
+    }
+    html += '</table>';
+    html += '</div>'
+    return html;
+  }
+
   async genContentHtml () {
-    return `<h1>Entity ${this.tid} <small> = ${Tid.toBase36String(this.tid)}</small></h1>
-        <h2>Data</h2>
+    let availablePredicatesAsSubject = this.getPredicatesAvailableForAdding(true);
+    let availablePredicatesAsObject = this.getPredicatesAvailableForAdding(false);
+    return `<h1>Entity ${this.entityId} <small> = ${Tid.toBase36String(this.entityId)}</small></h1>
+        <h2>Basic Data</h2>
         ${await this.getSimpleElementsHtml(this.data)}
-        <h3>Statements</h3>
+        <h3>Statements as Subject</h3>
         ${await this.getStatementsTable(this.data['statements'])}
+        ${availablePredicatesAsSubject.length > 0 ? await this.getPredicatesAvailableSection(availablePredicatesAsSubject, true) : ''}
         <h3>Statements as Object</h3>
         ${await this.getStatementsTable(this.data['statementsAsObject'])}
+        ${availablePredicatesAsSubject.length > 0 ? await this.getPredicatesAvailableSection(availablePredicatesAsObject, false) : ''}
         <div class="entity-data-dump">
             <h2>Json</h2>
             <pre>${JSON.stringify(this.data, null, 3)}</pre>
         </div>`;
   }
 
-  async getEntityName(tid) {
-    if (tid === this.tid) {
+  async getEntityName(id) {
+    if (id === this.entityId) {
       return '';
+    }
+    if (this.predicateDefs[id] !== undefined) {
+      return this.predicateDefs[id]['name'];
     }
     let data;
     try {
-      data = await this.apmDataProxy.getEntityData(tid);
+      data = await this.apmDataProxy.getEntityData(id);
     } catch (e) {
       return '';
     }
@@ -66,7 +127,7 @@ export class EntityPage extends NormalPage {
     if (name === '') {
       return tid;
     }
-    return `<a href="${urlGen.siteEntity(tid)}" title="Entity ${tid} = ${Tid.toBase36String(tid)}">${tid}  [${name}]</a>`
+    return `<a href="${urlGen.siteAdminEntity(tid)}" title="Entity ${tid} = ${Tid.toBase36String(tid)}">${tid}  [${name}]</a>`
   }
 
   /**
@@ -123,11 +184,21 @@ export class EntityPage extends NormalPage {
     return 'literal';
   }
 
-
-  async getStatementsTable(statements) {
+  /**
+   *
+   * @param {[]}statements
+   * @param {string}orderBy
+   * @return {Promise<string>}
+   */
+  async getStatementsTable(statements, orderBy = 'predicate') {
     if (statements.length === 0) {
       return `<em>None</em>`;
     }
+
+    statements.sort( (a, b) => {
+      return parseInt(a[orderBy]) - parseInt(b[orderBy])
+    })
+
     const metadataPredicates = [ 3001, 3002, 3003];
     let rows = [];
     for (let i = 0; i < statements.length; i++) {
@@ -156,15 +227,29 @@ export class EntityPage extends NormalPage {
         cancellationItems.push(`${await this.getEntityHtml(predicate)}: ${await this.getObjectHtml(obj, this.getObjectValueTypeFromPredicate(predicate))}`);
       }
 
-      cols.push(qualificationItems.join('<br/>'))
-      cols.push(metadataItems.join('<br/>'))
+      cols.push(qualificationItems.join('<br/>'));
+      cols.push(metadataItems.join('<br/>'));
       if (cancellationItems.length === 0) {
-        cols.push('<span class="active-notice">Active</span>');
+        let spans = [];
+        spans.push('<span class="active-notice">Active</span>');
+        let predicateDef = this.predicateDefs[statement['predicate']];
+        if (predicateDef['flags'].indexOf(5) !== -1) {
+          spans.push('<span class="not-editable-notice">System data, editing is disabled</span>');
+        } else {
+          if (predicateDef['canBeCancelled'] === false) {
+            spans.push('<span class="not-cancellable-notice">Cannot be cancelled</span>');
+          }
+        }
+
+        cols.push(spans.join('<br/>'));
       } else {
-        cols.push(cancellationItems.join('<br/>'))
+        cols.push(cancellationItems.join('<br/>'));
       }
 
-      rows.push(cols);
+      rows.push({
+        statement: statement,
+        cols: cols
+      });
     }
 
     let html = '';
@@ -172,8 +257,15 @@ export class EntityPage extends NormalPage {
     html += '<tr><th>Statement Id</th><th>Subject</th><th>Predicate</th><th>Object</th><th>Qualifications</th><th>Statement Metadata</th></tr>'
 
     html += rows.map( (row) => {
-      let rowHtml = '<tr>';
-      rowHtml += row.map( (col) => { return `<td>${col}</td>`}).join('');
+
+      let tdClasses = [];
+      let trClasses = [];
+      if (row['statement']['cancellationId'] !== -1) {
+        tdClasses.push('cancelled')
+        trClasses.push('cancelled');
+      }
+      let rowHtml = `<tr class="${trClasses.join(' ')}">`;
+      rowHtml += row.cols.map( (col) => { return `<td class="${tdClasses.join(' ')}">${col}</td>`}).join('');
       rowHtml += '</tr>';
       return rowHtml;
     }).join('');
@@ -202,4 +294,4 @@ export class EntityPage extends NormalPage {
 }
 
 
-window.EntityPage = EntityPage;
+window.AdminEntityPage = AdminEntityPage;

@@ -76,10 +76,11 @@ class Entity implements TidDefiner
     const pDeprecated = 2013;
 
     // ID predicates that apply to different types of entities
-    const pViafId = 2901;
-    const pWikiDataId = 2902;
     const pGNDId = 2093;
     const pLocId = 2094;
+    const pViafId = 2901;
+    const pWikiDataId = 2902;
+
 
 
     // Basic statement metadata predicates

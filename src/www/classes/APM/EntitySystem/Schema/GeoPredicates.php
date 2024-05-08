@@ -8,7 +8,7 @@ use APM\EntitySystem\Kernel\PredicateDefiner;
 
 const GeoPredicatesDef = [
     [
-        'tid' => Entity::pContainedBy,
+        'id' => Entity::pContainedBy,
         'type' => Entity::tRelation,
         'name' => 'Contained By',
         'descr' => "The geographical area that contains the entity",
@@ -21,7 +21,7 @@ const GeoPredicatesDef = [
         'flags' => []
     ],
     [
-        'tid' => Entity::pContains,
+        'id' => Entity::pContains,
         'type' => Entity::tRelation,
         'name' => 'Contains',
         'descr' => "An area or place that is located within the entity",
@@ -32,7 +32,7 @@ const GeoPredicatesDef = [
         'flags' => []
     ],
     [
-        'tid' => Entity::pCivicAddress,
+        'id' => Entity::pCivicAddress,
         'type' => Entity::tAttribute,
         'name' => 'Civic Address',
         'descr' => "The place's civic address: number, street, city, postal code",
@@ -43,7 +43,7 @@ const GeoPredicatesDef = [
         'flags' => []
     ],
     [
-        'tid' => Entity::pGpsCoordinates,
+        'id' => Entity::pGpsCoordinates,
         'type' => Entity::tAttribute,
         'name' => 'GPS coordinates',
         'descr' => "A place's exact GPS coordinates",

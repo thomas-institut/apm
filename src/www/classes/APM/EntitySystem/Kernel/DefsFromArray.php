@@ -23,7 +23,7 @@ class DefsFromArray
         foreach ($definitionsArray as $type) {
             $def = new EntityDefinition();
             [ $tid, $name, $description, $trNames, $trDescriptions, $deprecated, $deprecationNotice] = $type;
-            $def->tid = $tid;
+            $def->id = $tid;
             $def->type = $entityType;
             $def->name = $name;
             $def->description = $description;
@@ -53,7 +53,7 @@ class DefsFromArray
         foreach ($definitionsArray as $type) {
             $def = new EntityTypeDefinition();
             [ $tid, $name, $description, $trNames, $trDescriptions, $isSysType] = $type;
-            $def->tid = $tid;
+            $def->id = $tid;
             $def->type = Entity::tEntityType;
             $def->name = $name;
             $def->description = $description;
@@ -74,7 +74,7 @@ class DefsFromArray
         $defs = [];
         foreach($definitionsArray as $definitionObject) {
             $def = new PredicateDefinition();
-            $def->tid = $definitionObject['tid'];
+            $def->id = $definitionObject['id'];
             $def->type = $definitionObject['type'];
             $def->name = $definitionObject['name'];
             $def->description = $definitionObject['descr'];

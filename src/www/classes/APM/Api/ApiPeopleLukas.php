@@ -55,6 +55,9 @@ class ApiPeopleLukas extends ApiController
         $data = [];
         $stringToMatch = $_POST['value'];
 
+        $this->logger->debug('VALUE');
+        $this->logger->debug($stringToMatch);
+
         // Get number of people
         $cache = $this->systemManager->getSystemDataCache();
         $cacheKey = 'Next_Entity_ID';
@@ -66,7 +69,10 @@ class ApiPeopleLukas extends ApiController
             $num_people = 0;
         }
 
-        for ($id=0; $id<=$num_people; $id++) {
+        $this->logger->debug($stringToMatch);
+        $this->logger->debug($num_people);
+
+        for ($id=0; $id<$num_people; $id++) {
             $person = $this->getMetadataFromSql($id);
             if (levenshtein(strtolower($stringToMatch), strtolower($person['values'][0])) < 4 ||
                 (str_contains(strtolower($person['values'][0]), strtolower($stringToMatch))) && strlen($stringToMatch) > 2) {
@@ -196,8 +202,12 @@ class ApiPeopleLukas extends ApiController
 
         // TO DO | PLACE HERE A FUNCTION WHICH GETS DATA BY ID FROM A SQL TABLE
 
+        $this->logger->debug('GET PERSON FROM SQL');
         $cache = $this->systemManager->getSystemDataCache();
         $cacheKey = 'person' . $id;
+
+        $this->logger->debug($cacheKey);
+
         try {
             $data = unserialize($cache->get($cacheKey));
         } catch (KeyNotInCacheException) {

@@ -2,7 +2,7 @@ import {OptionsChecker} from "@thomas-inst/optionschecker";
 import {urlGen} from "../pages/common/SiteUrlGen";
 import {TagEditor} from "../widgets/TagEditorLukas";
 import {ConfirmDialog} from "../pages/common/ConfirmDialog";
-import {tPerson} from "../constants/Entity";
+import {pStatementEditorialNote, tPerson} from "../constants/Entity";
 
 export class MetadataEditor {
 
@@ -154,15 +154,42 @@ export class MetadataEditor {
     }
 
     if (this.entity.id === '') {
-      this.entity.id = this.options.entityId
+      //this.entity.id = this.options.entityId
+      this.entity.id = this.options.genericEntityData.id
     }
-    this.entity.type = this.options.entityType
+
+    //this.entity.type = this.options.entityType
+    this.entity.type = this.options.genericEntityData.type
+
     if (this.entity.values.length === 0) { // After having edited and saved values and notes, they get updated via the updateEntityData function
-      this.entity.values = this.options.metadata.values
-      this.entity.notes = this.options.metadata.notes
+      // this.entity.values = this.options.metadata.values
+      // this.entity.notes = this.options.metadata.notes
+
+      this.entity.values.push(this.options.genericEntityData.name)
+      this.entity.keys.push('Name')
+      this.entity.notes.push('')
+      this.entity.types.push('text')
+
+      for (let statement of this.options.genericEntityData.statements) {
+        for (let section of this.options.genericSchema.sections) {
+          for (let predicate of section.predicates) {
+            if (statement.predicate === predicate.id) {
+              this.entity.values.push(statement.object)
+              this.entity.keys.push(statement.predicate)
+              this.entity.notes.push('note dummy') // WHERE DO I FIND THE EDITORIAL NOTES? There is a constant, see below.
+              //console.log(pStatementEditorialNote)
+              this.entity.types.push('text')
+              // console.log(predicate.validObjectTypes) // WHERE DO I FIND THE VALID OBJET TYPES?
+            }
+          }
+      }
+      }
+
+
     }
-    this.entity.keys = this.options.metadataSchema.keys
-    this.entity.types = this.options.metadataSchema.types
+
+    // this.entity.keys = this.options.metadataSchema.keys
+    // this.entity.types = this.options.metadataSchema.types
 
     // store number of keys of the entity
     this.numKeys = this.entity.keys.length
@@ -588,6 +615,9 @@ export class MetadataEditor {
 
   getMatchingPeople(value, callback) {
 
+    console.log('VALUE')
+    console.log(value)
+
     let apiCallIdGetMatchingPeople = this.apiCallIdGetMatchingPeople
 
     $.post(urlGen.apiPeopleGetMatchingPeople(), {'value': value})
@@ -753,6 +783,9 @@ export class MetadataEditor {
 
   setupMetadataEditorInDialogWindow (entity, selector, dialog, inputFormId) {
 
+    console.log('HELLO')
+    console.log(entity.keys)
+
     let mde = new MetadataEditor({
       containerSelector: selector,
       entityId: entity.id,
@@ -767,6 +800,7 @@ export class MetadataEditor {
       dialog: dialog,
       dialogRootMetadataEditor: this,
       dialogRootInputFormSelector: inputFormId,
+      sections: ['c', 'c', 'c', 'c', 'c', 'c', 'c']
     })
   }
 
@@ -1544,6 +1578,9 @@ export class MetadataEditor {
 
   // Functions for saving and getting tags to/from global tag cache
   saveTagsAsHints(tags) {
+
+    console.log('TAGS')
+    console.log(tags)
 
     // Make API Call
     $.post(urlGen.apiTagEditorSaveTagsAsHints(), {'tags': tags})

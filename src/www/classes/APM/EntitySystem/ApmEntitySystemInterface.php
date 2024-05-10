@@ -5,6 +5,9 @@ namespace APM\EntitySystem;
 use APM\EntitySystem\Exception\EntityAlreadyMergedException;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Exception\InvalidEntityTypeException;
+use APM\EntitySystem\Exception\InvalidObjectException;
+use APM\EntitySystem\Exception\InvalidStatementException;
+use APM\EntitySystem\Exception\InvalidSubjectException;
 use APM\EntitySystem\Exception\PredicateCannotBeCancelledException;
 use APM\EntitySystem\Exception\StatementAlreadyCancelledException;
 use APM\EntitySystem\Exception\StatementNotFoundException;
@@ -154,7 +157,10 @@ interface ApmEntitySystemInterface
      * @param array $extraMetadata
      * @param int $ts
      * @return int
-     */
+     * @throws InvalidObjectException
+     * @throws InvalidStatementException
+     * @throws InvalidSubjectException
+ */
     public function makeStatement(int $subject, int $predicate, int|string $object, int $author,
                                   string $editorialNote = '', array $extraMetadata = [], int $ts = -1) : int;
 

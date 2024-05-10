@@ -469,7 +469,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         }
 
         if (!$kernel->predicateCanBeCancelled($statementData->predicate)) {
-            throw new PredicateCannotBeCancelledException();
+            throw new PredicateCannotBeCancelledException("Predicate $statementData->predicate cannot be cancelled");
         }
 
         try {

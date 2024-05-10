@@ -673,6 +673,10 @@ function createApiEntityRoutes(RouteCollectorProxy $group, string $prefix, Conta
     $group->get("/$prefix/{tid}/data", function(Request $request, Response $response) use ($container){
         return (new ApiEntity($container))->getEntityData($request, $response);
     })->setName("api.$prefix.data");
+
+    $group->get("/$prefix/statements/edit", function(Request $request, Response $response) use ($container){
+        return (new ApiEntity($container))->statementEdition($request, $response);
+    })->setName("api.$prefix.statements.edit");
 }
 
 function createApiImageRoutes(RouteCollectorProxy $group, string $prefix, ContainerInterface $container) : void

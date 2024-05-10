@@ -275,6 +275,10 @@ class ApmUrlGenerator {
         return `${this.base}/api/entity/${tid}/data`
     }
 
+    apiEntityStatementsEdit() {
+        return `${this.base}/api/entity/statements/edit`
+    }
+
     siteAdminEntity(tid) {
         return `${this.base}/entity/${tid}/admin`;
     }

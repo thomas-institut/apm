@@ -674,7 +674,7 @@ function createApiEntityRoutes(RouteCollectorProxy $group, string $prefix, Conta
         return (new ApiEntity($container))->getEntityData($request, $response);
     })->setName("api.$prefix.data");
 
-    $group->get("/$prefix/statements/edit", function(Request $request, Response $response) use ($container){
+    $group->post("/$prefix/statements/edit", function(Request $request, Response $response) use ($container){
         return (new ApiEntity($container))->statementEdition($request, $response);
     })->setName("api.$prefix.statements.edit");
 }

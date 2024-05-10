@@ -4,6 +4,7 @@ import { Tid } from '../../Tid/Tid'
 import { capitalizeFirstLetter } from '../../toolbox/Util.mjs'
 import { urlGen } from '../common/SiteUrlGen'
 import { ApmFormats } from '../common/ApmFormats'
+import { GenericStatementEditor } from './GenericStatementEditor'
 
 
 const TimestampPredicates = [ 2004, 3002, 5002];
@@ -33,7 +34,44 @@ export class AdminEntityPage extends NormalPage {
 
     this.entityId = this.data['id'];
     this.title = `Ent. ${this.entityId}`;
-    this.initPage().then( () => {});
+    this.initPage().then( () => {
+      $('.new-statement-btn').on('click', this.genOnClickNewStatementButton());
+    })
+  }
+
+  genOnClickNewStatementButton() {
+    return (ev) => {
+      ev.preventDefault();
+      console.log('Click on new statement button')
+
+      let classes = ev.target.className.split(' ');
+      let asSubject = classes.indexOf('as-subject') !== -1;
+      let relation = classes.indexOf('is-relation') !== -1;
+      let predicate = null;
+      classes.forEach( (className) => {
+        let [ name, value] = className.split('-');
+        if (name === 'predicate') {
+          predicate = parseInt(value);
+        }
+      })
+      if (predicate === null) {
+        console.log("No predicate defined");
+        return;
+      }
+      if (asSubject) {
+        console.log(`New statement as subject, predicate ${predicate}`);
+        new GenericStatementEditor({
+          subject: this.entityId,
+          predicate: predicate,
+          relation: relation,
+        })
+
+      } else {
+        console.log(`New statement as object, predicate ${predicate}`);
+        console.log(`Not implemented yet`);
+      }
+
+    }
   }
 
   async initPage () {
@@ -76,9 +114,11 @@ export class AdminEntityPage extends NormalPage {
     html += '<h4>Predicates Available</h4>'
     html += '<table class="available-predicates">';
     for(let i = 0; i < predicates.length; i++) {
+      let def = this.predicateDefs[predicates[i]];
+      let typeClass = def.type === 101 ? 'is-relation' : 'is-attribute';
       html += `<tr>
         <td>${await this.getEntityHtml(predicates[i])}</td>
-        <td><a class="btn btn-primary btn-sm new-statement-btn ${asSubject ? 'as-subject' : 'as-object'} predicate-${predicates[i]}"
+        <td><a class="btn btn-primary btn-sm new-statement-btn ${asSubject ? 'as-subject' : 'as-object'} predicate-${predicates[i]} ${typeClass}"
         title="Click to create a new statement with the entity as ${asSubject ? 'subject' : 'object'}">
         New Statement</a></td>
         </tr>`;

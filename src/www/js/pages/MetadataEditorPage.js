@@ -49,11 +49,11 @@ setupMetadataEditorPage () {
   else {
       this.getEntitySchema((genericSchema) => {
           this.getEntityData((genericEntityData) => {
-              this.getPerson(this.id, (entity) => {
+              //this.getPerson(this.id, (entity) => {
                   this.removeSpinner()
-                  this.makePage(entity.values[0])
-                  this.setupMetadataEditor(entity, 'show', genericSchema, genericEntityData)
-              })
+                  this.makePage(genericEntityData.name)
+                  this.setupMetadataEditor('show', genericSchema, genericEntityData)
+              //})
           })
       })
 
@@ -98,21 +98,17 @@ removeSpinner() {
 }
 
 
-setupMetadataEditor (entity, mode, genericSchema, genericEntityData) {
+setupMetadataEditor (mode, genericSchema, genericEntityData) {
 
     this.removeMetadataEditor()
   let mde = new MetadataEditor({
     containerSelector: '#person-metadata-editor-container',
-    entityId: entity.id,
-    entityType: entity.type,
-    metadata: {values: entity.values, notes: entity.notes},
-    metadataSchema: {keys: entity.keys, types: entity.types},
     callback: (data, mode, callback) => {
         this.savePersonData(data, mode, callback)
     },
     mode: mode,
     theme: 'vertical',
-    sections: ['c', 'c', 'c', 'c', 'c', 'c', 'c'],
+    sections: ['c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c'],
     genericSchema: genericSchema,
     genericEntityData: genericEntityData
   })

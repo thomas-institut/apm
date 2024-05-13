@@ -2,7 +2,17 @@ import {OptionsChecker} from "@thomas-inst/optionschecker";
 import {urlGen} from "../pages/common/SiteUrlGen";
 import {TagEditor} from "../widgets/TagEditorLukas";
 import {ConfirmDialog} from "../pages/common/ConfirmDialog";
-import {pStatementEditorialNote, tPerson} from "../constants/Entity";
+import {
+  pDarePersonId,
+  pDateOfBirth,
+  pDateOfDeath,
+  pGNDId, pLocId,
+  pOrcid,
+  pStatementEditorialNote,
+  pUrl,
+  pViafId, pWikiDataId,
+  tPerson
+} from "../constants/Entity";
 
 export class MetadataEditor {
 
@@ -10,10 +20,10 @@ export class MetadataEditor {
 
     const optionsDefinition = {
       containerSelector: { type:'string', required: true},
-      entityId: {type:'string', required: true},
-      entityType: {type:'string', required: true},
-      metadata: {type:'object', required: false, default: {values: [], notes: []}},
-      metadataSchema: {type: 'object', required: true},
+      //entityId: {type:'string', required: true},
+      //entityType: {type:'string', required: true},
+      //metadata: {type:'object', required: false, default: {values: [], notes: []}},
+      //metadataSchema: {type: 'object', required: true},
       mode: {type:'string', required: true},
       callback: {type:'function', required: true},
       theme: {type:'string', required: true},
@@ -165,27 +175,42 @@ export class MetadataEditor {
       // this.entity.values = this.options.metadata.values
       // this.entity.notes = this.options.metadata.notes
 
-      this.entity.values.push(this.options.genericEntityData.name)
-      this.entity.keys.push('Name')
-      this.entity.notes.push('')
-      this.entity.types.push('text')
+      this.sectionTitles = []
+      this.sections = []
 
-      for (let statement of this.options.genericEntityData.statements) {
-        for (let section of this.options.genericSchema.sections) {
+      for (let section of this.options.genericSchema.sections) {
+        this.sectionTitles.push(section.title)
+        for (let statement of this.options.genericEntityData.statements) {
           for (let predicate of section.predicates) {
             if (statement.predicate === predicate.id) {
+
+              switch (section.type) {
+                case 'verticalList':
+                  this.sections.push('c')
+                  break
+                case 'horizontalList':
+                  this.sections.push('r')
+                  break
+                case 'urlList':
+                  this.sections.push('u')
+                      break
+                default:
+                  this.sections.push('null')
+              }
+
               this.entity.values.push(statement.object)
-              this.entity.keys.push(statement.predicate)
-              this.entity.notes.push('note dummy') // WHERE DO I FIND THE EDITORIAL NOTES? There is a constant, see below.
-              //console.log(pStatementEditorialNote)
+              this.entity.keys.push(predicate.title)
+              for (let statementMetadata of statement.statementMetadata) {
+                if (statementMetadata[0] === pStatementEditorialNote) {
+                  this.entity.notes.push(statementMetadata[1])
+                }
+              }
               this.entity.types.push('text')
-              // console.log(predicate.validObjectTypes) // WHERE DO I FIND THE VALID OBJET TYPES?
+              // this.entity.types.push(predicate.validObjectTypes) // WHERE DO I FIND THE VALID OBJET TYPES?
             }
           }
       }
       }
-
-
     }
 
     // this.entity.keys = this.options.metadataSchema.keys
@@ -306,30 +331,40 @@ export class MetadataEditor {
         }
         break
       case 'vertical':
+
+        let sectionIndex = 0
           for (let i = 1; i <= this.numKeys; i++) {
 
-            if (this.options.sections[i-1] === 'c') {
+            if (this.sections[i-1] !== this.sections[i-2]) {
+              $(this.metadataGridSelector).css("grid-template-columns", "6fr")
+              $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+sectionIndex}; grid-row-end: ${i+sectionIndex}; grid-column-start: 0; grid-column-end: 3; font-size: large"><br><b>${this.sectionTitles[sectionIndex]}</b></div>`)
+              sectionIndex++
+            }
+
+            if (this.sections[i-1] === 'c') {
+
+              $(this.metadataGridSelector).css("grid-template-columns", "4fr 4fr 2fr")
 
               var rowSectionStartIndex = 'null';
               let cellId = "entity_attr" + i
               let editAttributeButton = "entity_attr" + i + "_editButton"
-              let keyName = this.entity.keys[i - 1] + "&emsp;&emsp;"
+              let keyName = this.entity.keys[i-1] + "&emsp;&emsp;"
 
               if (this.options.mode !== this.mode.show) {
-                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i}; grid-row-end: ${i};">${keyName}</div>
+                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+1}; grid-row-end: ${i+1};">${keyName}</div>
                                     <div class="${cellId} grid-main" style="grid-row-start: ${i}; grid-row-end: ${i};"></div>`)
               } else {
                 let cellButtonsAndIconsId = cellId + "_tableCellButton"
-                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i}; grid-row-end: ${i};">${keyName}</div>
-                                    <div class="${cellId} grid-main" style="grid-row-start: ${i}; grid-row-end: ${i};"></div>
-                                    <div class="${cellButtonsAndIconsId}" style="text-align: right; grid-row-start: ${i}; grid-row-end: ${i};">
+                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+1}; grid-row-end: ${i+1};">${keyName}</div>
+                                    <div class="${cellId} grid-main" style="grid-row-start: ${i+1}; grid-row-end: ${i+1};"></div>
+                                    <div class="${cellButtonsAndIconsId}" style="text-align: right; grid-row-start: ${i+1}; grid-row-end: ${i+1};">
                                         <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
                                     </div>`)
                 this.makeEditIconEvent(editAttributeButton)
               }
-            } else if (this.options.sections[i-1] === 'r') {
+            } else if (this.sections[i-1] === 'r') {
 
-              if (rowSectionStartIndex === 'null') {rowSectionStartIndex=i; var j=1;} else {j=j+3}
+              if (rowSectionStartIndex === 'null') {rowSectionStartIndex=i+2; var j=1;} else {j=j+3}
 
               $(this.metadataGridSelector).css("grid-template-columns", "2fr 6fr 2fr 2fr 2fr 2fr")
 
@@ -349,9 +384,55 @@ export class MetadataEditor {
                                     </div>`)
                 this.makeEditIconEvent(editAttributeButton)
               }
+            } else if (this.sections[i-1] === 'u') {
+
+              let cellId = "entity_attr" + i
+              let editAttributeButton = "entity_attr" + i + "_editButton"
+              let keyName = this.entity.keys[i-1] + "&emsp;&emsp;"
+
+              if (this.options.mode !== this.mode.show) {
+                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+2}; grid-row-end: ${i+2};">${keyName}</div>
+                                    <div class="${cellId} grid-main" style="grid-row-start: ${i+2}; grid-row-end: ${i+2};"></div>`)
+              } else {
+                let cellButtonsAndIconsId = cellId + "_tableCellButton"
+                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+3}; grid-row-end: ${i+3};">${keyName}</div>
+                                    <div class="${cellId} grid-main" style="grid-row-start: ${i+3}; grid-row-end: ${i+3};"></div>
+                                    <div class="${cellButtonsAndIconsId}" style="text-align: right; grid-row-start: ${i+3}; grid-row-end: ${i+3};">
+                                        <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
+                                    </div>`)
+                this.makeEditIconEvent(editAttributeButton)
+              }
             }
           }
         break
+    }
+  }
+
+  getDisplayName(predicateCode) {
+
+    switch (predicateCode) {
+      case pUrl:
+        return 'URL'
+      case pDateOfBirth:
+        return 'Date of Birth'
+      case pDateOfDeath:
+        return 'Date of Death'
+      case pDarePersonId:
+        return 'Dare ID'
+      case pWikiDataId:
+        return 'WikiData ID'
+      case pLocId:
+        return 'Loc ID'
+      case pViafId:
+        return 'Viaf ID'
+      case pGNDId:
+        return 'GND ID'
+      case pOrcid:
+        return 'ORC ID'
+      case 'name':
+        return 'Name'
+      default:
+        return 'null'
     }
   }
 

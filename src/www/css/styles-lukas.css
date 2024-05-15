@@ -386,7 +386,6 @@ ul.matched-persons li {
 div.metadataEditorGridContainer {
     display: grid;
     grid-template-areas: 'header main';
-    grid-template-columns: 2fr 4fr 2fr;
     grid-row-gap: 5px;
 }
 
@@ -399,10 +398,34 @@ div.metadataEditorGridContainer {
 div.grid-header {
     grid-area: header;
     text-align: left;
+    grid-column-start: 1;
+    grid-column-end: 4;
 }
 
 
 div.grid-main {
     grid-area: main;
     text-align: left;
+    grid-column-start: 4;
+    grid-column-end: 10;
+}
+
+div.grid-icons {
+    text-align: right;
+    grid-column-start: 10;
+    grid-column-end: 12;
+}
+
+div.grid-header-row {
+    grid-area: header;
+    text-align: left;
+}
+
+div.grid-main-row {
+    grid-area: main;
+    text-align: left;
+}
+
+div.grid-icons-row {
+    text-align: right;
 }

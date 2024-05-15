@@ -2,17 +2,7 @@ import {OptionsChecker} from "@thomas-inst/optionschecker";
 import {urlGen} from "../pages/common/SiteUrlGen";
 import {TagEditor} from "../widgets/TagEditorLukas";
 import {ConfirmDialog} from "../pages/common/ConfirmDialog";
-import {
-  pDarePersonId,
-  pDateOfBirth,
-  pDateOfDeath,
-  pGNDId, pLocId,
-  pOrcid,
-  pStatementEditorialNote,
-  pUrl,
-  pViafId, pWikiDataId,
-  tPerson
-} from "../constants/Entity";
+import * as entityConstants from "../constants/Entity";
 
 export class MetadataEditor {
 
@@ -159,7 +149,7 @@ export class MetadataEditor {
     console.log(this.options.genericSchema)
     console.log(this.options.genericEntityData)
 
-    if (this.options.genericSchema.typeId === tPerson) {
+    if (this.options.genericSchema.typeId === entityConstants.tPerson) {
       console.log('YES')
     }
 
@@ -199,17 +189,37 @@ export class MetadataEditor {
               }
 
               this.entity.values.push(statement.object)
-              this.entity.keys.push(predicate.title)
+
+              if (predicate.title !== '') {this.entity.keys.push(predicate.title)}
+              else if (predicate.iconUrl !== '') {this.entity.keys.push(predicate.iconUrl)}
+              else {
+                for (let metadata of statement.statementMetadata) {
+                  if (metadata[0] === entityConstants.pObjectUrlType) {
+                    this.entity.keys.push(this.getDisplayName(metadata[1]))
+                  }
+                }
+              }
+
               for (let statementMetadata of statement.statementMetadata) {
-                if (statementMetadata[0] === pStatementEditorialNote) {
+                if (statementMetadata[0] === entityConstants.pStatementEditorialNote) {
                   this.entity.notes.push(statementMetadata[1])
                 }
               }
-              this.entity.types.push('text')
-              // this.entity.types.push(predicate.validObjectTypes) // WHERE DO I FIND THE VALID OBJET TYPES?
+
+              // THIS HAS TO BE REPLACED BY: this.entity.types.push(predicate.validObjectTypes)
+              switch (section.title) {
+                case 'Biographical Data':
+                  this.entity.types.push(['text', 'empty'])
+                  break
+                case 'External Links':
+                  this.entity.types.push(['url', 'empty'])
+                  break
+                case '':
+                  this.entity.types.push(['text', 'number', 'mixed', 'empty'])
+              }
             }
           }
-      }
+        }
       }
     }
 
@@ -343,21 +353,19 @@ export class MetadataEditor {
 
             if (this.sections[i-1] === 'c') {
 
-              $(this.metadataGridSelector).css("grid-template-columns", "4fr 4fr 2fr")
-
               var rowSectionStartIndex = 'null';
               let cellId = "entity_attr" + i
               let editAttributeButton = "entity_attr" + i + "_editButton"
               let keyName = this.entity.keys[i-1] + "&emsp;&emsp;"
 
               if (this.options.mode !== this.mode.show) {
-                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+1}; grid-row-end: ${i+1};">${keyName}</div>
-                                    <div class="${cellId} grid-main" style="grid-row-start: ${i}; grid-row-end: ${i};"></div>`)
+                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+1}; grid-row-end: ${i+1}">${keyName}</div>
+                                    <div class="${cellId} grid-main" style="grid-row-start: ${i+1}; grid-row-end: ${i+1};"></div>`)
               } else {
                 let cellButtonsAndIconsId = cellId + "_tableCellButton"
                 $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+1}; grid-row-end: ${i+1};">${keyName}</div>
                                     <div class="${cellId} grid-main" style="grid-row-start: ${i+1}; grid-row-end: ${i+1};"></div>
-                                    <div class="${cellButtonsAndIconsId}" style="text-align: right; grid-row-start: ${i+1}; grid-row-end: ${i+1};">
+                                    <div class="${cellButtonsAndIconsId} grid-icons" style="text-align: right; grid-row-start: ${i+1}; grid-row-end: ${i+1};">
                                         <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
                                     </div>`)
                 this.makeEditIconEvent(editAttributeButton)
@@ -366,20 +374,18 @@ export class MetadataEditor {
 
               if (rowSectionStartIndex === 'null') {rowSectionStartIndex=i+2; var j=1;} else {j=j+3}
 
-              $(this.metadataGridSelector).css("grid-template-columns", "2fr 6fr 2fr 2fr 2fr 2fr")
-
               let cellId = "entity_attr" + i
               let editAttributeButton = "entity_attr" + i + "_editButton"
-              let keyName = this.entity.keys[i - 1] + "&emsp;&emsp;"
+              let keyName = `<img class="id-logo" src=${this.entity.keys[i-1] + "&emsp;&emsp;"}>`
 
               if (this.options.mode !== this.mode.show) {
-                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: 6; grid-row-end: 6;">${keyName}</div>
-                                    <div class="${cellId} grid-main" style="grid-row-start: 6; grid-row-end: 6;"></div>`)
+                $(this.metadataGridSelector).append(`<div class="grid-header-row" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j}; grid-column-end: ${j};">${keyName}</div>
+                                    <div class="${cellId} grid-main-row" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j+1}; grid-column-end: ${j+1};"></div>`)
               } else {
                 let cellButtonsAndIconsId = cellId + "_tableCellButton"
-                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j}; grid-column-end: ${j};">${keyName}</div>
-                                    <div class="${cellId} grid-main" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j+1}; grid-column-end: ${j+1};"></div>
-                                    <div class="${cellButtonsAndIconsId}" style="text-align: right; grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j+2}; grid-column-end: ${j+2};">
+                $(this.metadataGridSelector).append(`<div class="grid-header-row" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j}; grid-column-end: ${j};">${keyName}</div>
+                                    <div class="${cellId} grid-main-row" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j+1}; grid-column-end: ${j+1};"></div>
+                                    <div class="${cellButtonsAndIconsId} grid-icons-row" style="text-align: right; grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j+2}; grid-column-end: ${j+2};">
                                         <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
                                     </div>`)
                 this.makeEditIconEvent(editAttributeButton)
@@ -391,13 +397,13 @@ export class MetadataEditor {
               let keyName = this.entity.keys[i-1] + "&emsp;&emsp;"
 
               if (this.options.mode !== this.mode.show) {
-                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+2}; grid-row-end: ${i+2};">${keyName}</div>
-                                    <div class="${cellId} grid-main" style="grid-row-start: ${i+2}; grid-row-end: ${i+2};"></div>`)
+                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+3}; grid-row-end: ${i+3};">${keyName}</div>
+                                    <div class="${cellId} grid-main" style="grid-row-start: ${i+3}; grid-row-end: ${i+3};"></div>`)
               } else {
                 let cellButtonsAndIconsId = cellId + "_tableCellButton"
                 $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+3}; grid-row-end: ${i+3};">${keyName}</div>
                                     <div class="${cellId} grid-main" style="grid-row-start: ${i+3}; grid-row-end: ${i+3};"></div>
-                                    <div class="${cellButtonsAndIconsId}" style="text-align: right; grid-row-start: ${i+3}; grid-row-end: ${i+3};">
+                                    <div class="${cellButtonsAndIconsId} grid-icons" style="text-align: right; grid-row-start: ${i+3}; grid-row-end: ${i+3};">
                                         <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
                                     </div>`)
                 this.makeEditIconEvent(editAttributeButton)
@@ -411,23 +417,33 @@ export class MetadataEditor {
   getDisplayName(predicateCode) {
 
     switch (predicateCode) {
-      case pUrl:
+      case entityConstants.UrlTypeGeneric:
         return 'URL'
-      case pDateOfBirth:
+      case entityConstants.UrlTypeViaf:
+        return 'VIAF'
+      case entityConstants.UrlTypeDb:
+        return 'DB'
+      case entityConstants.UrlTypeDnb:
+        return 'DNB'
+      case entityConstants.UrlTypeWikipedia:
+        return 'Wikipedia'
+      case entityConstants.pUrl:
+        return 'URL'
+      case entityConstants.pDateOfBirth:
         return 'Date of Birth'
-      case pDateOfDeath:
+      case entityConstants.pDateOfDeath:
         return 'Date of Death'
-      case pDarePersonId:
+      case entityConstants.pDarePersonId:
         return 'Dare ID'
-      case pWikiDataId:
+      case entityConstants.pWikiDataId:
         return 'WikiData ID'
-      case pLocId:
+      case entityConstants.pLocId:
         return 'Loc ID'
-      case pViafId:
+      case entityConstants.pViafId:
         return 'Viaf ID'
-      case pGNDId:
+      case entityConstants.pGNDId:
         return 'GND ID'
-      case pOrcid:
+      case entityConstants.pOrcid:
         return 'ORC ID'
       case 'name':
         return 'Name'
@@ -495,7 +511,8 @@ export class MetadataEditor {
         $(selector).append(value)
 
       } else if (type.includes('url')) {
-        let extLink = 'http://' + value
+        let extLink
+        if (value[0] !== 'h') {extLink = 'http://' + value} else {extLink = value}
         value = `<a target="_blank" href=${extLink}>${value}</a>`
         $(selector).append(value)
       } else {
@@ -1488,7 +1505,7 @@ export class MetadataEditor {
   }
 
   isUrl(str) {
-    return /www\..+\..+/.test(str)
+    return /www\..+\..+/.test(str) || /http.+\/\/.+\..+/.test(str)
   }
 
   containsNumber(str) {
@@ -1496,11 +1513,11 @@ export class MetadataEditor {
   }
 
   containsOnlyNumbers(str) {
-    return /^\d+$/.test(str);
+    return /^\d+$/.test(str)
   }
 
   isDate(str) {
-    return /.+-.+-.+/.test(str)
+    return /..-..-.+/.test(str) || /..-..-.+-.+/.test(str)
   }
 
   // Error Communication and Logging

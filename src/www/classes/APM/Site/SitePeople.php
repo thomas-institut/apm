@@ -76,7 +76,7 @@ class SitePeople extends SiteController
         }
 
         $data['sortName'] = $rawEntityData->getObjectForPredicate(Entity::pSortName);
-        $data['description'] = $rawEntityData->getObjectForPredicate(Entity::pEntityDescription);
+        $data['description'] = $rawEntityData->getObjectForPredicate(Entity::pEntityDescription) ?? '';
         $data['dateOfBirth'] = $rawEntityData->getObjectForPredicate(Entity::pDateOfBirth);
         $data['dateOfDeath'] = $rawEntityData->getObjectForPredicate(Entity::pDateOfDeath);
         $data['viafId'] = $rawEntityData->getObjectForPredicate(Entity::pViafId);

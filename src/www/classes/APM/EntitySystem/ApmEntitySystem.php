@@ -36,7 +36,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    const dataId = '010';
+    const dataId = '011';
 
     const kernelCacheKey = 'ApmEntitySystemKernel';
 
@@ -391,9 +391,9 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             }
             if (count($statements) !== 0) {
                 $statementId = $statements[0][0];
-                $cancellationMetadata[] = [ Entity::pCancelledBy, $author];
+                $cancellationMetadata[] = [ Entity::pCancelledBy, Entity::System];
                 $cancellationMetadata[] = [ Entity::pCancellationTimestamp, strval($ts)];
-                $cancellationMetadata[] = [ Entity::pCancellationEditorialNote, "Setting new value/object for single property $predicate"];
+                $cancellationMetadata[] = [ Entity::pCancellationEditorialNote, "Automatically cancelled when setting new value for single property $predicate"];
                 $commands[] = [ EntitySystem::CancelStatementCommand, $statementId, $cancellationMetadata];
             }
         }

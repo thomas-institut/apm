@@ -25,11 +25,6 @@ class PredicateDefinition extends EntityDefinition
      */
     public ?array $allowedValues = null;
 
-
-
-
-
-
     /**
      * Flags that apply to the predicate
      * (defined in the `PredicateFlag` class)
@@ -51,7 +46,7 @@ class PredicateDefinition extends EntityDefinition
 
 
     /**
-     * List of entity type that are allowed as subject.
+     * List of entity types that are allowed as subject.
      *
      * If null, any type is allowed.
      *
@@ -64,6 +59,9 @@ class PredicateDefinition extends EntityDefinition
      * @var int|null
      */
     public ?int $reversePredicate = null;
+
+
+    public ?array $allowedQualifications = null;
 
     /**
      * If true and the predicate has a reverse, this predicate is the only one that must be

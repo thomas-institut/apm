@@ -42,7 +42,7 @@ export class ApmPage {
      * @deprecated
      */
     this.userId = this.commonData.userInfo['id'];
-    this.userTid = this.commonData.userInfo['id'];
+    this.userTid = this.commonData.userInfo['tid'];
     this.userName = this.commonData.userInfo.userName;
 
     this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId);

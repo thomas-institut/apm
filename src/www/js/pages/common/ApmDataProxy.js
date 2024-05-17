@@ -201,7 +201,8 @@ export class ApmDataProxy {
   }
 
   getEntityData(tid) {
-    return this.fetch(urlGen.apiEntityGetData(tid), 'GET', {},false, false, shortTtl);
+    let ttl = tid < 1000000 ? 24*3600 : shortTtl;
+    return this.fetch(urlGen.apiEntityGetData(tid), 'GET', {},false, false, ttl);
   }
 
 

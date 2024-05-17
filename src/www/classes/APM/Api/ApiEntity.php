@@ -309,6 +309,24 @@ class ApiEntity extends ApiController
             }
         }
 
+        $entitiesInvolved = [];
+        foreach($commands as $command) {
+            $entitiesInvolved[]  = $command['subject'];
+            $entitiesInvolved[] = $command['object'];
+        }
+
+        foreach ($entitiesInvolved as $entity) {
+            try {
+                if ($es->getEntityType($entity) === Entity::tPerson) {
+                    $this->systemManager->onPersonDataChanged($entity);
+                    break;
+                }
+            } catch (EntityDoesNotExistException) {
+                // should never happen
+            }
+        }
+
+
         return $this->responseWithJson($response, [
            'success' => $success,
            'errorCode' => $success ? self::Error_NoError : self::Error_SomeCommandsFailed,
@@ -408,6 +426,7 @@ class ApiEntity extends ApiController
         $dod->title = 'Date of Death';
         $dod->displayIfNotSet = true;
         $dod->isUniqueInSection = true;
+        $dob->validObjectTypes = [ Entity::ValueTypeVagueDate];
         $bioSection->predicates  = [ $dob, $dod];
 
         $externalIdsSection = new Section();

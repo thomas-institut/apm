@@ -208,6 +208,8 @@ export class PersonPageNew extends NormalPage {
       return html;
     }).join('')
 
+    let descriptionHtml = this.personData['description'];
+
     let dataHtml = [
       [ tr('Sort Name'), this.personData['sortName']],
       [ tr('Date of Birth'), this.personData['dateOfBirth']],
@@ -226,6 +228,7 @@ export class PersonPageNew extends NormalPage {
     return `
     <div>${breadcrumbHtml}</div>
      <h1 class="">${this.personData.name}</h1>
+     <div class="section person-description">${descriptionHtml}</div>
      
      <div class="section person-entity-data">${dataHtml}</div>
      <div class="section person-ids">${idsHtml}</div>

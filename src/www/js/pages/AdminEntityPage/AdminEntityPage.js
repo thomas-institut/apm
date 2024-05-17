@@ -31,12 +31,76 @@ export class AdminEntityPage extends NormalPage {
 
     this.data = this.options.entityData;
     this.predicateDefs = this.options.predicateDefs;
+    this.statements = this.data.statements;
 
     this.entityId = this.data['id'];
     this.title = `Ent. ${this.entityId}`;
     this.initPage().then( () => {
-      $('.new-statement-btn').on('click', this.genOnClickNewStatementButton());
+      $(`.new-statement-btn`).on('click', this.genOnClickNewStatementButton());
+      $('.cancel-statement-btn').on('click', this.genOnClickCancelStatementButton());
+      $('.edit-statement-btn').on('click', this.genOnClickEditStatementButton());
     })
+  }
+
+  genOnClickCancelStatementButton() {
+    return (ev) => {
+      ev.preventDefault();
+      console.log('Click on cancel statement button')
+      let statementId = this.getIdFromClassNameString(ev.target.className, 'statement');
+      if (statementId === null || statementId < 0) {
+        console.log(`Invalid statement id in classes ${ev.target.className}`);
+        return;
+      }
+      console.log(`Statement id: ${statementId}`);
+    }
+  }
+
+  genOnClickEditStatementButton() {
+    return (ev) => {
+      ev.preventDefault();
+      console.log('Click on edit statement button')
+      let statementId = this.getIdFromClassNameString(ev.target.className, 'statement');
+      if (statementId === null || statementId < 0) {
+        console.log(`Invalid statement id in classes ${ev.target.className}`);
+        return;
+      }
+      console.log(`Statement id: ${statementId}`);
+
+      let statement = this.statements.filter((statement) => statement.id === statementId)[0];
+      if (statement === undefined) {
+        console.warn(`Undefined statement ${statementId}`);
+        return;
+      }
+      new GenericStatementEditor({
+        statementId: statementId,
+        editableParts : [ false, false, true],
+        subject: this.entityId,
+        predicate: statement.predicate,
+        object: statement.object,
+        relation: typeof statement.object === 'number',
+        allowedQualifications: this.predicateDefs[statement.predicate].allowedQualifications,
+        onSuccess: this.genOnStatementEditorSuccess(),
+        getEntityName: this.genGetEntityName(),
+      })
+
+    }
+  }
+
+  genGetEntityName() {
+    return (id) => {
+      return this.getEntityName(id, false);
+    }
+  }
+
+  getIdFromClassNameString(classNameString, prefix) {
+    let classes = classNameString.split(' ');
+    for (let i = 0; i < classes.length; i++) {
+      let [name, value] = classes[i].split('-');
+      if (name === prefix) {
+        return parseInt(value);
+      }
+    }
+    return null;
   }
 
   genOnClickNewStatementButton() {
@@ -47,13 +111,7 @@ export class AdminEntityPage extends NormalPage {
       let classes = ev.target.className.split(' ');
       let asSubject = classes.indexOf('as-subject') !== -1;
       let relation = classes.indexOf('is-relation') !== -1;
-      let predicate = null;
-      classes.forEach( (className) => {
-        let [ name, value] = className.split('-');
-        if (name === 'predicate') {
-          predicate = parseInt(value);
-        }
-      })
+      let predicate = this.getIdFromClassNameString(ev.target.className, 'predicate');
       if (predicate === null) {
         console.log("No predicate defined");
         return;
@@ -61,9 +119,13 @@ export class AdminEntityPage extends NormalPage {
       if (asSubject) {
         console.log(`New statement as subject, predicate ${predicate}`);
         new GenericStatementEditor({
+          editableParts : [ false, false, true],
           subject: this.entityId,
           predicate: predicate,
           relation: relation,
+          allowedQualifications: this.predicateDefs[predicate].allowedQualifications,
+          onSuccess: this.genOnStatementEditorSuccess(),
+          getEntityName: this.genGetEntityName()
         })
 
       } else {
@@ -71,6 +133,12 @@ export class AdminEntityPage extends NormalPage {
         console.log(`Not implemented yet`);
       }
 
+    }
+  }
+
+  genOnStatementEditorSuccess() {
+    return () => {
+      window.location.reload();
     }
   }
 
@@ -118,7 +186,7 @@ export class AdminEntityPage extends NormalPage {
       let typeClass = def.type === 101 ? 'is-relation' : 'is-attribute';
       html += `<tr>
         <td>${await this.getEntityHtml(predicates[i])}</td>
-        <td><a class="btn btn-primary btn-sm new-statement-btn ${asSubject ? 'as-subject' : 'as-object'} predicate-${predicates[i]} ${typeClass}"
+        <td><a class="btn btn-outline-secondary btn-sm new-statement-btn ${asSubject ? 'as-subject' : 'as-object'} predicate-${predicates[i]} ${typeClass}"
         title="Click to create a new statement with the entity as ${asSubject ? 'subject' : 'object'}">
         New Statement</a></td>
         </tr>`;
@@ -146,9 +214,13 @@ export class AdminEntityPage extends NormalPage {
         </div>`;
   }
 
-  async getEntityName(id) {
-    if (id === this.entityId) {
+  async getEntityName(id, suppressOwnEntity = true) {
+    if (isNaN(id)) {
+      console.warn("Request for entity name for non-numerical id", id);
       return '';
+    }
+    if (id === this.entityId) {
+      return suppressOwnEntity ? '' : this.data.name;
     }
     if (this.predicateDefs[id] !== undefined) {
       return this.predicateDefs[id]['name'];
@@ -278,6 +350,12 @@ export class AdminEntityPage extends NormalPage {
         } else {
           if (predicateDef['canBeCancelled'] === false) {
             spans.push('<span class="not-cancellable-notice">Cannot be cancelled</span>');
+            spans.push(`<span class="edit-buttons-span"><a class="btn btn-outline-secondary btn-sm edit-statement-btn statement-${statement['id']}">Edit</a></span>`);
+          } else {
+            spans.push(`<span class="edit-buttons-span">
+                <a class="btn btn-outline-secondary btn-sm cancel-statement-btn statement-${statement['id']}">Cancel</a>
+                <a class="btn btn-outline-secondary btn-sm edit-statement-btn statement-${statement['id']}">Edit</a>
+                </span>`);
           }
         }
 

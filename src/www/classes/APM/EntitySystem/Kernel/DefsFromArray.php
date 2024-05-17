@@ -81,6 +81,7 @@ class DefsFromArray
             $def->singleProperty = $definitionObject['singleProperty'] ?? false;
             $def->allowedSubjectTypes = $definitionObject['allowedSubjectTypes'] ?? null;
             $def->allowedObjectTypes = $definitionObject['allowedObjectTypes'] ?? null;
+            $def->allowedQualifications = $definitionObject['allowedQualifications'] ?? null;
             $def->allowedValues = $definitionObject['allowedValues'] ?? null;
             $def->reversePredicate = $definitionObject['reversePredicate'] ?? null;
             $def->isPrimaryRelation = $definitionObject['isPrimaryRelation'] ?? true;

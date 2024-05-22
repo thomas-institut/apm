@@ -386,7 +386,9 @@ ul.matched-persons li {
 div.metadataEditorGridContainer {
     display: grid;
     grid-template-areas: 'header main';
+    grid-template-columns: 1fr 2fr 1fr 1fr 2fr 1fr 1fr 2fr 1fr;
     grid-row-gap: 5px;
+    grid-column-gap: 5px;
 }
 
 #person-metadata-editor-container {
@@ -417,15 +419,19 @@ div.grid-icons {
 }
 
 div.grid-header-row {
-    grid-area: header;
     text-align: left;
 }
 
 div.grid-main-row {
-    grid-area: main;
-    text-align: left;
+    text-align: center;
 }
 
 div.grid-icons-row {
     text-align: right;
+}
+
+.entity_attr0 {
+    text-align: left;
+    font-size: 24px;
+    font-weight: bold;
 }

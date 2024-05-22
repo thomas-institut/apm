@@ -52,4 +52,9 @@ class NullDataCache implements DataCache
     {
         // do nothing
     }
+
+    public function getRemainingTtl(string $key): int
+    {
+        return -1;
+    }
 }

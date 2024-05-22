@@ -3,6 +3,7 @@ import {urlGen} from "../pages/common/SiteUrlGen";
 import {TagEditor} from "../widgets/TagEditorLukas";
 import {ConfirmDialog} from "../pages/common/ConfirmDialog";
 import * as entityConstants from "../constants/Entity";
+import {EditableTextField} from "../widgets/EditableTextField";
 
 export class MetadataEditor {
 
@@ -10,20 +11,14 @@ export class MetadataEditor {
 
     const optionsDefinition = {
       containerSelector: { type:'string', required: true},
-      //entityId: {type:'string', required: true},
-      //entityType: {type:'string', required: true},
-      //metadata: {type:'object', required: false, default: {values: [], notes: []}},
-      //metadataSchema: {type: 'object', required: true},
+      entityDataSchema: {type: 'object', required: true},
+      entityData: {type: 'object', required: false, default: {}},
       mode: {type:'string', required: true},
-      callback: {type:'function', required: true},
-      theme: {type:'string', required: true},
-      sections: {type:'array', required: false, default: ['c']},
+      onSave: {type:'function', required: true},
       backlink: {type:'string', required: false, default: ''},
-      dialog: {type: 'object', required: false, default: {}},
+      dialogWindow: {type: 'object', required: false, default: {}},
       dialogRootMetadataEditor: {type: 'object', required: false, default: {}},
-      dialogRootInputFormSelector: {type:'string', required: false, default: ''},
-      genericSchema: {type: 'object', required: false, default: {}},
-      genericEntityData: {type: 'object', required: false, default: {}}
+      dialogRootInputFormSelector: {type:'string', required: false, default: ''}
     }
 
     const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "MetadataEditor"})
@@ -33,10 +28,11 @@ export class MetadataEditor {
     this.makeHtmlStructureForMetadataEditor()
 
     // globals
-    this.entity = {id: '', type: '', keys: [], values: [], types: [], notes: []} // this object gets always updated with the latest metadata
-    this.numKeys = 0
-    this.numSections = this.options.sections.length
+    this.entity = {id: '', type: '', predicates: [], objects: [], validObjectTypes: [], notes: []} // this object gets always updated with the latest metadata
+    this.numPredicates = 0
     this.mode = {create: 'create', edit: 'edit', show: 'show', dialog: 'dialog'}
+    this.sectionTitles = []
+    this.sectionStructure = []
     this.tagEditor = undefined
     this.singleEditingActive = false
     this.people = []
@@ -69,23 +65,11 @@ export class MetadataEditor {
   // Editor Setup
   makeHtmlStructureForMetadataEditor() {
 
-    // define tableClass depending on the desired theme
-    let tableClass
-    switch (this.options.theme) {
-      case 'vertical':
-        tableClass = 'table'
-        break
-      case 'horizontal':
-        tableClass = 'dataTable'
-        break
-    }
-
     this.metadataGridSelector = `${this.options.containerSelector} .metadataEditorGridContainer`
 
     $(this.options.containerSelector).html(
-        `<br>
+        `<div class="entity_attr0"></div>
                             <div class="buttons_top" align="right"></div>
-                            <br>
                             <div class='metadataEditorGridContainer'>
                             </div>
                             <div class="buttons_bottom" align="left"></div>
@@ -146,56 +130,36 @@ export class MetadataEditor {
   // updates the empty object this.entity with the data from this.options when instantiating a new metadata editor
   buildEntity(callback) {
 
-    console.log(this.options.genericSchema)
-    console.log(this.options.genericEntityData)
+    console.log(this.options.entityDataSchema)
+    console.log(this.options.entityData)
 
-    if (this.options.genericSchema.typeId === entityConstants.tPerson) {
-      console.log('YES')
+    if (this.options.entityDataSchema.typeId === entityConstants.tPerson) {
+      console.log('Entity is of type person')
     }
 
     if (this.entity.id === '') {
-      //this.entity.id = this.options.entityId
-      this.entity.id = this.options.genericEntityData.id
+      this.entity.id = this.options.entityData.id
     }
 
-    //this.entity.type = this.options.entityType
-    this.entity.type = this.options.genericEntityData.type
+    this.entity.type = this.options.entityData.type
 
-    if (this.entity.values.length === 0) { // After having edited and saved values and notes, they get updated via the updateEntityData function
-      // this.entity.values = this.options.metadata.values
-      // this.entity.notes = this.options.metadata.notes
+    if (this.entity.objects.length === 0) { // After having edited and saved objects and notes, they get updated via the updateEntityData function
 
-      this.sectionTitles = []
-      this.sections = []
-
-      for (let section of this.options.genericSchema.sections) {
+      for (let section of this.options.entityDataSchema.sections) {
         this.sectionTitles.push(section.title)
-        for (let statement of this.options.genericEntityData.statements) {
+        for (let statement of this.options.entityData.statements) {
           for (let predicate of section.predicates) {
             if (statement.predicate === predicate.id) {
 
-              switch (section.type) {
-                case 'verticalList':
-                  this.sections.push('c')
-                  break
-                case 'horizontalList':
-                  this.sections.push('r')
-                  break
-                case 'urlList':
-                  this.sections.push('u')
-                      break
-                default:
-                  this.sections.push('null')
-              }
+              this.sectionStructure.push(section.type)
+              this.entity.objects.push(statement.object)
 
-              this.entity.values.push(statement.object)
-
-              if (predicate.title !== '') {this.entity.keys.push(predicate.title)}
-              else if (predicate.iconUrl !== '') {this.entity.keys.push(predicate.iconUrl)}
+              if (predicate.title !== '') {this.entity.predicates.push(predicate.title)}
+              else if (predicate.iconUrl !== '') {this.entity.predicates.push(predicate.iconUrl)}
               else {
                 for (let metadata of statement.statementMetadata) {
                   if (metadata[0] === entityConstants.pObjectUrlType) {
-                    this.entity.keys.push(this.getDisplayName(metadata[1]))
+                    this.entity.predicates.push(this.getDisplayName(metadata[1]))
                   }
                 }
               }
@@ -206,16 +170,16 @@ export class MetadataEditor {
                 }
               }
 
-              // THIS HAS TO BE REPLACED BY: this.entity.types.push(predicate.validObjectTypes)
+              // THIS HAS TO BE REPLACED BY: this.entity.validObjectTypes.push(predicate.validObjectTypes)
               switch (section.title) {
                 case 'Biographical Data':
-                  this.entity.types.push(['text', 'empty'])
+                  this.entity.validObjectTypes.push(['text', 'empty'])
                   break
                 case 'External Links':
-                  this.entity.types.push(['url', 'empty'])
+                  this.entity.validObjectTypes.push(['url', 'empty'])
                   break
                 case '':
-                  this.entity.types.push(['text', 'number', 'mixed', 'empty'])
+                  this.entity.validObjectTypes.push(['text', 'number', 'mixed', 'empty'])
               }
             }
           }
@@ -223,31 +187,46 @@ export class MetadataEditor {
       }
     }
 
-    // this.entity.keys = this.options.metadataSchema.keys
-    // this.entity.types = this.options.metadataSchema.types
-
-    // store number of keys of the entity
-    this.numKeys = this.entity.keys.length
+    // store number of predicates of the entity
+    this.numPredicates = this.entity.predicates.length
 
     callback()
   }
 
   // updates the empty object this.entity with the data-schema from this.options when creating a new entity
   buildEntitySchema(callback) {
-    this.entity.id = this.options.entityId
-    this.entity.type = this.options.entityType
-    this.entity.keys = this.options.metadataSchema.keys
-    this.entity.types = this.options.metadataSchema.types
+    this.entity.type = this.options.entityDataSchema.typeId
 
-    // store number of values
-    this.numKeys = this.entity.keys.length
+    for (let section of this.options.entityDataSchema.sections) {
+      this.sectionTitles.push(section.title)
+        for (let predicate of section.predicates) {
+
+            this.sectionStructure.push(section.type)
+            this.entity.predicates.push(predicate.title)
+
+            // THIS HAS TO BE REPLACED BY: this.entity.validObjectTypes.push(predicate.validObjectTypes)
+            switch (section.title) {
+              case 'Biographical Data':
+                this.entity.validObjectTypes.push(['text', 'empty'])
+                break
+              case 'External Links':
+                this.entity.validObjectTypes.push(['url', 'empty'])
+                break
+              case '':
+                this.entity.validObjectTypes.push(['text', 'number', 'mixed', 'empty'])
+            }
+        }
+    }
+
+    // store number of objects
+    this.numPredicates = this.entity.predicates.length
 
     callback()
   }
 
-  getValueByKeyFromEntity(key) {
-    let i = this.entity.keys.indexOf(key)
-    return this.entity.values[i]
+  getObjectByPredicateFromEntity(predicate) {
+    let i = this.entity.predicates.indexOf(predicate)
+    return this.entity.objects[i]
   }
 
   getPersonNameByIdFromPeople (id) {
@@ -284,133 +263,97 @@ export class MetadataEditor {
     this.makeTableCells()
   }
 
-  makeTableRows() {
-    switch (this.options.theme) {
-      case 'horizontal':
-        $(this.metadataGridSelector).append(`<div class="row1"></div><div class="row2"></div>`)
-        break
-      case 'vertical':
-        console.log('vertical')
-          for (let i = 1; i <= this.numKeys; i++) {
-            if (this.options.sections[i-1] === 'c') {
-              console.log(this.options.sections[i-1])
-              let className = "row" + i
-            $(this.metadataGridSelector).append(`<div class="${className}" 
-            style="display: grid; 
-                    grid-row-start: ${i}; 
-                    grid-row-end: ${i};
-                    grid-template-areas: 'header main';
-                    grid-template-columns: 2fr 4fr 2fr;"></div>`)
-          } else if (this.options.sections[i-1] === 'r') {
-              console.log(this.options.sections[i-1])
-              let className = "row" + i
-              $(this.metadataGridSelector).append(`<div class="${className}" 
-            style="display: grid; 
-                    grid-row-start: 6; 
-                    grid-row-end: 6;
-                    grid-template-areas: 'header main';
-                    grid-template-columns: 2fr 4fr 2fr;"></div>`)
-
-            }
-          }
-          break
-    }
-  }
-
   makeTableCells () {
-    switch (this.options.theme) {
-      case 'horizontal':
-        for (let i = 1; i <= this.numKeys; i++) {
 
-          let cellId = "entity_attr" + i
+    if (this.options.mode === this.mode.dialog || this.options.mode === this.mode.create) {
+      new EditableTextField({
+        verbose: false,
+        containerSelector: `${this.options.containerSelector+' .entity_attr0'}`,
+        initialText: 'Name',
+        editIcon: '<i class="fas fa-pencil-alt fa-2xs" style="color: dimgray"></i>',
+        confirmIcon: '<i class="fa fa-check fa-2xs" style="color: green"></i>',
+        cancelIcon: '<i class="fa fa-times fa-2xs" style="color: darkred"></i>',
+        onConfirm: () => {console.log('CONFIRMED')} // PUT IN HERE API CALL TO SAVE NEW STATEMENT
+      })
+    } else {
+      new EditableTextField({
+        verbose: false,
+        containerSelector: `${this.options.containerSelector+' .entity_attr0'}`,
+        initialText: this.options.entityData.name,
+        editIcon: '<i class="fas fa-pencil-alt fa-2xs" style="color: dimgray"></i>',
+        confirmIcon: '<i class="fa fa-check fa-2xs" style="color: green"></i>',
+        cancelIcon: '<i class="fa fa-times fa-2xs" style="color: darkred"></i>',
+        onConfirm: () => {console.log('CONFIRMED')} // PUT IN HERE API CALL TO SAVE NEW STATEMENT
+      })
+    }
 
-          if (this.options.mode === this.mode.show) {
-            let cellButtonsAndIconsId = cellId + "_tableCellButton"
-            let editAttributeButton = "entity_attr" + i + "_editButton"
-            $(`${this.options.containerSelector} .row1`).append(`<div>${this.entity.keys[i-1]}</div><div></div>`)
-            $(`${this.options.containerSelector} .row2`).append(`<div><div class=${cellId}></div></div>
-                                                <div class=${cellButtonsAndIconsId} style="width: 3em; text-align: center">
-                                                    <button class=${editAttributeButton} style="border: transparent; background-color: transparent">
-                                                        <i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
-                                                </div>`)
-            this.makeEditIconEvent(editAttributeButton)
-          } else {
-            $(`${this.options.containerSelector} .row1`).append(`<div>${this.entity.keys[i-1]}</div>`)
-            $(`${this.options.containerSelector} .row2`).append(`<div><div class=${cellId}></div></div>`)
-          }
+    let sectionIndex = 0
+
+    for (let i = 1; i <= this.numPredicates; i++) {
+
+      if (this.sectionStructure[i-1] !== this.sectionStructure[i-2]) {
+        $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+sectionIndex}; grid-row-end: ${i+sectionIndex}; grid-column-start: 0; grid-column-end: 6; font-size: large"><br><b>${this.sectionTitles[sectionIndex]}</b></div>`)
+        sectionIndex++
+      }
+
+      if (this.sectionStructure[i-1] === 'verticalList') {
+
+        var rowSectionStartIndex = 'null';
+        let cellId = "entity_attr" + i
+        let editAttributeButton = "entity_attr" + i + "_editButton"
+        let predicateName = this.entity.predicates[i-1] + "&emsp;&emsp;"
+
+        if (this.options.mode !== this.mode.show) {
+          $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+1}; grid-row-end: ${i+1}">${predicateName}</div>
+                              <div class="${cellId} grid-main" style="grid-row-start: ${i+1}; grid-row-end: ${i+1};"></div>`)
+        } else {
+          let cellButtonsAndIconsId = cellId + "_tableCellButton"
+          $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+1}; grid-row-end: ${i+1};">${predicateName}</div>
+                              <div class="${cellId} grid-main" style="grid-row-start: ${i+1}; grid-row-end: ${i+1};"></div>
+                              <div class="${cellButtonsAndIconsId} grid-icons" style="text-align: right; grid-row-start: ${i+1}; grid-row-end: ${i+1};">
+                                  <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
+                              </div>`)
+          this.makeEditIconEvent(editAttributeButton)
         }
-        break
-      case 'vertical':
+      } else if (this.sectionStructure[i-1] === 'horizontalList') {
 
-        let sectionIndex = 0
-          for (let i = 1; i <= this.numKeys; i++) {
+        if (rowSectionStartIndex === 'null') {rowSectionStartIndex=i+2; var j=1;} else {j=j+3}
 
-            if (this.sections[i-1] !== this.sections[i-2]) {
-              $(this.metadataGridSelector).css("grid-template-columns", "6fr")
-              $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+sectionIndex}; grid-row-end: ${i+sectionIndex}; grid-column-start: 0; grid-column-end: 3; font-size: large"><br><b>${this.sectionTitles[sectionIndex]}</b></div>`)
-              sectionIndex++
-            }
+        let cellId = "entity_attr" + i
+        let editAttributeButton = "entity_attr" + i + "_editButton"
+        let predicateName = `<img class="id-logo" src=${this.entity.predicates[i-1] + "&emsp;&emsp;"}>`
 
-            if (this.sections[i-1] === 'c') {
+        if (this.options.mode !== this.mode.show) {
+          $(this.metadataGridSelector).append(`<div class="grid-header-row" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j}; grid-column-end: ${j};">${predicateName}</div>
+                              <div class="${cellId} grid-main-row" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j+1}; grid-column-end: ${j+1};"></div>`)
+        } else {
+          let cellButtonsAndIconsId = cellId + "_tableCellButton"
+          $(this.metadataGridSelector).append(`<div class="grid-header-row" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j}; grid-column-end: ${j};">${predicateName}</div>
+                              <div class="${cellId} grid-main-row" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j+1}; grid-column-end: ${j+1};"></div>
+                              <div class="${cellButtonsAndIconsId} grid-icons-row" style="text-align: right; grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j+2}; grid-column-end: ${j+2};">
+                                  <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
+                              </div>`)
+          this.makeEditIconEvent(editAttributeButton)
+        }
+      } else if (this.sectionStructure[i-1] === 'urlList') {
 
-              var rowSectionStartIndex = 'null';
-              let cellId = "entity_attr" + i
-              let editAttributeButton = "entity_attr" + i + "_editButton"
-              let keyName = this.entity.keys[i-1] + "&emsp;&emsp;"
+        let cellId = "entity_attr" + i
+        let editAttributeButton = "entity_attr" + i + "_editButton"
+        let predicateName = this.entity.predicates[i-1] + "&emsp;&emsp;"
 
-              if (this.options.mode !== this.mode.show) {
-                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+1}; grid-row-end: ${i+1}">${keyName}</div>
-                                    <div class="${cellId} grid-main" style="grid-row-start: ${i+1}; grid-row-end: ${i+1};"></div>`)
-              } else {
-                let cellButtonsAndIconsId = cellId + "_tableCellButton"
-                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+1}; grid-row-end: ${i+1};">${keyName}</div>
-                                    <div class="${cellId} grid-main" style="grid-row-start: ${i+1}; grid-row-end: ${i+1};"></div>
-                                    <div class="${cellButtonsAndIconsId} grid-icons" style="text-align: right; grid-row-start: ${i+1}; grid-row-end: ${i+1};">
-                                        <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
-                                    </div>`)
-                this.makeEditIconEvent(editAttributeButton)
-              }
-            } else if (this.sections[i-1] === 'r') {
-
-              if (rowSectionStartIndex === 'null') {rowSectionStartIndex=i+2; var j=1;} else {j=j+3}
-
-              let cellId = "entity_attr" + i
-              let editAttributeButton = "entity_attr" + i + "_editButton"
-              let keyName = `<img class="id-logo" src=${this.entity.keys[i-1] + "&emsp;&emsp;"}>`
-
-              if (this.options.mode !== this.mode.show) {
-                $(this.metadataGridSelector).append(`<div class="grid-header-row" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j}; grid-column-end: ${j};">${keyName}</div>
-                                    <div class="${cellId} grid-main-row" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j+1}; grid-column-end: ${j+1};"></div>`)
-              } else {
-                let cellButtonsAndIconsId = cellId + "_tableCellButton"
-                $(this.metadataGridSelector).append(`<div class="grid-header-row" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j}; grid-column-end: ${j};">${keyName}</div>
-                                    <div class="${cellId} grid-main-row" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j+1}; grid-column-end: ${j+1};"></div>
-                                    <div class="${cellButtonsAndIconsId} grid-icons-row" style="text-align: right; grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j+2}; grid-column-end: ${j+2};">
-                                        <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
-                                    </div>`)
-                this.makeEditIconEvent(editAttributeButton)
-              }
-            } else if (this.sections[i-1] === 'u') {
-
-              let cellId = "entity_attr" + i
-              let editAttributeButton = "entity_attr" + i + "_editButton"
-              let keyName = this.entity.keys[i-1] + "&emsp;&emsp;"
-
-              if (this.options.mode !== this.mode.show) {
-                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+3}; grid-row-end: ${i+3};">${keyName}</div>
-                                    <div class="${cellId} grid-main" style="grid-row-start: ${i+3}; grid-row-end: ${i+3};"></div>`)
-              } else {
-                let cellButtonsAndIconsId = cellId + "_tableCellButton"
-                $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+3}; grid-row-end: ${i+3};">${keyName}</div>
-                                    <div class="${cellId} grid-main" style="grid-row-start: ${i+3}; grid-row-end: ${i+3};"></div>
-                                    <div class="${cellButtonsAndIconsId} grid-icons" style="text-align: right; grid-row-start: ${i+3}; grid-row-end: ${i+3};">
-                                        <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
-                                    </div>`)
-                this.makeEditIconEvent(editAttributeButton)
-              }
-            }
-          }
-        break
+        if (this.options.mode !== this.mode.show) {
+          $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+3}; grid-row-end: ${i+3};">${predicateName}</div>
+                              <div class="${cellId} grid-main" style="grid-row-start: ${i+3}; grid-row-end: ${i+3};"></div>`)
+        } else {
+          let cellButtonsAndIconsId = cellId + "_tableCellButton"
+          $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+3}; grid-row-end: ${i+3};">${predicateName}</div>
+                              <div class="${cellId} grid-main" style="grid-row-start: ${i+3}; grid-row-end: ${i+3};"></div>
+                              <div class="${cellButtonsAndIconsId} grid-icons" style="text-align: right; grid-row-start: ${i+3}; grid-row-end: ${i+3};">
+                                  <button class=${editAttributeButton} style="border: transparent; background-color: transparent"><i class="fas fa-pencil-alt" style="color: dimgray"></i></button>
+                              </div>`)
+          this.makeEditIconEvent(editAttributeButton)
+        }
+      }
     }
   }
 
@@ -461,7 +404,7 @@ export class MetadataEditor {
   }
 
   clearTableCells() {
-    for (let i=1; i<=this.numKeys; i++) {
+    for (let i=1; i<=this.numPredicates; i++) {
       let id = "#entity_attr" + i
       $(id).empty()
     }
@@ -477,46 +420,46 @@ export class MetadataEditor {
     this.clearTableCells()
     this.removeSpinner()
 
-    for (let i = 1; i <= this.numKeys; i++) {
+    for (let i = 1; i <= this.numPredicates; i++) {
       let selector = this.options.containerSelector + " .entity_attr" + i
-      let value = this.entity.values[i - 1]
-      let type = this.entity.types[i - 1]
+      let object = this.entity.objects[i - 1]
+      let type = this.entity.validObjectTypes[i - 1]
       let note = this.entity.notes[i - 1]
 
-      if (type.includes('person') && value !== '') {
-        let url = urlGen.sitePerson(value)
-        let linkId = "linktoperson" + value
-        let name = this.getPersonNameByIdFromPeople(value)
-        value = `<a id=${linkId} href=${url} >${name}</a>`
-        $(selector).append(value)
+      if (type.includes('person') && object !== '') {
+        let url = urlGen.sitePerson(object)
+        let linkId = "linktoperson" + object
+        let name = this.getPersonNameByIdFromPeople(object)
+        object = `<a id=${linkId} href=${url} >${name}</a>`
+        $(selector).append(object)
 
       } else if (type.includes('years_range')) {
-        value = this.formatYearForShowModesRangeForShowMode(value)
-        $(selector).append(value)
+        object = this.formatYearForShowModesRangeForShowMode(object)
+        $(selector).append(object)
 
       } else if (type.includes('year')) {
-        value = this.formatYearForShowMode(value)
-        $(selector).append(value)
+        object = this.formatYearForShowMode(object)
+        $(selector).append(object)
 
       } else if (type.includes('tags')) {
         let tagEditorId = 'tag-editor-' + (1 + Math.floor(Math.random() * 10000))
         this.tagEditor = new TagEditor({
           containerSelector: selector,
           idPrefix: tagEditorId,
-          tags: value,
+          tags: object,
           mode: 'show'
         })
       } else if (type.includes('date')) {
-        value = this.formatDateForShowMode(value)
-        $(selector).append(value)
+        object = this.formatDateForShowMode(object)
+        $(selector).append(object)
 
       } else if (type.includes('url')) {
         let extLink
-        if (value[0] !== 'h') {extLink = 'http://' + value} else {extLink = value}
-        value = `<a target="_blank" href=${extLink}>${value}</a>`
-        $(selector).append(value)
+        if (object[0] !== 'h') {extLink = 'http://' + object} else {extLink = object}
+        object = `<a target="_blank" href=${extLink}>${object}</a>`
+        $(selector).append(object)
       } else {
-        $(selector).append(value)
+        $(selector).append(object)
       }
 
       //  add info icon to input field if not a tag field
@@ -566,40 +509,35 @@ export class MetadataEditor {
     }
   }
 
-  setupTableForUserInput(callback, keyIndex='all') {
+  setupTableForUserInput(callback, predicateIndex='all') {
 
-    this.setupInputFormByIndex(keyIndex)
+    this.setupInputFormByIndex(predicateIndex)
 
     if (this.options.mode === this.mode.create || this.options.mode === this.mode.dialog) {
       callback()
     }
     else {
-      this.addValueToInputFormByIndex(keyIndex)
+      this.addValueToInputFormByIndex(predicateIndex)
       callback()
     }
   }
 
-  setupInputFormByIndex(keyIndex) {
-    if (keyIndex === 'all') {
-      for (let i = 1; i <= this.numKeys; i++) {
+  setupInputFormByIndex(predicateIndex) {
+    if (predicateIndex === 'all') {
+      for (let i = 1; i <= this.numPredicates; i++) {
         let selectorId = this.options.containerSelector + " .entity_attr" + i
         let inputFormId = "entity_attr" + i + "_form"
-        let type = this.entity.types[i-1][0] // first possible type of data, set in the corresponding schema, determines type of input form
+        let type = this.entity.validObjectTypes[i-1][0] // first possible type of data, set in the corresponding schema, determines type of input form
 
         this.setupInputFormByType(type, selectorId, inputFormId)
 
-        // adjust sizing
-        $(this.metadataGridSelector).css("grid-template-columns", "2fr 6fr")
       }
     } else {
-      let selectorId = this.options.containerSelector + " .entity_attr" + keyIndex
-      let inputFormId = "entity_attr" + keyIndex + "_form"
-      let type = this.entity.types[keyIndex-1][0] // first possible type of data, set in the corresponding schema, determines type of input form
+      let selectorId = this.options.containerSelector + " .entity_attr" + predicateIndex
+      let inputFormId = "entity_attr" + predicateIndex + "_form"
+      let type = this.entity.validObjectTypes[predicateIndex-1][0] // first possible type of data, set in the corresponding schema, determines type of input form
 
       this.setupInputFormByType(type, selectorId, inputFormId)
-
-      // adjust sizing
-      $(this.metadataGridSelector).css("grid-template-columns", "2fr 6fr 1fr")
 
     }
   }
@@ -656,7 +594,7 @@ export class MetadataEditor {
     this.tagEditor = new TagEditor({
       containerSelector: selectorId,
       idPrefix: tagEditorId,
-      tags: this.getValueByKeyFromEntity('Tags'),
+      tags: this.getObjectByPredicateFromEntity('Tags'),
       mode: 'edit'
     })
     this.getTagHints((tagHints) => {
@@ -680,7 +618,7 @@ export class MetadataEditor {
     let list = "people-datalist"
     let paragraphId = inputFormId + '_paragraph'
     let inputSelector = this.options.containerSelector + ' .' + inputFormId
-    let keyIndex = inputFormId.match(/\d+/)[0]
+    let predicateIndex = inputFormId.match(/\d+/)[0]
 
     $(selector).html(`<p class='${paragraphId} embed-button'>
             <input class='${inputFormId} form-control' placeholder="person" autoComplete="off" style="padding: unset">
@@ -689,7 +627,7 @@ export class MetadataEditor {
     // This ensures, that existing data will be validated correctly, because validation compares the user input to datalist entries
     if (!(this.options.mode === 'dialog' || this.options.mode === 'create')) {
       console.log(this.mode)
-      this.addValueToInputFormByIndex(keyIndex)
+      this.addValueToInputFormByIndex(predicateIndex)
       this.getMatchingPeople($(inputSelector).val(), (people) => {
         this.addNamesToDatalistForPersonsAsValues(people, this.datalistSelector)
         $(this.datalistSelector).hide()
@@ -764,9 +702,9 @@ export class MetadataEditor {
 
   makeMatchedEntityButtonEvent(inputSelector, plusIcon) {
 
-    let keyIndex = inputSelector.match(/\d+/)[0]
-    let selectorId = this.options.containerSelector+"_entity_attr"+keyIndex
-    let inputFormId = "entity_attr"+keyIndex+"_form"
+    let predicateIndex = inputSelector.match(/\d+/)[0]
+    let selectorId = this.options.containerSelector+"_entity_attr"+predicateIndex
+    let inputFormId = "entity_attr"+predicateIndex+"_form"
     let buttonId = inputFormId + '_info-note-button'
     let buttonSelector = this.options.containerSelector+ " ." + buttonId
     let noteId = inputFormId + '_info-note'
@@ -868,8 +806,8 @@ export class MetadataEditor {
     $(this.options.dialogRootInputFormSelector).val(value)
     $(buttonSelector).remove()
 
-    let keyIndex = this.options.dialogRootInputFormSelector.match(/\d+/)[0]
-    let saveIcon = ".entity_attr" + keyIndex + "_saveButton"
+    let predicateIndex = this.options.dialogRootInputFormSelector.match(/\d+/)[0]
+    let saveIcon = ".entity_attr" + predicateIndex + "_saveButton"
     $(saveIcon).click();
   }
 
@@ -882,23 +820,18 @@ export class MetadataEditor {
   setupMetadataEditorInDialogWindow (entity, selector, dialog, inputFormId) {
 
     console.log('HELLO')
-    console.log(entity.keys)
+    console.log(entity.predicates)
 
     let mde = new MetadataEditor({
       containerSelector: selector,
-      entityId: entity.id,
-      entityType: entity.type,
-      metadata: entity.values,
-      metadataSchema: {keys: entity.keys, types: entity.types},
-      callback: (data, mode, callback) => {
+      entityDataSchema: this.options.entityDataSchema,
+      mode: 'dialog',
+      onSave: (data, mode, callback) => {
         this.savePersonData(data, mode, callback)
       },
-      mode: 'dialog',
-      theme: 'vertical',
-      dialog: dialog,
+      dialogWindow: dialog,
       dialogRootMetadataEditor: this,
-      dialogRootInputFormSelector: inputFormId,
-      sections: ['c', 'c', 'c', 'c', 'c', 'c', 'c']
+      dialogRootInputFormSelector: inputFormId
     })
   }
 
@@ -1003,19 +936,19 @@ export class MetadataEditor {
     }
   }
 
-  addValueToInputFormByIndex(keyIndex) {
-    if (keyIndex === 'all') {
-      for (let i=1; i<=this.numKeys; i++) {
-        this.addValueToInputFormByType(this.entity.types[i-1][0], i)
+  addValueToInputFormByIndex(predicateIndex) {
+    if (predicateIndex === 'all') {
+      for (let i=1; i<=this.numPredicates; i++) {
+        this.addValueToInputFormByType(this.entity.validObjectTypes[i-1][0], i)
       }
     } else {
-      this.addValueToInputFormByType(this.entity.types[keyIndex-1][0], keyIndex)
+      this.addValueToInputFormByType(this.entity.validObjectTypes[predicateIndex-1][0], predicateIndex)
     }
   }
 
   addValueToInputFormByType(type, index) {
 
-    let values = this.entity.values
+    let objects = this.entity.objects
     let notes = this.entity.notes
     let entityAttrFormId = this.options.containerSelector + " .entity_attr" + index + "_form"
     let entityAttrNoteId = this.options.containerSelector + " .entity_attr" + index + "_form_info-note"
@@ -1023,24 +956,24 @@ export class MetadataEditor {
     switch (type) {
       case 'year':
         let idYearBcAd = entityAttrFormId + "_year_bc_ad"
-        $(entityAttrFormId).val(values[index-1][0])
-        $(idYearBcAd).val(values[index-1][1])
+        $(entityAttrFormId).val(objects[index-1][0])
+        $(idYearBcAd).val(objects[index-1][1])
         break
       case 'years_range':
         let idYearsRangeEnd = entityAttrFormId + "_years_range_end"
         let idYearsRangeNote = entityAttrFormId + "_years_range_note"
-        $(entityAttrFormId).val(values[index-1][0])
-        $(idYearsRangeEnd).val(values[index-1][1])
-        $(idYearsRangeNote).val(values[index-1][2])
+        $(entityAttrFormId).val(objects[index-1][0])
+        $(idYearsRangeEnd).val(objects[index-1][1])
+        $(idYearsRangeNote).val(objects[index-1][2])
         break
       case 'person':
-        if (values[index-1] !== '') {
-          let name = this.getPersonNameByIdFromPeople(values[index-1])
+        if (objects[index-1] !== '') {
+          let name = this.getPersonNameByIdFromPeople(objects[index-1])
           $(entityAttrFormId).val(name)
         }
         break
       default:
-        $(entityAttrFormId).val(values[index-1])
+        $(entityAttrFormId).val(objects[index-1])
     }
 
     if (notes[index-1] !== undefined) {
@@ -1117,15 +1050,15 @@ export class MetadataEditor {
       // validate and save data, execute the callback-function given in the options, check if working in dialog window
       if (this.validateData(d) && this.validatePasswords()) {
         this.makeSpinner(this.buttonsSelectorBottom)
-        this.updateEntityData(d.id, d.type, d.values, d.notes)
+        this.updateEntityData(d.id, d.type, d.objects, d.notes)
         this.saveTagsAsHints(this.tagEditor.getTags())
-        this.options.callback(this.entity, this.options.mode, () => {
+        this.options.onSave(this.entity, this.options.mode, () => {
           this.logSaveAction(this.options.mode)
           if (this.options.mode === this.mode.dialog) {
             this.copyValueFromDialogToRootAndSave()
-            this.options.dialog.hide()
-            this.options.dialog.destroy()
-            this.options.dialogRootMetadataEditor.updatePeople(this.entity.id, d.values[0])
+            this.options.dialogWindow.hide()
+            this.options.dialogWindow.destroy()
+            this.options.dialogRootMetadataEditor.updatePeople(this.entity.id, d.objects[0])
           } else {
             this.setupShowMode()
           }
@@ -1138,27 +1071,27 @@ export class MetadataEditor {
     selector = this.options.containerSelector + ' .' + selector
     $(selector).on("click", () => {
       if (!this.singleEditingActive) {
-        let keyIndex = selector.match(/\d+/)[0]
-        let inputForm = this.options.containerSelector + " .entity_attr" + keyIndex + "_form"
+        let predicateIndex = selector.match(/\d+/)[0]
+        let inputForm = this.options.containerSelector + " .entity_attr" + predicateIndex + "_form"
         this.setupTableForUserInput(() => {
-          this.replaceEditWithSaveAndAbortIcons(keyIndex)
+          this.replaceEditWithSaveAndAbortIcons(predicateIndex)
           $(inputForm).focus()
           if (this.tagEditor !== undefined) {
             this.tagEditor.focus()
           }
-          console.log(`'${this.entity.keys[keyIndex-1]}' in edit mode!`)
-        }, keyIndex)
+          console.log(`'${this.entity.predicates[predicateIndex-1]}' in edit mode!`)
+        }, predicateIndex)
         this.options.mode = this.mode.edit
         this.singleEditingActive = true
-        this.mutePencilAndInfoIcons(keyIndex)
+        this.mutePencilAndInfoIcons(predicateIndex)
       }
     })
   }
 
-  mutePencilAndInfoIcons(keyIndex) {
-    for (let i=1; i<=this.numKeys; i++) {
+  mutePencilAndInfoIcons(predicateIndex) {
+    for (let i=1; i<=this.numPredicates; i++) {
       let selector = this.options.containerSelector + " .entity_attr" + i + "_tableCellButton"
-      if (i !== parseInt(keyIndex)) {
+      if (i !== parseInt(predicateIndex)) {
         $(selector+" .fa").css("color", "lightgray"); // make info-icons light-gray
         $(selector+" .fas").css("color", "lightgray"); // make pencils light-gray
       }
@@ -1184,35 +1117,35 @@ export class MetadataEditor {
     selector = this.options.containerSelector + ' .' + selector
     $(selector).on("click",  () => {
       this.singleEditingActive = false
-      let keyIndex = selector.match(/\d+/)[0]
+      let predicateIndex = selector.match(/\d+/)[0]
       this.clearErrorMessage()
       this.setupShowMode()
-      console.log(`Editing value for '${this.entity.keys[keyIndex-1]}' aborted.`)
+      console.log(`Editing object for '${this.entity.predicates[predicateIndex-1]}' aborted.`)
     })
   }
 
   makeSaveIconEvent(selector) {
     selector = this.options.containerSelector + ' .' + selector
     $(selector).on("click",  () => {
-      let keyIndex = selector.match(/\d+/)[0]
-      let cellButtonsAndIconsId = "entity_attr" + keyIndex + "_tableCellButton"
+      let predicateIndex = selector.match(/\d+/)[0]
+      let cellButtonsAndIconsId = "entity_attr" + predicateIndex + "_tableCellButton"
       let cellButtonsAndIconsSelector = this.options.containerSelector + ' .' + cellButtonsAndIconsId
-      let value = this.getEntityDataFromInputFormByIndex(keyIndex)['value']
-      let note = this.getEntityDataFromInputFormByIndex(keyIndex)['note']
-      if (this.validateData(value, keyIndex)) {
+      let object = this.getEntityDataFromInputFormByIndex(predicateIndex)['object']
+      let note = this.getEntityDataFromInputFormByIndex(predicateIndex)['note']
+      if (this.validateData(object, predicateIndex)) {
         this.clearErrorMessage()
         this.makeSpinner(cellButtonsAndIconsSelector, '1.25em')
-        if (this.entity.types[keyIndex-1].includes('tags')) {
-          this.saveTagsAsHints(value)
+        if (this.entity.validObjectTypes[predicateIndex-1].includes('tags')) {
+          this.saveTagsAsHints(object)
         }
-        this.entity.values[keyIndex-1] = value // Corresponds to updateEntityData function in global save event
-        this.entity.notes[keyIndex-1] = note // Corresponds to updateEntityData function in global save event
-        this.options.callback(this.entity, this.options.mode, () => {
+        this.entity.objects[predicateIndex-1] = object // Corresponds to updateEntityData function in global save event
+        this.entity.notes[predicateIndex-1] = note // Corresponds to updateEntityData function in global save event
+        this.options.onSave(this.entity, this.options.mode, () => {
           this.logSaveAction(this.options.mode)
           this.singleEditingActive = false
           this.setupShowMode()
         })
-        console.log(`Saved value for '${this.entity.keys[keyIndex-1]}'.`)
+        console.log(`Saved object for '${this.entity.predicates[predicateIndex-1]}'.`)
       }
     })
   }
@@ -1240,54 +1173,54 @@ export class MetadataEditor {
     })
   }
 
-  updateEntityData(id, type, values, notes) {
+  updateEntityData(id, type, objects, notes) {
     this.entity.id = id
     this.entity.type = type
-    this.entity.values = values
+    this.entity.objects = objects
     this.entity.notes = notes
   }
 
-  getEntityDataFromInputFormByIndex(keyIndex='all') {
+  getEntityDataFromInputFormByIndex(predicateIndex='all') {
     let id = this.entity.id
-    let values = []
+    let objects = []
     let notes = []
     let type = this.entity.type
 
-    if (keyIndex === 'all') {
-      for (let i = 1; i <= this.numKeys; i++) {
-        let valueAndNote = this.getEntityDataFromInputFormByType(this.entity.types[i-1], i)
-        values.push(valueAndNote['value'])
-        notes.push(valueAndNote['note'])
+    if (predicateIndex === 'all') {
+      for (let i = 1; i <= this.numPredicates; i++) {
+        let objectAndNote = this.getEntityDataFromInputFormByType(this.entity.validObjectTypes[i-1], i)
+        objects.push(objectAndNote['object'])
+        notes.push(objectAndNote['note'])
       }
-      return {id: id, type: type, values: values, notes: notes}
+      return {id: id, type: type, objects: objects, notes: notes}
     } else {
-      return this.getEntityDataFromInputFormByType(this.entity.types[keyIndex-1], keyIndex)
+      return this.getEntityDataFromInputFormByType(this.entity.validObjectTypes[predicateIndex-1], predicateIndex)
     }
   }
 
-  getEntityDataFromInputFormByType (type, keyIndex) {
+  getEntityDataFromInputFormByType (type, predicateIndex) {
 
-    let selector = this.options.containerSelector + " .entity_attr" + keyIndex + "_form"
+    let selector = this.options.containerSelector + " .entity_attr" + predicateIndex + "_form"
     let value = $(selector).val()
-    let noteSelector = this.options.containerSelector + " .entity_attr" + keyIndex + "_form_info-note"
+    let noteSelector = this.options.containerSelector + " .entity_attr" + predicateIndex + "_form_info-note"
     let note = $(noteSelector).val()
     if (note === undefined) {note = ''}
 
     if (type.includes('year')) {
       return {
-        'value': this.getDataForYearFromInputForm(selector, value),
+        'object': this.getDataForYearFromInputForm(selector, value),
         'note': note
       }
 
     } else if (type.includes('years_range')) {
       return {
-        'value': this.getDataForYearsRangeFromInputForm(selector, value),
+        'object': this.getDataForYearsRangeFromInputForm(selector, value),
         'note': note
       }
 
     } else if (type.includes('tags')) {
       return {
-        'value': this.tagEditor.getTags(),
+        'object': this.tagEditor.getTags(),
         'note': ''
       }
 
@@ -1300,13 +1233,13 @@ export class MetadataEditor {
         person_id = ''
       }
       return {
-        'value': person_id,
+        'object': person_id,
         'note': note
       }
 
     } else {
       return {
-        'value':value,
+        'object':value,
         'note': note
       }
     }
@@ -1333,17 +1266,17 @@ export class MetadataEditor {
   }
 
   // Validate Data
-  validateData (d, keyIndex='all') {
+  validateData (d, predicateIndex='all') {
 
     let index = 0
 
-    if (keyIndex === 'all') { // full edit
-      for (let value of d.values) {
+    if (predicateIndex === 'all') { // full edit
+      for (let object of d.objects) {
 
-        let key = this.entity.keys[index]
-        let affordedTypes = this.entity.types[index]
+        let predicate = this.entity.predicates[index]
+        let affordedTypes = this.entity.validObjectTypes[index]
 
-        if (!affordedTypes.includes('password') && !this.isValid(key, affordedTypes, this.dataType(value), value)) { // Passwords do not need to undergo a check here
+        if (!affordedTypes.includes('password') && !this.isValid(predicate, affordedTypes, this.dataType(object), object)) { // Passwords do not need to undergo a check here
           return false
         } else {
           index++
@@ -1351,44 +1284,44 @@ export class MetadataEditor {
       }
     } else { // single edit
 
-      let key = this.entity.keys[keyIndex-1]
-      let affordedTypes = this.entity.types[keyIndex-1]
-      let value = d
+      let predicate = this.entity.predicates[predicateIndex-1]
+      let affordedTypes = this.entity.validObjectTypes[predicateIndex-1]
+      let object = d
 
-      if (!affordedTypes.includes('password') && !this.isValid(key, affordedTypes, this.dataType(value), value)) { // Passwords do not need to undergo a check here
+      if (!affordedTypes.includes('password') && !this.isValid(predicate, affordedTypes, this.dataType(object), object)) { // Passwords do not need to undergo a check here
         return false
       }
     }
     return true
   }
 
-  isValid(key, affordedTypes, givenType, value) {
-    if (this.typesNotMatching(givenType, affordedTypes) || value === undefined) {
-      this.returnDataTypeError(key, givenType, affordedTypes)
+  isValid(predicate, affordedTypes, givenType, object) {
+    if (this.typesNotMatching(givenType, affordedTypes) || object === undefined) {
+      this.returnDataTypeError(predicate, givenType, affordedTypes)
       return false
-    } else if (this.inconsistentDates(key, givenType, value)) {
+    } else if (this.inconsistentDates(predicate, givenType, object)) {
       this.returnImpossibleDatesError()
       return false
-    } else if (this.inconsistentYearsRange(affordedTypes, value)) {
-      this.returnImpossibleYearsRangeError(key)
+    } else if (this.inconsistentYearsRange(affordedTypes, object)) {
+      this.returnImpossibleYearsRangeError(predicate)
       return false
-    } else if (this.nameIsDuplicate(key, givenType, value)) {
-      this.returnDuplicateInNameError(value)
+    } else if (this.nameIsDuplicate(predicate, givenType, object)) {
+      this.returnDuplicateInNameError(object)
     } else {
       return true
     }
   }
 
-  nameIsDuplicate (key, givenType, value) {
+  nameIsDuplicate (predicate, givenType, object) {
     let names = this.getNamesOfAllThePeople()
-    return givenType === 'text' && names.includes(value) && value !== this.entity.values[0]
+    return givenType === 'text' && names.includes(object) && object !== this.entity.objects[0]
   }
 
   typesNotMatching (givenType, affordedTypes) {
     return affordedTypes.includes(givenType) === false && !(affordedTypes.includes('person') && givenType === 'number')
   }
 
-  inconsistentDates(key, givenType, value) {
+  inconsistentDates(predicate, givenType, object) {
 
     if (givenType !== 'date') {
       return false
@@ -1397,21 +1330,21 @@ export class MetadataEditor {
       let date_death = 'z'
 
       // get dates of birth and death
-      if (key === 'Date of Birth' && value !== '' && this.getValueByKeyFromEntity('Date of Death') !== '') {
-        date_birth = value
-        date_death = this.getValueByKeyFromEntity('Date of Death')
+      if (predicate === 'Date of Birth' && object !== '' && this.getObjectByPredicateFromEntity('Date of Death') !== '') {
+        date_birth = object
+        date_death = this.getObjectByPredicateFromEntity('Date of Death')
       }
-      if (key === 'Date of Death' && value !== '' && this.getValueByKeyFromEntity('Date of Birth') !== '') {
-        date_death = value
-        date_birth = this.getValueByKeyFromEntity('Date of Birth')
+      if (predicate === 'Date of Death' && object !== '' && this.getObjectByPredicateFromEntity('Date of Birth') !== '') {
+        date_death = object
+        date_birth = this.getObjectByPredicateFromEntity('Date of Birth')
       }
       return date_birth > date_death
     }
   }
 
-  inconsistentYearsRange(affordedTypes, value) {
+  inconsistentYearsRange(affordedTypes, object) {
     return affordedTypes.includes('years_range') &&
-        (parseInt(value[0]) > parseInt(value[1]) || (value[0] === '' && value[1] !== '') || (value[0] === '' && value[2] !== ''))
+        (parseInt(object[0]) > parseInt(object[1]) || (object[0] === '' && object[1] !== '') || (object[0] === '' && object[2] !== ''))
   }
 
   validatePasswords() {
@@ -1424,48 +1357,48 @@ export class MetadataEditor {
     }
   }
 
-  dataType(value) {
+  dataType(object) {
 
     let type
 
-    if (value === undefined) {
-      type = value
+    if (object === undefined) {
+      type = object
     }
-    else if (Array.isArray(value)) {
-      if (this.isYearsRange(value)) {
+    else if (Array.isArray(object)) {
+      if (this.isYearsRange(object)) {
         type = 'years_range'
       }
-      else if (this.isYear(value)) {
+      else if (this.isYear(object)) {
         type = 'year'
       }
-      else if (this.isIncorrectYear(value)) {
-        type = this.dataType(value[0])
+      else if (this.isIncorrectYear(object)) {
+        type = this.dataType(object[0])
       }
-      else if (this.isEmptyArray(value)) {
+      else if (this.isEmptyArray(object)) {
         type = 'empty'
       } else {
         type = 'tags'
       }
     }
-    else if (this.isMail(value)) {
+    else if (this.isMail(object)) {
       type = 'email'
     }
-    else if (this.isUrl(value)) {
+    else if (this.isUrl(object)) {
       type = 'url'
     }
-    else if (this.containsNumber(value)) {
+    else if (this.containsNumber(object)) {
 
-      if (this.containsOnlyNumbers(value)) {
+      if (this.containsOnlyNumbers(object)) {
         type = 'number'
       }
-      else if (this.isDate(value)) {
+      else if (this.isDate(object)) {
         type = 'date'
       }
       else {
         type = 'mixed'
       }
     }
-    else if (value === "") {
+    else if (object === "") {
       type = 'empty'
     }
     else {
@@ -1496,8 +1429,8 @@ export class MetadataEditor {
     return array.length === 2 && array[0] !== "" && this.containsOnlyNumbers(array[0])
   }
 
-  isIncorrectYear(value) {
-    return value.length === 2 && value[1] === 'BC' || value[1] === 'AD'
+  isIncorrectYear(object) {
+    return object.length === 2 && object[1] === 'BC' || object[1] === 'AD'
   }
 
   isMail(str) {
@@ -1521,9 +1454,9 @@ export class MetadataEditor {
   }
 
   // Error Communication and Logging
-  returnDataTypeError(key, givenType, affordedTypes) {
-    console.log(`Data Type Error! Given data for '${key}' is of type '${givenType}' but has to be of one of the types '${affordedTypes}'. Please try again.`)
-    this.returnError(`Error! Given data for '${key}' is of type '${givenType}' but has to be of one of the types '${affordedTypes}'. Please try again.`)
+  returnDataTypeError(predicate, givenType, affordedTypes) {
+    console.log(`Data Type Error! Given data for '${predicate}' is of type '${givenType}' but has to be of one of the types '${affordedTypes}'. Please try again.`)
+    this.returnError(`Error! Given data for '${predicate}' is of type '${givenType}' but has to be of one of the types '${affordedTypes}'. Please try again.`)
   }
 
   returnImpossibleDatesError() {
@@ -1531,9 +1464,9 @@ export class MetadataEditor {
     this.returnError(`Error! Given date for 'Date of Birth' is after given date for 'Date of Death'. Please try again.`)
   }
 
-  returnImpossibleYearsRangeError(key) {
+  returnImpossibleYearsRangeError(predicate) {
     console.log('Impossible Years Range Error!')
-    this.returnError(`Error! Given data for '${key}' are inconsistent. Please try again.`)
+    this.returnError(`Error! Given data for '${predicate}' are inconsistent. Please try again.`)
   }
 
   returnPasswordError() {

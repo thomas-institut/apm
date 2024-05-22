@@ -78,6 +78,7 @@ use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\DataTableDataCache;
 use ThomasInstitut\DataCache\MemcachedDataCache;
 use ThomasInstitut\DataCache\MultiCacheDataCache;
+use ThomasInstitut\DataCache\NullDataCache;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
@@ -338,10 +339,12 @@ class ApmSystemManager extends SystemManager {
 
     public function getMemDataCache(): DataCache
     {
-        if ($this->memDataCache === null) {
-            $this->memDataCache = new MemcachedDataCache();
-        }
-        return $this->memDataCache;
+//        if ($this->memDataCache === null) {
+//            $this->memDataCache = new MemcachedDataCache();
+//        }
+//        return $this->memDataCache;
+
+        return new NullDataCache();
     }
 
     public function getPresetsManager() : PresetManager {

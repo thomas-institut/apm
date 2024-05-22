@@ -40,29 +40,20 @@ setupMetadataEditorPage () {
 
   this.makeSpinner()
   if (this.id === 'create') {
-      this.getPersonSchema((entity) => {
-          this.removeSpinner()
-          this.makePage()
-          this.setupMetadataEditor(entity, this.id)
-    })
+      this.getEntitySchema((genericSchema) => {
+              this.removeSpinner()
+              this.makePage('New Person')
+              this.setupMetadataEditor('create', genericSchema)
+      })
   }
   else {
       this.getEntitySchema((genericSchema) => {
           this.getEntityData((genericEntityData) => {
-              //this.getPerson(this.id, (entity) => {
                   this.removeSpinner()
                   this.makePage(genericEntityData.name)
                   this.setupMetadataEditor('show', genericSchema, genericEntityData)
-              //})
           })
       })
-
-
-    //   this.getPerson(this.id, (entity) => {
-    //       this.removeSpinner()
-    //       this.makePage(entity.values[0])
-    //       this.setupMetadataEditor(entity, 'show')
-    // })
   }
 
   return true;
@@ -76,14 +67,12 @@ async genContentHtml() {
         </ol>
     </nav>
 
-    <h1 id="person-heading"></h1>
     <div id="spinner" align="center"></div>
     <div id="person-metadata-editor-container" align="center"></div>
     <br>`
     }
 
 makePage(name='Person') {
-  $('#person-heading').html(`${name}`)
   $('#nav_people').html(`<a href=${urlGen.sitePeople()}>People</a>`)
   $('#nav_person_name').html(`${name}`)
 }
@@ -98,20 +87,30 @@ removeSpinner() {
 }
 
 
-setupMetadataEditor (mode, genericSchema, genericEntityData) {
+setupMetadataEditor (mode, genericSchema, genericEntityData=[]) {
 
     this.removeMetadataEditor()
-  let mde = new MetadataEditor({
-    containerSelector: '#person-metadata-editor-container',
-    callback: (data, mode, callback) => {
-        this.savePersonData(data, mode, callback)
-    },
-    mode: mode,
-    theme: 'vertical',
-    sections: ['c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c'],
-    genericSchema: genericSchema,
-    genericEntityData: genericEntityData
-  })
+
+    if (genericEntityData === []) { // Load only schema for creation of new entity
+        let mde = new MetadataEditor({
+            containerSelector: '#person-metadata-editor-container',
+            entityDataSchema: genericSchema,
+            mode: mode,
+            onSave: (data, mode, callback) => {
+                this.savePersonData(data, mode, callback)
+            }
+        })
+        } else {
+        let mde = new MetadataEditor({
+            containerSelector: '#person-metadata-editor-container',
+            entityDataSchema: genericSchema,
+            entityData: genericEntityData,
+            mode: mode,
+            onSave: (data, mode, callback) => {
+                this.savePersonData(data, mode, callback)
+            }
+        })
+    }
 }
 
 removeMetadataEditor() {

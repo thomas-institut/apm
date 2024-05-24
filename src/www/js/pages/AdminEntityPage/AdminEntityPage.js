@@ -5,6 +5,7 @@ import { capitalizeFirstLetter } from '../../toolbox/Util.mjs'
 import { urlGen } from '../common/SiteUrlGen'
 import { ApmFormats } from '../common/ApmFormats'
 import { GenericStatementEditor } from './GenericStatementEditor'
+import { ConfirmDialog } from '../common/ConfirmDialog'
 
 
 const TimestampPredicates = [ 2004, 3002, 5002];
@@ -45,14 +46,75 @@ export class AdminEntityPage extends NormalPage {
   genOnClickCancelStatementButton() {
     return (ev) => {
       ev.preventDefault();
-      console.log('Click on cancel statement button')
       let statementId = this.getIdFromClassNameString(ev.target.className, 'statement');
       if (statementId === null || statementId < 0) {
         console.log(`Invalid statement id in classes ${ev.target.className}`);
         return;
       }
-      console.log(`Statement id: ${statementId}`);
+
+      this.getCancelDialogHtml(statementId).then( (dialogHtml) => {
+        this.cancelDialog = new ConfirmDialog({
+          acceptButtonLabel: 'Yes, do it',
+          cancelButtonLabel: 'No',
+          title: "Cancel statement",
+          body: dialogHtml,
+          hideOnAccept: false,
+        })
+        this.cancelDialogInfo = `${this.cancelDialog.getSelector()} .cancel-dialog-info}`;
+        this.cancellationNoteInput = $(`${this.cancelDialog.getSelector()} .cancellation-note-input`);
+        this.cancelDialog.setAcceptFunction(() => {
+          let cancellationNote = this.cancellationNoteInput.val().trim();
+          console.log(`Cancelling statement id: ${statementId}, note: '${cancellationNote}'`);
+          this.cancelDialog.cancelButton .prop('disabled', true);
+          this.cancelDialog.acceptButton.prop('disabled', true);
+          this.cancelDialog.setAcceptButtonLabel("Cancelling statement...");
+
+          let commands = [{ command: 'cancel', statementId: statementId , editorialNote: cancellationNote}];
+          $.post(urlGen.apiEntityStatementsEdit(), JSON.stringify(commands)).then( (response) => {
+            console.log("Success", response);
+            if (response.success === true) {
+              this.cancelDialog.hide();
+              window.location.reload();
+            } else {
+              this.cancelDialogInfo.html("Errors cancelling statement:<br/>&nbsp;&nbsp;" +
+                response['commandResults'].map( (r) => { return `[${r.errorCode}] ${r.errorMessage}`})
+                  .join("<br/>&nbsp;&nbsp;"));
+              this.cancelDialog.setAcceptButtonLabel("Yes, try to cancel again");
+              this.cancelDialog.cancelButton .prop('disabled', false);
+              this.cancelDialog.acceptButton.prop('disabled', false);
+            }
+          }).catch( (response) => {
+            console.error("Failure", response);
+            this.cancelDialogInfo.html("Error cancelling statement, check console.");
+            this.cancelDialog.setAcceptButtonLabel("Yes, try to cancel again");
+            this.cancelDialog.cancelButton .prop('disabled', false);
+            this.cancelDialog.acceptButton.prop('disabled', false);
+          })
+        });
+        this.cancelDialog.show();
+      })
     }
+  }
+
+  async getCancelDialogHtml(statementId) {
+
+    let filteredStatements = this.statements.filter( (statement) => statement.id === statementId);
+    if (filteredStatements.length === 0) {
+      return `ERROR: statement ${statementId }not found`;
+    }
+
+    let statement = filteredStatements[0];
+    let objectHtml = typeof statement.object === 'number'
+      ? `${statement.object} [${await this.getEntityName(statement.id, false)}]`
+      : `'${statement.object}'`;
+
+
+    return `<p>Do you want to cancel statement ${statementId}?</p>
+     <p><b>Subject</b>: ${statement.subject} [${await this.getEntityName(statement.subject, false)}]<br/>
+     <b>Predicate</b>: ${statement.predicate} [${await this.getEntityName(statement.predicate)}]<br/>
+     <b>Object</b>: ${objectHtml}</p>
+     <p><b>Cancellation Note</b>: <textarea class="cancellation-note-input"></textarea></p>
+     <div class="cancel-dialog-info"></div>`
   }
 
   genOnClickEditStatementButton() {
@@ -164,7 +226,7 @@ export class AdminEntityPage extends NormalPage {
          return false;
        }
        let isUsed = this.data.statements.filter( (statement) => {
-         return statement['predicate'] === predicate;
+         return statement['predicate'] === predicate && statement['cancellationId'] === -1;
        }).length > 0;
        return !(asSubject && def['singleProperty'] && isUsed);
      })

@@ -41,6 +41,10 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
     const kernelCacheKey = 'ApmEntitySystemKernel';
 
     const kernelCacheTtl = 8 * 24 * 3600;
+    const minNameCacheTtl = 15 * 24 * 3600;
+    const maxNameCacheTtl = 21 * 24 * 3600;
+
+    const entityListCacheTtl =  30 * 24 * 3600;
 
     const ColEntity = 'entity';
     const ColMergedInto = 'mergedInto';
@@ -103,6 +107,14 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 
     private function getMergedIntoCacheKey(int $entity) : string {
         return implode('_', [ $this->cachePrefix, self::dataId, 'mergedInto', $entity]);
+    }
+
+    private function getEntityNameCacheKey(int $entity) : string {
+        return implode('_', [ $this->cachePrefix, self::dataId, 'name', $entity]);
+    }
+
+    private function getEntityListCacheKey(int $type, bool $withMerged) : string {
+        return implode('_', [ $this->cachePrefix, self::dataId, 'entityList', $type, $withMerged ? 'withMerged' : 'withoutMerged']);
     }
 
     private function getKernel() : ApmEntitySystemKernel {
@@ -218,7 +230,13 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         $metadata[] = [ Entity::pStatementTimestamp, $ts];
         $metadata[] = [ Entity::pStatementEditorialNote, "Creating entity of type $entityType: '$name'"];
 
-        return $this->getInnerEntitySystem()->createEntity($entityType, $extraStatements, $metadata);
+        $newEntityId =  $this->getInnerEntitySystem()->createEntity($entityType, $extraStatements, $metadata);
+
+        if ($this->typeUsesCacheForEntityList($entityType)) {
+            $this->memCache->delete($this->getEntityListCacheKey($entityType, true));
+            $this->memCache->delete($this->getEntityListCacheKey($entityType, false));
+        }
+        return $newEntityId;
     }
 
 
@@ -409,6 +427,11 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             // should never happen
             throw new RuntimeException("Statement not found exception: " . $e->getMessage());
         }
+        // invalidate the name cache if necessary
+        if ($predicate === Entity::pEntityName) {
+            $this->memCache->delete($this->getEntityNameCacheKey($subject));
+        }
+
         // return the last statement id
         return $statementIds[count($statementIds)-1];
     }
@@ -481,6 +504,10 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         }
     }
 
+    private function typeUsesCacheForEntityList(int $type) : bool {
+        return in_array($type, [Entity::tPerson, Entity::tGeographicalPlace, Entity::tGeographicalArea, Entity::tOrganization]);
+    }
+
     /**
      * @inheritDoc
      */
@@ -494,7 +521,27 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             return $this->getKernel()->getAllEntitiesForType($type) ?? [];
         }
 
-        $entities =  $this->getInnerEntitySystem()->getAllEntitiesForType($type);
+        $useCache = $this->typeUsesCacheForEntityList($type);
+        $cacheKey = $this->getEntityListCacheKey($type, $includeMerged);
+        $inCache = true;
+        if ($useCache) {
+            $this->logger->debug("Using cache for type $type entity list");
+            try {
+                return unserialize($this->memCache->get($cacheKey));
+            } catch (KeyNotInCacheException) {
+                $this->logger->debug("Cache miss for type $type entity list");
+                $inCache = false;
+                $entities =  $this->getInnerEntitySystem()->getAllEntitiesForType($type);
+            }
+        } else {
+            $entities =  $this->getInnerEntitySystem()->getAllEntitiesForType($type);
+        }
+
+        // at this point $entities contains the list of all entities, including merged entities
+
+        if ($useCache && !$inCache) {
+            $this->memCache->set($this->getEntityListCacheKey($type, true), serialize($entities), self::entityListCacheTtl);
+        }
 
         if ($includeMerged) {
             return $entities;
@@ -505,6 +552,9 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             if ($this->getMergedIntoEntity($entity) === null) {
                 $filteredEntities[] = $entity;
             }
+        }
+        if ($useCache) {
+            $this->memCache->set($this->getEntityListCacheKey($type, false), serialize($filteredEntities), self::entityListCacheTtl);
         }
         return $filteredEntities;
     }
@@ -590,6 +640,9 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 
         $this->registerMerge($entity, $mergeInto);
         $this->memCache->delete($this->getMergedIntoCacheKey($entity));
+        if ($this->typeUsesCacheForEntityList($entityType)) {
+            $this->memCache->delete($this->getEntityListCacheKey($entityType, false));
+        }
 
     }
 
@@ -606,6 +659,12 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
      */
     public function getEntityType(int $entity): int
     {
+        if ($this->getKernel()->isSystemEntity($entity)) {
+            $data = $this->getKernel()->getEntityData($entity);
+            return $data->type;
+        }
+
+
         try {
             return $this->getInnerEntitySystem()->getEntityType($entity);
         } catch (\ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException) {
@@ -643,5 +702,26 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
     public function getValidPredicatesAsObjectForType(int $type, bool $includeReverseRelations = false): array
     {
         return $this->getKernel()->getValidPredicatesAsObjectForType($type, $includeReverseRelations);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getEntityName(int $entity): string
+    {
+
+        $useCache = $entity > ApmEntitySystemKernel::MaxSystemTid;
+        $cacheKey = $this->getEntityNameCacheKey($entity);
+        if ($useCache) {
+            try {
+                return $this->memCache->get($cacheKey);
+            } catch (KeyNotInCacheException) {
+            }
+        }
+        $name = $this->getEntityData($entity)->getObjectForPredicate(Entity::pEntityName);
+        if ($useCache) {
+            $this->memCache->set($cacheKey, $name, rand(self::minNameCacheTtl, self::maxNameCacheTtl));
+        }
+        return $name;
     }
 }

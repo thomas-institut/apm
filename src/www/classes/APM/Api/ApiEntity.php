@@ -15,11 +15,20 @@ use APM\EntitySystem\Exception\StatementAlreadyCancelledException;
 use APM\EntitySystem\Exception\StatementNotFoundException;
 use APM\EntitySystem\Kernel\PredicateFlag;
 use APM\EntitySystem\Schema\Entity;
+use APM\StringMatcher\LevenshteinMatcher;
+use APM\StringMatcher\NameMatcher;
+use APM\StringMatcher\PerfectMatchMatcher;
+use APM\StringMatcher\SimpleIndexElement;
+use APM\StringMatcher\StringStartMatcher;
+use APM\StringMatcher\SubStringMatcher;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
+use APM\SystemProfiler;
 use APM\ToolBox\HttpStatus;
+use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
 
 
 class ApiEntity extends ApiController
@@ -49,6 +58,10 @@ class ApiEntity extends ApiController
     const Error_InvalidParameter = 2016;
     const Error_PredicateNotFound = 2017;
     const Error_SystemPredicateNotAllowedForApiUsers = 2018;
+
+
+    const MaxNameSearchMatches = 10;
+    const CacheId = '001';
 
     /**
      * API call:
@@ -158,7 +171,7 @@ class ApiEntity extends ApiController
                         ];
                         break;
                     }
-                    $note = $commands['editorialNote'] ?? '';
+                    $note = $command['editorialNote'] ?? '';
                     try {
                         $cancellationId = $es->cancelStatement(intval($command['statementId']), $this->apiUserTid, $timestamp, $note);
                         $commandResults[] = [
@@ -311,8 +324,10 @@ class ApiEntity extends ApiController
 
         $entitiesInvolved = [];
         foreach($commands as $command) {
-            $entitiesInvolved[]  = $command['subject'];
-            $entitiesInvolved[] = $command['object'];
+            if ($command['command'] === 'create') {
+                $entitiesInvolved[]  = $command['subject'];
+                $entitiesInvolved[] = $command['object'];
+            }
         }
 
         foreach ($entitiesInvolved as $entity) {
@@ -378,6 +393,155 @@ class ApiEntity extends ApiController
         }
         return $this->responseWithJson($response, $data);
     }
+
+
+
+    /**
+     *
+     * API call:
+     *
+     *    GET  .../api/{entityType}/entities
+     *
+     * Returns the entity data for the given entity ID
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getEntitiesForType(Request $request, Response $response): Response {
+        $tidString = $request->getAttribute('entityType');
+        $es = $this->systemManager->getEntitySystem();
+        $type = $es->getEntityIdFromString($tidString);
+        if ($type <= 0) {
+            return $this->responseWithJson($response, [ 'error' => "Input '$type' not an entity id"], HttpStatus::BAD_REQUEST);
+        }
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':'  . $type);
+        try {
+            $entities = $es->getAllEntitiesForType($type);
+            return $this->responseWithJson($response, $entities);
+        } catch (InvalidArgumentException) {
+            return $this->responseWithJson($response, [ 'error' => "Entity $type not a type"], HttpStatus::BAD_REQUEST);
+        }
+    }
+
+
+    /**
+     *
+     * API call:
+     *
+     *    GET  .../api/entity/nameSearch/{inputString}/{typeList}
+     *
+     * Returns the entity data for the given entity ID
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function nameSearch(Request $request, Response $response): Response {
+
+        $inputString = $this->normalizeName($request->getAttribute('inputString'));
+        if ($inputString === '') {
+            return $this->responseWithJson($response, [ 'error' => "Empty input string"], HttpStatus::BAD_REQUEST);
+        }
+        $typeList = $request->getAttribute('typeList');
+
+        $types = explode(',', $typeList);
+        if (count($types) === 0) {
+            return $this->responseWithJson($response, [ 'error' => "Empty type list"], HttpStatus::BAD_REQUEST);
+        }
+
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':'  . $inputString . ':'. implode('+', $types));
+        for ($i = 0; $i < count($types); $i++) {
+            $types[$i] = intval($types[$i]);
+            if ($types[$i] <= 0) {
+                return $this->responseWithJson($response, [ 'error' => "Invalid type in list at index $i"], HttpStatus::BAD_REQUEST);
+            }
+        }
+        $es = $this->systemManager->getEntitySystem();
+
+
+        foreach($types as $type) {
+            try {
+                $theType = $es->getEntityType($type);
+                if ($theType !== Entity::tEntityType) {
+                    $this->logger->debug("Entity $type is of type $theType");
+                    return $this->responseWithJson($response, [ 'error' => "Entity $type given as type is not a type"], HttpStatus::BAD_REQUEST);
+                }
+            } catch (EntityDoesNotExistException) {
+                return $this->responseWithJson($response, [ 'error' => "Entity $type given as type does not exist"], HttpStatus::BAD_REQUEST);
+            }
+        }
+
+        $cache = $this->systemManager->getSystemDataCache();
+
+        $index = [];
+        foreach($types as $type) {
+            try {
+                $typeIndex = unserialize($cache->get($this->getTypeNamesIndexCacheKey($type)));
+            } catch (KeyNotInCacheException $e) {
+                $typeIndex = $this->buildNamesIndex($type);
+                $cache->set($this->getTypeNamesIndexCacheKey($type), serialize($typeIndex));
+            }
+            array_push($index, ...$typeIndex);
+        }
+
+        // find perfect matches first
+//
+//        $perfectMatches = (new PerfectMatchMatcher($index))->getMatches($inputString, 1);
+//
+//        if (count($perfectMatches) > 0) {
+//            return $this->responseWithJson($response, $perfectMatches);
+//        }
+//
+//        $startStringMatches =  (new StringStartMatcher($index))->getMatches($inputString, self::MaxNameSearchMatches);
+//        if (count($startStringMatches) > 0) {
+//            return $this->responseWithJson($response, $startStringMatches);
+//        }
+//
+//        $subStringMatches =  (new SubStringMatcher($index))->getMatches($inputString, self::MaxNameSearchMatches);
+//        if (count($subStringMatches) > 0) {
+//            return $this->responseWithJson($response, $subStringMatches);
+//        }
+
+
+
+        $matcher = new NameMatcher($index);
+//        $matcher->setLogger($this->logger);
+
+        return $this->responseWithJson($response, $matcher->getMatches($inputString, self::MaxNameSearchMatches));
+    }
+
+    /**
+     * @param int $type
+     * @return SimpleIndexElement[]
+     */
+    private function buildNamesIndex(int $type) : array {
+        $es = $this->systemManager->getEntitySystem();
+        $entities = $es->getAllEntitiesForType($type);
+
+        $index = [];
+        foreach ($entities as $entity) {
+            try {
+                $name = $es->getEntityName($entity);
+                $index[] = (new SimpleIndexElement())->fromTuple([ $entity, $name, 'name', $this->normalizeName($name)]);
+            } catch (EntityDoesNotExistException $e) {
+                // should never happen
+                throw new \RuntimeException($e->getMessage());
+            }
+        }
+        return $index;
+    }
+
+
+    private function normalizeName(string $name) : string {
+        $name = iconv('UTF-8', 'US-ASCII//TRANSLIT', $name);
+        return strtolower(trim($name));
+    }
+
+    private function getTypeNamesIndexCacheKey(int $type) : string {
+        return implode("_", [ 'ApmEntityNamesIndex', self::CacheId, $type]);
+    }
+
 
     /**
      * API call:

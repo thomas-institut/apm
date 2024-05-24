@@ -12,6 +12,7 @@ use APM\EntitySystem\Exception\PredicateCannotBeCancelledException;
 use APM\EntitySystem\Exception\StatementAlreadyCancelledException;
 use APM\EntitySystem\Exception\StatementNotFoundException;
 use APM\EntitySystem\Kernel\PredicateDefinition;
+use InvalidArgumentException;
 use ThomasInstitut\EntitySystem\EntityData;
 
 /**
@@ -147,6 +148,15 @@ interface ApmEntitySystemInterface
 
 
     /**
+     * Returns the name of an entity
+     * @param int $entity
+     * @return string
+     * @throws EntityDoesNotExistException
+     */
+    public function getEntityName(int $entity) : string;
+
+
+    /**
      * Makes a statement
      *
      * @param int $subject
@@ -200,6 +210,7 @@ interface ApmEntitySystemInterface
      * @param int $type
      * @param bool $includeMerged
      * @return int[]
+     * @throws InvalidArgumentException
      */
     public function getAllEntitiesForType(int $type, bool $includeMerged = false) : array;
 

@@ -64,7 +64,7 @@ export class ApmDataProxy {
   }
 
   async getPersonEssentialData(personId) {
-    return await this.getApmEntityData('Person', 'essential',  personId, 'session');
+    return await this.getApmEntityData('Person', 'essential',  personId, 'local');
   }
 
   async getAllPersonEssentialData(){
@@ -215,7 +215,7 @@ export class ApmDataProxy {
    * @return {Promise<any>}
    * @private
    */
-  getApmEntityData(entityType, dataType, entityId, cacheName = 'session') {
+  getApmEntityData(entityType, dataType, entityId, cacheName = 'local') {
     return new Promise ( (resolve, reject) => {
       let getUrl = '';
       switch(entityType) {
@@ -260,7 +260,7 @@ export class ApmDataProxy {
           case 'Work':
             dataToStore = serverData;
         }
-        cache.store(cacheKey, dataToStore, longTtl);
+        cache.store(cacheKey, dataToStore, longTtl * (1+Math.random()));
         resolve(dataToStore);
       }).catch( (e) => {
         reject(e);

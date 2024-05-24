@@ -670,6 +670,10 @@ function createApiEntityRoutes(RouteCollectorProxy $group, string $prefix, Conta
         return (new ApiEntity($container))->getEntitySchema($request, $response);
     })->setName("api.$prefix.type.schema");
 
+    $group->get("/$prefix/{entityType}/entities", function(Request $request, Response $response) use ($container){
+        return (new ApiEntity($container))->getEntitiesForType($request, $response);
+    })->setName("api.$prefix.type.entities");
+
     $group->get("/$prefix/{tid}/data", function(Request $request, Response $response) use ($container){
         return (new ApiEntity($container))->getEntityData($request, $response);
     })->setName("api.$prefix.data");
@@ -677,6 +681,10 @@ function createApiEntityRoutes(RouteCollectorProxy $group, string $prefix, Conta
     $group->post("/$prefix/statements/edit", function(Request $request, Response $response) use ($container){
         return (new ApiEntity($container))->statementEdition($request, $response);
     })->setName("api.$prefix.statements.edit");
+
+    $group->get("/$prefix/nameSearch/{inputString}/{typeList}", function(Request $request, Response $response) use ($container){
+        return (new ApiEntity($container))->nameSearch($request, $response);
+    })->setName("api.$prefix.nameSearch");
 }
 
 function createApiImageRoutes(RouteCollectorProxy $group, string $prefix, ContainerInterface $container) : void

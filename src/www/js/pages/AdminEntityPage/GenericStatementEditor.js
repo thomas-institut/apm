@@ -93,7 +93,7 @@ export class GenericStatementEditor {
       currentSubject = currentSubject.trim();
       currentObject = currentObject.trim();
 
-      console.log( "Values", [ currentSubject, currentObject, currentEditorialNote ] );
+      // console.log( "Values", [ currentSubject, currentObject, currentEditorialNote ] );
       let inputErrors = [];
       if (currentObject !== null) {
         if (currentObject === '') {
@@ -117,7 +117,7 @@ export class GenericStatementEditor {
       if (currentEditorialNote === '') {
         inputErrors.push('Editorial note cannot be empty');
       }
-      console.log('Input errors', inputErrors);
+      // console.log('Input errors', inputErrors);
       if (inputErrors.length === 0) {
         this.dialog.showAcceptButton();
         this.info.html('');

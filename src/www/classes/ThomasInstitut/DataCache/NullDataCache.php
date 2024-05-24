@@ -57,4 +57,12 @@ class NullDataCache implements DataCache
     {
         // do nothing
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getRemainingTtl(string $key): int
+    {
+        return -1;
+    }
 }

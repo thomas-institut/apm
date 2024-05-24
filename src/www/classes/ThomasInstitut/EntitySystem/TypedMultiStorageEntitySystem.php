@@ -146,6 +146,7 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
         }
     }
 
+
     /**
      * Creates an entity in the system with the given entity type by making the statement:
      *

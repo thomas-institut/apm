@@ -49,7 +49,7 @@ EOD;
 //
 // On a Linux machine:
 //
-//    echo -n "1999-01-01 12:58:21" | openssl dgst -md5
+//    date | openssl dgst -md5
 //
 // or use  https://www.md5hashgenerator.com/
 //
@@ -57,5 +57,5 @@ EOD;
 // string sent to the JS app(s). Otherwise it will be impossible to debug potential browser cache problems.
 //
 
-$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = '93ba9f336a0dc3838c3024f2d75541bc'; // hash: '2024-02-29 08:30:00'
-$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = '20240325-002'; // hash: '2024-02-29 08:30:00'
+
+$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = '42a3e45d2d5b6df6d4b501ebe7ea45ca'; // generated 2024-05-22 11:17 EDT

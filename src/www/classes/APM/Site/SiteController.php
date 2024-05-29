@@ -132,7 +132,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             $userInfo['tidString'] = Tid::toBase36String($userData->tid);
             return $userInfo;
         } catch (UserNotFoundException|PersonNotFoundException $e) {
-            $this->logger->error("System Error: " . $e->getMessage());
+            $this->logger->error("System Error while getting SiteUserInfo: " . $e->getMessage(), [ 'userTid' => $this->userTid ]);
             // should never happen
             return [];
         }
@@ -190,7 +190,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             ];
             $data['baseUrl'] = $this->getBaseUrl();
         }
-
         try {
             $responseToReturn = $this->systemManager->getTwig()->render($response, $template, $data);
             SystemProfiler::lap('Response ready');

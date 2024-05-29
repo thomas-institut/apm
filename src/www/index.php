@@ -27,6 +27,7 @@ use APM\Api\ApiPeople;
 use APM\Api\ApiTranscription;
 use APM\Api\ApiWorks;
 use APM\Site\SiteEntity;
+use APM\Site\SiteMetadataEditor;
 use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePeople;
 use APM\System\ConfigLoader;
@@ -121,6 +122,7 @@ try {
 
 createLoginRoutes($app, $container);
 createSiteRoutes($app, $container);
+createSiteDevRoutes($app, $container);
 createAuthenticatedApiRoutes($app, $container);
 createDareApiRoutes($app, $container);
 
@@ -760,6 +762,21 @@ function createLoginRoutes(App $app, ContainerInterface $container) : void {
             return (new Authenticator($container))->logout($request, $response);
         })
         ->setName('logout');
+}
+
+function createSiteDevRoutes(App $app, ContainerInterface $container) : void {
+
+    $app->group("/dev", function (RouteCollectorProxy $group) use ($container){
+        $group->get('/metadata-editor/{id}',
+            function(Request $request, Response $response) use ($container){
+                return (new SiteMetadataEditor($container))->metadataEditorPage($request, $response);
+            })
+            ->setName('metadata-editor');
+    })->add( function(Request $request, RequestHandlerInterface $handler) use($container){
+        return (new Authenticator($container))->authenticateSiteRequest($request, $handler);
+    });
+
+
 }
 
 function createDareApiRoutes(App $app, ContainerInterface $container) : void {

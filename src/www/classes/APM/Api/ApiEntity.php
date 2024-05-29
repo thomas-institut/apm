@@ -579,11 +579,15 @@ class ApiEntity extends ApiController
         $bioSection->type = SectionType::VerticalList;
         $bioSection->title = 'Biographical Data';
 
+        $bioSection->predicates = [];
+
         $dob = new Predicate();
         $dob->id = Entity::pDateOfBirth;
         $dob->title = 'Date of Birth';
         $dob->displayIfNotSet = true;
         $dob->isUniqueInSection = true;
+
+        $bioSection->predicates[] = $dob;
 
         $dod = new Predicate();
         $dod->id = Entity::pDateOfDeath;
@@ -591,15 +595,26 @@ class ApiEntity extends ApiController
         $dod->displayIfNotSet = true;
         $dod->isUniqueInSection = true;
         $dob->validObjectTypes = [ Entity::ValueTypeVagueDate];
-        $bioSection->predicates  = [ $dob, $dod];
+        $bioSection->predicates[] = $dod;
+
+
+//        $email = new Predicate();
+//        $email->id = Entity::pEmailAddress;
+//        $email->title = 'Email Address';
+//        $email->validObjectTypes = [ Entity::ValueTypeEmailAddress];
+
+
+
+
+
 
         $externalIdsSection = new Section();
         $externalIdsSection->title = '';
         $externalIdsSection->type = SectionType::HorizontalList;
         $def = [
-            Entity::pOrcid => "$baseUrl/orcid-logo.svg",
-            Entity::pViafId => "$baseUrl/viaf-logo.svg",
-            Entity::pGNDId => "$baseUrl/gnd-logo.svg",
+            Entity::pOrcid => "$baseUrl/images/orcid-logo.svg",
+            Entity::pViafId => "$baseUrl/images/viaf-logo.svg",
+            Entity::pGNDId => "$baseUrl/images/gnd-logo.svg",
         ];
 
         foreach($def as $id => $logoUrl) {

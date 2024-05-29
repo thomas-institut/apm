@@ -24,10 +24,6 @@ module.exports = {
     },
     PeoplePage: './pages/PeoplePage.js',
     PersonPageNew: './pages/PersonPageNew.js',
-    PersonPage: {
-      import: './pages/PersonPage.js',
-      filename: 'PersonPage.bundle.js'
-    },
     MceComposer: {
       import: './MceComposer/MceComposer.js',
       filename: 'MceComposer.bundle.js',
@@ -37,6 +33,7 @@ module.exports = {
     ApmLogPage: './pages/ApmLogPage.js',
     DashboardPage: './pages/DashboardPage.js',
     SearchPage: './pages/SearchPage.js',
+    MetadataEditorPage: './pages/MetadataEditorPage.js',
     // JASMINE TESTS
     JasmineTests: {
       import: '../test/js/modules-to-test.js',

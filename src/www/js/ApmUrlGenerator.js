@@ -227,6 +227,14 @@ class ApmUrlGenerator {
         return `${this.base}/api/person/create`
     }
 
+    apiEntityGetSchema(entityType) {
+        return `${this.base}/api/entity/${entityType}/schema`
+    }
+
+    apiEntityTypeGetEntities(entityType) {
+        return `${this.base}/api/entity/${entityType}/entities`
+    }
+
 
 
     apiUserGetCollationTableInfo(id) {

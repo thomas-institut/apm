@@ -1,0 +1,23 @@
+{% extends "normal-page.twig" %}
+
+{% block title %}Metadata Editor{% endblock %}
+
+{% block extraCSS %}
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseUrl}}/css/metadata-editor.css" />
+{% endblock %}
+
+{% block extraJS %}
+    <script type="application/javascript" src="{{baseurl}}/js/dist/MetadataEditorPage.bundle.js"></script>
+{% endblock %}
+
+
+{% block finalBodyJS %}
+    <script>
+      $(() => {
+        new MetadataEditorPage(( {
+          commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
+          id: JSON.parse('{{id|json_encode|e('js')}}')
+        }))
+      })
+    </script>
+{%  endblock %}

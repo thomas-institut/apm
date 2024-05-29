@@ -27,7 +27,8 @@ use ThomasInstitut\EntitySystem\Exception\StatementNotFoundException;
  * types.
  *
  * An entity is considered to exist in the system if it is the subject of any
- * statement.
+ * statement. Entities must have at least one statement, the one with the
+ * type predicate.
  *
  */
 class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem

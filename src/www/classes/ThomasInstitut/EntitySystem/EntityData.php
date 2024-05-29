@@ -21,7 +21,7 @@ class EntityData
     public int $type = -1;
 
     /**
-     * The entity's name)
+     * The entity's name
      * @var string
      */
     public string $name = '';
@@ -155,7 +155,7 @@ class EntityData
      *
      *     noQualificationKey => [ obj1, obj2, ... ]
      *
-     * @param int $
+     * @param int $predicate $
      * @param int $qualificationPredicate
      * @param string $noQualificationKey
      * @return array

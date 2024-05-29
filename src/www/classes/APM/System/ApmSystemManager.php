@@ -561,8 +561,6 @@ class ApmSystemManager extends SystemManager {
             $this->systemDataCache->setDefaultTtl(self::DefaultSystemCacheTtl);
         }
 
-
-
         return $this->systemDataCache;
     }
 

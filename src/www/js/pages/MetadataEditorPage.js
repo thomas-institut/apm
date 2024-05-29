@@ -101,7 +101,7 @@ setupMetadataEditor (mode, genericSchema, genericEntityData=[]) {
             }
         })
         } else {
-        let mde = new MetadataEditor({
+        let mde = new MetadataEditor({ // Load schema and entity data of existing entity
             containerSelector: '#person-metadata-editor-container',
             entityDataSchema: genericSchema,
             entityData: genericEntityData,
@@ -115,35 +115,6 @@ setupMetadataEditor (mode, genericSchema, genericEntityData=[]) {
 
 removeMetadataEditor() {
   $('#peopleEditor').empty()
-}
-
-
-getPerson (id, setupMetadataEditor) {
-
-  // Make API Call
-  $.post(urlGen.apiPeopleGetPerson(), {id: id.toString()})
-    .done((apiResponse) => {
-
-      // Catch Error
-      if (apiResponse.status !== 'OK') {
-        console.log(`Error in query`);
-          if (apiResponse.errorData !== undefined) {
-          console.log(apiResponse.errorData);
-        }
-        return false
-      }
-      else {
-        console.log(apiResponse)
-        setupMetadataEditor(apiResponse.data)
-        entity = apiResponse.data
-        return true
-      }
-
-    })
-    .fail((status) => {
-      console.log(status);
-      return false
-    })
 }
 
 async getEntityData(callback) {
@@ -170,112 +141,11 @@ async getEntityData(callback) {
             })
     }
 
-getIdForNewPerson(data, saveEntity) {
-  $.post(urlGen.apiPeopleGetNewId())
-    .done((apiResponse) => {
+    savePersonData (data, mode, callback) {
 
-      // Catch Error
-      if (apiResponse.status !== 'OK') {
-        console.log(`Error in query`);
-        if (apiResponse.errorData !== undefined) {
-          console.log(apiResponse.errorData);
-        }
-        return false
-      }
-      else {
-        console.log(apiResponse)
-        data.id = apiResponse.id
-        saveEntity(data)
-      }
-
-    })
-    .fail((status) => {
-      console.log(status);
-      return false
-    })
-}
-
-getPersonSchema (setupMetadataEditor) {
-  // Make API Call
-  $.post(urlGen.apiPeopleGetSchema())
-    .done((apiResponse) => {
-
-      // Catch Error
-      if (apiResponse.status !== 'OK') {
-        console.log(`Error in query`);
-        if (apiResponse.errorData !== undefined) {
-          console.log(apiResponse.errorData);
-        }
-        return false
-      }
-      else {
-        console.log(apiResponse)
-        setupMetadataEditor(apiResponse.data)
-        return true
-      }
-
-    })
-    .fail((status) => {
-      console.log(status);
-      return false
-    })
-}
-
-savePersonData (data, mode, callback) {
-
-  if (mode === 'edit') {
-    // Make API Call
-    $.post(urlGen.apiPeopleSaveData(), data)
-      .done((apiResponse) => {
-
-        // Catch Error
-        if (apiResponse.status !== 'OK') {
-          console.log(`Error in query`);
-          if (apiResponse.errorData !== undefined) {
-            console.log(apiResponse.errorData);
-          }
-          return;
-        }
-
-        // Log API response and change to show mode
-        console.log(apiResponse);
+        console.log('API CALL TO SAVE DATA WOULD BE CALLED NOW!')
         callback()
-        entity = data
-        this.makePage(data.values[0]) // Updates heading with person name
-        return true
-      })
-      .fail((status) => {
-        console.log(status);
-      })
-  }
-  else if (mode === 'create') {
-      this.getIdForNewPerson(data, (newData) => {
-      // Make API Call
-      $.post(urlGen.apiPeopleSaveData(), newData)
-        .done((apiResponse) => {
-
-          // Catch Error
-          if (apiResponse.status !== 'OK') {
-            console.log(`Error in query`);
-            if (apiResponse.errorData !== undefined) {
-              console.log(apiResponse.errorData);
-            }
-            return;
-          }
-
-          // Log API response and change to show mode
-          console.log(apiResponse);
-          callback()
-          entity = newData
-          this.makePage(data.values[0]) // Updates heading with person name
-          return true
-        })
-        .fail((status) => {
-          console.log(status);
-        })
-    })
-  }
-}
+    }
 }
 
 window.MetadataEditorPage = MetadataEditorPage

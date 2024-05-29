@@ -28,11 +28,12 @@ export class MetadataEditor {
     this.makeHtmlStructureForMetadataEditor()
 
     // globals
-    this.entity = {id: '', type: '', predicates: [], objects: [], validObjectTypes: [], notes: []} // this object gets always updated with the latest metadata
+    this.entity = {id: '', name: '', type: '', predicates: [], objects: [], validObjectTypes: [], notes: []} // this object gets always updated with the latest metadata
     this.numPredicates = 0
     this.mode = {create: 'create', edit: 'edit', show: 'show', dialog: 'dialog'}
     this.sectionTitles = []
     this.sectionStructure = []
+    this.entity.nameField = {}
     this.tagEditor = undefined
     this.singleEditingActive = false
     this.people = []
@@ -68,8 +69,8 @@ export class MetadataEditor {
     this.metadataGridSelector = `${this.options.containerSelector} .metadataEditorGridContainer`
 
     $(this.options.containerSelector).html(
-        `<div class="entity_attr0"></div>
-                            <div class="buttons_top" align="right"></div>
+        `<div class="buttons_top" align="right"></div>
+                            <div class="entity_attr0"></div>
                             <div class='metadataEditorGridContainer'>
                             </div>
                             <div class="buttons_bottom" align="left"></div>
@@ -91,7 +92,6 @@ export class MetadataEditor {
 
   setupCreateMode() {
     this.options.mode = this.mode.create
-
     this.buildEntitySchema(() => {
       this.makeTableStructure()
       this.setupTableForUserInput(() => {
@@ -115,7 +115,6 @@ export class MetadataEditor {
 
   setupDialogMode() {
     this.options.mode = this.mode.dialog
-
     this.buildEntitySchema(() => {
       this.makeTableStructure()
       this.setupSaveButton()
@@ -130,9 +129,6 @@ export class MetadataEditor {
   // updates the empty object this.entity with the data from this.options when instantiating a new metadata editor
   buildEntity(callback) {
 
-    console.log(this.options.entityDataSchema)
-    console.log(this.options.entityData)
-
     if (this.options.entityDataSchema.typeId === entityConstants.tPerson) {
       console.log('Entity is of type person')
     }
@@ -141,10 +137,15 @@ export class MetadataEditor {
       this.entity.id = this.options.entityData.id
     }
 
+    if (this.entity.name === '') {
+      this.entity.name = this.options.entityData.name
+    }
+
     this.entity.type = this.options.entityData.type
 
     if (this.entity.objects.length === 0) { // After having edited and saved objects and notes, they get updated via the updateEntityData function
 
+      // Get entity predicates, objects, validObjectTypes and notes
       for (let section of this.options.entityDataSchema.sections) {
         this.sectionTitles.push(section.title)
         for (let statement of this.options.entityData.statements) {
@@ -173,7 +174,7 @@ export class MetadataEditor {
               // THIS HAS TO BE REPLACED BY: this.entity.validObjectTypes.push(predicate.validObjectTypes)
               switch (section.title) {
                 case 'Biographical Data':
-                  this.entity.validObjectTypes.push(['text', 'empty'])
+                  this.entity.validObjectTypes.push(['text', 'number', 'mixed', 'empty'])
                   break
                 case 'External Links':
                   this.entity.validObjectTypes.push(['url', 'empty'])
@@ -204,17 +205,17 @@ export class MetadataEditor {
             this.sectionStructure.push(section.type)
             this.entity.predicates.push(predicate.title)
 
-            // THIS HAS TO BE REPLACED BY: this.entity.validObjectTypes.push(predicate.validObjectTypes)
-            switch (section.title) {
-              case 'Biographical Data':
-                this.entity.validObjectTypes.push(['text', 'empty'])
-                break
-              case 'External Links':
-                this.entity.validObjectTypes.push(['url', 'empty'])
-                break
-              case '':
-                this.entity.validObjectTypes.push(['text', 'number', 'mixed', 'empty'])
-            }
+          // THIS HAS TO BE REPLACED BY: this.entity.validObjectTypes.push(predicate.validObjectTypes)
+          switch (section.title) {
+            case 'Biographical Data':
+              this.entity.validObjectTypes.push(['text', 'number', 'mixed', 'empty'])
+              break
+            case 'External Links':
+              this.entity.validObjectTypes.push(['url', 'empty'])
+              break
+            case '':
+              this.entity.validObjectTypes.push(['text', 'number', 'mixed', 'empty'])
+          }
         }
     }
 
@@ -265,30 +266,32 @@ export class MetadataEditor {
 
   makeTableCells () {
 
+    // Name Field
     if (this.options.mode === this.mode.dialog || this.options.mode === this.mode.create) {
-      new EditableTextField({
+      this.entity.nameField = new EditableTextField({
         verbose: false,
         containerSelector: `${this.options.containerSelector+' .entity_attr0'}`,
-        initialText: 'Name',
+        initialText: 'name',
         editIcon: '<i class="fas fa-pencil-alt fa-2xs" style="color: dimgray"></i>',
         confirmIcon: '<i class="fa fa-check fa-2xs" style="color: green"></i>',
         cancelIcon: '<i class="fa fa-times fa-2xs" style="color: darkred"></i>',
-        onConfirm: () => {console.log('CONFIRMED')} // PUT IN HERE API CALL TO SAVE NEW STATEMENT
+        onConfirm: () => {this.entity.name = this.entity.nameField.getTextInEditor();} // PUT IN HERE API CALL TO SAVE NEW STATEMENT
       })
     } else {
-      new EditableTextField({
+      this.entity.nameField = new EditableTextField({
         verbose: false,
         containerSelector: `${this.options.containerSelector+' .entity_attr0'}`,
-        initialText: this.options.entityData.name,
+        initialText: this.entity.name,
         editIcon: '<i class="fas fa-pencil-alt fa-2xs" style="color: dimgray"></i>',
         confirmIcon: '<i class="fa fa-check fa-2xs" style="color: green"></i>',
         cancelIcon: '<i class="fa fa-times fa-2xs" style="color: darkred"></i>',
-        onConfirm: () => {console.log('CONFIRMED')} // PUT IN HERE API CALL TO SAVE NEW STATEMENT
+        onConfirm: () => {this.entity.name = this.entity.nameField.getTextInEditor();} // PUT IN HERE API CALL TO SAVE NEW STATEMENT
       })
     }
 
     let sectionIndex = 0
 
+    // Predicates by section
     for (let i = 1; i <= this.numPredicates; i++) {
 
       if (this.sectionStructure[i-1] !== this.sectionStructure[i-2]) {
@@ -524,6 +527,13 @@ export class MetadataEditor {
 
   setupInputFormByIndex(predicateIndex) {
     if (predicateIndex === 'all') {
+
+      // setup name field
+      $(".entity_attr0").click()
+      $(".confirmButton").hide()
+      $(".cancelButton").hide()
+
+
       for (let i = 1; i <= this.numPredicates; i++) {
         let selectorId = this.options.containerSelector + " .entity_attr" + i
         let inputFormId = "entity_attr" + i + "_form"
@@ -626,7 +636,6 @@ export class MetadataEditor {
 
     // This ensures, that existing data will be validated correctly, because validation compares the user input to datalist entries
     if (!(this.options.mode === 'dialog' || this.options.mode === 'create')) {
-      console.log(this.mode)
       this.addValueToInputFormByIndex(predicateIndex)
       this.getMatchingPeople($(inputSelector).val(), (people) => {
         this.addNamesToDatalistForPersonsAsValues(people, this.datalistSelector)
@@ -650,9 +659,6 @@ export class MetadataEditor {
 
 
   getMatchingPeople(value, callback) {
-
-    console.log('VALUE')
-    console.log(value)
 
     let apiCallIdGetMatchingPeople = this.apiCallIdGetMatchingPeople
 
@@ -818,9 +824,6 @@ export class MetadataEditor {
   }
 
   setupMetadataEditorInDialogWindow (entity, selector, dialog, inputFormId) {
-
-    console.log('HELLO')
-    console.log(entity.predicates)
 
     let mde = new MetadataEditor({
       containerSelector: selector,
@@ -1048,10 +1051,13 @@ export class MetadataEditor {
       let d = this.getEntityDataFromInputFormByIndex()
 
       // validate and save data, execute the callback-function given in the options, check if working in dialog window
-      if (this.validateData(d) && this.validatePasswords()) {
+      if (this.validateData(d) && this.validatePasswords() && this.validName(this.entity.nameField.getTextInEditor())) {
         this.makeSpinner(this.buttonsSelectorBottom)
+        this.entity.nameField.confirmEdit()
         this.updateEntityData(d.id, d.type, d.objects, d.notes)
-        this.saveTagsAsHints(this.tagEditor.getTags())
+        if (this.tagEditor !== undefined) {
+          this.saveTagsAsHints(this.tagEditor.getTags())
+        }
         this.options.onSave(this.entity, this.options.mode, () => {
           this.logSaveAction(this.options.mode)
           if (this.options.mode === this.mode.dialog) {
@@ -1175,6 +1181,7 @@ export class MetadataEditor {
 
   updateEntityData(id, type, objects, notes) {
     this.entity.id = id
+    this.entity.name = this.entity.nameField.getTextInEditor()
     this.entity.type = type
     this.entity.objects = objects
     this.entity.notes = notes
@@ -1266,6 +1273,13 @@ export class MetadataEditor {
   }
 
   // Validate Data
+  validName  (object) {
+    if (this.dataType(object) !== 'text') {
+      this.returnDataTypeError('Name', this.dataType(object), 'text')
+    }
+    return this.dataType(object) === 'text'
+  }
+
   validateData (d, predicateIndex='all') {
 
     let index = 0
@@ -1330,13 +1344,13 @@ export class MetadataEditor {
       let date_death = 'z'
 
       // get dates of birth and death
-      if (predicate === 'Date of Birth' && object !== '' && this.getObjectByPredicateFromEntity('Date of Death') !== '') {
+      if (predicate === entityConstants.pDateOfBirth && object !== '' && this.getObjectByPredicateFromEntity(entityConstants.pDateOfDeath) !== '') {
         date_birth = object
-        date_death = this.getObjectByPredicateFromEntity('Date of Death')
+        date_death = this.getObjectByPredicateFromEntity(entityConstants.pDateOfDeath)
       }
-      if (predicate === 'Date of Death' && object !== '' && this.getObjectByPredicateFromEntity('Date of Birth') !== '') {
+      if (predicate === entityConstants.pDateOfDeath && object !== '' && this.getObjectByPredicateFromEntity(entityConstants.pDateOfBirth) !== '') {
         date_death = object
-        date_birth = this.getObjectByPredicateFromEntity('Date of Birth')
+        date_birth = this.getObjectByPredicateFromEntity(entityConstants.pDateOfBirth)
       }
       return date_birth > date_death
     }
@@ -1609,9 +1623,6 @@ export class MetadataEditor {
 
   // Functions for saving and getting tags to/from global tag cache
   saveTagsAsHints(tags) {
-
-    console.log('TAGS')
-    console.log(tags)
 
     // Make API Call
     $.post(urlGen.apiTagEditorSaveTagsAsHints(), {'tags': tags})

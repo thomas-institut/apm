@@ -22,7 +22,8 @@ export class AdminEntityPage extends NormalPage {
         entityData: { type: 'Object', required: true},
         predicatesAllowedAsSubject: { type: 'Object', required: true },
         predicatesAllowedAsObject: { type: 'Object', required: true },
-        predicateDefs: { type: 'Object', required: true}
+        predicateDefs: { type: 'Object', required: true},
+        qualificationDefs: { type: 'Object', required: true}
       }
     })
 
@@ -140,9 +141,12 @@ export class AdminEntityPage extends NormalPage {
         predicate: statement.predicate,
         object: statement.object,
         relation: typeof statement.object === 'number',
-        allowedQualifications: this.predicateDefs[statement.predicate].allowedQualifications,
+        statementMetadata: statement.statementMetadata,
+        predicateDef: this.predicateDefs[statement.predicate],
+        qualificationDefs: this.options.qualificationDefs,
         onSuccess: this.genOnStatementEditorSuccess(),
         getEntityName: this.genGetEntityName(),
+        getEntityList: this.genGetEntitiesForType(),
       })
 
     }
@@ -151,6 +155,12 @@ export class AdminEntityPage extends NormalPage {
   genGetEntityName() {
     return (id) => {
       return this.getEntityName(id, false);
+    }
+  }
+
+  genGetEntitiesForType() {
+    return (type) => {
+      return this.apmDataProxy.getEntityListForType(type);
     }
   }
 
@@ -186,8 +196,12 @@ export class AdminEntityPage extends NormalPage {
           predicate: predicate,
           relation: relation,
           allowedQualifications: this.predicateDefs[predicate].allowedQualifications,
+          statementMetadata: [],
+          predicateDef: this.predicateDefs[predicate],
+          qualificationDefs: this.options.qualificationDefs,
+          getEntityName: this.genGetEntityName(),
+          getEntityList: this.genGetEntitiesForType(),
           onSuccess: this.genOnStatementEditorSuccess(),
-          getEntityName: this.genGetEntityName()
         })
 
       } else {

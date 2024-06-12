@@ -205,6 +205,10 @@ export class ApmDataProxy {
     return this.fetch(urlGen.apiEntityGetData(tid), 'GET', {},false, false, ttl);
   }
 
+  getEntityListForType(typeTid) {
+    return this.fetch(urlGen.apiEntityTypeGetEntities(typeTid), 'GET', {}, false, false, mediumTtl);
+  }
+
 
   /**
    *

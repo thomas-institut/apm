@@ -330,16 +330,7 @@ class ApiEntity extends ApiController
             }
         }
 
-        foreach ($entitiesInvolved as $entity) {
-            try {
-                if ($es->getEntityType($entity) === Entity::tPerson) {
-                    $this->systemManager->onPersonDataChanged($entity);
-                    break;
-                }
-            } catch (EntityDoesNotExistException) {
-                // should never happen
-            }
-        }
+        $this->systemManager->onEntityDataChange($entitiesInvolved);
 
 
         return $this->responseWithJson($response, [

@@ -39,11 +39,19 @@ class SiteEntity extends SiteController
                     $predicateDefs[$predicate] = $es->getPredicateDefinition($predicate);
                 }
             }
+
+            $qualificationPredicates = $es->getValidQualificationPredicates();
+            $qualificationDefs = [];
+            foreach ($qualificationPredicates as $predicate) {
+                $qualificationDefs[$predicate] = $es->getPredicateDefinition($predicate);
+            }
+
             return $this->renderPage($response, self::Template_AdminEntity, [
                 'entityData' => $entityData,
                 'predicatesAllowedAsSubject' => $predicatesAllowedAsSubject,
                 'predicatesAllowedAsObject' => $predicatesAllowedAsObject,
                 'predicateDefs' => $predicateDefs,
+                'qualificationDefs' => $qualificationDefs,
             ]);
         } catch (EntityDoesNotExistException) {
             return $this->getBasicErrorPage($response,  "Not found", "Entity $tid not found", HttpStatus::NOT_FOUND);

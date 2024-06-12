@@ -148,6 +148,19 @@ interface ApmEntitySystemInterface
 
 
     /**
+     * Returns true if entities of the given type can be created
+     * with the createEntity method
+     *
+     * If false, this means that entities must be created manually in the PHP code.
+     * For example, entity types, value types, etc.
+     *
+     * @param int $tid
+     * @return bool
+     */
+    public function entityCreationAllowedForType(int $tid) : bool;
+
+
+    /**
      * Returns the name of an entity
      * @param int $entity
      * @return string
@@ -221,6 +234,12 @@ interface ApmEntitySystemInterface
      * @return int
      */
     public function getEntityIdFromString(string $tidString) : int;
+
+    /**
+     * Gets the list of all predicates that can be used as statement qualifications
+     * @return int[]
+     */
+    public function getValidQualificationPredicates() : array;
 
 
     /**

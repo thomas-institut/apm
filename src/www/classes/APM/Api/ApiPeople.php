@@ -151,7 +151,7 @@ class ApiPeople extends ApiController
             $this->logger->error("Invalid name creating person");
             return $this->responseWithJson($response, [ 'errorMsg' => 'Invalid name' ], HttpStatus::BAD_REQUEST);
         }
-        $this->systemManager->onPersonDataChanged($tid);
+        $this->systemManager->onEntityDataChange($tid);
         // the person has been created
         return $this->responseWithJson($response, [ 'tid' => $tid ], HttpStatus::SUCCESS);
 

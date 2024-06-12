@@ -36,7 +36,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    const dataId = '011';
+    const dataId = '013';
 
     const kernelCacheKey = 'ApmEntitySystemKernel';
 
@@ -704,24 +704,44 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         return $this->getKernel()->getValidPredicatesAsObjectForType($type, $includeReverseRelations);
     }
 
+    public function entityCreationAllowedForType(int $tid) : bool {
+        return $this->getKernel()->entityCreationAllowedForType($tid);
+    }
+
     /**
      * @inheritDoc
      */
     public function getEntityName(int $entity): string
     {
 
-        $useCache = $entity > ApmEntitySystemKernel::MaxSystemTid;
-        $cacheKey = $this->getEntityNameCacheKey($entity);
-        if ($useCache) {
-            try {
-                return $this->memCache->get($cacheKey);
-            } catch (KeyNotInCacheException) {
+        try {
+            $data = $this->getKernel()->getEntityData($entity);
+            return $data->name;
+        } catch (EntityDoesNotExistException) {
+            $useCache = $entity > ApmEntitySystemKernel::MaxSystemTid;
+            $cacheKey = $this->getEntityNameCacheKey($entity);
+            if ($useCache) {
+                try {
+                    return $this->memCache->get($cacheKey);
+                } catch (KeyNotInCacheException) {
+                }
             }
+            $name = $this->getEntityData($entity)->getObjectForPredicate(Entity::pEntityName);
+            if ($name === null) {
+                return '';
+            }
+            if ($useCache) {
+                $this->memCache->set($cacheKey, $name, rand(self::minNameCacheTtl, self::maxNameCacheTtl));
+            }
+            return $name;
         }
-        $name = $this->getEntityData($entity)->getObjectForPredicate(Entity::pEntityName);
-        if ($useCache) {
-            $this->memCache->set($cacheKey, $name, rand(self::minNameCacheTtl, self::maxNameCacheTtl));
-        }
-        return $name;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getValidQualificationPredicates(): array
+    {
+        return $this->getKernel()->getValidQualificationPredicates();
     }
 }

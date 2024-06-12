@@ -60,6 +60,12 @@ class ApmEntitySystemKernel
     private array $otherEntities;
 
 
+    /**
+     * @var int[]
+     */
+    private array $qualificationPredicates;
+
+
 
     public function __construct()
     {
@@ -141,7 +147,7 @@ class ApmEntitySystemKernel
                 if (isset($this->otherEntities[$tid])) {
                     throw new LogicException("Entity $tid is defined twice");
                 }
-                $this->otherEntities[] = $entityDefinition;
+                $this->otherEntities[$tid] = $entityDefinition;
             }
         }
 
@@ -172,6 +178,10 @@ class ApmEntitySystemKernel
                 throw new LogicException("System entity $tid is defined $definitionCount times");
             }
         }
+
+        $this->qualificationPredicates = $this->calcQualificationPredicates();
+
+
     }
 
 
@@ -464,6 +474,26 @@ class ApmEntitySystemKernel
             }
         }
         return $validPredicates;
+    }
+
+
+
+    private function calcQualificationPredicates() : array {
+        $predicates = [];
+        foreach($this->predicates as $predicateDef) {
+            if ($predicateDef->hasFlag(PredicateFlag::QualificationPredicate)) {
+                $predicates[] = $predicateDef->id;
+            }
+        }
+        return $predicates;
+    }
+    /**
+     * Gets the list of all predicates that can be used as statement qualifications
+     * @return int[]
+     */
+    public function getValidQualificationPredicates() : array
+    {
+       return $this->qualificationPredicates;
     }
 
 

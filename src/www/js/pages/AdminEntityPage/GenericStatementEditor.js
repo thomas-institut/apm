@@ -1,6 +1,9 @@
 import { ConfirmDialog } from '../common/ConfirmDialog'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { urlGen } from '../common/SiteUrlGen'
+import * as Entity from "../../constants/Entity";
+
+const EmptyValue = 'EmptyJ2KMKDy9xIAVR8NB';
 
 export class GenericStatementEditor {
   constructor(options) {
@@ -13,9 +16,11 @@ export class GenericStatementEditor {
         predicate: { type: 'number', required: true},
         relation: { type: 'boolean', required: true },
         object: { type: 'string', default: null},
-        canBeCancelled: { type: 'boolean', default:null},
-        allowedQualifications: { type: 'array', default: [] },
+        predicateDef: { type: 'object', required: true},
+        qualificationDefs: { type: 'object', required: true},
+        statementMetadata: { type: 'array', default: []},
         getEntityName: { type: 'function', default: async () => { return ''}},
+        getEntityList: { type: 'function', default: async () => { return []}},
         onSuccess: { type: 'function', default: () => { console.log('GenericStatementEditor: success')}}
       }
     });
@@ -25,9 +30,12 @@ export class GenericStatementEditor {
     let [ editSubject, , editObject ] = this.options.editableParts;
     this.editSubject = editSubject;
     this.editObject = editObject;
+    this.allowedQualifications = this.options.predicateDef.allowedQualifications ?? [];
+    this.canBeCancelled = this.options.predicateDef.canBeCancelled;
     this.initialSubject = this.options.subject ?? '';
     this.initialObject =this.options.object ?? '';
-
+    this.initialQualifications = this.getQualificationsFromStatementMetadata();
+    this.emptyValue = EmptyValue + Date.now();
 
     this.getBodyHtml().then( (bodyHtml) => {
       this.dialog = new ConfirmDialog({
@@ -43,48 +51,137 @@ export class GenericStatementEditor {
       this.editorialNoteInput = $(`${this.dialog.getSelector()} .editorial-note`);
       this.info = $(`${this.dialog.getSelector()} .info`)
       if (this.subjectInput !== null) {
-        this.subjectInput.on('keyup', this.genOnTextInputKeyUp());
+        this.subjectInput.on('keyup', this.genOnInputChange());
       }
       if (this.objectInput !== null) {
-        this.objectInput.on('keyup', this.genOnTextInputKeyUp());
+        this.objectInput.on('keyup', this.genOnInputChange());
       }
-      this.editorialNoteInput.on('keyup', this.genOnTextInputKeyUp());
-      this.genOnTextInputKeyUp()();
+      this.editorialNoteInput.on('keyup', this.genOnInputChange());
+
+      this.allowedQualifications.forEach( (id) => {
+        $(`.qualification-${id}`).on('change', this.genOnInputChange());
+      })
+      this.genOnInputChange()();
       this.dialog.setAcceptFunction(this.genAcceptFunction());
       this.dialog.show();
     })
   }
 
+  qualificationsAreEqual(arrayA, arrayB) {
+    function toObject(qualificationsArray) {
+      let obj = {};
+      qualificationsArray.forEach( (metadata) => {
+        obj[metadata[0]] = metadata[1];
+      })
+      return obj;
+    }
+
+    let debug = false;
+    debug && console.log(`Comparing qualifications of lengths`, arrayA.length, arrayB.length);
+
+    if (arrayA === arrayB) {
+      return true;
+    }
+
+    if (arrayA.length !== arrayB.length) {
+      debug && console.log(`Different lengths`);
+      return false;
+    }
+
+    let objA = toObject(arrayA);
+    let objB = toObject(arrayB);
+
+    debug && console.log(`Comparing qualification contents`, objA, objB);
+
+    for(let index = 0; index < this.allowedQualifications.length; index++) {
+      let predicate = this.allowedQualifications[index];
+      if (objA[predicate] === undefined && objB[predicate] === undefined) {
+        continue;
+      }
+      if (objA[predicate] !== undefined && objB[predicate] === undefined) {
+        debug && console.log(`Predicate ${predicate} only defined in A`)
+        return false;
+      }
+      if (objA[predicate] === undefined && objB[predicate] !== undefined) {
+        debug && console.log(`Predicate ${predicate} only defined in B`)
+        return false;
+      }
+      if (objA[predicate] !== objB[predicate]) {
+        debug && console.log(`Predicate ${predicate} has different values`, objA[predicate], objB[predicate])
+        return false;
+      }
+    }
+    debug && console.log(`They're equal`);
+    return true;
+  }
+
   getQualificationLabel(id) {
-    switch(id) {
-      case 4001: return 'Language';
-      case 4002: return 'Sequence';
-      case 4003: return 'From';
-      case 4004: return 'Until';
-      case 4005: return 'URL Type';
-      case 4006: return 'ID Type';
-      default: return '????';
-    }
+    return this.options.qualificationDefs[id].name ?? '???';
   }
 
-  getQualificationInput(id, currentValue) {
-    switch(id) {
-      case 4003:
-      case 4004:
-        return `<input type="text" class="qualification-input qualification-${id}" value="${currentValue}">`
+  async getQualificationInput(id, currentValue) {
+    let def = this.options.qualificationDefs[id] ?? null;
 
-      default:
-        return '';
+    if (def === null) {
+      return '(!) Undefined';
     }
+
+    let idSpan = `<span class="predicate-help" title="${def.description}"><i class="bi bi-info-circle"></i></span>`;
+    let allowedObjectTypes = def['allowedObjectTypes'];
+
+    if (def.type === Entity.tRelation) {
+      let allowedEntities = await this.getAllEntitiesForTypes(allowedObjectTypes);
+      let optionsHtml =`<option value="${this.emptyValue}"></option>`;
+      for (let i = 0; i < allowedEntities.length; i++) {
+        let id = allowedEntities[i];
+        let selected = id === currentValue ? 'selected' : '';
+        optionsHtml += `<option value="${id}" ${selected}>${await this.options.getEntityName(id)}</option>`
+      }
+      return `<select class="qualification-input qualification-${id}">${optionsHtml}</select> ${idSpan}`
+    } else {
+
+      let inputType = 'text';
+
+      if (allowedObjectTypes.length === 1 && allowedObjectTypes[0] === Entity.ValueTypeInteger) {
+        inputType = 'number';
+      }
+
+      return `<input type="${inputType}" class="qualification-input qualification-${id}" value="${currentValue}"> ${idSpan}`
+    }
+
   }
 
-  genOnTextInputKeyUp() {
+  async getAllEntitiesForTypes(typeArray){
+    let entities = [];
+    for (let i = 0; i < typeArray.length; i++) {
+      let type = typeArray[i];
+      entities.push(...await this.options.getEntityList(type));
+    }
+    return entities;
+  }
+
+  getQualificationsFromStatementMetadata() {
+    let qualifications = [];
+    this.options.statementMetadata.forEach( (metadata) => {
+      let [ id, value] = metadata;
+      if (this.allowedQualifications.indexOf(id) !== -1) {
+        qualifications.push(metadata);
+      }
+    })
+    return qualifications;
+  }
+
+  genOnInputChange() {
     return () => {
 
       let currentSubject = this.subjectInput !== null ? this.subjectInput.val() : this.initialSubject.toString();
       let currentObject = this.objectInput !== null ? this.objectInput.val() : this.initialObject.toString();
       let currentEditorialNote = this.editorialNoteInput.val().trim();
-      if (currentObject === this.initialObject.toString() && currentSubject === this.initialSubject.toString()) {
+      let currentQualifications = this.getQualificationsFromInputFields();
+
+
+      if (currentObject === this.initialObject.toString() && currentSubject === this.initialSubject.toString()
+        && this.qualificationsAreEqual(currentQualifications, this.initialQualifications)) {
         this.dialog.hideAcceptButton();
         this.info.html('No change in data');
         return;
@@ -133,6 +230,7 @@ export class GenericStatementEditor {
       console.log(`Click on accept `)
       let newSubject = this.subjectInput === null ? this.options.subject : parseInt(this.subjectInput.val().trim());
       let newObject = this.objectInput === null ? this.options.object : this.objectInput.val().trim();
+      let newQualifications = this.getQualificationsFromInputFields();
 
       if (newSubject === undefined || newSubject === null || newSubject === '' || isNaN(newSubject))  {
          this.info("ERROR: Invalid subject");
@@ -151,7 +249,7 @@ export class GenericStatementEditor {
       console.log(`Saving new ${this.options.relation ? 'object' : 'value'} [${newObject}], note '${this.editorialNoteInput.val().toString()}'`);
 
       let commands = [];
-      if (this.options.statementId !== null && this.options.canBeCancelled) {
+      if (this.options.statementId !== null && this.canBeCancelled) {
         commands.push({ command: 'cancel', statementId: this.options.statementId });
       }
       commands.push({
@@ -159,12 +257,17 @@ export class GenericStatementEditor {
         subject: newSubject,
         predicate: this.options.predicate,
         object: this.options.relation ? parseInt(newObject) : newObject.toString(),
+        qualifications: newQualifications,
         editorialNote: this.editorialNoteInput.val().trim().toString()
       });
 
-      console.log(`Commands for API`, commands);
+      console.log(`Commands for API`);
+      commands.forEach( (command) => {
+        console.log(command);
+      })
       $.post(urlGen.apiEntityStatementsEdit(), JSON.stringify(commands)).then( (response) => {
-        console.log("Success", response);
+        console.log("Success");
+        console.log(response);
         if (response.success === true) {
           this.options.onSuccess();
         } else {
@@ -206,10 +309,11 @@ export class GenericStatementEditor {
     }
 
     let qualificationsDivs = [];
-    for (let i = 0; i < this.options.allowedQualifications.length; i++) {
-      let qp = this.options.allowedQualifications[i];
+    for (let i = 0; i < this.allowedQualifications.length; i++) {
+      let qp = this.allowedQualifications[i];
       qualificationsDivs.push(`<div class="edit-label">${this.getQualificationLabel(qp)}</div>`);
-      qualificationsDivs.push(`<div>${this.getQualificationInput(qp, '')}</div>`);
+      let value = this.getQualification(qp, this.options.statementMetadata) ?? '';
+      qualificationsDivs.push(`<div>${await this.getQualificationInput(qp, value)}</div>`);
     }
 
     return `
@@ -230,7 +334,40 @@ export class GenericStatementEditor {
         </div>
         <div class="info"></div>
 `
+  }
 
+  getQualificationsFromInputFields() {
+    let qualifications = [];
+    for (let i = 0; i < this.allowedQualifications.length; i++) {
+        let id = this.allowedQualifications[i];
+        let qualificationInput = $(`.qualification-${id}`);
+        let value = qualificationInput.val().toString();
+        if (value !== '' && value !== this.emptyValue) {
+          let predicateDef = this.options.qualificationDefs[id];
+          if (predicateDef.type === Entity.tRelation) {
+            qualifications.push( [ id, parseInt(value)]);
+          } else {
+            qualifications.push( [ id, value]);
+          }
+        }
+    }
+    return qualifications;
+  }
+
+  /**
+   * Return the object/
+   * @param predicate
+   * @param statementMetadata
+   */
+  getQualification(predicate, statementMetadata) {
+
+    let filterQualifications = statementMetadata.filter( (entry) => { return entry[0] === predicate});
+
+    if (filterQualifications.length === 0) {
+      return null;
+    }
+
+    return filterQualifications[0][1];
   }
 
 

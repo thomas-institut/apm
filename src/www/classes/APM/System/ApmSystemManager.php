@@ -32,6 +32,7 @@ use APM\Core\Token\Normalizer\IgnoreShaddaNormalizer;
 use APM\Core\Token\Normalizer\IgnoreTatwilNormalizer;
 use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
 use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
 use APM\FullTranscription\TranscriptionManager;
 use APM\Jobs\ApiPeopleUpdateAllPeopleEssentialData;
@@ -740,6 +741,23 @@ class ApmSystemManager extends SystemManager {
         $this->getJobManager()->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '', [],0, 3, 20);
 
+    }
+
+    /**
+     * @throws EntityDoesNotExistException
+     */
+    public function onEntityDataChange(int|array $entityIdOrIds): void
+    {
+        parent::onEntityDataChange($entityIdOrIds);
+        $entities = is_int($entityIdOrIds) ? [ $entityIdOrIds] : $entityIdOrIds;
+        $es = $this->getEntitySystem();
+
+        foreach ($entities as $entity) {
+            if ($es->getEntityType($entity) === Entity::tPerson) {
+                $this->onPersonDataChanged($entity);
+                break;
+            }
+        }
     }
 
     public function onPersonDataChanged(int $personTid): void

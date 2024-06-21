@@ -121,8 +121,6 @@ class Entity implements TidDefiner
     const pOrcid = 7015;
 
 
-
-
     // Geographical Predicates
     const pContainedBy = 8001;
     const pContains = 8002;

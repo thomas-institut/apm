@@ -16,7 +16,7 @@
       $(() => {
         new MetadataEditorPage(( {
           commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
-          id: JSON.parse('{{id|json_encode|e('js')}}')
+          id: {{ id }}
         }))
       })
     </script>

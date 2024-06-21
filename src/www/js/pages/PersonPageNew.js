@@ -147,6 +147,7 @@ export class PersonPageNew extends NormalPage {
     if (this.isUserRoot()) {
       entityAdminHtml = `<div class="entity-admin">
                 <a class="entity-page-button" href="${urlGen.siteAdminEntity(this.personData.tid)}">[ ${tr('Entity Page')} ]</a>
+                <a class="dev-metadata-editor-button" href="${urlGen.siteDevMetadataEditor(this.personData.tid)}">[ ${tr('Dev Metadata Editor')} ]</a>
                 </div>`
     }
 

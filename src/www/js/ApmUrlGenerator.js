@@ -291,6 +291,10 @@ class ApmUrlGenerator {
         return `${this.base}/entity/${tid}/admin`;
     }
 
+    siteDevMetadataEditor(tid) {
+        return `${this.base}/dev/metadata-editor/${tid}`;
+    }
+
     apiGetCollationTable(tableId, compactEncodedTimeString = '') {
         if (compactEncodedTimeString !== '') {
             return `${this.base}/api/collation/get/${tableId}/${compactEncodedTimeString}`

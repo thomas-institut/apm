@@ -30,7 +30,7 @@ export class MetadataEditor {
     // globals
     this.entity = {id: '', type: '', predicates: [], objects: [], validObjectTypes: [], notes: []} // this object gets always updated with the latest metadata
     this.numPredicates = 0
-    this.mode = {create: 'create', edit: 'edit', show: 'show', dialog: 'dialog'}
+    this.mode = { create: 'create', edit: 'edit', show: 'show', dialog: 'dialog'}
     this.sectionTitles = []
     this.sectionStructure = []
     this.tagEditor = undefined
@@ -44,22 +44,24 @@ export class MetadataEditor {
     this.datalistSelector = this.options.containerSelector + " #people-datalist"
 
     // get a list of all people (for blocking the creation of entities with a name that already exists)
-    this.getPeople(() => {
-      switch (this.options.mode) {
-        case this.mode.edit:
-          this.setupEditMode()
-          break
-        case this.mode.create:
-          this.setupCreateMode()
-          break
-        case this.mode.show:
-          this.setupShowMode()
-          break
-        case this.mode.dialog:
-          this.setupDialogMode()
-          break
-      }
-    })
+    // this.getPeople(() => {
+    //
+    // })
+
+    switch (this.options.mode) {
+      case this.mode.edit:
+        this.setupEditMode()
+        break
+      case this.mode.create:
+        this.setupCreateMode()
+        break
+      case this.mode.show:
+        this.setupShowMode()
+        break
+      case this.mode.dialog:
+        this.setupDialogMode()
+        break
+    }
   }
 
   // Editor Setup
@@ -79,12 +81,12 @@ export class MetadataEditor {
 
   setupEditMode() {
     this.options.mode = this.mode.edit
-    this.buildEntity(() => {
-      this.makeTableStructure()
+    this.buildEntity().then(() => {
+      this.makeTableStructure();
       this.setupTableForUserInput(() => {
-        this.setupCancelButton()
-        this.setupSaveButton()
-        console.log(`edit-mode for metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} activated.`)
+        this.setupCancelButton();
+        this.setupSaveButton();
+        console.log(`edit-mode for metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} activated.`);
       })
     })
   }
@@ -92,23 +94,23 @@ export class MetadataEditor {
   setupCreateMode() {
     this.options.mode = this.mode.create
 
-    this.buildEntitySchema(() => {
-      this.makeTableStructure()
+    this.buildEntitySchema().then(() => {
+      this.makeTableStructure();
       this.setupTableForUserInput(() => {
-        this.setupSaveButton()
-        this.makeBackButton()
-        console.log(`create-mode for new entity of type '${this.entity.type}' activated.`)
+        this.setupSaveButton();
+        this.makeBackButton();
+        console.log(`create-mode for new entity of type '${this.entity.type}' activated.`);
       })
     })
   }
 
   setupShowMode() {
     this.options.mode = this.mode.show
-    this.removeSpinner()
-    this.buildEntity(() => {
-      this.makeTableStructure()
-      this.setupBackAndEditButton()
-      this.showMetadata()
+    this.removeSpinner();
+    this.buildEntity().then(() => {
+      this.makeTableStructure();
+      this.setupBackAndEditButton();
+      this.showMetadata();
       console.log(`show-mode for metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} activated.`)
     })
   }
@@ -116,7 +118,7 @@ export class MetadataEditor {
   setupDialogMode() {
     this.options.mode = this.mode.dialog
 
-    this.buildEntitySchema(() => {
+    this.buildEntitySchema().then(() => {
       this.makeTableStructure()
       this.setupSaveButton()
       this.setupTableForUserInput(() => {
@@ -128,10 +130,7 @@ export class MetadataEditor {
   // Entity and Table Management
 
   // updates the empty object this.entity with the data from this.options when instantiating a new metadata editor
-  buildEntity(callback) {
-
-    console.log(this.options.entityDataSchema)
-    console.log(this.options.entityData)
+  async buildEntity() {
 
     if (this.options.entityDataSchema.typeId === entityConstants.tPerson) {
       console.log('Entity is of type person')
@@ -189,12 +188,10 @@ export class MetadataEditor {
 
     // store number of predicates of the entity
     this.numPredicates = this.entity.predicates.length
-
-    callback()
   }
 
   // updates the empty object this.entity with the data-schema from this.options when creating a new entity
-  buildEntitySchema(callback) {
+  async buildEntitySchema() {
     this.entity.type = this.options.entityDataSchema.typeId
 
     for (let section of this.options.entityDataSchema.sections) {
@@ -220,8 +217,6 @@ export class MetadataEditor {
 
     // store number of objects
     this.numPredicates = this.entity.predicates.length
-
-    callback()
   }
 
   getObjectByPredicateFromEntity(predicate) {
@@ -826,9 +821,7 @@ export class MetadataEditor {
       containerSelector: selector,
       entityDataSchema: this.options.entityDataSchema,
       mode: 'dialog',
-      onSave: (data, mode, callback) => {
-        this.savePersonData(data, mode, callback)
-      },
+      onSave: this.options.onSave,
       dialogWindow: dialog,
       dialogRootMetadataEditor: this,
       dialogRootInputFormSelector: inputFormId
@@ -1052,7 +1045,7 @@ export class MetadataEditor {
         this.makeSpinner(this.buttonsSelectorBottom)
         this.updateEntityData(d.id, d.type, d.objects, d.notes)
         this.saveTagsAsHints(this.tagEditor.getTags())
-        this.options.onSave(this.entity, this.options.mode, () => {
+        this.options.onSave(this.entity, this.options.mode).then( () => {
           this.logSaveAction(this.options.mode)
           if (this.options.mode === this.mode.dialog) {
             this.copyValueFromDialogToRootAndSave()
@@ -1140,7 +1133,7 @@ export class MetadataEditor {
         }
         this.entity.objects[predicateIndex-1] = object // Corresponds to updateEntityData function in global save event
         this.entity.notes[predicateIndex-1] = note // Corresponds to updateEntityData function in global save event
-        this.options.onSave(this.entity, this.options.mode, () => {
+        this.options.onSave(this.entity, this.options.mode).then(() => {
           this.logSaveAction(this.options.mode)
           this.singleEditingActive = false
           this.setupShowMode()
@@ -1507,18 +1500,7 @@ export class MetadataEditor {
   getPeople(callback) {
     $.get(urlGen.apiEntityTypeGetEntities(107))
       .done((apiResponse) => {
-
         console.log(`GetAllEntities response`, apiResponse);
-        // Catch Error
-        // if (apiResponse.status !== 'OK') {
-        //   console.log(`Error in query`);
-        //   if (apiResponse.errorData !== undefined) {
-        //     console.log(apiResponse.errorData);
-        //   }
-        //   return false
-        // }
-        // else {
-        //   console.log(apiResponse)
           this.people = apiResponse.data
           callback()
         // }

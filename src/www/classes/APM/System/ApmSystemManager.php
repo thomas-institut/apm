@@ -231,7 +231,7 @@ class ApmSystemManager extends SystemManager {
 
     public function getDbConnection() : PDO {
         if ($this->dbConn === null) {
-            $this->logger->debug("Getting DB connection");
+//            $this->logger->debug("Getting DB connection");
             // Set up database connection
             try {
                 $this->dbConn = $this->setUpDbConnection();
@@ -548,7 +548,7 @@ class ApmSystemManager extends SystemManager {
                 [
                     $this->getMemDataCache(),
                     function ()  {
-                        $this->logger->info("Creating datatable cache");
+//                        $this->logger->info("Creating datatable cache");
                         $dataTableCache = new DataTableDataCache(new MySqlDataTable($this->getDbConnection(),
                             $this->tableNames[ApmMySqlTableName::TABLE_SYSTEM_CACHE], true));
                         $dataTableCache->setLogger($this->getLogger()->withName('CACHE'));

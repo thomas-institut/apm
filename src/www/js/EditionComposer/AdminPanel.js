@@ -33,6 +33,7 @@ import * as CollationTableType from '../constants/CollationTableType'
 import { Panel } from '../MultiPanelUI/Panel'
 import { ApmFormats } from '../pages/common/ApmFormats'
 import { TimeString } from '../toolbox/TimeString.mjs'
+import { urlGen } from '../pages/common/SiteUrlGen'
 
 const archiveButtonId = 'archive-table-btn'
 const versionHistoryDiv = 'version-history-div'
@@ -56,7 +57,6 @@ export class AdminPanel extends  Panel {
     this.options = oc.getCleanOptions(options)
     this.rendered = false
     this.versionInfo = this.options.versionInfo
-    this.urlGen = this.options.urlGen
   }
 
   async updateVersionInfo(newVersionInfo) {
@@ -165,7 +165,7 @@ export class AdminPanel extends  Panel {
       let authorName = authorData.name;
       html += '<tr>'
       html += '<td>' + (i+1) + '</td>'
-      html += `<td><a href="${this.urlGen.siteEditCollationTable(this.options.tableId, version['id'])}">${version['id']}</a></td>`
+      html += `<td><a href="${urlGen.siteChunkEdition(this.options.tableId, version['id'])}">${version['id']}</a></td>`
       html += '<td class="author">' + authorName + '</td>'
       html += '<td class="time">' + ApmFormats.time(TimeString.toDate(version['timeFrom'])) + '</td>'
       html += '<td>' + version['description'] + '</td>'

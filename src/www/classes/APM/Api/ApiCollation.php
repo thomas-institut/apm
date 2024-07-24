@@ -272,7 +272,8 @@ class ApiCollation extends ApiController
             return $this->responseWithJson($response, ['error' => self::ERROR_NOT_ENOUGH_WITNESSES, 'msg' => $msg], 409);
         }
 
-        
+        $currentTime = date('Y-m-d H:i:s');
+        $collationTable->setTitle("Collation $workId-$chunkNumber, $currentTime UTC");
         $this->profiler->lap('Collation table built');
         $collationTableCacheId = implode(':', $witnessIds) . '-' . implode(':', $normalizerNames);
         $this->codeDebug('Collation table ID: ' . $collationTableCacheId);

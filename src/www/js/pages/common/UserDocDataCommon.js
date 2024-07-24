@@ -17,7 +17,7 @@ export class UserDocDataCommon {
       return noneParagraph()
     }
     return apiData.map( (mceInfo)=> {
-      let url = urlGen.siteEditMultiChunkEdition(mceInfo.id)
+      let url = urlGen.siteMultiChunkEdition(mceInfo.id)
       return `<p class="mce-title"><a href="${url}" title="${tr('Click to edit in new tab/window')}" target="_blank">${mceInfo.title}</a></p>`
     }).join('')
   }
@@ -58,21 +58,12 @@ export class UserDocDataCommon {
     let editions = expandedData.filter( (ctInfo) => { return ctInfo['type'] === 'edition'})
     let cTables = expandedData.filter( (ctInfo) => { return ctInfo['type'] === 'ctable'})
     return {
-      editions: this.__genCtList(editions, workInfoObject),
-      cTables: this.__genCtList(cTables, workInfoObject)
+      editions: this.__genCtList(editions, workInfoObject, false),
+      cTables: this.__genCtList(cTables, workInfoObject, true)
     }
   }
 
-  // static fetchWorkInfoFromExpandedApiData(expandedApiData, urlGen) {
-  //   return new Promise( async (resolve) => {
-  //     let workList = this.getWorksFromCtInfoArray(expandedApiData)
-  //     let workInfoObject = {}
-  //     for (let i = 0; i < workList.length; i++) {
-  //       workInfoObject[workList[i]] =  await $.get(urlGen.apiWorkGetInfo(workList[i]))
-  //     }
-  //     resolve(workInfoObject)
-  //   })
-  // }
+
 
   static getWorksFromCtInfoArray(ctInfoArray) {
     let works = {}
@@ -82,7 +73,7 @@ export class UserDocDataCommon {
     return Object.keys(works)
   }
 
-  static __genCtList(ctInfoArray, workInfoObject) {
+  static __genCtList(ctInfoArray, workInfoObject, isCollationTable = true) {
     if (ctInfoArray.length === 0) {
       return noneParagraph()
     }
@@ -102,7 +93,7 @@ export class UserDocDataCommon {
       html += `<p class="work-title">${workTitle}</p>`
       ctTables = numericFieldSort(ctTables, 'chunkNumber')
       html += ctTables.map( ( ctInfo) => {
-        let editUrl = urlGen.siteEditCollationTable(ctInfo.id)
+        let editUrl = isCollationTable ? urlGen.siteCollationTableEdit(ctInfo.id) : urlGen.siteChunkEdition(ctInfo.id);
         let chunkUrl = urlGen.siteChunkPage(ctInfo.work, ctInfo.chunkNumber)
         return `<p class='ct-info'><a href="${chunkUrl}" title="${tr('Click to see chunk {{chunk}} in new tab/window', { chunk:ctInfo.chunkId })}" target="_blank>">${ctInfo.chunkNumber}</a> : 
  <a href="${editUrl}" title="${tr('Click to edit in new tab/window')}" target="_blank">${ctInfo.title}</a></p>`

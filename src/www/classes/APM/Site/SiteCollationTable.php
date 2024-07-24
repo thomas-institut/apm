@@ -61,6 +61,57 @@ class SiteCollationTable extends SiteController
     const TEMPLATE_EDIT_COLLATION_TABLE_OLD = 'collation-edit.twig';
     const TEMPLATE_EDITION_COMPOSER = 'edition-composer.twig';
 
+    public function newChunkEdition(Request $request, Response $response) : Response{
+        $this->profiler->start();
+        $workId  = $request->getAttribute('workId');
+        $chunkNumber = $request->getAttribute('chunkNumber');
+        $lang = $request->getAttribute('lang');
+        if ($workId === null || $chunkNumber === null || $lang === null) {
+            return $this->getBasicErrorPage($response, "Error", "Invalid parameters for new chunk edition creation", HttpStatus::BAD_REQUEST);
+        }
+        $this->logger->debug("New Chunk Edition, $workId-$chunkNumber, language = $lang");
+
+        $ctData = $this->systemManager->getCollationTableManager()->getEmptyChunkEdition($workId, $chunkNumber, $lang, "New Chunk Edition");
+
+        $dm = $this->systemManager->getDataManager();
+        $rawWorkInfo = $dm->getWorkInfoByDareId($workId);
+        $workInfo = [
+            'authorTid' => intval($rawWorkInfo['author_tid']),
+            'title' => $rawWorkInfo['title']
+        ];
+
+        $peopleTids = [];
+        $peopleTids[] = $workInfo['authorTid'];
+        $pm = $this->systemManager->getPersonManager();
+        $peopleInfo = [];
+        foreach($peopleTids as $personTid) {
+            try {
+                $personData = $pm->getPersonEssentialData($personTid);
+            } catch (PersonNotFoundException) {
+                $this->logger->error("Person $personTid mentioned in CT not found");
+            }
+            if (isset($personData)) {
+                $peopleInfo[$personTid] = $personData->getExportObject();
+            }
+        }
+
+        return $this->renderPage($response, self::TEMPLATE_EDITION_COMPOSER, [
+            'workId' => $workId,
+            'chunkNumber' => $chunkNumber,
+            'tableId' => -1,
+            'collationTableData' => $ctData,
+            'workInfo' => $workInfo,
+            'peopleInfo' => $peopleInfo,
+            'docInfo' => [],
+            'versionInfo' => [],
+            'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userTid),
+            'versionId' => -1,
+            'lastVersion' => true
+        ]);
+
+    }
+
+
     /**
      * Serves the collation table editor.
      * The collation table editor handles both saved collation tables and chunk editions,
@@ -117,7 +168,7 @@ class SiteCollationTable extends SiteController
 
         try {
             $ctData = $ctManager->getCollationTableById($tableId, $timeStamp);
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException) {
             $this->logger->info("Table $tableId requested for editing not found");
             return $this->getErrorPage($response, 'Collation Table Error', "Table $tableId not found", HttpStatus::NOT_FOUND);
         }

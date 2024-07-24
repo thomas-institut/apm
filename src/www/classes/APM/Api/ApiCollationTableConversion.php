@@ -30,10 +30,9 @@ class ApiCollationTableConversion extends  ApiController
     const CLASS_NAME = 'CollationTableConversion';
     const ERROR_CANNOT_CONVERT = 6001;
 
-    public function convertTable(Request $request, Response $response): Response
+    public function convertCollationTableToChunkEdition(Request $request, Response $response): Response
     {
-        $this->setApiCallName(self::CLASS_NAME . ':convert');
-//        $this->profiler->start();
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $inputData = $this->checkAndGetInputData($request, $response, ['tableId', 'initStrategy']);
         $this->debug('Input data', [ $inputData ]);
         if (!is_array($inputData)) {
@@ -58,7 +57,9 @@ class ApiCollationTableConversion extends  ApiController
             return $this->responseWithJson($response, ['error' => self::ERROR_CANNOT_CONVERT], 409);
         }
 
-        return $this->responseWithJson($response, ['status' => 'OK', 'url' => $this->router->urlFor('chunkedition.edit', ['tableId' => $tableId])]);
+        return $this->responseWithJson($response, [
+            'status' => 'OK',
+            'url' => $this->router->urlFor('chunk-edition.edit', ['tableId' => $tableId])]);
 
     }
 

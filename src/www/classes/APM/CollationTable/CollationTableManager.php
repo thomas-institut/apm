@@ -20,12 +20,14 @@
 namespace APM\CollationTable;
 
 
+use APM\Core\Collation\CollationTable;
 use APM\Core\Token\TokenType;
 use APM\StandardData\StandardTokenClass;
 use APM\StandardData\StandardTokenType;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
+use ThomasInstitut\TimeString\TimeString;
 
 /**
  * Class CollationTableManager
@@ -106,6 +108,36 @@ abstract class CollationTableManager implements ErrorReporter
      * @return CollationTableInfo[]
      */
     abstract public function getCollationTableStoredVersionsInfo(int $id) : array;
+
+
+    public function getEmptyChunkEdition(string $workId, int $chunkNumber, string $lang, string $title) : array {
+        $ctData =  [];
+        $ctData['lang'] = $lang;
+        $ctData['sigla'] = [ '-'];
+        $ctData['witnesses'] = [ [
+            'ApmWitnessId' => "$workId-$chunkNumber-edition-xx",
+            'chunkId' => "$workId-$chunkNumber",
+            'lang' => $lang,
+            'witnessType' => 'edition',
+            'tokens' => [],
+            'timeStamp' => TimeString::now()
+        ]];
+        $ctData['collationMatrix'] = [ []];
+        $ctData['witnessTitles'] = [ 'Edition'];
+        $ctData['witnessOrder'] = [ 0 ];
+        $ctData['type'] = CollationTableType::EDITION;
+        $ctData['chunkId'] = "$workId-$chunkNumber";
+        $ctData['title'] = $title;
+        $ctData['editionWitnessIndex'] = 0;
+        $ctData['groupedColumns'] = [];
+        $ctData['tableId'] = -1;
+        $ctData['archived'] = false;
+        $ctData['schemaVersion'] = "1.4";
+        $ctData['siglaGroups'] = [];
+        $ctData['automaticNormalizationsApplied'] = [];
+        $ctData['customApparatuses'] = [];
+        return $ctData;
+    }
 
     /**
      * @param int $collationTableId

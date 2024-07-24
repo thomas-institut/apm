@@ -103,6 +103,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
 
     }
 
+
     public function saveNewCollationTable(array $collationTableData, CollationTableVersionInfo $versionInfo) : int
     {
         $time = TimeString::now();

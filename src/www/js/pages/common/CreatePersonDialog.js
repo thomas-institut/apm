@@ -21,7 +21,7 @@ export class CreatePersonDialog {
     this.debug = this.options.debug;
   }
 
-  show() {
+  createPerson() {
     return new Promise((resolve) => {
       this.dialog = new ConfirmDialog({
         title: tr('Create Person') ,

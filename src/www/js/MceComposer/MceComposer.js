@@ -387,7 +387,7 @@ export class MceComposer extends ApmPage {
         if (this.editionId === -1) {
           // redirect to new edition's page
           this.unsavedChanges = false
-          window.location.href = urlGen.siteEditMultiChunkEdition(apiResponse.id)
+          window.location.href = urlGen.siteMultiChunkEdition(apiResponse.id)
         } else {
           this.saveButton.html(this.icons.saveEdition)
           this.lastSavedMceData = Util.deepCopy(this.mceData)

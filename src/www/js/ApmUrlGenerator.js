@@ -54,10 +54,10 @@ class ApmUrlGenerator {
     }
 
     siteCollationTableCustom(work, chunkno, lang) {
-        return this.base + '/collation/auto/' + work + '/' + chunkno + '/' + lang + '/custom';
+        return this.base + '/collation-table/auto/' + work + '/' + chunkno + '/' + lang + '/custom';
     }
     siteCollationTablePreset(work, chunkno, presetId) {
-        return this.base + '/collation/auto/' + work + '/' + chunkno + '/preset/' + presetId;
+        return this.base + '/collation-table/auto/' + work + '/' + chunkno + '/preset/' + presetId;
     }
     sitePageView(docId, pageSequence, col = 0) {
         let url = this.base + '/doc/' + docId + '/page/' + pageSequence + '/view';
@@ -124,32 +124,43 @@ class ApmUrlGenerator {
         return this.base + '/people'
     }
 
-    siteEditMultiChunkEdition(editionId) {
-        return `${this.base}/edition/multi/edit/${editionId}`
+    siteMultiChunkEdition(editionId) {
+        return `${this.base}/multi-chunk-edition/${editionId}`
     }
 
     siteMultiChunkEditionNew() {
-        return `${this.base}/edition/multi/new`
+        return `${this.base}/multi-chunk-edition/new`
     }
 
-    siteCollationTable(work, chunkno, lang, ids = []) {
+    siteCollationTableAutomatic(work, chunkNumber, lang, ids = []) {
         let extra = '';
         if (ids.length > 0) {
-            extra += '/';
-            extra += ids.join('/');
+            extra = '/' + ids.join('/');
         }
-        return this.base + '/collation/auto/' + work + '/' + chunkno + '/' + lang + extra;
+        return this.base + '/collation-table/auto/' + work + '/' + chunkNumber + '/' + lang + extra;
     }
-    siteEditCollationTable(tableId, version = 0) {
+    siteCollationTableEdit(tableId, version = 0) {
         let postfix = ''
         if (version !== 0) {
             postfix = `/${version}`
         }
-        return `${this.base}/collation/edit/${tableId}${postfix}`
+        return `${this.base}/collation-table/${tableId}${postfix}`
+    }
+
+    siteChunkEdition(editionId, version = 0) {
+        let postfix = ''
+        if (version !== 0) {
+            postfix = `/${version}`
+        }
+        return `${this.base}/chunk-edition/${editionId}${postfix}`
+    }
+
+    siteChunkEditionNew(workId, chunkNumber, lang) {
+        return `${this.base}/chunk-edition/new/${workId}/${chunkNumber}/${lang}`;
     }
 
     siteEditCollationTableBeta(tableId) {
-        return this.base + '/collation/edit/' + tableId + '/beta'
+        return this.base + '/collation-table/edit/' + tableId + '/beta'
     }
 
     siteBlankThumbnail() {
@@ -261,7 +272,7 @@ class ApmUrlGenerator {
         return `${this.base}/api/page/types`
     }
     apiQuickCollation() {
-        return this.base + '/api/public/collation/quick';
+        return this.base + '/api/public/collation-table/quick';
     }
     // apiConvertSvg() {
     //     return this.base + '/api/convert/svg2pdf';
@@ -276,7 +287,7 @@ class ApmUrlGenerator {
     }
 
     apiConvertCollationTable(tableId) {
-        return `${this.base}/api/collation/convert/${tableId}`;
+        return `${this.base}/api/collation-table/convert/${tableId}`;
     }
 
     apiEntityGetData(tid) {
@@ -297,13 +308,13 @@ class ApmUrlGenerator {
 
     apiGetCollationTable(tableId, compactEncodedTimeString = '') {
         if (compactEncodedTimeString !== '') {
-            return `${this.base}/api/collation/get/${tableId}/${compactEncodedTimeString}`
+            return `${this.base}/api/collation-table/get/${tableId}/${compactEncodedTimeString}`
         }
-        return `${this.base}/api/collation/get/${tableId}`
+        return `${this.base}/api/collation-table/get/${tableId}`
     }
 
     apiGetActiveEditionInfo() {
-        return `${this.base}/api/collation/info/edition/active`
+        return `${this.base}/api/collation-table/info/edition/active`
     }
 
     apiGetMultiChunkEdition(editionId, timeStamp = '') {
@@ -359,15 +370,11 @@ class ApmUrlGenerator {
 
 
 
-
-    siteChunkEdition(tableId) {
-        return this.base + '/edition/chunk/edit/' + tableId;
-    }
     apiAutomaticCollation() {
-        return this.base + '/api/collation/auto';
+        return this.base + '/api/collation-table/auto';
     }
     apiSaveCollation() {
-        return this.base + '/api/collation/save';
+        return this.base + '/api/collation-table/save';
     }
     apiAutomaticEdition() {
         return this.base + '/api/edition/auto';

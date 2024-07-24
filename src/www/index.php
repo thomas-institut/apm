@@ -207,48 +207,53 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
 
         // COLLATION TABLES
         // Collation table with preset
-        $group->get('/collation/auto/{work}/{chunk}/preset/{preset}',
+        $group->get('/collation-table/auto/{work}/{chunk}/preset/{preset}',
             function(Request $request, Response $response) use ($container){
                 return (new SiteCollationTable($container))->automaticCollationPagePreset($request, $response);
             })
-            ->setName('chunk.collationtable.preset');
+            ->setName('chunk.collation-table.preset');
 
         // Collation table with parameters in Url
-        $group->get('/collation/auto/{work}/{chunk}/{lang}[/{ignore_punct}[/{witnesses:.*}]]',
+        $group->get('/collation-table/auto/{work}/{chunk}/{lang}[/{ignore_punct}[/{witnesses:.*}]]',
             function(Request $request, Response $response, $args) use ($container){
                 return (new SiteCollationTable($container))->automaticCollationPageGet($request, $response, $args);
             })
-            ->setName('chunk.collationtable');
+            ->setName('chunk.collation-table');
 
         // Collation table with full options in post
-        $group->post('/collation/auto/{work}/{chunk}/{lang}/custom',
+        $group->post('/collation-table/auto/{work}/{chunk}/{lang}/custom',
             function(Request $request, Response $response) use ($container){
                 return (new SiteCollationTable($container))->automaticCollationPageCustom($request, $response);
             })
-            ->setName('chunk.collationtable.custom');
+            ->setName('chunk.collation-table.custom');
 
         // edit collation table
-        $group->get('/collation/edit/{tableId}[/{versionId}]',
+        $group->get('/collation-table/{tableId}[/{versionId}]',
             function(Request $request, Response $response) use ($container){
                 return (new SiteCollationTable($container))->editCollationTable($request, $response);
             })
-            ->setName('collationtable.edit');
+            ->setName('collation-table.edit');
 
-        // EDITION
-        $group->get('/edition/chunk/edit/{tableId}[/{type}]',
+        // CHUNK EDITION
+        $group->get('/chunk-edition/new/{workId}/{chunkNumber}/{lang}',
+            function(Request $request, Response $response) use ($container){
+                return (new SiteCollationTable($container))->newChunkEdition($request, $response);
+            })->setName('chunk-edition.new');
+
+        $group->get('/chunk-edition/{tableId}[/{type}]',
             function(Request $request, Response $response) use ($container){
                 return (new SiteCollationTable($container))->editCollationTable($request, $response);
-            })->setName('chunkedition.edit');
+            })->setName('chunk-edition.edit');
 
 
         // MULTI-CHUNK EDITION
-        $group->get('/edition/multi/new',
+        $group->get('/multi-chunk-edition/new',
             function(Request $request, Response $response) use ($container){
                 return (new SiteMultiChunkEdition($container))->newMultiChunkEdition($response);
             }
         )->setName('mce.new');
 
-        $group->get('/edition/multi/edit/{editionId}',
+        $group->get('/multi-chunk-edition/{editionId}',
             function(Request $request, Response $response) use ($container){
                 return (new SiteMultiChunkEdition($container))->getMultiChunkEdition($request, $response);
             }
@@ -546,31 +551,31 @@ function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) :
 
         // COLLATION TABLES
 
-        $group->post('/collation/auto',
+        $group->post('/collation-table/auto',
             function(Request $request, Response $response) use ($container){
                 return (new ApiCollation($container))->automaticCollation($request, $response);
             })
             ->setName('api.collation.auto');
 
-        $group->post('/collation/save',
+        $group->post('/collation-table/save',
             function(Request $request, Response $response) use ($container){
                 return (new ApiCollation($container))->saveCollationTable($request, $response);
             })
             ->setName('api.collation.save');
 
-        $group->post('/collation/convert/{tableId}',
+        $group->post('/collation-table/convert/{tableId}',
             function(Request $request, Response $response) use ($container){
-                return (new ApiCollationTableConversion($container))->convertTable($request, $response);
+                return (new ApiCollationTableConversion($container))->convertCollationTableToChunkEdition($request, $response);
             })
             ->setName('api.collation.convert');
 
-        $group->get('/collation/get/{tableId}[/{timestamp}]',
+        $group->get('/collation-table/get/{tableId}[/{timestamp}]',
             function(Request $request, Response $response) use ($container){
                 return (new ApiCollation($container))->getTable($request, $response);
             })
             ->setName('api.collation.get');
 
-        $group->get('/collation/info/edition/active',
+        $group->get('/collation-table/info/edition/active',
             function(Request $request, Response $response) use ($container){
                 return (new ApiCollation($container))->getActiveEditions($response);
             })

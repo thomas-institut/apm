@@ -409,7 +409,7 @@ async function displayResults (data, lang, num_passages, zoom, keywordDistance, 
       else {
         table_id = data[i]['table_id']
         chunk = data[i]['chunk']
-        link = getLink(urlGen.siteEditCollationTable(table_id))
+        link = getLink(urlGen.siteCollationTableEdit(table_id))
       }
 
       // Slice and highlight passages

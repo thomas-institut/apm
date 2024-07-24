@@ -304,7 +304,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
         console.log("Success saving table")
         console.log(apiResponse)
         let tableId = apiResponse['tableId']
-        let url = urlGen.siteEditCollationTable(tableId)
+        let url = urlGen.siteCollationTableEdit(tableId)
 
         this.collationTableActionsDiv.html('Table saved: <a href="' + url + '">Edit table</a>')
 
@@ -697,7 +697,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
   async getHeaderHtml(){
     let breadcrumbHtml = this.getBreadcrumbNavHtml([
       { label :tr('Works'), url:  urlGen.siteWorks()},
-      { label : this.options.workId},
+      { label : this.options.workId, url: urlGen.siteWorkPage(this.options.workId)},
       { label : `Chunk ${this.options.chunkNumber}`, url: urlGen.siteChunkPage(this.options.workId, this.options.chunkNumber)},
       { label: tr('Automatic Collation Table')},
       { label: `${tr(this.options.langName)} ${this.options.isPartial ? `(${tr('Partial')})` : ''}`, active: true}

@@ -4,6 +4,7 @@ import { urlGen } from './common/SiteUrlGen'
 import { tr } from './common/SiteLang'
 import { ApmPage } from './ApmPage'
 import { CreatePersonDialog } from './common/CreatePersonDialog'
+import { PersonCreationDialog } from './common/PersonCreationDialog'
 
 export class PeoplePage extends NormalPage {
 
@@ -51,17 +52,18 @@ export class PeoplePage extends NormalPage {
     }
 
     genOnClickCreateNewPersonButton() {
-      return () => {
-        (new CreatePersonDialog({
+      return async () => {
+        let dialog = new PersonCreationDialog({
           apmDataProxy: this.apmDataProxy
-        })).show().then((newPersonTid) => {
-          if (newPersonTid !== -1) {
-            console.log("New person tid is " + Tid.toBase36String(newPersonTid));
-            this.initPage().then(() => {
-              console.log(`Data reloaded`)
-            })
-          }
-        })
+        });
+
+        let newPersonTid = await dialog.createPerson();
+        if (newPersonTid !== false) {
+          console.log("New person tid is " + Tid.toBase36String(newPersonTid));
+          this.initPage().then(() => {
+            console.log(`Data reloaded`)
+          })
+        }
        }
     }
 

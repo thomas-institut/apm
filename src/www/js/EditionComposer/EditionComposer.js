@@ -132,6 +132,8 @@ export class EditionComposer extends ApmPage {
     console.log(`EditionComposer Options`)
     console.log(this.options)
 
+
+
     // icons
     this.icons = {
       moveUp: '&uarr;',
@@ -166,6 +168,8 @@ export class EditionComposer extends ApmPage {
 
     console.log('Clean CT Data')
     console.log(this.ctData)
+
+    this.isNew = this.ctData.tableId === -1;
 
     this.lang = this.ctData['lang']
 
@@ -314,7 +318,6 @@ export class EditionComposer extends ApmPage {
          )
       })
       .concat([
-        // TabConfig.createTabConfig(editionPreviewTabId, 'Edition Preview', this.editionPreviewPanel),
         TabConfig.createTabConfig(editionPreviewNewTabId, 'Edition Preview', this.editionPreviewPanelNew),
         TabConfig.createTabConfig(adminPanelTabId, 'Admin', this.adminPanel),
     ])
@@ -811,11 +814,13 @@ export class EditionComposer extends ApmPage {
         let description = this.lastVersion ? '' : `From version ${this.versionId}: `;
         description += changes.join('. ');
         let apiCallOptions = {
-          collationTableId: this.tableId,
           collationTable: this.ctData,
           descr: description,
           source: 'edit',
           baseSiglum: this.ctData['sigla'][0]
+        }
+        if (!this.isNew) {
+          apiCallOptions.collationTableId = this.tableId
         }
         $.post(
           this.apiSaveCollationUrl,
@@ -823,9 +828,15 @@ export class EditionComposer extends ApmPage {
         ).done(  async (apiResponse) => {
           console.log("Success saving table")
           console.log(apiResponse)
-          if (!this.lastVersion) {
+          if (this.isNew) {
+            // redirect to proper url
             this.unsavedChanges = false;
-            location.replace(urlGen.siteEditCollationTable(this.tableId));
+            location.replace(urlGen.siteChunkEdition(apiResponse.tableId));
+          }
+          if (!this.lastVersion) {
+            // redirect to last version
+            this.unsavedChanges = false;
+            location.replace(urlGen.siteCollationTableEdit(this.tableId));
           } else {
             this.saveButton.html(this.icons.saveEdition)
             this.lastSavedCtData = Util.deepCopy(this.ctData)
@@ -1168,9 +1179,14 @@ export class EditionComposer extends ApmPage {
     } else {
       // console.log(`No changes`)
       this.unsavedChanges = false
-      this.adminPanel.allowArchiving()
-      let lastVersion = this.versionInfo[this.versionInfo.length-1]
-      this.saveButtonPopoverContent = `Last save: ${ApmFormats.timeString(lastVersion['timeFrom'])}`
+      if (this.isNew) {
+        this.saveButtonPopoverContent = `Last save: never`
+      } else {
+        this.adminPanel.allowArchiving()
+        let lastVersion = this.versionInfo[this.versionInfo.length-1]
+        this.saveButtonPopoverContent = `Last save: ${ApmFormats.timeString(lastVersion['timeFrom'])}`
+
+      }
       this.saveButtonPopoverTitle = 'Nothing to save'
       this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassNoChanges)
       this.saveButton.prop('disabled', true)

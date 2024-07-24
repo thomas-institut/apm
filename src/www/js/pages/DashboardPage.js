@@ -23,6 +23,7 @@ import { NormalPage } from './NormalPage'
 import { urlGen } from './common/SiteUrlGen'
 import { ApmPage } from './ApmPage'
 import { Tid } from '../Tid/Tid'
+import { NewChunkEditionDialog } from './common/NewChunkEditionDialog'
 
 const newMceEditionIcon = '<i class="bi bi-file-plus"></i>'
 
@@ -51,6 +52,12 @@ export class DashboardPage extends NormalPage {
       this.fetchCollationTablesAndEditions(),
       this.fetchTranscriptions()
     ])
+
+    $('.new-chunk-edition-btn').on('click', (ev) => {
+      ev.preventDefault();
+      let d = new NewChunkEditionDialog();
+      d.createNewChunkEdition();
+    })
   }
 
   async fetchMultiChunkEditions() {
@@ -63,9 +70,13 @@ export class DashboardPage extends NormalPage {
 
   async fetchCollationTablesAndEditions() {
    let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.userTid))
-   let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo'])
-   this.chunkEditionsCollapse.setContent(listHtml.editions)
+   let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo']);
+   let newChunkEditionHtml = `<p class="new-mce"><a href="" class="new-chunk-edition-btn" 
+        title="${tr("Click to create a new chunk edition")}">${newMceEditionIcon} Create new chunk edition</a></p>`;
+   this.chunkEditionsCollapse.setContent(listHtml.editions + newChunkEditionHtml);
    this.collationTablesCollapse.setContent(listHtml.cTables)
+
+
   }
 
   async fetchTranscriptions() {

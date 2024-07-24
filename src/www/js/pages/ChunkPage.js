@@ -268,7 +268,7 @@ export class ChunkPage extends HeaderAndContentPage {
             urlGen.apiWitnessToEdition(info.systemId)
           ).done( function (apiResponse){
             console.log("Success")
-            let tableUrl = urlGen.siteEditCollationTable(apiResponse.tableId)
+            let tableUrl = urlGen.siteCollationTableEdit(apiResponse.tableId)
             dialogObject.setTitle('Success')
             dialogObject.setBody(`
 <p>The edition with witness ${info.title} was successfully created.<p><p>Click <a href="${tableUrl}" target="_blank" >here to open it on a new tab</a></p>
@@ -310,7 +310,7 @@ export class ChunkPage extends HeaderAndContentPage {
       html += `<h4>${titles[type]}</h4>`
       html += '<ul>'
       for(const ctInfo of tables) {
-        let url = urlGen.siteEditCollationTable(ctInfo['tableId'])
+        let url = urlGen.siteCollationTableEdit(ctInfo['tableId'])
         html += '<li class="smallpadding"><a title="Open in new tab/window" target="_blank" href="' + url + '">' + ctInfo['title'] +
           '</a>, <small>last change: ' + ApmFormats.timeString(ctInfo['lastSave']) +
           ' by ' + await this.getAuthorLink(ctInfo['authorTid']) + '</small></li>'
@@ -614,7 +614,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
              { 
                lang: l,
                name: langName,
-               url:  urlGen.siteCollationTable(this.options.work, this.options.chunk, l),
+               url:  urlGen.siteCollationTableAutomatic(this.options.work, this.options.chunk, l),
                urltext: 'All witnesses',
                urltitle: 'Open automatic collation table in new tab',
                availableWitnesses: this.witnessesByLang[l],

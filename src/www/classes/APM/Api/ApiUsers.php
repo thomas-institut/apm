@@ -20,6 +20,7 @@
 
 namespace APM\Api;
 
+use APM\System\Cache\CacheKey;
 use APM\System\DataRetrieveHelper;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
@@ -45,12 +46,7 @@ class ApiUsers extends ApiController
 {
 
     const CLASS_NAME = 'Users';
-    const CACHE_KEY_PREFIX_TRANSCRIBED_PAGES = 'ApiUsers-TranscribedPagesData-';
-
     const CACHE_TTL_TRANSCRIBED_PAGES = 7 * 24 * 3600;  // 7 days
-
-    const CACHE_KEY_PREFIX_CT_INFO = 'ApiUsers-CollationTableInfoData-';
-
     const CACHE_TTL_CT_INFO = 7 * 24 * 3600;  // 7 days
     /**
      * @param Request $request
@@ -200,7 +196,7 @@ class ApiUsers extends ApiController
         $userTid =  (int) $request->getAttribute('userTid');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $userTid);
 
-        $cacheKey = self::CACHE_KEY_PREFIX_TRANSCRIBED_PAGES . $userTid;
+        $cacheKey = CacheKey::ApiUsersTranscribedPages . $userTid;
         $cacheHit = true;
         $dataCache = $this->systemManager->getSystemDataCache();
         $this->systemManager->getSqlQueryCounterTracker()->incrementSelect();
@@ -232,7 +228,7 @@ class ApiUsers extends ApiController
                 ]);
             return false;
         }
-        $systemManager->getSystemDataCache()->set(self::CACHE_KEY_PREFIX_TRANSCRIBED_PAGES . $userId,
+        $systemManager->getSystemDataCache()->set(CacheKey::ApiUsersTranscribedPages. $userId,
             serialize($data), self::CACHE_TTL_TRANSCRIBED_PAGES);
         return true;
     }
@@ -271,7 +267,7 @@ class ApiUsers extends ApiController
         $userTid =  (int) $request->getAttribute('userTid');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . Tid::toBase36String($userTid));
 
-        $cacheKey = self::CACHE_KEY_PREFIX_CT_INFO . $userTid;
+        $cacheKey = CacheKey::ApiUsersCollationTableInfoData . $userTid;
 
         $cacheHit = true;
         $dataCache = $this->systemManager->getSystemDataCache();
@@ -341,7 +337,7 @@ class ApiUsers extends ApiController
                 ]);
             return false;
         }
-        $systemManager->getSystemDataCache()->set(self::CACHE_KEY_PREFIX_CT_INFO . $userTid,
+        $systemManager->getSystemDataCache()->set(CacheKey::ApiUsersCollationTableInfoData . $userTid,
             serialize($data), self::CACHE_TTL_CT_INFO);
         return true;
     }

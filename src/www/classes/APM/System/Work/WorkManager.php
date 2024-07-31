@@ -34,4 +34,13 @@ interface WorkManager extends LoggerAwareInterface
      */
     public function getWorksByAuthor(int $authorTid) : array;
 
+
+    /**
+     * Returns an array of entity ids corresponding to all
+     * the people in the system that are authors of a work
+     *
+     * @return int[]
+     */
+    public function getAuthors(): array;
+
 }

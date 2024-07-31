@@ -19,6 +19,7 @@ use APM\EntitySystem\Schema\SystemEntity;
 use APM\EntitySystem\Schema\SystemPredicates;
 use APM\EntitySystem\Schema\UrlTypes;
 use APM\EntitySystem\Schema\ValueTypes;
+use APM\EntitySystem\Schema\WorkPredicates;
 use LogicException;
 use ThomasInstitut\EntitySystem\EntityData;
 
@@ -76,6 +77,7 @@ class ApmEntitySystemKernel
         $predicateDefiners = [
             new SystemPredicates(),
             new PersonPredicates(),
+            new WorkPredicates(),
             new GeoPredicates(),
             new DarePredicates()
         ];

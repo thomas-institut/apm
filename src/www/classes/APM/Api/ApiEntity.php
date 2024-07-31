@@ -15,15 +15,11 @@ use APM\EntitySystem\Exception\StatementAlreadyCancelledException;
 use APM\EntitySystem\Exception\StatementNotFoundException;
 use APM\EntitySystem\Kernel\PredicateFlag;
 use APM\EntitySystem\Schema\Entity;
-use APM\StringMatcher\LevenshteinMatcher;
 use APM\StringMatcher\NameMatcher;
-use APM\StringMatcher\PerfectMatchMatcher;
 use APM\StringMatcher\SimpleIndexElement;
-use APM\StringMatcher\StringStartMatcher;
-use APM\StringMatcher\SubStringMatcher;
+use APM\System\Cache\CacheKey;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
-use APM\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -450,7 +446,6 @@ class ApiEntity extends ApiController
         }
         $es = $this->systemManager->getEntitySystem();
 
-
         foreach($types as $type) {
             try {
                 $theType = $es->getEntityType($type);
@@ -469,35 +464,14 @@ class ApiEntity extends ApiController
         foreach($types as $type) {
             try {
                 $typeIndex = unserialize($cache->get($this->getTypeNamesIndexCacheKey($type)));
-            } catch (KeyNotInCacheException $e) {
+            } catch (KeyNotInCacheException) {
                 $typeIndex = $this->buildNamesIndex($type);
                 $cache->set($this->getTypeNamesIndexCacheKey($type), serialize($typeIndex));
             }
             array_push($index, ...$typeIndex);
         }
 
-        // find perfect matches first
-//
-//        $perfectMatches = (new PerfectMatchMatcher($index))->getMatches($inputString, 1);
-//
-//        if (count($perfectMatches) > 0) {
-//            return $this->responseWithJson($response, $perfectMatches);
-//        }
-//
-//        $startStringMatches =  (new StringStartMatcher($index))->getMatches($inputString, self::MaxNameSearchMatches);
-//        if (count($startStringMatches) > 0) {
-//            return $this->responseWithJson($response, $startStringMatches);
-//        }
-//
-//        $subStringMatches =  (new SubStringMatcher($index))->getMatches($inputString, self::MaxNameSearchMatches);
-//        if (count($subStringMatches) > 0) {
-//            return $this->responseWithJson($response, $subStringMatches);
-//        }
-
-
-
         $matcher = new NameMatcher($index);
-//        $matcher->setLogger($this->logger);
 
         return $this->responseWithJson($response, $matcher->getMatches($inputString, self::MaxNameSearchMatches));
     }
@@ -530,7 +504,7 @@ class ApiEntity extends ApiController
     }
 
     private function getTypeNamesIndexCacheKey(int $type) : string {
-        return implode("_", [ 'ApmEntityNamesIndex', self::CacheId, $type]);
+        return implode("_", [ CacheKey::ApiEntityEntityNamesIndexPrefix, self::CacheId, $type]);
     }
 
 

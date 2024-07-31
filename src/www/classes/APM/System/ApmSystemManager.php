@@ -20,6 +20,7 @@
 
 namespace APM\System;
 
+use APM\Api\ApiPeople;
 use APM\CollationEngine\Collatex;
 use APM\CollationEngine\CollationEngine;
 use APM\CollationEngine\DoNothingCollationEngine;
@@ -60,7 +61,7 @@ use APM\System\Preset\DataTablePresetManager;
 use APM\System\Preset\PresetManager;
 use APM\System\User\ApmUserManager;
 use APM\System\User\UserManagerInterface;
-use APM\System\Work\DataTableWorkManager;
+use APM\System\Work\EntitySystemWorkManager;
 use APM\System\Work\WorkManager;
 use APM\ToolBox\BaseUrlDetector;
 use AverroesProject\Data\DataManager;
@@ -110,7 +111,8 @@ class ApmSystemManager extends SystemManager {
     // Database version
     const DB_VERSION = 33;
 
-    const ES_DATA_ID = 'es001';
+    // Entity system Data ID: key for entity system caches
+    const ES_DATA_ID = 'es002';
 
     const MemCachePrefix_Apm_ES = 'apm_es';
     const MemCachePrefix_TypedMultiStorage_ES = 'apm_msEs';
@@ -783,6 +785,34 @@ class ApmSystemManager extends SystemManager {
             '', [],0, 3, 20);
     }
 
+    public function onWorkAdded(int $workId): void
+    {
+        parent::onWorkAdded($workId);
+        ApiPeople::invalidateWorksByPersonCache($this, $this->getWorkAuthor($workId));
+    }
+
+    public function onWorkDeleted($workId): void
+    {
+        parent::onWorkAdded($workId);
+        ApiPeople::invalidateWorksByPersonCache($this, $this->getWorkAuthor($workId));
+    }
+
+    public function onWorkUpdated(int $workId): void
+    {
+        parent::onWorkUpdated($workId);
+        // TODO: find previous author and invalidate cache too!
+        ApiPeople::invalidateWorksByPersonCache($this, $this->getWorkAuthor($workId));
+    }
+
+    private function getWorkAuthor(int $workId) : int {
+        try {
+            $data = $this->getWorkManager()->getWorkData($workId);
+        } catch (Work\WorkNotFoundException $e) {
+            return -1;
+        }
+        return $data->authorTid;
+    }
+
     public function getUserManager() : UserManagerInterface {
         if ($this->userManager === null) {
 //            $this->logger->debug("Creating UserManager");
@@ -815,9 +845,12 @@ class ApmSystemManager extends SystemManager {
     {
         if ($this->workManager === null) {
 //            $this->logger->debug("Creating WorkManager");
-            $this->workManager = new DataTableWorkManager(
-                new MySqlDataTable($this->getDbConnection(),
-                    $this->tableNames[ApmMySqlTableName::TABLE_WORKS], true));
+//            $this->workManager = new DataTableWorkManager(
+//                new MySqlDataTable($this->getDbConnection(),
+//                    $this->tableNames[ApmMySqlTableName::TABLE_WORKS], true));
+
+            $this->workManager = new EntitySystemWorkManager($this->getEntitySystem());
+            $this->workManager->setLogger($this->getLogger()->withName("WorkManager"));
         }
         return $this->workManager;
     }

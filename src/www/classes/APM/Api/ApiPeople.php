@@ -1,34 +1,29 @@
 <?php
 
-// This should return a json file as an API response
 
 namespace APM\Api;
 
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
+use APM\System\Cache\CacheKey;
 use APM\System\Person\InvalidPersonNameException;
-use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use APM\ToolBox\HttpStatus;
-use PHPUnit\Event\Telemetry\System;
-use PHPUnit\Util\Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\Exportable\ExportableObject;
-use ThomasInstitut\TimeString\TimeString;
-use function PHPUnit\Framework\throwException;
 
 class ApiPeople extends ApiController
 {
 
-    const AllPeopleDataForPeoplePageCacheKey = 'ApiPeople_AllPeopleDataForPeoplePage';
     const AllPeopleDataForPeoplePageTtl = 8 * 24 * 3600;
+    const WorksByPersonTtl =  8 * 24 * 3600;
 
     public function getPersonEssentialData(Request $request, Response $response): Response {
         $this->profiler->start();
@@ -63,10 +58,10 @@ class ApiPeople extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
         $cache = $this->systemManager->getSystemDataCache();
         try {
-            return $this->responseWithJson($response, unserialize($cache->get(self::AllPeopleDataForPeoplePageCacheKey)));
+            return $this->responseWithJson($response, unserialize($cache->get(CacheKey::ApiPeopleAllDataForPeoplePageCacheKey)));
         } catch (KeyNotInCacheException) {
             $dataToServe = self::buildAllPeopleDataForPeoplePage($this->systemManager->getEntitySystem());
-            $cache->set(self::AllPeopleDataForPeoplePageCacheKey, serialize($dataToServe), self::AllPeopleDataForPeoplePageTtl);
+            $cache->set(CacheKey::ApiPeopleAllDataForPeoplePageCacheKey, serialize($dataToServe), self::AllPeopleDataForPeoplePageTtl);
             return $this->responseWithJson($response, $dataToServe);
         }
     }
@@ -101,7 +96,7 @@ class ApiPeople extends ApiController
     public static function updateCachedAllPeopleDataForPeoplePage(SystemManager $systemManager) : bool {
         try {
             $data = self::buildAllPeopleDataForPeoplePage($systemManager->getEntitySystem());
-            $systemManager->getSystemDataCache()->set(self::AllPeopleDataForPeoplePageCacheKey,
+            $systemManager->getSystemDataCache()->set(CacheKey::ApiPeopleAllDataForPeoplePageCacheKey,
                 serialize($data), self::AllPeopleDataForPeoplePageTtl);
         } catch (\Exception $e) {
             $systemManager->getLogger()->error("Exception while updating cached AllPeopleEssentialData",
@@ -114,20 +109,36 @@ class ApiPeople extends ApiController
         return true;
     }
 
-    public function getWorks(Request $request, Response $response): Response {
+    static public function invalidateWorksByPersonCache(SystemManager $systemManager, int $personId) : void {
+        if ($personId === -1) {
+            return;
+        }
+       $systemManager->getSystemDataCache()->delete(CacheKey::ApiPeopleWorksByPerson . $personId);
+    }
+
+    public function getWorksByPerson(Request $request, Response $response): Response {
         $this->profiler->start();
         $personTid =  (int) $request->getAttribute('tid');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . Tid::toBase36String($personTid));
+        // check cache
+        $cacheKey = CacheKey::ApiPeopleWorksByPerson . $personTid;
+        $cache = $this->systemManager->getSystemDataCache();
 
         try {
-            $this->systemManager->getPersonManager()->getPersonEssentialData($personTid);
-        } catch (PersonNotFoundException) {
-            $this->logger->info("Person $personTid not found");
-            return $this->responseWithStatus($response, HttpStatus::NOT_FOUND);
+            $cachedString = $cache->get($cacheKey);
+            $data = unserialize($cachedString);
+        } catch (KeyNotInCacheException) {
+            try {
+                $this->systemManager->getPersonManager()->getPersonEssentialData($personTid);
+            } catch (PersonNotFoundException) {
+                $this->logger->info("Person $personTid not found");
+                return $this->responseWithStatus($response, HttpStatus::NOT_FOUND);
+            }
+            $works = $this->systemManager->getWorkManager()->getWorksByAuthor($personTid);
+            $data = ExportableObject::getArrayExportObject($works);
+            $cache->set($cacheKey, serialize($data), self::WorksByPersonTtl);
         }
-        $works = $this->systemManager->getWorkManager()->getWorksByAuthor($personTid);
-
-        return $this->responseWithJson($response, [ 'tid' => $personTid, 'works' => ExportableObject::getArrayExportObject($works)]);
+        return $this->responseWithJson($response, [ 'tid' => $personTid, 'works' => $data]);
     }
 
 

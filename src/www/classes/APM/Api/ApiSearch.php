@@ -2,6 +2,7 @@
 namespace APM\Api;
 
 use APM\System\ApmConfigParameter;
+use APM\System\Cache\CacheKey;
 use APM\System\SystemManager;
 use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
@@ -14,7 +15,6 @@ use ThomasInstitut\TimeString\TimeString;
 class ApiSearch extends ApiController
 {
 
-    const LEMMATA_CACHE_PREFIX = 'SearchLemma_';
     const CLASS_NAME = 'Search';
     /**
      * @param Request $request
@@ -210,7 +210,7 @@ class ApiSearch extends ApiController
 
     private  function getLemmaCacheKey($word): string
     {
-        return self::LEMMATA_CACHE_PREFIX . $word;
+        return CacheKey::ApiSearchLemma . $word;
     }
 
     private function removeBlanks ($searched_phrase): array|string|null
@@ -732,15 +732,15 @@ class ApiSearch extends ApiController
         {
             $transcriptions = self::getAllEntriesFromIndex($client, 'transcription');
             $transcribers = self::getAllEntriesFromIndex($client, 'transcriber');
-            $cache->set('Transcriptions', serialize($transcriptions));
-            $cache->set('Transcribers', serialize($transcribers));
+            $cache->set(CacheKey::ApiSearchTranscriptions, serialize($transcriptions));
+            $cache->set(CacheKey::ApiSearchTranscribers, serialize($transcribers));
             
         }
         else if ($whichindex === 'editions') {
             $editions = self::getAllEntriesFromIndex($client, 'edition');
             $editors = self::getAllEntriesFromIndex($client, 'editor');
-            $cache->set('Editions', serialize($editions));
-            $cache->set('Editors', serialize($editors));
+            $cache->set(CacheKey::ApiSearchEditions, serialize($editions));
+            $cache->set(CacheKey::ApiSearchEditors, serialize($editors));
         }
         
         return true;
@@ -749,22 +749,22 @@ class ApiSearch extends ApiController
     // ApiCall – Function to get all doc titles
     public function getTranscriptionTitles(Request $request, Response $response): Response
     {
-        return $this->getDataFromCacheOrIndex($request, $response, 'Transcriptions', 'transcription');
+        return $this->getDataFromCacheOrIndex($request, $response, CacheKey::ApiSearchTranscriptions, 'transcription');
     }
 
     public function getTranscribers(Request $request, Response $response): Response
     {
-        return $this->getDataFromCacheOrIndex($request, $response, 'Transcribers', 'transcriber');
+        return $this->getDataFromCacheOrIndex($request, $response, CacheKey::ApiSearchTranscribers, 'transcriber');
     }
 
     public function getEditionTitles(Request $request, Response $response): Response
     {
-        return $this->getDataFromCacheOrIndex($request, $response, 'Editions', 'edition');
+        return $this->getDataFromCacheOrIndex($request, $response, CacheKey::ApiSearchEditions, 'edition');
     }
 
     public function getEditors(Request $request, Response $response): Response
     {
-        return $this->getDataFromCacheOrIndex($request, $response, 'Editors', 'editor');
+        return $this->getDataFromCacheOrIndex($request, $response, CacheKey::ApiSearchEditors, 'editor');
     }
 
     private function getDataFromCacheOrIndex(Request $request, Response $response, string $cacheKey, string $queryKey): Response

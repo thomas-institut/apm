@@ -2,6 +2,7 @@
 
 namespace APM\Api;
 
+use APM\EntitySystem\Schema\Entity;
 use APM\System\Work\WorkNotFoundException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -43,10 +44,10 @@ class ApiWorks extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $workId);
         $workManager = $this->systemManager->getWorkManager();
         try {
-            return $this->responseWithJson($response,$workManager->getWorkDataByDareId($workId)->getExportObject());
+            return $this->responseWithJson($response, $workManager->getWorkDataByDareId($workId)->getExportObject());
         } catch(WorkNotFoundException) {
             try {
-                return $this->responseWithJson($response,$workManager->getWorkData(intval($workId))->getExportObject());
+                return $this->responseWithJson($response, $workManager->getWorkData(intval($workId))->getExportObject());
             } catch (WorkNotFoundException) {
                 $this->logger->error("Work '$workId' not found",
                     [ 'apiUserId' => $this->apiUserTid,
@@ -54,6 +55,16 @@ class ApiWorks extends ApiController
                 return $this->responseWithStatus($response, 409);
             }
         }
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getAuthorList(Request $request, Response $response): Response {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
+        return $this->responseWithJson($response, $this->systemManager->getWorkManager()->getAuthors());
     }
 
 

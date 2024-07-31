@@ -6,6 +6,7 @@ use APM\Api\ApiPeople;
 use APM\Site\SiteWorks;
 use APM\Site\SiteDocuments;
 use APM\System\ApmConfigParameter;
+use APM\System\Cache\CacheKey;
 use Exception;
 use Monolog\Logger;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
@@ -35,7 +36,7 @@ class ApmDaemon extends CommandLineUtility
                 }
             ],
             [
-                'cacheKey' => ApiPeople::AllPeopleDataForPeoplePageCacheKey,
+                'cacheKey' => CacheKey::ApiPeopleAllDataForPeoplePageCacheKey,
                 'ttl' => ApiPeople::AllPeopleDataForPeoplePageTtl,
                 'builder' => function () {
                     return ApiPeople::buildAllPeopleDataForPeoplePage($this->getSystemManager()->getEntitySystem());

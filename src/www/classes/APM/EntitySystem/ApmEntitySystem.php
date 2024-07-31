@@ -36,7 +36,11 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    const dataId = '013';
+    /**
+     * Data id for internal kernel caches, change every time there is a
+     * change in the entity system schema or in the ApmEntitySystemKernel class
+     */
+    const dataId = '015';
 
     const kernelCacheKey = 'ApmEntitySystemKernel';
 
@@ -743,5 +747,10 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
     public function getValidQualificationPredicates(): array
     {
         return $this->getKernel()->getValidQualificationPredicates();
+    }
+
+    public function getStatements(?int $subject, ?int $predicate, int|string|null $object, bool $includeCancelled = false): array
+    {
+        return $this->getInnerEntitySystem()->getStatementsData($subject, $predicate, $object, $includeCancelled);
     }
 }

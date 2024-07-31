@@ -25,6 +25,7 @@ use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
 use APM\Core\Witness\EditionWitness;
 use APM\StandardData\CollationTableDataProvider;
+use APM\System\Cache\CacheKey;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use APM\ToolBox\SiglumGenerator;
@@ -278,7 +279,8 @@ class ApiCollation extends ApiController
         $collationTableCacheId = implode(':', $witnessIds) . '-' . implode(':', $normalizerNames);
         $this->codeDebug('Collation table ID: ' . $collationTableCacheId);
 
-        $cacheKey = 'ApiCollation-ACT-' . $workId . '-' . $chunkNumber . '-' . $language . '-' . hash('sha256', $collationTableCacheId);
+        $cacheKey = CacheKey::ApiCollationAutomaticCollationTablePrefix . $workId . '-' . $chunkNumber . '-' .
+            $language . '-' . hash('sha256', $collationTableCacheId);
         $this->codeDebug("Cache key: $cacheKey");
 
         $cache = $this->systemManager->getSystemDataCache();

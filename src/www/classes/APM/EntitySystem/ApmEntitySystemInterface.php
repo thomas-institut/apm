@@ -14,6 +14,7 @@ use APM\EntitySystem\Exception\StatementNotFoundException;
 use APM\EntitySystem\Kernel\PredicateDefinition;
 use InvalidArgumentException;
 use ThomasInstitut\EntitySystem\EntityData;
+use ThomasInstitut\EntitySystem\StatementData;
 
 /**
  * This interface describes the entity system used in APM. It is a basically a EntitySystemWithMetadata
@@ -271,7 +272,16 @@ interface ApmEntitySystemInterface
      */
     public function getValidPredicatesAsObjectForType(int $type, bool $includeReverseRelations = false) : array;
 
-
+    /**
+     * Returns all statements that match the given parameters. Null means any.
+     *
+     * @param int|null $subject
+     * @param int|null $predicate
+     * @param string|int|null $object
+     * @param bool $includeCancelled
+     * @return StatementData[]
+     */
+    public function getStatements(int|null $subject, int|null $predicate, string|int|null $object, bool $includeCancelled = false): array;
 
 
 }

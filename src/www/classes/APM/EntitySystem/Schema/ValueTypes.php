@@ -16,7 +16,7 @@ use APM\EntitySystem\ValueType\TimestampValidator;
 use APM\EntitySystem\ValueType\TimeStringValidator;
 use APM\EntitySystem\ValueType\UrlValidator;
 use APM\EntitySystem\ValueType\VagueDate;
-
+use APM\EntitySystem\ValueType\WorkIdValidator;
 
 
 const ValueTypeEntityDefs = [
@@ -92,6 +92,13 @@ const ValueTypeEntityDefs = [
         []
     ],
     [
+        Entity::ValueTypeWorkId,
+        'ValueType WorkId',
+        "An APM/Dare work Id, e.g. AW47",
+        [],
+        []
+    ],
+    [
         Entity::ValueTypeEmailAddress,
         'ValueType EmailAddress',
         "An email address",
@@ -118,6 +125,7 @@ class ValueTypes implements ValueTypeDefiner
             Entity::ValueTypeTimeString => new TimeStringValidator(),
             Entity::ValueTypeGpsCoordinates => new GpsCoordinatesValidator(),
             Entity::ValueTypeUrl => new UrlValidator(),
+            Entity::ValueTypeWorkId => new WorkIdValidator(),
             Entity::ValueTypeEmailAddress => new EmailAddressValidator(),
             default => null,
         };

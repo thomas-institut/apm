@@ -197,4 +197,17 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     public function onPersonDataChanged(int $personTid) : void {
 
     }
+
+    public function onWorkAdded(int $workId) : void {
+
+    }
+
+    public function onWorkDeleted(int $workId) : void {
+
+    }
+
+    public function onWorkUpdated(int $workId) : void {
+
+    }
+
 }

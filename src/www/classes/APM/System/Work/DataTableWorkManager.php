@@ -6,6 +6,9 @@ use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 use ThomasInstitut\DataTable\DataTable;
 
+/**
+ * @deprecated Use EntitySystemWorkManager
+ */
 class DataTableWorkManager implements WorkManager
 {
     use LoggerAwareTrait;

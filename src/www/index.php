@@ -310,39 +310,14 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
 }
 
 function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) : void {
+
     $app->group('/api', function (RouteCollectorProxy $group) use ($container){
 
         createApiEntityRoutes($group, 'entity', $container);
-        // SEARCH
-        $group->post('/search/keyword',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiSearch($container))->search($request, $response);
-            })
-            ->setName('search.keyword');
-
-        $group->post('/search/transcriptions',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiSearch($container))->getTranscriptionTitles($request, $response);
-            })
-            ->setName('search.titles');
-
-        $group->post('/search/transcribers',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiSearch($container))->getTranscribers($request, $response);
-            })
-            ->setName('search.transcribers');
-
-        $group->post('/search/editions',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiSearch($container))->getEditionTitles($request, $response);
-            })
-            ->setName('search.editions');
-
-        $group->post('/search/editors',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiSearch($container))->getEditors($request, $response);
-            })
-            ->setName('search.editors');
+        createApiSearchRoutes($group, 'search', $container);
+        createApiImageRoutes($group, 'images', $container);
+        createApiTranscriptionRoutes($group, 'transcriptions', $container);
+        createApiWorkAndAuthorRoutes($group,$container);
 
         // LOG
         $group->post('/admin/log',
@@ -350,38 +325,6 @@ function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) :
                 return (new ApiLog($container))->frontEndLog($request, $response);
             })
             ->setName('api.admin.log');
-
-        // TRANSCRIPTIONS
-
-        // get pages transcribed by user
-        $group->get('/transcriptions/byUser/{userTid}/docPageData',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiUsers($container))->getTranscribedPages($request, $response);
-            })
-            ->setName('api.transcriptions.byUser.docPageData');
-
-        //  getElements
-        $group->get('/transcriptions/{document}/{page}/{column}/get',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiElements($container))->getElementsByDocPageCol($request, $response);
-            })
-            ->setName('api.transcriptions.getData');
-
-        //   getElements (with version Id)
-        // TODO: merge this with previous
-        $group->get('/transcriptions/{document}/{page}/{column}/get/version/{version}',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiElements($container))->getElementsByDocPageCol($request, $response);
-            })
-            ->setName('api.transcriptions.getData.withVersion');
-
-        // updateColumnElements
-        $group->post('/transcriptions/{document}/{page}/{column}/update',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiElements($container))->updateElementsByDocPageCol($request, $response);
-            })
-            ->setName('api.transcriptions.update');
-
 
         // DOCUMENTS
 
@@ -442,7 +385,7 @@ function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) :
             })
             ->setName('api.updatepagesettings.bulk');
 
-        // API -> numColumns
+        // API -> newColumn
         $group->get('/{document}/{page}/newcolumn',
             function(Request $request, Response $response) use ($container){
                 return (new ApiDocuments($container))->addNewColumn($request, $response);
@@ -455,27 +398,6 @@ function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) :
                 return (new ApiDocuments($container))->getPageInfo($request, $response);
             })
             ->setName('api.getPageInfo');
-
-        // WORKS
-
-        // API -> work : get work info
-        $group->get('/work/{workId}/old-info',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiWorks($container))->getWorkInfoOld($request, $response);
-            })
-            ->setName('api.work.info');
-
-        $group->get('/work/{workId}/data',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiWorks($container))->getWorkData($request, $response);
-            })
-            ->setName('api.work.data');
-
-        $group->get('/work/{workId}/chunksWithTranscription',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiWorks($container))->getChunksWithTranscription($request, $response);
-            })
-            ->setName('api.work.chunksWithTranscription');
 
         //  PERSON
 
@@ -493,7 +415,7 @@ function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) :
 
         $group->get('/person/{tid}/works',
             function(Request $request, Response $response) use ($container){
-                return (new ApiPeople($container))->getWorks($request, $response);
+                return (new ApiPeople($container))->getWorksByPerson($request, $response);
             })
             ->setName('api.person.works');
 
@@ -664,7 +586,7 @@ function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) :
             })
             ->setName('api.presets.post');
 
-        createApiImageRoutes($group, 'images', $container);
+
 
     })->add( function(Request $request, RequestHandlerInterface $handler) use($container){
         return (new Authenticator($container))->authenticateApiRequest($request, $handler);
@@ -755,6 +677,107 @@ function createApiImageRoutes(RouteCollectorProxy $group, string $prefix, Contai
 
 }
 
+function createApiSearchRoutes(RouteCollectorProxy $group, string $prefix, ContainerInterface $container) : void {
+    // SEARCH
+    $group->post("/$prefix/keyword",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiSearch($container))->search($request, $response);
+        })
+        ->setName('search.keyword');
+
+    $group->post("/$prefix/transcriptions",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiSearch($container))->getTranscriptionTitles($request, $response);
+        })
+        ->setName('search.titles');
+
+    $group->post("/$prefix/transcribers",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiSearch($container))->getTranscribers($request, $response);
+        })
+        ->setName('search.transcribers');
+
+    $group->post("/$prefix/editions",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiSearch($container))->getEditionTitles($request, $response);
+        })
+        ->setName('search.editions');
+
+    $group->post("/$prefix/editors",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiSearch($container))->getEditors($request, $response);
+        })
+        ->setName('search.editors');
+
+}
+
+function createApiTranscriptionRoutes(RouteCollectorProxy $group, string $prefix, ContainerInterface $container) : void {
+    // TRANSCRIPTIONS
+
+    // get pages transcribed by user
+    $group->get("/$prefix/byUser/{userTid}/docPageData",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiUsers($container))->getTranscribedPages($request, $response);
+        })
+        ->setName('api.transcriptions.byUser.docPageData');
+
+    //  getElements
+    $group->get("/$prefix/{document}/{page}/{column}/get",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiElements($container))->getElementsByDocPageCol($request, $response);
+        })
+        ->setName('api.transcriptions.getData');
+
+    //   getElements (with version Id)
+    // TODO: merge this with previous
+    $group->get("/$prefix/{document}/{page}/{column}/get/version/{version}",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiElements($container))->getElementsByDocPageCol($request, $response);
+        })
+        ->setName('api.transcriptions.getData.withVersion');
+
+    // updateColumnElements
+    $group->post("/$prefix/{document}/{page}/{column}/update",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiElements($container))->updateElementsByDocPageCol($request, $response);
+        })
+        ->setName('api.transcriptions.update');
+}
+
+
+function createApiWorkAndAuthorRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
+
+
+    // WORKS
+
+    // API -> work : get work info
+    $group->get("/work/{workId}/old-info",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiWorks($container))->getWorkInfoOld($request, $response);
+        })
+        ->setName('api.work.info');
+
+    $group->get("/work/{workId}/data",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiWorks($container))->getWorkData($request, $response);
+        })
+        ->setName('api.work.data');
+
+    $group->get("/work/{workId}/chunksWithTranscription",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiWorks($container))->getChunksWithTranscription($request, $response);
+        })
+        ->setName('api.work.chunksWithTranscription');
+
+
+    // AUTHORS
+
+    $group->get("/works/authors", function(Request $request, Response $response) use ($container){
+        return (new ApiWorks($container))->getAuthorList($request, $response);
+    })
+    ->setName('api.works.authors');
+
+}
 function createLoginRoutes(App $app, ContainerInterface $container) : void {
     $app->any('/login',
         function(Request $request, Response $response) use ($container){

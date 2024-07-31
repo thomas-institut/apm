@@ -57,7 +57,9 @@ class Entity implements TidDefiner
     const ValueTypeTimeString = 1008;
     const ValueTypeGpsCoordinates = 1009;
     const ValueTypeUrl = 1010;
+    const ValueTypeWorkId = 1011;
     const ValueTypeEmailAddress = 1111;
+
 
     // Basic entity predicates
 
@@ -121,6 +123,16 @@ class Entity implements TidDefiner
     const pOrcid = 7015;
 
 
+    // Work Predicates
+
+    const pWorkAuthor = 7501;
+    const pApmWorkId = 7502;
+    const pWorkShortTitle = 7503;
+    const pWorkIsEnabledInApm = 7504;
+
+
+
+
     // Geographical Predicates
     const pContainedBy = 8001;
     const pContains = 8002;
@@ -178,6 +190,9 @@ class Entity implements TidDefiner
 //    const OccupationPriest = 13008;
 //    const OccupationStudent = 13009;
 //    const OccupationEditor = 13010;
+
+
+
 
 
     // Dare stuff

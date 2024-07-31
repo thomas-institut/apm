@@ -35,12 +35,6 @@ const typeNames = {
   'print': 'Print'
 }
 
-const langNames = {
-  'ar': 'Arabic',
-  'la': 'Latin',
-  'he' : 'Hebrew',
-  'jrb': 'Judeo Arabic'
-}
 
 /**
  * Class to wrap most API calls to the APM and provide caching
@@ -88,8 +82,22 @@ export class ApmDataProxy {
     return typeNames[type];
   }
 
+  async getSystemLanguages() {
+    return await this.getAlmostStaticData('systemLanguages', urlGen.apiSystemGetLanguages());
+  }
+
+  async getAuthors() {
+    return this.get(urlGen.apiWorksGetAuthors(),  false, shortTtl);
+  }
+
   async getLangName(lang) {
-    return langNames[lang];
+    let languages = await this.getSystemLanguages();
+    for (let systemLang of languages) {
+      if (systemLang.code === lang) {
+        return systemLang.name;
+      }
+    }
+    return '';
   }
 
 
@@ -148,7 +156,7 @@ export class ApmDataProxy {
   }
 
   async getPersonWorks(personTid){
-    return this.get(urlGen.apiPersonGetWorks(personTid))
+    return this.get(urlGen.apiPersonGetWorks(personTid), false, shortTtl);
   }
 
 
@@ -194,10 +202,11 @@ export class ApmDataProxy {
    *
    * @param {string} url
    * @param {boolean}forceActualFetch
+   * @param ttl
    * @return {Promise<{}>}
    */
-  get(url, forceActualFetch = true) {
-    return this.fetch(url, 'GET', [], forceActualFetch)
+  get(url, forceActualFetch = true, ttl = -1) {
+    return this.fetch(url, 'GET', { }, forceActualFetch, false, ttl)
   }
 
   getEntityData(tid) {

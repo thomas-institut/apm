@@ -348,6 +348,10 @@ class ApmUrlGenerator {
         return `${this.base}/api/work/${workId}/data`;
     }
 
+    apiWorksGetAuthors() {
+        return `${this.base}/api/works/authors`;
+    }
+
     apiWorkGetChunksWithTranscription(workId) {
         return `${this.base}/api/work/${workId}/chunksWithTranscription`;
     }
@@ -422,6 +426,10 @@ class ApmUrlGenerator {
 
     apiSearchEditionTitles() {
         return `${this.base}/api/search/editions`
+    }
+
+    apiSystemGetLanguages() {
+        return `${this.base}/api/system/languages`
     }
 
     apiPeopleGetPerson() {

@@ -47,6 +47,7 @@ export class GetDataAndProcessDialog {
       optionsDefinition: {
         size: { type: 'string', default: LARGE_DIALOG},
         title: { type: 'string', default: 'Please confirm'},
+        loadingBodyHtml: { type: 'string', default: 'Loading...'},
         getBodyHtml: { type: 'function', default: async () => {return `` } },
         processButtonLabel: { type: 'string', default: 'Process' },
         cancelButtonLabel: { type: 'string', default: 'Cancel' },
@@ -82,7 +83,7 @@ export class GetDataAndProcessDialog {
         size: this.options.size,
         acceptButtonLabel: this.options.processButtonLabel,
         cancelButtonLabel: this.options.cancelButtonLabel,
-        body: await this.getBodyHtml(),
+        body: this.options.loadingBodyHtml,
         hideOnAccept: false,
         cancelFunction: () => {
           this.hide();
@@ -90,6 +91,7 @@ export class GetDataAndProcessDialog {
         }
       });
       this.dialog.hideAcceptButton();
+      this.dialog.setBody(await this.getBodyHtml());
       this.dialogSelector = this.dialog.getSelector();
       this.debug && console.log(`Dialog selector: ${this.dialogSelector}`);
       this.infoArea = $(`${this.dialogSelector} .info-area`);
@@ -135,7 +137,7 @@ export class GetDataAndProcessDialog {
       let validationResult = await this.options.validateData(data);
       if (validationResult === true) {
         this.infoArea.html('');
-       this.dialog.showAcceptButton();
+        this.dialog.showAcceptButton();
       } else {
         this.dialog.hideAcceptButton();
         if (validationResult === false) {

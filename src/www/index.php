@@ -24,6 +24,7 @@ use APM\Api\ApiEntity;
 use APM\Api\ApiLog;
 use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiPeople;
+use APM\Api\ApiSystem;
 use APM\Api\ApiTranscription;
 use APM\Api\ApiWorks;
 use APM\Site\SiteEntity;
@@ -100,8 +101,8 @@ if ($systemManager->fatalErrorOccurred()) {
 // Build container for Slim
 $container = new MinimalContainer();
 $container->set(ApmContainerKey::SYSTEM_MANAGER, $systemManager);
-$container->set(ApmContainerKey::SITE_USER_TID, -1);
-$container->set(ApmContainerKey::API_USER_TID, -1);
+$container->set(ApmContainerKey::SITE_USER_TID, -1); // set by authenticator
+$container->set(ApmContainerKey::API_USER_TID, -1); // set by authenticator
 
 // Setup Slim App
 $app = new App(new ResponseFactory(), $container);
@@ -120,12 +121,14 @@ try {
     exitWithErrorMessage("Could not set up application, please report to administrators");
 }
 
+// Create routes
 createLoginRoutes($app, $container);
 createSiteRoutes($app, $container);
 createSiteDevRoutes($app, $container);
-createAuthenticatedApiRoutes($app, $container);
+createApiAuthenticatedRoutes($app, $container);
 createDareApiRoutes($app, $container);
 
+// RUN!!
 SystemProfiler::lap('Ready to run');
 $app->run();
 
@@ -308,421 +311,447 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
         return (new Authenticator($container))->authenticateSiteRequest($request, $handler);
     });
 }
-
-function createAuthenticatedApiRoutes(App $app, ContainerInterface $container) : void {
-
+function createApiAuthenticatedRoutes(App $app, ContainerInterface $container) : void {
     $app->group('/api', function (RouteCollectorProxy $group) use ($container){
 
-        createApiEntityRoutes($group, 'entity', $container);
-        createApiSearchRoutes($group, 'search', $container);
-        createApiImageRoutes($group, 'images', $container);
-        createApiTranscriptionRoutes($group, 'transcriptions', $container);
-        createApiWorkAndAuthorRoutes($group,$container);
-
-        // LOG
-        $group->post('/admin/log',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiLog($container))->frontEndLog($request, $response);
-            })
-            ->setName('api.admin.log');
-
-        // DOCUMENTS
-
-        // API -> create new document
-        $group->post('/doc/new',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiDocuments($container))->newDocument($request, $response);
-            })
-            ->setName('api.doc.new');
-
-        // API -> delete document
-        $group->get('/doc/{id}/delete',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiDocuments($container))->deleteDocument($request, $response);
-            })
-            ->setName('api.doc.delete');
-
-        // API -> add pages to a document
-        $group->post('/doc/{id}/addpages',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiDocuments($container))->addPages($request, $response);
-            })
-            ->setName('api.doc.addpages');
-
-        // API -> update document settings
-        $group->post('/doc/{id}/update',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiDocuments($container))->updateDocSettings($request, $response);
-            })
-            ->setName('api.doc.update');
-
-        // API -> numColumns
-        $group->get('/{document}/{page}/numcolumns',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiDocuments($container))->getNumColumns($request, $response);
-            })
-            ->setName('api.numcolumns');
-
-        // API -> pageTypes
-
-        $group->get('/page/types',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiDocuments($container))->getPageTypes($request, $response);
-            })
-            ->setName('api.page.types');
-
-
-        // API -> updatePageSettings
-        $group->post('/page/{pageId}/update',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiDocuments($container))->updatePageSettings($request, $response);
-            })
-            ->setName('api.updatepagesettings');
-
-        $group->post('/page/bulkupdate',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiDocuments($container))->updatePageSettingsBulk($request, $response);
-            })
-            ->setName('api.updatepagesettings.bulk');
-
-        // API -> newColumn
-        $group->get('/{document}/{page}/newcolumn',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiDocuments($container))->addNewColumn($request, $response);
-            })
-            ->setName('api.newcolumn');
-
-        // API -> getPageInfo
-        $group->post('/pages/info',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiDocuments($container))->getPageInfo($request, $response);
-            })
-            ->setName('api.getPageInfo');
-
-        //  PERSON
-
-        $group->get('/person/all/dataForPeoplePage',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiPeople($container))->getAllPeopleDataForPeoplePage($request, $response);
-            })
-            ->setName('api.person.data.essential.all');
-
-        $group->get('/person/{tid}/data/essential',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiPeople($container))->getPersonEssentialData($request, $response);
-            })
-            ->setName('api.person.data.essential');
-
-        $group->get('/person/{tid}/works',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiPeople($container))->getWorksByPerson($request, $response);
-            })
-            ->setName('api.person.works');
-
-        $group->post('/person/create',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiPeople($container))->createNewPerson($request, $response);
-            })
-            ->setName('api.person.create');
-
-        // USERS
-        // API -> user : update profile
-        $group->post('/user/{userTid}/update',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiUsers($container))->updateUserProfile($request, $response);
-            })
-            ->setName('api.user.update');
-
-        $group->post('/user/create/{personTid}',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiUsers($container))->createNewUser($request, $response);
-            })
-            ->setName('api.user.create');
-
-        // API -> user : get collation tables (and chunk edition) by user
-        $group->get('/user/{userTid}/collationTables',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiUsers($container))->getCollationTableInfo($request, $response);
-            })
-            ->setName('api.user.collationTables');
-
-        // API -> user : get multi-chunk editions by user
-        $group->get('/user/{userTid}/multiChunkEditions',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiUsers($container))->getMultiChunkEditionsByUser($request, $response);
-            })
-            ->setName('api.user.multiChunkEditions');
-
-        // WITNESSES
-        $group->get('/witness/get/{witnessId}[/{outputType}[/{cache}]]',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiWitness($container))->getWitness($request, $response);
-            })
-            ->setName('api.witness.get');
-
-        $group->post('/witness/check/updates',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiWitness($container))->checkWitnessUpdates($request, $response);
-            })
-            ->setName('api.witness.check.updates');
-
-        $group->get('/witness/{witnessId}/to/edition',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiCollation($container))->convertWitnessToEdition($request, $response);
-            })->setName('api.witness.convert.to.edition');
-
-        // COLLATION TABLES
-
-        $group->post('/collation-table/auto',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiCollation($container))->automaticCollation($request, $response);
-            })
-            ->setName('api.collation.auto');
-
-        $group->post('/collation-table/save',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiCollation($container))->saveCollationTable($request, $response);
-            })
-            ->setName('api.collation.save');
-
-        $group->post('/collation-table/convert/{tableId}',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiCollationTableConversion($container))->convertCollationTableToChunkEdition($request, $response);
-            })
-            ->setName('api.collation.convert');
-
-        $group->get('/collation-table/get/{tableId}[/{timestamp}]',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiCollation($container))->getTable($request, $response);
-            })
-            ->setName('api.collation.get');
-
-        $group->get('/collation-table/info/edition/active',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiCollation($container))->getActiveEditions($response);
-            })
-            ->setName('api.collation.info.edition.active');
-
-        // EDITION SOURCES
-
-        $group->get('/edition/sources/all',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiEditionSources($container))->getAllSources($request, $response);
-            })
-            ->setName('api.edition_sources.get_all');
-
-
-        $group->get('/edition/source/get/{tid}',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiEditionSources($container))->getSourceByTid($request, $response);
-            })
-            ->setName('api.edition_sources.get');
-
-        // MULTI CHUNK EDITION
-
-        $group->get('/edition/multi/get/{editionId}[/{timestamp}]',
-            function(Request $request, Response $response, array $args) use ($container){
-                return (new ApiMultiChunkEdition($container))->getEdition($request, $response, $args);
-            })->setName('api.multi_chunk.get');
-
-        $group->post('/edition/multi/save',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiMultiChunkEdition($container))->saveEdition($request, $response);
-            })
-            ->setName('api.multi_chunk.save');
-
-        //  EDITION ENGINE
-
-        // TODO: check this, most likely obsolete
-        $group->post('/edition/auto',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiEditionEngine($container))->automaticEditionEngine($request, $response);
-            })
-            ->setName('api.edition.auto');
-
-        // TYPESETTING
-
-        $group->post('/typeset/raw',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiTypesetPdf($container))->typesetRawData($request, $response);
-            })
-            ->setName('api.typeset.raw');
-
-        //  PRESETS
-
-        $group->post('/presets/get',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiPresets($container))->getPresets($request, $response);
-            })
-            ->setName('api.presets.get');
-
-        $group->get('/presets/delete/{id}',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiPresets($container))->deletePreset($request, $response);
-            })
-            ->setName('api.presets.delete');
-
-        $group->post('/presets/sigla/get',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiPresets($container))->getSiglaPresets($request, $response);
-            })
-            ->setName('api.presets.sigla.get');
-
-        $group->post('/presets/sigla/save',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiPresets($container))->saveSiglaPreset($request, $response);
-            })
-            ->setName('api.presets.sigla.save');
-
-        $group->post('/presets/act/get',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiPresets($container))->getAutomaticCollationPresets($request, $response);
-            })
-            ->setName('api.presets.act.get');
-
-        $group->post('/presets/post',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiPresets($container))->savePreset($request, $response);
-            })
-            ->setName('api.presets.post');
-
-
+        // system
+        createApiSystemRoutes($group, $container);
+        // entity
+        createApiEntityRoutes($group,  $container);
+        // search
+        createApiSearchRoutes($group, $container);
+        // images
+        createApiImageRoutes($group,  $container);
+        // transcriptions
+        createApiTranscriptionRoutes($group, $container);
+        // work, works
+        createApiWorksRoutes($group,$container);
+        // presets
+        createApiPresetsRoutes($group, $container);
+        // doc, page, pages
+        createApiDocAndPageRoutes($group, $container);
+        // person
+        createApiPersonRoutes($group, $container);
+        // user
+        createApiUsersRoutes($group, $container);
+        // witness
+        createApiWitnessRoutes($group, $container);
+        // collation-table
+        createApiCollationTableRoutes($group, $container);
+        // edition
+        createApiEditionRoutes($group, $container);
+        // typeset
+        createApiTypesettingRoutes($group, $container);
+        // admin
+        createApiAdminRoutes($group, $container);
 
     })->add( function(Request $request, RequestHandlerInterface $handler) use($container){
         return (new Authenticator($container))->authenticateApiRequest($request, $handler);
     });
 }
+function createApiEditionRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
+    // EDITION SOURCES
 
-function createApiEntityRoutes(RouteCollectorProxy $group, string $prefix, ContainerInterface $container) : void
-{
-    $group->get("/$prefix/{entityType}/schema", function(Request $request, Response $response) use ($container){
-        return (new ApiEntity($container))->getEntitySchema($request, $response);
-    })->setName("api.$prefix.type.schema");
+    $group->get('/edition/sources/all',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiEditionSources($container))->getAllSources($request, $response);
+        })
+        ->setName('api.edition_sources.get_all');
 
-    $group->get("/$prefix/{entityType}/entities", function(Request $request, Response $response) use ($container){
-        return (new ApiEntity($container))->getEntitiesForType($request, $response);
-    })->setName("api.$prefix.type.entities");
+    $group->get('/edition/source/get/{tid}',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiEditionSources($container))->getSourceByTid($request, $response);
+        })
+        ->setName('api.edition_sources.get');
 
-    $group->get("/$prefix/{tid}/data", function(Request $request, Response $response) use ($container){
-        return (new ApiEntity($container))->getEntityData($request, $response);
-    })->setName("api.$prefix.data");
+    // MULTI CHUNK EDITION
 
-    $group->post("/$prefix/statements/edit", function(Request $request, Response $response) use ($container){
-        return (new ApiEntity($container))->statementEdition($request, $response);
-    })->setName("api.$prefix.statements.edit");
+    $group->get('/edition/multi/get/{editionId}[/{timestamp}]',
+        function(Request $request, Response $response, array $args) use ($container){
+            return (new ApiMultiChunkEdition($container))->getEdition($request, $response, $args);
+        })->setName('api.multi_chunk.get');
 
-    $group->get("/$prefix/nameSearch/{inputString}/{typeList}", function(Request $request, Response $response) use ($container){
-        return (new ApiEntity($container))->nameSearch($request, $response);
-    })->setName("api.$prefix.nameSearch");
+    $group->post('/edition/multi/save',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiMultiChunkEdition($container))->saveEdition($request, $response);
+        })
+        ->setName('api.multi_chunk.save');
+
+    //  EDITION ENGINE
+
+    // TODO: check this, most likely obsolete
+    $group->post('/edition/auto',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiEditionEngine($container))->automaticEditionEngine($request, $response);
+        })
+        ->setName('api.edition.auto');
+
+}
+function createApiCollationTableRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
+    // COLLATION TABLES
+    $group->post('/collation-table/auto',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiCollation($container))->automaticCollation($request, $response);
+        })
+        ->setName('api.collation.auto');
+
+    $group->post('/collation-table/save',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiCollation($container))->saveCollationTable($request, $response);
+        })
+        ->setName('api.collation.save');
+
+    $group->post('/collation-table/convert/{tableId}',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiCollationTableConversion($container))->convertCollationTableToChunkEdition($request, $response);
+        })
+        ->setName('api.collation.convert');
+
+    $group->get('/collation-table/get/{tableId}[/{timestamp}]',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiCollation($container))->getTable($request, $response);
+        })
+        ->setName('api.collation.get');
+
+    $group->get('/collation-table/info/edition/active',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiCollation($container))->getActiveEditions($response);
+        })
+        ->setName('api.collation.info.edition.active');
+}
+function createApiWitnessRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
+    // WITNESSES
+    $group->get('/witness/get/{witnessId}[/{outputType}[/{cache}]]',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiWitness($container))->getWitness($request, $response);
+        })
+        ->setName('api.witness.get');
+
+    $group->post('/witness/check/updates',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiWitness($container))->checkWitnessUpdates($request, $response);
+        })
+        ->setName('api.witness.check.updates');
+
+    $group->get('/witness/{witnessId}/to/edition',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiCollation($container))->convertWitnessToEdition($request, $response);
+        })->setName('api.witness.convert.to.edition');
+
 }
 
-function createApiImageRoutes(RouteCollectorProxy $group, string $prefix, ContainerInterface $container) : void
+function createApiSystemRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
+    // LOG
+    $group->get('/system/languages',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiSystem($container))->getSystemLanguages($request, $response);
+        })
+        ->setName('api.system.languages');
+}
+function createApiAdminRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
+    // LOG
+    $group->post('/admin/log',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiLog($container))->frontEndLog($request, $response);
+        })
+        ->setName('api.admin.log');
+}
+function createApiPersonRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
+    //  PERSON
+    $group->get('/person/all/dataForPeoplePage',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiPeople($container))->getAllPeopleDataForPeoplePage($request, $response);
+        })
+        ->setName('api.person.data.essential.all');
+
+    $group->get('/person/{tid}/data/essential',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiPeople($container))->getPersonEssentialData($request, $response);
+        })
+        ->setName('api.person.data.essential');
+
+    $group->get('/person/{tid}/works',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiPeople($container))->getWorksByPerson($request, $response);
+        })
+        ->setName('api.person.works');
+
+    $group->post('/person/create',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiPeople($container))->createNewPerson($request, $response);
+        })
+        ->setName('api.person.create');
+}
+function createApiUsersRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
+
+    // USERS
+    // API -> user : update profile
+    $group->post('/user/{userTid}/update',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiUsers($container))->updateUserProfile($request, $response);
+        })
+        ->setName('api.user.update');
+
+    $group->post('/user/create/{personTid}',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiUsers($container))->createNewUser($request, $response);
+        })
+        ->setName('api.user.create');
+
+    // API -> user : get collation tables (and chunk edition) by user
+    $group->get('/user/{userTid}/collationTables',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiUsers($container))->getCollationTableInfo($request, $response);
+        })
+        ->setName('api.user.collationTables');
+
+    // API -> user : get multi-chunk editions by user
+    $group->get('/user/{userTid}/multiChunkEditions',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiUsers($container))->getMultiChunkEditionsByUser($request, $response);
+        })
+        ->setName('api.user.multiChunkEditions');
+}
+function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
+    // DOCUMENTS
+
+    // API -> create new document
+    $group->post('/doc/new',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiDocuments($container))->newDocument($request, $response);
+        })
+        ->setName('api.doc.new');
+
+    // API -> delete document
+    $group->get('/doc/{id}/delete',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiDocuments($container))->deleteDocument($request, $response);
+        })
+        ->setName('api.doc.delete');
+
+    // API -> add pages to a document
+    $group->post('/doc/{id}/addpages',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiDocuments($container))->addPages($request, $response);
+        })
+        ->setName('api.doc.addpages');
+
+    // API -> update document settings
+    $group->post('/doc/{id}/update',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiDocuments($container))->updateDocSettings($request, $response);
+        })
+        ->setName('api.doc.update');
+
+    // API -> numColumns
+    $group->get('/{document}/{page}/numcolumns',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiDocuments($container))->getNumColumns($request, $response);
+        })
+        ->setName('api.numcolumns');
+
+    // API -> pageTypes
+
+    $group->get('/page/types',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiDocuments($container))->getPageTypes($request, $response);
+        })
+        ->setName('api.page.types');
+
+
+    // API -> updatePageSettings
+    $group->post('/page/{pageId}/update',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiDocuments($container))->updatePageSettings($request, $response);
+        })
+        ->setName('api.updatepagesettings');
+
+    $group->post('/page/bulkupdate',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiDocuments($container))->updatePageSettingsBulk($request, $response);
+        })
+        ->setName('api.updatepagesettings.bulk');
+
+    // API -> newColumn
+    $group->get('/{document}/{page}/newcolumn',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiDocuments($container))->addNewColumn($request, $response);
+        })
+        ->setName('api.newcolumn');
+
+    // API -> getPageInfo
+    $group->post('/pages/info',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiDocuments($container))->getPageInfo($request, $response);
+        })
+        ->setName('api.getPageInfo');
+}
+function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void
+{
+    $group->get("/entity/{entityType}/schema", function(Request $request, Response $response) use ($container){
+        return (new ApiEntity($container))->getEntitySchema($request, $response);
+    })->setName("api.entity.type.schema");
+
+    $group->get("/entity/{entityType}/entities", function(Request $request, Response $response) use ($container){
+        return (new ApiEntity($container))->getEntitiesForType($request, $response);
+    })->setName("api.entity.type.entities");
+
+    $group->get("/entity/{tid}/data", function(Request $request, Response $response) use ($container){
+        return (new ApiEntity($container))->getEntityData($request, $response);
+    })->setName("api.entity.data");
+
+    $group->post("/entity/statements/edit", function(Request $request, Response $response) use ($container){
+        return (new ApiEntity($container))->statementEdition($request, $response);
+    })->setName("api.entity.statements.edit");
+
+    $group->get("/entity/nameSearch/{inputString}/{typeList}", function(Request $request, Response $response) use ($container){
+        return (new ApiEntity($container))->nameSearch($request, $response);
+    })->setName("api.entity.nameSearch");
+}
+function createApiPresetsRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
+    //  PRESETS
+
+    $group->post('/presets/get',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiPresets($container))->getPresets($request, $response);
+        })
+        ->setName('api.presets.get');
+
+    $group->get('/presets/delete/{id}',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiPresets($container))->deletePreset($request, $response);
+        })
+        ->setName('api.presets.delete');
+
+    $group->post('/presets/sigla/get',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiPresets($container))->getSiglaPresets($request, $response);
+        })
+        ->setName('api.presets.sigla.get');
+
+    $group->post('/presets/sigla/save',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiPresets($container))->saveSiglaPreset($request, $response);
+        })
+        ->setName('api.presets.sigla.save');
+
+    $group->post('/presets/act/get',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiPresets($container))->getAutomaticCollationPresets($request, $response);
+        })
+        ->setName('api.presets.act.get');
+
+    $group->post('/presets/post',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiPresets($container))->savePreset($request, $response);
+        })
+        ->setName('api.presets.post');
+}
+function createApiImageRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void
 {
 
     // API -> images : Mark Icon
-    $group->get("/$prefix/mark/{size}",
+    $group->get("/images/mark/{size}",
         function(Request $request, Response $response) use ($container){
             return (new ApiIcons($container))->generateMarkIcon($request, $response);
         })
-        ->setName("api.$prefix.mark");
+        ->setName("api.images.mark");
 
     // API -> images : No Word Break Icon
-    $group->get("/$prefix/nowb/{size}",
+    $group->get("/images/nowb/{size}",
         function(Request $request, Response $response) use ($container){
             return (new ApiIcons($container))->generateNoWordBreakIcon($request, $response);
         })
-        ->setName("api.$prefix.nowb");
+        ->setName("api.images.nowb");
 
     // API -> images : Illegible Icon
-    $group->get("/$prefix/illegible/{size}/{length}",
+    $group->get("/images/illegible/{size}/{length}",
         function(Request $request, Response $response) use ($container){
             return (new ApiIcons($container))->generateIllegibleIcon($request, $response);
         })
-        ->setName("api.$prefix.illegible");
+        ->setName("api.images.illegible");
 
     // API -> images : ChunkMark Icon
-    $group->get("/$prefix/chunkmark/{dareid}/{chunkno}/{lwid}/{segment}/{type}/{dir}/{size}",
+    $group->get("/images/chunkmark/{dareid}/{chunkno}/{lwid}/{segment}/{type}/{dir}/{size}",
         function(Request $request, Response $response) use ($container){
             return (new ApiIcons($container))->generateChunkMarkIcon($request, $response);
         })
-        ->setName("api.$prefix.chunkmark");
+        ->setName("api.images.chunkmark");
 
     // API -> images : ChapterMark Icon
-    $group->get("/$prefix/chaptermark/{work}/{level}/{number}/{type}/{dir}/{size}",
+    $group->get("/images/chaptermark/{work}/{level}/{number}/{type}/{dir}/{size}",
         function(Request $request, Response $response) use ($container){
             return (new ApiIcons($container))->generateChapterMarkIcon($request, $response);
         })
-        ->setName("api.$prefix.chaptermark");
+        ->setName("api.images.chaptermark");
 
     // API -> images : Line Gap Mark
-    $group->get("/$prefix/linegap/{count}/{size}",
+    $group->get("/images/linegap/{count}/{size}",
         function(Request $request, Response $response) use ($container){
             return (new ApiIcons($container))->generateLineGapImage($request, $response);
         })
-        ->setName("api.$prefix.linegap");
+        ->setName("api.images.linegap");
 
     // API -> images : Character Gap Mark
-    $group->get("/$prefix/charactergap/{length}/{size}",
+    $group->get("/images/charactergap/{length}/{size}",
         function(Request $request, Response $response) use ($container){
             return (new ApiIcons($container))->generateCharacterGapImage($request, $response);
         })
-        ->setName("api.$prefix.charactergap");
+        ->setName("api.images.charactergap");
 
     // API -> images : Paragraph Mark
-    $group->get("/$prefix/paragraphmark/{size}",
+    $group->get("/images/paragraphmark/{size}",
         function(Request $request, Response $response) use ($container){
             return (new ApiIcons($container))->generateParagraphMarkIcon($request, $response);
         })
-        ->setName("api.$prefix.charactergap");
+        ->setName("api.images.charactergap");
 
 }
-
-function createApiSearchRoutes(RouteCollectorProxy $group, string $prefix, ContainerInterface $container) : void {
+function createApiSearchRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
     // SEARCH
-    $group->post("/$prefix/keyword",
+    $group->post("/search/keyword",
         function(Request $request, Response $response) use ($container){
             return (new ApiSearch($container))->search($request, $response);
         })
         ->setName('search.keyword');
 
-    $group->post("/$prefix/transcriptions",
+    $group->post("/search/transcriptions",
         function(Request $request, Response $response) use ($container){
             return (new ApiSearch($container))->getTranscriptionTitles($request, $response);
         })
         ->setName('search.titles');
 
-    $group->post("/$prefix/transcribers",
+    $group->post("/search/transcribers",
         function(Request $request, Response $response) use ($container){
             return (new ApiSearch($container))->getTranscribers($request, $response);
         })
         ->setName('search.transcribers');
 
-    $group->post("/$prefix/editions",
+    $group->post("/search/editions",
         function(Request $request, Response $response) use ($container){
             return (new ApiSearch($container))->getEditionTitles($request, $response);
         })
         ->setName('search.editions');
 
-    $group->post("/$prefix/editors",
+    $group->post("/search/editors",
         function(Request $request, Response $response) use ($container){
             return (new ApiSearch($container))->getEditors($request, $response);
         })
         ->setName('search.editors');
 
 }
-
-function createApiTranscriptionRoutes(RouteCollectorProxy $group, string $prefix, ContainerInterface $container) : void {
+function createApiTranscriptionRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
     // TRANSCRIPTIONS
 
     // get pages transcribed by user
-    $group->get("/$prefix/byUser/{userTid}/docPageData",
+    $group->get("/transcriptions/byUser/{userTid}/docPageData",
         function(Request $request, Response $response) use ($container){
             return (new ApiUsers($container))->getTranscribedPages($request, $response);
         })
         ->setName('api.transcriptions.byUser.docPageData');
 
     //  getElements
-    $group->get("/$prefix/{document}/{page}/{column}/get",
+    $group->get("/transcriptions/{document}/{page}/{column}/get",
         function(Request $request, Response $response) use ($container){
             return (new ApiElements($container))->getElementsByDocPageCol($request, $response);
         })
@@ -730,22 +759,20 @@ function createApiTranscriptionRoutes(RouteCollectorProxy $group, string $prefix
 
     //   getElements (with version Id)
     // TODO: merge this with previous
-    $group->get("/$prefix/{document}/{page}/{column}/get/version/{version}",
+    $group->get("/transcriptions/{document}/{page}/{column}/get/version/{version}",
         function(Request $request, Response $response) use ($container){
             return (new ApiElements($container))->getElementsByDocPageCol($request, $response);
         })
         ->setName('api.transcriptions.getData.withVersion');
 
     // updateColumnElements
-    $group->post("/$prefix/{document}/{page}/{column}/update",
+    $group->post("/transcriptions/{document}/{page}/{column}/update",
         function(Request $request, Response $response) use ($container){
             return (new ApiElements($container))->updateElementsByDocPageCol($request, $response);
         })
         ->setName('api.transcriptions.update');
 }
-
-
-function createApiWorkAndAuthorRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
+function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
 
 
     // WORKS
@@ -776,7 +803,16 @@ function createApiWorkAndAuthorRoutes(RouteCollectorProxy $group, ContainerInter
         return (new ApiWorks($container))->getAuthorList($request, $response);
     })
     ->setName('api.works.authors');
+}
+function createApiTypesettingRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
 
+    // TYPESETTING
+
+    $group->post('/typeset/raw',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiTypesetPdf($container))->typesetRawData($request, $response);
+        })
+        ->setName('api.typeset.raw');
 }
 function createLoginRoutes(App $app, ContainerInterface $container) : void {
     $app->any('/login',
@@ -791,7 +827,6 @@ function createLoginRoutes(App $app, ContainerInterface $container) : void {
         })
         ->setName('logout');
 }
-
 function createSiteDevRoutes(App $app, ContainerInterface $container) : void {
 
     $app->group("/dev", function (RouteCollectorProxy $group) use ($container){
@@ -806,7 +841,6 @@ function createSiteDevRoutes(App $app, ContainerInterface $container) : void {
 
 
 }
-
 function createDareApiRoutes(App $app, ContainerInterface $container) : void {
     $app->group('/api/data', function(RouteCollectorProxy $group) use($container){
         // get list of transcriptions available for download

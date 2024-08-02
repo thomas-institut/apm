@@ -1552,6 +1552,16 @@ export class TableEditor {
     this.columnSequence.removeNumber(col)
   }
 
+  getEmptyColumnCount() {
+    let count = 0;
+    for (let col = 0; col < this.matrix.nCols; col++) {
+      if (this.canDeleteColumn(col)) {
+        count++;
+      }
+    }
+    return count;
+  }
+
   /**
    * Deletes all empty columns in the table
    */

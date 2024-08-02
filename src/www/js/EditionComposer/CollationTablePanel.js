@@ -59,6 +59,7 @@ import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
 import { FmtText } from '../FmtText/FmtText.mjs'
 import { Punctuation } from '../defaults/Punctuation.mjs'
 import { toolbarCharacters} from '../defaults/ToolbarCharacters'
+import { SimpleConfirmDialog } from '../pages/common/SimpleConfirmDialog'
 
 export class CollationTablePanel extends PanelWithToolbar {
   constructor (options = {}) {
@@ -339,8 +340,17 @@ export class CollationTablePanel extends PanelWithToolbar {
    * @private
    */
   genOnClickCompactTable() {
-    return () => {
-      this.tableEditor.compactTable()
+    return async () => {
+      let emptyColumnCount = this.tableEditor.getEmptyColumnCount();
+      if (emptyColumnCount !== 0) {
+        let msg = emptyColumnCount === 1 ? 'There is one empty column, do you want to erase it?' :
+          `There are ${emptyColumnCount} empty columns, do you want to erase them?`;
+
+        if (await SimpleConfirmDialog.getUserConfirmation(msg, "Yes", "No")) {
+          this.tableEditor.compactTable()
+        }
+      }
+
     }
   }
 

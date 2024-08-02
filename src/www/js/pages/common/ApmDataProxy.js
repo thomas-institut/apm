@@ -21,6 +21,7 @@ import { KeyCache } from '../../toolbox/KeyCache/KeyCache'
 import { WebStorageKeyCache } from '../../toolbox/KeyCache/WebStorageKeyCache'
 import { CachedFetcher } from '../../toolbox/CachedFetcher'
 import { urlGen } from './SiteUrlGen'
+import { wait } from '../../toolbox/FunctionUtil.mjs'
 
 
 const cachePrefix = 'apm';
@@ -28,6 +29,8 @@ const cachePrefix = 'apm';
 const shortTtl = 60 // 1 minute
 const mediumTtl = 3600; // 1 hour
 const longTtl = 24 * 3600; // 24 hours
+
+const CleaningDelayInSeconds = 1;
 
 
 const typeNames = {
@@ -55,6 +58,17 @@ export class ApmDataProxy {
     }
 
     this.cachedFetcher = new CachedFetcher(this.caches.session);
+
+    wait(CleaningDelayInSeconds * 1000).then( () => {
+
+      let sessionRemovedItemCount = this.caches.session.cleanCache();
+      let localRemovedItemCount = this.caches.local.cleanCache();
+
+      let total = sessionRemovedItemCount + localRemovedItemCount;
+      if (total > 0) {
+        console.log(`Removed ${total} items from web caches:  ${sessionRemovedItemCount} session, ${localRemovedItemCount} local`);
+      }
+    })
   }
 
   async getPersonEssentialData(personId) {
@@ -328,7 +342,7 @@ export class ApmDataProxy {
    * @param tid
    */
   getEditionSource(tid) {
-    return this.fetch(urlGen.apiEditionSourcesGet(tid), 'GET', {}, false, false, 600);
+    return this.fetch(urlGen.apiEditionSourcesGet(tid), 'GET', {}, false, false, mediumTtl);
   }
 
 

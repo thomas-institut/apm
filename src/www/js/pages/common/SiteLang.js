@@ -76,10 +76,13 @@ const strings = [
   { key: 'Click to open in new tab/window', es: 'Click para abrir en nueva tab/ventana'},
   { key: 'Page Type', es: 'Tipo de página'},
   { key: 'Works', es: 'Obras'},
+  { key: 'Work', es: 'Obra'},
+  { key: 'Chunk Number', es: 'Número de chunk'},
   { key: 'Click to show chunk list', es: 'Click para mostrar lista de chunks'},
   { key: 'People', es: 'Personas'},
   { key: 'Name', es: 'Nombre'},
   { key: 'User', es: 'Usuario'},
+  { key: 'Author', es: 'Autor'},
   { key: 'Person Details', es: 'Datos personales'},
   { key: 'Click to see person details', es: 'Click para ver datos de la persona'},
   { key: 'Entity ID', es: 'Id de entidad'},
@@ -141,6 +144,14 @@ const strings = [
   { key: 'Last change in data', es: 'Último cambio en datos'},
   { key: 'View person data', es: 'Ver datos de la persona'},
   { key: 'Click to select page', es: 'Click para seleccionar página'},
+  { key: 'Create new chunk edition', es: 'Crear nueva edición de chunk'},
+  { key: 'Click to create a new chunk edition', es: 'Click para crear nueva edición de chunk'},
+  { key: 'Create New Chunk Edition', es: 'Crear nueva edición de chunk'},
+  { key: 'New Chunk Edition', es: 'Nueva edición de chunk'},
+  { key: 'Choose a work from the dropdown menu', es: 'Escoja una obra en el menú'},
+  { key: 'Invalid chunk number', es: 'Número de chunk incorrecto'},
+  { key: 'Chunk number must be greater than 0', es: 'El número de chunk debe ser mayor que 0'},
+
 ]
 
 export class SiteLang {

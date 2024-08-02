@@ -27,6 +27,14 @@
  * the protected methods: storeItemObject, getItemObject,
  * deleteItemObject and getKeys
  */
+
+/**
+ * Maximum TTL in the system
+ *
+ * @type {number}
+ */
+const MaxTtl = 7 * 24 * 3600;
+
 export class KeyCache {
 
   /**
@@ -81,11 +89,15 @@ export class KeyCache {
     }
     if (itemData['dataId'] === (dataId ?? this.defaultDataId)) {
       if (itemData.expires === -1) {
-        return itemData.data
-      }
-
-      if (itemData.expires > this.now()) {
-        return itemData.data
+        // enforce max ttl
+        let realExpirationTime = itemData.setAt + MaxTtl;
+        if (realExpirationTime > this.now()) {
+          return itemData.data
+        }
+      } else {
+        if (itemData.expires > this.now()) {
+          return itemData.data
+        }
       }
     }
 
@@ -105,24 +117,35 @@ export class KeyCache {
   /**
    * Deletes all expired items as well as all items
    * set before the given date and, if a dataId is given,
-   * also items which do not have a matching
+   * also items which do not have a matching.
+   *
+   * Returns the number of removed items
    *
    * @param before
+   * @return {number}
    */
   cleanCache(before = -1) {
     let now = this.now();
+    let removedItemCount = 0;
     this.getKeys().forEach( (key) => {
       let itemObject = this.getItemObject(key)
       if (itemObject['dataId'] !== this.defaultDataId) {
+        removedItemCount++;
         this.delete(key);
+        return;
       }
-      if (itemObject.expires < now) {
+      let expirationTime = itemObject.expires === -1 ? itemObject.setAt + MaxTtl : itemObject.expires;
+      if (expirationTime < now) {
+        removedItemCount++;
         this.delete(key);
+        return;
       }
       if (itemObject.setAt <= before) {
+        removedItemCount++;
         this.delete(key);
       }
     })
+    return removedItemCount;
 
   }
 

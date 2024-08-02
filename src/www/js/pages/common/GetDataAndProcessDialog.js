@@ -1,6 +1,7 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { ConfirmDialog, LARGE_DIALOG } from './ConfirmDialog'
 import { ObjectUtil } from '../../toolbox/ObjectUtil.mjs'
+import { tr } from './SiteLang'
 
 /**
  * A class to show a generic form dialog for clients that need to get some data from the user
@@ -55,7 +56,7 @@ export class GetDataAndProcessDialog {
         validateData: { type: 'function', default: async (data) => { return true } },
         getDataFromForm: { type: 'function', default: async (dialogSelector) => { return {} }},
         processData: { type: 'function', default: async (data, infoArea) => { return { success: false} }},
-        debug: { type: 'boolean', default: true},
+        debug: { type: 'boolean', default: false},
       }
     });
 
@@ -85,6 +86,7 @@ export class GetDataAndProcessDialog {
         cancelButtonLabel: this.options.cancelButtonLabel,
         body: this.options.loadingBodyHtml,
         hideOnAccept: false,
+        debug: this.options.debug,
         cancelFunction: () => {
           this.hide();
           resolve(false);
@@ -113,7 +115,7 @@ export class GetDataAndProcessDialog {
             resolve(processResult['result'] ?? true);
           }
         } else if (validationResult === false) {
-          this.infoArea.html(this.getErrorHtml('Input data is not valid'));
+          this.infoArea.html(this.getErrorHtml(tr('Input data is not valid')));
         } else {
           this.infoArea.html(validationResult.toString());
         }
@@ -141,7 +143,7 @@ export class GetDataAndProcessDialog {
       } else {
         this.dialog.hideAcceptButton();
         if (validationResult === false) {
-          this.infoArea.html(this.getErrorHtml('Input data is not valid'));
+          this.infoArea.html(this.getErrorHtml(tr('Input data is not valid')));
         } else {
           this.infoArea.html(validationResult.toString());
         }

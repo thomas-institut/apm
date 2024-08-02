@@ -26,6 +26,7 @@ export class NewChunkEditionDialog {
 
       this.dialog = new GetDataAndProcessDialog({
         title: tr('New Chunk Edition'),
+        cancelButtonLabel: tr('Cancel'),
         processButtonLabel: tr('Create New Chunk Edition'),
         getBodyHtml: this.genGetBodyHtml(),
         initialData: { work: '', chunkNumber: 1, lang: 'la' },
@@ -79,12 +80,12 @@ export class NewChunkEditionDialog {
   genGetBodyHtml() {
     return async () => {
       let languagesSelectHtml = '<select class="language-input">'  +
-          this.systemLanguages.map((lang) => { return `<option value="${lang.code}">${lang.name}</option>` }).join('') +
+          this.systemLanguages.map((lang) => { return `<option value="${lang.code}">${tr(lang.name)}</option>` }).join('') +
          '</select>';
 
       let authors = await this.options.apmDataProxy.getAuthors();
       let authorData = await Promise.all( authors.map( (authorId) => { return this.options.apmDataProxy.getPersonEssentialData(authorId); }) );
-      this.debug && console.log('Author data', authorData);
+      // this.debug && console.log('Author data', authorData);
       let authorSelectHtml = '<select class="author-input">' +
         '<option value="-1"></option>' +
         authorData.map( (authorInfo) => { return `<option value="${authorInfo.tid}">${authorInfo.name}</option>` }) +
@@ -108,15 +109,15 @@ export class NewChunkEditionDialog {
 
   genValidateData() {
     return (data) => {
-      this.debug && console.log("Validating data", data);
+      // this.debug && console.log("Validating data", data);
       if (data.work === '' ) {
-        return '<span class="text-warning">Choose a work from the dropdown menu</span>'
+        return `<span class="text-warning">${tr('Choose a work from the dropdown menu')}</span>`
       }
       if (isNaN(data.chunkNumber)) {
-        return '<span class="text-danger">Invalid chunk number</span>'
+        return `<span class="text-danger">${tr('Invalid chunk number')}</span>`
       }
       if (data.chunkNumber <= 0) {
-         return '<span class="text-danger">Chunk number must be greater than 0</span>';
+         return `<span class="text-danger">${tr('Chunk number must be greater than 0')}</span>`;
       }
       return data.lang !== undefined && data.lang !== '';
     }

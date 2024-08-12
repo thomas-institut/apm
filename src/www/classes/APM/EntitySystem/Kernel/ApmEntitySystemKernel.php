@@ -89,8 +89,8 @@ class ApmEntitySystemKernel
         $otherEntityDefiners = [
             new SystemEntity(),
             new IdTypes(),
-            new UrlTypes(),
-            new OrganizationTypes()
+            new OrganizationTypes(),
+            new UrlTypes()
         ];
 
         $this->entityTypes = [];

@@ -345,7 +345,6 @@ export class CollationTablePanel extends PanelWithToolbar {
       if (emptyColumnCount !== 0) {
         let msg = emptyColumnCount === 1 ? 'There is one empty column, do you want to erase it?' :
           `There are ${emptyColumnCount} empty columns, do you want to erase them?`;
-
         if (await SimpleConfirmDialog.getUserConfirmation(msg, "Yes", "No")) {
           this.tableEditor.compactTable()
         }

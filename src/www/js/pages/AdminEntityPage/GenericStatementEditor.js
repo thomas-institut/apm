@@ -131,11 +131,20 @@ export class GenericStatementEditor {
 
     if (def.type === Entity.tRelation) {
       let allowedEntities = await this.getAllEntitiesForTypes(allowedObjectTypes);
-      let optionsHtml =`<option value="${this.emptyValue}"></option>`;
+      let allowedEntityData = [];
       for (let i = 0; i < allowedEntities.length; i++) {
         let id = allowedEntities[i];
+        allowedEntityData.push( { id: id, name: await this.options.getEntityName(id) });
+      }
+
+      allowedEntityData.sort( (a,b) => { if (a.name < b.name) return -1; if (a.name > b.name) return 1; return 0;} );
+
+      let optionsHtml =`<option value="${this.emptyValue}"></option>`;
+      for (let i = 0; i < allowedEntityData.length; i++) {
+        let id = allowedEntityData[i].id;
+        let name = allowedEntityData[i].name;
         let selected = id === currentValue ? 'selected' : '';
-        optionsHtml += `<option value="${id}" ${selected}>${await this.options.getEntityName(id)}</option>`
+        optionsHtml += `<option value="${id}" ${selected}>${name}</option>`
       }
       return `<select class="qualification-input qualification-${id}">${optionsHtml}</select> ${idSpan}`
     } else {

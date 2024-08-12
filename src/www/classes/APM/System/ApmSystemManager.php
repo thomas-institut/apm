@@ -765,7 +765,9 @@ class ApmSystemManager extends SystemManager {
     public function onPersonDataChanged(int $personTid): void
     {
         parent::onPersonDataChanged($personTid);
-        $this->logger->debug("Scheduling update to ApiPeople cache");
+        $part = ApiPeople::onPersonDataChanged($personTid, $this->getEntitySystem(), $this->getSystemDataCache(), $this->logger);
+        $this->logger->debug("Invalidated ApiPeople data cache, part $part");
+        $this->logger->debug("Scheduling update to ApiPeople data cache, all");
         $this->getJobManager()->scheduleJob(ApmJobName::API_PEOPLE_UPDATE_CACHE, '', [], 0, 3, 20);
     }
 

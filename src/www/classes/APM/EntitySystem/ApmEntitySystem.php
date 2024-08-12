@@ -40,7 +40,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
      * Data id for internal kernel caches, change every time there is a
      * change in the entity system schema or in the ApmEntitySystemKernel class
      */
-    const dataId = '015';
+    const dataId = '018';
 
     const kernelCacheKey = 'ApmEntitySystemKernel';
 

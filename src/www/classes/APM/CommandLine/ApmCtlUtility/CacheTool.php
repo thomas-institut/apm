@@ -4,9 +4,12 @@
 namespace APM\CommandLine\ApmCtlUtility;
 
 
+use APM\Api\ApiPeople;
+use APM\Api\ApiSystem;
 use APM\CommandLine\AdminUtility;
 use APM\CommandLine\CommandLineUtility;
 use APM\System\ApmMySqlTableName;
+use APM\System\Cache\CacheKey;
 use PDO;
 
 class CacheTool extends CommandLineUtility implements AdminUtility
@@ -79,10 +82,23 @@ class CacheTool extends CommandLineUtility implements AdminUtility
             return;
         }
 
-        $cacheKey = $this->argv[2];
+        $key = $this->argv[2];
+        $sm = $this->getSystemManager();
+        $cache = $sm->getSystemDataCache();
 
-        $this->getSystemManager()->getSystemDataCache()->delete($cacheKey);
-        $this->logger->info("Cache key deleted: " . $cacheKey);
+        switch ($key) {
+            case 'PeoplePageData':
+                ApiPeople::invalidatePeoplePageDataAllParts($sm->getEntitySystem(),$cache, $this->logger);
+                $cache->delete(CacheKey::ApiPeople_PeoplePageData_Parts);
+                $cache->delete(CacheKey::ApiPeople_PeoplePageData_All);
+                break;
+
+            default:
+                $cache->delete($key);
+        }
+
+
+        $this->logger->info("Cache key deleted: " . $key);
     }
 
     private function flushCache(): void

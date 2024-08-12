@@ -36,10 +36,11 @@ class ApmDaemon extends CommandLineUtility
                 }
             ],
             [
-                'cacheKey' => CacheKey::ApiPeopleAllDataForPeoplePageCacheKey,
+                'cacheKey' => CacheKey::ApiPeople_PeoplePageData_All,
                 'ttl' => ApiPeople::AllPeopleDataForPeoplePageTtl,
                 'builder' => function () {
-                    return ApiPeople::buildAllPeopleDataForPeoplePage($this->getSystemManager()->getEntitySystem());
+                    return ApiPeople::buildAllPeopleDataForPeoplePage($this->getSystemManager()->getEntitySystem(),
+                        $this->getSystemManager()->getSystemDataCache(), $this->getSystemManager()->getLogger());
                 }
             ]
         ];

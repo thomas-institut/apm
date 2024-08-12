@@ -37,7 +37,11 @@ class CacheKey
      * Maintained up to date by the APM Daemon.
      *
      */
-    const ApiPeopleAllDataForPeoplePageCacheKey =  'ApiPeople_AllPeopleDataForPeoplePage';
+    const ApiPeople_PeoplePageData_All =  'ApiPeople_PeoplePage_All';
+
+
+    const ApiPeople_PeoplePageData_Parts = 'ApiPeople_PeoplePage_Parts';
+    const ApiPeople_PeoplePageData_PartPrefix = 'ApiPeople_PeoplePage_Part_';
 
 
     /**

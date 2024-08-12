@@ -82,6 +82,7 @@ const BasicEntityPredicateDefs = [
         'descr' => "The entity's name in original language and script",
         'allowedSubjectTypes' => [ Entity::tPerson, Entity::tGeographicalPlace, Entity::tGeographicalArea, Entity::tWork],
         'allowedObjectTypes'=> null,
+        'allowedQualifications' => [ Entity::pObjectLang],
         'canBeCancelled' => true,
         'singleProperty' => false,
         'flags' => []

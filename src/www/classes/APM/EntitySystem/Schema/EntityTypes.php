@@ -86,7 +86,7 @@ const EntityTypeDefinitions = [
         'A human language, e.g. German, French',
         [],
         [],
-        true
+        false
     ],
     [
         Entity::tUrlType,

@@ -54,7 +54,8 @@ export class PeoplePage extends NormalPage {
     genOnClickCreateNewPersonButton() {
       return async () => {
         let dialog = new PersonCreationDialog({
-          apmDataProxy: this.apmDataProxy
+          apmDataProxy: this.apmDataProxy,
+          successWaitTime: 1000,
         });
 
         let newPersonTid = await dialog.createPerson();
@@ -68,7 +69,9 @@ export class PeoplePage extends NormalPage {
     }
 
     makeDataForDataTables() {
-        return this.dataFromServer.map( (person) => {
+        return this.dataFromServer.filter( (person) => {
+          return person['mergedInto'] === null;
+        }).map( (person) => {
           let personWebId = Tid.toBase36String(person.tid);
           return {
             name: {

@@ -39,7 +39,10 @@ export class CachedFetcher {
       }
       this.verbose && console.log(`Doing actual fetch for '${key}'`)
       fetcher().then( (data) => {
-        this.cache.store(key, data, ttl === -1 ? this.defaultTtl : ttl)
+        let actualTtl = ttl === -1 ? this.defaultTtl : ttl
+        if (actualTtl > 0) {
+          this.cache.store(key, data, actualTtl)
+        }
         resolve(data)
       }).catch( (e) => { reject(e)})
     })

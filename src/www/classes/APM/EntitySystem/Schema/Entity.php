@@ -152,6 +152,10 @@ class Entity implements TidDefiner
     const UrlTypeDnb = 9003;
     const UrlTypeWikipedia = 9004;
 
+
+
+
+
     // ID types
     const IdTypeWikiData = 10001;
     const IdTypeViaf = 10002;
@@ -192,12 +196,10 @@ class Entity implements TidDefiner
 //    const OccupationEditor = 13010;
 
 
-
-
-
     // Dare stuff
 
     const pDarePersonId = 14001;
+
 
 
 }

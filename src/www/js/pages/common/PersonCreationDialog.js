@@ -9,7 +9,7 @@ import { GetDataAndProcessDialog } from './GetDataAndProcessDialog'
 export class PersonCreationDialog {
   constructor (options) {
     let oc = new OptionsChecker({
-      context: 'CreatePersonDialog2',
+      context: 'PersonCreationDialog',
       optionsDefinition: {
         successWaitTime: { type: 'number', default: 500},
         apmDataProxy: { type: 'object', objectClass: ApmDataProxy},
@@ -54,7 +54,7 @@ export class PersonCreationDialog {
           let sortName = data['sortName'];
           infoArea.html(`<span class="text-info">${ApmPage.genLoadingMessageHtml(tr('Creating new person'))}</span>`)
           this.options.apmDataProxy.createPerson(name, sortName).then( (resp) => {
-            infoArea.html(tr('Person successfully created'));
+            infoArea.html(ApmPage.genLoadingMessageHtml(tr('Person successfully created, reloading page')));
             wait(this.options.successWaitTime).then( () => {
               resolve({ success: true, result: resp.tid})
             })

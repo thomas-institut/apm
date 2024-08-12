@@ -109,7 +109,7 @@ export class GetDataAndProcessDialog {
         let validationResult = await this.options.validateData(data);
         if (validationResult === true) {
           this.dialog.hideAcceptButton();
-          let processResult = await this.options.processData(data);
+          let processResult = await this.options.processData(data, this.infoArea);
           if (processResult['success'] === true) {
             this.hide();
             resolve(processResult['result'] ?? true);

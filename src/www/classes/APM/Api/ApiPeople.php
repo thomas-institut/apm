@@ -15,6 +15,8 @@ use APM\System\User\UserTag;
 use APM\ToolBox\HttpStatus;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Log\LoggerInterface;
+use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\Exportable\ExportableObject;
@@ -24,6 +26,13 @@ class ApiPeople extends ApiController
 
     const AllPeopleDataForPeoplePageTtl = 8 * 24 * 3600;
     const WorksByPersonTtl =  8 * 24 * 3600;
+
+    /**
+     * Make this number so that rebuilding the data for a part does not take more than one second.
+     * When changing this number, stop the ApmDaemon, delete the PeoplePageData cache and restart
+     * the daemon again to ensure the cache is regenerated
+     */
+    const PeoplePageData_PeoplePerPart = 25;
 
     public function getPersonEssentialData(Request $request, Response $response): Response {
         $this->profiler->start();
@@ -58,45 +67,127 @@ class ApiPeople extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
         $cache = $this->systemManager->getSystemDataCache();
         try {
-            return $this->responseWithJson($response, unserialize($cache->get(CacheKey::ApiPeopleAllDataForPeoplePageCacheKey)));
+            return $this->responseWithJson($response, unserialize($cache->get(CacheKey::ApiPeople_PeoplePageData_All)));
         } catch (KeyNotInCacheException) {
-            $dataToServe = self::buildAllPeopleDataForPeoplePage($this->systemManager->getEntitySystem());
-            $cache->set(CacheKey::ApiPeopleAllDataForPeoplePageCacheKey, serialize($dataToServe), self::AllPeopleDataForPeoplePageTtl);
+            $dataToServe = self::buildAllPeopleDataForPeoplePage($this->systemManager->getEntitySystem(), $cache, $this->logger);
+            $cache->set(CacheKey::ApiPeople_PeoplePageData_All, serialize($dataToServe), self::AllPeopleDataForPeoplePageTtl);
             return $this->responseWithJson($response, $dataToServe);
         }
     }
 
-    public static function buildAllPeopleDataForPeoplePage(ApmEntitySystemInterface $es) : array {
+    public static function invalidatePeoplePageDataPart(int $i, DataCache $cache) : void {
+        $cache->delete(CacheKey::ApiPeople_PeoplePageData_PartPrefix . $i);
+    }
 
-        $tids = $es->getAllEntitiesForType(Entity::tPerson);
-        $dataArray = [];
-        foreach ($tids as $tid) {
+    public static function invalidatePeoplePageDataAllParts(ApmEntitySystemInterface $es, DataCache $cache, LoggerInterface $logger) : void {
+        $parts = self::getPartsData($es, $cache, $logger);
+        for($i = 0; $i < count($parts); $i++) {
+            self::invalidatePeoplePageDataPart($i, $cache);
+        }
+    }
 
-            try {
-                $personData = $es->getEntityData($tid);
-            } catch (EntityDoesNotExistException) {
-                // should never happen
-                throw new \RuntimeException("Entity from all people list does not exist: $tid");
+    public static function onPersonDataChanged(int $tid, ApmEntitySystemInterface $es, DataCache $cache, LoggerInterface $logger) : int {
+        $parts = self::getPartsData($es, $cache, $logger);
+        $numParts = count($parts);
+        $partToInvalidate = -1;
+        for($i = 0; $i < count($parts); $i++) {
+            if (in_array($tid, $parts[$i])) {
+                $partToInvalidate = $i;
+                break;
             }
-
-            $dataArray[] = [
-                'tid' => $tid,
-                'name' => $personData->name,
-                'sortName' => $personData->getObjectForPredicate(Entity::pSortName) ?? '',
-                'dateOfBirth' => $personData->getObjectForPredicate(Entity::pDateOfBirth) ?? '',
-                'dateOfDeath' => $personData->getObjectForPredicate(Entity::pDateOfDeath) ?? '',
-                'isUser' => ($personData->getObjectForPredicate(Entity::pIsUser) ?? '0') === '1',
-            ];
         }
 
+        if ($partToInvalidate !== -1) {
+            self::invalidatePeoplePageDataPart($partToInvalidate, $cache);
+        } else {
+            // new person, rebuild the parts data
+            $cache->delete(CacheKey::ApiPeople_PeoplePageData_Parts);
+            $parts = self::getPartsData($es, $cache, $logger);
+            if (count($parts) === $numParts) {
+                // we have the same number of parts as before,
+                // which means that the new person's data belongs in the last part
+                // and that part's cache should be invalidated
+                // Note that this works because tids are ordered in ascending order
+                // and new tids are always greater than older ones. New tids will always
+                // be in the last part.
+                $partToInvalidate = $numParts -1;
+                self::invalidatePeoplePageDataPart($numParts-1, $cache);
 
+            } else {
+                // a new part is needed, but its cache is not built yet
+                // so there's no need to invalidate it
+                $partToInvalidate = $numParts;
+            }
+        }
+
+        return $partToInvalidate;
+    }
+
+
+    private static function getPartsData(ApmEntitySystemInterface $es, DataCache $cache, LoggerInterface $logger) : array {
+        // check the parts cache
+        try {
+            $parts = unserialize($cache->get(CacheKey::ApiPeople_PeoplePageData_Parts));
+        } catch (KeyNotInCacheException) {
+            // build parts structure
+            $logger->debug("People page data: parts info not in cache, rebuilding");
+            // get all tids, including merged ones so that there's no need to deal with deletions in the cache
+            $allPeopleTids = $es->getAllEntitiesForType(Entity::tPerson, true);
+            // sort in ascending order, which results in any future new person tid to be always in the last part when newly
+            // created
+            sort($allPeopleTids, SORT_NUMERIC);
+            $parts = array_chunk($allPeopleTids, self::PeoplePageData_PeoplePerPart);
+            $cache->set(CacheKey::ApiPeople_PeoplePageData_Parts, serialize($parts), self::AllPeopleDataForPeoplePageTtl);
+        }
+
+        return $parts;
+    }
+
+    public static function buildAllPeopleDataForPeoplePage(ApmEntitySystemInterface $es, DataCache $cache, LoggerInterface $logger) : array {
+
+
+        $parts = self::getPartsData($es, $cache, $logger);
+
+        $dataArray = [];
+        for ($i = 0; $i < count($parts); $i++) {
+            $partTids = $parts[$i];
+            $partCacheKey = CacheKey::ApiPeople_PeoplePageData_PartPrefix . $i;
+            // check if the part is already built
+            try {
+                $partData = unserialize($cache->get($partCacheKey));
+            } catch (KeyNotInCacheException) {
+                // build part data
+                $logger->debug("People page data: part $i not in cache, rebuilding");
+                $partData  = [];
+                foreach ($partTids as $tid) {
+                    try {
+                        $personData = $es->getEntityData($tid);
+                    } catch (EntityDoesNotExistException) {
+                        // should never happen
+                        throw new \RuntimeException("Entity from all people list does not exist: $tid");
+                    }
+
+                    $partData[] = [
+                        'tid' => $tid,
+                        'name' => $personData->name,
+                        'sortName' => $personData->getObjectForPredicate(Entity::pSortName) ?? '',
+                        'dateOfBirth' => $personData->getObjectForPredicate(Entity::pDateOfBirth) ?? '',
+                        'dateOfDeath' => $personData->getObjectForPredicate(Entity::pDateOfDeath) ?? '',
+                        'isUser' => ($personData->getObjectForPredicate(Entity::pIsUser) ?? '0') === '1',
+                        'mergedInto' => $personData->mergedInto,
+                    ];
+                }
+                $cache->set($partCacheKey, serialize($partData), self::AllPeopleDataForPeoplePageTtl);
+            }
+            array_push($dataArray, ...$partData);
+        }
         return $dataArray;
     }
 
     public static function updateCachedAllPeopleDataForPeoplePage(SystemManager $systemManager) : bool {
         try {
-            $data = self::buildAllPeopleDataForPeoplePage($systemManager->getEntitySystem());
-            $systemManager->getSystemDataCache()->set(CacheKey::ApiPeopleAllDataForPeoplePageCacheKey,
+            $data = self::buildAllPeopleDataForPeoplePage($systemManager->getEntitySystem(), $systemManager->getSystemDataCache(), $systemManager->getLogger());
+            $systemManager->getSystemDataCache()->set(CacheKey::ApiPeople_PeoplePageData_All,
                 serialize($data), self::AllPeopleDataForPeoplePageTtl);
         } catch (\Exception $e) {
             $systemManager->getLogger()->error("Exception while updating cached AllPeopleEssentialData",

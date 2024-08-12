@@ -33,6 +33,7 @@ export class AdminEntityPage extends NormalPage {
 
     this.data = this.options.entityData;
     this.predicateDefs = this.options.predicateDefs;
+
     this.statements = this.data.statements;
 
     this.entityId = this.data['id'];

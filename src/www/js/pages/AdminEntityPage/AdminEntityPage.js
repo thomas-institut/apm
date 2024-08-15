@@ -276,7 +276,10 @@ export class AdminEntityPage extends NormalPage {
   async genContentHtml () {
     let availablePredicatesAsSubject = this.getPredicatesAvailableForAdding(true);
     let availablePredicatesAsObject = this.getPredicatesAvailableForAdding(false);
+    let apmUrl = urlGen.siteEntityPage(this.data.type, this.entityId);
+    let apmUrlLink = apmUrl === '' ? '<i>None</i>' : `<a href="${apmUrl}">${apmUrl}</a>`;
     return `<h1>Entity ${this.entityId} <small> = ${Tid.toBase36String(this.entityId)}</small></h1>
+         <p>Apm Url:  ${apmUrlLink} </p>
         <h2>Basic Data</h2>
         ${await this.getSimpleElementsHtml(this.data)}
         <h3>Statements as Subject</h3>

@@ -24,13 +24,7 @@ div.entity-info p {
 div.api-call-control {
     min-height: 3em;
 }
-div.editor-container {
-    min-width: 30em;
-    max-width: 50em;
-    border: 1px solid #f1f1f1;
-    margin-left: 3em;
-    padding: 1em;
-}
+
 
 h4 {
     margin-top: 2em;
@@ -218,4 +212,63 @@ div.grid-icons-row {
     font-weight: bold;
 }
 
+/* Dev Editor */
 
+div.editor-container {
+    min-width: 30em;
+    /*max-width: 80em;*/
+    border: 1px solid #f1f1f1;
+    margin-left: 3em;
+    margin-right: 3em;
+    padding: 1em;
+}
+
+
+/* NEW editor */
+
+.mde-section {
+    margin-bottom: 1em;
+}
+
+.mde-header-name {
+    font-size: 2em;
+    font-weight: bold;
+}
+
+.mde-section-title {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+
+.mde-section-body {
+    margin-left: 2em;
+}
+
+.mde-predicate {
+    display: flex;
+    flex-direction: row;
+    column-gap: 0.5em;
+}
+
+.mde-predicate-logo{
+    max-height: 2.5em;
+    min-width: 2em;
+}
+
+.mde-predicate-list-vertical {
+    display: flex;
+    flex-direction: column;
+}
+
+.mde-predicate-list-horizontal {
+    display: flex;
+    flex-direction: row;
+    column-gap: 5em;
+    width:100%;
+
+}
+
+.ghost {
+    visibility: hidden;
+}

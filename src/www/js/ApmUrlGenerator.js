@@ -15,7 +15,11 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
-class ApmUrlGenerator {
+
+import * as Entity from './constants/Entity'
+import { Tid } from './Tid/Tid'
+
+export class ApmUrlGenerator {
 
     /**
      *
@@ -73,10 +77,6 @@ class ApmUrlGenerator {
         return `${this.base}/work/${work}/chunk/${chunk}`
     }
 
-/*    siteUserProfile(userName) {
-        return this.base + '/user/' + userName
-    }*/
-
     siteWorks() {
         return `${this.base}/works`;
     }
@@ -117,7 +117,7 @@ class ApmUrlGenerator {
     }
 
     sitePerson(id) {
-        return this.base + '/person/' + id
+        return `${this.base}/person/${id}`;
     }
 
     sitePeople() {
@@ -169,6 +169,22 @@ class ApmUrlGenerator {
 
     siteOpenSeadragonIconsPrefix() {
         return `${this.base}/node_modules/openseadragon/build/openseadragon/images/`
+    }
+
+    /**
+     *
+     * @param {number}entityType
+     * @param {number}entityId
+     */
+    siteEntityPage(entityType, entityId) {
+        switch (entityType) {
+            case Entity.tPerson:
+                return this.sitePerson(Tid.toBase36String(entityId));
+
+            case Entity.tWork:
+                return this.siteWorkPage(entityId);
+        }
+        return '';
     }
 
 
@@ -432,10 +448,6 @@ class ApmUrlGenerator {
         return `${this.base}/api/system/languages`
     }
 
-    apiPeopleGetPerson() {
-        return `${this.base}/api/person/get`
-    }
-
     apiPeopleSaveData() {
         return `${this.base}/api/person/save`
     }
@@ -448,35 +460,8 @@ class ApmUrlGenerator {
         return `${this.base}/api/person/newid`
     }
 
-    apiPeopleGetAllPeople() {
-        return `${this.base}/api/people/all`
-    }
-
     images() {
         return this.base + '/images'
-    }
-
-
-    // logos
-
-    logoOrcid() {
-        return `${this.images()}/orcid-logo.svg`
-    }
-
-    logoWikiData() {
-        return `${this.images()}/wikidata-logo.svg`
-    }
-
-    logoGnd() {
-        return `${this.images()}/gnd-logo.svg`
-    }
-
-    logoViaf() {
-        return `${this.images()}/viaf-logo.svg`
-    }
-
-    logoLoc() {
-        return `${this.images()}/loc-logo2.svg`
     }
 
     // External
@@ -496,6 +481,43 @@ class ApmUrlGenerator {
     gndExplorePage(gndId) {
         return `https://explore.gnd.network/gnd/${gndId}`;
     }
+
+    /**
+     * Returns the logo associated with an entity id.
+     *
+     * Normally the entity is a predicate, for example, an external ID
+     * @param {number}entityId
+     * @return {string}
+     */
+    entityLogoUrl(entityId) {
+        switch(entityId) {
+            case Entity.pOrcid: return `${this.images()}/orcid-logo.svg`;
+            case Entity.pViafId:  return `${this.images()}/viaf-logo.svg`;
+            case Entity.pGNDId:  return `${this.images()}/gnd-logo.svg`;
+            case Entity.pWikiDataId: return `${this.images()}/wikidata-logo.svg`;
+            case Entity.pLocId: return `${this.images()}/loc-logo2.svg`;
+        }
+        return '';
+    }
+
+    /**
+     * Returns an external url for an entity and a given predicate, normally
+     * an external ID.
+     *
+     * @param {number}idTypeEntityId
+     * @param {number}entityId
+     * @return {string}
+     */
+    entityExternalUrl(idTypeEntityId, entityId) {
+        switch(idTypeEntityId) {
+            case Entity.pOrcid: return this.orcidPage(entityId);
+            case Entity.pViafId:  return this.viafPage(entityId);
+            case Entity.pGNDId:  return this.gndExplorePage(entityId);
+            case Entity.pWikiDataId: return this.wikiDataPage(entityId);
+        }
+        return ''
+    }
+
 
 
 }

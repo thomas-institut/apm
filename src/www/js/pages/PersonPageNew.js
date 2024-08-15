@@ -8,6 +8,7 @@ import { UserDocDataCommon } from './common/UserDocDataCommon'
 import { ApmPage } from './ApmPage'
 import { UserProfileEditorDialog } from './common/UserProfileEditorDialog'
 import { MakeUserDialog } from './common/MakeUserDialog'
+import * as Entity from '../constants/Entity'
 
 
 const CONTRIBUTION_MCE = 'mcEditions';
@@ -157,34 +158,34 @@ export class PersonPageNew extends NormalPage {
         value: this.personData['orcidId'] ?? '',
         url: urlGen.orcidPage(this.personData['orcidId']),
         title: 'ORCiD',
-        logoUrl: urlGen.logoOrcid()
+        logoUrl: urlGen.entityLogoUrl(Entity.pOrcid)
       },
       {
         name: 'VIAF',
         value: this.personData['viafId'] ?? '',
         url: urlGen.viafPage(this.personData['viafId']),
-        logoUrl: urlGen.logoViaf(),
+        logoUrl: urlGen.entityLogoUrl(Entity.pViafId),
         title: 'VIAF ID'
       },
       {
         name: 'GND',
         value: this.personData['gndId'] ?? '',
         url: urlGen.gndExplorePage(this.personData['gndId']),
-        logoUrl: urlGen.logoGnd(),
+        logoUrl: urlGen.entityLogoUrl(Entity.pGNDId),
         title: 'Gemeinsame Normdatei (GND) ID'
       },
       {
         name: 'WikiData',
         value: this.personData['wikiDataId'] ?? '',
         url: urlGen.wikiDataPage(this.personData['wikiDataId']),
-        logoUrl: urlGen.logoWikiData(),
+        logoUrl: urlGen.entityLogoUrl(Entity.pWikiDataId),
         title: 'WikiData Id'
       },
       {
         name: 'LoC',
         value: this.personData['locId'] ?? '',
         url: '',
-        logoUrl: urlGen.logoLoc(),
+        logoUrl: urlGen.entityLogoUrl(Entity.pLocId),
         title: "US Library of Congress ID"
       }
     ].map( (idDef) => {

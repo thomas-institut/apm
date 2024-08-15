@@ -33,7 +33,7 @@ module.exports = {
     ApmLogPage: './pages/ApmLogPage.js',
     DashboardPage: './pages/DashboardPage.js',
     SearchPage: './pages/SearchPage.js',
-    MetadataEditorPage: './pages/MetadataEditorPage.js',
+    DevelopmentEntityDataEditor: './pages/DevelopmentEntityDataEditor.js',
     // JASMINE TESTS
     JasmineTests: {
       import: '../test/js/modules-to-test.js',

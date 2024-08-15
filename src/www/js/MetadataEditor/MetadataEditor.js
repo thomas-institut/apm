@@ -5,84 +5,95 @@ import {ConfirmDialog} from "../pages/common/ConfirmDialog";
 import * as entityConstants from "../constants/Entity";
 import {EditableTextField} from "../widgets/EditableTextField";
 
+
+export const Mode_Create = 'create';
+export const Mode_Edit = 'edit';
+export const Mode_Show = 'show';
+export const Mode_Dialog = 'dialog';
+
 export class MetadataEditor {
 
   constructor(options) {
 
-    const optionsDefinition = {
-      containerSelector: { type:'string', required: true},
-      entityDataSchema: {type: 'object', required: true},
-      entityData: {type: 'object', required: false, default: {}},
-      mode: {type:'string', required: true},
-      onSave: {type:'function', required: true},
-      backlink: {type:'string', required: false, default: ''},
-      dialogWindow: {type: 'object', required: false, default: {}},
-      dialogRootMetadataEditor: {type: 'object', required: false, default: {}},
-      dialogRootInputFormSelector: {type:'string', required: false, default: ''}
-    }
+    const oc = new OptionsChecker({
+      optionsDefinition:  {
+        containerSelector: { type:'string', required: true},
+        entityDataSchema: {type: 'object', required: true},
+        entityData: {type: 'object', required: false, default: {}},
+        mode: {type:'string', required: true},
+        getEntityName: { type: 'function', default: async (id) => { return `Entity ${id}` } },
+        onSave: {type:'function', required: true},
+        backlink: {type:'string', required: false, default: ''},
+        dialogWindow: {type: 'object', required: false, default: {}},
+        dialogRootMetadataEditor: {type: 'object', required: false, default: {}},
+        dialogRootInputFormSelector: {type:'string', required: false, default: ''}
+      }, 
+      context:  "MetadataEditor"
+    });
+    this.options = oc.getCleanOptions(options);
 
-    const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "MetadataEditor"})
-    this.options = oc.getCleanOptions(options)
+    $(this.options.containerSelector).html(this.getEditorInitialHtml());
+    this.metadataGridSelector = `${this.options.containerSelector} .metadataEditorGridContainer`;
 
-    // fill container with the html structure of the metadata editor
-    this.makeHtmlStructureForMetadataEditor()
+    // this object gets always updated with the latest metadata
+    this.entity = {
+      id: -1,
+      type: '', 
+      predicates: [], 
+      objects: [], 
+      validObjectTypes: [], 
+      notes: []
+    }; 
+    this.numPredicates = 0;
 
-    // globals
-    this.entity = {id: '', type: '', predicates: [], objects: [], validObjectTypes: [], notes: []} // this object gets always updated with the latest metadata
-    this.numPredicates = 0
-    this.mode = { create: 'create', edit: 'edit', show: 'show', dialog: 'dialog'}
-    this.sectionTitles = []
-    this.sectionStructure = []
-    this.tagEditor = undefined
-    this.singleEditingActive = false
-    this.people = []
-    this.apiCallIdGetMatchingPeople = 0
+    
+    this.sectionTitles = [];
+    this.sectionStructure = [];
+    this.tagEditor = undefined;
+    this.singleEditingActive = false;
+    this.people = [];
+    this.apiCallIdGetMatchingPeople = 0;
+    this.currentMode = '';
 
     // selectors
-    this.buttonsSelectorTop = `${this.options.containerSelector} .buttons_top`
-    this.buttonsSelectorBottom = `${this.options.containerSelector} .buttons_bottom`
-    this.datalistSelector = this.options.containerSelector + " #people-datalist"
-
-    // get a list of all people (for blocking the creation of entities with a name that already exists)
-    // this.getPeople(() => {
-    //
-    // })
+    this.buttonsSelectorTop = `${this.options.containerSelector} .buttons_top`;
+    this.buttonsSelectorBottom = `${this.options.containerSelector} .buttons_bottom`;
+    this.datalistSelector = this.options.containerSelector + " #people-datalist";
 
     switch (this.options.mode) {
-      case this.mode.edit:
+      case Mode_Edit:
         this.setupEditMode()
         break
-      case this.mode.create:
+      case Mode_Create:
         this.setupCreateMode()
         break
-      case this.mode.show:
+      case Mode_Show:
         this.setupShowMode()
         break
-      case this.mode.dialog:
+      case Mode_Dialog:
         this.setupDialogMode()
         break
     }
   }
 
-  // Editor Setup
-  makeHtmlStructureForMetadataEditor() {
-
-    this.metadataGridSelector = `${this.options.containerSelector} .metadataEditorGridContainer`
-
-    $(this.options.containerSelector).html(
-      `<div class="entity_attr0"></div>
-                            <div class="buttons_top" align="right"></div>
-                            <div class='metadataEditorGridContainer'>
-                            </div>
-                            <div class="buttons_bottom" align="left"></div>
-                            <div class="errorMessage" style="font-style: oblique"></div>
-                            <br>`)
+  /**
+   * Editor Setup
+   * @private
+   */
+  getEditorInitialHtml() {
+    return `<div class="entity_attr0"></div>
+        <div class="buttons_top" align="right"></div>
+        <div class='metadataEditorGridContainer'>
+        </div>
+        <div class="buttons_bottom" align="left"></div>
+        <div class="errorMessage" style="font-style: oblique"></div>
+        <br>`;
   }
 
   setupEditMode() {
-    this.options.mode = this.mode.edit
+    this.currentMode = Mode_Edit
     this.buildEntity().then(() => {
-      this.makeTableStructure();
+      this.makeGridStructure();
       this.setupTableForUserInput(() => {
         this.setupCancelButton();
         this.setupSaveButton();
@@ -92,10 +103,10 @@ export class MetadataEditor {
   }
 
   setupCreateMode() {
-    this.options.mode = this.mode.create
+    this.currentMode = Mode_Create
 
     this.buildEntitySchema().then(() => {
-      this.makeTableStructure();
+      this.makeGridStructure();
       this.setupTableForUserInput(() => {
         this.setupSaveButton();
         this.makeBackButton();
@@ -105,10 +116,10 @@ export class MetadataEditor {
   }
 
   setupShowMode() {
-    this.options.mode = this.mode.show
-    this.removeSpinner();
+    this.currentMode = Mode_Show;
+    // this.removeSpinner();
     this.buildEntity().then(() => {
-      this.makeTableStructure();
+      this.makeGridStructure();
       this.setupBackAndEditButton();
       this.showMetadata();
       console.log(`show-mode for metadata for entity of type '${this.entity.type}' with ID ${this.entity.id} activated.`)
@@ -116,10 +127,10 @@ export class MetadataEditor {
   }
 
   setupDialogMode() {
-    this.options.mode = this.mode.dialog
+    this.currentMode = Mode_Dialog;
 
     this.buildEntitySchema().then(() => {
-      this.makeTableStructure()
+      this.makeGridStructure()
       this.setupSaveButton()
       this.setupTableForUserInput(() => {
         console.log(`create-mode for new entity of type '${this.entity.type}' activated.`)
@@ -129,43 +140,44 @@ export class MetadataEditor {
 
   // Entity and Table Management
 
-  // updates the empty object this.entity with the data from this.options when instantiating a new metadata editor
+
+  /**
+   * Updates the empty object this.entity with the data from this.options when instantiating a new metadata editor
+   * @return {Promise<void>}
+   * @private
+   */
   async buildEntity() {
 
-    if (this.options.entityDataSchema.typeId === entityConstants.tPerson) {
-      console.log('Entity is of type person')
+    if (this.entity.id === -1) {
+      this.entity.id = this.options.entityData.id;
     }
-
-    if (this.entity.id === '') {
-      this.entity.id = this.options.entityData.id
-    }
-
-    this.entity.type = this.options.entityData.type
-
+    this.entity.type = this.options.entityData.type;
     if (this.entity.objects.length === 0) { // After having edited and saved objects and notes, they get updated via the updateEntityData function
-
       for (let section of this.options.entityDataSchema.sections) {
-        this.sectionTitles.push(section.title)
+        this.sectionTitles.push(section.title);
+        // TODO: change these loops into something more readable
         for (let statement of this.options.entityData.statements) {
           for (let predicate of section.predicates) {
             if (statement.predicate === predicate.id) {
-
-              this.sectionStructure.push(section.type)
-              this.entity.objects.push(statement.object)
-
-              if (predicate.title !== '') {this.entity.predicates.push(predicate.title)}
-              else if (predicate.iconUrl !== '') {this.entity.predicates.push(predicate.iconUrl)}
+              this.sectionStructure.push(section.type);
+              this.entity.objects.push(statement.object);
+              if (predicate.title !== '') {
+                this.entity.predicates.push(predicate.title);
+              }
+              else if (predicate['iconUrl'] !== '') {
+                this.entity.predicates.push(predicate['iconUrl']);
+              }
               else {
                 for (let metadata of statement.statementMetadata) {
+                  // TODO: support all metadata types, not only ObjectUrlType
                   if (metadata[0] === entityConstants.pObjectUrlType) {
-                    this.entity.predicates.push(this.getDisplayName(metadata[1]))
+                    this.entity.predicates.push(await this.options.getEntityName(metadata[1]));
                   }
                 }
               }
-
               for (let statementMetadata of statement.statementMetadata) {
                 if (statementMetadata[0] === entityConstants.pStatementEditorialNote) {
-                  this.entity.notes.push(statementMetadata[1])
+                  this.entity.notes.push(statementMetadata[1]);
                 }
               }
 
@@ -187,7 +199,7 @@ export class MetadataEditor {
     }
 
     // store number of predicates of the entity
-    this.numPredicates = this.entity.predicates.length
+    this.numPredicates = this.entity.predicates.length;
   }
 
   // updates the empty object this.entity with the data-schema from this.options when creating a new entity
@@ -251,36 +263,34 @@ export class MetadataEditor {
     return true
   }
 
-  // Table Design Management
-  makeTableStructure() {
-    this.clearTable()
-    //this.makeTableRows()
-    this.makeTableCells()
+  /**
+   * @private
+   */
+  makeGridStructure() {
+    this.clearGrid()
+    this.makeGridCells()
   }
 
-  makeTableCells () {
+  /**
+   * @private
+   */
+  makeGridCells () {
 
-    if (this.options.mode === this.mode.dialog || this.options.mode === this.mode.create) {
-      new EditableTextField({
-        verbose: false,
-        containerSelector: `${this.options.containerSelector+' .entity_attr0'}`,
-        initialText: 'Name',
-        editIcon: '<i class="fas fa-pencil-alt fa-2xs" style="color: dimgray"></i>',
-        confirmIcon: '<i class="fa fa-check fa-2xs" style="color: green"></i>',
-        cancelIcon: '<i class="fa fa-times fa-2xs" style="color: darkred"></i>',
-        onConfirm: () => {console.log('CONFIRMED')} // PUT IN HERE API CALL TO SAVE NEW STATEMENT
-      })
-    } else {
-      new EditableTextField({
-        verbose: false,
-        containerSelector: `${this.options.containerSelector+' .entity_attr0'}`,
-        initialText: this.options.entityData.name,
-        editIcon: '<i class="fas fa-pencil-alt fa-2xs" style="color: dimgray"></i>',
-        confirmIcon: '<i class="fa fa-check fa-2xs" style="color: green"></i>',
-        cancelIcon: '<i class="fa fa-times fa-2xs" style="color: darkred"></i>',
-        onConfirm: () => {console.log('CONFIRMED')} // PUT IN HERE API CALL TO SAVE NEW STATEMENT
-      })
+    // Editor for entity name
+    let name = 'Name';
+    if (this.currentMode === Mode_Show || this.currentMode === Mode_Edit) {
+      name = this.options.entityData.name;
     }
+    new EditableTextField({
+        verbose: false,
+        containerSelector: `${this.options.containerSelector} .entity_attr0`,
+        initialText: name,
+        editIcon: '<i class="fas fa-pencil-alt fa-2xs" style="color: dimgray"></i>',
+        confirmIcon: '<i class="fa fa-check fa-2xs" style="color: green"></i>',
+        cancelIcon: '<i class="fa fa-times fa-2xs" style="color: darkred"></i>',
+        onConfirm: () => {console.log('CONFIRMED')} // PUT IN HERE API CALL TO SAVE NEW STATEMENT
+    });
+
 
     let sectionIndex = 0
 
@@ -298,7 +308,7 @@ export class MetadataEditor {
         let editAttributeButton = "entity_attr" + i + "_editButton"
         let predicateName = this.entity.predicates[i-1] + "&emsp;&emsp;"
 
-        if (this.options.mode !== this.mode.show) {
+        if (this.currentMode !== Mode_Show) {
           $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+1}; grid-row-end: ${i+1}">${predicateName}</div>
                               <div class="${cellId} grid-main" style="grid-row-start: ${i+1}; grid-row-end: ${i+1};"></div>`)
         } else {
@@ -318,7 +328,7 @@ export class MetadataEditor {
         let editAttributeButton = "entity_attr" + i + "_editButton"
         let predicateName = `<img class="id-logo" src="${this.entity.predicates[i-1]}">`
 
-        if (this.options.mode !== this.mode.show) {
+        if (this.currentMode !== Mode_Show) {
           $(this.metadataGridSelector).append(`<div class="grid-header-row" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j}; grid-column-end: ${j};">${predicateName}</div>
                               <div class="${cellId} grid-main-row" style="grid-row-start: ${rowSectionStartIndex}; grid-row-end: ${rowSectionStartIndex}; grid-column-start: ${j+1}; grid-column-end: ${j+1};"></div>`)
         } else {
@@ -336,7 +346,7 @@ export class MetadataEditor {
         let editAttributeButton = "entity_attr" + i + "_editButton"
         let predicateName = this.entity.predicates[i-1] + "&emsp;&emsp;"
 
-        if (this.options.mode !== this.mode.show) {
+        if (this.currentMode !== Mode_Show) {
           $(this.metadataGridSelector).append(`<div class="grid-header" style="grid-row-start: ${i+3}; grid-row-end: ${i+3};">${predicateName}</div>
                               <div class="${cellId} grid-main" style="grid-row-start: ${i+3}; grid-row-end: ${i+3};"></div>`)
         } else {
@@ -349,44 +359,6 @@ export class MetadataEditor {
           this.makeEditIconEvent(editAttributeButton)
         }
       }
-    }
-  }
-
-  getDisplayName(predicateCode) {
-
-    switch (predicateCode) {
-      case entityConstants.UrlTypeGeneric:
-        return 'URL'
-      case entityConstants.UrlTypeViaf:
-        return 'VIAF'
-      case entityConstants.UrlTypeDb:
-        return 'DB'
-      case entityConstants.UrlTypeDnb:
-        return 'DNB'
-      case entityConstants.UrlTypeWikipedia:
-        return 'Wikipedia'
-      case entityConstants.pUrl:
-        return 'URL'
-      case entityConstants.pDateOfBirth:
-        return 'Date of Birth'
-      case entityConstants.pDateOfDeath:
-        return 'Date of Death'
-      case entityConstants.pDarePersonId:
-        return 'Dare ID'
-      case entityConstants.pWikiDataId:
-        return 'WikiData ID'
-      case entityConstants.pLocId:
-        return 'Loc ID'
-      case entityConstants.pViafId:
-        return 'Viaf ID'
-      case entityConstants.pGNDId:
-        return 'GND ID'
-      case entityConstants.pOrcid:
-        return 'ORC ID'
-      case 'name':
-        return 'Name'
-      default:
-        return 'null'
     }
   }
 
@@ -405,7 +377,7 @@ export class MetadataEditor {
     }
   }
 
-  clearTable() {
+  clearGrid() {
     $(this.metadataGridSelector).empty()
   }
 
@@ -508,7 +480,7 @@ export class MetadataEditor {
 
     this.setupInputFormByIndex(predicateIndex)
 
-    if (this.options.mode === this.mode.create || this.options.mode === this.mode.dialog) {
+    if (this.currentMode === Mode_Create || this.currentMode === Mode_Dialog) {
       callback()
     }
     else {
@@ -620,8 +592,7 @@ export class MetadataEditor {
                 <ul class="matched-persons dropdown-menu dropdown-menu-right" data-display="static" id=${list}></ul></p>`)
 
     // This ensures, that existing data will be validated correctly, because validation compares the user input to datalist entries
-    if (!(this.options.mode === 'dialog' || this.options.mode === 'create')) {
-      console.log(this.mode)
+    if (!(this.currentMode === Mode_Dialog || this.currentMode === Mode_Create)) {
       this.addValueToInputFormByIndex(predicateIndex)
       this.getMatchingPeople($(inputSelector).val(), (people) => {
         this.addNamesToDatalistForPersonsAsValues(people, this.datalistSelector)
@@ -724,7 +695,7 @@ export class MetadataEditor {
     let inputSelector = this.options.containerSelector + ' .' + inputFormId
     let paragraphSelector = this.options.containerSelector + ' .' + paragraphId
 
-    if (!(this.options.mode === this.mode.dialog)) {
+    if (!(this.currentMode === Mode_Dialog)) {
       dialog = this.makeDialog(inputSelector)
     } else {
       $(inputSelector).on('focus', () => {
@@ -1045,9 +1016,9 @@ export class MetadataEditor {
         this.makeSpinner(this.buttonsSelectorBottom)
         this.updateEntityData(d.id, d.type, d.objects, d.notes)
         this.saveTagsAsHints(this.tagEditor.getTags())
-        this.options.onSave(this.entity, this.options.mode).then( () => {
-          this.logSaveAction(this.options.mode)
-          if (this.options.mode === this.mode.dialog) {
+        this.options.onSave(this.entity, this.currentMode).then( () => {
+          this.logSaveAction(this.currentMode)
+          if (this.currentMode === Mode_Dialog) {
             this.copyValueFromDialogToRootAndSave()
             this.options.dialogWindow.hide()
             this.options.dialogWindow.destroy()
@@ -1074,7 +1045,7 @@ export class MetadataEditor {
           }
           console.log(`'${this.entity.predicates[predicateIndex-1]}' in edit mode!`)
         }, predicateIndex)
-        this.options.mode = this.mode.edit
+        this.currentMode = Mode_Edit
         this.singleEditingActive = true
         this.mutePencilAndInfoIcons(predicateIndex)
       }
@@ -1133,8 +1104,8 @@ export class MetadataEditor {
         }
         this.entity.objects[predicateIndex-1] = object // Corresponds to updateEntityData function in global save event
         this.entity.notes[predicateIndex-1] = note // Corresponds to updateEntityData function in global save event
-        this.options.onSave(this.entity, this.options.mode).then(() => {
-          this.logSaveAction(this.options.mode)
+        this.options.onSave(this.entity, this.currentMode).then(() => {
+          this.logSaveAction(this.currentMode)
           this.singleEditingActive = false
           this.setupShowMode()
         })
@@ -1146,7 +1117,7 @@ export class MetadataEditor {
   makeEditButtonEvent() {
     $(`${this.options.containerSelector} .edit_button`).on("click",  () => {
 
-      this.options.mode = this.mode.edit
+      this.currentMode = Mode_Edit
 
       // Clear Messages
       this.clearErrorMessage()
@@ -1157,7 +1128,7 @@ export class MetadataEditor {
   makeCancelButtonEvent() {
     $(`${this.options.containerSelector} .cancel_button`).on("click",  () => {
 
-      this.options.mode = this.mode.show
+      this.currentMode = Mode_Show
 
       // Clear Messages
       this.clearErrorMessage()
@@ -1488,10 +1459,10 @@ export class MetadataEditor {
   }
 
   logSaveAction(mode) {
-    if (mode === this.mode.edit) {
+    if (mode === Mode_Edit) {
       console.log(`Saved alterations of entity with ID ${this.entity.id}.`)
     }
-    else if (mode === this.mode.create || mode === this.mode.dialog) {
+    else if (mode === Mode_Create || mode === Mode_Dialog) {
       console.log(`Created new entity of type '${this.entity.type}' with ID ${this.entity.id}.`)
     }
   }

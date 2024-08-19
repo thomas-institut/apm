@@ -253,7 +253,7 @@ div.editor-container {
 
 .mde-predicate-logo{
     max-height: 2.5em;
-    min-width: 2em;
+    min-width: 3em;
 }
 
 .mde-predicate-list-vertical {
@@ -264,11 +264,34 @@ div.editor-container {
 .mde-predicate-list-horizontal {
     display: flex;
     flex-direction: row;
-    column-gap: 5em;
+    flex-wrap: wrap;
+    column-gap: 3em;
+    row-gap: 3em;
     width:100%;
 
 }
 
 .ghost {
     visibility: hidden;
+}
+
+p.bpe-popover-tagline {
+    padding: 0;
+    margin: 0 0 0 1em;
+    font-size: 0.9em;
+}
+
+.bpe-predicate-edit {
+    background: #fcfcfc;
+    margin-bottom: 1em;
+    border: 1px solid silver;
+    border-radius: 3px;
+    padding: 0.5em;
+}
+
+.bpe-predicate-edit-attribute {
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: 1em;
+    row-gap: 1em;
 }

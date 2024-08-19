@@ -20,22 +20,13 @@ export class AdminEntityPage extends NormalPage {
       context: 'AdminEntityPage',
       optionsDefinition: {
         entityData: { type: 'Object', required: true},
-        predicatesAllowedAsSubject: { type: 'Object', required: true },
-        predicatesAllowedAsObject: { type: 'Object', required: true },
-        predicateDefs: { type: 'Object', required: true},
-        qualificationDefs: { type: 'Object', required: true}
       }
     })
 
     this.options = oc.getCleanOptions(options);
     console.log('Options', this.options);
-
-
     this.data = this.options.entityData;
-    this.predicateDefs = this.options.predicateDefs;
-
     this.statements = this.data.statements;
-
     this.entityId = this.data['id'];
     this.title = `Ent. ${this.entityId}`;
     this.initPage().then( () => {
@@ -144,7 +135,7 @@ export class AdminEntityPage extends NormalPage {
         relation: typeof statement.object === 'number',
         statementMetadata: statement.statementMetadata,
         predicateDef: this.predicateDefs[statement.predicate],
-        qualificationDefs: this.options.qualificationDefs,
+        qualificationDefs: this.qualificationDefs,
         onSuccess: this.genOnStatementEditorSuccess(),
         getEntityName: this.genGetEntityName(),
         getEntityList: this.genGetEntitiesForType(),
@@ -199,7 +190,7 @@ export class AdminEntityPage extends NormalPage {
           allowedQualifications: this.predicateDefs[predicate].allowedQualifications,
           statementMetadata: [],
           predicateDef: this.predicateDefs[predicate],
-          qualificationDefs: this.options.qualificationDefs,
+          qualificationDefs: this.qualificationDefs,
           getEntityName: this.genGetEntityName(),
           getEntityList: this.genGetEntitiesForType(),
           onSuccess: this.genOnStatementEditorSuccess(),
@@ -220,6 +211,13 @@ export class AdminEntityPage extends NormalPage {
   }
 
   async initPage () {
+    let typeData = await this.apmDataProxy.getPredicateDefinitionsForType(this.data.type);
+    console.log('Entity Type Data', typeData);
+    this.predicateDefs = typeData['predicateDefinitions'];
+    this.predicatesAllowedAsObject = typeData['predicatesAllowedAsObject'];
+    this.predicatesAllowedAsSubject = typeData['predicatesAllowedAsSubject'];
+    this.qualificationDefs = typeData['qualificationDefinitions'];
+
     await super.initPage();
     document.title = this.title;
   }
@@ -233,7 +231,7 @@ export class AdminEntityPage extends NormalPage {
    * @return {int[]}
    */
   getPredicatesAvailableForAdding(asSubject = true) {
-     let predicateArray = asSubject ? this.options.predicatesAllowedAsSubject : this.options.predicatesAllowedAsObject;
+     let predicateArray = asSubject ? this.predicatesAllowedAsSubject : this.predicatesAllowedAsObject;
 
      return predicateArray.filter( (predicate) => {
        let def = this.predicateDefs[predicate];
@@ -307,7 +305,7 @@ export class AdminEntityPage extends NormalPage {
     }
     let data;
     try {
-      data = await this.apmDataProxy.getEntityData(id);
+      data = await this.apmDataProxy.getEntityData(id, 15 * 60);
     } catch (e) {
       return '';
     }

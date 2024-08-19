@@ -19,14 +19,19 @@ export class MetadataEditor2 {
     });
     this.options = oc.getCleanOptions(options);
     this.containerSelector = this.options.containerSelector;
+    this.entityData = this.options.entityData;
 
     this.getBootstrapHtml().then( async (html) => {
       $(this.options.containerSelector).html(html);
+      this.typeData = await this.options.apmDataProxy.getPredicateDefinitionsForType(this.entityData.type);
+
       this.sections = this.options.entityDataSchema.sections.map( (sectionSchema, sectionIndex) => {
         switch(sectionSchema.type) {
           case SectionType.EditableHeader:
             return new EditableHeaderSection({
               apmDataProxy: this.options.apmDataProxy,
+              predicateDefinitions: this.typeData['predicateDefinitions'],
+              qualificationDefinitions: this.typeData['qualificationDefinitions'],
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
               entityData: this.options.entityData,
               sectionSchema: sectionSchema,
@@ -35,6 +40,8 @@ export class MetadataEditor2 {
           case SectionType.VerticalList:
             return new PredicateListSection({
               apmDataProxy: this.options.apmDataProxy,
+              predicateDefinitions: this.typeData['predicateDefinitions'],
+              qualificationDefinitions: this.typeData['qualificationDefinitions'],
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
               entityData: this.options.entityData,
               sectionSchema: sectionSchema,
@@ -44,6 +51,8 @@ export class MetadataEditor2 {
           case SectionType.HorizontalList:
             return new PredicateListSection({
               apmDataProxy: this.options.apmDataProxy,
+              predicateDefinitions: this.typeData['predicateDefinitions'],
+              qualificationDefinitions: this.typeData['qualificationDefinitions'],
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
               entityData: this.options.entityData,
               sectionSchema: sectionSchema,
@@ -53,6 +62,8 @@ export class MetadataEditor2 {
           default:
             return new MdeSection({
               apmDataProxy: this.options.apmDataProxy,
+              predicateDefinitions: this.typeData['predicateDefinitions'],
+              qualificationDefinitions: this.typeData['qualificationDefinitions'],
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
               entityData: this.options.entityData,
               sectionSchema: sectionSchema,

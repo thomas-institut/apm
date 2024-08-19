@@ -223,9 +223,13 @@ export class ApmDataProxy {
     return this.fetch(url, 'GET', { }, forceActualFetch, false, ttl)
   }
 
-  getEntityData(tid) {
-    let ttl = tid < 1000000 ? 24*3600 : shortTtl;
+  getEntityData(tid, nonSystemTtl = shortTtl) {
+    let ttl = tid < 1000000 ? 24*3600 : nonSystemTtl;
     return this.fetch(urlGen.apiEntityGetData(tid), 'GET', {},false, false, ttl);
+  }
+
+  getPredicateDefinitionsForType(type) {
+    return this.fetch(urlGen.apiEntityGetPredicateDefinitionsForType(type), 'GET', {},false, false, mediumTtl);
   }
 
   getEntityListForType(typeTid) {

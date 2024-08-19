@@ -12,6 +12,8 @@ export class MdeSection {
       optionsDefinition: {
         containerSelector: { type:'string', required: true},
         entityData: {type: 'object', required: false, default: {}},
+        predicateDefinitions: { type: 'object', required: true},
+        qualificationDefinitions: { type: 'object', required: true},
         apmDataProxy: { type: 'object', objectClass: ApmDataProxy, required: true},
         sectionSchema: { type: 'object', required: true}
       }
@@ -22,6 +24,8 @@ export class MdeSection {
     this.title = this.schema.title ?? '';
     this.containerSelector = this.options.containerSelector;
     this.apmDataProxy = this.options.apmDataProxy;
+    this.predicateDefinitions = this.options.predicateDefinitions;
+    this.qualificationDefinitions = this.options.qualificationDefinitions;
   }
 
   async init() {

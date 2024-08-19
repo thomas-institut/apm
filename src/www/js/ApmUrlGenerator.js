@@ -310,6 +310,10 @@ export class ApmUrlGenerator {
         return `${this.base}/api/entity/${tid}/data`
     }
 
+    apiEntityGetPredicateDefinitionsForType(type) {
+        return `${this.base}/api/entity/${type}/predicateDefinitions`
+    }
+
     apiEntityStatementsEdit() {
         return `${this.base}/api/entity/statements/edit`
     }
@@ -495,7 +499,7 @@ export class ApmUrlGenerator {
             case Entity.pViafId:  return `${this.images()}/viaf-logo.svg`;
             case Entity.pGNDId:  return `${this.images()}/gnd-logo.svg`;
             case Entity.pWikiDataId: return `${this.images()}/wikidata-logo.svg`;
-            case Entity.pLocId: return `${this.images()}/loc-logo2.svg`;
+            case Entity.pLocId: return `${this.images()}/loc-logo.svg`;
         }
         return '';
     }

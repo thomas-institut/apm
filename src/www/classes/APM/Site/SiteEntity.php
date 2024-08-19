@@ -20,38 +20,9 @@ class SiteEntity extends SiteController
         $tid = $this->systemManager->getEntitySystem()->getEntityIdFromString($tidString);
 
         SystemProfiler::setName(__FUNCTION__ . " $tid");
-
         try {
-            $es = $this->systemManager->getEntitySystem();
-            $entityData = $es->getEntityData($tid);
-            $predicatesAllowedAsSubject = $es->getValidPredicatesAsSubjectForType($entityData->type);
-            sort($predicatesAllowedAsSubject, SORT_NUMERIC);
-            $predicatesAllowedAsObject = $es->getValidPredicatesAsObjectForType($entityData->type);
-            sort($predicatesAllowedAsObject, SORT_NUMERIC);
-            $predicateDefs = [];
-            foreach ($predicatesAllowedAsSubject as $predicate) {
-                if (!isset($predicateDefs[$predicate])) {
-                    $predicateDefs[$predicate] = $es->getPredicateDefinition($predicate);
-                }
-            }
-            foreach ($predicatesAllowedAsObject as $predicate) {
-                if (!isset($predicateDefs[$predicate])) {
-                    $predicateDefs[$predicate] = $es->getPredicateDefinition($predicate);
-                }
-            }
-
-            $qualificationPredicates = $es->getValidQualificationPredicates();
-            $qualificationDefs = [];
-            foreach ($qualificationPredicates as $predicate) {
-                $qualificationDefs[$predicate] = $es->getPredicateDefinition($predicate);
-            }
-
             return $this->renderPage($response, self::Template_AdminEntity, [
-                'entityData' => $entityData,
-                'predicatesAllowedAsSubject' => $predicatesAllowedAsSubject,
-                'predicatesAllowedAsObject' => $predicatesAllowedAsObject,
-                'predicateDefs' => $predicateDefs,
-                'qualificationDefs' => $qualificationDefs,
+                'entityData' => $this->systemManager->getEntitySystem()->getEntityData($tid),
             ]);
         } catch (EntityDoesNotExistException) {
             return $this->getBasicErrorPage($response,  "Not found", "Entity $tid not found", HttpStatus::NOT_FOUND);

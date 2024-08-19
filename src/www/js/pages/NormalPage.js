@@ -45,7 +45,7 @@ export class NormalPage extends ApmPage {
 
   async getBodyHtml() {
     return `<div class="page-top-bar"></div>
-    <div class="page-content"></div>
+    <div class="page-content">Loading...</div>
     <div class="page-footer"></div>`;
   }
 

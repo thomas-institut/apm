@@ -2,10 +2,7 @@
 
 namespace APM\Api;
 
-use APM\EntitySystem\EntityEdition\EditorSchema;
-use APM\EntitySystem\EntityEdition\Predicate;
-use APM\EntitySystem\EntityEdition\Section;
-use APM\EntitySystem\EntityEdition\SectionType;
+
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Exception\InvalidObjectException;
 use APM\EntitySystem\Exception\InvalidStatementException;
@@ -24,6 +21,7 @@ use APM\ToolBox\HttpStatus;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use RuntimeException;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 
 
@@ -477,6 +475,83 @@ class ApiEntity extends ApiController
     }
 
     /**
+     *
+     * API call:
+     *
+     *    GET  .../api/entity/{id}/predicateDefinitions
+     *
+     * Returns an object with information about the predicates applicable to an entity type.
+     * If the id is not a type, the data for given entity's type is returned.
+     *
+     * The id must be in numerical form
+     *
+     *    [
+     *       predicatesAllowedAsSubject => int[],
+     *       predicatesAllowedAsObject => int[],
+     *       predicateDefinitions => object[],
+     *       qualificationDefinitions => object[]
+     *    ]
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getPredicateDefinitions(Request $request, Response $response): Response {
+
+        $id = intval($request->getAttribute('id') ?? -1);
+
+        if ($id <=0 ) {
+            return $this->responseWithText($response, "No entity id given", HttpStatus::BAD_REQUEST);
+        }
+
+        $es = $this->systemManager->getEntitySystem();
+        try {
+            $entityType = $es->getEntityType($id);
+        } catch (EntityDoesNotExistException $e) {
+            return $this->responseWithText($response, "Given entity $id does not exist", HttpStatus::BAD_REQUEST);
+        }
+
+        $type = $entityType === Entity::tEntityType ? $id : $entityType;
+
+        try {
+            $predicatesAllowedAsSubject = $es->getValidPredicatesAsSubjectForType($type);
+            sort($predicatesAllowedAsSubject, SORT_NUMERIC);
+            $predicatesAllowedAsObject = $es->getValidPredicatesAsObjectForType($type);
+            sort($predicatesAllowedAsObject, SORT_NUMERIC);
+            $predicateDefs = [];
+            foreach ($predicatesAllowedAsSubject as $predicate) {
+                if (!isset($predicateDefs[$predicate])) {
+                    $predicateDefs[$predicate] = $es->getPredicateDefinition($predicate);
+                }
+            }
+            foreach ($predicatesAllowedAsObject as $predicate) {
+                if (!isset($predicateDefs[$predicate])) {
+                    $predicateDefs[$predicate] = $es->getPredicateDefinition($predicate);
+                }
+            }
+            $qualificationPredicates = $es->getValidQualificationPredicates();
+            $qualificationDefs = [];
+            foreach ($qualificationPredicates as $predicate) {
+                $qualificationDefs[$predicate] = $es->getPredicateDefinition($predicate);
+            }
+
+            return $this->responseWithJson($response, [
+                'type' => $type,
+                'predicatesAllowedAsSubject' => $predicatesAllowedAsSubject,
+                'predicatesAllowedAsObject' => $predicatesAllowedAsObject,
+                'predicateDefinitions' => $predicateDefs,
+                'qualificationDefinitions' => $qualificationDefs,
+            ]);
+        } catch (EntityDoesNotExistException $e) {
+            // this should never happen
+            throw new RuntimeException("Entity does not exist exception thrown when getting predicate definitions: " .
+             $e->getMessage());
+        }
+
+
+    }
+
+    /**
      * @param int $type
      * @return SimpleIndexElement[]
      */
@@ -491,11 +566,13 @@ class ApiEntity extends ApiController
                 $index[] = (new SimpleIndexElement())->fromTuple([ $entity, $name, 'name', $this->normalizeName($name)]);
             } catch (EntityDoesNotExistException $e) {
                 // should never happen
-                throw new \RuntimeException($e->getMessage());
+                throw new RuntimeException($e->getMessage());
             }
         }
         return $index;
     }
+
+
 
 
     private function normalizeName(string $name) : string {

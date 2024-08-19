@@ -50,6 +50,7 @@ export class PredicateListSection extends MdeSection{
         showLogo: predicate.showLogo,
         showUrl: predicate.showUrl,
         isRelation: predicate.isRelation,
+        canBeCancelled: this.predicateDefinitions[predicate.id]['canBeCancelled'],
         getEntityName: this.genGetEntityName(),
         getEntityType: this.genGetEntityType()
       })

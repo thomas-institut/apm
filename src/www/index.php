@@ -588,13 +588,13 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
 }
 function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void
 {
-//    $group->get("/entity/{entityType}/schema", function(Request $request, Response $response) use ($container){
-//        return (new ApiEntity($container))->getEntitySchema($request, $response);
-//    })->setName("api.entity.type.schema");
-
     $group->get("/entity/{entityType}/entities", function(Request $request, Response $response) use ($container){
         return (new ApiEntity($container))->getEntitiesForType($request, $response);
-    })->setName("api.entity.type.entities");
+    })->setName("api.entity.entities");
+
+    $group->get("/entity/{id}/predicateDefinitions", function(Request $request, Response $response) use ($container){
+        return (new ApiEntity($container))->getPredicateDefinitions($request, $response);
+    })->setName("api.entity.predicateDefinitions");
 
     $group->get("/entity/{tid}/data", function(Request $request, Response $response) use ($container){
         return (new ApiEntity($container))->getEntityData($request, $response);

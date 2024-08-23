@@ -13,23 +13,36 @@ const schemata = {
       },
       {
         type: SectionType.VerticalList,
-        title: 'General Data',
+        title: 'Basic Data',
         predicates: [
           {
+            id: Entity.pEntityName,
+            hideEvenIfActive: true,
+            isUniqueInSection: true,
+          },
+          {
+            id: Entity.pEntityDescription,
+            hideEvenIfActive: true,
+            multiLineInput: true,
+            isUniqueInSection: true,
+          },
+          {
             id: Entity.pSortName,
-            displayIfNotSet: true,
             isUniqueInSection: true,
           },
           {
             id: Entity.pDateOfBirth,
-            displayIfNotSet: true,
             isUniqueInSection: true,
           },
           {
             id: Entity.pDateOfDeath,
-            displayIfNotSet: false,
             isUniqueInSection: true,
           },
+          {
+            id: Entity.pAlternateName,
+            label: 'Alt. Name'
+          },
+
         ]
       },
       {
@@ -39,13 +52,21 @@ const schemata = {
           return {
             id: idType,
             showLogo: true,
-            showUrl: true
+            showUrl: true,
           }
         })
       },
       {
-        type: SectionType.UrlList,
-        predicates: []
+        type: SectionType.VerticalList,
+        title: 'Urls',
+        predicates: [
+          {
+            id: Entity.pUrl,
+            label: null,
+            alwaysShow: true,
+            showUrl: true
+          }
+        ]
       }
     ]
   }

@@ -1,4 +1,3 @@
-import { MetadataEditor, Mode_Show } from '../MetadataEditor/MetadataEditor'
 import {NormalPage} from "./NormalPage";
 import {tr} from "./common/SiteLang";
 import {OptionsChecker} from "@thomas-inst/optionschecker";
@@ -40,18 +39,7 @@ export class DevelopmentEntityDataEditor extends NormalPage {
     this.schema = MetadataEditorSchema.getSchema(this.entityType);
     console.log(`Entity Schema for type ${this.entityType}`, this.schema);
 
-    this.metadataEditor = new MetadataEditor({
-      containerSelector: 'div.editor-container-lukas',
-      entityDataSchema: this.schema,
-      entityData: this.entityData,
-      mode: Mode_Show,
-      getEntityName: async (id) => {
-        const data = await this.apmDataProxy.getEntityData(id);
-        return data.name;
-      },
-      onSave: this.genMetadataEditorSave(),
-    });
-    this.metadataEditorNew = new MetadataEditor2({
+    new MetadataEditor2({
       containerSelector: 'div.editor-container-new',
       entityDataSchema: this.schema,
       entityData: this.entityData,
@@ -79,26 +67,13 @@ export class DevelopmentEntityDataEditor extends NormalPage {
     <h4>API Call Control</h4>
     <div class="api-call-control"></div>
     
-    <h4>Editor New</h4>
+    <h4>Editor</h4>
     <div class="editor-container  editor-container-new"></div>
-    
-    <h4>Editor Lukas</h4>
-    <div class="editor-container editor-container-lukas"></div>
     `
   }
 
   async getEntityData() {
     return this.apmDataProxy.fetch(urlGen.apiEntityGetData(this.id), 'GET', {},true, true);
-  }
-
-  getEntitySchema () {
-    return this.apmDataProxy.fetch(urlGen.apiEntityGetSchema(this.entityType), 'GET', {},true, true);
-  }
-
-  genMetadataEditorSave() {
-    return async (data, mode) => {
-      console.log(`Save, mode ${mode}`, data);
-    }
   }
 
 }

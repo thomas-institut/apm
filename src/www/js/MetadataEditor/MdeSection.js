@@ -39,6 +39,8 @@ export class MdeSection {
     <div class="mde-section-body"></div>`;
   }
 
+
+
   run() {
     $(`${this.containerSelector} .mde-section-body`).html(`Section of type ${this.schema.type} not implemented yet`);
   }

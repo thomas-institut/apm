@@ -238,10 +238,6 @@ export class ApmUrlGenerator {
         return `${this.base}/api/user/${tid}/update`;
     }
 
-    // apiUserGetInfo(id) {
-    //     return this.base + '/api/user/' + id + '/info';
-    // }
-
     apiPersonGetEssentialData(tid) {
         return `${this.base}/api/person/${tid}/data/essential`
     }
@@ -262,8 +258,6 @@ export class ApmUrlGenerator {
         return `${this.base}/api/entity/${entityType}/entities`
     }
 
-
-
     apiUserGetCollationTableInfo(id) {
         return this.base + '/api/user/' + id + '/collationTables';
     }
@@ -271,12 +265,6 @@ export class ApmUrlGenerator {
         return `${this.base}/api/user/${tid}/multiChunkEditions`
     }
 
-    // apiUserPasswordChange(id) {
-    //     return this.base + '/api/user/' + id + '/changepassword';
-    // }
-    // apiUserMakeRoot(id) {
-    //     return this.base + '/api/user/' + id + '/makeroot';
-    // }
     apiBulkPageSettings() {
         return this.base + '/api/page/bulkupdate';
     }
@@ -290,13 +278,7 @@ export class ApmUrlGenerator {
     apiQuickCollation() {
         return this.base + '/api/public/collation-table/quick';
     }
-    // apiConvertSvg() {
-    //     return this.base + '/api/convert/svg2pdf';
-    // }
-    //
-    // apiConvertTypesetterData() {
-    //     return this.base + '/api/convert/ts2pdf'
-    // }
+
 
     apiTypesetRaw() {
         return this.base + '/api/typeset/raw'
@@ -505,19 +487,19 @@ export class ApmUrlGenerator {
     }
 
     /**
-     * Returns an external url for an entity and a given predicate, normally
-     * an external ID.
+     * Returns an external url for predicate and its object
      *
-     * @param {number}idTypeEntityId
-     * @param {number}entityId
+     * @param {number}predicateId
+     * @param {number|string}object
      * @return {string}
      */
-    entityExternalUrl(idTypeEntityId, entityId) {
-        switch(idTypeEntityId) {
-            case Entity.pOrcid: return this.orcidPage(entityId);
-            case Entity.pViafId:  return this.viafPage(entityId);
-            case Entity.pGNDId:  return this.gndExplorePage(entityId);
-            case Entity.pWikiDataId: return this.wikiDataPage(entityId);
+    entityExternalUrl(predicateId, object) {
+        switch(predicateId) {
+            case Entity.pOrcid: return this.orcidPage(object);
+            case Entity.pViafId:  return this.viafPage(object);
+            case Entity.pGNDId:  return this.gndExplorePage(object);
+            case Entity.pWikiDataId: return this.wikiDataPage(object);
+            case Entity.pUrl: return object;
         }
         return ''
     }

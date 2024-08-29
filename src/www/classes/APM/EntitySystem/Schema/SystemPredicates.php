@@ -387,6 +387,20 @@ const IdPredicatesDefs = [
     ],
 ];
 
+const LanguagePredicateDefs = [
+    [
+        'id' => Entity::pLangIso639Code,
+        'type' => Entity::tAttribute,
+        'name' => 'ISO 639 Code',
+        'descr' => "A language's 2 or 3 letter code defined in the ISO 639 standard",
+        'allowedSubjectTypes' => [ Entity::tLanguage],
+        'allowedObjectTypes'=> null,
+        'canBeCancelled' => false,
+        'singleProperty' => true,
+        'flags' => [ PredicateFlag::SystemPredicate ]
+    ]
+];
+
 class SystemPredicates implements PredicateDefiner
 {
 
@@ -409,7 +423,8 @@ class SystemPredicates implements PredicateDefiner
             StatementCancellationPredicateDefs,
             StatementMetadataPredicateDefs,
             StatementQualificationPredicateDefs,
-            IdPredicatesDefs
+            IdPredicatesDefs,
+            LanguagePredicateDefs,
         ];
 
         $totalDefs = [];
@@ -420,6 +435,14 @@ class SystemPredicates implements PredicateDefiner
             }
         }
         return $totalDefs;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getStatements(): array
+    {
+        return [];
     }
 
 

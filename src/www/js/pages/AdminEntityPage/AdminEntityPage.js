@@ -305,7 +305,7 @@ export class AdminEntityPage extends NormalPage {
     }
     let data;
     try {
-      data = await this.apmDataProxy.getEntityData(id, 15 * 60);
+      data = await this.apmDataProxy.getEntityData(id, false,15 * 60);
     } catch (e) {
       return '';
     }

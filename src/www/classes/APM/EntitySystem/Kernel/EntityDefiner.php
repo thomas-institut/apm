@@ -11,4 +11,12 @@ interface EntityDefiner
      */
     public function getEntityDefinitions() : array;
 
+
+    /**
+     * Returns an array of triples representing statements involving
+     * the entities in the definer
+     * @return array
+     */
+    public function getStatements() : array;
+
 }

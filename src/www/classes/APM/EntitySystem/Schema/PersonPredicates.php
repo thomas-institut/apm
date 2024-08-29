@@ -130,4 +130,11 @@ class PersonPredicates implements PredicateDefiner
     {
        return DefsFromArray::getPredicateDefinitionsFromArray(PersonPredicateDefs);
     }
+    /**
+     * @inheritDoc
+     */
+    public function getStatements(): array
+    {
+        return [];
+    }
 }

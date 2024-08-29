@@ -141,5 +141,13 @@ class ValueTypes implements ValueTypeDefiner
         return DefsFromArray::getEntityDefinitionsFromArray(ValueTypeEntityDefs, Entity::tValueType);
     }
 
+    /**
+     * @inheritDoc
+     */
+    public function getStatements(): array
+    {
+        return [];
+    }
+
   
 }

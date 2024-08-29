@@ -83,6 +83,9 @@ class Entity implements TidDefiner
     const pViafId = 2901;
     const pWikiDataId = 2902;
 
+    // Language predicates
+    const pLangIso639Code = 2951;
+
 
 
     // Basic statement metadata predicates
@@ -199,6 +202,25 @@ class Entity implements TidDefiner
     // Dare stuff
 
     const pDarePersonId = 14001;
+
+
+    // languages
+
+    const LangArabic = 20001;
+    const LangHebrew = 20002;
+    const LangLatin = 20003;
+    const LangJudeoArabic = 20004;
+    const LangAncientGreek = 20005;
+
+    const LangEnglish = 20021;
+    const LangGerman = 20022;
+    const LangFrench = 20023;
+    const LangItalian = 20024;
+    const LangSpanish = 20025;
+    const LangPortuguese = 20026;
+    const LangTurkish = 20027;
+
+
 
 
 

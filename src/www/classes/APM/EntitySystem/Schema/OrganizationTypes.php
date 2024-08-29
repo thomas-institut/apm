@@ -59,4 +59,12 @@ class OrganizationTypes implements EntityDefiner
     {
         return DefsFromArray::getEntityDefinitionsFromArray(OrganizationTypesDef, Entity::tOrganizationType);
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getStatements(): array
+    {
+        return [];
+    }
 }

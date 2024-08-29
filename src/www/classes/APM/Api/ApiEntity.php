@@ -409,6 +409,13 @@ class ApiEntity extends ApiController
         }
     }
 
+    public function getValidQualificationObjects(Request $request, Response $response, bool $onlyIds): Response {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':'  . ( $onlyIds ? 'onlyIds' : 'data' ));
+        return $this->responseWithJson($response,  $this->systemManager->getEntitySystem()->getValidQualificationObjects($onlyIds));
+    }
+
+
+
 
     /**
      *

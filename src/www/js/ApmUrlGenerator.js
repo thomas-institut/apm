@@ -296,6 +296,10 @@ export class ApmUrlGenerator {
         return `${this.base}/api/entity/${type}/predicateDefinitions`
     }
 
+    apiEntityGetStatementQualificationObjects(withData = true) {
+        return `${this.base}/api/entity/statementQualificationObjects${withData ? '/data' : ''}`;
+    }
+
     apiEntityStatementsEdit() {
         return `${this.base}/api/entity/statements/edit`
     }

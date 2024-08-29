@@ -4,7 +4,8 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { BasicPredicateEditor } from './BasicPredicateEditor'
 import { urlGen } from '../pages/common/SiteUrlGen'
 import { wait } from '../toolbox/FunctionUtil.mjs'
-
+import { WebStorageKeyCache } from '../toolbox/KeyCache/WebStorageKeyCache'
+import * as Entity from '../constants/Entity'
 
 const ShowAllLabel =  'Show All';
 const ShowActiveDataLabel = 'Show Minimal'
@@ -21,6 +22,7 @@ export class PredicateListSection extends MdeSection{
     })
     let cleanOptions = oc.getCleanOptions(options);
     this.listType = cleanOptions.listType;
+    this.memCache = new WebStorageKeyCache();
 
   }
 
@@ -77,6 +79,7 @@ export class PredicateListSection extends MdeSection{
     this.predicateEditors = this.predicates.map( (predicate, index) => {
       return new BasicPredicateEditor({
         predicateDefinition: predicate.predicateDefinition,
+        qualificationDefinitions: this.qualificationDefinitions,
         containerSelector: `${this.containerSelector} .mde-predicate-${index}`,
         statements: EntityData.getStatementsForPredicate(this.entityData, predicate.id, true),
         showLabel: predicate.label !== null,
@@ -92,6 +95,7 @@ export class PredicateListSection extends MdeSection{
             return predicate.showUrl ? urlGen.entityExternalUrl(predicate.id, object) : null;
           }
         },
+        getAllEntitiesForTypes: this.genGetAllEntitiesForTypes(),
         getEntityName: this.genGetEntityName(),
         getEntityType: this.genGetEntityType(),
         saveStatement: this.genSaveStatement(predicate)
@@ -135,15 +139,23 @@ export class PredicateListSection extends MdeSection{
 
   genGetEntityName() {
     return async (id) => {
-      let data = await this.apmDataProxy.getEntityData(id);
-      return data.name;
+      return await this.apmDataProxy.getEntityName(id);
     }
   }
 
   genGetEntityType() {
     return async (id) => {
-      let data = await this.apmDataProxy.getEntityData(id);
-      return data.type;
+      return await this.apmDataProxy.getEntityType(id);
+    }
+  }
+
+  genGetAllEntitiesForTypes() {
+    return async (types) => {
+      let entities = [];
+      for (let i = 0; i < types.length; i++) {
+        entities.push(...await this.apmDataProxy.getEntityListForType(types[i]));
+      }
+      return entities;
     }
   }
 

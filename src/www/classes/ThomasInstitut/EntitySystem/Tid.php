@@ -114,10 +114,17 @@ class Tid
      * @param string $str
      * @return int
      */
-    public static function fromString(string $str) : int {
+    public static function fromString(string $str, bool $detectSystemEntities = false) : int {
         $str = str_replace(['-', '.', ' ', "\n", "\t", '_'], '', $str);
-        if (strlen($str) >= 12 and self::isAllNumbers($str)) {
-            return intval($str);
+
+        if (self::isAllNumbers($str)) {
+            $intVal = intval($str);
+            if (strlen($str) >= 12) {
+                return $intVal;
+            }
+            if ($detectSystemEntities && $intVal < 1000000) {
+                return $intVal;
+            }
         }
         if (self::strIsValidTid($str)) {
             return self::fromBase36String($str);

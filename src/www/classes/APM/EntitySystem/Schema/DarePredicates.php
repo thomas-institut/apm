@@ -40,4 +40,12 @@ class DarePredicates implements PredicateDefiner
     {
        return DefsFromArray::getPredicateDefinitionsFromArray(DarePredicateDef);
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getStatements(): array
+    {
+        return [];
+    }
 }

@@ -1,7 +1,5 @@
-import { afterWrite } from '@popperjs/core'
-import { wait } from './FunctionUtil.mjs'
 
-const MaxLockWaitTime = 2000;
+import { SimpleLockManager } from './SimpleLockManager'
 
 export class CachedFetcher {
 
@@ -9,13 +7,14 @@ export class CachedFetcher {
    *
    * @param {KeyCache}cache
    * @param {number}defaultTtl
+   * @param lockManager
    */
-  constructor (cache, defaultTtl = 0) {
+  constructor (cache, defaultTtl = 0, lockManager = null) {
     this.cache = cache
     this.debug = false;
     this.verbose = true;
     this.defaultTtl = defaultTtl;
-    this.locks = [];
+    this.lockManager = lockManager ?? new SimpleLockManager();
   }
 
   /**
@@ -31,32 +30,24 @@ export class CachedFetcher {
    * @return { Promise<{}>}
    */
   fetch( key, fetcher, forceActualFetch = false , ttl = -1) {
-    return new Promise( async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+
+      await this.lockManager.getLock(key);
       if (forceActualFetch) {
         this.cache.delete(key)
       }
-      // Wait for current fetch operation to end
-      let tickSize = 100;
-      let ticksToWait = MaxLockWaitTime / tickSize;
-      let ticksPassed = 0;
-      while (this.locks.includes(key) && ticksPassed < ticksToWait) {
-        await wait(tickSize);
-        ticksPassed++;
-      }
       let cachedData = this.cache.retrieve(key)
       if (cachedData !== null) {
-        this.debug && console.log(`Data for '${key}' in cache, returning cached data (waited ${tickSize * ticksPassed} ms)`);
+        this.lockManager.releaseLock(key);
         resolve(cachedData);
         return;
       }
-
 
       let startTime;
       if (this.verbose) {
         startTime = Date.now();
       }
       this.verbose && console.log(`Doing actual fetch for '${key}' at ${startTime / 1000}`);
-      this.locks.push(key);
       fetcher().then((data) => {
         this.debug && console.log(`Got data for '${key}' in ${Date.now() - startTime} ms`);
         let actualTtl = ttl === -1 ? this.defaultTtl : ttl;
@@ -64,14 +55,12 @@ export class CachedFetcher {
         if (actualTtl > 0) {
           this.cache.store(key, data, actualTtl);
         }
-        let lockIndex = this.locks.indexOf(key);
-        if (lockIndex !== -1) {
-          this.locks.splice(lockIndex,1);
-        }
+        this.lockManager.releaseLock(key);
         resolve(data);
-      }).catch((e) => { this.debug && console.groupEnd(); reject(e)});
-    })
+      }).catch((e) => {
+        this.lockManager.releaseLock(key);
+        reject(e)
+      });
+    });
   }
-
-
 }

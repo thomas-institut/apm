@@ -73,4 +73,12 @@ class GeoPredicates implements PredicateDefiner
     {
        return DefsFromArray::getPredicateDefinitionsFromArray(GeoPredicatesDef);
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getStatements(): array
+    {
+        return [];
+    }
 }

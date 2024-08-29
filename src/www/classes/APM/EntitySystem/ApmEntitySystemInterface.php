@@ -244,6 +244,16 @@ interface ApmEntitySystemInterface
 
 
     /**
+     * Returns an array with the id or the entity data for all entities that are
+     * valid objects in statement qualifications (e.g., languages, id types, etc.)
+     *
+     * @param bool $onlyIds
+     * @return EntityData[]|int[]
+     */
+    public function getValidQualificationObjects(bool $onlyIds = false) : array;
+
+
+    /**
      * Returns the definition of the given predicate.
      *
      * @param int $predicate

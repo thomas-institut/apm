@@ -59,4 +59,12 @@ class UrlTypes implements EntityDefiner
     {
         return DefsFromArray::getEntityDefinitionsFromArray(UrlTypeDefinition, Entity::tUrlType);
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getStatements(): array
+    {
+        return [];
+    }
 }

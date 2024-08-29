@@ -13,6 +13,7 @@ use APM\EntitySystem\Schema\Entity;
 use APM\EntitySystem\Schema\EntityTypes;
 use APM\EntitySystem\Schema\GeoPredicates;
 use APM\EntitySystem\Schema\IdTypes;
+use APM\EntitySystem\Schema\Languages;
 use APM\EntitySystem\Schema\OrganizationTypes;
 use APM\EntitySystem\Schema\PersonPredicates;
 use APM\EntitySystem\Schema\SystemEntity;
@@ -22,6 +23,7 @@ use APM\EntitySystem\Schema\ValueTypes;
 use APM\EntitySystem\Schema\WorkPredicates;
 use LogicException;
 use ThomasInstitut\EntitySystem\EntityData;
+use ThomasInstitut\EntitySystem\StatementData;
 
 /**
  * The heart of the Apm entity system
@@ -33,7 +35,9 @@ use ThomasInstitut\EntitySystem\EntityData;
 class ApmEntitySystemKernel
 {
 
-    const MaxSystemTid = 100000000;
+    const MaxSystemTid = 10000000;
+
+    const SystemCreationTimestamp = 1;
 
     /**
      * @var PredicateDefinition[]
@@ -67,6 +71,9 @@ class ApmEntitySystemKernel
     private array $qualificationPredicates;
 
 
+    private array $validQualificationObjects;
+    private array $systemStatements;
+
 
     public function __construct()
     {
@@ -90,8 +97,12 @@ class ApmEntitySystemKernel
             new SystemEntity(),
             new IdTypes(),
             new OrganizationTypes(),
-            new UrlTypes()
+            new UrlTypes(),
+            new Languages()
         ];
+
+        /** @var $allDefiners EntityDefiner[]*/
+        $allDefiners = [ ...$typeDefiners, ...$predicateDefiners, ...$valueTypeDefiners, ...$otherEntityDefiners ];
 
         $this->entityTypes = [];
         foreach($typeDefiners as $definer) {
@@ -183,7 +194,42 @@ class ApmEntitySystemKernel
 
         $this->qualificationPredicates = $this->calcQualificationPredicates();
 
+        $this->validQualificationObjects = [];
+        $validQualificationObjectTypes = [];
+        foreach ($this->qualificationPredicates as $qualificationPredicate) {
+            $predicateDef = $this->predicates[$qualificationPredicate];
+            array_push($validQualificationObjectTypes, ...($predicateDef->allowedObjectTypes ?? []));
+        }
+        $validQualificationObjectTypes = array_unique($validQualificationObjectTypes);
+        foreach ($validQualificationObjectTypes as $type) {
+            array_push($this->validQualificationObjects, ...($this->getAllEntitiesForType($type) ?? []));
+        }
+        $this->validQualificationObjects = array_unique($this->validQualificationObjects);
+        sort($this->validQualificationObjects, SORT_NUMERIC);
 
+        $this->systemStatements = [];
+        foreach ($allDefiners as $definer) {
+            array_push($this->systemStatements, ...$definer->getStatements());
+        }
+        // check statement consistency
+        foreach ($this->systemStatements as $triplet) {
+            [ $subject, $predicate, $object] = $triplet;
+            if (gettype($subject) !== 'integer') {
+                throw new LogicException("Subject in system statement not an Entity Id: $subject");
+            }
+            if (!$this->entityExistsInEntityDefArray($allDefinedEntities, $subject)) {
+                throw new LogicException("Subject in system statement is not defined: [ $subject, $predicate, $object ]");
+            }
+            if (gettype($predicate) !== 'integer') {
+                throw new LogicException("Subject in system statement not an Entity Id: [ $subject, $predicate, $object ]");
+            }
+            if (!isset($this->predicates[$predicate])) {
+                throw new LogicException("Predicate in system statement not valid: [ $subject, $predicate, $object ]");
+            }
+            if (gettype($object) === 'integer' && !$this->entityExistsInEntityDefArray($allDefinedEntities, $object )) {
+                throw new LogicException("Subject in system statement not an Entity Id: [ $subject, $predicate, $object ]");
+            }
+        }
     }
 
 
@@ -239,11 +285,49 @@ class ApmEntitySystemKernel
 
 
     private function genEntityDataFromEntityDefinition(EntityDefinition $def) : EntityData {
+        // Basic data from definition
         $data = new EntityData();
         $data->type = $def->type;
         $data->name = $def->name;
         $data->id = $def->id;
+
+        // system statements
+        $statementTriplets = [];
+        $statementAsObjectTriplets = [];
+        foreach ($this->systemStatements as $statementTriplet) {
+            if ($statementTriplet[0] === $data->id) {
+                $statementTriplets[] = $statementTriplet;
+                continue;
+            }
+            if ($statementTriplet[2] === $def->id) {
+                $statementAsObjectTriplets[] = $statementTriplet;
+            }
+
+        }
+        foreach ($statementTriplets as $triplet) {
+            $data->statements[] = $this->getStatementFromSystemStatementTriplet($triplet);
+        }
+
+        foreach ($statementAsObjectTriplets as $statementAsObjectTriplet) {
+            $data->statementsAsObject[] = $this->getStatementFromSystemStatementTriplet($statementAsObjectTriplet);
+        }
         return $data;
+    }
+
+    private function getStatementFromSystemStatementTriplet(array $triplet) : StatementData {
+        $statement = new StatementData();
+
+        [ $subject, $predicate, $object] = $triplet;
+
+        $statement->subject = $subject;
+        $statement->predicate = $predicate;
+        $statement->object = $object;
+        $statement->statementMetadata = [
+            [ Entity::pStatementAuthor, Entity::System],
+            [ Entity::pStatementTimestamp, self::SystemCreationTimestamp],
+            [ Entity::pStatementEditorialNote, 'System statement']
+        ];
+        return $statement;
     }
 
     private function genEntityDataForEntityType(EntityTypeDefinition $def) : EntityData {
@@ -260,6 +344,15 @@ class ApmEntitySystemKernel
 
     private function genEntityDataForOtherEntity(EntityDefinition $def) : EntityData {
         return $this->genEntityDataFromEntityDefinition($def);
+    }
+
+    private function entityExistsInEntityDefArray(array $entityDefArray, int $entity) : bool {
+        for($i = 0; $i < count($entityDefArray); $i++) {
+            if ($entity === $entityDefArray[$i]->id) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -331,6 +424,15 @@ class ApmEntitySystemKernel
                 }
                 return $tids;
         }
+    }
+
+    /**
+     * Returns an array entity data for all valid qualification objects (languages, id types, url types, etc.)
+     *
+     * @return EntityData[]
+     */
+    public function getValidQualificationObjects() : array {
+        return $this->validQualificationObjects;
     }
 
     /**

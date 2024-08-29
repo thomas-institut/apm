@@ -58,4 +58,12 @@ class IdTypes implements EntityDefiner
     {
         return DefsFromArray::getEntityDefinitionsFromArray(IdTypeDefinitions, Entity::tIdType);
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getStatements(): array
+    {
+        return [];
+    }
 }

@@ -86,7 +86,7 @@ const EntityTypeDefinitions = [
         'A human language, e.g. German, French',
         [],
         [],
-        false
+        true
     ],
     [
         Entity::tUrlType,
@@ -171,5 +171,12 @@ class EntityTypes implements EntityTypeDefiner
     public function getEntityTypeDefinitions(): array
     {
         return DefsFromArray::getEntityTypeDefinitionsFromArray(EntityTypeDefinitions);
+    }
+    /**
+     * @inheritDoc
+     */
+    public function getStatements(): array
+    {
+        return [];
     }
 }

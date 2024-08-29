@@ -19,4 +19,12 @@ class SystemEntity implements EntityDefiner
         $def->description = "The system itself, normally used as the author of automatically generated statements";
         return [ $def];
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getStatements(): array
+    {
+        return [];
+    }
 }

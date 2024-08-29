@@ -49,6 +49,9 @@ export class BasicPredicateEditor {
           type: 'object',
           required: true,
         },
+        qualificationDefinitions : {
+          type: 'object', required: true
+        },
         containerSelector: { type: 'string', required: true},
         statements: { type: 'Array', required: true},
         showLabel: {type: 'boolean', default: true},
@@ -69,6 +72,12 @@ export class BasicPredicateEditor {
           this.debug && console.log(`Faking get entity type for entity ${id}`);
           return -1
         }},
+        getAllEntitiesForTypes: {
+          type: 'function', default: async (typeArray) => {
+            this.debug && console.log(`Faking get all entities for types`, typeArray);
+            return [];
+          }
+        },
         saveStatement: { type: 'function', default: async (object, qualifications, editorialNote) => {
           this.debug && console.log(`Faking save statement`, [object, qualifications, editorialNote]);
           await wait(500);
@@ -82,18 +91,21 @@ export class BasicPredicateEditor {
     })
     this.options = oc.getCleanOptions(options);
     this.containerSelector = this.options.containerSelector;
-    this.def = this.options.predicateDefinition;
-    this.id = this.def.id
+    this.predicateDefinition = this.options.predicateDefinition;
+    this.id = this.predicateDefinition.id
     this.label = this.options.label;
-    this.name = this.def.name;
+    this.name = this.predicateDefinition.name;
+    this.allowedQualifications = this.predicateDefinition.allowedQualifications ?? [];
     this.statements = this.options.statements;
     this.currentStatements = this.getCurrentStatements(this.statements);
     this.currentModes = [];
-    this.isRelation = this.def.type === Entity.tRelation;
+    this.isRelation = this.predicateDefinition.type === Entity.tRelation;
     this.getEntityName = this.options.getEntityName;
     this.getEntityType = this.options.getEntityType;
     this.saveStatement = this.options.saveStatement;
     this.debug = true;
+
+    this.emptyValuePrefix = `ev-${ (Math.random() * 1000000).toString(36) }`;
   }
 
 
@@ -180,15 +192,25 @@ export class BasicPredicateEditor {
       this.statementElements[statement.id].editSaveButton = $(`${selectorPrefix} .edit-save-button`);
       this.statementElements[statement.id].editCancelButton = $(`${selectorPrefix} .edit-cancel-button`);
       this.statementElements[statement.id].statusDiv = $(`${selectorPrefix} div.status-div`);
+      this.statementElements[statement.id].qualificationInputs = {};
+      this.allowedQualifications.forEach( (predicate) => {
+        this.statementElements[statement.id].qualificationInputs[predicate] =
+          $(`${selectorPrefix} .qualification-input-${predicate}`);
+      });
       this.statementElements[statement.id].attributeValueInput.val(statement.object);
       this.statementElements[statement.id].attributeValueInput.on('keyup', this.genOnInputChangeAttributeMode(statement));
       this.statementElements[statement.id].noteInput.on('keyup', this.genOnInputChangeAttributeMode(statement));
+      this.allowedQualifications.forEach( (predicate) => {
+        this.statementElements[statement.id].qualificationInputs[predicate].on('keyup change', this.genOnInputChangeAttributeMode(statement));
+      })
       this.statementElements[statement.id].editCancelButton.on('click', (ev) => {
         ev.preventDefault();
         this.switchToShowMode(statement);
       });
       this.statementElements[statement.id].editSaveButton.on('click', this.genOnClickEditSaveButton(statement));
       this.statementElements[statement.id].iconsSpan.addClass('hidden');
+
+
       this.currentMode = 'edit';
     }
   }
@@ -221,24 +243,62 @@ export class BasicPredicateEditor {
   }
 
   getDataFromForm(statement, attributeMode) {
+    let qualifications = { };
+    this.allowedQualifications.forEach( (predicate) => {
+      let val = this.statementElements[statement.id].qualificationInputs[predicate].val();
+      if (this.options.qualificationDefinitions[predicate].type === Entity.tRelation) {
+        val = parseInt(val);
+      } else {
+        val = trimWhiteSpace(val);
+      }
+      qualifications[predicate] = val;
+    })
     if (attributeMode) {
       return {
         object: trimWhiteSpace(this.statementElements[statement.id].attributeValueInput.val()),
-        editorialNote: trimWhiteSpace(this.statementElements[statement.id].noteInput.val())
+        editorialNote: trimWhiteSpace(this.statementElements[statement.id].noteInput.val()),
+        qualifications: qualifications
       }
     } else {
       return {
         object: -1,
-        editorialNote: trimWhiteSpace(this.statementElements[statement.id].noteInput.val())
+        editorialNote: trimWhiteSpace(this.statementElements[statement.id].noteInput.val()),
+        qualifications: qualifications
       };
     }
   }
 
   validateData(statement, data, attributeMode) {
     let currentObject = statement.object;
+    let currentQualifications = {};
+    this.allowedQualifications.forEach( (predicate) => {
+      currentQualifications[predicate] = this.options.qualificationDefinitions[predicate].type === Entity.tRelation ? 0 : '';
+    })
+    statement.statementMetadata.filter( (md) => {
+      let [ predicate, ] = md;
+      return this.allowedQualifications.includes(predicate);
+    }).forEach( (md) => {
+      let [predicate, object] = md;
+      currentQualifications[predicate] = object;
+    });
 
     if (data.object === currentObject) {
-      return `No changes`;
+      let noChanges = true;
+      for (let predicate in currentQualifications) {
+        let object = currentQualifications[predicate];
+        if (data['qualifications'][predicate] !== object) {
+          noChanges = false;
+          break;
+        }
+        if (predicate === Entity.pObjectSequence) {
+          if (parseInt(object) < 0) {
+            return 'Sequence number must be greater than 0';
+          }
+        }
+      }
+      if (noChanges) {
+        return `No changes`;
+      }
     }
     if (attributeMode && data.object === '') {
       return `Value cannot be empty`;
@@ -282,11 +342,65 @@ export class BasicPredicateEditor {
     let inputHtml = this.options.multiLineInput ?
       `<textarea class="value-input" placeholder="Enter value here" rows="3"></textarea>` :
       `<input type="text" class="value-input">`;
-    return `<!-- Statement ${statement.id} Edit (Attribute) --><div>${this.getPredicateName()}</div><div>${inputHtml}</div>
+
+    let allowedQualifications = this.predicateDefinition.allowedQualifications ?? [];
+    let qualificationDivs = (await Promise.all(allowedQualifications.map( async (qualificationPredicate) => {
+      let currentQualificationValue = Statement.getMetadataPredicate(statement, qualificationPredicate);
+      return `<div>
+           ${await this.options.getEntityName(qualificationPredicate)}
+        </div>
+        <div>
+            ${await this.getQualificationInput(qualificationPredicate, currentQualificationValue)}
+        </div>`
+    }))).join('');
+    return `<!-- Statement ${statement.id} Edit (Attribute) -->
+        <div>${this.getPredicateName()}</div><div>${inputHtml}</div>
+        ${qualificationDivs}
         <div>Note</div><div><textarea class="note-input" placeholder="Enter an editorial note here" cols="20" rows="3"></textarea></div>
-       <div></div> <div class="status-div"></div> 
+        <div></div> <div class="status-div"></div> 
         <div></div><div><a class="btn btn-sm btn-secondary edit-save-button disabled">Save</a>
         <a class="btn btn-sm btn-secondary edit-cancel-button">Cancel</a></div>`
+  }
+
+  async getQualificationInput(id, currentValue) {
+    let def = this.options.qualificationDefinitions[id] ?? null;
+
+    if (def === null) {
+      return '(!) Undefined';
+    }
+
+    let idSpan = `<span class="bpe-predicate-help" title="${def.description}"><i class="bi bi-info-circle"></i></span>`;
+    let allowedObjectTypes = def['allowedObjectTypes'];
+
+    if (def.type === Entity.tRelation) {
+      let allowedEntities = await this.options.getAllEntitiesForTypes(allowedObjectTypes);
+      let allowedEntityData = [];
+      for (let i = 0; i < allowedEntities.length; i++) {
+        let id = allowedEntities[i];
+        allowedEntityData.push( { id: id, name: await this.options.getEntityName(id) });
+      }
+
+      allowedEntityData.sort( (a,b) => { if (a.name < b.name) return -1; if (a.name > b.name) return 1; return 0;} );
+
+      let optionsHtml =`<option value="${this.emptyValuePrefix}-${this.id}"></option>`;
+      for (let i = 0; i < allowedEntityData.length; i++) {
+        let id = allowedEntityData[i].id;
+        let name = allowedEntityData[i].name;
+        let selected = id === currentValue ? 'selected' : '';
+        optionsHtml += `<option value="${id}" ${selected}>${name}</option>`
+      }
+      return `<select class="qualification-input qualification-input-${id}">${optionsHtml}</select> ${idSpan}`
+    } else {
+
+      let inputType = 'text';
+
+      if (allowedObjectTypes.length === 1 && allowedObjectTypes[0] === Entity.ValueTypeInteger) {
+        inputType = 'number';
+      }
+
+      return `<input type="${inputType}" class="qualification-input qualification-${id}" value="${currentValue}"> ${idSpan}`
+    }
+
   }
 
 
@@ -402,7 +516,7 @@ export class BasicPredicateEditor {
     }
     let statementDivs = (await Promise.all(this.currentStatements.map( async (statement) => {
       let editButton = !this.options.readOnly ? this.getEditButtonHtml(statement) : '';
-      let cancellationButton = this.currentStatements.length !== 0 && !this.options.readOnly && this.def.canBeCancelled ?
+      let cancellationButton = this.currentStatements.length !== 0 && !this.options.readOnly && this.predicateDefinition.canBeCancelled ?
          this.getCancellationButtonHtml(statement) : '';
       let infoButton = this.getInfoButtonHtml(statement);
       let iconsSpan = `<span class="mde-predicate-icons mde-predicate-icons-${statement.id} ghost">${editButton} ${cancellationButton} ${infoButton}</span>`

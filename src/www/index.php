@@ -588,6 +588,13 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
 }
 function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void
 {
+    $group->get("/entity/statementQualificationObjects/data", function(Request $request, Response $response) use ($container){
+        return (new ApiEntity($container))->getValidQualificationObjects($request, $response, false);
+    })->setName("api.entity.statementQualificationObjects.data");
+
+    $group->get("/entity/statementQualificationObjects", function(Request $request, Response $response) use ($container){
+        return (new ApiEntity($container))->getValidQualificationObjects($request, $response, true);
+    })->setName("api.entity.statementQualificationObjects");
     $group->get("/entity/{entityType}/entities", function(Request $request, Response $response) use ($container){
         return (new ApiEntity($container))->getEntitiesForType($request, $response);
     })->setName("api.entity.entities");
@@ -607,6 +614,10 @@ function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $c
     $group->get("/entity/nameSearch/{inputString}/{typeList}", function(Request $request, Response $response) use ($container){
         return (new ApiEntity($container))->nameSearch($request, $response);
     })->setName("api.entity.nameSearch");
+
+
+
+
 }
 function createApiPresetsRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
     //  PRESETS

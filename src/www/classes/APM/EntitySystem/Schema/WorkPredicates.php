@@ -73,4 +73,12 @@ class WorkPredicates implements PredicateDefiner
     {
        return DefsFromArray::getPredicateDefinitionsFromArray(WorkPredicateDef);
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getStatements(): array
+    {
+        return [];
+    }
 }

@@ -72,15 +72,19 @@ export class PredicateListSection extends MdeSection{
     this.predicatesDiv = $(`${this.containerSelector} .mde-section-body-predicates`);
 
     this.predicatesDiv.addClass(this.getExtraClassForType()).html( this.predicates.map( (predicate, index) => {
-      let hiddenClass = this.predicateMustBeDisplayed(predicate) ? '' : 'force-hidden';
-      return `<div class="mde-predicate mde-predicate-${index} ${hiddenClass}"></div>`;
+      let classes = [ 'mde-predicate', `mde-predicate-index-${index}`, `mde-predicate-${predicate.id}`];
+      if (!this.predicateMustBeDisplayed(predicate)) {
+        classes.push('force-hidden');
+      }
+      classes.push( predicate.predicateDefinition['singleProperty'] ? 'mde-predicate-single' : 'mde-predicate-multi')
+      return `<div class="${classes.join(' ')}"></div>`;
     }).join(''))
 
     this.predicateEditors = this.predicates.map( (predicate, index) => {
       return new BasicPredicateEditor({
         predicateDefinition: predicate.predicateDefinition,
         qualificationDefinitions: this.qualificationDefinitions,
-        containerSelector: `${this.containerSelector} .mde-predicate-${index}`,
+        containerSelector: `${this.containerSelector} .mde-predicate-index-${index}`,
         statements: EntityData.getStatementsForPredicate(this.entityData, predicate.id, true),
         showLabel: predicate.label !== null,
         label: predicate.label ?? '',
@@ -124,7 +128,7 @@ export class PredicateListSection extends MdeSection{
     if (this.showingAll) {
       this.predicates.forEach( (predicate, index) => {
         if (!this.predicateMustBeDisplayed(predicate)) {
-          $(`${this.containerSelector} .mde-predicate-${index}`).addClass('force-hidden');
+          $(`${this.containerSelector} .mde-predicate-index-${index}`).addClass('force-hidden');
         }
       });
     } else {

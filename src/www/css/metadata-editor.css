@@ -286,6 +286,14 @@ div.editor-container {
     column-gap: 0.5em;
 }
 
+.mde-predicate-multi {
+    flex-direction: column;
+}
+
+.mde-predicate-multi .mde-statement-divs {
+    margin-left: 2em;
+}
+
 .btn.edit-button {
     font-size: 0.7em;
 }
@@ -353,7 +361,15 @@ p.bpe-popover-tagline {
     column-gap: 1em;
 }
 
+.bpe-popover-subtitle {
+    font-weight: normal;
+    font-size: 0.8em;
+    margin-top: 0.2em;
+}
 
+.bpe-popover-value {
+    font-family: monospace;
+}
 
 .force-hidden {
     !important;

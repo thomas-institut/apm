@@ -13,29 +13,39 @@ const PredicateIcon = '<b class="mde-icon">Predicate</b>'
 const ObjectIcon = '<b class="mde-icon">Object</b>'
 const ValueIcon = '<b class="mde-icon">Value</b>'
 
+
+const PredicateInfoIcon = '<i class="bi bi-info-circle"></i>';
+const PredicateResetIcon = '<i class="bi bi-arrow-counterclockwise"></i>'
+
 export class BasicPredicateEditor {
+
 
   /**
    * Constructs a new BasicPredicateEditor.
    *
    * Options:
-   *   * __predicateDefinition: the predicate's definition, as given the by APM's entity system
-   *   * __containerSelector__: the JQuery selector for the editor
-   *   * __statements__: an array of statements with the given predicate. No more than one must be active.
-   *   * __label__: the label to show for the predicate. If empty or not given, the predicate's name from the
-   *     predicateDefinition will be used
-   *   * __logoUrl__: if present and not an empty string, the url will be used to display a logo instead of the
+   *   * __predicateDefinition__: the predicate's definition, as given the by APM's entity system (required)
+   *   * __qualificationsDefinition__: qualification definitions in an object with qualification predicates as keys
+   *   (required)
+   *   * __containerSelector__: the JQuery selector for the editor (required)
+   *   * __statements__: an array of statements with the given predicate (required)
+   *   * __showLabel__: if false, no label will be shown. Default: true.
+   *   * __label__: label to show if *showLabel* is true. If empty or not given, the predicate's name from the
+   *       predicateDefinition will be used
+   *   * __logoUrl__: if present and not an empty string, the url of a logo that will be displayed instead of the
    *       label. The label will be used as the alternate text for a html IMG element.
-   *   * __getObjectUrl__: a function that returns a promise to a URL to be used for the object of the predicate, if not given
-   *       or if the promise resolves to null, no URL will be used.
-   *   * __initialMode__: the editor's initial mode, 'show' or 'edit'. By default, the editor starts in 'show' mode.
+   *   * __getObjectUrl__: an async function that takes the predicate's object and returns a URL to display. If not given
+   *       or if the function returns null, no URL will be displayed.
+   *   * __initialMode__: the editor's initial mode, 'show' or 'edit'. Default: 'show'.
    *   * __readOnly__: if true, the editor does not show edit and delete buttons. Default: false.
-   *   * __getEntityName__: a function that takes an entity id and returns a promise to a string with the entity's name
-   *   * __getEntityType__: a function that takes an entity id and returns a promise to the entity's type
-   *   * __saveStatement__: a function that takes a statement object (see below) and returns a promise to an object
+   *   * __getEntityName__: an async function that takes an entity id and returns the entity's name
+   *   * __getEntityType__: an async function that takes an entity id and returns the entity's type
+   *   * __getAllEntitiesForTypes__: an async function that takes an array of entity types and returns all entities
+   *       with those types.
+   *   * __saveStatement__: an async function that takes a statement object (see below) and returns an object
    *       with the save operation result, an error message if necessary and a new array of statements for
    *       the predicate:  *{ success: true|false, msg: string, statements: array}*
-   *   * __cancelStatement__: a function that takes a statement id and returns a promise to an object with the result
+   *   * __cancelStatement__: an async function that takes a statement id and returns an object with the result
    *       of the cancellation operation as in *saveStatement*
    * @param options
    */
@@ -104,8 +114,7 @@ export class BasicPredicateEditor {
     this.getEntityType = this.options.getEntityType;
     this.saveStatement = this.options.saveStatement;
     this.debug = true;
-
-    this.emptyValuePrefix = `ev-${ (Math.random() * 1000000).toString(36) }`;
+    this.selectEmptyValue = `ev-${ (Math.floor(Math.random() * 100000000)).toString(36) }-${this.id}`;
   }
 
 
@@ -154,7 +163,7 @@ export class BasicPredicateEditor {
       elements.infoButton.popover({
         content: await this.getInfoPopoverHtml(statement),
         html: true,
-        title: await this.getPredicateName(),
+        title: await this.getInfoPopoverTitle(statement),
       }).on('mouseenter', () => {
         elements.infoButton.popover('show');
       }).on('mouseleave', () => {
@@ -193,15 +202,24 @@ export class BasicPredicateEditor {
       this.statementElements[statement.id].editCancelButton = $(`${selectorPrefix} .edit-cancel-button`);
       this.statementElements[statement.id].statusDiv = $(`${selectorPrefix} div.status-div`);
       this.statementElements[statement.id].qualificationInputs = {};
+      this.statementElements[statement.id].qualificationPredicateResets = {};
       this.allowedQualifications.forEach( (predicate) => {
         this.statementElements[statement.id].qualificationInputs[predicate] =
           $(`${selectorPrefix} .qualification-input-${predicate}`);
+
+        this.statementElements[statement.id].qualificationPredicateResets[predicate] =
+          $(`${selectorPrefix} .bpe-predicate-reset-${predicate}`);
       });
       this.statementElements[statement.id].attributeValueInput.val(statement.object);
-      this.statementElements[statement.id].attributeValueInput.on('keyup', this.genOnInputChangeAttributeMode(statement));
-      this.statementElements[statement.id].noteInput.on('keyup', this.genOnInputChangeAttributeMode(statement));
+      this.statementElements[statement.id].attributeValueInput.on('keyup', this.genOnInputChangeAttributeMode(statement, 'attribute'));
+      this.statementElements[statement.id].noteInput.on('keyup', this.genOnInputChangeAttributeMode(statement, 'note'));
       this.allowedQualifications.forEach( (predicate) => {
-        this.statementElements[statement.id].qualificationInputs[predicate].on('keyup change', this.genOnInputChangeAttributeMode(statement));
+        this.statementElements[statement.id].qualificationInputs[predicate]
+          .on('change', this.genOnInputChangeAttributeMode(statement, 'qualification', predicate))
+          .on('keyup', this.genOnInputChangeAttributeMode(statement, 'qualification', predicate));
+        this.statementElements[statement.id].qualificationPredicateResets[predicate]
+          .on('click', this.genOnClickQualificationPredicateReset(statement, predicate));
+
       })
       this.statementElements[statement.id].editCancelButton.on('click', (ev) => {
         ev.preventDefault();
@@ -242,16 +260,48 @@ export class BasicPredicateEditor {
     }
   }
 
+  genOnClickQualificationPredicateReset(statement, predicate) {
+    return () => {
+      this.resetQualificationPredicate(statement, predicate);
+      this.processInputChangeAttributeMode(statement,'qualification', predicate);
+    }
+  }
+
+  resetQualificationPredicate(statement, predicate) {
+    let def = this.options.qualificationDefinitions[predicate] ?? null;
+
+    if (def === null) {
+      console.warn(`Undefined predicate ${predicate}`);
+      return;
+    }
+
+    let defaultValue = '';
+
+    if (def.type === Entity.tRelation) {
+      defaultValue = this.selectEmptyValue;
+    }
+    let currentQualificationValue = Statement.getMetadataPredicate(statement, predicate) ?? defaultValue;
+    this.statementElements[statement.id].qualificationInputs[predicate].val(currentQualificationValue);
+  }
+
+  getQualificationValueFromForm(statement, predicate) {
+    let val = this.statementElements[statement.id].qualificationInputs[predicate].val() ?? '';
+    if (this.options.qualificationDefinitions[predicate].type === Entity.tRelation) {
+      if (val === `${this.selectEmptyValue}`) {
+        val = -1;
+      } else {
+        val = parseInt(val);
+      }
+    } else {
+      val = trimWhiteSpace(val);
+    }
+    return val;
+  }
+
   getDataFromForm(statement, attributeMode) {
     let qualifications = { };
     this.allowedQualifications.forEach( (predicate) => {
-      let val = this.statementElements[statement.id].qualificationInputs[predicate].val();
-      if (this.options.qualificationDefinitions[predicate].type === Entity.tRelation) {
-        val = parseInt(val);
-      } else {
-        val = trimWhiteSpace(val);
-      }
-      qualifications[predicate] = val;
+      qualifications[predicate] = this.getQualificationValueFromForm(statement, predicate);
     })
     if (attributeMode) {
       return {
@@ -268,11 +318,10 @@ export class BasicPredicateEditor {
     }
   }
 
-  validateData(statement, data, attributeMode) {
-    let currentObject = statement.object;
+  getCurrentQualificationsObject(statement) {
     let currentQualifications = {};
     this.allowedQualifications.forEach( (predicate) => {
-      currentQualifications[predicate] = this.options.qualificationDefinitions[predicate].type === Entity.tRelation ? 0 : '';
+      currentQualifications[predicate] = this.options.qualificationDefinitions[predicate].type === Entity.tRelation ? -1 : '';
     })
     statement.statementMetadata.filter( (md) => {
       let [ predicate, ] = md;
@@ -282,30 +331,42 @@ export class BasicPredicateEditor {
       currentQualifications[predicate] = object;
     });
 
-    if (data.object === currentObject) {
-      let noChanges = true;
-      for (let predicate in currentQualifications) {
-        let object = currentQualifications[predicate];
-        if (data['qualifications'][predicate] !== object) {
-          noChanges = false;
-          break;
-        }
-        if (predicate === Entity.pObjectSequence) {
-          if (parseInt(object) < 0) {
+    return currentQualifications;
+  }
+
+  validateData(statement, data, attributeMode) {
+    let currentObject = statement.object;
+    let currentQualifications = this.getCurrentQualificationsObject(statement);
+
+    let noChanges = true;
+    if (data.object !== currentObject) {
+      noChanges = false;
+    }
+
+    for (let qualificationPredicate in currentQualifications) {
+      let currentQualificationObject = currentQualifications[qualificationPredicate];
+      let qualificationObjectInData = data['qualifications'][qualificationPredicate]
+      if (qualificationObjectInData !== currentQualificationObject) {
+        noChanges = false;
+        // console.log(`Changes in predicate ${qualificationPredicate}, current ${currentQualificationObject}, new ${qualificationObjectInData}`)
+        if (parseInt(qualificationPredicate) === Entity.pObjectSequence) {
+          if (parseInt(qualificationObjectInData) <= 0) {
             return 'Sequence number must be greater than 0';
           }
         }
       }
-      if (noChanges) {
-        return `No changes`;
-      }
     }
+
+    if (noChanges) {
+      return ``;
+    }
+
     if (attributeMode && data.object === '') {
       return `Value cannot be empty`;
     }
 
     if (data.editorialNote.length === 0) {
-      return `Editorial note cannot be empty`;
+      return `Enter an editorial note`;
     }
     if (data.editorialNote.length < 5 ) {
       return `Editorial note too short`;
@@ -315,18 +376,29 @@ export class BasicPredicateEditor {
 
 
 
-  genOnInputChangeAttributeMode(statement) {
+  genOnInputChangeAttributeMode(statement, type, predicate = null) {
     return (ev) => {
       ev.preventDefault();
-      let dataFromForm = this.getDataFromForm(statement, true);
-      let validationResult = this.validateData(statement, dataFromForm, true);
-      if (validationResult !== true) {
-        this.statementElements[statement.id].statusDiv.html(`<span class="text-danger">${validationResult}</span>`);
-        this.statementElements[statement.id].editSaveButton.addClass('disabled');
+      this.processInputChangeAttributeMode(statement, type, predicate)
+    }
+  }
+
+  processInputChangeAttributeMode(statement, type, predicate) {
+    let dataFromForm = this.getDataFromForm(statement, true);
+    if (type === 'qualification' && predicate !== null) {
+      if (this.getCurrentQualificationsObject(statement)[predicate] !== this.getQualificationValueFromForm(statement, predicate)) {
+        this.statementElements[statement.id].qualificationPredicateResets[predicate].removeClass('hidden');
       } else {
-        this.statementElements[statement.id].statusDiv.html('');
-        this.statementElements[statement.id].editSaveButton.removeClass('disabled');
+        this.statementElements[statement.id].qualificationPredicateResets[predicate].addClass('hidden');
       }
+    }
+    let validationResult = this.validateData(statement, dataFromForm, true);
+    if (validationResult !== true) {
+      this.statementElements[statement.id].statusDiv.html(`<span class="text-danger">${validationResult}</span>`);
+      this.statementElements[statement.id].editSaveButton.addClass('disabled');
+    } else {
+      this.statementElements[statement.id].statusDiv.html('');
+      this.statementElements[statement.id].editSaveButton.removeClass('disabled');
     }
   }
 
@@ -369,7 +441,8 @@ export class BasicPredicateEditor {
       return '(!) Undefined';
     }
 
-    let idSpan = `<span class="bpe-predicate-help" title="${def.description}"><i class="bi bi-info-circle"></i></span>`;
+    let idSpan = `<span class="bpe-predicate-help bpe-predicate-help-${id}" title="${def.description}">${PredicateInfoIcon}</span>`;
+    let resetSpan = `<span class="bpe-predicate-reset bpe-predicate-reset-${id} hidden" title="Click to reset">${PredicateResetIcon}</span>`;
     let allowedObjectTypes = def['allowedObjectTypes'];
 
     if (def.type === Entity.tRelation) {
@@ -382,23 +455,23 @@ export class BasicPredicateEditor {
 
       allowedEntityData.sort( (a,b) => { if (a.name < b.name) return -1; if (a.name > b.name) return 1; return 0;} );
 
-      let optionsHtml =`<option value="${this.emptyValuePrefix}-${this.id}"></option>`;
+      let optionsHtml =`<option value="${this.selectEmptyValue}"></option>`;
       for (let i = 0; i < allowedEntityData.length; i++) {
         let id = allowedEntityData[i].id;
         let name = allowedEntityData[i].name;
         let selected = id === currentValue ? 'selected' : '';
         optionsHtml += `<option value="${id}" ${selected}>${name}</option>`
       }
-      return `<select class="qualification-input qualification-input-${id}">${optionsHtml}</select> ${idSpan}`
+      return `<select class="qualification-input qualification-input-${id}">${optionsHtml}</select> ${idSpan} ${resetSpan}`
     } else {
-
       let inputType = 'text';
 
       if (allowedObjectTypes.length === 1 && allowedObjectTypes[0] === Entity.ValueTypeInteger) {
         inputType = 'number';
       }
 
-      return `<input type="${inputType}" class="qualification-input qualification-${id}" value="${currentValue}"> ${idSpan}`
+
+      return `<input type="${inputType}" class="qualification-input qualification-input-${id}" value="${currentValue ?? ''}"> ${idSpan} ${resetSpan}`
     }
 
   }
@@ -484,7 +557,8 @@ export class BasicPredicateEditor {
   getNewStatementSkeletonObject() {
     return {
       id: `pred-${this.id}-new`,
-      object: this.isRelation ? -1 : ''
+      object: this.isRelation ? -1 : '',
+      statementMetadata: [],
     }
   }
 
@@ -594,6 +668,15 @@ export class BasicPredicateEditor {
     return this.options.logoUrl !== '' ? `<img src="${this.options.logoUrl}" class="mde-predicate-logo" alt="${name}" title="${name}">` : label;
   }
 
+  async getInfoPopoverTitle(statement) {
+    let predicateName = await this.getPredicateName();
+    let predicateDescription = this.predicateDefinition['description'];
+    if (predicateName === predicateDescription) {
+      predicateDescription = '';
+    }
+    return `<div>${predicateName}</div><div class="bpe-popover-subtitle">${predicateDescription}</div>`;
+  }
+
   async getInfoPopoverHtml(statement) {
     if (statement.id === this.getNewStatementSkeletonObject().id) {
       if (this.currentStatements.length === 0) {
@@ -611,7 +694,7 @@ export class BasicPredicateEditor {
       return `<div><i>Inconsistent data</i></div>`;
     }
 
-    let html = await this.getStatementCard(statement, [ 'bpe-statement-popover']);
+    let html = await this.getStatementCard(statement, [ 'bpe-statement-popover'], [ false, false, true]);
     if (this.currentStatements.length < this.statements.length) {
       html += `<div class="bpe-popover-more-info-line">There are cancelled statements. Click info icon to see full list</div>`
     }
@@ -642,7 +725,7 @@ export class BasicPredicateEditor {
     if (includeObject) {
       let objectString= this.isRelation ?
         `${Tid.toBase36String(statement.object)} (${await this.getEntityName(statement.object)})` :
-        `<span class="text-monospace">${statement.object}</span>`;
+        `<span class="bpe-popover-value">${statement.object}</span>`;
       objectArea = `<div>${this.isRelation ? ObjectIcon : ValueIcon}</div><div>${objectString}</div>`;
     }
 

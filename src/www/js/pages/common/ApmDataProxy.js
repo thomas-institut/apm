@@ -306,8 +306,6 @@ export class ApmDataProxy {
   getTtlWithVariability(ttl, variability = 5) {
     return  ttl * (1-variability/100) + (ttl/variability)*Math.random();
   }
-
-
   async getEntityDataRaw(tid) {
     console.log(`Fetching data for entity ${tid} from the server`);
     let url = urlGen.apiEntityGetData(tid);
@@ -317,6 +315,11 @@ export class ApmDataProxy {
     let data = await $.get(urlGen.apiEntityGetData(tid));
     this.lockManager.releaseLock(url);
     return data;
+  }
+
+  async apiEntityStatementsEdit(commands){
+    return $.post(urlGen.apiEntityStatementsEdit(), JSON.stringify(commands));
+
   }
 
   /**

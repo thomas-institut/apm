@@ -334,6 +334,11 @@ p.bpe-popover-tagline {
     padding: 0.5em;
 }
 
+.bpe-predicate-edit h1 {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
 .bpe-predicate-edit-attribute {
     width: 100%;
     min-width: 15em;
@@ -370,6 +375,41 @@ p.bpe-popover-tagline {
 .bpe-popover-value {
     font-family: monospace;
 }
+
+div.bpe-statement-history-div {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+table.bpe-statement-history {
+    margin: 1em;
+}
+
+table.bpe-statement-history td {
+    padding: 0.5em;
+    border: 1px solid silver;
+}
+
+table.bpe-statement-history th {
+    padding: 0.5em;
+    color: white;
+    background: black;
+    border: 1px solid black;
+}
+
+table.bpe-statement-history tr.active-statement {
+    color: black;
+    font-weight: bold;
+}
+
+table.bpe-statement-history tr.cancelled-statement {
+    color: gray;
+}
+
+table.bpe-statement-history tr.event-creation {
+    background: #fafafa;
+}
+
 
 .force-hidden {
     !important;

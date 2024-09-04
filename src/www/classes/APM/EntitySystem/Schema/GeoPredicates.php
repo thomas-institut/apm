@@ -53,6 +53,17 @@ const GeoPredicatesDef = [
         'singleProperty' => true,
         'flags' => []
     ],
+    [
+        'id' => Entity::pAreaType,
+        'type' => Entity::tRelation,
+        'name' => 'Area type',
+        'descr' => "A geographical area's type, e.g. city, country",
+        'allowedSubjectTypes' => [ Entity::tGeographicalArea],
+        'allowedObjectTypes'=> [ Entity::tAreaType],
+        'canBeCancelled' => true,
+        'singleProperty' => true,
+        'flags' => []
+    ],
 ];
 
 class GeoPredicates implements PredicateDefiner

@@ -35,6 +35,7 @@ export class MetadataEditor2 {
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
               entityData: this.options.entityData,
               sectionSchema: sectionSchema,
+              onEntityDataChange: this.genOnEntityDataChange(sectionIndex)
             });
 
           case SectionType.VerticalList:
@@ -45,7 +46,8 @@ export class MetadataEditor2 {
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
               entityData: this.options.entityData,
               sectionSchema: sectionSchema,
-              listType: 'vertical'
+              listType: 'vertical',
+              onEntityDataChange: this.genOnEntityDataChange(sectionIndex)
             });
 
           case SectionType.HorizontalList:
@@ -56,7 +58,8 @@ export class MetadataEditor2 {
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
               entityData: this.options.entityData,
               sectionSchema: sectionSchema,
-              listType: 'horizontal'
+              listType: 'horizontal',
+              onEntityDataChange: this.genOnEntityDataChange(sectionIndex)
             });
 
           default:
@@ -67,6 +70,7 @@ export class MetadataEditor2 {
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
               entityData: this.options.entityData,
               sectionSchema: sectionSchema,
+              onEntityDataChange: this.genOnEntityDataChange(sectionIndex)
             });
         }
       })
@@ -78,12 +82,35 @@ export class MetadataEditor2 {
     });
   }
 
-   async getBootstrapHtml() {
+  async getBootstrapHtml() {
+    return this.options.entityDataSchema.sections.map( (sectionSchema, sectionIndex) => {
+      return `<div class='mde-section mde-section-${sectionIndex} mde-section_type-${sectionSchema.type}'>
+         </div>`
+    })
+  }
 
-      return this.options.entityDataSchema.sections.map( (sectionSchema, sectionIndex) => {
-        return `<div class='mde-section mde-section-${sectionIndex} mde-section_type-${sectionSchema.type}'>
-        </div>`
-      })
+  genOnEntityDataChange(sectionIndex) {
+    return (newData, updatedPredicates) => {
+      return this.onEntityDataChange(newData, updatedPredicates, sectionIndex);
+    }
+  }
+
+  /**
+   *
+   * @param {{}}newData
+   * @param {number[]}updatedPredicates
+   * @param {number}originatingSectionIndex
+   * @return {Promise<boolean[]>}
+   */
+  onEntityDataChange(newData, updatedPredicates, originatingSectionIndex) {
+    console.log(`New entity data received from section ${originatingSectionIndex}`, updatedPredicates, newData);
+    return Promise.all(this.sections.map( (section, index) => {
+      if (index !== originatingSectionIndex) {
+        return section.updateEntityData(newData, updatedPredicates);
+      }
+      return true;
+    }));
+
   }
 
 }

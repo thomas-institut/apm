@@ -35,8 +35,14 @@ const schemata = {
             isUniqueInSection: true,
           },
           {
+            id: Entity.pPlaceOfBirth,
+          },
+          {
             id: Entity.pDateOfDeath,
             isUniqueInSection: true,
+          },
+          {
+            id: Entity.pPlaceOfDeath
           },
           {
             id: Entity.pAlternateName,
@@ -58,7 +64,7 @@ const schemata = {
       },
       {
         type: SectionType.VerticalList,
-        title: 'Urls',
+        title: 'External Links',
         predicates: [
           {
             id: Entity.pUrl,

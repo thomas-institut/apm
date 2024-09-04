@@ -1,6 +1,10 @@
 // Entity Types
 
 
+export const System = 1;
+
+// Entity Types
+
 export const tRelation = 101;
 export const tAttribute = 102;
 export const tEntityType = 103;
@@ -32,6 +36,7 @@ export const ValueTypeVagueDate = 1007;
 export const ValueTypeTimeString = 1008;
 export const ValueTypeGpsCoordinates = 1009;
 export const ValueTypeUrl = 1010;
+export const ValueTypeWorkId = 1011;
 export const ValueTypeEmailAddress = 1111;
 
 // Basic entity predicates
@@ -51,10 +56,14 @@ export const pMemberOf = 2012;
 export const pDeprecated = 2013;
 
 // ID predicates that apply to different types of entities
-export const pViafId = 2901;
-export const pWikiDataId = 2902;
 export const pGNDId = 2093;
 export const pLocId = 2094;
+export const pViafId = 2901;
+export const pWikiDataId = 2902;
+
+// Language predicates
+export const pLangIso639Code = 2951;
+
 
 
 // Basic statement metadata predicates
@@ -95,21 +104,22 @@ export const pIsEnabledUser = 7014;
 export const pOrcid = 7015;
 
 
-//    export const pFather = 7013;
-//    export const pFatherOf = 7014
-//    export const pMother = 7015;
-//    export const pMotherOf = 7016;
+// Work Predicates
+
+export const pWorkAuthor = 7501;
+export const pApmWorkId = 7502;
+export const pWorkShortTitle = 7503;
+export const pWorkIsEnabledInApm = 7504;
+
+
+
 
 // Geographical Predicates
 export const pContainedBy = 8001;
 export const pContains = 8002;
 export const pCivicAddress = 8003;
 export const pGpsCoordinates = 8004;
-//    export const pRadius = 8005;
-
-//    export const pPoliticalDivisionOf = 8006;
-//    export const pPoliticalDivision = 8007;
-
+export const pAreaType = 8005;
 
 // Url Types
 
@@ -118,6 +128,10 @@ export const UrlTypeViaf = 9001;
 export const UrlTypeDb = 9002;
 export const UrlTypeDnb = 9003;
 export const UrlTypeWikipedia = 9004;
+
+
+
+
 
 // ID types
 export const IdTypeWikiData = 10001;
@@ -128,12 +142,13 @@ export const IdTypeOrcid = 10004;
 
 // Area types
 
-//    export const AreaTypeCountry = 11001;
-//    export const AreaTypeProvince = 11002;
-//    export const AreaTypeState = 11003;
-//    export const AreaTypeCity = 11004;
-//    export const AreaTypeCounty = 11005;
-//    export const AreaTypeCanton = 11006;
+export const AreaTypeCountry = 11001;
+export const AreaTypeCountryPart = 11002;
+export const AreaTypeProvince = 11003;
+export const AreaTypeState = 11004;
+export const AreaTypeCity = 11005;
+export const AreaTypeCounty = 11006;
+export const AreaTypeCanton = 11007;
 
 
 // Organization types
@@ -162,3 +177,21 @@ export const IdTypeOrcid = 10004;
 // Dare stuff
 
 export const pDarePersonId = 14001;
+
+
+// languages
+
+export const LangArabic = 20001;
+export const LangHebrew = 20002;
+export const LangLatin = 20003;
+export const LangJudeoArabic = 20004;
+export const LangAncientGreek = 20005;
+
+export const LangEnglish = 20021;
+export const LangGerman = 20022;
+export const LangFrench = 20023;
+export const LangItalian = 20024;
+export const LangSpanish = 20025;
+export const LangPortuguese = 20026;
+export const LangTurkish = 20027;
+

@@ -3,13 +3,11 @@ import { EntityData } from '../EntityData/EntityData'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { BasicPredicateEditor } from './BasicPredicateEditor'
 import { urlGen } from '../pages/common/SiteUrlGen'
-import { wait } from '../toolbox/FunctionUtil.mjs'
-import { WebStorageKeyCache } from '../toolbox/KeyCache/WebStorageKeyCache'
-import * as Entity from '../constants/Entity'
+import { StatementArray } from '../EntityData/StatementArray'
 
 const ShowAllLabel =  'Show All';
 const ShowActiveDataLabel = 'Show Minimal'
-export class PredicateListSection extends MdeSection{
+export class PredicateListSection extends MdeSection {
 
   constructor (options) {
     super(options)
@@ -22,8 +20,6 @@ export class PredicateListSection extends MdeSection{
     })
     let cleanOptions = oc.getCleanOptions(options);
     this.listType = cleanOptions.listType;
-    this.memCache = new WebStorageKeyCache();
-
   }
 
 
@@ -46,7 +42,7 @@ export class PredicateListSection extends MdeSection{
     if (predicate.hideEvenIfActive) {
       return false;
     }
-    return predicate.statements.length > 0;
+    return StatementArray.getCurrentStatements(predicate.statements).length > 0;
   }
 
   async init () {
@@ -102,7 +98,8 @@ export class PredicateListSection extends MdeSection{
         getAllEntitiesForTypes: this.genGetAllEntitiesForTypes(),
         getEntityName: this.genGetEntityName(),
         getEntityType: this.genGetEntityType(),
-        saveStatement: this.genSaveStatement(predicate)
+        saveStatement: this.genSaveStatement(predicate),
+        cancelStatement: this.genCancelStatement(predicate),
       })
     })
     await Promise.all(this.predicateEditors.map( (predicateEditor) => { return predicateEditor.init()}));
@@ -127,8 +124,11 @@ export class PredicateListSection extends MdeSection{
   togglePredicateVisibility() {
     if (this.showingAll) {
       this.predicates.forEach( (predicate, index) => {
-        if (!this.predicateMustBeDisplayed(predicate)) {
-          $(`${this.containerSelector} .mde-predicate-index-${index}`).addClass('force-hidden');
+        let predicateContainer =  $(`${this.containerSelector} .mde-predicate-index-${index}`);
+        if (this.predicateMustBeDisplayed(predicate)) {
+          predicateContainer.removeClass('force-hidden');
+        } else {
+          predicateContainer.addClass('force-hidden');
         }
       });
     } else {
@@ -163,18 +163,101 @@ export class PredicateListSection extends MdeSection{
     }
   }
 
-  genSaveStatement(predicate) {
-    return async (object, qualifications, editorialNote) => {
-
-      this.debug && console.log(`Faking save statement for predicate ${predicate.id}`, [object, qualifications, editorialNote]);
-      await wait(500);
-      return { success: false, msg: `Save statement for predicate ${predicate.id} not implemented yet`, statements: []}
-
+  async updateEntityData (newEntityData, updatedPredicates) {
+    await super.updateEntityData(newEntityData, updatedPredicates);
+    let promises = [];
+    for (let index =0; index > this.predicates.length; index++) {
+      let predicate = this.predicates[index];
+      if (updatedPredicates.includes(predicate.predicateDefinition.id)) {
+        let newStatements = EntityData.getStatementsForPredicate(this.entityData, predicate.predicateDefinition.id, true);
+        this.predicates[index].statements = newStatements;
+        promises.push(this.predicateEditors[index].updateStatements(newStatements));
+        let predicateContainer = $(`${this.containerSelector} .mde-predicate-${index}`);
+        if (this.predicateMustBeDisplayed(predicate)) {
+          predicateContainer.removeClass('force-hidden');
+        } else {
+          predicateContainer.addClass('force-hidden');
+        }
+      }
     }
+    await Promise.all(promises);
+    return true;
+  }
+
+  genSaveStatement(predicate) {
+    return async (newObject, qualifications, editorialNote, statementId = -1, cancellationNote = '') => {
+      let commands = [];
+      if (!predicate.predicateDefinition['singleProperty'] && statementId !== -1) {
+        // if the predicate is not a single property and there's a statement id,
+        // we need to cancel it before creating the new one
+        commands.push({
+          command: 'cancel',
+          statementId: statementId,
+          editorialNote: cancellationNote
+        });
+      }
+
+      commands.push({
+        command: 'create',
+        subject: this.entityData.id,
+        predicate: predicate.id,
+        object: newObject,
+        qualifications: qualifications,
+        editorialNote: editorialNote,
+        cancellationNote: cancellationNote
+      });
+
+      return await this.doStatementEditCommands(commands, predicate);
+    }
+  }
+
+  genCancelStatement(predicate) {
+    return async (statementId, cancellationNote) => {
+      let commands= [{
+        command: 'cancel',
+        statementId: statementId,
+        editorialNote: cancellationNote
+      }];
+      return await this.doStatementEditCommands(commands, predicate);
+    }
+  }
+
+  async doStatementEditCommands(commands, predicate) {
+    console.log(`Edit statement`, commands);
+    let serverResponse = await this.apmDataProxy.apiEntityStatementsEdit(commands);
+    console.log('Response from server', serverResponse);
+    if (serverResponse.success === false) {
+      return { success: false, msg: serverResponse.errorMessage, statements: []}
+    }
+    let minorProblems = [];
+    serverResponse['commandResults'].forEach( (cmdResult) => {
+      if (cmdResult['success'] === false) {
+        minorProblems.push(cmdResult['errorMessage']);
+      }
+    })
+    let msg = minorProblems.length === 0 ? 'Success' : minorProblems.join('. ');
+    // need to get entity data once again
+    this.entityData = await this.apmDataProxy.getEntityData(this.entityData.id, true);
+    let newStatements = EntityData.getStatementsForPredicate(this.entityData, predicate.id, true);
+    let predicateIndex = this.getPredicateIndexFromId(predicate.id);
+    if (predicateIndex !== -1) {
+      this.predicates[predicateIndex].statements = newStatements;
+    }
+    await this.options.onEntityDataChange(this.entityData, [ predicate.id ]);
+    return { success: true, msg: msg, statements: newStatements,}
   }
 
   getExtraClassForType() {
     return `mde-predicate-list-${this.listType}`;
+  }
+
+  getPredicateIndexFromId(predicateId) {
+    for(let index = 0; index < this.predicates.length; index++) {
+      if (predicateId === this.predicates[index].predicateDefinition.id) {
+        return index;
+      }
+    }
+    return -1;
   }
 
 }

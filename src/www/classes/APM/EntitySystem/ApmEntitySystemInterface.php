@@ -180,26 +180,27 @@ interface ApmEntitySystemInterface
      * @param string $editorialNote
      * @param array $extraMetadata
      * @param int $ts
+     * @param string $cancellationNote cancellation note if the statement is about a single property
      * @return int
      * @throws InvalidObjectException
      * @throws InvalidStatementException
      * @throws InvalidSubjectException
  */
     public function makeStatement(int $subject, int $predicate, int|string $object, int $author,
-                                  string $editorialNote = '', array $extraMetadata = [], int $ts = -1) : int;
+                                  string $editorialNote = '', array $extraMetadata = [], int $ts = -1, string $cancellationNote = '') : int;
 
     /**
      * Cancels a statement
      * @param int $statementId
      * @param int $author
      * @param int $ts
-     * @param string $editorialNote
+     * @param string $cancellationNote
      * @return int
      * @throws StatementNotFoundException
      * @throws StatementAlreadyCancelledException
      * @throws PredicateCannotBeCancelledException
  */
-    public function cancelStatement(int $statementId, int $author, int $ts = -1, string $editorialNote = '') : int;
+    public function cancelStatement(int $statementId, int $author, int $ts = -1, string $cancellationNote = '') : int;
 
 
     /**

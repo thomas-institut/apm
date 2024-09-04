@@ -49,6 +49,7 @@ export class GenericStatementEditor {
       this.subjectInput = editSubject ? $(`${this.dialog.getSelector()} .subject-input`) : null;
       this.objectInput = editObject ?  $(`${this.dialog.getSelector()} .object-input`) : null;
       this.editorialNoteInput = $(`${this.dialog.getSelector()} .editorial-note`);
+      this.cancellationNoteInput = $(`${this.dialog.getSelector()} .cancellation-note`);
       this.info = $(`${this.dialog.getSelector()} .info`)
       if (this.subjectInput !== null) {
         this.subjectInput.on('keyup', this.genOnInputChange());
@@ -57,6 +58,7 @@ export class GenericStatementEditor {
         this.objectInput.on('keyup', this.genOnInputChange());
       }
       this.editorialNoteInput.on('keyup', this.genOnInputChange());
+      this.cancellationNoteInput.on('keyup', this.genOnInputChange());
 
       this.allowedQualifications.forEach( (id) => {
         $(`.qualification-${id}`).on('change', this.genOnInputChange());
@@ -223,7 +225,7 @@ export class GenericStatementEditor {
       if (currentEditorialNote === '') {
         inputErrors.push('Editorial note cannot be empty');
       }
-      // console.log('Input errors', inputErrors);
+      // TODO: Check cancellation note for single properties
       if (inputErrors.length === 0) {
         this.dialog.showAcceptButton();
         this.info.html('');
@@ -267,7 +269,8 @@ export class GenericStatementEditor {
         predicate: this.options.predicate,
         object: this.options.relation ? parseInt(newObject) : newObject.toString(),
         qualifications: newQualifications,
-        editorialNote: this.editorialNoteInput.val().trim().toString()
+        editorialNote: this.editorialNoteInput.val().trim().toString(),
+        cancellationNote: this.cancellationNoteInput.val().trim().toString()
       });
 
       console.log(`Commands for API`);
@@ -340,6 +343,8 @@ export class GenericStatementEditor {
             ${qualificationsDivs.join("\n")}
             <div class="edit-label">Editorial Note</div>
             <div><textarea class="editorial-note" rows="3" cols="${textAreaCols}"></textarea></div>
+            <div class="edit-label">Cancellation Note</div>
+            <div><textarea class="cancellation-note" rows="3" cols="${textAreaCols}"></textarea></div>
         </div>
         <div class="info"></div>
 `

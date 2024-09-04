@@ -8,6 +8,7 @@ use APM\EntitySystem\Exception\InvalidPredicateException;
 use APM\EntitySystem\Exception\InvalidStatementException;
 use APM\EntitySystem\Exception\InvalidSubjectException;
 use APM\EntitySystem\Exception\InvalidValueException;
+use APM\EntitySystem\Schema\AreaTypes;
 use APM\EntitySystem\Schema\DarePredicates;
 use APM\EntitySystem\Schema\Entity;
 use APM\EntitySystem\Schema\EntityTypes;
@@ -21,6 +22,7 @@ use APM\EntitySystem\Schema\SystemPredicates;
 use APM\EntitySystem\Schema\UrlTypes;
 use APM\EntitySystem\Schema\ValueTypes;
 use APM\EntitySystem\Schema\WorkPredicates;
+use InvalidArgumentException;
 use LogicException;
 use ThomasInstitut\EntitySystem\EntityData;
 use ThomasInstitut\EntitySystem\StatementData;
@@ -98,7 +100,8 @@ class ApmEntitySystemKernel
             new IdTypes(),
             new OrganizationTypes(),
             new UrlTypes(),
-            new Languages()
+            new Languages(),
+            new AreaTypes()
         ];
 
         /** @var $allDefiners EntityDefiner[]*/
@@ -558,7 +561,7 @@ class ApmEntitySystemKernel
      */
     public function getValidPredicatesAsSubjectForType(int $type, bool $includeReverseRelations = false) : array {
         if (!isset($this->entityTypes[$type])) {
-            throw new \InvalidArgumentException("Entity $type is not a type");
+            throw new InvalidArgumentException("Entity $type is not a type");
         }
 
         $typeDef = $this->entityTypes[$type];
@@ -610,7 +613,7 @@ class ApmEntitySystemKernel
      */
     public function getValidPredicatesAsObjectForType(int $type, bool $includeReverseRelations = false) : array{
         if (!isset($this->entityTypes[$type])) {
-            throw new \InvalidArgumentException("Entity $type is not a type");
+            throw new InvalidArgumentException("Entity $type is not a type");
         }
 
         $typeDef = $this->entityTypes[$type];

@@ -40,7 +40,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
      * Data id for internal kernel caches, change every time there is a
      * change in the entity system schema or in the ApmEntitySystemKernel class
      */
-    const dataId = '025';
+    const dataId = '027';
 
     const kernelCacheKey = 'ApmEntitySystemKernel';
 
@@ -341,7 +341,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
      * @throws InvalidSubjectException
      */
     public function makeStatement(int $subject, int $predicate, int|string $object, int $author,
-                                  string $editorialNote = '', array $extraMetadata = [], int $ts = -1) : int
+                                  string $editorialNote = '', array $extraMetadata = [], int $ts = -1, string $cancellationNote = '') : int
     {
         if ($ts=== -1) {
             $ts = time();
@@ -417,9 +417,13 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             }
             if (count($statements) !== 0) {
                 $statementId = $statements[0][0];
-                $cancellationMetadata[] = [ Entity::pCancelledBy, Entity::System];
+                $cancellationNote = trim($cancellationNote);
+                if ($cancellationNote === '') {
+                    $cancellationNote = "Automatically cancelled when setting new value for single property $predicate";
+                }
+                $cancellationMetadata[] = [ Entity::pCancelledBy, $author];
                 $cancellationMetadata[] = [ Entity::pCancellationTimestamp, strval($ts)];
-                $cancellationMetadata[] = [ Entity::pCancellationEditorialNote, "Automatically cancelled when setting new value for single property $predicate"];
+                $cancellationMetadata[] = [ Entity::pCancellationEditorialNote, $cancellationNote];
                 $commands[] = [ EntitySystem::CancelStatementCommand, $statementId, $cancellationMetadata];
             }
         }
@@ -448,13 +452,13 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
      * @param int $statementId
      * @param int $author
      * @param int $ts
-     * @param string $editorialNote
+     * @param string $cancellationNote
      * @return int
      * @throws StatementNotFoundException
      * @throws StatementAlreadyCancelledException
      * @throws PredicateCannotBeCancelledException
      */
-    public function cancelStatement(int $statementId, int $author, int $ts = -1, string $editorialNote = ''): int
+    public function cancelStatement(int $statementId, int $author, int $ts = -1, string $cancellationNote = ''): int
     {
         if ($ts=== -1) {
             $ts = time();
@@ -485,10 +489,10 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             [ Entity::pCancellationTimestamp, strval($ts)]
         ];
 
-        $editorialNote = trim($editorialNote);
+        $cancellationNote = trim($cancellationNote);
 
-        if ($editorialNote !== '') {
-            $metadata[] = [ Entity::pCancellationEditorialNote, $editorialNote];
+        if ($cancellationNote !== '') {
+            $metadata[] = [ Entity::pCancellationEditorialNote, $cancellationNote];
         }
         $kernel = $this->getKernel();
 

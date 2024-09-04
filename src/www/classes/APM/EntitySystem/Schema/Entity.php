@@ -141,11 +141,8 @@ class Entity implements TidDefiner
     const pContains = 8002;
     const pCivicAddress = 8003;
     const pGpsCoordinates = 8004;
-//    const pRadius = 8005;
 
-//    const pPoliticalDivisionOf = 8006;
-//    const pPoliticalDivision = 8007;
-
+    const pAreaType = 8005;
 
     // Url Types
 
@@ -168,12 +165,13 @@ class Entity implements TidDefiner
 
     // Area types
 
-//    const AreaTypeCountry = 11001;
-//    const AreaTypeProvince = 11002;
-//    const AreaTypeState = 11003;
-//    const AreaTypeCity = 11004;
-//    const AreaTypeCounty = 11005;
-//    const AreaTypeCanton = 11006;
+    const AreaTypeCountry = 11001;
+    const AreaTypeCountryPart = 11002;
+    const AreaTypeProvince = 11003;
+    const AreaTypeState = 11004;
+    const AreaTypeCity = 11005;
+    const AreaTypeCounty = 11006;
+    const AreaTypeCanton = 11007;
 
 
     // Organization types

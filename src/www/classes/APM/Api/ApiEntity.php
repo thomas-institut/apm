@@ -74,7 +74,8 @@ class ApiEntity extends ApiController
      *         'predicate' => predicateId (if command is 'create')
      *         'object' => 'value' | objectId  (if command is 'create')
      *         'qualifications' => array of [ qualificationPredicate, value ] elements, (if command is 'create')
-     *         'editorialNote' => 'some text',  (will be used as cancellation note if command is 'cancel')
+     *         'editorialNote' => 'some text',
+     *         'cancellationNote => 'some text' (used for 'cancel' commands or 'create' commands on single properties )
      *     },
      *
      *     {  ... command 2 ...},
@@ -270,9 +271,10 @@ class ApiEntity extends ApiController
                         break;
                     }
                     $note = $command['editorialNote'] ?? "Via API, no editorial note left";
+                    $cancellationNote = $command['cancellationNote'] ?? 'Via API, no cancellation note left';
                     try {
                         $newStatement = $es->makeStatement($command['subject'], $predicate, $command['object'],
-                            $this->apiUserTid, $note, $qualifications, $timestamp);
+                            $this->apiUserTid, $note, $qualifications, $timestamp, $cancellationNote);
                         $commandResults[] = [
                             'success' => true,
                             'statementId' => $newStatement,

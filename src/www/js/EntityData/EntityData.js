@@ -1,3 +1,5 @@
+import { StatementArray } from './StatementArray'
+
 export class EntityData {
 
   /**
@@ -8,10 +10,7 @@ export class EntityData {
    * @return {string[]|number[]}
    */
   static getStatementsForPredicate(data, predicate, includeCancelled = false) {
-    return data.statements
-      .filter( (statement) => {
-        return statement.predicate === predicate && (statement['cancellationId'] === -1 || includeCancelled );
-      });
+    return StatementArray.getStatementsForPredicate(data.statements, predicate, includeCancelled);
   }
 
 

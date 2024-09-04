@@ -15,14 +15,44 @@ export class Statement {
     return this.getMetadataPredicate(statement, Entity.pStatementEditorialNote);
   }
 
+  static getCancellationAuthor(statement) {
+    return this.getCancellationMetadataPredicate(statement, Entity.pCancelledBy);
+  }
+
+  static getCancellationTimestamp(statement) {
+    return parseInt(this.getCancellationMetadataPredicate(statement, Entity.pCancellationTimestamp));
+  }
+
+  static getCancellationEditorialNote(statement) {
+    return this.getCancellationMetadataPredicate(statement, Entity.pCancellationEditorialNote);
+  }
+
+  static getCancellationMetadataPredicate(statement, predicateId) {
+    return this.getMetadataPredicateGeneric(statement, predicateId, 'cancellationMetadata');
+  }
+
   static getMetadataPredicate(statement, predicateId) {
-    for (let i  = 0; i < statement['statementMetadata'].length; i++) {
-      let [ predicate, object] = statement['statementMetadata'][i];
+    return this.getMetadataPredicateGeneric(statement, predicateId, 'statementMetadata');
+  }
+
+  /**
+   *
+   * @param statement
+   * @param predicateId
+   * @param field
+   * @return {*|null}
+   * @private
+   */
+  static getMetadataPredicateGeneric(statement, predicateId, field) {
+    if (statement[field] === undefined || statement[field] === null) {
+      return null;
+    }
+    for (let i  = 0; i < statement[field].length; i++) {
+      let [ predicate, object] = statement[field][i];
       if (predicate === predicateId) {
         return object;
       }
     }
-    // should never happen though
     return null;
   }
 }

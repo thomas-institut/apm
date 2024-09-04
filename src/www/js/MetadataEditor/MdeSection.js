@@ -15,7 +15,15 @@ export class MdeSection {
         predicateDefinitions: { type: 'object', required: true},
         qualificationDefinitions: { type: 'object', required: true},
         apmDataProxy: { type: 'object', objectClass: ApmDataProxy, required: true},
-        sectionSchema: { type: 'object', required: true}
+        sectionSchema: { type: 'object', required: true},
+        /**
+         * Async function to be called when the section originates a change in entity data
+         * It should return a boolean.
+         */
+        onEntityDataChange: { type: 'function', default: async (newData, changedPredicates) => {
+          console.log(`Faking onEntityDataChange`, newData, changedPredicates);
+          return false;
+        }}
       }
     })
     this.options = oc.getCleanOptions(options);
@@ -39,6 +47,18 @@ export class MdeSection {
     <div class="mde-section-body"></div>`;
   }
 
+  /**
+   * Updates the entity data in the section
+   * Should not be called when the section itself originated the change in data
+   *
+   * @param {{}}newEntityData
+   * @param {number[]}updatedPredicates a list of predicates that have changed in the new entity data
+   * @return {Promise<boolean>}
+   */
+  async updateEntityData(newEntityData, updatedPredicates) {
+    this.entityData = newEntityData;
+    return true;
+  }
 
 
   run() {

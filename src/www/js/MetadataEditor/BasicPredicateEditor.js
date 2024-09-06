@@ -410,7 +410,6 @@ export class BasicPredicateEditor {
     let currentObject = statement.object;
     let currentQualifications = this.getCurrentQualificationsObject(statement);
 
-
     let noChanges = true;
     if (data.object !== currentObject) {
       noChanges = false;
@@ -935,7 +934,7 @@ export class BasicPredicateEditor {
     }
     return objectUrl === null ? statement.object :
       `<a href="${objectUrl}" target="_blank" title="Click to visit ${this.getPredicateName()} page">
-        ${statement.object}</a>`;
+        ${statement.object} <i class="bi bi-link-45deg"></i></a>`;
   }
 
 

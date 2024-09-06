@@ -24,17 +24,54 @@ import { urlGen } from './common/SiteUrlGen'
 import { ApmPage } from './ApmPage'
 import { Tid } from '../Tid/Tid'
 import { NewChunkEditionDialog } from './common/NewChunkEditionDialog'
+import { Calendar } from '../toolbox/Calendar'
 
 const newMceEditionIcon = '<i class="bi bi-file-plus"></i>'
 
 export class DashboardPage extends NormalPage {
   constructor(options) {
-    super(options)
-    console.log(`Dashboard Page`)
-    console.log(options)
+    super(options);
+    console.log(`Dashboard Page`);
+    console.log(options);
+    this.calculationPlayGround();
     this.initPage().then( () => {
       console.log(`Dashboard page initialized`)
     })
+  }
+
+  calculationPlayGround() {
+    console.group(`Calculation playground`);
+
+    let today = Calendar.RD_fromJsDate(new Date());
+
+    console.log(`Today is RD ${today}`);
+
+    let results =
+    [ '1082-08-21', '1945-11-12', '1970-03-13', '1971-01-28', '2023-09-05'].map( (dateString) => {
+      let [ year, month, day ] = dateString.split('-');
+      let rd = Calendar.RD_fromGregorian(parseInt(year), parseInt(month), parseInt(day));
+      let dow = Calendar.dayOfTheWeek_fromRD(rd);
+      return {
+        dateString: dateString,
+        rd: rd,
+        dow: dow,
+        daysAgo: today - rd,
+        julian: Calendar.Julian_fromRD(rd)
+      }
+    })
+
+    let dayNames = [ '', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    results.forEach( (result) => {
+      console.log(`${result.dateString} = RD ${result.rd}, ${dayNames[result.dow]}`);
+      console.log(`   ${result.daysAgo} days ago  (${(result.daysAgo / 365.2425).toFixed(3)} solar years ago)`);
+      let [ julianYear, julianMonth, julianDay] = result.julian;
+      console.log(`   Julian:  ${Math.abs(julianYear)}-${julianMonth}-${julianDay} ${julianYear < 0 ? 'BCE' : 'CE'}`);
+    })
+
+
+    console.groupEnd();
+
   }
 
   async initPage() {

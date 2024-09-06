@@ -152,6 +152,9 @@ class Entity implements TidDefiner
     const UrlTypeDnb = 9003;
     const UrlTypeWikipedia = 9004;
 
+    const UrlTypePersonalHomePage = 9005;
+    const UrlTypeWorkHomePage = 9006;
+
 
 
 

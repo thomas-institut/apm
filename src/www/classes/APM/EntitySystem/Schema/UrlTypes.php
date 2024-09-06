@@ -40,6 +40,20 @@ const UrlTypeDefinition = [
         [],
         []
     ],
+    [
+        Entity::UrlTypePersonalHomePage,
+        'Personal Home Page',
+        'A home page hosted privately',
+        [],
+        []
+    ],
+    [
+        Entity::UrlTypeWorkHomePage,
+        'Work Home Page',
+        'A home page hosted by an employer or institution',
+        [],
+        []
+    ],
 
 
 ];

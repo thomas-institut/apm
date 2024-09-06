@@ -9,6 +9,9 @@ import { ApmPage } from './ApmPage'
 import { UserProfileEditorDialog } from './common/UserProfileEditorDialog'
 import { MakeUserDialog } from './common/MakeUserDialog'
 import * as Entity from '../constants/Entity'
+import { MetadataEditorSchema } from '../defaults/MetadataEditorSchemata/MetadataEditorSchema'
+import { MetadataEditor2 } from '../MetadataEditor/MetadataEditor2'
+import { EntityData } from '../EntityData/EntityData'
 
 
 const CONTRIBUTION_MCE = 'mcEditions';
@@ -50,6 +53,21 @@ export class PersonPageNew extends NormalPage {
   async initPage () {
     await super.initPage();
     document.title = this.personData.name;
+    this.entityData = await this.apmDataProxy.getEntityData(this.personData.tid);
+    this.schema = MetadataEditorSchema.getSchema(Entity.tPerson);
+    console.log(`Entity Schema for type Person`, this.schema);
+
+
+    // preload statement qualification object entities
+    await this.apmDataProxy.getStatementQualificationObjects(true);
+
+    new MetadataEditor2({
+      containerSelector: 'div.metadata-editor',
+      entityDataSchema: this.schema,
+      entityData: this.entityData,
+      apmDataProxy: this.apmDataProxy,
+    });
+
     if (this.personData.isUser) {
       $('button.edit-user-profile-btn').on('click', this.genOnClickEditUserProfileButton());
       this.mcEditionsCollapse = this.constructCollapse('#multi-chunk-editions', tr('Multi-Chunk Editions'), [ 'first'])
@@ -152,95 +170,12 @@ export class PersonPageNew extends NormalPage {
                 </div>`
     }
 
-    let idsHtml = [
-      {
-        name: 'ORCiD',
-        value: this.personData['orcidId'] ?? '',
-        url: urlGen.orcidPage(this.personData['orcidId']),
-        title: 'ORCiD',
-        logoUrl: urlGen.entityLogoUrl(Entity.pOrcid)
-      },
-      {
-        name: 'VIAF',
-        value: this.personData['viafId'] ?? '',
-        url: urlGen.viafPage(this.personData['viafId']),
-        logoUrl: urlGen.entityLogoUrl(Entity.pViafId),
-        title: 'VIAF ID'
-      },
-      {
-        name: 'GND',
-        value: this.personData['gndId'] ?? '',
-        url: urlGen.gndExplorePage(this.personData['gndId']),
-        logoUrl: urlGen.entityLogoUrl(Entity.pGNDId),
-        title: 'Gemeinsame Normdatei (GND) ID'
-      },
-      {
-        name: 'WikiData',
-        value: this.personData['wikiDataId'] ?? '',
-        url: urlGen.wikiDataPage(this.personData['wikiDataId']),
-        logoUrl: urlGen.entityLogoUrl(Entity.pWikiDataId),
-        title: 'WikiData Id'
-      },
-      {
-        name: 'LoC',
-        value: this.personData['locId'] ?? '',
-        url: '',
-        logoUrl: urlGen.entityLogoUrl(Entity.pLocId),
-        title: "US Library of Congress ID"
-      }
-    ].map( (idDef) => {
-      if (idDef.value === '') {
-        return '';
-      }
-      let html = '<div class="person-id">';
-      let logoUrl = idDef.logoUrl ?? '';
-      let logoHtml
-      if (logoUrl === '') {
-        logoHtml = `<span class="id-name" title="${idDef.title}">${idDef.name}</span>`
-      } else {
-        logoHtml = `<img class="id-logo" src="${logoUrl}" alt="${idDef.name}" title="${idDef.title}">`;
-      }
-
-      if (idDef.url !== '') {
-        html += `${logoHtml}<a href="${idDef.url}" target="_blank" title="${idDef.title}"><span class="literal-value">${idDef.value}</span> <i class="bi bi-link-45deg"></i></a>`
-      } else {
-        html += `${logoHtml}<span class="literal-value" title="${idDef.title ?? ''}">${idDef.value}</span>`;
-      }
-      html += '</div>'
-      return html;
-    }).join('')
-
-    let descriptionHtml = this.personData['description'];
-
-    let dataHtml = [
-      [ tr('Sort Name'), this.personData['sortName']],
-      [ tr('Date of Birth'), this.personData['dateOfBirth']],
-      [ tr('Date of Death'), this.personData['dateOfDeath']],
-    ].map ( (displayTuple) => {
-      let [ predicateName, predicateValue] = displayTuple;
-      return this.getPredicateHtml(predicateName, predicateValue);
-    }).join('');
-
-    let urlsHtml = this.personData.urls.map( (urlDef) => {
-        return `<div class="person-url">${urlDef.name}: <a href="${urlDef.url}" target="_blank">${urlDef.url} <i class="bi bi-link-45deg"></i></a></div>`
-    }).join('');
-
-
-
-    return `
-    <div>${breadcrumbHtml}</div>
-     <h1 class="">${this.personData.name}</h1>
-     <div class="section person-description">${descriptionHtml}</div>
-     
-     <div class="section person-entity-data">${dataHtml}</div>
-     <div class="section person-ids">${idsHtml}</div>
-     <div class="section person-urls">
-        ${urlsHtml !== '' ? "<h4>External Links</h4>" : ''}
-        ${urlsHtml}
-      </div>
+    return `<div>${breadcrumbHtml}</div>
+     <div class="metadata-editor"></div>
      <div class="section person-admin">${entityAdminHtml}</div>
-     <div class="section user-data">${await this.getUserDataHtml(this.personData)}</div>
+     <div class="section user-data">${await this.getUserDataHtml()}</div>
      <div class="section works-div"></div>`;
+
   }
 
   getWorksDivHtml() {
@@ -255,14 +190,13 @@ export class PersonPageNew extends NormalPage {
   }
 
 
-
   /**
    * Get
-   * @param {Object} personData
    * @return {Promise<string>}
    */
-  async getUserDataHtml(personData) {
-    if (!personData.isUser) {
+  async getUserDataHtml() {
+    if (!this.personData.isUser) {
+
       if (this.canManageUsers) {
         let userAdminHtml = `<button class="btn btn-primary edit-user-profile-btn">${tr('Make User')}</button>`;
         return ` <div class="user-admin">${userAdminHtml}</div>`;

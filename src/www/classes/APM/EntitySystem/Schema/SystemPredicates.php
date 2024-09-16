@@ -256,6 +256,28 @@ const StatementQualificationPredicateDefs = [
         'deprecated' => true,
         'deprecationNotice' => "Use the individual ID predicate instead"
     ],
+    [
+        'id' => Entity::pObjectCalendar,
+        'type' => Entity::tRelation,
+        'name' => 'Calendar',
+        'descr' => "The date's calendar",
+        'allowedSubjectTypes' => null,
+        'allowedObjectTypes'=> [ Entity::tCalendar],
+        'canBeCancelled' => false,
+        'singleProperty' => true,
+        'flags' => [ PredicateFlag::StatementMetadata, PredicateFlag::QualificationPredicate ],
+    ],
+    [
+        'id' => Entity::pQualificationsCalendar,
+        'type' => Entity::tRelation,
+        'name' => 'Calendar',
+        'descr' => "The calendar used for the From/Until dates",
+        'allowedSubjectTypes' => null,
+        'allowedObjectTypes'=> [ Entity::tCalendar],
+        'canBeCancelled' => false,
+        'singleProperty' => true,
+        'flags' => [ PredicateFlag::StatementMetadata, PredicateFlag::QualificationPredicate ],
+    ],
 ];
 const StatementCancellationPredicateDefs = [
 

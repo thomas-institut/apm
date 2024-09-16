@@ -152,6 +152,14 @@ const EntityTypeDefinitions = [
         [],
         true
     ],
+    [
+        Entity::tCalendar,
+        'Calendar',
+        "A calendar, e.g. Gregorian, Julian, etc.",
+        [],
+        [],
+        true
+    ],
 ];
 
 class EntityTypes implements EntityTypeDefiner

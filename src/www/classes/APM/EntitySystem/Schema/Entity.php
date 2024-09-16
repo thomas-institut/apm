@@ -45,6 +45,8 @@ class Entity implements TidDefiner
     const tOccupation = 117;
     const tOrganizationalRole = 118;
 
+    const tCalendar = 119;
+
     // Value types
 
     const ValueTypeText = 1001;
@@ -102,6 +104,9 @@ class Entity implements TidDefiner
     const pObjectUrlType = 4005;
     const pObjectIdType = 4006;
 
+    const pObjectCalendar = 4007;
+    const pQualificationsCalendar = 4008;
+
     // Cancellation predicates
     const pCancelledBy = 5001;
     const pCancellationTimestamp = 5002;
@@ -157,6 +162,16 @@ class Entity implements TidDefiner
 
 
 
+    // Calendars
+    const CalendarGregorian = 9501;
+    const CalendarJulian = 9502;
+    const CalendarIslamicObservational = 9503;
+    const CalendarIslamicTabular = 9504;
+    const CalendarIslamicTabularUlughBeg = 9505;
+    const CalendarIslamicTabularBohras = 9506;
+    const CalendarHebrewObservational = 9507;
+    const CalendarHebrewCalculated = 9508;
+
 
 
     // ID types
@@ -164,6 +179,9 @@ class Entity implements TidDefiner
     const IdTypeViaf = 10002;
     const IdTypeGnd = 10003;
     const IdTypeOrcid = 10004;
+
+
+
 
 
     // Area types

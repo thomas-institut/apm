@@ -58,4 +58,4 @@ EOD;
 //
 
 
-$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = '93ef2420756966d2f84b8340f022ec6e'; // generated 2024-08-30 11:45 UTC+2
+$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = 'a0c77b05dcb2605553f193a2f0cb7b29'; // generated 2024-09-09 10:24 UTC+2

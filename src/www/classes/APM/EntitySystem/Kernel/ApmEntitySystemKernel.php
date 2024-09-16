@@ -9,6 +9,7 @@ use APM\EntitySystem\Exception\InvalidStatementException;
 use APM\EntitySystem\Exception\InvalidSubjectException;
 use APM\EntitySystem\Exception\InvalidValueException;
 use APM\EntitySystem\Schema\AreaTypes;
+use APM\EntitySystem\Schema\Calendars;
 use APM\EntitySystem\Schema\DarePredicates;
 use APM\EntitySystem\Schema\Entity;
 use APM\EntitySystem\Schema\EntityTypes;
@@ -101,7 +102,8 @@ class ApmEntitySystemKernel
             new OrganizationTypes(),
             new UrlTypes(),
             new Languages(),
-            new AreaTypes()
+            new AreaTypes(),
+            new Calendars()
         ];
 
         /** @var $allDefiners EntityDefiner[]*/

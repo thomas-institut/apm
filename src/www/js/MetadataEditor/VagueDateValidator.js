@@ -34,7 +34,7 @@ export class VagueDateValidator extends ObjectValidator {
   }
 
   getHelp () {
-    return `One or two dates in the Gregorian calendar, each one as [-]YYYY-MM-DD. The month and the day of the month are optional. 
+    return `One or two dates in the chosen calendar, each one as [-]YYYY-MM-DD. The month and the day of the month are optional. 
           E.g.,'-200 -100' = an indeterminate date between 200 and 100 BCE, '1980-12' = an 
           indeterminate date in December 1980, '1550-04 1550-05' = an indeterminate date between April 1st and May
           31st 1550, '1925-04-09' = the exact date April 9th, 1925'`
@@ -81,29 +81,33 @@ export class VagueDateValidator extends ObjectValidator {
     if (day > 31) {
       return NaN;
     }
-    if ([4, 6, 9, 11].includes(month) && day > 30) {
-      return NaN;
-    }
 
-    if (month === 2) {
-      let maxDaysInFebruary = 28;
-      if (multiplier === 1) {
-        // only CE years included
-        if (year % 4 === 0) {
-          // potential leap year
-          maxDaysInFebruary = 29;
-        }
-        if (year > 1582 && (year % 100 === 0) && (year % 400 !== 0)) {
-          // no leap year if year divisible by 100 in Gregorian calendar, except
-          // those divisible by 400
-          maxDaysInFebruary = 28;
-        }
-      }
-      console.log(`Max Days in february for year ${year}: ${maxDaysInFebruary}`);
-      if (day > maxDaysInFebruary) {
-        return NaN;
-      }
-    }
+    // TODO: use calendar information to check for days in the month
+    // if ([4, 6, 9, 11].includes(month) && day > 30) {
+    //   return NaN;
+    // }
+
+
+
+    // if (month === 2) {
+    //   let maxDaysInFebruary = 28;
+    //   if (multiplier === 1) {
+    //     // only CE years included
+    //     if (year % 4 === 0) {
+    //       // potential leap year
+    //       maxDaysInFebruary = 29;
+    //     }
+    //     if (year > 1582 && (year % 100 === 0) && (year % 400 !== 0)) {
+    //       // no leap year if year divisible by 100 in Gregorian calendar, except
+    //       // those divisible by 400
+    //       maxDaysInFebruary = 28;
+    //     }
+    //   }
+    //   console.log(`Max Days in february for year ${year}: ${maxDaysInFebruary}`);
+    //   if (day > maxDaysInFebruary) {
+    //     return NaN;
+    //   }
+    // }
     return multiplier * ( day + month *100 + year * 10000);
 
   }

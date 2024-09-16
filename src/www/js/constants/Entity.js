@@ -1,6 +1,7 @@
-// Entity Types
 
 
+
+// System Entity
 export const System = 1;
 
 // Entity Types
@@ -24,6 +25,8 @@ export const tOrganizationType = 116;
 export const tOccupation = 117;
 export const tOrganizationalRole = 118;
 
+export const tCalendar = 119;
+
 // Value types
 
 export const ValueTypeText = 1001;
@@ -38,6 +41,7 @@ export const ValueTypeGpsCoordinates = 1009;
 export const ValueTypeUrl = 1010;
 export const ValueTypeWorkId = 1011;
 export const ValueTypeEmailAddress = 1111;
+
 
 // Basic entity predicates
 
@@ -80,6 +84,9 @@ export const pObjectUntil = 4004;
 export const pObjectUrlType = 4005;
 export const pObjectIdType = 4006;
 
+export const pObjectCalendar = 4007;
+export const pQualificationsCalendar = 4008;
+
 // Cancellation predicates
 export const pCancelledBy = 5001;
 export const pCancellationTimestamp = 5002;
@@ -119,6 +126,7 @@ export const pContainedBy = 8001;
 export const pContains = 8002;
 export const pCivicAddress = 8003;
 export const pGpsCoordinates = 8004;
+
 export const pAreaType = 8005;
 
 // Url Types
@@ -129,7 +137,20 @@ export const UrlTypeDb = 9002;
 export const UrlTypeDnb = 9003;
 export const UrlTypeWikipedia = 9004;
 
+export const UrlTypePersonalHomePage = 9005;
+export const UrlTypeWorkHomePage = 9006;
 
+
+
+// Calendars
+export const CalendarGregorian = 9501;
+export const CalendarJulian = 9502;
+export const CalendarIslamicObservational = 9503;
+export const CalendarIslamicTabular = 9504;
+export const CalendarIslamicTabularUlughBeg = 9505;
+export const CalendarIslamicTabularBohras = 9506;
+export const CalendarHebrewObservational = 9507;
+export const CalendarHebrewCalculated = 9508;
 
 
 
@@ -138,6 +159,9 @@ export const IdTypeWikiData = 10001;
 export const IdTypeViaf = 10002;
 export const IdTypeGnd = 10003;
 export const IdTypeOrcid = 10004;
+
+
+
 
 
 // Area types
@@ -194,4 +218,5 @@ export const LangItalian = 20024;
 export const LangSpanish = 20025;
 export const LangPortuguese = 20026;
 export const LangTurkish = 20027;
+
 

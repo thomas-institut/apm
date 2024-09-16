@@ -31,7 +31,7 @@ $config[ApmConfigParameter::APP_NAME] = 'APM';
 // + Version 0.42.10, named after Oded, who discovered the first reproducible bug after EditionComposer's bug detector
 //   was implemented
 // + Version 0.42.11 still named after Oded, since he also found the bug that caused the update!
-$config[ApmConfigParameter::VERSION] = '0.64.3 (2024-Jun-21)';
+$config[ApmConfigParameter::VERSION] = '0.65.0 (2024-Sep-16)';
 
 //
 // Copyright Notice
@@ -44,7 +44,7 @@ EOD;
 //
 // JS App Cache Data ID
 //
-// To be absolutely sure that this is a unique, but non-readable string, use a manually generated hash manually of the
+// To be absolutely sure that this is a unique, but non-readable string, use a manually generated hash of the
 // current date/time.
 //
 // On a Linux machine:
@@ -58,4 +58,4 @@ EOD;
 //
 
 
-$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = 'a0c77b05dcb2605553f193a2f0cb7b29'; // generated 2024-09-09 10:24 UTC+2
+$config[ApmConfigParameter::JS_APP_CACHE_DATA_ID] = 'd99dff78651487fb2319e8d511bd0b2d'; // generated 2024-09-16 11:37 UTC+2

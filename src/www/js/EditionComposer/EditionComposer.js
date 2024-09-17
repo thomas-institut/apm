@@ -28,6 +28,7 @@ import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
 import { KeyCache } from '../toolbox/KeyCache/KeyCache'
 import { ServerLogger } from '../Server/ServerLogger'
 
+
 // MultiPanel UI
 import { MultiPanelUI } from '../MultiPanelUI/MultiPanelUI'
 import { TabConfig } from '../MultiPanelUI/TabConfig'
@@ -119,7 +120,7 @@ export class EditionComposer extends ApmPage {
       versionId: { type: 'NonZeroNumber', required: true},
       langDef : { type: 'object', default: defaultLanguageDefinition },
       availableWitnesses: { type: 'Array', default: [] },
-      urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true},
+      // urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true},
       workInfo: { type: 'object', default: {} },
       peopleInfo: { type: 'object', default: {} },
       docInfo: { type: 'object', default: {} },
@@ -157,10 +158,10 @@ export class EditionComposer extends ApmPage {
     this.errorDetected = false
     this.errorDetail = ''
 
-    this.apiSaveCollationUrl = this.options.urlGenerator.apiSaveCollation()
+    this.apiSaveCollationUrl = urlGen.apiSaveCollation()
 
     this.serverLogger = new ServerLogger({
-      apiCallUrl: this.options.urlGenerator.apiAdminLog(),
+      apiCallUrl: urlGen.apiAdminLog(),
       module: 'EditionComposer'
     })
 
@@ -243,7 +244,7 @@ export class EditionComposer extends ApmPage {
 
     this.adminPanel = new AdminPanel({
       apmDataProxy: this.apmDataProxy,
-      urlGen: this.options.urlGenerator,
+      urlGen: urlGen,
       tableId: this.tableId,
       verbose: false,
       containerSelector: `#${adminPanelTabId}`,
@@ -329,8 +330,8 @@ export class EditionComposer extends ApmPage {
     }
 
     this.multiPanelUI = new MultiPanelUI({
-        logo: `<a href="${this.options.urlGenerator.siteHome()}" title="Home">
-<img src="${this.options.urlGenerator.images()}/apm-logo-plain.svg" height="40px" alt="logo"/></a>`,
+        logo: `<a href="${urlGen.siteHome()}" title="Home">
+<img src="${urlGen.images()}/apm-logo-plain.svg" height="40px" alt="logo"/></a>`,
         topBarContent: () => {
           let warningSign = ''
           if (!this.lastVersion) {
@@ -344,8 +345,8 @@ export class EditionComposer extends ApmPage {
         },
       icons: {
         closePanel: '&times;',
-        horizontalMode: `<img src="${this.options.urlGenerator.images()}/horizontal-mode.svg" alt="Horizontal Mode"/>`,
-        verticalMode: `<img src="${this.options.urlGenerator.images()}/vertical-mode.svg" alt="Vertical Mode"/>`
+        horizontalMode: `<img src="${urlGen.images()}/horizontal-mode.svg" alt="Horizontal Mode"/>`,
+        verticalMode: `<img src="${urlGen.images()}/vertical-mode.svg" alt="Vertical Mode"/>`
       },
         panels: [
           {
@@ -864,7 +865,7 @@ export class EditionComposer extends ApmPage {
   genGetWitnessData() {
     return (witnessId) => {
       return new Promise( (resolve, reject) => {
-        let apiUrl = this.options.urlGenerator.apiWitnessGet(witnessId, 'standardData')
+        let apiUrl = urlGen.apiWitnessGet(witnessId, 'standardData')
         $.get(apiUrl).then( (resp) => {
           // got witness data
           // normalize its tokens first
@@ -977,7 +978,7 @@ export class EditionComposer extends ApmPage {
   genCheckWitnessUpdates() {
     return (currentWitnessUpdateData) => {
       return new Promise( (resolve, reject) => {
-        let apiUrl = this.options.urlGenerator.apiWitnessCheckUpdates()
+        let apiUrl = urlGen.apiWitnessCheckUpdates()
         $.post(apiUrl, { data: JSON.stringify(currentWitnessUpdateData)})
           .done(function(apiResponse){
               resolve(apiResponse)
@@ -993,13 +994,13 @@ export class EditionComposer extends ApmPage {
 
   genGetDocUrl() {
     return (docId) => {
-      return this.options.urlGenerator.siteDocPage(docId)
+      return urlGen.siteDocPage(docId)
     }
   }
 
   genGetPageUrl() {
     return (docId, pageSeq, col) => {
-      return this.options.urlGenerator.sitePageView(docId, pageSeq, col)
+      return urlGen.sitePageView(docId, pageSeq, col)
     }
   }
 
@@ -1020,7 +1021,7 @@ export class EditionComposer extends ApmPage {
         if (pageIdsToGetFromServer.length === 0) {
           resolve(pageInfoInCache)
         }
-        let apiUrl = this.options.urlGenerator.apiGetPageInfo()
+        let apiUrl = urlGen.apiGetPageInfo()
         $.post(apiUrl, { data: JSON.stringify({pages: pageIdsToGetFromServer})})
           .done((pageInfoArrayFromServer) => {
             pageInfoArrayFromServer.forEach( (pageInfo) => {
@@ -1079,7 +1080,7 @@ export class EditionComposer extends ApmPage {
         if (this.editionSources !== null) {
           resolve(this.filterOutUsedSources(this.editionSources))
         }
-        $.get(this.options.urlGenerator.apiEditionSourcesGetAll())
+        $.get(urlGen.apiEditionSourcesGetAll())
           .done( (apiResponse) => {
             this.editionSources = apiResponse
             resolve(this.filterOutUsedSources(this.editionSources))
@@ -1094,7 +1095,7 @@ export class EditionComposer extends ApmPage {
   genFetchSiglaPresets() {
     return () => {
       return new Promise ( (resolve, reject) => {
-        let apiSiglaPresetsUrl = this.options.urlGenerator.apiGetSiglaPresets()
+        let apiSiglaPresetsUrl = urlGen.apiGetSiglaPresets()
         let apiCallOptions = {
           lang: this.ctData['lang'],
           witnesses: this.ctData['witnesses'].filter(w => { return w['witnessType'] === 'fullTx'}).map(w => w['ApmWitnessId'])
@@ -1121,7 +1122,7 @@ export class EditionComposer extends ApmPage {
       return new Promise( (resolve, reject) => {
         console.log('About to call save preset API')
         console.log(apiCallData)
-        let apiUrl = this.options.urlGenerator.apiSaveSiglaPreset()
+        let apiUrl = urlGen.apiSaveSiglaPreset()
         $.post(apiUrl, { data: JSON.stringify(apiCallData)}).done( () =>{
           resolve()
         }).fail( (resp) => {

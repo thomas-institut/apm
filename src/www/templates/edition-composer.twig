@@ -23,7 +23,7 @@
     <script type="text/javascript" src="{{baseUrl}}/node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
     <script type="text/javascript" src="{{baseUrl}}/node_modules/moment/moment.js"></script>
     <script type="text/javascript" src="{{baseUrl}}/js/SimpleProfiler.js"></script>
-    <script type="application/javascript" src="{{baseUrl}}/js/ApmUrlGenerator.js"></script>
+{#    <script type="application/javascript" src="{{baseUrl}}/js/ApmUrlGenerator.js"></script>#}
     <script type="application/javascript" src="{{baseUrl}}/js/dist/Quill.bundle.js"></script>
     <script type="application/javascript" src="{{baseUrl}}/js/dist/EditionComposer.bundle.js"></script>
 </head>
@@ -52,7 +52,7 @@
       workId: '{{ workId }}',
       chunkNumber: {{ chunkNumber }},
       tableId: {{ tableId }},
-      urlGenerator: new ApmUrlGenerator('{{ baseUrl }}'),
+      {#urlGenerator: new ApmUrlGenerator('{{ baseUrl }}'),#}
       peopleInfo: peopleInfo,
       workInfo: workInfo,
       docInfo: docInfo,

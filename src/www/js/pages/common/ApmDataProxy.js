@@ -22,11 +22,7 @@ import { WebStorageKeyCache } from '../../toolbox/KeyCache/WebStorageKeyCache'
 import { CachedFetcher } from '../../toolbox/CachedFetcher'
 import { urlGen } from './SiteUrlGen'
 import { wait } from '../../toolbox/FunctionUtil.mjs'
-import * as Entity from '../../constants/Entity'
 import { SimpleLockManager } from '../../toolbox/SimpleLockManager'
-
-
-const cachePrefix = 'Apm';
 
 const TtlOneMinute = 60 // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -54,13 +50,14 @@ export class ApmDataProxy {
   /**
    *
    * @param {string}cacheDataId
+   * @param {string}cachePrefix
    */
-  constructor (cacheDataId) {
+  constructor (cacheDataId, cachePrefix) {
     this.cacheDataId = cacheDataId;
     this.caches = {
       memory: new KeyCache(),
-      session: new WebStorageKeyCache('session', this.cacheDataId),
-      local: new WebStorageKeyCache('local', this.cacheDataId)
+      session: new WebStorageKeyCache('session', this.cacheDataId, cachePrefix),
+      local: new WebStorageKeyCache('local', this.cacheDataId, cachePrefix)
     }
 
     this.lockManager = new SimpleLockManager();
@@ -107,7 +104,7 @@ export class ApmDataProxy {
   }
 
   async getSystemLanguages() {
-    return await this.getAlmostStaticData('systemLanguages', urlGen.apiSystemGetLanguages());
+    return await this.getAlmostStaticData('SystemLanguages', urlGen.apiSystemGetLanguages());
   }
 
   async getAuthors() {
@@ -126,19 +123,18 @@ export class ApmDataProxy {
 
 
   async getAvailablePageTypes() {
-    return await this.getAlmostStaticData('pageTypes', urlGen.apiGetPageTypes());
+    return await this.getAlmostStaticData('PageTypes', urlGen.apiGetPageTypes());
   }
 
 
   async getAlmostStaticData(name, url) {
-    let cacheKey = `${cachePrefix}-${name}`;
     let cache = this.caches['local'];
-    let data = cache.retrieve(cacheKey);
+    let data = cache.retrieve(name);
     if (data !== null) {
       return data;
     }
     let serverData = await this.get(url, true);
-    cache.store(cacheKey, serverData, TtlOneDay)
+    cache.store(name, serverData, TtlOneDay)
     return serverData
   }
 
@@ -195,7 +191,7 @@ export class ApmDataProxy {
    * @return {Promise<{}>}
    */
   fetch(url, method = 'GET', payload = [] , forceActualFetch = false, useRawData = false, ttl = -1) {
-    let key = encodeURI(url)
+    let key = encodeURI(url);
     return this.cachedFetcher.fetch(key, () => {
       switch(method) {
         case 'GET':
@@ -258,7 +254,7 @@ export class ApmDataProxy {
     // console.log(`Storing entity ${data.id} data in cache with ttl = ${ttl}`);
 
     // use the session cache, so that all entity data can disappear when resetting the browser
-    cache.store(`${cachePrefix}${EntityDataCacheKeyPrefix}-${data.id}`, data, ttl)
+    cache.store(`${EntityDataCacheKeyPrefix}-${data.id}`, data, ttl)
   }
 
   retrieveEntityDataFromCache(id) {
@@ -266,7 +262,7 @@ export class ApmDataProxy {
     if (id <= MaxSystemEntityId) {
       cache = this.caches.local;
     }
-    return cache.retrieve(`${cachePrefix}${EntityDataCacheKeyPrefix}-${id}`);
+    return cache.retrieve(`${EntityDataCacheKeyPrefix}-${id}`);
   }
 
   /**
@@ -277,7 +273,7 @@ export class ApmDataProxy {
   async getEntityType(id) {
     // Since entities do not change types, these values can be
     // cached for a long time
-    let cacheKey = `${cachePrefix}${EntityTypeCacheKeyPrefix}-${id}`;
+    let cacheKey = `${EntityTypeCacheKeyPrefix}-${id}`;
     let type = this.caches.local.retrieve(cacheKey, this.cacheDataId);
     if (type === null) {
       let data = await this.getEntityData(id);
@@ -482,7 +478,7 @@ export class ApmDataProxy {
     if (dataType === '') {
       dataType = 'default';
     }
-    return `${cachePrefix}-${entityType}-${dataType}-${entityId}${attribute === '' ? '' : '-' + attribute}`;
+    return `${entityType}-${dataType}-${entityId}${attribute === '' ? '' : '-' + attribute}`;
   }
 
   /**

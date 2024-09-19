@@ -8,20 +8,20 @@ export class WebStorageKeyCache extends KeyCache {
    * storage will be used, otherwise the (more permanent)
    * local storage will be used.
    * @param {string} type
-   * @param dataId
+   * @param {string}dataId
+   * @param {string}cachePrefix
    */
-  constructor (type = 'session', dataId = '') {
-    super(dataId)
+  constructor (type = 'session', dataId = '', cachePrefix = '') {
+    super(dataId, cachePrefix)
     this.storage = type === 'session' ? window.sessionStorage : window.localStorage
   }
 
-
   storeItemObject (key, itemObject) {
-      this.storage.setItem(key, JSON.stringify(itemObject))
+      this.storage.setItem(this.getRealKey(key), JSON.stringify(itemObject))
   }
 
   getItemObject (key) {
-    let val = this.storage.getItem(key)
+    let val = this.storage.getItem(this.getRealKey(key))
     if (val === null) {
       return null
     }
@@ -34,16 +34,15 @@ export class WebStorageKeyCache extends KeyCache {
   }
 
   deleteItemObject(key) {
-    this.storage.removeItem(key)
+    this.storage.removeItem(this.getRealKey(key));
   }
 
   getKeys () {
     let storageLength = this.storage.length
-    let keys = []
+    let realKeys = []
     for (let i = 0; i < storageLength; i++) {
-      keys.push(this.storage.key(i))
+      realKeys.push(this.storage.key(i))
     }
-    return keys
+    return this.getKeysFromRealKeysArray(realKeys);
   }
-
 }

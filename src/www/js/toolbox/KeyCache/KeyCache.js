@@ -40,10 +40,12 @@ export class KeyCache {
   /**
    *
    * @param {string} dataId
+   * @param {string} prefix
    */
-  constructor (dataId = '') {
+  constructor (dataId = '', prefix = '') {
     this.cache = {};
     this.defaultDataId = dataId;
+    this.prefix = prefix;
   }
 
   /**
@@ -69,6 +71,10 @@ export class KeyCache {
       expires: ttl > 0 ? now + ttl : -1,
       setAt: now
     })
+  }
+
+  getRealKey(key) {
+    return `${this.prefix}${key}`;
   }
 
   /**
@@ -165,7 +171,16 @@ export class KeyCache {
    * @protected
    */
   getKeys() {
-    return Object.keys(this.cache);
+   return this.getKeysFromRealKeysArray(Object.keys(this.cache));
+  }
+
+  getKeysFromRealKeysArray(realKeysArray) {
+    let prefixLength = this.prefix.length;
+    return realKeysArray.filter( (realKey) => {
+      return realKey.substring(0, prefixLength) === this.prefix;
+    }).map( (realKey) => {
+      return realKey.substring(prefixLength);
+    });
   }
 
   /**
@@ -176,7 +191,7 @@ export class KeyCache {
    * @protected
    */
   getItemObject(key) {
-    return this.cache[key];
+    return this.cache[this.getRealKey(key)];
   }
 
   /**
@@ -185,7 +200,7 @@ export class KeyCache {
    * @param { {data, expires, setAt}}itemObject
    */
   storeItemObject(key, itemObject) {
-    this.cache[key] = itemObject;
+    this.cache[this.getRealKey(key)] = itemObject;
   }
 
   /**
@@ -194,7 +209,7 @@ export class KeyCache {
    * @protected
    */
   deleteItemObject(key) {
-    delete this.cache[key];
+    delete this.cache[this.getRealKey(key)];
   }
 
 }

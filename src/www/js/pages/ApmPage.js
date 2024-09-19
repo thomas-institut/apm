@@ -8,6 +8,7 @@ import { ApmFormats } from './common/ApmFormats'
 
 const langCacheKey = 'apmSiteLanguage'
 const langCacheDataId = 'v1';
+const CachePrefix = 'Apm';
 
 export class ApmPage {
 
@@ -45,7 +46,7 @@ export class ApmPage {
     this.userTid = this.commonData.userInfo['tid'];
     this.userName = this.commonData.userInfo.userName;
 
-    this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId);
+    this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, CachePrefix);
     this.localCache = new WebStorageKeyCache('local', this.commonData.cacheDataId);
     this.sessionCache = new WebStorageKeyCache('session', this.commonData.cacheDataId);
 

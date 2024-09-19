@@ -135,7 +135,8 @@ export class BasicTypesetter extends Typesetter2 {
     this.textAreaHeight = this.options.pageHeight - this.options.marginTop - this.options.marginBottom
     this.lineSkip = this.options.lineSkip
     this.minLineSkip = this.options.minLineSkip
-    this.debug = this.options.debug;
+    // this.debug = this.options.debug;
+    this.debug = true;
     // this.debug && console.log(`Options`)
     // this.debug && console.log(this.options)
     this.pageOutputProcessors = []
@@ -616,11 +617,12 @@ export class BasicTypesetter extends Typesetter2 {
             if (lineRangeData.penalty === MINUS_INFINITE_PENALTY) {
               // insert a page break!
               this.debug && console.log(`EJECTING Page ${currentPage.pageNumber} due to forced page break`)
-              this.debug && console.log(`===================`)
-              thePages.push (this.ejectPage(verticalListToTest, currentPage.pageNumber, currentPage.firstLine, currentLine))
+              this.debug && console.log(`===================`);
+              let ejectedPages = this.ejectPage(verticalListToTest, currentPage.pageNumber, currentPage.firstLine, currentLine);
+              thePages.push (...ejectedPages)
               pageTypesettingData.push({ firstLine: currentPage.firstLine, lastLine: currentLine, badness: badness, linesLookedAhead: linesLookedAhead})
               // update current page
-              currentPage.pageNumber++
+              currentPage.pageNumber += ejectedPages.length;
               currentPage.firstLine = currentLine
               // reset best page
               bestPage = { firstLine: currentLine+1, lastLine: currentLine, badness: INFINITE_VERTICAL_BADNESS, list: null}
@@ -650,15 +652,16 @@ export class BasicTypesetter extends Typesetter2 {
                 } else {
                   // Eject the best page we have found
                   this.debug && console.log(`EJECTING Page ${currentPage.pageNumber}`)
-                  this.debug && console.log(`===================`)
-                  thePages.push(this.ejectPage(bestPage.list, currentPage.pageNumber, bestPage.firstLine, bestPage.lastLine))
+                  this.debug && console.log(`===================`);
+                  let ejectedPages = this.ejectPage(bestPage.list, currentPage.pageNumber, bestPage.firstLine, bestPage.lastLine);
+                  thePages.push(...ejectedPages)
                   pageTypesettingData.push({ firstLine: bestPage.firstLine, lastLine: bestPage.lastLine, badness: bestPage.badness, linesLookedAhead: linesLookedAhead})
                   // backtrack the current line to the best page's last line
                   // the for loop will increment it by 1, so the next line tested will be the one after
                   currentLine = bestPage.lastLine
                   // update current page
                   currentPage.firstLine = currentLine+1
-                  currentPage.pageNumber++
+                  currentPage.pageNumber += ejectedPages.length;
                   // reset best page
                   bestPage = { firstLine: currentLine+1, lastLine: currentLine, badness: INFINITE_VERTICAL_BADNESS, list: null}
                   // reset look ahead info
@@ -678,11 +681,12 @@ export class BasicTypesetter extends Typesetter2 {
           // reached the end, if there's  best page, eject it
           this.debug && console.log(`Reached the end`)
           if(bestPage.list !== null) {
-            this.debug && console.log(`EJECTING page ${currentPage.pageNumber}, lines ${currentPage.firstLine} to ${bestPage.lastLine}`)
-            this.debug && console.log(`===================`)
-            thePages.push ( this.ejectPage(bestPage.list, currentPage.pageNumber, currentPage.firstLine, bestPage.lastLine))
+            this.debug && console.log(`EJECTING page ${currentPage.pageNumber}, lines ${currentPage.firstLine} to ${bestPage.lastLine}`);
+            this.debug && console.log(`===================`);
+            let ejectedPages = this.ejectPage(bestPage.list, currentPage.pageNumber, currentPage.firstLine, bestPage.lastLine);
+            thePages.push ( ...ejectedPages);
             pageTypesettingData.push({ firstLine: bestPage.firstLine, lastLine: bestPage.lastLine, badness: bestPage.badness, linesLookedAhead: linesLookedAhead})
-            currentPage.pageNumber++
+            currentPage.pageNumber += ejectedPages.length;
           }
           if (lastLookedAheadList !== null) {
             // There are hanging lines!
@@ -691,8 +695,8 @@ export class BasicTypesetter extends Typesetter2 {
               this.prepareVerticalListToTest(verticalListToTypeset, lineRangeData.items, extraData.apparatuses,
                 bestPage.lastLine+1, lastLine, resetLineNumbersEachPage)
             this.debug && console.log(`EJECTING page ${currentPage.pageNumber}, hanging lines ${bestPage.lastLine+1} to ${lastLine}`)
-            this.debug && console.log(`===================`)
-            thePages.push(this.ejectPage(verticalListWithLastHangingLines, currentPage.pageNumber, bestPage.lastLine+1, lastLine))
+            this.debug && console.log(`===================`);
+            thePages.push(...this.ejectPage(verticalListWithLastHangingLines, currentPage.pageNumber, bestPage.lastLine+1, lastLine))
             pageTypesettingData.push({ firstLine: bestPage.lastLine+1, lastLine: lastLine, badness: -1, linesLookedAhead: 0})
           }
           this.debug && console.log(`Max lines looked ahead: ${maxLinesLookedAhead}`)
@@ -719,34 +723,85 @@ export class BasicTypesetter extends Typesetter2 {
   }
 
   /**
+   * Ejects a page.
+   *
+   * Returns an array of TypesetterPage object, which normally only contains one page.
+   * It may return more than one when there's a text overflow.
    *
    * @param {ItemList}verticalList
    * @param {number}pageNumber
    * @param {number}firstLine
    * @param {number}lastLine
-   * @return {TypesetterPage}
+   * @return {TypesetterPage[]}
    */
   ejectPage(verticalList, pageNumber, firstLine, lastLine) {
-    console.log(`Ejecting page ${pageNumber}: lines ${firstLine} to ${lastLine}`);
+    this.debug && console.log(`Ejecting page ${pageNumber}: lines ${firstLine} to ${lastLine}`);
     verticalList
       .setShiftX(this.options.marginLeft)
       .setShiftY(this.options.marginTop)
-      .addMetadata(MetadataKey.LIST_TYPE, ListType.MAIN_TEXT_BLOCK)
+      .addMetadata(MetadataKey.LIST_TYPE, ListType.MAIN_TEXT_BLOCK);
 
-    let adjRatio = AdjustmentRatio.calculateVerticalAdjustmentRatio(verticalList.getList(), this.textAreaHeight)
-    if (adjRatio !== null) {
-      let adjustedItems = verticalList.getList().map( (item) => {
+    let adjRatio = AdjustmentRatio.calculateVerticalAdjustmentRatio(verticalList.getList(), this.textAreaHeight);
+    if (adjRatio === null) {
+      console.warn(`Null vertical adjRatio found while ejecting page ${pageNumber}`);
+      // This will only occur when there's not enough room in the page to put all the text.
+      // The interim solution is to eject the pages necessary to display all the text
+      let itemList = [];
+      let currentHeight = 0;
+      let accGlue = [];
+      let pages = [];
+      verticalList.getList().forEach( (item) => {
         if (item instanceof Glue) {
-          if (adjRatio>=0) {
-            item.setHeight(item.getHeight() + adjRatio*item.getStretch())
+          accGlue.push(item);
+        } else {
+          if ((currentHeight + item.getHeight()) > this.textAreaHeight ) {
+            let vList = new ItemList(TypesetterItemDirection.VERTICAL);
+            vList.setList(itemList).setShiftX(this.options.marginLeft)
+              .setShiftY(this.options.marginTop)
+              .addMetadata(MetadataKey.LIST_TYPE, ListType.MAIN_TEXT_BLOCK);
+            // eject a page
+            let page = new TypesetterPage(this.options.pageWidth, this.options.pageHeight,
+              [vList])
+            page.addMetadata(MetadataKey.PAGE_NUMBER, `${pageNumber + pages.length}`);
+            pages.push(page);
+            itemList = [ item ];
+            currentHeight = item.getHeight();
+            accGlue = [];
           } else {
-            item.setHeight(item.getHeight() + adjRatio*item.getShrink())
+            accGlue.forEach( (glueItem) => {
+              currentHeight += glueItem.getHeight();
+            });
+            currentHeight += item.getHeight();
+            itemList.push(...accGlue, item);
+            accGlue = [];
           }
         }
-        return item
-      })
-      verticalList.setList(adjustedItems)
+      });
+      if (itemList.length > 0) {
+        let vList = new ItemList(TypesetterItemDirection.VERTICAL);
+        vList.setList(itemList).setShiftX(this.options.marginLeft)
+          .setShiftY(this.options.marginTop)
+          .addMetadata(MetadataKey.LIST_TYPE, ListType.MAIN_TEXT_BLOCK);
+        // eject a page
+        let page = new TypesetterPage(this.options.pageWidth, this.options.pageHeight,
+          [vList])
+        page.addMetadata(MetadataKey.PAGE_NUMBER, `${pageNumber + pages.length}`);
+        pages.push(page);
+      }
+      return pages;
     }
+    this.debug && console.log(`Page ${pageNumber}, adjRatio = ${adjRatio}`);
+    let adjustedItems = verticalList.getList().map( (item) => {
+      if (item instanceof Glue) {
+        if (adjRatio>=0) {
+          item.setHeight(item.getHeight() + adjRatio * item.getStretch());
+        } else {
+          item.setHeight(item.getHeight() + adjRatio * item.getShrink());
+        }
+      }
+      return item;
+    });
+    verticalList.setList(adjustedItems);
 
     let page = new TypesetterPage(this.options.pageWidth, this.options.pageHeight,
       [verticalList])
@@ -754,7 +809,7 @@ export class BasicTypesetter extends Typesetter2 {
 
     let marginalia = this.options.getMarginaliaForLineRange(firstLine, lastLine)
     page.addMetadata(MetadataKey.PAGE_MARGINALIA, marginalia)
-    return page
+    return [page];
   }
 
 

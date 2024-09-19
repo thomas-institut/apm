@@ -37,19 +37,20 @@ export class AdjustmentRatio {
       return 0
     }
     if (totalSize < desiredSize) {
-      // short array
+      // short item array
       let totalGlueStretch = itemArray.map( (item) => {
         if (item instanceof Glue) {
           return item.getStretch()
         }
         return 0
-      }).reduce( (total, x) => { return total+x}, 0)
+      }).reduce( (total, x) => { return total+x}, 0);
       if (totalGlueStretch <=0) {
         return null
       }
-      return (desiredSize - totalSize)/totalGlueStretch
+      // stretching can be extreme if necessary, so it does not really matter if adjRatio > 1
+      return (desiredSize - totalSize) / totalGlueStretch;
     }
-    // long array
+    // long item array
     let totalGlueShrink = itemArray.map ( (item) => {
       if (item instanceof Glue) {
         return item.getShrink()
@@ -59,7 +60,9 @@ export class AdjustmentRatio {
     if (totalGlueShrink <=0) {
       return null
     }
-    return (desiredSize - totalSize)/totalGlueShrink
+    let r = (desiredSize - totalSize) / totalGlueShrink;
+    // if adjRatio < -1, there's not enough shrink to fit the items, so, return null;
+    return r < -1 ? null : r;
   }
 
 

@@ -128,7 +128,12 @@ export class KeyCache {
     let now = this.now();
     let removedItemCount = 0;
     this.getKeys().forEach( (key) => {
-      let itemObject = this.getItemObject(key)
+      let itemObject = this.getItemObject(key);
+      if (itemObject === null) {
+        removedItemCount++;
+        this.delete(key);
+        return;
+      }
       if (itemObject['dataId'] !== this.defaultDataId) {
         removedItemCount++;
         this.delete(key);

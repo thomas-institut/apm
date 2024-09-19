@@ -26,9 +26,11 @@ class EntitySystemWorkManager implements WorkManager
      */
     public function getWorkDataByDareId(string $dareId): WorkData
     {
+//        $this->logger->debug("Getting work by dare Id $dareId");
         $statements = $this->entitySystem->getStatements(null, Entity::pApmWorkId, $dareId);
 
         if (count($statements) === 0) {
+//            $this->logger->debug("No work data found for dare $dareId");
             throw new WorkNotFoundException("No work with given Dare Id $dareId");
         }
 

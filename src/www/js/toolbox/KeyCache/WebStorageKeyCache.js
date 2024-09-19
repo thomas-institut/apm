@@ -25,7 +25,12 @@ export class WebStorageKeyCache extends KeyCache {
     if (val === null) {
       return null
     }
-    return JSON.parse(val);
+    try {
+      return JSON.parse(val);
+    } catch (e) {
+      console.log( `Error parsing value for key ${key}`, e, val);
+      return null;
+    }
   }
 
   deleteItemObject(key) {

@@ -20,11 +20,13 @@
 
 namespace APM\CommandLine;
 
+use APM\FullTranscription\ApmColumnVersionManager;
 use APM\System\ApmConfigParameter;
 use APM\System\PythonLemmatizer;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
 use OpenSearch\ClientBuilder;
+use function DI\string;
 
 /**
  * Description of IndexDocs
@@ -56,6 +58,7 @@ class TranscriptionsIndexManager extends OpenSearchIndexManager {
         
         // Get a list of all docIDs in the sql-database
         $doc_list = $this->getDm()->getDocIdList('title');
+
 
         // Download hebrew language model for lemmatization
         exec("python3 ../../python/download_model_he.py", $model_status);
@@ -107,7 +110,13 @@ class TranscriptionsIndexManager extends OpenSearchIndexManager {
                 // Get foliation number of the current page/sequence number
                 $foliation = $this->getFoliation($doc_id, $page);
 
-                $this->indexTranscription($this->client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcription, $lang);
+                // Get timestamp
+                $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
+                $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($page_id, $col);
+                $currentVersionInfo = (array) (end($versionsInfo));
+                $timeFrom = (string) $currentVersionInfo['timeFrom'];
+
+                $this->indexTranscription($this->client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcription, $lang, $timeFrom);
                 $id=$id+1;
             }
         }
@@ -192,7 +201,7 @@ class TranscriptionsIndexManager extends OpenSearchIndexManager {
     }
 
     // Function to add pages to the OpenSearch index
-    public function indexTranscription ($client, int $id, string $title, int $page, int $seq, string $foliation, int $col, string $transcriber, int $page_id, int $doc_id, string $transcription, string $lang): bool
+    public function indexTranscription ($client, int $id, string $title, int $page, int $seq, string $foliation, int $col, string $transcriber, int $page_id, int $doc_id, string $transcription, string $lang, string $timeFrom): bool
     {
 
         if ($lang != 'jrb') {
@@ -239,11 +248,12 @@ class TranscriptionsIndexManager extends OpenSearchIndexManager {
                 'lang' => $lang,
                 'creator' => $transcriber,
                 'transcription_tokens' => $transcription_tokenized,
-                'transcription_lemmata' => $transcription_lemmatized
+                'transcription_lemmata' => $transcription_lemmatized,
+                'time_from' => $timeFrom
             ]
         ]);
 
-        $this->logger->debug("Indexed Document in $indexName – OpenSearch ID: $id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Transcriber: $transcriber Lang: $lang\n");
+        $this->logger->debug("Indexed Document in $indexName – OpenSearch ID: $id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Transcriber: $transcriber Lang: $lang TimeFrom: $timeFrom\n");
         return true;
     }
 }

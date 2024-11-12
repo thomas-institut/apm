@@ -27,8 +27,7 @@ class TranscriptionsIndexCompletenessChecker extends TranscriptionsIndexManager
         
         $docs = $this->getDm()->getDocIdList('title');
 
-        foreach (array_slice($docs, 0, 1) as $doc) {
-
+        foreach ($docs as $doc) {
             // Get a list of transcribed pages of the document
             $pages_transcribed = $this->getDm()->getTranscribedPageListByDocId($doc);
 
@@ -40,6 +39,12 @@ class TranscriptionsIndexCompletenessChecker extends TranscriptionsIndexManager
 
                 for ($col = 1; $col <= $num_cols; $col++) {
 
+                    $versions = $this->getDm()->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
+                    if (count($versions) === 0) {
+                        // no transcription in this column
+                        continue;
+                    }
+
                     // Get timestamp
                     $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($page_id, $col);
                     $currentVersionInfo = (array)(end($versionsInfo));
@@ -50,6 +55,8 @@ class TranscriptionsIndexCompletenessChecker extends TranscriptionsIndexManager
                 }
             }
         }
+
+        $numColumnsInDatabase = count($columnsInDatabase);
 
         // Get all relevant data from the opensearch index
 
@@ -74,7 +81,7 @@ class TranscriptionsIndexCompletenessChecker extends TranscriptionsIndexManager
             foreach ($query['hits']['hits'] as $match) {
                 $page_id = $match['_source']['pageID'];
                 $col = $match['_source']['column'];
-                $timeFrom = $match['_source']['timeFrom'];
+                $timeFrom = $match['_source']['time_from'];
                 $indexedColumns[] = [$page_id, $col, $timeFrom];
             }
         }
@@ -82,20 +89,53 @@ class TranscriptionsIndexCompletenessChecker extends TranscriptionsIndexManager
         // check if every column from the database is indexed in the most up-to-date version
 
         print("\nComparing transcriptions in database and opensearch index...\n");
-        $notIndexedColumns = [];
+
+        $numNotIndexedColumns = 0;
+        $numNotUpdatedColumns = 0;
+        $numNotInDatabaseColumns = 0;
+        $notInDatabaseColumns = [];
+        $notUpdated = false;
 
         foreach ($columnsInDatabase as $columnInDatabase) {
+
             if (!in_array($columnInDatabase, $indexedColumns)) {
-                $notIndexedColumns[] = $columnInDatabase;
+                $numNotIndexedColumns++;
+
+                //print("Column $columnInDatabase[1] from page with id  $columnInDatabase[0] is NOT UPDATED ($columnInDatabase[2] != ).\n");
+
+                    foreach ($indexedColumns as $indexedColumn) {
+                        if (array_slice($columnInDatabase, 0, 2) === array_slice($indexedColumn, 0, 2)) {
+                            print("Column $columnInDatabase[1] from page with id $columnInDatabase[0] is NOT UPDATED ($columnInDatabase[2] != $indexedColumn[2]).\n");
+                            $numNotIndexedColumns--;
+                            $numNotUpdatedColumns++;
+                            $notUpdated = true;
+                        }
+                    }
+
+                if (!$notUpdated) {
+                    print("Column $columnInDatabase[1] from page with id $columnInDatabase[0] is NOT INDEXED.\n");
+                }
             }
         }
 
-        if ($notIndexedColumns === []) {
+        foreach ($indexedColumns as $indexedColumn) {
+            if (!in_array($indexedColumn, $columnsInDatabase)) {
+                $numNotInDatabaseColumns++;
+                $notInDatabaseColumns[] = $indexedColumn[0];
+            }
+        }
+
+        if ($numNotIndexedColumns === 0 && $numNotUpdatedColumns === 0) {
             print ("INDEX IS COMPLETE!.\n");
         } else {
-            print ("Index is NOT COMPLETE!\n" . count($notIndexedColumns) . " of " . count($columnsInDatabase) .
-                    " columns are not yet indexed or not up to date. Namely (Page ID, Column, TimeFrom):\n");
-            print_r($notIndexedColumns);
+            print ("INDEX IS NOT COMPLETE!\n
+            $numNotIndexedColumns of $numColumnsInDatabase columns are not indexed.\n
+            $numNotUpdatedColumns of $numColumnsInDatabase are not up to date.\n");
+        }
+
+        if ($numNotInDatabaseColumns !== 0) {
+            print("\nINFO: The index contains $numNotInDatabaseColumns columns which could not be found in the database. Their page ids are:\n");
+            print(implode(", ", $notInDatabaseColumns));
         }
 
         return true;

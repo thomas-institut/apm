@@ -5,7 +5,7 @@ namespace APM\CommandLine;
 use APM\System\ApmConfigParameter;
 use OpenSearch\ClientBuilder;
 
-class TranscriptionsIndexCompletenessChecker extends TranscriptionsIndexManager
+class TranscriptionsIndexChecker extends TranscriptionsIndexer
 {
     public function main($argc, $argv): bool
     {

@@ -9,7 +9,7 @@ use APM\System\PythonLemmatizer;
 use Exception;
 use OpenSearch\ClientBuilder;
 
-class EditionsIndexManager extends OpenSearchIndexManager
+class EditionsIndexer extends OpenSearchIndexManager
 {
     protected CollationTableManager $collationTableManager;
 

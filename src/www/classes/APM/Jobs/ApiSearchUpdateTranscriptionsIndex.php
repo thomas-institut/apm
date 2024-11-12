@@ -4,7 +4,7 @@ namespace APM\Jobs;
 
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
-use APM\CommandLine\TranscriptionsIndexManager;
+use APM\CommandLine\TranscriptionsIndexer;
 
 class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
 {
@@ -26,7 +26,7 @@ class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateOpenSearchIndex 
         $col = $payload['col'];
 
         // Fetch indexing-relevant data from the SQL database
-        $tic = new TranscriptionsIndexManager($config, 0, [0]);
+        $tic = new TranscriptionsIndexer($config, 0, [0]);
         $data = $this->fetchTranscriptionData($tic, $doc_id, $page, $col);
 
         // Check if a new transcription was created or an existing one was changed
@@ -39,7 +39,7 @@ class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateOpenSearchIndex 
     }
 
     // Fetch relevant data from the SQL database
-    private function fetchTranscriptionData(TranscriptionsIndexManager $tic, string $doc_id, string $page, string $col): array
+    private function fetchTranscriptionData(TranscriptionsIndexer $tic, string $doc_id, string $page, string $col): array
     {
         $title = $tic->getTitle($doc_id);
         $seq = $tic->getSeq($doc_id, $page);
@@ -96,7 +96,7 @@ class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateOpenSearchIndex 
         return ['exists' => $exists, 'id' => $opensearchID, 'indexname' => $index_name];
     }
 
-    protected function updateIndex(TranscriptionsIndexManager $tic, array $transcription_status, array $data): void
+    protected function updateIndex(TranscriptionsIndexer $tic, array $transcription_status, array $data): void
     {
         if ($transcription_status['exists'] === 0) { // Completely new transcription was created
 

@@ -2,7 +2,7 @@
 
 namespace APM\Jobs;
 
-use APM\CommandLine\EditionsIndexManager;
+use APM\CommandLine\EditionsIndexer;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
@@ -26,7 +26,7 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateOpenSearchIndex implem
             return false;
         }
 
-        $eic = new EditionsIndexManager($config, 0, [0]);
+        $eic = new EditionsIndexer($config, 0, [0]);
 
         // Fetch data from payload
         $table_id = $payload[0];
@@ -73,7 +73,7 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateOpenSearchIndex implem
         return ['exists' => $exists, 'id' => $opensearchID, 'indexname' => $index_name];
     }
 
-    protected function updateIndex(EditionsIndexManager $eic, array $editionStatus, array $data): void
+    protected function updateIndex(EditionsIndexer $eic, array $editionStatus, array $data): void
     {
 
         if ($editionStatus['exists'] === 0) { // New edition was created

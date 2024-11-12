@@ -37,7 +37,7 @@ use function DI\string;
  * @author Lukas Reichert
  */
 
-class TranscriptionsIndexManager extends OpenSearchIndexManager {
+class TranscriptionsIndexer extends OpenSearchIndexManager {
 
     public function main($argc, $argv): bool
     {

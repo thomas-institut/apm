@@ -58,7 +58,7 @@ class TranscriptionsIndexManager extends OpenSearchIndexManager {
         $doc_list = $this->getDm()->getDocIdList('title');
 
         // Download hebrew language model for lemmatization
-        exec("python3 ../../python/download_model_he.py", $model_status);
+        exec("/home/rafael/apm-python-venv/bin/python ../../python/download_model_he.py", $model_status);
         $this->logger->debug($model_status[0]);
 
         $this->logger->debug("Start indexing...\n");

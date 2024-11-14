@@ -50,6 +50,8 @@ class EditionsIndexManager extends OpenSearchIndexManager
         $editions = $this->cleanEditionData($editions);
         $num_editions = count($editions);
         $this->logger->debug("Found $num_editions actual editions.");
+        // Download hebrew language model for lemmatization
+        exec("/home/rafael/apm-python-venv/bin/python ../../python/download_model_he.py", $model_status);
 
         // Index editions
         foreach ($editions as $id => $edition) {

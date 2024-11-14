@@ -34,6 +34,7 @@ class ApmConfigParameter
     const COLLATEX_JAR_FILE = 'collatex_jar_file';
     const COLLATEX_TEMP_DIR = 'collatex_temp_dir';
     const JAVA_EXECUTABLE = 'java_executable';
+    const PYTHON_VENV = 'python_env';
 
     const VERSION = 'version';
     const APP_NAME = 'app_name';

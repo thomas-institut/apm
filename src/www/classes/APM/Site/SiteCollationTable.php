@@ -28,6 +28,8 @@ namespace APM\Site;
 
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
+use APM\EntitySystem\Schema\Entity;
 use APM\FullTranscription\DocInfo;
 use APM\System\DataRetrieveHelper;
 use APM\System\Person\PersonNotFoundException;
@@ -35,6 +37,7 @@ use APM\System\User\UserNotFoundException;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
+use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\HttpStatus;
 use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -61,6 +64,19 @@ class SiteCollationTable extends SiteController
     const TEMPLATE_EDIT_COLLATION_TABLE_OLD = 'collation-edit.twig';
     const TEMPLATE_EDITION_COMPOSER = 'edition-composer.twig';
 
+
+    /**
+     * @throws EntityDoesNotExistException
+     */
+    private function getWorkEntityIdFromApmId(string $apmId) : int{
+        $es = $this->systemManager->getEntitySystem();
+        $statements = $es->getStatements(null, Entity::pApmWorkId, $apmId);
+        if (count($statements) === 0){
+            throw new EntityDoesNotExistException();
+        }
+        return $statements[0]->subject;
+    }
+
     public function newChunkEdition(Request $request, Response $response) : Response{
         $this->profiler->start();
         $workId  = $request->getAttribute('workId');
@@ -73,15 +89,18 @@ class SiteCollationTable extends SiteController
 
         $ctData = $this->systemManager->getCollationTableManager()->getEmptyChunkEdition($workId, $chunkNumber, $lang, "New Chunk Edition");
 
-        $dm = $this->systemManager->getDataManager();
-        $rawWorkInfo = $dm->getWorkInfoByDareId($workId);
-        $workInfo = [
-            'authorTid' => intval($rawWorkInfo['author_tid']),
-            'title' => $rawWorkInfo['title']
-        ];
+        try {
+            $workInfo = $this->systemManager->getWorkManager()->getWorkDataByDareId($workId);
+        } catch (WorkNotFoundException) {
+//          Not found!!!
+            return $this->getBasicErrorPage(
+                $response,
+                "Error",
+                "Work '$workId' not defined in the system", 404);
+        }
 
         $peopleTids = [];
-        $peopleTids[] = $workInfo['authorTid'];
+        $peopleTids[] = $workInfo->authorTid;
         $pm = $this->systemManager->getPersonManager();
         $peopleInfo = [];
         foreach($peopleTids as $personTid) {
@@ -176,16 +195,19 @@ class SiteCollationTable extends SiteController
         $versionInfoArray = $ctManager->getCollationTableVersions($tableId);
         $chunkId = $ctData['chunkId'] ?? $ctData['witnesses'][0]['chunkId'];
         [ $workId, $chunkNumber] = explode('-', $chunkId);
+        try {
+            $workInfo = $this->systemManager->getWorkManager()->getWorkDataByDareId($workId);
+        } catch (WorkNotFoundException) {
+//          Not found!!!
+            return $this->getBasicErrorPage(
+                $response,
+                "Error",
+                "Work '$workId' not defined in the system", 404);
+        }
 
-        $dm = $this->systemManager->getDataManager();
-        $rawWorkInfo = $dm->getWorkInfoByDareId($workId);
-        $workInfo = [
-            'authorTid' => intval($rawWorkInfo['author_tid']),
-            'title' => $rawWorkInfo['title']
-        ];
 
         $peopleTids = [];
-        $peopleTids[] = $workInfo['authorTid'];
+        $peopleTids[] = $workInfo->authorTid;
         $peopleTids = array_merge($peopleTids, $this->getMentionedAuthorsFromCtData($ctData));
         $peopleTids = array_merge($peopleTids, $this->getMentionedPeopleFromVersionArray($versionInfoArray));
         $pm = $this->systemManager->getPersonManager();
@@ -578,8 +600,12 @@ class SiteCollationTable extends SiteController
         }
         
         // get work info
-        $workInfo = $dm->getWorkInfoByDareId($workId);
-        
+        try {
+            $workInfo = $this->systemManager->getWorkManager()->getWorkDataByDareId($workId);
+        } catch (WorkNotFoundException $e) {
+            return $this->getBasicErrorPage($response, 'Error', "Work $workId not found", 404);
+        }
+
         // get total witness counts
         $validWitnesses = $this->getValidWitnessesForChunkLang($workId, $chunkNumber, $language);
 
@@ -640,7 +666,7 @@ class SiteCollationTable extends SiteController
             'isPartial' => $partialCollation,
             'isPreset' => $collationPageOptions['isPreset'],
             'rtl' => $langInfo['rtl'],
-            'work_info' => $workInfo,
+            'work_info' => get_object_vars($workInfo),
             'num_docs' => $partialCollation ? count($apiCallOptions['witnesses']) : count($validWitnesses),
             'total_num_docs' => count($validWitnesses),
             'availableWitnesses' => $validWitnesses,

@@ -30,11 +30,14 @@ use APM\System\User\InvalidUserNameException;
 use APM\System\User\UserNameAlreadyInUseException;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
+use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\HttpStatus;
 use Exception;
 use InvalidArgumentException;
+use OpenSearch\Common\Exceptions\Missing404Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use RuntimeException;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 
@@ -320,7 +323,18 @@ class ApiUsers extends ApiController
         }
         $workInfo = [];
         foreach (array_keys($worksCited) as $work) {
-            $workInfo[$work] = $systemManager->getDataManager()->getWorkInfoByDareId($work);
+            try {
+                $workData= get_object_vars($systemManager->getWorkManager()->getWorkDataByDareId($work));
+                $authorId = $workData['authorTid'];
+                $authorName = $systemManager->getPersonManager()->getPersonEssentialData($authorId)->name;
+                $workData['author_name'] =$authorName;
+                $workInfo[$work] = $workData;
+
+            } catch (WorkNotFoundException) {
+                // should never happen!
+                throw new RuntimeException("Work $work not found");
+            } catch (PersonNotFoundException $e) {
+            }
         }
 
         return ['tableInfo' => $tableInfo, 'workInfo' => $workInfo];

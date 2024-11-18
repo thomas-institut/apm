@@ -46,6 +46,7 @@ class ApmDaemon extends CommandLineUtility
         ];
 
         if ($daemon) {
+            $this->getSystemManager(); // just to get the right logger
             if (is_a($this->logger, Logger::class)) {
                 $this->logger = $this->logger->withName('APM_D');
             }

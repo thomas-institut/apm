@@ -398,32 +398,31 @@ class DataManager implements  SqlQueryCounterTrackerAware
     }
     
     // TODO: fix maxChunk!
-    public function getActiveWorks(): bool|array
-    {
-         $query = 'SELECT dare_id, people.name, title FROM ' . $this->tNames['works'] .
-                 ' AS works JOIN (' . $this->tNames['people'] . ' AS people) ON (people.tid=works.author_tid) WHERE enabled=1' ;
-
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        $res = $this->databaseHelper->query($query);
-        if ($res === false) {
-            // This means a database error
-            // Can't reproduce in testing for now
-            return false; // @codeCoverageIgnore
-        }
-        $data =  $res->fetchAll(PDO::FETCH_ASSOC);
-        
-        $theWorks = [];
-        foreach($data as $work) {
-            //$this->logger->debug('Work', $work);
-            $theWorks[] =  [ 
-                'title' => '(' . $work['dare_id'] . ') ' . $work['name'],
-                'dareId' => $work['dare_id'], 
-                'maxChunk' => 500
-                ];
-        }
-        return $theWorks;
-
-    }
+//    public function getActiveWorks(): bool|array
+//    {
+//         $query = 'SELECT dare_id, people.name, title FROM ' . $this->tNames['works'] .
+//                 ' AS works JOIN (' . $this->tNames['people'] . ' AS people) ON (people.tid=works.author_tid) WHERE enabled=1' ;
+//
+//        $this->getSqlQueryCounterTracker()->incrementSelect();
+//        $res = $this->databaseHelper->query($query);
+//        if ($res === false) {
+//            // This means a database error
+//            // Can't reproduce in testing for now
+//            return false; // @codeCoverageIgnore
+//        }
+//        $data =  $res->fetchAll(PDO::FETCH_ASSOC);
+//
+//        $theWorks = [];
+//        foreach($data as $work) {
+//            //$this->logger->debug('Work', $work);
+//            $theWorks[] =  [
+//                'title' => '(' . $work['dare_id'] . ') ' . $work['name'],
+//                'dareId' => $work['dare_id'],
+//                'maxChunk' => 500
+//                ];
+//        }
+//        return $theWorks;
+//    }
 
     /**
      * @throws InvalidRowForUpdate
@@ -879,23 +878,23 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param string $dareId
      * @return bool|array
      */
-    public function getWorkInfoByDareId(string $dareId) : bool|array
-    {
-        $rows = $this->worksTable->findRows(['dare_id' => $dareId], 1);
-        if (count($rows)===0) {
-            return false;
-        }
-        $workInfo = $rows->getFirst();
-        try {
-            $authorInfo = $this->pm->getPersonEssentialData($workInfo['author_tid']);
-//            $this->logger->info("Author info retrieved", get_object_vars($authorInfo));
-            $workInfo['author_name'] = $authorInfo->name;
-        } catch (PersonNotFoundException) {
-            $this->logger->error("Author not found " . $workInfo['author_tid']);
-            $workInfo['author_name'] = '';
-        }
-        return $workInfo;
-    }
+//    public function getWorkInfoByDareId(string $dareId) : bool|array
+//    {
+//        $rows = $this->worksTable->findRows(['dare_id' => $dareId], 1);
+//        if (count($rows)===0) {
+//            return false;
+//        }
+//        $workInfo = $rows->getFirst();
+//        try {
+//            $authorInfo = $this->pm->getPersonEssentialData($workInfo['author_tid']);
+////            $this->logger->info("Author info retrieved", get_object_vars($authorInfo));
+//            $workInfo['author_name'] = $authorInfo->name;
+//        } catch (PersonNotFoundException) {
+//            $this->logger->error("Author not found " . $workInfo['author_tid']);
+//            $workInfo['author_name'] = '';
+//        }
+//        return $workInfo;
+//    }
 
     /**
      * Gets an array of chunk Numbers with a transcription in the database for

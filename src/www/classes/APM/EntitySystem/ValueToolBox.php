@@ -9,7 +9,7 @@ class ValueToolBox
         return $boolean ? ApmEntitySystemInterface::ValueTrue : ApmEntitySystemInterface::ValueFalse;
     }
 
-    public static function valueToBool(string $value) : bool {
+    public static function valueToBool(?string $value) : bool {
         return $value === ApmEntitySystemInterface::ValueTrue;
     }
 }

@@ -14,7 +14,7 @@
         "ext-intl": "*",
         "ext-mbstring": "*",
         "ext-zlib": "*",
-        "ext-memcached": "",
+        "ext-memcached": "*",
         "ext-pcntl": "*",
         "ext-posix": "*",
         "psr/log": "^3.0",

@@ -17,21 +17,21 @@ class ApiWorks extends ApiController
      * @param Response $response
      * @return Response
      */
-//    public function getWorkInfoOld(Request $request, Response $response): Response
-//    {
-//        $workId =  $request->getAttribute('workId');
-//        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $workId);
-//        $dataManager = $this->systemManager->getDataManager();
-//        $workInfo = $dataManager->getWorkInfoByDareId($workId);
-//
-//        if ($workInfo === false) {
-//            $this->logger->error("Work '$workId' not found",
-//                [ 'apiUserId' => $this->apiUserTid,
-//                    'workId' => $workId]);
-//            return $this->responseWithStatus($response, 409);
-//        }
-//        return $this->responseWithJson($response, $workInfo);
-//    }
+    public function getWorkInfoOld(Request $request, Response $response): Response
+    {
+        $workId =  $request->getAttribute('workId');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $workId);
+        $dataManager = $this->systemManager->getDataManager();
+        $workInfo = $dataManager->getWorkInfoByDareId($workId);
+
+        if ($workInfo === false) {
+            $this->logger->error("Work '$workId' not found",
+                [ 'apiUserId' => $this->apiUserTid,
+                    'workId' => $workId]);
+            return $this->responseWithStatus($response, 409);
+        }
+        return $this->responseWithJson($response, $workInfo);
+    }
 
     /**
      * @param Request $request

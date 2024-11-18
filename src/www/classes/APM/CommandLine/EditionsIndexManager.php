@@ -6,6 +6,7 @@ use APM\CollationTable\CollationTableManager;
 use APM\System\ApmConfigParameter;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\PythonLemmatizer;
+use APM\System\Work\WorkNotFoundException;
 use Exception;
 use OpenSearch\ClientBuilder;
 
@@ -93,8 +94,13 @@ class EditionsIndexManager extends OpenSearchIndexManager
             $edition_data['lang'] = $data['lang'];
             $edition_data['chunk_id'] = explode('-', $data['chunkId'])[1];
             $work_id = explode('-', $data['chunkId'])[0];
-            $edition_data['title'] = $this->getDm()->getWorkInfoByDareId($work_id)['title'];
-
+            try {
+                $title = $this->getSystemManager()->getWorkManager()->getWorkDataByDareId($work_id)->title;
+            } catch (WorkNotFoundException) {
+                $this->logger->error("Could not find work with ID $work_id");
+                $title = "Unknown";
+            }
+            $edition_data['title'] = $title ;
         }
 
         return $edition_data;

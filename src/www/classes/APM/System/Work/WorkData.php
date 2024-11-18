@@ -10,6 +10,8 @@ class WorkData implements Exportable
     public string $dareId = '';
     public int $authorTid = -1;
     public string $title ='';
+    public string $shortTitle = '';
+    public bool $enabled = false;
 
     public function getExportObject(): array
     {

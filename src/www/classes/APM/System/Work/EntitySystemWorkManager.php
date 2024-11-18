@@ -5,6 +5,7 @@ namespace APM\System\Work;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
+use APM\EntitySystem\ValueToolBox;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -56,6 +57,10 @@ class EntitySystemWorkManager implements WorkManager
             $data->dareId =  $entityData->getObjectForPredicate(Entity::pApmWorkId) ?? '';
             $data->authorTid = $entityData->getObjectForPredicate(Entity::pWorkAuthor);
             $data->title =  $entityData->getObjectForPredicate(Entity::pEntityName);
+            $data->shortTitle = $entityData->getObjectForPredicate(Entity::pWorkShortTitle) ?? '';
+            $data->enabled = ValueToolBox::valueToBool($entityData->getObjectForPredicate(Entity::pWorkIsEnabledInApm))
+                ?? false;
+
 
             return $data;
 
@@ -95,5 +100,19 @@ class EntitySystemWorkManager implements WorkManager
         }
 
         return array_values(array_unique($authors, SORT_NUMERIC));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getEnabledWorks(): array
+    {
+        $statements = $this->entitySystem->getStatements(null, Entity::pWorkIsEnabledInApm, ValueToolBox::boolToValue(true));
+
+        $ids = [];
+        foreach ($statements as $statement) {
+            $ids[] = $statement->subject;
+        }
+        return $ids;
     }
 }

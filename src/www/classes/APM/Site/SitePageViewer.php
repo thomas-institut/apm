@@ -25,6 +25,7 @@
 
 namespace APM\Site;
 
+use APM\System\Work\WorkNotFoundException;
 use AverroesProject\Data\DataManager;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -37,6 +38,35 @@ class SitePageViewer extends SiteController
 {
 
     const PAGE_VIEWER_TWIG = 'page-viewer.twig';
+
+
+    /**
+     * Returns an array of active work data with the same format as the
+     * legacy DataManager getActiveWorks
+     *
+     * @return string[]
+     */
+    private function getActiveWorks() : array {
+       $enabledWorks = $this->systemManager->getWorkManager()->getEnabledWorks();
+       $this->logger->debug("EnabledWorks: ".count($enabledWorks), [ $enabledWorks]);
+
+       $activeWorks = [];
+       foreach ($enabledWorks as $work) {
+           try {
+               $workData = $this->systemManager->getWorkManager()->getWorkData($work);
+           } catch (WorkNotFoundException $e) {
+               // should never happen
+               throw new \RuntimeException($e->getMessage());
+           }
+           $activeWorks[] = [
+               'title' => '(' . $workData->dareId . ') ' . $workData->shortTitle,
+               'dareId' => $workData->dareId,
+               'maxChunk' => 500
+           ];
+       }
+       return $activeWorks;
+    }
+
 
     /**
      * @param Request $request
@@ -61,7 +91,8 @@ class SitePageViewer extends SiteController
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $dataManager->getImageUrl($docId, $pageInfo['img_number']);
         $pageTypeNames  = $dataManager->getPageTypeNames();
-        $activeWorks = $dataManager->getActiveWorks();
+//        $activeWorks = $dataManager->getActiveWorks();
+        $activeWorks = $this->getActiveWorks();
         $pageNumberFoliation = $pageNumber;
         $languagesArray = $this->getLanguages();
         $deepZoom = $dataManager->isImageDeepZoom($docId) ? '1' : '0';
@@ -114,7 +145,8 @@ class SitePageViewer extends SiteController
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $dataManager->getImageUrl($docId, $pageInfo['img_number']);
         $pageTypeNames  = $dataManager->getPageTypeNames();
-        $activeWorks = $dataManager->getActiveWorks();
+//        $activeWorks = $dataManager->getActiveWorks();
+        $activeWorks = $this->getActiveWorks();
         $languagesArray = $this->getLanguages();
 
         $pageNumberFoliation = $pageInfo['seq'];

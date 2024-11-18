@@ -31,6 +31,7 @@ use APM\FullTranscription\ColumnVersionInfo;
 use APM\System\DataRetrieveHelper;
 use APM\System\User\UserNotFoundException;
 use APM\System\WitnessType;
+use APM\System\Work\WorkNotFoundException;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\TimeString\TimeString;
@@ -57,7 +58,11 @@ class SiteChunkPage extends SiteController
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
         $this->profiler->start();
-        $workInfo = $dm->getWorkInfoByDareId($workId);
+        try {
+            $workInfo = get_object_vars($this->systemManager->getWorkManager()->getWorkDataByDareId($workId));
+        } catch (WorkNotFoundException $e) {
+            return $this->getBasicErrorPage($response, "Error", "Work $workId not found", 404);
+        }
 
         $witnessInfoArray = $transcriptionManager->getWitnessesForChunk($workId, $chunkNumber);
         $time =  TimeString::now();

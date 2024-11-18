@@ -27,6 +27,7 @@
 namespace APM\Site;
 
 use APM\FullTranscription\ApmChunkSegmentLocation;
+use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
 use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\HttpStatus;
@@ -99,8 +100,7 @@ class SiteWorks extends SiteController
         } catch (KeyNotInCacheException) {
             // not in cache
             $cacheHit = false;
-            $dataManager = $this->systemManager->getDataManager();
-            $works = self::buildWorkData($dataManager);
+            $works = self::buildWorkData($this->systemManager);
             $cache->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
         }
         $this->profiler->stop();
@@ -110,20 +110,35 @@ class SiteWorks extends SiteController
         ]);
     }
 
-    public static function buildWorkData(DataManager $dataManager) : array {
+    public static function buildWorkData(SystemManager $systemManager) : array {
 
         $works = [];
-        $workIds = $dataManager->getWorksWithTranscriptions();
+        $personManager = $systemManager->getPersonManager();
+        $workIds = $systemManager->getDataManager()->getWorksWithTranscriptions();
         foreach($workIds as $workId) {
             $work = ['work_id' => $workId, 'is_valid' => true];
-            $workInfo = $dataManager->getWorkInfoByDareId($workId);
-            if ($workInfo === false) {
+            try {
+                $workData =$systemManager->getWorkManager()->getWorkDataByDareId($workId);
+            } catch (WorkNotFoundException $e) {
                 $work['is_valid'] = false;
                 $works[] = $work;
                 continue;
             }
+
+            $workInfo = [
+                'author_tid' => $workData->authorTid,
+                'dareId' => $workData->dareId,
+                'title' => $workData->title,
+                'tid' => $workData->tid,
+            ];
+            try {
+                $workInfo['author_name'] = $personManager->getPersonEssentialData($workData->authorTid)->name;
+            } catch (PersonNotFoundException) {
+                $workInfo['author_name']  = 'Undefined';
+            }
+
             $work['work_info'] = $workInfo;
-            $chunks = $dataManager->getChunksWithTranscriptionForWorkId($workId);
+            $chunks = $systemManager->getDataManager()->getChunksWithTranscriptionForWorkId($workId);
             $work['chunks'] = $chunks;
             $works[] = $work;
         }
@@ -133,7 +148,7 @@ class SiteWorks extends SiteController
     public static function updateCachedWorkData(SystemManager $systemManager): bool
     {
         try {
-            $works = self::buildWorkData( $systemManager->getDataManager());
+            $works = self::buildWorkData($systemManager);
             $systemManager->getSystemDataCache()->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
         } catch(Exception $e) {
             $systemManager->getLogger()->error("Exception while updating cached WorkData",

@@ -16,8 +16,13 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *  
+ *
  */
+
+// USAGE: the program can only be run with three arguments:
+// the name of the index of the column to be deleted,
+// the page id of the column,
+// and the column number
 
 namespace APM;
 
@@ -35,4 +40,5 @@ include_once __DIR__ . '/../version.php';
 
 global $config;
 
-(new CommandLine\IndexedDocumentDeleter($config, $argc, $argv))->run();
+(new CommandLine\IndexedColumnDeleter($config, $argc, $argv))->run();
+

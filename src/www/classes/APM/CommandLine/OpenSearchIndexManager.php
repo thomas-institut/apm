@@ -39,31 +39,36 @@ abstract class OpenSearchIndexManager extends CommandLineUtility {
     public function encodeForLemmatization(string $text): string {
 
         // Replace line breaks, blanks, brackets...these character can provoke errors in the exec-command
-        $text_clean = str_replace("\n", "#", $text);
-        $text_clean = str_replace(".", " .", $text_clean);
-        $text_clean = str_replace(",", " ,", $text_clean);
-        $text_clean = str_replace(" ", "#", $text_clean);
-        $text_clean = str_replace("(", "%", $text_clean);
-        $text_clean = str_replace(")", "§", $text_clean);
-        $text_clean = str_replace("׳", "€", $text_clean);
-        $text_clean = str_replace("'", "\'", $text_clean);
-        $text_clean = str_replace("\"", "\\\"", $text_clean);
-        $text_clean = str_replace(' ', '#', $text_clean);
-        $text_clean = str_replace(' ', '#', $text_clean);
-        $text_clean = str_replace('T.', '', $text_clean);
-        $text_clean = str_replace('|', '+', $text_clean);
-        $text_clean = str_replace('<', '°', $text_clean);
-        $text_clean = str_replace('>', '^', $text_clean);
-        $text_clean = str_replace(';', 'ß', $text_clean);
-        $text_clean = str_replace('`', '~', $text_clean);
-        $text_clean = str_replace('[', '', $text_clean);
-        $text_clean = str_replace(']', '', $text_clean);
+//        $text_clean = str_replace("\n", "#", $text);
+//        $text_clean = str_replace(".", " .", $text_clean);
+//        $text_clean = str_replace(",", " ,", $text_clean);
+//        $text_clean = str_replace(" ", "#", $text_clean);
+//        $text_clean = str_replace("(", "%", $text_clean);
+//        $text_clean = str_replace(")", "§", $text_clean);
+//        $text_clean = str_replace("׳", "€", $text_clean);
+//        $text_clean = str_replace("'", "\'", $text_clean);
+//        $text_clean = str_replace("\"", "\\\"", $text_clean);
+//        $text_clean = str_replace(' ', '#', $text_clean);
+//        $text_clean = str_replace(' ', '#', $text_clean);
+//        $text_clean = str_replace('T.', '', $text_clean);
+//        $text_clean = str_replace('|', '+', $text_clean);
+//        $text_clean = str_replace('<', '°', $text_clean);
+//        $text_clean = str_replace('>', '^', $text_clean);
+//        $text_clean = str_replace(';', 'ß', $text_clean);
+//        $text_clean = str_replace('`', '~', $text_clean);
+//        $text_clean = str_replace('[', '', $text_clean);
+//        $text_clean = str_replace(']', '', $text_clean);
+
+        $text_clean = str_replace("\n", " ", $text);
+        $text_clean = str_replace(' ', ' ', $text_clean);
+        $text_clean = str_replace(' ', ' ', $text_clean);
+        $text_clean = str_replace('- ', '', $text_clean);
 
 
         // Remove numbers
-        for ($i=0; $i<10; $i++) {
-            $text_clean = str_replace("$i", '', $text_clean);
-        }
+        //for ($i=0; $i<10; $i++) {
+        //    $text_clean = str_replace("$i", '', $text_clean);
+        //}
 
         // Remove repetitions of hashtags
         while (str_contains($text_clean, '##')) {

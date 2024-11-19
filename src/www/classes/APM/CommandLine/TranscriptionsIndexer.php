@@ -22,7 +22,7 @@ namespace APM\CommandLine;
 
 use APM\FullTranscription\ApmColumnVersionManager;
 use APM\System\ApmConfigParameter;
-use APM\System\PythonLemmatizer;
+use APM\System\Lemmatizer;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
 use OpenSearch\ClientBuilder;
@@ -49,7 +49,7 @@ class TranscriptionsIndexer extends OpenSearchIndexManager {
             ->build();
 
         // Name of the indices in OpenSearch
-        $this->indices = ['transcriptions_la', 'transcriptions_ar', 'transcriptions_he'];
+        $this->indices = ['test_la', 'test_ar', 'test_he'];
 
         // Delete existing and create new index
         foreach ($this->indices as $indexName) {
@@ -60,10 +60,6 @@ class TranscriptionsIndexer extends OpenSearchIndexManager {
         $doc_list = $this->getDm()->getDocIdList('title');
 
 
-        // Download hebrew language model for lemmatization
-        exec("python3 ../../python/download_model_he.py", $model_status);
-        $this->logger->debug($model_status[0]);
-
         $this->logger->debug("Start indexing...\n");
 
         $id = 0;
@@ -71,7 +67,11 @@ class TranscriptionsIndexer extends OpenSearchIndexManager {
         // Get all relevant data for every transcription and index it
         foreach ($doc_list as $doc_id) {
             // $id will be indexed as open-search-id
-            $id = $this->getAndIndexTranscriptionData($doc_id, $id)+1;
+
+            if ($doc_id === 23) { // 142 for arabic test, 23 for latin
+                $id = $this->getAndIndexTranscriptionData($doc_id, $id) + 1;
+            }
+
         }
         return true;
     }
@@ -84,6 +84,7 @@ class TranscriptionsIndexer extends OpenSearchIndexManager {
         // Get a list of transcribed pages of the document
         $pages_transcribed = $this->getDm()->getTranscribedPageListByDocId($doc_id);
 
+
         // Iterate over transcribed pages
         foreach ($pages_transcribed as $page) {
 
@@ -93,32 +94,33 @@ class TranscriptionsIndexer extends OpenSearchIndexManager {
             $num_cols = $page_info['num_cols'];
             $seq = $this->getSeq($doc_id, $page);
 
-            // Iterate over all columns of the page and get the corresponding transcripts and transcribers
-            for ($col = 1; $col <= $num_cols; $col++) {
-                $versions = $this->getDm()->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
-                if (count($versions) === 0) {
-                    // no transcription in this column
-                    continue;
+                // Iterate over all columns of the page and get the corresponding transcripts and transcribers
+                for ($col = 1; $col <= $num_cols; $col++) {
+                    $versions = $this->getDm()->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
+                    if (count($versions) === 0) {
+                        // no transcription in this column
+                        continue;
+                    }
+
+                    $transcription = $this->getTranscription($doc_id, $page, $col);
+                    $transcriber = $this->getTranscriber($doc_id, $page, $col);
+
+                    // Get language of current column (same as document)
+                    $lang = $this->getLang($doc_id, $page);
+
+                    // Get foliation number of the current page/sequence number
+                    $foliation = $this->getFoliation($doc_id, $page);
+
+                    // Get timestamp
+                    $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
+                    $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($page_id, $col);
+                    $currentVersionInfo = (array)(end($versionsInfo));
+                    $timeFrom = (string)$currentVersionInfo['timeFrom'];
+
+                    $this->indexTranscription($this->client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcription, $lang, $timeFrom);
+
+                    $id = $id + 1;
                 }
-
-                $transcription = $this->getTranscription($doc_id, $page, $col);
-                $transcriber = $this->getTranscriber($doc_id, $page, $col);
-
-                // Get language of current column (same as document)
-                $lang = $this->getLang($doc_id, $page);
-
-                // Get foliation number of the current page/sequence number
-                $foliation = $this->getFoliation($doc_id, $page);
-
-                // Get timestamp
-                $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
-                $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($page_id, $col);
-                $currentVersionInfo = (array) (end($versionsInfo));
-                $timeFrom = (string) $currentVersionInfo['timeFrom'];
-
-                $this->indexTranscription($this->client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcription, $lang, $timeFrom);
-                $id=$id+1;
-            }
         }
 
         return $id;
@@ -205,10 +207,10 @@ class TranscriptionsIndexer extends OpenSearchIndexManager {
     {
 
         if ($lang != 'jrb') {
-            $indexName = 'transcriptions_' . $lang;
+            $indexName = 'test_' . $lang;
         }
         else {
-            $indexName = 'transcriptions_he';
+            $indexName = 'test_he';
         }
 
         // Encode transcript for avoiding errors in exec shell command because of characters like "(", ")" or " "
@@ -217,12 +219,11 @@ class TranscriptionsIndexer extends OpenSearchIndexManager {
         // Tokenization and lemmatization
         // Test existence of transcript and tokenize/lemmatize existing transcripts in python
         if (strlen($transcription_clean) > 3) {
-            PythonLemmatizer::runLemmatizer($lang, $transcription_clean, $tokens_and_lemmata);
-//            exec("python3 ../../python/Lemmatizer_Indexing.py $lang $transcription_clean", $tokens_and_lemmata);
 
-            // Get tokenized and lemmatized transcript
-            $transcription_tokenized = explode("#", $tokens_and_lemmata[0]);
-            $transcription_lemmatized = explode("#", $tokens_and_lemmata[1]);
+            $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $transcription_clean);
+
+            $transcription_tokenized = $tokens_and_lemmata[0];
+            $transcription_lemmatized = $tokens_and_lemmata[1];
         }
         else {
             $transcription_tokenized = [];

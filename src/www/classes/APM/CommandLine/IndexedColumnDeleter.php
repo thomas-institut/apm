@@ -5,7 +5,7 @@ namespace APM\CommandLine;
 use APM\System\ApmConfigParameter;
 use OpenSearch\ClientBuilder;
 
-class IndexedDocumentDeleter extends TranscriptionsIndexer
+class IndexedColumnDeleter extends TranscriptionsIndexer
 {
     public function main($argc, $argv): bool
     {
@@ -18,18 +18,20 @@ class IndexedDocumentDeleter extends TranscriptionsIndexer
             ->build();
 
         // Name of the index in OpenSearch
-        $this->indexName = '';
+        $this->indexName = $argv[0];
 
         // ID of the document to delete
-        $id = 20000;
+        $pageID = $this->argv[1];
+        $col = $this->argv[2];
 
         // Delete a single document
         $this->client->delete([
             'index' => $this->indexName,
-            'id' => $id,
+            'pageID' => $pageID,
+            'column' => $col
         ]);
 
-        print ("Document with ID $id was deleted from index *$this->indexName*.\n");
+        print ("Column $col from page with ID $pageID was deleted from index *$this->indexName*.\n");
 
         return true;
     }

@@ -3,6 +3,7 @@ namespace APM\Api;
 
 use APM\System\ApmConfigParameter;
 use APM\System\Cache\CacheKey;
+use APM\System\Lemmatizer;
 use APM\System\SystemManager;
 use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
@@ -66,6 +67,11 @@ class ApiSearch extends ApiController
         else {
             $tokensForQuery = explode(" ", $searched_phrase);
         }
+
+        $this->logger->debug($tokensForQuery[0]);
+        //$this->logger->debug($tokensForQuery[1]);
+
+
         $lemmata = $tokensForQuery;
 
         // Count tokens
@@ -133,44 +139,39 @@ class ApiSearch extends ApiController
             'status' => $status]);
     }
 
-    // Get lemmata of words from cache or python lemmatizer
+    // Get lemmata of words from cache or run lemmatizer
     private function getLemmata (string $searched_phrase, $lang): array {
 
-        // Lemmatization in python is very slow, so we need to cache it as much as possible
+        // Lemmatization can be slow, so we cache it as much as possible
         $cache = $this->systemManager->getSystemDataCache();
         $searchTokens = explode(' ', $searched_phrase);
-        $tokensToLemmatizeWithPython = [];
+        $tokensToLemmatize = [];
 
         foreach($searchTokens as $token) { // Try to get lemmata from cache
             $cacheKey = $this->getLemmaCacheKey($token);
             if ($cache->isInCache($cacheKey)) {
                 $tokensForQuery[] = $cache->get($cacheKey);
+                $this->logger->debug("Lemma for queried token '$token' already cached with cache key $cacheKey!");
             } else {
-                $tokensToLemmatizeWithPython[] = $token;
+                $tokensToLemmatize[] = $token;
             }
         }
-        if (count($tokensToLemmatizeWithPython) > 0) { // Get lemmata with python lemmatizer
-            $this->logger->debug(count($tokensToLemmatizeWithPython) . " tokens not in cache, need to run python lemmatizer", $tokensToLemmatizeWithPython);
-            $phrase = implode(' ', $tokensToLemmatizeWithPython);
-            $tokens_and_lemmata = $this->runLemmatizer($lang, $phrase);
-            $lemmata = explode("#", $tokens_and_lemmata[1]);
+        if (count($tokensToLemmatize) > 0) { // Get lemmata from lemmatizer
+            $this->logger->debug(count($tokensToLemmatize) . " tokens not in cache, need to run lemmatizer", $tokensToLemmatize);
+            $phrase = implode(' ', $tokensToLemmatize);
+            $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $phrase);
+            $lemmata = $tokens_and_lemmata[1];
             foreach ($lemmata as $i => $lemma) {
                 $tokensForQuery[] = $lemma;
-                $cache->set($this->getLemmaCacheKey($tokensToLemmatizeWithPython[$i]), $lemma);
+                $cacheKey = $this->getLemmaCacheKey($tokensToLemmatize[$i]);
+                $cache->set($cacheKey, $lemma);
+                $this->logger->debug("Cached lemma '$lemma' for token '$tokensToLemmatize[$i]' with cache key '$cacheKey'");
             }
         }
         
         return $tokensForQuery;
     }
     
-    // Run python lemmatizer
-    private function runLemmatizer(string $lang, string $text_encoded): array
-    {
-        exec("python3 ../python/Lemmatizer_Query.py $lang $text_encoded", $tokens_and_lemmata);
-        $this->logger->debug('output', $tokens_and_lemmata);
-
-        return $tokens_and_lemmata;
-    }
 
     // Get full number of passages stored in data-array
     private function getNumPassages(array $data): int {
@@ -345,7 +346,6 @@ class ApiSearch extends ApiController
 
                 $title = $query['hits']['hits'][$i]['_source']['title'];
                 $creator = $query['hits']['hits'][$i]['_source']['creator'];
-
 
                 // Get all lower-case and upper-case token positions (lemmatized or unlemmatized) in the current column (measured in words)
                 if ($lemmatize) {
@@ -619,7 +619,7 @@ class ApiSearch extends ApiController
             $current_token = $transcript[$i];
 
             // Depending on the filter algorithm, append all positions of the queried token in the transcript to the positions array
-            if ($this->isMatching($current_token, $token, $filter)) {
+            if ($current_token !== null && $this->isMatching($current_token, $token, $filter)) {
                 $positions[] = $i;
             }
         }

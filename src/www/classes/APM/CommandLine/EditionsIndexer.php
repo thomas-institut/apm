@@ -5,7 +5,7 @@ namespace APM\CommandLine;
 use APM\CollationTable\CollationTableManager;
 use APM\System\ApmConfigParameter;
 use APM\System\Person\PersonNotFoundException;
-use APM\System\PythonLemmatizer;
+use APM\System\Lemmatizer;
 use Exception;
 use OpenSearch\ClientBuilder;
 
@@ -114,7 +114,7 @@ class EditionsIndexer extends OpenSearchIndexManager
         // Tokenization and lemmatization
         // Test existence of text and tokenize/lemmatize existing texts in python
         if (strlen($text_clean) > 3) {
-            PythonLemmatizer::runLemmatizer($lang, $text_clean, $tokens_and_lemmata);
+            Lemmatizer::runLemmatizer($lang, $text_clean, $tokens_and_lemmata);
 //            exec("python3 ../../python/Lemmatizer_Indexing.py $lang $text_clean", $tokens_and_lemmata);
 
             // Get tokenized and lemmatized transcript

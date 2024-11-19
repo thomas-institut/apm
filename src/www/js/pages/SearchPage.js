@@ -126,8 +126,8 @@ export function setupSearchPage() {
   let errorMessageDiv = $("#error_message")
 
   // Get lists for creator and title forms
-  getCreatorsAndTitles ('transcriptions', errorMessageDiv)
-  getCreatorsAndTitles ('transcribers', errorMessageDiv)
+  getCreatorsAndTitles ('apisearchtranscriptions', errorMessageDiv)
+  getCreatorsAndTitles ('apisearchtranscribers', errorMessageDiv)
 
   // Start query when the search button is pressed
   $("#searchButton").on("click", function () {
@@ -186,8 +186,8 @@ export function setupSearchPage() {
       trans_or_editor.text("Transcriber")
 
       // Get lists for transcription and transcriber forms
-      getCreatorsAndTitles ('transcriptions', errorMessageDiv)
-      getCreatorsAndTitles ('transcribers', errorMessageDiv)
+      getCreatorsAndTitles ('apisearchtranscriptions', errorMessageDiv)
+      getCreatorsAndTitles ('apisearchtranscribers', errorMessageDiv)
     }
     else {
       doc_or_edition.text("Edition Title")
@@ -207,11 +207,11 @@ function getCreatorsAndTitles(category, errorMessageDiv) {
   let apiUrl = ''
   let listSelector = ''
 
-  if (category === 'transcriptions') {
+  if (category === 'apisearchtranscriptions') {
     apiUrl = urlGen.apiSearchTranscriptionTitles()
     listSelector = '#titleList'
   }
-  else if (category === 'transcribers') {
+  else if (category === 'apisearchtranscribers') {
     apiUrl = urlGen.apiSearchTranscribers()
     listSelector = '#creatorList'
   }
@@ -295,9 +295,11 @@ function search() {
 
   state = STATE_WAITING_FOR_SERVER
 
+
   // Make API Call
   $.post(urlGen.apiSearchKeyword(), inputs)
     .done((apiResponse) => {
+
 
       // Catch Error
       if (apiResponse.status !== 'OK') {
@@ -309,6 +311,7 @@ function search() {
         state = STATE_INIT
         return;
       }
+
 
       p.lap('Got results from server')
 
@@ -577,7 +580,7 @@ function removeBlanks (text) {
   text = text.replaceAll(" ,", ",")
   text = text.replaceAll(" :", ":")
   text = text.replaceAll("[ ", "[")
-  text = text.replaceAll(" ]", "]")
+  text = text.replaceAll(" ;", ";")
 
   return text
 }

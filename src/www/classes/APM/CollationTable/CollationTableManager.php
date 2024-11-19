@@ -264,4 +264,5 @@ abstract class CollationTableManager implements ErrorReporter
 
     abstract public function checkDataConsistency($ids = []) : array;
 
+    abstract public function getActiveTablesByWorkId(string $workId) : array;
 }

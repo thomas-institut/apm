@@ -362,6 +362,10 @@ export class ApmUrlGenerator {
         return `${this.base}/api/work/${workId}/chunksWithTranscription`;
     }
 
+    apiCollationTableGetActiveTablesForWork(workId) {
+        return`${this.base}/api/collation-table/active/work/${workId}`
+    }
+
     apiPersonGetWorks(personTid) {
         return `${this.base}/api/person/${personTid}/works`;
     }

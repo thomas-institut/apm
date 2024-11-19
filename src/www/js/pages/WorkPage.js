@@ -4,6 +4,7 @@ import { tr } from './common/SiteLang'
 import { urlGen } from './common/SiteUrlGen'
 import { ApmPage } from './ApmPage'
 import { Tid } from '../Tid/Tid'
+import { numericSort } from '../toolbox/ArrayUtil.mjs'
 
 export class WorkPage extends NormalPage {
 
@@ -32,19 +33,59 @@ export class WorkPage extends NormalPage {
     await super.initPage();
 
     let apiChunkData = await this.apmDataProxy.get(urlGen.apiWorkGetChunksWithTranscription(this.workData.dareId));
+    console.log(`Transcription Data`, apiChunkData);
+    let apiCollationTableData = await this.apmDataProxy.get(urlGen.apiCollationTableGetActiveTablesForWork(this.workData.dareId));
+    console.log(`Collation Table Data`, apiCollationTableData)
 
-    this.chunks = apiChunkData['chunks'];
+    this.aggregatedData = this.aggregateChunkData(apiChunkData['chunks'], apiCollationTableData);
+
+    this.chunks = this.aggregatedData.allChunks;
 
     $('div.chunks-div').html(this.genChunksDivHtml());
 
   }
 
-  genChunksDivHtml() {
-    if (this.chunks.length === 0) {
-      return `No chunks with transcription in the system`;
+
+  aggregateChunkData(apiTranscriptionData, apiCollationTableData) {
+    // tx data is just an array of chunk ids
+    let chunksWithTx = apiTranscriptionData;
+    let allChunks = apiTranscriptionData;
+    let chunksWithCT = [];
+    let chunksWithEdition = [];
+    apiCollationTableData.forEach( (ctData) => {
+      let chunkNumber = parseInt(ctData['chunkId'].split('-')[1]) ?? -1;
+      if (chunkNumber === -1) {
+        console.warn(`Chunk number not detected in chunkId ${ctData['chunkId']}`);
+        return;
+      }
+      if (allChunks.indexOf(chunkNumber) === -1) {
+        allChunks.push(chunkNumber);
+      }
+      if (ctData['type'] === 'edition') {
+        if (chunksWithEdition.indexOf(chunkNumber) === -1) {
+          chunksWithEdition.push(chunkNumber);
+        }
+      } else {
+        if (chunksWithCT.indexOf(chunkNumber) === -1) {
+          chunksWithCT.push(chunkNumber)
+        }
+      }
+    })
+    return {
+      allChunks: numericSort(allChunks),
+      chunksWithTx: numericSort(chunksWithTx),
+      chunksWithCT: numericSort(chunksWithCT),
+      chunksWithEdition: numericSort(chunksWithEdition)
     }
 
-    let html = '<h2>Chunks with Transcription</h2>';
+  }
+
+  genChunksDivHtml() {
+    if (this.chunks.length === 0) {
+      return `No chunks with transcription, editions or collation tables in the system`;
+    }
+
+    let html = '<h2>Chunks with Data</h2>';
     let maxChunk = Math.max(...this.chunks);
     let cellSize = 'small';
     if (maxChunk >= 100) {
@@ -55,8 +96,12 @@ export class WorkPage extends NormalPage {
     }
     html += `<div class="chunk-list chunk-list-${cellSize}">`;
     html += this.chunks.map( ( chunk) => {
+      let chunkLabel = `${chunk}`;
+      if (this.aggregatedData.chunksWithEdition.indexOf(chunk) !== -1) {
+        chunkLabel = `<small>*</small>${chunkLabel}`;
+      }
       return `<div class="chunk-div">
-            <a class="chunk-link" href="${urlGen.siteChunkPage(this.workData.dareId, chunk)}" title="View chunk">${chunk}</a>
+            <a class="chunk-link" href="${urlGen.siteChunkPage(this.workData.dareId, chunk)}" title="View chunk">${chunkLabel}</a>
             </div>`;
     }).join('');
     html += `</div>`; // chunk-list
@@ -82,11 +127,21 @@ export class WorkPage extends NormalPage {
       return this.getPredicateHtml(predicateName, predicateValue);
     }).join('')
 
+    let entityAdminHtml = '';
+    if (this.isUserRoot()) {
+      entityAdminHtml = `<div class="entity-admin">
+                <a class="entity-page-button" href="${urlGen.siteAdminEntity(this.workData.tid)}">[ ${tr('Entity Page')} ]</a>
+                <a class="dev-metadata-editor-button" href="${urlGen.siteDevMetadataEditor(this.workData.tid)}">[ ${tr('Dev Metadata Editor')} ]</a>
+                </div>`
+    }
+
 
     return `${breadcrumbHtml}
     <h1><a href="${urlGen.sitePerson(this.workData.authorTid)}">${authorData.name}</a>, <em>${this.workData.title}</em></h1>
     <div class="work-info">${infoHtml}</div>
-    <div class="chunks-div">${ApmPage.genLoadingMessageHtml('Loading chunk data')}</div>`
+    <div class="section entity-admin">${entityAdminHtml}</div>
+    <div class="section chunks-div">${ApmPage.genLoadingMessageHtml('Loading chunk data')}</div>
+`
   }
 }
 

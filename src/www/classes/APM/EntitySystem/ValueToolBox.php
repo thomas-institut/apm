@@ -5,7 +5,10 @@ namespace APM\EntitySystem;
 class ValueToolBox
 {
 
-    public static function boolToValue(bool $boolean) : string {
+    public static function boolToValue(?bool $boolean) : string {
+        if ($boolean === null) {
+            return ApmEntitySystemInterface::ValueFalse;
+        }
         return $boolean ? ApmEntitySystemInterface::ValueTrue : ApmEntitySystemInterface::ValueFalse;
     }
 

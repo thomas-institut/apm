@@ -5,6 +5,7 @@
 import { numericFieldSort, stringFieldSort } from '../../toolbox/ArrayUtil.mjs'
 import { tr } from './SiteLang'
 import { urlGen} from './SiteUrlGen'
+import { Tid } from '../../Tid/Tid'
 
 function noneParagraph() {
   return `<p class="none"><em>${tr('None')}</em></p>`
@@ -75,20 +76,22 @@ export class UserDocDataCommon {
 
   static __genCtList(ctInfoArray, workInfoObject, isCollationTable = true) {
     if (ctInfoArray.length === 0) {
-      return noneParagraph()
+      return noneParagraph();
     }
     let html = ''
     this.getWorksFromCtInfoArray(ctInfoArray).sort().forEach( (work) => {
-      html += `<div class="work">`
+      html += `<div class="work">`;
       let ctTables = ctInfoArray.filter( (ctInfo) => {
-        return ctInfo.work === work
+        return ctInfo.work === work;
       })
-      let workInfo = workInfoObject[work]
-      let workTitle
+      let workInfo = workInfoObject[work];
+      let workTitle;
       if (workInfo === undefined) {
-        workTitle = work
+        workTitle = work;
       } else {
-        workTitle = `${workInfo['author_name']}, <em>${workInfo['title']}</em> (${work})`
+        let workUrl = urlGen.siteWorkPage(Tid.toBase36String(workInfo['tid']));
+        let authorUrl = urlGen.sitePerson(Tid.toBase36String(workInfo['authorTid']));
+        workTitle = `<a href="${authorUrl}">${workInfo['author_name']}</a>, <a href="${workUrl}"><em>${workInfo['title']}</em> (${work})</a>`
       }
       html += `<p class="work-title">${workTitle}</p>`
       ctTables = numericFieldSort(ctTables, 'chunkNumber')

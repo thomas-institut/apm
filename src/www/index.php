@@ -418,6 +418,12 @@ function createApiCollationTableRoutes(RouteCollectorProxy $group, ContainerInte
             return (new ApiCollation($container))->getActiveEditions($response);
         })
         ->setName('api.collation.info.edition.active');
+
+    $group->get('/collation-table/active/work/{workId}',
+        function (Request $request, Response $response) use ($container){
+            return (new ApiCollation($container))->getActiveTablesForWork($request, $response);
+        })
+        ->setName('api.collation.active.work');
 }
 function createApiWitnessRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
     // WITNESSES
@@ -784,7 +790,6 @@ function createApiTranscriptionRoutes(RouteCollectorProxy $group, ContainerInter
         ->setName('api.transcriptions.update');
 }
 function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
-
 
     // WORKS
 

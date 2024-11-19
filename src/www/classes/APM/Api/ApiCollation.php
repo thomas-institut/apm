@@ -28,6 +28,7 @@ use APM\StandardData\CollationTableDataProvider;
 use APM\System\Cache\CacheKey;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
+use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\SiglumGenerator;
 use AverroesProjectToApm\ApmPersonInfoProvider;
 use Exception;
@@ -67,6 +68,28 @@ class ApiCollation extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $infoArray = $this->systemManager->getCollationTableManager()->getActiveEditionTableInfo();
         return $this->responseWithJson($response, $infoArray);
+    }
+
+    public function getActiveTablesForWork(Request $request, Response $response) : Response {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+
+        $workId = $request->getAttribute("workId");
+
+        try {
+            $workData = $this->systemManager->getWorkManager()->getWorkDataByDareId($workId);
+        } catch (WorkNotFoundException) {
+            return $this->responseWithJson($response,  [
+                'workId' => $workId,
+                'message' => 'Work not found'
+            ], 404);
+        }
+
+        if ($workData->dareId === '') {
+            return $this->responseWithJson($response, []);
+        }
+
+        return $this->responseWithJson($response, $this->systemManager->getCollationTableManager()->getActiveTablesByWorkId($workData->dareId));
+
     }
 
 

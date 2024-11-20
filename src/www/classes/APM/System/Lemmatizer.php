@@ -32,116 +32,92 @@ class Lemmatizer
 
         exec("curl -s -F data=@$tempfile -F model=$lang -F tokenizer= -F tagger= https://lindat.mff.cuni.cz/services/udpipe/api/process", $data);
 
-        exec("rm $tempfile");
+        // exec("rm $tempfile");
 
-
-        return self::formatData($data[6], $lang);
+        return self::getTokensAndLemmata($data[6]);
     }
 
-    static private function formatData ($data, $lang) {
+    static private function getTokensAndLemmata ($data) {
 
-        $tokens_and_lemmata = [[], []];
+        //print($data);
 
-        // split data into encoded sentences
-        $data = explode('text', $data);
+        // array of arrays to be returned
+        $words_and_lemmata = [[], []];
 
-        // remove metadata from the api response
-        $data = array_values(array_slice($data, 1));
-        //print("ARRAY OF ENCODED SENTENCES\n");
-        //print_r($data);
+        // split plain text data from the udpipe api into encoded sentences
+        $sentences = explode(' text ', $data);
+        $sentences = array_values(array_slice($sentences, 1)); // removes metadata which are not a sentence
 
-        switch ($lang) {
-            case 'latin':
+        // print("ARRAY OF ENCODED SENTENCES\n");
+        // print_r($sentences);
 
-                // convert encoded sentences to arrays of encoded tokens
-                foreach ($data as $sentence) {
-                    $sentence = str_replace('\n#', '', $sentence);
-                    $numTokens = substr_count($sentence, '\n');
+        // extract tokens and lemmata from each sentence
+        foreach ($sentences as $sentence) {
 
-                    for ($i = 1; $i < $numTokens; $i++) {
-                        $sentence = str_replace('\n' . $i, '\nTOKEN', $sentence);
-                    }
+            // remove irrelevant signs and convert each sentence into an array of still encoded tokens
+            $sentence = str_replace('\n#', '', $sentence);
+            $numTokens = substr_count($sentence, '\n');
 
-                    $sentence = explode('\nTOKEN', $sentence);
-                    $sentence = array_values(array_slice($sentence, 1));
+            for ($i = 1; $i < $numTokens; $i++) {
+                $sentence = str_replace('\n' . $i, '\nTOKEN', $sentence);
+            }
 
-                    //print("SENTENCE AS ARRAY OF ENCODED TOKENS\n");
-                    //print_r($sentence);
+            $sentence = explode('\nTOKEN', $sentence);
+            $sentence = array_values(array_slice($sentence, 1));
 
-                    // drop integers at the beginning of encoded tokens
-                    for ($j = 0; $j < 10; $j++) {
-                        foreach ($sentence as $k=>$token) {
-                            if (substr($token, 0, 1) === (string) $j) {
-                                $sentence[$k] = substr($token, 1);
-                            }
+            //print("SENTENCE AS ARRAY OF ENCODED TOKENS\n");
+            //print_r($sentence);
+
+            // normalize the tokens
+            // drop integers at the beginning of every encoded tokens and drop the token duplicates which are not lemmatized
+            // (it seems like the api lemmatizer returns articles of nouns and the nouns twice (each as a single token with lemmatization
+            // and as complex token without lemmatization, these ones are removed)
+            for ($i = 0; $i < 5; $i++) {
+                // Iterate the process 4 times to make sure that all integers, which represent token numbers, will be deleted,
+                // even for very long sentences with a token number with four digits
+                for ($j = 0; $j < 10; $j++) {
+                    foreach ($sentence as $k => $token) {
+                        if (substr($token, 0, 1) === (string) $j) {
+                            $sentence[$k] = substr($token, 1);
+                        }
+                        if (str_starts_with($token, "-")) { // these are the ,complex tokens‘ to be removed
+                            unset($sentence[$k]);
                         }
                     }
-
-                    //print("SENTENCE AS ARRAY OF ENCODED TOKENS WITHOUT INTEGERS\n");
-                    //print_r($sentence);
-
-                    // extract tokens and lemmata out of the encoded tokens
-                    foreach ($sentence as $encToken) {
-                        $decToken = explode('\t', $encToken);
-                        //print("DECODED TOKEN\n");
-                        //print_r($decToken);
-                        $tokens_and_lemmata[0][] = $decToken[1];
-                        $tokens_and_lemmata[1][] = $decToken[2];
-                    }
                 }
-                break;
+            }
 
-            case 'arabic':
+            // update the array indices
+            $sentence = array_values($sentence);
 
-                foreach ($data as $sentence) {
-                    $sentence = str_replace('\n#', '', $sentence);
-                    $numTokens = substr_count($sentence, '\n');
+            // print("SENTENCE AS ARRAY OF ENCODED TOKENS WITHOUT INTEGERS AND UNLEMMATIZED DUPLICATES\n");
+            // print_r($sentence);
 
-                    for ($i = 1; $i < $numTokens; $i++) {
-                        $sentence = str_replace('\n' . $i, '\nTOKEN', $sentence);
-                    }
-
-                    $sentence = explode('\nTOKEN', $sentence);
-                    $sentence = array_values(array_slice($sentence, 1));
-                    //print("SENTENCE AS ARRAY OF ENCODED TOKENS\n");
-                    //print_r($sentence);
-
-                    // drop integers at the beginning of encoded tokens as well as unlemmatized token duplicates
-                    for ($j = 0; $j < 10; $j++) {
-                        foreach ($sentence as $k=>$token) {
-                            if (substr($token, 0, 1) === (string) $j) {
-                                $sentence[$k] = substr($token, 1);
-                            }
-                            if (str_starts_with($token, "-")) {
-                                unset($sentence[$k]);
-                            }
-                        }
-                    }
-
-                    $sentence = array_values($sentence);
-
-                    //print("SENTENCE AS ARRAY OF ENCODED TOKENS WITHOUT INTEGERS AND UNLEMMATIZED DUPLICATES\n");
-                    //print_r($sentence);
-
-                    // extract tokens and lemmata out of the encoded tokens
-                    foreach ($sentence as $encToken) {
-                        $decToken = explode('\t', $encToken);
-                        //print("DECODED TOKEN\n");
-                        //print_r($decToken);
-                        $tokens_and_lemmata[0][] = $decToken[1];
-                        $tokens_and_lemmata[1][] = $decToken[2];
-                    }
-                }
-
-                break;
-
-            case 'hebrew':
-                print($data);
-                break;
+            // extract words and lemmata out of the normalized encoded tokens
+            foreach ($sentence as $encToken) {
+                $token = explode('\t', $encToken);
+                //print("DECODED TOKEN\n");
+                //print_r($decToken);
+                $words_and_lemmata[0][] = $token[1];
+                $words_and_lemmata[1][] = $token[2];
+            }
         }
 
-        print_r($tokens_and_lemmata);
-        return $tokens_and_lemmata;
+        // signal missing words or lemmata in the returned data
+        foreach ($words_and_lemmata[0] as $word) {
+            if ($word === null or $word === '') {
+                print("EMPTY WORD IN LIST OF WORDS!\n");
+            }
+        }
+
+        foreach ($words_and_lemmata[1] as $lemma) {
+            if ($lemma === null or $lemma === '') {
+                print("EMPTY LEMMA IN LIST OF LEMMATA!\n");
+            }
+        }
+
+        // print_r($words_and_lemmata);
+        return $words_and_lemmata;
     }
 
 }

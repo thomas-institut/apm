@@ -49,7 +49,7 @@ class TranscriptionsIndexer extends OpenSearchIndexManager {
             ->build();
 
         // Name of the indices in OpenSearch
-        $this->indices = ['test_la', 'test_ar', 'test_he'];
+        $this->indices = ['transcriptions_la', 'transcriptions_ar', 'transcriptions_he'];
 
         // Delete existing and create new index
         foreach ($this->indices as $indexName) {
@@ -68,11 +68,11 @@ class TranscriptionsIndexer extends OpenSearchIndexManager {
         foreach ($doc_list as $doc_id) {
             // $id will be indexed as open-search-id
 
-            if ($doc_id === 23) { // 142 for arabic test, 23 for latin
+            //if ($doc_id === 23) { // 142 for arabic test, 23 for latin, 49 for hebrew
                 $id = $this->getAndIndexTranscriptionData($doc_id, $id) + 1;
-            }
-
+            //}
         }
+
         return true;
     }
 
@@ -94,33 +94,33 @@ class TranscriptionsIndexer extends OpenSearchIndexManager {
             $num_cols = $page_info['num_cols'];
             $seq = $this->getSeq($doc_id, $page);
 
-                // Iterate over all columns of the page and get the corresponding transcripts and transcribers
-                for ($col = 1; $col <= $num_cols; $col++) {
-                    $versions = $this->getDm()->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
-                    if (count($versions) === 0) {
-                        // no transcription in this column
-                        continue;
-                    }
-
-                    $transcription = $this->getTranscription($doc_id, $page, $col);
-                    $transcriber = $this->getTranscriber($doc_id, $page, $col);
-
-                    // Get language of current column (same as document)
-                    $lang = $this->getLang($doc_id, $page);
-
-                    // Get foliation number of the current page/sequence number
-                    $foliation = $this->getFoliation($doc_id, $page);
-
-                    // Get timestamp
-                    $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
-                    $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($page_id, $col);
-                    $currentVersionInfo = (array)(end($versionsInfo));
-                    $timeFrom = (string)$currentVersionInfo['timeFrom'];
-
-                    $this->indexTranscription($this->client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcription, $lang, $timeFrom);
-
-                    $id = $id + 1;
+            // Iterate over all columns of the page and get the corresponding transcripts and transcribers
+            for ($col = 1; $col <= $num_cols; $col++) {
+                $versions = $this->getDm()->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
+                if (count($versions) === 0) {
+                    // no transcription in this column
+                    continue;
                 }
+
+                $transcription = $this->getTranscription($doc_id, $page, $col);
+                $transcriber = $this->getTranscriber($doc_id, $page, $col);
+
+                // Get language of current column (same as document)
+                $lang = $this->getLang($doc_id, $page);
+
+                // Get foliation number of the current page/sequence number
+                $foliation = $this->getFoliation($doc_id, $page);
+
+                // Get timestamp
+                $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
+                $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($page_id, $col);
+                $currentVersionInfo = (array)(end($versionsInfo));
+                $timeFrom = (string)$currentVersionInfo['timeFrom'];
+
+                $this->indexTranscription($this->client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcription, $lang, $timeFrom);
+
+                $id = $id + 1;
+            }
         }
 
         return $id;
@@ -186,8 +186,8 @@ class TranscriptionsIndexer extends OpenSearchIndexManager {
             return '';
         }
         else {
-            $latest_version = count($versions) - 1;
-            return $versions[$latest_version]['author_name'];
+            $latranscriptions_version = count($versions) - 1;
+            return $versions[$latranscriptions_version]['author_name'];
         }
     }
 
@@ -207,10 +207,10 @@ class TranscriptionsIndexer extends OpenSearchIndexManager {
     {
 
         if ($lang != 'jrb') {
-            $indexName = 'test_' . $lang;
+            $indexName = 'transcriptions_' . $lang;
         }
         else {
-            $indexName = 'test_he';
+            $indexName = 'transcriptions_he';
         }
 
         // Encode transcript for avoiding errors in exec shell command because of characters like "(", ")" or " "

@@ -114,7 +114,7 @@ class EditionsIndexer extends OpenSearchIndexManager
         // Tokenization and lemmatization
         // Test existence of text and tokenize/lemmatize existing texts in python
         if (strlen($text_clean) > 3) {
-            Lemmatizer::runLemmatizer($lang, $text_clean, $tokens_and_lemmata);
+            $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $text_clean);
 //            exec("python3 ../../python/Lemmatizer_Indexing.py $lang $text_clean", $tokens_and_lemmata);
 
             // Get tokenized and lemmatized transcript

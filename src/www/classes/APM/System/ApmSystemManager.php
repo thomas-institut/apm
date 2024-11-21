@@ -812,7 +812,7 @@ class ApmSystemManager extends SystemManager {
         } catch (Work\WorkNotFoundException $e) {
             return -1;
         }
-        return $data->authorTid;
+        return $data->authorId;
     }
 
     public function getUserManager() : UserManagerInterface {

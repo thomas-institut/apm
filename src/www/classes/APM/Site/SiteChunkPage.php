@@ -140,12 +140,19 @@ class SiteChunkPage extends SiteController
         }
 
         $validChunks = $this->systemManager->getDataManager()->getChunksWithTranscriptionForWorkId($workId);
+        $tablesInfo = $this->systemManager->getCollationTableManager()->getTablesInfo(false, $workId);
+        foreach ($tablesInfo as $tableInfo) {
+            if (!in_array($tableInfo['chunkNumber'], $validChunks)) {
+                $validChunks[] = $tableInfo['chunkNumber'];
+            }
+        }
+        sort($validChunks, SORT_NUMERIC);
 
         $this->profiler->stop();
         $this->logProfilerData("ChunkPage-$workId-$chunkNumber");
         return $this->renderPage($response, self::TEMPLATE_CHUNK_PAGE, [
-            'work' => $workId,
-            'chunk' => $chunkNumber,
+            'workId' => $workId,
+            'chunkNumber' => $chunkNumber,
             'work_info' => $workInfo,
             'showAdminInfo' => $showAdminInfo,
             'witnessInfoArray' => $witnessInfoArray,

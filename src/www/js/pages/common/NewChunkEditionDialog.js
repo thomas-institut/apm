@@ -62,7 +62,7 @@ export class NewChunkEditionDialog {
         // need to reload work input selector
         let works = (await this.options.apmDataProxy.getPersonWorks(author))['works'];
         workInput.html( '<option value=""></option>' +
-          works.map( (work) => { return `<option value="${work['dareId']}">${work['dareId']}: ${work['title'].substring(0, 80)}</option>` }).join('') );
+          works.map( (work) => { return `<option value="${work['workId']}">${work['workId']}: ${work['title'].substring(0, 80)}</option>` }).join('') );
         return {
           work: '',
           chunkNumber: parseInt(chunkNumberInput.val().toString()),

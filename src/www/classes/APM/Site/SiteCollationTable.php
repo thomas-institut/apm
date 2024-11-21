@@ -100,7 +100,7 @@ class SiteCollationTable extends SiteController
         }
 
         $peopleTids = [];
-        $peopleTids[] = $workInfo->authorTid;
+        $peopleTids[] = $workInfo->authorId;
         $pm = $this->systemManager->getPersonManager();
         $peopleInfo = [];
         foreach($peopleTids as $personTid) {
@@ -207,7 +207,7 @@ class SiteCollationTable extends SiteController
 
 
         $peopleTids = [];
-        $peopleTids[] = $workInfo->authorTid;
+        $peopleTids[] = $workInfo->authorId;
         $peopleTids = array_merge($peopleTids, $this->getMentionedAuthorsFromCtData($ctData));
         $peopleTids = array_merge($peopleTids, $this->getMentionedPeopleFromVersionArray($versionInfoArray));
         $pm = $this->systemManager->getPersonManager();

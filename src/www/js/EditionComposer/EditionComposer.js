@@ -1341,7 +1341,7 @@ export class EditionComposer extends ApmPage {
 
   genCtInfoDiv() {
     let workTitle = this.options.workInfo['title']
-    let workAuthorTid = this.options.workInfo['authorTid']
+    let workAuthorTid = this.options.workInfo['authorId']
     let workAuthorName = this.options.peopleInfo[workAuthorTid]['name']
     let warningSign = ''
     return `<div id="ct-info" title="${workAuthorName}, ${workTitle}; table ID: ${this.tableId}">${this.options.workId}-${this.options.chunkNumber}</div>`

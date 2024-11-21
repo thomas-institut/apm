@@ -89,8 +89,8 @@ export class UserDocDataCommon {
       if (workInfo === undefined) {
         workTitle = work;
       } else {
-        let workUrl = urlGen.siteWorkPage(Tid.toBase36String(workInfo['tid']));
-        let authorUrl = urlGen.sitePerson(Tid.toBase36String(workInfo['authorTid']));
+        let workUrl = urlGen.siteWorkPage(Tid.toBase36String(workInfo['entityId']));
+        let authorUrl = urlGen.sitePerson(Tid.toBase36String(workInfo['authorId']));
         workTitle = `<a href="${authorUrl}">${workInfo['author_name']}</a>, <a href="${workUrl}"><em>${workInfo['title']}</em> (${work})</a>`
       }
       html += `<p class="work-title">${workTitle}</p>`

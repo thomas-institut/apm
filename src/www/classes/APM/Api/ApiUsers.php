@@ -325,7 +325,7 @@ class ApiUsers extends ApiController
         foreach (array_keys($worksCited) as $work) {
             try {
                 $workData= get_object_vars($systemManager->getWorkManager()->getWorkDataByDareId($work));
-                $authorId = $workData['authorTid'];
+                $authorId = $workData['authorId'];
                 $authorName = $systemManager->getPersonManager()->getPersonEssentialData($authorId)->name;
                 $workData['author_name'] =$authorName;
                 $workInfo[$work] = $workData;

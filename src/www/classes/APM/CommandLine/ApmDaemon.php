@@ -26,7 +26,7 @@ class ApmDaemon extends CommandLineUtility
             [
                 'cacheKey' => SiteWorks::WORK_DATA_CACHE_KEY,
                 'ttl' => SiteWorks::WORK_DATA_TTL,
-                'builder' => function () { return SiteWorks::buildWorkData($this->getSystemManager());}
+                'builder' => function () { return SiteWorks::buildWorkData($this->getSystemManager(), $this->logger);}
             ],
             [
                 'cacheKey' => SiteDocuments::DOCUMENT_DATA_CACHE_KEY,

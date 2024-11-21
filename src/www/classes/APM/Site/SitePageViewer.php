@@ -48,7 +48,7 @@ class SitePageViewer extends SiteController
      */
     private function getActiveWorks() : array {
        $enabledWorks = $this->systemManager->getWorkManager()->getEnabledWorks();
-       $this->logger->debug("EnabledWorks: ".count($enabledWorks), [ $enabledWorks]);
+//       $this->logger->debug("EnabledWorks: ".count($enabledWorks), [ $enabledWorks]);
 
        $activeWorks = [];
        foreach ($enabledWorks as $work) {
@@ -59,8 +59,8 @@ class SitePageViewer extends SiteController
                throw new \RuntimeException($e->getMessage());
            }
            $activeWorks[] = [
-               'title' => '(' . $workData->dareId . ') ' . $workData->shortTitle,
-               'dareId' => $workData->dareId,
+               'title' => '(' . $workData->workId . ') ' . $workData->shortTitle,
+               'dareId' => $workData->workId,
                'maxChunk' => 500
            ];
        }

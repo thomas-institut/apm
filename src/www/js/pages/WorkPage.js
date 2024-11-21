@@ -32,9 +32,9 @@ export class WorkPage extends NormalPage {
   async initPage () {
     await super.initPage();
 
-    let apiChunkData = await this.apmDataProxy.get(urlGen.apiWorkGetChunksWithTranscription(this.workData.dareId));
+    let apiChunkData = await this.apmDataProxy.get(urlGen.apiWorkGetChunksWithTranscription(this.workData.workId));
     console.log(`Transcription Data`, apiChunkData);
-    let apiCollationTableData = await this.apmDataProxy.get(urlGen.apiCollationTableGetActiveTablesForWork(this.workData.dareId));
+    let apiCollationTableData = await this.apmDataProxy.get(urlGen.apiCollationTableGetActiveTablesForWork(this.workData.workId));
     console.log(`Collation Table Data`, apiCollationTableData)
 
     this.aggregatedData = this.aggregateChunkData(apiChunkData['chunks'], apiCollationTableData);
@@ -101,7 +101,7 @@ export class WorkPage extends NormalPage {
         chunkLabel = `<small>*</small>${chunkLabel}`;
       }
       return `<div class="chunk-div">
-            <a class="chunk-link" href="${urlGen.siteChunkPage(this.workData.dareId, chunk)}" title="View chunk">${chunkLabel}</a>
+            <a class="chunk-link" href="${urlGen.siteChunkPage(this.workData.workId, chunk)}" title="View chunk">${chunkLabel}</a>
             </div>`;
     }).join('');
     html += `</div>`; // chunk-list
@@ -112,14 +112,14 @@ export class WorkPage extends NormalPage {
     await super.genContentHtml();
     let breadcrumbHtml = this.getBreadcrumbNavHtml([
       { label: tr('Works'), url:  urlGen.siteWorks()},
-      { label: this.workData.dareId, active: true}
+      { label: this.workData.workId, active: true}
     ])
 
-    let authorData = await this.apmDataProxy.getPersonEssentialData(this.workData.authorTid);
+    let authorData = await this.apmDataProxy.getPersonEssentialData(this.workData.authorId);
 
     let infoToDisplay =  [
-      [ tr('Entity Id'), Tid.toBase36String(this.workData.tid)],
-      [ tr('Dare Id'), this.workData.dareId]
+      [ tr('Entity Id'), Tid.toBase36String(this.workData.entityId)],
+      [ tr('Work Id'), this.workData.workId]
     ];
 
     let infoHtml = infoToDisplay.map ( (displayTuple) => {
@@ -130,14 +130,14 @@ export class WorkPage extends NormalPage {
     let entityAdminHtml = '';
     if (this.isUserRoot()) {
       entityAdminHtml = `<div class="entity-admin">
-                <a class="entity-page-button" href="${urlGen.siteAdminEntity(this.workData.tid)}">[ ${tr('Entity Page')} ]</a>
-                <a class="dev-metadata-editor-button" href="${urlGen.siteDevMetadataEditor(this.workData.tid)}">[ ${tr('Dev Metadata Editor')} ]</a>
+                <a class="entity-page-button" href="${urlGen.siteAdminEntity(this.workData.entityId)}">[ ${tr('Entity Page')} ]</a>
+                <a class="dev-metadata-editor-button" href="${urlGen.siteDevMetadataEditor(this.workData.entityId)}">[ ${tr('Dev Metadata Editor')} ]</a>
                 </div>`
     }
 
 
     return `${breadcrumbHtml}
-    <h1><a href="${urlGen.sitePerson(this.workData.authorTid)}">${authorData.name}</a>, <em>${this.workData.title}</em></h1>
+    <h1><a href="${urlGen.sitePerson(this.workData.authorId)}">${authorData.name}</a>, <em>${this.workData.title}</em></h1>
     <div class="work-info">${infoHtml}</div>
     <div class="section entity-admin">${entityAdminHtml}</div>
     <div class="section chunks-div">${ApmPage.genLoadingMessageHtml('Loading chunk data')}</div>

@@ -569,7 +569,8 @@ export class DocPage extends NormalPage {
       }
       let workData = await this.apmDataProxy.getWorkDataOld(workDareId)
       let authorData = await this.apmDataProxy.getPersonEssentialData(workData['authorTid'])
-      html += `<li><a href="${urlGen.sitePerson(Tid.toBase36String(authorData.tid))}">${authorData.name}</a>, <em>${workData['title']}</em> (${workDareId})`
+      html += `<li><a href="${urlGen.sitePerson(Tid.toBase36String(authorData.tid))}">${authorData.name}</a>, 
+            <a href="${urlGen.siteWorkPage(workDareId)}"><em>${workData['title']}</em> (${workDareId})</a>`
       html += '<ul><li>';
       let tdArray = [];
       for (const chunkNumber in chunkInfo[workDareId]) {

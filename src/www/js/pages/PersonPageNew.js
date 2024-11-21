@@ -184,7 +184,7 @@ export class PersonPageNew extends NormalPage {
     }
     let html = `<h2>Works</h2>`;
     html += this.works.map( (work, index) => {
-      return `<div class="work-div work-div-${index}"><a href="${urlGen.siteWorkPage(work['dareId'])}">${work['dareId']}: ${work['title']}</a></div>`;
+      return `<div class="work-div work-div-${index}"><a href="${urlGen.siteWorkPage(work['workId'])}">${work['workId']}: ${work['title']}</a></div>`;
     }).join('');
     return html;
   }

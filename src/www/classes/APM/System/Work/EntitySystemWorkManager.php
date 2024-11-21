@@ -53,9 +53,9 @@ class EntitySystemWorkManager implements WorkManager
 
 
             $data = new WorkData();
-            $data->tid = $workTid;
-            $data->dareId =  $entityData->getObjectForPredicate(Entity::pApmWorkId) ?? '';
-            $data->authorTid = $entityData->getObjectForPredicate(Entity::pWorkAuthor);
+            $data->entityId = $workTid;
+            $data->workId =  $entityData->getObjectForPredicate(Entity::pApmWorkId) ?? '';
+            $data->authorId = $entityData->getObjectForPredicate(Entity::pWorkAuthor);
             $data->title =  $entityData->getObjectForPredicate(Entity::pEntityName);
             $data->shortTitle = $entityData->getObjectForPredicate(Entity::pWorkShortTitle) ?? '';
             $data->enabled = ValueToolBox::valueToBool($entityData->getObjectForPredicate(Entity::pWorkIsEnabledInApm))

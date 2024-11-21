@@ -35,9 +35,9 @@ class DataTableWorkManager implements WorkManager
 
     protected function constructWorkDataFromDatatableRow(array $row) : WorkData {
         $wd = new WorkData();
-        $wd->tid = intval($row['tid'] ?? -1);
-        $wd->dareId  = $row['dare_id'] ?? '';
-        $wd->authorTid = intval($row['author_tid'] ?? -1);
+        $wd->entityId = intval($row['tid'] ?? -1);
+        $wd->workId  = $row['dare_id'] ?? '';
+        $wd->authorId = intval($row['author_tid'] ?? -1);
         $wd->title = $row['title'] ?? '';
         return $wd;
     }

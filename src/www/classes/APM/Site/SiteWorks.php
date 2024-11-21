@@ -38,6 +38,8 @@ use \Psr\Http\Message\ResponseInterface as Response;
 
 
 use AverroesProject\ItemStream\ItemStream;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
@@ -94,13 +96,11 @@ class SiteWorks extends SiteController
     {
         $this->profiler->start();
         $cache = $this->systemManager->getSystemDataCache();
-        $cacheHit = true;
         try {
             $works = unserialize($cache->get(self::WORK_DATA_CACHE_KEY));
         } catch (KeyNotInCacheException) {
             // not in cache
-            $cacheHit = false;
-            $works = self::buildWorkData($this->systemManager);
+            $works = self::buildWorkData($this->systemManager, $this->logger);
             $cache->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
         }
         $this->profiler->stop();
@@ -110,45 +110,129 @@ class SiteWorks extends SiteController
         ]);
     }
 
-    public static function buildWorkData(SystemManager $systemManager) : array {
-
-        $works = [];
-        $personManager = $systemManager->getPersonManager();
-        $workIds = $systemManager->getDataManager()->getWorksWithTranscriptions();
-        foreach($workIds as $workId) {
-            $work = ['work_id' => $workId, 'is_valid' => true];
-            try {
-                $workData =$systemManager->getWorkManager()->getWorkDataByDareId($workId);
-            } catch (WorkNotFoundException $e) {
-                $work['is_valid'] = false;
-                $works[] = $work;
-                continue;
-            }
-
-            $workInfo = [
-                'author_tid' => $workData->authorTid,
-                'dareId' => $workData->dareId,
-                'title' => $workData->title,
-                'tid' => $workData->tid,
-            ];
-            try {
-                $workInfo['author_name'] = $personManager->getPersonEssentialData($workData->authorTid)->name;
-            } catch (PersonNotFoundException) {
-                $workInfo['author_name']  = 'Undefined';
-            }
-
-            $work['work_info'] = $workInfo;
-            $chunks = $systemManager->getDataManager()->getChunksWithTranscriptionForWorkId($workId);
-            $work['chunks'] = $chunks;
-            $works[] = $work;
+    private static function getWorkDataBasicInfo(string $workId, SystemManager $systemManager) : array {
+        $workDataBasicInfo = [
+            'workId' => $workId,
+            'isValid' => true,
+        ];
+        try {
+            $workData = $systemManager->getWorkManager()->getWorkDataByDareId($workId);
+            $workDataBasicInfo['entityId'] = $workData->entityId;
+            $workDataBasicInfo['authorId'] = $workData->authorId;
+            $workDataBasicInfo['title'] = $workData->title;
+            $workDataBasicInfo['shortTitle'] = $workData->shortTitle;
+            $workDataBasicInfo['chunks'] = [];
+        } catch (WorkNotFoundException) {
+            $workDataBasicInfo['isValid'] = false;
         }
+        return $workDataBasicInfo;
+    }
+
+    private static function getChunkBasicArray(int $chunkNumber) : array {
+        return
+            [
+                'n' => $chunkNumber,
+                'tx' => false,
+                'ed' => false,
+                'ct' => false
+            ];
+    }
+
+
+    /**
+     * Generates an array with active works in the system for use in the site's "Works" page.
+     *
+     * The returned array has one entry per active work in the system with the workId as the
+     * array key
+     * ```
+     *  $resultsArray['WWW'] = [
+     *   'workId' => 'WWW', // a.k.a. Dare id
+     *   'isValid' => bool // if false, there's some inconsistency in the database and the other fields are undefined
+     *   'entityId' => int
+     *   'authorId' => int // entity id
+     *   'title' => string
+     *   'shortTitle' => string
+     *   'chunks' => array
+     * ]
+     * ```
+     * The ``chunks`` array has one entry per chunk with some data in the system with the
+     * chunk number as array key:
+     *
+     * ```
+     *   chunks[N] = [
+     *      'n' => N,
+     *      'tx' => bool, // hasTranscriptions
+     *      'ed' => bool, // hasEditions
+     *      'ct' => bool // hasCollationTables
+     *   ]
+     * ```
+     *
+     *
+     * @param SystemManager $systemManager
+     * @param LoggerInterface|null $logger
+     * @return array
+     */
+    public static function buildWorkData(SystemManager $systemManager, ?LoggerInterface $logger = null) : array {
+        $debug = true;
+        if ($logger === null) {
+            $logger = new NullLogger();
+        }
+        $works = [];
+        $tableInfoArray = $systemManager->getCollationTableManager()->getTablesInfo();
+        $debug && $logger->debug('Got ' . count($tableInfoArray) . ' active tables');
+        foreach ($tableInfoArray as $table) {
+            $workId = $table['workId'];
+            if (!isset($works[$workId])) {
+                $works[$workId] = self::getWorkDataBasicInfo($workId, $systemManager);
+                if (!$works[$workId]['isValid']) {
+                    $logger->error("BuildWorkData: found an invalid work while processing active collation tables", [
+                        'work' => $works[$workId],
+                        'table' => $table
+                    ]);
+                }
+            }
+            if ($works[$workId]['isValid']) {
+                $chunkNumber = $table['chunkNumber'];
+                if (!isset($works[$workId]['chunks'][$chunkNumber])) {
+                    $works[$workId]['chunks'][$chunkNumber] = self::getChunkBasicArray($chunkNumber);
+                }
+                if ($table['type'] === 'edition') {
+                    $works[$workId]['chunks'][$chunkNumber]['ed'] = true;
+                } else {
+                    $works[$workId]['chunks'][$chunkNumber]['ct'] = true;
+                }
+            }
+        }
+        $worksWithTranscriptions = $systemManager->getDataManager()->getWorksWithTranscriptions();
+        $debug && $logger->debug('Got ' . count($worksWithTranscriptions) . ' works with transcriptions');
+        foreach($worksWithTranscriptions as $workId) {
+            if (!isset($works[$workId])) {
+                $works[$workId] = self::getWorkDataBasicInfo($workId, $systemManager);
+                if (!$works[$workId]['isValid']) {
+                    $logger->error("BuildWorkData: Found an invalid work while processing works with transcriptions",
+                        [ 'data' => $works[$workId] ]);
+                }
+            }
+            if ($works[$workId]['isValid']) {
+                $chunksWithTranscriptions = $systemManager->getDataManager()->getChunksWithTranscriptionForWorkId($workId);
+                foreach($chunksWithTranscriptions as $chunkNumber) {
+                    if ($chunkNumber >= 1) {
+                        if (!isset($works[$workId]['chunks'][$chunkNumber])) {
+                            $works[$workId]['chunks'][$chunkNumber] = self::getChunkBasicArray($chunkNumber);
+                        }
+                        $works[$workId]['chunks'][$chunkNumber]['tx'] = true;
+                    }
+                }
+            }
+        }
+        $debug && $logger->debug('Finished building work data, there are ' . count($works) . ' active works');
         return $works;
     }
 
     public static function updateCachedWorkData(SystemManager $systemManager): bool
     {
         try {
-            $works = self::buildWorkData($systemManager);
+            $works = self::buildWorkData($systemManager, $systemManager->getLogger());
             $systemManager->getSystemDataCache()->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
         } catch(Exception $e) {
             $systemManager->getLogger()->error("Exception while updating cached WorkData",

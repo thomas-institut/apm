@@ -84,11 +84,11 @@ class ApiCollation extends ApiController
             ], 404);
         }
 
-        if ($workData->dareId === '') {
+        if ($workData->workId === '') {
             return $this->responseWithJson($response, []);
         }
 
-        return $this->responseWithJson($response, $this->systemManager->getCollationTableManager()->getActiveTablesByWorkId($workData->dareId));
+        return $this->responseWithJson($response, $this->systemManager->getCollationTableManager()->getActiveTablesByWorkId($workData->workId));
 
     }
 

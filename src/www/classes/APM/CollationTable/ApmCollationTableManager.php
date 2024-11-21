@@ -68,7 +68,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
     public function getCollationTableById(int $collationTableId, string $timeStamp = '') : array
     {
 
-        $this->logger->debug("Getting ctable $collationTableId at time '$timeStamp'");
+//        $this->logger->debug("Getting ctable $collationTableId at time '$timeStamp'");
         if ($timeStamp === '') {
             $timeStamp = TimeString::now();
         }
@@ -94,9 +94,8 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
 //        $this->logger->debug("CT data ", [ 'valid_from' => $dbData['valid_from'], 'title' => $dbData['title'], 'tableId' => $ctData['tableId'] ]);
 
 
-        // fix table id!
-        if ($ctData['tableId'] !== $collationTableId) {
-            $this->logger->warning("Wrong collation table id found in table $collationTableId", [ 'wrongId' => $ctData['tableId']]);
+        if (!isset($ctData['tableId']) || ($ctData['tableId'] !== $collationTableId)) {
+            $this->logger->warning("Wrong collation table id found in table $collationTableId", [ 'wrongId' => $ctData['tableId'] ?? 'N/A']);
             $ctData['tableId'] = $collationTableId;
         }
 
@@ -199,6 +198,14 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
 
     }
 
+    /**
+     * Returns a table info array from a DB row or false
+     * if inconsistencies are found.
+     *
+     * @param array $row
+     * @param bool $withVersionInfo
+     * @return array|bool
+     */
     private function getTableInfoFromDbRow(array $row, bool $withVersionInfo = true) : array|bool {
         $id = intval($row['id']);
         if ($withVersionInfo) {
@@ -219,6 +226,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             'chunkId' => $row['chunk_id'],
             'chunkNumber' => $row['chunk_number'],
             'type' => $row['type'],
+            'lastChange' => $row['valid_from'] ?? '',
             'lastVersion' => $lastVersionInfo
         ];
     }
@@ -234,17 +242,6 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
     }
 
 
-    public function getActiveEditionTableInfo(): array {
-        $rows = $this->ctTable->findRowsWithTime(['archived' => 0, 'type' =>'edition'], 0,  TimeString::now());
-        $results = [];
-        foreach($rows as $row) {
-            $data = $this->getTableInfoFromDbRow($row);
-            if ($data !== false)   {
-                $results[] = $data;
-            }
-        }
-        return $results;
-    }
 
     public function getCollationTableIdsForChunk(string $chunkId, string $timeString): array
     {
@@ -346,4 +343,39 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
 
         return $returnArray;
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getTablesInfo(bool $includeArchived = false, ?string $workId = null): array
+    {
+        if ($workId === '') {
+            return [];
+        }
+        $whatToFind = [];
+        if (!$includeArchived) {
+            $whatToFind['archived'] = 0;
+        }
+        if ($workId !== null) {
+            $whatToFind['work_id'] = $workId;
+        }
+
+        $rows = $this->ctTable->findRowsWithTime($whatToFind, 0,  TimeString::now());
+        $tableInfoArray = [];
+        foreach($rows as $row) {
+            $tableInfo = $this->getTableInfoFromDbRow($row, false);
+            if ($tableInfo !== false)   {
+                $tableInfoArray[] = $tableInfo;
+            }
+        }
+        return $tableInfoArray;
+    }
+
+
+    public function getActiveEditionTableInfo(): array {
+        return array_filter($this->getTablesInfo(), function ($tableInfo) {
+            return $tableInfo['type'] === 'edition';
+        });
+    }
+
 }

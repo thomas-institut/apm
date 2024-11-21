@@ -6,9 +6,9 @@ use ThomasInstitut\Exportable\Exportable;
 
 class WorkData implements Exportable
 {
-    public int $tid = -1;
-    public string $dareId = '';
-    public int $authorTid = -1;
+    public int $entityId = -1;
+    public string $workId = '';
+    public int $authorId = -1;
     public string $title ='';
     public string $shortTitle = '';
     public bool $enabled = false;

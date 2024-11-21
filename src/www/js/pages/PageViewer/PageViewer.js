@@ -196,9 +196,11 @@ export class PageViewer extends ApmPage {
         $('#tabsUl').append(theUl)
       }
       for (let col = 1; col <= numColumns; col++) {
+        console.log(`Getting column data for doc ${this.options.docId}, page ${thePageNumber}, col ${col}`);
         let apiGetColumnDataUrl = urlGen.apiTranscriptionsGetData(this.options.docId, thePageNumber, col)
         $.getJSON(apiGetColumnDataUrl,
           (respColData) => {
+            console.log(`Got data`, respColData);
             $('.nav-tabs a').on('click', function () {
               $(this).tab('show')
             })

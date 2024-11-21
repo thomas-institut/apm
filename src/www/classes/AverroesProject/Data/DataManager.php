@@ -901,7 +901,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * the given work id
      *
      * @param $workId
-     * @return string[]
+     * @return int[]
      */
     public function getChunksWithTranscriptionForWorkId($workId) : array
     {

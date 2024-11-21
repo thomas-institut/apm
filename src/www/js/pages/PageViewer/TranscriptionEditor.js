@@ -96,8 +96,8 @@ export class TranscriptionEditor
     this.containerId = containerId
     this.id = id
     this.options = TranscriptionEditor.getOptions(userOptions)
-    //console.log('Transcription editor options')
-    //console.log(this.options)
+    // console.log('Transcription editor options')
+    // console.log(this.options)
     this.people = this.options.people
     this.editorTid = this.options.editorTid
     this.activeWorks = this.options.activeWorks

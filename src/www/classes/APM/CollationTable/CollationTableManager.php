@@ -259,6 +259,28 @@ abstract class CollationTableManager implements ErrorReporter
         return $newData;
     }
 
+
+    /**
+     * Returns an array with one element for each table in the system
+     *
+     *   ```
+     * [
+     *        tableId => int
+     *        type => 'edition' | 'ctable'
+     *        workId => string
+     *        chunkNumber => string
+     *        lastVersion => Timestring
+     *        archived => boolean
+     *  ]
+     * ```
+     *
+     * @param bool $includeArchived  if true, archived tables are also listed
+     * @param string|null $workId if not null, only tables for the given work id are listed.
+     *        The method does not check if the given work id is valid. If workId is '', an empty
+     *        array will be returned
+     * @return array
+     */
+    abstract public function getTablesInfo(bool $includeArchived = false, ?string $workId = null) : array;
     abstract public function getActiveEditionTableInfo(): array;
 
 

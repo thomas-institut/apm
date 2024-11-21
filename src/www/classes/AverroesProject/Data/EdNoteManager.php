@@ -258,6 +258,9 @@ class EdNoteManager {
                 $logger->error('Bad editorial note in array', $arrayElement);
                 continue;
             }
+            if ($edNote->authorTid === 0) {
+                $logger->warning("No author tid in note", get_object_vars($edNote));
+            }
             $notes[] = $edNote;
         }
         return $notes;

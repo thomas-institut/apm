@@ -61,9 +61,8 @@ class EditorialNote {
             return false;
         }
         $editorialNote->setType($type);
-
         $editorialNote->id = intval($theArray['id']) ?? 0;
-        $editorialNote->authorTid = intval($theArray['authorTid']) ?? 0;
+        $editorialNote->authorTid = intval($theArray['authorTid'] ?? 0);
         $editorialNote->lang = $theArray['lang'] ?? '';
         $editorialNote->target = intval($theArray['target']) ?? 0;
         $editorialNote->time = $theArray['time'] ?? '';

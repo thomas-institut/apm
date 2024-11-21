@@ -46,8 +46,8 @@ export class ChunkPage extends HeaderAndContentPage {
     let optionsChecker = new OptionsChecker({
       context: 'ChunkPage',
       optionsDefinition: {
-        work : { required: true, type: 'string'},
-        chunk : { required: true, type: 'NumberGreaterThanZero' },
+        workId : { required: true, type: 'string'},
+        chunkNumber : { required: true, type: 'NumberGreaterThanZero' },
         showAdminInfo : { type: 'boolean', default: false},
         witnessInfo :{ type: 'Array', default: []},
         pageInfo:  { type: 'object', default: []},
@@ -93,6 +93,7 @@ export class ChunkPage extends HeaderAndContentPage {
   async initPage() {
 
     await super.initPage();
+    console.log(`ChunkPage: initPage`);
 
     // selectors and classes
     this.ctLinksElement = $('#collationtablelinks')
@@ -103,8 +104,9 @@ export class ChunkPage extends HeaderAndContentPage {
     this.savedCollationTablesDiv = $('#savedcollationtables')
     this.editionsDiv = $('#editions')
 
-    this.workData = await  this.apmDataProxy.getWorkData(this.options.work);
-    this.authorInfo = await this.apmDataProxy.getPersonEssentialData(this.workData.authorTid);
+    this.workData = await this.apmDataProxy.getWorkData(this.options.workId);
+    console.log(`WorkData from server`, this.workData);
+    this.authorInfo = await this.apmDataProxy.getPersonEssentialData(this.workData.authorId);
     this.headerDiv.html(this.generateHeaderDivHtml());
     this.chunkIdDiv.html(this.generateChunkIdDivHtml());
 
@@ -231,8 +233,8 @@ export class ChunkPage extends HeaderAndContentPage {
   async getHeaderHtml() {
     let breadcrumbHtml = this.getBreadcrumbNavHtml([
       { label: tr('Works'), url:  urlGen.siteWorks()},
-      { label: this.options.work, url: urlGen.siteWorkPage(this.options.work)},
-      { label: `Chunk ${this.options.chunk}`, active: true}
+      { label: this.options.workId, url: urlGen.siteWorkPage(this.options.workId)},
+      { label: `Chunk ${this.options.chunkNumber}`, active: true}
     ])
     return `${breadcrumbHtml} <div id="chunkpageheader"></div>`
   }
@@ -272,7 +274,7 @@ export class ChunkPage extends HeaderAndContentPage {
             dialogObject.setTitle('Success')
             dialogObject.setBody(`
 <p>The edition with witness ${info.title} was successfully created.<p><p>Click <a href="${tableUrl}" target="_blank" >here to open it on a new tab</a></p>
-<p>You can also close this window and find a link to the new edition under the 'Editions' section.</p>
+<p>You can also close this window and find a link to the new edition under the 'Chunk Editions' section.</p>
 `)
             dialogObject.hideAcceptButton()
             dialogObject.setCancelButtonText(`Close and Refresh Page`)
@@ -301,7 +303,7 @@ export class ChunkPage extends HeaderAndContentPage {
 
     const titles = {
       ctable : tr('Saved Collation Tables'),
-      edition : tr('Editions')
+      edition : tr('Chunk Editions')
     }
 
     let tables = this.options.savedCollationTables.filter( savedCt => savedCt.type === type)
@@ -310,10 +312,12 @@ export class ChunkPage extends HeaderAndContentPage {
       html += `<h4>${titles[type]}</h4>`
       html += '<ul>'
       for(const ctInfo of tables) {
-        let url = urlGen.siteCollationTableEdit(ctInfo['tableId'])
+         console.log(`Processing ctInfo`, ctInfo);
+        let url = type === 'edition' ? urlGen.siteChunkEdition(ctInfo['tableId'])
+          : urlGen.siteCollationTableEdit(ctInfo['tableId']);
         html += '<li class="smallpadding"><a title="Open in new tab/window" target="_blank" href="' + url + '">' + ctInfo['title'] +
           '</a>, <small>last change: ' + ApmFormats.timeString(ctInfo['lastSave']) +
-          ' by ' + await this.getAuthorLink(ctInfo['authorTid']) + '</small></li>'
+          ' by ' + await this.getAuthorLink(ctInfo['authorId']) + '</small></li>'
       }
       html += '</ul>'
 
@@ -345,24 +349,24 @@ export class ChunkPage extends HeaderAndContentPage {
     html += '<div class="row row-no-gutters">'
 
     html += '<div class="col-md-11 cpheader">'
-    //let url = this.pathFor.siteChunkPage(this.options.work, this.options.chunk-1)
+    //let url = this.pathFor.siteChunkPage(this.options.workId, this.options.chunkNumber-1)
 
-    let prevChunk = this.getPreviousChunk(this.options.chunk, this.options.validChunks)
+    let prevChunk = this.getPreviousChunk(this.options.chunkNumber, this.options.validChunks)
     if (prevChunk !== -1) {
-      let url = urlGen.siteChunkPage(this.options.work, prevChunk)
+      let url = urlGen.siteChunkPage(this.options.workId, prevChunk)
       html += '<a role="button" class="btn-default" title="Go to chunk ' + prevChunk + '" href="' + url +
         '">'+ arrowLeft + '</a>'
       html += '&nbsp;&nbsp;'
     }
     html += `<a href="${urlGen.sitePerson(Tid.toBase36String(this.authorInfo.tid))}">${this.authorInfo.name}</a>, 
-        <em><a href="${urlGen.siteWorkPage(this.workData.dareId)}">${this.workData.title}</a></em>, chunk ${this.options.chunk}`;
+        <em><a href="${urlGen.siteWorkPage(this.workData.workId)}">${this.workData.title}</a></em>, chunk ${this.options.chunkNumber}`;
 
     html += '</div>'
 
     html += '<div class="col-md1 cpheader justifyright">'
-    let nextChunk = this.getNextChunk(this.options.chunk, this.options.validChunks)
+    let nextChunk = this.getNextChunk(this.options.chunkNumber, this.options.validChunks)
     if (nextChunk !== -1) {
-      let url = urlGen.siteChunkPage(this.options.work, nextChunk)
+      let url = urlGen.siteChunkPage(this.options.workId, nextChunk)
       html += '<a role="button" class="btn-default" title="Go to chunk ' + nextChunk + '" href="' + url +
         '">'+ arrowRight + '</a>'
     }
@@ -556,7 +560,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
     let numWitnesses = this.options.witnessInfo.length
     let numValidWitnesses = this.calculateTotalValidWitnesses()
     html += '<p>'
-    html += '<b>Chunk ID:</b> ' + this.workData.dareId + '-' + this.options.chunk
+    html += '<b>Chunk ID:</b> ' + this.workData.workId + '-' + this.options.chunkNumber
     html += '<br/>'
     if (numWitnesses === 0) {
       html += '<b>Witnesses:</b> none'
@@ -614,15 +618,15 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
              { 
                lang: l,
                name: langName,
-               url:  urlGen.siteCollationTableAutomatic(this.options.work, this.options.chunk, l),
+               url:  urlGen.siteCollationTableAutomatic(this.options.workId, this.options.chunkNumber, l),
                urltext: 'All witnesses',
                urltitle: 'Open automatic collation table in new tab',
                availableWitnesses: this.witnessesByLang[l],
                isPreset: false,
                actSettings : { 
                  lang: l,
-                 work: this.options.work,
-                 chunk: this.options.chunk,
+                 work: this.options.workId,
+                 chunk: this.options.chunkNumber,
                  ignorePunctuation: true,
                  witnesses: this.witnessesByLang[l]
                }

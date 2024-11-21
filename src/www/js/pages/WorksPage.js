@@ -5,6 +5,7 @@ import { urlGen } from './common/SiteUrlGen'
 import { CollapsePanel } from '../widgets/CollapsePanel'
 import { compareStrings } from '../toolbox/Util.mjs'
 import { Tid } from '../Tid/Tid'
+import { WorkId } from '../toolbox/WorkId'
 
 export class WorksPage extends NormalPage {
   constructor (options) {
@@ -13,22 +14,21 @@ export class WorksPage extends NormalPage {
     let oc = new OptionsChecker({
       context: 'WorksPage',
       optionsDefinition: {
-        works: { type: 'array', required: true}
+        works: { type: 'object', required: true}
       }
     });
 
     this.options = oc.getCleanOptions(options);
     this.works = this.options.works;
-
-    this.groupedWorks = this.groupWorksByAuthor(this.works);
-    console.log(`Works`);
-    console.log(this.works);
-    console.log(this.groupedWorks);
-    this.collapses = [];
-
-    this.initPage().then( () => {
-      console.log(`Works Page Initialized`)
-    })
+    console.log(`Works`, this.works);
+    this.groupWorksByAuthor(this.works). then( (gw) => {
+      this.groupedWorks = gw;
+      console.log(`Grouped Works`, this.groupedWorks);
+      this.collapses = [];
+      this.initPage().then( () => {
+        console.log(`Works Page Initialized`)
+      })
+    });
   }
 
   /**
@@ -36,20 +36,22 @@ export class WorksPage extends NormalPage {
    * @param works
    * @private
    */
-  groupWorksByAuthor(works) {
+  async groupWorksByAuthor(works) {
     let groupedWorks = [];
-    works.forEach( (work) => {
-      let authorTid = work['work_info']['author_tid'];
-      if (groupedWorks[authorTid] === undefined) {
-        groupedWorks[authorTid] = {
-          authorTid: authorTid,
-          authorName: work['work_info']['author_name'],
+    let workIds = Object.keys(works);
+    for(let i = 0; i < workIds.length; i++) {
+      let workId = workIds[i];
+      let authorId = works[workId]['authorId'];
+      if (groupedWorks[authorId] === undefined) {
+        groupedWorks[authorId] = {
+          authorId: authorId,
+          authorName: await this.apmDataProxy.getEntityName(authorId),
           works: []
         }
       }
-      groupedWorks[authorTid].works.push(work);
-    })
-    // console.log(groupedWorks);
+      groupedWorks[authorId].works.push(works[workId]);
+    }
+
     let gwArray = [];
     Object.keys(groupedWorks).forEach( (key) => {
       gwArray.push(groupedWorks[key]);
@@ -59,7 +61,7 @@ export class WorksPage extends NormalPage {
     })
       .map ( (gw) => {
       gw.works = gw.works.sort( (a,b) => {
-        return compareStrings(a['work_info']['id'], b['work_info']['id']);
+        return WorkId.compare(a['workId'], b['workId']);
       });
       return gw;
     });
@@ -69,10 +71,11 @@ export class WorksPage extends NormalPage {
 
   async genContentHtml () {
     let html = `<h2>${tr('Works')}</h2>`;
-    html += `<div class="note">Works with transcription or edition data in the system. 
-       For a full list of works, visit the author's page.</div>`
+    html += `<div class="note">There are the works that have transcription, collation table or edition data in the system. 
+       Other works can be found by visiting the author's page.</div>`
     this.groupedWorks.forEach( (gw, authorIndex) => {
-      html += `<div class="author author-${authorIndex}"><h1><a href="${urlGen.sitePerson(Tid.toBase36String(gw.authorTid))}">${gw.authorName}</a></h1>`;
+      html += `<div class="author author-${authorIndex}">
+        <h1><a href="${urlGen.sitePerson(Tid.toBase36String(gw.authorId))}">${gw.authorName}</a></h1>`;
       gw.works.forEach( (work, index) => {
           html += `<div class="work work-${authorIndex}-${index}"></div>`;
         })
@@ -84,7 +87,10 @@ export class WorksPage extends NormalPage {
 
   genWorkDivHtml(work, authorIndex, workIndex) {
     let html = '';
-    let maxChunk = Math.max(...work['chunks']);
+    let chunkNumbers = Object.keys(work['chunks'])
+      .map( (k) => { return parseInt(k)})
+      .sort( (a,b) => {return a-b});
+    let maxChunk = Math.max(...chunkNumbers);
     let cellSize = 'small';
     if (maxChunk >= 100) {
       cellSize = 'medium';
@@ -93,9 +99,14 @@ export class WorksPage extends NormalPage {
       cellSize = 'large';
     }
     html += `<div class="chunk-list chunk-list-${cellSize}" id="chunk-list-${authorIndex}-${workIndex}">`;
-    html += work['chunks'].map( ( chunk) => {
+    html += chunkNumbers.map( ( chunkNumber) => {
+      let chunk = work['chunks'][chunkNumber];
+      let chunkLabel = chunk['n'];
+      if (chunk['ed'] || chunk['ct'] ) {
+        chunkLabel = `*${chunkLabel}`;
+      }
       return `<div class="chunk-div">
-            <a class="chunk-link" href="${urlGen.siteChunkPage(work['work_info']['dare_id'], chunk)}" title="View chunk">${chunk}</a>
+            <a class="chunk-link" href="${urlGen.siteChunkPage(work['workId'], chunk['n'])}" title="View chunk">${chunkLabel}</a>
             </div>`;
     }).join('');
     html += `</div>`; // chunk-list
@@ -109,7 +120,7 @@ export class WorksPage extends NormalPage {
       gw.works.forEach( (work, workIndex) => {
         this.collapses.push(new CollapsePanel({
           containerSelector: `div.work-${authorIndex}-${workIndex}`,
-          title: `<a href="${urlGen.siteWorkPage(work['work_id'])}">${work['work_id']}: <em>${work['work_info']['title']}</em> </a>`,
+          title: `<a href="${urlGen.siteWorkPage(work['workId'])}">${work['workId']}: <em>${work['title']}</em> </a>`,
           content: this.genWorkDivHtml(work, workIndex),
           contentClasses: [],
           expandLinkTitle: tr('Click to show chunk list'),

@@ -32,17 +32,17 @@ class ApiWorks extends ApiController
             return $this->responseWithStatus($response, 409);
         }
         try {
-            $authorName = $this->systemManager->getPersonManager()->getPersonEssentialData($workData->authorTid)->name;
+            $authorName = $this->systemManager->getPersonManager()->getPersonEssentialData($workData->authorId)->name;
         } catch (PersonNotFoundException) {
-            $this->logger->error("Author not found " . $workData->authorTid);
+            $this->logger->error("Author not found " . $workData->authorId);
             $authorName = '';
         }
 
         $workInfo = [
-            'id' => $workData->tid,
-            'tid' => $workData->tid,
-            'dare_id' => $workData->dareId,
-            'author_tid'=> $workData->authorTid,
+            'id' => $workData->entityId,
+            'tid' => $workData->entityId,
+            'dare_id' => $workData->workId,
+            'author_tid'=> $workData->authorId,
             'title' => $workData->title,
             'short_title' => $workData->title,
             'enabled' => $workData->enabled ? 1 : 0,

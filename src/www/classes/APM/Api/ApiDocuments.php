@@ -20,6 +20,7 @@
 
 namespace APM\Api;
 
+use APM\FullTranscription\Exception\PageNotFoundException;
 use APM\FullTranscription\PageManager;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
@@ -381,7 +382,7 @@ class ApiDocuments extends ApiController
 
             try {
                 $pageInfo = $transcriptionManager->getPageManager()->getPageInfoByDocPage($docId, $pageNumber);
-            } catch (InvalidArgumentException) {
+            } catch (PageNotFoundException) {
                 $errors[] = "Page not found, doc " . $pageDef['docId'] . " page " . $pageDef['page'];
                 continue;
             }

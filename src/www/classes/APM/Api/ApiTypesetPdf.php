@@ -119,7 +119,7 @@ class ApiTypesetPdf extends ApiController
 //        $this->profiler->stop();
 //        $totalProcessingTime = $this->getProfilerTotalTime() * 1000;
         if ($result['status'] === 'error') {
-            return $this->responseWithJson($response, ['error' => $result['error']], 409);
+            return $this->responseWithJson($response, ['error' => $result['error'] ?? 'No error reported'], 409);
         }
         return $this->responseWithJson($response, [
             'status' => 'OK',
@@ -180,7 +180,10 @@ class ApiTypesetPdf extends ApiController
 
         $pythonVenv = $this->systemManager->getConfig()[ApmConfigParameter::PYTHON_VENV];
         $renderer = $this->systemManager->getConfig()[ApmConfigParameter::PDF_RENDERER];
-        $renderer = "$pythonVenv/bin/python $renderer";
+        if (isset($this->systemManager->getConfig()[ApmConfigParameter::PYTHON_VENV])) {
+            $renderer = "$pythonVenv/bin/python $renderer";
+        }
+
         $apmFullPath = $this->systemManager->getConfig()[ApmConfigParameter::BASE_FULL_PATH];
         $outputFileName = "$apmFullPath/$fileToDownload";
 

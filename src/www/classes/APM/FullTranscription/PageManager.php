@@ -19,6 +19,10 @@
 
 namespace APM\FullTranscription;
 
+use APM\FullTranscription\Exception\DocumentNotFoundException;
+use APM\FullTranscription\Exception\PageNotFoundException;
+use APM\FullTranscription\Exception\PageNumberNotFoundException;
+
 /**
  * Class that manages information about pages in the APM
  *
@@ -34,6 +38,7 @@ abstract class PageManager
     /**
      * @param int $pageId
      * @return PageInfo
+     * @throws PageNotFoundException
      */
     abstract public function getPageInfoById(int $pageId) : PageInfo;
 
@@ -41,6 +46,7 @@ abstract class PageManager
      * @param int $docId
      * @param int $seq
      * @return PageInfo
+     * @throws PageNotFoundException
      */
     abstract public function getPageInfoByDocSeq(int $docId, int $seq) : PageInfo;
 
@@ -48,6 +54,7 @@ abstract class PageManager
      * @param int $docId
      * @param int $pageNumber
      * @return PageInfo
+     * @throws PageNotFoundException
      */
     abstract public function getPageInfoByDocPage(int $docId, int $pageNumber) : PageInfo;
 

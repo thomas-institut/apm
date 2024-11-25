@@ -66,7 +66,14 @@ class ApiCollation extends ApiController
     public function  getActiveEditions(Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $infoArray = $this->systemManager->getCollationTableManager()->getActiveEditionTableInfo();
+        $activeEditions = $this->systemManager->getCollationTableManager()->getActiveEditionTableInfo();
+        // fill in version info for each table
+        $infoArray = [];
+        foreach ($activeEditions as $info) {
+            $versions = $this->systemManager->getCollationTableManager()->getCollationTableVersions($info['id']);
+            $info['lastVersion'] = $versions[count($versions)-1];
+            $infoArray[] = $info;
+        }
         return $this->responseWithJson($response, $infoArray);
     }
 

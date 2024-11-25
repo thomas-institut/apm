@@ -23,7 +23,7 @@ module.exports = {
       dependOn: 'QuillPack',
     },
     PeoplePage: './pages/PeoplePage.js',
-    PersonPageNew: './pages/PersonPageNew.js',
+    PersonPage: './pages/PersonPage.js',
     MceComposer: {
       import: './MceComposer/MceComposer.js',
       filename: 'MceComposer.bundle.js',

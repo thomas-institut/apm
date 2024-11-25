@@ -196,7 +196,8 @@ export class ChunkPage extends HeaderAndContentPage {
           let witnessUrl = urlGen.apiWitnessGet(witnessInfo.systemId, 'html')
           console.log('Loading witness ' + witnessInfo.systemId)
           let formattedSelector = '#formatted-' + witnessInfo.systemId
-          $(formattedSelector).html('Loading text, this might take a while <i class="fas fa-spinner fa-spin fa-fw"></i> ...')
+          $(formattedSelector).html('Loading text, this might take a while <i class="fas fa-spinner fa-spin fa-fw"></i> ...');
+          // TODO: change this to ApmDataProxy
           $.get(witnessUrl)
             .done(function(data){
               console.log('Got data for fullTx witness ' + witnessInfo.systemId)

@@ -16,5 +16,8 @@ ALTER TABLE `ap_ctables`
 
 ALTER TABLE `ap_ctables` ADD INDEX `apm_id` (`work_id`);
 
+# Fixes Pasquale Porro's problem!
+ALTER TABLE apm.ap_versions_ct DROP FOREIGN KEY ap_versions_ct_author;
+
 
 UPDATE `ap_settings` SET `value` = '35' WHERE `ap_settings`.`setting` = 'DatabaseVersion';

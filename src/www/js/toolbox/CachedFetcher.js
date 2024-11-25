@@ -6,7 +6,7 @@ export class CachedFetcher {
   /**
    *
    * @param {KeyCache}cache
-   * @param {number}defaultTtl
+   * @param {number} defaultTtl if 0, no caching is done by default
    * @param lockManager
    */
   constructor (cache, defaultTtl = 0, lockManager = null) {

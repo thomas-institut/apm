@@ -373,9 +373,9 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
 
 
     public function getActiveEditionTableInfo(): array {
-        return array_filter($this->getTablesInfo(), function ($tableInfo) {
+        return array_values(array_filter($this->getTablesInfo(), function ($tableInfo) {
             return $tableInfo['type'] === 'edition';
-        });
+        }));
     }
 
 }

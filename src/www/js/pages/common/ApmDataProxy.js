@@ -219,16 +219,26 @@ export class ApmDataProxy {
   }
 
   /**
+   * Gets a URL with caching if needed.
+   *
+   * By default, an actual GET request will be done and the results will not be cached.
    *
    * @param {string} url
-   * @param {boolean}forceActualFetch
-   * @param ttl
+   * @param {boolean} [forceGet=true] if true, the cache is not checked and the GET request is actually made to the URL
+   * @param {number} [ttl=-1] seconds to cache the results, or no caching if <=0
    * @return {Promise<{}>}
    */
-  get(url, forceActualFetch = true, ttl = -1) {
-    return this.fetch(url, 'GET', { }, forceActualFetch, false, ttl)
+  get(url, forceGet = true, ttl = -1) {
+    return this.fetch(url, 'GET', { }, forceGet, false, ttl)
   }
 
+  /**
+   * Stores the data for an entity in the browser's cache
+   *
+   * @param {Object} data - The entity's data object
+   * @param {?number} [ttl=null] if null, the default cache strategy will be used
+   * @private
+   */
   storeEntityDataInCache(data, ttl = null) {
     let cache = this.caches.session;
     if (ttl === null) {

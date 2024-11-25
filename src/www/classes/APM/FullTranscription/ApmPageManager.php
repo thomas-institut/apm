@@ -19,6 +19,7 @@
 
 namespace APM\FullTranscription;
 
+use APM\FullTranscription\Exception\PageNotFoundException;
 use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataTable\UnitemporalDataTable;
@@ -54,6 +55,9 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
         $this->localMemCache = new InMemoryDataCache();
     }
 
+    /**
+     * @inheritDoc
+     */
     public function getPageInfoByDocSeq(int $docId, int $seq) : PageInfo {
 
         $cacheKey = $this->getCacheKey(self::CACHE_TYPE_PAGE_SEQUENCE, $docId, $seq);
@@ -76,7 +80,7 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
             'seq'=> $seq
         ],1);
         if (count($rows) === 0) {
-            $this->throwInvalidArgumentException("Page $docId, seq $seq not found", self::ERROR_PAGE_NOT_FOUND);
+            throw new PageNotFoundException("Page $docId, seq $seq not found", self::ERROR_PAGE_NOT_FOUND);
         }
         $pageInfo = PageInfo::createFromDatabaseRow($rows->getFirst());
         $this->storePageInfoInCache($pageInfo);
@@ -104,7 +108,7 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
             'page_number'=> $pageNumber
         ],1);
         if (count($rows) === 0) {
-            $this->throwInvalidArgumentException("Page $docId, page $pageNumber not found", self::ERROR_PAGE_NOT_FOUND);
+            throw new PageNotFoundException("Page $docId, page $pageNumber not found", self::ERROR_PAGE_NOT_FOUND);
         }
         $pageInfo = PageInfo::createFromDatabaseRow($rows->getFirst());
         $this->storePageInfoInCache($pageInfo);
@@ -159,7 +163,7 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
         $row = $this->pagesDataTable->getRow($pageId);
         if ($row === null) {
             // no such page!
-            $this->throwInvalidArgumentException("Page $pageId not found", self::ERROR_PAGE_NOT_FOUND);
+            throw new PageNotFoundException("Page $pageId not found", self::ERROR_PAGE_NOT_FOUND);
         }
         $pageInfo = PageInfo::createFromDatabaseRow($row);
         $this->storePageInfoInCache($pageInfo);

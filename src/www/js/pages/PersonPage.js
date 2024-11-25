@@ -17,7 +17,7 @@ import { EntityData } from '../EntityData/EntityData'
 const CONTRIBUTION_MCE = 'mcEditions';
 const CONTRIBUTION_TX = 'transcriptions';
 const CONTRIBUTION_CT = 'collationTables';
-export class PersonPageNew extends NormalPage {
+export class PersonPage extends NormalPage {
 
 
   constructor (options) {
@@ -272,4 +272,4 @@ export class PersonPageNew extends NormalPage {
 
 }
 
-window.PersonPageNew = PersonPageNew;
+window.PersonPage = PersonPage;

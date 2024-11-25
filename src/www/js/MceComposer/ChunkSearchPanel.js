@@ -56,6 +56,7 @@ export class ChunkSearchPanel extends Panel {
     this.options = oc.getCleanOptions(options);
     this.mceData = this.options.mceData;
     this.icons = this.options.icons;
+    /** @type ApmDataProxy */
     this.apmDataProxy = this.options.apmDataProxy;
     this.activeEditionsData = null
     this.lastFilter = ''
@@ -122,7 +123,8 @@ export class ChunkSearchPanel extends Panel {
   genOnClickLoadActiveEditionData() {
     return async () => {
       this.loadActiveEditionDataButton.html(`Loading ... ${this.icons.busy}`);
-      let data = await  $.get(urlGen.apiGetActiveEditionInfo());
+      let data = await this.apmDataProxy.get(urlGen.apiGetActiveEditionInfo());
+      console.log(`Active edition data`, data);
       this.activeEditionTableContainer.html(await this.genActiveEditionTable(data));
       this.setupActiveEditionTableButtons(data);
       this.loadActiveEditionDataButton.html('Reload Data');
@@ -200,8 +202,7 @@ export class ChunkSearchPanel extends Panel {
       return `<em>No active single chunk editions found in APM</em>`
     }
     let tableIdsInMceData = this.mceData.chunks.map( (chunk) => { return chunk.chunkEditionTableId})
-    console.log('Table Id in MCE Data')
-    console.log(tableIdsInMceData)
+    console.log('Table Ids in MCE Data', tableIdsInMceData)
     let html = '<table class="active-editions">';
     html +=  '<thead><tr><th>Chunk</th><th>Title</th><th>Author</th><th>Last Save</th><th></th></tr></thead>';
     for(let i = 0; i < infoArray.length; i++) {

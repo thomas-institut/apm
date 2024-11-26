@@ -58,8 +58,6 @@ class IndexManager extends CommandLineUtility {
         // Name of the indices in OpenSearch
         $this->indices = [$this->indexNamePrefix . '_la', $this->indexNamePrefix . '_ar', $this->indexNamePrefix . '_he'];
 
-        print ("You chose to $operation $this->indexNamePrefix.\n");
-
         switch ($operation) {
             case 'build': // create new or replace existing index with a specific name
                 $this->rebuildIndex();
@@ -67,16 +65,37 @@ class IndexManager extends CommandLineUtility {
             case 'check': // check if a specific index mirrors all data from the sql database
                 $this->checkIndex();
                 break;
+            case 'fix':
+                $this->checkAndfixIndex();
+                break;
             case 'add': // adds a new single doc to an index
                 $pageID = $argv[3];
                 $col = $argv[4];
-                $this->addDoc($pageID, $col);
+                if (!$this->isAlreadyIndexed($pageID, $col)) {
+                    $this->addDoc($pageID, $col);
+                } else {
+                    print ("Column $col of page with id $pageID is already indexed. Do you want to update it? (y/n)\n");
+                    $input = rtrim(fgets(STDIN));
+
+                    if ($input === 'y') {
+                        $this->updateDoc($pageID, $col);
+                    }
+                }
                 break;
             case 'update': // updates an existing doc in an index
                 $pageID = $argv[3];
                 $col = $argv[4];
-                $this->updateDoc($pageID, $col);
-                break;
+                if ($this->isAlreadyIndexed($pageID, $col)) {
+                    $this->updateDoc($pageID, $col);
+                } else {
+                    print ("Column $col of page with id $pageID is not indexed and therefore cannot be updated.\nDo you want to index it? (y/n)\n");
+                    $input = rtrim(fgets(STDIN));
+
+                    if ($input === 'y') {
+                        $this->addDoc($pageID, $col);
+                    }
+                }
+                    break;
             case 'remove': // removes a doc from an index
                 $pageID = $argv[3];
                 $col = $argv[4];
@@ -88,13 +107,16 @@ class IndexManager extends CommandLineUtility {
     }
 
     private function rebuildIndex () {
+
+        print ("Rebuilding index...\n");
+
         // Delete existing and create new index
         foreach ($this->indices as $indexName) {
             $this->resetIndex($this->client, $indexName);
         }
 
         switch ($this->indexNamePrefix) {
-            case 'transcriptions':
+            case 'transcriptions' or 'test':
                 $this->rebuildIndexTranscriptions();
                 break;
             case 'editions':
@@ -109,14 +131,12 @@ class IndexManager extends CommandLineUtility {
 
         $this->logger->debug("Building index...\n");
 
-        $id = 0;
-
         // Get all relevant data for every transcription and index it
         foreach ($doc_list as $doc_id) {
             // $id will be indexed as open-search-id
 
             //if ($doc_id === 23) { // 142 for arabic test, 23 for latin, 49 for hebrew
-            $id = $this->getAndIndexTranscriptionData($doc_id, $id) + 1;
+            $this->getAndIndexTranscriptionData($doc_id);
             //}
         }
         return true;
@@ -153,27 +173,27 @@ class IndexManager extends CommandLineUtility {
 
     }
 
-    private function checkIndex () {
+    private function checkIndex ($fix=false) {
+
+        print ("Checking index...");
 
         switch ($this->indexNamePrefix) {
-            case 'transcriptions':
-                $this->checkIndexTranscriptions();
+            case 'transcriptions' or 'test':
+                $this->checkIndexTranscriptions($fix);
                 break;
             case 'editions':
-                $this->checkIndexEditions();
+                $this->checkIndexEditions($fix);
                 break;
         }
         return true;
     }
 
-    private function checkIndexTranscriptions () {
+    private function checkIndexTranscriptions ($fix) {
 
         // get versionManager
         $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
 
         // Get a list of triples with data about all transcribed columns, their pageIDs and their timestamps from the database
-
-        print("Allocating transcriptions from database");
         $columnsInDatabase = [];
 
         $docs = $this->getDm()->getDocIdList('title');
@@ -210,8 +230,6 @@ class IndexManager extends CommandLineUtility {
         $numColumnsInDatabase = count($columnsInDatabase);
 
         // Get all relevant data from the opensearch index
-
-        print("\nAllocating transcriptions from opensearch index...");
         $indexedColumns = [];
 
         foreach ($this->indices as $indexName) {
@@ -236,9 +254,6 @@ class IndexManager extends CommandLineUtility {
         }
 
         // check if every column from the database is indexed in the most up-to-date version
-
-        print("\nComparing transcriptions in database and opensearch index...\n");
-
         $notIndexedColumns = [];
         $notUpdatedColumns = [];
         $numNotIndexedColumns = 0;
@@ -277,9 +292,9 @@ class IndexManager extends CommandLineUtility {
         }
 
         if ($numNotIndexedColumns === 0 && $numNotUpdatedColumns === 0) {
-            print ("INDEX IS COMPLETE!.\n");
+            print ("\nINDEX IS COMPLETE!.\n");
         } else {
-            print ("INDEX IS NOT COMPLETE!\n
+            print ("\nINDEX IS NOT COMPLETE!\n
             $numNotIndexedColumns of $numColumnsInDatabase columns are not indexed.\n
             $numNotUpdatedColumns of $numColumnsInDatabase are not up to date.\n");
         }
@@ -291,17 +306,21 @@ class IndexManager extends CommandLineUtility {
 
         $checkResults = ['notIndexed' => $notIndexedColumns, 'outdated' => $notUpdatedColumns];
 
-        print ("Do you want to fix the index? (y, n)\n");
-        $input = rtrim(fgets(STDIN));
+        if (!$fix) {
+            print ("Do you want to fix the index? (y/n)\n");
+            $input = rtrim(fgets(STDIN));
 
-        if ($input === 'y') {
+            if ($input === 'y') {
+                $this->fixIndex($checkResults);
+            }
+        } else {
             $this->fixIndex($checkResults);
         }
 
         return true;
     }
 
-    private function checkIndexEditions () {
+    private function checkIndexEditions ($fix) {
 
         // TO DO
 
@@ -313,7 +332,7 @@ class IndexManager extends CommandLineUtility {
         print("Fixing index...\n");
 
         switch ($this->indexNamePrefix) {
-            case 'transcriptions':
+            case 'transcriptions' or  'test':
                 $this->fixIndexTranscriptions($data);
                 break;
             case 'editions':
@@ -322,9 +341,13 @@ class IndexManager extends CommandLineUtility {
         }
     }
 
+    private function checkAndFixIndex () {
+        $this->checkIndex(true);
+    }
+
     private function fixIndexTranscriptions($data) {
         foreach($data['notIndexed'] as $notIndexedCol) {
-            $this->addDoc($notIndexedCol['pageID'], $notIndexedCol['col']);
+            $this->addDoc($notIndexedCol['pageID'], $notIndexedCol['col'], null, 'fix');
             sleep(2);
         }
 
@@ -341,38 +364,31 @@ class IndexManager extends CommandLineUtility {
         return true;
     }
 
-    private function addDoc ($pageID, $col, $id=null) {
+    private function addDoc ($pageID, $col, $id=null, $context=null) {
 
-        // Get next open search id
-        if ($id === null) {
-            $id = $this->getNextIdForIndexing();
+        if ($context === null) {
+            print ("Indexing doc...\n");
         }
 
         switch ($this->indexNamePrefix) {
-            case 'transcriptions':
-                $this->addColToTranscriptionsIndex($id, $pageID, $col);
+            case 'transcriptions' or 'test':
+                $this->addColToTranscriptionsIndex($pageID, $col);
                 break;
             case 'editions':
-                $this->addDocToEditionsIndex($id);
+                $this->addDocToEditionsIndex();
                 break;
         }
 
         return true;
     }
 
-    private function addColToTranscriptionsIndex ($id, $pageID, $col) {
+    private function addColToTranscriptionsIndex ($pageID, $col) {
 
-        // Get doc-id for the page-id to be indexed
-        $docList = $this->getDm()->getDocIdList('title');
-        foreach ($docList as $doc) {
-            $pages_transcribed = $this->getDm()->getTranscribedPageListByDocId($doc);
-            foreach ($pages_transcribed as $page_transcribed) {
-                $currentPageID = $this->getPageID($doc, $page_transcribed);
-                if ($currentPageID === $pageID) {
-                    $doc_id = $doc;
-                    break;
-                }
-            }
+        $doc_id = $this->getDocIdByPageId($pageID);
+
+        if($doc_id === null) {
+            print("no doc id found for page id $pageID, column $col\n");
+            return true;
         }
 
         // Get other relevent data for indexing
@@ -390,39 +406,67 @@ class IndexManager extends CommandLineUtility {
         $currentVersionInfo = (array)(end($versionsInfo));
         $timeFrom = (string) $currentVersionInfo['timeFrom'];
 
-        $this->indexTranscription($this->client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $pageID, $doc_id, $transcription, $lang, $timeFrom);
+        $this->indexTranscription($this->client, $title, $page, $seq, $foliation, $col, $transcriber, $pageID, $doc_id, $transcription, $lang, $timeFrom);
 
         return true;
     }
 
-    private function addDocToEditionsIndex ($id) {
+    private function getDocIdByPageId ($pageID) {
+
+        $docList = $this->getDm()->getDocIdList('title');
+        foreach ($docList as $doc) {
+            $pages_transcribed = $this->getDm()->getTranscribedPageListByDocId($doc);
+            foreach ($pages_transcribed as $page_transcribed) {
+                $currentPageID = $this->getPageID($doc, $page_transcribed);
+                if ((string) $currentPageID === $pageID or $currentPageID === $pageID) {
+                    return $doc;
+                }
+            }
+        }
+    }
+
+    private function addDocToEditionsIndex () {
         // Get all relevant data from sql database
 
-        //$this->indexEdition ($this->client, $id, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id']);
+        //$this->indexEdition ($this->client, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id']);
         return true;
     }
 
     private function updateDoc ($pageID, $col) {
-        $id = $this->getOpenSearchID($pageID, $col);
-        $this->removeDoc($pageID, $col);
-        $this->addDoc($pageID, $col, $id);
+
+        print ("Updating doc...\n");
+
+        $id = $this->getOpenSearchIDAndIndexName($pageID, $col)['id'];
+        $this->removeDoc($pageID, $col, 'update');
+        $this->addDoc($pageID, $col, $id, 'update');
     }
 
-    private function removeDoc ($pageID, $col) {
+    private function removeDoc ($pageID, $col, $context='remove') {
 
-        foreach ($this->indices as $indexName) {
+        if ($context !== 'update') {
+            print ("Removing doc...\n");
+        }
+
+        $data = $this->getOpenSearchIDAndIndexName($pageID, $col);
+        $index = $data['index'];
+        $id = $data['id'];
+
+        if ($id !== null) {
             $this->client->delete([
-                'index' => $indexName,
-                'pageID' => $pageID,
-                'column' => $col
+                'index' => $index,
+                'id' => $id
             ]);
 
-            print ("Column $col from page with ID $pageID was deleted from index *$indexName*.\n");
+            if ($context !== 'update') {
+                print ("Column $col from page with ID $pageID has been removed from index *$index*.\n");
+            }
+        } else {
+            print ("Column $col from page with ID $pageID does not exist and therefore cannot be removed.\n");
         }
         return true;
     }
 
-    private function getAndIndexTranscriptionData (string $doc_id, int $id): int
+    private function getAndIndexTranscriptionData (string $doc_id): int
     {
 
         $title = $this->getTitle($doc_id);
@@ -463,13 +507,12 @@ class IndexManager extends CommandLineUtility {
                 $currentVersionInfo = (array)(end($versionsInfo));
                 $timeFrom = (string)$currentVersionInfo['timeFrom'];
 
-                $this->indexTranscription($this->client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcription, $lang, $timeFrom);
+                $this->indexTranscription($this->client, $title, $page, $seq, $foliation, $col, $transcriber, $page_id, $doc_id, $transcription, $lang, $timeFrom);
 
-                $id = $id + 1;
             }
         }
 
-        return $id;
+        return true;
     }
 
     // Function to get plaintext of the transcripts in the sql-database (copied from the ApiTranscription class)
@@ -549,7 +592,7 @@ class IndexManager extends CommandLineUtility {
     }
 
     // Function to add pages to the OpenSearch index
-    public function indexTranscription ($client, int $id, string $title, int $page, int $seq, string $foliation, int $col, string $transcriber, int $page_id, int $doc_id, string $transcription, string $lang, string $timeFrom): bool
+    public function indexTranscription ($client, string $title, int $page, int $seq, string $foliation, int $col, string $transcriber, int $page_id, int $doc_id, string $transcription, string $lang, string $timeFrom): bool
     {
 
         if ($lang != 'jrb') {
@@ -583,7 +626,6 @@ class IndexManager extends CommandLineUtility {
         // Data to be stored on the OpenSearch index
         $client->create([
             'index' => $indexName,
-            'id' => $id,
             'body' => [
                 'title' => $title,
                 'page' => $page,
@@ -600,7 +642,7 @@ class IndexManager extends CommandLineUtility {
             ]
         ]);
 
-        $this->logger->debug("Indexed Document in $indexName – OpenSearch ID: $id: Doc ID: $doc_id ($title) Page: $page Seq: $seq Foliation: $foliation Column: $col Transcriber: $transcriber Lang: $lang TimeFrom: $timeFrom\n");
+        $this->logger->debug("Indexed Document in $indexName – Doc ID: $doc_id ($title) Page ID: $page_id Page: $page Seq: $seq Foliation: $foliation Column: $col Transcriber: $transcriber Lang: $lang TimeFrom: $timeFrom\n");
         return true;
     }
 
@@ -676,7 +718,7 @@ class IndexManager extends CommandLineUtility {
         return $edition_data;
     }
 
-    public function indexEdition ($client, int $id, string $editor, string $text, string $title, string $chunk, string $lang, int $table_id): bool
+    public function indexEdition ($client, string $editor, string $text, string $title, string $chunk, string $lang, int $table_id): bool
     {
         // Get name of the target index
         if ($lang != 'jrb') {
@@ -711,7 +753,6 @@ class IndexManager extends CommandLineUtility {
         // Data to be stored on the OpenSearch index
         $client->create([
             'index' => $index_name,
-            'id' => $id,
             'body' => [
                 'table_id' => $table_id,
                 'chunk' => $chunk,
@@ -740,32 +781,41 @@ class IndexManager extends CommandLineUtility {
         return array_values($editions);
     }
 
-    private function getNextIdForIndexing() {
+//    private function getNextIdForIndexing() {
+//
+//        $ids = [];
+//
+//        foreach ($this->indices as $indexName) {
+//            $query = $this->client->search([
+//                'index' => $indexName,
+//                'size' => 20000,
+//                'body' => [
+//                    "query" => [
+//                        "match_all" => [
+//                            "boost" => 1.0
+//                        ]
+//                    ],
+//                ]
+//            ]);
+//
+//            foreach ($query['hits']['hits'] as $match) {
+//                $id = $match['_id'];
+//                $ids[] = $id;
+//            }
+//        }
+//        return max($ids)+1;
+//    }
 
-        $ids = [];
+    private function isAlreadyIndexed ($pageID, $col) {
 
-        foreach ($this->indices as $indexName) {
-            $query = $this->client->search([
-                'index' => $indexName,
-                'size' => 20000,
-                'body' => [
-                    "query" => [
-                        "match_all" => [
-                            "boost" => 1.0
-                        ]
-                    ],
-                ]
-            ]);
-
-            foreach ($query['hits']['hits'] as $match) {
-                $id = $match['_id'];
-                $ids[] = $id;
-            }
+        if ($this->getOpenSearchIDAndIndexName($pageID, $col)['id'] === null) {
+            return false;
+        } else {
+            return true;
         }
-        return max($ids)+1;
     }
 
-    private function getOpenSearchID ($pageID, $col) {
+    private function getOpenSearchIDAndIndexName ($pageID, $col) {
 
         $mustConditions = [];
         $mustConditions[] = [ 'match' => ['pageID' => $pageID]];
@@ -785,8 +835,8 @@ class IndexManager extends CommandLineUtility {
             ]);
 
             if ($query['hits']['hits'] !== []) {
-                return $query['hits']['hits'][0]['_id'];
-                }
+                return ['index' => $index, 'id' => $query['hits']['hits'][0]['_id']];
             }
         }
+    }
 }

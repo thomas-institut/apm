@@ -10,7 +10,6 @@ class Lemmatizer
 
     static public function runLemmatizer($lang, $text_clean)
     {
-        //exec(self::CMD_PREFIX . " $lang $text_clean", $tokens_and_lemmata);
 
         switch ($lang) {
             case 'la':
@@ -32,7 +31,7 @@ class Lemmatizer
 
         exec("curl -s -F data=@$tempfile -F model=$lang -F tokenizer= -F tagger= https://lindat.mff.cuni.cz/services/udpipe/api/process", $data);
 
-        // exec("rm $tempfile");
+        exec("rm $tempfile");
 
         return self::getTokensAndLemmata($data[6]);
     }
@@ -58,15 +57,22 @@ class Lemmatizer
             $sentence = str_replace('\n#', '', $sentence);
             $numTokens = substr_count($sentence, '\n');
 
-            for ($i = 1; $i < $numTokens; $i++) {
-                $sentence = str_replace('\n' . $i, '\nTOKEN', $sentence);
-            }
+            //for ($i = 1; $i < $numTokens; $i++) {
+                //$sentence = str_replace('\n', '\nTOKEN', $sentence);
+            //}
 
-            $sentence = explode('\nTOKEN', $sentence);
+            $sentence = explode("\\n", $sentence);
+
+//            foreach ($sentence as $k => $token) {
+//                $sentence[$k] = str_replace('nTOKEN', '', $token);
+//            }
+
             $sentence = array_values(array_slice($sentence, 1));
 
-            //print("SENTENCE AS ARRAY OF ENCODED TOKENS\n");
-            //print_r($sentence);
+            print("SENTENCE AS ARRAY OF ENCODED TOKENS\n");
+            print_r($sentence);
+
+            // !!!GO ON HERE!!! test command: sudo ./index update test 4381 1
 
             // normalize the tokens
             // drop integers at the beginning of every encoded tokens and drop the token duplicates which are not lemmatized
@@ -104,17 +110,17 @@ class Lemmatizer
         }
 
         // signal missing words or lemmata in the returned data
-        foreach ($words_and_lemmata[0] as $word) {
-            if ($word === null or $word === '') {
-                print("EMPTY WORD IN LIST OF WORDS!\n");
-            }
-        }
-
-        foreach ($words_and_lemmata[1] as $lemma) {
-            if ($lemma === null or $lemma === '') {
-                print("EMPTY LEMMA IN LIST OF LEMMATA!\n");
-            }
-        }
+//        foreach ($words_and_lemmata[0] as $word) {
+//            if ($word === null or $word === '') {
+//                print("EMPTY WORD IN LIST OF WORDS!\n");
+//            }
+//        }
+//
+//        foreach ($words_and_lemmata[1] as $lemma) {
+//            if ($lemma === null or $lemma === '') {
+//                print("EMPTY LEMMA IN LIST OF LEMMATA!\n");
+//            }
+//        }
 
         // print_r($words_and_lemmata);
         return $words_and_lemmata;

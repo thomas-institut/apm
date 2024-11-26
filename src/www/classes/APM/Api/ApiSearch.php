@@ -330,7 +330,8 @@ class ApiSearch extends ApiController
                     $foliation = $query['hits']['hits'][$i]['_source']['foliation'];
                     $column = $query['hits']['hits'][$i]['_source']['column'];
                     $docID = $query['hits']['hits'][$i]['_source']['docID'];
-                    $pageID = $query['hits']['hits'][$i]['_id'];
+                    $pageID = $query['hits']['hits'][$i]['_source']['pageID'];
+                    $openSearchID = $query['hits']['hits'][$i]['_id'];
                     $text_tokenized = $query['hits']['hits'][$i]['_source']['transcription_tokens'];
                     $text_lemmatized = $query['hits']['hits'][$i]['_source']['transcription_lemmata'];
                     $score = $query['hits']['hits'][$i]['_score'];
@@ -407,6 +408,7 @@ class ApiSearch extends ApiController
                         'column' => $column,
                         'creator' => $creator,
                         'pageID' => $pageID,
+                        'openSearchID' => $openSearchID,
                         'docID' => $docID,
                         'text_tokenized' => $text_tokenized,
                         'text_lemmatized' => $text_lemmatized,

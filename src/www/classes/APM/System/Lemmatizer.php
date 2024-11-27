@@ -41,7 +41,7 @@ class Lemmatizer
         //print($data);
 
         // array of arrays to be returned
-        $words_and_lemmata = [[], []];
+        $tokens_and_lemmata = ['tokens' => [], 'lemmata' => []];
 
         // split plain text data from the udpipe api into encoded sentences
         $sentences = explode(' text ', $data);
@@ -55,24 +55,40 @@ class Lemmatizer
 
             // remove irrelevant signs and convert each sentence into an array of still encoded tokens
             $sentence = str_replace('\n#', '', $sentence);
-            $numTokens = substr_count($sentence, '\n');
-
-            //for ($i = 1; $i < $numTokens; $i++) {
-                //$sentence = str_replace('\n', '\nTOKEN', $sentence);
-            //}
 
             $sentence = explode("\\n", $sentence);
 
-//            foreach ($sentence as $k => $token) {
-//                $sentence[$k] = str_replace('nTOKEN', '', $token);
-//            }
+            foreach ($sentence as $k => $token) {
+                if (!str_contains($token, '\t')) {
+                    unset($sentence[$k]);
+                }
+            }
 
-            $sentence = array_values(array_slice($sentence, 1));
+            $sentence = array_values($sentence);
 
-            print("SENTENCE AS ARRAY OF ENCODED TOKENS\n");
-            print_r($sentence);
+            $complexTokenPositions = [];
+            $numComplexTokens = 0;
 
-            // !!!GO ON HERE!!! test command: sudo ./index update test 4381 1
+            // get start and end indices of complex tokens
+            foreach ($sentence as $k => $token) {
+                if (str_contains(substr($token, 0, 4), '-')) {
+                    $token = explode('-', $token);
+                    $start = (int)$token[0] + $numComplexTokens;
+                    $end = (int)explode('\t', $token[1])[0] + $numComplexTokens;
+                    $complexTokenPositions[] = [$start, $end];
+                    $numComplexTokens++;
+                }
+            }
+
+            //foreach ($complexTokenPositions as $k => $pos) {
+
+
+            //$sentence[$pos[0]-1+$k] = '\tComTokSep\tComTokSep';
+            //array_splice($sentence, $pos[1]+($k+1), 0, '\tComTokSep\tComTokSep');
+            //}
+
+            //print("SENTENCE AS ARRAY OF ENCODED TOKENS\n");
+            //print_r($sentence);
 
             // normalize the tokens
             // drop integers at the beginning of every encoded tokens and drop the token duplicates which are not lemmatized
@@ -83,11 +99,8 @@ class Lemmatizer
                 // even for very long sentences with a token number with four digits
                 for ($j = 0; $j < 10; $j++) {
                     foreach ($sentence as $k => $token) {
-                        if (substr($token, 0, 1) === (string) $j) {
+                        if (substr($token, 0, 1) === (string)$j or str_starts_with($token, '-')) {
                             $sentence[$k] = substr($token, 1);
-                        }
-                        if (str_starts_with($token, "-")) { // these are the ,complex tokens‘ to be removed
-                            unset($sentence[$k]);
                         }
                     }
                 }
@@ -96,34 +109,66 @@ class Lemmatizer
             // update the array indices
             $sentence = array_values($sentence);
 
-            // print("SENTENCE AS ARRAY OF ENCODED TOKENS WITHOUT INTEGERS AND UNLEMMATIZED DUPLICATES\n");
-            // print_r($sentence);
+
+            //print("SENTENCE AS ARRAY OF ENCODED TOKENS WITHOUT INTEGERS AND UNLEMMATIZED DUPLICATES\n");
+            //print_r($sentence);
 
             // extract words and lemmata out of the normalized encoded tokens
-            foreach ($sentence as $encToken) {
-                $token = explode('\t', $encToken);
+            foreach ($sentence as $l => $encToken) {
+                $decToken = explode('\t', $encToken);
+
+                // clean tokens and lemmata from underscores
+                foreach ($decToken as $k => $elem) {
+                    if (str_contains($elem, '_')) {
+                        $decToken[$k] = str_replace('_', '', $elem);
+                    }
+                }
+
+                $sentence[$l] = $decToken;
+
                 //print("DECODED TOKEN\n");
                 //print_r($decToken);
-                $words_and_lemmata[0][] = $token[1];
-                $words_and_lemmata[1][] = $token[2];
+                //$tokens_and_lemmata[0][] = $decToken[1];
+                //$tokens_and_lemmata[1][] = $decToken[2];
+            }
+
+
+            foreach ($complexTokenPositions as $positions) {
+                for ($n = $positions[0]; $n <= $positions[1]; $n++) {
+                    if ($n === $positions[0]) {
+                        $sentence[$positions[0]-1][2] = " " . $sentence[$n][2] . " ";
+                    } else {
+                        $sentence[$positions[0]-1][2] = $sentence[$positions[0]-1][2] . " " . $sentence[$n][2] . " ";
+                    }
+                    unset($sentence[$n]);
+                }
+            }
+
+            $sentence = array_values($sentence);
+
+            //print_r($sentence);
+
+            foreach ($sentence as $tokenAsList) {
+                $tokens_and_lemmata['tokens'][] = $tokenAsList[1];
+                $tokens_and_lemmata['lemmata'][] = $tokenAsList[2];
+            }
+        }
+        
+        // signal missing words or lemmata in the returned data
+        foreach ($tokens_and_lemmata['tokens'] as $word) {
+            if ($word === null or $word === '') {
+                print("EMPTY WORD IN LIST OF WORDS!\n");
             }
         }
 
-        // signal missing words or lemmata in the returned data
-//        foreach ($words_and_lemmata[0] as $word) {
-//            if ($word === null or $word === '') {
-//                print("EMPTY WORD IN LIST OF WORDS!\n");
-//            }
-//        }
-//
-//        foreach ($words_and_lemmata[1] as $lemma) {
+//        foreach ($tokens_and_lemmata[1] as $lemma) {
 //            if ($lemma === null or $lemma === '') {
 //                print("EMPTY LEMMA IN LIST OF LEMMATA!\n");
 //            }
 //        }
 
-        // print_r($words_and_lemmata);
-        return $words_and_lemmata;
+        //print_r($tokens_and_lemmata['lemmata']);
+        return $tokens_and_lemmata;
     }
 
 }

@@ -611,8 +611,8 @@ class IndexManager extends CommandLineUtility {
 
             $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $transcription_clean);
 
-            $transcription_tokenized = $tokens_and_lemmata[0];
-            $transcription_lemmatized = $tokens_and_lemmata[1];
+            $transcription_tokenized = $tokens_and_lemmata['tokens'];
+            $transcription_lemmatized = $tokens_and_lemmata['lemmata'];
         }
         else {
             $transcription_tokenized = [];

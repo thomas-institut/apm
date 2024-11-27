@@ -582,6 +582,16 @@ function removeBlanks (text) {
   text = text.replaceAll("[ ", "[")
   text = text.replaceAll(" ;", ";")
 
+  // text = text.split("ComTokSep")
+  //
+  // for (let [index, value] of text.entries()) {
+  //   if (index % 2 === 1) {
+  //     text[index] = value.replaceAll(" ", "")
+  //   }
+  // }
+  //
+  // text =  text.join(' ')
+
   return text
 }
 

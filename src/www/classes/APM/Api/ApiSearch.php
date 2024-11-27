@@ -160,7 +160,7 @@ class ApiSearch extends ApiController
             $this->logger->debug(count($tokensToLemmatize) . " tokens not in cache, need to run lemmatizer", $tokensToLemmatize);
             $phrase = implode(' ', $tokensToLemmatize);
             $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $phrase);
-            $lemmata = $tokens_and_lemmata[1];
+            $lemmata = $tokens_and_lemmata['lemmata'];
             foreach ($lemmata as $i => $lemma) {
                 $tokensForQuery[] = $lemma;
                 $cacheKey = $this->getLemmaCacheKey($tokensToLemmatize[$i]);
@@ -271,10 +271,18 @@ class ApiSearch extends ApiController
         $mustConditions = [];
 
         $mustConditions[] = [ 'match' => ['lang' => $lang]];
+
         foreach ($tokens as $token) {
-            $mustConditions[] = [ 'wildcard' => [
-                $area_of_query => $token
-            ]];
+            if ($lemmatize) {
+                // MODIFY HERE FOR HANDLING OF COMPLEX LEMMATA
+                $mustConditions[] = ['match' => [
+                    $area_of_query => " " . $token . " "
+                ]];
+            } else {
+                $mustConditions[] = ['wildcard' => [
+                    $area_of_query => $token
+                ]];
+            }
         }
 
         if ($creator !== '') {
@@ -318,6 +326,8 @@ class ApiSearch extends ApiController
 
         // Get number of matched columns
         $num_matches = $query['hits']['total']['value'];
+        // MODIFY HERE FOR HANDLING OF COMPLEX LEMMATA
+        $this->logger->debug('numMatches ' . $num_matches);
 
         // If there are any matched columns, collect them all in an ordered and nested array of columns
         if ($num_matches !== 0) {
@@ -545,9 +555,12 @@ class ApiSearch extends ApiController
     // Function, to check if $needle is matching $token in one of four different modes
     private function isMatching (string $token, string $needle, string $filter): bool {
 
-        if ($filter === 'match_full') {
+        $needleForLemmataCheck = " " . $needle . " ";
 
-                if ($token === $needle or $token === ucfirst($needle)) {
+        if ($filter === 'match_full') {
+            // MODIFY HERE FOR HANDLING OF COMPLEX LEMMATA
+                if ($token === $needle or $token === ucfirst($needle) or
+                str_contains($token, $needleForLemmataCheck)) {
                     return true;
                 }
                 else {

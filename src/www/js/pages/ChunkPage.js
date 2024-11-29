@@ -318,7 +318,7 @@ export class ChunkPage extends HeaderAndContentPage {
           : urlGen.siteCollationTableEdit(ctInfo['tableId']);
         html += '<li class="smallpadding"><a title="Open in new tab/window" target="_blank" href="' + url + '">' + ctInfo['title'] +
           '</a>, <small>last change: ' + ApmFormats.timeString(ctInfo['lastSave']) +
-          ' by ' + await this.getAuthorLink(ctInfo['authorId']) + '</small></li>'
+          ' by ' + await this.getAuthorLink(ctInfo['authorTid']) + '</small></li>'
       }
       html += '</ul>'
 

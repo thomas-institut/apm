@@ -28,6 +28,10 @@ class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateOpenSearchIndex 
         // Fetch indexing-relevant data from the SQL database
         $tic = new TranscriptionsIndexManager($config, 0, [0]);
         $data = $this->fetchTranscriptionData($tic, $doc_id, $page, $col);
+        if ($data === null) {
+            // nothing to do
+            return true;
+        }
 
         // Check if a new transcription was created or an existing one was changed
         $transcription_status = $this->getTranscriptionStatus($this->client, $data);
@@ -39,11 +43,15 @@ class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateOpenSearchIndex 
     }
 
     // Fetch relevant data from the SQL database
-    private function fetchTranscriptionData(TranscriptionsIndexManager $tic, string $doc_id, string $page, string $col): array
+    private function fetchTranscriptionData(TranscriptionsIndexManager $tic, string $doc_id, string $page, string $col): ?array
     {
         $title = $tic->getTitle($doc_id);
         $seq = $tic->getSeq($doc_id, $page);
         $foliation = $tic->getFoliation($doc_id, $page);
+        if ($foliation === '') {
+            // don't do anything
+            return null;
+        }
         $transcriber = $tic->getTranscriber($doc_id, $page, $col);
         $page_id = $tic->getPageID($doc_id, $page);
         $lang = $tic->getLang($doc_id, $page);

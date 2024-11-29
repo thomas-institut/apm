@@ -271,7 +271,10 @@ export class MultiPanelUI {
         return
       }
       //console.log('Switching to vertical mode')
-      this.switchMode(verticalMode)
+      this.switchMode(verticalMode).then( () => {
+        // done
+        console.log(`Finished switching to vertical mode`);
+      })
 
     })
 
@@ -281,7 +284,10 @@ export class MultiPanelUI {
         return
       }
       //console.log('Switching to horizontal mode')
-      this.switchMode(horizontalMode)
+      this.switchMode(horizontalMode).then( () => {
+        // done
+        console.log(`Finished switching to horizontal mode`);
+      })
     })
 
     $(window).on('resize',
@@ -297,8 +303,7 @@ export class MultiPanelUI {
     // Fit panels and tab content div
     if (this.currentMode === verticalMode) {
       this.panels.forEach( (panel) => {
-        let panelDiv = $(`#${panel.id}`)
-        maximizeElementHeight(panelDiv)
+        maximizeElementHeight($(`#${panel.id}`))
       })
     } else {
       maximizeElementHeight($(`#${ids.panelsDiv}`))
@@ -514,10 +519,10 @@ export class MultiPanelUI {
     })
   }
 
-  switchMode(newMode) {
+  async switchMode(newMode) {
     this.currentMode = newMode
     this._updateActiveTabIds()
-    this._renderPanels()
+    await this._renderPanels()
     this._setupTabEventHandlers()
     this._fitPanelsToScreen()
     this._setupSplit()
@@ -565,8 +570,8 @@ ${this.options.topBarRightAreaContent()}
 </div>`
   }
 
-  _renderPanels() {
-    let newHtml = this.genHtmlPanels()
+  async _renderPanels() {
+    let newHtml = await this.genHtmlPanels()
     $(`#${ids.panelsDiv}`).replaceWith(newHtml)
   }
 

@@ -1501,6 +1501,9 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
     public function getPageFoliationByDocSeq(int $docId, int $pageSeq) : string {
         $info = $this->getPageInfoByDocSeq($docId, $pageSeq);
+        if ($info === false) {
+            return '';
+        }
         if (is_null($info['foliation'])) {
             return $info['page_number'];
         }

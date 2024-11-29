@@ -158,7 +158,7 @@ class TranscriptionsIndexManager extends OpenSearchIndexManager {
     public function getSeq(int $doc_id, int $page): string {
         $page_id = $this->getDm()->getpageIDByDocPage($doc_id, $page);
         $page_info = $this->getDm()->getPageInfo($page_id);
-        return $page_info['seq'];
+        return $page_info['seq'] ?? '';
     }
 
     public function getTranscription(int $doc_id, int $page, int $col): string
@@ -182,12 +182,21 @@ class TranscriptionsIndexManager extends OpenSearchIndexManager {
 
     public function getLang(int $doc_id, int $page): string {
         $seq = $this->getSeq($doc_id, $page);
-        return $this->getDm()->getPageInfoByDocSeq($doc_id, $seq)['lang'];
+        if ($seq !== '')
+        {
+            return $this->getDm()->getPageInfoByDocSeq($doc_id, $seq)['lang'];
+        } else {
+            return 'la';
+        }
+
     }
 
     public function getFoliation(int $doc_id, int $page): string
     {
         $seq = $this->getSeq($doc_id, $page);
+        if ($seq === '') {
+            return '';
+        }
         return $this->getDm()->getPageFoliationByDocSeq($doc_id,  $seq);
     }
 

@@ -119,6 +119,17 @@ abstract class CommandLineUtility {
         fwrite(STDERR, $str);
     }
 
+    protected function getAnswerFromCommandLine(string $question) : string {
+        print $question;
+        return fgets(STDIN);
+    }
+
+    protected function userRespondsYes(string $question) : bool {
+        $question = trim($question);
+        $question = "$question Type 'yes' to proceed: ";
+        return strtolower(trim($this->getAnswerFromCommandLine($question))) === 'yes';
+    }
+
 
     public abstract function main($argc, $argv);
 

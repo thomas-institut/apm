@@ -4,16 +4,13 @@
 namespace APM\CommandLine\ApmCtlUtility;
 
 
-use APM\Api\ApiPeople;
-use APM\Api\ApiSystem;
 use APM\CommandLine\AdminUtility;
 use APM\CommandLine\CommandLineUtility;
 use APM\FullTranscription\Exception\PageNotFoundException;
 use APM\FullTranscription\PageInfo;
 use APM\FullTranscription\PageManager;
 use APM\System\ApmMySqlTableName;
-use APM\System\Cache\CacheKey;
-use PDO;
+use APM\ToolBox\ArrayPrint;
 
 class TranscriptionTool extends CommandLineUtility implements AdminUtility
 {
@@ -29,7 +26,7 @@ class TranscriptionTool extends CommandLineUtility implements AdminUtility
 TXT;
 
     const DESCRIPTION = "Transcription management functions";
-    const FLUSH_SAFE_WORD = 'IKnowWhatImDoing';
+    const MAGIC_WORD = 'IKnowWhatImDoing';
     private PageManager $pageManager;
 
     public function __construct(array $config, int $argc, array $argv)
@@ -66,12 +63,16 @@ TXT;
                    $this->printErrorMsg("Need page and column information");
                    return 1;
                }
+               $forReal = false;
+               if (isset($argv[3]) && $argv[3] === self::MAGIC_WORD) {
+                   $forReal = true;
+               }
                $data = $this->getPageColumnInfoFromArgumentString($argv[2]);
                if (!$this->reportArgErrors($data, $argv[2])) {
                    return 1;
                }
                [$pageInfo, $columNumber] = $data;
-               $this->deleteTranscription($pageInfo, $columNumber);
+               $this->deleteTranscription($pageInfo, $columNumber, $forReal);
                break;
 
            case 'move':
@@ -202,52 +203,92 @@ TXT;
         return [ $pageInfo, $realColumnNumber ];
     }
 
-    private function printTranscriptionInfo(PageInfo $pageInfo, int $column, $indent = 3) : void {
-
+    private function getTranscriptionInfo(PageInfo $pageInfo, int $columnNumber) : ?array {
         $txManager = $this->getSystemManager()->getTranscriptionManager();
-        $pageId = $pageInfo->pageId;
-        $docId = $pageInfo->docId;
-        $pageNumber = $pageInfo->pageNumber;
-        $foliation  = $pageInfo->foliationIsSet ? "'$pageInfo->foliation'" : 'undefined';
+        $txInfo = [
+            'pageId' => $pageInfo->pageId,
+            'docId' => $pageInfo->docId,
+            'pageNumber' => $pageInfo->pageNumber,
+            'columnNumber' => $columnNumber,
+            'numCols' => $pageInfo->numCols,
+            'foliation' => $pageInfo->foliationIsSet ? "'$pageInfo->foliation'" : 'undefined',
+        ];
 
-
-        $docInfo = $this->getSystemManager()->getDataManager()->getDocById($docId);
+        $docInfo = $this->getSystemManager()->getDataManager()->getDocById($txInfo["docId"]);
         if ($docInfo === false) {
-            $this->printErrorMsg("Could not find page doc $docId");
-            return;
+            $txInfo["error"] = "Doc not found: $txInfo[docId]";
+            return $txInfo;
         }
-        $versions = $txManager->getColumnVersionManager()->getColumnVersionInfoByPageCol($pageId, $column, 0);
-        $lastChange = $versions[count($versions) - 1]->timeFrom;
-        $creationTime = $versions[0]->timeFrom;
-
-        $docTitle = $docInfo['title'];
-        $docType = $docInfo['doc_type'];
-        $spaces = str_repeat(' ', $indent);
-
-        $infoTextLines = [];
-
-        $infoTextLines[] = "Page ID: $pageId";
-        $infoTextLines[] = "Document ID: $docId";
-        $infoTextLines[] = "Document Type: $docType";
-        $infoTextLines[] = "Document Title: '$docTitle'";
-        $infoTextLines[] = "Page Number: $pageNumber  (seq $pageInfo->sequence, foliation $foliation)";
-        $infoTextLines[] = "Column: $column of $pageInfo->numCols";
-        $infoTextLines[] = "Versions: " . count($versions);
-        $infoTextLines[] = "Creation Time: $creationTime UTC";
-        $infoTextLines[] = "Last Change: $lastChange UTC";
-
-
-        foreach ($infoTextLines as $line) {
-            print $spaces . trim($line) . "\n";
+        $txInfo["docTitle"] = $docInfo['title'];
+        $txInfo["docType"] = $docInfo['doc_type'];
+        $versions = $txManager->getColumnVersionManager()->getColumnVersionInfoByPageCol($txInfo["pageId"], $columnNumber);
+        $txInfo["versionCount"] = count($versions);
+        if (count($versions) > 0) {
+            $txInfo["firstChange"] = $versions[0]->timeFrom;
+            $txInfo["lastChange"] = $versions[count($versions) - 1]->timeFrom;
+            $txInfo["lastAuthorId"] =  $versions[count($versions) - 1]->authorTid;
         }
+        return $txInfo;
     }
 
-    private function deleteTranscription(PageInfo $pageInfo, int $column) : void {
+    private function printTranscriptionInfo(PageInfo $pageInfo, int $column) : bool {
+        $txInfo = $this->getTranscriptionInfo($pageInfo, $column);
+        print ArrayPrint::sPrintAssociativeArray($txInfo, ArrayPrint::STYLE_COLUMNS);
+        return isset($txInfo["error"]);
+    }
+
+    private function deleteTranscription(PageInfo $pageInfo, int $column, bool $forReal = false) : void {
         $pageId = $pageInfo->pageId;
         $docId = $pageInfo->docId;
-        $pageNumber = $pageInfo->pageNumber;
-        print "Are you sure you want to delete the transcription at page id $pageId, column $column (doc $docId, page number $pageNumber)?\n";
-        print "... just kidding, not implemented yet\n";
+
+        if ($this->printTranscriptionInfo($pageInfo,$column, 1)) {
+            if ($this->userRespondsYes("Are you sure you want to delete this transcription?")) {
+                $tableNames = $this->getSystemManager()->getTableNames();
+                $dbConn = $this->getDbConn();
+                $edNotes = $tableNames[ApmMySqlTableName::TABLE_EDNOTES];
+                $elements = $tableNames[ApmMySqlTableName::TABLE_ELEMENTS];
+                $items = $tableNames[ApmMySqlTableName::TABLE_ITEMS];
+                $versionsTable = $tableNames[ApmMySqlTableName::TABLE_VERSIONS_TX];
+                $txManager = $this->getSystemManager()->getTranscriptionManager();
+                $versions = $txManager->getColumnVersionManager()->getColumnVersionInfoByPageCol($pageId, $column);
+                $lastAuthor = $versions[count($versions) - 1]->authorTid;
+
+                $dbConn->beginTransaction();
+
+                // 1. Delete ednotes
+                $query1 = "DELETE $edNotes  FROM $edNotes, $items, $elements " .
+                    "WHERE $elements.page_id=$pageId AND $elements.column_number=$column AND $items.ce_id=$elements.id AND $edNotes.target=$items.id ";
+//                print "Query: $query1\n";
+                $result = $dbConn->query($query1);
+                print " - Deleted " . $result->rowCount() . " editorial notes\n";
+                // 2. Delete text items
+                $query2 = "DELETE $items FROM $items, $elements " .
+                    " WHERE $elements.page_id=$pageId  AND $elements.column_number=$column AND $items.ce_id=$elements.id";
+//                print "Query: $query2\n";
+                $result = $dbConn->query($query2);
+                print " - Deleted " . $result->rowCount() . " items\n";
+                // 3. Delete elements
+                $query3 = "DELETE FROM $elements WHERE page_id=$pageId AND column_number=$column ";
+                print "Query: $query3\n";
+                $result = $dbConn->query($query3);
+//                print " - Deleted " . $result->rowCount() . " elements\n";
+
+                // 4. Delete versions
+                $query4 = "DELETE FROM $versionsTable WHERE page_id=$pageId AND col=$column";
+//                print "Query: $query4\n";
+                $result = $dbConn->query($query4);
+                print " - Deleted " . $result->rowCount() . " versions\n";
+                if ($forReal) {
+                    $dbConn->commit();
+                    $this->getSystemManager()->onTranscriptionUpdated($lastAuthor, $docId,$pageId, $column);
+                } else {
+                    print "Not really, need the magic word to actually do it.\n";
+                    $dbConn->rollBack();
+                }
+            }
+        } else {
+            print "\nNothing to delete\n";
+        }
     }
 
     private function moveTranscription(PageInfo $fromPage, int $column, PageInfo $toPage, int $toColumn) : void {

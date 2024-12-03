@@ -116,10 +116,10 @@ class IndexManager extends CommandLineUtility {
         }
 
         switch ($this->indexNamePrefix) {
-            case 'transcriptions' or 'test':
+            case 'transcriptions':
                 $this->rebuildIndexTranscriptions();
                 break;
-            case 'editions':
+            case 'editions' or 'test':
                 $this->rebuildIndexEditions();
                 break;
         }
@@ -156,7 +156,6 @@ class IndexManager extends CommandLineUtility {
                 $this->logger->debug("Found $num_editions potential editions.");
                 break;
             }
-            return true;
         }
 
         // Clean data
@@ -165,12 +164,13 @@ class IndexManager extends CommandLineUtility {
         $this->logger->debug("Found $num_editions actual editions.");
 
         // Index editions
-        foreach ($editions as $id => $edition) {
-            $this->indexEdition ($this->client, $id, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id']);
+        foreach ($editions as $edition) {
+            $this->indexEdition ($this->client, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id']);
             $log_data = 'Title: ' . $edition['title'] . ', Editor: ' . $edition['editor'] . ', Chunk: ' . $edition['chunk_id'];
             $this->logger->debug("Indexed Edition – $log_data\n");
         }
 
+        return true;
     }
 
     private function checkIndex ($fix=false) {
@@ -178,10 +178,10 @@ class IndexManager extends CommandLineUtility {
         print ("Checking index...");
 
         switch ($this->indexNamePrefix) {
-            case 'transcriptions' or 'test':
+            case 'transcriptions':
                 $this->checkIndexTranscriptions($fix);
                 break;
-            case 'editions':
+            case 'editions' or 'test':
                 $this->checkIndexEditions($fix);
                 break;
         }
@@ -322,7 +322,113 @@ class IndexManager extends CommandLineUtility {
 
     private function checkIndexEditions ($fix) {
 
-        // TO DO
+        // Get collationTableManager
+        $this->collationTableManager = $this->getSystemManager()->getCollationTableManager();
+
+        // Get the data of up to 20 000 editions
+        $editionsinDatabase = [];
+        foreach (range(1, 20000) as $id) {
+            try {
+                $editionsinDatabase[] = $this->getEditionData($this->collationTableManager, $id);
+            } catch (Exception) {
+                break;
+            }
+        }
+
+        // Clean data
+        $editionsInDatabase = $this->cleanEditionData($editionsinDatabase);
+        $numEditionsInDatabase = count($editionsInDatabase);
+
+
+        // FORMAT EDITIONS TO ['title', 'tableID', 'chunk']
+
+        // Get all relevant data from the opensearch index
+        $indexedEditions = [];
+
+        foreach ($this->indices as $indexName) {
+            $query = $this->client->search([
+                'index' => $indexName,
+                'size' => 20000,
+                'body' => [
+                    "query" => [
+                        "match_all" => [
+                            "boost" => 1.0
+                        ]
+                    ],
+                ]
+            ]);
+
+
+            foreach ($query['hits']['hits'] as $match) {
+                $title = $match['_source']['title'];
+                $tableID = $match['_source']['table_id'];
+                $chunk = $match['_source']['chunk'];
+                $indexedEditions[] = [$title, $tableID, $chunk];
+            }
+        }
+
+        // check if every column from the database is indexed in the most up-to-date version
+        $notIndexedEditions = [];
+        $notUpdatedEditions = [];
+        $numNotIndexedEditions = 0;
+        $numNotUpdatedEditions = 0;
+        $numNotInDatabaseEditions = 0;
+        $notInDatabaseEditions = [];
+        $notUpdated = false;
+
+        foreach ($editionsInDatabase as $editionInDatabase) {
+
+            if (!in_array($editionInDatabase, $indexedEditions)) {
+                $numNotIndexedEditions++;
+
+                foreach ($indexedEditions as $indexedEdition) {
+                    if (array_slice($editionInDatabase, 0, 2) === array_slice($indexedEdition, 0, 2)) {
+                        $numNotIndexedEditions--;
+                        $numNotUpdatedEditions++;
+                        $notUpdated = true;
+                        $notUpdatedEditions[] = ['pageID' => $editionInDatabase[0], 'col' => $editionInDatabase[1]];
+                    }
+                }
+
+                if (!$notUpdated) {
+                    //print("Column $editionInDatabase[1] from page with id $editionInDatabase[0] is NOT INDEXED.\n");
+                    $notIndexedEditions[] = ['pageID' => $editionInDatabase[0], 'col' => $editionInDatabase[1]];
+                }
+            }
+        }
+
+        foreach ($indexedEditions as $indexedEdition) {
+            if (!in_array($indexedEdition, $editionsInDatabase)) {
+                $numNotInDatabaseEditions++;
+                $notInDatabaseEditions[] = $indexedEdition[0];
+            }
+        }
+
+        if ($numNotIndexedEditions === 0 && $numNotUpdatedEditions === 0) {
+            print ("\nINDEX IS COMPLETE!.\n");
+        } else {
+            print ("\nINDEX IS NOT COMPLETE!\n
+            $numNotIndexedEditions of $numEditionsInDatabase columns are not indexed.\n
+            $numNotUpdatedEditions of $numEditionsInDatabase are not up to date.\n");
+        }
+
+        if ($numNotInDatabaseEditions !== 0) {
+            print("\nINFO: The index contains $numNotInDatabaseEditions columns which could not be found in the database. Their page ids are:\n");
+            print(implode(", ", $notInDatabaseEditions));
+        }
+
+        $checkResults = ['notIndexed' => $notIndexedEditions, 'outdated' => $notUpdatedEditions];
+
+        if (!$fix) {
+            print ("Do you want to fix the index? (y/n)\n");
+            $input = rtrim(fgets(STDIN));
+
+            if ($input === 'y') {
+                $this->fixIndex($checkResults);
+            }
+        } else {
+            $this->fixIndex($checkResults);
+        }
 
         return true;
     }
@@ -332,10 +438,10 @@ class IndexManager extends CommandLineUtility {
         print("Fixing index...\n");
 
         switch ($this->indexNamePrefix) {
-            case 'transcriptions' or  'test':
+            case 'transcriptions':
                 $this->fixIndexTranscriptions($data);
                 break;
-            case 'editions':
+            case 'editions' or 'test':
                 $this->fixIndexEditions($data);
                 break;
         }
@@ -371,10 +477,10 @@ class IndexManager extends CommandLineUtility {
         }
 
         switch ($this->indexNamePrefix) {
-            case 'transcriptions' or 'test':
+            case 'transcriptions':
                 $this->addColToTranscriptionsIndex($pageID, $col);
                 break;
-            case 'editions':
+            case 'editions' or 'test':
                 $this->addDocToEditionsIndex();
                 break;
         }

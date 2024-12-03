@@ -43,7 +43,7 @@ export class SearchPage extends NormalPage {
         <th id="doc-or-edition"><span title="Choose a specific document to search">Document</span></th>
         <th id="transcriber-or-editor"><span title="Limit your search to transcriptions by a specific transcriber.">Transcriber</span></th>
         <th style="text-align: center"><span title="Number of tokens, i. e. words or punctuation marks, that are allowed to occur between your first keyword and the following ones. A value of 0 means that only the occurrence of directly consecutive keywords counts as a match.">Keyword Distance</span></th>
-        <th class="text-center"><span title="If checked, all conjugated or declined forms of your keywords will count as matches.">Lemmatization</span></th>
+        <th class="text-center"><span title="If checked, all conjugated or declined forms of your keywords will count as matches. Be aware, that searches containing articles or conjunctions like ,and‘ can cause too many and not desired matches. Best practice is searching only for nouns, verbs and/or adjectives.">Lemmatization</span></th>
     </tr>
     <tr>
         <td>
@@ -581,16 +581,6 @@ function removeBlanks (text) {
   text = text.replaceAll(" :", ":")
   text = text.replaceAll("[ ", "[")
   text = text.replaceAll(" ;", ";")
-
-  // text = text.split("ComTokSep")
-  //
-  // for (let [index, value] of text.entries()) {
-  //   if (index % 2 === 1) {
-  //     text[index] = value.replaceAll(" ", "")
-  //   }
-  // }
-  //
-  // text =  text.join(' ')
 
   return text
 }

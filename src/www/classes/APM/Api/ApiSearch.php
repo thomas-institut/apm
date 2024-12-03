@@ -71,7 +71,6 @@ class ApiSearch extends ApiController
         $this->logger->debug($tokensForQuery[0]);
         //$this->logger->debug($tokensForQuery[1]);
 
-
         $lemmata = $tokensForQuery;
 
         // Count tokens
@@ -102,6 +101,8 @@ class ApiSearch extends ApiController
         $data = $this->getData($query, $tokensForQuery[0], $tokensForQuery, $lemmata, $keywordDistance, $lemmatize, $corpus);
 
         $this->profiler->lap("getData");
+
+        $this->logger->debug(count($data));
 
         // Until now, there was no check, if the queried keywords are close enough to each other, depending on the keywordDistance value
         // So, if there is more than one token in the searched phrase, now filter out all columns and passages, which do not match all tokens in the desired way
@@ -150,7 +151,10 @@ class ApiSearch extends ApiController
         foreach($searchTokens as $token) { // Try to get lemmata from cache
             $cacheKey = $this->getLemmaCacheKey($token);
             if ($cache->isInCache($cacheKey)) {
-                $tokensForQuery[] = $cache->get($cacheKey);
+                $lemma = explode(" ", $cache->get($cacheKey));
+                foreach ($lemma as $complexLemmaPart) {
+                    $tokensForQuery[] = $complexLemmaPart;
+                }
                 $this->logger->debug("Lemma for queried token '$token' already cached with cache key $cacheKey!");
             } else {
                 $tokensToLemmatize[] = $token;
@@ -162,16 +166,30 @@ class ApiSearch extends ApiController
             $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $phrase);
             $lemmata = $tokens_and_lemmata['lemmata'];
             foreach ($lemmata as $i => $lemma) {
-                $tokensForQuery[] = $lemma;
                 $cacheKey = $this->getLemmaCacheKey($tokensToLemmatize[$i]);
                 $cache->set($cacheKey, $lemma);
+
+                $lemma = explode(" ", $lemma); // check if it is a complex lemma, e. g. article + noun in arabic/hebrew
+                foreach ($lemma as $complexLemmaPart) {
+                    $tokensForQuery[] = $complexLemmaPart;
+                }
                 $this->logger->debug("Cached lemma '$lemma' for token '$tokensToLemmatize[$i]' with cache key '$cacheKey'");
             }
         }
-        
-        return $tokensForQuery;
+
+        foreach ($tokensForQuery as $i => $token) {
+            if ($token === "") {
+                unset($tokensForQuery[$i]);
+            }
+        }
+
+        usort($tokensForQuery, function($a, $b) {
+            return strlen($b) - strlen($a);
+        });
+
+        return array_values($tokensForQuery);
     }
-    
+
 
     // Get full number of passages stored in data-array
     private function getNumPassages(array $data): int {
@@ -276,7 +294,7 @@ class ApiSearch extends ApiController
             if ($lemmatize) {
                 // MODIFY HERE FOR HANDLING OF COMPLEX LEMMATA
                 $mustConditions[] = ['match' => [
-                    $area_of_query => " " . $token . " "
+                    $area_of_query => " " . $token . " " // complex tokens are lemmatized as strings of lemmata, separated by blanks
                 ]];
             } else {
                 $mustConditions[] = ['wildcard' => [
@@ -326,8 +344,6 @@ class ApiSearch extends ApiController
 
         // Get number of matched columns
         $num_matches = $query['hits']['total']['value'];
-        // MODIFY HERE FOR HANDLING OF COMPLEX LEMMATA
-        $this->logger->debug('numMatches ' . $num_matches);
 
         // If there are any matched columns, collect them all in an ordered and nested array of columns
         if ($num_matches !== 0) {
@@ -476,14 +492,21 @@ class ApiSearch extends ApiController
                     foreach ($passage as $k => $token) {
 
                         // Add matched tokens to tokens_matched array and make it unique
-                        if ($token === $lemma) {
+                        if ((str_contains($token, " " . $lemma . " ") or $token === $lemma) and strlen($lemma) > 2) { // filter out matches of single character lemmata like articles
                             $data[$i]['tokens_matched'][] = $match['passage_tokenized'][$j][$k];
                             $data[$i]['tokens_matched'] = array_unique($data[$i]['tokens_matched']);
                         }
                     }
 
                     // If the token is not in the passage, remove passage_tokenized, passage_lemmatized and tokens_matched from $data and adjust the num_passages in $data
-                    if (in_array($lemma, $passage) === false) {
+                    $noMatch = true;
+                    foreach ($passage as $token) {
+                        if (str_contains($token, " " . $lemma . " ") or $token === $lemma) {
+                            $noMatch = false;
+                        }
+                    }
+
+                    if ($noMatch) {
                         unset($data[$i]['passage_tokenized'][$j]);
                         unset($data[$i]['passage_lemmatized'][$j]);
                         unset($data[$i]['passage_coordinates'][$j]);

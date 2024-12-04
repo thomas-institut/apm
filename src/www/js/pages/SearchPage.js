@@ -194,8 +194,8 @@ export function setupSearchPage() {
       trans_or_editor.text("Editor")
 
       // Get lists for edition and editor forms
-      getCreatorsAndTitles ('editions', errorMessageDiv)
-      getCreatorsAndTitles ('editors', errorMessageDiv)
+      getCreatorsAndTitles ('apisearcheditions', errorMessageDiv)
+      getCreatorsAndTitles ('apisearcheditors', errorMessageDiv)
     }
   })
 }
@@ -215,11 +215,11 @@ function getCreatorsAndTitles(category, errorMessageDiv) {
     apiUrl = urlGen.apiSearchTranscribers()
     listSelector = '#creatorList'
   }
-  else if (category === 'editors') {
+  else if (category === 'apisearcheditors') {
     apiUrl = urlGen.apiSearchEditors()
     listSelector = '#creatorList'
   }
-  else if (category === 'editions') {
+  else if (category === 'apisearcheditions') {
     apiUrl = urlGen.apiSearchEditionTitles()
     listSelector = '#titleList'
   }
@@ -242,6 +242,7 @@ function getCreatorsAndTitles(category, errorMessageDiv) {
     }
 
     console.log(apiResponse);
+    console.log(category);
 
     // Get items from apiResponse
     let items = apiResponse[category];

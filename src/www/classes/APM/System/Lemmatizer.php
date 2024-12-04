@@ -8,7 +8,7 @@ class Lemmatizer
 {
     // const CMD_PREFIX = "python3 " . __DIR__ . "/../../../../python/Lemmatizer_Indexing.py" ;
 
-    static public function runLemmatizer($lang, $text_clean)
+    static public function runLemmatizer($lang, $text_clean, $tempfile='undefined')
     {
 
         switch ($lang) {
@@ -23,16 +23,20 @@ class Lemmatizer
                 break;
         }
 
-        $tempfile = 'lemmatization_temp.txt';
+        $tempfile = 'lemmatization_temp_' . $tempfile . '.txt';
+        exec("rm $tempfile 2>&1");
 
+        //print("creating file for lemmatization\n");
         exec("touch $tempfile");
 
         file_put_contents($tempfile, $text_clean);
 
+        //print("making api call\n");
         exec("curl -s -F data=@$tempfile -F model=$lang -F tokenizer= -F tagger= https://lindat.mff.cuni.cz/services/udpipe/api/process", $data);
 
         exec("rm $tempfile");
 
+        //print("extracting tokens and lemmata from api response\n");
         return self::getTokensAndLemmata($data[6]);
     }
 

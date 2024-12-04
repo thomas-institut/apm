@@ -815,6 +815,7 @@ class ApiSearch extends ApiController
         // Get data from cache, if data is not cached, get data from open search index and set the cache
         try {
             $data = unserialize($cache->get($cacheKey));
+            // $this->logger->debug(serialize($data));
         } catch (KeyNotInCacheException $e) {
             // Instantiate OpenSearch client
             try {

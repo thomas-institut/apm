@@ -258,6 +258,7 @@ export class EditionComposer extends ApmPage {
 
 
 
+    /** @member {ApparatusPanel[]} this.apparatusPanels */
     this.apparatusPanels = this.edition.apparatuses
       .map( (apparatus, index) => {
         return new ApparatusPanel({
@@ -452,10 +453,15 @@ export class EditionComposer extends ApmPage {
     return -1
   }
 
+  /**
+   *
+   * @param {number}apparatusIndex
+   * @param {number}mainTextFrom
+   * @param {number}mainTextTo
+   */
   editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo) {
     console.log(`Got request to edit apparatus entry in apparatus ${this.edition.apparatuses[apparatusIndex].type}, from ${mainTextFrom} to ${mainTextTo}`)
-
-    this.apparatusPanels[apparatusIndex].editApparatusEntry(mainTextFrom, mainTextTo)
+    this.apparatusPanels[apparatusIndex].editApparatusEntry(mainTextFrom, mainTextTo, true)
     $(`#apparatus-${apparatusIndex}-tab`).tab('show')
   }
 

@@ -20,7 +20,6 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Edition } from '../Edition/Edition.mjs'
 import { ApparatusCommon } from './ApparatusCommon.js'
 import { PanelWithToolbar } from '../MultiPanelUI/PanelWithToolbar'
-import { getIntArrayIdFromClasses } from '../toolbox/UserInterfaceUtil'
 import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import { CtData } from '../CtData/CtData'
 import { onClickAndDoubleClick } from '../toolbox/DoubleClick'
@@ -44,6 +43,7 @@ import { ConfirmDialog } from '../pages/common/ConfirmDialog'
 import { WitnessDataEditor } from './WitnessDataEditor'
 import { ApparatusEntry } from '../Edition/ApparatusEntry.mjs'
 import { TagEditor } from '../widgets/TagEditor'
+import { UiToolBox } from '../toolbox/UiToolBox'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
@@ -184,7 +184,13 @@ export class ApparatusPanel extends  PanelWithToolbar {
     }
   }
 
-  editApparatusEntry(mainTextFrom, mainTextTo) {
+  /**
+   * Shows the entry editor, optionally adding a new custom sub-sentry
+   * @param {number}mainTextFrom
+   * @param {number}mainTextTo
+   * @param {boolean}addCustom
+   */
+  editApparatusEntry(mainTextFrom, mainTextTo, addCustom = false) {
     this.verbose && console.log(`Editing apparatus entry main text ${mainTextFrom} to ${mainTextTo}`)
     let entryIndex = this.apparatus.entries.map( (entry) => {return `${entry.from}-${entry.to}`}).indexOf(`${mainTextFrom}-${mainTextTo}`)
 
@@ -196,6 +202,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
       this.verbose && console.log(`Existing entry ${entryIndex}`)
       this._selectLemma(entryIndex)
       this._loadEntryIntoEntryForm(entryIndex)
+    }
+    if (addCustom) {
+      this.addNewCustomSubEntry();
     }
     this._showApparatusEntryForm()
   }
@@ -395,31 +404,66 @@ export class ApparatusPanel extends  PanelWithToolbar {
     }
   }
 
+  /**
+   *
+   * @returns {(function(): void)|*}
+   * @private
+   */
   _genOnClickAddCustomSubEntryButton() {
     return () => {
       this.debug && console.log(`Click on add custom sub entry button`)
-      let newSubEntry = new ApparatusSubEntry()
-      newSubEntry.type = SubEntryType.FULL_CUSTOM
-      newSubEntry.source = 'user'
-      newSubEntry.position = this.editedEntry.subEntries.length
-      this.editedEntry.subEntries.push(newSubEntry)
-      // redraw subEntry table
-      this._drawAndSetupSubEntryTableInForm()
-      this._updateUpdateApparatusButton()
+      this.addNewCustomSubEntry()
     }
+  }
+
+  /**
+   * Adds a new custom sub entry to the entry currently being edited
+   * @private
+   */
+  addNewCustomSubEntry() {
+    let newSubEntry = new ApparatusSubEntry()
+    newSubEntry.type = SubEntryType.FULL_CUSTOM
+    newSubEntry.source = 'user'
+    newSubEntry.position = this.editedEntry.subEntries.length
+    this.editedEntry.subEntries.push(newSubEntry)
+    // redraw subEntry table
+    this._drawAndSetupSubEntryTableInForm()
+    this._updateUpdateApparatusButton()
+    this.setSubEntryEditorVisibility(this.editedEntry.subEntries.length-1, true);
   }
 
   _genOnClickSubEntryEditButton(subEntryIndex) {
     return () => {
       this.debug && console.log(`Click on edit button for subEntry ${subEntryIndex}`)
-      if (this.subEntryEditors[subEntryIndex].visible) {
-        $(this._getSubEntryEditDivSelector(subEntryIndex)).addClass('hidden')
-        this.subEntryEditors[subEntryIndex].visible = false
-      }else {
-        this.subEntryEditors[subEntryIndex].text.setText(this.editedEntry.subEntries[subEntryIndex].fmtText)
-        $(this._getSubEntryEditDivSelector(subEntryIndex)).removeClass('hidden')
-        this.subEntryEditors[subEntryIndex].visible = true
-      }
+      this.setSubEntryEditorVisibility(subEntryIndex, !this.subEntryEditors[subEntryIndex].visible);
+      // if (this.subEntryEditors[subEntryIndex].visible) {
+      //   $(this._getSubEntryEditDivSelector(subEntryIndex)).addClass('hidden')
+      //   this.subEntryEditors[subEntryIndex].visible = false
+      // } else {
+      //   this.subEntryEditors[subEntryIndex].text.setText(this.editedEntry.subEntries[subEntryIndex].fmtText)
+      //   $(this._getSubEntryEditDivSelector(subEntryIndex)).removeClass('hidden')
+      //   this.subEntryEditors[subEntryIndex].visible = true
+      // }
+    }
+  }
+
+  /**
+   *
+   * @param {number}subEntryIndex
+   * @param {boolean}visible
+   * @private
+   */
+  setSubEntryEditorVisibility(subEntryIndex, visible) {
+    if (visible === this.subEntryEditors[subEntryIndex].visible ) {
+      return;
+    }
+    if (visible) {
+      $(this._getSubEntryEditDivSelector(subEntryIndex)).removeClass('hidden')
+      this.subEntryEditors[subEntryIndex].visible = true
+    } else {
+      this.subEntryEditors[subEntryIndex].text.setText(this.editedEntry.subEntries[subEntryIndex].fmtText)
+      $(this._getSubEntryEditDivSelector(subEntryIndex)).addClass('hidden')
+      this.subEntryEditors[subEntryIndex].visible = false
     }
   }
 
@@ -1102,9 +1146,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.__fitDivs()
   }
 
-  updateApparatus(mainTextTokensWithTypesettingInfo) {
+  updateApparatus(mainTextTypesettingInfo) {
     // this.verbose && console.log(`Updating apparatus ${this.options.apparatusIndex}`)
-    this.cachedHtml = this._genApparatusHtml(mainTextTokensWithTypesettingInfo)
+    this.cachedHtml = this._genApparatusHtml(mainTextTypesettingInfo)
     $(this.getApparatusDivSelector()).html(this.cachedHtml)
     this._setUpEventHandlers()
     if (this.currentSelectedEntryIndex !== -1) {
@@ -1157,24 +1201,40 @@ export class ApparatusPanel extends  PanelWithToolbar {
     onClickAndDoubleClick(lemmaElements, this._genOnClickLemma(), this._genOnDoubleClickLemma())
   }
 
+  /**
+   * Highlights the lemma for the given entryIndex with the standard
+   * 'hover' style
+   *
+   * @param {number}entryIndex
+   * @param {boolean}on
+   */
+  hoverEntry (entryIndex, on) {
+    let lemmaElement  = $(`${this.containerSelector} .lemma-${this.options.apparatusIndex}-${entryIndex}`);
+    this.hoverLemma(lemmaElement, on);
+  }
+
+  hoverLemma(lemmaElement, on) {
+    if (this.apparatusEntryFormIsVisible) {
+      return
+    }
+    if (on) {
+      if (!lemmaElement.hasClass('lemma-selected')) {
+        lemmaElement.addClass('lemma-hover');
+      }
+    } else {
+      lemmaElement.removeClass('lemma-hover');
+    }
+  }
+
   _genOnMouseEnterLemma() {
     return (ev) => {
-      if (this.apparatusEntryFormIsVisible) {
-        return
-      }
-      let target = $(ev.target)
-      if (!target.hasClass('lemma-selected')) {
-        target.addClass('lemma-hover')
-      }
+      this.hoverLemma($(ev.target), true);
     }
   }
 
   _genOnMouseLeaveLemma() {
     return (ev) => {
-      if (this.apparatusEntryFormIsVisible) {
-        return
-      }
-      $(ev.target).removeClass('lemma-hover')
+      this.hoverLemma($(ev.target), false);
     }
   }
 
@@ -1255,7 +1315,11 @@ export class ApparatusPanel extends  PanelWithToolbar {
   }
 
   _getLemmaIndexFromElement(element) {
-    return getIntArrayIdFromClasses(element, 'lemma-')
+    let indexes = UiToolBox.getIntArrayIdFromClasses(element, 'lemma-');
+    if (indexes.length < 1) {
+      return [-1, -1];
+    }
+    return indexes[0];
   }
 
   /**
@@ -1279,63 +1343,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     return  $(`${this.containerSelector} .clear-selection-btn`)
   }
 
-  _getOccurrenceInLine(mainTextIndex, tokensWithTypesetInfo) {
-    if (tokensWithTypesetInfo[mainTextIndex] === undefined) {
-      return 1
-    }
-    return tokensWithTypesetInfo[mainTextIndex].occurrenceInLine
-  }
-
-  _getTotalOccurrencesInLine(mainTextIndex, tokensWithTypesetInfo) {
-    if (tokensWithTypesetInfo[mainTextIndex] === undefined) {
-      return 1
-    }
-    return tokensWithTypesetInfo[mainTextIndex].numberOfOccurrencesInLine
-  }
-
-  _getLemmaHtml(apparatusEntry, typesettingInfo) {
-
-    let lemmaComponents = ApparatusUtil.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText)
-
-    switch(lemmaComponents.type) {
-      case 'custom':
-        return lemmaComponents.text
-
-      case 'full':
-        let lemmaNumberString = ''
-        if (lemmaComponents.numWords === 1) {
-          let occurrenceInLine = this._getOccurrenceInLine(apparatusEntry.from, typesettingInfo.tokens)
-          let numberOfOccurrencesInLine = this._getTotalOccurrencesInLine(apparatusEntry.from, typesettingInfo.tokens)
-          if (numberOfOccurrencesInLine > 1) {
-            lemmaNumberString = `<sup>${ApparatusCommon.getNumberString(occurrenceInLine, this.edition.lang)}</sup>`
-          }
-        }
-        return `${lemmaComponents.text}${lemmaNumberString}`
-
-      case 'shortened':
-        let lemmaNumberStringFrom = ''
-        let occurrenceInLineFrom = this._getOccurrenceInLine(apparatusEntry.from, typesettingInfo.tokens)
-        let numberOfOccurrencesInLineFrom = this._getTotalOccurrencesInLine(apparatusEntry.from, typesettingInfo.tokens)
-        if (numberOfOccurrencesInLineFrom > 1) {
-          lemmaNumberStringFrom = `<sup>${ApparatusCommon.getNumberString(occurrenceInLineFrom, this.edition.lang)}</sup>`
-        }
-        let lemmaNumberStringTo = ''
-        let occurrenceInLineTo = this._getOccurrenceInLine(apparatusEntry.to, typesettingInfo.tokens)
-        let numberOfOccurrencesInLineTo = this._getTotalOccurrencesInLine(apparatusEntry.to, typesettingInfo.tokens)
-        if (numberOfOccurrencesInLineTo > 1) {
-          lemmaNumberStringTo = `<sup>${ApparatusCommon.getNumberString(occurrenceInLineTo, this.edition.lang)}</sup>`
-        }
-        return `${lemmaComponents.from}${lemmaNumberStringFrom}${lemmaComponents.separator}${lemmaComponents.to}${lemmaNumberStringTo}`
-
-      default:
-        console.warn(`Unknown lemma component type '${lemmaComponents.type}'`)
-        return 'ERROR'
-    }
-  }
-
-
-
-  _genApparatusHtml(mainTextTokensWithTypesettingInfo) {
+  _genApparatusHtml(mainTextTypesettingInfo) {
      // console.log(`Generating Apparatus html`)
     // console.log(mainTextTokensWithTypesettingInfo)
     // console.log(mainTextTokensWithTypesettingInfo.tokens.filter( (t) => { return t.type === 'text' && t.occurrenceInLine > 1}))
@@ -1349,7 +1357,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
       html += `<span class="apparatus-entry apparatus-entry-${this.options.apparatusIndex}-${aeIndex}">`
       let currentLine
       try {
-        currentLine = this._getLineNumberString(apparatusEntry, mainTextTokensWithTypesettingInfo)
+        currentLine = ApparatusCommon.getLineNumberString(apparatusEntry, mainTextTypesettingInfo, this.lang)
       } catch (e) {
         console.error(`Error getting lineNumber string in apparatus entry ${aeIndex}`)
         console.log(apparatusEntry)
@@ -1379,7 +1387,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
       let preLemmaSpan = preLemmaSpanHtml === '' ? '' : `<span class="pre-lemma">${preLemmaSpanHtml}</span> `
 
 
-      let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${this._getLemmaHtml(apparatusEntry, mainTextTokensWithTypesettingInfo)}</span>`
+      let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${ApparatusCommon.getLemmaHtml(apparatusEntry, mainTextTypesettingInfo, this.edition.lang)}</span>`
 
       let postLemmaSpan = ''
       if (apparatusEntry.postLemma !== '') {
@@ -1429,21 +1437,21 @@ export class ApparatusPanel extends  PanelWithToolbar {
     return html
   }
 
-  _getLineNumberString(apparatusEntry, mainTextTokensWithTypesettingInfo) {
-    if (mainTextTokensWithTypesettingInfo.tokens[apparatusEntry.from] === undefined) {
-      // before the main text
-      return ApparatusCommon.getNumberString(1, this.lang)
-    }
-
-    let startLine = mainTextTokensWithTypesettingInfo.tokens[apparatusEntry.from].lineNumber
-    let endLine = mainTextTokensWithTypesettingInfo.tokens[apparatusEntry.to] === undefined ? '???' :
-      mainTextTokensWithTypesettingInfo.tokens[apparatusEntry.to].lineNumber
-
-    if (startLine === endLine) {
-      return ApparatusCommon.getNumberString(startLine, this.lang)
-    }
-    return `${ApparatusCommon.getNumberString(startLine, this.lang)}-${ApparatusCommon.getNumberString(endLine, this.lang)}`
-  }
+  // _getLineNumberString(apparatusEntry, mainTextTypesettingInfo, lang) {
+  //   if (mainTextTypesettingInfo.tokens[apparatusEntry.from] === undefined) {
+  //     // before the main text
+  //     return ApparatusCommon.getNumberString(1, this.lang)
+  //   }
+  //
+  //   let startLine = mainTextTypesettingInfo.tokens[apparatusEntry.from].lineNumber
+  //   let endLine = mainTextTypesettingInfo.tokens[apparatusEntry.to] === undefined ? '???' :
+  //     mainTextTypesettingInfo.tokens[apparatusEntry.to].lineNumber
+  //
+  //   if (startLine === endLine) {
+  //     return ApparatusCommon.getNumberString(startLine, lang)
+  //   }
+  //   return `${ApparatusCommon.getNumberString(startLine, lang)}-${ApparatusCommon.getNumberString(endLine, lang)}`
+  // }
 
 
 }

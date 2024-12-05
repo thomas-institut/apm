@@ -1,6 +1,9 @@
 :root {
     --latin-apparatus-font-family: APM_FreeSerif, serif;
     --dimmed-apparatus-text-color: #646464;
+    --light-text-highlight-color: #ebf0fd;
+    --darker-text-highlight-color: #dcdcdc;
+    --text-select-color: yellow;
 }
 
 
@@ -41,23 +44,25 @@ div#ct-info {
    margin-right: 0.25rem;
 }
 
+:root {
+    --tb-button-padding: 3px;
+}
+
 a.tb-button {
+    color: grey;
     text-decoration: none;
-    padding: 2px;
+    padding: var(--tb-button-padding);
 }
 
 a.tb-button:hover {
     text-decoration: none;
+    padding: var(--tb-button-padding) !important;
+    color: #575757;
 }
 
 .panel-toolbar-item a.multitoggle-on {
     border: 1px solid silver;
     border-radius: 3px;
-}
-
-
-a.tb-button {
-    color: grey;
 }
 
 a.dv-button {
@@ -255,7 +260,7 @@ div.apparatus {
 }
 
 .main-text.text-la, .apparatus.text-la, .line-number.text-la{
-    font-family: var(--latin-apparatus-font-family);
+    font-family: var(--latin-apparatus-font-family), serif;
 }
 
 .main-text.text-la {
@@ -297,7 +302,7 @@ div.main-text p.paragraph-empty {
 }
 
 .mte-icon {
-    font-family: var(--default-serif-font);
+    font-family: var(--default-serif-font), serif;
     font-size: 0.9em;
     vertical-align: 0.1rem;
 }
@@ -332,15 +337,23 @@ b.apparatus-line-number {
 }
 
 .token-selected {
-    background: #bddeea;
+    background: #bddeea !important;
 }
 
 .token-highlighted {
-    background: #f6f669;
+    background: #f6f669 !important;
 }
 .token-highlighted.token-selected {
     background: #8cb484;
 }
+
+.token-in-app {
+    background: var(--light-text-highlight-color);
+}
+.token-in-app:hover {
+    background: var(--darker-text-highlight-color);
+}
+
 
 h1.lemma {
     font-size: 2em;
@@ -389,7 +402,7 @@ div#text-editor-info {
 div#text-editor-info h4 {
     font-size: 1rem;
     margin-left: 1rem;
-    font-family: var(--default-font-family);
+    font-family: var(--default-font-family), sans-serif;
 }
 
 b.blot-numbering-label, span.main-text-token.numbering-label, span.numbering-label  {
@@ -415,6 +428,34 @@ b.blot-sigla {
     font-weight: normal;
     background-color: #f1f1f1;
 }
+
+.popover .app {
+    margin-bottom: 1em;
+}
+
+.popover .apparatus-label {
+    font-weight: bold;
+}
+.popover .entries {
+    margin-inline-start: 1em;
+}
+
+.popover .sub-entries{
+    margin-inline-start: 1em;
+}
+
+.popover .sub-entry-disabled {
+    text-decoration-line: line-through;
+    color: silver;
+}
+
+.popover .entry-line-number {
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+
+
 /* Collation Table Panel */
 
 #collation-table .panel-content {
@@ -536,7 +577,7 @@ div.aei-form div.form-footer {
 }
 
 .fte-icon {
-    font-family: var(--default-serif-font);
+    font-family: var(--default-serif-font), serif;
     font-size: 0.8em;
     vertical-align: 0.1rem;
 }
@@ -550,22 +591,22 @@ div.aei-form div.form-footer {
 }
 
 .text-la .ql-editor {
-    font-family: var(--latin-apparatus-font-family);
+    font-family: var(--latin-apparatus-font-family), serif;
 }
 
 .form-group.text-la, .entry-text.text-la, .auto-entries.text-la {
-    font-family: var(--latin-apparatus-font-family);
+    font-family: var(--latin-apparatus-font-family), serif;
 }
 
 
 .entry-text.text-he, .auto-entries.text-he {
-    font-family: var(--hebrew-font-family);
+    font-family: var(--hebrew-font-family), serif;
     font-size: var(--hebrew-font-size);
     direction: rtl;
 }
 
 .entry-text.text-ar, .auto-entries.text-ar {
-    font-family: var(--arabic-font-family);
+    font-family: var(--arabic-font-family), serif;
     font-size: var(--arabic-font-size);
     direction: rtl;
 }
@@ -644,7 +685,7 @@ select.hand-select {
 
 span.empty-sub-entry {
     color: silver;
-    font-family: var(--default-font-family);
+    font-family: var(--default-font-family), serif;
     font-variant-caps: small-caps;
 }
 

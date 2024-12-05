@@ -21,8 +21,8 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import Split from 'split-grid'
 import { createIndexArray, prettyPrintArray } from '../toolbox/ArrayUtil.mjs'
 import { BootstrapTabGenerator } from './BootstrapTabGenerator'
-import { maximizeElementHeightInParent} from '../toolbox/UserInterfaceUtil'
 import { doNothing, returnEmptyString} from '../toolbox/FunctionUtil.mjs'
+import { UiToolBox } from '../toolbox/UiToolBox'
 
 const defaultIcons = {
   closePanel: '&times;',
@@ -313,9 +313,9 @@ export class MultiPanelUI {
       if (panel.type === tabsPanel) {
         let panelDiv = $(`#${panel.id}`)
         let tabsContentsDiv = $(`#${panel.id}-tabs-content`)
-        maximizeElementHeightInParent(tabsContentsDiv, panelDiv, $(`#${panel.id}-tabs`).outerHeight())
+        UiToolBox.maximizeElementHeightInParent(tabsContentsDiv, panelDiv, $(`#${panel.id}-tabs`).outerHeight())
         panel.tabs.forEach( (tab) => {
-          maximizeElementHeightInParent($(`#${tab.id}`), tabsContentsDiv,0 )
+          UiToolBox.maximizeElementHeightInParent($(`#${tab.id}`), tabsContentsDiv,0 )
         })
       }
     })

@@ -123,10 +123,10 @@ export class ChunkSearchPanel extends Panel {
   genOnClickLoadActiveEditionData() {
     return async () => {
       this.loadActiveEditionDataButton.html(`Loading ... ${this.icons.busy}`);
-      let data = await this.apmDataProxy.get(urlGen.apiGetActiveEditionInfo());
-      console.log(`Active edition data`, data);
-      this.activeEditionTableContainer.html(await this.genActiveEditionTable(data));
-      this.setupActiveEditionTableButtons(data);
+      this.activeEditionsData = await this.apmDataProxy.get(urlGen.apiGetActiveEditionInfo());
+      console.log(`Active edition data`, this.activeEditionsData);
+      this.activeEditionTableContainer.html(await this.genActiveEditionTable(this.activeEditionsData));
+      this.setupActiveEditionTableButtons(this.activeEditionsData);
       this.loadActiveEditionDataButton.html('Reload Data');
     }
   }

@@ -589,7 +589,6 @@ table.bpe-statement-history tr.event-creation {
 
 
 .force-hidden {
-!important;
-    display: none;
+    display: none !important;
 }
 

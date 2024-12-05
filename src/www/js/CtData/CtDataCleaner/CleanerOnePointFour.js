@@ -3,6 +3,7 @@ import { SubEntryPositionsConsistencyCleaner } from './SubEntryPositionsConsiste
 import { ApparatusEntryPositionCleaner } from './ApparatusEntryPositionCleaner'
 import { DefaultApparatusesCleaner } from './DefaultApparatusesCleaner'
 import { EditionWitnessTokenStringParser } from '../../toolbox/EditionWitnessTokenStringParser.mjs'
+import { clean } from 'quill/ui/icons'
 
 /**
  *
@@ -30,6 +31,11 @@ export class CleanerOnePointFour extends CtDataCleaner {
       // clean up edition witness
       let editionWitnessIndex = cleanData['editionWitnessIndex'];
       cleanData.witnesses[editionWitnessIndex] = this.getCleanEditionWitness(cleanData.witnesses[editionWitnessIndex]);
+    }
+
+    if (cleanData.type === 'edition' && cleanData.witnesses.length === 2) {
+      // fix '_edition_' title in single chunk editions (bug in single chunk edition generator)
+      cleanData.sigla[cleanData['editionWitnessIndex']] = '-';
     }
     return cleanData;
   }

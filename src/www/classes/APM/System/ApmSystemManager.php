@@ -50,6 +50,8 @@ use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\EntitySystem\ApmEntitySystem;
 use APM\EntitySystem\ApmEntitySystemInterface;
+use APM\Session\ApmSessionManager;
+use APM\Session\SessionManager;
 use APM\System\ImageSource\BilderbergImageSource;
 use APM\System\ImageSource\OldBilderbergStyleRepository;
 use APM\System\Job\ApmJobQueueManager;
@@ -169,6 +171,7 @@ class ApmSystemManager extends SystemManager {
     private ?ApmJobQueueManager $jobManager;
     private ?ApmEditionSourceManager $editionSourceManager;
     private ?WorkManager $workManager;
+    private ?ApmSessionManager $sessionManager;
     private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem;
     private ?DataCache $memDataCache;
 
@@ -225,6 +228,7 @@ class ApmSystemManager extends SystemManager {
         $this->presetsManager = null;
         $this->transcriptionManager = null;
         $this->collationTableManager = null;
+        $this->sessionManager = null;
         $this->dataManager = null;
         $this->memDataCache = null;
         $this->apmEntitySystem = null;
@@ -313,7 +317,9 @@ class ApmSystemManager extends SystemManager {
             ApmMySqlTableName::TABLE_EDITION_SOURCES,
             ApmMySqlTableName::ES_Statements_Default,
             ApmMySqlTableName::ES_Cache_Default,
-            ApmMySqlTableName::ES_Merges
+            ApmMySqlTableName::ES_Merges,
+            ApmMySqlTableName::TABLE_SESSIONS_REGISTER,
+            ApmMySqlTableName::TABLE_SESSIONS_LOG,
 //            ApmMySqlTableName::ES_Statements_Person,
 //            ApmMySqlTableName::ES_Statements_Document,
 //            ApmMySqlTableName::ES_Statements_Work,
@@ -979,5 +985,17 @@ class ApmSystemManager extends SystemManager {
             $this->dataManager = $dataManager;
         }
         return $this->dataManager;
+    }
+
+    public function getSessionManager(): SessionManager
+    {
+        if ($this->sessionManager === null) {
+            $sessionsTable = new MySqlDataTable($this->getDbConnection(),
+                $this->getTableNames()[ApmMySqlTableName::TABLE_SESSIONS_REGISTER], true);
+            $logTable = new MySqlDataTable($this->getDbConnection(),
+                $this->getTableNames()[ApmMySqlTableName::TABLE_SESSIONS_LOG], true);
+            $this->sessionManager = new ApmSessionManager($sessionsTable, $logTable, $this->logger);
+        }
+        return $this->sessionManager;
     }
 }

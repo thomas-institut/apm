@@ -19,6 +19,7 @@
 
 namespace APM\Site;
 
+use APM\Session\Exception\SessionNotFoundException;
 use APM\System\ApmConfigParameter;
 use APM\SystemProfiler;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -37,13 +38,14 @@ class SiteDashboard extends SiteController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws SessionNotFoundException
      */
     public function DashboardPage(Request $request, Response $response): Response
     {
 //        $this->profiler->start();
 //        $this->profiler->stop();
 //        $this->logProfilerData('Dashboard');
-        SystemProfiler::setName(__FUNCTION__);
+        SystemProfiler::setName("Site:" . __FUNCTION__);
         return $this->renderPage($response, self::TEMPLATE_DASHBOARD, []);
     }
 }

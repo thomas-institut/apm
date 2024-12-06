@@ -28,6 +28,7 @@ use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\FullTranscription\TranscriptionManager;
 use APM\EntitySystem\ApmEntitySystemInterface;
+use APM\Session\SessionManager;
 use APM\System\Job\JobQueueManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
@@ -123,6 +124,7 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     abstract public function getTranscriptionManager() : TranscriptionManager;
     abstract public function getCollationTableManager() : CollationTableManager;
     abstract public function getMultiChunkEditionManager() : MultiChunkEditionManager;
+    abstract public function getSessionManager() : SessionManager;
     abstract public function getSystemDataCache() : DataCache;
 
     abstract public function getMemDataCache() : DataCache;

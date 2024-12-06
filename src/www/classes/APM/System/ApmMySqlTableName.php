@@ -42,6 +42,8 @@ class ApmMySqlTableName
     const TABLE_VERSIONS_CT = 'versions_ct';
     const TABLE_MULTI_CHUNK_EDITIONS = 'mc_editions';
     const TABLE_EDITION_SOURCES = 'edition_sources';
+    const TABLE_SESSIONS_REGISTER = 'sessions_register';
+    const TABLE_SESSIONS_LOG = 'sessions_log';
 
     // Entity system tables:
 

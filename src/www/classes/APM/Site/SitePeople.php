@@ -4,8 +4,10 @@ namespace APM\Site;
 
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
+use APM\Session\Exception\SessionNotFoundException;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
+use APM\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -20,16 +22,22 @@ class SitePeople extends SiteController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws SessionNotFoundException
      */
 
     public function peoplePage(Request $request, Response $response): Response
     {
+        SystemProfiler::setName("Site:" . __FUNCTION__);
         return $this->renderPage($response, self::TEMPLATE_PEOPLE,[]);
     }
 
+    /**
+     * @throws SessionNotFoundException
+     */
     public function personPage(Request $request, Response $response): Response
     {
         $tid = $request->getAttribute('tid');
+        SystemProfiler::setName("Site:" . __FUNCTION__ . ":" . $tid);
 
         $tid = Tid::fromString($tid);
         if ($tid === -1) {

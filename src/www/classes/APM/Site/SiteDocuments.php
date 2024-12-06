@@ -27,12 +27,14 @@
 namespace APM\Site;
 
 use APM\FullTranscription\ApmChunkSegmentLocation;
+use APM\Session\Exception\SessionNotFoundException;
 use APM\System\DataRetrieveHelper;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
+use APM\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use AverroesProject\Data\DataManager;
 use Exception;
@@ -60,11 +62,11 @@ class SiteDocuments extends SiteController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws SessionNotFoundException
      */
     public function documentsPage(Request $request, Response $response): Response
     {
-
-
+        SystemProfiler::setName("Site:" . __FUNCTION__);
         $this->profiler->start();
 
         $cache = $this->systemManager->getSystemDataCache();

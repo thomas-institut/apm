@@ -17,6 +17,7 @@
         "ext-memcached": "*",
         "ext-pcntl": "*",
         "ext-posix": "*",
+        "ext-sockets": "*",
         "psr/log": "^3.0",
         "slim/slim": "^4.3",
         "slim/psr7": "^1.6",

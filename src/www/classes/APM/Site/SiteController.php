@@ -27,6 +27,7 @@
 namespace APM\Site;
 
 use APM\FullTranscription\PageInfo;
+use APM\Session\Exception\SessionNotFoundException;
 use APM\System\ApmConfigParameter;
 use APM\System\ApmImageType;
 use APM\System\Person\PersonNotFoundException;
@@ -171,6 +172,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
      * @param array $data
      * @param bool $withBaseData
      * @return ResponseInterface
+     * @throws SessionNotFoundException
      */
     protected function renderPage(ResponseInterface $response,
                                   string $template, array $data,
@@ -178,6 +180,11 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     {
 
         if ($withBaseData) {
+            $sessionId = $this->systemManager->getSessionManager()->startSession($this->userTid);
+//            $name = SystemProfiler::getName();
+//            if ($name !== '') {
+//                $this->systemManager->getSessionManager()->logToSession($sessionId, 'site' , $name);
+//            }
             $data['commonData'] = [
                 'appName' => $this->config[ApmConfigParameter::APP_NAME],
                 'appVersion' => $this->config[ApmConfigParameter::VERSION],
@@ -186,7 +193,8 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
                 'cacheDataId' => $this->config[ApmConfigParameter::JS_APP_CACHE_DATA_ID],
                 'userInfo' => $this->getSiteUserInfo(),
                 'showLanguageSelector' => $this->config[ApmConfigParameter::SITE_SHOW_LANGUAGE_SELECTOR],
-                'baseUrl' => $this->getBaseUrl()
+                'baseUrl' => $this->getBaseUrl(),
+                'sessionId' => $sessionId,
             ];
             $data['baseUrl'] = $this->getBaseUrl();
         }

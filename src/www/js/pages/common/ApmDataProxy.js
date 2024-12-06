@@ -51,8 +51,9 @@ export class ApmDataProxy {
    *
    * @param {string}cacheDataId
    * @param {string}cachePrefix
+   * @param ignoreDataIds list of dataIds to ignore when cleaning
    */
-  constructor (cacheDataId, cachePrefix) {
+  constructor (cacheDataId, cachePrefix, ignoreDataIds = []) {
     this.cacheDataId = cacheDataId;
     this.caches = {
       memory: new KeyCache(),
@@ -68,8 +69,8 @@ export class ApmDataProxy {
 
     wait(CleaningDelayInSeconds * 1000).then( () => {
 
-      let sessionRemovedItemCount = this.caches.session.cleanCache();
-      let localRemovedItemCount = this.caches.local.cleanCache();
+      let sessionRemovedItemCount = this.caches.session.cleanCache(-1, ignoreDataIds);
+      let localRemovedItemCount = this.caches.local.cleanCache(-1, ignoreDataIds);
 
       let total = sessionRemovedItemCount + localRemovedItemCount;
       if (total > 0) {

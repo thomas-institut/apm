@@ -9,6 +9,9 @@ import { ApmFormats } from './common/ApmFormats'
 const langCacheKey = 'apmSiteLanguage'
 const langCacheDataId = 'v1';
 const CachePrefix = 'Apm';
+const SessionIdCacheKey = CachePrefix + 'SessionId';
+const SessionIdDataId = 'SessionInfo_v0001';
+const SessionIdTtl = 365.2422 * 24 * 3600; // 1 tropical year :)
 
 export class ApmPage {
 
@@ -29,6 +32,7 @@ export class ApmPage {
             userInfo: { type: 'object'},
             siteLanguage: { type: 'string', default: ''},
             showLanguageSelector: { type: 'boolean', default: false},
+            sessionId: { required: true, type: 'number'}
           }
         }
       }
@@ -46,7 +50,7 @@ export class ApmPage {
     this.userTid = this.commonData.userInfo['tid'];
     this.userName = this.commonData.userInfo.userName;
 
-    this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, CachePrefix);
+    this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, CachePrefix, [ SessionIdDataId]);
     this.localCache = new WebStorageKeyCache('local', this.commonData.cacheDataId);
     this.sessionCache = new WebStorageKeyCache('session', this.commonData.cacheDataId);
 
@@ -68,10 +72,27 @@ export class ApmPage {
     ApmFormats.setTimeZone(this.timeZone);
 
     console.log(`Client timezone is '${this.timeZone}', currently ${ApmFormats.getTimeZoneOffsetStringForDate(new Date(), false, false)}`);
+
+    this.sessionId = this.getSessionIdFromWebStorage();
+    if (this.sessionId === null) {
+      this.sessionId = this.commonData['sessionId'];
+      console.log(`Using new session id from server: ${this.sessionId}`);
+      this.saveSessionIdToWebStorage();
+    } else {
+      console.log(`Using existing session id ${this.sessionId}`);
+    }
   }
 
   isUserRoot() {
     return this.commonData.userInfo['isRoot'];
+  }
+
+  getSessionIdFromWebStorage() {
+    return this.sessionCache.retrieve(SessionIdCacheKey, SessionIdDataId);
+  }
+
+  saveSessionIdToWebStorage() {
+    this.sessionCache.store(SessionIdCacheKey, this.sessionId, SessionIdTtl, SessionIdDataId);
   }
 
 

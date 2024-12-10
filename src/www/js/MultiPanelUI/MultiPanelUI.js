@@ -88,6 +88,12 @@ export class MultiPanelUI {
       mode: {
         type: 'string',  // 'vertical' | 'horizontal'
         default: verticalMode
+      },
+      onModeChange: {
+        type: 'function',
+        // called after a mode change
+        //  (newMode) => { .... }
+        default: doNothing
       }
     }
 
@@ -521,13 +527,14 @@ export class MultiPanelUI {
 
   async switchMode(newMode) {
     this.currentMode = newMode
-    this._updateActiveTabIds()
-    await this._renderPanels()
-    this._setupTabEventHandlers()
-    this._fitPanelsToScreen()
-    this._setupSplit()
-    this._setupDraggingEventHandlers()
-    this._callPostRenderHandlers()
+    this._updateActiveTabIds();
+    await this._renderPanels();
+    this._setupTabEventHandlers();
+    this._fitPanelsToScreen();
+    this._setupSplit();
+    this._setupDraggingEventHandlers();
+    this._callPostRenderHandlers();
+    this.options.onModeChange(newMode);
   }
 
   _updateActiveTabIds() {

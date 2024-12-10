@@ -46,7 +46,7 @@ class ApiMultiChunkEdition extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $editionId);
         $description = $inputDataObject['description'];
         $mceData = $inputDataObject['mceData'];
-        $authorTid = $this->apiUserTid;
+        $authorTid = $this->apiUserId;
 
         try {
             $editionId = $this->systemManager->getMultiChunkEditionManager()->saveMultiChunkEdition($editionId, $mceData, $authorTid, $description);

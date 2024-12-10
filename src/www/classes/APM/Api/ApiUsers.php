@@ -64,14 +64,14 @@ class ApiUsers extends ApiController
 
         $newUserManager = $this->systemManager->getUserManager();
 
-        if ($profileUserTid === $this->apiUserTid) {
+        if ($profileUserTid === $this->apiUserId) {
             $this->logger->info("User $profileUserTid is changing their own user profile");
         } else {
-            if (!$newUserManager->isUserAllowedTo($this->apiUserTid, UserTag::MANAGE_USERS)) {
-                $this->logger->error("Api user $this->apiUserTid not allowed to update user profile $profileUserTid");
+            if (!$newUserManager->isUserAllowedTo($this->apiUserId, UserTag::MANAGE_USERS)) {
+                $this->logger->error("Api user $this->apiUserId not allowed to update user profile $profileUserTid");
                 return $this->responseWithStatus($response, HttpStatus::UNAUTHORIZED);
             }
-            $this->logger->info("User $this->apiUserTid is changing user profile $profileUserTid");
+            $this->logger->info("User $this->apiUserId is changing user profile $profileUserTid");
         }
 
         $postData = $request->getParsedBody();
@@ -142,11 +142,11 @@ class ApiUsers extends ApiController
         $personTid = intval($request->getAttribute('personTid'));
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $personTid);
 
-        if (!$apmUserManager->isUserAllowedTo($this->apiUserTid, UserTag::MANAGE_USERS)) {
-            $this->logger->error("Api user $this->apiUserTid not allowed to create users");
+        if (!$apmUserManager->isUserAllowedTo($this->apiUserId, UserTag::MANAGE_USERS)) {
+            $this->logger->error("Api user $this->apiUserId not allowed to create users");
             return $this->responseWithStatus($response, HttpStatus::UNAUTHORIZED);
         }
-        $this->logger->info("User $this->apiUserTid is making user $personTid");
+        $this->logger->info("User $this->apiUserId is making user $personTid");
 
         try {
             $personData = $personManager->getPersonEssentialData($personTid);

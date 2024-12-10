@@ -30,7 +30,7 @@ import { ServerLogger } from '../Server/ServerLogger'
 
 
 // MultiPanel UI
-import { MultiPanelUI } from '../MultiPanelUI/MultiPanelUI'
+import { horizontalMode, MultiPanelUI, verticalMode } from '../MultiPanelUI/MultiPanelUI'
 import { TabConfig } from '../MultiPanelUI/TabConfig'
 
 // Panels
@@ -91,6 +91,9 @@ const saveButtonTextClassChanges = 'text-primary'
 const saveButtonTextClassSaving = 'text-warning'
 const saveButtonTextClassError = 'text-danger'
 
+const ViewOptionsCacheTtl = 180 * 24 * 3600;  // 6 months
+export const ViewOptionsCacheDataId = 'apm_ec_a8731fe';
+
 
 export class EditionComposer extends ApmPage {
 
@@ -128,12 +131,14 @@ export class EditionComposer extends ApmPage {
     }
 
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "EditionComposer"})
-    this.options = oc.getCleanOptions(options)
+    this.options = oc.getCleanOptions(options);
+    this.tableId = this.options.tableId;
 
-    console.log(`EditionComposer Options`)
-    console.log(this.options)
+    console.log(`EditionComposer Options`);
+    console.log(this.options);
 
-
+    this.viewOptions = this.getViewOptions();
+    console.log(`ViewOptions`, this.viewOptions);
 
     // icons
     this.icons = {
@@ -180,7 +185,7 @@ export class EditionComposer extends ApmPage {
     // this.availableNormalizers = this.normalizerRegister.getRegisteredNormalizers()
 
     this.lastSavedCtData = Util.deepCopy(this.ctData)
-    this.tableId = this.options.tableId;
+
     this.ctData['tableId'] = this.tableId;
     this.versionInfo = this.options.versionInfo;
     this.lastVersion= this.options.lastVersion;
@@ -224,7 +229,7 @@ export class EditionComposer extends ApmPage {
     })
     this.witnessInfoPanel = new WitnessInfoPanel({
       verbose: true,
-      userTid: this.userTid,
+      userId: this.userId,
       containerSelector: `#${witnessInfoTabId}`,
       ctData: this.ctData,
       onWitnessOrderChange: this.genOnWitnessOrderChange(),
@@ -260,16 +265,19 @@ export class EditionComposer extends ApmPage {
 
     /** @member {ApparatusPanel[]} this.apparatusPanels */
     this.apparatusPanels = this.edition.apparatuses
-      .map( (apparatus, index) => {
+      .map( (apparatus, appIndex) => {
         return new ApparatusPanel({
           ctData: this.ctData,
-          containerSelector: `#apparatus-${index}`,
+          containerSelector: `#apparatus-${appIndex}`,
           edition: this.edition,
-          apparatusIndex: index,
-          onHighlightMainText: this._genOnHighlightMainText(apparatus.type),
+          apparatusIndex: appIndex,
+          highlightMainText: this.genHighlightMainTextForApparatusPanel(apparatus.type),
+          hoverMainText: (entryIndex, on) => {
+            this.mainTextPanel.hoverEntry(appIndex, entryIndex, on);
+          },
           highlightCollationTableRange: this._genHighlightCollationTable(),
-          onCtDataChange: this.genOnCtDataChange(`ApparatusPanel ${index}`),
-          onError: (msg) => { this._setError(`${msg} (Apparatus ${index})`)},
+          onCtDataChange: this.genOnCtDataChange(`ApparatusPanel ${appIndex}`),
+          onError: (msg) => { this._setError(`${msg} (Apparatus ${appIndex})`)},
           verbose: true,
           editApparatusEntry: (apparatusIndex, mainTextFrom, mainTextTo) => { this.editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo)}
         }
@@ -284,7 +292,17 @@ export class EditionComposer extends ApmPage {
       onError: (msg) => { this._setError(`${msg} (Main Text Panel)`)},
       onCtDataChange: this.genOnCtDataChange('mainTextPanel'),
       editApparatusEntry: (apparatusIndex, mainTextFrom, mainTextTo) => { this.editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo)},
-      editionWitnessTokenNormalizer: this.genEditionWitnessTokenNormalizer()
+      editionWitnessTokenNormalizer: this.genEditionWitnessTokenNormalizer(),
+      highlightEnabled: this.viewOptions.highlightEnabled,
+      popoversEnabled: this.viewOptions.popoversEnabled,
+      onChangeHighlightEnabled: (newStatus) => {
+        this.viewOptions.highlightEnabled = newStatus;
+        this.storeViewOptions(this.viewOptions);
+      },
+      onChangePopoversEnabled: (newStatus) => {
+        this.viewOptions.popoversEnabled = newStatus;
+        this.storeViewOptions(this.viewOptions);
+      }
     })
 
     this.techSupportPanel = new TechSupportPanel({
@@ -349,6 +367,11 @@ export class EditionComposer extends ApmPage {
         horizontalMode: `<img src="${urlGen.images()}/horizontal-mode.svg" alt="Horizontal Mode"/>`,
         verticalMode: `<img src="${urlGen.images()}/vertical-mode.svg" alt="Vertical Mode"/>`
       },
+      mode: this.viewOptions.vertical ? verticalMode : horizontalMode,
+      onModeChange: (newMode) => {
+        this.viewOptions.vertical = newMode === verticalMode;
+        this.storeViewOptions(this.viewOptions);
+      },
         panels: [
           {
             id: 'panel-one',
@@ -403,6 +426,25 @@ export class EditionComposer extends ApmPage {
     })
   }
 
+  getViewOptionsStorageKey() {
+    return `Apm-EC-ViewOptions-${this.userId}-${this.tableId}`;
+  }
+  getViewOptions() {
+    let viewOptions = this.localCache.retrieve(this.getViewOptionsStorageKey(), ViewOptionsCacheDataId);
+    return viewOptions === null ?
+      {
+        vertical: true,
+        percentage: 50,
+        popoversEnabled: true,
+        highlightEnabled: true
+      } :
+      viewOptions;
+  }
+
+  storeViewOptions(viewOptions) {
+    this.localCache.store(this.getViewOptionsStorageKey(), viewOptions, ViewOptionsCacheTtl, ViewOptionsCacheDataId);
+  }
+
   _genHighlightCollationTable() {
     return (colStart, colEnd) => {
       if (colEnd === undefined) {
@@ -414,7 +456,13 @@ export class EditionComposer extends ApmPage {
     }
   }
 
-  _genOnHighlightMainText(apparatusType) {
+  /**
+   *
+   * @param apparatusType
+   * @returns {(function(*, *): void)|*}
+   * @private
+   */
+  genHighlightMainTextForApparatusPanel(apparatusType) {
     return (index, on) => {
       this.mainTextPanel.highlightTextForLemma(apparatusType, index, on)
     }

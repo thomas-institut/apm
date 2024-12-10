@@ -33,7 +33,7 @@ export class DashboardPage extends NormalPage {
     super(options);
     console.log(`Dashboard Page`);
     console.log(options);
-    this.calculationPlayGround();
+    //this.calculationPlayGround();
     this.initPage().then( () => {
       console.log(`Dashboard page initialized`)
     })

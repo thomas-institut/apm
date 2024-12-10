@@ -427,7 +427,7 @@ class SiteCollationTable extends SiteController
         $ignorePunctuation = $presetData['ignorePunctuation'];
 
 
-        $presetUserName = $this->systemManager->getPersonManager()->getPersonEssentialData($preset->getUserTid())->name;
+        $presetUserName = $this->systemManager->getPersonManager()->getPersonEssentialData($preset->getUserId())->name;
         
         $collationPageOptions = [
             'work' => $workId,
@@ -438,11 +438,11 @@ class SiteCollationTable extends SiteController
             'partialCollation' => false,
             'isPreset' => true,
             'preset' => [ 
-                'id' => $preset->getId(), 
+                'id' => $preset->getPresetId(),
                 'title' => $preset->getTitle(),
-                'userTid' => $preset->getUserTid(),
+                'userTid' => $preset->getUserId(),
                 'userName' => $presetUserName,
-                'editable' =>  $this->userId === $preset->getUserTid()
+                'editable' =>  $this->userId === $preset->getUserId()
             ]
         ];
         if (isset($presetData['normalizers'])) {

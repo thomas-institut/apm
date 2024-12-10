@@ -25,7 +25,6 @@ import { ConfirmDialog } from './common/ConfirmDialog'
 import { urlGen } from './common/SiteUrlGen'
 import { ApmFormats } from './common/ApmFormats'
 import { TimeString } from '../toolbox/TimeString.mjs'
-import { NormalPage } from './NormalPage'
 import { tr } from './common/SiteLang'
 import { HeaderAndContentPage } from './HeaderAndContentPage'
 import { Tid } from '../Tid/Tid'
@@ -527,8 +526,8 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
     return info
   }
 
-  async getAuthorLink(authorTid) {
-    let userData = await this.apmDataProxy.getPersonEssentialData(authorTid);
+  async getAuthorLink(authorId) {
+    let userData = await this.apmDataProxy.getPersonEssentialData(authorId);
     return `<a href="${urlGen.sitePerson(Tid.toBase36String(userData.tid))}" 
     title="${tr('View person data')}" target="_blank">${userData.name}</a>`
   }
@@ -637,7 +636,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
         let thisObject = this
         let apiCallOptions = {
           lang: langInfo[l].code,
-          userTid: -1,
+          userId: -1,
           witnesses: []
         }
         for(const w in this.witnessesByLang[l]) {
@@ -663,14 +662,14 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
         .done(function (data) { 
           console.log('Got ' + data.presets.length + ' presets')
           console.log(data.presets)
-          for(const pr of data.presets) {
+          for(const preset of data.presets) {
             let witnessesToInclude = []
-            for (const presetWitness of pr.data.witnesses) {
-              let witness = false
-              let fields = presetWitness.split('-')
-              let presetWitnessType = fields[0]
-              let presetWitnessDocId = parseInt(fields[1])
-              let presetWitnessLwid = fields[2]
+            for (const presetWitness of preset.data.witnesses) {
+              let witness = false;
+              let fields = presetWitness.split('-');
+              let presetWitnessType = fields[0];
+              let presetWitnessDocId = parseInt(fields[1]);
+              let presetWitnessLwid = fields[2];
               for(const w of thisObject.witnessesByLang[l]) {
                 // match only fullTx witnesses with localWitnessId === 'A'
                 if (w.type=== presetWitnessType && w['typeSpecificInfo'].docId === presetWitnessDocId && w['typeSpecificInfo'].localWitnessId === presetWitnessLwid) {
@@ -687,24 +686,24 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
              { 
                lang: l,
                name: langName,
-               url:  urlGen.siteCollationTablePreset(thisObject.options.work, thisObject.options.chunk, pr.presetId),
-               urltext: pr.title + ' <small><i>(' + pr.userName + ')</i></small>',
+               url:  urlGen.siteCollationTablePreset(thisObject.options.work, thisObject.options.chunk, preset.presetId),
+               urltext: preset.title + ' <small><i>(' + preset.userName + ')</i></small>',
                urltitle:  'Open collation table in new tab', 
                availableWitnesses: thisObject.witnessesByLang[l],
                isPreset: true,
                preset: { 
-                 id: pr.presetId, 
-                 title: pr.title, 
-                 userId: pr.userId, 
-                 userName: pr.userName,
-                 editable: (pr.userId === thisObject.options.userId)
+                 id: preset.presetId,
+                 title: preset.title,
+                 userId: preset.userId,
+                 userName: preset.userName,
+                 editable: (preset.userId === thisObject.options.userId)
                },
                actSettings : { 
                  lang: l,
                  work: thisObject.options.work,
                  chunk: thisObject.options.chunk,
-                 ignorePunctuation: pr.data.ignorePunctuation,
-                 normalizers: pr.data.normalizers !== undefined ? pr.data.normalizers : null,
+                 ignorePunctuation: preset.data.ignorePunctuation,
+                 normalizers: preset.data.normalizers !== undefined ? preset.data.normalizers : null,
                  witnesses: witnessesToInclude
                }
                
@@ -768,7 +767,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
           applyButtonText: 'Generate Collation',
           userId: this.options.userId,
           normalizerData: this.options.languageInfo[urls[u].lang]['normalizerData'],
-          debug: true
+          debug: false
         })
        $('#' + liId  + ' .cterasepresetbutton').on('click', function() { 
             $('#' + liId + '-a').addClass('disabled')

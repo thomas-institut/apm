@@ -67,7 +67,7 @@ class ApiLog extends ApiController
                 break;
         }
 
-        $inputDataObject['data']['apiUserTid'] = $this->apiUserTid;
+        $inputDataObject['data']['apiUserTid'] = $this->apiUserId;
         $logMessage = sprintf("%s:%s : %s", $inputDataObject['module'], $inputDataObject['subModule'], $inputDataObject['description']);
         $this->frontEndLogger->log($logLevel, $logMessage, $inputDataObject['data']);
         return $this->responseWithText($response, 'OK');

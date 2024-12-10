@@ -138,7 +138,7 @@ class ApiTypesetPdf extends ApiController
             // Cannot reproduce this condition in testing
             // @codeCoverageIgnoreStart
             $this->logger->error("Cannot create file $tempFileName",
-                [ 'apiUserTid' => $this->apiUserTid,
+                [ 'apiUserTid' => $this->apiUserId,
                     'apiError' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE,
                     'data' => $data ]);
             return false;

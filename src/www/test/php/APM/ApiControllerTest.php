@@ -460,7 +460,7 @@ class ApiControllerTest extends TestCase {
         $apiUser = self::$dataManager->userManager->createUserByUserName('testApiUser2');
         $this->assertNotFalse($apiUser);
         self::$testEnvironment->setApiUser($apiUser);
-        self::$apiPresets->setApiUserTid($apiUser);
+        self::$apiPresets->setApiUserId($apiUser);
         $presetOwnedByNewApiUser = $presetData;
         $presetOwnedByNewApiUser['userId'] = $apiUser;
 
@@ -545,7 +545,7 @@ class ApiControllerTest extends TestCase {
      */
     public function testDeletePreset($presetData) {
         self::$testEnvironment->setUserTid($presetData['apiUserId']);
-        self::$apiPresets->setApiUserTid($presetData['apiUserId']);
+        self::$apiPresets->setApiUserId($presetData['apiUserId']);
         $presetId1 = $presetData['presetId1']; // owned by self::$editor1
         $presetId2 = $presetData['presetId2']; // owned by the current api user
 

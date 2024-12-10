@@ -68,7 +68,7 @@ class ApiWitness extends ApiController
             case WitnessType::PARTIAL_TRANSCRIPTION:
                 $msg = 'Witness type ' . WitnessType::PARTIAL_TRANSCRIPTION . ' not implemented yet';
                 $this->logger->error($msg, [
-                    'apiUserTid' => $this->apiUserTid,
+                    'apiUserTid' => $this->apiUserId,
                     'apiError' => self::ERROR_WITNESS_TYPE_NOT_IMPLEMENTED
                 ]);
                 return $this->responseWithJson($response, [ 'error' => $msg ], 409);
@@ -76,7 +76,7 @@ class ApiWitness extends ApiController
             default:
                 $msg = "Unknown witness type $witnessType";
                 $this->logger->error($msg, [
-                    'apiUserTid' => $this->apiUserTid,
+                    'apiUserTid' => $this->apiUserId,
                     'apiError' => self::ERROR_UNKNOWN_WITNESS_TYPE
                 ]);
                 return $this->responseWithJson($response, [ 'error' => $msg ], 409);
@@ -105,7 +105,7 @@ class ApiWitness extends ApiController
             if (!isset($witness['id'])) {
                 $msg = "No witness id given in witness $i" ;
                 $this->logger->error($msg, [
-                    'apiUserTid' => $this->apiUserTid,
+                    'apiUserTid' => $this->apiUserId,
                     'apiError' => self::ERROR_UNKNOWN_WITNESS_TYPE
                 ]);
                 return $this->responseWithJson($response, [ 'error' => $msg ], 409);
@@ -174,7 +174,7 @@ class ApiWitness extends ApiController
                 case WitnessType::PARTIAL_TRANSCRIPTION:
                     $msg = 'Witness type ' . WitnessType::PARTIAL_TRANSCRIPTION . ' not implemented yet';
                     $this->logger->error($msg, [
-                        'apiUserTid' => $this->apiUserTid,
+                        'apiUserTid' => $this->apiUserId,
                         'apiError' => self::ERROR_WITNESS_TYPE_NOT_IMPLEMENTED
                     ]);
                     return $this->responseWithJson($response, [ 'error' => $msg ], 409);
@@ -185,7 +185,7 @@ class ApiWitness extends ApiController
                 default:
                     $msg = "Unknown witness type $witnessType";
                     $this->logger->error($msg, [
-                        'apiUserTid' => $this->apiUserTid,
+                        'apiUserTid' => $this->apiUserId,
                         'apiError' => self::ERROR_UNKNOWN_WITNESS_TYPE
                     ]);
                     return $this->responseWithJson($response, [ 'error' => $msg ], 409);
@@ -201,7 +201,7 @@ class ApiWitness extends ApiController
         } catch (InvalidArgumentException $e) {
             $msg = "Cannot get fullTx witness info from system Id. Error: " . $e->getMessage();
             $this->logger->error($msg, [
-                'apiUserTid' => $this->apiUserTid,
+                'apiUserTid' => $this->apiUserId,
                 'apiError' => self::ERROR_SYSTEM_ID_ERROR,
                 'exceptionErrorCode' => $e->getCode(),
                 'exceptionErrorMsg' => $e->getMessage()

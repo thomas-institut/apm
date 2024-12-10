@@ -92,7 +92,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     private ContainerInterface $container;
     private bool $debugMode;
     protected string $apiCallName;
-    protected int $apiUserTid;
+    protected int $apiUserId;
 
 
     /**
@@ -107,7 +107,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
        $this->debugMode = false;
 
        $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
-       $this->apiUserTid = $ci->get(ApmContainerKey::API_USER_ID); // this should be set by the authenticator!
+       $this->apiUserId = $ci->get(ApmContainerKey::API_USER_ID); // this should be set by the authenticator!
        $this->languages = $this->systemManager->getConfig()[ApmConfigParameter::LANGUAGES];
        $this->logger = $this->systemManager->getLogger()->withName('API');
        $this->router = $this->systemManager->getRouter();
@@ -126,13 +126,13 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function setApiUserTid(int $userTid=0): void
+    public function setApiUserId(int $userTid=0): void
     {
         if ($userTid === 0) {
-            $this->apiUserTid = $this->container->get(ApmContainerKey::API_USER_ID);
+            $this->apiUserId = $this->container->get(ApmContainerKey::API_USER_ID);
         } else {
             $this->container->set(ApmContainerKey::API_USER_ID, $userTid);
-            $this->apiUserTid = $userTid;
+            $this->apiUserId = $userTid;
         }
     }
 
@@ -196,19 +196,19 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
         } else {
             if (!isset($postData['data']) ) {
                 $this->logger->error("$this->apiCallName: no data in input",
-                    [ 'apiUserTid' => $this->apiUserTid,
-                        'apiUserTidString' => Tid::toBase36String($this->apiUserTid),
+                    [ 'apiUserId' => $this->apiUserId,
+                        'apiUserIdString' => Tid::toBase36String($this->apiUserId),
                         'apiError' => self::API_ERROR_NO_DATA,
-                        'rawdata' => $postData]);
+                        'rawData' => $postData]);
                 return $this->responseWithJson($response, ['error' => self::API_ERROR_NO_DATA], HttpStatus::BAD_REQUEST);
             }
             $inputData = json_decode($postData['data'], true);
             if (is_null($inputData)) {
                 $this->logger->error("$this->apiCallName: bad JSON in data",
-                    [ 'apiUserTid' => $this->apiUserTid,
-                        'apiUserTidString' => Tid::toBase36String($this->apiUserTid),
+                    [ 'apiUserId' => $this->apiUserId,
+                        'apiUserIdString' => Tid::toBase36String($this->apiUserId),
                         'apiError' => self::API_ERROR_NO_DATA,
-                        'rawdata' => $postData]);
+                        'rawData' => $postData]);
                 return $this->responseWithJson($response, ['error' => self::API_ERROR_NO_DATA], HttpStatus::BAD_REQUEST);
             }
         }
@@ -216,10 +216,10 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
         foreach ($requiredFields as $requiredField) {
             if (!isset($inputData[$requiredField]) || ($errorIfEmpty && $inputData[$requiredField] === '')) {
                 $this->logger->error("$this->apiCallName: missing required field '$requiredField' in input data",
-                    [ 'apiUserTid' => $this->apiUserTid,
-                      'apiUserTidString' => Tid::toBase36String($this->apiUserTid),
+                    [ 'apiUserId' => $this->apiUserId,
+                      'apiUserIdString' => Tid::toBase36String($this->apiUserId),
                       'apiError' => self::API_ERROR_MISSING_REQUIRED_FIELD,
-                      'rawdata' => $postData]);
+                      'rawData' => $postData]);
             return $this->responseWithJson($response, [
                 'error' => self::API_ERROR_MISSING_REQUIRED_FIELD,
                 'errorMsg' => "Required $requiredField not given"

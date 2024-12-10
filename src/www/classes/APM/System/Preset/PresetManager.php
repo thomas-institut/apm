@@ -133,7 +133,7 @@ abstract class PresetManager {
      * @return bool
      */
     public function correspondingPresetExists(Preset $preset) : bool {
-        return $this->presetExists($preset->getTool(), $preset->getUserTid(), $preset->getTitle());
+        return $this->presetExists($preset->getTool(), $preset->getUserId(), $preset->getTitle());
     }
     
     /**
@@ -143,7 +143,7 @@ abstract class PresetManager {
      * @return bool
      */
     public function eraseCorrespondingPreset(Preset $preset) : bool {
-        return $this->erasePreset($preset->getTool(), $preset->getUserTid(), $preset->getTitle());
+        return $this->erasePreset($preset->getTool(), $preset->getUserId(), $preset->getTitle());
     }
    
     /**

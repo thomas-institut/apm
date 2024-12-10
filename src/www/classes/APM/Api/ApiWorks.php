@@ -27,7 +27,7 @@ class ApiWorks extends ApiController
             $workData = $workManager->getWorkDataByDareId($workId);
         } catch (WorkNotFoundException) {
             $this->logger->error("Work '$workId' not found",
-                [ 'apiUserId' => $this->apiUserTid,
+                [ 'apiUserId' => $this->apiUserId,
                     'workId' => $workId]);
             return $this->responseWithStatus($response, 409);
         }
@@ -68,7 +68,7 @@ class ApiWorks extends ApiController
                 return $this->responseWithJson($response, $workManager->getWorkData(intval($workId))->getExportObject());
             } catch (WorkNotFoundException) {
                 $this->logger->error("Work '$workId' not found",
-                    [ 'apiUserId' => $this->apiUserTid,
+                    [ 'apiUserId' => $this->apiUserId,
                         'workId' => $workId]);
                 return $this->responseWithStatus($response, 409);
             }

@@ -117,7 +117,7 @@ class ApiEntity extends ApiController
 
         $userManager = $this->systemManager->getUserManager();
 
-        if ($userManager->hasTag($this->apiUserTid, UserTag::READ_ONLY)) {
+        if ($userManager->hasTag($this->apiUserId, UserTag::READ_ONLY)) {
             return $this->responseWithError($response,
                 self::Error_UserNotAuthorized,
                 "User is not authorized to update statements",
@@ -168,7 +168,7 @@ class ApiEntity extends ApiController
                     }
                     $note = $command['editorialNote'] ?? '';
                     try {
-                        $cancellationId = $es->cancelStatement(intval($command['statementId']), $this->apiUserTid, $timestamp, $note);
+                        $cancellationId = $es->cancelStatement(intval($command['statementId']), $this->apiUserId, $timestamp, $note);
                         $commandResults[] = [
                             'success' => true,
                             'statementId' => $command['statementId'],
@@ -274,7 +274,7 @@ class ApiEntity extends ApiController
                     $cancellationNote = $command['cancellationNote'] ?? 'Via API, no cancellation note left';
                     try {
                         $newStatement = $es->makeStatement($command['subject'], $predicate, $command['object'],
-                            $this->apiUserTid, $note, $qualifications, $timestamp, $cancellationNote);
+                            $this->apiUserId, $note, $qualifications, $timestamp, $cancellationNote);
                         $commandResults[] = [
                             'success' => true,
                             'statementId' => $newStatement,
@@ -347,7 +347,7 @@ class ApiEntity extends ApiController
         ];
         $this->logger->error($message,
             [
-                'apiUserTid' => $this->apiUserTid,
+                'apiUserTid' => $this->apiUserId,
                 'errorCode' => $code,
             ]);
         return $this->responseWithJson($response,

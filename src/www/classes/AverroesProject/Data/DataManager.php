@@ -542,9 +542,9 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
-        $query = "SELECT DISTINCT $tu.`tid`" .
+        $query = "SELECT DISTINCT $tu.`id`" .
             " FROM `$tu` JOIN (`$te`,  `$tp`)" . 
-            " ON ($tu.tid=$te.editor_tid AND $tp.id=$te.page_id)" .
+            " ON ($tu.id=$te.editor_tid AND $tp.id=$te.page_id)" .
             " WHERE $tp.doc_id=" . $docId . 
             " AND $tp.`valid_until`='9999-12-31 23:59:59.999999'" .
             " AND $te.`valid_until`='9999-12-31 23:59:59.999999'";
@@ -553,7 +553,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         
         $editors = [];
         while ($row = $r->fetch()) {
-            $editors[] = $row['tid'];
+            $editors[] = $row['id'];
         }
         return $editors;
     }

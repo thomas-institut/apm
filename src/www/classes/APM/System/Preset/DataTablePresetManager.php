@@ -204,7 +204,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
         $currentPreset = $this->getPresetById($id);
 
         $updatedRow = $this->createDataTableRowFromPreset($updatedPreset);
-        $updatedRow['id'] = $currentPreset->getId();
+        $updatedRow['id'] = $currentPreset->getPresetId();
         try {
             $this->getSqlQueryCounterTracker()->incrementUpdate();
             $this->dataTable->updateRow($updatedRow);
@@ -260,7 +260,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
         $keyArray = $preset->getKeyArray();
         $theRow = [ 
             self::FIELD_TOOL => $preset->getTool(), 
-            self::FIELD_USER_TID => $preset->getUserTid(),
+            self::FIELD_USER_TID => $preset->getUserId(),
             self::FIELD_TITLE => $preset->getTitle(),
             self::FIELD_KEY_ARRAY => $this->encodeArrayToString($keyArray),
             self::FIELD_DATA => $this->encodeArrayToString($preset->getData())

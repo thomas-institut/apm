@@ -44,6 +44,7 @@ import { WitnessDataEditor } from './WitnessDataEditor'
 import { ApparatusEntry } from '../Edition/ApparatusEntry.mjs'
 import { TagEditor } from '../widgets/TagEditor'
 import { UiToolBox } from '../toolbox/UiToolBox'
+import { horizontalMode, verticalMode } from '../MultiPanelUI/MultiPanelUI'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
@@ -82,11 +83,22 @@ export class ApparatusPanel extends  PanelWithToolbar {
       apparatusLineSeparator: { type: 'string', default: doubleVerticalLine },
       onCtDataChange: { type: 'function', default: doNothing },
       onError: { type: 'function', default: doNothing },
-      onHighlightMainText: {
+      highlightMainText: {
         // function to be called when main text needs to be highlighted
-        // (lemmaIndexArray, on) => { ... return nothing }
+        // (entryIndex, on) => { ... return nothing }
         type: 'function',
-        default: doNothing
+        default: (entryIndex, on) => {
+          console.log(`Main Text HIGHLIGHT: ${this.options.apparatusIndex}:${entryIndex}, ${on}`);
+        }
+      },
+      hoverMainText: {
+        // function to be called when main text for an apparatus entry needs to be highlighted as if
+        // the user were hovering over it.
+        // (entryIndex, on) => { ... return nothing }
+        type: 'function',
+        default: (entryIndex, on) => {
+          console.log(`Main Text HOVER: ${this.options.apparatusIndex}:${entryIndex}, ${on}`);
+        }
       },
       highlightCollationTableRange: {
         // function to be called when a column range in the collation table
@@ -134,53 +146,71 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
   onResize (visible) {
     super.onResize(visible)
-    this.__fitDivs()
+    this.fitDivs()
   }
 
-  __fitDivs() {
-    // this.debug && console.log(`Fitting divs for apparatus ${this.options.apparatusIndex}`)
-    let currentContentHeight = $(this.getContentAreaSelector()).outerHeight()
-    // first, reset apparatus css height so that we can measure its actual height
-    let apparatusDiv = $(this.getApparatusDivSelector())
-    apparatusDiv.css('height', '')
-    if (this.apparatusEntryFormIsVisible) {
+  /**
+   * Adjusts the height or the width of the panel divs (apparatus entry form and apparatus)
+   *
+   * @private
+   */
+  fitDivs() {
+    let apparatusDiv = $(this.getApparatusDivSelector());
+    let contentArea = $(this.getContentAreaSelector());
+    if (!this.apparatusEntryFormIsVisible) {
+      // this.debug && console.log(`Apparatus entry form is NOT visible`)
+      // this.debug && console.log(`Current apparatus height: ${apparatusDiv.outerHeight()}`)
+      apparatusDiv.css('height', '');
+      apparatusDiv.css('width', '');
+      apparatusDiv.css('border-top', '');
+      if (this.mode === horizontalMode) {
+        // reset display grid used for horizontal mode
+        contentArea.css('display', 'inline');
+        contentArea.css('grid-template-columns', '');
+      }
+      $(this.getContentAreaSelector()).css('overflow-y', 'auto');
+      return;
+    }
+    // this.debug && console.log(`Apparatus entry form is visible`);
+    let currentContentHeight = $(this.getContentAreaSelector()).outerHeight();
+    let formDiv =  $(this.getApparatusEntryFormSelector())
+
+    if (this.mode === verticalMode) {
+      // first, reset apparatus css height so that we can measure its actual height
+      apparatusDiv.css('height', '');
       apparatusDiv.css('border-top', '2px solid var(--panel-border-color)')
-      this.debug && console.log(`Apparatus entry form is visible`)
-      let formDiv =  $(this.getApparatusEntryFormSelector())
       formDiv.css('height', '')
       let currentApparatusHeight = apparatusDiv.outerHeight()
       this.debug && console.log(`Current container height: ${currentContentHeight}`)
       let currentFormHeight = formDiv.outerHeight()
       this.debug && console.log(`Current Form height: ${currentFormHeight}`)
       this.debug && console.log(`Current apparatus height: ${currentApparatusHeight}`)
-
       if (currentContentHeight < shortPanelThreshold) {
-        // this is just too short for any meaningful fitting
-        // this.debug && console.log(`Panel is too short, not doing any fitting`)
-        // formDiv.css('height', '')
-        // apparatusDiv.css('height', '')
+          // the panel is just too short for any meaningful fitting
+          // this.debug && console.log(`Panel is too short, not doing any fitting`)
         return
       }
       if (currentContentHeight > (currentApparatusHeight + currentFormHeight)) {
         // everything fits all right
         // this.debug && console.log(`Panel is larger than current content, no fitting is necessary`)
-        // formDiv.css('height', '')
-        // apparatusDiv.css('height', '')
         return
       }
 
       let newApparatusHeight = Math.max(minApparatusHeight, currentContentHeight * apparatusPercentageHeight / 100)
-      // this.debug && console.log(`Setting apparatus height to ${newApparatusHeight}`)
       apparatusDiv.css('height', newApparatusHeight)
       apparatusDiv.css('overflow-y', 'auto')
       formDiv.css('height', currentContentHeight - newApparatusHeight - 25)
       formDiv.css('overflow-y', 'auto')
       $(this.getContentAreaSelector()).css('overflow-y', 'clip')
     } else {
-      // this.debug && console.log(`Apparatus entry form is NOT visible`)
-      // this.debug && console.log(`Current apparatus height: ${apparatusDiv.outerHeight()}`)
-      apparatusDiv.css('border-top', '')
-      $(this.getContentAreaSelector()).css('overflow-y', 'auto')
+      // horizontal mode
+      // apparatus and form use each half of the width of the panel
+      // no need to calculate anything, the browser can do it with a grid
+      contentArea.css('display', 'grid');
+      contentArea.css('grid-template-columns', '1fr 1fr');
+      apparatusDiv.css('border-left', '2px solid var(--panel-border-color)');
+      apparatusDiv.css('overflow-y', 'auto');
+      formDiv.css('overflow-y', 'auto');
     }
   }
 
@@ -680,7 +710,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
   }
 
   async generateContentHtml (tabId, mode, visible) {
-    let textDirection = this.edition.lang === 'la' ? 'ltr' : 'rtl'
+    let textDirection = this.edition.lang === 'la' ? 'ltr' : 'rtl';
     return `<div class="aei-form" style="direction: ${textDirection}">${this._generateApparatusEntryFormHtml()}</div>
 <div class="apparatus text-${this.lang}">${this.cachedHtml}</div>`
   }
@@ -711,42 +741,40 @@ export class ApparatusPanel extends  PanelWithToolbar {
                         <div class="col-sm-${shortCol}">Collation Table:</div>
                         <div class="col-sm-${longCol} ct-table-cols"></div>
                     </div>
-                    
-                  
-                </div>
+                </div> <!-- entry-header-->
                   <div class="form-group row">
                         <div class="col-sm-${shortCol}">Tags:</div>
                         <div class="col-sm-${longCol} tags"></div>
-                    </div>
-                <div class="form-group row">
+                  </div>
+                    <div class="form-group row">
                     <label for="pre-lemma-div" class="col-sm-${shortCol} col-form-label">Pre Lemma:</label>
-                    <div class="col-sm-${longCol} aei-multitoggle-div pre-lemma-div">
-                        <div class="pre-lemma-toggle aei-multitoggle"> </div>
-                        <div><input type="text" class="custom-pre-lemma-input" size="${customTextSize}"></div>
-                    </div>
+                        <div class="col-sm-${longCol} aei-multitoggle-div pre-lemma-div">
+                            <div class="pre-lemma-toggle aei-multitoggle"> </div>
+                            <div><input type="text" class="custom-pre-lemma-input" size="${customTextSize}"></div>
+                        </div>
                     
-                </div>
-                <div class="form-group row">
-                    <label for="lemma-div" class="col-sm-${shortCol} col-form-label">Lemma:</label>
-                    <div class="col-sm-${longCol} aei-multitoggle-div lemma-div">
-                        <div class="lemma-toggle aei-multitoggle"> </div>
-                        <div><input type="text" class="custom-lemma-input" size="${customTextSize}"></div>
                     </div>
-                </div>
-                <div class="form-group row">
-                    <label for="post-lemma-div" class="col-sm-${shortCol} col-form-label">Post Lemma:</label>
-                    <div class="col-sm-${longCol} aei-multitoggle-div post-lemma-div">
-                        <div class="post-lemma-toggle aei-multitoggle"> </div>
-                        <div><input type="text" class="custom-post-lemma-input" size="${customTextSize}"></div>
+                    <div class="form-group row">
+                        <label for="lemma-div" class="col-sm-${shortCol} col-form-label">Lemma:</label>
+                        <div class="col-sm-${longCol} aei-multitoggle-div lemma-div">
+                            <div class="lemma-toggle aei-multitoggle"> </div>
+                            <div><input type="text" class="custom-lemma-input" size="${customTextSize}"></div>
+                        </div>
                     </div>
-                </div>
-                <div class="form-group row">
-                     <label for="separator-div" class="col-sm-${shortCol} col-form-label">Separator:</label>
-                     <div class="col-sm-${longCol} aei-multitoggle-div separator-div">
-                        <div class="separator-toggle aei-multitoggle"> </div>
-                        <div><input type="text" class="custom-separator-input" size="${customSeparatorTextSize}"></div>
+                    <div class="form-group row">
+                        <label for="post-lemma-div" class="col-sm-${shortCol} col-form-label">Post Lemma:</label>
+                        <div class="col-sm-${longCol} aei-multitoggle-div post-lemma-div">
+                            <div class="post-lemma-toggle aei-multitoggle"> </div>
+                            <div><input type="text" class="custom-post-lemma-input" size="${customTextSize}"></div>
+                        </div>
                     </div>
-                </div>
+                    <div class="form-group row">
+                         <label for="separator-div" class="col-sm-${shortCol} col-form-label">Separator:</label>
+                        <div class="col-sm-${longCol} aei-multitoggle-div separator-div">
+                            <div class="separator-toggle aei-multitoggle"> </div>
+                            <div><input type="text" class="custom-separator-input" size="${customSeparatorTextSize}"></div>
+                        </div>
+                    </div>
                 <div class="sub-entries"></div>
                 </form>
             </div>
@@ -1134,7 +1162,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     }
     this.options.highlightCollationTableRange(-1, -1)
     this.apparatusEntryFormIsVisible = false
-    this.__fitDivs()
+    this.fitDivs()
   }
 
   _showApparatusEntryForm() {
@@ -1143,7 +1171,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this._getEditEntryButtonElement().html(icons.cancelEdit).attr('title', cancelEditButtonTitle).removeClass('hidden')
     this.options.highlightCollationTableRange(this.entryInEditor.metadata.get('ctGroup').from, this.entryInEditor.metadata.get('ctGroup').to)
     this.apparatusEntryFormIsVisible = true
-    this.__fitDivs()
+    this.fitDivs()
   }
 
   updateApparatus(mainTextTypesettingInfo) {
@@ -1217,6 +1245,15 @@ export class ApparatusPanel extends  PanelWithToolbar {
     if (this.apparatusEntryFormIsVisible) {
       return
     }
+
+    let entryIndexes = UiToolBox.getIntArrayIdFromAncestor('SPAN', lemmaElement, 'lemma-');
+    if (entryIndexes.length < 1 || entryIndexes[0].length !== 2) {
+      console.warn(`Found wrong lemma indices in element`, lemmaElement, entryIndexes);
+      return;
+    }
+    let [ appIndex, entryIndex] = entryIndexes[0];
+    this.options.hoverMainText(entryIndex, on);
+
     if (on) {
       if (!lemmaElement.hasClass('lemma-selected')) {
         lemmaElement.addClass('lemma-hover');
@@ -1260,7 +1297,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     if (entryIndex === -1) {
       // Deselect
       if (runCallbacks && this.currentSelectedEntryIndex !== -1) {
-        this.options.onHighlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], false)
+        this.options.highlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], false)
       }
       this.currentSelectedEntryIndex = -1
       this._getEditEntryButtonElement().addClass('hidden')
@@ -1275,9 +1312,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
     let fullEntryArray = [this.options.apparatusIndex, entryIndex]
     if (runCallbacks) {
       if (this.currentSelectedEntryIndex !== -1) {
-        this.options.onHighlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], false)
+        this.options.highlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], false)
       }
-      this.options.onHighlightMainText(fullEntryArray, true)
+      this.options.highlightMainText(fullEntryArray, true)
     }
     this.currentSelectedEntryIndex = entryIndex
   }
@@ -1291,7 +1328,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
   onHidden () {
     super.onHidden()
     if(this.currentSelectedEntryIndex !== -1) {
-      this.options.onHighlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], false)
+      this.options.highlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], false)
     }
 
   }
@@ -1299,7 +1336,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
   onShown () {
     super.onShown()
     if(this.currentSelectedEntryIndex !== -1) {
-      this.options.onHighlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], true)
+      this.options.highlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], true)
       if (this.apparatusEntryFormIsVisible) {
         this.options.highlightCollationTableRange(this.entryInEditor.metadata.get('ctGroup').from, this.entryInEditor.metadata.get('ctGroup').to)
       } else {

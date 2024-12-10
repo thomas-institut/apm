@@ -92,7 +92,17 @@ export class MainTextPanel extends PanelWithToolbar {
         // function that opens an apparatus entry editor, provided by EditionComposer
         type: 'function',
         default: (apparatusIndex, mainTextFrom, mainTextTo) => { console.log(`Edit apparatus ${apparatusIndex}, from ${mainTextFrom} to ${mainTextTo}`)}
-      }
+      },
+      onChangeHighlightEnabled: {
+        type: 'function',
+        default: (newStatus) => { console.log(`New highlight main text status`, newStatus)}
+      },
+      onChangePopoversEnabled: {
+        type: 'function',
+        default: (newStatus) => { console.log(`New popover enable status`, newStatus)}
+      },
+      highlightEnabled: { type: 'boolean', default: true},
+      popoversEnabled: { type: 'boolean', default: true}
     }
 
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  'Main Text Panel'})
@@ -116,7 +126,8 @@ export class MainTextPanel extends PanelWithToolbar {
     this.detectIntraWordQuotationMarks = (this.lang === 'he')
     this.diffEngine = new AsyncMyersDiff.AsyncMyersDiff()
     this.onchangeMainTextFreeTextEditorWaiting = false
-    this.popoversEnabled = true;
+    this.popoversEnabled = this.options.popoversEnabled;
+    this.highlightEnabled = this.options.highlightEnabled;
 
     this.changesInfoDivConstructed = false
 
@@ -142,7 +153,10 @@ export class MainTextPanel extends PanelWithToolbar {
     if (this.visible) {
       this.verbose && console.log(`MainTextPanel is visible, regenerating content`)
       $(this.getContentAreaSelector()).html(await this.generateContentHtml('', '', true));
-      this.addApparatusHighlightToMainText();
+      this.addApparatusEntryClassesToMainText();
+      if (this.highlightEnabled) {
+        this.setApparatusHighlightInMainText(true);
+      }
       this._setupMainTextDivEventHandlers();
       this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = false
       this._updateLineNumbersAndApparatuses()
@@ -176,6 +190,15 @@ export class MainTextPanel extends PanelWithToolbar {
 
     return `<div class="panel-toolbar-group">
             <div class="panel-toolbar-group" id="edition-panel-mode-toggle"></div>
+              <div class="panel-toolbar-group popover-toolbar-group">
+                <div class="panel-toolbar-item popover-toggle"></div>
+<!--                <div class="panel-toolbar-item">-->
+<!--                        <a class="btn tb-button popover-settings" title="Popover Settings">${icons.popoverSettings}</a>-->
+<!--                </div>-->
+            </div> 
+            <div class="panel-toolbar-group highlight-toolbar-group">
+                <div class="panel-toolbar-item highlight-toggle"></div>
+            </div>
             <div class="panel-toolbar-group apparatus-toolbar">
                <div class="panel-toolbar-item add-entry-dropdown hidden">
                   <div class="dropdown">
@@ -186,12 +209,7 @@ export class MainTextPanel extends PanelWithToolbar {
                   </div>
                </div>
             </div>
-            <div class="panel-toolbar-group popover-toolbar-group">
-                <div class="panel-toolbar-item popover-toggle"></div>
-                <div class="panel-toolbar-item">
-                        <a class="btn tb-button popover-settings" title="Popover Settings">${icons.popoverSettings}</a>
-                </div>
-            </div> 
+          
             <div class="panel-toolbar-group text-edit-toolbar">
                 <div class="panel-toolbar-group">
                     <div class="panel-toolbar-item numbering-labels-toggle"></div>
@@ -272,7 +290,10 @@ export class MainTextPanel extends PanelWithToolbar {
           case EDIT_MODE_OFF:
           // case EDIT_MODE_TEXT_OLD:
           case EDIT_MODE_APPARATUS:
-            this.addApparatusHighlightToMainText();
+            this.addApparatusEntryClassesToMainText();
+            if (this.highlightEnabled) {
+              this.setApparatusHighlightInMainText(true);
+            }
             this._setupMainTextDivEventHandlers();
             this._updateLineNumbersAndApparatuses()
               .then( () => { this.verbose && console.log(`Finished generating edition panel on shown`) })
@@ -334,14 +355,13 @@ export class MainTextPanel extends PanelWithToolbar {
     this.onResize(visible)
     this.modeToggle = new MultiToggle({
       containerSelector: '#edition-panel-mode-toggle',
-      title: 'Edit: ',
+      title: 'Mode: ',
       buttonClass: 'tb-button',
       initialOption: this.currentEditMode,
       wrapButtonsInDiv: true,
       buttonsDivClass: 'panel-toolbar-item',
       buttonDef: [
         { label: 'Off', name: EDIT_MODE_OFF, helpText: 'Turn off editing' },
-        // { label: 'Text', name: EDIT_MODE_TEXT_OLD, helpText: 'Edit main text' },
         { label: 'Apparatus', name: EDIT_MODE_APPARATUS, helpText: 'Add/Edit apparatus entries' },
         { label: 'Text', name: EDIT_MODE_TEXT, helpText: 'Edit main text' }
       ]
@@ -367,6 +387,26 @@ export class MainTextPanel extends PanelWithToolbar {
       } else {
         this.removeApparatusPopovers();
       }
+      this.options.onChangePopoversEnabled(this.popoversEnabled);
+    });
+
+    this.highlightToggle = new NiceToggle({
+      containerSelector: 'div.highlight-toggle',
+      title: 'Highlight: ',
+      initialValue: this.highlightEnabled,
+      onIcon: icons.toggleOn,
+      onPopoverText: 'Click to disable highlighting text with apparatus entries',
+      offIcon: icons.toggleOff,
+      offPopoverText: 'Click to enable highlighting text with apparatus entries'
+    });
+    this.highlightToggle.on( toggleEvent, (ev) => {
+      this.highlightEnabled = !!ev.detail.toggleStatus;
+      if (this.highlightEnabled) {
+        this.setApparatusHighlightInMainText(true);
+      } else {
+        this.setApparatusHighlightInMainText(false);
+      }
+      this.options.onChangeHighlightEnabled(this.highlightEnabled);
     });
 
     this.edition.apparatuses.forEach((app, index) => {
@@ -378,7 +418,10 @@ export class MainTextPanel extends PanelWithToolbar {
       // case EDIT_MODE_TEXT_OLD:
       case EDIT_MODE_APPARATUS:
         $(`${this.containerSelector} .popover-toolbar-group`).removeClass('force-hidden');
-        this.addApparatusHighlightToMainText();
+        this.addApparatusEntryClassesToMainText();
+        if (this.highlightEnabled) {
+          this.setApparatusHighlightInMainText(true);
+        }
         this._setupMainTextDivEventHandlers();
         break
 
@@ -412,13 +455,19 @@ export class MainTextPanel extends PanelWithToolbar {
         this.currentEditMode = newEditMode
         if (previousEditMode === EDIT_MODE_TEXT) {
           $(this.getContentAreaSelector()).html(this._getMainTextHtmlVersion());
-          this.addApparatusHighlightToMainText();
+          $(`${this.containerSelector} .popover-toolbar-group`).removeClass('force-hidden');
+          $(`${this.containerSelector} .highlight-toolbar-group`).removeClass('force-hidden');
+          this.addApparatusEntryClassesToMainText();
+          if (this.highlightEnabled) {
+            this.setApparatusHighlightInMainText(true);
+          }
+
           this._setupMainTextDivEventHandlers()
           this._updateLineNumbersAndApparatuses().then( () => {
+
             if (this.popoversEnabled) {
               this.addApparatusPopovers();
             }
-            $(`${this.containerSelector} .popover-toolbar-group`).removeClass('force-hidden');
             this.verbose && console.log(`Finished switching mode to ${this.currentEditMode}`)}
           );
           delete this.numberingLabelsToggle
@@ -441,30 +490,44 @@ export class MainTextPanel extends PanelWithToolbar {
     }
   }
 
-  addApparatusHighlightToMainText() {
+  addApparatusEntryClassesToMainText() {
     if (this.currentEditMode !== EDIT_MODE_OFF && this.currentEditMode !== EDIT_MODE_APPARATUS ) {
       // this is only applicable to OFF and APPARATUS modes
       return;
     }
     // add classes for apparatus entries
-    console.log(`Adding apparatus highlight`);
+    // console.log(`Adding apparatus highlight`);
     this.edition.apparatuses.forEach( (app, appIndex) => {
-      let appType = app['type']
+      let appType = app['type'];
       app.entries.forEach( (entry, entryIndex) => {
         for (let i = entry.from; i <= entry.to; i++) {
-          let textElement = $(`${this.containerSelector} .main-text-token-${i}`)
-            textElement.addClass(`token-in-app token-in-app-${appType} entry-index-${appIndex}-${entryIndex}`);
+          let textElement = $(`${this.containerSelector} .main-text-token-${i}`);
+          textElement.addClass(`token-in-app token-in-app-${appType} entry-index-${appIndex}-${entryIndex}`);
         }
       })
     })
-    console.log(`Done adding apparatus highlight`)
-
   }
+
+  setApparatusHighlightInMainText(on) {
+    if (this.currentEditMode !== EDIT_MODE_OFF && this.currentEditMode !== EDIT_MODE_APPARATUS ) {
+      // this is only applicable to OFF and APPARATUS modes
+      return;
+    }
+    let textElements = $(`${this.containerSelector} .token-in-app`);
+    if (on) {
+      textElements.addClass('main-text-apparatus-highlight');
+    } else {
+      textElements.removeClass('main-text-apparatus-highlight');
+    }
+  }
+
+
 
   _setupTextEditMode() {
     // console.log(`--- Setting up text edit mode ---`)
     this.removeApparatusPopovers();
     $(`${this.containerSelector} .popover-toolbar-group`).addClass('force-hidden');
+    $(`${this.containerSelector} .highlight-toolbar-group`).addClass('force-hidden');
     $(this.getContentAreaSelector()).html(this._getMainTextBetaEditor())
     this.freeTextEditor = new EditionMainTextEditor({
       containerSelector: `#${betaEditorDivId}`,
@@ -1310,7 +1373,7 @@ export class MainTextPanel extends PanelWithToolbar {
       let mainTextToken = this.edition.mainText[tokenIndex];
       element.popover('dispose').popover( {
         content: () => {
-          if (this.popoversEnabled) {
+          if (this.popoversEnabled && !this.selecting) {
             return this.getApparatusPopoverContent(tokenIndex, entries);
           }
           return '';
@@ -1319,9 +1382,9 @@ export class MainTextPanel extends PanelWithToolbar {
         placement: 'bottom',
         container: 'body',
         boundary: 'window',
-        trigger: 'hover',
+        trigger: 'manual',
         title: () => {
-          if (this.popoversEnabled) {
+          if (this.popoversEnabled && !this.selecting) {
             return `${mainTextToken.lineNumber}: ${mainTextToken.getPlainText()}`;
           }
           return '';
@@ -1489,7 +1552,8 @@ export class MainTextPanel extends PanelWithToolbar {
       switch(this.currentEditMode) {
         case EDIT_MODE_APPARATUS:
           // this.verbose && console.log(`Mouse down on main text ${tokenIndex} token in apparatus edit mode`)
-          this._setSelection(tokenIndex, tokenIndex)
+          $(ev.target).popover('hide');
+          this._setSelection(tokenIndex, tokenIndex);
           this.tokenIndexOne = tokenIndex
           this._showSelectionInBrowser()
           this._processNewSelection()
@@ -1590,7 +1654,23 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   /**
-   *
+   * Add a 'hover' highlight to the main text corresponding to the given apparatus entry
+   * @param appIndex
+   * @param entryIndex
+   * @param on
+   */
+  hoverEntry(appIndex, entryIndex, on) {
+    let textElements  = $(`${this.containerSelector} .entry-index-${appIndex}-${entryIndex}`);
+    if (on) {
+      textElements.addClass('main-text-hover');
+    } else {
+      textElements.removeClass('main-text-hover');
+    }
+  }
+
+  /**
+   * Calls the hoverEntry method in the appropriate apparatus panels for the given
+   * element in the main text panel
    * @param {JQuery}eventTargetElement
    * @param {boolean}on
    * @private
@@ -1620,6 +1700,7 @@ export class MainTextPanel extends PanelWithToolbar {
       switch(this.currentEditMode) {
         case EDIT_MODE_OFF:
           this.hoverEntriesInApparatusPanels($(ev.target), true);
+          $(ev.target).popover('show');
           break;
 
         case EDIT_MODE_APPARATUS:
@@ -1632,6 +1713,9 @@ export class MainTextPanel extends PanelWithToolbar {
             this._setSelection(this.tokenIndexOne, this.tokenIndexTwo)
             this._showSelectionInBrowser()
             this._processNewSelection()
+          } else {
+            this.hoverEntriesInApparatusPanels($(ev.target), true);
+            $(ev.target).popover('show');
           }
           break;
 
@@ -1648,10 +1732,13 @@ export class MainTextPanel extends PanelWithToolbar {
       switch(this.currentEditMode) {
         case EDIT_MODE_OFF:
           this.hoverEntriesInApparatusPanels($(ev.target), false);
+          $(ev.target).popover('hide');
           break;
 
         case EDIT_MODE_APPARATUS:
-          ev.stopPropagation()
+          ev.stopPropagation();
+          this.hoverEntriesInApparatusPanels($(ev.target), false);
+          $(ev.target).popover('hide');
           this.cursorInToken = false
           break;
 

@@ -4,6 +4,7 @@ import { ApmDataProxy } from './common/ApmDataProxy'
 import { defaultLanguage, setSiteLanguage, tr, validLanguages } from './common/SiteLang'
 import { WebStorageKeyCache } from '../toolbox/KeyCache/WebStorageKeyCache'
 import { ApmFormats } from './common/ApmFormats'
+import { ViewOptionsCacheDataId } from '../EditionComposer/EditionComposer'
 
 
 const langCacheKey = 'apmSiteLanguage'
@@ -52,7 +53,7 @@ export class ApmPage {
     this.userTid = this.commonData.userInfo['tid'];
     this.userName = this.commonData.userInfo.userName;
 
-    this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, CachePrefix, [ SessionIdDataId]);
+    this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, CachePrefix, [ SessionIdDataId, ViewOptionsCacheDataId]);
     this.localCache = new WebStorageKeyCache('local', this.commonData.cacheDataId);
     this.sessionCache = new WebStorageKeyCache('session', this.commonData.cacheDataId);
 
@@ -75,14 +76,14 @@ export class ApmPage {
 
     console.log(`Client timezone is '${this.timeZone}', currently ${ApmFormats.getTimeZoneOffsetStringForDate(new Date(), false, false)}`);
 
-    this.sessionId = this.getSessionIdFromWebStorage();
-    if (this.sessionId === null) {
-      this.sessionId = this.commonData['sessionId'];
-      console.log(`Using new session id from server: ${this.sessionId}`);
-      this.saveSessionIdToWebStorage();
-    } else {
-      console.log(`Using existing session id ${this.sessionId}`);
-    }
+    // this.sessionId = this.getSessionIdFromWebStorage();
+    // if (this.sessionId === null) {
+    //   this.sessionId = this.commonData['sessionId'];
+    //   console.log(`Using new session id from server: ${this.sessionId}`);
+    //   this.saveSessionIdToWebStorage();
+    // } else {
+    //   console.log(`Using existing session id ${this.sessionId}`);
+    // }
   }
 
   isUserRoot() {

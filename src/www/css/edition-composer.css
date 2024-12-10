@@ -347,10 +347,10 @@ b.apparatus-line-number {
     background: #8cb484;
 }
 
-.token-in-app {
+.main-text-apparatus-highlight {
     background: var(--light-text-highlight-color);
 }
-.token-in-app:hover {
+.token-in-app:hover, .main-text-hover {
     background: var(--darker-text-highlight-color);
 }
 

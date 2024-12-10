@@ -582,6 +582,8 @@ function removeBlanks (text) {
   text = text.replaceAll(" :", ":")
   text = text.replaceAll("[ ", "[")
   text = text.replaceAll(" ;", ";")
+  text = text.replaceAll("( ", "(")
+  text = text.replaceAll(" )", ")")
 
   return text
 }

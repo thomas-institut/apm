@@ -11,8 +11,6 @@ import { MakeUserDialog } from './common/MakeUserDialog'
 import * as Entity from '../constants/Entity'
 import { MetadataEditorSchema } from '../defaults/MetadataEditorSchemata/MetadataEditorSchema'
 import { MetadataEditor2 } from '../MetadataEditor/MetadataEditor2'
-import { EntityData } from '../EntityData/EntityData'
-
 
 const CONTRIBUTION_MCE = 'mcEditions';
 const CONTRIBUTION_TX = 'transcriptions';
@@ -26,8 +24,7 @@ export class PersonPage extends NormalPage {
     let oc = new OptionsChecker({
       context: 'PersonPage',
       optionsDefinition: {
-        tid: { type: 'number'},
-        data: { type: 'object'},
+        personData: { type: 'object'},
         canManageUsers: { type: 'boolean'},
       }
     })
@@ -36,8 +33,8 @@ export class PersonPage extends NormalPage {
 
     console.log(`PersonPage options`);
     console.log(cleanOptions);
-    this.personData = cleanOptions.data;
-    this.personTid = cleanOptions.tid;
+    this.personData = cleanOptions.personData;
+    this.personId = this.personData.id;
     this.canManageUsers = cleanOptions.canManageUsers;
     this.userData = this.personData.userData;
 
@@ -45,7 +42,7 @@ export class PersonPage extends NormalPage {
     this.works = [];
 
     this.initPage().then( () => {
-      console.log(`Page for person ${Tid.toBase36String(this.personTid)} (${this.personTid}) initialized`)
+      console.log(`Page for person ${Tid.toBase36String(this.personId)} (${this.personId}) initialized`)
     })
   }
 
@@ -53,7 +50,7 @@ export class PersonPage extends NormalPage {
   async initPage () {
     await super.initPage();
     document.title = this.personData.name;
-    this.entityData = await this.apmDataProxy.getEntityData(this.personData.tid);
+    this.entityData = await this.apmDataProxy.getEntityData(this.personId);
     this.schema = MetadataEditorSchema.getSchema(Entity.tPerson);
     console.log(`Entity Schema for type Person`, this.schema);
 
@@ -106,13 +103,13 @@ export class PersonPage extends NormalPage {
       $('button.edit-user-profile-btn').on('click', this.genOnClickMakeUserButton());
     }
 
-    let worksApiData = await this.apmDataProxy.getPersonWorks(this.personData.tid);
+    let worksApiData = await this.apmDataProxy.getPersonWorks(this.personData.id);
     this.works = worksApiData['works'];
     $('div.works-div').html(this.getWorksDivHtml());
   }
 
   async fetchMultiChunkEditions() {
-    let data = await this.apmDataProxy.get(urlGen.apiUserGetMultiChunkEditionInfo(this.personTid));
+    let data = await this.apmDataProxy.get(urlGen.apiUserGetMultiChunkEditionInfo(this.personId));
     if (data.length !== 0) {
       this.userContributions.push(CONTRIBUTION_MCE);
       let html = UserDocDataCommon.generateMultiChunkEditionsListHtml(data);
@@ -122,7 +119,7 @@ export class PersonPage extends NormalPage {
   }
 
   async fetchCollationTablesAndEditions() {
-    let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.personTid))
+    let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.personId))
     if (data['tableInfo'].length !== 0) {
       this.userContributions.push(CONTRIBUTION_CT);
       let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo'])
@@ -133,7 +130,7 @@ export class PersonPage extends NormalPage {
   }
 
   async fetchTranscriptions() {
-    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.personTid))
+    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.personId))
     if (data['docIds'].length !== 0) {
       this.userContributions.push(CONTRIBUTION_TX);
       this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data))
@@ -165,8 +162,8 @@ export class PersonPage extends NormalPage {
     let entityAdminHtml = '';
     if (this.isUserRoot()) {
       entityAdminHtml = `<div class="entity-admin">
-                <a class="entity-page-button" href="${urlGen.siteAdminEntity(this.personData.tid)}">[ ${tr('Entity Page')} ]</a>
-                <a class="dev-metadata-editor-button" href="${urlGen.siteDevMetadataEditor(this.personData.tid)}">[ ${tr('Dev Metadata Editor')} ]</a>
+                <a class="entity-page-button" href="${urlGen.siteAdminEntity(this.personData.id)}">[ ${tr('Entity Page')} ]</a>
+                <a class="dev-metadata-editor-button" href="${urlGen.siteDevMetadataEditor(this.personData.id)}">[ ${tr('Dev Metadata Editor')} ]</a>
                 </div>`
     }
 
@@ -206,13 +203,13 @@ export class PersonPage extends NormalPage {
     let userAdminHtml = '';
     let userPrivateDataHtml = '';
 
-    if (this.canManageUsers || this.userTid === this.personTid) {
+    if (this.canManageUsers || this.userId === this.personId) {
       if (this.canManageUsers || !this.userData.isReadOnly) {
         userAdminHtml = `<button class="btn btn-primary edit-user-profile-btn">Edit User Profile</button>`;
       }
       let privateDataToDisplay =  [
-        [ tr('Username'), this.personData.userName],
-        [ tr('User Email Address'), this.personData['userEmailAddress']]
+        [ tr('Username'), this.userData.userName],
+        [ tr('User Email Address'), this.userData['emailAddress']]
         ];
 
       if (this.canManageUsers) {

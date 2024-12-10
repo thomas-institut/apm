@@ -17,6 +17,11 @@ ALTER TABLE apm.ap_tokens DROP FOREIGN KEY ap_user_id;
 ALTER TABLE apm.ap_versions_tx DROP FOREIGN KEY ap_versions_tx_author;
 ALTER TABLE apm.ap_works DROP FOREIGN KEY ap_works_ibfk_1;
 
+# ap_users now use entity id as row ids
+ALTER TABLE `ap_users` CHANGE `id` `id` BIGINT NOT NULL;
+UPDATE `ap_users` SET `id` = `tid`;
+ALTER TABLE `ap_users` DROP COLUMN `tid`;
+
 
 # Sessions and session log tables
 DROP TABLE IF EXISTS `ap_sessions_register`;

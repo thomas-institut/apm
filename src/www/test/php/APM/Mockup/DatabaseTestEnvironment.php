@@ -134,7 +134,7 @@ EOD;
      * @throws Exception
      */
     public function setUserTid($userTid) : void {
-        $this->getContainer()->set(ApmContainerKey::SITE_USER_TID, $userTid);
+        $this->getContainer()->set(ApmContainerKey::SITE_USER_ID, $userTid);
     }
 
     /**
@@ -159,8 +159,8 @@ EOD;
         $container = new MinimalContainer();
         $container->addDefinitions([
             ApmContainerKey::SYSTEM_MANAGER => $systemManager,
-            ApmContainerKey::SITE_USER_TID => 0,  // invalid user Ids, must be set downstream for some API and Site operations
-            ApmContainerKey::API_USER_TID => 0,
+            ApmContainerKey::SITE_USER_ID => 0,  // invalid user Ids, must be set downstream for some API and Site operations
+            ApmContainerKey::API_USER_ID => 0,
         ]);
 
         $this->container = $container;
@@ -252,7 +252,7 @@ EOD;
      */
     public function setApiUser(int $userId): void
     {
-        $this->getContainer()->set(ApmContainerKey::API_USER_TID, $userId);
+        $this->getContainer()->set(ApmContainerKey::API_USER_ID, $userId);
 
     }
 

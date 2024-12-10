@@ -84,7 +84,7 @@ class SiteDocuments extends SiteController
         $canManageDocuments = false;
         $userManager = $this->systemManager->getUserManager();
         try {
-            if ($userManager->hasTag($this->userTid, UserTag::CREATE_DOCUMENTS) || $userManager->isRoot($this->userTid)) {
+            if ($userManager->hasTag($this->userId, UserTag::CREATE_DOCUMENTS) || $userManager->isRoot($this->userId)) {
                 $canManageDocuments = true;
             }
         } catch (UserNotFoundException) {
@@ -259,14 +259,14 @@ class SiteDocuments extends SiteController
         return $this->renderPage($response, self::TEMPLATE_SHOW_DOCS_PAGE, [
             'navByPage' => false,
             'canDefinePages' => true,
-            'canEditDocuments' => $userManager->isUserAllowedTo($this->userTid, UserTag::EDIT_DOCUMENTS),
+            'canEditDocuments' => $userManager->isUserAllowedTo($this->userId, UserTag::EDIT_DOCUMENTS),
             'pageTypeNames' => $pageTypeNames,
             'doc' => $doc,
             'chunkInfo' => $chunkInfo,
             'lastVersions' => $lastVersions,
             'lastSaves' => $lastSaves,
             'metaData' => $metaData,
-            'userTid' => $this->userTid,
+            'userTid' => $this->userId,
         ]);
     }
 
@@ -279,8 +279,8 @@ class SiteDocuments extends SiteController
     public function newDocPage(Request $request, Response $response): Response
     {
 
-        if (!$this->systemManager->getUserManager()->isUserAllowedTo($this->userTid, 'create-new-documents')) {
-            $this->logger->debug("User $this->userTid tried to add new doc but is not allowed to do it");
+        if (!$this->systemManager->getUserManager()->isUserAllowedTo($this->userId, 'create-new-documents')) {
+            $this->logger->debug("User $this->userId tried to add new doc but is not allowed to do it");
             return $this->getErrorPage($response, 'Error', 'You are not allowed to create documents', HttpStatus::UNAUTHORIZED);
         }
 

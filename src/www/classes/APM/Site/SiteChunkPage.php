@@ -135,7 +135,7 @@ class SiteChunkPage extends SiteController
         $pageInfoArray = $helper->getPageInfoArrayFromList($pagesMentioned, $transcriptionManager->getPageManager());
 
         $showAdminInfo = false;
-        if ($this->systemManager->getUserManager()->isRoot($this->userTid)) {
+        if ($this->systemManager->getUserManager()->isRoot($this->userId)) {
             $showAdminInfo = true;
         }
 

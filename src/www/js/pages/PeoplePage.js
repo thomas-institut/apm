@@ -3,7 +3,6 @@ import { Tid } from '../Tid/Tid'
 import { urlGen } from './common/SiteUrlGen'
 import { tr } from './common/SiteLang'
 import { ApmPage } from './ApmPage'
-import { CreatePersonDialog } from './common/CreatePersonDialog'
 import { PersonCreationDialog } from './common/PersonCreationDialog'
 
 export class PeoplePage extends NormalPage {

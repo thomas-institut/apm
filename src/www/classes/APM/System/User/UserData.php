@@ -14,8 +14,8 @@ class UserData implements Exportable
      * DO NOT use for identifying a user in any other case.
      * @var int
      */
+    public int $dbRowId;
     public int $id;
-    public int $tid;
     public string $userName;
     public bool $disabled;
     public bool $readOnly;
@@ -31,7 +31,6 @@ class UserData implements Exportable
     public function __construct()
     {
         $this->id = -1;
-        $this->tid = -1;
         $this->userName = '';
         $this->passwordHash = '';
         $this->emailAddress = '';

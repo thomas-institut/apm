@@ -16,8 +16,7 @@
       $(() => {
         new PersonPage(( {
           commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
-          tid: {{ tid }},
-          data: JSON.parse("{{data|json_encode|e('js')}}"),
+          personData: JSON.parse("{{personData|json_encode|e('js')}}"),
           canManageUsers: JSON.parse("{{canManageUsers|json_encode|e('js')}}"),
         }))
       })

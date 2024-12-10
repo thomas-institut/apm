@@ -65,7 +65,7 @@ export class UserProfileEditorDialog {
   genOnAccept(resolve) {
     return () => {
       if (this.validateInput()) {
-        let tid = this.options.personData.tid;
+        let id = this.options.personData.id;
         let email = this.inputEmailAddress.val().trim();
         let password1 = this.inputPassword1.val().trim();
         let password2 = this.inputPassword2.val().trim();
@@ -73,7 +73,7 @@ export class UserProfileEditorDialog {
         this.dialog.hideCancelButton();
         let loadingMessage = tr('Saving profile');
         this.infoDiv.html(ApmPage.genLoadingMessageHtml(loadingMessage)).removeClass('text-danger');
-        this.options.apmDataProxy.updateUserProfile(tid, email, password1, password2).then( () => {
+        this.options.apmDataProxy.updateUserProfile(id, email, password1, password2).then( () => {
           this.infoDiv.html(tr('Profile successfully updated'));
           wait(this.options.successWaitTime).then( () => {
             this.dialog.hide();

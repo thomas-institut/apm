@@ -27,7 +27,6 @@
 namespace APM\Site;
 
 use APM\FullTranscription\PageInfo;
-use APM\Session\Exception\SessionNotFoundException;
 use APM\System\ApmConfigParameter;
 use APM\System\ApmImageType;
 use APM\System\Person\PersonNotFoundException;
@@ -73,7 +72,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     protected bool $userAuthenticated;
     protected RouteParser $router;
     protected SimpleProfiler $profiler;
-    protected int $userTid;
+    protected int $userId;
 
     /**
      * SiteController constructor.
@@ -98,9 +97,9 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
        
        // Check if the user has been authenticated by the authentication middleware
         //$this->logger->debug('Checking user authentication');
-        if ($ci->has(ApmContainerKey::SITE_USER_TID)) {
+        if ($ci->has(ApmContainerKey::SITE_USER_ID)) {
            $this->userAuthenticated = true;
-           $this->userTid = $ci->get(ApmContainerKey::SITE_USER_TID);
+           $this->userId = $ci->get(ApmContainerKey::SITE_USER_ID);
         }
     }
 
@@ -121,8 +120,8 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     protected function getSiteUserInfo(): array
     {
         try {
-            $userData = $this->systemManager->getUserManager()->getUserData($this->userTid);
-            $personData = $this->systemManager->getPersonManager()->getPersonEssentialData($this->userTid);
+            $userData = $this->systemManager->getUserManager()->getUserData($this->userId);
+            $personData = $this->systemManager->getPersonManager()->getPersonEssentialData($this->userId);
 
             $userInfo = $userData->getExportObject();
             unset($userInfo['passwordHash']);
@@ -130,10 +129,10 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             $userInfo['email'] = '';
             $userInfo['isRoot'] = $userData->root;
             $userInfo['manageUsers'] = $userData->root;
-            $userInfo['tidString'] = Tid::toBase36String($userData->tid);
+            $userInfo['tidString'] = Tid::toBase36String($userData->id);
             return $userInfo;
         } catch (UserNotFoundException|PersonNotFoundException $e) {
-            $this->logger->error("System Error while getting SiteUserInfo: " . $e->getMessage(), [ 'userTid' => $this->userTid ]);
+            $this->logger->error("System Error while getting SiteUserInfo: " . $e->getMessage(), [ 'userTid' => $this->userId ]);
             // should never happen
             return [];
         }
@@ -172,7 +171,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
      * @param array $data
      * @param bool $withBaseData
      * @return ResponseInterface
-     * @throws SessionNotFoundException
      */
     protected function renderPage(ResponseInterface $response,
                                   string $template, array $data,
@@ -180,11 +178,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     {
 
         if ($withBaseData) {
-            $sessionId = $this->systemManager->getSessionManager()->startSession($this->userTid);
-//            $name = SystemProfiler::getName();
-//            if ($name !== '') {
-//                $this->systemManager->getSessionManager()->logToSession($sessionId, 'site' , $name);
-//            }
             $data['commonData'] = [
                 'appName' => $this->config[ApmConfigParameter::APP_NAME],
                 'appVersion' => $this->config[ApmConfigParameter::VERSION],
@@ -194,7 +187,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
                 'userInfo' => $this->getSiteUserInfo(),
                 'showLanguageSelector' => $this->config[ApmConfigParameter::SITE_SHOW_LANGUAGE_SELECTOR],
                 'baseUrl' => $this->getBaseUrl(),
-                'sessionId' => $sessionId,
+                'wsServerUrl' => $this->config[ApmConfigParameter::WS_SERVER_URL]
             ];
             $data['baseUrl'] = $this->getBaseUrl();
         }

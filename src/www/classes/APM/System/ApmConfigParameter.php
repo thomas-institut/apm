@@ -77,4 +77,6 @@ class ApmConfigParameter
 
     const UNI_KOELN_URL = 'uni_koeln_url';
     const THOMAS_INSTITUT_URL = 'thomas_institut_url';
+
+    const WS_SERVER_URL = 'ws_server_url';
 }

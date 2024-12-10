@@ -123,7 +123,7 @@ class SiteCollationTable extends SiteController
             'peopleInfo' => $peopleInfo,
             'docInfo' => [],
             'versionInfo' => [],
-            'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userTid),
+            'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
             'versionId' => -1,
             'lastVersion' => true
         ]);
@@ -248,7 +248,7 @@ class SiteCollationTable extends SiteController
             'peopleInfo' => $peopleInfo,
             'docInfo' => $docInfo,
             'versionInfo' => $versionInfoArray,
-            'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userTid),
+            'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
             'versionId' => $versionId,
             'lastVersion' => $isLastVersion
         ]);
@@ -442,7 +442,7 @@ class SiteCollationTable extends SiteController
                 'title' => $preset->getTitle(),
                 'userTid' => $preset->getUserTid(),
                 'userName' => $presetUserName,
-                'editable' =>  $this->userTid === $preset->getUserTid()
+                'editable' =>  $this->userId === $preset->getUserTid()
             ]
         ];
         if (isset($presetData['normalizers'])) {

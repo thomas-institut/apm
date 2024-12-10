@@ -25,6 +25,7 @@ export class ApmPage {
           objectDefinition: {
             appName: { required: true, type: 'string'},
             appVersion: { required: true, type: 'string'},
+            pageId: { type: 'string', default: 'ApmPage'},
             copyrightNotice: { required: true, type: 'string'},
             renderTimestamp: { required: true, type: 'number'},
             cacheDataId: { required: true, type: 'string'},
@@ -32,7 +33,7 @@ export class ApmPage {
             userInfo: { type: 'object'},
             siteLanguage: { type: 'string', default: ''},
             showLanguageSelector: { type: 'boolean', default: false},
-            sessionId: { required: true, type: 'number'}
+            wsServerUrl: { required: true, type: 'string'}
           }
         }
       }
@@ -41,12 +42,13 @@ export class ApmPage {
     this.commonData = cleanOptions.commonData
     setBaseUrl(this.commonData.baseUrl);
 
+
+    this.userId = this.commonData.userInfo['id'];
     /**
-     * Use userTid instead
+     * Use userId instead
      * @var {int} userId
      * @deprecated
      */
-    this.userId = this.commonData.userInfo['id'];
     this.userTid = this.commonData.userInfo['tid'];
     this.userName = this.commonData.userInfo.userName;
 

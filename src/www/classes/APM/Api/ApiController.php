@@ -107,7 +107,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
        $this->debugMode = false;
 
        $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
-       $this->apiUserTid = $ci->get(ApmContainerKey::API_USER_TID); // this should be set by the authenticator!
+       $this->apiUserTid = $ci->get(ApmContainerKey::API_USER_ID); // this should be set by the authenticator!
        $this->languages = $this->systemManager->getConfig()[ApmConfigParameter::LANGUAGES];
        $this->logger = $this->systemManager->getLogger()->withName('API');
        $this->router = $this->systemManager->getRouter();
@@ -129,9 +129,9 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     public function setApiUserTid(int $userTid=0): void
     {
         if ($userTid === 0) {
-            $this->apiUserTid = $this->container->get(ApmContainerKey::API_USER_TID);
+            $this->apiUserTid = $this->container->get(ApmContainerKey::API_USER_ID);
         } else {
-            $this->container->set(ApmContainerKey::API_USER_TID, $userTid);
+            $this->container->set(ApmContainerKey::API_USER_ID, $userTid);
             $this->apiUserTid = $userTid;
         }
     }

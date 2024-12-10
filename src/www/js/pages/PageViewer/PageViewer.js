@@ -49,7 +49,7 @@ export class PageViewer extends ApmPage {
     this.pageSystemId = this.options.pageSystemId;
 
 
-    this.layoutCacheKey = `apm-PageViewer-Layout-${this.userTid}-${this.pageSystemId}`
+    this.layoutCacheKey = `apm-PageViewer-Layout-${this.userId}-${this.pageSystemId}`
 
     this.splitPaneElements =  $('div.split-pane')
     

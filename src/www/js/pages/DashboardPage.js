@@ -98,7 +98,7 @@ export class DashboardPage extends NormalPage {
   }
 
   async fetchMultiChunkEditions() {
-    let data = await this.apmDataProxy.get(urlGen.apiUserGetMultiChunkEditionInfo(this.userTid))
+    let data = await this.apmDataProxy.get(urlGen.apiUserGetMultiChunkEditionInfo(this.userId))
     let html = UserDocDataCommon.generateMultiChunkEditionsListHtml(data)
     let newMceUrl = urlGen.siteMultiChunkEditionNew()
     html += `<p class="new-mce"><a href="${newMceUrl}" title="${tr('Click to start a new multi-chunk edition')}" target="_blank">${newMceEditionIcon} ${tr('Create new multi-chunk edition')}</a></p>`
@@ -106,7 +106,7 @@ export class DashboardPage extends NormalPage {
   }
 
   async fetchCollationTablesAndEditions() {
-   let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.userTid))
+   let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.userId))
    let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo']);
    let newChunkEditionHtml = `<p class="new-mce"><a href="" class="new-chunk-edition-btn" 
         title="${tr("Click to create a new chunk edition")}">${newMceEditionIcon} ${tr('Create new chunk edition')}</a></p>`;
@@ -117,7 +117,7 @@ export class DashboardPage extends NormalPage {
   }
 
   async fetchTranscriptions() {
-    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.userTid))
+    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.userId))
     this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data))
   }
 
@@ -139,7 +139,7 @@ export class DashboardPage extends NormalPage {
 
   genAdminSectionHtml() {
     return `
-        <p><a href="${urlGen.sitePerson(Tid.toBase36String(this.userTid))}">${tr("Edit profile / Change Password")}</a></p>`
+        <p><a href="${urlGen.sitePerson(Tid.toBase36String(this.userId))}">${tr("Edit profile / Change Password")}</a></p>`
   }
 
   constructCollapse(selector, title, headerClasses = []) {

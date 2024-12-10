@@ -101,8 +101,8 @@ if ($systemManager->fatalErrorOccurred()) {
 // Build container for Slim
 $container = new MinimalContainer();
 $container->set(ApmContainerKey::SYSTEM_MANAGER, $systemManager);
-$container->set(ApmContainerKey::SITE_USER_TID, -1); // set by authenticator
-$container->set(ApmContainerKey::API_USER_TID, -1); // set by authenticator
+$container->set(ApmContainerKey::SITE_USER_ID, -1); // set by authenticator
+$container->set(ApmContainerKey::API_USER_ID, -1); // set by authenticator
 
 // Setup Slim App
 $app = new App(new ResponseFactory(), $container);
@@ -168,7 +168,7 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
             })
             ->setName('people');
 
-        $group->get('/person/{tid}',
+        $group->get('/person/{id}',
             function(Request $request, Response $response) use ($container){
                 return (new SitePeople($container))->personPage($request, $response);
             })

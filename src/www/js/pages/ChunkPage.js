@@ -686,7 +686,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
              { 
                lang: l,
                name: langName,
-               url:  urlGen.siteCollationTablePreset(thisObject.options.work, thisObject.options.chunk, preset.presetId),
+               url:  urlGen.siteCollationTablePreset(thisObject.options.workId, thisObject.options.chunkNumber, preset.presetId),
                urltext: preset.title + ' <small><i>(' + preset.userName + ')</i></small>',
                urltitle:  'Open collation table in new tab', 
                availableWitnesses: thisObject.witnessesByLang[l],

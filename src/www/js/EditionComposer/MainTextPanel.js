@@ -128,11 +128,8 @@ export class MainTextPanel extends PanelWithToolbar {
     this.onchangeMainTextFreeTextEditorWaiting = false
     this.popoversEnabled = this.options.popoversEnabled;
     this.highlightEnabled = this.options.highlightEnabled;
-
     this.changesInfoDivConstructed = false
-
     this.htmlRenderer = new HtmlRenderer({})
-
     this.debug = true
   }
 
@@ -288,9 +285,9 @@ export class MainTextPanel extends PanelWithToolbar {
         $(this.getContentAreaSelector()).html(html);
         switch(this.currentEditMode) {
           case EDIT_MODE_OFF:
-          // case EDIT_MODE_TEXT_OLD:
           case EDIT_MODE_APPARATUS:
             this.addApparatusEntryClassesToMainText();
+            this.addApparatusPopovers();
             if (this.highlightEnabled) {
               this.setApparatusHighlightInMainText(true);
             }
@@ -1105,6 +1102,15 @@ export class MainTextPanel extends PanelWithToolbar {
         await wait(tickTime)
       }
     }
+    // deal with some low-hanging fruit scenarios
+    // 1. oldTokens is empty
+    if (oldTokens.length === 0) {
+      return newTokens.map( (token, index) => { return { index: index, command: 1, seq: index}});
+    }
+    // 2. newTokens is empty
+    if (newTokens.length === 0) {
+      return oldTokens.map( (token, index) => { return {index:index, command: -1, seq: -1}});
+    }
 
     return await this.diffEngine.calculate(oldTokens, newTokens, function(a,b) {
       if (a.tokenType !== b.tokenType) {
@@ -1373,10 +1379,7 @@ export class MainTextPanel extends PanelWithToolbar {
       let mainTextToken = this.edition.mainText[tokenIndex];
       element.popover('dispose').popover( {
         content: () => {
-          if (this.popoversEnabled && !this.selecting) {
             return this.getApparatusPopoverContent(tokenIndex, entries);
-          }
-          return '';
         },
         html: true,
         placement: 'bottom',
@@ -1384,10 +1387,7 @@ export class MainTextPanel extends PanelWithToolbar {
         boundary: 'window',
         trigger: 'manual',
         title: () => {
-          if (this.popoversEnabled && !this.selecting) {
-            return `${mainTextToken.lineNumber}: ${mainTextToken.getPlainText()}`;
-          }
-          return '';
+          return `${mainTextToken.lineNumber}: ${mainTextToken.getPlainText()}`;
         },
         customClass: `text-${this.edition.lang}`
       })
@@ -1695,12 +1695,19 @@ export class MainTextPanel extends PanelWithToolbar {
     }
   }
 
+  showElementPopover(element) {
+    if (this.popoversEnabled && !this.selecting) {
+      element.popover('show');
+    }
+  }
+
   _genOnMouseEnterToken() {
+
     return (ev) => {
       switch(this.currentEditMode) {
         case EDIT_MODE_OFF:
           this.hoverEntriesInApparatusPanels($(ev.target), true);
-          $(ev.target).popover('show');
+          this.showElementPopover($(ev.target));
           break;
 
         case EDIT_MODE_APPARATUS:
@@ -1715,7 +1722,7 @@ export class MainTextPanel extends PanelWithToolbar {
             this._processNewSelection()
           } else {
             this.hoverEntriesInApparatusPanels($(ev.target), true);
-            $(ev.target).popover('show');
+            this.showElementPopover($(ev.target));
           }
           break;
 
@@ -1800,7 +1807,6 @@ export class MainTextPanel extends PanelWithToolbar {
   _generateMainTextHtml() {
     switch(this.currentEditMode) {
       case EDIT_MODE_OFF:
-      // case EDIT_MODE_TEXT_OLD:
       case EDIT_MODE_APPARATUS:
         return this._getMainTextHtmlVersion()
 

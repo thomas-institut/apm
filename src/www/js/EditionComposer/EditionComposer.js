@@ -67,10 +67,11 @@ import { CollationTableConsistencyCleaner } from '../CtData/CtDataCleaner/Collat
 import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
 
 import { PdfDownloadUrl } from './PdfDownloadUrl'
-import { IgnoreHyphen } from '../normalizers/TokenNormalizer/IgnoreHyphen'
+// import { IgnoreHyphen } from '../normalizers/TokenNormalizer/IgnoreHyphen'
 import { ApmPage } from '../pages/ApmPage'
 import { ApmFormats } from '../pages/common/ApmFormats'
 import { urlGen } from '../pages/common/SiteUrlGen'
+import { DataId_EC_ViewOptions } from '../constants/WebStorageDataId'
 
 // import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS
@@ -92,7 +93,7 @@ const saveButtonTextClassSaving = 'text-warning'
 const saveButtonTextClassError = 'text-danger'
 
 const ViewOptionsCacheTtl = 180 * 24 * 3600;  // 6 months
-export const ViewOptionsCacheDataId = 'apm_ec_a8731fe';
+// export const ViewOptionsCacheDataId = 'apm_ec_a8731fe';
 
 
 export class EditionComposer extends ApmPage {
@@ -430,7 +431,7 @@ export class EditionComposer extends ApmPage {
     return `Apm-EC-ViewOptions-${this.userId}-${this.tableId}`;
   }
   getViewOptions() {
-    let viewOptions = this.localCache.retrieve(this.getViewOptionsStorageKey(), ViewOptionsCacheDataId);
+    let viewOptions = this.localCache.retrieve(this.getViewOptionsStorageKey(), DataId_EC_ViewOptions);
     return viewOptions === null ?
       {
         vertical: true,
@@ -442,7 +443,7 @@ export class EditionComposer extends ApmPage {
   }
 
   storeViewOptions(viewOptions) {
-    this.localCache.store(this.getViewOptionsStorageKey(), viewOptions, ViewOptionsCacheTtl, ViewOptionsCacheDataId);
+    this.localCache.store(this.getViewOptionsStorageKey(), viewOptions, ViewOptionsCacheTtl, DataId_EC_ViewOptions);
   }
 
   _genHighlightCollationTable() {

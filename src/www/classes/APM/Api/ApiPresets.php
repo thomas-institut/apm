@@ -479,7 +479,7 @@ class ApiPresets extends ApiController
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $this->profiler->start();
-        $inputData = $this->checkAndGetInputData($request, $response, ['command', 'tool', 'userId', 'title', 'presetId', 'presetData']);
+        $inputData = $this->checkAndGetInputData($request, $response, ['command', 'tool', 'title', 'presetId', 'presetData']);
         if (!is_array($inputData)) {
             return $inputData;
         }

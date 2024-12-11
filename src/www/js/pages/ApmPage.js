@@ -4,15 +4,16 @@ import { ApmDataProxy } from './common/ApmDataProxy'
 import { defaultLanguage, setSiteLanguage, tr, validLanguages } from './common/SiteLang'
 import { WebStorageKeyCache } from '../toolbox/KeyCache/WebStorageKeyCache'
 import { ApmFormats } from './common/ApmFormats'
-import { ViewOptionsCacheDataId } from '../EditionComposer/EditionComposer'
+import { DataId_EC_ViewOptions } from '../constants/WebStorageDataId'
+
 
 
 const langCacheKey = 'apmSiteLanguage'
 const langCacheDataId = 'v1';
 const CachePrefix = 'Apm';
-const SessionIdCacheKey = CachePrefix + 'SessionId';
-const SessionIdDataId = 'SessionInfo_v0001';
-const SessionIdTtl = 365.2422 * 24 * 3600; // 1 tropical year :)
+// const SessionIdCacheKey = CachePrefix + 'SessionId';
+// const SessionIdDataId = 'SessionInfo_v0001';
+// const SessionIdTtl = 365.2422 * 24 * 3600; // 1 tropical year :)
 
 export class ApmPage {
 
@@ -53,9 +54,9 @@ export class ApmPage {
     this.userTid = this.commonData.userInfo['tid'];
     this.userName = this.commonData.userInfo.userName;
 
-    this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, CachePrefix, [ SessionIdDataId, ViewOptionsCacheDataId]);
+    this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, CachePrefix, [ DataId_EC_ViewOptions]);
     this.localCache = new WebStorageKeyCache('local', this.commonData.cacheDataId);
-    this.sessionCache = new WebStorageKeyCache('session', this.commonData.cacheDataId);
+    // this.sessionCache = new WebStorageKeyCache('session', this.commonData.cacheDataId);
 
     this.showLanguageSelector = this.commonData.showLanguageSelector;
     if (this.showLanguageSelector) {
@@ -90,13 +91,13 @@ export class ApmPage {
     return this.commonData.userInfo['isRoot'];
   }
 
-  getSessionIdFromWebStorage() {
-    return this.sessionCache.retrieve(SessionIdCacheKey, SessionIdDataId);
-  }
-
-  saveSessionIdToWebStorage() {
-    this.sessionCache.store(SessionIdCacheKey, this.sessionId, SessionIdTtl, SessionIdDataId);
-  }
+  // getSessionIdFromWebStorage() {
+  //   return this.sessionCache.retrieve(SessionIdCacheKey, SessionIdDataId);
+  // }
+  //
+  // saveSessionIdToWebStorage() {
+  //   this.sessionCache.store(SessionIdCacheKey, this.sessionId, SessionIdTtl, SessionIdDataId);
+  // }
 
 
 

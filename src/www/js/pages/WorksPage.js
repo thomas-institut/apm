@@ -71,7 +71,7 @@ export class WorksPage extends NormalPage {
 
   async genContentHtml () {
     let html = `<h2>${tr('Works')}</h2>`;
-    html += `<div class="note">There are the works that have transcription, collation table or edition data in the system. 
+    html += `<div class="note">These are the works that have transcription, collation table or edition data in the system. 
        Other works can be found by visiting the author's page.</div>`
     this.groupedWorks.forEach( (gw, authorIndex) => {
       html += `<div class="author author-${authorIndex}">

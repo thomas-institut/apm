@@ -42,8 +42,6 @@ class IndexManager extends CommandLineUtility {
 
     public function main($argc, $argv): bool
     {
-        print ("Welcome to the Index Manager!\n");
-
         // Instantiate OpenSearch client
         $this->client =  (new ClientBuilder())
             ->setHosts($this->config[ApmConfigParameter::OPENSEARCH_HOSTS])
@@ -51,31 +49,43 @@ class IndexManager extends CommandLineUtility {
             ->setSSLVerification(false) // For testing only. Use certificate for validation
             ->build();
 
+        // help
+        if ($argv[1] === '-h') {
+                print("Usage: indexmanager [transcriptions/editions] [operation] [pageID/tableID] [column/chunk]\n
+Available operations are:\nbuild - builds the index, deletes already existing one\nadd [arg1] [arg2] - adds a single item to an index\nremove [arg1] [arg2] - removes a single item from an index\nupdate [arg1] [arg2] - updates an already indexed item\nshow [arg1] [arg2] - shows an indexed item\nshowdb [arg1] [arg2] - shows an item from the database\ncheck ([arg1] [arg2]) - checks the completeness of an index in total or the correctness of a single item in it\nfix - fixes an index by indexing not indexed items and updating outdated items\n");
+                return true;
+        }
+
         // get desired operation and indexNamePrefix
-        $operation = $argv[1];
-        $this->indexNamePrefix = $argv[2];
+        $operation = $argv[2];
+        $this->indexNamePrefix = $argv[1];
 
         // Name of the indices in OpenSearch
         $this->indices = [$this->indexNamePrefix . '_la', $this->indexNamePrefix . '_ar', $this->indexNamePrefix . '_he'];
 
         switch ($operation) {
             case 'build': // create new or replace existing index with a specific name
-                $this->rebuildIndex();
+                $this->buildIndex();
                 break;
             case 'show':
                 $identifier1 = $argv[3];
                 $identifier2 = $argv[4];
+                print("Querying…\n");
                 $data = $this->getIndexedItem($identifier1, $identifier2);
                 print_r($data);
                 break;
             case 'showdb':
                 $identifier1 = $argv[3];
                 $identifier2 = $argv[4];
+                print("Querying…");
                 $data = $this->getItemFromDatabase($identifier1, $identifier2);
-                print_r($data);
+                if ($data !== null) {
+                    print("\n");
+                    print_r($data);
+                }
                 break;
             case 'check': // check if a specific index mirrors all data from the sql database
-                $identifier1 = $argv[3]; // HERE
+                $identifier1 = $argv[3];
                 $identifier2 = $argv[4];
                 $this->checkIndex($identifier1, $identifier2);
                 break;
@@ -115,12 +125,14 @@ class IndexManager extends CommandLineUtility {
                 $identifier2 = $argv[4];
                 $this->removeItem($identifier1, $identifier2);
                 break;
+            default:
+                print("Command not found. You will find some help via 'indexmanager -h'\n.");
         }
 
         return true;
     }
 
-    private function rebuildIndex () {
+    private function buildIndex () {
 
         print ("Building index...\n");
 
@@ -133,7 +145,7 @@ class IndexManager extends CommandLineUtility {
             case 'transcriptions':
                 $this->buildIndexTranscriptions();
                 break;
-            case 'editions' or 'test':
+            case 'editions':
                 $this->buildIndexEditions();
                 break;
         }
@@ -182,54 +194,20 @@ class IndexManager extends CommandLineUtility {
         return true;
     }
 
-    private function getIndexedItem ($identifier1, $identifier2) {
-
-        $mustConditions = [];
-
-        if ($this->indexNamePrefix === 'transcriptions') {
-            $mustConditions[] = [ 'match' => ['pageID' => $identifier1]];
-            $mustConditions[] = [ 'match' => ['column' => $identifier2]];
-        } else if ($this->indexNamePrefix === 'editions') {
-            $mustConditions[] = [ 'match' => ['table_id' => $identifier1]];
-            $mustConditions[] = [ 'match' => ['chunk' => $identifier2]];
-        }
-
-        foreach ($this->indices as $indexName) {
-            $data = $this->client->search([
-                'index' => $indexName,
-                'body' => [
-                    'size' => 20000,
-                    'query' => [
-                        'bool' => [
-                            'must' => $mustConditions
-                        ]
-                    ]
-                ]
-            ]);
-
-            if ($data['hits']['total']['value'] !== 0) {
-               return ($data['hits']['hits']);
-            } else {
-                return null;
-            }
-        }
-    }
-
     private function checkIndex ($identifier1, $identifier2, $fix=false) {
 
-        print ("Checking index...");
+        print ("Checking...");
 
         switch ($this->indexNamePrefix) {
             case 'transcriptions':
-                if ($identifier1 === '') { // HERE
-                    print("hallo");
+                if ($identifier1 === null) {
                     $this->checkIndexTranscriptions($fix);
                 } else {
                     $this->checkSingleTranscription($identifier1, $identifier2);
                 }
                 break;
-            case 'editions' or 'test':
-                if ($identifier1 === '') {
+            case 'editions':
+                if ($identifier1 === null) {
                     $this->checkIndexEditions($fix);
                 } else {
                     $this->checkSingleEdition($identifier1, $identifier2);
@@ -239,62 +217,7 @@ class IndexManager extends CommandLineUtility {
         return true;
     }
 
-    private function checkSingleTranscription ($pageID, $col) {
-        
-        $transcriptionInDatabase = $this->getTranscriptionFromDatabase($pageID, $col);
-        $transcriptionInIndex = $this->getIndexedItem($pageID, $col);
-
-        if ($transcriptionInIndex === null) {
-            print("Transcription is NOT INDEXED!\n");
-            print ("Do you want to index it? (y/n)\n");
-            $input = rtrim(fgets(STDIN));
-
-            if ($input === 'y') {
-                $this->addItem($pageID, $col);
-            }
-        } else if ($transcriptionInIndex[0]['_source']['time_from'] === $transcriptionInDatabase['timeFrom']) {
-            print("Transcription in index is up to date!\n");
-        } else {
-            print("Transcription in index is OUTDATED!\n");
-            print ("Do you want to update it? (y/n)\n");
-            $input = rtrim(fgets(STDIN));
-
-            if ($input === 'y') {
-                $this->updateItem($pageID, $col);
-            }
-        }
-
-        return true;
-    }
-
-    private function checkSingleEdition ($tableID, $chunk) {
-
-        $editionInDatabase = $this->getEditionFromDatabase($tableID, $chunk);
-        $editionInIndex = $this->getIndexedItem($tableID, $chunk);
-
-        if ($editionInIndex === null) {
-            print("Edition is NOT INDEXED!\n");
-            print ("Do you want to index it? (y/n)\n");
-            $input = rtrim(fgets(STDIN));
-
-            if ($input === 'y') {
-                $this->addItem($tableID, $chunk);
-            }
-        } else if ($editionInIndex[0]['_source']['timeFrom'] === $editionInDatabase['timeFrom']) {
-            print("Indexed edition is up to date!\n");
-        } else {
-            print("Indexed edition is OUTDATED!\n");
-            print ("Do you want to update it? (y/n)\n");
-            $input = rtrim(fgets(STDIN));
-
-            if ($input === 'y') {
-                $this->updateItem($tableID, $chunk);
-            }
-        }
-
-        return true;
-    }
-
+    
     private function checkIndexTranscriptions ($fix) {
 
         // get versionManager
@@ -451,13 +374,8 @@ class IndexManager extends CommandLineUtility {
 
         foreach ($editionsInDatabase as $i => $edition) {
             $edition = [$edition['table_id'], $edition['chunk_id'], $edition['timeFrom']];
-            if ($edition['table_id'] === 266 or $edition['table_id'] === '266') {
-                print_r($edition);
-            }
             $editionsInDatabase[$i] = $edition;
         }
-
-        print_r($editionsInDatabase);
 
         // Get all relevant data from the opensearch index
         $indexedEditions = [];
@@ -554,6 +472,73 @@ class IndexManager extends CommandLineUtility {
         return true;
     }
 
+    private function checkSingleTranscription ($pageID, $col) {
+
+        $transcriptionInDatabase = $this->getTranscriptionFromDatabase($pageID, $col);
+
+        if ($transcriptionInDatabase === null) {
+            return true;
+        }
+
+        $transcriptionInIndex = $this->getIndexedItem($pageID, $col);
+
+        if ($transcriptionInIndex === null) {
+            print("\nTranscription is NOT INDEXED!\n");
+            print ("Do you want to index it? (y/n)\n");
+            $input = rtrim(fgets(STDIN));
+
+            if ($input === 'y') {
+                $this->addItem($pageID, $col);
+            }
+        } else if ($transcriptionInIndex[0]['_source']['time_from'] === $transcriptionInDatabase['timeFrom']) {
+            print("\nTranscription in index is up to date!\n");
+        } else {
+            print("\nTranscription in index is OUTDATED!\n");
+            print ("Do you want to update it? (y/n)\n");
+            $input = rtrim(fgets(STDIN));
+
+            if ($input === 'y') {
+                $this->updateItem($pageID, $col);
+            }
+        }
+
+        return true;
+    }
+
+    private function checkSingleEdition ($tableID, $chunk) {
+
+        $editionInDatabase = $this->getEditionFromDatabase($tableID, $chunk);
+
+        if ($editionInDatabase === null) {
+            return true;
+        }
+
+        $editionInIndex = $this->getIndexedItem($tableID, $chunk);
+
+        if ($editionInIndex === null) {
+            print("\nEdition is NOT INDEXED!\n");
+            print ("Do you want to index it? (y/n)\n");
+            $input = rtrim(fgets(STDIN));
+
+            if ($input === 'y') {
+                $this->addItem($tableID, $chunk);
+            }
+        } else if ($editionInIndex[0]['_source']['timeFrom'] === $editionInDatabase['timeFrom']) {
+            print("\nIndexed edition is up to date!\n");
+        } else {
+            print("\nIndexed edition is OUTDATED!\n");
+            print ("Do you want to update it? (y/n)\n");
+            $input = rtrim(fgets(STDIN));
+
+            if ($input === 'y') {
+                $this->updateItem($tableID, $chunk);
+            }
+        }
+
+        return true;
+    }
+
+
     private function fixIndex ($data) {
 
         print("Fixing index...\n");
@@ -569,7 +554,7 @@ class IndexManager extends CommandLineUtility {
     }
 
     private function checkAndFixIndex () {
-        $this->checkIndex('', '', true);
+        $this->checkIndex(null, null, true);
     }
 
     private function addItem ($identifier1, $identifier2, $id=null, $context=null) {
@@ -580,9 +565,9 @@ class IndexManager extends CommandLineUtility {
 
         switch ($this->indexNamePrefix) {
             case 'transcriptions':
-                $this->addColToTranscriptionsIndex($identifier1, $identifier2, $id);
+                $this->addItemToTranscriptionsIndex($identifier1, $identifier2, $id);
                 break;
-            case 'editions' or 'test':
+            case 'editions':
                 $this->addItemToEditionsIndex($identifier1, $identifier2, $id);
                 break;
         }
@@ -590,13 +575,13 @@ class IndexManager extends CommandLineUtility {
         return true;
     }
 
-    private function addColToTranscriptionsIndex ($pageID, $col, $id) {
+    private function addItemToTranscriptionsIndex ($pageID, $col, $id) {
 
         $doc_id = $this->getDocIdByPageId($pageID);
 
         if ($doc_id === null) {
-            print("no doc id found for page id $pageID, column $col\n");
-            return true;
+            print("No transcription in database with page id $pageID and column number $col.\n");
+            return null;
         }
 
         // Get other relevant data for indexing
@@ -613,104 +598,15 @@ class IndexManager extends CommandLineUtility {
         $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($pageID, $col);
         $currentVersionInfo = (array)(end($versionsInfo));
         $timeFrom = (string) $currentVersionInfo['timeFrom'];
+
+        if ($timeFrom === '') {
+            print("No transcription in database with page id $pageID and column number $col.\n");
+            return null;
+        };
 
         $this->indexTranscription($this->client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $pageID, $doc_id, $transcription, $lang, $timeFrom);
 
         return true;
-    }
-
-    private function getItemFromDatabase ($identifier1, $identifier2) {
-
-        switch ($this->indexNamePrefix) {
-            case 'transcriptions':
-                return $this->getTranscriptionFromDatabase($identifier1, $identifier2);
-            case 'editions' or 'test':
-                return $this->getEditionFromDatabase($identifier1, $identifier2);
-        }
-    }
-
-    private function getTranscriptionFromDatabase ($pageID, $col) {
-
-        $doc_id = $this->getDocIdByPageId($pageID);
-
-        if ($doc_id === null) {
-            print("no doc id found for page id $pageID, column $col\n");
-            return true;
-        }
-
-        // Get other relevant data for indexing
-        $title = $this->getTitle($doc_id);
-        $page = $this->getDm()->getPageInfo($pageID)['page_number'];
-        $seq = $this->getSeq($doc_id, $page);
-        $foliation = $this->getFoliation($doc_id, $page);
-        $transcriber = $this->getTranscriber($doc_id, $page, $col);
-        $transcription = $this->getTranscription($doc_id, $page, $col);
-        $lang = $this->getLang($doc_id, $page);
-
-        // Get timestamp
-        $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
-        $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($pageID, $col);
-        $currentVersionInfo = (array)(end($versionsInfo));
-        $timeFrom = (string) $currentVersionInfo['timeFrom'];
-
-        $data = ['title' => $title,
-                 'page' => $page,
-                 'seq' => $seq,
-                 'foliation' => $foliation,
-                 'transcriber' => $transcriber,
-                 'transcription' => $transcription,
-                 'lang' => $lang,
-                 'timeFrom' => $timeFrom] ;
-
-        return $data;
-    }
-
-    private function getEditionFromDatabase ($tableID, $chunk)  {
-
-        // Get collationTableManager
-        $this->collationTableManager = $this->getSystemManager()->getCollationTableManager();
-
-        // Get the data of up to 20 000 editions
-        $editions = [];
-        foreach (range(1, 20000) as $i) {
-            try {
-                $editions[] = $this->getEditionData($this->collationTableManager, $i);
-            } catch (Exception) {
-                break;
-            }
-        }
-
-        // Clean data
-        $editions = $this->cleanEditionData($editions);
-
-        // Index editions
-        foreach ($editions as $edition) {
-
-            if ($edition['table_id'] === (int) $tableID and $edition['chunk_id'] === $chunk) {
-                $data = ['title' => $edition['title'],
-                    'editor' => $edition['editor'],
-                    'table_id' => $edition['table_id'],
-                    'chunk' => $edition['chunk_id'],
-                    'text' => $edition['text'],
-                    "timeFrom" => $edition['timeFrom']];
-            }
-        }
-
-        return $data;
-    }
-
-    private function getDocIdByPageId ($pageID) {
-
-        $docList = $this->getDm()->getDocIdList('title');
-        foreach ($docList as $doc) {
-            $pages_transcribed = $this->getDm()->getTranscribedPageListByDocId($doc);
-            foreach ($pages_transcribed as $page_transcribed) {
-                $currentPageID = $this->getPageID($doc, $page_transcribed);
-                if ((string) $currentPageID === $pageID or $currentPageID === $pageID) {
-                    return $doc;
-                }
-            }
-        }
     }
 
     private function addItemToEditionsIndex ($tableID, $chunkID, $id=null, $context=null) {
@@ -731,13 +627,19 @@ class IndexManager extends CommandLineUtility {
         $editions = $this->cleanEditionData($editions);
 
         // Index editions
+        $editionExists = false;
         foreach ($editions as $edition) {
 
             if ($edition['table_id'] === (int) $tableID and $edition['chunk_id'] === $chunkID) {
-                    $this->indexEdition($this->client, $id, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
-                    $log_data = 'Title: ' . $edition['title'] . ', Editor: ' . $edition['editor'] . ', Table ID: ' . $edition['table_id'] . ', Chunk: ' . $edition['chunk_id'] . ", TimeFrom: " . $edition['timeFrom'];
-                    $this->logger->debug("Indexed Edition – $log_data\n");
+                $this->indexEdition($this->client, $id, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
+                $log_data = 'Title: ' . $edition['title'] . ', Editor: ' . $edition['editor'] . ', Table ID: ' . $edition['table_id'] . ', Chunk: ' . $edition['chunk_id'] . ", TimeFrom: " . $edition['timeFrom'];
+                $this->logger->debug("Indexed Edition – $log_data\n");
+                $editionExists = true;
             }
+        }
+
+        if (!$editionExists) {
+            print ("No edition in database with table id $tableID and chunk id $chunkID.\n");
         }
 
         return true;
@@ -773,7 +675,7 @@ class IndexManager extends CommandLineUtility {
                     case 'transcriptions':
                         print ("Column $identifier2 from page with ID $identifier1 has been removed from index *$index*.\n");
                         break;
-                    case 'editions' or 'test':
+                    case 'editions':
                         print ("Chunk $identifier2 from table with ID $identifier1 has been removed from index *$index*.\n");
                         break;
                 }
@@ -783,12 +685,191 @@ class IndexManager extends CommandLineUtility {
                 case 'transcriptions':
                     print ("Column $identifier2 from page with ID $identifier1 does not exist and therefore cannot be removed.\n");
                     break;
-                case 'editions' or 'test':
+                case 'editions':
                     print ("Chunk $identifier2 from table with ID $identifier1 does not exist and therefore cannot be removed.\n");
                     break;
             }
         }
         return true;
+    }
+
+
+    private function getItemFromDatabase ($identifier1, $identifier2) {
+
+        switch ($this->indexNamePrefix) {
+            case 'transcriptions':
+                return $this->getTranscriptionFromDatabase($identifier1, $identifier2);
+            case 'editions':
+                return $this->getEditionFromDatabase($identifier1, $identifier2);
+        }
+    }
+
+    private function getTranscriptionFromDatabase ($pageID, $col) {
+
+        $doc_id = $this->getDocIdByPageId($pageID);
+
+        if ($doc_id === null) {
+            print("\nNo transcription in database with page id $pageID and column number $col.\n");
+            return null;
+        }
+
+        // Get other relevant data for indexing
+        $title = $this->getTitle($doc_id);
+        $page = $this->getDm()->getPageInfo($pageID)['page_number'];
+        $seq = $this->getSeq($doc_id, $page);
+        $foliation = $this->getFoliation($doc_id, $page);
+        $transcriber = $this->getTranscriber($doc_id, $page, $col);
+        $transcription = $this->getTranscription($doc_id, $page, $col);
+        $lang = $this->getLang($doc_id, $page);
+
+        // Get timestamp
+        $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
+        $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($pageID, $col);
+        $currentVersionInfo = (array)(end($versionsInfo));
+        $timeFrom = (string) $currentVersionInfo['timeFrom'];
+
+        if ($timeFrom === '') {
+            print("\nNo transcription in database with page id $pageID and column number $col.\n");
+            return null;
+        };
+
+        $data = ['title' => $title,
+                 'page' => $page,
+                 'seq' => $seq,
+                 'foliation' => $foliation,
+                 'transcriber' => $transcriber,
+                 'transcription' => $transcription,
+                 'lang' => $lang,
+                 'timeFrom' => $timeFrom] ;
+
+        return $data;
+    }
+
+    private function getEditionFromDatabase ($tableID, $chunk)  {
+
+        // Get collationTableManager
+        $this->collationTableManager = $this->getSystemManager()->getCollationTableManager();
+
+        // Get the data of up to 20 000 editions
+        $editions = [];
+        foreach (range(1, 20000) as $i) {
+            try {
+                $editions[] = $this->getEditionData($this->collationTableManager, $i);
+            } catch (Exception) {
+                break;
+            }
+        }
+
+        // Clean data
+        $editions = $this->cleanEditionData($editions);
+
+        // Index editions
+        $editionExists = false;
+
+        foreach ($editions as $edition) {
+
+            if ($edition['table_id'] === (int) $tableID and $edition['chunk_id'] === $chunk) {
+                $data = ['title' => $edition['title'],
+                    'editor' => $edition['editor'],
+                    'table_id' => $edition['table_id'],
+                    'chunk' => $edition['chunk_id'],
+                    'text' => $edition['text'],
+                    "timeFrom" => $edition['timeFrom']];
+
+                $editionExists = true;
+            }
+        }
+
+        if (!$editionExists) {
+            print ("\nNo edition in database with table id $tableID and chunk id $chunk.\n");
+            return null;
+        }
+
+        return $data;
+    }
+    
+    private function getIndexedItem ($identifier1, $identifier2) {
+
+        $mustConditions = [];
+
+        if ($this->indexNamePrefix === 'transcriptions') {
+            $mustConditions[] = [ 'match' => ['pageID' => $identifier1]];
+            $mustConditions[] = [ 'match' => ['column' => $identifier2]];
+        } else if ($this->indexNamePrefix === 'editions') {
+            $mustConditions[] = [ 'match' => ['table_id' => $identifier1]];
+            $mustConditions[] = [ 'match' => ['chunk' => $identifier2]];
+        }
+
+        foreach ($this->indices as $indexName) {
+            $data = $this->client->search([
+                'index' => $indexName,
+                'body' => [
+                    'size' => 20000,
+                    'query' => [
+                        'bool' => [
+                            'must' => $mustConditions
+                        ]
+                    ]
+                ]
+            ]);
+
+
+            if ($data['hits']['total']['value'] !== 0) {
+                return ($data['hits']['hits']);
+            }
+        }
+
+        print("Item not indexed!\nDo you want to index it? (y/n)\n");
+
+        $input = rtrim(fgets(STDIN));
+
+        if ($input === 'y') {
+            $this->addItem($identifier1, $identifier2);
+            return null;
+        } else {
+            return null;
+        }
+    }
+
+    private function isAlreadyIndexed ($pageID, $col) {
+
+        if ($this->getOpenSearchIDAndIndexName($pageID, $col)['id'] === null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    private function getOpenSearchIDAndIndexName ($identifier1, $identifier2) {
+
+        $mustConditions = [];
+
+        if ($this->indexNamePrefix === 'transcriptions') {
+            $mustConditions[] = [ 'match' => ['pageID' => $identifier1]];
+            $mustConditions[] = [ 'match' => ['column' => $identifier2]];
+
+        } else {
+            $mustConditions[] = [ 'match' => ['table_id' => $identifier1]];
+            $mustConditions[] = [ 'match' => ['chunk' => $identifier2]];
+        }
+
+        foreach ($this->indices as $index) {
+            $query = $this->client->search([
+                'index' => $index,
+                'body' => [
+                    'size' => 20000,
+                    'query' => [
+                        'bool' => [
+                            'must' => $mustConditions
+                        ]
+                    ]
+                ]
+            ]);
+
+            if ($query['hits']['hits'] !== []) {
+                return ['index' => $index, 'id' => $query['hits']['hits'][0]['_id']];
+            }
+        }
     }
 
     private function getAndIndexTranscriptionData (string $doc_id): int
@@ -840,82 +921,6 @@ class IndexManager extends CommandLineUtility {
         return true;
     }
 
-    // Function to get plaintext of the transcripts in the sql-database (copied from the ApiTranscription class)
-    private function getPlainTextFromElements(array $elements) : string {
-        $text = '';
-        foreach($elements as $element) {
-            if ($element->type === Element::LINE) {
-                foreach($element->items as $item) {
-                    switch($item->type) {
-                        case Item::TEXT:
-                        case Item::HEADING:
-                        case Item::RUBRIC:
-                        case Item::BOLD_TEXT:
-                        case Item::ITALIC:
-                        case Item::MATH_TEXT:
-                        case Item::GLIPH:
-                        case Item::INITIAL:
-                            $text .= $item->theText;
-                            break;
-
-                        case Item::NO_WORD_BREAK:
-                            $text .= '-';
-                            break;
-
-
-                    }
-                }
-                $text .=  "\n";
-            }
-        }
-        return $text;
-    }
-
-    public function getPageID (int $doc_id, int $page): int {
-        return $this->getDm()->getpageIDByDocPage($doc_id, $page);
-    }
-
-    public function getTitle(int $doc_id): string {
-        $doc_info = $this->getDm()->getDocById($doc_id);
-        return $doc_info['title'];
-    }
-
-    public function getSeq(int $doc_id, int $page): string {
-        $page_id = $this->getDm()->getpageIDByDocPage($doc_id, $page);
-        $page_info = $this->getDm()->getPageInfo($page_id);
-        return $page_info['seq'];
-    }
-
-    public function getTranscription(int $doc_id, int $page, int $col): string
-    {
-        $page_id = $this->getDm()->getpageIDByDocPage($doc_id, $page);
-        $elements = $this->getDm()->getColumnElementsBypageID($page_id, $col);
-        return $this->getPlainTextFromElements($elements);
-    }
-
-    public function getTranscriber(int $doc_id, int $page, int $col): string {
-        $page_id = $this->getDm()->getpageIDByDocPage($doc_id, $page);
-        $versions = $this->getDm()->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
-        if ($versions === []) {
-            return '';
-        }
-        else {
-            $latranscriptions_version = count($versions) - 1;
-            return $versions[$latranscriptions_version]['author_name'];
-        }
-    }
-
-    public function getLang(int $doc_id, int $page): string {
-        $seq = $this->getSeq($doc_id, $page);
-        return $this->getDm()->getPageInfoByDocSeq($doc_id, $seq)['lang'];
-    }
-
-    public function getFoliation(int $doc_id, int $page): string
-    {
-        $seq = $this->getSeq($doc_id, $page);
-        return $this->getDm()->getPageFoliationByDocSeq($doc_id,  $seq);
-    }
-
     // Function to add pages to the OpenSearch index
     public function indexTranscription ($client, $id, string $title, int $page, int $seq, string $foliation, int $col, string $transcriber, int $page_id, int $doc_id, string $transcription, string $lang, string $timeFrom): bool
     {
@@ -939,7 +944,9 @@ class IndexManager extends CommandLineUtility {
 
             $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $transcription_clean, $this->indexNamePrefix);
 
-
+            // Get tokenized and lemmatized transcript
+            $transcription_tokenized = $tokens_and_lemmata['tokens'];
+            $transcription_lemmatized = $tokens_and_lemmata['lemmata'];
         }
         else {
             $transcription_tokenized = [];
@@ -992,44 +999,6 @@ class IndexManager extends CommandLineUtility {
         }
 
         $this->logger->debug("Indexed Document in $indexName – Doc ID: $doc_id ($title) Page ID: $page_id Page: $page Seq: $seq Foliation: $foliation Column: $col Transcriber: $transcriber Lang: $lang TimeFrom: $timeFrom\n");
-        return true;
-    }
-
-    // Function to prepare the text for the lemmatizer
-    public function encodeForLemmatization(string $text): string {
-
-        $text_clean = str_replace("\n", " ", $text);
-        $text_clean = str_replace(' ', ' ', $text_clean);
-        $text_clean = str_replace(' ', ' ', $text_clean);
-        $text_clean = str_replace('- ', '', $text_clean);
-
-        return $text_clean;
-    }
-
-    protected function resetIndex ($client, string $index): bool {
-
-        // Delete existing index
-        if ($client->indices()->exists(['index' => $index])) {
-            $client->indices()->delete([
-                'index' => $index
-            ]);
-            $this->logger->debug("Existing index *$index* was deleted!\n");
-        }
-
-        // Create new index
-        $client->indices()->create([
-            'index' => $index,
-            'body' => [
-                'settings' => [
-                    'index' => [
-                        'max_result_window' => 50000
-                    ]
-                ]
-            ]
-        ]);
-
-        $this->logger->debug("New index *$index* was created!\n");
-
         return true;
     }
 
@@ -1152,69 +1121,131 @@ class IndexManager extends CommandLineUtility {
         return array_values($editions);
     }
 
-//    private function getNextIdForIndexing() {
-//
-//        $ids = [];
-//
-//        foreach ($this->indices as $indexName) {
-//            $query = $this->client->search([
-//                'index' => $indexName,
-//                'size' => 20000,
-//                'body' => [
-//                    "query" => [
-//                        "match_all" => [
-//                            "boost" => 1.0
-//                        ]
-//                    ],
-//                ]
-//            ]);
-//
-//            foreach ($query['hits']['hits'] as $match) {
-//                $id = $match['_id'];
-//                $ids[] = $id;
-//            }
-//        }
-//        return max($ids)+1;
-//    }
+    // Function to prepare the text for the lemmatizer
+    public function encodeForLemmatization(string $text): string {
 
-    private function isAlreadyIndexed ($pageID, $col) {
+        $text_clean = str_replace("\n", " ", $text);
+        $text_clean = str_replace(' ', ' ', $text_clean);
+        $text_clean = str_replace(' ', ' ', $text_clean);
+        $text_clean = str_replace('- ', '', $text_clean);
 
-        if ($this->getOpenSearchIDAndIndexName($pageID, $col)['id'] === null) {
-            return false;
-        } else {
-            return true;
+        return $text_clean;
+    }
+
+    protected function resetIndex ($client, string $index): bool {
+
+        // Delete existing index
+        if ($client->indices()->exists(['index' => $index])) {
+            $client->indices()->delete([
+                'index' => $index
+            ]);
+            $this->logger->debug("Existing index *$index* was deleted!\n");
+        }
+
+        // Create new index
+        $client->indices()->create([
+            'index' => $index,
+            'body' => [
+                'settings' => [
+                    'index' => [
+                        'max_result_window' => 50000
+                    ]
+                ]
+            ]
+        ]);
+
+        $this->logger->debug("New index *$index* was created!\n");
+
+        return true;
+    }
+
+    private function getDocIdByPageId ($pageID) {
+
+        $docList = $this->getDm()->getDocIdList('title');
+        foreach ($docList as $doc) {
+            $pages_transcribed = $this->getDm()->getTranscribedPageListByDocId($doc);
+            foreach ($pages_transcribed as $page_transcribed) {
+                $currentPageID = $this->getPageID($doc, $page_transcribed);
+                if ((string) $currentPageID === $pageID or $currentPageID === $pageID) {
+                    return $doc;
+                }
+            }
         }
     }
 
-    private function getOpenSearchIDAndIndexName ($identifier1, $identifier2) {
+    // Function to get plaintext of the transcripts in the sql-database (copied from the ApiTranscription class)
+    private function getPlainTextFromElements(array $elements) : string {
+        $text = '';
+        foreach($elements as $element) {
+            if ($element->type === Element::LINE) {
+                foreach($element->items as $item) {
+                    switch($item->type) {
+                        case Item::TEXT:
+                        case Item::HEADING:
+                        case Item::RUBRIC:
+                        case Item::BOLD_TEXT:
+                        case Item::ITALIC:
+                        case Item::MATH_TEXT:
+                        case Item::GLIPH:
+                        case Item::INITIAL:
+                            $text .= $item->theText;
+                            break;
 
-        $mustConditions = [];
+                        case Item::NO_WORD_BREAK:
+                            $text .= '-';
+                            break;
 
-        if ($this->indexNamePrefix === 'transcriptions') {
-            $mustConditions[] = [ 'match' => ['pageID' => $identifier1]];
-            $mustConditions[] = [ 'match' => ['column' => $identifier2]];
 
-        } else {
-            $mustConditions[] = [ 'match' => ['table_id' => $identifier1]];
-            $mustConditions[] = [ 'match' => ['chunk' => $identifier2]];
-        }
-
-        foreach ($this->indices as $index) {
-            $query = $this->client->search([
-                'index' => $index,
-                'body' => [
-                    'size' => 20000,
-                    'query' => [
-                        'bool' => [
-                            'must' => $mustConditions
-                        ]
-                    ]
-                ]
-            ]);
-
-            if ($query['hits']['hits'] !== []) {
-                return ['index' => $index, 'id' => $query['hits']['hits'][0]['_id']];
+                    }
+                }
+                $text .=  "\n";
             }
         }
+        return $text;
+    }
+
+    public function getPageID (int $doc_id, int $page): int {
+        return $this->getDm()->getpageIDByDocPage($doc_id, $page);
+    }
+
+    public function getTitle(int $doc_id): string {
+        $doc_info = $this->getDm()->getDocById($doc_id);
+        return $doc_info['title'];
+    }
+
+    public function getSeq(int $doc_id, int $page): string {
+        $page_id = $this->getDm()->getpageIDByDocPage($doc_id, $page);
+        $page_info = $this->getDm()->getPageInfo($page_id);
+        return $page_info['seq'];
+    }
+
+    public function getTranscription(int $doc_id, int $page, int $col): string
+    {
+        $page_id = $this->getDm()->getpageIDByDocPage($doc_id, $page);
+        $elements = $this->getDm()->getColumnElementsBypageID($page_id, $col);
+        return $this->getPlainTextFromElements($elements);
+    }
+
+    public function getTranscriber(int $doc_id, int $page, int $col): string {
+        $page_id = $this->getDm()->getpageIDByDocPage($doc_id, $page);
+        $versions = $this->getDm()->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
+        if ($versions === []) {
+            return '';
+        }
+        else {
+            $latranscriptions_version = count($versions) - 1;
+            return $versions[$latranscriptions_version]['author_name'];
+        }
+    }
+
+    public function getLang(int $doc_id, int $page): string {
+        $seq = $this->getSeq($doc_id, $page);
+        return $this->getDm()->getPageInfoByDocSeq($doc_id, $seq)['lang'];
+    }
+
+    public function getFoliation(int $doc_id, int $page): string
+    {
+        $seq = $this->getSeq($doc_id, $page);
+        return $this->getDm()->getPageFoliationByDocSeq($doc_id,  $seq);
     }
 }

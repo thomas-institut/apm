@@ -2,15 +2,13 @@
 
 namespace APM\System;
 
-use function DI\string;
-
 class Lemmatizer
 {
-    // const CMD_PREFIX = "python3 " . __DIR__ . "/../../../../python/Lemmatizer_Indexing.py" ;
 
     static public function runLemmatizer($lang, $text_clean, $tempfile='undefined')
     {
 
+        // get language code for api call to udpipe2
         switch ($lang) {
             case 'la':
                 $lang = 'latin';
@@ -23,26 +21,21 @@ class Lemmatizer
                 break;
         }
 
+        // make temp file and api call
         $tempfile = 'lemmatization_temp_' . $tempfile . '.txt';
+
         exec("rm $tempfile 2>&1");
-
-        //print("creating file for lemmatization\n");
         exec("touch $tempfile");
-
         file_put_contents($tempfile, $text_clean);
 
-        //print("making api call\n");
         exec("curl -s -F data=@$tempfile -F model=$lang -F tokenizer= -F tagger= https://lindat.mff.cuni.cz/services/udpipe/api/process", $data);
-
         exec("rm $tempfile");
 
-        //print("extracting tokens and lemmata from api response\n");
+        // return tokens and lemmata
         return self::getTokensAndLemmata($data[6]);
     }
 
     static private function getTokensAndLemmata ($data) {
-
-        //print($data);
 
         // array of arrays to be returned
         $tokens_and_lemmata = ['tokens' => [], 'lemmata' => []];
@@ -50,9 +43,6 @@ class Lemmatizer
         // split plain text data from the udpipe api into encoded sentences
         $sentences = explode(' text ', $data);
         $sentences = array_values(array_slice($sentences, 1)); // removes metadata which are not a sentence
-
-        // print("ARRAY OF ENCODED SENTENCES\n");
-        // print_r($sentences);
 
         // extract tokens and lemmata from each sentence
         foreach ($sentences as $sentence) {
@@ -84,16 +74,6 @@ class Lemmatizer
                 }
             }
 
-            //foreach ($complexTokenPositions as $k => $pos) {
-
-
-            //$sentence[$pos[0]-1+$k] = '\tComTokSep\tComTokSep';
-            //array_splice($sentence, $pos[1]+($k+1), 0, '\tComTokSep\tComTokSep');
-            //}
-
-            //print("SENTENCE AS ARRAY OF ENCODED TOKENS\n");
-            //print_r($sentence);
-
             // normalize the tokens
             // drop integers at the beginning of every encoded tokens and drop the token duplicates which are not lemmatized
             // (it seems like the api lemmatizer returns articles of nouns and the nouns twice (each as a single token with lemmatization
@@ -113,10 +93,6 @@ class Lemmatizer
             // update the array indices
             $sentence = array_values($sentence);
 
-
-            //print("SENTENCE AS ARRAY OF ENCODED TOKENS WITHOUT INTEGERS AND UNLEMMATIZED DUPLICATES\n");
-            //print_r($sentence);
-
             // extract words and lemmata out of the normalized encoded tokens
             foreach ($sentence as $l => $encToken) {
                 $decToken = explode('\t', $encToken);
@@ -129,14 +105,9 @@ class Lemmatizer
                 }
 
                 $sentence[$l] = $decToken;
-
-                //print("DECODED TOKEN\n");
-                //print_r($decToken);
-                //$tokens_and_lemmata[0][] = $decToken[1];
-                //$tokens_and_lemmata[1][] = $decToken[2];
             }
 
-
+            // normalize complex tokens with blanks
             foreach ($complexTokenPositions as $positions) {
                 for ($n = $positions[0]; $n <= $positions[1]; $n++) {
                     if ($n === $positions[0]) {
@@ -149,8 +120,6 @@ class Lemmatizer
             }
 
             $sentence = array_values($sentence);
-
-            //print_r($sentence);
 
             foreach ($sentence as $tokenAsList) {
                 $tokens_and_lemmata['tokens'][] = $tokenAsList[1];
@@ -165,13 +134,6 @@ class Lemmatizer
             }
         }
 
-//        foreach ($tokens_and_lemmata[1] as $lemma) {
-//            if ($lemma === null or $lemma === '') {
-//                print("EMPTY LEMMA IN LIST OF LEMMATA!\n");
-//            }
-//        }
-
-        //print_r($tokens_and_lemmata['lemmata']);
         return $tokens_and_lemmata;
     }
 

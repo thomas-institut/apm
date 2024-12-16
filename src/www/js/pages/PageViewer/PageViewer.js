@@ -215,7 +215,7 @@ export class PageViewer extends ApmPage {
             $('#theTabs').append(theDiv)
             const te = new TranscriptionEditor('col' + theCol, theCol,
                 {
-                editorTid: this.userTid ,
+                editorTid: this.userId ,
                 activeWorks: this.options.activeWorks,
                 langDef: this.langDef,
                 defaultLang: this.options.defaultLang,

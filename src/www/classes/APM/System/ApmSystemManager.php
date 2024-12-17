@@ -114,10 +114,10 @@ class ApmSystemManager extends SystemManager {
     const DB_VERSION = 36;
 
     // Entity system Data ID: key for entity system caches
-    const ES_DATA_ID = 'es002';
+    const ES_DATA_ID = 'es007';
 
     const MemCachePrefix_Apm_ES = 'apm_es';
-    const MemCachePrefix_TypedMultiStorage_ES = 'apm_msEs';
+    const MemCachePrefix_TypedMultiStorage_ES = 'apm_msEs_';
 
     const DefaultSystemCacheTtl = 30 * 24 * 3600;  // 30 days
 
@@ -169,7 +169,7 @@ class ApmSystemManager extends SystemManager {
     private ?ApmUserManager $userManager;
     private ?PersonManagerInterface $personManager;
     private ?ApmJobQueueManager $jobManager;
-    private ?ApmEditionSourceManager $editionSourceManager;
+    private ?EntitySystemEditionSourceManager $editionSourceManager;
     private ?WorkManager $workManager;
     private ?ApmSessionManager $sessionManager;
     private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem;
@@ -687,9 +687,10 @@ class ApmSystemManager extends SystemManager {
     public function getEditionSourceManager(): EditionSourceManager
     {
         if (is_null($this->editionSourceManager)) {
-            $table = new MySqlDataTable($this->getDbConnection(),
-                $this->tableNames[ApmMySqlTableName::TABLE_EDITION_SOURCES], true);
-            $this->editionSourceManager = new ApmEditionSourceManager($table);
+
+            $this->editionSourceManager = new EntitySystemEditionSourceManager(function () {
+                return $this->getEntitySystem();
+            });
         }
         return $this->editionSourceManager;
     }
@@ -962,7 +963,7 @@ class ApmSystemManager extends SystemManager {
                     Entity::pEntityType, [$defaultConfig],
                     self::ES_DATA_ID,
                     $this->getMemDataCache(),
-                    self::MemCachePrefix_TypedMultiStorage_ES
+                    self::MemCachePrefix_TypedMultiStorage_ES . self::ES_DATA_ID
                 );
                 $this->typedMultiStorageEntitySystem->setLogger($this->logger);
             } catch (InvalidArgumentException) {

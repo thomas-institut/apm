@@ -8,8 +8,10 @@ use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\UUID\Uuid;
 
-class ApmEditionSourceManager extends EditionSourceManager
-implements LoggerAwareInterface
+/**
+ * @deprecated Use EntitySystemEditionSourceManager
+ */
+class DataTableEditionSourceManager implements EditionSourceManager, LoggerAwareInterface
 {
     use LoggerAwareTrait;
 

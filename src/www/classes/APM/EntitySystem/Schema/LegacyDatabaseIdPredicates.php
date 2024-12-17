@@ -7,7 +7,7 @@ use APM\EntitySystem\Kernel\PredicateDefiner;
 use APM\EntitySystem\Kernel\PredicateFlag;
 
 
-const DarePredicateDef = [
+const LegacyDatabaseIdPredicatesDefinitions = [
     [
         'id' => Entity::pDarePersonId,
         'type' => Entity::tAttribute,
@@ -19,10 +19,21 @@ const DarePredicateDef = [
         'singleProperty' => false,
         'flags' => [ PredicateFlag::SystemPredicate]
     ],
+    [
+        'id' => Entity::pLegacyApmDatabaseId,
+        'type' => Entity::tAttribute,
+        'name' => 'Legacy APM Database Id',
+        'descr' => "Original row id in one of APM's legacy database tables",
+        'allowedSubjectTypes' => [ Entity::tDocument, Entity::tGenericEditionSource], // more will be added as legacy entity types are moved to the entity system
+        'allowedObjectTypes'=> [ Entity::ValueTypeInteger],
+        'canBeCancelled' => true,
+        'singleProperty' => true,
+        'flags' => [ PredicateFlag::SystemPredicate]
+    ],
 
 ];
 
-class DarePredicates implements PredicateDefiner
+class LegacyDatabaseIdPredicates implements PredicateDefiner
 {
 
     /**
@@ -38,7 +49,7 @@ class DarePredicates implements PredicateDefiner
      */
     public function getPredicateDefinitions(): array
     {
-       return DefsFromArray::getPredicateDefinitionsFromArray(DarePredicateDef);
+       return DefsFromArray::getPredicateDefinitionsFromArray(LegacyDatabaseIdPredicatesDefinitions);
     }
 
     /**

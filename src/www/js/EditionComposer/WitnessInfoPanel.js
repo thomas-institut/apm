@@ -39,7 +39,7 @@ import { CtData } from '../CtData/CtData'
 import { flatten } from '../toolbox/ArrayUtil.mjs'
 import { trimWhiteSpace } from '../toolbox/Util.mjs'
 import { SiglaGroupsUI } from './SiglaGroupsUI'
-import { ConfirmDialog, LARGE_DIALOG, MEDIUM_DIALOG } from '../pages/common/ConfirmDialog'
+import { ConfirmDialog, EXTRA_LARGE_DIALOG, LARGE_DIALOG, MEDIUM_DIALOG } from '../pages/common/ConfirmDialog'
 import { ApmFormats } from '../pages/common/ApmFormats'
 
 const icons = {
@@ -268,7 +268,7 @@ export class WitnessInfoPanel extends Panel{
 `
       let dialog = new ConfirmDialog({
         title: 'Add Sources',
-        size: LARGE_DIALOG,
+        size: EXTRA_LARGE_DIALOG,
         acceptButtonLabel:  'Add Checked Sources',
         body: dialogBody,
         hideOnAccept: false,

@@ -585,7 +585,12 @@ function removeBlanks (text) {
   text = text.replaceAll("( ", "(")
   text = text.replaceAll(" )", ")")
 
-  return text
+  if (text.substring(0, 1) === "." || text.substring(0, 1) === ",") {
+    text = text.replace(".", "")
+    text = text.replace(",", "")
+  }
+
+  return text.trimStart()
 }
 
 function fillResultsTable(passage, title, identifier, transcriber, link, lang, zoom, prev_title=' ', k) {

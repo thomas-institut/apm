@@ -21,19 +21,18 @@
 namespace APM\CommandLine;
 
 use APM\CollationTable\CollationTableManager;
-use APM\FullTranscription\ApmColumnVersionManager;
 use APM\System\ApmConfigParameter;
 use APM\System\Lemmatizer;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
 use Exception;
 use OpenSearch\ClientBuilder;
-use function DI\string;
 
 /**
  * Description of IndexManager
  *
- * Commandline utility to manage Open Search indices.
+ * Commandline utility to manage the open search indices for transcriptions and editions. 
+ * Use option '-h' in the command line for getting information about how to use the manager.
  *
  * @author Lukas Reichert
  */
@@ -49,18 +48,17 @@ class IndexManager extends CommandLineUtility {
             ->setSSLVerification(false) // For testing only. Use certificate for validation
             ->build();
 
-        // help
+        // print help
         if ($argv[1] === '-h') {
-                print("Usage: indexmanager [transcriptions/editions] [operation] [pageID/tableID] [column/chunk]\n
-Available operations are:\nbuild - builds the index, deletes already existing one\nadd [arg1] [arg2] - adds a single item to an index\nremove [arg1] [arg2] - removes a single item from an index\nupdate [arg1] [arg2] - updates an already indexed item\nshow [arg1] [arg2] - shows an indexed item\nshowdb [arg1] [arg2] - shows an item from the database\ncheck ([arg1] [arg2]) - checks the completeness of an index in total or the correctness of a single item in it\nfix - fixes an index by indexing not indexed items and updating outdated items\n");
-                return true;
+            $this->printHelp();
+            return true;
         }
 
-        // get desired operation and indexNamePrefix
-        $operation = $argv[2];
+        // get target index and operation
         $this->indexNamePrefix = $argv[1];
+        $operation = $argv[2];
 
-        // Name of the indices in OpenSearch
+        // get names of the indices in OpenSearch
         $this->indices = [$this->indexNamePrefix . '_la', $this->indexNamePrefix . '_ar', $this->indexNamePrefix . '_he'];
 
         switch ($operation) {
@@ -68,62 +66,32 @@ Available operations are:\nbuild - builds the index, deletes already existing on
                 $this->buildIndex();
                 break;
             case 'show':
-                $identifier1 = $argv[3];
-                $identifier2 = $argv[4];
                 print("Querying…\n");
-                $data = $this->getIndexedItem($identifier1, $identifier2);
-                print_r($data);
+                $item = $this->getIndexedItem($argv[3], $argv[4], 'show');
+                print_r($item);
                 break;
             case 'showdb':
-                $identifier1 = $argv[3];
-                $identifier2 = $argv[4];
                 print("Querying…");
-                $data = $this->getItemFromDatabase($identifier1, $identifier2);
-                if ($data !== null) {
+                $item = $this->getItemFromDatabase($argv[3], $argv[4]);
+                if ($item !== null) {
                     print("\n");
-                    print_r($data);
+                    print_r($item);
                 }
                 break;
-            case 'check': // check if a specific index mirrors all data from the sql database
-                $identifier1 = $argv[3];
-                $identifier2 = $argv[4];
-                $this->checkIndex($identifier1, $identifier2);
+            case 'check': // check if the chosen index mirrors all data from the sql database or if a specific item is indexed
+                $this->checkIndex($argv[3], $argv[4]);
                 break;
             case 'fix':
                 $this->checkAndfixIndex();
                 break;
             case 'add': // adds a new single doc to an index
-                $identifier1 = $argv[3];
-                $identifier2 = $argv[4];
-                if (!$this->isAlreadyIndexed($identifier1, $identifier2)) {
-                    $this->addItem($identifier1, $identifier2);
-                } else {
-                    print ("Item is already indexed in the corresponding index. Do you want to update it? (y/n)\n");
-                    $input = rtrim(fgets(STDIN));
-
-                    if ($input === 'y') {
-                        $this->updateItem($identifier1, $identifier2);
-                    }
-                }
+                $this->addItem($argv[3], $argv[4]);
                 break;
             case 'update': // updates an existing doc in an index
-                $identifier1 = $argv[3];
-                $identifier2 = $argv[4];
-                if ($this->isAlreadyIndexed($identifier1, $identifier2)) {
-                    $this->updateItem($identifier1, $identifier2);
-                } else {
-                    print ("Item is not yet indexed and therefore cannot be updated.\nDo you want to index it? (y/n)\n");
-                    $input = rtrim(fgets(STDIN));
-
-                    if ($input === 'y') {
-                        $this->addItem($identifier1, $identifier2);
-                    }
-                }
-                    break;
+                $this->updateItem($argv[3], $argv[4]);
+                break;
             case 'remove': // removes a doc from an index
-                $identifier1 = $argv[3];
-                $identifier2 = $argv[4];
-                $this->removeItem($identifier1, $identifier2);
+                $this->removeItem($argv[3], $argv[4]);
                 break;
             default:
                 print("Command not found. You will find some help via 'indexmanager -h'\n.");
@@ -132,11 +100,16 @@ Available operations are:\nbuild - builds the index, deletes already existing on
         return true;
     }
 
+    private function printHelp() {
+        print("Usage: indexmanager [transcriptions/editions] [operation] [pageID/tableID] [column]\nAvailable operations are:\nbuild - builds the index, deletes already existing one\nadd [arg1] ([arg2]) - adds a single item to an index\nremove [arg1] ([arg2]) - removes a single item from an index\nupdate [arg1] ([arg2]) - updates an already indexed item\nshow [arg1] ([arg2]) - shows an indexed item\nshowdb [arg1] ([arg2]) - shows an item from the database\ncheck ([arg1] ([arg2])) - checks the completeness of an index in total or the correctness of a single item in it\nfix - fixes an index by indexing not indexed items and updating outdated items\n");
+        return true;
+    }
+
     private function buildIndex () {
 
         print ("Building index...\n");
 
-        // Delete existing and create new index
+        // delete existing and create new index
         foreach ($this->indices as $indexName) {
             $this->resetIndex($this->client, $indexName);
         }
@@ -152,10 +125,10 @@ Available operations are:\nbuild - builds the index, deletes already existing on
     }
 
     private function buildIndexTranscriptions() {
-        // Get a list of all docIDs in the sql-database
+        // get a list of all docIDs in the sql-database
         $doc_list = $this->getDm()->getDocIdList('title');
 
-        // Get all relevant data for every transcription and index it
+        // get all relevant data for every transcription and index it
         foreach ($doc_list as $doc_id) {
             $this->getAndIndexTranscriptionData($doc_id);
         }
@@ -164,10 +137,10 @@ Available operations are:\nbuild - builds the index, deletes already existing on
     }
 
     private function buildIndexEditions() {
-        // Get collationTableManager
+        // gget collationTableManager
         $this->collationTableManager = $this->getSystemManager()->getCollationTableManager();
 
-        // Get the data of up to 20 000 editions
+        // get the data of up to 20 000 editions
         $editions = [];
         foreach (range(1, 20000) as $id) {
             try {
@@ -179,12 +152,12 @@ Available operations are:\nbuild - builds the index, deletes already existing on
             }
         }
 
-        // Clean data
+        // clean data
         $editions = $this->cleanEditionData($editions);
         $num_editions = count($editions);
         $this->logger->debug("Found $num_editions actual editions.");
 
-        // Index editions
+        // index editions
         foreach ($editions as $edition) {
             $this->indexEdition ($this->client, null, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
             $log_data = 'Title: ' . $edition['title'] . ', Editor: ' . $edition['editor'] . ', Table ID: ' . $edition['table_id'] . ', Chunk: ' . $edition['chunk_id'] . ", TimeFrom: " . $edition['timeFrom'];
@@ -194,42 +167,41 @@ Available operations are:\nbuild - builds the index, deletes already existing on
         return true;
     }
 
-    private function checkIndex ($identifier1, $identifier2, $fix=false) {
+    private function checkIndex ($arg1, $arg2, $fix=false) {
 
         print ("Checking...");
 
         switch ($this->indexNamePrefix) {
             case 'transcriptions':
-                if ($identifier1 === null) {
+                if ($arg1 === null) {
                     $this->checkIndexTranscriptions($fix);
                 } else {
-                    $this->checkSingleTranscription($identifier1, $identifier2);
+                    $this->checkSingleTranscription($arg1, $arg2);
                 }
                 break;
             case 'editions':
-                if ($identifier1 === null) {
+                if ($arg1 === null) {
                     $this->checkIndexEditions($fix);
                 } else {
-                    $this->checkSingleEdition($identifier1, $identifier2);
+                    $this->checkSingleEdition($arg1);
                 }
                 break;
         }
         return true;
     }
-
     
     private function checkIndexTranscriptions ($fix) {
 
         // get versionManager
         $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
 
-        // Get a list of triples with data about all transcribed columns, their pageIDs and their timestamps from the database
+        // get a list of triples with data about all transcribed columns, their pageIDs and their timestamps from the database
         $columnsInDatabase = [];
 
         $docs = $this->getDm()->getDocIdList('title');
 
         foreach ($docs as $doc) {
-            // Get a list of transcribed pages of the document
+            // get a list of transcribed pages of the document
             $pages_transcribed = $this->getDm()->getTranscribedPageListByDocId($doc);
 
             foreach ($pages_transcribed as $page) {
@@ -246,7 +218,7 @@ Available operations are:\nbuild - builds the index, deletes already existing on
                         continue;
                     }
 
-                    // Get timestamp
+                    // get timestamp
                     $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($page_id, $col);
                     $currentVersionInfo = (array)(end($versionsInfo));
                     $timeFrom = (string)$currentVersionInfo['timeFrom'];
@@ -257,9 +229,7 @@ Available operations are:\nbuild - builds the index, deletes already existing on
             }
         }
 
-        $numColumnsInDatabase = count($columnsInDatabase);
-
-        // Get all relevant data from the opensearch index
+        // get all relevant data from the opensearch index
         $indexedColumns = [];
 
         foreach ($this->indices as $indexName) {
@@ -284,80 +254,19 @@ Available operations are:\nbuild - builds the index, deletes already existing on
         }
 
         // check if every column from the database is indexed in the most up-to-date version
-        $notIndexedColumns = [];
-        $notUpdatedColumns = [];
-        $numNotIndexedColumns = 0;
-        $numNotUpdatedColumns = 0;
-        $numNotInDatabaseColumns = 0;
-        $notInDatabaseColumns = [];
-        $notUpdated = false;
+        $checkResults = $this->compareDataFromDatabaseAndIndex($columnsInDatabase, $indexedColumns);
 
-        foreach ($columnsInDatabase as $columnInDatabase) {
-
-            if (!in_array($columnInDatabase, $indexedColumns)) {
-                $numNotIndexedColumns++;
-
-                foreach ($indexedColumns as $indexedColumn) {
-                    if (array_slice($columnInDatabase, 0, 2) === array_slice($indexedColumn, 0, 2)) {
-                        //print("Column $columnInDatabase[1] from page with id $columnInDatabase[0] is NOT UPDATED ($columnInDatabase[2] != $indexedColumn[2]).\n");
-                        $numNotIndexedColumns--;
-                        $numNotUpdatedColumns++;
-                        $notUpdated = true;
-                        $notUpdatedColumns[] = [$columnInDatabase[0], $columnInDatabase[1]];
-                    }
-                }
-
-                if (!$notUpdated) {
-                    //print("Column $columnInDatabase[1] from page with id $columnInDatabase[0] is NOT INDEXED.\n");
-                    $notIndexedColumns[] = [$columnInDatabase[0], $columnInDatabase[1]];
-                }
-            }
-        }
-
-        foreach ($indexedColumns as $indexedColumn) {
-            if (!in_array($indexedColumn, $columnsInDatabase)  and !in_array(array_slice($indexedColumn, 0, 2), $notUpdatedColumns)) {
-                $numNotInDatabaseColumns++;
-                $notInDatabaseColumns[] = $indexedColumn[0];
-            }
-        }
-
-        if ($numNotIndexedColumns === 0 && $numNotUpdatedColumns === 0) {
-            print ("\nINDEX IS COMPLETE!.\n");
-        } else {
-            print ("\nINDEX IS NOT COMPLETE!\n
-            $numNotIndexedColumns of $numColumnsInDatabase columns not indexed.\n
-            $numNotUpdatedColumns of $numColumnsInDatabase columns not up to date.\n");
-        }
-
-        if ($numNotInDatabaseColumns !== 0) {
-            print("\nINFO: The index contains $numNotInDatabaseColumns columns which could not be found in the database. Their page ids are:\n");
-            print(implode(", ", $notInDatabaseColumns) . "\n");
-        }
-
-        $checkResults = ['notIndexed' => $notIndexedColumns, 'outdated' => $notUpdatedColumns];
-
-        if (!$fix and ($numNotIndexedColumns !== 0 or $numNotUpdatedColumns !== 0)) {
-            print ("Do you want to fix the index? (y/n)\n");
-            $input = rtrim(fgets(STDIN));
-
-            if ($input === 'y') {
-                $this->fixIndex($checkResults);
-            }
-        } else if ($fix and $numNotIndexedColumns === 0 and $numNotUpdatedColumns === 0) {
-            print ("Index cannot and needs not to be fixed.\n");
-        } else if ($fix) {
-            $this->fixIndex($checkResults);
-        }
+        $this->evaluateCheckResults($checkResults, $fix);
 
         return true;
     }
 
     private function checkIndexEditions ($fix) {
 
-        // Get collationTableManager
+        // get collationTableManager
         $this->collationTableManager = $this->getSystemManager()->getCollationTableManager();
 
-        // Get the data of up to 20 000 editions
+        // get the data of up to 20 000 editions
         $editionsinDatabase = [];
         foreach (range(1, 20000) as $id) {
             try {
@@ -368,16 +277,15 @@ Available operations are:\nbuild - builds the index, deletes already existing on
             }
         }
 
-        // Clean data
+        // clean data
         $editionsInDatabase = $this->cleanEditionData($editionsinDatabase);
-        $numEditionsInDatabase = count($editionsInDatabase);
 
         foreach ($editionsInDatabase as $i => $edition) {
             $edition = [$edition['table_id'], $edition['chunk_id'], $edition['timeFrom']];
             $editionsInDatabase[$i] = $edition;
         }
 
-        // Get all relevant data from the opensearch index
+        // get all relevant data from the opensearch index
         $indexedEditions = [];
 
         foreach ($this->indices as $indexName) {
@@ -402,75 +310,14 @@ Available operations are:\nbuild - builds the index, deletes already existing on
         }
 
 
-        // check if every column from the database is indexed in the most up-to-date version
-        $notIndexedEditions = [];
-        $notUpdatedEditions = [];
-        $numNotIndexedEditions = 0;
-        $numNotUpdatedEditions = 0;
-        $numNotInDatabaseEditions = 0;
-        $notInDatabaseEditions = [];
-        $notUpdated = false;
+        // check if every edition from the database is indexed in the most up-to-date version
+        $checkResults = $this->compareDataFromDatabaseAndIndex($editionsInDatabase, $indexedEditions);
 
-        foreach ($editionsInDatabase as $editionInDatabase) {
-
-            if (!in_array($editionInDatabase, $indexedEditions)) {
-                $numNotIndexedEditions++;
-
-                foreach ($indexedEditions as $indexedEdition) {
-                    if (array_slice($editionInDatabase, 0, 2) === array_slice($indexedEdition, 0, 2)) {
-                        // edition is indexed but outdated
-                        $numNotIndexedEditions--;
-                        $numNotUpdatedEditions++;
-                        $notUpdated = true;
-                        $notUpdatedEditions[] = [$editionInDatabase[0], $editionInDatabase[1]];
-                    }
-                }
-
-                if (!$notUpdated) { // edition is not indexed
-                    $notIndexedEditions[] = [$editionInDatabase[0], $editionInDatabase[1]];
-                }
-            }
-        }
-
-        foreach ($indexedEditions as $indexedEdition) {
-            if (!in_array($indexedEdition, $editionsInDatabase) and !in_array(array_slice($indexedEdition, 0, 2), $notUpdatedEditions)) {
-                print_r(array_values($notUpdatedEditions));
-                print_r(array_slice($indexedEdition, 0, 2));
-                $numNotInDatabaseEditions++;
-                $notInDatabaseEditions[] = $indexedEdition[0];
-            }
-        }
-
-        if ($numNotIndexedEditions === 0 && $numNotUpdatedEditions === 0) {
-            print ("\nINDEX IS COMPLETE!.\n");
-        } else {
-            print ("\nINDEX IS NOT COMPLETE!\n
-            $numNotIndexedEditions of $numEditionsInDatabase editions not indexed.\n
-            $numNotUpdatedEditions of $numEditionsInDatabase editions not up to date.\n");
-        }
-
-        if ($numNotInDatabaseEditions !== 0) {
-            print("\nINFO: The index contains $numNotInDatabaseEditions editions which could not be found in the database. Their table ids are:\n");
-            print(implode(", ", $notInDatabaseEditions) . "\n");
-        }
-
-        $checkResults = ['notIndexed' => $notIndexedEditions, 'outdated' => $notUpdatedEditions];
-
-        if (!$fix and ($numNotIndexedEditions !== 0 or $numNotUpdatedEditions !== 0)) {
-            print ("Do you want to fix the index? (y/n)\n");
-            $input = rtrim(fgets(STDIN));
-
-            if ($input === 'y') {
-                $this->fixIndex($checkResults);
-            }
-        } else if ($fix and $numNotIndexedEditions === 0 and $numNotUpdatedEditions === 0) {
-            print ("Index cannot and needs not to be fixed.\n");
-        } else if ($fix) {
-            $this->fixIndex($checkResults);
-        }
+        $this->evaluateCheckResults($checkResults, $fix);
 
         return true;
     }
+
 
     private function checkSingleTranscription ($pageID, $col) {
 
@@ -505,15 +352,15 @@ Available operations are:\nbuild - builds the index, deletes already existing on
         return true;
     }
 
-    private function checkSingleEdition ($tableID, $chunk) {
+    private function checkSingleEdition ($tableID) {
 
-        $editionInDatabase = $this->getEditionFromDatabase($tableID, $chunk);
+        $editionInDatabase = $this->getEditionFromDatabase($tableID);
 
         if ($editionInDatabase === null) {
             return true;
         }
 
-        $editionInIndex = $this->getIndexedItem($tableID, $chunk);
+        $editionInIndex = $this->getIndexedItem($tableID);
 
         if ($editionInIndex === null) {
             print("\nEdition is NOT INDEXED!\n");
@@ -521,7 +368,7 @@ Available operations are:\nbuild - builds the index, deletes already existing on
             $input = rtrim(fgets(STDIN));
 
             if ($input === 'y') {
-                $this->addItem($tableID, $chunk);
+                $this->addItem($tableID);
             }
         } else if ($editionInIndex[0]['_source']['timeFrom'] === $editionInDatabase['timeFrom']) {
             print("\nIndexed edition is up to date!\n");
@@ -531,13 +378,87 @@ Available operations are:\nbuild - builds the index, deletes already existing on
             $input = rtrim(fgets(STDIN));
 
             if ($input === 'y') {
-                $this->updateItem($tableID, $chunk);
+                $this->updateItem($tableID);
             }
         }
 
         return true;
     }
 
+    private function compareDataFromDatabaseAndIndex($dbData, $indexData) {
+
+        $notIndexedItems = [];
+        $notUpdatedItems = [];
+        $notInDatabaseItems = [];
+        $numNotIndexedItems = 0;
+        $numNotUpdatedItems = 0;
+        $numNotInDatabaseItems = 0;
+        $notUpdated = false;
+        $numItemsInDatabase = count($dbData);
+
+
+        foreach ($dbData as $dbItem) {
+
+            if (!in_array($dbItem, $indexData)) {
+                $numNotIndexedItems++;
+
+                foreach ($indexData as $indexedItem) {
+                    if (array_slice($dbItem, 0, 2) === array_slice($indexedItem, 0, 2)) {
+                        $numNotIndexedItems--;
+                        $numNotUpdatedItems++;
+                        $notUpdated = true;
+                        $notUpdatedItems[] = [$dbItem[0], $dbItem[1]];
+                    }
+                }
+
+                if (!$notUpdated) {
+                    $notIndexedItems[] = [$dbItem[0], $dbItem[1]];
+                }
+            }
+        }
+
+        foreach ($indexData as $indexedItem) {
+            if (!in_array($indexedItem, $dbData)  and !in_array(array_slice($indexedItem, 0, 2), $notUpdatedItems)) {
+                $numNotInDatabaseItems++;
+                $notInDatabaseItems[] = $indexedItem[0];
+            }
+        }
+
+        if ($numNotIndexedItems === 0 && $numNotUpdatedItems === 0) {
+            print ("\nINDEX IS COMPLETE!.\n");
+        } else {
+            print ("\nINDEX IS NOT COMPLETE!\n
+            $numNotIndexedItems of $numItemsInDatabase items not indexed.\n
+            $numNotUpdatedItems of $numItemsInDatabase items not up to date.\n");
+        }
+
+        if ($numNotInDatabaseItems !== 0) {
+            print("\nINFO: The index contains $numNotInDatabaseItems items which could not be found in the database. Their ids are:\n");
+            print(implode(", ", $notInDatabaseItems) . "\n");
+        }
+
+        $checkResults = ['notIndexed' => $notIndexedItems, 'outdated' => $notUpdatedItems, 'numNotIndexedItems' => $numNotIndexedItems, 'numNotUpdatedItems' => $numNotUpdatedItems];
+
+        return $checkResults;
+    }
+
+    private function evaluateCheckResults ($checkResults, $fix) {
+        // fix index if possible and desired
+        if (!$fix and ($checkResults['numNotIndexedItems'] !== 0 or $checkResults['numNotUpdatedItems'] !== 0)) {
+            print ("Do you want to fix the index? (y/n)\n");
+            $input = rtrim(fgets(STDIN));
+
+            if ($input === 'y') {
+                $this->fixIndex($checkResults);
+            }
+        } else if ($fix and $checkResults['numNotIndexedItems'] === 0 and $checkResults['numNotUpdatedItems'] === 0) {
+            print ("Index cannot and needs not to be fixed.\n");
+        } else if ($fix) {
+            $this->fixIndex($checkResults);
+        }
+
+        return true;
+    }
 
     private function fixIndex ($data) {
 
@@ -557,7 +478,18 @@ Available operations are:\nbuild - builds the index, deletes already existing on
         $this->checkIndex(null, null, true);
     }
 
-    private function addItem ($identifier1, $identifier2, $id=null, $context=null) {
+    private function addItem ($arg1, $arg2=null, $id=null, $context=null) {
+
+        if ($this->isAlreadyIndexed($arg1, $arg2) and $context !== 'update') {
+            print ("Item is already indexed in the corresponding index. Do you want to update it? (y/n)\n");
+            $input = rtrim(fgets(STDIN));
+
+            if ($input === 'y') {
+                $this->updateItem($arg1, $arg2);
+            }
+
+            return true;
+        }
 
         if ($context === null) {
             print ("Indexing...\n");
@@ -565,10 +497,10 @@ Available operations are:\nbuild - builds the index, deletes already existing on
 
         switch ($this->indexNamePrefix) {
             case 'transcriptions':
-                $this->addItemToTranscriptionsIndex($identifier1, $identifier2, $id);
+                $this->addItemToTranscriptionsIndex($arg1, $arg2, $id);
                 break;
             case 'editions':
-                $this->addItemToEditionsIndex($identifier1, $identifier2, $id);
+                $this->addItemToEditionsIndex($arg1, $id);
                 break;
         }
 
@@ -609,11 +541,12 @@ Available operations are:\nbuild - builds the index, deletes already existing on
         return true;
     }
 
-    private function addItemToEditionsIndex ($tableID, $chunkID, $id=null, $context=null) {
-        // Get collationTableManager
+    private function addItemToEditionsIndex ($tableID, $id=null) {
+
+        // get collationTableManager
         $this->collationTableManager = $this->getSystemManager()->getCollationTableManager();
 
-        // Get the data of up to 20 000 editions
+        // get the data of up to 20 000 editions
         $editions = [];
         foreach (range(1, 20000) as $i) {
             try {
@@ -630,7 +563,7 @@ Available operations are:\nbuild - builds the index, deletes already existing on
         $editionExists = false;
         foreach ($editions as $edition) {
 
-            if ($edition['table_id'] === (int) $tableID and $edition['chunk_id'] === $chunkID) {
+            if ($edition['table_id'] === (int) $tableID) {
                 $this->indexEdition($this->client, $id, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
                 $log_data = 'Title: ' . $edition['title'] . ', Editor: ' . $edition['editor'] . ', Table ID: ' . $edition['table_id'] . ', Chunk: ' . $edition['chunk_id'] . ", TimeFrom: " . $edition['timeFrom'];
                 $this->logger->debug("Indexed Edition – $log_data\n");
@@ -639,28 +572,40 @@ Available operations are:\nbuild - builds the index, deletes already existing on
         }
 
         if (!$editionExists) {
-            print ("No edition in database with table id $tableID and chunk id $chunkID.\n");
+            print ("No edition in database with table id $tableID.\n");
         }
 
         return true;
     }
 
-    private function updateItem ($identifier1, $identifier2) {
+    private function updateItem ($arg1, $arg2=null) {
+
+        if (!$this->isAlreadyIndexed($arg1, $arg2)) {
+            print ("Item is not yet indexed and therefore cannot be updated.\nDo you want to index it? (y/n)\n");
+            $input = rtrim(fgets(STDIN));
+
+            if ($input === 'y') {
+                $this->addItem($arg1, $arg2);
+            }
+            return true;
+        }
 
         print ("Updating...\n");
 
-        $id = $this->getOpenSearchIDAndIndexName($identifier1, $identifier2)['id'];
-        $this->removeItem($identifier1, $identifier2, 'update');
-        $this->addItem($identifier1, $identifier2, $id, 'update');
+        $id = $this->getOpenSearchIDAndIndexName($arg1, $arg2)['id'];
+        $this->removeItem($arg1, $arg2, 'update');
+        $this->addItem($arg1, $arg2, $id, 'update');
+
+        return true;
     }
 
-    private function removeItem ($identifier1, $identifier2, $context='remove') {
+    private function removeItem ($arg1, $arg2=null, $context='remove') {
 
         if ($context !== 'update') {
             print ("Removing...\n");
         }
 
-        $data = $this->getOpenSearchIDAndIndexName($identifier1, $identifier2);
+        $data = $this->getOpenSearchIDAndIndexName($arg1, $arg2);
         $index = $data['index'];
         $id = $data['id'];
 
@@ -673,20 +618,20 @@ Available operations are:\nbuild - builds the index, deletes already existing on
             if ($context !== 'update') {
                 switch ($this->indexNamePrefix) {
                     case 'transcriptions':
-                        print ("Column $identifier2 from page with ID $identifier1 has been removed from index *$index*.\n");
+                        print ("Column $arg2 from page with ID $arg1 has been removed from index *$index*.\n");
                         break;
                     case 'editions':
-                        print ("Chunk $identifier2 from table with ID $identifier1 has been removed from index *$index*.\n");
+                        print ("Table with ID $arg1 has been removed from index *$index*.\n");
                         break;
                 }
             }
         } else {
             switch ($this->indexNamePrefix) {
                 case 'transcriptions':
-                    print ("Column $identifier2 from page with ID $identifier1 does not exist and therefore cannot be removed.\n");
+                    print ("Column $arg2 from page with ID $arg1 does not exist and therefore cannot be removed.\n");
                     break;
                 case 'editions':
-                    print ("Chunk $identifier2 from table with ID $identifier1 does not exist and therefore cannot be removed.\n");
+                    print ("Table with ID $arg1 does not exist and therefore cannot be removed.\n");
                     break;
             }
         }
@@ -694,14 +639,16 @@ Available operations are:\nbuild - builds the index, deletes already existing on
     }
 
 
-    private function getItemFromDatabase ($identifier1, $identifier2) {
+    private function getItemFromDatabase ($arg1, $arg2) {
 
         switch ($this->indexNamePrefix) {
             case 'transcriptions':
-                return $this->getTranscriptionFromDatabase($identifier1, $identifier2);
+                return $this->getTranscriptionFromDatabase($arg1, $arg2);
             case 'editions':
-                return $this->getEditionFromDatabase($identifier1, $identifier2);
+                return $this->getEditionFromDatabase($arg1);
         }
+
+        return true;
     }
 
     private function getTranscriptionFromDatabase ($pageID, $col) {
@@ -745,12 +692,12 @@ Available operations are:\nbuild - builds the index, deletes already existing on
         return $data;
     }
 
-    private function getEditionFromDatabase ($tableID, $chunk)  {
+    private function getEditionFromDatabase ($tableID)  {
 
-        // Get collationTableManager
+        // get collationTableManager
         $this->collationTableManager = $this->getSystemManager()->getCollationTableManager();
 
-        // Get the data of up to 20 000 editions
+        // get the data of up to 20 000 editions
         $editions = [];
         foreach (range(1, 20000) as $i) {
             try {
@@ -760,15 +707,15 @@ Available operations are:\nbuild - builds the index, deletes already existing on
             }
         }
 
-        // Clean data
+        // clean data
         $editions = $this->cleanEditionData($editions);
 
-        // Index editions
+        // index editions
         $editionExists = false;
 
         foreach ($editions as $edition) {
 
-            if ($edition['table_id'] === (int) $tableID and $edition['chunk_id'] === $chunk) {
+            if ($edition['table_id'] === (int) $tableID) {
                 $data = ['title' => $edition['title'],
                     'editor' => $edition['editor'],
                     'table_id' => $edition['table_id'],
@@ -781,23 +728,22 @@ Available operations are:\nbuild - builds the index, deletes already existing on
         }
 
         if (!$editionExists) {
-            print ("\nNo edition in database with table id $tableID and chunk id $chunk.\n");
+            print ("\nNo edition in database with table id $tableID.\n");
             return null;
         }
 
         return $data;
     }
     
-    private function getIndexedItem ($identifier1, $identifier2) {
+    private function getIndexedItem ($arg1, $arg2=null, $context=null) {
 
         $mustConditions = [];
 
         if ($this->indexNamePrefix === 'transcriptions') {
-            $mustConditions[] = [ 'match' => ['pageID' => $identifier1]];
-            $mustConditions[] = [ 'match' => ['column' => $identifier2]];
+            $mustConditions[] = [ 'match' => ['pageID' => $arg1]];
+            $mustConditions[] = [ 'match' => ['column' => $arg2]];
         } else if ($this->indexNamePrefix === 'editions') {
-            $mustConditions[] = [ 'match' => ['table_id' => $identifier1]];
-            $mustConditions[] = [ 'match' => ['chunk' => $identifier2]];
+            $mustConditions[] = [ 'match' => ['table_id' => $arg1]];
         }
 
         foreach ($this->indices as $indexName) {
@@ -819,38 +765,37 @@ Available operations are:\nbuild - builds the index, deletes already existing on
             }
         }
 
-        print("Item not indexed!\nDo you want to index it? (y/n)\n");
+        if ($context === 'show') {
+            print("Item not indexed!\nDo you want to index it? (y/n)\n");
 
-        $input = rtrim(fgets(STDIN));
+            $input = rtrim(fgets(STDIN));
 
-        if ($input === 'y') {
-            $this->addItem($identifier1, $identifier2);
-            return null;
-        } else {
-            return null;
+            if ($input === 'y') {
+                $this->addItem($arg1, $arg2);
+            }
         }
+
+        return true;
     }
 
-    private function isAlreadyIndexed ($pageID, $col) {
+    private function isAlreadyIndexed ($arg1, $arg2=null) {
 
-        if ($this->getOpenSearchIDAndIndexName($pageID, $col)['id'] === null) {
+        if ($this->getOpenSearchIDAndIndexName($arg1, $arg2)['id'] === null) {
             return false;
         } else {
             return true;
         }
     }
 
-    private function getOpenSearchIDAndIndexName ($identifier1, $identifier2) {
+    private function getOpenSearchIDAndIndexName ($arg1, $arg2=null) {
 
         $mustConditions = [];
 
         if ($this->indexNamePrefix === 'transcriptions') {
-            $mustConditions[] = [ 'match' => ['pageID' => $identifier1]];
-            $mustConditions[] = [ 'match' => ['column' => $identifier2]];
-
-        } else {
-            $mustConditions[] = [ 'match' => ['table_id' => $identifier1]];
-            $mustConditions[] = [ 'match' => ['chunk' => $identifier2]];
+            $mustConditions[] = [ 'match' => ['pageID' => $arg1]];
+            $mustConditions[] = [ 'match' => ['column' => $arg2]];
+        } else if ($this->indexNamePrefix === 'editions') {
+            $mustConditions[] = [ 'match' => ['table_id' => $arg1]];
         }
 
         foreach ($this->indices as $index) {
@@ -870,6 +815,8 @@ Available operations are:\nbuild - builds the index, deletes already existing on
                 return ['index' => $index, 'id' => $query['hits']['hits'][0]['_id']];
             }
         }
+
+        return true;
     }
 
     private function getAndIndexTranscriptionData (string $doc_id): int
@@ -877,20 +824,20 @@ Available operations are:\nbuild - builds the index, deletes already existing on
 
         $title = $this->getTitle($doc_id);
 
-        // Get a list of transcribed pages of the document
+        // get a list of transcribed pages of the document
         $pages_transcribed = $this->getDm()->getTranscribedPageListByDocId($doc_id);
 
 
-        // Iterate over transcribed pages
+        // iterate over transcribed pages
         foreach ($pages_transcribed as $page) {
 
-            // Get pageID, number of columns and sequence number of the page
+            // get pageID, number of columns and sequence number of the page
             $page_id = $this->getPageID($doc_id, $page);
             $page_info = $this->getDm()->getPageInfo($page_id);
             $num_cols = $page_info['num_cols'];
             $seq = $this->getSeq($doc_id, $page);
 
-            // Iterate over all columns of the page and get the corresponding transcripts and transcribers
+            // iterate over all columns of the page and get the corresponding transcripts and transcribers
             for ($col = 1; $col <= $num_cols; $col++) {
                 $versions = $this->getDm()->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
                 if (count($versions) === 0) {
@@ -901,13 +848,13 @@ Available operations are:\nbuild - builds the index, deletes already existing on
                 $transcription = $this->getTranscription($doc_id, $page, $col);
                 $transcriber = $this->getTranscriber($doc_id, $page, $col);
 
-                // Get language of current column (same as document)
+                // get language of current column (same as document)
                 $lang = $this->getLang($doc_id, $page);
 
-                // Get foliation number of the current page/sequence number
+                // get foliation number of the current page/sequence number
                 $foliation = $this->getFoliation($doc_id, $page);
 
-                // Get timestamp
+                // get timestamp
                 $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
                 $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($page_id, $col);
                 $currentVersionInfo = (array)(end($versionsInfo));
@@ -921,7 +868,7 @@ Available operations are:\nbuild - builds the index, deletes already existing on
         return true;
     }
 
-    // Function to add pages to the OpenSearch index
+    // Function to add columns as items to the OpenSearch index
     public function indexTranscription ($client, $id, string $title, int $page, int $seq, string $foliation, int $col, string $transcriber, int $page_id, int $doc_id, string $transcription, string $lang, string $timeFrom): bool
     {
 
@@ -932,19 +879,16 @@ Available operations are:\nbuild - builds the index, deletes already existing on
             $indexName = $this->indexNamePrefix . '_he';
         }
 
-        //print("encoding for lemmatization\n");
-
-        // Encode transcript for avoiding errors in exec shell command because of characters like "(", ")" or " "
+        // encode transcript for avoiding errors in exec shell command because of characters like "(", ")" or " "
         $transcription_clean = $this->encodeForLemmatization($transcription);
 
-        //print("lemmatizing\n");
-        // Tokenization and lemmatization
-        // Test existence of transcript and tokenize/lemmatize existing transcripts in python
+        // tokenization and lemmatization
+        // test existence of transcript and tokenize/lemmatize existing transcripts in python
         if (strlen($transcription_clean) > 3) {
 
             $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $transcription_clean, $this->indexNamePrefix);
 
-            // Get tokenized and lemmatized transcript
+            // get tokenized and lemmatized transcript
             $transcription_tokenized = $tokens_and_lemmata['tokens'];
             $transcription_lemmatized = $tokens_and_lemmata['lemmata'];
         }
@@ -957,8 +901,7 @@ Available operations are:\nbuild - builds the index, deletes already existing on
             $this->logger->debug("Error! Array of tokens and lemmata do not have the same length!\n");
         }
 
-        //print("creating entry in os\n");
-        // Data to be stored on the OpenSearch index
+        // data to be stored on the OpenSearch index
         if ($id === null) {
             $client->create([
                 'index' => $indexName,
@@ -1038,7 +981,7 @@ Available operations are:\nbuild - builds the index, deletes already existing on
         return $edition_data;
     }
 
-    public function indexEdition ($client, $id=null, string $editor, string $text, string $title, string $chunk, string $lang, int $table_id, string $timeFrom): bool
+    public function indexEdition ($client, $id, string $editor, string $text, string $title, string $chunk, string $lang, int $table_id, string $timeFrom): bool
     {
         // Get name of the target index
         if ($lang != 'jrb') {
@@ -1048,15 +991,13 @@ Available operations are:\nbuild - builds the index, deletes already existing on
             $index_name = $this->indexNamePrefix . '_he';
         }
 
-
-        // Encode text for avoiding errors in exec shell command because of characters like "(", ")" or " "
+        // encode text for avoiding errors in exec shell command because of characters like "(", ")" or " "
         $text_clean = $this->encodeForLemmatization($text);
 
-        // Tokenization and lemmatization
-        // Test existence of text and tokenize/lemmatize existing texts
+        // tokenization and lemmatization
+        // test existence of text and tokenize/lemmatize existing texts
         if (strlen($text_clean) > 3) {
             $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $text_clean, $this->indexNamePrefix);
-//            exec("python3 ../../python/Lemmatizer_Indexing.py $lang $text_clean", $tokens_and_lemmata);
 
             // Get tokenized and lemmatized transcript
             $edition_tokenized = $tokens_and_lemmata['tokens'];
@@ -1071,7 +1012,7 @@ Available operations are:\nbuild - builds the index, deletes already existing on
             $this->logger->debug("Error! Array of tokens and lemmata do not have the same length!\n");
         }
 
-        // Data to be stored on the OpenSearch index
+        // data to be stored on the OpenSearch index
         if ($id === null) {
             $client->create([
                 'index' => $index_name,
@@ -1109,7 +1050,7 @@ Available operations are:\nbuild - builds the index, deletes already existing on
     public function cleanEditionData (array $editions): array
     {
 
-        // Remove empty editions
+        // remove empty editions
         foreach ($editions as $i=>$edition) {
 
             if (count($edition) === 0) {
@@ -1117,7 +1058,7 @@ Available operations are:\nbuild - builds the index, deletes already existing on
             }
         }
 
-        // Update keys in editions array and get number of non-empty editions
+        // update keys in editions array and get number of non-empty editions
         return array_values($editions);
     }
 
@@ -1134,7 +1075,7 @@ Available operations are:\nbuild - builds the index, deletes already existing on
 
     protected function resetIndex ($client, string $index): bool {
 
-        // Delete existing index
+        // delete existing index
         if ($client->indices()->exists(['index' => $index])) {
             $client->indices()->delete([
                 'index' => $index
@@ -1142,7 +1083,7 @@ Available operations are:\nbuild - builds the index, deletes already existing on
             $this->logger->debug("Existing index *$index* was deleted!\n");
         }
 
-        // Create new index
+        // create new index
         $client->indices()->create([
             'index' => $index,
             'body' => [
@@ -1171,6 +1112,8 @@ Available operations are:\nbuild - builds the index, deletes already existing on
                 }
             }
         }
+
+        return true;
     }
 
     // Function to get plaintext of the transcripts in the sql-database (copied from the ApiTranscription class)

@@ -134,6 +134,15 @@ class Lemmatizer
             }
         }
 
+        // in some rare cases, there seems to be no lemma returned from the api, then: use the word itself as the lemma
+        /** @var string $key */
+        foreach ($tokens_and_lemmata['lemmata'] as $key => $lemma) {
+            if ($lemma === null or $lemma === '') {
+                $tokens_and_lemmata['lemmata'][$key] =  $tokens_and_lemmata['tokens'][$key];
+            }
+        }
+
+
         return $tokens_and_lemmata;
     }
 

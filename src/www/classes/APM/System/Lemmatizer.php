@@ -2,11 +2,24 @@
 
 namespace APM\System;
 
+/**
+ * Description of Lemmatizer
+ *
+ * Lemmatizes a clean text via an api call to udpipe 2 in arabic, hebrew or latin.
+ *
+ * @author Lukas Reichert
+ */
+
 class Lemmatizer
 {
-
-    static public function runLemmatizer($lang, $text_clean, $tempfile='undefined')
-    {
+    /**
+     * Returns an array of tokens and lemmata for a given text in a given language.
+     * @param string $lang
+     * @param string $text_clean
+     * @param string $tempfile, on this value depends the name of the tempfile that is necessary to create for lemmatizing
+     * @return array|array[]
+     */
+    static public function runLemmatizer(string $lang, string $text_clean, string $tempfile='undefined'): array {
 
         // get language code for api call to udpipe2
         switch ($lang) {
@@ -21,21 +34,32 @@ class Lemmatizer
                 break;
         }
 
-        // make temp file and api call
-        $tempfile = 'lemmatization_temp_' . $tempfile . '.txt';
+        // get random code for lemmatization-temp-file to avoid
+        // errors when running multiple lemmatization processes in parallel
+        $rand = self::generateRandomString();
 
+        // make new temp file and write the text to lemmatize into it
+        $tempfile = 'lemmatization_temp_' . $tempfile . '_' . $rand . '.txt';
         exec("rm $tempfile 2>&1");
         exec("touch $tempfile");
         file_put_contents($tempfile, $text_clean);
 
+        // make api call
         exec("curl -s -F data=@$tempfile -F model=$lang -F tokenizer= -F tagger= https://lindat.mff.cuni.cz/services/udpipe/api/process", $data);
+
+        // remove temp file after lemmatization
         exec("rm $tempfile");
 
         // return tokens and lemmata
         return self::getTokensAndLemmata($data[6]);
     }
 
-    static private function getTokensAndLemmata ($data) {
+    /**
+     * Extracts the tokens and its lemmata from the api response, which is plain text that contains a lot more information than needed here.
+     * @param string $data
+     * @return array|array[]
+     */
+    static private function getTokensAndLemmata (string $data): array {
 
         // array of arrays to be returned
         $tokens_and_lemmata = ['tokens' => [], 'lemmata' => []];
@@ -142,8 +166,25 @@ class Lemmatizer
             }
         }
 
-
         return $tokens_and_lemmata;
+    }
+
+    /**
+     * Returns a random string.
+     * @param int $length
+     * @return string
+     * @throws \Exception
+     */
+    private static function generateRandomString(int $length=10): string {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[random_int(0, $charactersLength - 1)];
+        }
+
+        return $randomString;
     }
 
 }

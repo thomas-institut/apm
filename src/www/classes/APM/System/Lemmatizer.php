@@ -56,10 +56,10 @@ class Lemmatizer
 
     /**
      * Extracts the tokens and its lemmata from the api response, which is plain text that contains a lot more information than needed here.
-     * @param string $data
+     * @param string|null $data
      * @return array|array[]
      */
-    static private function getTokensAndLemmata (string $data): array {
+    static private function getTokensAndLemmata (string $data=null): array {
 
         // array of arrays to be returned
         $tokens_and_lemmata = ['tokens' => [], 'lemmata' => []];

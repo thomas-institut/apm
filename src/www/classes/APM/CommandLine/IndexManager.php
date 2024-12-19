@@ -1396,11 +1396,11 @@ class IndexManager extends CommandLineUtility {
     }
 
     /**
-     * @param int $doc_id
+     * @param string $doc_id
      * @return string
      */
-    private function getTitle(int $doc_id): string {
-        $doc_info = $this->getDm()->getDocById($doc_id);
+    private function getTitle(string $doc_id): string {
+        $doc_info = $this->getDm()->getDocById((int) $doc_id);
         return $doc_info['title'];
     }
 

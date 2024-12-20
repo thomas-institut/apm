@@ -26,9 +26,11 @@ use APM\CollationTable\CtData;
 use APM\Core\Witness\EditionWitness;
 use APM\StandardData\CollationTableDataProvider;
 use APM\System\Cache\CacheKey;
+use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use APM\System\Work\WorkNotFoundException;
+use APM\ToolBox\HttpStatus;
 use APM\ToolBox\SiglumGenerator;
 use AverroesProjectToApm\ApmPersonInfoProvider;
 use Exception;
@@ -141,7 +143,16 @@ class ApiCollation extends ApiController
         $docs = CtData::getMentionedDocsFromCtData($ctData);
         $docInfoArray = [];
         foreach($docs as $docId) {
-            $docInfo = $this->systemManager->getDataManager()->getDocById($docId);
+            try {
+                $docInfo = $this->systemManager->getDocumentManager()->getLegacyDocInfo($docId);
+            } catch (DocumentNotFoundException $e) {
+                // should never happen
+                return $this->responseWithJson($response,  [
+                    'tableId' => $tableId,
+                    'message' => 'Internal server error',
+                    'exception' => $e->getMessage()
+                ], HttpStatus::INTERNAL_SERVER_ERROR);
+            }
             $docInfoArray[] = [ 'docId' => $docId, 'title' => $docInfo['title']];
         }
 
@@ -571,7 +582,7 @@ class ApiCollation extends ApiController
         $language = $fullTxWitness->getLang();
         $docId = $fullTxWitness->getDocId();
         $work = $fullTxWitness->getWorkId();
-        $docInfo = $this->getDataManager()->getDocById($docId);
+        $docInfo = $this->systemManager->getDocumentManager()->getLegacyDocInfo($docId);
         $witnessTitle = $docInfo['title'];
 
         $normalizerManager = $this->systemManager->getNormalizerManager();

@@ -85,12 +85,14 @@ class DataManager implements  SqlQueryCounterTrackerAware
     use SimpleSqlQueryCounterTrackerAware;
 
 
+
     const ORDER_BY_PAGE_NUMBER = 100;
+
     const ORDER_BY_SEQ = 101;
 
-    // Witness Types
-    const WITNESS_TRANSCRIPTION = 'transcription';
-    const WITNESS_PLAINTEXT = 'plaintext';
+//    // Witness Types
+//    const WITNESS_TRANSCRIPTION = 'transcription';
+//    const WITNESS_PLAINTEXT = 'plaintext';
 
 
     private array $tNames;
@@ -99,12 +101,10 @@ class DataManager implements  SqlQueryCounterTrackerAware
     private MySqlHelper $databaseHelper;
     public EdNoteManager $edNoteManager;
     private MySqlUnitemporalDataTable $pagesDataTable;
-//    /**
-//     * Use new UserManager
-//     * @var UserManager
-//     * @deprecated
-//     */
-//    public UserManager $userManager;
+    /**
+     * @var MySqlDataTable
+     * @deprecated Document data is now handled by the entity system
+     */
     private MySqlDataTable $docsDataTable;
     private MySqlUnitemporalDataTable $elementsDataTable;
     private MySqlUnitemporalDataTable $itemsDataTable;
@@ -142,17 +142,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         $this->databaseHelper = new MySqlHelper($dbConn, $logger);
         $this->edNoteManager = new EdNoteManager($dbConn, $this->databaseHelper, $tableNames,
                 $logger);
-//        $this->userManager = new UserManager(
-//            new MySqlDataTable($dbConn,
-//                    $tableNames['users']),
-//            new MySqlDataTable($dbConn, $tableNames['relations']),
-//            new MySqlDataTableWithRandomIds($dbConn,
-//                    $tableNames['people'],
-//                    self::MIN_USER_ID, self::MAX_USER_ID),
-//            new MySqlDataTable($dbConn, $tableNames['tokens'])
-//        );
-//        $this->userManager->setLogger($this->logger);
-        
+
         $this->docsDataTable = new MySqlDataTable($this->dbConn, 
                 $tableNames['docs']);
         $this->pageTypesTable = new MySqlDataTable($this->dbConn, 
@@ -182,6 +172,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param string $order
      * @param bool $asc
      * @return array
+     * @deprecated use entity system functions
      */
     public function getDocIdList(string $order = '', bool $asc=true): array
     {
@@ -214,6 +205,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $tid
      * @return int|boolean
      * @throws RowAlreadyExists
+     * @deprecated Use new DocumentManager functions
      */
     public function newDoc(string $title, int $pageCount,
                            string $lang, string $type,
@@ -239,6 +231,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
     /**
      * @throws RowAlreadyExists
+     * @deprecated Use new DocumentManager functions
      */
     public function newPage($docId, $pageNumber, $lang, $type=0): int
     {
@@ -264,6 +257,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $docId
      * @param int $pageNumber
      * @return int
+     * @deprecated Use new DocumentManager functions
      */
     function getNumColumns(int $docId, int $pageNumber): int
     {
@@ -281,38 +275,40 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $docId
      * @param int $pageNumber
      * @return boolean
+     * @deprecated Use new DocumentManager functions
      */
-    function addNewColumn(int $docId, int $pageNumber): bool
-    {
-        $pageId = $this->getPageIdByDocPage($docId, $pageNumber);
-        if ($pageId === -1) {
-            return false;
-        }
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        $pageInfo = $this->pagesDataTable->getRow($pageId);
-        if ($pageInfo === null) {
-            $this->logger->error("page not found $pageId");
-            return false;
-        }
-        $this->getSqlQueryCounterTracker()->incrementUpdate();
-        try {
-            $this->pagesDataTable->updateRow([
-                'id' => $pageId,
-                'num_cols' => $pageInfo['num_cols']+1
-            ]);
-        } catch (Exception $e) {
-            $this->reportException('addNewColumn, updateRow ' . $pageId, $e);
-            return false;
-        }
-
-        return true;
-    }
+//    function addNewColumn(int $docId, int $pageNumber): bool
+//    {
+//        $pageId = $this->getPageIdByDocPage($docId, $pageNumber);
+//        if ($pageId === -1) {
+//            return false;
+//        }
+//        $this->getSqlQueryCounterTracker()->incrementSelect();
+//        $pageInfo = $this->pagesDataTable->getRow($pageId);
+//        if ($pageInfo === null) {
+//            $this->logger->error("page not found $pageId");
+//            return false;
+//        }
+//        $this->getSqlQueryCounterTracker()->incrementUpdate();
+//        try {
+//            $this->pagesDataTable->updateRow([
+//                'id' => $pageId,
+//                'num_cols' => $pageInfo['num_cols']+1
+//            ]);
+//        } catch (Exception $e) {
+//            $this->reportException('addNewColumn, updateRow ' . $pageId, $e);
+//            return false;
+//        }
+//
+//        return true;
+//    }
 
     /**
      * Returns an associative array with the information about a page
      * @param int $docId
      * @param int $pageNumber
      * @return array|bool
+     * @deprecated Use new DocumentManager functions
      */
     function getPageInfoByDocPage(int $docId, int $pageNumber): bool|array
     {
@@ -327,6 +323,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
     /**
      * @param int $pageId
      * @return array|bool
+     * @deprecated Use new DocumentManager functions
      */
     public function getPageInfo(int $pageId): bool|array
     {
@@ -347,6 +344,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * Returns the number of pages of a document
      * @param int $docId
      * @return boolean|int
+     * @deprecated Use new DocumentManager functions
      */
     function getPageCountByDocId(int $docId): bool|int
     {
@@ -363,25 +361,35 @@ class DataManager implements  SqlQueryCounterTrackerAware
         }
         return $res->fetch(PDO::FETCH_NUM)[0];
     }
-    
-    function getPageCountByDocIdAllTime($docId): bool|int
-    {
 
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        
-        $query = 'SELECT COUNT(*) FROM ' . $this->tNames['pages'] . 
-                ' WHERE `doc_id`=' . $docId;
-        $res = $this->databaseHelper->query($query);
-        if ($res === false) {
-            // This means a database error
-            // Can't reproduce in testing for now
-            return false; // @codeCoverageIgnore
-        }
-        return (int) $res->fetch(PDO::FETCH_NUM)[0];
-    }
+    /**
+     * Returns the number of pages the belong or have ever belonged to the
+     * given document.
+     *
+     * @param $docId
+     * @return bool|int
+     * @deprecated Need to be implemented at the SystemManager level using MySQL queries.
+     * But, it will not be necessary, because disabling/merging documents will be possible in the future
+     */
+//    function getPageCountByDocIdAllTime($docId): bool|int
+//    {
+//
+//        $this->getSqlQueryCounterTracker()->incrementSelect();
+//
+//        $query = 'SELECT COUNT(*) FROM ' . $this->tNames['pages'] .
+//                ' WHERE `doc_id`=' . $docId;
+//        $res = $this->databaseHelper->query($query);
+//        if ($res === false) {
+//            // This means a database error
+//            // Can't reproduce in testing for now
+//            return false; // @codeCoverageIgnore
+//        }
+//        return (int) $res->fetch(PDO::FETCH_NUM)[0];
+//    }
     
     /**
      * Gets the page types table into an array
+     * @deprecated Use entity functions
      */
     function getPageTypeNames(): bool|array
     {
@@ -397,36 +405,10 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
     
-    // TODO: fix maxChunk!
-//    public function getActiveWorks(): bool|array
-//    {
-//         $query = 'SELECT dare_id, people.name, title FROM ' . $this->tNames['works'] .
-//                 ' AS works JOIN (' . $this->tNames['people'] . ' AS people) ON (people.tid=works.author_tid) WHERE enabled=1' ;
-//
-//        $this->getSqlQueryCounterTracker()->incrementSelect();
-//        $res = $this->databaseHelper->query($query);
-//        if ($res === false) {
-//            // This means a database error
-//            // Can't reproduce in testing for now
-//            return false; // @codeCoverageIgnore
-//        }
-//        $data =  $res->fetchAll(PDO::FETCH_ASSOC);
-//
-//        $theWorks = [];
-//        foreach($data as $work) {
-//            //$this->logger->debug('Work', $work);
-//            $theWorks[] =  [
-//                'title' => '(' . $work['dare_id'] . ') ' . $work['name'],
-//                'dareId' => $work['dare_id'],
-//                'maxChunk' => 500
-//                ];
-//        }
-//        return $theWorks;
-//    }
-
     /**
      * @throws InvalidRowForUpdate
      * @throws RowDoesNotExist
+     * @deprecated Use entity system statements to change document data
      */
     public function updateDocSettings(int $docId, array $newSettings): bool
     {
@@ -481,6 +463,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $pageId
      * @param array $settings
      * @return bool
+     * @deprecated use new DocumentManager equivalent function
      */
     function updatePageSettings(int $pageId, array $settings) : bool {
         $row['id'] = $pageId;
@@ -597,6 +580,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $docId
      * @param int $order
      * @return array
+     * @deprecated use new DocumentManager equivalent function
      */
     function getDocPageInfo(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER): array
     {
@@ -622,16 +606,23 @@ class DataManager implements  SqlQueryCounterTrackerAware
     /**
      * @param int $docId
      * @return bool|int
+     * @deprecated Documents cannot be deleted, disable it or merge it instead
      */
-    function deleteDocById(int $docId): bool|int
-    {
-        $this->getSqlQueryCounterTracker()->incrementDelete();
-        if ($this->getPageCountByDocIdAllTime($docId) !== 0) {
-            return false;
-        }
-        return $this->docsDataTable->deleteRow($docId);
-    }
+//    function deleteDocById(int $docId): bool|int
+//    {
+//        $this->getSqlQueryCounterTracker()->incrementDelete();
+//        if ($this->getPageCountByDocIdAllTime($docId) !== 0) {
+//            return false;
+//        }
+//        return $this->docsDataTable->deleteRow($docId);
+//    }
 
+    /**
+     * @param int $docId
+     * @param bool $useCache
+     * @return false|mixed
+     * @deprecated use DocumentManager::getLegacyDocInfo
+     */
     function getDocById(int $docId, bool $useCache = true)
     {
         $cacheKey = "doc-$docId";
@@ -648,18 +639,24 @@ class DataManager implements  SqlQueryCounterTrackerAware
         }
         return $data;
     }
-    
-    function getDocByDareId(string $dareId): ?array
-    {
 
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        $rows = $this->docsDataTable->findRows(['image_source_data' => $dareId], 1);
-        if (count($rows) !== 1) {
-            return null;
-        }
-
-        return $rows->getFirst();
-    }
+    /**
+     * Returns the document info array for the document with the given Dare id
+     * @param string $dareId
+     * @return array|null
+     * @deprecated use entity system functions
+     */
+//    function getDocByDareId(string $dareId): ?array
+//    {
+//
+//        $this->getSqlQueryCounterTracker()->incrementSelect();
+//        $rows = $this->docsDataTable->findRows(['image_source_data' => $dareId], 1);
+//        if (count($rows) !== 1) {
+//            return null;
+//        }
+//
+//        return $rows->getFirst();
+//    }
 
     /**
      * Returns an array of document Ids for the documents
@@ -669,8 +666,9 @@ class DataManager implements  SqlQueryCounterTrackerAware
      */
     public function getDocIdsTranscribedByUser(int $userTid) : array
     {
+        // TODO: change this query, it must not use the docs table
         $tp = $this->tNames['pages'];
-        $td = $this->tNames['docs'];
+             $td = $this->tNames['docs'];
         $te = $this->tNames['elements'];
         $eot = '9999-12-31 23:59:59.999999';
 
@@ -704,6 +702,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      */
     public function getPageIdsTranscribedByUser(int $userTid, int $docId) : array
     {
+        // TODO: change this query, it must not use the docs table
         $tp = $this->tNames['pages'];
         $td = $this->tNames['docs'];
         $te = $this->tNames['elements'];
@@ -738,6 +737,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $imageNumber
      * @param string $type
      * @return string|boolean
+     * @deprecated use DocumentManager equivalent function
      */
     public function getImageUrl(int $docId, int $imageNumber, string $type = ''): bool|string
     {
@@ -756,6 +756,11 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $imageSource->getImageUrl($type, $doc['image_source_data'], $imageNumber);
     }
 
+    /**
+     * @param int $docId
+     * @return bool
+     * @deprecated use EntityData function on the data returned by DocumentManager::getDocumentEntityData
+     */
     public function isImageDeepZoom(int $docId) : bool {
         $doc = $this->getDocById($docId);
         if ($doc === false) {
@@ -1439,6 +1444,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param $docId
      * @param $pageNum
      * @return int
+     * @deprecated use equivalent DocumentManager function
      */
     public function getPageIdByDocPage($docId, $pageNum) : int
     {
@@ -1453,8 +1459,14 @@ class DataManager implements  SqlQueryCounterTrackerAware
         }
         return $rows->getFirst()['id'];
     }
-    
-     public function getPageIdByDocSeq($docId, $seq)
+
+    /**
+     * @param $docId
+     * @param $seq
+     * @return false|mixed
+     * @deprecated use equivalent DocumentManager function
+     */
+     public function getPageIdByDocSeq($docId, $seq) : bool|int
     {
 
         $this->getSqlQueryCounterTracker()->incrementSelect();
@@ -1484,6 +1496,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $docId
      * @param int $seq
      * @return bool|array
+     * @deprecated get the page id first and then the page info
      */
     public function getPageInfoByDocSeq(int $docId, int $seq): bool|array
     {
@@ -1499,6 +1512,12 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $rows->getFirst();
     }
 
+    /**
+     * @param int $docId
+     * @param int $pageSeq
+     * @return string
+     * @deprecated get the page id first and then the data for that page
+     */
     public function getPageFoliationByDocSeq(int $docId, int $pageSeq) : string {
         $info = $this->getPageInfoByDocSeq($docId, $pageSeq);
         if ($info === false) {
@@ -2464,6 +2483,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param $pageNum
      * @return bool
      * @throws Exception
+     * @deprecated use equivalent function in DocumentManager
      */
     public function deletePage($docId, $pageNum): bool
     {
@@ -2596,21 +2616,4 @@ class DataManager implements  SqlQueryCounterTrackerAware
     {
         $this->logger->error('Exception caught in ' . $context, [ 'errorCode' => $e->getCode(), 'errorMessage' => $e->getMessage()]);
     }
-
-    //  Factory functions
-
-//    public function createDocInfoFromDbRow(array $row) : DocInfo {
-//        $di = new DocInfo();
-//
-//        $di->id = intval($row['id']);
-//        $di->tid = intval($row['tid']);
-//        $di->title = $row['title'];
-//        $di->shortTitle = $row['short_title'];
-//        $di->imageSource = $row['image_source'];
-//        $di->imageSourceData = $row['image_source_data'];
-//        $di->lang = $row['lang'];
-//        $di->docType = $row['doc_type'];
-//
-//        return $di;
-//    }
 }

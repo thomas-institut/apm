@@ -32,7 +32,7 @@ class ApmDaemon extends CommandLineUtility
                 'cacheKey' => SiteDocuments::DOCUMENT_DATA_CACHE_KEY,
                 'ttl' => SiteDocuments::DOCUMENT_DATA_TTL,
                 'builder' => function () {
-                        return SiteDocuments::buildDocumentData($this->getSystemManager()->getDataManager());
+                        return SiteDocuments::buildDocumentData($this->getSystemManager());
                 }
             ],
             [

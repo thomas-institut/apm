@@ -19,6 +19,8 @@
 
 namespace APM\CommandLine;
 
+use APM\System\Document\Exception\DocumentNotFoundException;
+
 /**
  * Class RevertPageSequence
  *
@@ -55,19 +57,24 @@ class ChangePageSequence extends CommandLineUtility
             return false;
         }
 
-        $docInfo = $this->getDm()->getDocById($docId);
-        if ($docInfo === false) {
+        $docManager = $this->getSystemManager()->getDocumentManager();
+
+        try {
+            $docInfo = $docManager->getLegacyDocInfo($docId);
+        } catch (DocumentNotFoundException) {
             $this->printErrorMsg("Given docId $docId does not exist.");
             return false;
         }
 
         $this->printStdErr("Doc Id $docId:  " . $docInfo['title'] . "\n");
 
-        $docPageCount = $this->getDm()->getPageCountByDocId($docId);
-        if ($docPageCount === false) {
+        try {
+            $docPageCount = $docManager->getDocPageCount($docId);
+        } catch (DocumentNotFoundException $e) {
             $this->printErrorMsg("Cannot get page count for document.");
             return false;
         }
+
         if ($docPageCount === 0) {
             $this->printStdErr("No pages in document, nothing to do.\n");
             return true;
@@ -125,6 +132,7 @@ class ChangePageSequence extends CommandLineUtility
         if (!$thereAreChanges) {
             $this->printStdErr("No changes are necessary.\n");
         }
+        return true;
     }
 
     private function generateDefaultPageSequence(int $pageCount) : array {

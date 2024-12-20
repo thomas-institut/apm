@@ -10,6 +10,7 @@ use APM\FullTranscription\Exception\PageNotFoundException;
 use APM\FullTranscription\PageInfo;
 use APM\FullTranscription\PageManager;
 use APM\System\ApmMySqlTableName;
+use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\ToolBox\ArrayPrint;
 
 class TranscriptionTool extends CommandLineUtility implements AdminUtility
@@ -214,8 +215,9 @@ TXT;
             'foliation' => $pageInfo->foliationIsSet ? "'$pageInfo->foliation'" : 'undefined',
         ];
 
-        $docInfo = $this->getSystemManager()->getDataManager()->getDocById($txInfo["docId"]);
-        if ($docInfo === false) {
+        try {
+            $docInfo = $this->getSystemManager()->getDocumentManager()->getLegacyDocInfo($txInfo["docId"]);
+        } catch (DocumentNotFoundException) {
             $txInfo["error"] = "Doc not found: $txInfo[docId]";
             return $txInfo;
         }

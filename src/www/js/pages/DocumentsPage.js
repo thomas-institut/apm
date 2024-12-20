@@ -83,9 +83,9 @@ export class DocumentsPage extends NormalPage {
         transcribersHtmlArray.push(`<a href="${urlGen.sitePerson(Tid.toBase36String(transcriberTid))}" title="Click to view person details">${transcriberData.name}</a>`)
       }
       data.push({
-        title: `<a href="${urlGen.siteDocPage(doc['docInfo']['id'])}">${doc['docInfo']['title']}</a>`,
-        type:  await this.apmDataProxy.getDocTypeName(doc.docInfo.doc_type),
-        lang: await this.apmDataProxy.getLangName(doc['docInfo']['lang']),
+        title: `<a href="${urlGen.siteDocPage(Tid.toBase36String(doc['docInfo']['id']))}">${doc['docInfo']['title']}</a>`,
+        type:  await this.apmDataProxy.getEntityName(doc['docInfo']['doc_type']),
+        lang: await this.apmDataProxy.getEntityName(doc['docInfo']['lang']),
         numPages: doc['numPages'],
         numTranscribedPages: doc['numTranscribedPages'],
         transcribers: transcribersHtmlArray.join(', '),

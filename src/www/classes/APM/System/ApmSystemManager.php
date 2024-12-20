@@ -52,6 +52,8 @@ use APM\EntitySystem\ApmEntitySystem;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\Session\ApmSessionManager;
 use APM\Session\SessionManager;
+use APM\System\Document\ApmDocumentManager;
+use APM\System\Document\DocumentManager;
 use APM\System\ImageSource\BilderbergImageSource;
 use APM\System\ImageSource\OldBilderbergStyleRepository;
 use APM\System\Job\ApmJobQueueManager;
@@ -114,7 +116,7 @@ class ApmSystemManager extends SystemManager {
     const DB_VERSION = 36;
 
     // Entity system Data ID: key for entity system caches
-    const ES_DATA_ID = 'es007';
+    const ES_DATA_ID = 'es008';
 
     const MemCachePrefix_Apm_ES = 'apm_es';
     const MemCachePrefix_TypedMultiStorage_ES = 'apm_msEs_';
@@ -177,6 +179,8 @@ class ApmSystemManager extends SystemManager {
 
     private ?ApmEntitySystem $apmEntitySystem;
 
+    private ?ApmDocumentManager $documentManager;
+
 
     public function __construct(array $configArray) {
         $config = $this->getSanitizedConfigArray($configArray);
@@ -207,8 +211,8 @@ class ApmSystemManager extends SystemManager {
         $this->tableNames = $this->createTableNames($this->config[ApmConfigParameter::DB_TABLE_PREFIX]);
 
         $this->imageSources = [
-            'bilderberg' => new BilderbergImageSource($this->config[ApmConfigParameter::BILDERBERG_URL]),
-            'averroes-server' => new OldBilderbergStyleRepository('https://averroes.uni-koeln.de/localrep')
+            Entity::ImageSourceBilderberg => new BilderbergImageSource($this->config[ApmConfigParameter::BILDERBERG_URL]),
+            Entity::ImageSourceAverroesServer => new OldBilderbergStyleRepository('https://averroes.uni-koeln.de/localrep')
         ];
 
 
@@ -232,6 +236,7 @@ class ApmSystemManager extends SystemManager {
         $this->dataManager = null;
         $this->memDataCache = null;
         $this->apmEntitySystem = null;
+        $this->documentManager = null;
     }
 
 
@@ -285,8 +290,13 @@ class ApmSystemManager extends SystemManager {
     public function getAvailableImageSources(): array
     {
         return array_keys($this->imageSources);
-
     }
+
+    public function getImageSources(): array
+    {
+        return $this->imageSources;
+    }
+
 
     /**
      * @param string $prefix
@@ -998,5 +1008,21 @@ class ApmSystemManager extends SystemManager {
             $this->sessionManager = new ApmSessionManager($sessionsTable, $logTable, $this->logger);
         }
         return $this->sessionManager;
+    }
+
+    public function getDocumentManager(): DocumentManager
+    {
+        if ($this->documentManager === null) {
+            $this->documentManager = new ApmDocumentManager(
+                function () {
+                    return $this->getEntitySystem();
+                },
+                function () {
+                    return new MySqlUnitemporalDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_PAGES]);
+                }
+            );
+            $this->documentManager->setLogger($this->logger);
+        }
+        return $this->documentManager;
     }
 }

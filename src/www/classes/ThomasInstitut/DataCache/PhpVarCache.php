@@ -1,43 +1,22 @@
 <?php
-/* 
- *  Copyright (C) 2020 Universität zu Köln
- *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *  
- */
 
 namespace ThomasInstitut\DataCache;
 
 /**
- * Interface to a generic data cache that can only store strings
- * as values.
- *
- * @package ThomasInstitut\DataCache
+ * Interface to a cache that can store any PHP variable,
+ * e.g., object, strings, arrays, etc.
  */
-
-interface DataCache
+interface PhpVarCache
 {
-
     /**
      * Gets the value associated with the given key.
      * If the key is not the cache, throws a KeyNotInCacheException
      *
      * @param string $key
-     * @return string
+     * @return mixed
      * @throws KeyNotInCacheException
      */
-    public function get(string $key) : string;
+    public function get(string $key) : mixed;
 
 
     /**
@@ -62,11 +41,11 @@ interface DataCache
      * If $ttl === 0, the cache item never expires.
      * If $ttl < 0, the default ttl is used
      * @param string $key
-     * @param string $value
+     * @param mixed $value
      * @param int $ttl
      * @return void
      */
-    public function set(string $key, string $value, int $ttl = -1) : void;
+    public function set(string $key, mixed $value, int $ttl = -1) : void;
 
 
     /**
@@ -97,6 +76,4 @@ interface DataCache
      * @return void
      */
     public function clean() : void;
-
-
 }

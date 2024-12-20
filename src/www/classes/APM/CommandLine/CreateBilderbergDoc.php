@@ -2,6 +2,8 @@
 
 namespace APM\CommandLine;
 
+use APM\EntitySystem\Schema\Entity;
+use APM\System\Document\Exception\DocumentNotFoundException;
 use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\TimeString\InvalidTimeZoneException;
@@ -34,18 +36,17 @@ class CreateBilderbergDoc extends CommandLineUtility
             return;
         }
 
-        $lang = $argv[3];
-        if (!in_array($lang, [ 'ar', 'he', 'la'])) {
-            print "Invalid language: $lang\n";
+        $lang = $this->getSystemManager()->getLangIdFromCode($argv[1]);
+        if ($lang === null) {
+            print "Invalid language: $argv[1]\n";
             return;
         }
 
-
         $title = substr($bilderbergId, 10);
 
-        $type = 'mss';
+        $type = Entity::DocTypeManuscript;
         if ($title[0] !== 'M') {
-            $type = 'print';
+            $type = Entity::DocTypePrint;
         }
 
         $creationTimeString = TimeString::now();
@@ -54,26 +55,25 @@ class CreateBilderbergDoc extends CommandLineUtility
         print "Creating document with title '$title', $type, $lang, $numPages pages, tid " .
             Tid::toBase36String($tid) . " ( " . Tid::toTimeString($tid) . " )...";
 
-        $doc = $this->getSystemManager()->getDataManager()->getDocByDareId($bilderbergId);
-        if ($doc !== null) {
-            print "Document already exists with id " . $doc['id'] . "\n";
+        // first, see if there's a document with image source data equal to the bilderbergId
+        $statements = $this->getSystemManager()->getEntitySystem()->getStatements(null, Entity::pImageSource, $bilderbergId);
+        if (count($statements) > 0) {
+            $docId = $statements[0]->subject;
+            try {
+                $docData = $this->getSystemManager()->getDocumentManager()->getDocumentEntityData($docId);
+            } catch (DocumentNotFoundException $e) {
+                // should never happen
+                $this->printErrorMsg("Exception: " . $e->getMessage() . "\n");
+                return;
+            }
+            $legacyId = $docData->getObjectForPredicate(Entity::pLegacyApmDatabaseId);
+            print "Document already exists with entity id $docId (legacy DB id = $legacyId)\n";
             return;
         }
 
-        $docId = $this->getSystemManager()->getDataManager()->newDoc(
-            $title,
-            $numPages,
-            $lang,
-            $type,
-            'bilderberg',
-            $bilderbergId,
-            $tid,
-        );
+        $docId = $this->getSystemManager()->getDocumentManager()->createDocument(
+            $title, $lang, $type, Entity::ImageSourceBilderberg, $bilderbergId, Entity::System);
 
-        if ($docId === false) {
-            print "Error creating document\n";
-        } else {
-            print "new document id = $docId\n";
-        }
+        print "new document id = $docId\n";
     }
 }

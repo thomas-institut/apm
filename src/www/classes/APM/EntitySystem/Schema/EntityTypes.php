@@ -192,6 +192,14 @@ const EntityTypeDefinitions = [
         [],
         true
     ],
+    [
+        Entity::tPageType,
+        'Page Type',
+        "A page's type, e.g., front matter, back matter, text",
+        [],
+        [],
+        true
+    ],
 ];
 
 class EntityTypes implements EntityTypeDefiner

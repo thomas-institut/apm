@@ -21,6 +21,7 @@
 namespace APM\CommandLine;
 
 use APM\System\ApmConfigParameter;
+use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\PythonLemmatizer;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
@@ -150,8 +151,11 @@ class TranscriptionsIndexManager extends OpenSearchIndexManager {
         return $this->getDm()->getpageIDByDocPage($doc_id, $page);
     }
 
+    /**
+     * @throws DocumentNotFoundException
+     */
     public function getTitle(int $doc_id): string {
-        $doc_info = $this->getDm()->getDocById($doc_id);
+        $doc_info = $this->getSystemManager()->getDocumentManager()->getLegacyDocInfo($doc_id);
         return $doc_info['title'];
     }
 

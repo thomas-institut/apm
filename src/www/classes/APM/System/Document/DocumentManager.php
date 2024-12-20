@@ -1,0 +1,271 @@
+<?php
+
+namespace APM\System\Document;
+
+use APM\EntitySystem\Schema\Entity;
+use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\ImageSource\ImageSourceInterface;
+use ThomasInstitut\EntitySystem\EntityData;
+
+/**
+ * Methods for creating, querying and manipulating documents in APM.
+ *
+ * Documents are entities of type Entity::tDocument. They are referred in the system
+ * either by their entity id or by a legacy APM database id (which is always less or equal to 1043)
+ *
+ */
+interface DocumentManager
+{
+
+    const ORDER_BY_PAGE_NUMBER = 100;
+    const ORDER_BY_SEQ = 101;
+
+
+    /**
+     * Creates a new document in the system with the given title, pageCount, etc.
+     *
+     * Returns the id of the newly created document.
+     *
+     * @param string $title
+     * @param int $lang
+     * @param int $type
+     * @param int $imageSource
+     * @param string $imageSourceData
+     * @param int $createdBy creator's entity id
+     * @return int
+     */
+    public function createDocument(string $title,
+                                   int $lang, int $type,
+                                   int $imageSource,
+                                   string $imageSourceData,
+                                   int $createdBy) : int;
+
+
+    /**
+     * Creates a new page for the given document.
+     *
+     * Returns the id of the newly created page.
+     *
+     * @param int $docId
+     * @param int $pageNumber
+     * @param int $lang
+     * @param int $type
+     * @return int
+     * @throws DocumentNotFoundException
+     */
+    public function createPage(int $docId, int $pageNumber, int $lang, int $type = Entity::PageTypeNotSet): int;
+
+
+    /**
+     * Deletes a page
+     *
+     * @param $docId
+     * @param $pageNum
+     * @return void
+     * @deprecated Only used in a test case, probably not needed!
+     */
+    public function deletePage($docId, $pageNum): void;
+
+    /**
+     * Returns the number of columns defined for the given page
+     * @param int $docId
+     * @param int $pageNumber
+     * @return int
+     * @throws PageNotFoundException
+     * @throws DocumentNotFoundException
+     */
+    public function getNumColumnsByDocPage(int $docId, int $pageNumber): int;
+
+    /**
+     * Returns the number of columns defined for the given page
+     * @param int $pageId
+     * @return int
+     * @throws PageNotFoundException
+     */
+    public function getNumColumns(int $pageId): int;
+
+    /**
+     * Adds a column to the given page
+     * @param int $docId
+     * @param int $pageNumber
+     * @return void
+     * @throws PageNotFoundException
+     * @throws DocumentNotFoundException
+     */
+    public function addColumnByDocPage(int $docId, int $pageNumber) : void;
+
+
+    /**
+     * Adds a column to the given page
+     * @param int $pageId
+     * @return void
+     * @throws PageNotFoundException
+     */
+    public function addColumn(int $pageId) : void;
+
+
+    /**
+     * Get the page id for a given doc and page number.
+     *
+     * @param int $docId
+     * @param int $pageNum
+     * @return int
+     * @throws PageNotFoundException
+     * @throws DocumentNotFoundException
+     */
+    public function getPageIdByDocPage(int $docId, int $pageNum) : int;
+
+
+    /**
+     * Get the page id for a given doc and seq number.
+     *
+     * @param int $docId
+     * @param int $seq
+     * @return int
+     * @throws PageNotFoundException
+     * @throws DocumentNotFoundException
+     */
+    public function getPageIdByDocSeq(int $docId, int $seq) : int;
+
+    /**
+     * Returns a (legacy) array with information about a page:
+     *
+     *  ``
+     *    [
+     *      'doc_id' => docId (int),
+     *      'page_number' => pageNumber (int),
+     *      'img_number'  => imageNumber (int),
+     *      'seq' => sequenceNumber (int),
+     *      'type' => pageType (int),
+     *      'lang' => pageLanguage (int)
+     *      'numCols' => numCols (int)
+     *      'foliation' => foliationString (string)
+     *    ]
+     *  ``
+     * @param int $docId
+     * @param int $pageNumber
+     * @return array
+     * @throws PageNotFoundException
+     * @throws DocumentNotFoundException
+     */
+    public function getLegacyPageInfoByDocPage(int $docId, int $pageNumber): array;
+
+
+    /**
+     * Returns a (legacy) array with information about a page:
+     *
+     *  ``
+     *    [
+     *      'doc_id' => docId (int),
+     *      'page_number' => pageNumber (int),
+     *      'img_number'  => imageNumber (int),
+     *      'seq' => sequenceNumber (int),
+     *      'type' => pageType (int),
+     *      'lang' => pageLanguage (int)
+     *      'numCols' => numCols (int)
+     *      'foliation' => foliationString (string)
+     *    ]
+     *  ``
+     * @param int $pageId
+     * @return array
+     * @throws PageNotFoundException
+     */
+    public function getLegacyPageInfo(int $pageId): array;
+
+
+    /**
+     * Returns a (legacy) array with information about a document, taken
+     * now from the entity system
+     * ``
+     * [
+     *  'id' => docId (int) // the entity id, to be used in all requests
+     *  'tid' => docId (int) // same as id, given for compatibility
+     *  'title' => entity name (string)
+     *  'lang' => pDocumentLanguage (int)
+     *  'doc_type' => pDocumentType (int)
+     *  'image_source' => pImageSource (int)
+     *  'image_source_data' => pImageSourceData (string)
+     *  'deep_zoom' => pUseDeepZoomForImages (bool)
+     * ]
+     * ``
+     * @param int $docId
+     * @return array
+     * @throws DocumentNotFoundException
+     */
+    public function getLegacyDocInfo(int $docId) : array;
+
+
+    /**
+     * Returns the legacy doc id (i.e., old database id) for a given
+     * document.
+     *
+     * For compatibility reasons, the given docId can also be an old database id
+     * but the normal use case is to call this function with an entity id
+     *
+     * @param int $docId
+     * @return int
+     * @throws DocumentNotFoundException
+     */
+    public function getLegacyDocId(int $docId) : int;
+
+    /**
+     * Returns the number of pages of a document
+     * @param int $docId
+     * @return int
+     * @throws DocumentNotFoundException
+     */
+    public function getDocPageCount(int $docId): int;
+
+
+    /**
+     *  Updates the page settings: lang, foliation, type and seq
+     *
+     * The input array may have one or more of the parameters to change. E.g.
+     *  ``
+     *    [ 'lang' => newLang, 'foliation' => newFoliation, 'type' => newType, 'seq' => newSeq ]
+     *  ``
+     *
+     * @param int $pageId
+     * @param array $settings
+     * @return void
+     * @throws PageNotFoundException
+     * @deprecated
+     */
+    public function updatePageSettings(int $pageId, array $settings) : void;
+
+
+    /**
+     *  Returns (legacy) page information for each page for the given $docId
+     *
+     * @param int $docId
+     * @param int $order
+     * @return array
+     * @throws DocumentNotFoundException
+     */
+    public function getLegacyDocPageInfoArray(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER): array;
+
+
+    /**
+     * Returns the entity data for the given document id
+     *
+     * Accepts an entity id or a legacy APM database id
+     * @param int $docId
+     * @return EntityData
+     * @throws DocumentNotFoundException
+     */
+    public function getDocumentEntityData(int $docId) : EntityData;
+
+    /**
+     * Returns the image URL for a page
+     *
+     * @param int $docId
+     * @param int $imageNumber
+     * @param string $type e.g. ApmImageType::IMAGE_TYPE_JPG
+     * @param ImageSourceInterface[] $imageSources
+     * @return string
+     * @throws DocumentNotFoundException
+     */
+    public function getImageUrl(int $docId, int $imageNumber, string $type, array $imageSources): string;
+
+}

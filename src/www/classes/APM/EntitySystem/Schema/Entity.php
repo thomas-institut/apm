@@ -47,9 +47,9 @@ class Entity implements TidDefiner
     const tCalendar = 119;
     const tDocument = 120;
     const tGenericEditionSource = 121;
-
     const tDocumentType = 122;
     const tImageSource = 123;
+    const tPageType = 124;
 
 
 
@@ -123,13 +123,6 @@ class Entity implements TidDefiner
     const pMergeTimestamp = 6003;
     const pMergeEditorialNote = 6004;
 
-
-
-
-
-
-
-
     // Person predicates
     const pOccupation = 7008;
     const pDateOfBirth = 7009;
@@ -199,6 +192,13 @@ class Entity implements TidDefiner
     // Image Sources
     const ImageSourceBilderberg = 9201;
     const ImageSourceAverroesServer = 9202;
+
+
+    // Page Types
+    const PageTypeNotSet = 9300;
+    const PageTypeText = 9301;
+    const PageTypeFrontMatter = 9302;
+    const PageTypeBackMatter = 9303;
 
 
     // Calendars

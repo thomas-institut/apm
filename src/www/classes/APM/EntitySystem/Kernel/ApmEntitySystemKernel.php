@@ -20,6 +20,7 @@ use APM\EntitySystem\Schema\GeoPredicates;
 use APM\EntitySystem\Schema\IdTypes;
 use APM\EntitySystem\Schema\Languages;
 use APM\EntitySystem\Schema\OrganizationTypes;
+use APM\EntitySystem\Schema\PageTypes;
 use APM\EntitySystem\Schema\PersonPredicates;
 use APM\EntitySystem\Schema\SystemEntity;
 use APM\EntitySystem\Schema\SystemPredicates;
@@ -111,7 +112,8 @@ class ApmEntitySystemKernel
             new AreaTypes(),
             new Calendars(),
             new DocumentTypes(),
-            new ImageSources()
+            new ImageSources(),
+            new PageTypes()
         ];
 
         /** @var $allDefiners EntityDefiner[]*/

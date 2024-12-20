@@ -112,6 +112,7 @@ class Tid
      * If the given string is not a valid TID returns -1
      *
      * @param string $str
+     * @param bool $detectSystemEntities
      * @return int
      */
     public static function fromString(string $str, bool $detectSystemEntities = false) : int {
@@ -145,6 +146,12 @@ class Tid
         }
     }
 
+
+    /**
+     * Returns true is the given string can be parsed to a valid Tid
+     * @param string $str
+     * @return bool
+     */
     public static function strIsValidTid(string $str) : bool {
         if (strlen($str) > 11) {
             return false;

@@ -20,6 +20,10 @@
 
 namespace APM\CommandLine;
 
+use APM\EntitySystem\Schema\Entity;
+use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
+
 /**
  * Description of ChangePasswordUtility
  *
@@ -30,7 +34,7 @@ class InitDoc extends CommandLineUtility {
     
     const USAGE = "usage: initdoc <docId> <numPages> <colsPerPage>\n";
     
-    public function main($argc, $argv)
+    public function main($argc, $argv): bool
     {
         if ($argc != 4) {
             print self::USAGE;
@@ -55,30 +59,48 @@ class InitDoc extends CommandLineUtility {
             $this->printErrorMsg('Wrong cols per page');
             return false;
         }
-        
-        $docInfo = $this->getDm()->getDocById($docId);
-        
-        if ($docInfo === false) {
-            $this->printErrorMsg("Can't get doc info for docId $docId");
+
+        $docManager = $this->getSystemManager()->getDocumentManager();
+
+        try {
+            $docEntityData = $docManager->getDocumentEntityData($docId);
+        } catch (DocumentNotFoundException) {
+            $this->printErrorMsg("DocId $docId does not exist");
             return false;
         }
-        
-        print "Creating $numPages  pages for doc Id $docId (" . $docInfo['title'] . ")...\n";
+        $docTitle = $docEntityData->name;
+        $docLang = $docEntityData->getObjectForPredicate(Entity::pDocumentLanguage) ?? Entity::LangArabic;
+
+        print "Creating $numPages pages for doc Id $docId ($docTitle)...\n";
         for ($i = 0; $i < $numPages; $i++) {
-            $curPageId = $this->getDm()->getPageIdByDocPage($docId, $i+1);
-            if ($curPageId !== -1) {
+            $pageExists = true;
+            try {
+               $docManager->getPageIdByDocPage($docId, $i + 1);
+            } catch (DocumentNotFoundException) {
+                // should never happen
+                $this->printErrorMsg("ERROR: DocumentNotFoundException when getting page number " . ($i + 1));
+                return false;
+            } catch (PageNotFoundException) {
+                $pageExists = false;
+            }
+            if ($pageExists) {
                 $this->printWarningMsg("Page " . ($i+1) . " already exists, skipping.");
                 continue;
             }
-            $pageId = $this->getDm()->newPage($docId, $i+1, $docInfo['lang']);
-            if ($pageId === false) {
-                $this->printErrorMsg("Can't create page " . ($i+1));
+            try {
+                $newPageId = $docManager->createPage($docId, $i + 1, $docLang);
+            } catch (DocumentNotFoundException) {
+                // should never happen
+                $this->printErrorMsg("ERROR: DocumentNotFoundException when creating page number " . ($i + 1));
                 return false;
             }
+
             for ($j = 0; $j < $colsPerPage; $j++) {
-                $result = $this->getDm()->addNewColumn($docId, $i+1);
-                if ($result === false) {
-                    $this->printErrorMsg("Can't add column " . ($j+1) . " to page " . ($i+1));
+                try {
+                    $docManager->addColumn($newPageId);
+                } catch (PageNotFoundException) {
+                    // should never happen
+                    $this->printErrorMsg("ERROR: PageNotFoundException when add column to page number " . ($i + 1) . " pageId $newPageId");
                     return false;
                 }
             }

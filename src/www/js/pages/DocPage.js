@@ -55,7 +55,15 @@ export class DocPage extends NormalPage {
     this.doc = this.options.doc
     this.docInfo = this.doc.docInfo
     this.docId = this.docInfo.id
-    this.pages = this.doc.pages
+    this.pages = this.doc.pages;
+
+    Object.keys(this.pages).forEach( (pageId) => {
+      if (this.pages[pageId]['foliation'] === null) {
+        this.pages[pageId]['foliation'] = this.pages[pageId]['seq'].toString();
+      }
+    });
+
+
     this.pageSeqToPageKeyMap = this.getPageSequenceToPageKeyMap(this.pages)
     this.pageArray = PageArray.getPageArray(this.pages, 'sequence')
 
@@ -83,9 +91,9 @@ export class DocPage extends NormalPage {
 
     let pageTypesData = await this.apmDataProxy.getAvailablePageTypes();
     this.pageTypes = [];
-    pageTypesData.forEach( ( ptd) => {
-      this.pageTypes[ptd.id] = ptd.descr;
-    })
+    for (let i = 0; i < pageTypesData.length; i++) {
+      this.pageTypes[pageTypesData[i]] = await this.apmDataProxy.getEntityName(pageTypesData[i]);
+    }
 
     this.selectedPage = -1
     this.thumbnails = 'none';
@@ -318,14 +326,14 @@ export class DocPage extends NormalPage {
   getPageSequenceToPageKeyMap(pages) {
     let map = []
     Object.keys(pages).forEach( (pageKey) => {
-      map[pages[pageKey]['sequence']] = pageKey
+      map[pages[pageKey]['seq']] = pageKey
     })
     return map
   }
 
   async getDocInfoHtml() {
-    let langName = await this.apmDataProxy.getLangName(this.docInfo.lang)
-    let docTypeName = await this.apmDataProxy.getDocTypeName(this.docInfo.doc_type)
+    let langName = await this.apmDataProxy.getEntityName(this.docInfo.lang)
+    let docTypeName = await this.apmDataProxy.getEntityName(this.docInfo.doc_type)
     let items = []
     items.push(tr(`${langName} ${docTypeName}`) + ', ' + tr('{{num}} of {{total}} pages transcribed',
       { num:this.doc['numTranscribedPages'], total:  this.doc['numPages']}));
@@ -439,8 +447,11 @@ export class DocPage extends NormalPage {
    * @param pageSequence
    */
   selectPage(pageSequence) {
+    // console.log(`Selecting page with page sequence ${pageSequence}`)
     let pageIndex = this.pageSeqToPageKeyMap[pageSequence];
+    // console.log(`Page index = ${pageIndex}`);
     let page = this.pages[pageIndex];
+    // console.log(`Page`, page);
     if (this.osd !== null) {
       this.osd.destroy();
     }

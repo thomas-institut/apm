@@ -24,11 +24,13 @@ namespace APM\System;
 
 use APM\CollationEngine\CollationEngine;
 use APM\CollationTable\CollationTableManager;
+use APM\EntitySystem\Schema\Entity;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\FullTranscription\TranscriptionManager;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\Session\SessionManager;
+use APM\System\Document\DocumentManager;
 use APM\System\Job\JobQueueManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
@@ -99,6 +101,27 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
         return in_array($tool, self::VALID_TOOL_IDS);
     }
 
+    /**
+     * Language methods
+     */
+
+    /**
+     * Returns the entity id of the language with the given ISO 649 code
+     *
+     * If the language is not defined, returns null
+     *
+     * @param string $code
+     * @return int|null
+     */
+    public function getLangIdFromCode(string $code) : int|null {
+
+        $statements = $this->getEntitySystem()->getStatements(null, Entity::pLangIso639Code, $code);
+        if (count($statements) === 0) {
+            return null;
+        }
+        return $statements[0]->subject;
+    }
+
 
 
     /**
@@ -117,6 +140,7 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     abstract public function getDataManager() : DataManager;
     abstract public function getPresetsManager() : PresetManager;
     abstract public function getAvailableImageSources() : array;
+    abstract public function getImageSources() : array;
     abstract public function getLogger() : Logger;
 //    abstract public function getHookManager() : HookManager;
     abstract public function getSettingsManager() : SettingsManager;
@@ -126,7 +150,6 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     abstract public function getMultiChunkEditionManager() : MultiChunkEditionManager;
     abstract public function getSessionManager() : SessionManager;
     abstract public function getSystemDataCache() : DataCache;
-
     abstract public function getMemDataCache() : DataCache;
     abstract public function getBaseUrl(): string;
     abstract public function getTwig() : Twig;
@@ -138,6 +161,7 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     abstract public function getPersonManager() : PersonManagerInterface;
     abstract public function getWorkManager() : WorkManager;
     abstract public function getEntitySystem() : ApmEntitySystemInterface;
+    abstract public function getDocumentManager() : DocumentManager;
 
     /**
      * @internal
@@ -173,7 +197,6 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
      * @return void
      */
     public function onEntityDataChange(int|array $entityIdOrIds) : void {
-
     }
 
     public function onTranscriptionUpdated(int $userTid, int $docId, int $pageNumber, int $columnNumber) : void {
@@ -193,23 +216,18 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
 
     }
     public function onCollationTableSaved(int $userTid, int $ctId) : void {
-
     }
 
     public function onPersonDataChanged(int $personTid) : void {
-
     }
 
     public function onWorkAdded(int $workId) : void {
-
     }
 
     public function onWorkDeleted(int $workId) : void {
-
     }
 
     public function onWorkUpdated(int $workId) : void {
-
     }
 
 }

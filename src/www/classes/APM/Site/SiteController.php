@@ -29,6 +29,7 @@ namespace APM\Site;
 use APM\FullTranscription\PageInfo;
 use APM\System\ApmConfigParameter;
 use APM\System\ApmImageType;
+use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\User\UserNotFoundException;
 use APM\SystemProfiler;
@@ -41,6 +42,7 @@ use APM\System\ApmSystemManager;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use RuntimeException;
 use Slim\Routing\RouteParser;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
@@ -259,21 +261,36 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     }
 
     // Utility function
-    protected function buildPageArrayNew(array $pagesInfo, array $transcribedPages, $docInfo): array
+    protected function buildPageArrayNew(array $pagesInfo, array $transcribedPages, array $legacyDocInfo): array
     {
         $thePages = [];
-        $dm  = $this->systemManager->getDataManager();
+        $docManager = $this->systemManager->getDocumentManager();
+        $imageSources = $this->systemManager->getImageSources();
         foreach ($pagesInfo as $pageInfo) {
-            /** @var $pageInfo PageInfo */
-            $thePage = get_object_vars($pageInfo);
-//            $thePage['classes'] = '';
-            $thePage['imageSource'] = $docInfo['image_source'];
-            $thePage['isDeepZoom'] = $docInfo['deep_zoom'];
-            $thePage['isTranscribed'] = in_array($pageInfo->pageNumber, $transcribedPages);
-            $thePage['imageUrl'] = $dm->getImageUrl($docInfo['id'], $pageInfo->imageNumber);
-            $thePage['jpgUrl'] = $dm->getImageUrl($docInfo['id'], $pageInfo->imageNumber, ApmImageType::IMAGE_TYPE_JPG);
-            $thePage['thumbnailUrl'] = $dm->getImageUrl($docInfo['id'], $pageInfo->imageNumber, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL);
-            $thePages[$pageInfo->pageId] = $thePage;
+            try {
+                $thePage = $pageInfo;
+                $pageNumber = $pageInfo['page_number'];
+                $thePage['pageId'] = $pageInfo['id'];
+                $thePage['sequence'] = $pageInfo['seq'];
+                $thePage['pageNumber'] = $pageInfo['page_number'];
+                $thePage['imageNumber'] = $pageInfo['img_number'];
+                $thePage['numCols'] = $pageInfo['num_cols'];
+                $thePage['imageSource'] = $legacyDocInfo['image_source'];
+                $thePage['isDeepZoom'] = $legacyDocInfo['deep_zoom'];
+                $thePage['isTranscribed'] = in_array($pageNumber, $transcribedPages);
+
+                $thePage['imageUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
+                    $pageNumber, ApmImageType::IMAGE_TYPE_DEFAULT, $imageSources);
+                $thePage['jpgUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
+                    $pageNumber, ApmImageType::IMAGE_TYPE_JPG, $imageSources);
+                $thePage['thumbnailUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
+                    $pageNumber, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL, $imageSources);
+//                $this->logger->debug("The page", $thePage);
+                $thePages[$pageInfo['id']] = $thePage;
+            } catch (DocumentNotFoundException $e) {
+                // should never happen
+                throw new RuntimeException("Document not found:" . $e->getMessage());
+            }
         }
         return $thePages;
     }

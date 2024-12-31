@@ -32,6 +32,16 @@ import { ApmFormats } from './common/ApmFormats'
 import { TimeString } from '../toolbox/TimeString.mjs'
 import Split from 'split-grid'
 import { ApmPage } from './ApmPage'
+import * as Entity from '../constants/Entity'
+import { MetadataEditorSchema } from '../defaults/MetadataEditorSchemata/MetadataEditorSchema'
+import { MetadataEditor2 } from '../MetadataEditor/MetadataEditor2'
+
+const TabId_DocDetails = 'doc-info';
+const TabId_Pages = 'page-list';
+const TabId_Contents = 'contents';
+const TabId_LastSaves = 'last-saves';
+const TabId_PageInfo = 'page-info';
+
 
 export class DocPage extends NormalPage {
   constructor(options) {
@@ -45,16 +55,18 @@ export class DocPage extends NormalPage {
         versionInfo: { type: 'object', required: true},
         lastSaves: { type: 'object', required: true},
         canDefinePages: {type: 'boolean', default: false},
-        canEditDocuments: { type: 'boolean', default: false}
+        canEditDocuments: { type: 'boolean', default: false},
+        params: {type: 'array', default: []},
+        selectedPage: { type: 'number', default: 0}
       }
     })
 
-    this.options = oc.getCleanOptions(options)
+    this.options = oc.getCleanOptions(options);
 
     this.chunkInfo = this.options.chunkInfo;
-    this.doc = this.options.doc
-    this.docInfo = this.doc.docInfo
-    this.docId = this.docInfo.id
+    this.doc = this.options.doc;
+    this.docInfo = this.doc.docInfo;
+    this.docId = this.docInfo.id;
     this.pages = this.doc.pages;
 
     Object.keys(this.pages).forEach( (pageId) => {
@@ -64,26 +76,184 @@ export class DocPage extends NormalPage {
     });
 
 
-    this.pageSeqToPageKeyMap = this.getPageSequenceToPageKeyMap(this.pages)
-    this.pageArray = PageArray.getPageArray(this.pages, 'sequence')
+    this.pageSeqToPageKeyMap = this.getPageSequenceToPageKeyMap(this.pages);
+    this.pageArray = PageArray.getPageArray(this.pages, 'sequence');
 
-    console.log(`DocPage for docId ${this.docId}`)
-    console.log(options)
+    console.log(`DocPage for docId ${this.docId}`);
+    console.log(options);
+    this.firstPage = -1;
+    this.lastPage = -1;
 
-    this.firstPage = Math.min(...Object.keys(this.pageSeqToPageKeyMap).map( k => parseInt(k)))
-    this.lastPage = Math.max(...Object.keys(this.pageSeqToPageKeyMap).map( k => parseInt(k)))
+    if (this.pageSeqToPageKeyMap.length !== 0) {
+      this.firstPage = Math.min(...Object.keys(this.pageSeqToPageKeyMap).map( k => parseInt(k)));
+      this.lastPage = Math.max(...Object.keys(this.pageSeqToPageKeyMap).map( k => parseInt(k)));
+    }
 
-    this.versionInfo = this.options.versionInfo
+    this.versionInfo = this.options.versionInfo;
     this.authors = this.options.authorInfo;
     this.lastSaves = this.options.lastSaves;
     this.canDefinePages = this.options.canDefinePages;
     this.canEditDocuments = this.options.canEditDocuments;
-    this.osd = null
+    this.osd = null;
+    this.selectedPage = -1;
+
+    this.tabSlugs={};
+    this.tabSlugs[TabId_DocDetails] = '';
+    this.tabSlugs[TabId_Pages] = 'pages';
+    this.tabSlugs[TabId_Contents] = 'contents';
+    this.tabSlugs[TabId_LastSaves] = 'lastSaves';
+    this.tabSlugs[TabId_PageInfo] = 'page';
+
+    // titles to be used in the document's title
+    // actual tab title in the browser is set in the HTML generator function
+    this.tabTitles = {};
+    this.tabTitles[TabId_DocDetails] = '';
+    this.tabTitles[TabId_Pages] = 'Pages Tab';
+    this.tabTitles[TabId_Contents] = 'Contents Tab';
+    this.tabTitles[TabId_LastSaves] = 'Last Saves Tab';
+    this.tabTitles[TabId_PageInfo] = 'page';
+
+    this.initialTab = TabId_DocDetails;
+    this.currentTab = this.initialTab;
+    this.initialPage = this.firstPage;
+    if (this.options.selectedPage !== 0) {
+      this.initialPage = this.options.selectedPage;
+    }
+    this.docPageUrl = urlGen.siteDocPage(Tid.toBase36String(this.docId));
+    // parse params
+    if (this.options.params.length !== 0) {
+      switch(this.options.params[0]) {
+        case this.tabSlugs[TabId_Pages]:
+          this.initialTab = TabId_Pages;
+          break;
+
+        case this.tabSlugs[TabId_Contents]:
+          this.initialTab = TabId_Contents;
+          break;
+
+        case this.tabSlugs[TabId_LastSaves]:
+          this.initialTab = TabId_LastSaves;
+          break;
+
+        case this.tabSlugs[TabId_PageInfo]:
+          this.initialTab = TabId_PageInfo;
+          this.initialPage = parseInt(this.options.params[1]);
+          if (this.initialPage < this.firstPage){
+            this.initialPage = this.firstPage;
+          }
+          if (this.initialPage > this.lastPage) {
+            this.initialPage = this.lastPage;
+          }
+          break;
+      }
+    }
+    this.initialState = { tab: this.initialTab, selectedPage: this.initialPage};
+    window.history.replaceState(this.initialState, '', this.getUrlForTab(this.initialTab, this.initialPage));
+    this.restablishingPreviousState = false;
+
+    // console.log(`Ready to init page`, window.history.state);
+
 
     this.initPage().then( () => {
-      console.log('Finished initializing page')
+      document.title = this.getTitle();
+      $(`.btn-${TabId_DocDetails}`).on('show.bs.tab', this.genOnShowTab(TabId_DocDetails));
+      $(`.btn-${TabId_Pages}`).on('show.bs.tab', this.genOnShowTab(TabId_Pages));
+      $(`.btn-${TabId_Contents}`).on('show.bs.tab', this.genOnShowTab(TabId_Contents));
+      $(`.btn-${TabId_LastSaves}`).on('show.bs.tab', this.genOnShowTab(TabId_LastSaves));
+      $(`.btn-${TabId_PageInfo}`).on('show.bs.tab', this.genOnShowTab(TabId_PageInfo));
+      window.onpopstate = this.genOnPopState();
+      console.log('Finished initializing page');
     })
+  }
 
+  getTitle() {
+    let title = this.docInfo['title'];
+
+    if (this.currentTab === TabId_PageInfo) {
+      return `${title}: page ${this.selectedPage} details`;
+    }
+
+    if (this.currentTab !== TabId_DocDetails) {
+      title += `: ${this.tabTitles[this.currentTab]}`;
+    }
+    if (this.selectedPage > 1) {
+      title += ` (at page ${this.selectedPage})`;
+    }
+    return title;
+  }
+
+  /**
+   * Returns the url for the given tab id and selected page
+   *
+   * If selectedPage is null, the current selected page is used
+   * @param {string}tabId
+   * @param {number|null}selectedPage
+   * @returns {string}
+   */
+  getUrlForTab(tabId, selectedPage = null) {
+    if (selectedPage === null) {
+      selectedPage = this.selectedPage;
+    }
+    switch(tabId) {
+      case TabId_DocDetails:
+        if (selectedPage <= 1) {
+          return this.docPageUrl;
+        } else {
+          return `${this.docPageUrl}?selectedPage=${selectedPage}`;
+        }
+
+
+      case TabId_Pages:
+      case TabId_Contents:
+      case TabId_LastSaves:
+        if (selectedPage <= 1) {
+          return `${this.docPageUrl}/${this.tabSlugs[tabId]}`;
+        } else {
+          return `${this.docPageUrl}/${this.tabSlugs[tabId]}?selectedPage=${selectedPage}`;
+        }
+
+      case TabId_PageInfo:
+        return `${this.docPageUrl}/${this.tabSlugs[tabId]}/${selectedPage}`;
+    }
+  }
+
+  genOnShowTab(tabId) {
+    return () => {
+      // console.log(`show.bs.tab ${tabId}`);
+      if (this.restablishingPreviousState) {
+        // console.log(`Re-establishing previous state, nothing to do`);
+        this.restablishingPreviousState = false;
+        return;
+      }
+      if (this.currentTab !== tabId) {
+        this.currentTab = tabId;
+        let newState = { tab: tabId, selectedPage: this.selectedPage};
+        // console.log(`Pushing state to history`, newState)
+        window.history.pushState(newState, '', this.getUrlForTab(tabId));
+        document.title = this.getTitle();
+      }
+    }
+  }
+
+  showTab(tabId) {
+    $(`.btn-${tabId}`).tab('show').focus();
+  }
+
+  genOnPopState() {
+    return () => {
+      let state =  window.history.state;
+      console.log(`onpopstate`);
+      console.log(`Current window.history.state`, state);
+      console.log(`There are ${window.history.length} entries in the session history`);
+      if (state === null) {
+        console.log(`Using initial state`, this.initialState);
+        state = this.initialState;
+      }
+      this.restablishingPreviousState = true; // will be set to false by the tab's onShow event handler
+      this.selectPage(state.selectedPage, false);
+      this.showTab(state.tab);
+      document.title = this.getTitle();
+    }
   }
 
   async initPage () {
@@ -92,10 +262,36 @@ export class DocPage extends NormalPage {
     let pageTypesData = await this.apmDataProxy.getAvailablePageTypes();
     this.pageTypes = [];
     for (let i = 0; i < pageTypesData.length; i++) {
-      this.pageTypes[pageTypesData[i]] = await this.apmDataProxy.getEntityName(pageTypesData[i]);
+      let [id, name]  = pageTypesData[i];
+      this.pageTypes[id] = name;
     }
 
-    this.selectedPage = -1
+
+    this.entityData = await this.apmDataProxy.getEntityData(this.docId);
+    this.schema = MetadataEditorSchema.getSchema(Entity.tDocument);
+    console.log(`Entity Schema for type Document`, this.schema);
+
+
+    // preload statement qualification object entities
+    await this.apmDataProxy.getStatementQualificationObjects(true);
+
+    new MetadataEditor2({
+      containerSelector: 'div.metadata-editor',
+      entityDataSchema: this.schema,
+      entityData: this.entityData,
+      apmDataProxy: this.apmDataProxy,
+      infoStringProviders: [
+        {
+          name: 'docShortInfo',
+          provider: async () => {
+            return `${this.doc['numTranscribedPages']} of ${this.doc['numPages']} pages transcribed`
+          }
+        }
+      ]
+    });
+
+
+    this.selectedPage = -1;
     this.thumbnails = 'none';
 
 
@@ -142,16 +338,16 @@ export class DocPage extends NormalPage {
       }
     })
 
-    $('button.first-btn').on('click', () => { this.selectPage(this.firstPage)})
-    $('button.last-btn').on('click', () => { this.selectPage(this.lastPage)})
+    $('button.first-btn').on('click', () => { this.selectPage(this.firstPage, true)})
+    $('button.last-btn').on('click', () => { this.selectPage(this.lastPage, true)})
     $('button.prev-btn').on('click', () => {
       if (this.selectedPage > this.firstPage) {
-        this.selectPage(this.selectedPage-1)
+        this.selectPage(this.selectedPage-1, true)
       }
     });
     $('button.next-btn').on('click', () => {
       if (this.selectedPage < this.lastPage) {
-        this.selectPage(this.selectedPage+1)
+        this.selectPage(this.selectedPage+1, true)
       }
     });
     this.pageListPopoverDiv = $('div.page-list-popover');
@@ -191,15 +387,17 @@ export class DocPage extends NormalPage {
     for (let i = this.firstPage; i <= this.lastPage; i++) {
       $(`.page-select-${i}`).on('click', (ev) => {
         ev.preventDefault();
-        this.selectPage(i);
+        this.selectPage(i, true);
       })
     }
-    this.selectPage(this.firstPage);
+    this.selectPage(this.initialPage, false);
     this.maximizeElementsHeight();
 
     $(window).on('resize', () => {
       this.maximizeElementsHeight();
     });
+
+
   }
 
   maximizeElementsHeight() {
@@ -315,7 +513,7 @@ export class DocPage extends NormalPage {
   setupEventHandlersForPageTable() {
     this.pageArray.forEach( (page) => {
       $(`div.page-big-div-${page['sequence']}`).on('click', () => {
-        this.selectPage(page['sequence'])
+        this.selectPage(page['sequence'], true)
         if (this.pageInfoPopperShown) {
           this.hidePageListPopover()
         }
@@ -340,15 +538,15 @@ export class DocPage extends NormalPage {
 
 
     switch(this.docInfo.image_source) {
-      case 'averroes-server':
+      case Entity.ImageSourceAverroesServer:
         items.push('Images stored in the Averroes server');
         break;
 
-      case 'bilderberg':
+      case Entity.ImageSourceBilderberg:
         items.push('Images stored in Bilderberg');
         break;
     }
-    items.push(`Doc ID: ${this.docInfo.id}, Entity ID: ${Tid.toBase36String(this.docInfo['tid'])}`)
+    items.push(`Id: ${Tid.toBase36String(this.docInfo['id'])}`)
 
     return `<div class="doc-basic-data">` + items.map( (item) => { return `<p>${item}</p>`}).join('') + '</div>'
   }
@@ -357,11 +555,24 @@ export class DocPage extends NormalPage {
     return [ 'doc-page'];
   }
 
+
+
   async genContentHtml() {
+
+    let tabActiveClasses = (tabId) => {
+      return this.initialTab===tabId ? 'active' : '';
+    }
+    let buttonClasses = (tabId) => {
+      let classes = [ `btn-${tabId}`];
+      if (this.initialTab === tabId) {
+        classes.push('active');
+      }
+      return classes.join(' ');
+    }
 
     let breadcrumbHtml = this.getBreadcrumbNavHtml([
       { label: 'Documents', url:  urlGen.siteDocs()},
-      { label:  this.docInfo.title, active:  true}
+      { label:  this.docInfo.title, url: this.getUrlForTab(TabId_DocDetails, 1), active:  true}
     ])
     return `
     <div class="doc-page-breadcrum">${breadcrumbHtml}</div>
@@ -388,35 +599,32 @@ export class DocPage extends NormalPage {
             <div class="tabs">
             <ul class="nav nav-tabs" role="tablist">
                 <li class="nav-item">
-                    <button class="nav-link active" data-target="#metadata" data-toggle="tab">Doc</button>
+                    <button class="nav-link ${buttonClasses(TabId_DocDetails)}" data-target="#tab-${TabId_DocDetails}" data-toggle="tab">Doc</button>
                 </li>
-               <li class="nav-item" role="presentation">
-                <button class="nav-link" data-target="#page-list" data-toggle="tab">Pages</button>
+               <li class="nav-item">
+                <button class="nav-link ${buttonClasses(TabId_Pages)}" data-target="#tab-${TabId_Pages}" data-toggle="tab">Pages</button>
             </li>
              <li class="nav-item">
-                <button class="nav-link" data-target="#page-contents" data-toggle="tab">Contents</button>
+                <button class="nav-link ${buttonClasses(TabId_Contents)}" data-target="#tab-${TabId_Contents}" data-toggle="tab">Contents</button>
             </li>
 
             <li class="nav-item">
-                <button class="nav-link" data-target="#last-saves" data-toggle="tab">Last Saves</button>
+                <button class="nav-link ${buttonClasses(TabId_LastSaves)}" data-target="#tab-${TabId_LastSaves}" data-toggle="tab">Last Saves</button>
             </li>
              <li class="nav-item">
-                <button class="nav-link page-info-tab-title" data-target="#page-info-tab" data-toggle="tab">Page Info</button>
+                <button class="nav-link page-info-tab-title ${buttonClasses(TabId_PageInfo)}" data-target="#tab-${TabId_PageInfo}" data-toggle="tab">Page Info</button>
              </li>
             </ul>
             </div>
             <div class="tab-content">
-                <div class="tab-pane page-info-panel" id="page-info-tab"></div>
-                <div class="tab-pane doc-metadata show active" id="metadata">
+                <div class="tab-pane doc-metadata ${tabActiveClasses(TabId_DocDetails)}" id="tab-${TabId_DocDetails}">
                      <h1>${this.docInfo.title}</h1>
                      <div class="doc-info-tag"> ${await this.getDocInfoHtml()}</div>
                       <div class="doc-admin">${this.getAdminHtml()}</div> 
-                    <div>
-                        <h2>Metadata</h2>
-                        <p><em>TDB...</em></p>
+                    <div class="metadata-editor">
                     </div>
                 </div>
-                <div class="tab-pane panel-with-toolbar page-list-panel" id="page-list">
+                <div class="tab-pane panel-with-toolbar page-list-panel ${tabActiveClasses(TabId_Pages)}" id="tab-${TabId_Pages}">
                    <div class="panel-toolbar">
                       <div class="thumbnail-selector"></div>
                    </div>
@@ -424,14 +632,15 @@ export class DocPage extends NormalPage {
                     
                    </div>
                 </div>
-                <div class="tab-pane page-contents" id="page-contents">
+                <div class="tab-pane page-contents ${tabActiveClasses(TabId_Contents)}" id="tab-${TabId_Contents}">
                      <h1>Works</h1>
                     <div class="worksinfo" id="chunkinfo">${await this.genWorkInfoHtml()}</div>   
                 </div>
-                <div class="tab-pane doc-last-saves" id="last-saves">
+                <div class="tab-pane doc-last-saves ${tabActiveClasses(TabId_LastSaves)}" id="tab-${TabId_LastSaves}">
                     <h1>Last Saves </h1>
                     <div id="lastsaves">${await this.getLastSavesHtml()}</div>
                 </div>
+                <div class="tab-pane page-info-panel ${tabActiveClasses(TabId_PageInfo)}" id="tab-${TabId_PageInfo}"></div>
             </div>
         </div>
     </div>
@@ -442,12 +651,19 @@ export class DocPage extends NormalPage {
 
 
   /**
-   * Loads a page into OpenSeaDragon
+   * Shows a page in the viewer
+   *
    * @private
    * @param pageSequence
+   * @param changeBrowserHistory
    */
-  selectPage(pageSequence) {
+  selectPage(pageSequence, changeBrowserHistory = false) {
     // console.log(`Selecting page with page sequence ${pageSequence}`)
+
+    if (pageSequence === -1 || this.selectedPage === pageSequence) {
+      // nothing to do
+      return;
+    }
     let pageIndex = this.pageSeqToPageKeyMap[pageSequence];
     // console.log(`Page index = ${pageIndex}`);
     let page = this.pages[pageIndex];
@@ -502,7 +718,7 @@ export class DocPage extends NormalPage {
             this.pages[pageIndex].foliation = newText;
             this.pages[pageIndex].foliationIsSet = true;
             this.rebuildPageList()
-            this.selectPage(pageSequence);
+            this.selectPage(pageSequence, false);
           }).catch( (e) => {
             console.warn(`Error saving foliation for page ${pageIndex}: ${e}`);
             foliationWarningElement.html(`Error saving foliation`);
@@ -510,8 +726,14 @@ export class DocPage extends NormalPage {
           })
         }
       }
-    })
+    });
     this.selectedPage = pageSequence;
+    if (changeBrowserHistory) {
+      let newState = { tab: this.currentTab, selectedPage: this.selectedPage};
+      // console.log(`Pushing state to history`, newState)
+      window.history.pushState(newState, '', this.getUrlForTab(this.currentTab));
+      document.title = this.getTitle();
+    }
   }
 
 
@@ -558,15 +780,15 @@ export class DocPage extends NormalPage {
 
   getAdminHtml() {
 
-    let editDocUrl = urlGen.siteDocEdit(this.docId)
-    let editDocumentHtml = this.canEditDocuments ?
-      `<a class="btn btn-sm btn-primary" href="${editDocUrl}">Edit Document</a>` : '';
+    // let editDocUrl = urlGen.siteDocEdit(Tid.toBase36String(this.docId))
+    // let editDocumentHtml = this.canEditDocuments ?
+    //   `<a class="btn btn-sm btn-primary" href="${editDocUrl}">Edit Document</a>` : '';
 
-    let defineDocPagesUrl = urlGen.siteDocDefinePages(this.docId);
+    let defineDocPagesUrl = urlGen.siteDocDefinePages(Tid.toBase36String(this.docId));
     let definePagesHtml = this.canDefinePages ?
       `<a class="btn btn-sm btn-primary" href="${defineDocPagesUrl}">Define pages</a>` : '';
 
-    return `${editDocumentHtml} ${definePagesHtml}`;
+    return `${definePagesHtml}`;
   }
   async genWorkInfoHtml() {
     if (Object.keys(this.chunkInfo).length === 0) {

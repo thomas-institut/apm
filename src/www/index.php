@@ -270,11 +270,12 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
             })
             ->setName('docs');
 
-        $group->get('/doc/{id}/details',
-            function(Request $request, Response $response) use ($container){
-                return (new SiteDocuments($container))->showDocPage($request, $response);
-            })
-            ->setName('doc.showdoc');
+
+//        $group->get('/doc/new',
+//            function(Request $request, Response $response) use ($container){
+//                return (new SiteDocuments($container))->newDocPage($request, $response);
+//            })
+//            ->setName('doc.new');
 
         $group->get('/doc/{id}/definepages',
             function(Request $request, Response $response) use ($container){
@@ -282,17 +283,17 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
             })
             ->setName('doc.definedocpages');
 
-        $group->get('/doc/{id}/edit',
-            function(Request $request, Response $response) use ($container){
-                return (new SiteDocuments($container))->editDocPage($request, $response);
-            })
-            ->setName('doc.editdoc');
+//        $group->get('/doc/{id}/edit',
+//            function(Request $request, Response $response, array $args) use ($container){
+//                return (new SiteDocuments($container))->editDocPage($request, $response, $args);
+//            })
+//            ->setName('doc.editdoc');
 
-        $group->get('/doc/new',
-            function(Request $request, Response $response) use ($container){
-                return (new SiteDocuments($container))->newDocPage($request, $response);
+        $group->get('/doc/{id}[/{params:.*}]',
+            function(Request $request, Response $response, array $args) use ($container){
+                return (new SiteDocuments($container))->showDocPage($request, $response, $args);
             })
-            ->setName('doc.new');
+            ->setName('doc.details');
 
         // PAGE VIEWER / TRANSCRIPTION EDITOR
         $group->get('/doc/{doc}/realpage/{page}/view',
@@ -524,9 +525,16 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
     // API -> create new document
     $group->post('/doc/new',
         function(Request $request, Response $response) use ($container){
-            return (new ApiDocuments($container))->newDocument($request, $response);
+            return (new ApiDocuments($container))->newDocumentOld($request, $response);
         })
         ->setName('api.doc.new');
+
+
+    $group->post('/doc/create',
+        function(Request $request, Response $response, array $args) use ($container){
+            return (new ApiDocuments($container))->createDocument($request, $response, $args);
+        })
+        ->setName('api.doc.create');
 
     // API -> delete document
     $group->get('/doc/{id}/delete',

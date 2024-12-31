@@ -28,7 +28,6 @@ namespace APM\Site;
 
 use APM\EntitySystem\Schema\Entity;
 use APM\FullTranscription\ApmChunkSegmentLocation;
-use APM\Session\Exception\SessionNotFoundException;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
@@ -54,8 +53,6 @@ class SiteDocuments extends SiteController
 
     const TEMPLATE_DOCS_PAGE = 'documents-page.twig';
     const TEMPLATE_SHOW_DOCS_PAGE = 'doc-details.twig';
-    const TEMPLATE_DOC_EDIT_PAGE = 'doc-edit.twig';
-    const TEMPLATE_NEW_DOC_PAGE = 'doc-new.twig';
     const TEMPLATE_DEFINE_DOC_PAGES = 'doc-def-pages.twig';
 
     /**
@@ -149,14 +146,17 @@ class SiteDocuments extends SiteController
     /**
      * @param Request $request
      * @param Response $response
+     * @param array $args
      * @return Response
      * @throws PersonNotFoundException
      * @throws UserNotFoundException
      */
-    public function showDocPage(Request $request, Response $response): Response
+    public function showDocPage(Request $request, Response $response, array $args): Response
     {
         
-        $id = $request->getAttribute('id');
+        $id = $args['id'];
+
+        $selectedPage = intval($request->getQueryParams()['selectedPage'] ?? '0');
 
         $docId = $this->systemManager->getEntitySystem()->getEntityIdFromString($id);
 
@@ -164,6 +164,8 @@ class SiteDocuments extends SiteController
             return $this->getBasicErrorPage($response, "Invalid Document ID",
                 "Invalid Document ID $id", HttpStatus::BAD_REQUEST);
         }
+
+        $this->logger->debug("Showing Document Page for Document ID $docId");
 
 
         $chunkSegmentErrorMessages = [];
@@ -180,6 +182,21 @@ class SiteDocuments extends SiteController
         $docManager = $this->systemManager->getDocumentManager();
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $userManager = $this->systemManager->getUserManager();
+        if ($docId < 2000) {
+            // a legacy doc id
+            $this->logger->debug("Id $docId is a legacy id");
+            try {
+                $docData = $docManager->getDocumentEntityData($docId);
+            } catch (DocumentNotFoundException $e) {
+                $this->logger->debug("Document not found: " . $e->getMessage());
+                return $this->getBasicErrorPage($response, "Document $id not found",
+                    "Document $id not found", HttpStatus::NOT_FOUND);
+            }
+            $this->logger->debug("Entity id for legacy doc id $docId is $docData->id");
+            $newUrl = $this->router->urlFor("doc.details", [ 'id' => Tid::toBase36String($docData->id)]);
+            $this->logger->warning("Redirecting to $newUrl");
+            return $response->withHeader('Location', $newUrl)->withStatus(HttpStatus::MOVED_PERMANENTLY);
+        }
 
         $doc = [];
         try {
@@ -286,59 +303,10 @@ class SiteDocuments extends SiteController
             'lastSaves' => $lastSaves,
             'metaData' => $metaData,
             'userTid' => $this->userId,
+            'params' => explode('/', $args['params'] ?? ''),
+            'selectedPage' => $selectedPage
         ]);
     }
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     * @throws UserNotFoundException
-     */
-    public function newDocPage(Request $request, Response $response): Response
-    {
-
-        if (!$this->systemManager->getUserManager()->isUserAllowedTo($this->userId, 'create-new-documents')) {
-            $this->logger->debug("User $this->userId tried to add new doc but is not allowed to do it");
-            return $this->getErrorPage($response, 'Error', 'You are not allowed to create documents', HttpStatus::UNAUTHORIZED);
-        }
-
-        return $this->renderPage($response, self::TEMPLATE_NEW_DOC_PAGE, [
-            'imageSources' =>  $this->systemManager->getAvailableImageSources(),
-            'languages' => $this->getLanguages(),
-            'docTypes' =>  [ ['mss', 'Manuscript'], ['print', 'Print']]
-        ]);
-    }
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-    public function editDocPage(Request $request, Response $response): Response
-    {
-        $this->profiler->start();
-
-        $docId = $request->getAttribute('id');
-        $dataManager = $this->systemManager->getDataManager();
-        $docInfo = $dataManager->getDocById($docId);
-        if ($docInfo === false) {
-            return $this->getBasicErrorPage($response, 'Not found', "Document not found", HttpStatus::NOT_FOUND);
-        }
-        $availableImageSources = $this->systemManager->getAvailableImageSources();
-        $docTypes = [ ['mss', 'Manuscript'], ['print', 'Print']];
-        $this->profiler->stop();
-        $this->logProfilerData('editDocPage-' . $docId);
-        return $this->renderPage($response, self::TEMPLATE_DOC_EDIT_PAGE, [
-            'docInfo' => $docInfo,
-            'imageSources' => $availableImageSources,
-            'languages' => $this->getLanguages(),
-            'docTypes' => $docTypes,
-            'canBeDeleted' => false
-        ]);
-    }
-
-
 
     /**
      * @param Request $request
@@ -349,13 +317,7 @@ class SiteDocuments extends SiteController
     {
         $this->profiler->start();
         
-//        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')){
-//            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to define document pages  but is not allowed to do it');
-//            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
-//                'message' => 'You are not authorized to edit document settings'
-//            ]);
-//        }
-        
+
         $docId = $request->getAttribute('id');
         $dataManager = $this->systemManager->getDataManager();
         $doc = [];

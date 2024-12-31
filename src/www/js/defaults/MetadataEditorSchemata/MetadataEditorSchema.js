@@ -1,6 +1,7 @@
 import * as Entity from '../../constants/Entity'
 import * as SchemaContext from './SchemaContext'
 import { PersonSchemata } from './PersonSchemata'
+import { DocumentSchemata } from './DocumentSchemata'
 
 export class MetadataEditorSchema {
 
@@ -16,6 +17,9 @@ export class MetadataEditorSchema {
     switch (entityType) {
       case Entity.tPerson:
         return PersonSchemata.getSchema(context);
+
+      case Entity.tDocument:
+        return DocumentSchemata.getSchema(context);
     }
 
     return null;

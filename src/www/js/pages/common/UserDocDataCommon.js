@@ -32,7 +32,7 @@ export class UserDocDataCommon {
     } else {
       let docs = stringFieldSort(docArray, 'title')
       html = docs.map( (docInfo) => {
-        let docUrl = urlGen.siteDocPage(docInfo.id)
+        let docUrl = urlGen.siteDocPage(Tid.toBase36String(docInfo.tid))
         let pageListHtml = docInfo['pageIds'].map( (pageId) => {
           let pageInfo = apiData['pageInfoArray'][pageId]
           let pageUrl = urlGen.sitePageView(pageInfo.docId, pageInfo.sequence)

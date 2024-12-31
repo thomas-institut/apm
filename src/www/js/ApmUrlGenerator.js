@@ -86,7 +86,7 @@ export class ApmUrlGenerator {
     }
 
     siteDocPage(docId) {
-        return this.base + '/doc/' + docId + '/details'
+        return `${this.base}/doc/${docId}`;
     }
 
     siteDocEdit(docId) {
@@ -370,9 +370,20 @@ export class ApmUrlGenerator {
         return `${this.base}/api/person/${personTid}/works`;
     }
 
-    apiDocumentNew() {
+    /**
+     *
+     * @returns {string}
+     * @deprecated
+     */
+    apiDocumentNew_deprecated() {
         return `${this.base}/api/doc/new`
     }
+
+    apiDocumentCreate() {
+        return `${this.base}/api/doc/create`
+    }
+
+
 
     apiDocumentUpdate(id) {
         return `${this.base}/api/doc/${id}/update`

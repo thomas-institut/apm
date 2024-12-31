@@ -21,7 +21,7 @@ export class NewChunkEditionDialog {
 
   createNewChunkEdition() {
     return new Promise( async (resolve) => {
-      this.systemLanguages = await this.options.apmDataProxy.getSystemLanguages();
+      this.systemLanguages = await this.options.apmDataProxy.getLegacySystemLanguagesArray();
 
 
       this.dialog = new GetDataAndProcessDialog({

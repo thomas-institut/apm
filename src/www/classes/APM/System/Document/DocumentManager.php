@@ -23,23 +23,34 @@ interface DocumentManager
 
 
     /**
+     * Creates a document with the given name and returns
+     * the id of the newly created document.
+     *
+     * @param string $name should not be empty
+     * @param int $createdBy id of the person who is creating the document
+     * @return int
+     */
+    public function createDocumentSimple(string $name, int $createdBy): int;
+
+
+    /**
      * Creates a new document in the system with the given title, pageCount, etc.
      *
      * Returns the id of the newly created document.
      *
      * @param string $title
-     * @param int $lang
-     * @param int $type
-     * @param int $imageSource
-     * @param string $imageSourceData
+     * @param int|null $lang
+     * @param int|null $type
+     * @param int|null $imageSource
+     * @param string|null $imageSourceData
      * @param int $createdBy creator's entity id
      * @return int
      */
-    public function createDocument(string $title,
-                                   int $lang, int $type,
-                                   int $imageSource,
-                                   string $imageSourceData,
-                                   int $createdBy) : int;
+    public function createDocument(string  $title,
+                                   ?int $type, ?int    $lang,
+                                   ?int    $imageSource,
+                                   ?string $imageSourceData,
+                                   int     $createdBy) : int;
 
 
     /**

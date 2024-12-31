@@ -40,7 +40,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
      * Data id for internal kernel caches, needs to be changed every time there is a
      * change in the entity system schema or in the ApmEntitySystemKernel class
      */
-    const dataId = '041';
+    const dataId = '2024.12.24-11:53:37';
 
     const kernelCacheKey = 'ApmEntitySystemKernel';
 
@@ -352,8 +352,8 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 
         if ($author !== Entity::System) {
             try {
-                $authorType = $this->getInnerEntitySystem()->getEntityType($author);
-            } catch (\ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException) {
+                $authorType = $this->getEntityType($author);
+            } catch (EntityDoesNotExistException $e) {
                 throw new InvalidArgumentException("Author $author not defined in the system");
             }
 
@@ -361,9 +361,9 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
                 throw new InvalidArgumentException("Author $author not a Person entity");
             }
 
-            $authorTid  = $this->getMergedIntoEntity($author);
-            if ($authorTid !== null) {
-                throw new InvalidArgumentException("Author $author has been merged into $authorTid");
+            $authorId  = $this->getMergedIntoEntity($author);
+            if ($authorId !== null) {
+                throw new InvalidArgumentException("Author $author has been merged into $authorId");
             }
         }
 
@@ -373,15 +373,15 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         }
 
         try {
-            $subjectType = $this->getInnerEntitySystem()->getEntityType($subject);
-        } catch (\ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException) {
+            $subjectType = $this->getEntityType($subject);
+        } catch (EntityDoesNotExistException $e) {
             throw new InvalidSubjectException("Subject $subject not an entity in the system");
         }
 
         if (is_int($object)) {
             try {
-                $objectType = $this->getInnerEntitySystem()->getEntityType($object);
-            } catch (\ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException) {
+                $objectType = $this->getEntityType($object);
+            } catch (EntityDoesNotExistException) {
                 throw new InvalidObjectException("Object $object not an entity in the system");
             }
             $objectTid = $this->getMergedIntoEntity($object);

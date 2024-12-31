@@ -233,13 +233,63 @@ class ApiDocuments extends ApiController
         return $this->responseWithStatus($response, 200);
     }
 
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @param array $args
+     * @return Response
+     * @throws UserNotFoundException
+     */
+    public function createDocument(Request $request, Response $response, array $args): Response
+    {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        $this->profiler->start();
+
+
+        // TODO: implement proper user permissions
+        if (!$this->systemManager->getUserManager()->isRoot($this->apiUserId)) {
+            $this->logger->warning("Create document: unauthorized request",
+                ['apiUserTid' => $this->apiUserId]
+            );
+            return $this->responseWithStatus($response, 403);
+        }
+
+        $rawData = $request->getBody()->getContents();
+        $postData = [];
+        parse_str($rawData, $postData);
+
+        $this->logger->debug("Post", [ 'rawData' => $rawData, 'postData' => $postData ]);
+
+        $name = $postData['name'] ?? '';
+        $type = $postData['type'] ?? null;
+        $lang = $postData['lang'] ?? null;
+        $imageSource = $postData['imageSource'] ?? null;
+        $imageSourceData = $postData['imageSourceData'] ?? null;
+
+        if ($name === '') {
+            $this->logger->error("New Document: no name provided",
+                ['apiUserTid' => $this->apiUserId,
+                    'apiError' => ApiController::API_ERROR_NO_DATA,]);
+            return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_DATA], 409);
+        }
+
+        $newDocId = $this->systemManager->getDocumentManager()->createDocument($name, $type,
+            $lang, $imageSource, $imageSourceData, $this->apiUserId);
+
+        $this->systemManager->onDocumentAdded($this->apiUserId, $newDocId);
+        return $this->responseWithJson($response, $newDocId);
+    }
+
+
+
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
      * @throws UserNotFoundException
      */
-    public function newDocument(Request $request, Response $response): Response
+    public function newDocumentOld(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $this->profiler->start();

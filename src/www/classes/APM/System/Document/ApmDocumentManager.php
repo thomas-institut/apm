@@ -87,29 +87,32 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
     }
 
     /**
-     * @param string $title
-     * @param int $lang
-     * @param int $type
-     * @param int $imageSource
-     * @param string $imageSourceData
+     * @param string $name
      * @param int $createdBy
      * @inheritDoc
      */
-    public function createDocument(string $title, int $lang, int $type, int $imageSource, string $imageSourceData, int $createdBy): int
+    public function createDocumentSimple(string $name, int $createdBy): int {
+        return $this->createDocument($name, null,null, null, null, $createdBy);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function createDocument(string $title, ?int $type, ?int $lang, ?int $imageSource, ?string $imageSourceData, int $createdBy): int
     {
         $es = $this->getEntitySystem();
 
-        if (!$this->checkEntity($lang, Entity::tLanguage)) {
+        if ($lang !== null && !$this->checkEntity($lang, Entity::tLanguage)) {
             throw new InvalidArgumentException("Given language '$lang' is not a valid language");
         }
-        if (!$this->checkEntity($type, Entity::tDocumentType)) {
+        if ($type !== null && !$this->checkEntity($type, Entity::tDocumentType)) {
             throw new InvalidArgumentException("Given type '$type' is not a valid document type");
         }
-        if (!$this->checkEntity($imageSource, Entity::tImageSource)) {
+        if ($imageSource !== null && !$this->checkEntity($imageSource, Entity::tImageSource)) {
             throw new InvalidArgumentException("Given image source '$imageSource' is not a valid image source");
         }
 
-        $imageSourceData = trim($imageSourceData);
+        $imageSourceData = trim($imageSourceData ?? '');
         try {
             $id = $es->createEntity(Entity::tDocument, $title, '', $createdBy);
         } catch (InvalidEntityTypeException $e) {
@@ -117,14 +120,20 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
             throw new RuntimeException("Exception creating entity: " . $e->getMessage(), 0, $e);
         }
         try {
-            $es->makeStatement($id, Entity::pDocumentLanguage, $lang, $createdBy,
-                "Setting language when creating document");
-            $es->makeStatement($id, Entity::pDocumentType, $type, $createdBy,
-                "Setting document type when creating document");
-            $es->makeStatement($id, Entity::pImageSource, $imageSource, $createdBy,
-                "Setting image source when creating document");
+            if ($lang !== null) {
+                $es->makeStatement($id, Entity::pDocumentLanguage, $lang, $createdBy,
+                    "Setting language when creating document");
+            }
+            if ($type !== null) {
+                $es->makeStatement($id, Entity::pDocumentType, $type, $createdBy,
+                    "Setting document type when creating document");
+            }
+            if ($imageSource !== null) {
+                $es->makeStatement($id, Entity::pImageSource, $imageSource, $createdBy,
+                    "Setting image source when creating document");
+            }
             if ($imageSourceData !== '') {
-                $es->makeStatement($id, Entity::pImageSourceData, $imageSourceData, $imageSourceData,
+                $es->makeStatement($id, Entity::pImageSourceData, $imageSourceData, $createdBy,
                     "Setting image source data when creating document");
             }
         } catch (InvalidObjectException|InvalidSubjectException|InvalidStatementException $e) {
@@ -386,7 +395,7 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
             try {
                 $entityId = $this->cache->get("entity-id-$docId");
             } catch (KeyNotInCacheException) {
-                $statements = $this->getEntitySystem()->getStatements(null, Entity::pLegacyApmDatabaseId, $docId);
+                $statements = $this->getEntitySystem()->getStatements(null, Entity::pLegacyApmDatabaseId, strval($docId));
                 if (count($statements) === 0) {
                     throw new DocumentNotFoundException("Document with legacy docId $docId not found");
                 }

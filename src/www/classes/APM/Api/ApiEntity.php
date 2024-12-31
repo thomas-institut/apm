@@ -322,7 +322,9 @@ class ApiEntity extends ApiController
         foreach($commands as $command) {
             if ($command['command'] === 'create') {
                 $entitiesInvolved[]  = $command['subject'];
-                $entitiesInvolved[] = $command['object'];
+                if (is_int($command['object'])) {
+                    $entitiesInvolved[] = $command['object'];
+                }
             }
         }
 

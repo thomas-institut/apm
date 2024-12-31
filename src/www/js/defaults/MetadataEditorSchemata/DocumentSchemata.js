@@ -4,63 +4,60 @@ import * as SchemaContext from './SchemaContext'
 
 const schemata = {
   default: {
-    type: Entity.tPerson,
+    type: Entity.tDocument,
     context: SchemaContext.Default,
     sections: [
       {
         type: SectionType.Header,
         predicates: [],
+        postDescriptionInfoStrings: [ 'docShortInfo'],
       },
       {
         type: SectionType.VerticalList,
-        title: 'Basic Data',
+        title: 'General Info',
         predicates: [
           {
             id: Entity.pEntityName,
+            label: 'Document Title',
             hideEvenIfActive: true,
             isUniqueInSection: true,
           },
           {
             id: Entity.pEntityDescription,
+            label: 'Description',
             hideEvenIfActive: true,
             multiLineInput: true,
             isUniqueInSection: true,
           },
           {
-            id: Entity.pSortName,
-            isUniqueInSection: true,
+            id: Entity.pDocumentType,
+            label: 'Type'
           },
           {
-            id: Entity.pDateOfBirth,
-            isUniqueInSection: true,
-          },
-          {
-            id: Entity.pPlaceOfBirth,
-          },
-          {
-            id: Entity.pDateOfDeath,
-            isUniqueInSection: true,
-          },
-          {
-            id: Entity.pPlaceOfDeath
+            id: Entity.pDocumentLanguage,
+            label: 'Language'
           },
           {
             id: Entity.pAlternateName,
-            label: 'Alt. Name'
+            label: 'Alt. Name(s)'
           },
-
         ]
       },
       {
-        type: SectionType.HorizontalList,
-        title: 'External Ids',
-        predicates: [Entity.pWikiDataId, Entity.pOrcid, Entity.pViafId, Entity.pGNDId, Entity.pLocId].map( (idType) => {
-          return {
-            id: idType,
-            showLogo: true,
-            showUrl: true,
-          }
-        })
+        type: SectionType.VerticalList,
+        title: 'Images',
+        predicates: [
+          {
+            id: Entity.pImageSource,
+            isUniqueInSection: true,
+          },
+          {
+            id: Entity.pImageSourceData,
+            label: 'Image Source Data',
+            isUniqueInSection: true,
+            hideEvenIfActive: true,
+          },
+        ]
       },
       {
         type: SectionType.VerticalList,
@@ -80,7 +77,7 @@ const schemata = {
 
 
 
-export class PersonSchemata {
+export class DocumentSchemata {
 
   static getSchema(context= 'default') {
     return schemata[context] ?? null;

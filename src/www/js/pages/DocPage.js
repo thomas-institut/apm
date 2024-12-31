@@ -417,7 +417,7 @@ export class DocPage extends NormalPage {
   }
 
   rebuildPageList() {
-    $('div.page-list-panel .panel-content').html(this.getPageListHtml(true))
+    $('div.page-list-panel .page-list').html(this.getPageListHtml(true))
     this.pageListPopoverDiv.html(this.getPageListHtml(false));
     this.setupEventHandlersForPageTable()
   }
@@ -529,28 +529,6 @@ export class DocPage extends NormalPage {
     return map
   }
 
-  async getDocInfoHtml() {
-    let langName = await this.apmDataProxy.getEntityName(this.docInfo.lang)
-    let docTypeName = await this.apmDataProxy.getEntityName(this.docInfo.doc_type)
-    let items = []
-    items.push(tr(`${langName} ${docTypeName}`) + ', ' + tr('{{num}} of {{total}} pages transcribed',
-      { num:this.doc['numTranscribedPages'], total:  this.doc['numPages']}));
-
-
-    switch(this.docInfo.image_source) {
-      case Entity.ImageSourceAverroesServer:
-        items.push('Images stored in the Averroes server');
-        break;
-
-      case Entity.ImageSourceBilderberg:
-        items.push('Images stored in Bilderberg');
-        break;
-    }
-    items.push(`Id: ${Tid.toBase36String(this.docInfo['id'])}`)
-
-    return `<div class="doc-basic-data">` + items.map( (item) => { return `<p>${item}</p>`}).join('') + '</div>'
-  }
-
   getExtraClassesForPageContentDiv () {
     return [ 'doc-page'];
   }
@@ -618,17 +596,19 @@ export class DocPage extends NormalPage {
             </div>
             <div class="tab-content">
                 <div class="tab-pane doc-metadata ${tabActiveClasses(TabId_DocDetails)}" id="tab-${TabId_DocDetails}">
-                     <h1>${this.docInfo.title}</h1>
-                     <div class="doc-info-tag"> ${await this.getDocInfoHtml()}</div>
-                      <div class="doc-admin">${this.getAdminHtml()}</div> 
                     <div class="metadata-editor">
                     </div>
+                    <div class="doc-admin">${this.getAdminHtml()}</div> 
                 </div>
                 <div class="tab-pane panel-with-toolbar page-list-panel ${tabActiveClasses(TabId_Pages)}" id="tab-${TabId_Pages}">
                    <div class="panel-toolbar">
                       <div class="thumbnail-selector"></div>
                    </div>
                    <div class="panel-content">
+                    <div class="page-list"></div>
+                    <div class="page-admin">
+                    ${await this.getPageAdminHtml()}
+                </div>
                     
                    </div>
                 </div>
@@ -647,6 +627,15 @@ export class DocPage extends NormalPage {
      <!-- Page list popover -->
     <div class="page-list-popover"></div>
 `
+  }
+
+  async getPageAdminHtml() {
+    let html = '';
+
+    html += `<h3>Add pages</h3>`
+    html += `Add <input type="number" class="add-pages-num-pages-input" value=""/> page(s) at the end of the document 
+        <button class="btn-primary btn-sm add-pages-btn">Do it!</button>`
+    return html;
   }
 
 

@@ -197,7 +197,6 @@ class ApiCollation extends ApiController
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $this->profiler->start();
-        $dataManager = $this->getDataManager();
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $requiredFields = [ 'work', 'chunk', 'lang', 'witnesses'];
 
@@ -211,6 +210,7 @@ class ApiCollation extends ApiController
         $language = $inputDataObject['lang'];
         $requestedWitnesses = $inputDataObject['witnesses'];
         $ignorePunctuation = $inputDataObject['ignorePunctuation'] ?? false;
+        $useCache = $request->getAttribute('useCache') ?? false;
 
 
         // Check that language is valid
@@ -320,47 +320,50 @@ class ApiCollation extends ApiController
         $collationTableCacheId = implode(':', $witnessIds) . '-' . implode(':', $normalizerNames);
         $this->codeDebug('Collation table ID: ' . $collationTableCacheId);
 
-        $cacheKey = CacheKey::ApiCollationAutomaticCollationTablePrefix . $workId . '-' . $chunkNumber . '-' .
-            $language . '-' . hash('sha256', $collationTableCacheId);
-        $this->codeDebug("Cache key: $cacheKey");
+        if ($useCache) {
+            $cacheKey = CacheKey::ApiCollationAutomaticCollationTablePrefix . $workId . '-' . $chunkNumber . '-' .
+                $language . '-' . hash('sha256', $collationTableCacheId);
+            $this->codeDebug("Cache key: $cacheKey");
 
-        $cache = $this->systemManager->getSystemDataCache();
-        $cacheHit = true;
-        try {
-            $cachedData = $cache->get($cacheKey);
-        } catch ( KeyNotInCacheException) {
-            $this->systemManager->getCacheTracker()->incrementMisses();
-            $cacheHit = false;
-            $cachedData = '';
-        }
+            $cache = $this->systemManager->getSystemDataCache();
+            $cacheHit = true;
+            try {
+                $cachedData = $cache->get($cacheKey);
+            } catch ( KeyNotInCacheException) {
+                $this->systemManager->getCacheTracker()->incrementMisses();
+                $cacheHit = false;
+                $cachedData = '';
+            }
 
-        if ($cacheHit) {
-            $this->systemManager->getCacheTracker()->incrementHits();
-            $this->profiler->lap('Before decoding from cache');
-            $responseData = DataCacheToolBox::fromCachedString($cachedData, true);
-            $this->profiler->lap("Data decoded from cache");
-            if (!is_null($responseData)) {
-                if (!isset($responseData['collationTableCacheId'])) {
-                    // this will generate a cache key collision
-                    $responseData['collationTableCacheId'] = 'collationTableCacheId not set';
-                }
-                if ($responseData['collationTableCacheId'] !== $collationTableCacheId) {
-                    // this should almost never happen once the cached is cleared of entries without collationTableId
-                    $this->logger->info("Cache key collision!", [
-                        'cacheKey' => $cacheKey,
-                        'requestedCollationTableCacheId' => $collationTableCacheId,
-                        'cachedCollationTableCacheId' => $responseData['collationTableCacheId']
-                    ]);
-                } else {
-                    $responseData['collationEngineDetails']['cached'] = true;
-                    $this->profiler->stop();
-                    $responseData['collationEngineDetails']['cachedRunTime'] = $this->getProfilerTotalTime();
-                    $responseData['collationEngineDetails']['cachedTimestamp'] = time();
-                    return $this->responseWithJson($response, $responseData);
+            if ($cacheHit) {
+                $this->systemManager->getCacheTracker()->incrementHits();
+                $this->profiler->lap('Before decoding from cache');
+                $responseData = DataCacheToolBox::fromCachedString($cachedData, true);
+                $this->profiler->lap("Data decoded from cache");
+                if (!is_null($responseData)) {
+                    if (!isset($responseData['collationTableCacheId'])) {
+                        // this will generate a cache key collision
+                        $responseData['collationTableCacheId'] = 'collationTableCacheId not set';
+                    }
+                    if ($responseData['collationTableCacheId'] !== $collationTableCacheId) {
+                        // this should almost never happen once the cached is cleared of entries without collationTableId
+                        $this->logger->info("Cache key collision!", [
+                            'cacheKey' => $cacheKey,
+                            'requestedCollationTableCacheId' => $collationTableCacheId,
+                            'cachedCollationTableCacheId' => $responseData['collationTableCacheId']
+                        ]);
+                    } else {
+                        $responseData['collationEngineDetails']['cached'] = true;
+                        $this->profiler->stop();
+                        $responseData['collationEngineDetails']['cachedRunTime'] = $this->getProfilerTotalTime();
+                        $responseData['collationEngineDetails']['cachedTimestamp'] = time();
+                        return $this->responseWithJson($response, $responseData);
+                    }
                 }
             }
         }
-        // cache miss, or mismatch in cache keys, or bad cache data
+
+        // useCache is false, cache miss, mismatch in cache keys, or bad cache data
 
         $collatexInput = $collationTable->getCollationEngineInput();
         
@@ -452,12 +455,16 @@ class ApiCollation extends ApiController
             'people' => $people,
         ];
 
-        // let's cache it!
-
-        $stringToCache = DataCacheToolBox::toStringToCache($responseData, true);
-        $this->logger->debug("Caching automatic collation, " . strlen($stringToCache) . " bytes");
-        $cache->set($cacheKey, $stringToCache);
         $jsonToCache = json_encode($responseData, JSON_UNESCAPED_UNICODE);
+        if ($useCache) {
+            // let's cache it!
+
+            $stringToCache = DataCacheToolBox::toStringToCache($responseData, true);
+            $this->logger->debug("Caching automatic collation, " . strlen($stringToCache) . " bytes");
+            $cache->set($cacheKey, $stringToCache);
+
+        }
+
 
         $this->profiler->stop();
         $this->info("Automatic Collation Table generated", ['workId'=>$workId, 'chunk' => $chunkNumber, 'lang' => $lang]);

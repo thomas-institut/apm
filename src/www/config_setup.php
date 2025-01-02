@@ -48,10 +48,16 @@ $config[ConfigParam::PDF_RENDERER] = '../python/pdf-renderer.py';
 $config[ConfigParam::TYPESETTER] = 'node ../node/typesetStdinJson.mjs';
 $config[ConfigParam::SITE_SHOW_LANGUAGE_SELECTOR] = false;
 
-$config[ConfigParam::COLLATION_ENGINE] = 'Collatex';
+//$config[ConfigParam::COLLATION_ENGINE] = 'Collatex';
+$config[ConfigParam::COLLATION_ENGINE] = 'CollatexHttp';
+
+$config[ConfigParam::COLLATEX_HTTP_HOST] = '127.0.0.1';
+$config[ConfigParam::COLLATEX_HTTP_PORT] = 7369;
+
 $config[ConfigParam::COLLATEX_JAR_FILE] = 'collatex/bin/collatex-tools-1.7.1.jar';
 $config[ConfigParam::COLLATEX_TEMP_DIR] = '/tmp';
 $config[ConfigParam::JAVA_EXECUTABLE] = '/usr/bin/java';
+
 $config[ConfigParam::LOG_INCLUDE_DEBUG_INFO] = false;
 $config[ConfigParam::LOG_IN_PHP_ERROR_HANDLER] = true;
 $config[ConfigParam::TWIG_TEMPLATE_DIR] = 'templates';

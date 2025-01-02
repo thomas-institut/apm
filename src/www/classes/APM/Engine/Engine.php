@@ -3,6 +3,10 @@
 
 namespace APM\Engine;
 
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\NullLogger;
+
 /**
  * Basic class for algorithm engines
  *
@@ -14,24 +18,19 @@ namespace APM\Engine;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-abstract class Engine
+abstract class Engine implements LoggerAwareInterface
 {
-    const ERROR_NOERROR=0;
+    use LoggerAwareTrait;
+    const ERROR_NO_ERROR = 0;
 
     const DEFAULT_ENGINE_NAME = 'Generic Edition Engine';
 
-    /** @var float */
-    protected $duration;
-    /** @var int */
-    protected $errorCode;
-    /** @var string */
-    protected $errorContext;
-    /** @var float */
-    protected $startMicroTime;
-    /** @var float */
-    protected $endMicroTime;
-    /** @var string */
-    protected $engineName;
+    protected float $duration;
+    protected int $errorCode;
+    protected string $errorContext;
+    protected float $startMicroTime;
+    protected float $endMicroTime;
+    protected string $engineName;
 
 
     public function __construct(string $engineName) {
@@ -41,19 +40,23 @@ abstract class Engine
         $this->engineName = $engineName;
         $this->resetError();
         $this->resetChronometer();
+        $this->logger = new NullLogger();
     }
 
-    public function reset() {
+    public function reset(): void
+    {
         $this->resetChronometer();
         $this->resetError();
     }
 
-    public function resetChronometer() {
+    public function resetChronometer(): void
+    {
         $this->duration = 0;
     }
 
-    public function resetError() {
-        $this->errorCode = self::ERROR_NOERROR;
+    public function resetError(): void
+    {
+        $this->errorCode = self::ERROR_NO_ERROR;
         $this->errorContext = '';
     }
 
@@ -98,17 +101,20 @@ abstract class Engine
     //
     // PROTECTED
     //
-    protected function startChrono() {
+    protected function startChrono(): void
+    {
         $this->duration = 0;
         $this->startMicroTime = microtime(true);
     }
 
-    protected function endChrono() {
+    protected function endChrono(): void
+    {
         $this->endMicroTime = microtime(true);
         $this->duration = $this->endMicroTime - $this->startMicroTime;
     }
 
-    protected function setError(int $code, string $context='') {
+    protected function setError(int $code, string $context=''): void
+    {
         $this->errorCode = $code;
         $this->errorContext = $context;
     }

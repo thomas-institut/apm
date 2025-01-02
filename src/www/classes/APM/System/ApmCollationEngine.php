@@ -24,4 +24,5 @@ class ApmCollationEngine
 {
     const COLLATEX = 'Collatex';
     const DO_NOTHING = 'DoNothing';
+    const COLLATEX_HTTP = 'CollatexHttp';
 }

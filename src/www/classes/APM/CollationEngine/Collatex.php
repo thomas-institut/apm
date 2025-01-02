@@ -26,6 +26,7 @@ use APM\Engine\Engine;
  * Class that interfaces with the collatex executable in the server
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
+ * @deprecated Use CollatexHttp
  */
 class Collatex extends CollationEngine {
     
@@ -33,9 +34,9 @@ class Collatex extends CollationEngine {
      *
      * @var string
      */
-    protected $collatexExecutable;
-    protected $tempFolder;
-    protected $javaExecutable;
+    protected string $collatexExecutable;
+    protected string $tempFolder;
+    protected string $javaExecutable;
     
     protected $rawOutput;
     protected $input;
@@ -52,7 +53,7 @@ class Collatex extends CollationEngine {
     
     const CR_COLLATEX_DID_NOT_RETURN_JSON = 301;
     
-    public function __construct($collatexExecutable, $tempFolder='/tmp', $java = '/usr/bin/java') {
+    public function __construct(string $collatexExecutable, string $tempFolder='/tmp', string $java = '/usr/bin/java') {
         parent::__construct('Collatex 1.7.1');
         $this->collatexExecutable = $collatexExecutable;
         $this->tempFolder = $tempFolder;
@@ -61,12 +62,14 @@ class Collatex extends CollationEngine {
         $this->reset();
     }
     
-    public function reset() {
+    public function reset(): void
+    {
         parent::reset();
         $this->rawOutput = '';
     }
     
-    public function runningEnvironmentOk() {
+    public function runningEnvironmentOk(): bool
+    {
         $this->reset();
         
         if (!file_exists($this->collatexExecutable)){
@@ -91,7 +94,7 @@ class Collatex extends CollationEngine {
         return true;
     }
     
-    private function getCommandLine($inputFileName) 
+    private function getCommandLine($inputFileName): string
     {
         return $this->javaExecutable . ' -jar ' . $this->collatexExecutable . ' ' . $inputFileName . ' 2>&1';
     }
@@ -124,7 +127,7 @@ class Collatex extends CollationEngine {
         
         fwrite($handle, $rawJsonInput);
         
-        $returnValue = false;
+        $returnValue = 0;
         $returnArray = [];
        
         exec($this->getCommandLine($tmpInputFileName), $returnArray, $returnValue);
@@ -147,7 +150,7 @@ class Collatex extends CollationEngine {
             $output .= "\n" . $returnArray[$i];
         }
         
-        unlink($tmpInputFileName);
+//        unlink($tmpInputFileName);
         $this->endChrono();
         return $output;
     }
@@ -177,7 +180,7 @@ class Collatex extends CollationEngine {
         $this->input = $witnessArray;
         $this->rawOutput =  $this->rawRun($input);
         
-        if ($this->getErrorCode() !== Engine::ERROR_NOERROR) {
+        if ($this->getErrorCode() !== Engine::ERROR_NO_ERROR) {
             return [];
         }
         

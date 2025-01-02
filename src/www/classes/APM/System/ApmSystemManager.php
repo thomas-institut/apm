@@ -22,6 +22,7 @@ namespace APM\System;
 
 use APM\Api\ApiPeople;
 use APM\CollationEngine\Collatex;
+use APM\CollationEngine\CollatexHttp;
 use APM\CollationEngine\CollationEngine;
 use APM\CollationEngine\DoNothingCollationEngine;
 use APM\CollationTable\ApmCollationTableManager;
@@ -398,10 +399,18 @@ class ApmSystemManager extends SystemManager {
                         $this->config[ApmConfigParameter::JAVA_EXECUTABLE]
                     );
                     break;
+
+                case ApmCollationEngine::COLLATEX_HTTP:
+                    $this->collationEngine = new CollatexHttp(
+                        ApmConfigParameter::COLLATEX_HTTP_HOST,
+                        ApmConfigParameter::COLLATEX_HTTP_PORT);
+
+                    break;
                 case ApmCollationEngine::DO_NOTHING:
                     $this->collationEngine = new DoNothingCollationEngine();
                     break;
             }
+            $this->collationEngine->setLogger($this->logger);
         }
         return $this->collationEngine;
     }

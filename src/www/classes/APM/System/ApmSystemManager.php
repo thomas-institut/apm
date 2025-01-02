@@ -402,10 +402,10 @@ class ApmSystemManager extends SystemManager {
 
                 case ApmCollationEngine::COLLATEX_HTTP:
                     $this->collationEngine = new CollatexHttp(
-                        ApmConfigParameter::COLLATEX_HTTP_HOST,
-                        ApmConfigParameter::COLLATEX_HTTP_PORT);
-
+                        $this->config[ApmConfigParameter::COLLATEX_HTTP_HOST],
+                        $this->config[ApmConfigParameter::COLLATEX_HTTP_PORT]);
                     break;
+
                 case ApmCollationEngine::DO_NOTHING:
                     $this->collationEngine = new DoNothingCollationEngine();
                     break;

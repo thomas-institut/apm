@@ -36,6 +36,7 @@ import * as Entity from '../constants/Entity'
 import { MetadataEditorSchema } from '../defaults/MetadataEditorSchemata/MetadataEditorSchema'
 import { MetadataEditor2 } from '../MetadataEditor/MetadataEditor2'
 import { WidgetAddPages } from '../WidgetAddPages'
+import { CollapsePanel } from '../widgets/CollapsePanel'
 
 const TabId_DocDetails = 'doc-info';
 const TabId_Pages = 'page-list';
@@ -392,6 +393,16 @@ export class DocPage extends NormalPage {
       });
     }
 
+    new CollapsePanel({
+      containerSelector: 'div.page-admin',
+      title: 'Page Admin',
+      content: this.getPageAdminHtml(),
+      initiallyShown: false,
+      iconWhenHidden: '<small><i class="bi bi-caret-right-fill"></i></small>',
+      iconWhenShown: '<small><i class="bi bi-caret-down-fill"></i></small>',
+      iconAtEnd: true,
+    });
+
     new WidgetAddPages('div.add-pages-widget-container', this.docId, this.doc.numPages);
 
     this.selectPage(this.initialPage, false);
@@ -611,7 +622,7 @@ export class DocPage extends NormalPage {
                    <div class="panel-content">
                     <div class="page-list"></div>
                     <div class="page-admin">
-                    ${await this.getPageAdminHtml()}
+                    
                 </div>
                     
                    </div>
@@ -633,8 +644,12 @@ export class DocPage extends NormalPage {
 `
   }
 
-  async getPageAdminHtml() {
-    return `<h3>Add pages</h3><div class="add-pages-widget-container"></div>`
+  getPageAdminHtml() {
+    return `
+        <div class="page-admin-section">
+            <h5>Add pages</h5><div class="add-pages-widget-container"></div>
+        </div>
+    `
   }
 
 

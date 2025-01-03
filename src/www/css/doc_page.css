@@ -299,3 +299,15 @@ div.doc-def-pages-page-list div.page-div {
 .add-pages-input-div {
     margin-left: 2em;
 }
+
+.page-admin h4 {
+    font-size: 1.2em;
+}
+
+.page-admin h5 {
+    font-size: 1.1em;
+}
+
+.page-admin-section {
+    margin-left: 2em;
+}

@@ -6,11 +6,10 @@ namespace APM\CommandLine\ApmCtlUtility;
 
 use APM\CommandLine\AdminUtility;
 use APM\CommandLine\CommandLineUtility;
-use APM\FullTranscription\Exception\PageNotFoundException;
-use APM\FullTranscription\PageInfo;
-use APM\FullTranscription\PageManager;
 use APM\System\ApmMySqlTableName;
 use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\Document\PageInfo;
 use APM\ToolBox\ArrayPrint;
 
 class TranscriptionTool extends CommandLineUtility implements AdminUtility
@@ -28,12 +27,11 @@ TXT;
 
     const DESCRIPTION = "Transcription management functions";
     const MAGIC_WORD = 'IKnowWhatImDoing';
-    private PageManager $pageManager;
 
     public function __construct(array $config, int $argc, array $argv)
     {
         parent::__construct($config, $argc, $argv);
-        $this->pageManager = $this->getSystemManager()->getTranscriptionManager()->getPageManager();
+
     }
 
 
@@ -175,11 +173,11 @@ TXT;
                 $givenPageNumber = intval($fields[2]);
                 if ($givenPageNumber > 0) {
                     try {
-                        $pageInfo = $this->pageManager->getPageInfoByDocPage($givenDocId, $givenPageNumber);
+                        $pageInfo = $this->getSystemManager()->getTranscriptionManager()->getPageInfoByDocPage($givenDocId, $givenPageNumber);
                         if ($givenColumnNumber <= $pageInfo->numCols) {
                             $realColumnNumber = $givenColumnNumber;
                         }
-                    } catch (PageNotFoundException) {
+                    } catch (PageNotFoundException|DocumentNotFoundException) {
                         // nothing to do, nulls will be returned because real data has not been overwritten
                     }
                 }
@@ -192,7 +190,7 @@ TXT;
             $givenPageId = intval($fields[1]);
             if ($givenColumnNumber > 0 && $givenPageId > 0) {
                 try {
-                    $pageInfo = $this->pageManager->getPageInfoById($givenPageId);
+                    $pageInfo = $this->getSystemManager()->getDocumentManager()->getPageInfo($givenPageId);
                     if ($givenColumnNumber <= $pageInfo->numCols) {
                         $realColumnNumber = $givenColumnNumber;
                     }

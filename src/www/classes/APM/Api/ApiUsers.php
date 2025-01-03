@@ -22,6 +22,8 @@ namespace APM\Api;
 
 use APM\System\Cache\CacheKey;
 use APM\System\DataRetrieveHelper;
+use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
 use APM\System\User\InvalidEmailAddressException;
@@ -236,26 +238,29 @@ class ApiUsers extends ApiController
         return true;
     }
 
-    static public function buildTranscribedPagesData(SystemManager $systemManager, int $userTid) : array {
+    /**
+     * @throws DocumentNotFoundException
+     * @throws PageNotFoundException
+     */
+    static public function buildTranscribedPagesData(SystemManager $systemManager, int $userId) : array {
         $dm = $systemManager->getDataManager();
-        $docManager = $systemManager->getTranscriptionManager()->getDocManager();
-        $pageManager = $systemManager->getTranscriptionManager()->getPageManager();
+        $docManager = $systemManager->getDocumentManager();
 
         $helper = new DataRetrieveHelper();
         $helper->setLogger($systemManager->getLogger());
-        $docIds = $dm->getDocIdsTranscribedByUser($userTid);
+        $docIds = $dm->getDocIdsTranscribedByUser($userId);
         $docInfoArray = $helper->getDocInfoArrayFromList($docIds, $docManager);
         $allPageIds = [];
 
         foreach($docIds as $docId) {
-            $pageIds = $dm->getPageIdsTranscribedByUser($userTid, $docId);
+            $pageIds = $dm->getPageIdsTranscribedByUser($userId, $docId);
             $docInfoArray[$docId]->pageIds = $pageIds;
             foreach($pageIds as $pageId) {
                 $allPageIds[] = $pageId;
             }
         }
 
-        $pageInfoArray = $helper->getPageInfoArrayFromList($allPageIds, $pageManager);
+        $pageInfoArray = $helper->getPageInfoArrayFromList($allPageIds, $docManager);
         return [
             'docIds' => $docIds,
             'docInfoArray' => $docInfoArray,

@@ -21,7 +21,6 @@ namespace APM\Decorators\Witness;
 
 
 use APM\Core\Address\IntRange;
-use APM\Core\Collation\CollationTable;
 use APM\Core\Item\Item;
 use APM\Core\Item\Mark;
 use APM\Core\Item\MarkType;
@@ -30,7 +29,7 @@ use APM\Core\Item\TextualItem;
 use APM\Core\Token\TranscriptionToken;
 use APM\Core\Witness\Witness;
 use APM\Core\Witness\WitnessDecorator;
-use APM\FullTranscription\ApmTranscriptionWitness;
+use APM\System\Transcription\ApmTranscriptionWitness;
 use AverroesProjectToApm\AddressInDatabaseItemStream;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;

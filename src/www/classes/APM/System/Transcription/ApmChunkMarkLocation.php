@@ -17,7 +17,7 @@
  *  
  */
 
-namespace APM\FullTranscription;
+namespace APM\System\Transcription;
 
 /**
  * Location and information about a chunk mark in the APM database

@@ -17,7 +17,7 @@
  *  
  */
 
-namespace APM\FullTranscription;
+namespace APM\System\Transcription;
 
 use ThomasInstitut\TimeString\TimeString;
 

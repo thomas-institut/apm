@@ -26,19 +26,18 @@
 
 namespace APM\Site;
 
-use APM\FullTranscription\PageInfo;
 use APM\System\ApmConfigParameter;
+use APM\System\ApmContainerKey;
 use APM\System\ApmImageType;
+use APM\System\ApmSystemManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\User\UserNotFoundException;
 use APM\SystemProfiler;
-use APM\System\ApmContainerKey;
 use APM\ToolBox\HttpStatus;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use APM\System\ApmSystemManager;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
@@ -261,20 +260,20 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     }
 
     // Utility function
-    protected function buildPageArrayNew(array $pagesInfo, array $transcribedPages, array $legacyDocInfo): array
+    protected function buildPageArrayNew(array $legacyPageInfoArray, array $transcribedPages, array $legacyDocInfo): array
     {
         $thePages = [];
         $docManager = $this->systemManager->getDocumentManager();
         $imageSources = $this->systemManager->getImageSources();
-        foreach ($pagesInfo as $pageInfo) {
+        foreach ($legacyPageInfoArray as $legacyPageInfo) {
             try {
-                $thePage = $pageInfo;
-                $pageNumber = $pageInfo['page_number'];
-                $thePage['pageId'] = $pageInfo['id'];
-                $thePage['sequence'] = $pageInfo['seq'];
-                $thePage['pageNumber'] = $pageInfo['page_number'];
-                $thePage['imageNumber'] = $pageInfo['img_number'];
-                $thePage['numCols'] = $pageInfo['num_cols'];
+                $thePage = $legacyPageInfo;
+                $pageNumber = $legacyPageInfo['page_number'];
+                $thePage['pageId'] = $legacyPageInfo['id'];
+                $thePage['sequence'] = $legacyPageInfo['seq'];
+                $thePage['pageNumber'] = $legacyPageInfo['page_number'];
+                $thePage['imageNumber'] = $legacyPageInfo['img_number'];
+                $thePage['numCols'] = $legacyPageInfo['num_cols'];
                 $thePage['imageSource'] = $legacyDocInfo['image_source'];
                 $thePage['isDeepZoom'] = $legacyDocInfo['deep_zoom'];
                 $thePage['isTranscribed'] = in_array($pageNumber, $transcribedPages);
@@ -286,7 +285,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
                 $thePage['thumbnailUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
                     $pageNumber, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL, $imageSources);
 //                $this->logger->debug("The page", $thePage);
-                $thePages[$pageInfo['id']] = $thePage;
+                $thePages[$legacyPageInfo['id']] = $thePage;
             } catch (DocumentNotFoundException $e) {
                 // should never happen
                 throw new RuntimeException("Document not found:" . $e->getMessage());

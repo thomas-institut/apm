@@ -1,7 +1,7 @@
 <?php
 
 
-namespace APM\FullTranscription;
+namespace APM\System\Transcription;
 
 
 use InvalidArgumentException;

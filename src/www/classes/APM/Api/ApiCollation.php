@@ -24,6 +24,7 @@ namespace APM\Api;
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
 use APM\Core\Witness\EditionWitness;
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\StandardData\CollationTableDataProvider;
 use APM\System\Cache\CacheKey;
 use APM\System\Document\Exception\DocumentNotFoundException;
@@ -280,9 +281,21 @@ class ApiCollation extends ApiController
                     }
                     $witnessInfo = WitnessSystemId::getFullTxInfo($requestedWitness['systemId']);
                     try {
+                        $docInfo = $this->systemManager->getDocumentManager()->getDocInfo($witnessInfo->typeSpecificInfo['docId']);
+                        $docLangCode = $this->systemManager->getLangCodeFromId($docInfo->language);
+                    } catch (DocumentNotFoundException|EntityDoesNotExistException $e) {
+                        // cannot get witness
+                        $msg = "Could not get doc info for witness '" . $requestedWitness['systemId'];
+                        $this->logger->error($msg, [ 'exceptionError' => $e->getCode(), 'exceptionMsg' => $e->getMessage(), 'witness'=> $requestedWitness]);
+                        return $this->responseWithJson($response, ['error' => self::ERROR_BAD_WITNESS, 'msg' => $msg], HttpStatus::INTERNAL_SERVER_ERROR);
+                    }
+                    try {
                         $fullTxWitness = $transcriptionManager->getTranscriptionWitness($witnessInfo->workId,
-                            $witnessInfo->chunkNumber, $witnessInfo->typeSpecificInfo['docId'],
-                            $witnessInfo->typeSpecificInfo['localWitnessId'], $witnessInfo->typeSpecificInfo['timeStamp']);
+                            $witnessInfo->chunkNumber,
+                            $witnessInfo->typeSpecificInfo['localWitnessId'],
+                            $witnessInfo->typeSpecificInfo['timeStamp'],
+                            $docLangCode
+                        );
                     } catch (InvalidArgumentException $e) {
                         // cannot get witness
                         $msg = "Requested witness '" . $requestedWitness['systemId'] . "' does not exist";
@@ -576,9 +589,22 @@ class ApiCollation extends ApiController
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
 
         try {
+            $docInfo = $this->systemManager->getDocumentManager()->getDocInfo($witnessInfo->typeSpecificInfo['docId']);
+            $docLangCode = $this->systemManager->getLangCodeFromId($docInfo->language);
+        } catch (DocumentNotFoundException|EntityDoesNotExistException $e) {
+            // cannot get witness
+            $msg = "Could not get doc info for witness '" . $witnessId;
+            $this->logger->error($msg, [ 'exceptionError' => $e->getCode(), 'exceptionMsg' => $e->getMessage(), 'witness'=> $witnessId]);
+            return $this->responseWithJson($response, ['error' => self::ERROR_BAD_WITNESS, 'msg' => $msg], HttpStatus::INTERNAL_SERVER_ERROR);
+        }
+
+        try {
             $fullTxWitness = $transcriptionManager->getTranscriptionWitness($witnessInfo->workId,
-                $witnessInfo->chunkNumber, $witnessInfo->typeSpecificInfo['docId'],
-                $witnessInfo->typeSpecificInfo['localWitnessId'], $witnessInfo->typeSpecificInfo['timeStamp']);
+                $witnessInfo->chunkNumber,
+                $witnessInfo->typeSpecificInfo['localWitnessId'],
+                $witnessInfo->typeSpecificInfo['timeStamp'],
+                $docLangCode
+            );
         } catch (InvalidArgumentException $e) {
             // cannot get witness
             $msg = "Requested witness '" . $witnessId . "' does not exist";

@@ -30,8 +30,9 @@ use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
-use APM\FullTranscription\DocInfo;
 use APM\System\DataRetrieveHelper;
+use APM\System\Document\DocInfo;
+use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\User\UserNotFoundException;
 use APM\System\WitnessInfo;
@@ -40,8 +41,8 @@ use APM\System\WitnessType;
 use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\HttpStatus;
 use InvalidArgumentException;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use ThomasInstitut\TimeString\TimeString;
 
 
@@ -139,7 +140,7 @@ class SiteCollationTable extends SiteController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws UserNotFoundException
+     * @throws UserNotFoundException|DocumentNotFoundException
      */
     public function editCollationTable(Request $request, Response $response) : Response{
         $tableId = intval($request->getAttribute('tableId'));
@@ -227,7 +228,7 @@ class SiteCollationTable extends SiteController
         $docs = $this->getMentionedDocsFromCtData($ctData);
         $helper = new DataRetrieveHelper();
         $helper->setLogger($this->logger);
-        $docInfo = $helper->getDocInfoArrayFromList($docs, $this->systemManager->getTranscriptionManager()->getDocManager());
+        $docInfo = $helper->getDocInfoArrayFromList($docs, $this->systemManager->getDocumentManager());
 
         $this->profiler->stop();
         $this->logProfilerData("Edit Collation Table");

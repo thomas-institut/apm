@@ -25,10 +25,14 @@
 
 namespace APM\Site;
 
+use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Work\WorkNotFoundException;
+use APM\ToolBox\HttpStatus;
 use AverroesProject\Data\DataManager;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use ThomasInstitut\EntitySystem\Tid;
 
 /**
  * Site Controller class
@@ -127,25 +131,47 @@ class SitePageViewer extends SiteController
      */
     function pageViewerPageByDocSeq(Request $request, Response $response): Response
     {
-        $docId = $request->getAttribute('doc');
-        $seq = $request->getAttribute('seq');
-        $activeColumn = intval($request->getAttribute('col'));
+        $givenDocId = $request->getAttribute('doc') ?? '';
+        $docId = Tid::fromString($givenDocId);
+        if ($docId === -1) {
+            return $this->getErrorPage($response, 'Error', "Invalid doc id '$givenDocId'",
+                HttpStatus::BAD_REQUEST);
+        }
+        $givenSeq = $request->getAttribute('seq') ?? '';
+        $seq = intval($givenSeq);
+        if ($seq <= 0) {
+            return $this->getErrorPage($response, 'Error', "Invalid page sequence  '$givenSeq'",
+                HttpStatus::BAD_REQUEST);
+        }
+
+        $activeColumn = intval($request->getAttribute('col') ?? '');
         if ($activeColumn === 0) {
             $activeColumn = 1;
         }
+        $docManager = $this->systemManager->getDocumentManager();
         $dataManager = $this->systemManager->getDataManager();
-        
-        $docInfo = $dataManager->getDocById($docId);
-        $pageId = $dataManager->getPageIdByDocSeq($docId, $seq);
-        $pageInfo = $dataManager->getPageInfo($pageId);
-        $pageNumber = $pageInfo['page_number'];
-        $docPageCount = $dataManager->getPageCountByDocId($docId);
-        $pagesInfo = $dataManager->getDocPageInfo($docId, DataManager::ORDER_BY_SEQ);
+        try {
+            $docInfo = $docManager->getLegacyDocInfo($docId);
+            $pageId = $docManager->getPageIdByDocSeq($docId, $seq);
+            $pageInfo = $docManager->getLegacyPageInfo($pageId);
+            $pageNumber = $pageInfo['page_number'];
+            $docPageCount = $docManager->getDocPageCount($docId);
+            $pagesInfo = $docManager->getLegacyDocPageInfoArray($docId, DataManager::ORDER_BY_SEQ);
+        } catch (DocumentNotFoundException) {
+            $this->logger->info("Document '$givenDocId' (= $docId) not found");
+            return $this->getErrorPage($response, 'Error', "Document $givenDocId not found",
+                HttpStatus::NOT_FOUND);
+        } catch (PageNotFoundException) {
+            $this->logger->info("Page $docId:$seq not found");
+            return $this->getErrorPage($response, 'Error', "Page $givenDocId:$seq not found",
+                HttpStatus::NOT_FOUND);
+        }
+
+
         $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $dataManager->getImageUrl($docId, $pageInfo['img_number']);
         $pageTypeNames  = $dataManager->getPageTypeNames();
-//        $activeWorks = $dataManager->getActiveWorks();
         $activeWorks = $this->getActiveWorks();
         $languagesArray = $this->getLanguages();
 

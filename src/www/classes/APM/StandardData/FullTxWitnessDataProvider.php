@@ -21,11 +21,9 @@ namespace APM\StandardData;
 
 
 use APM\Core\Transcription\ItemInDocument;
-use APM\Core\Witness\TranscriptionWitness;
-use APM\FullTranscription\ApmTranscriptionWitness;
+use APM\System\Transcription\ApmTranscriptionWitness;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
-use stdClass;
 
 class FullTxWitnessDataProvider implements StandardDataProvider
 {

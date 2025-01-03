@@ -3,8 +3,9 @@
 
 namespace APM\CommandLine;
 
-use APM\FullTranscription\ColumnVersionInfo;
-use APM\FullTranscription\PageInfo;
+use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\PageInfo;
+use APM\System\Transcription\ColumnVersionInfo;
 use Exception;
 use PDO;
 use ThomasInstitut\TimeString\TimeString;
@@ -51,7 +52,7 @@ class ColumnVersionFixTool extends CommandLineUtility {
             case 'page':
                 $pageId = (int) $argv[2];
                 try {
-                    $pageInfo = $this->getSystemManager()->getTranscriptionManager()->getPageManager()->getPageInfoById($pageId);
+                    $pageInfo = $this->getSystemManager()->getDocumentManager()->getPageInfo($pageId);
                 } catch (Exception $e) {
                     $this->logger->error($e->getMessage());
                     return false;
@@ -132,17 +133,19 @@ class ColumnVersionFixTool extends CommandLineUtility {
         return !$issuesFound;
     }
 
-    private function processDoc(int $docId, bool $fullDebug, bool $coldRun = true) {
-        $tm = $this->getSystemManager()->getTranscriptionManager();
+    /**
+     * @throws DocumentNotFoundException
+     */
+    private function processDoc(int $docId, bool $fullDebug, bool $coldRun = true) : bool{
 
         try {
-            $docInfo = $tm->getDocManager()->getDocInfoById($docId);
+            $docInfo = $this->getSystemManager()->getDocumentManager()->getDocInfo($docId);
         } catch(Exception $e) {
             $this->logger->error($e->getMessage());
             return false;
         }
 
-        $pageInfoArray = $tm->getPageManager()->getPageInfoArrayForDoc($docId);
+        $pageInfoArray = $this->getSystemManager()->getDocumentManager()->getDocPageInfoArray($docId);
 
 
         $this->logger->debug("Checking column versions for doc $docId: " . $docInfo->title . ",  " .
@@ -152,12 +155,13 @@ class ColumnVersionFixTool extends CommandLineUtility {
         foreach($pageInfoArray as $pageInfo) {
             if (!$this->processPageInfo($pageInfo, $fullDebug, $coldRun)) {
                 $issuesFound = true;
-            };
+            }
         }
 
         if (!$issuesFound) {
             $this->logger->debug("No issues found in doc $docId");
         }
+        return true;
     }
 
     private function getLastPageSettingsChangeTime($pageId): string {

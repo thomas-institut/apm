@@ -17,7 +17,7 @@
  *  
  */
 
-namespace APM\FullTranscription;
+namespace APM\System\Transcription;
 
 /**
  * Represents the location of chunk segment in the database:

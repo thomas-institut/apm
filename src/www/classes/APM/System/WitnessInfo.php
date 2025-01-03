@@ -29,33 +29,40 @@ class WitnessInfo
    /**
      * @var string
      */
-    public $type;
+    public string $type;
     /**
      * @var string
      */
-    public $workId;
+    public string $workId;
     /**
      * @var int
      */
-    public $chunkNumber;
+    public int $chunkNumber;
+
+    /**
+     * The witness language, an entity Id
+     * @var int
+     */
+    public int $language;
+    /**
+     * @var string
+     * @deprecated use language
+     */
+    public string $languageCode;
     /**
      * @var string
      */
-    public $languageCode;
-    /**
-     * @var string
-     */
-    public $systemId;
+    public string $systemId;
     /**
      * @var bool
      */
-    public $isValid;
+    public bool $isValid;
 
-    public $typeSpecificInfo;
+    public ?array $typeSpecificInfo;
     /**
      * @var int
      */
-    public $errorCode;
+    public int $errorCode;
 
     public function __construct()
     {
@@ -63,6 +70,7 @@ class WitnessInfo
         $this->workId = '';
         $this->chunkNumber = 0;
         $this->languageCode = '';
+        $this->language = -1;
         $this->systemId = '';
         $this->isValid = false;
         $this->typeSpecificInfo = null;

@@ -27,17 +27,19 @@
 namespace APM\Site;
 
 use APM\EntitySystem\Schema\Entity;
-use APM\FullTranscription\ApmChunkSegmentLocation;
 use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
+use APM\System\Transcription\ApmChunkSegmentLocation;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use APM\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use Exception;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use RuntimeException;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 
@@ -254,7 +256,12 @@ class SiteDocuments extends SiteController
                             if ($location->start->isZero()) {
                                 $start = '';
                             } else {
-                                $pageInfo = $transcriptionManager->getPageInfoByDocSeq($legacyDocId, $location->start->pageSequence);
+                                try {
+                                    $pageInfo = $docManager->getPageInfo($docManager->getPageIdByDocSeq($docId, $location->start->pageSequence));
+                                } catch (DocumentNotFoundException|PageNotFoundException $e) {
+                                    // should never happen
+                                    throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+                                }
                                 $start = [
                                     'seq' => $location->start->pageSequence,
                                     'foliation' => $pageInfo->foliation,
@@ -265,7 +272,12 @@ class SiteDocuments extends SiteController
                             if ($location->end->isZero()) {
                                 $end = '';
                             } else {
-                                $pageInfo = $transcriptionManager->getPageInfoByDocSeq($legacyDocId, $location->end->pageSequence);
+                                try {
+                                    $pageInfo = $docManager->getPageInfo($docManager->getPageIdByDocSeq($docId, $location->end->pageSequence));
+                                } catch (DocumentNotFoundException|PageNotFoundException $e) {
+                                    // should never happen
+                                    throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+                                }
                                 $end = [
                                     'seq' => $location->end->pageSequence,
                                     'foliation' => $pageInfo->foliation,
@@ -316,23 +328,25 @@ class SiteDocuments extends SiteController
     public function defineDocPages(Request $request, Response $response): Response
     {
         $this->profiler->start();
-        
+
 
         $docId = $request->getAttribute('id');
-        $dataManager = $this->systemManager->getDataManager();
-        $doc = [];
-        $doc['numPages'] = $dataManager->getPageCountByDocId($docId);
-        $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
-        $dataManager->getDocPageInfo($docId);
+        $docManager = $this->systemManager->getDocumentManager();
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
-        $pageManager = $transcriptionManager->getPageManager();
-        $pageInfoArray = $pageManager->getPageInfoArrayForDoc($docId);
-        $doc['numTranscribedPages'] = count($transcribedPages);
-        $doc['docInfo'] = $dataManager->getDocById($docId);
-        $doc['tableId'] = "doc-$docId-table";
-        $doc['pages'] = $this->buildPageArrayNew($pageInfoArray,
+        $doc = [];
+        try {
+            $doc['numPages'] = $docManager->getDocPageCount($docId);
+            $transcribedPages = $transcriptionManager->getTranscribedPageListByDocId($docId);
+            $pageInfoArray = $docManager->getLegacyDocPageInfoArray($docId);
+            $doc['docInfo'] = $docManager->getLegacyDocInfo($docId);
+            $doc['numTranscribedPages'] = count($transcribedPages);
+            $doc['tableId'] = "doc-$docId-table";
+            $doc['pages'] = $this->buildPageArrayNew($pageInfoArray,
                 $transcribedPages, $doc['docInfo']);
-
+        } catch (DocumentNotFoundException $e) {
+            $this->logger->info($e->getMessage());
+            return $this->getBasicErrorPage($response, "Not found", "Document not found", HttpStatus::NOT_FOUND);
+        }
         $this->profiler->stop();
         $this->logProfilerData('defineDocPages-' . $docId);
         return $this->renderPage($response, self::TEMPLATE_DEFINE_DOC_PAGES, [

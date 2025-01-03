@@ -20,16 +20,16 @@
 
 namespace APM\Api;
 
-use APM\FullTranscription\ColumnVersionInfo;
 use APM\System\Person\PersonNotFoundException;
+use APM\System\Transcription\ColumnVersionInfo;
 use APM\System\User\UserTag;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\Data\DataManager;
 use AverroesProject\Data\EdNoteManager;
 use Exception;
-use ThomasInstitut\TimeString\TimeString;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use ThomasInstitut\TimeString\TimeString;
 
 /**
  * API Controller class

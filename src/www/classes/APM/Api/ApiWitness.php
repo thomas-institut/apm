@@ -21,17 +21,20 @@ namespace APM\Api;
 
 use APM\Core\Witness\SimpleHtmlWitnessDecorator;
 use APM\Decorators\Witness\ApmTxWitnessDecorator;
-use APM\FullTranscription\ApmTranscriptionWitness;
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\StandardData\FullTxWitnessDataProvider;
-use APM\System\ApmTranscriptionManager;
+use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Transcription\ApmTranscriptionManager;
+use APM\System\Transcription\ApmTranscriptionWitness;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
+use APM\ToolBox\HttpStatus;
 use AverroesProjectToApm\ApmPersonInfoProvider;
 use AverroesProjectToApm\Formatter\WitnessPageFormatter;
 use Exception;
 use InvalidArgumentException;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
 
@@ -215,8 +218,19 @@ class ApiWitness extends ApiController
         $localWitnessId = $witnessInfo->typeSpecificInfo['localWitnessId'];
         $timeStamp = $witnessInfo->typeSpecificInfo['timeStamp'];
 
+        try {
+            $docInfo = $this->systemManager->getDocumentManager()->getDocInfo($docId);
+            $docLangCode = $this->systemManager->getLangCodeFromId($docInfo->language);
+        } catch (DocumentNotFoundException|EntityDoesNotExistException $e) {
+            // cannot get witness
+            $msg = "Could not get doc info for witness '" . $requestedWitnessId;
+            $this->logger->error($msg, [ 'exceptionError' => $e->getCode(), 'exceptionMsg' => $e->getMessage(), 'witness'=> $requestedWitnessId]);
+            return $this->responseWithJson($response, ['error' => self::API_ERROR_RUNTIME_ERROR, 'msg' => $msg], HttpStatus::INTERNAL_SERVER_ERROR);
+        }
+
         /** @var ApmTranscriptionManager $transcriptionManager */
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
+
 
         $txManagerIsUsingCache = $transcriptionManager->isCacheInUse();
 
@@ -265,7 +279,7 @@ class ApiWitness extends ApiController
             // need to build everything from scratch
             $locations = $transcriptionManager->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
             try {
-                $apmWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+                $apmWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $localWitnessId, $timeStamp, $docLangCode);
             } catch (Exception $e) {
                 $msg = $e->getMessage();
                 $this->logger->error("Exception trying to get transcription witness. Msg = '$msg'",

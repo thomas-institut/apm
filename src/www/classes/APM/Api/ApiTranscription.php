@@ -21,16 +21,14 @@ namespace APM\Api;
 
 
 use APM\EntitySystem\Schema\Entity;
-use APM\FullTranscription\ColumnVersionInfo;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
+use APM\System\Transcription\ColumnVersionInfo;
 use APM\ToolBox\HttpStatus;
-use AverroesProject\ColumnElement\Element;
-use AverroesProject\TxText\Item;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
-use ThomasInstitut\TimeString\TimeString;
+
 
 class ApiTranscription extends ApiController
 {

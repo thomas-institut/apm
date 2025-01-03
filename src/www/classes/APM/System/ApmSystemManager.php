@@ -34,23 +34,22 @@ use APM\Core\Token\Normalizer\IgnoreShaddaNormalizer;
 use APM\Core\Token\Normalizer\IgnoreTatwilNormalizer;
 use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
 use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
+use APM\EntitySystem\ApmEntitySystem;
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
-use APM\FullTranscription\TranscriptionManager;
 use APM\Jobs\ApiPeopleUpdateAllPeopleEssentialData;
 use APM\Jobs\ApiSearchUpdateEditionsIndex;
 use APM\Jobs\ApiSearchUpdateEditorsAndEditionsCache;
-use APM\Jobs\ApiSearchUpdateTranscriptionsIndex;
 use APM\Jobs\ApiSearchUpdateTranscribersAndTranscriptionsCache;
+use APM\Jobs\ApiSearchUpdateTranscriptionsIndex;
 use APM\Jobs\ApiUsersUpdateCtDataForUser;
 use APM\Jobs\ApiUsersUpdateTranscribedPagesData;
 use APM\Jobs\ApmJobName;
-use APM\Jobs\SiteWorksUpdateDataCache;
 use APM\Jobs\SiteDocumentsUpdateDataCache;
+use APM\Jobs\SiteWorksUpdateDataCache;
 use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
-use APM\EntitySystem\ApmEntitySystem;
-use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\Session\ApmSessionManager;
 use APM\Session\SessionManager;
 use APM\System\Document\ApmDocumentManager;
@@ -64,6 +63,8 @@ use APM\System\Person\EntitySystemPersonManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\DataTablePresetManager;
 use APM\System\Preset\PresetManager;
+use APM\System\Transcription\ApmTranscriptionManager;
+use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\ApmUserManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\Work\EntitySystemWorkManager;
@@ -556,7 +557,7 @@ class ApmSystemManager extends SystemManager {
     {
         if ($this->transcriptionManager === null) {
             // Set up TranscriptionManager
-            $this->transcriptionManager = new ApmTranscriptionManager($this->getDbConnection(), $this->tableNames, $this->logger);
+            $this->transcriptionManager = new ApmTranscriptionManager($this->getDbConnection(), $this->tableNames, $this->logger, $this->getDocumentManager());
             $this->transcriptionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
             $this->transcriptionManager->setCacheTracker($this->getCacheTracker());
             $this->transcriptionManager->setCache($this->getSystemDataCache());

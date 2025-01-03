@@ -26,14 +26,15 @@
 
 namespace APM\Site;
 
-use APM\FullTranscription\ApmChunkSegmentLocation;
-use APM\FullTranscription\ColumnVersionInfo;
 use APM\System\DataRetrieveHelper;
+use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\Transcription\ApmChunkSegmentLocation;
+use APM\System\Transcription\ColumnVersionInfo;
 use APM\System\User\UserNotFoundException;
 use APM\System\WitnessType;
 use APM\System\Work\WorkNotFoundException;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use ThomasInstitut\TimeString\TimeString;
 
 
@@ -48,6 +49,7 @@ class SiteChunkPage extends SiteController
 
     /**
      * @throws UserNotFoundException
+     * @throws PageNotFoundException
      */
     public function singleChunkPage(Request $request, Response $response): Response
     {
@@ -132,7 +134,7 @@ class SiteChunkPage extends SiteController
         $helper = new DataRetrieveHelper();
         $helper->setLogger($this->logger);
 
-        $pageInfoArray = $helper->getPageInfoArrayFromList($pagesMentioned, $transcriptionManager->getPageManager());
+        $pageInfoArray = $helper->getPageInfoArrayFromList($pagesMentioned, $this->systemManager->getDocumentManager());
 
         $showAdminInfo = false;
         if ($this->systemManager->getUserManager()->isRoot($this->userId)) {

@@ -17,8 +17,12 @@
  *  
  */
 
-namespace APM\FullTranscription;
+namespace APM\System\Transcription;
 
+use APM\System\Document\DocumentManager;
+use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\Document\PageInfo;
 use APM\System\WitnessInfo;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 
@@ -27,15 +31,18 @@ use ThomasInstitut\ErrorReporter\ErrorReporter;
  *
  * Class to deal with a database containing full transcriptions
  *
- * @package APM\FullTranscription
  */
 abstract class TranscriptionManager implements ErrorReporter
 {
     const ORDER_BY_PAGE_NUMBER = 100;
     const ORDER_BY_SEQ = 101;
 
-    abstract public function getPageManager() : PageManager;
-    abstract public function getDocManager() : DocManager;
+
+    /**
+     * Returns the DocumentManager associated with the TranscriptionManager
+     * @return DocumentManager
+     */
+    abstract protected function getDocumentManager() : DocumentManager;
     abstract public function getColumnVersionManager() : ColumnVersionManager;
 
     /**
@@ -48,9 +55,10 @@ abstract class TranscriptionManager implements ErrorReporter
      * @param int $docId
      * @param string $localWitnessId
      * @param string $timeStamp
+     * @param string $defaultLanguageCode
      * @return ApmTranscriptionWitness
      */
-    abstract public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : ApmTranscriptionWitness;
+    abstract public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp, string $defaultLanguageCode) : ApmTranscriptionWitness;
 
     /**
      * Returns a "map" of work locations in a particular document at the given time.
@@ -130,15 +138,16 @@ abstract class TranscriptionManager implements ErrorReporter
     abstract public function getChunkLocationMapForChunk(string $workId, int $chunkNumber, string $timeString) : array;
 
 
-    abstract public function getPageInfoByDocSeq(int $docId, int $seq) : PageInfo;
+//    abstract public function getPageInfoByDocSeq(int $docId, int $seq) : PageInfo;
 
     /**
      * Returns the page numbers of the pages with transcription
-     * data for a document Id
+     * data for a document id
      *
      * @param int $docId
      * @param int $order
      * @return int[]
+     * @throws DocumentNotFoundException
      */
     abstract  public function getTranscribedPageListByDocId(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER) : array;
 
@@ -153,6 +162,7 @@ abstract class TranscriptionManager implements ErrorReporter
      * @param string $upToTimeString
      * @param int $n
      * @return ColumnVersionInfo[]
+     * @throws PageNotFoundException|DocumentNotFoundException
      */
     abstract public function getVersionsForLocation(ApmItemLocation $location, string $upToTimeString, int $n = 0): array;
 
@@ -169,6 +179,7 @@ abstract class TranscriptionManager implements ErrorReporter
      *
      * @param ApmChunkSegmentLocation $chunkSegmentLocation
      * @return array
+     * @throws PageNotFoundException|DocumentNotFoundException
      */
     abstract public function getVersionsForSegmentLocation(ApmChunkSegmentLocation $chunkSegmentLocation) : array;
 
@@ -185,6 +196,8 @@ abstract class TranscriptionManager implements ErrorReporter
      *
      * @param array $chunkLocationMap
      * @return array
+     * @throws DocumentNotFoundException
+     * @throws PageNotFoundException
      */
     abstract public function getVersionsForChunkLocationMap(array $chunkLocationMap) : array;
 
@@ -204,6 +217,8 @@ abstract class TranscriptionManager implements ErrorReporter
      * @param string $workId
      * @param int $chunkNumber
      * @return WitnessInfo[]
+     * @throws DocumentNotFoundException
+     * @throws PageNotFoundException
      */
     abstract public function getWitnessesForChunk(string $workId, int $chunkNumber) : array;
 
@@ -225,6 +240,8 @@ abstract class TranscriptionManager implements ErrorReporter
      * @param int $docId
      * @param string $localWitnessId
      * @return string
+     * @throws DocumentNotFoundException
+     * @throws PageNotFoundException
      */
     abstract public function getLastChangeTimestampForWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId) : string;
 
@@ -248,6 +265,27 @@ abstract class TranscriptionManager implements ErrorReporter
      * @param int $pageId
      * @param PageInfo $newSettings
      * @param int $userTid
+     * @throws PageNotFoundException
+     * @throws DocumentNotFoundException
      */
     abstract public function updatePageSettings(int $pageId, PageInfo $newSettings, int $userTid) : void;
+
+
+    /**
+     * Convenience function to get a PageInfo object from a document id and a page sequence number
+     * @throws PageNotFoundException
+     * @throws DocumentNotFoundException
+     */
+    public function getPageInfoByDocSeq(int $docId, int $seq): PageInfo {
+        return $this->getDocumentManager()->getPageInfo($this->getDocumentManager()->getPageIdByDocSeq($docId, $seq));
+    }
+
+    /**
+     * Convenience function to get a PageInfo object from a document id and a page number
+     * @throws PageNotFoundException
+     * @throws DocumentNotFoundException
+     */
+    public function getPageInfoByDocPage(int $docId, int $pageNumber): PageInfo {
+        return $this->getDocumentManager()->getPageInfo($this->getDocumentManager()->getPageIdByDocPage($docId, $pageNumber));
+    }
 }

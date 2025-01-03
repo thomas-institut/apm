@@ -18,7 +18,7 @@
  *  
  */
 
-namespace APM\FullTranscription;
+namespace APM\System\Transcription;
 
 use APM\Core\Item\ItemWithAddress;
 use APM\Core\Witness\TranscriptionWitness;

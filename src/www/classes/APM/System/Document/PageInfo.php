@@ -17,7 +17,7 @@
  *  
  */
 
-namespace APM\FullTranscription;
+namespace APM\System\Document;
 
 /**
  * Information about a page
@@ -28,6 +28,11 @@ class PageInfo
 {
 
     /**
+     * The doc id in the database
+     *
+     * When setting it, make sure to transform document entity ids into database id
+     * with the DocumentManager->getLegacyDocId() method
+     *
      * @var int
      */
     public int $docId;
@@ -44,13 +49,22 @@ class PageInfo
      */
     public int $sequence;
     /**
+     * The page's type, an entity id
      * @var int
      */
     public int $type;
+
     /**
-     * @var string
+     * The page's main language, an entity id
+     * @var int
      */
-    public string $langCode;
+    public int $lang;
+    /**
+     *
+     * @var string|null
+     * @deprecated defaults to '', do not use
+     */
+    public ?string $langCode;
     /**
      * @var int
      */
@@ -64,7 +78,9 @@ class PageInfo
      */
     public int $pageId;
     /**
-     * @var false
+     * If false, the value for $this->foliation is derived from the sequence number
+     * because it is not explicitly set in the database
+     * @var bool
      */
     public bool $foliationIsSet;
 
@@ -84,13 +100,12 @@ class PageInfo
 
     public function setFromDatabaseRow(array $row): void
     {
-        $this->pageId = (int) $row['id'];
-        $this->docId = (int) $row['doc_id'];
-        $this->pageNumber = (int) $row['page_number'];
-        $this->imageNumber = (int) $row['img_number'];
-        $this->sequence = (int) $row['seq'];
-        $this->type = (int) $row['type'];
-        $this->langCode = $row['lang'];
+        $this->pageId = intval($row['id']);
+        $this->docId = intval($row['doc_id']);
+        $this->pageNumber = intval($row['page_number']);
+        $this->imageNumber = intval($row['img_number']);
+        $this->sequence = intval($row['seq']);
+        $this->type = intval($row['type']);
         $this->numCols = (int)$row['num_cols'];
         if (is_null($row['foliation'])) {
             $this->foliation = $this->sequence;
@@ -115,7 +130,7 @@ class PageInfo
             'img_number' => $this->imageNumber,
             'seq' => $this->sequence,
             'type' => $this->type,
-            'lang' => $this->langCode,
+            'lang' => $this->lang,
             'num_cols' => $this->numCols,
             'foliation' => $this->foliationIsSet ? $this->foliation : null
         ];

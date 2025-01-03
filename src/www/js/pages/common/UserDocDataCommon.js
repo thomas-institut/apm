@@ -32,10 +32,10 @@ export class UserDocDataCommon {
     } else {
       let docs = stringFieldSort(docArray, 'title')
       html = docs.map( (docInfo) => {
-        let docUrl = urlGen.siteDocPage(Tid.toBase36String(docInfo.tid))
+        let docUrl = urlGen.siteDocPage(docInfo.tid)
         let pageListHtml = docInfo['pageIds'].map( (pageId) => {
           let pageInfo = apiData['pageInfoArray'][pageId]
-          let pageUrl = urlGen.sitePageView(pageInfo.docId, pageInfo.sequence)
+          let pageUrl = urlGen.sitePageView(docInfo.tid, pageInfo.sequence)
           return `<a href="${pageUrl}" title="${tr('Click to view page in new tab/window')}" target="_blank">${pageInfo['foliation']}</a>`
         }).join('&nbsp; ')
         return `<p class="doc-title"><a href="${docUrl}" title="${tr('Click to open document in new tab/window')}" target="_blank">${docInfo.title}</a></p>

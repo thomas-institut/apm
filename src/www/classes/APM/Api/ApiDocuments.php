@@ -21,17 +21,15 @@
 namespace APM\Api;
 
 use APM\EntitySystem\Schema\Entity;
-use APM\FullTranscription\Exception\PageNotFoundException;
-use APM\FullTranscription\PageManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use APM\ToolBox\HttpStatus;
 use Exception;
-use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
-use ThomasInstitut\EntitySystem\Tid;
+use RuntimeException;
 
 
 /**
@@ -70,18 +68,23 @@ class ApiDocuments extends ApiController
         $this->logger->debug("Update page settings, postData", [ $postData]);
         $foliation = $postData['foliation'];
         $type = (int) $postData['type'];
-        $lang = $postData['lang'];
+        $lang = intval($postData['lang']);
 
-        $pageInfo = $this->systemManager->getTranscriptionManager()->getPageManager()->getPageInfoById($pageId);
+        try {
+            $pageInfo = $this->systemManager->getDocumentManager()->getPageInfo($pageId);
+        } catch (PageNotFoundException $e) {
+            $this->logger->info("Page not found", [ 'pageId' => $pageId]);
+            return $this->responseWithText($response, "Page not found", HttpStatus::NOT_FOUND);
+        }
         $pageInfo->foliation = $foliation;
         $pageInfo->foliationIsSet = true;
         $pageInfo->type = $type;
-        $pageInfo->langCode = $lang;
+        $pageInfo->lang = $lang;
 
         try {
             $this->systemManager->getTranscriptionManager()->updatePageSettings($pageId, $pageInfo, $this->apiUserId);
         } catch (Exception $e) {
-            $this->logger->error("Can't update page settings for page $pageId: " . $e->getMessage(), $pageInfo->getDatabaseRow());
+            $this->logger->error("Can't update page settings for page $pageId: " . $e->getMessage(), get_object_vars($pageInfo));
             return $this->responseWithStatus($response, 409);
         }
         $this->systemManager->onUpdatePageSettings($this->apiUserId, $pageId);
@@ -489,8 +492,8 @@ class ApiDocuments extends ApiController
             $pageNumber = intval($pageDef['page']);
 
             try {
-                $pageInfo = $transcriptionManager->getPageManager()->getPageInfoByDocPage($docId, $pageNumber);
-            } catch (PageNotFoundException) {
+                $pageInfo = $transcriptionManager->getPageInfoByDocPage($docId, $pageNumber);
+            } catch (PageNotFoundException|DocumentNotFoundException) {
                 $errors[] = "Page not found, doc " . $pageDef['docId'] . " page " . $pageDef['page'];
                 continue;
             }
@@ -645,17 +648,13 @@ class ApiDocuments extends ApiController
         for($i = 0; $i<count($inputData['pages']); $i++) {
             $pageId = $inputData['pages'][$i];
             try {
-                $pageInfo = $this->systemManager->getTranscriptionManager()->getPageManager()->getPageInfoById($pageId);
-            } catch (InvalidArgumentException $e) {
-                if ($e->getCode() === PageManager::ERROR_PAGE_NOT_FOUND) {
+                $pageInfo = $this->systemManager->getDocumentManager()->getPageInfo($pageId);
+            } catch (\APM\System\Document\Exception\PageNotFoundException $e) {
                     $this->logger->error("Page $pageId not found", [ 'errorMsg' => $e->getMessage(), 'errorCode' ]);
-                    return $this->responseWithText($response,"Page $pageId not found", 404);
-                }
-                $this->logException($e, "Invalid Argument Exception from getPageInfoById, page $pageId");
-                return $this->responseWithText($response, "Server error", 500);
-            } catch (Exception $e) {
+                    return $this->responseWithText($response,"Page $pageId not found", HttpStatus::NOT_FOUND);
+            } catch (RuntimeException $e) {
                 $this->logException($e, "Generic Exception from getPageInfoById, page $pageId");
-                return $this->responseWithText($response, "Server error", 500);
+                return $this->responseWithText($response, "Server error", HttpStatus::INTERNAL_SERVER_ERROR);
             }
             $returnData[] = [
                 'id' => $pageId,

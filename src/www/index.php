@@ -271,42 +271,36 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
             ->setName('docs');
 
 
-//        $group->get('/doc/new',
-//            function(Request $request, Response $response) use ($container){
-//                return (new SiteDocuments($container))->newDocPage($request, $response);
-//            })
-//            ->setName('doc.new');
-
+        // will be deprecated soon
         $group->get('/doc/{id}/definepages',
             function(Request $request, Response $response) use ($container){
                 return (new SiteDocuments($container))->defineDocPages($request, $response);
             })
             ->setName('doc.definedocpages');
 
-//        $group->get('/doc/{id}/edit',
-//            function(Request $request, Response $response, array $args) use ($container){
-//                return (new SiteDocuments($container))->editDocPage($request, $response, $args);
-//            })
-//            ->setName('doc.editdoc');
 
-        $group->get('/doc/{id}[/{params:.*}]',
-            function(Request $request, Response $response, array $args) use ($container){
-                return (new SiteDocuments($container))->showDocPage($request, $response, $args);
-            })
-            ->setName('doc.details');
-
-        // PAGE VIEWER / TRANSCRIPTION EDITOR
-        $group->get('/doc/{doc}/realpage/{page}/view',
-            function(Request $request, Response $response) use ($container){
-                return (new SitePageViewer($container))->pageViewerPageByDocPage($request, $response);
-            })
-            ->setName('pageviewer.docpage');
-
+        // transcription editor
         $group->get('/doc/{doc}/page/{seq}/view[/c/{col}]',
             function(Request $request, Response $response) use ($container){
                 return (new SitePageViewer($container))->pageViewerPageByDocSeq($request, $response);
             })
-            ->setName('pageviewer.docseq');
+            ->setName('doc.page.transcribe');
+
+        // transcription editor (real pages)
+
+        $group->get('/doc/{doc}/realpage/{page}/view',
+            function(Request $request, Response $response) use ($container){
+                return (new SitePageViewer($container))->pageViewerPageByDocPage($request, $response);
+            })
+            ->setName('doc.page.transcribe.realPage');
+
+        // show document
+        $group->get('/doc/{id}[/{params:.*}]',
+            function(Request $request, Response $response, array $args) use ($container){
+                return (new SiteDocuments($container))->showDocPage($request, $response, $args);
+            })
+            ->setName('doc.show');
+
 
     })->add( function(Request $request, RequestHandlerInterface $handler) use($container){
         return (new Authenticator($container))->authenticateSiteRequest($request, $handler);

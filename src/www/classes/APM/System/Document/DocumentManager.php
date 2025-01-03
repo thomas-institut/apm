@@ -9,10 +9,12 @@ use APM\System\ImageSource\ImageSourceInterface;
 use ThomasInstitut\EntitySystem\EntityData;
 
 /**
- * Methods for creating, querying and manipulating documents in APM.
+ * Methods for creating, querying and manipulating documents and their pages in APM.
  *
  * Documents are entities of type Entity::tDocument. They are referred in the system
- * either by their entity id or by a legacy APM database id (which is always less or equal to 1043)
+ * either by their entity id or by a legacy APM database id (which is always less or equal to 1043).
+ *
+ * Pages are not part of the entity system and have their own unique ids.
  *
  */
 interface DocumentManager
@@ -186,6 +188,14 @@ interface DocumentManager
 
 
     /**
+     * @param int $pageId
+     * @return PageInfo
+     * @throws PageNotFoundException
+     */
+    public function getPageInfo(int $pageId): PageInfo;
+
+
+    /**
      * Returns a (legacy) array with information about a document, taken
      * now from the entity system
      * ``
@@ -205,6 +215,17 @@ interface DocumentManager
      * @throws DocumentNotFoundException
      */
     public function getLegacyDocInfo(int $docId) : array;
+
+
+    /**
+     * Returns a doc info object for the given document
+     *
+     * @param int $docId
+     * @param bool $includePageIds
+     * @return DocInfo
+     * @throws DocumentNotFoundException
+     */
+    public function getDocInfo(int $docId, bool $includePageIds = false) : DocInfo;
 
 
     /**
@@ -238,12 +259,11 @@ interface DocumentManager
      *  ``
      *
      * @param int $pageId
-     * @param array $settings
+     * @param PageInfo $newPageInfo
      * @return void
      * @throws PageNotFoundException
-     * @deprecated
      */
-    public function updatePageSettings(int $pageId, array $settings) : void;
+    public function updatePageSettings(int $pageId, PageInfo $newPageInfo) : void;
 
 
     /**
@@ -255,6 +275,16 @@ interface DocumentManager
      * @throws DocumentNotFoundException
      */
     public function getLegacyDocPageInfoArray(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER): array;
+
+    /**
+     *  Returns an array of PageInfo objects for each page in the given $docId
+     *
+     * @param int $docId
+     * @param int $order
+     * @return PageInfo[]
+     * @throws DocumentNotFoundException
+     */
+    public function getDocPageInfoArray(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER): array;
 
 
     /**

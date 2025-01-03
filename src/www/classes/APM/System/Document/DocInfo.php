@@ -17,31 +17,48 @@
  *  
  */
 
-namespace APM\FullTranscription;
+namespace APM\System\Document;
 
+
+use APM\EntitySystem\Schema\Entity;
+use ThomasInstitut\EntitySystem\EntityData;
 
 class DocInfo
 {
 
     public int $id;
     public string $title;
-    public string $languageCode;
-    public string $type;
-    public string $imageSource;
-    public string $imageSourceData;
+    public ?string $imageSource;
+    public ?string $imageSourceData;
     public array $pageIds;
+    /**
+     * @var int
+     * @deprecated use $id
+     */
     public int $tid;
+    public ?int $language;
+    public ?int $type;
 
     public function __construct()
     {
         $this->id = 0;
         $this->tid = 0;
         $this->title = '';
-        $this->languageCode = '';
-        $this->type = '';
+        $this->language = null;
+        $this->type = null;
         $this->imageSource = '';
         $this->imageSourceData = '';
         $this->pageIds = [];
+    }
+
+    public function setFromEntityData(EntityData $data) : void {
+        $this->id = $data->id;
+        $this->tid = $data->id;
+        $this->title = $data->name;
+        $this->language = $data->getObjectForPredicate(Entity::pDocumentLanguage);
+        $this->type = $data->getObjectForPredicate(Entity::pDocumentType);
+        $this->imageSource = $data->getObjectForPredicate(Entity::pImageSource);
+        $this->imageSourceData = $data->getObjectForPredicate(Entity::pImageSourceData);
     }
 
     public function setFromDatabaseRow(array $row): void
@@ -49,8 +66,8 @@ class DocInfo
         $this->id = intval($row['id']);
         $this->tid = intval($row['tid'] ?? 0);
         $this->title = $row['title'];
-        $this->languageCode = $row['lang'];
-        $this->type = $row['doc_type'];
+
+        $this->typeName = $row['doc_type'];
         $this->imageSource = $row['image_source'];
         $this->imageSourceData = $row['image_source_data'];
     }

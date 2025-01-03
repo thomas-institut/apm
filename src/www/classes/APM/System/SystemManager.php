@@ -24,16 +24,17 @@ namespace APM\System;
 
 use APM\CollationEngine\CollationEngine;
 use APM\CollationTable\CollationTableManager;
+use APM\EntitySystem\ApmEntitySystemInterface;
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
-use APM\FullTranscription\ApmTranscriptionWitness;
-use APM\FullTranscription\TranscriptionManager;
-use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\Session\SessionManager;
 use APM\System\Document\DocumentManager;
 use APM\System\Job\JobQueueManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
+use APM\System\Transcription\ApmTranscriptionWitness;
+use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\Work\WorkManager;
 use AverroesProject\Data\DataManager;
@@ -120,6 +121,13 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
             return null;
         }
         return $statements[0]->subject;
+    }
+
+    /**
+     * @throws EntityDoesNotExistException
+     */
+    public function getLangCodeFromId(int $langId) : string {
+        return $this->getEntitySystem()->getEntityData($langId)->name;
     }
 
 

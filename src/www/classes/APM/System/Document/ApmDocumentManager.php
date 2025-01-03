@@ -51,6 +51,10 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
     private InMemoryDataCache $cache;
     private PhpVarCacheEntityDataCache $entityCache;
 
+    const PAGE_ARRAY_LEGACY = 'legacy';
+    const PAGE_ARRAY_INFO = 'info';
+    const PAGE_ARRAY_IDS = 'ids';
+
     public function __construct(callable $getEntitySystem, callable $getPagesDataTable)
     {
         $this->getEntitySystem = $getEntitySystem;
@@ -282,6 +286,14 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
         return $this->getLegacyPageInfoFromDbRow($row);
     }
 
+    public function getPageInfo(int $pageId): PageInfo
+    {
+        $row = $this->getPagesDataTable()->getRow($pageId);
+        if ($row === null) {
+            throw new PageNotFoundException("Page $pageId not found");
+        }
+        return PageInfo::createFromDatabaseRow($row);
+    }
 
     private function getLegacyPageInfoFromDbRow(array $row): array {
         // Sanitize types!
@@ -318,52 +330,69 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
     /**
      * @inheritDoc
      */
-    public function updatePageSettings(int $pageId, array $settings): void
+    public function updatePageSettings(int $pageId, PageInfo $newPageInfo): void
     {
-        if (count(array_keys($settings)) === 0) {
-            return;
-        }
-            // make sure the page exists
-        $this->getLegacyPageInfo($pageId);
-        $row = [];
-
-        $row['lang'] = $settings['lang'] ?? null;
-        $row['foliation'] = $settings['foliation'] ?? null;
-        if ($row['foliation'] === '') {
-            $row['foliation'] = null;
+        $newPageInfo->pageId = $pageId;
+        if ( $newPageInfo->pageNumber === 0 ||$newPageInfo->sequence === 0 ) {
+            $this->logger->error("Invalid new page settings to update page $pageId", $newPageInfo->getDatabaseRow());
+            throw new InvalidArgumentException("Invalid new settings to update page $pageId");
         }
 
-        $row['type'] = $settings['type'] ?? null;
-        if ($row['type'] !== null) {
-            if (!$this->checkEntity($row['type'], Entity::tDocumentType)) {
-                throw new InvalidArgumentException("Given type '{$row['type']}' is not a valid document type");
+        $currentPageInfo = $this->getPageInfo($pageId);
+        $databaseRow = $newPageInfo->getDatabaseRow();
+        // check each individual column in the database row to see
+        // if it needs to be updated
+        unset($databaseRow['doc_id']); // must not update doc id, it is set at creation time only
+        if ($newPageInfo->pageNumber === $currentPageInfo->pageNumber) {
+            unset($databaseRow['page_number']);
+        }
+        if ($newPageInfo->imageNumber === $currentPageInfo->imageNumber) {
+            unset($databaseRow['image_number']);
+        }
+        if ($newPageInfo->sequence === $currentPageInfo->sequence) {
+            unset($databaseRow['seq']);
+        }
+        if ($newPageInfo->type === $currentPageInfo->type) {
+            unset($databaseRow['type']);
+        } else {
+            if (!$this->checkEntity($newPageInfo->type, Entity::tDocumentType)) {
+                throw new InvalidArgumentException("Given type '{$newPageInfo->type}' is not a valid document type");
             }
         }
-        $row['seq'] = $settings['seq'] ?? null;
+        if ($newPageInfo->lang === $currentPageInfo->lang) {
+            unset($databaseRow['lang']);
+        } else {
+            if (!$this->checkEntity($newPageInfo->lang, Entity::tLanguage)) {
+                throw new InvalidArgumentException("Given language '{$newPageInfo->lang}' is not a valid language");
+            }
+        }
 
+        if ($newPageInfo->numCols === $currentPageInfo->numCols) {
+            unset($databaseRow['num_cols']);
+        }
 
-        $row = array_filter($row, function($v) { return $v !== null;});
-        if (count(array_keys($row)) === 0) {
-            // nothing to update
+        if ($newPageInfo->foliationIsSet === $currentPageInfo->foliationIsSet && $newPageInfo->foliation === $currentPageInfo->foliation) {
+             unset($databaseRow['foliation']);
+        }
+
+        if (count(array_keys($databaseRow)) <= 1) {
+            // only the row id is left in the database row, nothing to update
             return;
         }
-        $row['id'] = $pageId;
 
         try {
-            $this->getPagesDataTable()->updateRow($row);
-        } catch (Exception $e) {
-            // should never happen
-            throw new RuntimeException("Exception updating page: " . $e->getMessage(), 0, $e);
+            $this->getPagesDataTable()->updateRow($databaseRow);
+        } catch (InvalidRowForUpdate $e) {
+            throw new RuntimeException("InvalidRowForUpdate exception: " . $e->getMessage(), 0, $e);
         }
     }
 
     /**
-     * @inheritDoc
+     * @throws DocumentNotFoundException
      */
-    public function getLegacyDocPageInfoArray(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER): array
+    private function getPageArray(int $docId, int $order, $dataType): array
     {
-
-        $this->debug && $this->logger->debug("Getting legacy doc page info array for doc $docId",
+        $this->debug && $this->logger->debug("Getting doc page info array for doc $docId",
             [ 'dbId' => $this->getLegacyDocId($docId)]);
 
         $dt = $this->getPagesDataTable();
@@ -382,7 +411,33 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
             }
         });
 
-        return array_map(function($row) { return $this->getLegacyPageInfoFromDbRow($row);}, $rows);
+        return match ($dataType) {
+            self::PAGE_ARRAY_LEGACY => array_map(function ($row) {
+                return $this->getLegacyPageInfoFromDbRow($row);
+            }, $rows),
+            self::PAGE_ARRAY_IDS => array_map(function ($row) {
+                return $row['id'];
+            }, $rows),
+            self::PAGE_ARRAY_INFO => array_map(function ($row) {
+                return PageInfo::createFromDatabaseRow($row);
+            }, $rows),
+            default => throw new InvalidArgumentException("Unknown data type '{$dataType}'"),
+        };
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getLegacyDocPageInfoArray(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER): array
+    {
+        return $this->getPageArray($docId, $order, self::PAGE_ARRAY_LEGACY);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getDocPageInfoArray(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER): array {
+        return $this->getPageArray($docId, $order, self::PAGE_ARRAY_INFO);
     }
 
     /**
@@ -491,6 +546,20 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
             'image_source_data' => $docEntityData->getObjectForPredicate(Entity::pImageSourceData),
             'deep_zoom' => ValueToolBox::valueToBool($docEntityData->getObjectForPredicate(Entity::pUseDeepZoomForImages)),
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getDocInfo(int $docId, bool $includePageIds = false) : DocInfo {
+        $docEntityData = $this->getDocumentEntityData($docId);
+        $docInfo = new DocInfo();
+        $docInfo->setFromEntityData($docEntityData);
+
+        if ($includePageIds) {
+            $docInfo->pageIds = $this->getPageArray($docId, self::ORDER_BY_PAGE_NUMBER, self::PAGE_ARRAY_IDS);
+        }
+        return $docInfo;
     }
 
 }

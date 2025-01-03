@@ -22,8 +22,7 @@ namespace APM\StandardData;
 
 use APM\Core\Collation\CollationTable;
 use APM\Core\Witness\EditionWitness;
-use APM\Core\Witness\TranscriptionWitness;
-use APM\FullTranscription\ApmTranscriptionWitness;
+use APM\System\Transcription\ApmTranscriptionWitness;
 use InvalidArgumentException;
 use stdClass;
 

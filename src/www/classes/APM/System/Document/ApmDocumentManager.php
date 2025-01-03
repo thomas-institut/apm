@@ -159,8 +159,10 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
         // make sure the document exists
         $this->getDocumentEntityData($docId);
 
+        $docIdForDb = $this->getLegacyDocId($docId);
+
         $page = [
-            'doc_id' => $docId,
+            'doc_id' => $docIdForDb,
             'page_number' => $pageNumber,
             'img_number' => $pageNumber,
             'seq' => $pageNumber,

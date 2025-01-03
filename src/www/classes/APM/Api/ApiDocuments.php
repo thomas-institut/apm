@@ -163,7 +163,9 @@ class ApiDocuments extends ApiController
     public function addPages(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        $this->debugMode = true;
         $documentManager = $this->systemManager->getDocumentManager();
+
         $this->profiler->start();
 
         $docId = (int) $request->getAttribute('id');
@@ -208,7 +210,8 @@ class ApiDocuments extends ApiController
             return $this->responseWithStatus($response, HttpStatus::INTERNAL_SERVER_ERROR);
         }
         $docLang = $docData->getObjectForPredicate(Entity::pDocumentLanguage);
-        
+
+        $this->debug("Doc $docId has $curNumPages pages, creating $numPages more with language $docLang");
         for ($i = $curNumPages; $i < ($numPages+$curNumPages); $i++) {
             try {
                 $documentManager->createPage($docId, $i + 1, $docLang);

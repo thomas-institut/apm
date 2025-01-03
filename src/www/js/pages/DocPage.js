@@ -35,6 +35,7 @@ import { ApmPage } from './ApmPage'
 import * as Entity from '../constants/Entity'
 import { MetadataEditorSchema } from '../defaults/MetadataEditorSchemata/MetadataEditorSchema'
 import { MetadataEditor2 } from '../MetadataEditor/MetadataEditor2'
+import { WidgetAddPages } from '../WidgetAddPages'
 
 const TabId_DocDetails = 'doc-info';
 const TabId_Pages = 'page-list';
@@ -388,8 +389,11 @@ export class DocPage extends NormalPage {
       $(`.page-select-${i}`).on('click', (ev) => {
         ev.preventDefault();
         this.selectPage(i, true);
-      })
+      });
     }
+
+    new WidgetAddPages('div.add-pages-widget-container', this.docId, this.doc.numPages);
+
     this.selectPage(this.initialPage, false);
     this.maximizeElementsHeight();
 
@@ -630,12 +634,7 @@ export class DocPage extends NormalPage {
   }
 
   async getPageAdminHtml() {
-    let html = '';
-
-    html += `<h3>Add pages</h3>`
-    html += `Add <input type="number" class="add-pages-num-pages-input" value=""/> page(s) at the end of the document 
-        <button class="btn-primary btn-sm add-pages-btn">Do it!</button>`
-    return html;
+    return `<h3>Add pages</h3><div class="add-pages-widget-container"></div>`
   }
 
 
@@ -768,10 +767,6 @@ export class DocPage extends NormalPage {
   }
 
   getAdminHtml() {
-
-    // let editDocUrl = urlGen.siteDocEdit(Tid.toBase36String(this.docId))
-    // let editDocumentHtml = this.canEditDocuments ?
-    //   `<a class="btn btn-sm btn-primary" href="${editDocUrl}">Edit Document</a>` : '';
 
     let defineDocPagesUrl = urlGen.siteDocDefinePages(Tid.toBase36String(this.docId));
     let definePagesHtml = this.canDefinePages ?

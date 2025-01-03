@@ -100,8 +100,8 @@ class EntityTool extends CommandLineUtility implements AdminUtility
 
 
     private function merge(string $entity1, string $entity2) : void {
-        $id1 = Tid::fromString($entity1, true);
-        $id2 = Tid::fromString($entity2, true);
+        $id1 = Tid::fromString($entity1);
+        $id2 = Tid::fromString($entity2);
 
         if ($id1 === -1) {
             print "ERROR: invalid entity id1 '$entity1'\n";
@@ -206,7 +206,7 @@ class EntityTool extends CommandLineUtility implements AdminUtility
      * @throws InvalidTimeZoneException
      */
     private function printInfo(string $tidString) : void {
-        $tid = Tid::fromString($tidString, true);
+        $tid = Tid::fromString($tidString);
 
         if ($tid === -1) {
             print "ERROR: invalid TID '$tidString'\n";

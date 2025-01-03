@@ -683,9 +683,6 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
      */
     public function getEntityIdFromString(string $tidString): int
     {
-        if (strlen($tidString) < 8 && intval($tidString) !== 0) {
-            return intval($tidString);
-        }
         return Tid::fromString($tidString);
     }
 

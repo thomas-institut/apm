@@ -20,7 +20,7 @@
 
     <script type="application/javascript" src="{{baseUrl}}/js/split-pane.js"></script>
 
-    <script type="application/javascript" src="{{baseUrl}}/js/ApmUrlGenerator.js"></script>
+{#    <script type="application/javascript" src="{{baseUrl}}/js/ApmUrlGenerator.js"></script>#}
     <script type="application/javascript" src="{{baseUrl}}/js/dist/PageViewer.bundle.js"></script>
 
     <link href='{{baseUrl}}/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
@@ -29,7 +29,7 @@
     $( () => {
       new PageViewer({
         commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
-        pageSystemId: {{pageInfo.id}},
+        pageId: {{pageInfo.id}},
         docId: {{ doc }},
         imageUrl: '{{imageUrl}}',
         pageType: {{pageInfo.type}},
@@ -38,11 +38,11 @@
         seq: {{ seq }},
         pageNumberFoliation:'{{ pageNumberFoliation }}',
         activeColumn : JSON.parse('{{activeColumn|json_encode|e('js')}}'),
-        defaultLang: '{{pageInfo.lang}}',
+        defaultLang: JSON.parse({{pageInfo.lang|json_encode|e('js')}}),
         activeWorks: JSON.parse("{{activeWorks|json_encode|e('js')}}"),
         languagesArray: JSON.parse("{{languagesArray|json_encode|e('js')}}"),
         pageTypeNames : JSON.parse('{{pageTypeNames|json_encode|e('js')}}'),
-        pagePopoverContent : '{{macros.pageviewtablepv(doc, thePages, navByPage)|escape('js')}}',
+        pagePopoverContent : '{{macros.pageviewtablepv(docIdString, thePages, navByPage)|escape('js')}}',
         deepZoom: '{{ deepZoom }}' === '1'
       })
     })
@@ -56,26 +56,26 @@
                 <a href="{{url_for('home')}}" title="Back to main page"><img src="{{baseUrl}}/images/apm-logo-plain.svg" height="50" alt="APM Logo"></a>
             </td>
             <td>
-                <span class="textonly"><a href="{{url_for('doc.showdoc', {'id' : doc })}}">{{ docInfo.title}}</a></span>
+                <span class="textonly"><a href="{{url_for('doc.show', {'id' : docIdString })}}">{{ docInfo.title}}</a></span>
             </td>
             <td>
                 {% if navByPage==true %}
                     <button class="textonly headerbutton {{ page==1?' disabled':''}}"
                             title="First Page" 
-                            onclick="window.location='{{url_for('pageviewer.docpage', {'doc': doc, 'page': 1})}}';" {{ page==1 ? ' disabled' : '' }}>
+                            onclick="window.location='{{url_for('doc.page.transcribe.realPage', {'doc': docIdString, 'page': 1})}}';" {{ page==1 ? ' disabled' : '' }}>
                {% else %}
                     <button class="textonly headerbutton {{ seq==1?' disabled':''}}"
-                            onclick="window.location='{{url_for('pageviewer.docseq', {'doc': doc, 'seq': 1})}}';" {{ seq==1 ? ' disabled' : '' }}>
+                            onclick="window.location='{{url_for('doc.page.transcribe', {'doc': docIdString, 'seq': 1})}}';" {{ seq==1 ? ' disabled' : '' }}>
                 {% endif %}
                         <i class="fas fa-step-backward"></i>
                 {% if navByPage==true %}
                     <button class="textonly headerbutton {{ page==1?' disabled':''}}" 
                         title="Previous Page" 
-                                onclick="window.location='{{url_for('pageviewer.docpage', {'doc': doc, 'page': page-1})}}';" {{ page==1 ? ' disabled' : '' }}>
+                                onclick="window.location='{{url_for('doc.page.transcribe.realPage', {'doc': docIdString, 'page': page-1})}}';" {{ page==1 ? ' disabled' : '' }}>
                 {% else %}
                     <button class="textonly headerbutton {{ seq==1?' disabled':''}}" 
                                 title="Previous Page" 
-                                onclick="window.location='{{url_for('pageviewer.docseq', {'doc': doc, 'seq': seq-1})}}';" {{ seq==1 ? ' disabled' : '' }}>
+                                onclick="window.location='{{url_for('doc.page.transcribe', {'doc': docIdString, 'seq': seq-1})}}';" {{ seq==1 ? ' disabled' : '' }}>
                 {% endif %}
                         <i class="fas fa-chevron-left"></i>
                     </button>
@@ -85,23 +85,23 @@
                {% if navByPage==true %}
                     <button class="textonly headerbutton {{ page==docPageCount?' disabled':''}}"
                                 title="Next Page" 
-                                onclick="window.location='{{url_for('pageviewer.docpage', {'doc': doc, 'page': page+1})}}';" {{ page==docPageCount ? ' disabled' : '' }}>
+                                onclick="window.location='{{url_for('doc.page.transcribe.realPage', {'doc': docIdString, 'page': page+1})}}';" {{ page==docPageCount ? ' disabled' : '' }}>
                 {% else %}
                     <button class="textonly headerbutton {{ seq==docPageCount?' disabled':''}}"
                                title="Next Page" 
-                                onclick="window.location='{{url_for('pageviewer.docseq', {'doc': doc, 'seq': seq+1})}}';" {{ seq==docPageCount ? ' disabled' : '' }}>
+                                onclick="window.location='{{url_for('doc.page.transcribe', {'doc': docIdString, 'seq': seq+1})}}';" {{ seq==docPageCount ? ' disabled' : '' }}>
                 {% endif %}
                         <i class="fas fa-chevron-right"></i>
                     </button>
                 {% if navByPage==true %}
                     <button class="textonly headerbutton {{ page==docPageCount?' disabled':''}}" 
                                 title="Last Page" 
-                                onclick="window.location='{{url_for('pageviewer.docpage', {'doc': doc, 'page': docPageCount})}}';" {{ page==docPageCount?' disabled':''}}>
+                                onclick="window.location='{{url_for('doc.page.transcribe.realPage', {'doc': docIdString, 'page': docPageCount})}}';" {{ page==docPageCount?' disabled':''}}>
 
                 {% else %}  
                     <button class="textonly headerbutton {{ seq==docPageCount?' disabled':''}}" 
                                 title="Last Page" 
-                                onclick="window.location='{{url_for('pageviewer.docseq', {'doc': doc, 'seq': docPageCount})}}';" {{ seq==docPageCount?' disabled':''}}>
+                                onclick="window.location='{{url_for('doc.page.transcribe', {'doc': docIdString, 'seq': docPageCount})}}';" {{ seq==docPageCount?' disabled':''}}>
                 {% endif %}
                         <i class="fas fa-step-forward"></i>
                     </button>

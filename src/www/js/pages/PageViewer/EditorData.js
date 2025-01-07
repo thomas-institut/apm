@@ -63,7 +63,7 @@ export class EditorData {
         id: -1,
         pageId: editorInfo.pageId,
         columnNumber: editorInfo.columnNumber,
-        lang: editorInfo.defaultLang,
+        lang: editorInfo.defaultLangCode,
         editorTid: editorInfo.editorTid,
         handId: editorInfo.handId,
         type: invalidElementType,
@@ -82,7 +82,7 @@ export class EditorData {
         columnElementId: currentElementId,
         seq: currentItemSeq++,
         type: normalTextItemType,
-        lang: editorInfo.defaultLang,
+        lang: editorInfo.defaultLangCode,
         handId: 0,
         theText: '',
         altText: null,
@@ -499,12 +499,13 @@ export class EditorData {
     console.log(`Target texts`)
     console.log(targetTexts)
 
+
+    // notice that we're using the language code here, not the entity id!
+    // items currently still use codes
     let languageCounts = {}
-    for (const lang in langDef) {
-      if (langDef.hasOwnProperty(lang)) {
-        languageCounts[lang] = 0
-      }
-    }
+    langDef.forEach( (langDefEntry) => {
+      languageCounts[langDefEntry['code']] = 0;
+    });
 
 
     formats[ELEMENT_HEAD] = 'headelement'
@@ -646,6 +647,7 @@ export class EditorData {
   }
   
   static getMainLanguage(languageCounts) {
+    console.log(`Getting main language`, languageCounts)
     let max = 0
     let mainLanguage = false
     for (const lang in languageCounts) {

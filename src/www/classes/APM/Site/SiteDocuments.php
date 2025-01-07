@@ -206,29 +206,34 @@ class SiteDocuments extends SiteController
             $doc['numPages'] = $docManager->getDocPageCount($docId);
             $pageInfoArray = $docManager->getLegacyDocPageInfoArray($docId);
             $doc['docInfo'] = $docManager->getLegacyDocInfo($docId);
+            $transcribedPages = $transcriptionManager->getTranscribedPageListByDocId($legacyDocId);
+            $doc['numTranscribedPages'] = count($transcribedPages);
+            $editorTids = $dataManager->getEditorTidsByDocId($legacyDocId);
+            $doc['editors'] = $editorTids;
+            $doc['tableId'] = "doc-$docId-table";
+            $doc['pages'] = $this->buildPageArrayNew($pageInfoArray, $transcribedPages, $doc['docInfo']);
+
+            // TODO: enable metadata when there's a use for it, or when the doc details JS app
+            //  would not hang if there's an error with it.
+            $metaData = [];
+
+            $chunkLocationMap = $transcriptionManager->getChunkLocationMapForDoc($legacyDocId, '');
+
+            $versionMap = $transcriptionManager->getVersionsForChunkLocationMap($chunkLocationMap);
+            $lastChunkVersions = $transcriptionManager->getLastChunkVersionFromVersionMap($versionMap);
+            $lastSaves = $transcriptionManager->getLastSavesForDoc($legacyDocId, 20);
+
         } catch (DocumentNotFoundException $e) {
             return $this->getBasicErrorPage($response, "Document $id not found",
                 "Document $id not found", HttpStatus::NOT_FOUND);
+        } catch (PageNotFoundException $e) {
+            // should never happen
+            $this->logger->error("Page not found when showing doc $docId: " . $e->getMessage());
+            return $this->getBasicErrorPage($response, "System error",
+                "System error (docs:233)", HttpStatus::INTERNAL_SERVER_ERROR);
         }
 
 
-        $transcribedPages = $transcriptionManager->getTranscribedPageListByDocId($legacyDocId);
-        $doc['numTranscribedPages'] = count($transcribedPages);
-        $editorTids = $dataManager->getEditorTidsByDocId($legacyDocId);
-        $doc['editors'] = $editorTids;
-        $doc['tableId'] = "doc-$docId-table";
-        $doc['pages'] = $this->buildPageArrayNew($pageInfoArray, $transcribedPages, $doc['docInfo']);
-
-
-        // TODO: enable metadata when there's a use for it, or when the doc details JS app
-        //  would not hang if there's an error with it.
-        $metaData = [];
-
-        $chunkLocationMap = $transcriptionManager->getChunkLocationMapForDoc($legacyDocId, '');
-
-        $versionMap = $transcriptionManager->getVersionsForChunkLocationMap($chunkLocationMap);
-        $lastChunkVersions = $transcriptionManager->getLastChunkVersionFromVersionMap($versionMap);
-        $lastSaves = $transcriptionManager->getLastSavesForDoc($legacyDocId, 20);
         $chunkInfo = [];
 
         $lastVersions = [];

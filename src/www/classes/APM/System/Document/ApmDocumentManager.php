@@ -204,7 +204,7 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
      */
     public function getNumColumns(int $pageId): int
     {
-        return $this->getLegacyPageInfo($pageId)['num_columns'];
+        return $this->getPageInfo($pageId)->numCols;
     }
 
     /**
@@ -300,6 +300,7 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
         $row['page_number'] = intval($row['page_number']);
         $row['seq'] = intval($row['seq']);
         $row['num_cols'] = intval($row['num_cols']);
+        $row['foliation'] = $row['foliation'] ?? strval($row['seq']);
         return $row;
     }
 
@@ -519,10 +520,9 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
     /**
      * Returns true if the document is DeepZoom
      *
-     * (caches results to speed things up)
      * @throws DocumentNotFoundException
      */
-    private function isDocDeepZoom(int $docId): bool {
+    public function isDocDeepZoom(int $docId): bool {
         return ValueToolBox::valueToBool($this->getDocAttribute($docId, Entity::pUseDeepZoomForImages));
     }
 

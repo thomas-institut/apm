@@ -553,8 +553,15 @@ class ApiDocuments extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');
-        
-        $numColumns = $this->getDataManager()->getNumColumns($docId, $pageNumber);
+
+        $docManager = $this->systemManager->getDocumentManager();
+
+        try {
+            $numColumns = $docManager->getPageInfo($docManager->getPageIdByDocPage($docId, $pageNumber))->numCols;
+        } catch (DocumentNotFoundException|PageNotFoundException $e) {
+            $this->logger->info("Doc/Page not found in API call to getNumColumns: $docId:$pageNumber");
+            return $this->responseWithStatus($response, HttpStatus::NOT_FOUND);
+        }
         $this->info("getNumColumns successful", [ 'docId' => $docId, 'pageNumber' => $pageNumber]);
 
         return $this->responseWithJson($response, $numColumns);
@@ -587,7 +594,7 @@ class ApiDocuments extends ApiController
 
         try {
             $pageId = $documentManager->getPageIdByDocPage($docId, $pageNumber);
-        } catch (\APM\System\Document\Exception\PageNotFoundException) {
+        } catch (PageNotFoundException) {
             // page does not exist
             $this->logger->error("Page not found", ['docId' => $docId, 'pageNumber' => $pageNumber]);
             return $this->responseWithJson($response,
@@ -604,7 +611,7 @@ class ApiDocuments extends ApiController
 
         try {
             $documentManager->addColumn($pageId);
-        } catch (\APM\System\Document\Exception\PageNotFoundException $e) {
+        } catch (PageNotFoundException $e) {
             // should never happen!
             $this->logger->error("Runtime Error: " . $e->getMessage(), [ 'docId' => $docId, 'pageNumber' => $pageNumber]);
             return $this->responseWithJson($response,
@@ -615,7 +622,7 @@ class ApiDocuments extends ApiController
 
         try {
             $numColumns = $documentManager->getNumColumns($pageId);
-        } catch (\APM\System\Document\Exception\PageNotFoundException $e) {
+        } catch (PageNotFoundException $e) {
             // should never happen!
             $this->logger->error("Runtime Error: " . $e->getMessage(), [ 'docId' => $docId, 'pageNumber' => $pageNumber]);
             return $this->responseWithJson($response,
@@ -649,7 +656,7 @@ class ApiDocuments extends ApiController
             $pageId = $inputData['pages'][$i];
             try {
                 $pageInfo = $this->systemManager->getDocumentManager()->getPageInfo($pageId);
-            } catch (\APM\System\Document\Exception\PageNotFoundException $e) {
+            } catch (PageNotFoundException $e) {
                     $this->logger->error("Page $pageId not found", [ 'errorMsg' => $e->getMessage(), 'errorCode' ]);
                     return $this->responseWithText($response,"Page $pageId not found", HttpStatus::NOT_FOUND);
             } catch (RuntimeException $e) {

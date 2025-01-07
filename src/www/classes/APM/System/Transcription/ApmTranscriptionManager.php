@@ -22,15 +22,46 @@ namespace APM\System\Transcription;
 use APM\System\ApmMySqlTableName;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Document\PageInfo;
 use APM\System\LegacyLangData;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
+use APM\ToolBox\ArraySort;
+use AverroesProject\ColumnElement\Custodes;
 use AverroesProject\ColumnElement\Element;
+use AverroesProject\ColumnElement\Gloss;
+use AverroesProject\ColumnElement\Head;
+use AverroesProject\ColumnElement\Line;
+use AverroesProject\ColumnElement\LineGap;
+use AverroesProject\ColumnElement\PageNumber;
+use AverroesProject\ColumnElement\Substitution;
 use AverroesProject\Data\EdNoteManager;
 use AverroesProject\Data\MySqlHelper;
+use AverroesProject\TxText\Abbreviation;
+use AverroesProject\TxText\Addition;
+use AverroesProject\TxText\BoldText;
+use AverroesProject\TxText\ChapterMark;
+use AverroesProject\TxText\CharacterGap;
+use AverroesProject\TxText\ChunkMark;
+use AverroesProject\TxText\Deletion;
+use AverroesProject\TxText\Gliph;
+use AverroesProject\TxText\Heading;
+use AverroesProject\TxText\Illegible;
+use AverroesProject\TxText\Initial;
+use AverroesProject\TxText\Item;
 use AverroesProject\TxText\Item as ApItem;
+use AverroesProject\TxText\ItemArray;
+use AverroesProject\TxText\MarginalMark;
+use AverroesProject\TxText\Mark;
+use AverroesProject\TxText\MathText;
+use AverroesProject\TxText\NoWordBreak;
+use AverroesProject\TxText\ParagraphMark;
+use AverroesProject\TxText\Rubric;
+use AverroesProject\TxText\Sic;
+use AverroesProject\TxText\Text;
+use AverroesProject\TxText\Unclear;
 use AverroesProjectToApm\DatabaseItemStream;
 use Exception;
 use InvalidArgumentException;
@@ -46,6 +77,7 @@ use ThomasInstitut\DataCache\DataCacheToolBox;
 use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataCache\SimpleCacheAware;
+use ThomasInstitut\DataTable\InvalidTimeStringException;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
@@ -160,7 +192,8 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @param int $docId
      * @param string $localWitnessId
      * @return string
-     * @throws InvalidArgumentException
+     * @throws DocumentNotFoundException
+     * @throws PageNotFoundException
      */
     public function getLastChangeTimestampForWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId) : string {
         $chunkWitnesses = $this->getWitnessesForChunk($workId, $chunkNumber);
@@ -192,8 +225,10 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @param string $timeStamp
      * @param string $defaultLanguageCode
      * @return ApmTranscriptionWitness
+     * @throws DocumentNotFoundException
      * @throws InvalidTimeZoneException
      * @throws MalformedStringException
+     * @throws PageNotFoundException
      */
     public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp, string $defaultLanguageCode) : ApmTranscriptionWitness
     {
@@ -497,11 +532,6 @@ class ApmTranscriptionManager extends TranscriptionManager
         }
         return $rows;
     }
-
-//    public function getPageInfoByDocSeq(int $docId, int $seq) : PageInfo {
-//        $pageId = $this->getDocumentManager()->getPageIdByDocSeq($docId, $seq);
-//        return $this->pageManager->getPageInfoByDocSeq($docId, $seq);
-//    }
 
     /**
      * @inheritDoc
@@ -1002,5 +1032,381 @@ class ApmTranscriptionManager extends TranscriptionManager
     public function getColumnVersionManager(): ColumnVersionManager
     {
         return $this->columnVersionManager;
+    }
+
+    /**
+     * @param int $pageId
+     * @param int $col
+     * @param string $timeString
+     * @return Element[]
+     * @throws InvalidTimeStringException
+     */
+    public function getColumnElementsByPageId(int $pageId, int $col, string $timeString = ''): array
+    {
+
+        $this->getSqlQueryCounterTracker()->incrementSelect();
+        if ($timeString === '') {
+            $timeString = TimeString::now();
+        }
+        $rows = $this->elementsDataTable->findRowsWithTime([
+            'page_id' => $pageId,
+            'column_number' => $col
+        ], 0, $timeString);
+        $theRows = iterator_to_array($rows);
+        ArraySort::byKey($theRows, 'seq');
+
+
+        $elements = [];
+        foreach($theRows as $row) {
+            $e = $this->createElementObjectFromRow($row);
+            $e->items = $this->getItemsForElement($e, $timeString);
+            $elements[] = $e;
+        }
+        return $elements;
+    }
+
+    /**
+     * @throws InvalidTimeStringException
+     */
+    private function getItemsForElement($element, $time = false): array
+    {
+        if ($time === false) {
+            $time = TimeString::now();
+        }
+
+
+        $this->getSqlQueryCounterTracker()->incrementSelect();
+        $rows = $this->itemsDataTable->findRowsWithTime([
+            'ce_id' => $element->id
+        ], 0, $time);
+
+        $theRows = iterator_to_array($rows);
+        ArraySort::byKey($theRows, 'seq');
+
+        $tt=[];
+
+        foreach ($theRows as $row) {
+            $item = self::createItemObjectFromRow($row);
+            ItemArray::addItem($tt, $item, true);
+        }
+        return $tt;
+    }
+
+    public static function createItemObjectFromRow($row) : Item
+    {
+        $fields = [
+            'id' => 'id',
+            'type'=> 'type',
+            'ce_id' => 'ce_id',
+            'seq' => 'seq',
+            'lang' => 'lang',
+            'hand_id' => 'hand_id',
+            'text' => 'text',
+            'alt_text' => 'alt_text',
+            'extra_info' => 'extra_info',
+            'length' => 'length',
+            'target' => 'target',
+        ];
+        return self::createItemObjectFromArbitraryRow($fields, $row);
+    }
+
+    private function createElementObjectFromRow($row): Element
+    {
+        $fields = [
+            'id' => 'id',
+            'type'=> 'type',
+            'page_id' => 'page_id',
+            'column_number' => 'column_number',
+            'seq' => 'seq',
+            'lang' => 'lang',
+//            'editor_id' => 'editor_id',
+            'editor_tid' => 'editor_tid',
+            'hand_id' => 'hand_id',
+            'reference' => 'reference',
+            'placement' => 'placement'
+        ];
+        return self::createElementObjectFromArbitraryRow($fields, $row);
+    }
+
+    public static function createElementObjectFromArbitraryRow($fields, $row) : Element {
+
+        switch ($row[$fields['type']]){
+            case Element::LINE:
+                $e = new Line();
+                // the line number
+                //$e->setLineNumber($row[$fields['reference']]);
+                break;
+
+            case Element::CUSTODES:
+                $e = new Custodes();
+                break;
+
+            case Element::HEAD:
+                $e = new Head();
+                break;
+
+            case Element::GLOSS:
+                $e = new Gloss();
+                break;
+
+            case Element::LINE_GAP:
+                $e = new LineGap();
+                break;
+
+            case Element::ADDITION:
+                $e = new \AverroesProject\ColumnElement\Addition();
+                break;
+
+            case Element::PAGE_NUMBER:
+                $e = new PageNumber();
+                break;
+
+            case Element::SUBSTITUTION:
+                $e = new Substitution();
+                break;
+        }
+        if (!isset($e)) {
+            throw new RuntimeException("Unknown Element type in $row", $row);
+        }
+        $e->columnNumber = (int) $row[$fields['column_number']];
+        $e->pageId = (int) $row[$fields['page_id']];
+        $e->seq = (int) $row[$fields['seq']];
+        $e->editorTid = intval($row[$fields['editor_tid']]);
+        $e->handId = (int) $row[$fields['hand_id']];
+        $e->id = (int) $row[$fields['id']];
+        $e->lang = $row[$fields['lang']];
+        $e->reference = (int) $row[$fields['reference']];
+        $e->placement = $row[$fields['placement']];
+        return $e;
+    }
+
+
+    public static function createItemObjectFromArbitraryRow($fields, $row) : Item{
+        switch ($row[$fields['type']]){
+            case Item::TEXT:
+                $item = new Text($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['text']]);
+                break;
+
+            case Item::RUBRIC:
+                $item = new Rubric($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['text']]);
+                break;
+
+            case Item::INITIAL:
+                $item = new Initial($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['text']]);
+                break;
+
+            case Item::SIC:
+                $item = new Sic($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['text']],
+                    $row[$fields['alt_text']]);
+                break;
+
+            case Item::MARK:
+                $item = new Mark($row[$fields['id']],
+                    $row[$fields['seq']]);
+                break;
+
+            case Item::UNCLEAR:
+                $item = new Unclear($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['extra_info']],
+                    $row[$fields['text']],
+                    $row[$fields['alt_text']]);
+                break;
+
+            case Item::ILLEGIBLE:
+                $item = new Illegible($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['length']],
+                    $row[$fields['extra_info']]);
+                break;
+
+            case Item::ABBREVIATION:
+                $item = new Abbreviation($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['text']],
+                    $row[$fields['alt_text']]);
+                break;
+
+            case Item::GLIPH:
+                $item = new Gliph($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['text']]);
+                break;
+
+            case Item::DELETION:
+                $item = new Deletion($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['text']],
+                    $row[$fields['extra_info']]);
+                break;
+
+            case Item::ADDITION:
+                $item = new Addition($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['text']],
+                    $row[$fields['extra_info']],
+                    (int) $row[$fields['target']]);
+                break;
+
+            case Item::NO_WORD_BREAK:
+                $item = new NoWordBreak($row[$fields['id']],
+                    $row[$fields['seq']]);
+                break;
+
+            case Item::CHUNK_MARK:
+                if (!isset($row[$fields['length']])) {
+                    $row[$fields['length']] = 1;
+                }
+                $item = new ChunkMark($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['text']],
+                    (int) $row[$fields['target']],
+                    $row[$fields['alt_text']],
+                    $row[$fields['extra_info']],
+                    $row[$fields['length']]);
+                break;
+
+            case Item::CHAPTER_MARK:
+                $textFields = explode(ChapterMark::SEPARATOR, $row[$fields['text']]);
+                $appellation = $textFields[0];
+                $title = $textFields[1];
+                $item = new ChapterMark(
+                    $row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['extra_info']],
+                    (int) $row[$fields['target']],
+                    $row[$fields['alt_text']],
+                    $appellation,
+                    $title,
+                    $row[$fields['length']]
+                );
+                break;
+
+            case Item::CHARACTER_GAP:
+                $item = new CharacterGap(
+                    $row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['length']]);
+                break;
+
+            case Item::PARAGRAPH_MARK:
+                $item = new ParagraphMark($row[$fields['id']],
+                    $row[$fields['seq']]);
+                break;
+
+            case Item::MATH_TEXT:
+                $item = new MathText($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['text']]);
+                break;
+
+            case Item::MARGINAL_MARK:
+                $item = new MarginalMark($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['text']]);
+                break;
+
+            case Item::BOLD_TEXT:
+                $item = new BoldText($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['text']]);
+                break;
+
+            case Item::HEADING:
+                $item = new Heading($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['text']]);
+
+
+        }
+        if (!isset($item)) {
+            throw new RuntimeException("Unknown item type found in row", $row);
+        }
+        $item->lang = $row[$fields['lang']];
+        $item->handId = $row[$fields['hand_id']];
+        $item->setColumnElementId($row[$fields['ce_id']]);
+        return $item;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getEdNoteManager(): EdNoteManager
+    {
+        return $this->edNoteManager;
+    }
+
+
+    /**
+     * @inheritDoc
+     */
+    public function getDocIdsTranscribedByUser(int $userTid) : array
+    {
+        $tp = $this->tNames['pages'];
+        $te = $this->tNames['elements'];
+        $eot = '9999-12-31 23:59:59.999999';
+
+
+        $this->getSqlQueryCounterTracker()->incrementSelect();
+
+        $query = "SELECT DISTINCT $tp.doc_id as 'id' FROM $tp, $te " .
+            "WHERE $te.editor_tid=$userTid  and $tp.id=$te.page_id " .
+            "AND $te.valid_until='$eot' AND $tp.valid_until='$eot'";
+
+        $res = $this->databaseHelper->query($query);
+        if ($res === false) {
+            return [];
+        }
+
+        $docIds = [];
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)){
+            $docIds[] = intval($row['id']);
+        }
+        return $docIds;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getPageIdsTranscribedByUser(int $userTid, int $docId) : array
+    {
+        $tp = $this->tNames['pages'];
+        $te = $this->tNames['elements'];
+        $eot = '9999-12-31 23:59:59.999999';
+
+        try {
+            $docId = $this->getDocumentManager()->getLegacyDocId($docId);
+        } catch (DocumentNotFoundException $e) {
+            return [];
+        }
+
+        $this->getSqlQueryCounterTracker()->incrementSelect();
+
+
+        $query = "SELECT DISTINCT $tp.id FROM $tp, $te " .
+            "WHERE $te.editor_tid=$userTid AND $te.page_id = $tp.id  AND $tp.doc_id = $docId " .
+            "AND $te.valid_until='$eot' AND $tp.valid_until='$eot'";
+        $this->logger->debug("Querying: '$query'");
+        $res = $this->databaseHelper->query($query);
+        if ($res === false) {
+            return [];
+        }
+
+        $pageIds = [];
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)){
+            $pageIds[] = intval($row['id']);
+        }
+        if ($docId > 2000) {
+            $this->logger->debug("Page Ids for user $userTid, doc $docId", [ 'pageIds' => $pageIds ]);
+        }
+        return $pageIds;
     }
 }

@@ -238,29 +238,36 @@ class ApiUsers extends ApiController
         return true;
     }
 
-    /**
-     * @throws DocumentNotFoundException
-     * @throws PageNotFoundException
-     */
+
     static public function buildTranscribedPagesData(SystemManager $systemManager, int $userId) : array {
-        $dm = $systemManager->getDataManager();
         $docManager = $systemManager->getDocumentManager();
+        $txManager = $systemManager->getTranscriptionManager();
 
         $helper = new DataRetrieveHelper();
         $helper->setLogger($systemManager->getLogger());
-        $docIds = $dm->getDocIdsTranscribedByUser($userId);
-        $docInfoArray = $helper->getDocInfoArrayFromList($docIds, $docManager);
+        $docIds = $txManager->getDocIdsTranscribedByUser($userId);
+        try {
+            $docInfoArray = $helper->getDocInfoArrayFromList($docIds, $docManager);
+        } catch (DocumentNotFoundException) {
+            // should never happen
+            throw new RuntimeException("Document not found while getting docInfo array");
+        }
         $allPageIds = [];
 
         foreach($docIds as $docId) {
-            $pageIds = $dm->getPageIdsTranscribedByUser($userId, $docId);
+            $pageIds = $txManager->getPageIdsTranscribedByUser($userId, $docId);
             $docInfoArray[$docId]->pageIds = $pageIds;
             foreach($pageIds as $pageId) {
                 $allPageIds[] = $pageId;
             }
         }
 
-        $pageInfoArray = $helper->getPageInfoArrayFromList($allPageIds, $docManager);
+        try {
+            $pageInfoArray = $helper->getPageInfoArrayFromList($allPageIds, $docManager);
+        } catch (PageNotFoundException) {
+            // should never happen
+            throw new RuntimeException("Document not found while getting pageInfo array");
+        }
         return [
             'docIds' => $docIds,
             'docInfoArray' => $docInfoArray,

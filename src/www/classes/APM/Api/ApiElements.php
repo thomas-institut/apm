@@ -20,6 +20,8 @@
 
 namespace APM\Api;
 
+use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\Transcription\ColumnVersionInfo;
 use APM\System\User\UserTag;
@@ -29,6 +31,7 @@ use AverroesProject\Data\EdNoteManager;
 use Exception;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use ThomasInstitut\DataTable\InvalidTimeStringException;
 use ThomasInstitut\TimeString\TimeString;
 
 /**
@@ -350,6 +353,9 @@ class ApiElements extends ApiController
      * @param Response $response
      * @return Response
      * @throws PersonNotFoundException
+     * @throws DocumentNotFoundException
+     * @throws PageNotFoundException
+     * @throws InvalidTimeStringException
      */
     public function getElementsByDocPageCol(Request $request, Response $response): Response
     {
@@ -358,12 +364,14 @@ class ApiElements extends ApiController
         $pageNumber = $request->getAttribute('page');
         $columnNumber = $request->getAttribute('column');
         $versionId = $request->getAttribute('version');
-
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":$docId:$pageNumber:$columnNumber");
+
         $dataManager = $this->getDataManager();
+        $docManager = $this->systemManager->getDocumentManager();
+        $txManager = $this->systemManager->getTranscriptionManager();
 
         // Get a list of versions
-        $pageId = $dataManager->getPageIdByDocPage($docId, $pageNumber);
+        $pageId = $docManager->getPageIdByDocPage($docId, $pageNumber);
         $versions = $dataManager->getTranscriptionVersionsWithAuthorInfo($pageId, $columnNumber);
 
         $versionTime = TimeString::now();
@@ -403,13 +411,15 @@ class ApiElements extends ApiController
         }
 
         // Get the elements
-        $elements = $dataManager->getColumnElements($docId, $pageNumber,
-            $columnNumber, $versionTime);
+        $elements = $txManager->getColumnElementsByPageId($pageId, $columnNumber, $versionTime);
+
+//        $elements = $dataManager->getColumnElements($docId, $pageNumber,
+//            $columnNumber, $versionTime);
 
         // Get the editorial notes
-        $ednotes = $dataManager->edNoteManager->getEditorialNotesByPageIdColWithTime($pageId, $columnNumber, $versionTime);
+        $ednotes = $txManager->getEdNoteManager()->getEditorialNotesByPageIdColWithTime($pageId, $columnNumber, $versionTime);
         
-        $pageInfo = $dataManager->getPageInfoByDocPage($docId, $pageNumber);
+        $pageInfo = $docManager->getLegacyPageInfoByDocPage($docId, $pageNumber);
 
         $goodPageInfo = $pageInfo === false ?  [ 'doc_id' => -1,  'id' => -1, 'lang' => '', 'num_cols' => 0] : $pageInfo;
 

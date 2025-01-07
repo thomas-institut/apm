@@ -24,6 +24,9 @@ use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Document\PageInfo;
 use APM\System\WitnessInfo;
+use AverroesProject\ColumnElement\Element;
+use AverroesProject\Data\EdNoteManager;
+use ThomasInstitut\DataTable\InvalidTimeStringException;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 
 /**
@@ -43,6 +46,12 @@ abstract class TranscriptionManager implements ErrorReporter
      * @return DocumentManager
      */
     abstract protected function getDocumentManager() : DocumentManager;
+
+    /**
+     * Returns the EdNoteManager associated with the TranscriptionManager
+     * @return EdNoteManager
+     */
+    abstract public function getEdNoteManager() : EdNoteManager;
     abstract public function getColumnVersionManager() : ColumnVersionManager;
 
     /**
@@ -288,4 +297,35 @@ abstract class TranscriptionManager implements ErrorReporter
     public function getPageInfoByDocPage(int $docId, int $pageNumber): PageInfo {
         return $this->getDocumentManager()->getPageInfo($this->getDocumentManager()->getPageIdByDocPage($docId, $pageNumber));
     }
+
+
+    /**
+     * @param int $pageId
+     * @param int $col
+     * @param string $timeString
+     * @return Element[]
+     * @throws InvalidTimeStringException
+     */
+    public abstract function getColumnElementsByPageId(int $pageId, int $col, string $timeString = ''): array;
+
+
+    /**
+     * Returns an array of document Ids for the documents
+     * in which a user has done some transcription work
+     *
+     * @param int $userTid
+     * @return int[]
+     */
+    abstract public function getDocIdsTranscribedByUser(int $userTid) : array;
+
+
+
+    /**
+     * Returns the page Ids transcribed by a user in a given document
+     *
+     * @param int $userTid
+     * @param int $docId
+     * @return int[]
+     */
+    abstract public function getPageIdsTranscribedByUser(int $userTid, int $docId) : array;
 }

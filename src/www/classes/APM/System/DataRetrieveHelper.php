@@ -46,7 +46,7 @@ class DataRetrieveHelper implements LoggerAwareInterface
         return $this->getInfoFromIdList(
             $pageList,
             function ($id) use ($pageManager) {
-                return $pageManager->getLegacyPageInfo($id);
+                return $pageManager->getPageInfo($id);
             }
         );
     }
@@ -61,7 +61,7 @@ class DataRetrieveHelper implements LoggerAwareInterface
         return $this->getInfoFromIdList(
             $docList,
             function ($id) use ($docManager) {
-                return $docManager->getLegacyDocInfo($id);
+                return $docManager->getDocInfo($id);
             }
         );
     }

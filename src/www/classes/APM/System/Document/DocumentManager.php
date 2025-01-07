@@ -309,4 +309,12 @@ interface DocumentManager
      */
     public function getImageUrl(int $docId, int $imageNumber, string $type, array $imageSources): string;
 
+    /**
+     * Returns true if the document's images are in DeepZoom format
+     * @param int $docId
+     * @return bool
+     * @throws DocumentNotFoundException
+     */
+    public function isDocDeepZoom(int $docId): bool;
+
 }

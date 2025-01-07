@@ -28,7 +28,7 @@ class DocInfo
 
     public int $id;
     public string $title;
-    public ?string $imageSource;
+    public ?int $imageSource;
     public ?string $imageSourceData;
     public array $pageIds;
     /**
@@ -46,7 +46,7 @@ class DocInfo
         $this->title = '';
         $this->language = null;
         $this->type = null;
-        $this->imageSource = '';
+        $this->imageSource = null;
         $this->imageSourceData = '';
         $this->pageIds = [];
     }
@@ -61,20 +61,20 @@ class DocInfo
         $this->imageSourceData = $data->getObjectForPredicate(Entity::pImageSourceData);
     }
 
-    public function setFromDatabaseRow(array $row): void
-    {
-        $this->id = intval($row['id']);
-        $this->tid = intval($row['tid'] ?? 0);
-        $this->title = $row['title'];
+//    public function setFromDatabaseRow(array $row): void
+//    {
+//        $this->id = intval($row['id']);
+//        $this->tid = intval($row['tid'] ?? 0);
+//        $this->title = $row['title'];
+//
+//        $this->typeName = $row['doc_type'];
+//        $this->imageSource = $row['image_source'];
+//        $this->imageSourceData = $row['image_source_data'];
+//    }
 
-        $this->typeName = $row['doc_type'];
-        $this->imageSource = $row['image_source'];
-        $this->imageSourceData = $row['image_source_data'];
-    }
-
-    public static function createFromDatabaseRow(array $row) : DocInfo {
-        $docInfo = new DocInfo();
-        $docInfo->setFromDatabaseRow($row);
-        return $docInfo;
-    }
+//    public static function createFromDatabaseRow(array $row) : DocInfo {
+//        $docInfo = new DocInfo();
+//        $docInfo->setFromDatabaseRow($row);
+//        return $docInfo;
+//    }
 }

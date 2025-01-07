@@ -663,6 +663,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * in which a user has done some transcription work
      * @param int $userTid
      * @return array
+     * @deprecated user TranscriptionManager method
      */
     public function getDocIdsTranscribedByUser(int $userTid) : array
     {
@@ -699,6 +700,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $userTid
      * @param int $docId
      * @return array
+     * @deprecated User TranscriptionManager method
      */
     public function getPageIdsTranscribedByUser(int $userTid, int $docId) : array
     {

@@ -23,6 +23,11 @@ import { urlGen } from '../common/SiteUrlGen'
 import { ApmUtil } from '../../ApmUtil'
 import { ApmPage } from '../ApmPage'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
+import * as Entity from '../../constants/Entity'
+import { TranscriptionLanguages } from '../../constants/TranscriptionLanguages'
+
+
+
 
 const DEFAULT_LAYOUT_CACHE_TTL = 180 * 24 * 3600;  // 6 months
 const LAYOUT_CACHE_DATA_ID = 'apm_pv_a4af3548';
@@ -36,26 +41,35 @@ export class PageViewer extends ApmPage {
       context: 'PageViewer',
       optionsDefinition: {
         docId: { type: 'integer', required: true},
-        pageSystemId: { type: 'integer', required: true},
+        pageId: { type: 'integer', required: true},
         activeColumn: { type: 'integer', required: true},
       }
     });
 
-    this.options = options
-    console.log('Page Viewer options')
-    console.log(options)
+    this.options = options;
+    console.log('Page Viewer options');
+    console.log(options);
+
+
+    this.docId = this.options.docId;
+    this.pageNumber  = this.options.pageNumber;
+    this.seq = this.options.seq;
+    this.pageId = this.options.pageId;
+    this.column = this.options.activeColumn;
 
     TranscriptionEditor.init(this.commonData.baseUrl);
-    this.pageSystemId = this.options.pageSystemId;
 
 
-    this.layoutCacheKey = `apm-PageViewer-Layout-${this.userId}-${this.pageSystemId}`
+    this.layoutCacheKey = `apm-PageViewer-Layout-${this.userId}-${this.pageId}`
 
     this.splitPaneElements =  $('div.split-pane')
     
     this.getViewerLayoutFromCache()
-    this.langDef =  ApmUtil.getLangDefFromLanguagesArray(this.options.languagesArray)
-    
+    this.langDef = [];
+    for (const lang of TranscriptionLanguages) {
+      this.langDef[lang['id']] = lang
+    }
+
     if (this.layout.vertical) {
       this.doVerticalLayout(this.layout.percentage)
     } else {
@@ -84,7 +98,8 @@ export class PageViewer extends ApmPage {
     }
 
     this.osdViewer = OpenSeadragon(osdOptions)
-    
+
+    // TODO: generate page list in JS
     $('#pagenumber').popover({
       title:'Page List', 
       content: options.pagePopoverContent, 
@@ -114,7 +129,7 @@ export class PageViewer extends ApmPage {
       this.genOnHorizontalButton())  
       
     // Load columns
-    $.getJSON(urlGen.apiGetNumColumns(this.options.docId, this.options.pageNumber),
+    $.getJSON(urlGen.apiGetNumColumns(this.docId, this.pageNumber),
       this.genOnLoadNumColumns())
   }
   
@@ -323,7 +338,7 @@ export class PageViewer extends ApmPage {
   }
 
   genOnClickEditPageSubmitButton(){
-    let apiUpdatePageSettingsUrl = urlGen.apiUpdatePageSettings(this.options.pageSystemId)
+    let apiUpdatePageSettingsUrl = urlGen.apiUpdatePageSettings(this.pageId)
     return  () => {
       let pageSettingsForm = $('#pageSettingsForm');
       console.log('Updating page settings');

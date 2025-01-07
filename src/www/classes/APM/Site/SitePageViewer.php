@@ -25,6 +25,7 @@
 
 namespace APM\Site;
 
+use APM\System\ApmImageType;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Work\WorkNotFoundException;
@@ -157,6 +158,18 @@ class SitePageViewer extends SiteController
             $pageNumber = $pageInfo['page_number'];
             $docPageCount = $docManager->getDocPageCount($docId);
             $pagesInfo = $docManager->getLegacyDocPageInfoArray($docId, DataManager::ORDER_BY_SEQ);
+            $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
+            $imageSources = $this->systemManager->getImageSources();
+            $imageUrl = $docManager->getImageUrl($docId, $pageInfo['img_number'], ApmImageType::IMAGE_TYPE_DEFAULT, $imageSources);
+            $deepZoom = $docManager->isDocDeepZoom($docId) ? '1' : '0';
+            $activeWorks = $this->getActiveWorks();
+            $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
+            $languagesArray = $this->getLanguages();
+
+            $pageNumberFoliation = $pageInfo['seq'];
+            if ($pageInfo['foliation'] !== NULL) {
+                $pageNumberFoliation = $pageInfo['foliation'];
+            }
         } catch (DocumentNotFoundException) {
             $this->logger->info("Document '$givenDocId' (= $docId) not found");
             return $this->getErrorPage($response, 'Error', "Document $givenDocId not found",
@@ -168,23 +181,11 @@ class SitePageViewer extends SiteController
         }
 
 
-        $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
-        $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
-        $imageUrl = $dataManager->getImageUrl($docId, $pageInfo['img_number']);
-        $pageTypeNames  = $dataManager->getPageTypeNames();
-        $activeWorks = $this->getActiveWorks();
-        $languagesArray = $this->getLanguages();
-
-        $pageNumberFoliation = $pageInfo['seq'];
-        if ($pageInfo['foliation'] !== NULL) {
-            $pageNumberFoliation = $pageInfo['foliation'];
-        }
-
-        $deepZoom = $this->systemManager->getDataManager()->isImageDeepZoom($docId) ? '1' : '0';
 
         return $this->renderPage($response, self::PAGE_VIEWER_TWIG, [
             'navByPage' => false,  // i.e., navigate by sequence
             'doc' => $docId,
+            'docIdString' => Tid::toBase36String($docId),
             'docInfo' => $docInfo,
             'docPageCount' => $docPageCount,
             'page' => $pageNumber,
@@ -192,13 +193,13 @@ class SitePageViewer extends SiteController
             'activeColumn' => $activeColumn,
             'pageNumberFoliation' => $pageNumberFoliation,
             'pageInfo' => $pageInfo,
-            'pageTypeNames' => $pageTypeNames,
+            'pageTypeNames' => [],
             'activeWorks' => $activeWorks,
             'thePages' => $thePages,
             'imageUrl' => $imageUrl,
             'languagesArray' => $languagesArray,
             'deepZoom' => $deepZoom
-        ], true, false);
+        ], true);
     }
 
 }

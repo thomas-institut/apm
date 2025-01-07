@@ -4,11 +4,16 @@ import { ApmDataProxy } from './common/ApmDataProxy'
 import { defaultLanguage, setSiteLanguage, tr, validLanguages } from './common/SiteLang'
 import { WebStorageKeyCache } from '../toolbox/KeyCache/WebStorageKeyCache'
 import { ApmFormats } from './common/ApmFormats'
+import { DataId_EC_ViewOptions } from '../constants/WebStorageDataId'
+
 
 
 const langCacheKey = 'apmSiteLanguage'
 const langCacheDataId = 'v1';
 const CachePrefix = 'Apm';
+// const SessionIdCacheKey = CachePrefix + 'SessionId';
+// const SessionIdDataId = 'SessionInfo_v0001';
+// const SessionIdTtl = 365.2422 * 24 * 3600; // 1 tropical year :)
 
 export class ApmPage {
 
@@ -22,6 +27,7 @@ export class ApmPage {
           objectDefinition: {
             appName: { required: true, type: 'string'},
             appVersion: { required: true, type: 'string'},
+            pageId: { type: 'string', default: 'ApmPage'},
             copyrightNotice: { required: true, type: 'string'},
             renderTimestamp: { required: true, type: 'number'},
             cacheDataId: { required: true, type: 'string'},
@@ -29,6 +35,7 @@ export class ApmPage {
             userInfo: { type: 'object'},
             siteLanguage: { type: 'string', default: ''},
             showLanguageSelector: { type: 'boolean', default: false},
+            wsServerUrl: { required: true, type: 'string'}
           }
         }
       }
@@ -37,18 +44,19 @@ export class ApmPage {
     this.commonData = cleanOptions.commonData
     setBaseUrl(this.commonData.baseUrl);
 
+
+    this.userId = this.commonData.userInfo['id'];
     /**
-     * Use userTid instead
+     * Use userId instead
      * @var {int} userId
      * @deprecated
      */
-    this.userId = this.commonData.userInfo['id'];
     this.userTid = this.commonData.userInfo['tid'];
     this.userName = this.commonData.userInfo.userName;
 
-    this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, CachePrefix);
+    this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, CachePrefix, [ DataId_EC_ViewOptions]);
     this.localCache = new WebStorageKeyCache('local', this.commonData.cacheDataId);
-    this.sessionCache = new WebStorageKeyCache('session', this.commonData.cacheDataId);
+    // this.sessionCache = new WebStorageKeyCache('session', this.commonData.cacheDataId);
 
     this.showLanguageSelector = this.commonData.showLanguageSelector;
     if (this.showLanguageSelector) {
@@ -68,11 +76,28 @@ export class ApmPage {
     ApmFormats.setTimeZone(this.timeZone);
 
     console.log(`Client timezone is '${this.timeZone}', currently ${ApmFormats.getTimeZoneOffsetStringForDate(new Date(), false, false)}`);
+
+    // this.sessionId = this.getSessionIdFromWebStorage();
+    // if (this.sessionId === null) {
+    //   this.sessionId = this.commonData['sessionId'];
+    //   console.log(`Using new session id from server: ${this.sessionId}`);
+    //   this.saveSessionIdToWebStorage();
+    // } else {
+    //   console.log(`Using existing session id ${this.sessionId}`);
+    // }
   }
 
   isUserRoot() {
     return this.commonData.userInfo['isRoot'];
   }
+
+  // getSessionIdFromWebStorage() {
+  //   return this.sessionCache.retrieve(SessionIdCacheKey, SessionIdDataId);
+  // }
+  //
+  // saveSessionIdToWebStorage() {
+  //   this.sessionCache.store(SessionIdCacheKey, this.sessionId, SessionIdTtl, SessionIdDataId);
+  // }
 
 
 

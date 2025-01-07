@@ -20,6 +20,9 @@ class PredicateFlag
      */
     const MergePredicate = 3;
 
+    /**
+     * When set, the predicate can only be used for statement qualifications
+     */
     const QualificationPredicate = 4;
 
     /**

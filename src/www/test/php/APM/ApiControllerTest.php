@@ -460,7 +460,7 @@ class ApiControllerTest extends TestCase {
         $apiUser = self::$dataManager->userManager->createUserByUserName('testApiUser2');
         $this->assertNotFalse($apiUser);
         self::$testEnvironment->setApiUser($apiUser);
-        self::$apiPresets->setApiUserTid($apiUser);
+        self::$apiPresets->setApiUserId($apiUser);
         $presetOwnedByNewApiUser = $presetData;
         $presetOwnedByNewApiUser['userId'] = $apiUser;
 
@@ -483,7 +483,7 @@ class ApiControllerTest extends TestCase {
         $request6 = self::requestWithData($request,
             [   'command' => ApiPresets::COMMAND_NEW,
                 'tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
-                'userId' => self::$container->get(ApmContainerKey::SITE_USER_TID),
+                'userId' => self::$container->get(ApmContainerKey::SITE_USER_ID),
                 'title' => $presetTitle,
                 'presetId' => 0,
                 'presetData' => $presetOwnedByNewApiUser
@@ -545,7 +545,7 @@ class ApiControllerTest extends TestCase {
      */
     public function testDeletePreset($presetData) {
         self::$testEnvironment->setUserTid($presetData['apiUserId']);
-        self::$apiPresets->setApiUserTid($presetData['apiUserId']);
+        self::$apiPresets->setApiUserId($presetData['apiUserId']);
         $presetId1 = $presetData['presetId1']; // owned by self::$editor1
         $presetId2 = $presetData['presetId2']; // owned by the current api user
 
@@ -670,7 +670,7 @@ class ApiControllerTest extends TestCase {
         $data = json_decode($response->getBody(), true);
         $this->assertEquals([], $data['elements']);
         $this->assertEquals([], $data['ednotes']);
-        $this->assertEquals([self::$container->get(ApmContainerKey::SITE_USER_TID)], array_keys($data['people'])); // only test UserId
+        $this->assertEquals([self::$container->get(ApmContainerKey::SITE_USER_ID)], array_keys($data['people'])); // only test UserId
         $this->assertEquals(1, $data['info']['col']);
 
         $numElements = 5;

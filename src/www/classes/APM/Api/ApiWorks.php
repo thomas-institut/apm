@@ -3,6 +3,7 @@
 namespace APM\Api;
 
 use APM\EntitySystem\Schema\Entity;
+use APM\System\Person\PersonNotFoundException;
 use APM\System\Work\WorkNotFoundException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -21,15 +22,32 @@ class ApiWorks extends ApiController
     {
         $workId =  $request->getAttribute('workId');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $workId);
-        $dataManager = $this->systemManager->getDataManager();
-        $workInfo = $dataManager->getWorkInfoByDareId($workId);
-
-        if ($workInfo === false) {
+        $workManager = $this->systemManager->getWorkManager();
+        try {
+            $workData = $workManager->getWorkDataByDareId($workId);
+        } catch (WorkNotFoundException) {
             $this->logger->error("Work '$workId' not found",
-                [ 'apiUserId' => $this->apiUserTid,
+                [ 'apiUserId' => $this->apiUserId,
                     'workId' => $workId]);
             return $this->responseWithStatus($response, 409);
         }
+        try {
+            $authorName = $this->systemManager->getPersonManager()->getPersonEssentialData($workData->authorId)->name;
+        } catch (PersonNotFoundException) {
+            $this->logger->error("Author not found " . $workData->authorId);
+            $authorName = '';
+        }
+
+        $workInfo = [
+            'id' => $workData->entityId,
+            'tid' => $workData->entityId,
+            'dare_id' => $workData->workId,
+            'author_tid'=> $workData->authorId,
+            'title' => $workData->title,
+            'short_title' => $workData->title,
+            'enabled' => $workData->enabled ? 1 : 0,
+            'author_name' => $authorName,
+        ];
         return $this->responseWithJson($response, $workInfo);
     }
 
@@ -50,7 +68,7 @@ class ApiWorks extends ApiController
                 return $this->responseWithJson($response, $workManager->getWorkData(intval($workId))->getExportObject());
             } catch (WorkNotFoundException) {
                 $this->logger->error("Work '$workId' not found",
-                    [ 'apiUserId' => $this->apiUserTid,
+                    [ 'apiUserId' => $this->apiUserId,
                         'workId' => $workId]);
                 return $this->responseWithStatus($response, 409);
             }

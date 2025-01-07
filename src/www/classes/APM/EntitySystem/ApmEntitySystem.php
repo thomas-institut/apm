@@ -37,14 +37,14 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
     use LoggerAwareTrait;
 
     /**
-     * Data id for internal kernel caches, change every time there is a
+     * Data id for internal kernel caches, needs to be changed every time there is a
      * change in the entity system schema or in the ApmEntitySystemKernel class
      */
-    const dataId = '030';
+    const dataId = '2024.12.24-11:53:37';
 
     const kernelCacheKey = 'ApmEntitySystemKernel';
 
-    const kernelCacheTtl = 8 * 24 * 3600;
+    const kernelCacheTtl = 8 * 24 * 3600; // 8 days
     const minNameCacheTtl = 15 * 24 * 3600;
     const maxNameCacheTtl = 21 * 24 * 3600;
 
@@ -72,18 +72,21 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
     /**
      * Constructs the ApmEntitySystem
      *
-     * $getTypedMultiStorageEntitySystem is a function that takes no arguments and returns a TypeMultiStorageEntitySystem
-     * object.
+     * The ApmEntitySystem needs a TypedMultiStorageEntitySystem where all statements are stored and a DataTable to
+     * keep track of entity merges. The constructor does not require the actual objects but callables that return them
+     * when needed.
      *
-     * $mergesDataTable is the table where merge data will be stored. It should at least the following three columns:
-     *   id: int
-     *   entity: big int, not null  (a Tid)
-     *   mergedInto: big int (a Tid)
+     * The merges table should have at least the following three columns:
+     *   * id: int
+     *   * entity: big int, not null  (a Tid)
+     *   * mergedInto: big int (a Tid)
      *
-     * @param callable $getTypedMultiStorageEntitySystem
-     * @param callable $getMergesDataTable
-     * @param DataCache $memDataCache
-     * @param string $memCachePrefix
+     * @param callable $getTypedMultiStorageEntitySystem a callable that takes no arguments and returns a
+     *  TypeMultiStorageEntitySystem object.
+     * @param callable $getMergesDataTable a callable that takes no arguments and returns a DataTable object
+     *  with the mergesDataTable
+     * @param DataCache $memDataCache a DataCache for caching to memory
+     * @param string $memCachePrefix the prefix to use from storing/retrieving data from the memory DataCache
      */
     public function __construct(callable  $getTypedMultiStorageEntitySystem, callable $getMergesDataTable,
                                 DataCache $memDataCache, string $memCachePrefix)
@@ -349,8 +352,8 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 
         if ($author !== Entity::System) {
             try {
-                $authorType = $this->getInnerEntitySystem()->getEntityType($author);
-            } catch (\ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException) {
+                $authorType = $this->getEntityType($author);
+            } catch (EntityDoesNotExistException $e) {
                 throw new InvalidArgumentException("Author $author not defined in the system");
             }
 
@@ -358,9 +361,9 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
                 throw new InvalidArgumentException("Author $author not a Person entity");
             }
 
-            $authorTid  = $this->getMergedIntoEntity($author);
-            if ($authorTid !== null) {
-                throw new InvalidArgumentException("Author $author has been merged into $authorTid");
+            $authorId  = $this->getMergedIntoEntity($author);
+            if ($authorId !== null) {
+                throw new InvalidArgumentException("Author $author has been merged into $authorId");
             }
         }
 
@@ -370,15 +373,15 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         }
 
         try {
-            $subjectType = $this->getInnerEntitySystem()->getEntityType($subject);
-        } catch (\ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException) {
+            $subjectType = $this->getEntityType($subject);
+        } catch (EntityDoesNotExistException $e) {
             throw new InvalidSubjectException("Subject $subject not an entity in the system");
         }
 
         if (is_int($object)) {
             try {
-                $objectType = $this->getInnerEntitySystem()->getEntityType($object);
-            } catch (\ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException) {
+                $objectType = $this->getEntityType($object);
+            } catch (EntityDoesNotExistException) {
                 throw new InvalidObjectException("Object $object not an entity in the system");
             }
             $objectTid = $this->getMergedIntoEntity($object);
@@ -680,9 +683,6 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
      */
     public function getEntityIdFromString(string $tidString): int
     {
-        if (strlen($tidString) < 8 && intval($tidString) !== 0) {
-            return intval($tidString);
-        }
         return Tid::fromString($tidString);
     }
 

@@ -22,6 +22,8 @@ namespace APM\Api;
 
 use APM\System\Cache\CacheKey;
 use APM\System\DataRetrieveHelper;
+use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
 use APM\System\User\InvalidEmailAddressException;
@@ -30,11 +32,14 @@ use APM\System\User\InvalidUserNameException;
 use APM\System\User\UserNameAlreadyInUseException;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
+use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\HttpStatus;
 use Exception;
 use InvalidArgumentException;
+use OpenSearch\Common\Exceptions\Missing404Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use RuntimeException;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 
@@ -61,14 +66,14 @@ class ApiUsers extends ApiController
 
         $newUserManager = $this->systemManager->getUserManager();
 
-        if ($profileUserTid === $this->apiUserTid) {
+        if ($profileUserTid === $this->apiUserId) {
             $this->logger->info("User $profileUserTid is changing their own user profile");
         } else {
-            if (!$newUserManager->isUserAllowedTo($this->apiUserTid, UserTag::MANAGE_USERS)) {
-                $this->logger->error("Api user $this->apiUserTid not allowed to update user profile $profileUserTid");
+            if (!$newUserManager->isUserAllowedTo($this->apiUserId, UserTag::MANAGE_USERS)) {
+                $this->logger->error("Api user $this->apiUserId not allowed to update user profile $profileUserTid");
                 return $this->responseWithStatus($response, HttpStatus::UNAUTHORIZED);
             }
-            $this->logger->info("User $this->apiUserTid is changing user profile $profileUserTid");
+            $this->logger->info("User $this->apiUserId is changing user profile $profileUserTid");
         }
 
         $postData = $request->getParsedBody();
@@ -139,11 +144,11 @@ class ApiUsers extends ApiController
         $personTid = intval($request->getAttribute('personTid'));
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $personTid);
 
-        if (!$apmUserManager->isUserAllowedTo($this->apiUserTid, UserTag::MANAGE_USERS)) {
-            $this->logger->error("Api user $this->apiUserTid not allowed to create users");
+        if (!$apmUserManager->isUserAllowedTo($this->apiUserId, UserTag::MANAGE_USERS)) {
+            $this->logger->error("Api user $this->apiUserId not allowed to create users");
             return $this->responseWithStatus($response, HttpStatus::UNAUTHORIZED);
         }
-        $this->logger->info("User $this->apiUserTid is making user $personTid");
+        $this->logger->info("User $this->apiUserId is making user $personTid");
 
         try {
             $personData = $personManager->getPersonEssentialData($personTid);
@@ -233,26 +238,36 @@ class ApiUsers extends ApiController
         return true;
     }
 
-    static public function buildTranscribedPagesData(SystemManager $systemManager, int $userTid) : array {
-        $dm = $systemManager->getDataManager();
-        $docManager = $systemManager->getTranscriptionManager()->getDocManager();
-        $pageManager = $systemManager->getTranscriptionManager()->getPageManager();
+
+    static public function buildTranscribedPagesData(SystemManager $systemManager, int $userId) : array {
+        $docManager = $systemManager->getDocumentManager();
+        $txManager = $systemManager->getTranscriptionManager();
 
         $helper = new DataRetrieveHelper();
         $helper->setLogger($systemManager->getLogger());
-        $docIds = $dm->getDocIdsTranscribedByUser($userTid);
-        $docInfoArray = $helper->getDocInfoArrayFromList($docIds, $docManager);
+        $docIds = $txManager->getDocIdsTranscribedByUser($userId);
+        try {
+            $docInfoArray = $helper->getDocInfoArrayFromList($docIds, $docManager);
+        } catch (DocumentNotFoundException) {
+            // should never happen
+            throw new RuntimeException("Document not found while getting docInfo array");
+        }
         $allPageIds = [];
 
         foreach($docIds as $docId) {
-            $pageIds = $dm->getPageIdsTranscribedByUser($userTid, $docId);
+            $pageIds = $txManager->getPageIdsTranscribedByUser($userId, $docId);
             $docInfoArray[$docId]->pageIds = $pageIds;
             foreach($pageIds as $pageId) {
                 $allPageIds[] = $pageId;
             }
         }
 
-        $pageInfoArray = $helper->getPageInfoArrayFromList($allPageIds, $pageManager);
+        try {
+            $pageInfoArray = $helper->getPageInfoArrayFromList($allPageIds, $docManager);
+        } catch (PageNotFoundException) {
+            // should never happen
+            throw new RuntimeException("Document not found while getting pageInfo array");
+        }
         return [
             'docIds' => $docIds,
             'docInfoArray' => $docInfoArray,
@@ -320,7 +335,18 @@ class ApiUsers extends ApiController
         }
         $workInfo = [];
         foreach (array_keys($worksCited) as $work) {
-            $workInfo[$work] = $systemManager->getDataManager()->getWorkInfoByDareId($work);
+            try {
+                $workData= get_object_vars($systemManager->getWorkManager()->getWorkDataByDareId($work));
+                $authorId = $workData['authorId'];
+                $authorName = $systemManager->getPersonManager()->getPersonEssentialData($authorId)->name;
+                $workData['author_name'] =$authorName;
+                $workInfo[$work] = $workData;
+
+            } catch (WorkNotFoundException) {
+                // should never happen!
+                throw new RuntimeException("Work $work not found");
+            } catch (PersonNotFoundException $e) {
+            }
         }
 
         return ['tableInfo' => $tableInfo, 'workInfo' => $workInfo];

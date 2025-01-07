@@ -63,16 +63,42 @@ export class ApmUrlGenerator {
     siteCollationTablePreset(work, chunkno, presetId) {
         return this.base + '/collation-table/auto/' + work + '/' + chunkno + '/preset/' + presetId;
     }
-    sitePageView(docId, pageSequence, col = 0) {
-        let url = this.base + '/doc/' + docId + '/page/' + pageSequence + '/view';
+
+    /**
+     * If the input is a string, returns the string unchanged. Otherwise,
+     * if necessary, converts the id to an integer and returns its base36 representation
+     *
+     * E.g.  'asdf' =>  'asdf',  1234 => '0000-00YA'
+     *
+     * @param {string|number}id
+     * @return {string}
+     */
+    getFormattedId(id) {
+        if (typeof id === 'string') {
+            return id;
+        }
+        if (typeof id === 'number') {
+            return Tid.toBase36String(id);
+        }
+
+        return Tid.toBase36String(parseInt(id.toString()));
+    }
+
+    /**
+     *
+     * @param {string|number}docId
+     * @param {number}pageSequence
+     * @param {number|null}col
+     * @returns {string}
+     */
+    sitePageView(docId, pageSequence, col = null) {
+        let url = `${this.base}/doc/${this.getFormattedId(docId)}/page/${pageSequence}/view`;
         if (col > 0) {
-            url += '/c/' + col;
+            url += `/c/${col}`
         }
         return url;
     }
-    // sitePageViewRealPage(docId, pageNumber) {
-    //     return this.base + '/doc/' + docId + '/realpage/' + pageNumber + '/view'
-    // }
+
     siteChunkPage(work, chunk) {
         return `${this.base}/work/${work}/chunk/${chunk}`
     }
@@ -82,26 +108,24 @@ export class ApmUrlGenerator {
     }
 
     siteWorkPage(workId) {
-        return `${this.base}/work/${workId}`;
+        return `${this.base}/work/${this.getFormattedId(workId)}`;
     }
 
+    /**
+     *
+     * @param {string|number}docId
+     * @returns {string}
+     */
     siteDocPage(docId) {
-        return this.base + '/doc/' + docId + '/details'
+        return `${this.base}/doc/${this.getFormattedId(docId)}`;
     }
 
-    siteDocEdit(docId) {
-        return `${this.base}/doc/${docId}/edit`
-    }
     siteDocDefinePages(docId) {
         return `${this.base}/doc/${docId}/definepages`
     }
 
     siteDocs() {
         return this.base + '/documents'
-    }
-
-    siteDocNewDoc() {
-        return `${this.base}/doc/new`;
     }
 
     siteChunks() {
@@ -117,7 +141,7 @@ export class ApmUrlGenerator {
     }
 
     sitePerson(id) {
-        return `${this.base}/person/${id}`;
+        return `${this.base}/person/${this.getFormattedId(id)}`;
     }
 
     sitePeople() {
@@ -179,10 +203,13 @@ export class ApmUrlGenerator {
     siteEntityPage(entityType, entityId) {
         switch (entityType) {
             case Entity.tPerson:
-                return this.sitePerson(Tid.toBase36String(entityId));
+                return this.sitePerson(this.getFormattedId(entityId));
 
             case Entity.tWork:
-                return this.siteWorkPage(entityId);
+                return this.siteWorkPage(this.getFormattedId(entityId));
+
+            case Entity.tDocument:
+                return this.siteDocPage(this.getFormattedId(entityId));
         }
         return '';
     }
@@ -362,13 +389,28 @@ export class ApmUrlGenerator {
         return `${this.base}/api/work/${workId}/chunksWithTranscription`;
     }
 
+    apiCollationTableGetActiveTablesForWork(workId) {
+        return`${this.base}/api/collation-table/active/work/${workId}`
+    }
+
     apiPersonGetWorks(personTid) {
         return `${this.base}/api/person/${personTid}/works`;
     }
 
-    apiDocumentNew() {
+    /**
+     *
+     * @returns {string}
+     * @deprecated
+     */
+    apiDocumentNew_deprecated() {
         return `${this.base}/api/doc/new`
     }
+
+    apiDocumentCreate() {
+        return `${this.base}/api/doc/create`
+    }
+
+
 
     apiDocumentUpdate(id) {
         return `${this.base}/api/doc/${id}/update`

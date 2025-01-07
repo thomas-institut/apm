@@ -1,6 +1,6 @@
 import { Panel } from './Panel'
-import { maximizeElementHeightInParent } from '../toolbox/UserInterfaceUtil'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
+import { UiToolBox } from '../toolbox/UiToolBox'
 
 const toolbarClass = 'panel-toolbar'
 const contentAreaClass  = 'panel-content'
@@ -25,7 +25,7 @@ export class PanelWithToolbar extends Panel {
     super.onResize(visible)
     if (this.maximizeContentArea) {
       //console.log(`Resizing content area for '${this.containerSelector}'`)
-      maximizeElementHeightInParent($(this.getContentAreaSelector()), $(this.containerSelector), $(this.getToolbarSelector()).outerHeight())
+      UiToolBox.maximizeElementHeightInParent($(this.getContentAreaSelector()), $(this.containerSelector), $(this.getToolbarSelector()).outerHeight())
     }
   }
 
@@ -78,7 +78,7 @@ export class PanelWithToolbar extends Panel {
     super.postRender(id, mode, visible)
     if (this.maximizeContentArea) {
       //console.log(`Resizing content area for '${this.containerSelector}'`)
-      maximizeElementHeightInParent($(this.getContentAreaSelector()), $(this.containerSelector), $(this.getToolbarSelector()).outerHeight())
+      UiToolBox.maximizeElementHeightInParent($(this.getContentAreaSelector()), $(this.containerSelector), $(this.getToolbarSelector()).outerHeight())
     }
   }
 

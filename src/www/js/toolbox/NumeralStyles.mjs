@@ -20,10 +20,20 @@ const arabicZeroCodePoint = 0x660
 
 export class NumeralStyles {
 
+  /**
+   *
+   * @param n
+   * @returns {string}
+   */
   static toDecimalWestern(n) {
     return n.toString()
   }
 
+  /**
+   *
+   * @param n
+   * @returns {string}
+   */
   static toDecimalArabic(n) {
     if (n === -1) {
       return '?'

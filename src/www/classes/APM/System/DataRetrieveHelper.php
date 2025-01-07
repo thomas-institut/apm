@@ -2,8 +2,7 @@
 
 namespace APM\System;
 
-use APM\FullTranscription\DocManager;
-use APM\FullTranscription\PageManager;
+use APM\System\Document\DocumentManager;
 use APM\System\Person\PersonManagerInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
@@ -37,20 +36,32 @@ class DataRetrieveHelper implements LoggerAwareInterface
         return $infoArray;
     }
 
-    public function getPageInfoArrayFromList(array $pageList, PageManager $pageManager) : array {
+    /**
+     * @param array $pageList
+     * @param DocumentManager $pageManager
+     * @return array
+     * @throws Document\Exception\PageNotFoundException
+     */
+    public function getPageInfoArrayFromList(array $pageList, DocumentManager $pageManager) : array {
         return $this->getInfoFromIdList(
             $pageList,
             function ($id) use ($pageManager) {
-                return $pageManager->getPageInfoById($id);
+                return $pageManager->getPageInfo($id);
             }
         );
     }
 
-    public function getDocInfoArrayFromList(array $docList, DocManager $docManager) : array {
+    /**
+     * @param array $docList
+     * @param DocumentManager $docManager
+     * @return array
+     * @throws Document\Exception\DocumentNotFoundException
+     */
+    public function getDocInfoArrayFromList(array $docList, DocumentManager $docManager) : array {
         return $this->getInfoFromIdList(
             $docList,
             function ($id) use ($docManager) {
-                return $docManager->getDocInfoById($id);
+                return $docManager->getDocInfo($id);
             }
         );
     }

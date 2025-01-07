@@ -117,9 +117,9 @@ class ApiTypesetPdf extends ApiController
 
         $result = $this->renderPdfFromJsonData($typesetData, $jsonDataHash, false);
 //        $this->profiler->stop();
-        $totalProcessingTime = $this->getProfilerTotalTime() * 1000;
+//        $totalProcessingTime = $this->getProfilerTotalTime() * 1000;
         if ($result['status'] === 'error') {
-            return $this->responseWithJson($response, ['error' => $result['error']], 409);
+            return $this->responseWithJson($response, ['error' => $result['error'] ?? 'No error reported'], 409);
         }
         return $this->responseWithJson($response, [
             'status' => 'OK',
@@ -127,8 +127,8 @@ class ApiTypesetPdf extends ApiController
             'url' => $result['url'],
             'typesetDocument' => json_decode($typesetData, true),
             'typesetterProcessingTime' => $typesetterDuration,
-            'pdfRenderingTime' => $totalProcessingTime - $typesetterDuration,
-            'totalProcessingTime' => $totalProcessingTime
+//            'pdfRenderingTime' => $totalProcessingTime - $typesetterDuration,
+//            'totalProcessingTime' => $totalProcessingTime
         ]);
     }
 
@@ -138,7 +138,7 @@ class ApiTypesetPdf extends ApiController
             // Cannot reproduce this condition in testing
             // @codeCoverageIgnoreStart
             $this->logger->error("Cannot create file $tempFileName",
-                [ 'apiUserTid' => $this->apiUserTid,
+                [ 'apiUserTid' => $this->apiUserId,
                     'apiError' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE,
                     'data' => $data ]);
             return false;
@@ -178,11 +178,16 @@ class ApiTypesetPdf extends ApiController
             return [ 'status' => 'error', 'errorCode' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE];
         }
 
+        $pythonVenv = $this->systemManager->getConfig()[ApmConfigParameter::PYTHON_VENV];
         $renderer = $this->systemManager->getConfig()[ApmConfigParameter::PDF_RENDERER];
+        if (isset($this->systemManager->getConfig()[ApmConfigParameter::PYTHON_VENV])) {
+            $renderer = "$pythonVenv/bin/python $renderer";
+        }
+
         $apmFullPath = $this->systemManager->getConfig()[ApmConfigParameter::BASE_FULL_PATH];
         $outputFileName = "$apmFullPath/$fileToDownload";
 
-        $this->codeDebug("About to call PDF renderer, input: $tmpInputFileName, output $outputFileName");
+        $this->logger->debug("About to call PDF renderer '$renderer', input: $tmpInputFileName, output $outputFileName");
 
         $returnValue = -1;
         $returnArray = [];

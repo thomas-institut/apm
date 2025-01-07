@@ -37,3 +37,7 @@ div.chunk-list-large {
 div.chunk-div {
     text-align: end;
 }
+
+div.entity-admin {
+    margin-bottom: 1em;
+}

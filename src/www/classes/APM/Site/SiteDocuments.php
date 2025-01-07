@@ -26,19 +26,22 @@
 
 namespace APM\Site;
 
-use APM\FullTranscription\ApmChunkSegmentLocation;
-use APM\System\DataRetrieveHelper;
-use APM\System\Person\PersonManagerInterface;
+use APM\EntitySystem\Schema\Entity;
+use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
+use APM\System\Transcription\ApmChunkSegmentLocation;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
+use APM\SystemProfiler;
 use APM\ToolBox\HttpStatus;
-use AverroesProject\Data\DataManager;
 use Exception;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use RuntimeException;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\EntitySystem\Tid;
 
 /**
  * SiteDocuments class
@@ -52,8 +55,6 @@ class SiteDocuments extends SiteController
 
     const TEMPLATE_DOCS_PAGE = 'documents-page.twig';
     const TEMPLATE_SHOW_DOCS_PAGE = 'doc-details.twig';
-    const TEMPLATE_DOC_EDIT_PAGE = 'doc-edit.twig';
-    const TEMPLATE_NEW_DOC_PAGE = 'doc-new.twig';
     const TEMPLATE_DEFINE_DOC_PAGES = 'doc-def-pages.twig';
 
     /**
@@ -63,8 +64,7 @@ class SiteDocuments extends SiteController
      */
     public function documentsPage(Request $request, Response $response): Response
     {
-
-
+        SystemProfiler::setName("Site:" . __FUNCTION__);
         $this->profiler->start();
 
         $cache = $this->systemManager->getSystemDataCache();
@@ -74,7 +74,7 @@ class SiteDocuments extends SiteController
             // not in cache
             $this->logger->debug("Cache miss for SiteDocuments document data");
             $dataManager = $this->systemManager->getDataManager();
-            $data = self::buildDocumentData($dataManager);
+            $data = self::buildDocumentData($this->systemManager);
             $cache->set(self::DOCUMENT_DATA_CACHE_KEY, serialize($data));
         }
         $docs = $data['docs'];
@@ -82,7 +82,7 @@ class SiteDocuments extends SiteController
         $canManageDocuments = false;
         $userManager = $this->systemManager->getUserManager();
         try {
-            if ($userManager->hasTag($this->userTid, UserTag::CREATE_DOCUMENTS) || $userManager->isRoot($this->userTid)) {
+            if ($userManager->hasTag($this->userId, UserTag::CREATE_DOCUMENTS) || $userManager->isRoot($this->userId)) {
                 $canManageDocuments = true;
             }
         } catch (UserNotFoundException) {
@@ -98,19 +98,30 @@ class SiteDocuments extends SiteController
         ]);
     }
 
-    static public function buildDocumentData(DataManager $dataManager): array
+    static public function buildDocumentData(SystemManager $systemManager): array
     {
         $docs = [];
 
-        $docIds = $dataManager->getDocIdList('title');
+        $docIds = $systemManager->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
+        $docManager = $systemManager->getDocumentManager();
+        $dataManager = $systemManager->getDataManager();
+
         foreach ($docIds as $docId){
-            //$profiler->lap("Doc $docId - START");
-            $doc = array();
-            $doc['numPages'] = $dataManager->getPageCountByDocId($docId);
-            $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
-            $doc['numTranscribedPages'] = count($transcribedPages);
-            $doc['transcribers'] = $dataManager->getEditorTidsByDocId($docId);
-            $doc['docInfo'] = $dataManager->getDocById($docId, false);
+            $doc = [];
+
+            try {
+                $legacyDocId = $docManager->getLegacyDocId($docId);
+                $doc['numPages'] = $docManager->getDocPageCount($docId);
+                $transcribedPages = $dataManager->getTranscribedPageListByDocId($legacyDocId);
+                $doc['numTranscribedPages'] = count($transcribedPages);
+                $doc['transcribers'] = $dataManager->getEditorTidsByDocId($legacyDocId);
+                $doc['docInfo'] = $docManager->getLegacyDocInfo($docId);
+
+            } catch (DocumentNotFoundException $e) {
+                // should never happen
+                $systemManager->getLogger()->error("Document not found: " . $e->getMessage());
+                continue;
+            }
             $docs[] = $doc;
         }
 
@@ -121,7 +132,7 @@ class SiteDocuments extends SiteController
     public static function updateDataCache(SystemManager $systemManager): bool
     {
         try {
-            $data = self::buildDocumentData($systemManager->getDataManager());
+            $data = self::buildDocumentData($systemManager);
         } catch(Exception $e) {
             $systemManager->getLogger()->error("Exception while building DocumentData",
                 [
@@ -137,14 +148,27 @@ class SiteDocuments extends SiteController
     /**
      * @param Request $request
      * @param Response $response
+     * @param array $args
      * @return Response
      * @throws PersonNotFoundException
      * @throws UserNotFoundException
      */
-    public function showDocPage(Request $request, Response $response): Response
+    public function showDocPage(Request $request, Response $response, array $args): Response
     {
         
-        $docId = $request->getAttribute('id');
+        $id = $args['id'];
+
+        $selectedPage = intval($request->getQueryParams()['selectedPage'] ?? '0');
+
+        $docId = $this->systemManager->getEntitySystem()->getEntityIdFromString($id);
+
+        if ($docId === -1) {
+            return $this->getBasicErrorPage($response, "Invalid Document ID",
+                "Invalid Document ID $id", HttpStatus::BAD_REQUEST);
+        }
+
+        $this->logger->debug("Showing Document Page for Document ID $docId");
+
 
         $chunkSegmentErrorMessages = [];
         $chunkSegmentErrorMessages[ApmChunkSegmentLocation::VALID] = '';
@@ -157,35 +181,59 @@ class SiteDocuments extends SiteController
 
         $this->profiler->start();
         $dataManager = $this->systemManager->getDataManager();
+        $docManager = $this->systemManager->getDocumentManager();
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
-        $pageManager = $transcriptionManager->getPageManager();
         $userManager = $this->systemManager->getUserManager();
+        if ($docId < 2000) {
+            // a legacy doc id
+            $this->logger->debug("Id $docId is a legacy id");
+            try {
+                $docData = $docManager->getDocumentEntityData($docId);
+            } catch (DocumentNotFoundException $e) {
+                $this->logger->debug("Document not found: " . $e->getMessage());
+                return $this->getBasicErrorPage($response, "Document $id not found",
+                    "Document $id not found", HttpStatus::NOT_FOUND);
+            }
+            $this->logger->debug("Entity id for legacy doc id $docId is $docData->id");
+            $newUrl = $this->router->urlFor("doc.details", [ 'id' => Tid::toBase36String($docData->id)]);
+            $this->logger->warning("Redirecting to $newUrl");
+            return $response->withHeader('Location', $newUrl)->withStatus(HttpStatus::MOVED_PERMANENTLY);
+        }
 
         $doc = [];
-        $doc['numPages'] = $dataManager->getPageCountByDocId($docId);
-        $transcribedPages = $transcriptionManager->getTranscribedPageListByDocId($docId);
-        $pageInfoArray = $pageManager->getPageInfoArrayForDoc($docId);
+        try {
+            $legacyDocId = $docManager->getLegacyDocId($docId);
+            $doc['numPages'] = $docManager->getDocPageCount($docId);
+            $pageInfoArray = $docManager->getLegacyDocPageInfoArray($docId);
+            $doc['docInfo'] = $docManager->getLegacyDocInfo($docId);
+            $transcribedPages = $transcriptionManager->getTranscribedPageListByDocId($legacyDocId);
+            $doc['numTranscribedPages'] = count($transcribedPages);
+            $editorTids = $dataManager->getEditorTidsByDocId($legacyDocId);
+            $doc['editors'] = $editorTids;
+            $doc['tableId'] = "doc-$docId-table";
+            $doc['pages'] = $this->buildPageArrayNew($pageInfoArray, $transcribedPages, $doc['docInfo']);
 
-        $doc['numTranscribedPages'] = count($transcribedPages);
-        $editorTids = $dataManager->getEditorTidsByDocId($docId);
-        $doc['editors'] = [];
-        foreach ($editorTids as $editorTid){
-            $doc['editors'][] = $this->systemManager->getPersonManager()->getPersonEssentialData($editorTid);
+            // TODO: enable metadata when there's a use for it, or when the doc details JS app
+            //  would not hang if there's an error with it.
+            $metaData = [];
+
+            $chunkLocationMap = $transcriptionManager->getChunkLocationMapForDoc($legacyDocId, '');
+
+            $versionMap = $transcriptionManager->getVersionsForChunkLocationMap($chunkLocationMap);
+            $lastChunkVersions = $transcriptionManager->getLastChunkVersionFromVersionMap($versionMap);
+            $lastSaves = $transcriptionManager->getLastSavesForDoc($legacyDocId, 20);
+
+        } catch (DocumentNotFoundException $e) {
+            return $this->getBasicErrorPage($response, "Document $id not found",
+                "Document $id not found", HttpStatus::NOT_FOUND);
+        } catch (PageNotFoundException $e) {
+            // should never happen
+            $this->logger->error("Page not found when showing doc $docId: " . $e->getMessage());
+            return $this->getBasicErrorPage($response, "System error",
+                "System error (docs:233)", HttpStatus::INTERNAL_SERVER_ERROR);
         }
-        $doc['docInfo'] = $dataManager->getDocById($docId);
-        $doc['tableId'] = "doc-$docId-table";
-        $doc['pages'] = $this->buildPageArrayNew($pageInfoArray, $transcribedPages, $doc['docInfo']);
 
 
-        // TODO: enable metadata when there's a use for it, or when the doc details JS app
-        //  would not hang if there's an error with it.
-        $metaData = [];
-
-        $chunkLocationMap = $transcriptionManager->getChunkLocationMapForDoc($docId, '');
-
-        $versionMap = $transcriptionManager->getVersionsForChunkLocationMap($chunkLocationMap);
-        $lastChunkVersions = $transcriptionManager->getLastChunkVersionFromVersionMap($versionMap);
-        $lastSaves = $transcriptionManager->getLastSavesForDoc($docId, 20);
         $chunkInfo = [];
 
         $lastVersions = [];
@@ -213,7 +261,12 @@ class SiteDocuments extends SiteController
                             if ($location->start->isZero()) {
                                 $start = '';
                             } else {
-                                $pageInfo = $transcriptionManager->getPageInfoByDocSeq($docId, $location->start->pageSequence);
+                                try {
+                                    $pageInfo = $docManager->getPageInfo($docManager->getPageIdByDocSeq($docId, $location->start->pageSequence));
+                                } catch (DocumentNotFoundException|PageNotFoundException $e) {
+                                    // should never happen
+                                    throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+                                }
                                 $start = [
                                     'seq' => $location->start->pageSequence,
                                     'foliation' => $pageInfo->foliation,
@@ -224,7 +277,12 @@ class SiteDocuments extends SiteController
                             if ($location->end->isZero()) {
                                 $end = '';
                             } else {
-                                $pageInfo = $transcriptionManager->getPageInfoByDocSeq($docId, $location->end->pageSequence);
+                                try {
+                                    $pageInfo = $docManager->getPageInfo($docManager->getPageIdByDocSeq($docId, $location->end->pageSequence));
+                                } catch (DocumentNotFoundException|PageNotFoundException $e) {
+                                    // should never happen
+                                    throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+                                }
                                 $end = [
                                     'seq' => $location->end->pageSequence,
                                     'foliation' => $pageInfo->foliation,
@@ -249,76 +307,23 @@ class SiteDocuments extends SiteController
 
         }
 
-        $pageTypeNames  = $this->systemManager->getDataManager()->getPageTypeNames();
-
         $this->profiler->stop();
         $this->logProfilerData('showDocPage-' . $docId);
 
         return $this->renderPage($response, self::TEMPLATE_SHOW_DOCS_PAGE, [
             'navByPage' => false,
             'canDefinePages' => true,
-            'canEditDocuments' => $userManager->isUserAllowedTo($this->userTid, UserTag::EDIT_DOCUMENTS),
-            'pageTypeNames' => $pageTypeNames,
+            'canEditDocuments' => $userManager->isUserAllowedTo($this->userId, UserTag::EDIT_DOCUMENTS),
             'doc' => $doc,
             'chunkInfo' => $chunkInfo,
             'lastVersions' => $lastVersions,
             'lastSaves' => $lastSaves,
             'metaData' => $metaData,
-            'userTid' => $this->userTid,
+            'userTid' => $this->userId,
+            'params' => explode('/', $args['params'] ?? ''),
+            'selectedPage' => $selectedPage
         ]);
     }
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     * @throws UserNotFoundException
-     */
-    public function newDocPage(Request $request, Response $response): Response
-    {
-
-        if (!$this->systemManager->getUserManager()->isUserAllowedTo($this->userTid, 'create-new-documents')) {
-            $this->logger->debug("User $this->userTid tried to add new doc but is not allowed to do it");
-            return $this->getErrorPage($response, 'Error', 'You are not allowed to create documents', HttpStatus::UNAUTHORIZED);
-        }
-
-        return $this->renderPage($response, self::TEMPLATE_NEW_DOC_PAGE, [
-            'imageSources' =>  $this->systemManager->getAvailableImageSources(),
-            'languages' => $this->getLanguages(),
-            'docTypes' =>  [ ['mss', 'Manuscript'], ['print', 'Print']]
-        ]);
-    }
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-    public function editDocPage(Request $request, Response $response): Response
-    {
-        $this->profiler->start();
-
-        $docId = $request->getAttribute('id');
-        $dataManager = $this->systemManager->getDataManager();
-        $docInfo = $dataManager->getDocById($docId);
-        if ($docInfo === false) {
-            return $this->getBasicErrorPage($response, 'Not found', "Document not found", HttpStatus::NOT_FOUND);
-        }
-        $availableImageSources = $this->systemManager->getAvailableImageSources();
-        $docTypes = [ ['mss', 'Manuscript'], ['print', 'Print']];
-        $canBeDeleted = $dataManager->getPageCountByDocIdAllTime($docId) === 0;
-        $this->profiler->stop();
-        $this->logProfilerData('editDocPage-' . $docId);
-        return $this->renderPage($response, self::TEMPLATE_DOC_EDIT_PAGE, [
-            'docInfo' => $docInfo,
-            'imageSources' => $availableImageSources,
-            'languages' => $this->getLanguages(),
-            'docTypes' => $docTypes,
-            'canBeDeleted' => $canBeDeleted
-        ]);
-    }
-
-
 
     /**
      * @param Request $request
@@ -328,29 +333,25 @@ class SiteDocuments extends SiteController
     public function defineDocPages(Request $request, Response $response): Response
     {
         $this->profiler->start();
-        
-//        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')){
-//            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to define document pages  but is not allowed to do it');
-//            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
-//                'message' => 'You are not authorized to edit document settings'
-//            ]);
-//        }
-        
-        $docId = $request->getAttribute('id');
-        $dataManager = $this->systemManager->getDataManager();
-        $doc = [];
-        $doc['numPages'] = $dataManager->getPageCountByDocId($docId);
-        $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
-        $dataManager->getDocPageInfo($docId);
-        $transcriptionManager = $this->systemManager->getTranscriptionManager();
-        $pageManager = $transcriptionManager->getPageManager();
-        $pageInfoArray = $pageManager->getPageInfoArrayForDoc($docId);
-        $doc['numTranscribedPages'] = count($transcribedPages);
-        $doc['docInfo'] = $dataManager->getDocById($docId);
-        $doc['tableId'] = "doc-$docId-table";
-        $doc['pages'] = $this->buildPageArrayNew($pageInfoArray,
-                $transcribedPages, $doc['docInfo']);
 
+
+        $docId = $request->getAttribute('id');
+        $docManager = $this->systemManager->getDocumentManager();
+        $transcriptionManager = $this->systemManager->getTranscriptionManager();
+        $doc = [];
+        try {
+            $doc['numPages'] = $docManager->getDocPageCount($docId);
+            $transcribedPages = $transcriptionManager->getTranscribedPageListByDocId($docId);
+            $pageInfoArray = $docManager->getLegacyDocPageInfoArray($docId);
+            $doc['docInfo'] = $docManager->getLegacyDocInfo($docId);
+            $doc['numTranscribedPages'] = count($transcribedPages);
+            $doc['tableId'] = "doc-$docId-table";
+            $doc['pages'] = $this->buildPageArrayNew($pageInfoArray,
+                $transcribedPages, $doc['docInfo']);
+        } catch (DocumentNotFoundException $e) {
+            $this->logger->info($e->getMessage());
+            return $this->getBasicErrorPage($response, "Not found", "Document not found", HttpStatus::NOT_FOUND);
+        }
         $this->profiler->stop();
         $this->logProfilerData('defineDocPages-' . $docId);
         return $this->renderPage($response, self::TEMPLATE_DEFINE_DOC_PAGES, [

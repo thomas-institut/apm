@@ -10,18 +10,23 @@ use APM\EntitySystem\Exception\InvalidSubjectException;
 use APM\EntitySystem\Exception\InvalidValueException;
 use APM\EntitySystem\Schema\AreaTypes;
 use APM\EntitySystem\Schema\Calendars;
-use APM\EntitySystem\Schema\DarePredicates;
+use APM\EntitySystem\Schema\DocumentPredicates;
+use APM\EntitySystem\Schema\DocumentTypes;
+use APM\EntitySystem\Schema\ImageSources;
+use APM\EntitySystem\Schema\LegacyDatabaseIdPredicates;
 use APM\EntitySystem\Schema\Entity;
 use APM\EntitySystem\Schema\EntityTypes;
 use APM\EntitySystem\Schema\GeoPredicates;
 use APM\EntitySystem\Schema\IdTypes;
 use APM\EntitySystem\Schema\Languages;
 use APM\EntitySystem\Schema\OrganizationTypes;
+use APM\EntitySystem\Schema\PageTypes;
 use APM\EntitySystem\Schema\PersonPredicates;
 use APM\EntitySystem\Schema\SystemEntity;
 use APM\EntitySystem\Schema\SystemPredicates;
 use APM\EntitySystem\Schema\UrlTypes;
 use APM\EntitySystem\Schema\ValueTypes;
+use APM\EntitySystem\Schema\EditionSourcePredicates;
 use APM\EntitySystem\Schema\WorkPredicates;
 use InvalidArgumentException;
 use LogicException;
@@ -88,8 +93,10 @@ class ApmEntitySystemKernel
             new SystemPredicates(),
             new PersonPredicates(),
             new WorkPredicates(),
+            new EditionSourcePredicates(),
             new GeoPredicates(),
-            new DarePredicates()
+            new LegacyDatabaseIdPredicates(),
+            new DocumentPredicates()
         ];
 
         $valueTypeDefiners = [
@@ -103,7 +110,10 @@ class ApmEntitySystemKernel
             new UrlTypes(),
             new Languages(),
             new AreaTypes(),
-            new Calendars()
+            new Calendars(),
+            new DocumentTypes(),
+            new ImageSources(),
+            new PageTypes()
         ];
 
         /** @var $allDefiners EntityDefiner[]*/

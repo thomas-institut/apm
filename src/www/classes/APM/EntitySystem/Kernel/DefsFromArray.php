@@ -22,7 +22,7 @@ class DefsFromArray
 
         foreach ($definitionsArray as $type) {
             $def = new EntityDefinition();
-            [ $tid, $name, $description, $trNames, $trDescriptions, $deprecated, $deprecationNotice] = $type;
+            [ $tid, $name, $description, $trNames, $trDescriptions, $deprecated, $deprecationNotice] = array_pad($type, 7, null);
             $def->id = $tid;
             $def->type = $entityType;
             $def->name = $name;

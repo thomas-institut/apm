@@ -4,6 +4,7 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { Tid } from '../Tid/Tid'
 import { urlGen } from './common/SiteUrlGen'
 import { ApmPage } from './ApmPage'
+import { DocumentCreationDialog } from './common/DocumentCreationDialog'
 
 export class DocumentsPage extends NormalPage {
 
@@ -52,7 +53,23 @@ export class DocumentsPage extends NormalPage {
 
   async initPage() {
     await super.initPage();
+    $(".create-document-btn").on('click', this.genOnClickCreateNewDocument());
+  }
 
+  genOnClickCreateNewDocument() {
+      return async () => {
+        console.log(`Click`)
+        let dialog = new DocumentCreationDialog({
+          apmDataProxy: this.apmDataProxy,
+          successWaitTime: 1000,
+        });
+
+        let newDocId = await dialog.createDocument();
+        if (newDocId !== false) {
+          console.log(`New doc id is ${Tid.toBase36String(newDocId)} (${newDocId})`);
+          document.location = urlGen.siteDocPage(Tid.toBase36String(newDocId));
+        }
+      }
   }
 
   async genContentHtml () {
@@ -60,7 +77,7 @@ export class DocumentsPage extends NormalPage {
     if (this.canManageDocuments) {
       adminDiv = `<div class='doc-admin'><h3>${tr('Admin')}</h3>
        <ul>
-       <li><a href="${urlGen.siteDocNewDoc()}">${tr('Create New Document')}</a></li>
+       <li><button class="btn btn-primary btn-sm create-document-btn">Create New Document</button></li>
 </ul>
 
 `
@@ -83,9 +100,9 @@ export class DocumentsPage extends NormalPage {
         transcribersHtmlArray.push(`<a href="${urlGen.sitePerson(Tid.toBase36String(transcriberTid))}" title="Click to view person details">${transcriberData.name}</a>`)
       }
       data.push({
-        title: `<a href="${urlGen.siteDocPage(doc['docInfo']['id'])}">${doc['docInfo']['title']}</a>`,
-        type:  await this.apmDataProxy.getDocTypeName(doc.docInfo.doc_type),
-        lang: await this.apmDataProxy.getLangName(doc['docInfo']['lang']),
+        title: `<a href="${urlGen.siteDocPage(Tid.toBase36String(doc['docInfo']['id']))}">${doc['docInfo']['title']}</a>`,
+        type:  await this.apmDataProxy.getEntityName(doc['docInfo']['doc_type']),
+        lang: await this.apmDataProxy.getEntityName(doc['docInfo']['lang']),
         numPages: doc['numPages'],
         numTranscribedPages: doc['numTranscribedPages'],
         transcribers: transcribersHtmlArray.join(', '),

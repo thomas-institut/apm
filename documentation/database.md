@@ -27,4 +27,19 @@ At the MySql prompt:
 
 ``source /file/path/thefile .sql``
 
-Extra
+Alternatively, the file can be fed into mysql from the 
+shell's command line:
+
+``cat somefile.sql | mysql apm``
+
+(where apm is the name of the database)
+
+Using this method, it's not necessary to unpack a compressed
+database backup before sourcing it to mysql:
+
+``zcat somefile.sql.gz | mysql apm``
+
+or, showing a progress bar:
+
+``pv somefile.sql.gz | gunzip | mysql apm``
+

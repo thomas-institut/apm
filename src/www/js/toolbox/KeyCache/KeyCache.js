@@ -128,9 +128,10 @@ export class KeyCache {
    * Returns the number of removed items
    *
    * @param before
+   * @param ignoreDataIds array of dataIds to ignore
    * @return {number}
    */
-  cleanCache(before = -1) {
+  cleanCache(before = -1, ignoreDataIds = []) {
     let now = this.now();
     let removedItemCount = 0;
     this.getKeys().forEach( (key) => {
@@ -141,8 +142,10 @@ export class KeyCache {
         return;
       }
       if (itemObject['dataId'] !== this.defaultDataId) {
-        removedItemCount++;
-        this.delete(key);
+        if (ignoreDataIds.indexOf(itemObject['dataId']) === -1) {
+          removedItemCount++;
+          this.delete(key);
+        }
         return;
       }
       let expirationTime = itemObject.expires === -1 ? itemObject.setAt + MaxTtl : itemObject.expires;

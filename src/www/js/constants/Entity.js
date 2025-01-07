@@ -1,6 +1,3 @@
-
-
-
 // System Entity
 export const System = 1;
 
@@ -24,8 +21,14 @@ export const tOrganization = 115;
 export const tOrganizationType = 116;
 export const tOccupation = 117;
 export const tOrganizationalRole = 118;
-
 export const tCalendar = 119;
+export const tDocument = 120;
+export const tGenericEditionSource = 121;
+export const tDocumentType = 122;
+export const tImageSource = 123;
+export const tPageType = 124;
+
+
 
 // Value types
 
@@ -69,7 +72,6 @@ export const pWikiDataId = 2902;
 export const pLangIso639Code = 2951;
 
 
-
 // Basic statement metadata predicates
 
 export const pStatementAuthor = 3001;
@@ -98,8 +100,6 @@ export const pMergedBy = 6002;
 export const pMergeTimestamp = 6003;
 export const pMergeEditorialNote = 6004;
 
-
-
 // Person predicates
 export const pOccupation = 7008;
 export const pDateOfBirth = 7009;
@@ -119,6 +119,17 @@ export const pWorkShortTitle = 7503;
 export const pWorkIsEnabledInApm = 7504;
 
 
+// Document Predicates
+
+export const pDocumentType = 7601;
+export const pDocumentLanguage = 7602;
+export const pImageSource = 7603;
+export const pInDare = 7604;
+export const pIsPublic = 7605;
+export const pImageSourceData = 7606;
+export const pUseDeepZoomForImages = 7607;
+
+
 
 
 // Geographical Predicates
@@ -128,6 +139,13 @@ export const pCivicAddress = 8003;
 export const pGpsCoordinates = 8004;
 
 export const pAreaType = 8005;
+
+// Edition source predicates
+
+export const pDefaultSiglum = 8501;
+export const pApplicableLanguage = 8502;
+export const pApplicableWork = 8503;
+export const pSpecificSource = 8504;
 
 // Url Types
 
@@ -140,6 +158,24 @@ export const UrlTypeWikipedia = 9004;
 export const UrlTypePersonalHomePage = 9005;
 export const UrlTypeWorkHomePage = 9006;
 
+
+// Document types
+
+export const DocTypeManuscript = 9101;
+export const DocTypePrint = 9102;
+export const DocTypeIncunabulum = 9103;
+
+
+// Image Sources
+export const ImageSourceBilderberg = 9201;
+export const ImageSourceAverroesServer = 9202;
+
+
+// Page Types
+export const PageTypeNotSet = 9300;
+export const PageTypeText = 9301;
+export const PageTypeFrontMatter = 9302;
+export const PageTypeBackMatter = 9303;
 
 
 // Calendars
@@ -159,9 +195,6 @@ export const IdTypeWikiData = 10001;
 export const IdTypeViaf = 10002;
 export const IdTypeGnd = 10003;
 export const IdTypeOrcid = 10004;
-
-
-
 
 
 // Area types
@@ -198,10 +231,11 @@ export const AreaTypeCanton = 11007;
 //    export const OccupationEditor = 13010;
 
 
-// Dare stuff
+// Legacy or external database ids
 
 export const pDarePersonId = 14001;
 
+export const pLegacyApmDatabaseId = 14002;
 
 // languages
 
@@ -218,5 +252,3 @@ export const LangItalian = 20024;
 export const LangSpanish = 20025;
 export const LangPortuguese = 20026;
 export const LangTurkish = 20027;
-
-

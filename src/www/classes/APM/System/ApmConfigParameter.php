@@ -31,9 +31,22 @@ class ApmConfigParameter
     const DB = 'db';
     const DB_TABLE_PREFIX  = 'db_table_prefix';
     const COLLATION_ENGINE = 'collation_engine';
+    /**
+     * @deprecated
+     */
     const COLLATEX_JAR_FILE = 'collatex_jar_file';
+    /**
+     * @deprecated
+     */
     const COLLATEX_TEMP_DIR = 'collatex_temp_dir';
+    /**
+     * @deprecated
+     */
     const JAVA_EXECUTABLE = 'java_executable';
+
+    const COLLATEX_HTTP_HOST = 'collatex_http_host';
+    const COLLATEX_HTTP_PORT = 'collatex_http_port';
+    const PYTHON_VENV = 'python_env';
 
     const VERSION = 'version';
     const APP_NAME = 'app_name';
@@ -76,4 +89,6 @@ class ApmConfigParameter
 
     const UNI_KOELN_URL = 'uni_koeln_url';
     const THOMAS_INSTITUT_URL = 'thomas_institut_url';
+
+    const WS_SERVER_URL = 'ws_server_url';
 }

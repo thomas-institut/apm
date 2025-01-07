@@ -30,10 +30,8 @@ class ApmContainerKey
 
 
     const SYSTEM_MANAGER = 'systemManager';
-    const SITE_USER_TID = 'siteUserTid';
+    const SITE_USER_ID = 'siteUserId';
     const USER_DATA = 'userData';
-    const API_USER_TID = 'apiUserTid';
-
-
+    const API_USER_ID = 'apiUserId';
 
 }

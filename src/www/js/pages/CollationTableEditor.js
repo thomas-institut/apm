@@ -2832,7 +2832,7 @@ export class CollationTableEditor extends HeaderAndContentPage {
   genCtInfoDiv() {
     let html = ''
     let workTitle = this.options.workInfo['title']
-    let workAuthorId = this.options.workInfo['authorTid']
+    let workAuthorId = this.options.workInfo['authorId']
     let workAuthorName = this.options.peopleInfo[workAuthorId]['name']
     let newEditorHtml = this.ctData['type'] === CollationTableType.EDITION
       ? `... <a href="${urlGen.siteEditCollationTableBeta(this.tableId)}" title="Click to load new editor">New Editor</a>`

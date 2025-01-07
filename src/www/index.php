@@ -101,8 +101,8 @@ if ($systemManager->fatalErrorOccurred()) {
 // Build container for Slim
 $container = new MinimalContainer();
 $container->set(ApmContainerKey::SYSTEM_MANAGER, $systemManager);
-$container->set(ApmContainerKey::SITE_USER_TID, -1); // set by authenticator
-$container->set(ApmContainerKey::API_USER_TID, -1); // set by authenticator
+$container->set(ApmContainerKey::SITE_USER_ID, -1); // set by authenticator
+$container->set(ApmContainerKey::API_USER_ID, -1); // set by authenticator
 
 // Setup Slim App
 $app = new App(new ResponseFactory(), $container);
@@ -168,7 +168,7 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
             })
             ->setName('people');
 
-        $group->get('/person/{tid}',
+        $group->get('/person/{id}',
             function(Request $request, Response $response) use ($container){
                 return (new SitePeople($container))->personPage($request, $response);
             })
@@ -270,42 +270,37 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
             })
             ->setName('docs');
 
-        $group->get('/doc/{id}/details',
-            function(Request $request, Response $response) use ($container){
-                return (new SiteDocuments($container))->showDocPage($request, $response);
-            })
-            ->setName('doc.showdoc');
 
+        // will be deprecated soon
         $group->get('/doc/{id}/definepages',
             function(Request $request, Response $response) use ($container){
                 return (new SiteDocuments($container))->defineDocPages($request, $response);
             })
             ->setName('doc.definedocpages');
 
-        $group->get('/doc/{id}/edit',
-            function(Request $request, Response $response) use ($container){
-                return (new SiteDocuments($container))->editDocPage($request, $response);
-            })
-            ->setName('doc.editdoc');
 
-        $group->get('/doc/new',
-            function(Request $request, Response $response) use ($container){
-                return (new SiteDocuments($container))->newDocPage($request, $response);
-            })
-            ->setName('doc.new');
-
-        // PAGE VIEWER / TRANSCRIPTION EDITOR
-        $group->get('/doc/{doc}/realpage/{page}/view',
-            function(Request $request, Response $response) use ($container){
-                return (new SitePageViewer($container))->pageViewerPageByDocPage($request, $response);
-            })
-            ->setName('pageviewer.docpage');
-
+        // transcription editor
         $group->get('/doc/{doc}/page/{seq}/view[/c/{col}]',
             function(Request $request, Response $response) use ($container){
                 return (new SitePageViewer($container))->pageViewerPageByDocSeq($request, $response);
             })
-            ->setName('pageviewer.docseq');
+            ->setName('doc.page.transcribe');
+
+        // transcription editor (real pages)
+
+        $group->get('/doc/{doc}/realpage/{page}/view',
+            function(Request $request, Response $response) use ($container){
+                return (new SitePageViewer($container))->pageViewerPageByDocPage($request, $response);
+            })
+            ->setName('doc.page.transcribe.realPage');
+
+        // show document
+        $group->get('/doc/{id}[/{params:.*}]',
+            function(Request $request, Response $response, array $args) use ($container){
+                return (new SiteDocuments($container))->showDocPage($request, $response, $args);
+            })
+            ->setName('doc.show');
+
 
     })->add( function(Request $request, RequestHandlerInterface $handler) use($container){
         return (new Authenticator($container))->authenticateSiteRequest($request, $handler);
@@ -418,6 +413,12 @@ function createApiCollationTableRoutes(RouteCollectorProxy $group, ContainerInte
             return (new ApiCollation($container))->getActiveEditions($response);
         })
         ->setName('api.collation.info.edition.active');
+
+    $group->get('/collation-table/active/work/{workId}',
+        function (Request $request, Response $response) use ($container){
+            return (new ApiCollation($container))->getActiveTablesForWork($request, $response);
+        })
+        ->setName('api.collation.active.work');
 }
 function createApiWitnessRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
     // WITNESSES
@@ -518,9 +519,16 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
     // API -> create new document
     $group->post('/doc/new',
         function(Request $request, Response $response) use ($container){
-            return (new ApiDocuments($container))->newDocument($request, $response);
+            return (new ApiDocuments($container))->newDocumentOld($request, $response);
         })
         ->setName('api.doc.new');
+
+
+    $group->post('/doc/create',
+        function(Request $request, Response $response, array $args) use ($container){
+            return (new ApiDocuments($container))->createDocument($request, $response, $args);
+        })
+        ->setName('api.doc.create');
 
     // API -> delete document
     $group->get('/doc/{id}/delete',
@@ -784,7 +792,6 @@ function createApiTranscriptionRoutes(RouteCollectorProxy $group, ContainerInter
         ->setName('api.transcriptions.update');
 }
 function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
-
 
     // WORKS
 

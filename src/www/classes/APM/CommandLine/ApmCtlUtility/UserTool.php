@@ -126,7 +126,7 @@ class UserTool extends CommandLineUtility implements AdminUtility
         $userName = $this->argv[2];
         $um = $this->getSystemManager()->getUserManager();
 
-        $userTid = $um->getUserTidForUserName($userName);
+        $userTid = $um->getUserIdForUserName($userName);
 
         if ($userTid === -1) {
             print "$userName is not a user in the system\n";
@@ -181,8 +181,8 @@ class UserTool extends CommandLineUtility implements AdminUtility
 
         foreach($allUsersData as $userData) {
             printf("%-15s   %s   %d   %s\n",
-                $userData->userName, Tid::toBase36String($userData->tid),
-                $userData->tid, implode(', ', $userData->tags));
+                $userData->userName, Tid::toBase36String($userData->id),
+                $userData->id, implode(', ', $userData->tags));
         }
 
     }

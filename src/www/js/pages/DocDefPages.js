@@ -19,7 +19,7 @@
 
 import { DefPagesDefRange } from '../DefPagesDefRange'
 import { DefPagesDefAll } from '../DefPagesDefAll'
-import { DefPagesAddPages } from '../DefPagesAddPages'
+import { WidgetAddPages } from '../WidgetAddPages'
 import { NormalPage } from './NormalPage'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { urlGen } from './common/SiteUrlGen'
@@ -106,7 +106,7 @@ export class DocDefPages extends NormalPage {
     this.pageDiv.html(this.getPageListHtml());
     new DefPagesDefAll(this.options.numPages, 'dap-', this.docInfo['id'], urlGen);
     new DefPagesDefRange(this.options.numPages, 'dr-', this.docInfo['id'], this.pageTypes, urlGen);
-    new DefPagesAddPages(this.options.numPages, 'ap-', this.docInfo['id'], urlGen);
+    new WidgetAddPages(this.options.numPages, 'ap-', this.docInfo['id'], urlGen);
   }
 
   setThumbnailSize(size) {

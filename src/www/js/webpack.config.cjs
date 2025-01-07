@@ -11,8 +11,6 @@ module.exports = {
     WorksPage: './pages/WorksPage.js',
     WorkPage: './pages/WorkPage.js',
     DocDefPages: './pages/DocDefPages.js',
-    DocEditPage: './pages/DocEditPage.js',
-    DocNewDocPage: './pages/DocNewDocPage.js',
     ErrorPage: './pages/ErrorPage.js',
     AdminEntityPage: './pages/AdminEntityPage/AdminEntityPage.js',
     PageViewer: './pages/PageViewer/PageViewer.js',
@@ -23,7 +21,7 @@ module.exports = {
       dependOn: 'QuillPack',
     },
     PeoplePage: './pages/PeoplePage.js',
-    PersonPageNew: './pages/PersonPageNew.js',
+    PersonPage: './pages/PersonPage.js',
     MceComposer: {
       import: './MceComposer/MceComposer.js',
       filename: 'MceComposer.bundle.js',

@@ -423,6 +423,9 @@ export class AdminEntityPage extends NormalPage {
         let spans = [];
         spans.push('<span class="active-notice">Active</span>');
         let predicateDef = this.predicateDefs[statement['predicate']];
+        if (predicateDef === undefined) {
+          console.warn(`No predicate def for ${statement['predicate']}`);
+        }
         if (predicateDef['flags'].indexOf(5) !== -1) {
           spans.push('<span class="not-editable-notice">System data, editing is disabled</span>');
         } else {

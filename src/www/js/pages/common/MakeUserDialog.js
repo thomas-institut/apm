@@ -54,13 +54,13 @@ export class MakeUserDialog {
   genOnAccept(resolve) {
     return () => {
       if (this.validateInput()) {
-        let tid = this.options.personData.tid;
+        let id = this.options.personData.id;
         let username = this.inputUserName.val().trim();
         this.dialog.hideAcceptButton();
         this.dialog.hideCancelButton();
         let loadingMessage = tr('Making new user');
         this.infoDiv.html(ApmPage.genLoadingMessageHtml(loadingMessage)).removeClass('text-danger');
-        this.options.apmDataProxy.createUser(tid, username).then( () => {
+        this.options.apmDataProxy.createUser(id, username).then( () => {
           this.infoDiv.html(tr('User successfully created'));
           wait(this.options.successWaitTime).then( () => {
             this.dialog.hide();

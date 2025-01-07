@@ -19,6 +19,13 @@ $config[ConfigParam::DB_TABLE_PREFIX] = 'ap_';
 //       if it runs in https://test.com,  sub_dir = '';
 $config[ConfigParam::SUB_DIR] = '';
 
+
+// Base url for the web socket server.
+// In development this will be something like ws://localhost:5555
+// whereas in production some proxied sub folder of the main
+// server, e.g. https://averroes.uni-koeln.de/wss
+$config[ConfigParam::WS_SERVER_URL] = 'ws://localhost:5555';
+
 // APM DAEMON
 $config[ConfigParam::APM_DAEMON_PID_FILE] = '/path/to/apmd.pid';
 

@@ -24,7 +24,7 @@ import { urlGen } from './common/SiteUrlGen'
 import { ApmPage } from './ApmPage'
 import { Tid } from '../Tid/Tid'
 import { NewChunkEditionDialog } from './common/NewChunkEditionDialog'
-import { Calendar } from '../toolbox/Calendar'
+// import { Calendar } from '../toolbox/Calendar'
 
 const newMceEditionIcon = '<i class="bi bi-file-plus"></i>'
 
@@ -33,46 +33,46 @@ export class DashboardPage extends NormalPage {
     super(options);
     console.log(`Dashboard Page`);
     console.log(options);
-    this.calculationPlayGround();
+    //this.calculationPlayGround();
     this.initPage().then( () => {
       console.log(`Dashboard page initialized`)
     })
   }
 
-  calculationPlayGround() {
-    console.group(`Calculation playground`);
-
-    let today = Calendar.RD_fromJsDate(new Date());
-
-    console.log(`Today is RD ${today}`);
-
-    let results =
-    [ '1082-08-21', '1945-11-12', '1970-03-13', '1971-01-28', '2023-09-05'].map( (dateString) => {
-      let [ year, month, day ] = dateString.split('-');
-      let rd = Calendar.RD_fromGregorian(parseInt(year), parseInt(month), parseInt(day));
-      let dow = Calendar.dayOfTheWeek_fromRD(rd);
-      return {
-        dateString: dateString,
-        rd: rd,
-        dow: dow,
-        daysAgo: today - rd,
-        julian: Calendar.Julian_fromRD(rd)
-      }
-    })
-
-    let dayNames = [ '', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-    results.forEach( (result) => {
-      console.log(`${result.dateString} = RD ${result.rd}, ${dayNames[result.dow]}`);
-      console.log(`   ${result.daysAgo} days ago  (${(result.daysAgo / 365.2425).toFixed(3)} solar years ago)`);
-      let [ julianYear, julianMonth, julianDay] = result.julian;
-      console.log(`   Julian:  ${Math.abs(julianYear)}-${julianMonth}-${julianDay} ${julianYear < 0 ? 'BCE' : 'CE'}`);
-    })
-
-
-    console.groupEnd();
-
-  }
+  // calculationPlayGround() {
+  //   console.group(`Calculation playground`);
+  //
+  //   let today = Calendar.RD_fromJsDate(new Date());
+  //
+  //   console.log(`Today is RD ${today}`);
+  //
+  //   let results =
+  //   [ '1082-08-21', '1945-11-12', '1970-03-13', '1971-01-28', '2023-09-05'].map( (dateString) => {
+  //     let [ year, month, day ] = dateString.split('-');
+  //     let rd = Calendar.RD_fromGregorian(parseInt(year), parseInt(month), parseInt(day));
+  //     let dow = Calendar.dayOfTheWeek_fromRD(rd);
+  //     return {
+  //       dateString: dateString,
+  //       rd: rd,
+  //       dow: dow,
+  //       daysAgo: today - rd,
+  //       julian: Calendar.Julian_fromRD(rd)
+  //     }
+  //   })
+  //
+  //   let dayNames = [ '', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  //
+  //   results.forEach( (result) => {
+  //     console.log(`${result.dateString} = RD ${result.rd}, ${dayNames[result.dow]}`);
+  //     console.log(`   ${result.daysAgo} days ago  (${(result.daysAgo / 365.2425).toFixed(3)} solar years ago)`);
+  //     let [ julianYear, julianMonth, julianDay] = result.julian;
+  //     console.log(`   Julian:  ${Math.abs(julianYear)}-${julianMonth}-${julianDay} ${julianYear < 0 ? 'BCE' : 'CE'}`);
+  //   })
+  //
+  //
+  //   console.groupEnd();
+  //
+  // }
 
   async initPage() {
     await super.initPage()
@@ -98,7 +98,7 @@ export class DashboardPage extends NormalPage {
   }
 
   async fetchMultiChunkEditions() {
-    let data = await this.apmDataProxy.get(urlGen.apiUserGetMultiChunkEditionInfo(this.userTid))
+    let data = await this.apmDataProxy.get(urlGen.apiUserGetMultiChunkEditionInfo(this.userId))
     let html = UserDocDataCommon.generateMultiChunkEditionsListHtml(data)
     let newMceUrl = urlGen.siteMultiChunkEditionNew()
     html += `<p class="new-mce"><a href="${newMceUrl}" title="${tr('Click to start a new multi-chunk edition')}" target="_blank">${newMceEditionIcon} ${tr('Create new multi-chunk edition')}</a></p>`
@@ -106,7 +106,7 @@ export class DashboardPage extends NormalPage {
   }
 
   async fetchCollationTablesAndEditions() {
-   let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.userTid))
+   let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.userId))
    let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo']);
    let newChunkEditionHtml = `<p class="new-mce"><a href="" class="new-chunk-edition-btn" 
         title="${tr("Click to create a new chunk edition")}">${newMceEditionIcon} ${tr('Create new chunk edition')}</a></p>`;
@@ -117,7 +117,7 @@ export class DashboardPage extends NormalPage {
   }
 
   async fetchTranscriptions() {
-    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.userTid))
+    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.userId))
     this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data))
   }
 
@@ -139,7 +139,7 @@ export class DashboardPage extends NormalPage {
 
   genAdminSectionHtml() {
     return `
-        <p><a href="${urlGen.sitePerson(Tid.toBase36String(this.userTid))}">${tr("Edit profile / Change Password")}</a></p>`
+        <p><a href="${urlGen.sitePerson(Tid.toBase36String(this.userId))}">${tr("Edit profile / Change Password")}</a></p>`
   }
 
   constructCollapse(selector, title, headerClasses = []) {
@@ -157,9 +157,6 @@ export class DashboardPage extends NormalPage {
       debug: false
     })
   }
-
-
-
 }
 
 

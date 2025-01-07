@@ -511,7 +511,7 @@ class SiteControllerTest extends TestCase {
                 ['lang' => $lang, 'ignorePunctuation' => true, 'witnesses' => [1,3,4]]);
         $this->assertTrue($presetManager->addPreset($preset));
         
-        $presetId = $presetManager->getPreset(ApmSystemManager::TOOL_AUTOMATIC_COLLATION, $editor1, $presetTitle)->getId();
+        $presetId = $presetManager->getPreset(ApmSystemManager::TOOL_AUTOMATIC_COLLATION, $editor1, $presetTitle)->getPresetId();
         
         $request2 = (new ServerRequest('GET', ''))
                 ->withAttribute('work', $work)

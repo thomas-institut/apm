@@ -43,4 +43,10 @@ interface WorkManager extends LoggerAwareInterface
      */
     public function getAuthors(): array;
 
+    /**
+     * Returns an array with the tids of all the works that are enabled in the system
+     * @return int[]
+     */
+    public function getEnabledWorks() : array;
+
 }

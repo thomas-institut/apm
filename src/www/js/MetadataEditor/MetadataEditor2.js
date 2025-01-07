@@ -1,7 +1,7 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { ApmDataProxy } from '../pages/common/ApmDataProxy'
 import * as SectionType from '../defaults/MetadataEditorSchemata/SectionType'
-import { EditableHeaderSection } from './EditableHeaderSection'
+import { HeaderSection } from './HeaderSection'
 import { MdeSection } from './MdeSection'
 import { PredicateListSection } from './PredicateListSection'
 
@@ -14,6 +14,26 @@ export class MetadataEditor2 {
         entityDataSchema: {type: 'object', required: true},
         entityData: {type: 'object', required: false, default: {}},
         apmDataProxy: { type: 'object', objectClass: ApmDataProxy, required: true},
+        /**
+         * an array of string providers identified by name
+         * These can be used to insert any custom string in different places in the editor,
+         * for example, in the entity's description in a header section
+         */
+        infoStringProviders: {
+          type: 'array',
+          elementDefinition: {
+            type: 'object',
+            objectDefinition: {
+              name: { type: 'string', required: true},
+              /**
+               * an async function that takes an entity id and returns a string
+               * e.g.  (id) => { ....;  return 'someString'  }
+               */
+              provider: { type: 'function', required: true}
+            }
+          },
+          default: []
+        }
       },
       context:  "MetadataEditor2"
     });
@@ -27,15 +47,16 @@ export class MetadataEditor2 {
 
       this.sections = this.options.entityDataSchema.sections.map( (sectionSchema, sectionIndex) => {
         switch(sectionSchema.type) {
-          case SectionType.EditableHeader:
-            return new EditableHeaderSection({
+          case SectionType.Header:
+            return new HeaderSection({
               apmDataProxy: this.options.apmDataProxy,
               predicateDefinitions: this.typeData['predicateDefinitions'],
               qualificationDefinitions: this.typeData['qualificationDefinitions'],
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
               entityData: this.options.entityData,
               sectionSchema: sectionSchema,
-              onEntityDataChange: this.genOnEntityDataChange(sectionIndex)
+              onEntityDataChange: this.genOnEntityDataChange(sectionIndex),
+              getInfoString: this.genGetInfoString()
             });
 
           case SectionType.VerticalList:
@@ -92,6 +113,18 @@ export class MetadataEditor2 {
   genOnEntityDataChange(sectionIndex) {
     return (newData, updatedPredicates) => {
       return this.onEntityDataChange(newData, updatedPredicates, sectionIndex);
+    }
+  }
+
+  genGetInfoString() {
+    return async (providerName) => {
+      console.log(`Getting info string for provider ${providerName}`);
+      let providers = this.options.infoStringProviders.filter( (provider) => { return provider.name === providerName});
+      if (providers.length === 0) {
+        console.log(`Provider ${providerName} is undefined`);
+        return null;
+      }
+      return providers[0]['provider'](this.entityData.id);
     }
   }
 

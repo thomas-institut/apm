@@ -173,43 +173,27 @@ class Authenticator {
 
 
         $success = false;
-        if (!isset($_SESSION['userTid'])){
+        if (!isset($_SESSION['userId'])){
             // Check for long term cookie
             $this->debug('SITE : No session');
-            $userTid = $this->getUserTidFromLongTermCookie($request);
-            if ($userTid > 0) {
+            $userId = $this->getUserIdFromLongTermCookie($request);
+            if ($userId > 0) {
                 $success = true;
             }
         } else {
-            $userTid = intval($_SESSION['userTid']);
-            $this->debug('SITE : Session is set, user tid = ' . $userTid);
-            if ($this->userManager->isUser($userTid)){
-                $this->debug("Tid $userTid is a user");
+            $userId = intval($_SESSION['userTid']);
+            $this->debug('SITE : Session is set, user id = ' . $userId);
+            if ($this->userManager->isUser($userId)){
+                $this->debug("Id $userId is a user");
                 $success = true;
             } else {
-                $this->debug("Tid $userTid is NOT a user");
+                $this->debug("Id $userId is NOT a user");
             }
         }
         if ($success){
             $this->debug('SITE: Success, go ahead!');
-            $_SESSION['userid'] = $userTid;
-            $this->container->set(ApmContainerKey::SITE_USER_TID, $userTid);
-
-//            $userData = $this->userManager->getUserData($userTid);
-//
-//            $userInfo = $userData->getExportObject();
-//            unset($userInfo['passwordHash']);
-//
-//            $personData = $this->systemManager->getPersonManager()->getPersonEssentialData($userTid);
-//            // legacy data
-//            // TODO: get rid of this!
-//            $userInfo['name'] = $personData->name;
-//            $userInfo['email'] = '';
-//            $userInfo['isRoot'] = $userData->root;
-//            $userInfo['manageUsers'] = $userData->root;
-//            $userInfo['tidString'] = Tid::toBase36String($userData->tid);
-
-//            $this->container->set(ApmContainerKey::USER_DATA, $userInfo);
+            $_SESSION['userid'] = $userId;
+            $this->container->set(ApmContainerKey::SITE_USER_ID, $userId);
             if ($this->debugMode) {
                 $this->profiler->stop();
                 $this->debug("Profiler", $this->profiler->getLaps());
@@ -261,7 +245,7 @@ class Authenticator {
                 $pwd = htmlspecialchars($data['pwd']);
                 $rememberMe = $data['rememberme'] ?? '';
                 $this->debug('Trying to log in user ' . $userName);
-                $userTid = $this->userManager->getUserTidForUserName($userName);
+                $userTid = $this->userManager->getUserIdForUserName($userName);
 
                 if ($userTid !== -1 && $this->userManager->verifyPassword($userTid, $pwd)){
                     $userAgent = $request->getHeader('User-Agent')[0];
@@ -329,12 +313,12 @@ class Authenticator {
             return $response->withHeader('Location', 
                 $this->router->urlFor('home'))->withStatus(302);
         }
-        $userTid = intval($_SESSION['userid']);
+        $userId = intval($_SESSION['userid']);
         try {
-            $userData = $this->userManager->getUserData($userTid);
+            $userData = $this->userManager->getUserData($userId);
         } catch (UserNotFoundException) {
             $this->siteLogger->error("Can't get username from user Id at "
-                . "logout attempt", ['userTid' => $userTid]);
+                . "logout attempt", ['userId' => $userId]);
         }
 
         $userAgent = $request->getHeader('User-Agent')[0];
@@ -342,8 +326,8 @@ class Authenticator {
 
         $this->siteLogger->info('Logout',
             [
-                'tid' => $userTid,
-                'tidString' => Tid::toBase36String($userTid),
+                'id' => $userId,
+                'idString' => Tid::toBase36String($userId),
                 'username' => $userData->userName ?? '',
                 'user_agent' => $userAgent,
                 'ip_address' => $ipAddress
@@ -353,14 +337,14 @@ class Authenticator {
         session_destroy();
         $cookie = SetCookie::create($this->cookieName);
         $response = FigResponseCookies::set($response, $cookie->expire());
-        $this->userManager->removeToken($userTid, $userAgent );
+        $this->userManager->removeToken($userId, $userAgent );
         return $response->withHeader('Location',$this->router->urlFor('home'))
             ->withStatus(302);
     }
 
     public function authenticateDataApiRequest(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $this->container->set(ApmContainerKey::API_USER_TID, 0);
+        $this->container->set(ApmContainerKey::API_USER_ID, 0);
         return $handler->handle($request);
     }
     
@@ -370,14 +354,14 @@ class Authenticator {
         if ($this->debugMode) {
             $this->profiler->start();
         }
-        $userTid = $this->getUserTidFromLongTermCookie($request);
-        if ($userTid <= 0){
+        $userId = $this->getUserIdFromLongTermCookie($request);
+        if ($userId <= 0){
             $this->apiLogger->notice("Authentication fail");
             $response = new Response();
             return $response->withStatus(401);
         }
         $this->debug('API : Success, go ahead!');
-        $this->container->set(ApmContainerKey::API_USER_TID, $userTid);
+        $this->container->set(ApmContainerKey::API_USER_ID, $userId);
         if ($this->debugMode) {
             $this->profiler->stop();
             $this->debug("Profiler", $this->profiler->getLaps());
@@ -385,24 +369,24 @@ class Authenticator {
         return $handler->handle($request);
     }
     
-    private function getUserTidFromLongTermCookie(ServerRequestInterface $request): int
+    private function getUserIdFromLongTermCookie(ServerRequestInterface $request): int
     {
         $longTermCookie = FigRequestCookies::get($request, $this->cookieName);
         $cookieValue = $longTermCookie->getValue();
         if (!is_null($cookieValue)){
-            list($userTid, $token, $mac) = explode(':', $cookieValue);
-            $userTid = intval($userTid);
-            if (hash_equals($this->generateMac($userTid . ':' . $token), $mac)) {
+            list($userId, $token, $mac) = explode(':', $cookieValue);
+            $userId = intval($userId);
+            if (hash_equals($this->generateMac($userId . ':' . $token), $mac)) {
                 try {
                     $userToken = $this->userManager->getTokenByUserAgent(
-                        $userTid,
+                        $userId,
                         $request->getHeader('User-Agent')[0]
                     );
                 } catch (UserNotFoundException) {
                     return -1;
                 }
                 if (hash_equals($userToken, $token)){
-                    return $userTid;
+                    return $userId;
                 }
                 $this->debug('User tokens do not match -> ' . $userToken . 
                         ' vs ' . $token);

@@ -28,17 +28,21 @@ namespace APM\Site;
 
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
-use APM\FullTranscription\DocInfo;
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
+use APM\EntitySystem\Schema\Entity;
 use APM\System\DataRetrieveHelper;
+use APM\System\Document\DocInfo;
+use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\User\UserNotFoundException;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
+use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\HttpStatus;
 use InvalidArgumentException;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use ThomasInstitut\TimeString\TimeString;
 
 
@@ -61,6 +65,19 @@ class SiteCollationTable extends SiteController
     const TEMPLATE_EDIT_COLLATION_TABLE_OLD = 'collation-edit.twig';
     const TEMPLATE_EDITION_COMPOSER = 'edition-composer.twig';
 
+
+    /**
+     * @throws EntityDoesNotExistException
+     */
+    private function getWorkEntityIdFromApmId(string $apmId) : int{
+        $es = $this->systemManager->getEntitySystem();
+        $statements = $es->getStatements(null, Entity::pApmWorkId, $apmId);
+        if (count($statements) === 0){
+            throw new EntityDoesNotExistException();
+        }
+        return $statements[0]->subject;
+    }
+
     public function newChunkEdition(Request $request, Response $response) : Response{
         $this->profiler->start();
         $workId  = $request->getAttribute('workId');
@@ -73,15 +90,18 @@ class SiteCollationTable extends SiteController
 
         $ctData = $this->systemManager->getCollationTableManager()->getEmptyChunkEdition($workId, $chunkNumber, $lang, "New Chunk Edition");
 
-        $dm = $this->systemManager->getDataManager();
-        $rawWorkInfo = $dm->getWorkInfoByDareId($workId);
-        $workInfo = [
-            'authorTid' => intval($rawWorkInfo['author_tid']),
-            'title' => $rawWorkInfo['title']
-        ];
+        try {
+            $workInfo = $this->systemManager->getWorkManager()->getWorkDataByDareId($workId);
+        } catch (WorkNotFoundException) {
+//          Not found!!!
+            return $this->getBasicErrorPage(
+                $response,
+                "Error",
+                "Work '$workId' not defined in the system", 404);
+        }
 
         $peopleTids = [];
-        $peopleTids[] = $workInfo['authorTid'];
+        $peopleTids[] = $workInfo->authorId;
         $pm = $this->systemManager->getPersonManager();
         $peopleInfo = [];
         foreach($peopleTids as $personTid) {
@@ -104,7 +124,7 @@ class SiteCollationTable extends SiteController
             'peopleInfo' => $peopleInfo,
             'docInfo' => [],
             'versionInfo' => [],
-            'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userTid),
+            'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
             'versionId' => -1,
             'lastVersion' => true
         ]);
@@ -120,7 +140,7 @@ class SiteCollationTable extends SiteController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws UserNotFoundException
+     * @throws UserNotFoundException|DocumentNotFoundException
      */
     public function editCollationTable(Request $request, Response $response) : Response{
         $tableId = intval($request->getAttribute('tableId'));
@@ -176,16 +196,19 @@ class SiteCollationTable extends SiteController
         $versionInfoArray = $ctManager->getCollationTableVersions($tableId);
         $chunkId = $ctData['chunkId'] ?? $ctData['witnesses'][0]['chunkId'];
         [ $workId, $chunkNumber] = explode('-', $chunkId);
+        try {
+            $workInfo = $this->systemManager->getWorkManager()->getWorkDataByDareId($workId);
+        } catch (WorkNotFoundException) {
+//          Not found!!!
+            return $this->getBasicErrorPage(
+                $response,
+                "Error",
+                "Work '$workId' not defined in the system", 404);
+        }
 
-        $dm = $this->systemManager->getDataManager();
-        $rawWorkInfo = $dm->getWorkInfoByDareId($workId);
-        $workInfo = [
-            'authorTid' => intval($rawWorkInfo['author_tid']),
-            'title' => $rawWorkInfo['title']
-        ];
 
         $peopleTids = [];
-        $peopleTids[] = $workInfo['authorTid'];
+        $peopleTids[] = $workInfo->authorId;
         $peopleTids = array_merge($peopleTids, $this->getMentionedAuthorsFromCtData($ctData));
         $peopleTids = array_merge($peopleTids, $this->getMentionedPeopleFromVersionArray($versionInfoArray));
         $pm = $this->systemManager->getPersonManager();
@@ -205,7 +228,7 @@ class SiteCollationTable extends SiteController
         $docs = $this->getMentionedDocsFromCtData($ctData);
         $helper = new DataRetrieveHelper();
         $helper->setLogger($this->logger);
-        $docInfo = $helper->getDocInfoArrayFromList($docs, $this->systemManager->getTranscriptionManager()->getDocManager());
+        $docInfo = $helper->getDocInfoArrayFromList($docs, $this->systemManager->getDocumentManager());
 
         $this->profiler->stop();
         $this->logProfilerData("Edit Collation Table");
@@ -226,7 +249,7 @@ class SiteCollationTable extends SiteController
             'peopleInfo' => $peopleInfo,
             'docInfo' => $docInfo,
             'versionInfo' => $versionInfoArray,
-            'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userTid),
+            'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
             'versionId' => $versionId,
             'lastVersion' => $isLastVersion
         ]);
@@ -405,7 +428,7 @@ class SiteCollationTable extends SiteController
         $ignorePunctuation = $presetData['ignorePunctuation'];
 
 
-        $presetUserName = $this->systemManager->getPersonManager()->getPersonEssentialData($preset->getUserTid())->name;
+        $presetUserName = $this->systemManager->getPersonManager()->getPersonEssentialData($preset->getUserId())->name;
         
         $collationPageOptions = [
             'work' => $workId,
@@ -416,11 +439,11 @@ class SiteCollationTable extends SiteController
             'partialCollation' => false,
             'isPreset' => true,
             'preset' => [ 
-                'id' => $preset->getId(), 
+                'id' => $preset->getPresetId(),
                 'title' => $preset->getTitle(),
-                'userTid' => $preset->getUserTid(),
+                'userTid' => $preset->getUserId(),
                 'userName' => $presetUserName,
-                'editable' =>  $this->userTid === $preset->getUserTid()
+                'editable' =>  $this->userId === $preset->getUserId()
             ]
         ];
         if (isset($presetData['normalizers'])) {
@@ -578,8 +601,12 @@ class SiteCollationTable extends SiteController
         }
         
         // get work info
-        $workInfo = $dm->getWorkInfoByDareId($workId);
-        
+        try {
+            $workInfo = $this->systemManager->getWorkManager()->getWorkDataByDareId($workId);
+        } catch (WorkNotFoundException $e) {
+            return $this->getBasicErrorPage($response, 'Error', "Work $workId not found", 404);
+        }
+
         // get total witness counts
         $validWitnesses = $this->getValidWitnessesForChunkLang($workId, $chunkNumber, $language);
 
@@ -640,7 +667,7 @@ class SiteCollationTable extends SiteController
             'isPartial' => $partialCollation,
             'isPreset' => $collationPageOptions['isPreset'],
             'rtl' => $langInfo['rtl'],
-            'work_info' => $workInfo,
+            'work_info' => get_object_vars($workInfo),
             'num_docs' => $partialCollation ? count($apiCallOptions['witnesses']) : count($validWitnesses),
             'total_num_docs' => count($validWitnesses),
             'availableWitnesses' => $validWitnesses,

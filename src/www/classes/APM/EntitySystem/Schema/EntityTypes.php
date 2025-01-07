@@ -12,9 +12,9 @@ const EntityTypeDefinitions = [
         Entity::tRelation,
         'Relation',
         'A predicate whose object is an entity',
-        [],
-        [],
-        true   // isSystemType
+        [], // translated names
+        [], // translated descriptions
+        true   // isSystemType: if true, all entities of this type are defined in PHP code
     ],
     [
         Entity::tAttribute,
@@ -62,7 +62,7 @@ const EntityTypeDefinitions = [
         'A person',
         [],
         [],
-        false
+        false  // not a system type
     ],
     [
         Entity::tGeographicalPlace,
@@ -70,7 +70,7 @@ const EntityTypeDefinitions = [
         'A specific geographical point, in general any point that can have a physical address or a set of GPS coordinates',
         [],
         [],
-        false
+        false  // not a system type
     ],
     [
         Entity::tGeographicalArea,
@@ -78,7 +78,7 @@ const EntityTypeDefinitions = [
         'A geographical area, e.g., a country, a city, a district',
         [],
         [],
-        false
+        false  // not a system type
     ],
     [
         Entity::tLanguage,
@@ -110,7 +110,7 @@ const EntityTypeDefinitions = [
         'A work, such as a book, edition, article, etc',
         [],
         [],
-        false
+        false  // not a system type
     ],
     [
         Entity::tAreaType,
@@ -126,7 +126,7 @@ const EntityTypeDefinitions = [
         'A group of people or other organizations',
         [],
         [],
-        false
+        false  // not a system type
     ],
     [
         Entity::tOrganizationType,
@@ -156,6 +156,46 @@ const EntityTypeDefinitions = [
         Entity::tCalendar,
         'Calendar',
         "A calendar, e.g. Gregorian, Julian, etc.",
+        [],
+        [],
+        true
+    ],
+    [
+        Entity::tDocument,
+        'Document',
+        "A collection of pages bound or grouped together as a single object, e.g., a manuscript, a print, an incunabulum, etc",
+        [],
+        [],
+        false // not a system type
+    ],
+    [
+        Entity::tGenericEditionSource,
+        'Generic Edition Source',
+        "An entity that can be used as a source/witness in an edition when a more specific entity (e.g. a work or a manuscript) is defined",
+        [],
+        [],
+        false // not a system type
+    ],
+    [
+        Entity::tDocumentType,
+        'Document Type',
+        "A type of document, e.g., manuscript, print, etc",
+        [],
+        [],
+        true
+    ],
+    [
+        Entity::tImageSource,
+        'Image Source',
+        "A pre-defined source for document images",
+        [],
+        [],
+        true
+    ],
+    [
+        Entity::tPageType,
+        'Page Type',
+        "A page's type, e.g., front matter, back matter, text",
         [],
         [],
         true

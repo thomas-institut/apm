@@ -22,6 +22,7 @@ namespace APM\System;
 
 use APM\Api\ApiPeople;
 use APM\CollationEngine\Collatex;
+use APM\CollationEngine\CollatexHttp;
 use APM\CollationEngine\CollationEngine;
 use APM\CollationEngine\DoNothingCollationEngine;
 use APM\CollationTable\ApmCollationTableManager;
@@ -33,23 +34,26 @@ use APM\Core\Token\Normalizer\IgnoreShaddaNormalizer;
 use APM\Core\Token\Normalizer\IgnoreTatwilNormalizer;
 use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
 use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
+use APM\EntitySystem\ApmEntitySystem;
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
-use APM\FullTranscription\TranscriptionManager;
 use APM\Jobs\ApiPeopleUpdateAllPeopleEssentialData;
 use APM\Jobs\ApiSearchUpdateEditionsIndex;
 use APM\Jobs\ApiSearchUpdateEditorsAndEditionsCache;
-use APM\Jobs\ApiSearchUpdateTranscriptionsIndex;
 use APM\Jobs\ApiSearchUpdateTranscribersAndTranscriptionsCache;
+use APM\Jobs\ApiSearchUpdateTranscriptionsIndex;
 use APM\Jobs\ApiUsersUpdateCtDataForUser;
 use APM\Jobs\ApiUsersUpdateTranscribedPagesData;
 use APM\Jobs\ApmJobName;
-use APM\Jobs\SiteWorksUpdateDataCache;
 use APM\Jobs\SiteDocumentsUpdateDataCache;
+use APM\Jobs\SiteWorksUpdateDataCache;
 use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
-use APM\EntitySystem\ApmEntitySystem;
-use APM\EntitySystem\ApmEntitySystemInterface;
+use APM\Session\ApmSessionManager;
+use APM\Session\SessionManager;
+use APM\System\Document\ApmDocumentManager;
+use APM\System\Document\DocumentManager;
 use APM\System\ImageSource\BilderbergImageSource;
 use APM\System\ImageSource\OldBilderbergStyleRepository;
 use APM\System\Job\ApmJobQueueManager;
@@ -59,6 +63,8 @@ use APM\System\Person\EntitySystemPersonManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\DataTablePresetManager;
 use APM\System\Preset\PresetManager;
+use APM\System\Transcription\ApmTranscriptionManager;
+use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\ApmUserManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\Work\EntitySystemWorkManager;
@@ -109,13 +115,13 @@ class ApmSystemManager extends SystemManager {
     const ERROR_CONFIG_ARRAY_IS_NOT_VALID = 1007;
 
     // Database version
-    const DB_VERSION = 34;
+    const DB_VERSION = 36;
 
     // Entity system Data ID: key for entity system caches
-    const ES_DATA_ID = 'es002';
+    const ES_DATA_ID = 'es008';
 
     const MemCachePrefix_Apm_ES = 'apm_es';
-    const MemCachePrefix_TypedMultiStorage_ES = 'apm_msEs';
+    const MemCachePrefix_TypedMultiStorage_ES = 'apm_msEs_';
 
     const DefaultSystemCacheTtl = 30 * 24 * 3600;  // 30 days
 
@@ -167,12 +173,15 @@ class ApmSystemManager extends SystemManager {
     private ?ApmUserManager $userManager;
     private ?PersonManagerInterface $personManager;
     private ?ApmJobQueueManager $jobManager;
-    private ?ApmEditionSourceManager $editionSourceManager;
+    private ?EntitySystemEditionSourceManager $editionSourceManager;
     private ?WorkManager $workManager;
+    private ?ApmSessionManager $sessionManager;
     private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem;
     private ?DataCache $memDataCache;
 
     private ?ApmEntitySystem $apmEntitySystem;
+
+    private ?ApmDocumentManager $documentManager;
 
 
     public function __construct(array $configArray) {
@@ -204,8 +213,8 @@ class ApmSystemManager extends SystemManager {
         $this->tableNames = $this->createTableNames($this->config[ApmConfigParameter::DB_TABLE_PREFIX]);
 
         $this->imageSources = [
-            'bilderberg' => new BilderbergImageSource($this->config[ApmConfigParameter::BILDERBERG_URL]),
-            'averroes-server' => new OldBilderbergStyleRepository('https://averroes.uni-koeln.de/localrep')
+            Entity::ImageSourceBilderberg => new BilderbergImageSource($this->config[ApmConfigParameter::BILDERBERG_URL]),
+            Entity::ImageSourceAverroesServer => new OldBilderbergStyleRepository('https://averroes.uni-koeln.de/localrep')
         ];
 
 
@@ -225,9 +234,11 @@ class ApmSystemManager extends SystemManager {
         $this->presetsManager = null;
         $this->transcriptionManager = null;
         $this->collationTableManager = null;
+        $this->sessionManager = null;
         $this->dataManager = null;
         $this->memDataCache = null;
         $this->apmEntitySystem = null;
+        $this->documentManager = null;
     }
 
 
@@ -281,8 +292,13 @@ class ApmSystemManager extends SystemManager {
     public function getAvailableImageSources(): array
     {
         return array_keys($this->imageSources);
-
     }
+
+    public function getImageSources(): array
+    {
+        return $this->imageSources;
+    }
+
 
     /**
      * @param string $prefix
@@ -313,7 +329,9 @@ class ApmSystemManager extends SystemManager {
             ApmMySqlTableName::TABLE_EDITION_SOURCES,
             ApmMySqlTableName::ES_Statements_Default,
             ApmMySqlTableName::ES_Cache_Default,
-            ApmMySqlTableName::ES_Merges
+            ApmMySqlTableName::ES_Merges,
+            ApmMySqlTableName::TABLE_SESSIONS_REGISTER,
+            ApmMySqlTableName::TABLE_SESSIONS_LOG,
 //            ApmMySqlTableName::ES_Statements_Person,
 //            ApmMySqlTableName::ES_Statements_Document,
 //            ApmMySqlTableName::ES_Statements_Work,
@@ -382,10 +400,18 @@ class ApmSystemManager extends SystemManager {
                         $this->config[ApmConfigParameter::JAVA_EXECUTABLE]
                     );
                     break;
+
+                case ApmCollationEngine::COLLATEX_HTTP:
+                    $this->collationEngine = new CollatexHttp(
+                        $this->config[ApmConfigParameter::COLLATEX_HTTP_HOST],
+                        $this->config[ApmConfigParameter::COLLATEX_HTTP_PORT]);
+                    break;
+
                 case ApmCollationEngine::DO_NOTHING:
                     $this->collationEngine = new DoNothingCollationEngine();
                     break;
             }
+            $this->collationEngine->setLogger($this->logger);
         }
         return $this->collationEngine;
     }
@@ -531,7 +557,7 @@ class ApmSystemManager extends SystemManager {
     {
         if ($this->transcriptionManager === null) {
             // Set up TranscriptionManager
-            $this->transcriptionManager = new ApmTranscriptionManager($this->getDbConnection(), $this->tableNames, $this->logger);
+            $this->transcriptionManager = new ApmTranscriptionManager($this->getDbConnection(), $this->tableNames, $this->logger, $this->getDocumentManager());
             $this->transcriptionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
             $this->transcriptionManager->setCacheTracker($this->getCacheTracker());
             $this->transcriptionManager->setCache($this->getSystemDataCache());
@@ -681,9 +707,10 @@ class ApmSystemManager extends SystemManager {
     public function getEditionSourceManager(): EditionSourceManager
     {
         if (is_null($this->editionSourceManager)) {
-            $table = new MySqlDataTable($this->getDbConnection(),
-                $this->tableNames[ApmMySqlTableName::TABLE_EDITION_SOURCES], true);
-            $this->editionSourceManager = new ApmEditionSourceManager($table);
+
+            $this->editionSourceManager = new EntitySystemEditionSourceManager(function () {
+                return $this->getEntitySystem();
+            });
         }
         return $this->editionSourceManager;
     }
@@ -812,7 +839,7 @@ class ApmSystemManager extends SystemManager {
         } catch (Work\WorkNotFoundException $e) {
             return -1;
         }
-        return $data->authorTid;
+        return $data->authorId;
     }
 
     public function getUserManager() : UserManagerInterface {
@@ -956,7 +983,7 @@ class ApmSystemManager extends SystemManager {
                     Entity::pEntityType, [$defaultConfig],
                     self::ES_DATA_ID,
                     $this->getMemDataCache(),
-                    self::MemCachePrefix_TypedMultiStorage_ES
+                    self::MemCachePrefix_TypedMultiStorage_ES . self::ES_DATA_ID
                 );
                 $this->typedMultiStorageEntitySystem->setLogger($this->logger);
             } catch (InvalidArgumentException) {
@@ -979,5 +1006,33 @@ class ApmSystemManager extends SystemManager {
             $this->dataManager = $dataManager;
         }
         return $this->dataManager;
+    }
+
+    public function getSessionManager(): SessionManager
+    {
+        if ($this->sessionManager === null) {
+            $sessionsTable = new MySqlDataTable($this->getDbConnection(),
+                $this->getTableNames()[ApmMySqlTableName::TABLE_SESSIONS_REGISTER], true);
+            $logTable = new MySqlDataTable($this->getDbConnection(),
+                $this->getTableNames()[ApmMySqlTableName::TABLE_SESSIONS_LOG], true);
+            $this->sessionManager = new ApmSessionManager($sessionsTable, $logTable, $this->logger);
+        }
+        return $this->sessionManager;
+    }
+
+    public function getDocumentManager(): DocumentManager
+    {
+        if ($this->documentManager === null) {
+            $this->documentManager = new ApmDocumentManager(
+                function () {
+                    return $this->getEntitySystem();
+                },
+                function () {
+                    return new MySqlUnitemporalDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_PAGES]);
+                }
+            );
+            $this->documentManager->setLogger($this->logger);
+        }
+        return $this->documentManager;
     }
 }

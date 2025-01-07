@@ -26,21 +26,22 @@
 
 namespace APM\Site;
 
-use APM\FullTranscription\PageInfo;
 use APM\System\ApmConfigParameter;
+use APM\System\ApmContainerKey;
 use APM\System\ApmImageType;
+use APM\System\ApmSystemManager;
+use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\User\UserNotFoundException;
 use APM\SystemProfiler;
-use APM\System\ApmContainerKey;
 use APM\ToolBox\HttpStatus;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use APM\System\ApmSystemManager;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use RuntimeException;
 use Slim\Routing\RouteParser;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
@@ -72,7 +73,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     protected bool $userAuthenticated;
     protected RouteParser $router;
     protected SimpleProfiler $profiler;
-    protected int $userTid;
+    protected int $userId;
 
     /**
      * SiteController constructor.
@@ -97,9 +98,9 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
        
        // Check if the user has been authenticated by the authentication middleware
         //$this->logger->debug('Checking user authentication');
-        if ($ci->has(ApmContainerKey::SITE_USER_TID)) {
+        if ($ci->has(ApmContainerKey::SITE_USER_ID)) {
            $this->userAuthenticated = true;
-           $this->userTid = $ci->get(ApmContainerKey::SITE_USER_TID);
+           $this->userId = $ci->get(ApmContainerKey::SITE_USER_ID);
         }
     }
 
@@ -120,8 +121,8 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     protected function getSiteUserInfo(): array
     {
         try {
-            $userData = $this->systemManager->getUserManager()->getUserData($this->userTid);
-            $personData = $this->systemManager->getPersonManager()->getPersonEssentialData($this->userTid);
+            $userData = $this->systemManager->getUserManager()->getUserData($this->userId);
+            $personData = $this->systemManager->getPersonManager()->getPersonEssentialData($this->userId);
 
             $userInfo = $userData->getExportObject();
             unset($userInfo['passwordHash']);
@@ -129,10 +130,10 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             $userInfo['email'] = '';
             $userInfo['isRoot'] = $userData->root;
             $userInfo['manageUsers'] = $userData->root;
-            $userInfo['tidString'] = Tid::toBase36String($userData->tid);
+            $userInfo['tidString'] = Tid::toBase36String($userData->id);
             return $userInfo;
         } catch (UserNotFoundException|PersonNotFoundException $e) {
-            $this->logger->error("System Error while getting SiteUserInfo: " . $e->getMessage(), [ 'userTid' => $this->userTid ]);
+            $this->logger->error("System Error while getting SiteUserInfo: " . $e->getMessage(), [ 'userTid' => $this->userId ]);
             // should never happen
             return [];
         }
@@ -186,7 +187,8 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
                 'cacheDataId' => $this->config[ApmConfigParameter::JS_APP_CACHE_DATA_ID],
                 'userInfo' => $this->getSiteUserInfo(),
                 'showLanguageSelector' => $this->config[ApmConfigParameter::SITE_SHOW_LANGUAGE_SELECTOR],
-                'baseUrl' => $this->getBaseUrl()
+                'baseUrl' => $this->getBaseUrl(),
+                'wsServerUrl' => $this->config[ApmConfigParameter::WS_SERVER_URL]
             ];
             $data['baseUrl'] = $this->getBaseUrl();
         }
@@ -258,21 +260,36 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     }
 
     // Utility function
-    protected function buildPageArrayNew(array $pagesInfo, array $transcribedPages, $docInfo): array
+    protected function buildPageArrayNew(array $legacyPageInfoArray, array $transcribedPages, array $legacyDocInfo): array
     {
         $thePages = [];
-        $dm  = $this->systemManager->getDataManager();
-        foreach ($pagesInfo as $pageInfo) {
-            /** @var $pageInfo PageInfo */
-            $thePage = get_object_vars($pageInfo);
-//            $thePage['classes'] = '';
-            $thePage['imageSource'] = $docInfo['image_source'];
-            $thePage['isDeepZoom'] = $docInfo['deep_zoom'];
-            $thePage['isTranscribed'] = in_array($pageInfo->pageNumber, $transcribedPages);
-            $thePage['imageUrl'] = $dm->getImageUrl($docInfo['id'], $pageInfo->imageNumber);
-            $thePage['jpgUrl'] = $dm->getImageUrl($docInfo['id'], $pageInfo->imageNumber, ApmImageType::IMAGE_TYPE_JPG);
-            $thePage['thumbnailUrl'] = $dm->getImageUrl($docInfo['id'], $pageInfo->imageNumber, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL);
-            $thePages[$pageInfo->pageId] = $thePage;
+        $docManager = $this->systemManager->getDocumentManager();
+        $imageSources = $this->systemManager->getImageSources();
+        foreach ($legacyPageInfoArray as $legacyPageInfo) {
+            try {
+                $thePage = $legacyPageInfo;
+                $pageNumber = $legacyPageInfo['page_number'];
+                $thePage['pageId'] = $legacyPageInfo['id'];
+                $thePage['sequence'] = $legacyPageInfo['seq'];
+                $thePage['pageNumber'] = $legacyPageInfo['page_number'];
+                $thePage['imageNumber'] = $legacyPageInfo['img_number'];
+                $thePage['numCols'] = $legacyPageInfo['num_cols'];
+                $thePage['imageSource'] = $legacyDocInfo['image_source'];
+                $thePage['isDeepZoom'] = $legacyDocInfo['deep_zoom'];
+                $thePage['isTranscribed'] = in_array($pageNumber, $transcribedPages);
+
+                $thePage['imageUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
+                    $pageNumber, ApmImageType::IMAGE_TYPE_DEFAULT, $imageSources);
+                $thePage['jpgUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
+                    $pageNumber, ApmImageType::IMAGE_TYPE_JPG, $imageSources);
+                $thePage['thumbnailUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
+                    $pageNumber, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL, $imageSources);
+//                $this->logger->debug("The page", $thePage);
+                $thePages[$legacyPageInfo['id']] = $thePage;
+            } catch (DocumentNotFoundException $e) {
+                // should never happen
+                throw new RuntimeException("Document not found:" . $e->getMessage());
+            }
         }
         return $thePages;
     }

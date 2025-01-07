@@ -19,16 +19,7 @@
 
 namespace APM\CommandLine;
 
-use APM\FullTranscription\ColumnVersionInfo;
-use AverroesProject\ColumnElement\Element;
-use AverroesProject\Data\DataManager;
-use AverroesProject\TxText\Item;
-use Exception;
-use InvalidArgumentException;
-
 use ThomasInstitut\TimeString\TimeString;
-use function json_decode;
-use function json_encode;
 
 class PublishTranscription extends CommandLineUtility
 {

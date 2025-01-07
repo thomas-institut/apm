@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021 Universität zu Köln
+ *  Copyright (C) 2021-24 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,9 +17,6 @@
  */
 
 
-// TODO: eliminate this file altogether!
-
-
 import { TypesetterTokenFactory } from '../Typesetter/TypesetterTokenFactory'
 import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
 import * as ApparatusSubEntryType from '../Edition/SubEntryType.mjs'
@@ -33,15 +30,13 @@ import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
 import { escapeHtml } from '../toolbox/Util.mjs'
 import { ApparatusUtil } from '../Edition/ApparatusUtil.mjs'
 import { Punctuation} from '../defaults/Punctuation.mjs'
+import * as MainTexTokenType from '../Edition/MainTextTokenType.mjs'
+import { StringCounter } from '../toolbox/StringCounter.mjs'
 
 // const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
 const INPUT_TOKEN_FIELD_NORMALIZED_TEXT = 'normalizedText'
 const INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE = 'normalizationSource'
-
-
-
-// const thinSpace = String.fromCodePoint(0x2009)
 
 const enDash = String.fromCodePoint(0x2013)
 
@@ -74,6 +69,9 @@ const hebrewStyle = {
   }
 }
 
+/**
+ * Static methods for typesetting an apparatus in the browser
+ */
 export class ApparatusCommon {
 
   /**
@@ -166,7 +164,8 @@ export class ApparatusCommon {
   }
 
   /**
-   * Returns an array of typesetter tokens for the given keyword
+   * Returns an array of typesetter tokens for the given keyword.
+   *
    * Accepts also a FmtText array which will be converted to plain text before processing
    *
    * @param {string|FmtTextToken[]}keyword
@@ -514,7 +513,7 @@ export class ApparatusCommon {
    *
    * @param {number}n
    * @param {string}style
-   * @return {string|*}
+   * @return {string}
    */
   static getNumberString(n, style) {
     if (style === 'ar') {
@@ -637,4 +636,192 @@ export class ApparatusCommon {
 
     return  `${lemmaTextWords[0]}${separator}${lemmaTextWords[lemmaTextWords.length-1]}`
   }
+
+  /**
+   * Returns an object with information about line and y positions for every
+   * token in the given main text token array
+   *
+   * @param {string}containerSelector
+   * @param {string}classPrefix The class that identifies a token in the DOM
+   * @param {[]}tokens
+   * @returns {{lineMap: *[], yPositions: *[], tokens: *[]}}
+   */
+  static getMainTextTypesettingInfo(containerSelector, classPrefix, tokens) {
+    let yPositions = []
+    let tokensWithInfo = tokens.map( (token, i) => {
+      if (token.type === MainTexTokenType.PARAGRAPH_END) {
+        return token
+      }
+      let span = $(`${containerSelector} .${classPrefix}${i}`)
+      let position = span.offset()
+      let pY = position.top
+      yPositions.push(pY)
+      token.x = position.left
+      token.y = pY
+      return token
+    })
+
+    let uniqueYPositions = yPositions.filter((v, i, a) => a.indexOf(v) === i).sort( (a,b) => { return a > b ? 1 : 0})
+    let lineMap = calculateYPositionToLineMap(yPositions)
+    let tokensWithLineNumbers = tokensWithInfo.map( (t) => {
+      t.lineNumber = getLineNumber(t.y, lineMap)
+      return t
+    })
+    // get the occurrence number in each line
+    let currentLine = -1
+    let tokensWithOccurrencesInfo = []
+    let occurrenceInLineCounter = new StringCounter()
+    let currentLineTokens = []
+    tokensWithLineNumbers.forEach( (t) => {
+      if (t.lineNumber !== currentLine) {
+        currentLineTokens = currentLineTokens.map( (t) => {
+          if (t.type === MainTexTokenType.TEXT) {
+            t.numberOfOccurrencesInLine = occurrenceInLineCounter.getCount(t.getPlainText())
+          }
+          return t
+        })
+        pushArray(tokensWithOccurrencesInfo, currentLineTokens)
+        occurrenceInLineCounter.reset()
+        currentLineTokens = []
+        currentLine = t.lineNumber
+      }
+      if (t.type === MainTexTokenType.TEXT ) {
+        let text = t.getPlainText()
+        occurrenceInLineCounter.addString(text)
+        t.occurrenceInLine = occurrenceInLineCounter.getCount(text)
+      }
+      currentLineTokens.push(t)
+    })
+    if (currentLineTokens.length > 0) {
+      currentLineTokens = currentLineTokens.map( (t) => {
+        if (t.type === MainTexTokenType.TEXT) {
+          t.numberOfOccurrencesInLine = occurrenceInLineCounter.getCount(t.getPlainText())
+        }
+        return t
+      })
+      pushArray(tokensWithOccurrencesInfo, currentLineTokens)
+    }
+
+    return { yPositions: uniqueYPositions, tokens: tokensWithOccurrencesInfo, lineMap: lineMap }
+
+  }
+
+  /**
+   * Returns a string with the line number or line number range corresponding to the
+   * given apparatus entry in the given language.
+   *
+   * @param apparatusEntry
+   * @param mainTextTypesettingInfo
+   * @param {string}lang
+   * @returns {string}
+   */
+  static getLineNumberString(apparatusEntry, mainTextTypesettingInfo, lang) {
+    if (mainTextTypesettingInfo.tokens[apparatusEntry.from] === undefined) {
+      // before the main text
+      return ApparatusCommon.getNumberString(1, lang)
+    }
+
+    let startLine = mainTextTypesettingInfo.tokens[apparatusEntry.from].lineNumber
+    let endLine = mainTextTypesettingInfo.tokens[apparatusEntry.to] === undefined ? '???' :
+      mainTextTypesettingInfo.tokens[apparatusEntry.to].lineNumber
+
+    if (startLine === endLine) {
+      return ApparatusCommon.getNumberString(startLine, lang)
+    }
+    return `${ApparatusCommon.getNumberString(startLine, lang)}-${ApparatusCommon.getNumberString(endLine, lang)}`
+  }
+
+  /**
+   *
+   * @param mainTextTokenIndex
+   * @param mainTextTypesettingInfo
+   * @returns {number}
+   */
+  static getOccurrenceInLine(mainTextTokenIndex, mainTextTypesettingInfo) {
+    if (mainTextTypesettingInfo.tokens[mainTextTokenIndex] === undefined) {
+      return 1
+    }
+    return mainTextTypesettingInfo.tokens[mainTextTokenIndex].occurrenceInLine
+  }
+
+  /**
+   *
+   * @param mainTextIndex
+   * @param tokensWithTypesetInfo
+   * @returns {number}
+   */
+  static getTotalOccurrencesInLine(mainTextIndex, tokensWithTypesetInfo) {
+    if (tokensWithTypesetInfo[mainTextIndex] === undefined) {
+      return 1
+    }
+    return tokensWithTypesetInfo[mainTextIndex].numberOfOccurrencesInLine
+  }
+
+  static getLemmaHtml(apparatusEntry, mainTextTypesettingInfo, lang) {
+
+    let lemmaComponents = ApparatusUtil.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText)
+
+    switch(lemmaComponents.type) {
+      case 'custom':
+        return lemmaComponents.text
+
+      case 'full':
+        let lemmaNumberString = ''
+        if (lemmaComponents.numWords === 1) {
+          let occurrenceInLine = this.getOccurrenceInLine(apparatusEntry.from, mainTextTypesettingInfo)
+          let numberOfOccurrencesInLine = this.getTotalOccurrencesInLine(apparatusEntry.from, mainTextTypesettingInfo.tokens)
+          if (numberOfOccurrencesInLine > 1) {
+            lemmaNumberString = `<sup>${this.getNumberString(occurrenceInLine, lang)}</sup>`
+          }
+        }
+        return `${lemmaComponents.text}${lemmaNumberString}`
+
+      case 'shortened':
+        let lemmaNumberStringFrom = ''
+        let occurrenceInLineFrom = this.getOccurrenceInLine(apparatusEntry.from, mainTextTypesettingInfo)
+        let numberOfOccurrencesInLineFrom = this.getTotalOccurrencesInLine(apparatusEntry.from, mainTextTypesettingInfo.tokens)
+        if (numberOfOccurrencesInLineFrom > 1) {
+          lemmaNumberStringFrom = `<sup>${this.getNumberString(occurrenceInLineFrom, lang)}</sup>`
+        }
+        let lemmaNumberStringTo = ''
+        let occurrenceInLineTo = this.getOccurrenceInLine(apparatusEntry.to, mainTextTypesettingInfo)
+        let numberOfOccurrencesInLineTo = this.getTotalOccurrencesInLine(apparatusEntry.to, mainTextTypesettingInfo.tokens)
+        if (numberOfOccurrencesInLineTo > 1) {
+          lemmaNumberStringTo = `<sup>${this.getNumberString(occurrenceInLineTo, lang)}</sup>`
+        }
+        return `${lemmaComponents.from}${lemmaNumberStringFrom}${lemmaComponents.separator}${lemmaComponents.to}${lemmaNumberStringTo}`
+
+      default:
+        console.warn(`Unknown lemma component type '${lemmaComponents.type}'`)
+        return 'ERROR'
+    }
+  }
+
+}
+
+
+function calculateYPositionToLineMap(yPositions, textSizeInPixels = 16) {
+  let uniqueYPositions = yPositions.filter((v, i, a) => a.indexOf(v) === i).sort( (a,b) => { return a > b ? 1 : 0})
+  let halfTextSize = textSizeInPixels / 2
+  let currentYPosition = -1000
+  let currentLine = 0
+  let yPositionToLineMap = []
+  for (let i = 0; i < uniqueYPositions.length; i++) {
+    if (uniqueYPositions[i] > (currentYPosition + halfTextSize)) {
+      currentYPosition = uniqueYPositions[i]
+      currentLine++
+    }
+    yPositionToLineMap.push({ pY: uniqueYPositions[i], line: currentLine})
+  }
+  return yPositionToLineMap
+}
+
+
+function getLineNumber(y, lineMap) {
+  for(let i = 0; i < lineMap.length; i++) {
+    if (y === lineMap[i].pY) {
+      return lineMap[i].line
+    }
+  }
+  return -1
 }

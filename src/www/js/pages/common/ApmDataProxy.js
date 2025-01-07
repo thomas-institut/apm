@@ -23,6 +23,7 @@ import { CachedFetcher } from '../../toolbox/CachedFetcher'
 import { urlGen } from './SiteUrlGen'
 import { wait } from '../../toolbox/FunctionUtil.mjs'
 import { SimpleLockManager } from '../../toolbox/SimpleLockManager'
+import * as Entity from '../../constants/Entity'
 
 const TtlOneMinute = 60 // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -51,8 +52,9 @@ export class ApmDataProxy {
    *
    * @param {string}cacheDataId
    * @param {string}cachePrefix
+   * @param ignoreDataIds list of dataIds to ignore when cleaning
    */
-  constructor (cacheDataId, cachePrefix) {
+  constructor (cacheDataId, cachePrefix, ignoreDataIds = []) {
     this.cacheDataId = cacheDataId;
     this.caches = {
       memory: new KeyCache(),
@@ -68,8 +70,8 @@ export class ApmDataProxy {
 
     wait(CleaningDelayInSeconds * 1000).then( () => {
 
-      let sessionRemovedItemCount = this.caches.session.cleanCache();
-      let localRemovedItemCount = this.caches.local.cleanCache();
+      let sessionRemovedItemCount = this.caches.session.cleanCache(-1, ignoreDataIds);
+      let localRemovedItemCount = this.caches.local.cleanCache(-1, ignoreDataIds);
 
       let total = sessionRemovedItemCount + localRemovedItemCount;
       if (total > 0) {
@@ -99,11 +101,11 @@ export class ApmDataProxy {
     return await this.getApmEntityData('Work', '', workDareId, 'local');
   }
 
-  async getDocTypeName(type) {
-    return typeNames[type];
-  }
-
-  async getSystemLanguages() {
+  /**
+   * 
+   * @returns {Promise<*|{}>}
+   */
+  async getLegacySystemLanguagesArray() {
     return await this.getAlmostStaticData('SystemLanguages', urlGen.apiSystemGetLanguages());
   }
 
@@ -111,19 +113,39 @@ export class ApmDataProxy {
     return this.get(urlGen.apiWorksGetAuthors(),  false, TtlOneMinute);
   }
 
-  async getLangName(lang) {
-    let languages = await this.getSystemLanguages();
-    for (let systemLang of languages) {
-      if (systemLang.code === lang) {
-        return systemLang.name;
-      }
-    }
-    return '';
+  /**
+   * Returns an array of tuples containing the entity id and name of the available
+   * page types: 
+   * 
+   * `[ [ type1, 'name1'] , [ type2, 'name2'], .... ]` 
+   * 
+   * @returns {Promise<*|{}>}
+   */
+  async getAvailablePageTypes() {
+    return this.getEntityNameTuples( await this.getAlmostStaticData('PageTypes', urlGen.apiGetPageTypes()));
   }
 
+  async getAvailableLanguages() {
+    return this.getEntityNameTuples(await this.getAlmostStaticData('AllLanguages', urlGen.apiEntityTypeGetEntities(Entity.tLanguage)));
+  }
 
-  async getAvailablePageTypes() {
-    return await this.getAlmostStaticData('PageTypes', urlGen.apiGetPageTypes());
+  async getAvailableDocumentTypes() {
+    return this.getEntityNameTuples(await this.getAlmostStaticData('DocTypes', urlGen.apiEntityTypeGetEntities(Entity.tDocumentType)));
+  }
+
+  async getAvailableImagesSources() {
+    return this.getEntityNameTuples(await this.getAlmostStaticData('ImageSources', urlGen.apiEntityTypeGetEntities(Entity.tImageSource)));
+  }
+
+  /**
+   * Resolves to an array of tuples containing the id and the name for each of the entities
+   * in the given array
+   * @param {number[]}entityIdArray
+   */
+  async getEntityNameTuples(entityIdArray) {
+    return Promise.all( entityIdArray.map( async (id) => {
+      return [ id, await this.getEntityName(id)];
+    }))
   }
 
 
@@ -175,6 +197,25 @@ export class ApmDataProxy {
     }, true);
   }
 
+  /**
+   * Calls the createDocument API on APM
+   * @param {string}name
+   * @param type
+   * @param lang
+   * @param imageSource
+   * @param imageSourceData
+   * @returns {Promise<{}>}
+   */
+  async createDocument(name, type = null, lang = null, imageSource = null, imageSourceData = null) {
+    return this.post(urlGen.apiDocumentCreate(), {
+      name: name,
+      type: type,
+      lang: lang,
+      imageSource: imageSource,
+      imageSourceData: imageSourceData
+    }, true);
+  }
+
   async getPersonWorks(personTid){
     return this.get(urlGen.apiPersonGetWorks(personTid), false, TtlOneMinute);
   }
@@ -186,7 +227,7 @@ export class ApmDataProxy {
    * @param {string} method
    * @param {{}}payload
    * @param {boolean}forceActualFetch
-   * @param {boolean}useRawData
+   * @param {boolean}useRawData if true, the payload is posted as is, otherwise the payload is encapsulated on an object { data: payload}
    * @param {number} ttl
    * @return {Promise<{}>}
    */
@@ -211,7 +252,7 @@ export class ApmDataProxy {
    * Post to the APM server.
    * @param {string}url
    * @param {{}}payload
-   * @param {boolean}useRawData
+   * @param {boolean}useRawData if true, the payload is posted as is, otherwise the payload is encapsulated in an object `{ data: payload}`
    * @return {Promise<{}>}
    */
   post(url, payload, useRawData = false) {
@@ -219,16 +260,26 @@ export class ApmDataProxy {
   }
 
   /**
+   * Gets a URL with caching if needed.
+   *
+   * By default, an actual GET request will be done and the results will not be cached.
    *
    * @param {string} url
-   * @param {boolean}forceActualFetch
-   * @param ttl
+   * @param {boolean} [forceGet=true] if true, the cache is not checked and the GET request is actually made to the URL
+   * @param {number} [ttl=-1] seconds to cache the results, or no caching if <=0
    * @return {Promise<{}>}
    */
-  get(url, forceActualFetch = true, ttl = -1) {
-    return this.fetch(url, 'GET', { }, forceActualFetch, false, ttl)
+  get(url, forceGet = true, ttl = -1) {
+    return this.fetch(url, 'GET', { }, forceGet, false, ttl)
   }
 
+  /**
+   * Stores the data for an entity in the browser's cache
+   *
+   * @param {Object} data - The entity's data object
+   * @param {?number} [ttl=null] if null, the default cache strategy will be used
+   * @private
+   */
   storeEntityDataInCache(data, ttl = null) {
     let cache = this.caches.session;
     if (ttl === null) {
@@ -290,6 +341,9 @@ export class ApmDataProxy {
    * @return {Promise<string>}
    */
   async getEntityName(id) {
+    if (id === null) {
+      return 'Undefined';
+    }
     return (await this.getEntityData(id))['name'];
   }
 

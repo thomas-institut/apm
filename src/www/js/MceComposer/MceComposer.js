@@ -156,7 +156,7 @@ export class MceComposer extends ApmPage {
         console.log(`Loading edition ${this.editionId}`)
         this.editionPanel.updateLoadingMessage(`Loading multi-chunk edition`)
         let apiUrl = urlGen.apiGetMultiChunkEdition(this.editionId)
-        $.get(apiUrl).then( (data) => {
+        this.apmDataProxy.get(apiUrl).then( (data) => {
           console.log(`Got data from server`)
           console.log(data)
           this.mceData = MceData.fix(data.mceData)
@@ -737,7 +737,7 @@ export class MceComposer extends ApmPage {
       }
       // really get from server
       let url = urlGen.apiGetCollationTable(tableId, TimeString.compactEncode(timeStamp))
-      $.get(url).then( (data) => {
+      this.apmDataProxy.get(url).then( (data) => {
         console.log(`Got data from server for table ${tableId}, timeStamp '${timeStamp}'`)
         console.log(data)
         data.ctData = CtData.getCleanAndUpdatedCtData(data.ctData)

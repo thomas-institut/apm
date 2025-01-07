@@ -5,6 +5,7 @@
 import { numericFieldSort, stringFieldSort } from '../../toolbox/ArrayUtil.mjs'
 import { tr } from './SiteLang'
 import { urlGen} from './SiteUrlGen'
+import { Tid } from '../../Tid/Tid'
 
 function noneParagraph() {
   return `<p class="none"><em>${tr('None')}</em></p>`
@@ -31,10 +32,10 @@ export class UserDocDataCommon {
     } else {
       let docs = stringFieldSort(docArray, 'title')
       html = docs.map( (docInfo) => {
-        let docUrl = urlGen.siteDocPage(docInfo.id)
+        let docUrl = urlGen.siteDocPage(docInfo.tid)
         let pageListHtml = docInfo['pageIds'].map( (pageId) => {
           let pageInfo = apiData['pageInfoArray'][pageId]
-          let pageUrl = urlGen.sitePageView(pageInfo.docId, pageInfo.sequence)
+          let pageUrl = urlGen.sitePageView(docInfo.tid, pageInfo.sequence)
           return `<a href="${pageUrl}" title="${tr('Click to view page in new tab/window')}" target="_blank">${pageInfo['foliation']}</a>`
         }).join('&nbsp; ')
         return `<p class="doc-title"><a href="${docUrl}" title="${tr('Click to open document in new tab/window')}" target="_blank">${docInfo.title}</a></p>
@@ -75,20 +76,22 @@ export class UserDocDataCommon {
 
   static __genCtList(ctInfoArray, workInfoObject, isCollationTable = true) {
     if (ctInfoArray.length === 0) {
-      return noneParagraph()
+      return noneParagraph();
     }
     let html = ''
     this.getWorksFromCtInfoArray(ctInfoArray).sort().forEach( (work) => {
-      html += `<div class="work">`
+      html += `<div class="work">`;
       let ctTables = ctInfoArray.filter( (ctInfo) => {
-        return ctInfo.work === work
+        return ctInfo.work === work;
       })
-      let workInfo = workInfoObject[work]
-      let workTitle
+      let workInfo = workInfoObject[work];
+      let workTitle;
       if (workInfo === undefined) {
-        workTitle = work
+        workTitle = work;
       } else {
-        workTitle = `${workInfo['author_name']}, <em>${workInfo['title']}</em> (${work})`
+        let workUrl = urlGen.siteWorkPage(Tid.toBase36String(workInfo['entityId']));
+        let authorUrl = urlGen.sitePerson(Tid.toBase36String(workInfo['authorId']));
+        workTitle = `<a href="${authorUrl}">${workInfo['author_name']}</a>, <a href="${workUrl}"><em>${workInfo['title']}</em> (${work})</a>`
       }
       html += `<p class="work-title">${workTitle}</p>`
       ctTables = numericFieldSort(ctTables, 'chunkNumber')

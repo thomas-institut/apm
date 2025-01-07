@@ -21,7 +21,9 @@ import Quill from 'quill/core'
 import { SimpleBlockBlot } from './TranscriptionEditorBlots'
 import { EditorData } from './EditorData'
 import { configureTranscriptionEditorBlots } from './TranscriptionEditorBlotConfig'
-import Delta from 'quill'
+import * as Entity from '../../constants/Entity'
+
+
 
 const validAppellations = {
   la: [
@@ -96,8 +98,8 @@ export class TranscriptionEditor
     this.containerId = containerId
     this.id = id
     this.options = TranscriptionEditor.getOptions(userOptions)
-    //console.log('Transcription editor options')
-    //console.log(this.options)
+    console.log('Transcription editor options')
+    console.log(this.options)
     this.people = this.options.people
     this.editorTid = this.options.editorTid
     this.activeWorks = this.options.activeWorks
@@ -106,7 +108,6 @@ export class TranscriptionEditor
     this.containerElement = $('#' + this.options.containerId)
     // Default hand id is always 0!
     this.handId = 0
-    
     this.minItemId = 0
     this.minNoteId = 0
     
@@ -162,25 +163,22 @@ export class TranscriptionEditor
     
     // Language Buttons and default language options
     let langDef = this.options.langDef
-    for (const lang in langDef) {
-      if (!langDef.hasOwnProperty(lang)) {
-        continue
-      }
+    langDef.forEach( (langDefEntry) => {
       // language button
-      let buttonId = lang + '-button-' + this.id
+      let buttonId = langDefEntry['code'] + '-button-' + this.id
       $('#langButtons-'+this.id).append(
-              '<button id="' + buttonId +  '" class="langButton" ' + 
-              'title="' + langDef[lang].name + '" disabled>' + 
-              lang + '</button>'
-        ) 
-      $('#' + buttonId).on('click', this.genOnClickLangButton(lang))
+        '<button id="' + buttonId +  '" class="langButton" ' +
+        'title="' + langDefEntry['name'] + '" disabled>' +
+        langDefEntry['code'] + '</button>'
+      )
+      $('#' + buttonId).on('click', this.genOnClickLangButton(langDefEntry['id']))
       // option in default language menu
-      let optionId = 'set-' + lang + '-' + this.id 
+      let optionId = 'set-' +langDefEntry['code'] + '-' + this.id
       $('#set-lang-dd-menu-' + id).append('<a class="dropdown-item" href="#" id="'+ optionId +'">'
-              + langDef[lang].name + '</a>')
-      $('#' + optionId).on('click', this.genOnClickSetLang(lang))
-    }
-   
+        + langDefEntry['name'] + '</a>')
+      $('#' + optionId).on('click', this.genOnClickSetLang(langDefEntry['id']))
+    });
+
     // Simple formats
     for (const formatBlot of TranscriptionEditor.formatBlots) {
       // No button
@@ -433,14 +431,12 @@ export class TranscriptionEditor
 
     // langDef : language definitions
     if (options.langDef === undefined) {
-      options.langDef = { 
-        la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3} 
-      }    
+      options.langDef[Entity.LangLatin] = { id: Entity.LangLatin, name: 'Latin', code: 'la', fontsize: 3, rtl: false};
     }
     
     // defaultLang :  language code
     if (options.defaultLang === undefined) {
-      options.defaultLang = 'la'
+      options.defaultLang = Entity.LangLatin
     }
     
     
@@ -483,27 +479,30 @@ export class TranscriptionEditor
     
   setDefaultLang(lang)
   {
+
     let langDef = this.options.langDef
+    // console.log(`Setting default lang ${lang}`, langDef);
     if (langDef[lang] === undefined) {
       console.log('Invalid default language: ' + lang)
       return false
     }
+    let editorContainer = $('#editor-container-container-' + this.id);
 
-    for (const l in langDef) {
-      if (l === lang) {
-        //$('#editor-container-' + this.id).addClass(l + '-text')
-        $('#editor-container-container-' + this.id).addClass(l + '-text')
-        continue
+    langDef.forEach( (langDefEntry, langId) => {
+      if (lang === langId) {
+        console.log(`Testing lang ${langId}`);
+        editorContainer.addClass(langDefEntry['code'] + '-text')
+      } else {
+        editorContainer.removeClass(langDefEntry['code'] + '-text')
       }
-      //$('#editor-container-' + this.id).removeClass(l + '-text')
-      $('#editor-container-container-' + this.id).removeClass(l + '-text')
-    }
+    });
 
     $('#lang-button-' + this.id)
       .attr('title', langDef[lang].name)
-      .html(lang)
-    this.defaultLang = lang
-    this.setEditorMargin()
+      .html(langDef[lang].code)
+    this.defaultLang = lang;
+    this.defaultLangCode = langDef[lang]['code'];
+    this.setEditorMargin();
   }
 
   getParagraphType(p)
@@ -558,17 +557,16 @@ export class TranscriptionEditor
   
   setEditorMargin() 
   {
-    let marginSize = this.getEditorMarginSize()
+    let marginSize = this.getEditorMarginSize();
+    let qlEditor = $('#editor-container-' + this.id + ' .ql-editor');
     if (this.options.langDef[this.defaultLang].rtl) {
-      $('#editor-container-' + this.id + ' .ql-editor')
-        .css('margin-left', '0')
+      qlEditor.css('margin-left', '0')
         .css('margin-right', marginSize + 'px')
         .css('border-right', 'solid 1px #e0e0e0')
         .css('border-left', 'none')
       return true
     }
-    $('#editor-container-' + this.id + ' .ql-editor')
-      .css('margin-right', '0')
+    qlEditor.css('margin-right', '0')
       .css('margin-left', marginSize + 'px')
       .css('border-left', 'solid 1px #e0e0e0')
       .css('border-right', 'none')
@@ -753,7 +751,7 @@ export class TranscriptionEditor
       let numberMargin = this.options.lineNumbers.margin;
       
        let lineNumberLeftPos = marginSize - numberMargin - numChars*fontCharWidth;
-      if (this.defaultLang !== 'la') {
+      if (this.defaultLang !== Entity.LangLatin) {
         lineNumberLeftPos = $(editorDiv).outerWidth() + numberMargin;
       }
       let overlay = ''
@@ -817,7 +815,6 @@ export class TranscriptionEditor
   
   dispatchEvent(eventName, data = {})
   {
-    
     const event = new CustomEvent(eventName, {detail : data})
     $('#' + this.containerId).get()[0].dispatchEvent(event)
   }
@@ -855,8 +852,7 @@ export class TranscriptionEditor
         '<p class="text-danger"> Are you sure you want to edit this?</p>')
       $('#alert-modal-submit-button-' + thisObject.id).html('Yes!')
       $('#alert-modal-cancel-button-' + thisObject.id).html('No')
-      $('#alert-modal-submit-button-' + this.id).off()
-      $('#alert-modal-submit-button-' + this.id).on('click', function () {
+      $('#alert-modal-submit-button-' + this.id).off().on('click', function () {
         //console.log("User wants to drop changes in editor")
         $('#alert-modal-' + thisObject.id).modal('hide')
         thisObject.setVersionTitleButton(thisObject.currentVersion, false)
@@ -867,12 +863,10 @@ export class TranscriptionEditor
         thisObject.enabled = true
         $('#toolbar-'+ thisObject.id).show()
         thisObject.quillObject.enable(thisObject.enabled)
-        $('#save-button-' + thisObject.id).prop('disabled', true)
-        $('#reset-button-' + thisObject.id).prop('disabled', true)
-        $('#save-button-' + thisObject.id).show()
-        $('#reset-button-' + thisObject.id).show()
+        $('#save-button-' + thisObject.id).prop('disabled', true).show();
+        $('#reset-button-' + thisObject.id).prop('disabled', true).show();
         $('#toggle-button-' + thisObject.id).prop('title', 'Leave editor')
-        $('#toggle-button-' + thisObject.id).html('<i class="fas fa-power-off"></i>')
+          .html('<i class="fas fa-power-off"></i>')
         thisObject.lastSavedData = thisObject.quillObject.getContents()
         thisObject.setContentsNotChanged()
         thisObject.quillObject.setSelection(thisObject.quillObject.getLength())
@@ -891,12 +885,10 @@ export class TranscriptionEditor
     this.enabled = true
     $('#toolbar-'+ this.id).show()
     this.quillObject.enable(this.enabled)
-    $('#save-button-' + this.id).prop('disabled', true)
-    $('#reset-button-' + this.id).prop('disabled', true)
-    $('#save-button-' + this.id).show()
-    $('#reset-button-' + this.id).show()
+    $('#save-button-' + this.id).prop('disabled', true).show();
+    $('#reset-button-' + this.id).prop('disabled', true).show();
     $('#toggle-button-' + this.id).prop('title', 'Leave editor')
-    $('#toggle-button-' + this.id).html('<i class="fas fa-power-off"></i>')
+      .html('<i class="fas fa-power-off"></i>');
     this.lastSavedData = this.quillObject.getContents()
     this.setContentsNotChanged()
     this.quillObject.setSelection(this.quillObject.getLength())
@@ -915,10 +907,10 @@ export class TranscriptionEditor
       $('#alert-modal-title-' + this.id).html('There are changes to the text')
       $('#alert-modal-text-' + this.id).html(
           '<p>Are you sure you want to leave the editor?</p><p class="text-danger">Changes will be lost!</p>')
-      $('#alert-modal-submit-button-' + thisObject.id).html('Yes, leave!')
       $('#alert-modal-cancel-button-' + thisObject.id).html('Cancel')
-      $('#alert-modal-submit-button-' + this.id).off()
-      $('#alert-modal-submit-button-' + this.id).on('click', function () {
+      $('#alert-modal-submit-button-' + this.id).html('Yes, leave!')
+        .off()
+        .on('click', function () {
           console.log("User wants to drop changes in editor")
           $('#alert-modal-' + thisObject.id).modal('hide')
 
@@ -927,7 +919,7 @@ export class TranscriptionEditor
           $('#save-button-' + thisObject.id).hide()
           $('#reset-button-' + thisObject.id).hide()
           $('#toggle-button-' + thisObject.id).prop('title', 'Edit')
-          $('#toggle-button-' + thisObject.id).html('<i class="fas fa-pencil-alt"></i>')
+            .html('<i class="fas fa-pencil-alt"></i>')
           thisObject.quillObject.setContents(thisObject.lastSavedData)
           thisObject.quillObject.enable(thisObject.enabled)
           thisObject.setContentsNotChanged()
@@ -952,11 +944,11 @@ export class TranscriptionEditor
     this.setVersionTitleButton(this.currentVersion, true)
 
 
-    $('#toolbar-' + this.id).hide()
-    $('#save-button-' + this.id).hide()
-    $('#reset-button-' + this.id).hide()
+    $('#toolbar-' + this.id).hide();
+    $('#save-button-' + this.id).hide();
+    $('#reset-button-' + this.id).hide();
     $('#toggle-button-' + this.id).prop('title', 'Edit')
-    $('#toggle-button-' + this.id).html('<i class="fas fa-pencil-alt"></i>')
+      .html('<i class="fas fa-pencil-alt"></i>');
     this.quillObject.enable(this.enabled)
     this.contentsChanged = false
     this.resizeContainer()
@@ -1007,7 +999,7 @@ export class TranscriptionEditor
     }
     this.saving = true
     $('#save-button-' + this.id).prop('title', 'Saving changes...')
-    $('#save-button-' + this.id).html('<i class="fas fa-spinner fa-spin fa-fw"></i>')
+      .html('<i class="fas fa-spinner fa-spin fa-fw"></i>');
     this.quillObject.enable(false)
     this.dispatchEvent('editor-save', versionInfo)
   }
@@ -1018,14 +1010,14 @@ export class TranscriptionEditor
     this.setContentsNotChanged()
     this.saving = false
     $('#save-button-' + this.id).prop('title', 'Save changes')
-    $('#save-button-' + this.id).html('<i class="far fa-save"></i>')
+      .html('<i class="far fa-save"></i>');
     this.quillObject.enable(true)
   }
   
   saveFail(reason) {
     this.saving = false
     $('#save-button-' + this.id).prop('title', 'Could not save: ' + reason )
-    $('#save-button-' + this.id).html('<span class="fa-stack"><i class="far fa-save fa-stack-1x"></i><i class="fas fa-exclamation-triangle fa-stack-1x text-danger"></i></span>')
+      .html('<span class="fa-stack"><i class="far fa-save fa-stack-1x"></i><i class="fas fa-exclamation-triangle fa-stack-1x text-danger"></i></span>')
     this.quillObject.enable(true)
   }
 
@@ -1040,7 +1032,7 @@ export class TranscriptionEditor
   reset() {
     this.quillObject.setContents(this.lastSavedData)
     $('#save-button-' + this.id).prop('title', 'Save changes')
-    $('#save-button-' + this.id).html('<i class="far fa-save"></i>')
+      .html('<i class="far fa-save"></i>');
     let thisObject = this
     window.setTimeout( function() {
       //console.log('Number Lines on reset')
@@ -1050,9 +1042,10 @@ export class TranscriptionEditor
   }
   
   setDisableLangButtons (disable = true) {
-    for (const lang in this.options.langDef) {
-      $('#' + lang + '-button-' + this.id).prop('disabled', disable)
-    }
+    console.log(`Setting the disable prop in lang buttons`, disable);
+    this.options.langDef.forEach( (langDefEntry) => {
+      $('#' + langDefEntry['code'] + '-button-' + this.id).prop('disabled', disable)
+    })
   }
 
   getData()
@@ -1650,10 +1643,10 @@ export class TranscriptionEditor
     }
   }
 
-  genOnClickLangButton(lang) {
+  genOnClickLangButton(langCode) {
     let quillObject = this.quillObject
-    return function () {
-      quillObject.format('lang', lang)
+    return  ()=> {
+      quillObject.format('lang', langCode);
       const range = quillObject.getSelection()
       quillObject.setSelection(range.index + range.length)
     }
@@ -2004,18 +1997,14 @@ export class TranscriptionEditor
 
   genOnClickSetLang(lang)
   {
-    let thisObject = this
-    return function ()
-    {
-      thisObject.setDefaultLang(lang)
-      thisObject.setEditorMargin(thisObject.fontSize)
-      $('#lang-button-' + thisObject.id).html(lang)
-      //console.log('Number lines on click set lang')
-      // delay a little bit, wait for html elements to be ready 
-      window.setTimeout( function() {
-        thisObject.numberLines()
+    return  () =>{
+      this.setDefaultLang(lang);
+      this.setEditorMargin(this.fontSize);
+      $('#lang-button-' + this.id).html(this.options.langDef[lang]['code']);
+      // delay a little bit, wait for html elements to be ready
+      window.setTimeout( ()=>  {
+        this.numberLines();
       }, 100)
-      
     }
   }
   
@@ -2657,10 +2646,8 @@ export class TranscriptionEditor
   
   static indexIsInNormalLine(quillObject, index) {
     let [line,] = quillObject.getLine(index)
-    if (line instanceof SimpleBlockBlot) {
-      return false
-    }
-    return true
+    return !(line instanceof SimpleBlockBlot);
+
   }
   
   

@@ -19,7 +19,6 @@
 
 import { Panel } from '../MultiPanelUI/Panel'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import * as Util from '../toolbox/Util.mjs'
 import { KeyCache } from '../toolbox/KeyCache/KeyCache'
 import { urlGen } from '../pages/common/SiteUrlGen'
 import { ApmDataProxy } from '../pages/common/ApmDataProxy'
@@ -56,6 +55,7 @@ export class ChunkSearchPanel extends Panel {
     this.options = oc.getCleanOptions(options);
     this.mceData = this.options.mceData;
     this.icons = this.options.icons;
+    /** @type ApmDataProxy */
     this.apmDataProxy = this.options.apmDataProxy;
     this.activeEditionsData = null
     this.lastFilter = ''
@@ -122,9 +122,10 @@ export class ChunkSearchPanel extends Panel {
   genOnClickLoadActiveEditionData() {
     return async () => {
       this.loadActiveEditionDataButton.html(`Loading ... ${this.icons.busy}`);
-      let data = await  $.get(urlGen.apiGetActiveEditionInfo());
-      this.activeEditionTableContainer.html(await this.genActiveEditionTable(data));
-      this.setupActiveEditionTableButtons(data);
+      this.activeEditionsData = await this.apmDataProxy.get(urlGen.apiGetActiveEditionInfo());
+      console.log(`Active edition data`, this.activeEditionsData);
+      this.activeEditionTableContainer.html(await this.genActiveEditionTable(this.activeEditionsData));
+      this.setupActiveEditionTableButtons(this.activeEditionsData);
       this.loadActiveEditionDataButton.html('Reload Data');
     }
   }
@@ -200,21 +201,24 @@ export class ChunkSearchPanel extends Panel {
       return `<em>No active single chunk editions found in APM</em>`
     }
     let tableIdsInMceData = this.mceData.chunks.map( (chunk) => { return chunk.chunkEditionTableId})
-    console.log('Table Id in MCE Data')
-    console.log(tableIdsInMceData)
+    console.log('Table Ids in MCE Data', tableIdsInMceData)
     let html = '<table class="active-editions">';
     html +=  '<thead><tr><th>Chunk</th><th>Title</th><th>Author</th><th>Last Save</th><th></th></tr></thead>';
     for(let i = 0; i < infoArray.length; i++) {
       let info = infoArray[i];
-      let versionInfo = info['lastVersion']
-      let lastSaveLabel = `${ApmFormats.timeString(versionInfo['timeFrom'])}`
-      let addButton
+      let versionInfo = info['lastVersion'];
+      if (versionInfo === null) {
+        console.log(`Found null version info, i = ${i}`, info);
+        continue;
+      }
+      let lastSaveLabel = `${ApmFormats.timeString(versionInfo['timeFrom'])}`;
+      let addButton;
       if (tableIdsInMceData.indexOf(info.id) === -1) {
         addButton = `<button class="btn btn-sm btn-outline-secondary add-edition-${info.id}">Add</button>`
       } else {
         addButton = '<small>Already added</small>'
       }
-      let authorData = await this.apmDataProxy.getPersonEssentialData(versionInfo.authorTid)
+      let authorData = await this.apmDataProxy.getPersonEssentialData(versionInfo.authorTid);
       html += `<tr>
             <td>${info['chunkId']}</td>
             <td>${info['title']}</td>

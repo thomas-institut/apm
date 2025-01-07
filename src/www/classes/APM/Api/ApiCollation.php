@@ -24,10 +24,14 @@ namespace APM\Api;
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
 use APM\Core\Witness\EditionWitness;
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\StandardData\CollationTableDataProvider;
 use APM\System\Cache\CacheKey;
+use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
+use APM\System\Work\WorkNotFoundException;
+use APM\ToolBox\HttpStatus;
 use APM\ToolBox\SiglumGenerator;
 use AverroesProjectToApm\ApmPersonInfoProvider;
 use Exception;
@@ -65,8 +69,37 @@ class ApiCollation extends ApiController
     public function  getActiveEditions(Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $infoArray = $this->systemManager->getCollationTableManager()->getActiveEditionTableInfo();
+        $activeEditions = $this->systemManager->getCollationTableManager()->getActiveEditionTableInfo();
+        // fill in version info for each table
+        $infoArray = [];
+        foreach ($activeEditions as $info) {
+            $versions = $this->systemManager->getCollationTableManager()->getCollationTableVersions($info['id']);
+            $info['lastVersion'] = $versions[count($versions)-1];
+            $infoArray[] = $info;
+        }
         return $this->responseWithJson($response, $infoArray);
+    }
+
+    public function getActiveTablesForWork(Request $request, Response $response) : Response {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+
+        $workId = $request->getAttribute("workId");
+
+        try {
+            $workData = $this->systemManager->getWorkManager()->getWorkDataByDareId($workId);
+        } catch (WorkNotFoundException) {
+            return $this->responseWithJson($response,  [
+                'workId' => $workId,
+                'message' => 'Work not found'
+            ], 404);
+        }
+
+        if ($workData->workId === '') {
+            return $this->responseWithJson($response, []);
+        }
+
+        return $this->responseWithJson($response, $this->systemManager->getCollationTableManager()->getActiveTablesByWorkId($workData->workId));
+
     }
 
 
@@ -111,7 +144,16 @@ class ApiCollation extends ApiController
         $docs = CtData::getMentionedDocsFromCtData($ctData);
         $docInfoArray = [];
         foreach($docs as $docId) {
-            $docInfo = $this->systemManager->getDataManager()->getDocById($docId);
+            try {
+                $docInfo = $this->systemManager->getDocumentManager()->getLegacyDocInfo($docId);
+            } catch (DocumentNotFoundException $e) {
+                // should never happen
+                return $this->responseWithJson($response,  [
+                    'tableId' => $tableId,
+                    'message' => 'Internal server error',
+                    'exception' => $e->getMessage()
+                ], HttpStatus::INTERNAL_SERVER_ERROR);
+            }
             $docInfoArray[] = [ 'docId' => $docId, 'title' => $docInfo['title']];
         }
 
@@ -156,7 +198,6 @@ class ApiCollation extends ApiController
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $this->profiler->start();
-        $dataManager = $this->getDataManager();
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $requiredFields = [ 'work', 'chunk', 'lang', 'witnesses'];
 
@@ -170,6 +211,7 @@ class ApiCollation extends ApiController
         $language = $inputDataObject['lang'];
         $requestedWitnesses = $inputDataObject['witnesses'];
         $ignorePunctuation = $inputDataObject['ignorePunctuation'] ?? false;
+        $useCache = $request->getAttribute('useCache') ?? false;
 
 
         // Check that language is valid
@@ -239,9 +281,21 @@ class ApiCollation extends ApiController
                     }
                     $witnessInfo = WitnessSystemId::getFullTxInfo($requestedWitness['systemId']);
                     try {
+                        $docInfo = $this->systemManager->getDocumentManager()->getDocInfo($witnessInfo->typeSpecificInfo['docId']);
+                        $docLangCode = $this->systemManager->getLangCodeFromId($docInfo->language);
+                    } catch (DocumentNotFoundException|EntityDoesNotExistException $e) {
+                        // cannot get witness
+                        $msg = "Could not get doc info for witness '" . $requestedWitness['systemId'];
+                        $this->logger->error($msg, [ 'exceptionError' => $e->getCode(), 'exceptionMsg' => $e->getMessage(), 'witness'=> $requestedWitness]);
+                        return $this->responseWithJson($response, ['error' => self::ERROR_BAD_WITNESS, 'msg' => $msg], HttpStatus::INTERNAL_SERVER_ERROR);
+                    }
+                    try {
                         $fullTxWitness = $transcriptionManager->getTranscriptionWitness($witnessInfo->workId,
-                            $witnessInfo->chunkNumber, $witnessInfo->typeSpecificInfo['docId'],
-                            $witnessInfo->typeSpecificInfo['localWitnessId'], $witnessInfo->typeSpecificInfo['timeStamp']);
+                            $witnessInfo->chunkNumber,
+                            $witnessInfo->typeSpecificInfo['localWitnessId'],
+                            $witnessInfo->typeSpecificInfo['timeStamp'],
+                            $docLangCode
+                        );
                     } catch (InvalidArgumentException $e) {
                         // cannot get witness
                         $msg = "Requested witness '" . $requestedWitness['systemId'] . "' does not exist";
@@ -279,47 +333,50 @@ class ApiCollation extends ApiController
         $collationTableCacheId = implode(':', $witnessIds) . '-' . implode(':', $normalizerNames);
         $this->codeDebug('Collation table ID: ' . $collationTableCacheId);
 
-        $cacheKey = CacheKey::ApiCollationAutomaticCollationTablePrefix . $workId . '-' . $chunkNumber . '-' .
-            $language . '-' . hash('sha256', $collationTableCacheId);
-        $this->codeDebug("Cache key: $cacheKey");
+        if ($useCache) {
+            $cacheKey = CacheKey::ApiCollationAutomaticCollationTablePrefix . $workId . '-' . $chunkNumber . '-' .
+                $language . '-' . hash('sha256', $collationTableCacheId);
+            $this->codeDebug("Cache key: $cacheKey");
 
-        $cache = $this->systemManager->getSystemDataCache();
-        $cacheHit = true;
-        try {
-            $cachedData = $cache->get($cacheKey);
-        } catch ( KeyNotInCacheException) {
-            $this->systemManager->getCacheTracker()->incrementMisses();
-            $cacheHit = false;
-            $cachedData = '';
-        }
+            $cache = $this->systemManager->getSystemDataCache();
+            $cacheHit = true;
+            try {
+                $cachedData = $cache->get($cacheKey);
+            } catch ( KeyNotInCacheException) {
+                $this->systemManager->getCacheTracker()->incrementMisses();
+                $cacheHit = false;
+                $cachedData = '';
+            }
 
-        if ($cacheHit) {
-            $this->systemManager->getCacheTracker()->incrementHits();
-            $this->profiler->lap('Before decoding from cache');
-            $responseData = DataCacheToolBox::fromCachedString($cachedData, true);
-            $this->profiler->lap("Data decoded from cache");
-            if (!is_null($responseData)) {
-                if (!isset($responseData['collationTableCacheId'])) {
-                    // this will generate a cache key collision
-                    $responseData['collationTableCacheId'] = 'collationTableCacheId not set';
-                }
-                if ($responseData['collationTableCacheId'] !== $collationTableCacheId) {
-                    // this should almost never happen once the cached is cleared of entries without collationTableId
-                    $this->logger->info("Cache key collision!", [
-                        'cacheKey' => $cacheKey,
-                        'requestedCollationTableCacheId' => $collationTableCacheId,
-                        'cachedCollationTableCacheId' => $responseData['collationTableCacheId']
-                    ]);
-                } else {
-                    $responseData['collationEngineDetails']['cached'] = true;
-                    $this->profiler->stop();
-                    $responseData['collationEngineDetails']['cachedRunTime'] = $this->getProfilerTotalTime();
-                    $responseData['collationEngineDetails']['cachedTimestamp'] = time();
-                    return $this->responseWithJson($response, $responseData);
+            if ($cacheHit) {
+                $this->systemManager->getCacheTracker()->incrementHits();
+                $this->profiler->lap('Before decoding from cache');
+                $responseData = DataCacheToolBox::fromCachedString($cachedData, true);
+                $this->profiler->lap("Data decoded from cache");
+                if (!is_null($responseData)) {
+                    if (!isset($responseData['collationTableCacheId'])) {
+                        // this will generate a cache key collision
+                        $responseData['collationTableCacheId'] = 'collationTableCacheId not set';
+                    }
+                    if ($responseData['collationTableCacheId'] !== $collationTableCacheId) {
+                        // this should almost never happen once the cached is cleared of entries without collationTableId
+                        $this->logger->info("Cache key collision!", [
+                            'cacheKey' => $cacheKey,
+                            'requestedCollationTableCacheId' => $collationTableCacheId,
+                            'cachedCollationTableCacheId' => $responseData['collationTableCacheId']
+                        ]);
+                    } else {
+                        $responseData['collationEngineDetails']['cached'] = true;
+                        $this->profiler->stop();
+                        $responseData['collationEngineDetails']['cachedRunTime'] = $this->getProfilerTotalTime();
+                        $responseData['collationEngineDetails']['cachedTimestamp'] = time();
+                        return $this->responseWithJson($response, $responseData);
+                    }
                 }
             }
         }
-        // cache miss, or mismatch in cache keys, or bad cache data
+
+        // useCache is false, cache miss, mismatch in cache keys, or bad cache data
 
         $collatexInput = $collationTable->getCollationEngineInput();
         
@@ -333,7 +390,7 @@ class ApiCollation extends ApiController
         if ($collatexOutput === false) {
             $msg = "Automatic Collation: error running collation engine";
             $this->logger->error($msg,
-                        [ 'apiUserTid' => $this->apiUserTid,
+                        [ 'apiUserTid' => $this->apiUserId,
                         'apiError' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR,
                         'data' => $collatexInput, 
                         'collationEngineDetails' => $collationEngine->getRunDetails()
@@ -352,7 +409,7 @@ class ApiCollation extends ApiController
         catch(Exception $ex) {
             $msg = 'Error processing collation engine output into collation object';
             $this->logger->error($msg, 
-                    [ 'apiUserTid' => $this->apiUserTid,
+                    [ 'apiUserTid' => $this->apiUserId,
                         'apiError' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING,
 //                        'data' => $inputDataObject,
                          'collationEngineDetails' => $collationEngine->getRunDetails(),
@@ -411,12 +468,16 @@ class ApiCollation extends ApiController
             'people' => $people,
         ];
 
-        // let's cache it!
-
-        $stringToCache = DataCacheToolBox::toStringToCache($responseData, true);
-        $this->logger->debug("Caching automatic collation, " . strlen($stringToCache) . " bytes");
-        $cache->set($cacheKey, $stringToCache);
         $jsonToCache = json_encode($responseData, JSON_UNESCAPED_UNICODE);
+        if ($useCache) {
+            // let's cache it!
+
+            $stringToCache = DataCacheToolBox::toStringToCache($responseData, true);
+            $this->logger->debug("Caching automatic collation, " . strlen($stringToCache) . " bytes");
+            $cache->set($cacheKey, $stringToCache);
+
+        }
+
 
         $this->profiler->stop();
         $this->info("Automatic Collation Table generated", ['workId'=>$workId, 'chunk' => $chunkNumber, 'lang' => $lang]);
@@ -440,7 +501,7 @@ class ApiCollation extends ApiController
         $ctManager = $this->systemManager->getCollationTableManager();
 
         $versionInfo = new CollationTableVersionInfo();
-        $versionInfo->authorTid = $this->apiUserTid;
+        $versionInfo->authorTid = $this->apiUserId;
         $versionInfo->description = $inputDataObject['descr'] ?? '';
         $versionInfo->isMinor = $inputDataObject['isMinor'] ?? false;
         $versionInfo->isReview = $inputDataObject['isReview'] ?? false;
@@ -454,8 +515,8 @@ class ApiCollation extends ApiController
                 $msg = 'Invalid collation table ID ' . $collationTableId;
                 $this->logger->error($msg,
                     [
-                        'apiUserTid' => $this->apiUserTid,
-                        'apiUserTidString' => Tid::toBase36String($this->apiUserTid),
+                        'apiUserTid' => $this->apiUserId,
+                        'apiUserTidString' => Tid::toBase36String($this->apiUserId),
                         'apiError' => self::ERROR_INVALID_COLLATION_TABLE_ID,
                         'data' => $inputDataObject,
                     ]);
@@ -468,8 +529,8 @@ class ApiCollation extends ApiController
                 $msg = "Collation table ID $collationTableId does not exist";
                 $this->logger->error($msg,
                     [
-                        'apiUserTid' => $this->apiUserTid,
-                        'apiUserTidString' => Tid::toBase36String($this->apiUserTid),
+                        'apiUserTid' => $this->apiUserId,
+                        'apiUserTidString' => Tid::toBase36String($this->apiUserId),
                         'apiError' => self::ERROR_COLLATION_TABLE_DOES_NOT_EXIST,
                         'data' => $inputDataObject,
                     ]);
@@ -494,7 +555,7 @@ class ApiCollation extends ApiController
                 'versionInfo' => $ctManager->getCollationTableVersions($collationTableId)
             ];
 
-            $this->systemManager->onCollationTableSaved($this->apiUserTid, $collationTableId);
+            $this->systemManager->onCollationTableSaved($this->apiUserId, $collationTableId);
             $this->profiler->stop();
             $this->info("Collation Table $collationTableId saved");
             return $this->responseWithJson($response, $responseData);
@@ -509,7 +570,7 @@ class ApiCollation extends ApiController
             'versionInfo' => $ctManager->getCollationTableVersions($collationTableId)
         ];
 
-        $this->systemManager->onCollationTableSaved($this->apiUserTid, $collationTableId);
+        $this->systemManager->onCollationTableSaved($this->apiUserId, $collationTableId);
 
         $this->profiler->stop();
         $this->info("Collation Table $collationTableId saved (new table)");
@@ -528,9 +589,22 @@ class ApiCollation extends ApiController
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
 
         try {
+            $docInfo = $this->systemManager->getDocumentManager()->getDocInfo($witnessInfo->typeSpecificInfo['docId']);
+            $docLangCode = $this->systemManager->getLangCodeFromId($docInfo->language);
+        } catch (DocumentNotFoundException|EntityDoesNotExistException $e) {
+            // cannot get witness
+            $msg = "Could not get doc info for witness '" . $witnessId;
+            $this->logger->error($msg, [ 'exceptionError' => $e->getCode(), 'exceptionMsg' => $e->getMessage(), 'witness'=> $witnessId]);
+            return $this->responseWithJson($response, ['error' => self::ERROR_BAD_WITNESS, 'msg' => $msg], HttpStatus::INTERNAL_SERVER_ERROR);
+        }
+
+        try {
             $fullTxWitness = $transcriptionManager->getTranscriptionWitness($witnessInfo->workId,
-                $witnessInfo->chunkNumber, $witnessInfo->typeSpecificInfo['docId'],
-                $witnessInfo->typeSpecificInfo['localWitnessId'], $witnessInfo->typeSpecificInfo['timeStamp']);
+                $witnessInfo->chunkNumber,
+                $witnessInfo->typeSpecificInfo['localWitnessId'],
+                $witnessInfo->typeSpecificInfo['timeStamp'],
+                $docLangCode
+            );
         } catch (InvalidArgumentException $e) {
             // cannot get witness
             $msg = "Requested witness '" . $witnessId . "' does not exist";
@@ -541,7 +615,7 @@ class ApiCollation extends ApiController
         $language = $fullTxWitness->getLang();
         $docId = $fullTxWitness->getDocId();
         $work = $fullTxWitness->getWorkId();
-        $docInfo = $this->getDataManager()->getDocById($docId);
+        $docInfo = $this->systemManager->getDocumentManager()->getLegacyDocInfo($docId);
         $witnessTitle = $docInfo['title'];
 
         $normalizerManager = $this->systemManager->getNormalizerManager();
@@ -564,7 +638,7 @@ class ApiCollation extends ApiController
         $ctManager = $this->systemManager->getCollationTableManager();
 
         $versionInfo = new CollationTableVersionInfo();
-        $versionInfo->authorTid = $this->apiUserTid;
+        $versionInfo->authorTid = $this->apiUserId;
 //        $versionInfo->authorId = $this->apiUserId;
         $versionInfo->description = 'Table with single witness registered in the system';
         $versionInfo->isMinor = false;
@@ -606,7 +680,7 @@ class ApiCollation extends ApiController
         $standardData->witnessOrder = [ 1, 0];
 
         $versionInfo = new CollationTableVersionInfo();
-        $versionInfo->authorTid = $this->apiUserTid;
+        $versionInfo->authorTid = $this->apiUserId;
 //        $versionInfo->authorId = $this->apiUserId;
         $versionInfo->collationTableId = $collationTableId;
         $versionInfo->description = 'Edition text added by the system to complete creation of edition with a single witness';

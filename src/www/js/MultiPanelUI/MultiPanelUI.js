@@ -21,8 +21,8 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import Split from 'split-grid'
 import { createIndexArray, prettyPrintArray } from '../toolbox/ArrayUtil.mjs'
 import { BootstrapTabGenerator } from './BootstrapTabGenerator'
-import { maximizeElementHeightInParent} from '../toolbox/UserInterfaceUtil'
 import { doNothing, returnEmptyString} from '../toolbox/FunctionUtil.mjs'
+import { UiToolBox } from '../toolbox/UiToolBox'
 
 const defaultIcons = {
   closePanel: '&times;',
@@ -88,6 +88,12 @@ export class MultiPanelUI {
       mode: {
         type: 'string',  // 'vertical' | 'horizontal'
         default: verticalMode
+      },
+      onModeChange: {
+        type: 'function',
+        // called after a mode change
+        //  (newMode) => { .... }
+        default: doNothing
       }
     }
 
@@ -271,7 +277,10 @@ export class MultiPanelUI {
         return
       }
       //console.log('Switching to vertical mode')
-      this.switchMode(verticalMode)
+      this.switchMode(verticalMode).then( () => {
+        // done
+        console.log(`Finished switching to vertical mode`);
+      })
 
     })
 
@@ -281,7 +290,10 @@ export class MultiPanelUI {
         return
       }
       //console.log('Switching to horizontal mode')
-      this.switchMode(horizontalMode)
+      this.switchMode(horizontalMode).then( () => {
+        // done
+        console.log(`Finished switching to horizontal mode`);
+      })
     })
 
     $(window).on('resize',
@@ -297,8 +309,7 @@ export class MultiPanelUI {
     // Fit panels and tab content div
     if (this.currentMode === verticalMode) {
       this.panels.forEach( (panel) => {
-        let panelDiv = $(`#${panel.id}`)
-        maximizeElementHeight(panelDiv)
+        maximizeElementHeight($(`#${panel.id}`))
       })
     } else {
       maximizeElementHeight($(`#${ids.panelsDiv}`))
@@ -308,9 +319,9 @@ export class MultiPanelUI {
       if (panel.type === tabsPanel) {
         let panelDiv = $(`#${panel.id}`)
         let tabsContentsDiv = $(`#${panel.id}-tabs-content`)
-        maximizeElementHeightInParent(tabsContentsDiv, panelDiv, $(`#${panel.id}-tabs`).outerHeight())
+        UiToolBox.maximizeElementHeightInParent(tabsContentsDiv, panelDiv, $(`#${panel.id}-tabs`).outerHeight())
         panel.tabs.forEach( (tab) => {
-          maximizeElementHeightInParent($(`#${tab.id}`), tabsContentsDiv,0 )
+          UiToolBox.maximizeElementHeightInParent($(`#${tab.id}`), tabsContentsDiv,0 )
         })
       }
     })
@@ -514,15 +525,16 @@ export class MultiPanelUI {
     })
   }
 
-  switchMode(newMode) {
+  async switchMode(newMode) {
     this.currentMode = newMode
-    this._updateActiveTabIds()
-    this._renderPanels()
-    this._setupTabEventHandlers()
-    this._fitPanelsToScreen()
-    this._setupSplit()
-    this._setupDraggingEventHandlers()
-    this._callPostRenderHandlers()
+    this._updateActiveTabIds();
+    await this._renderPanels();
+    this._setupTabEventHandlers();
+    this._fitPanelsToScreen();
+    this._setupSplit();
+    this._setupDraggingEventHandlers();
+    this._callPostRenderHandlers();
+    this.options.onModeChange(newMode);
   }
 
   _updateActiveTabIds() {
@@ -565,8 +577,8 @@ ${this.options.topBarRightAreaContent()}
 </div>`
   }
 
-  _renderPanels() {
-    let newHtml = this.genHtmlPanels()
+  async _renderPanels() {
+    let newHtml = await this.genHtmlPanels()
     $(`#${ids.panelsDiv}`).replaceWith(newHtml)
   }
 

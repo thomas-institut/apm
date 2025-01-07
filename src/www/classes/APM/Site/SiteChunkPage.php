@@ -26,13 +26,15 @@
 
 namespace APM\Site;
 
-use APM\FullTranscription\ApmChunkSegmentLocation;
-use APM\FullTranscription\ColumnVersionInfo;
 use APM\System\DataRetrieveHelper;
+use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\Transcription\ApmChunkSegmentLocation;
+use APM\System\Transcription\ColumnVersionInfo;
 use APM\System\User\UserNotFoundException;
 use APM\System\WitnessType;
-use Psr\Http\Message\ServerRequestInterface as Request;
+use APM\System\Work\WorkNotFoundException;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use ThomasInstitut\TimeString\TimeString;
 
 
@@ -47,6 +49,7 @@ class SiteChunkPage extends SiteController
 
     /**
      * @throws UserNotFoundException
+     * @throws PageNotFoundException
      */
     public function singleChunkPage(Request $request, Response $response): Response
     {
@@ -57,7 +60,11 @@ class SiteChunkPage extends SiteController
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
         $this->profiler->start();
-        $workInfo = $dm->getWorkInfoByDareId($workId);
+        try {
+            $workInfo = get_object_vars($this->systemManager->getWorkManager()->getWorkDataByDareId($workId));
+        } catch (WorkNotFoundException $e) {
+            return $this->getBasicErrorPage($response, "Error", "Work $workId not found", 404);
+        }
 
         $witnessInfoArray = $transcriptionManager->getWitnessesForChunk($workId, $chunkNumber);
         $time =  TimeString::now();
@@ -127,20 +134,27 @@ class SiteChunkPage extends SiteController
         $helper = new DataRetrieveHelper();
         $helper->setLogger($this->logger);
 
-        $pageInfoArray = $helper->getPageInfoArrayFromList($pagesMentioned, $transcriptionManager->getPageManager());
+        $pageInfoArray = $helper->getPageInfoArrayFromList($pagesMentioned, $this->systemManager->getDocumentManager());
 
         $showAdminInfo = false;
-        if ($this->systemManager->getUserManager()->isRoot($this->userTid)) {
+        if ($this->systemManager->getUserManager()->isRoot($this->userId)) {
             $showAdminInfo = true;
         }
 
         $validChunks = $this->systemManager->getDataManager()->getChunksWithTranscriptionForWorkId($workId);
+        $tablesInfo = $this->systemManager->getCollationTableManager()->getTablesInfo(false, $workId);
+        foreach ($tablesInfo as $tableInfo) {
+            if (!in_array($tableInfo['chunkNumber'], $validChunks)) {
+                $validChunks[] = $tableInfo['chunkNumber'];
+            }
+        }
+        sort($validChunks, SORT_NUMERIC);
 
         $this->profiler->stop();
         $this->logProfilerData("ChunkPage-$workId-$chunkNumber");
         return $this->renderPage($response, self::TEMPLATE_CHUNK_PAGE, [
-            'work' => $workId,
-            'chunk' => $chunkNumber,
+            'workId' => $workId,
+            'chunkNumber' => $chunkNumber,
             'work_info' => $workInfo,
             'showAdminInfo' => $showAdminInfo,
             'witnessInfoArray' => $witnessInfoArray,

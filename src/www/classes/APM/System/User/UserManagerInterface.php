@@ -42,18 +42,18 @@ interface UserManagerInterface extends LoggerAwareInterface
      * Returns true if the given tid corresponds to a valid
      * user in the system.
      *
-     * @param int $tid
+     * @param int $id
      * @return bool
      */
-    public function isUser(int $tid) : bool;
+    public function isUser(int $id) : bool;
 
     /**
      * Returns user data for the given user.
-     * @param int $userTid
+     * @param int $userId
      * @return UserData
      * @throws UserNotFoundException
      */
-    public function getUserData(int $userTid) : UserData;
+    public function getUserData(int $userId) : UserData;
 
     /**
      * Returns true if the given userName is already
@@ -92,19 +92,19 @@ interface UserManagerInterface extends LoggerAwareInterface
      * @param string $userName
      * @return int
      */
-    public function getUserTidForUserName(string $userName) : int;
+    public function getUserIdForUserName(string $userName) : int;
 
     /**
      * Changes the username for a user
      *
-     * @param int $userTid
+     * @param int $userId
      * @param string $newUserName
      * @return void
      * @throws UserNotFoundException
      * @throws InvalidUserNameException
      * @throws UserNameAlreadyInUseException
      */
-    public function changeUserName(int $userTid, string $newUserName): void;
+    public function changeUserName(int $userId, string $newUserName): void;
 
 
     /**
@@ -113,13 +113,13 @@ interface UserManagerInterface extends LoggerAwareInterface
      * The email address may be used for authentication purposes, and it's independent of any email
      * address associated with the user's Person entity.
      *
-     * @param int $userTid
+     * @param int $userId
      * @param string $newEmailAddress
      * @return void
      * @throws UserNotFoundException
      * @throws InvalidEmailAddressException
      */
-    public function changeEmailAddress(int $userTid, string $newEmailAddress) : void;
+    public function changeEmailAddress(int $userId, string $newEmailAddress) : void;
 
 
     /**
@@ -128,143 +128,143 @@ interface UserManagerInterface extends LoggerAwareInterface
      * The given $tid must correspond to a valid Person entity in the system
      * but this method does not check if this is the case.
      *
-     * @param int $userTid
+     * @param int $userId
      * @param string $userName
      * @return void
      * @throws InvalidUserNameException
      * @throws UserNameAlreadyInUseException
      */
-    public function createUser(int $userTid, string $userName) : void;
+    public function createUser(int $userId, string $userName) : void;
 
 
     /**
      * Disables a user.
      *
-     * @param int $userTid
+     * @param int $userId
      * @return void
      * @throws UserNotFoundException
      */
-    public function disableUser(int $userTid) : void;
+    public function disableUser(int $userId) : void;
 
 
     /**
      * Returns true if the given tag is set of the given user.
      *
-     * @param int $userTid
+     * @param int $userId
      * @param string $tag
      * @return bool
      * @throws UserNotFoundException
      */
-    public function hasTag(int $userTid, string $tag) : bool;
+    public function hasTag(int $userId, string $tag) : bool;
 
     /**
      * Adds the given tag to the user
      *
-     * @param int $userTid
+     * @param int $userId
      * @param string $tag
      * @return void
      * @throws UserNotFoundException
      */
-    public function addTag(int $userTid, string $tag) : void;
+    public function addTag(int $userId, string $tag) : void;
 
     /**
      * Removes the given tag from the user
      *
-     * @param int $userTid
+     * @param int $userId
      * @param string $tag
      * @return void
      * @throws UserNotFoundException
      */
-    public function removeTag(int $userTid, string $tag) : void;
+    public function removeTag(int $userId, string $tag) : void;
 
 
     /**
      * Returns true if the user is root
      *
-     * @param int $userTid
+     * @param int $userId
      * @return bool
      * @throws UserNotFoundException
      */
-    public function isRoot(int $userTid) : bool;
+    public function isRoot(int $userId) : bool;
 
 
     /**
      * Returns true if the user is enabled
-     * @param int $userTid
+     * @param int $userId
      * @return bool
      * @throws UserNotFoundException
      */
-    public function isEnabled(int $userTid): bool;
+    public function isEnabled(int $userId): bool;
 
 
     /**
      * Returns true if the user is root or the user has the given tag
      * If $writeOperation is true, returns false is the user is readOnly
      *
-     * @param int $userTid
+     * @param int $userId
      * @param string $operationTag
      * @param bool $writeOperation
      * @return bool
      * @throws UserNotFoundException
      */
-    public function isUserAllowedTo(int $userTid, string $operationTag, bool $writeOperation = true): bool;
+    public function isUserAllowedTo(int $userId, string $operationTag, bool $writeOperation = true): bool;
 
     /**
      * Retrieves the stored user token for the given user agent.
      *
      * If there's no such token, returns an empty string
      *
-     * @param int $userTid
+     * @param int $userId
      * @param string $userAgent
      * @return string
      * @throws UserNotFoundException
      */
-    public function getTokenByUserAgent(int $userTid, string $userAgent) : string;
+    public function getTokenByUserAgent(int $userId, string $userAgent) : string;
 
 
     /**
      * Gets all the tokens for the given user as an array of tuples:
      *
      *  [ userAgent, token ]
-     * @param int $userTid
+     * @param int $userId
      * @return array
      * @throws UserNotFoundException
      */
-    public function getAllTokens(int $userTid) : array;
+    public function getAllTokens(int $userId) : array;
 
     /**
      * Stores a token for a user agent
      *
-     * @param int $userTid
+     * @param int $userId
      * @param string $userAgent
      * @param string $ipAddress
      * @param string $token
      * @return void
      * @throws UserNotFoundException
      */
-    public function storeToken(int $userTid, string $userAgent, string $ipAddress, string $token): void;
+    public function storeToken(int $userId, string $userAgent, string $ipAddress, string $token): void;
 
 
     /**
      * Removes a token for a user.
      *
      * This effectively logs out the user from the system.
-     * @param int $userTid
+     * @param int $userId
      * @param string $userAgent
      * @return void
      */
-    public function removeToken(int $userTid, string $userAgent) : void;
+    public function removeToken(int $userId, string $userAgent) : void;
 
 
     /**
      * Deletes the user token for the given user agent
      *
-     * @param int $userTid
+     * @param int $userId
      * @param string $userAgent
      * @return void
      * @throws UserNotFoundException
      */
-    public function deleteToken(int $userTid, string $userAgent) : void;
+    public function deleteToken(int $userId, string $userAgent) : void;
 
 
     /**
@@ -279,12 +279,12 @@ interface UserManagerInterface extends LoggerAwareInterface
      * Returns true if the user is not disabled, the stored password is not empty
      * and the given password matches the stored one.
      *
-     * @param int $userTid
+     * @param int $userId
      * @param string $password
      * @return bool
      * @throws UserNotFoundException
      */
-    public function verifyPassword(int $userTid, string $password) : bool;
+    public function verifyPassword(int $userId, string $password) : bool;
 
 
     /**
@@ -293,13 +293,13 @@ interface UserManagerInterface extends LoggerAwareInterface
      * Implementations must actually store a password hash, not the password
      * string as it is given.
      *
-     * @param int $userTid
+     * @param int $userId
      * @param string $password
      * @return void
      * @throws UserNotFoundException
      * @throws InvalidPasswordException
      */
-    public function changePassword(int $userTid, string $password) : void;
+    public function changePassword(int $userId, string $password) : void;
 
 
 }

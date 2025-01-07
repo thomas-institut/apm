@@ -23,6 +23,14 @@ export class MdeSection {
         onEntityDataChange: { type: 'function', default: async (newData, changedPredicates) => {
           console.log(`Faking onEntityDataChange`, newData, changedPredicates);
           return false;
+        }},
+        /**
+         * async function to be called when the section needs a string given by a named provider
+         * it must return a string or null if the provider is undefined
+         */
+        getInfoString: { type: 'function', default: async (providerName) => {
+          console.log(`getInfoString not set, called with provider name '${providerName}'`);
+          return null;
         }}
       }
     })

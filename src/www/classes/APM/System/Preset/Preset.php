@@ -54,7 +54,7 @@ class Preset {
     private array $data;
     
 
-    private int $userTid;
+    private int $userId;
     
     /**
      *
@@ -65,7 +65,7 @@ class Preset {
     /**
      * @var int
      */
-    private int $id;
+    private int $presetId;
     
     /**
      *
@@ -73,13 +73,13 @@ class Preset {
      */
     private string $title;
     
-    public function __construct(string $tool, int $userTid, string $title, array $keys, array $theData, int $id = self::NULL_ID) {
+    public function __construct(string $tool, int $userId, string $title, array $keys, array $theData, int $id = self::NULL_ID) {
         $this->toolId = $tool;
-        $this->userTid = $userTid;
+        $this->userId = $userId;
         $this->keyArray = $keys;
         $this->data = $theData;
         $this->title = $title;
-        $this->setId($id);
+        $this->setPresetId($id);
     }
 
     /**
@@ -126,8 +126,8 @@ class Preset {
     /**
      * @return int
      */
-    public function getUserTid() : int {
-        return $this->userTid;
+    public function getUserId() : int {
+        return $this->userId;
     }
 
     /**
@@ -140,15 +140,15 @@ class Preset {
     /**
      * @return int
      */
-    public function getId() : int {
-        return $this->id;
+    public function getPresetId() : int {
+        return $this->presetId;
     }
 
     /**
-     * @param int $id
+     * @param int $presetId
      */
-    public function setId(int $id): void
+    public function setPresetId(int $presetId): void
     {
-        $this->id = $id;
+        $this->presetId = $presetId;
     }
 }

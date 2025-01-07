@@ -39,7 +39,7 @@ abstract class CollationEngine extends Engine {
 
 
     /**
-     * Runs the collation engine on an array of witneses
+     * Runs the collation engine on an array of witnesses
      *
      * The witnesses in the input array should be in the format expected by
      * Collatex:

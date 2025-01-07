@@ -8,7 +8,7 @@ const schemata = {
     context: SchemaContext.Default,
     sections: [
       {
-        type: SectionType.EditableHeader,
+        type: SectionType.Header,
         predicates: [],
       },
       {

@@ -25,9 +25,15 @@
 
 namespace APM\Site;
 
+use APM\System\ApmImageType;
+use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\Work\WorkNotFoundException;
+use APM\ToolBox\HttpStatus;
 use AverroesProject\Data\DataManager;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use ThomasInstitut\EntitySystem\Tid;
 
 /**
  * Site Controller class
@@ -37,6 +43,35 @@ class SitePageViewer extends SiteController
 {
 
     const PAGE_VIEWER_TWIG = 'page-viewer.twig';
+
+
+    /**
+     * Returns an array of active work data with the same format as the
+     * legacy DataManager getActiveWorks
+     *
+     * @return string[]
+     */
+    private function getActiveWorks() : array {
+       $enabledWorks = $this->systemManager->getWorkManager()->getEnabledWorks();
+//       $this->logger->debug("EnabledWorks: ".count($enabledWorks), [ $enabledWorks]);
+
+       $activeWorks = [];
+       foreach ($enabledWorks as $work) {
+           try {
+               $workData = $this->systemManager->getWorkManager()->getWorkData($work);
+           } catch (WorkNotFoundException $e) {
+               // should never happen
+               throw new \RuntimeException($e->getMessage());
+           }
+           $activeWorks[] = [
+               'title' => '(' . $workData->workId . ') ' . $workData->shortTitle,
+               'dareId' => $workData->workId,
+               'maxChunk' => 500
+           ];
+       }
+       return $activeWorks;
+    }
+
 
     /**
      * @param Request $request
@@ -61,7 +96,8 @@ class SitePageViewer extends SiteController
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $dataManager->getImageUrl($docId, $pageInfo['img_number']);
         $pageTypeNames  = $dataManager->getPageTypeNames();
-        $activeWorks = $dataManager->getActiveWorks();
+//        $activeWorks = $dataManager->getActiveWorks();
+        $activeWorks = $this->getActiveWorks();
         $pageNumberFoliation = $pageNumber;
         $languagesArray = $this->getLanguages();
         $deepZoom = $dataManager->isImageDeepZoom($docId) ? '1' : '0';
@@ -96,37 +132,60 @@ class SitePageViewer extends SiteController
      */
     function pageViewerPageByDocSeq(Request $request, Response $response): Response
     {
-        $docId = $request->getAttribute('doc');
-        $seq = $request->getAttribute('seq');
-        $activeColumn = intval($request->getAttribute('col'));
+        $givenDocId = $request->getAttribute('doc') ?? '';
+        $docId = Tid::fromString($givenDocId);
+        if ($docId === -1) {
+            return $this->getErrorPage($response, 'Error', "Invalid doc id '$givenDocId'",
+                HttpStatus::BAD_REQUEST);
+        }
+        $givenSeq = $request->getAttribute('seq') ?? '';
+        $seq = intval($givenSeq);
+        if ($seq <= 0) {
+            return $this->getErrorPage($response, 'Error', "Invalid page sequence  '$givenSeq'",
+                HttpStatus::BAD_REQUEST);
+        }
+
+        $activeColumn = intval($request->getAttribute('col') ?? '');
         if ($activeColumn === 0) {
             $activeColumn = 1;
         }
+        $docManager = $this->systemManager->getDocumentManager();
         $dataManager = $this->systemManager->getDataManager();
-        
-        $docInfo = $dataManager->getDocById($docId);
-        $pageId = $dataManager->getPageIdByDocSeq($docId, $seq);
-        $pageInfo = $dataManager->getPageInfo($pageId);
-        $pageNumber = $pageInfo['page_number'];
-        $docPageCount = $dataManager->getPageCountByDocId($docId);
-        $pagesInfo = $dataManager->getDocPageInfo($docId, DataManager::ORDER_BY_SEQ);
-        $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
-        $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
-        $imageUrl = $dataManager->getImageUrl($docId, $pageInfo['img_number']);
-        $pageTypeNames  = $dataManager->getPageTypeNames();
-        $activeWorks = $dataManager->getActiveWorks();
-        $languagesArray = $this->getLanguages();
+        try {
+            $docInfo = $docManager->getLegacyDocInfo($docId);
+            $pageId = $docManager->getPageIdByDocSeq($docId, $seq);
+            $pageInfo = $docManager->getLegacyPageInfo($pageId);
+            $pageNumber = $pageInfo['page_number'];
+            $docPageCount = $docManager->getDocPageCount($docId);
+            $pagesInfo = $docManager->getLegacyDocPageInfoArray($docId, DataManager::ORDER_BY_SEQ);
+            $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
+            $imageSources = $this->systemManager->getImageSources();
+            $imageUrl = $docManager->getImageUrl($docId, $pageInfo['img_number'], ApmImageType::IMAGE_TYPE_DEFAULT, $imageSources);
+            $deepZoom = $docManager->isDocDeepZoom($docId) ? '1' : '0';
+            $activeWorks = $this->getActiveWorks();
+            $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
+            $languagesArray = $this->getLanguages();
 
-        $pageNumberFoliation = $pageInfo['seq'];
-        if ($pageInfo['foliation'] !== NULL) {
-            $pageNumberFoliation = $pageInfo['foliation'];
+            $pageNumberFoliation = $pageInfo['seq'];
+            if ($pageInfo['foliation'] !== NULL) {
+                $pageNumberFoliation = $pageInfo['foliation'];
+            }
+        } catch (DocumentNotFoundException) {
+            $this->logger->info("Document '$givenDocId' (= $docId) not found");
+            return $this->getErrorPage($response, 'Error', "Document $givenDocId not found",
+                HttpStatus::NOT_FOUND);
+        } catch (PageNotFoundException) {
+            $this->logger->info("Page $docId:$seq not found");
+            return $this->getErrorPage($response, 'Error', "Page $givenDocId:$seq not found",
+                HttpStatus::NOT_FOUND);
         }
 
-        $deepZoom = $this->systemManager->getDataManager()->isImageDeepZoom($docId) ? '1' : '0';
+
 
         return $this->renderPage($response, self::PAGE_VIEWER_TWIG, [
             'navByPage' => false,  // i.e., navigate by sequence
             'doc' => $docId,
+            'docIdString' => Tid::toBase36String($docId),
             'docInfo' => $docInfo,
             'docPageCount' => $docPageCount,
             'page' => $pageNumber,
@@ -134,13 +193,13 @@ class SitePageViewer extends SiteController
             'activeColumn' => $activeColumn,
             'pageNumberFoliation' => $pageNumberFoliation,
             'pageInfo' => $pageInfo,
-            'pageTypeNames' => $pageTypeNames,
+            'pageTypeNames' => [],
             'activeWorks' => $activeWorks,
             'thePages' => $thePages,
             'imageUrl' => $imageUrl,
             'languagesArray' => $languagesArray,
             'deepZoom' => $deepZoom
-        ], true, false);
+        ], true);
     }
 
 }

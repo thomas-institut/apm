@@ -22,17 +22,12 @@ namespace APM\System\Decorators;
 
 use APM\Core\Address\IntRange;
 use APM\Core\Address\Point;
-use APM\Core\Collation\CollationTableDecorator;
 use APM\Core\Collation\CollationTable;
-
+use APM\Core\Collation\CollationTableDecorator;
 use APM\Core\Item\Item;
-use APM\Core\Item\MarkType;
-use APM\Core\Token\TranscriptionToken;
-use APM\FullTranscription\ApmTranscriptionWitness;
-use AverroesProjectToApm\AddressInDatabaseItemStream;
-use APM\Core\Item\TextualItem;
 use APM\Core\Item\Mark;
-use AverroesProjectToApm\Formatter\WitnessPageFormatter;
+use APM\Core\Item\MarkType;
+use APM\Core\Item\TextualItem;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;

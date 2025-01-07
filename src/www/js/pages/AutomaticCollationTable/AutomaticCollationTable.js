@@ -215,7 +215,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
       containerSelector : this.editSettingsFormSelector,
       availableWitnesses: this.availableWitnesses,
       langDef: this.options.langDef,
-      userTid:  this.userTid,
+      userId:  this.userId,
       isPreset: this.options.isPreset,
       suppressTimestampsInSettings:  this.options.suppressTimestampsInApiCalls,
       applyButtonText: 'Redo collation',

@@ -44,8 +44,14 @@ class Entity implements TidDefiner
     const tOrganizationType = 116;
     const tOccupation = 117;
     const tOrganizationalRole = 118;
-
     const tCalendar = 119;
+    const tDocument = 120;
+    const tGenericEditionSource = 121;
+    const tDocumentType = 122;
+    const tImageSource = 123;
+    const tPageType = 124;
+
+
 
     // Value types
 
@@ -89,7 +95,6 @@ class Entity implements TidDefiner
     const pLangIso639Code = 2951;
 
 
-
     // Basic statement metadata predicates
 
     const pStatementAuthor = 3001;
@@ -118,8 +123,6 @@ class Entity implements TidDefiner
     const pMergeTimestamp = 6003;
     const pMergeEditorialNote = 6004;
 
-
-
     // Person predicates
     const pOccupation = 7008;
     const pDateOfBirth = 7009;
@@ -139,6 +142,17 @@ class Entity implements TidDefiner
     const pWorkIsEnabledInApm = 7504;
 
 
+    // Document Predicates
+
+    const pDocumentType = 7601;
+    const pDocumentLanguage = 7602;
+    const pImageSource = 7603;
+    const pInDare = 7604;
+    const pIsPublic = 7605;
+    const pImageSourceData = 7606;
+    const pUseDeepZoomForImages = 7607;
+
+
 
 
     // Geographical Predicates
@@ -148,6 +162,13 @@ class Entity implements TidDefiner
     const pGpsCoordinates = 8004;
 
     const pAreaType = 8005;
+
+    // Edition source predicates
+
+    const pDefaultSiglum = 8501;
+    const pApplicableLanguage = 8502;
+    const pApplicableWork = 8503;
+    const pSpecificSource = 8504;
 
     // Url Types
 
@@ -160,6 +181,24 @@ class Entity implements TidDefiner
     const UrlTypePersonalHomePage = 9005;
     const UrlTypeWorkHomePage = 9006;
 
+
+    // Document types
+
+    const DocTypeManuscript = 9101;
+    const DocTypePrint = 9102;
+    const DocTypeIncunabulum = 9103;
+
+
+    // Image Sources
+    const ImageSourceBilderberg = 9201;
+    const ImageSourceAverroesServer = 9202;
+
+
+    // Page Types
+    const PageTypeNotSet = 9300;
+    const PageTypeText = 9301;
+    const PageTypeFrontMatter = 9302;
+    const PageTypeBackMatter = 9303;
 
 
     // Calendars
@@ -179,9 +218,6 @@ class Entity implements TidDefiner
     const IdTypeViaf = 10002;
     const IdTypeGnd = 10003;
     const IdTypeOrcid = 10004;
-
-
-
 
 
     // Area types
@@ -218,10 +254,11 @@ class Entity implements TidDefiner
 //    const OccupationEditor = 13010;
 
 
-    // Dare stuff
+    // Legacy or external database ids
 
     const pDarePersonId = 14001;
 
+    const pLegacyApmDatabaseId = 14002;
 
     // languages
 

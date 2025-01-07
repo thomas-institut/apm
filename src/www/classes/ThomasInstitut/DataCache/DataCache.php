@@ -20,7 +20,9 @@
 namespace ThomasInstitut\DataCache;
 
 /**
- * Interface to a generic data cache
+ * Interface to a generic data cache that can only store strings
+ * as values.
+ *
  * @package ThomasInstitut\DataCache
  */
 

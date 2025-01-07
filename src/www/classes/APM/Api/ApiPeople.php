@@ -50,14 +50,14 @@ class ApiPeople extends ApiController
         }
         $this->logProfilers('normalFinish');
         try {
-            if ($data->isUser && !$this->systemManager->getUserManager()->isUserAllowedTo($this->apiUserTid, UserTag::MANAGE_USERS)) {
+            if ($data->isUser && !$this->systemManager->getUserManager()->isUserAllowedTo($this->apiUserId, UserTag::MANAGE_USERS)) {
                 $data->userEmailAddress = "N/A";
                 $data->userName = 'N/A';
                 $data->userTags = [];
             }
         } catch (UserNotFoundException) {
             // should never happen
-            $this->logger->error("User not found: $this->apiUserTid");
+            $this->logger->error("User not found: $this->apiUserId");
             return $this->responseWithStatus($response, HttpStatus::INTERNAL_SERVER_ERROR);
         }
         return $this->responseWithJson($response, $data->getExportObject());
@@ -248,7 +248,7 @@ class ApiPeople extends ApiController
         $pm = $this->systemManager->getPersonManager();
 
         try {
-            $tid = $pm->createPerson($name, $sortName, $this->apiUserTid);
+            $tid = $pm->createPerson($name, $sortName, $this->apiUserId);
         } catch (InvalidPersonNameException $e) {
             $this->logger->error("Invalid name creating person");
             return $this->responseWithJson($response, [ 'errorMsg' => 'Invalid name' ], HttpStatus::BAD_REQUEST);

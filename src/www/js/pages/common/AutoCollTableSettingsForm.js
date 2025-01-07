@@ -74,7 +74,7 @@ export class AutomaticCollationTableSettingsForm {
       applyButtonText: { type: 'string', default : 'Apply'},
       hideTitle: { type: 'boolean', default: false},
       isPreset: { type: 'boolean', default: false},
-      userTid: { type: 'number', default: -1 },
+      userId: { type: 'number', default: -1 },
       normalizerData: {type: 'Array', default: []},
       icons : {
         type: 'object', default:  {
@@ -83,9 +83,9 @@ export class AutomaticCollationTableSettingsForm {
       },
       noPresetTitle: { type: 'string', default : '--- [none] ---'},
       preset: { type: 'object', default: {
-          id: -1,
+          presetId: -1,
           title: '',
-          userTid: -1,
+          userId: -1,
           userName: 'noUser',
           editable: false
         }
@@ -198,7 +198,7 @@ export class AutomaticCollationTableSettingsForm {
 
   setNormalizersDiv() {
     if (this.options.normalizerData.length === 0) {
-      console.log(`ACT Settings: no normalizers defined`)
+      this.debug && console.log(`ACT Settings: no normalizers defined`)
       return
     }
     let html = '<h5>Standard Normalizations</h5><ul class="normalization-list">'
@@ -718,7 +718,7 @@ export class AutomaticCollationTableSettingsForm {
           tool: thisObject.automaticCollationPresetTool,
           userTid: thisObject.options.userTid,
           title: newPresetTitle,
-          presetId: thisObject.options.preset.id,
+          presetId: thisObject.options.preset.presetId,
           presetData : {
             lang: currentSettings.lang,
             witnesses: witnessIdArray,

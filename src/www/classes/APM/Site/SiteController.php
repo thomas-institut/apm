@@ -198,7 +198,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             $this->logger->info("SITE PROFILER " . SystemProfiler::getName(), SystemProfiler::getLaps());
             return $responseToReturn;
         } catch (LoaderError|RuntimeError|SyntaxError $e) {
-            $this->logger->error("Twig error rendering page: " . $e->getMessage());
+            $this->logger->error("Twig error rendering page: " . $e->getMessage(), [ 'exception' => get_class($e)]);
             return $this->getSystemErrorPage($response, "Error rendering page", []);
         }
     }

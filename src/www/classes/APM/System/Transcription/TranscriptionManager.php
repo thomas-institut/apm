@@ -26,8 +26,11 @@ use APM\System\Document\PageInfo;
 use APM\System\WitnessInfo;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\Data\EdNoteManager;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
+use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
 /**
  * Class TranscriptionManager
@@ -35,8 +38,11 @@ use ThomasInstitut\ErrorReporter\ErrorReporter;
  * Class to deal with a database containing full transcriptions
  *
  */
-abstract class TranscriptionManager implements ErrorReporter
+abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterface
 {
+
+    use SimpleErrorReporterTrait;
+    use LoggerAwareTrait;
     const ORDER_BY_PAGE_NUMBER = 100;
     const ORDER_BY_SEQ = 101;
 
@@ -57,6 +63,7 @@ abstract class TranscriptionManager implements ErrorReporter
     /**
      * Returns the ApmTranscriptionWitness contained in the given document for the given work and work number
      * at the given time.
+     *
      * Throws an InvalidArgument exception if there's no valid witness.
      *
      * @param string $workId
@@ -188,7 +195,6 @@ abstract class TranscriptionManager implements ErrorReporter
      *
      * @param ApmChunkSegmentLocation $chunkSegmentLocation
      * @return array
-     * @throws PageNotFoundException|DocumentNotFoundException
      */
     abstract public function getVersionsForSegmentLocation(ApmChunkSegmentLocation $chunkSegmentLocation) : array;
 
@@ -205,8 +211,6 @@ abstract class TranscriptionManager implements ErrorReporter
      *
      * @param array $chunkLocationMap
      * @return array
-     * @throws DocumentNotFoundException
-     * @throws PageNotFoundException
      */
     abstract public function getVersionsForChunkLocationMap(array $chunkLocationMap) : array;
 
@@ -226,8 +230,6 @@ abstract class TranscriptionManager implements ErrorReporter
      * @param string $workId
      * @param int $chunkNumber
      * @return WitnessInfo[]
-     * @throws DocumentNotFoundException
-     * @throws PageNotFoundException
      */
     abstract public function getWitnessesForChunk(string $workId, int $chunkNumber) : array;
 
@@ -306,8 +308,19 @@ abstract class TranscriptionManager implements ErrorReporter
      * @return Element[]
      * @throws InvalidTimeStringException
      */
-    public abstract function getColumnElementsByPageId(int $pageId, int $col, string $timeString = ''): array;
+    abstract public function getColumnElementsByPageId(int $pageId, int $col, string $timeString = ''): array;
 
+
+    /**
+     * Updates the elements for a given page and column numbers
+     *
+     * @param int $pageId
+     * @param int $columnNumber
+     * @param array $newElements
+     * @param string $time
+     * @return bool|array
+     */
+    abstract public function updateColumnElements(int $pageId, int $columnNumber, array $newElements, string $time = ''): bool|array;
 
     /**
      * Returns an array of document Ids for the documents

@@ -692,12 +692,12 @@ class SiteCollationTable extends SiteController
     protected function getValidWitnessesForChunkLang(string $workId, int $chunkNumber, string $langCode) : array {
         $this->logger->debug("Getting valid witnesses for $workId, $chunkNumber, $langCode");
         $tm = $this->systemManager->getTranscriptionManager();
-
         $vw = $tm->getWitnessesForChunk($workId, $chunkNumber);
+        $langId = $this->systemManager->getLangIdFromCode($langCode);
 
         $vWL = [];
         foreach($vw as $witnessInfo) {
-            if ($witnessInfo->languageCode === $langCode && $witnessInfo->isValid) {
+            if ($witnessInfo->language === $langId && $witnessInfo->isValid) {
                 $vWL[] = $witnessInfo;
             }
         }

@@ -30,7 +30,7 @@ class DataRetrieveHelper implements LoggerAwareInterface
                 continue;
             }
             if (!isset($infoArray[$id])) {
-                $infoArray[$id] = $getInfoCallable($id);
+                $infoArray[$id] = call_user_func($getInfoCallable, $id);
             }
         }
         return $infoArray;
@@ -38,15 +38,14 @@ class DataRetrieveHelper implements LoggerAwareInterface
 
     /**
      * @param array $pageList
-     * @param DocumentManager $pageManager
+     * @param DocumentManager $documentManager
      * @return array
-     * @throws Document\Exception\PageNotFoundException
      */
-    public function getPageInfoArrayFromList(array $pageList, DocumentManager $pageManager) : array {
+    public function getPageInfoArrayFromList(array $pageList, DocumentManager $documentManager) : array {
         return $this->getInfoFromIdList(
             $pageList,
-            function ($id) use ($pageManager) {
-                return $pageManager->getPageInfo($id);
+            function ($id) use ($documentManager) {
+                return $documentManager->getPageInfo($id);
             }
         );
     }
@@ -55,29 +54,12 @@ class DataRetrieveHelper implements LoggerAwareInterface
      * @param array $docList
      * @param DocumentManager $docManager
      * @return array
-     * @throws Document\Exception\DocumentNotFoundException
      */
     public function getDocInfoArrayFromList(array $docList, DocumentManager $docManager) : array {
         return $this->getInfoFromIdList(
             $docList,
             function ($id) use ($docManager) {
                 return $docManager->getDocInfo($id);
-            }
-        );
-    }
-
-
-
-    public function getAuthorInfoArrayFromList(array $authorList, PersonManagerInterface $personManager) : array {
-        return $this->getInfoFromIdList(
-            $authorList,
-            function ($tid) use ($personManager) {
-                try {
-                    $personData = $personManager->getPersonEssentialData($tid);
-                    return [ 'tid' => $tid, 'name' => $personData->name];
-                } catch (Person\PersonNotFoundException $e) {
-                    return [ 'tid' => $tid, 'name' => "Unknown P-$tid}"];
-                }
             }
         );
     }

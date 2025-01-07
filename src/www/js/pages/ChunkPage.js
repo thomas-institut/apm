@@ -77,7 +77,6 @@ export class ChunkPage extends HeaderAndContentPage {
     }
 
     // // shortcuts to options
-    // this.pathFor = urlGen;
 
     this.getPresetsUrl = urlGen.apiGetAutomaticCollationPresets()
     this.witnessesByLang = {}
@@ -120,7 +119,7 @@ export class ChunkPage extends HeaderAndContentPage {
       info: false,
       columns : [
         null, //title
-        null, //wtype
+        null, // witness type
         null, //doctype
         null, // language
         { orderable: false}, //pages
@@ -451,9 +450,9 @@ export class ChunkPage extends HeaderAndContentPage {
         html += ' (' + lwid + ')'
       }
       html += '</td>'
-      html += '<td>' + this.witnessTypeLabels[witnessInfo.type] + '</td>'
-      html += '<td>' + this.docTypes[docInfo.type] + '</td>'
-      html += '<td>' + this.options.languageInfo[witnessInfo['languageCode']]['name'] + '</td>'
+      html += '<td>' + this.witnessTypeLabels[witnessInfo['type']] + '</td>';
+      html += '<td>' + (await this.apmDataProxy.getEntityName(docInfo['type'])) + '</td>';
+      html += '<td>' + (await this.apmDataProxy.getEntityName(witnessInfo['language'])) + '</td>';
       let info = ''
       switch (witnessInfo.type) {
         case WitnessType.FULL_TX:

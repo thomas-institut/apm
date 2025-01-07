@@ -76,61 +76,10 @@ class SitePageViewer extends SiteController
     /**
      * @param Request $request
      * @param Response $response
+     * @param bool $byPage
      * @return Response
      */
-    function pageViewerPageByDocPage(Request $request, Response $response): Response
-    {
-        $docId = $request->getAttribute('doc');
-        $pageNumber = $request->getAttribute('page');
-        $activeColumn = intval($request->getAttribute('col'));
-        if ($activeColumn === 0) {
-            $activeColumn = 1;
-        }
-        $dataManager = $this->systemManager->getDataManager();
-        $docInfo = $dataManager->getDocById($docId);
-        $pageInfo = $dataManager->getPageInfoByDocPage($docId, $pageNumber);
-
-        $docPageCount = $dataManager->getPageCountByDocId($docId);
-        $pagesInfo = $dataManager->getDocPageInfo($docId);
-        $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
-        $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
-        $imageUrl = $dataManager->getImageUrl($docId, $pageInfo['img_number']);
-        $pageTypeNames  = $dataManager->getPageTypeNames();
-//        $activeWorks = $dataManager->getActiveWorks();
-        $activeWorks = $this->getActiveWorks();
-        $pageNumberFoliation = $pageNumber;
-        $languagesArray = $this->getLanguages();
-        $deepZoom = $dataManager->isImageDeepZoom($docId) ? '1' : '0';
-
-        if ($pageInfo['foliation'] !== NULL) {
-            $pageNumberFoliation = $pageInfo['foliation'];
-        }
-
-        return $this->renderPage($response, self::PAGE_VIEWER_TWIG, [
-            'navByPage' => true,
-            'doc' => $docId,
-            'docInfo' => $docInfo,
-            'docPageCount' => $docPageCount,
-            'page' => $pageNumber,
-            'seq' => $pageInfo['seq'],
-            'pageNumberFoliation' => $pageNumberFoliation,
-            'pageInfo' => $pageInfo,
-            'activeColumn' => $activeColumn,
-            'pageTypeNames' => $pageTypeNames,
-            'activeWorks' => $activeWorks,
-            'thePages' => $thePages,
-            'imageUrl' => $imageUrl,
-            'languagesArray' => $languagesArray,
-            'deepZoom' => $deepZoom
-        ]);
-    }
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-    function pageViewerPageByDocSeq(Request $request, Response $response): Response
+    function pageViewerPageByDoc(Request $request, Response $response, bool $byPage): Response
     {
         $givenDocId = $request->getAttribute('doc') ?? '';
         $docId = Tid::fromString($givenDocId);
@@ -138,10 +87,11 @@ class SitePageViewer extends SiteController
             return $this->getErrorPage($response, 'Error', "Invalid doc id '$givenDocId'",
                 HttpStatus::BAD_REQUEST);
         }
-        $givenSeq = $request->getAttribute('seq') ?? '';
-        $seq = intval($givenSeq);
-        if ($seq <= 0) {
-            return $this->getErrorPage($response, 'Error', "Invalid page sequence  '$givenSeq'",
+        $givenN = $request->getAttribute('n') ?? '';
+        $n = intval($givenN);
+        $inputNumberType = $byPage ? 'page' : 'seq';
+        if ($n <= 0) {
+            return $this->getErrorPage($response, 'Error', "Invalid $inputNumberType '$givenN'",
                 HttpStatus::BAD_REQUEST);
         }
 
@@ -153,9 +103,14 @@ class SitePageViewer extends SiteController
         $dataManager = $this->systemManager->getDataManager();
         try {
             $docInfo = $docManager->getLegacyDocInfo($docId);
-            $pageId = $docManager->getPageIdByDocSeq($docId, $seq);
+            if ($byPage) {
+                $pageId = $docManager->getPageIdByDocPage($docId, $n);
+            } else {
+                $pageId = $docManager->getPageIdByDocSeq($docId, $n);
+            }
             $pageInfo = $docManager->getLegacyPageInfo($pageId);
             $pageNumber = $pageInfo['page_number'];
+            $seq = $pageInfo['seq'];
             $docPageCount = $docManager->getDocPageCount($docId);
             $pagesInfo = $docManager->getLegacyDocPageInfoArray($docId, DataManager::ORDER_BY_SEQ);
             $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
@@ -175,15 +130,13 @@ class SitePageViewer extends SiteController
             return $this->getErrorPage($response, 'Error', "Document $givenDocId not found",
                 HttpStatus::NOT_FOUND);
         } catch (PageNotFoundException) {
-            $this->logger->info("Page $docId:$seq not found");
-            return $this->getErrorPage($response, 'Error', "Page $givenDocId:$seq not found",
+            $this->logger->info("Page $docId:$n not found");
+            return $this->getErrorPage($response, 'Error', "Page $givenDocId:$n not found",
                 HttpStatus::NOT_FOUND);
         }
 
-
-
         return $this->renderPage($response, self::PAGE_VIEWER_TWIG, [
-            'navByPage' => false,  // i.e., navigate by sequence
+            'navByPage' => $byPage,  // i.e., navigate by sequence
             'doc' => $docId,
             'docIdString' => Tid::toBase36String($docId),
             'docInfo' => $docInfo,

@@ -20,10 +20,35 @@
 namespace ThomasInstitut\DataCache;
 
 
+/**
+ * Classes that implement this interface provide common functions
+ * that allow clients to control caching in the class: use the cache or not, set the cache, tell whether
+ * the case is in use or not.
+ */
 interface CacheAware
 {
-    public function useCache();
-    public function doNotUseCache();
-    public function setCache(DataCache $dataCache);
+    /**
+     * Starts using the cache
+     * @return void
+     */
+    public function useCache() : void;
+
+    /**
+     * Stops using the cache
+     * @return void
+     */
+    public function doNotUseCache() : void;
+
+    /**
+     * Sets the cache
+     * @param DataCache $dataCache
+     * @return void
+     */
+    public function setCache(DataCache $dataCache) : void;
+
+    /**
+     * Returns true if the cache is in use
+     * @return bool
+     */
     public function isCacheInUse() : bool;
 }

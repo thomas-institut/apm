@@ -25,6 +25,7 @@ use APM\Core\Item\MarkType;
 use APM\Core\Item\TextualItem;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item as ApItem;
+use RuntimeException;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\PrintCodeDebugTrait;
 use ThomasInstitut\TimeString\InvalidTimeZoneException;
@@ -34,12 +35,12 @@ use ThomasInstitut\TimeString\MalformedStringException;
 /**
  *
  * In essence  an array of rows coming straight
- * from the database in. The main purpose of this class is to couple this
+ * from the database. The main purpose of this class is to couple this
  * raw data to the Witness abstractions in the new APM design.
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class DatabaseItemStream implements  CodeDebugInterface{
+class DatabaseItemStream implements CodeDebugInterface{
 
     use PrintCodeDebugTrait;
     /**
@@ -47,10 +48,8 @@ class DatabaseItemStream implements  CodeDebugInterface{
      * @var array 
      */
     private array $items;
-    /**
-     * @var int|string
-     */
-    private $lang;
+
+    private string $langCode;
 
     /**
      * DatabaseItemStream constructor
@@ -62,16 +61,14 @@ class DatabaseItemStream implements  CodeDebugInterface{
      *
      * @param int $docId
      * @param array $itemSegments
-     * @param string $defaultLang
+     * @param string $defaultLangCode
      * @param array $edNotes
      * @param bool $debugMode
-     * @throws InvalidTimeZoneException
-     * @throws MalformedStringException
      */
-    public function __construct(int $docId, array $itemSegments, string $defaultLang = 'la', array $edNotes = [], bool $debugMode = false) {
+    public function __construct(int $docId, array $itemSegments, string $defaultLangCode = 'la', array $edNotes = [], bool $debugMode = false) {
         $this->items = [];
-        $itemFactory = new ItemStreamItemFactory($defaultLang);
-        $langs = [];
+        $itemFactory = new ItemStreamItemFactory($defaultLangCode);
+        $languages = [];
 
         $this->debugMode = $debugMode;
         $this->codeDebug("Constructing DatabaseItemStream");
@@ -80,14 +77,14 @@ class DatabaseItemStream implements  CodeDebugInterface{
             $previousElementId = -1;
             $previousTbIndex = -1;
             $previousElementType = -1;
-            // the first fakeItemId to be used, it should be only relevant locally within the itemstream
+            // the first fakeItemId to be used, it should be only relevant locally within the item stream
             // but in order to avoid unintended problems it's better to use a number that is unlikely
             // to be used as an item id for real in a long time. For reference, after about 3 years of use,
             // as of Feb 2020, the highest itemId in the production database is around 660 000
             $fakeItemIdStart  = 999000000000;
             
             foreach ($itemRows as $i => $row) {
-                $this->codeDebug("** ItemRow $i: pei $previousElementId, ptbi $previousTbIndex, pet $previousElementType, text='" . $row['text'] . "'") ;
+                $this->codeDebug("** ItemRow $i: pei $previousElementId, previous tbi $previousTbIndex, pet $previousElementType, text='" . $row['text'] . "'") ;
                 $address = new AddressInDatabaseItemStream();
                 $address->setFromItemStreamRow($docId, $row);
                 $ceId = intval($row['ce_id']);
@@ -135,17 +132,22 @@ class DatabaseItemStream implements  CodeDebugInterface{
                 }
 
                 $lang = $row['lang'];
-                if (!isset($langs[$lang])) {
-                    $langs[$lang] = 0;
+                if (!isset($languages[$lang])) {
+                    $languages[$lang] = 0;
                 }
-                $langs[$lang]++;
+                $languages[$lang]++;
 
                 $item = $itemFactory->createItemFromRow($row);
 
                 $itemId = $address->getItemId();
                 $noteIndexes = $this->findNoteIndexesById($edNotes, $itemId );
                 foreach ($noteIndexes as $noteIndex) {
-                    $note = $itemFactory->createItemNoteFromRow($edNotes[$noteIndex]);
+                    try {
+                        $note = $itemFactory->createItemNoteFromRow($edNotes[$noteIndex]);
+                    } catch (InvalidTimeZoneException|MalformedStringException $e) {
+                        // should never happen
+                        throw new RuntimeException("Unexpected exception when creating note for item id $itemId: " . $e->getMessage());
+                    }
                     $item->addNote($note);
                 }
                 $this->codeDebug("Inserting item");
@@ -157,17 +159,17 @@ class DatabaseItemStream implements  CodeDebugInterface{
         }
         $maxLang = 0;
         $streamLang = '';
-        foreach($langs as $code => $itemCount) {
+        foreach($languages as $code => $itemCount) {
             if ($itemCount > $maxLang) {
                 $streamLang = $code;
                 $maxLang = $itemCount;
             }
         }
-        $this->lang = $streamLang;
+        $this->langCode = $streamLang;
     }
 
     public function getLang(): string {
-        return $this->lang;
+        return $this->langCode;
     }
     
     public function getItems() : array {

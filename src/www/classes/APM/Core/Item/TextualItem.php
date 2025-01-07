@@ -29,6 +29,7 @@ use InvalidArgumentException;
  * This class captures the different ways in which text can appear in a text
  * box in a transcription. It consists of a primary text with a series of attributes
  * that determine its appearance and role within the transcription:
+ *
  *   - hand
  *   - character format: e.g. rubric, initial, ...
  *   - normalization: normalized text and type of normalization (abbreviation, orthography, ...)
@@ -41,48 +42,27 @@ use InvalidArgumentException;
  */
 class TextualItem extends Item {
     
-    /** @var string */
-    protected $text;
-    
-    /** @var string */
-    protected $normalizedText;
-    
-    /** @var string */
-    protected $normalizationType;
+    protected string $text;
+    protected string $normalizedText;
+    protected string $normalizationType;
     const NORMALIZATION_NONE = '';
-    
-    /** @var string */
-    protected $language;
+    protected string $language;
     const LANG_NONE = '';
-
-
-    /** @var int */
-    protected $hand;
+    protected int $hand;
     const DEFAULT_HAND = 0;
     
-    /** @var string */
-    protected $format;
+    protected string $format;
     const FORMAT_NONE = '';
-    
-    /** @var string */
-    protected $deletion;
+    protected string $deletion;
     const DELETION_NONE='';
-    
-    /** @var float */
-    protected $clarity;
+    protected float $clarity;
     const CLARITY_CLEAR = 1.0;
     const CLARITY_UNCLEAR = 0.5;
     const CLARITY_ILLEGIBLE = 0;
-    
-    /** @var string */
-    protected $clarityReason;
+    protected string $clarityReason;
     const CLARITY_REASON_NONE = '';
     
-    
-    /** @var array */
-    protected $alternateTexts;
-    
-    
+    protected array $alternateTexts;
     
     public function __construct(string $t) {
         
@@ -95,32 +75,35 @@ class TextualItem extends Item {
         $this->setHand(self::DEFAULT_HAND);
         $this->setFormat(self::FORMAT_NONE);
         $this->setLanguage(self::LANG_NONE);
-//        $this->setTextualFlow(self::FLOW_MAIN_TEXT);
-//        $this->setLocation(self::LOCATION_INLINE);
-        $this->setClarity(self::CLARITY_CLEAR, self::CLARITY_REASON_NONE);
+        $this->setClarity(self::CLARITY_CLEAR);
         $this->setDeletion(self::DELETION_NONE);
         $this->setAlternateTexts([]);
     }
     
-    public function getPlainText() {
+    public function getPlainText(): string
+    {
         return $this->sanitizeText($this->text);
     }
     
-    public function setPlainText(string $text) {
+    public function setPlainText(string $text): void
+    {
         $this->text = $text;
     }
 
-    public function getNormalizedText() {
+    public function getNormalizedText(): string
+    {
         if ($this->normalizationType === self::NORMALIZATION_NONE) {
             return $this->getPlainText();
         }
         return $this->sanitizeText($this->normalizedText);
     }
 
-    public function getNormalizationType() {
+    public function getNormalizationType(): string
+    {
         return $this->normalizationType;
     }
-    public function setNormalization(string $normalizedText, string $normalizationType) {
+    public function setNormalization(string $normalizedText, string $normalizationType): void
+    {
         $this->normalizationType = $normalizationType;
         if ($normalizedText === '') {
             // If no normalized text is given, then just copy the main text
@@ -132,36 +115,44 @@ class TextualItem extends Item {
         
     }
     
-    public function setHand(int $hand) {
+    public function setHand(int $hand): void
+    {
         $this->hand = $hand;
     }
     
-    public function getHand() {
+    public function getHand(): int
+    {
         return $this->hand;
     }
     
-    public function setLanguage(string $lang) {
+    public function setLanguage(string $lang): void
+    {
         $this->language = $lang;
     }
     
-    public function getLanguage() {
+    public function getLanguage(): string
+    {
         return $this->language;
     }
     
-    public function setFormat(string $format) {
+    public function setFormat(string $format): void
+    {
         $this->format = $format;
     }
     
-    public function getFormat() {
+    public function getFormat(): string
+    {
         return $this->format;
     }
     
-    public function setClarity(float $clarityIndex, string $reason = self::CLARITY_REASON_NONE) {
+    public function setClarity(float $clarityIndex, string $reason = self::CLARITY_REASON_NONE): void
+    {
         $this->clarity = $clarityIndex;
         $this->clarityReason = $reason;
     }
     
-    public function getClarityValue() {
+    public function getClarityValue(): float
+    {
         return $this->clarity;
     }
     
@@ -169,11 +160,13 @@ class TextualItem extends Item {
         return $this->clarityReason;
     }
     
-    public function setSingleAlternateText(string $text) {
+    public function setSingleAlternateText(string $text): void
+    {
         $this->alternateTexts = [ $text ];
     }
     
-    public function setAlternateTexts(array $texts) {
+    public function setAlternateTexts(array $texts): void
+    {
         $this->alternateTexts = $texts;
     }
     
@@ -181,7 +174,8 @@ class TextualItem extends Item {
         return $this->alternateTexts;
     }
     
-    public function setDeletion(string $technique) {
+    public function setDeletion(string $technique): void
+    {
         $this->deletion = $technique;
     }
     

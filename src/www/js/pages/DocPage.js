@@ -395,7 +395,7 @@ export class DocPage extends NormalPage {
 
     new CollapsePanel({
       containerSelector: 'div.page-admin',
-      title: 'Page Admin',
+      title: 'Manage Pages',
       content: this.getPageAdminHtml(),
       initiallyShown: false,
       iconWhenHidden: '<small><i class="bi bi-caret-right-fill"></i></small>',
@@ -622,7 +622,6 @@ export class DocPage extends NormalPage {
                    <div class="panel-content">
                     <div class="page-list"></div>
                     <div class="page-admin">
-                    
                 </div>
                     
                    </div>

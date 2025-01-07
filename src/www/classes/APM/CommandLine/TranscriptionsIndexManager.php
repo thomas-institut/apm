@@ -22,6 +22,7 @@ namespace APM\CommandLine;
 
 use APM\System\ApmConfigParameter;
 use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\PythonLemmatizer;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
@@ -87,7 +88,7 @@ class TranscriptionsIndexManager extends OpenSearchIndexManager {
 
             // Get pageID, number of columns and sequence number of the page
             $page_id = $this->getPageID($doc_id, $page);
-            $page_info = $this->getDm()->getPageInfo($page_id);
+            $page_info = $this->getSystemManager()->getDocumentManager()->getLegacyPageInfo($page_id);
             $num_cols = $page_info['num_cols'];
             $seq = $this->getSeq($doc_id, $page);
 
@@ -159,10 +160,14 @@ class TranscriptionsIndexManager extends OpenSearchIndexManager {
         return $doc_info['title'];
     }
 
-    public function getSeq(int $doc_id, int $page): string {
-        $page_id = $this->getDm()->getpageIDByDocPage($doc_id, $page);
-        $page_info = $this->getDm()->getPageInfo($page_id);
-        return $page_info['seq'] ?? '';
+    /**
+     * @throws PageNotFoundException
+     * @throws DocumentNotFoundException
+     */
+    public function getSeq(int $docId, int $page): string {
+        $docManager = $this->getSystemManager()->getDocumentManager();
+        $pageId = $docManager->getPageIdByDocPage($docId, $page);
+        return $docManager->getPageInfo($pageId)->sequence;
     }
 
     public function getTranscription(int $doc_id, int $page, int $col): string

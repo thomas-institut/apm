@@ -280,17 +280,17 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
 
 
         // transcription editor
-        $group->get('/doc/{doc}/page/{seq}/view[/c/{col}]',
+        $group->get('/doc/{doc}/page/{n}/view[/c/{col}]',
             function(Request $request, Response $response) use ($container){
-                return (new SitePageViewer($container))->pageViewerPageByDocSeq($request, $response);
+                return (new SitePageViewer($container))->pageViewerPageByDoc($request, $response, false);
             })
             ->setName('doc.page.transcribe');
 
         // transcription editor (real pages)
 
-        $group->get('/doc/{doc}/realpage/{page}/view',
+        $group->get('/doc/{doc}/realPage/{n}/view[/c/{col}]',
             function(Request $request, Response $response) use ($container){
-                return (new SitePageViewer($container))->pageViewerPageByDocPage($request, $response);
+                return (new SitePageViewer($container))->pageViewerPageByDoc($request, $response, true);
             })
             ->setName('doc.page.transcribe.realPage');
 

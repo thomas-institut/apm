@@ -23,6 +23,7 @@ namespace APM\Api;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Person\PersonNotFoundException;
+use APM\System\Transcription\ApmTranscriptionManager;
 use APM\System\Transcription\ColumnVersionInfo;
 use APM\System\User\UserTag;
 use AverroesProject\ColumnElement\Element;
@@ -55,6 +56,8 @@ class ApiElements extends ApiController
     {
 
         $dataManager = $this->getDataManager();
+        $txManager = $this->systemManager->getTranscriptionManager();
+        $docManager = $this->systemManager->getDocumentManager();
         $this->profiler->start();
 
         $userManager = $this->systemManager->getUserManager();
@@ -135,7 +138,7 @@ class ApiElements extends ApiController
         }
 
         // Check elements and force hand ID on items
-        $pageId = $dataManager->getPageIdByDocPage($docId, $pageNumber);
+        $pageId = $docManager->getPageIdByDocPage($docId, $pageNumber);
         $newElementsArray = $inputDataObject['elements'];
         $edNotes = $inputDataObject['ednotes'];
         
@@ -307,7 +310,7 @@ class ApiElements extends ApiController
                               'updateTime' => $updateTime
                             ]);
 
-        $newElements = DataManager::createElementArrayFromArray($newElementsArray);
+        $newElements = ApmTranscriptionManager::createElementArrayFromArray($newElementsArray);
         // Get the editorial notes
         $edNotes  = EdNoteManager::buildEdNoteArrayFromInputArray($inputDataObject['ednotes'], $this->logger);
 

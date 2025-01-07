@@ -22,6 +22,7 @@ namespace APM\Api;
 
 use APM\EntitySystem\Schema\Entity;
 use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\Transcription\ColumnVersionInfo;
 use APM\ToolBox\HttpStatus;
@@ -73,18 +74,19 @@ class ApiTranscription extends ApiController
      *
      * @param array $versions
      * @return array
+     * @throws PageNotFoundException
      */
     protected function getDocsFromVersions(array $versions) : array {
         $docIds = [];
-        $dm = $this->getDataManager();
+        $docManager = $this->systemManager->getDocumentManager();
         foreach($versions as $version) {
             /**@var $version ColumnVersionInfo */
-            $pageInfo = $dm->getPageInfo($version->pageId);
-            $docId = intval($pageInfo['doc_id']);
+            $pageInfo = $docManager->getPageInfo($version->pageId);
+            $docId = $pageInfo->docId;
             if (!isset($docIds[$docId])) {
                 $docIds[$docId] = [];
             }
-            $docIds[$docId][] = intval($pageInfo['page_number']);
+            $docIds[$docId][] = $pageInfo->pageNumber;
         }
 
         return $docIds;

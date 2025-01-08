@@ -30,7 +30,6 @@ use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
-use APM\System\DataRetrieveHelper;
 use APM\System\Document\DocInfo;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
@@ -151,6 +150,7 @@ class SiteCollationTable extends SiteController
         $ctManager = $this->systemManager->getCollationTableManager();
         $versionInfoArray = $ctManager->getCollationTableVersions($tableId);
 
+
         if (count($versionInfoArray) === 0) {
             $this->logger->info("No version info found, table probably does not exist");
             $versionId = 0;
@@ -226,9 +226,11 @@ class SiteCollationTable extends SiteController
         }
 
         $docs = $this->getMentionedDocsFromCtData($ctData);
-        $helper = new DataRetrieveHelper();
-        $helper->setLogger($this->logger);
-        $docInfo = $helper->getDocInfoArrayFromList($docs, $this->systemManager->getDocumentManager());
+        $docManager = $this->systemManager->getDocumentManager();
+        $docInfoArray  = array_map( function ($id) use ($docManager) {
+            return $docManager->getDocInfo($id);
+        }, $docs);
+
 
         $this->profiler->stop();
         $this->logProfilerData("Edit Collation Table");
@@ -247,7 +249,7 @@ class SiteCollationTable extends SiteController
             'collationTableData' => $ctData,
             'workInfo' => $workInfo,
             'peopleInfo' => $peopleInfo,
-            'docInfo' => $docInfo,
+            'docInfo' => $docInfoArray,
             'versionInfo' => $versionInfoArray,
             'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
             'versionId' => $versionId,

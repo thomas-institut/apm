@@ -23,42 +23,41 @@ namespace APM\System\Transcription;
 use InvalidArgumentException;
 
 /**
- * The location of an item in the APM database:
+ * The full location of a transcription item in the APM database:
  *   doc_id, page sequence, column number, element sequence, item sequence
  *
  *
- * @package APM\FullTranscription
  */
 class ApmItemLocation
 {
     /**
      * @var int
      */
-    public $docId;
+    public int $docId;
 
     /**
      * @var int
      */
-    public $pageSequence;
+    public int $pageSequence;
 
     /**
      * @var int
      */
-    public $columnNumber;
+    public int $columnNumber;
 
     /**
      * @var int
      */
-    public $elementSequence;
+    public int $elementSequence;
 
     /**
      * @var int
      */
-    public $itemSequence;
+    public int $itemSequence;
     /**
      * @var int
      */
-    public $pageId;
+    public int $pageId;
 
 
     public function __construct()
@@ -86,17 +85,24 @@ class ApmItemLocation
             $this->itemSequence;
     }
 
-    public function isAfter(ApmItemLocation $loc2)
+    /**
+     * Returns true if the item location is after the given location
+     * @param ApmItemLocation $loc2
+     * @return bool
+     */
+    public function isAfter(ApmItemLocation $loc2): bool
     {
         if ($this->docId !== $loc2->docId) {
             throw new InvalidArgumentException("Cannot determine order of locations in different documents");
         }
-
         return $this->getIntLocation() > $loc2->getIntLocation();
-
     }
 
-    public function isZero() : bool {
+    /**
+     * Returns true if none of the location's values have been set
+     * @return bool
+     */
+    public function hasNotBeenSet() : bool {
         return $this->getIntLocation() === 0;
     }
 

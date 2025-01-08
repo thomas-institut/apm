@@ -338,7 +338,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * Returns the editors associated with a document as a list of usernames
      * @param int $docId
      * @return array
-     * @deprecated Will be changes by a function in DocumentManager
+     * @deprecated Will be changed by a function in DocumentManager
      */
     function getEditorTidsByDocId(int $docId): array
     {

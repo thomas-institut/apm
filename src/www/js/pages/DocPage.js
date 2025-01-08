@@ -50,7 +50,7 @@ export class DocPage extends NormalPage {
     super(options)
 
     let oc = new OptionsChecker({
-      context: 'DocumentDetailsPage',
+      context: 'DocumentPage',
       optionsDefinition: {
         doc: { type: 'object', required: true},
         chunkInfo: {type: 'object', required: true},

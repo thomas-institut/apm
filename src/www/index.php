@@ -297,7 +297,7 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
         // show document
         $group->get('/doc/{id}[/{params:.*}]',
             function(Request $request, Response $response, array $args) use ($container){
-                return (new SiteDocuments($container))->showDocPage($request, $response, $args);
+                return (new SiteDocuments($container))->documentPage($request, $response, $args);
             })
             ->setName('doc.show');
 

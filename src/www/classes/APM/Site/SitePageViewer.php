@@ -100,7 +100,7 @@ class SitePageViewer extends SiteController
             $activeColumn = 1;
         }
         $docManager = $this->systemManager->getDocumentManager();
-        $dataManager = $this->systemManager->getDataManager();
+        $txManager = $this->systemManager->getTranscriptionManager();
         try {
             $docInfo = $docManager->getLegacyDocInfo($docId);
             if ($byPage) {
@@ -112,13 +112,13 @@ class SitePageViewer extends SiteController
             $pageNumber = $pageInfo['page_number'];
             $seq = $pageInfo['seq'];
             $docPageCount = $docManager->getDocPageCount($docId);
-            $pagesInfo = $docManager->getLegacyDocPageInfoArray($docId, DataManager::ORDER_BY_SEQ);
-            $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
+            $legacyPageInfoArray = $docManager->getLegacyDocPageInfoArray($docId, DataManager::ORDER_BY_SEQ);
+            $transcribedPages = $txManager->getTranscribedPageListByDocId($docId);
             $imageSources = $this->systemManager->getImageSources();
             $imageUrl = $docManager->getImageUrl($docId, $pageInfo['img_number'], ApmImageType::IMAGE_TYPE_DEFAULT, $imageSources);
             $deepZoom = $docManager->isDocDeepZoom($docId) ? '1' : '0';
             $activeWorks = $this->getActiveWorks();
-            $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
+            $thePages = $this->buildPageArray($legacyPageInfoArray, $transcribedPages);
             $languagesArray = $this->getLanguages();
 
             $pageNumberFoliation = $pageInfo['seq'];

@@ -135,8 +135,8 @@ class SiteChunkPage extends SiteController
                     $segmentArray =  $witnessInfo->typeSpecificInfo['segments'];
                     foreach ($segmentArray as $segment) {
                         /** @var $segment ApmChunkSegmentLocation */
-                        $pagesMentioned[] = $segment->start->pageId;
-                        $pagesMentioned[] = $segment->end->pageId;
+                        $pagesMentioned[] = $segment->getStart()->pageId;
+                        $pagesMentioned[] = $segment->getEnd()->pageId;
                     }
                     break;
                 default:
@@ -154,7 +154,9 @@ class SiteChunkPage extends SiteController
         $helper = new DataRetrieveHelper();
         $helper->setLogger($this->logger);
 
-        $pageInfoArray = $helper->getPageInfoArrayFromList($pagesMentioned, $this->systemManager->getDocumentManager());
+        $pageInfoArray = array_map( function ($pageId) {
+            return $this->systemManager->getDocumentManager()->getPageInfo($pageId);
+        }, $pagesMentioned);
 
         $showAdminInfo = false;
         if ($this->systemManager->getUserManager()->isRoot($this->userId)) {

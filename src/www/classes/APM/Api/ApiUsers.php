@@ -246,12 +246,7 @@ class ApiUsers extends ApiController
         $helper = new DataRetrieveHelper();
         $helper->setLogger($systemManager->getLogger());
         $docIds = $txManager->getDocIdsTranscribedByUser($userId);
-        try {
-            $docInfoArray = $helper->getDocInfoArrayFromList($docIds, $docManager);
-        } catch (DocumentNotFoundException) {
-            // should never happen
-            throw new RuntimeException("Document not found while getting docInfo array");
-        }
+        $docInfoArray = $helper->getDocInfoArrayFromList($docIds, $docManager);
         $allPageIds = [];
 
         foreach($docIds as $docId) {
@@ -262,12 +257,14 @@ class ApiUsers extends ApiController
             }
         }
 
-        try {
-            $pageInfoArray = $helper->getPageInfoArrayFromList($allPageIds, $docManager);
-        } catch (PageNotFoundException) {
-            // should never happen
-            throw new RuntimeException("Document not found while getting pageInfo array");
-        }
+        $pageInfoArray = array_map( function ($pageId) use ($docManager) {
+            try {
+                $pageInfo = $docManager->getPageInfo($pageId);
+            } catch (PageNotFoundException) {
+                return null;
+            }
+            return $pageInfo;
+        }, $allPageIds);
         return [
             'docIds' => $docIds,
             'docInfoArray' => $docInfoArray,

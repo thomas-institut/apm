@@ -44,7 +44,7 @@ class ApmChunkMarkLocation extends ApmItemLocation
     /**
      * @var int
      */
-    public $docId;
+    public int $docId;
     /**
      * @var string
      */

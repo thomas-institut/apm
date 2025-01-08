@@ -311,7 +311,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             $segLocation = $locations[$segmentNumber];
             /** @var ApmChunkSegmentLocation $segLocation */
             $this->codeDebug(sprintf("Processing segment Number %d, %d -> %d",
-                $segmentNumber,$this->calcSeqNumber($segLocation->start), $this->calcSeqNumber($segLocation->end) ));
+                $segmentNumber,$this->calcSeqNumber($segLocation->getStart()), $this->calcSeqNumber($segLocation->getEnd()) ));
             if ($segLocation->isValid()) {
                 $apItemStream = $this->getItemStreamForSegmentLocation($segLocation, $timeStamp);
                 foreach($apItemStream as $row) {
@@ -329,8 +329,8 @@ class ApmTranscriptionManager extends TranscriptionManager
         $txWitness = new ApmTranscriptionWitness($docId, $workId, $chunkNumber, $localWitnessId, $timeStamp, $itemStream);
         /** @var ApmChunkSegmentLocation $firstLocation */
         $firstLocation = $locations[array_keys($locations)[0]];
-        $firstPageId = $firstLocation->start->pageId;
-        $firstColumn = $firstLocation->start->columnNumber;
+        $firstPageId = $firstLocation->getStart()->pageId;
+        $firstColumn = $firstLocation->getStart()->columnNumber;
         $firstLineNumber = $this->getInitialLineNumberForStartLocation( $firstLocation, $timeStamp);
         $this->logger->debug('First Line number: ' . $firstLineNumber);
         $txWitness->setInitialLineNumberForTextBox($firstPageId, $firstColumn, $firstLineNumber);
@@ -359,10 +359,10 @@ class ApmTranscriptionManager extends TranscriptionManager
 
     private function getInitialLineNumberForStartLocation(ApmChunkSegmentLocation $location, string $timeString) : int {
         $this->codeDebug("Getting initial line numbers for start location");
-        $seqNumberStart = $this->calcSeqNumber($location->start);
-        $seqNumberColumnStart = $this->calcSeqNumberGeneric($location->start->pageSequence, $location->start->columnNumber, 0 , 0);
+        $seqNumberStart = $this->calcSeqNumber($location->getStart());
+        $seqNumberColumnStart = $this->calcSeqNumberGeneric($location->getStart()->pageSequence, $location->getStart()->columnNumber, 0 , 0);
 
-        $rows = $this->getItemRowsBetweenSeqNumbers($seqNumberColumnStart, $seqNumberStart, $timeString, $location->start->docId);
+        $rows = $this->getItemRowsBetweenSeqNumbers($seqNumberColumnStart, $seqNumberStart, $timeString, $location->getStart()->docId);
         $this->codeDebug("Got " . count($rows) . " rows");
         $lineNumber = 1;
         foreach ($rows as $i => $row) {
@@ -418,11 +418,11 @@ class ApmTranscriptionManager extends TranscriptionManager
     }
 
     private function getItemStreamForSegmentLocation(ApmChunkSegmentLocation $location, string $timeString) : array {
-        $seqNumberStart = $this->calcSeqNumber($location->start);
-        $seqNumberEnd = $this->calcSeqNumber($location->end);
+        $seqNumberStart = $this->calcSeqNumber($location->getStart());
+        $seqNumberEnd = $this->calcSeqNumber($location->getEnd());
 
         // get all rows between seq numbers
-        $rows = $this->getItemRowsBetweenSeqNumbers($seqNumberStart, $seqNumberEnd, $timeString, $location->start->docId);
+        $rows = $this->getItemRowsBetweenSeqNumbers($seqNumberStart, $seqNumberEnd, $timeString, $location->getStart()->docId);
 
         // Process the rows filtering out all but main text rows and including additions items at the proper
         // places
@@ -600,37 +600,37 @@ class ApmTranscriptionManager extends TranscriptionManager
                 // Initialize the chunk segment location
                 $segmentLocation = new ApmChunkSegmentLocation();
                 if ($location->type === 'start') {
-                    $segmentLocation->start = $location;
+                    $segmentLocation->setStart($location);
                 } else {
-                    $segmentLocation->end = $location;
+                    $segmentLocation->setEnd($location);
                 }
                 $chunkLocations[$location->workId][$location->chunkNumber][$location->docId][$location->witnessLocalId][$location->segmentNumber] = $segmentLocation;
                 continue;
             }
             /** @var ApmChunkSegmentLocation $segmentLocation */
             $segmentLocation = $chunkLocations[$location->workId][$location->chunkNumber][$location->docId][$location->witnessLocalId][$location->segmentNumber];
-            if ($segmentLocation->getChunkError() === ApmChunkSegmentLocation::DUPLICATE_CHUNK_START_MARKS ||
-                $segmentLocation->getChunkError() === ApmChunkSegmentLocation::DUPLICATE_CHUNK_END_MARKS) {
+            if ($segmentLocation->getStatus() === ChunkSegmentLocationStatus::DUPLICATE_CHUNK_START_MARKS ||
+                $segmentLocation->getStatus() === ChunkSegmentLocationStatus::DUPLICATE_CHUNK_END_MARKS) {
                 // there's already a duplicate chunk mark error in the segment, skip the current location
                 continue;
             }
             if ($location->type === 'start') {
-                if ($segmentLocation->start->isZero()) {
+                if ($segmentLocation->getStart()->hasNotBeenSet()) {
                     // start location not set, set it now
-                    $segmentLocation->start = $location;
+                    $segmentLocation->setStart($location);
                 } else {
                     // start location already set, this means the current location is a duplicate start mark
                     $this->logger->debug('Duplicate chunk start mark found', [ $location]);
-                    $segmentLocation->setDuplicateChunkMarkError(true);
+                    $segmentLocation->setDuplicateChunkMarkStatus(true);
                 }
             } else {
-                if ($segmentLocation->end->isZero()) {
+                if ($segmentLocation->getEnd()->hasNotBeenSet()) {
                     // end location not set, set it now
-                    $segmentLocation->end = $location;
+                    $segmentLocation->setEnd($location);
                 } else {
                     // end location already set, this means the current location is a duplicate end mark
                     $this->logger->debug('Duplicate chunk end mark found', [ $location]);
-                    $segmentLocation->setDuplicateChunkMarkError(false);
+                    $segmentLocation->setDuplicateChunkMarkStatus(false);
                 }
             }
         }
@@ -693,7 +693,6 @@ class ApmTranscriptionManager extends TranscriptionManager
             " AND $tp.valid_until>'$timeString'" .
             " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
 
-//        $this->codeDebug("SQL Query", [ $query]);
         $r = $this->getDatabaseHelper()->query($query);
 
         $chunkMarkLocations = [];
@@ -741,8 +740,10 @@ class ApmTranscriptionManager extends TranscriptionManager
 
         $dbDocId = $this->getDocumentManager()->getLegacyDocId($docId);
 
+        $this->logger->debug("Doc Id $docId, DB docId $dbDocId");
 
-        $query =  'SELECT DISTINCT p.`page_number` AS page_number FROM ' .
+
+        $query = 'SELECT DISTINCT p.`page_number` AS page_number FROM ' .
             $tp . ' AS p' .
             ' JOIN ' . $te . ' AS e ON p.id=e.page_id' .
             ' WHERE p.doc_id=' . $dbDocId .
@@ -752,8 +753,9 @@ class ApmTranscriptionManager extends TranscriptionManager
         $r = $this->getDatabaseHelper()->query($query);
         $pages = [];
         while ($row = $r->fetch(PDO::FETCH_ASSOC)){
-            $pages[] = $row['page_number'];
+            $pages[] = intval($row['page_number']);
         }
+        $this->logger->debug("Pages", [ 'pages' => $pages]);
         return $pages;
     }
 
@@ -810,14 +812,14 @@ class ApmTranscriptionManager extends TranscriptionManager
         if (!$chunkSegmentLocation->isValid()) {
             return [];
         }
-        $docId = $chunkSegmentLocation->start->docId;
+        $docId = $chunkSegmentLocation->getStart()->docId;
 
-        $startPageSeq = $chunkSegmentLocation->start->pageSequence;
-        $startColumn = $chunkSegmentLocation->start->columnNumber;
+        $startPageSeq = $chunkSegmentLocation->getStart()->pageSequence;
+        $startColumn = $chunkSegmentLocation->getStart()->columnNumber;
 
 
-        $endPageSeq = $chunkSegmentLocation->end->pageSequence;
-        $endColumn = $chunkSegmentLocation->end->columnNumber;
+        $endPageSeq = $chunkSegmentLocation->getEnd()->pageSequence;
+        $endColumn = $chunkSegmentLocation->getEnd()->columnNumber;
 
         $segmentVersions = [];
         try {
@@ -989,7 +991,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                     /** @var $segment ApmChunkSegmentLocation */
                     if (!$segment->isValid()) {
                         $isValid = false;
-                        $invalidErrorCode = $segment->getChunkError();
+                        $invalidErrorCode = $segment->getStatus();
                     }
                 }
                 $witnessInfo->isValid = $isValid;

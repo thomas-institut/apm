@@ -3,7 +3,6 @@
 namespace APM\System;
 
 use APM\System\Document\DocumentManager;
-use APM\System\Person\PersonManagerInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 
@@ -34,20 +33,6 @@ class DataRetrieveHelper implements LoggerAwareInterface
             }
         }
         return $infoArray;
-    }
-
-    /**
-     * @param array $pageList
-     * @param DocumentManager $documentManager
-     * @return array
-     */
-    public function getPageInfoArrayFromList(array $pageList, DocumentManager $documentManager) : array {
-        return $this->getInfoFromIdList(
-            $pageList,
-            function ($id) use ($documentManager) {
-                return $documentManager->getPageInfo($id);
-            }
-        );
     }
 
     /**

@@ -21,6 +21,8 @@
 namespace APM\CommandLine;
 
 use APM\CollationTable\CollationTableManager;
+use APM\EntitySystem\Schema\Entity;
+use APM\EntitySystem\Schema\EntityTypes;
 use APM\System\ApmConfigParameter;
 use APM\System\Lemmatizer;
 use AverroesProject\ColumnElement\Element;
@@ -38,6 +40,7 @@ use OpenSearch\ClientBuilder;
  */
 
 class IndexManager extends CommandLineUtility {
+
 
     /**
      * This main function is called from the command line. Depending on the arguments given to the index manager command line tool,
@@ -91,13 +94,16 @@ class IndexManager extends CommandLineUtility {
             case 'fix':
                 $this->checkAndfixIndex($argv[3], $argv[4]);
                 break;
-            case 'add': // adds a new single doc to an index
+            case 'add': // adds a new single item to an index
                 $this->addItem($argv[3], $argv[4]);
                 break;
-            case 'update': // updates an existing doc in an index
+            case 'update': // updates an existing item in an index
                 $this->updateItem($argv[3], $argv[4]);
                 break;
-            case 'remove': // removes a doc from an index
+            case 'update-add': // updates an item if already indexed, otherwise adds the item to the index
+                $this->updateOrAddItem($argv[3], $argv[4]);
+                break;
+            case 'remove': // removes an item from an index
                 $this->removeItem($argv[3], $argv[4]);
                 break;
             default:
@@ -146,7 +152,10 @@ class IndexManager extends CommandLineUtility {
      */
     private function buildIndexTranscriptions(): bool {
         // get a list of all docIDs in the sql-database
-        $doc_list = $this->getDm()->getDocIdList('title');
+        // $doc_list = $this->getDm()->getDocIdList('title');
+
+        // HERE
+        $doc_list = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType('doc');
 
         // get all relevant data for every transcription and index it
         foreach ($doc_list as $doc_id) {
@@ -309,8 +318,8 @@ class IndexManager extends CommandLineUtility {
             foreach ($pages_transcribed as $page) {
 
                 $page_id = $this->getPageID($doc, $page);
-                $page_info = $this->getDm()->getPageInfo($page_id);
-                $num_cols = $page_info['num_cols'];
+                $page_info = $this->getSystemManager()->getDocumentManager()->getPageInfo($page_id);
+                $num_cols = $page_info->numCols;
 
                 for ($col = 1; $col <= $num_cols; $col++) {
 
@@ -639,12 +648,12 @@ class IndexManager extends CommandLineUtility {
 
         // Get other relevant data for indexing
         $title = $this->getTitle($doc_id);
-        $page = $this->getDm()->getPageInfo($pageID)['page_number'];
+        $page = $this->getSystemManager()->getDocumentManager()->getPageInfo($pageID)->pageNumber;
         $seq = $this->getSeq($doc_id, $page);
         $foliation = $this->getFoliation($doc_id, $page);
         $transcriber = $this->getTranscriber($doc_id, $page, $col);
         $transcription = $this->getTranscription($doc_id, $page, $col);
-        $lang = $this->getLang($doc_id, $page);
+        $lang = $this->getLang($pageID);
 
         // Get timestamp
         $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
@@ -707,8 +716,8 @@ class IndexManager extends CommandLineUtility {
 
     /**
      * Checks if the target item is already indexed, and if so, removes it and adds it again in the latest version from sql database.
-     * @param string $arg1
-     * @param string|null $arg2
+     * @param string $arg1, page id in case of transcriptions, table id in case of editions
+     * @param string|null $arg2 column number in case of transcriptions
      * @return true
      */
     private function updateItem (string $arg1, string $arg2=null): bool {
@@ -728,6 +737,29 @@ class IndexManager extends CommandLineUtility {
         $id = $this->getOpenSearchIDAndIndexName($arg1, $arg2)['id'];
         $this->removeItem($arg1, $arg2, 'update');
         $this->addItem($arg1, $arg2, $id, 'update');
+
+        return true;
+    }
+
+    /**
+     * Updates the target item if already indexed, otherwise adds it as a new item to the target index
+     * @param string $arg1
+     * @param string|null $arg2
+     * @return true
+     */
+    private function updateOrAddItem (string $arg1, string $arg2=null): bool {
+
+        if (!$this->isAlreadyIndexed($arg1, $arg2)) {
+                $this->addItem($arg1, $arg2);
+
+        } else {
+
+            print ("Updating...\n");
+
+            $id = $this->getOpenSearchIDAndIndexName($arg1, $arg2)['id'];
+            $this->removeItem($arg1, $arg2, 'update');
+            $this->addItem($arg1, $arg2, $id, 'update');
+        }
 
         return true;
     }
@@ -814,12 +846,12 @@ class IndexManager extends CommandLineUtility {
 
         // Get other relevant data for indexing
         $title = $this->getTitle($doc_id);
-        $page = $this->getDm()->getPageInfo($pageID)['page_number'];
+        $page = $this->getSystemManager()->getDocumentManager()->getPageInfo($pageID)->pageNumber;
         $seq = $this->getSeq($doc_id, $page);
         $foliation = $this->getFoliation($doc_id, $page);
         $transcriber = $this->getTranscriber($doc_id, $page, $col);
         $transcription = $this->getTranscription($doc_id, $page, $col);
-        $lang = $this->getLang($doc_id, $page);
+        $lang = $this->getLang($pageID);
 
         // Get timestamp
         $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
@@ -1013,7 +1045,7 @@ class IndexManager extends CommandLineUtility {
 
             // get pageID, number of columns and sequence number of the page
             $page_id = $this->getPageID($doc_id, $page);
-            $page_info = $this->getDm()->getPageInfo($page_id);
+            $page_info = $this->getSystemManager()->getDocumentManager()->getPageInfo($page_id);
             $num_cols = $page_info['num_cols'];
             $seq = $this->getSeq($doc_id, $page);
 
@@ -1029,7 +1061,7 @@ class IndexManager extends CommandLineUtility {
                 $transcriber = $this->getTranscriber($doc_id, $page, $col);
 
                 // get language of current column (same as document)
-                $lang = $this->getLang($doc_id, $page);
+                $lang = $this->getLang($page_id);
 
                 // get foliation number of the current page/sequence number
                 $foliation = $this->getFoliation($doc_id, $page);
@@ -1176,6 +1208,7 @@ class IndexManager extends CommandLineUtility {
             $edition_data['lang'] = $data['lang'];
             $edition_data['chunk_id'] = explode('-', $data['chunkId'])[1];
             $work_id = explode('-', $data['chunkId'])[0];
+            // HERE
             $edition_data['title'] = $this->getDm()->getWorkInfoByDareId($work_id)['title'];
             $edition_data['timeFrom'] = $timeFrom;
         }
@@ -1336,13 +1369,15 @@ class IndexManager extends CommandLineUtility {
      * @return string
      */
     private function getDocIdByPageId (string $pageID): string {
-
+// HERE
         $docList = $this->getDm()->getDocIdList('title');
+        //$docList = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
+
         foreach ($docList as $doc) {
             $pages_transcribed = $this->getDm()->getTranscribedPageListByDocId($doc);
             foreach ($pages_transcribed as $page_transcribed) {
                 $currentPageID = $this->getPageID($doc, $page_transcribed);
-                if ((string) $currentPageID === $pageID or $currentPageID === $pageID) {
+                if ((string) $currentPageID === $pageID) {
                     return $doc;
                 }
             }
@@ -1392,15 +1427,15 @@ class IndexManager extends CommandLineUtility {
      * @return int
      */
     private function getPageID (int $doc_id, int $page): int {
-        return $this->getDm()->getpageIDByDocPage($doc_id, $page);
+        return $this->getSystemManager()->getDocumentManager()->getpageIDByDocPage($doc_id, $page);
     }
 
     /**
      * @param string $doc_id
      * @return string
      */
-    private function getTitle(string $doc_id): string {
-        $doc_info = $this->getDm()->getDocById((int) $doc_id);
+    public function getTitle(string $doc_id): string {
+        $doc_info = $this->getSystemManager()->getDocumentManager()->getLegacyDocInfo((int) $doc_id);
         return $doc_info['title'];
     }
 
@@ -1409,10 +1444,10 @@ class IndexManager extends CommandLineUtility {
      * @param int $page
      * @return string
      */
-    private function getSeq(int $doc_id, int $page): string {
-        $page_id = $this->getDm()->getpageIDByDocPage($doc_id, $page);
-        $page_info = $this->getDm()->getPageInfo($page_id);
-        return $page_info['seq'];
+    public function getSeq(int $doc_id, int $page): string {
+        $page_id = $this->getSystemManager()->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
+        $page_info = $this->getSystemManager()->getDocumentManager()->getPageInfo($page_id);
+        return $page_info->sequence;
     }
 
     /**
@@ -1424,7 +1459,7 @@ class IndexManager extends CommandLineUtility {
      */
     private function getTranscription(int $doc_id, int $page, int $col): string
     {
-        $page_id = $this->getDm()->getpageIDByDocPage($doc_id, $page);
+        $page_id = $this->getSystemManager()->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
         $elements = $this->getDm()->getColumnElementsBypageID($page_id, $col);
         return $this->getPlainTextFromElements($elements);
     }
@@ -1436,7 +1471,7 @@ class IndexManager extends CommandLineUtility {
      * @return string
      */
     private function getTranscriber(int $doc_id, int $page, int $col): string {
-        $page_id = $this->getDm()->getpageIDByDocPage($doc_id, $page);
+        $page_id = $this->getSystemManager()->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
         $versions = $this->getDm()->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
         if ($versions === []) {
             return '';
@@ -1452,9 +1487,9 @@ class IndexManager extends CommandLineUtility {
      * @param int $page
      * @return string
      */
-    private function getLang(int $doc_id, int $page): string {
-        $seq = $this->getSeq($doc_id, $page);
-        return $this->getDm()->getPageInfoByDocSeq($doc_id, $seq)['lang'];
+    private function getLang(string $page_id): string {
+        // return $this->getSystemManager()->getDocumentManager()->getPageInfo($page_id)->langCode;
+        return 'la';
     }
 
     /**
@@ -1462,9 +1497,18 @@ class IndexManager extends CommandLineUtility {
      * @param int $page
      * @return string
      */
-    private function getFoliation(int $doc_id, int $page): string
+    public function getFoliation(int $doc_id, int $page): string
     {
         $seq = $this->getSeq($doc_id, $page);
-        return $this->getDm()->getPageFoliationByDocSeq($doc_id,  $seq);
+
+        $info = $this->getSystemManager()->getTranscriptionManager()->getPageInfoByDocSeq($doc_id, $seq);
+        if ($info === false) {
+            return '';
+        }
+        if (is_null($info->foliation)) {
+            return $info->pageNumber;
+        }
+        return $info->foliation;
+
     }
 }

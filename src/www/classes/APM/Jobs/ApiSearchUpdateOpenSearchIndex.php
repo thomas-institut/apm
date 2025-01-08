@@ -3,7 +3,6 @@
 namespace APM\Jobs;
 
 use APM\System\ApmConfigParameter;
-use APM\System\Lemmatizer;
 use OpenSearch\ClientBuilder;
 
 abstract class ApiSearchUpdateOpenSearchIndex
@@ -19,19 +18,6 @@ abstract class ApiSearchUpdateOpenSearchIndex
             ->build();
     }
 
-    protected function generateUniqueOpenSearchId($indexManager, string $indexname): int
-    {
-        $opensearchID_list = $indexManager->getIDs($this->client, $indexname);
-        $max_id = max($opensearchID_list);
-        return $max_id + 1;
-    }
-
-    protected function runLemmatizer(string $lang, string $text_encoded): array
-    {
-        Lemmatizer::runLemmatizer($lang, $text_encoded, $tokens_and_lemmata);
-//        exec("python3 ../../python/Lemmatizer_Indexing.py $lang $text_encoded", $tokens_and_lemmata);
-        return $tokens_and_lemmata;
-    }
     public function minTimeBetweenSchedules() : int {
         return 2;
     }

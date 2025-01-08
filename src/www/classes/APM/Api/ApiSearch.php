@@ -105,16 +105,16 @@ class ApiSearch extends ApiController
         $this->logger->debug(count($data));
 
         // Until now, there was no check, if the queried keywords are close enough to each other, depending on the keywordDistance value
-        // So, if there is more than one token in the searched phrase, now filter out all columns and passages, which do not match all tokens in the desired way
-        if ($numTokens !== 1) {
-            for ($i=0; $i<$numTokens; $i++) {
-                $data = $this->filterData($data, $tokensForQuery[$i], $lemmata[$i], $lemmatize);
-            }
-
-            // REMOVE DUPLICATE PASSAGES
-            $data = $this->removePassageDuplicates($data); // check search for "in summa dicatur"
-
+        // If there is more than one token in the searched phrase, now  all columns and passages, which do not match all tokens in the desired way,
+        // get filtered out
+        for ($i=0; $i<$numTokens; $i++) {
+            $data = $this->filterData($data, $tokensForQuery[$i], $lemmata[$i], $lemmatize);
         }
+
+        // REMOVE DUPLICATE PASSAGES
+        $data = $this->removePassageDuplicates($data); // check search for "in summa dicatur"
+
+
 
         // Crop data if there are more than 999 passages matched
         $num_passages_total = $this->getnumPassages($data);
@@ -517,29 +517,32 @@ class ApiSearch extends ApiController
     // Function to filter out data, which do not match additional tokens in the searched phrase
     private function filterData (array $data, string $token_plain, string $lemma, bool $lemmatize): array {
 
+        $this->logger->debug("JUHU!");
+
         if ($lemmatize) { // Lemmatization requested
 
             // Remove all passages from $data, which do not match the additional keyword
             foreach ($data as $i => $match) {
                 foreach ($match['passage_lemmatized'] as $j => $passage) {
+
+                    $noMatch = true;
+
                     foreach ($passage as $k => $token) {
+
+                        $this->logger->debug("TADA!");
+
 
                         // Add matched tokens to tokens_matched array and make it unique
                         if ((str_contains($token, " " . $lemma . " ") or $token === $lemma) and strlen($lemma) > 1) { // filter out matches of single character lemmata like articles
                             $data[$i]['tokens_matched'][] = $match['passage_tokenized'][$j][$k];
                             $data[$i]['tokens_matched'] = array_unique($data[$i]['tokens_matched']);
                             $data[$i]['matched_token_positions'][$j][] = $data[$i]['passage_coordinates'][$j][0] + $k;
-                        }
-                    }
-
-                    // If the token is not in the passage, remove passage_tokenized, passage_lemmatized and tokens_matched from $data and adjust the num_passages in $data
-                    $noMatch = true;
-                    foreach ($passage as $token) {
-                        if (str_contains($token, " " . $lemma . " ") or $token === $lemma) {
+                            $this->logger->debug("BUMM!");
                             $noMatch = false;
                         }
                     }
 
+                    // If the token is not in the passage, remove passage_tokenized, passage_lemmatized and tokens_matched from $data and adjust the num_passages in $data
                     if ($noMatch) {
                         unset($data[$i]['passage_tokenized'][$j]);
                         unset($data[$i]['passage_lemmatized'][$j]);

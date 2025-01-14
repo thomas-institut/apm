@@ -155,7 +155,8 @@ class IndexManager extends CommandLineUtility {
         // $doc_list = $this->getDm()->getDocIdList('title');
 
         // HERE
-        $doc_list = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType('doc');
+        $doc_list = $this->getDm()->getDocIdList('title');
+        // $doc_list = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType('doc');
 
         // get all relevant data for every transcription and index it
         foreach ($doc_list as $doc_id) {
@@ -890,7 +891,7 @@ class IndexManager extends CommandLineUtility {
         $editions = [];
         foreach (range(1, 20000) as $i) {
             try {
-                $editions[] = $this->getEditionData($this->collationTableManager, $i);
+                $editions[] = @$this->getEditionData($this->collationTableManager, $i);
             } catch (Exception) {
                 break;
             }
@@ -1185,7 +1186,7 @@ class IndexManager extends CommandLineUtility {
         $data = $ctm->getCollationTableById($tableID);
 
         if ($data['type'] === 'edition') {
-            $edition_data['table_id'] = $tableID; // equals $data['tableId']
+            $edition_data['table_id'] = $data['tableId']; // equals $tableID
             $edition_data['edition_witness_index'] = $data['witnessOrder'][0];
 
             $edition_json = $data['witnesses'][$edition_data['edition_witness_index']];
@@ -1488,7 +1489,7 @@ class IndexManager extends CommandLineUtility {
      * @return string
      */
     private function getLang(string $page_id): string {
-        // return $this->getSystemManager()->getDocumentManager()->getPageInfo($page_id)->langCode;
+        return $this->getSystemManager()->getDocumentManager()->getPageInfo($page_id)->langCode;
         return 'la';
     }
 

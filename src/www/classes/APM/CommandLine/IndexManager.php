@@ -24,6 +24,7 @@ use APM\CollationTable\CollationTableManager;
 use APM\EntitySystem\Schema\Entity;
 use APM\EntitySystem\Schema\EntityTypes;
 use APM\System\ApmConfigParameter;
+use APM\System\Document\PageInfo;
 use APM\System\Lemmatizer;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
@@ -193,9 +194,9 @@ class IndexManager extends CommandLineUtility {
 
         // index editions
         foreach ($editions as $edition) {
-            $this->indexEdition ($this->client, null, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
             $log_data = 'Title: ' . $edition['title'] . ', Editor: ' . $edition['editor'] . ', Table ID: ' . $edition['table_id'] . ', Chunk: ' . $edition['chunk_id'] . ", TimeFrom: " . $edition['timeFrom'];
             $this->logger->debug("Indexed Edition – $log_data\n");
+            $this->indexEdition ($this->client, null, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
         }
 
         return true;
@@ -1210,7 +1211,7 @@ class IndexManager extends CommandLineUtility {
             $edition_data['chunk_id'] = explode('-', $data['chunkId'])[1];
             $work_id = explode('-', $data['chunkId'])[0];
             // HERE
-            $edition_data['title'] = $this->getDm()->getWorkInfoByDareId($work_id)['title'];
+            $edition_data['title'] = (string) $this->getDm()->getWorkInfoByDareId($work_id)['title'];
             $edition_data['timeFrom'] = $timeFrom;
         }
 
@@ -1489,9 +1490,22 @@ class IndexManager extends CommandLineUtility {
      * @return string
      */
     private function getLang(string $page_id): string {
-        return $this->getSystemManager()->getDocumentManager()->getPageInfo($page_id)->langCode;
-        return 'la';
+        $langId = $this->getSystemManager()->getDocumentManager()->getPageInfo($page_id)->lang;
+
+        switch ($langId) {
+            case Entity::LangLatin:
+                return 'la';
+            case Entity::LangArabic:
+                return 'ar';
+            case Entity::LangHebrew:
+                return 'he';
+            case Entity::LangJudeoArabic:
+                return 'jrb';
+        }
+
+        return false;
     }
+
 
     /**
      * @param int $doc_id

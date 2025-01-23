@@ -194,9 +194,9 @@ class IndexManager extends CommandLineUtility {
 
         // index editions
         foreach ($editions as $edition) {
+            $this->indexEdition ($this->client, null, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
             $log_data = 'Title: ' . $edition['title'] . ', Editor: ' . $edition['editor'] . ', Table ID: ' . $edition['table_id'] . ', Chunk: ' . $edition['chunk_id'] . ", TimeFrom: " . $edition['timeFrom'];
             $this->logger->debug("Indexed Edition – $log_data\n");
-            $this->indexEdition ($this->client, null, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
         }
 
         return true;
@@ -684,29 +684,23 @@ class IndexManager extends CommandLineUtility {
         // get collationTableManager
         $this->collationTableManager = $this->getSystemManager()->getCollationTableManager();
 
-        // get the data of up to 20 000 editions
-        $editions = [];
-        foreach (range(1, 20000) as $i) {
-            try {
-                $editions[] = $this->getEditionData($this->collationTableManager, $i);
-            } catch (Exception) {
-                break;
-            }
+        try {
+            $edition = $this->getEditionData($this->collationTableManager, $tableID);
+        } catch (Exception) {
+            print ("No edition in database with table id $tableID.\n");
         }
 
         // Clean data
-        $editions = $this->cleanEditionData($editions);
+        $edition = $this->cleanEditionData([$edition])[0];
 
         // Index editions
         $editionExists = false;
-        foreach ($editions as $edition) {
 
-            if ($edition['table_id'] === (int) $tableID) {
-                $this->indexEdition($this->client, $id, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
-                $log_data = 'Title: ' . $edition['title'] . ', Editor: ' . $edition['editor'] . ', Table ID: ' . $edition['table_id'] . ', Chunk: ' . $edition['chunk_id'] . ", TimeFrom: " . $edition['timeFrom'];
-                $this->logger->debug("Indexed Edition – $log_data\n");
-                $editionExists = true;
-            }
+        if ($edition['table_id'] === (int) $tableID) {
+            $this->indexEdition($this->client, $id, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
+            $log_data = 'Title: ' . $edition['title'] . ', Editor: ' . $edition['editor'] . ', Table ID: ' . $edition['table_id'] . ', Chunk: ' . $edition['chunk_id'] . ", TimeFrom: " . $edition['timeFrom'];
+            $this->logger->debug("Indexed Edition – $log_data\n");
+            $editionExists = true;
         }
 
         if (!$editionExists) {
@@ -888,26 +882,20 @@ class IndexManager extends CommandLineUtility {
         // get collationTableManager
         $this->collationTableManager = $this->getSystemManager()->getCollationTableManager();
 
-        // get the data of up to 20 000 editions
-        $editions = [];
-        foreach (range(1, 20000) as $i) {
-            try {
-                $editions[] = @$this->getEditionData($this->collationTableManager, $i);
-            } catch (Exception) {
-                break;
-            }
+        try {
+            $edition = $this->getEditionData($this->collationTableManager, $tableID);
+        } catch (Exception) {
+            print ("\nNo edition in database with table id $tableID.\n");
         }
 
         // clean data
-        $editions = $this->cleanEditionData($editions);
+        $edition = $this->cleanEditionData([$edition])[0];
 
         // index editions
         $editionExists = false;
 
-        foreach ($editions as $edition) {
-
-            if ($edition['table_id'] === (int) $tableID) {
-                $data = ['title' => $edition['title'],
+        if ($edition['table_id'] === (int) $tableID) {
+            $data = ['title' => $edition['title'],
                     'editor' => $edition['editor'],
                     'table_id' => $edition['table_id'],
                     'chunk' => $edition['chunk_id'],
@@ -916,7 +904,6 @@ class IndexManager extends CommandLineUtility {
 
                 $editionExists = true;
             }
-        }
 
         if (!$editionExists) {
             print ("\nNo edition in database with table id $tableID.\n");
@@ -1189,7 +1176,6 @@ class IndexManager extends CommandLineUtility {
         if ($data['type'] === 'edition') {
             $edition_data['table_id'] = $data['tableId']; // equals $tableID
             $edition_data['edition_witness_index'] = $data['witnessOrder'][0];
-
             $edition_json = $data['witnesses'][$edition_data['edition_witness_index']];
             $tokens = $edition_json['tokens'];
             $versionInfo = $ctm->getCollationTableVersionManager()->getCollationTableVersionInfo($tableID);

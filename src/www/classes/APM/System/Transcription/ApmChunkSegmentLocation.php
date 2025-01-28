@@ -20,82 +20,77 @@
 namespace APM\System\Transcription;
 
 /**
- * Represents the location of chunk segment in the database:
- *   the locations of the start and end chunk marks, and a flag indicating whether the location
- *  is valid
- *
- * @package APM\FullTranscription
- */
+ * Represents the location of a chunk segment in the database:
+ *  - the locations of the start and end chunk marks
+ *  - an integer status code
+  */
 class ApmChunkSegmentLocation
 {
 
-    const UNDETERMINED = -1;
-    const VALID = 0;
-    const NO_CHUNK_START = 1;
-    const NO_CHUNK_END = 2;
-    const CHUNK_START_AFTER_END = 3;
-    const DUPLICATE_CHUNK_START_MARKS = 4;
-    const DUPLICATE_CHUNK_END_MARKS = 5;
-
-    /**
-     * @var ApmChunkMarkLocation
-     */
-    public $start;
-
-    /**
-     * @var ApmChunkMarkLocation
-     */
-    public $end;
-    /**
-     * @var int
-     */
-    private $validityError;
+    private ApmChunkMarkLocation $start;
+    private ApmChunkMarkLocation $end;
+    private int $status;
 
     public function __construct()
     {
-        $this->validityError = self::UNDETERMINED;
+        $this->status = ChunkSegmentLocationStatus::UNDETERMINED;
         $this->start = new ApmChunkMarkLocation();
         $this->end = new ApmChunkMarkLocation();
     }
 
-    public function isValid() : bool  {
-        if ($this->validityError !== self::UNDETERMINED) {
-            return $this->validityError === 0;
-        }
-
-        $this->validityError = $this->determineValidity();
-        return $this->validityError === 0;
+    public function setStart(ApmChunkMarkLocation $location) : void {
+        $this->start = $location;
     }
 
-    private function determineValidity() : int {
-        if ($this->validityError === self::DUPLICATE_CHUNK_START_MARKS || $this->validityError === self::DUPLICATE_CHUNK_END_MARKS) {
-            return $this->validityError;
-        }
-        if ($this->start->isZero()){
-            return self::NO_CHUNK_START;
+    public function setEnd(ApmChunkMarkLocation $location) : void {
+        $this->end = $location;
+    }
+
+    public function getStart() : ApmChunkMarkLocation {
+        return $this->start;
+    }
+    public function getEnd() : ApmChunkMarkLocation {
+        return $this->end;
+    }
+
+    public function isValid() : bool  {
+        if ($this->status !== ChunkSegmentLocationStatus::UNDETERMINED) {
+            return $this->status === ChunkSegmentLocationStatus::VALID;
         }
 
-        if ($this->end->isZero()) {
-            return self::NO_CHUNK_END;
+        $this->status = $this->determineStatus();
+        return $this->status === ChunkSegmentLocationStatus::VALID;
+    }
+
+    private function determineStatus() : int {
+        if ($this->status === ChunkSegmentLocationStatus::DUPLICATE_CHUNK_START_MARKS || $this->status === ChunkSegmentLocationStatus::DUPLICATE_CHUNK_END_MARKS) {
+            return $this->status;
+        }
+        if ($this->start->hasNotBeenSet()){
+            return ChunkSegmentLocationStatus::NO_CHUNK_START;
+        }
+
+        if ($this->end->hasNotBeenSet()) {
+            return ChunkSegmentLocationStatus::NO_CHUNK_END;
         }
 
         if ($this->start->isAfter($this->end)) {
-            return self::CHUNK_START_AFTER_END;
+            return ChunkSegmentLocationStatus::CHUNK_START_AFTER_END;
         }
-        return self::VALID;
+        return ChunkSegmentLocationStatus::VALID;
     }
 
-    public function getChunkError() : int {
-        return $this->validityError;
+    public function getStatus() : int {
+        return $this->status;
     }
 
-    public function setDuplicateChunkMarkError(bool $isStart) {
+    public function setDuplicateChunkMarkStatus(bool $isStart): void
+    {
         if ($isStart) {
-            $this->validityError = self::DUPLICATE_CHUNK_START_MARKS;
+            $this->status = ChunkSegmentLocationStatus::DUPLICATE_CHUNK_START_MARKS;
         } else {
-            $this->validityError = self::DUPLICATE_CHUNK_END_MARKS;
+            $this->status = ChunkSegmentLocationStatus::DUPLICATE_CHUNK_END_MARKS;
         }
-
     }
 
 }

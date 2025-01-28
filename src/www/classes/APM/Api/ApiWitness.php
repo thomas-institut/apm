@@ -279,7 +279,7 @@ class ApiWitness extends ApiController
             // need to build everything from scratch
             $locations = $transcriptionManager->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
             try {
-                $apmWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $localWitnessId, $timeStamp, $docLangCode);
+                $apmWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp, $docLangCode);
             } catch (Exception $e) {
                 $msg = $e->getMessage();
                 $this->logger->error("Exception trying to get transcription witness. Msg = '$msg'",

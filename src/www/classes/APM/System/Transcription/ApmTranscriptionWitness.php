@@ -37,19 +37,19 @@ class ApmTranscriptionWitness extends TranscriptionWitness {
      *
      * @var DatabaseItemStream
      */
-    private $databaseItemStream;
+    private DatabaseItemStream $databaseItemStream;
     
     
     /** @var array */
-    private $initialLineNumbers;
+    private array $initialLineNumbers;
     /**
      * @var int
      */
-    private $docId;
+    private int $docId;
     /**
      * @var string
      */
-    private $timeStamp;
+    private string $timeStamp;
 
     public function __construct(int $docId, string $work, string $chunk, string $localWitnessId, string $timeString, DatabaseItemStream $stream) {
         parent::__construct($work, $chunk, $localWitnessId);
@@ -87,7 +87,8 @@ class ApmTranscriptionWitness extends TranscriptionWitness {
         return 1;
     }
     
-    public function setInitialLineNumberForTextBox(int $pageId, int $textBox, int $lineNumber) {
+    public function setInitialLineNumberForTextBox(int $pageId, int $textBox, int $lineNumber): void
+    {
         if (!isset($this->initialLineNumbers[$pageId])) {
             $this->initialLineNumbers[$pageId] = [];
         }

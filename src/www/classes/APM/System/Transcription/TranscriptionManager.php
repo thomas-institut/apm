@@ -26,17 +26,39 @@ use APM\System\Document\PageInfo;
 use APM\System\WitnessInfo;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\Data\EdNoteManager;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
+use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
 /**
- * Class TranscriptionManager
  *
- * Class to deal with a database containing full transcriptions
+ * Management methods for APM's full transcriptions.
+ *
+ * Full transcriptions in APM are associated with a page (which belongs to a
+ * document) and a column number within that page.
+ *
+ * The full transcription of a page:column contains an ordered list of **column elements** which
+ * capture the main text in the column, line gaps, page numbers, marginal glosses, long marginal additions, and so on.
+ *
+ * Each element, in turn, contains an ordered list of **items**, which capture textual phenomena like
+ * plain text, abbreviations, deletions, short additions, gaps as well as information added by the
+ * transcriber such as editorial notes, indication of unclear or illegible text, etc.
+ *
+ * Transcribers can also insert chunk start and end marks within the main text of columns. This allows
+ * the system to extract the text of that chunk in particular document, provided the chunk marks are coherent.
+ *
+ * No data for a transcription entered in APM is ever deleted. Any update to the transcription of column
+ * generates a new version of the column's transcription, and it is possible to get the exact state of a column's
+ * transcription at any point in time in the past.
  *
  */
-abstract class TranscriptionManager implements ErrorReporter
+abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterface
 {
+
+    use SimpleErrorReporterTrait;
+    use LoggerAwareTrait;
     const ORDER_BY_PAGE_NUMBER = 100;
     const ORDER_BY_SEQ = 101;
 
@@ -55,16 +77,18 @@ abstract class TranscriptionManager implements ErrorReporter
     abstract public function getColumnVersionManager() : ColumnVersionManager;
 
     /**
-     * Returns the ApmTranscriptionWitness contained in the given document for the given work and work number
+     * Returns the ApmTranscriptionWitness contained in the given document for the given work and chunk number
      * at the given time.
+     *
      * Throws an InvalidArgument exception if there's no valid witness.
      *
-     * @param string $workId
+     * @param string $workId an APM work ID, e.g.  'AW47'
      * @param int $chunkNumber
      * @param int $docId
-     * @param string $localWitnessId
+     * @param string $localWitnessId normally a letter to identify possible different versions of the same chunk in
+     *      the same document, e.g. 'A', 'B', etc.
      * @param string $timeStamp
-     * @param string $defaultLanguageCode
+     * @param string $defaultLanguageCode the language code to assign to items and elements that do not have one explicitly
      * @return ApmTranscriptionWitness
      */
     abstract public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp, string $defaultLanguageCode) : ApmTranscriptionWitness;
@@ -72,12 +96,12 @@ abstract class TranscriptionManager implements ErrorReporter
     /**
      * Returns a "map" of work locations in a particular document at the given time.
      *
-     * The returned array contains ApmChunkSegmentLocation objects arranged by work, work, document and localWitnessId
+     * The returned array contains ApmChunkSegmentLocation objects arranged by work, chunk, document and localWitnessId
      *
-     *
-     * $returnedArray = [
+     * ```
+     *  $returnedArray = [
      *   'workId1' =>  [
-     *         chunkA => [
+     *         chunk1 => [
      *              docId1 => [
      *                  'A' => [
      *                      segment1 => ApmChunkSegmentLocation1-1-A-1,
@@ -106,7 +130,7 @@ abstract class TranscriptionManager implements ErrorReporter
      *             ],
      *             ... // more docs
      *         ],
-     *        chunkB => [
+     *        chunk2 => [
      *          docId1 => [
      *                  'A' => [
      *                      segment1 => ApmChunkSegmentLocation1-1-A-1,
@@ -127,7 +151,7 @@ abstract class TranscriptionManager implements ErrorReporter
      *  'workId2' => [ ... ],
      *   ... // more work Ids
      * ]
-     *
+     * ```
      *
      * @param int $docId
      * @param string $timeString
@@ -188,7 +212,6 @@ abstract class TranscriptionManager implements ErrorReporter
      *
      * @param ApmChunkSegmentLocation $chunkSegmentLocation
      * @return array
-     * @throws PageNotFoundException|DocumentNotFoundException
      */
     abstract public function getVersionsForSegmentLocation(ApmChunkSegmentLocation $chunkSegmentLocation) : array;
 
@@ -205,8 +228,6 @@ abstract class TranscriptionManager implements ErrorReporter
      *
      * @param array $chunkLocationMap
      * @return array
-     * @throws DocumentNotFoundException
-     * @throws PageNotFoundException
      */
     abstract public function getVersionsForChunkLocationMap(array $chunkLocationMap) : array;
 
@@ -226,8 +247,6 @@ abstract class TranscriptionManager implements ErrorReporter
      * @param string $workId
      * @param int $chunkNumber
      * @return WitnessInfo[]
-     * @throws DocumentNotFoundException
-     * @throws PageNotFoundException
      */
     abstract public function getWitnessesForChunk(string $workId, int $chunkNumber) : array;
 
@@ -306,8 +325,19 @@ abstract class TranscriptionManager implements ErrorReporter
      * @return Element[]
      * @throws InvalidTimeStringException
      */
-    public abstract function getColumnElementsByPageId(int $pageId, int $col, string $timeString = ''): array;
+    abstract public function getColumnElementsByPageId(int $pageId, int $col, string $timeString = ''): array;
 
+
+    /**
+     * Updates the elements for a given page and column numbers
+     *
+     * @param int $pageId
+     * @param int $columnNumber
+     * @param array $newElements
+     * @param string $time
+     * @return bool|array
+     */
+    abstract public function updateColumnElements(int $pageId, int $columnNumber, array $newElements, string $time = ''): bool|array;
 
     /**
      * Returns an array of document Ids for the documents

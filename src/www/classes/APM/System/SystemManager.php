@@ -127,7 +127,7 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
      * @throws EntityDoesNotExistException
      */
     public function getLangCodeFromId(int $langId) : string {
-        return $this->getEntitySystem()->getEntityData($langId)->name;
+        return $this->getEntitySystem()->getEntityData($langId)->getObjectForPredicate(Entity::pLangIso639Code) ?? 'unknown';
     }
 
 

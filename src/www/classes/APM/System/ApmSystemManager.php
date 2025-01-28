@@ -557,17 +557,17 @@ class ApmSystemManager extends SystemManager {
     {
         if ($this->transcriptionManager === null) {
             // Set up TranscriptionManager
-            $this->transcriptionManager = new ApmTranscriptionManager($this->getDbConnection(), $this->tableNames, $this->logger, $this->getDocumentManager());
-            $this->transcriptionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
-            $this->transcriptionManager->setCacheTracker($this->getCacheTracker());
+            $this->transcriptionManager = new ApmTranscriptionManager(
+                function () { return $this->getDbConnection();},
+                $this->tableNames,
+                $this->logger,
+                function () { return $this->getDocumentManager();},
+                function () { return $this->getPersonManager();}
+            );
             $this->transcriptionManager->setCache($this->getSystemDataCache());
-
         }
         return $this->transcriptionManager;
     }
-
-
-
 
     public function getSystemDataCache(): DataCache
     {

@@ -32,6 +32,7 @@ use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
 use APM\System\Transcription\ApmChunkSegmentLocation;
+use APM\System\Transcription\ChunkSegmentLocationStatus;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use APM\SystemProfiler;
@@ -153,30 +154,28 @@ class SiteDocuments extends SiteController
      * @throws PersonNotFoundException
      * @throws UserNotFoundException
      */
-    public function showDocPage(Request $request, Response $response, array $args): Response
+    public function documentPage(Request $request, Response $response, array $args): Response
     {
         
         $id = $args['id'];
-
         $selectedPage = intval($request->getQueryParams()['selectedPage'] ?? '0');
-
         $docId = $this->systemManager->getEntitySystem()->getEntityIdFromString($id);
 
         if ($docId === -1) {
             return $this->getBasicErrorPage($response, "Invalid Document ID",
                 "Invalid Document ID $id", HttpStatus::BAD_REQUEST);
         }
+        $docIdString = Tid::toBase36String($docId);
 
-        $this->logger->debug("Showing Document Page for Document ID $docId");
-
+        $this->logger->debug("Showing Document Page for Document ID $docId ($docIdString)");
 
         $chunkSegmentErrorMessages = [];
-        $chunkSegmentErrorMessages[ApmChunkSegmentLocation::VALID] = '';
-        $chunkSegmentErrorMessages[ApmChunkSegmentLocation::NO_CHUNK_START] = 'No chunk start found';
-        $chunkSegmentErrorMessages[ApmChunkSegmentLocation::NO_CHUNK_END] = 'No chunk end found';
-        $chunkSegmentErrorMessages[ApmChunkSegmentLocation::CHUNK_START_AFTER_END] = 'Chunk start after chunk end';
-        $chunkSegmentErrorMessages[ApmChunkSegmentLocation::DUPLICATE_CHUNK_START_MARKS] = 'Duplicate start marks';
-        $chunkSegmentErrorMessages[ApmChunkSegmentLocation::DUPLICATE_CHUNK_END_MARKS] = 'Duplicate end marks';
+        $chunkSegmentErrorMessages[ChunkSegmentLocationStatus::VALID] = '';
+        $chunkSegmentErrorMessages[ChunkSegmentLocationStatus::NO_CHUNK_START] = 'No chunk start found';
+        $chunkSegmentErrorMessages[ChunkSegmentLocationStatus::NO_CHUNK_END] = 'No chunk end found';
+        $chunkSegmentErrorMessages[ChunkSegmentLocationStatus::CHUNK_START_AFTER_END] = 'Chunk start after chunk end';
+        $chunkSegmentErrorMessages[ChunkSegmentLocationStatus::DUPLICATE_CHUNK_START_MARKS] = 'Duplicate start marks';
+        $chunkSegmentErrorMessages[ChunkSegmentLocationStatus::DUPLICATE_CHUNK_END_MARKS] = 'Duplicate end marks';
 
 
         $this->profiler->start();
@@ -213,9 +212,6 @@ class SiteDocuments extends SiteController
             $doc['tableId'] = "doc-$docId-table";
             $doc['pages'] = $this->buildPageArrayNew($pageInfoArray, $transcribedPages, $doc['docInfo']);
 
-            // TODO: enable metadata when there's a use for it, or when the doc details JS app
-            //  would not hang if there's an error with it.
-            $metaData = [];
 
             $chunkLocationMap = $transcriptionManager->getChunkLocationMapForDoc($legacyDocId, '');
 
@@ -258,23 +254,23 @@ class SiteDocuments extends SiteController
                         }
                         foreach ($segmentArray as $segmentNumber => $location) {
                             /** @var $location ApmChunkSegmentLocation */
-                            if ($location->start->isZero()) {
+                            if ($location->getStart()->hasNotBeenSet()) {
                                 $start = '';
                             } else {
                                 try {
-                                    $pageInfo = $docManager->getPageInfo($docManager->getPageIdByDocSeq($docId, $location->start->pageSequence));
+                                    $pageInfo = $docManager->getPageInfo($docManager->getPageIdByDocSeq($docId, $location->getStart()->pageSequence));
                                 } catch (DocumentNotFoundException|PageNotFoundException $e) {
                                     // should never happen
                                     throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
                                 }
                                 $start = [
-                                    'seq' => $location->start->pageSequence,
+                                    'seq' => $location->getStart()->pageSequence,
                                     'foliation' => $pageInfo->foliation,
-                                    'column' => $location->start->columnNumber,
+                                    'column' => $location->getEnd()->columnNumber,
                                     'numColumns' => $pageInfo->numCols
                                 ];
                             }
-                            if ($location->end->isZero()) {
+                            if ($location->end->hasNotBeenSet()) {
                                 $end = '';
                             } else {
                                 try {
@@ -296,8 +292,8 @@ class SiteDocuments extends SiteController
                                     'start' => $start,
                                     'end' => $end,
                                     'valid' => $location->isValid(),
-                                    'errorCode' => $location->getChunkError(),
-                                    'errorMsg' => $chunkSegmentErrorMessages[$location->getChunkError()]
+                                    'errorCode' => $location->getStatus(),
+                                    'errorMsg' => $chunkSegmentErrorMessages[$location->getStatus()]
                                 ];
                         }
                     }
@@ -318,7 +314,7 @@ class SiteDocuments extends SiteController
             'chunkInfo' => $chunkInfo,
             'lastVersions' => $lastVersions,
             'lastSaves' => $lastSaves,
-            'metaData' => $metaData,
+            'metaData' => [],
             'userTid' => $this->userId,
             'params' => explode('/', $args['params'] ?? ''),
             'selectedPage' => $selectedPage

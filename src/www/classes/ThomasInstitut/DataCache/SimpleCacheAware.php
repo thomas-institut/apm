@@ -20,6 +20,11 @@
 namespace ThomasInstitut\DataCache;
 
 
+/**
+ * Implements the CacheAware interface by adding
+ * a protected DataCache variable and a boolean
+ * cacheOn flag
+ */
 trait SimpleCacheAware
 {
 

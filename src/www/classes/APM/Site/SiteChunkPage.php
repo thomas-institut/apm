@@ -26,7 +26,9 @@
 
 namespace APM\Site;
 
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\System\DataRetrieveHelper;
+use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Transcription\ApmChunkSegmentLocation;
 use APM\System\Transcription\ColumnVersionInfo;
@@ -62,7 +64,7 @@ class SiteChunkPage extends SiteController
         $this->profiler->start();
         try {
             $workInfo = get_object_vars($this->systemManager->getWorkManager()->getWorkDataByDareId($workId));
-        } catch (WorkNotFoundException $e) {
+        } catch (WorkNotFoundException) {
             return $this->getBasicErrorPage($response, "Error", "Work $workId not found", 404);
         }
 
@@ -95,18 +97,36 @@ class SiteChunkPage extends SiteController
         $pagesMentioned = [];
         $languageInfoArray = [];
 
+        $witnessInfoArrayForPage = [];
         foreach($witnessInfoArray as $witnessInfo) {
+
+            $witnessInfoForPage = get_object_vars($witnessInfo);
+            try {
+                $witnessInfoForPage['languageCode'] = $this->systemManager->getLangCodeFromId($witnessInfo->language);
+            } catch (EntityDoesNotExistException $e) {
+                // should never happen
+                throw new \RuntimeException($e->getMessage(), $e->getCode());
+            }
+            $witnessInfoArrayForPage[] = $witnessInfoForPage;
+
             switch($witnessInfo->type) {
                 case WitnessType::FULL_TRANSCRIPTION:
                     $docInfo = $witnessInfo->typeSpecificInfo['docInfo'];
-                    if (!isset($languageInfoArray[$docInfo->languageCode])) {
-                        $languageInfoArray[$docInfo->languageCode] = $this->getLanguagesByCode()[$docInfo->languageCode];
-                        $languageInfoArray[$docInfo->languageCode]['totalWitnesses'] = 0;
-                        $languageInfoArray[$docInfo->languageCode]['validWitnesses'] = 0;
+                    try {
+                        $docLangCode = $this->systemManager->getLangCodeFromId($docInfo->language);
+                    } catch (EntityDoesNotExistException $e) {
+                        // should never happen
+                        throw new \RuntimeException($e->getMessage(), $e->getCode());
                     }
-                    $languageInfoArray[$docInfo->languageCode]['totalWitnesses']++;
+                    $this->logger->debug("Doc lang code from witness $docLangCode");
+                    if (!isset($languageInfoArray[$docLangCode])) {
+                        $languageInfoArray[$docLangCode] = $this->getLanguagesByCode()[$docLangCode];
+                        $languageInfoArray[$docLangCode]['totalWitnesses'] = 0;
+                        $languageInfoArray[$docLangCode]['validWitnesses'] = 0;
+                    }
+                    $languageInfoArray[$docLangCode]['totalWitnesses']++;
                     if ($witnessInfo->isValid) {
-                        $languageInfoArray[$docInfo->languageCode]['validWitnesses']++;
+                        $languageInfoArray[$docLangCode]['validWitnesses']++;
                     }
                     $lastVersion = $witnessInfo->typeSpecificInfo['lastVersion'];
                     /** @var $lastVersion ColumnVersionInfo */
@@ -115,8 +135,8 @@ class SiteChunkPage extends SiteController
                     $segmentArray =  $witnessInfo->typeSpecificInfo['segments'];
                     foreach ($segmentArray as $segment) {
                         /** @var $segment ApmChunkSegmentLocation */
-                        $pagesMentioned[] = $segment->start->pageId;
-                        $pagesMentioned[] = $segment->end->pageId;
+                        $pagesMentioned[] = $segment->getStart()->pageId;
+                        $pagesMentioned[] = $segment->getEnd()->pageId;
                     }
                     break;
                 default:
@@ -134,7 +154,9 @@ class SiteChunkPage extends SiteController
         $helper = new DataRetrieveHelper();
         $helper->setLogger($this->logger);
 
-        $pageInfoArray = $helper->getPageInfoArrayFromList($pagesMentioned, $this->systemManager->getDocumentManager());
+        $pageInfoArray = array_map( function ($pageId) {
+            return $this->systemManager->getDocumentManager()->getPageInfo($pageId);
+        }, $pagesMentioned);
 
         $showAdminInfo = false;
         if ($this->systemManager->getUserManager()->isRoot($this->userId)) {
@@ -157,7 +179,7 @@ class SiteChunkPage extends SiteController
             'chunkNumber' => $chunkNumber,
             'work_info' => $workInfo,
             'showAdminInfo' => $showAdminInfo,
-            'witnessInfoArray' => $witnessInfoArray,
+            'witnessInfoArray' => $witnessInfoArrayForPage,
             'pageInfo' => $pageInfoArray,
             'languageInfo' => $fullLanguageInfo,
             'validChunks' => $validChunks,

@@ -26,55 +26,17 @@ namespace APM\System;
  */
 class WitnessInfo
 {
-   /**
-     * @var string
-     */
-    public string $type;
+    public string $type = '';
+    public string $workId = '';
+    public int $chunkNumber = 0;
     /**
-     * @var string
-     */
-    public string $workId;
-    /**
+     * The witness' language, an entity id
      * @var int
      */
-    public int $chunkNumber;
-
-    /**
-     * The witness language, an entity Id
-     * @var int
-     */
-    public int $language;
-    /**
-     * @var string
-     * @deprecated use language
-     */
-    public string $languageCode;
-    /**
-     * @var string
-     */
-    public string $systemId;
-    /**
-     * @var bool
-     */
-    public bool $isValid;
-
-    public ?array $typeSpecificInfo;
-    /**
-     * @var int
-     */
-    public int $errorCode;
-
-    public function __construct()
-    {
-        $this->type = '';
-        $this->workId = '';
-        $this->chunkNumber = 0;
-        $this->languageCode = '';
-        $this->language = -1;
-        $this->systemId = '';
-        $this->isValid = false;
-        $this->typeSpecificInfo = null;
-        $this->errorCode = 0;
-    }
+    public int $language = -1;
+    public string $systemId = '';
+    public bool $isValid = false;
+    public ?array $typeSpecificInfo = null;
+    public int $errorCode = 0;
 
 }

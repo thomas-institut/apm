@@ -62,20 +62,20 @@
                 {% if navByPage==true %}
                     <button class="textonly headerbutton {{ page==1?' disabled':''}}"
                             title="First Page" 
-                            onclick="window.location='{{url_for('doc.page.transcribe.realPage', {'doc': docIdString, 'page': 1})}}';" {{ page==1 ? ' disabled' : '' }}>
+                            onclick="window.location='{{url_for('doc.page.transcribe.realPage', {'doc': docIdString, 'n': 1})}}';" {{ page==1 ? ' disabled' : '' }}>
                {% else %}
                     <button class="textonly headerbutton {{ seq==1?' disabled':''}}"
-                            onclick="window.location='{{url_for('doc.page.transcribe', {'doc': docIdString, 'seq': 1})}}';" {{ seq==1 ? ' disabled' : '' }}>
+                            onclick="window.location='{{url_for('doc.page.transcribe', {'doc': docIdString, 'n': 1})}}';" {{ seq==1 ? ' disabled' : '' }}>
                 {% endif %}
                         <i class="fas fa-step-backward"></i>
                 {% if navByPage==true %}
                     <button class="textonly headerbutton {{ page==1?' disabled':''}}" 
                         title="Previous Page" 
-                                onclick="window.location='{{url_for('doc.page.transcribe.realPage', {'doc': docIdString, 'page': page-1})}}';" {{ page==1 ? ' disabled' : '' }}>
+                                onclick="window.location='{{url_for('doc.page.transcribe.realPage', {'doc': docIdString, 'n': page-1})}}';" {{ page==1 ? ' disabled' : '' }}>
                 {% else %}
                     <button class="textonly headerbutton {{ seq==1?' disabled':''}}" 
                                 title="Previous Page" 
-                                onclick="window.location='{{url_for('doc.page.transcribe', {'doc': docIdString, 'seq': seq-1})}}';" {{ seq==1 ? ' disabled' : '' }}>
+                                onclick="window.location='{{url_for('doc.page.transcribe', {'doc': docIdString, 'n': seq-1})}}';" {{ seq==1 ? ' disabled' : '' }}>
                 {% endif %}
                         <i class="fas fa-chevron-left"></i>
                     </button>
@@ -85,23 +85,23 @@
                {% if navByPage==true %}
                     <button class="textonly headerbutton {{ page==docPageCount?' disabled':''}}"
                                 title="Next Page" 
-                                onclick="window.location='{{url_for('doc.page.transcribe.realPage', {'doc': docIdString, 'page': page+1})}}';" {{ page==docPageCount ? ' disabled' : '' }}>
+                                onclick="window.location='{{url_for('doc.page.transcribe.realPage', {'doc': docIdString, 'n': page+1})}}';" {{ page==docPageCount ? ' disabled' : '' }}>
                 {% else %}
                     <button class="textonly headerbutton {{ seq==docPageCount?' disabled':''}}"
                                title="Next Page" 
-                                onclick="window.location='{{url_for('doc.page.transcribe', {'doc': docIdString, 'seq': seq+1})}}';" {{ seq==docPageCount ? ' disabled' : '' }}>
+                                onclick="window.location='{{url_for('doc.page.transcribe', {'doc': docIdString, 'n': seq+1})}}';" {{ seq==docPageCount ? ' disabled' : '' }}>
                 {% endif %}
                         <i class="fas fa-chevron-right"></i>
                     </button>
                 {% if navByPage==true %}
                     <button class="textonly headerbutton {{ page==docPageCount?' disabled':''}}" 
                                 title="Last Page" 
-                                onclick="window.location='{{url_for('doc.page.transcribe.realPage', {'doc': docIdString, 'page': docPageCount})}}';" {{ page==docPageCount?' disabled':''}}>
+                                onclick="window.location='{{url_for('doc.page.transcribe.realPage', {'doc': docIdString, 'n': docPageCount})}}';" {{ page==docPageCount?' disabled':''}}>
 
                 {% else %}  
                     <button class="textonly headerbutton {{ seq==docPageCount?' disabled':''}}" 
                                 title="Last Page" 
-                                onclick="window.location='{{url_for('doc.page.transcribe', {'doc': docIdString, 'seq': docPageCount})}}';" {{ seq==docPageCount?' disabled':''}}>
+                                onclick="window.location='{{url_for('doc.page.transcribe', {'doc': docIdString, 'n': docPageCount})}}';" {{ seq==docPageCount?' disabled':''}}>
                 {% endif %}
                         <i class="fas fa-step-forward"></i>
                     </button>

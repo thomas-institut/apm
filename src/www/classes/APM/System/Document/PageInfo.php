@@ -60,12 +60,6 @@ class PageInfo
      */
     public int $lang;
     /**
-     *
-     * @var string|null
-     * @deprecated defaults to '', do not use
-     */
-    public ?string $langCode;
-    /**
      * @var int
      */
     public int $numCols;
@@ -105,6 +99,7 @@ class PageInfo
         $this->docId = intval($row['doc_id']);
         $this->pageNumber = intval($row['page_number']);
         $this->imageNumber = intval($row['img_number']);
+        $this->lang = intval($row['lang']);
         $this->sequence = intval($row['seq']);
         $this->type = intval($row['type']);
         $this->lang = intval($row['lang']); // ADDED by Lukas

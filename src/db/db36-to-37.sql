@@ -9,6 +9,7 @@
 #   migrate_edition_sources
 #   migrate_docs
 #
+
 DROP TABLE  `ap_edition_sources`;
 #DROP TABLE `ap_docs`;
 
@@ -25,7 +26,5 @@ UPDATE `ap_pages` set `lang`='20004' where `lang`='jrb';
 ALTER TABLE `ap_pages` MODIFY `lang` BIGINT NOT NULL DEFAULT 20003;
 ALTER TABLE apm.ap_pages DROP FOREIGN KEY ap_pages_ibfk_2;
 ALTER TABLE `ap_pages` MODIFY `doc_id` BIGINT;
-
-
 
 UPDATE `ap_settings` SET `value` = '37' WHERE `ap_settings`.`setting` = 'DatabaseVersion';

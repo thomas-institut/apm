@@ -20,8 +20,6 @@
 
 namespace AverroesProject\Data;
 
-use APM\System\ApmImageType;
-use APM\System\ImageSource\NullImageSource;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
 use APM\ToolBox\ArraySort;
@@ -59,7 +57,6 @@ use AverroesProject\TxText\Unclear;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ThomasInstitut\DataCache\InMemoryDataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\InvalidRowUpdateTime;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
@@ -191,117 +188,6 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $docIds;
     }
 
-    /**
-     * Creates a new document in the system.
-     * Returns the doc id of the newly created document or false
-     * if the document could not be created
-     *
-     * @param string $title
-     * @param int $pageCount
-     * @param string $lang
-     * @param string $type
-     * @param string $imageSource
-     * @param string $imageSourceData
-     * @param int $tid
-     * @return int|boolean
-     * @throws RowAlreadyExists
-     * @deprecated Use new DocumentManager functions
-     */
-    public function newDoc(string $title, int $pageCount,
-                           string $lang, string $type,
-                           string $imageSource, string $imageSourceData, int $tid = 0): bool|int
-    {
-        
-        $doc = [ 
-            'title' => $title, 
-            'tid' => $tid,
-            'lang' => $lang, 
-            'doc_type' => $type,
-            'image_source' => $imageSource, 
-            'image_source_data' => $imageSourceData
-            ];
-        
-        $this->getSqlQueryCounterTracker()->incrementCreate();
-        $docId = $this->docsDataTable->createRow($doc);
-        for ($i = 1; $i <= $pageCount; $i++) {
-            $this->newPage($docId, $i, $lang);
-        }
-        return $docId;
-    }
-
-    /**
-     * @throws RowAlreadyExists
-     * @deprecated Use new DocumentManager functions
-     */
-    public function newPage($docId, $pageNumber, $lang, $type=0): int
-    {
-        
-        $page = [
-           'doc_id' => $docId,
-           'page_number' => $pageNumber,
-            'img_number' => $pageNumber,
-            'seq' => $pageNumber,
-            'type' => $type,
-            'lang' => $lang
-            // foliation => defaults to null in DB
-        ];
-        
-
-        $this->getSqlQueryCounterTracker()->incrementCreate();
-        return $this->pagesDataTable->createRow($page);
-    }
-    
-    /**
-     * Returns the number of columns a given page
-     * 
-     * @param int $docId
-     * @param int $pageNumber
-     * @return int
-     * @deprecated Use new DocumentManager functions
-     */
-    function getNumColumns(int $docId, int $pageNumber): int
-    {
-        $pInfo = $this->getPageInfoByDocPage($docId, $pageNumber);
-        if ($pInfo === false) {
-            // Page or doc not found
-            return 0;
-        }
-        return intval($pInfo['num_cols']);
-    }
-    
-    /**
-     * Adds a new column to a page
-     * 
-     * @param int $docId
-     * @param int $pageNumber
-     * @return boolean
-     * @deprecated Use new DocumentManager functions
-     */
-//    function addNewColumn(int $docId, int $pageNumber): bool
-//    {
-//        $pageId = $this->getPageIdByDocPage($docId, $pageNumber);
-//        if ($pageId === -1) {
-//            return false;
-//        }
-//        $this->getSqlQueryCounterTracker()->incrementSelect();
-//        $pageInfo = $this->pagesDataTable->getRow($pageId);
-//        if ($pageInfo === null) {
-//            $this->logger->error("page not found $pageId");
-//            return false;
-//        }
-//        $this->getSqlQueryCounterTracker()->incrementUpdate();
-//        try {
-//            $this->pagesDataTable->updateRow([
-//                'id' => $pageId,
-//                'num_cols' => $pageInfo['num_cols']+1
-//            ]);
-//        } catch (Exception $e) {
-//            $this->reportException('addNewColumn, updateRow ' . $pageId, $e);
-//            return false;
-//        }
-//
-//        return true;
-//    }
 
     /**
      * Returns an associative array with the information about a page
@@ -325,7 +211,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @return array|bool
      * @deprecated Use new DocumentManager functions
      */
-    public function getPageInfo(int $pageId): bool|array
+    private function getPageInfo(int $pageId): bool|array
     {
         $this->getSqlQueryCounterTracker()->incrementSelect();
         $row = $this->pagesDataTable->getRow($pageId);
@@ -339,72 +225,8 @@ class DataManager implements  SqlQueryCounterTrackerAware
         $row['num_cols'] = intval($row['num_cols']);
         return $row;
     }
-    
-    /**
-     * Returns the number of pages of a document
-     * @param int $docId
-     * @return boolean|int
-     * @deprecated Use new DocumentManager functions
-     */
-    function getPageCountByDocId(int $docId): bool|int
-    {
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        
-        $query = 'SELECT COUNT(*) FROM ' . $this->tNames['pages'] . 
-                ' WHERE `doc_id`=' . $docId . 
-                ' AND `valid_until`=\'9999-12-31 23:59:59.999999\'';
-        $res = $this->databaseHelper->query($query);
-        if ($res === false) {
-            // This means a database error
-            // Can't reproduce in testing for now
-            return false; // @codeCoverageIgnore
-        }
-        return $res->fetch(PDO::FETCH_NUM)[0];
-    }
 
-    /**
-     * Returns the number of pages the belong or have ever belonged to the
-     * given document.
-     *
-     * @param $docId
-     * @return bool|int
-     * @deprecated Need to be implemented at the SystemManager level using MySQL queries.
-     * But, it will not be necessary, because disabling/merging documents will be possible in the future
-     */
-//    function getPageCountByDocIdAllTime($docId): bool|int
-//    {
-//
-//        $this->getSqlQueryCounterTracker()->incrementSelect();
-//
-//        $query = 'SELECT COUNT(*) FROM ' . $this->tNames['pages'] .
-//                ' WHERE `doc_id`=' . $docId;
-//        $res = $this->databaseHelper->query($query);
-//        if ($res === false) {
-//            // This means a database error
-//            // Can't reproduce in testing for now
-//            return false; // @codeCoverageIgnore
-//        }
-//        return (int) $res->fetch(PDO::FETCH_NUM)[0];
-//    }
-    
-    /**
-     * Gets the page types table into an array
-     * @deprecated Use entity functions
-     */
-    function getPageTypeNames(): bool|array
-    {
-        $query = 'SELECT * FROM ' . $this->tNames['types_page'];
 
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        $res = $this->databaseHelper->query($query);
-        if ($res === false) {
-            // This means a database error
-            // Can't reproduce in testing for now
-            return false; // @codeCoverageIgnore
-        }
-        return $res->fetchAll(PDO::FETCH_ASSOC);
-    }
-    
     /**
      * @throws InvalidRowForUpdate
      * @throws RowDoesNotExist
@@ -516,6 +338,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * Returns the editors associated with a document as a list of usernames
      * @param int $docId
      * @return array
+     * @deprecated Will be changed by a function in DocumentManager
      */
     function getEditorTidsByDocId(int $docId): array
     {
@@ -547,6 +370,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $docId
      * @param int $order
      * @return array
+     * @deprecated use DocumentManager
      */
     function getTranscribedPageListByDocId(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER) : array
     {
@@ -575,209 +399,12 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
 
     /**
-     *  Returns the page information for each page for the given $docId
-     *
-     * @param int $docId
-     * @param int $order
-     * @return array
-     * @deprecated use new DocumentManager equivalent function
-     */
-    function getDocPageInfo(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER): array
-    {
-        $tp = $this->tNames['pages'];
-        $td = $this->tNames['docs'];
-
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        
-        $orderBy = 'page_number';
-        if ($order === self::ORDER_BY_SEQ) {
-            $orderBy = 'seq';
-        }
-        
-        $query = "SELECT `$tp`.* FROM `$tp` JOIN `$td` " .
-                 "ON (`$td`.id=`$tp`.doc_id) WHERE " . 
-                 "`$tp`.`valid_until`='9999-12-31 23:59:59.999999' AND `$td`.id=$docId " . 
-                 "ORDER BY `$tp`.$orderBy";
-        $res = $this->databaseHelper->query($query);
-        
-        return $res->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    /**
-     * @param int $docId
-     * @return bool|int
-     * @deprecated Documents cannot be deleted, disable it or merge it instead
-     */
-//    function deleteDocById(int $docId): bool|int
-//    {
-//        $this->getSqlQueryCounterTracker()->incrementDelete();
-//        if ($this->getPageCountByDocIdAllTime($docId) !== 0) {
-//            return false;
-//        }
-//        return $this->docsDataTable->deleteRow($docId);
-//    }
-
-    /**
-     * @param int $docId
-     * @param bool $useCache
-     * @return false|mixed
-     * @deprecated use DocumentManager::getLegacyDocInfo
-     */
-    function getDocById(int $docId, bool $useCache = true)
-    {
-        $cacheKey = "doc-$docId";
-        if (!$useCache) {
-            return  $this->databaseHelper->getRowById($this->tNames['docs'], $docId);
-        }
-        try {
-            $data = unserialize($this->cache->get($cacheKey));
-        } catch (KeyNotInCacheException) {
-            $this->getSqlQueryCounterTracker()->incrementSelect();
-            $docInfo =  $this->databaseHelper->getRowById($this->tNames['docs'], $docId);
-            $this->cache->set($cacheKey, serialize($docInfo));
-            return $docInfo;
-        }
-        return $data;
-    }
-
-    /**
-     * Returns the document info array for the document with the given Dare id
-     * @param string $dareId
-     * @return array|null
-     * @deprecated use entity system functions
-     */
-//    function getDocByDareId(string $dareId): ?array
-//    {
-//
-//        $this->getSqlQueryCounterTracker()->incrementSelect();
-//        $rows = $this->docsDataTable->findRows(['image_source_data' => $dareId], 1);
-//        if (count($rows) !== 1) {
-//            return null;
-//        }
-//
-//        return $rows->getFirst();
-//    }
-
-    /**
-     * Returns an array of document Ids for the documents
-     * in which a user has done some transcription work
-     * @param int $userTid
-     * @return array
-     * @deprecated user TranscriptionManager method
-     */
-    public function getDocIdsTranscribedByUser(int $userTid) : array
-    {
-        // TODO: change this query, it must not use the docs table
-        $tp = $this->tNames['pages'];
-             $td = $this->tNames['docs'];
-        $te = $this->tNames['elements'];
-        $eot = '9999-12-31 23:59:59.999999';
-
-
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        
-        $query = "SELECT DISTINCT $td.id, $td.title FROM $td " . 
-                 "JOIN ($te, $tp) ON ($te.page_id=$tp.id and $td.id=$tp.doc_id) " . 
-                 "WHERE $te.editor_tid=$userTid " .
-                 "AND $te.valid_until='$eot' AND $tp.valid_until='$eot'" . 
-                 "ORDER BY $td.title";
-
-        $res = $this->databaseHelper->query($query);
-        if ($res === false) {
-            return [];
-        }
-        
-        $docIds = [];
-        while ($row = $res->fetch(PDO::FETCH_ASSOC)){
-            $docIds[] = intval($row['id']);
-        }
-        return $docIds;
-    }
-
-    /**
-     * Returns the page Ids transcribed by a user in a given document
-     *
-     * @param int $userTid
-     * @param int $docId
-     * @return array
-     * @deprecated User TranscriptionManager method
-     */
-    public function getPageIdsTranscribedByUser(int $userTid, int $docId) : array
-    {
-        // TODO: change this query, it must not use the docs table
-        $tp = $this->tNames['pages'];
-        $td = $this->tNames['docs'];
-        $te = $this->tNames['elements'];
-        $eot = '9999-12-31 23:59:59.999999';
-
-
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        
-        $query = "SELECT DISTINCT $tp.id, $tp.seq FROM $tp " . 
-                 "JOIN ($td, $te) ON ($te.page_id=$tp.id and $td.id=$tp.doc_id) " . 
-                 "WHERE $te.editor_tid=$userTid " .
-                 "AND $td.id=$docId " .
-                 "AND $te.valid_until='$eot' AND $tp.valid_until='$eot' " . 
-                 "ORDER BY $tp.seq";
-
-        $res = $this->databaseHelper->query($query);
-        if ($res === false) {
-            return [];
-        }
-        
-        $pageIds = [];
-        while ($row = $res->fetch(PDO::FETCH_ASSOC)){
-            $pageIds[] = intval($row['id']);
-        }
-        return $pageIds;
-    }
-
-    /**
-     * Returns the image URL for a page or false if the page image source
-     * is not recognized
-     * @param int $docId
-     * @param int $imageNumber
-     * @param string $type
-     * @return string|boolean
-     * @deprecated use DocumentManager equivalent function
-     */
-    public function getImageUrl(int $docId, int $imageNumber, string $type = ''): bool|string
-    {
-        $doc = $this->getDocById($docId);
-        if ($doc === false) {
-            return false;
-        }
-
-        $imageSource = $this->imageSources[$doc['image_source']] ?? new NullImageSource();
-        if ($type === '') {
-            $type = ApmImageType::IMAGE_TYPE_JPG;
-            if ($doc['deep_zoom']) {
-                $type = ApmImageType::IMAGE_TYPE_DEEP_ZOOM;
-            }
-        }
-        return $imageSource->getImageUrl($type, $doc['image_source_data'], $imageNumber);
-    }
-
-    /**
-     * @param int $docId
-     * @return bool
-     * @deprecated use EntityData function on the data returned by DocumentManager::getDocumentEntityData
-     */
-    public function isImageDeepZoom(int $docId) : bool {
-        $doc = $this->getDocById($docId);
-        if ($doc === false) {
-            return false;
-        }
-        return $doc['deep_zoom'];
-    }
-
-
-    /**
      * @param int $pageId
      * @param int $col
      * @param string $timeString
      * @return Element[]
      * @throws InvalidTimeStringException
+     * @deprecated
      */
     public function getColumnElementsByPageId(int $pageId, int $col, string $timeString = ''): array
     {
@@ -812,7 +439,6 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @return Element[]
      * @throws InvalidTimeStringException
      */
-    
     public function getColumnElements(int $docId, int $page, int $col, string $time = ''): array
     {
         if ($time === '') {
@@ -830,6 +456,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
     /**
      * @throws InvalidTimeStringException
+     * @deprecated use ApmTranscriptionEditor function
      */
     function getItemsForElement($element, $time = false): array
     {
@@ -881,6 +508,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
 
     /**
+<<<<<<< HEAD
      *  Get data for a work
      * @param string $dareId
      * @return bool|array
@@ -935,508 +563,6 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $chunks;
     }
 
-//    /**
-//     * Returns a list of witnesses that include the given work and chunk numbers
-//     *
-//     * Each element of the resulting array contains two properties:
-//     *   type:  witness Type (e.g., 'transcription')
-//     *   id:   witness id
-//     *
-//     * @param string $workId
-//     * @param int $chunkNumber
-//     * @return array
-//     */
-//    public function getWitnessesForChunk(string $workId, int $chunkNumber) : array {
-//
-//        // Get transcriptions
-//        $transcriptionWitnesses = $this->getDocInfosForChunk($workId, $chunkNumber);
-//
-//        // Get texts
-//
-//        // Get other witness types
-//
-//        // Assemble return array
-//        $witnessesForChunk = [];
-//
-//        foreach($transcriptionWitnesses as $tw) {
-//            $witnessesForChunk[] =  [
-//                'type' => self::WITNESS_TRANSCRIPTION,
-//                'id' => $tw->id
-//            ];
-//        }
-//        return $witnessesForChunk;
-//    }
-//
-//    /**
-//     * returns a list of docs
-//     *
-//     * @param string $workId
-//     * @param int $chunkNumber
-//     * @return array
-//     */
-//    public function getDocsForChunk(string $workId, int $chunkNumber) : array
-//    {
-//        $ti = $this->tNames['items'];
-//        $te = $this->tNames['elements'];
-//        $td = $this->tNames['docs'];
-//        $tp = $this->tNames['pages'];
-//
-//
-//        $this->getSqlQueryCounterTracker()->incrementSelect();
-//        $query = "SELECT DISTINCT $td.* FROM $td" .
-//                " JOIN ($te, $ti, $tp)" .
-//                " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id AND $td.id=$tp.doc_id)" .
-//                " WHERE $ti.type=" . Item::CHUNK_MARK .
-//                " AND $ti.text='$workId'" .
-//                " AND $ti.target=$chunkNumber" .
-//                " AND $ti.valid_until='9999-12-31 23:59:59.999999'" .
-//                " AND $te.valid_until='9999-12-31 23:59:59.999999'".
-//                " AND $tp.valid_until='9999-12-31 23:59:59.999999'";
-//
-//        $r = $this->databaseHelper->query($query);
-//
-//        $docs = [];
-//        while ($row = $r->fetch()) {
-//            $docs[] = $row;
-//        }
-//        return $docs;
-//    }
-
-//    /**
-//     * Returns an array of DocInfo structures corresponding to the documents in the
-//     * system whose transcription include some chunk mark for the given
-//     * workId and chunk number
-//     *
-//     * @param string $workId
-//     * @param int $chunkNumber
-//     * @return DocInfo[]
-//     */
-//    public function getDocInfosForChunk(string $workId, int $chunkNumber) : array {
-//
-//        $docs = $this->getDocsForChunk($workId, $chunkNumber);
-//
-//        $docInfos = [];
-//
-//        foreach($docs as $row) {
-//            $docInfos[] = $this->createDocInfoFromDbRow($row);
-//        }
-//
-//        return $docInfos;
-//    }
-
-
-    /**
-     * @param int $docId
-     * @param string $workId
-     * @param int $chunkNumber
-     * @param string $localWitnessId
-     * @return array
-     */
-//    public function getChunkLocationsForDoc(int $docId, string $workId, int $chunkNumber, string $localWitnessId = 'A') : array
-//    {
-//        $rawLocations = $this->getChunkLocationsForDocRaw($docId, $workId, $chunkNumber, $localWitnessId);
-//
-//        $locationArray = $this->getChunkLocationArrayFromRawLocations($rawLocations);
-//
-//        return $this->fillInColumnInfoForLocations($docId, $locationArray);
-//    }
-
-//    public function fillInColumnInfoForLocations(int $docId, array $locationArray) : array {
-//
-//        $returnArray = $locationArray;
-//
-//        // get columns for each location
-//        foreach ($returnArray as $key => &$segmentLoc) {
-//            $segmentLoc['columns'] = [];
-//            if (!$segmentLoc['valid']) {
-//                continue;
-//            }
-//            $startSeq = intval($segmentLoc['start']['page_seq']);
-//            $startCol = intval($segmentLoc['start']['column_number']);
-//            $endSeq = intval($segmentLoc['end']['page_seq']);
-//            $endCol = intval($segmentLoc['end']['column_number']);
-//            $pageInfo = $this->getPageInfoByDocSeq($docId, $startSeq);
-//            $pageFoliation = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
-//            if ($startSeq === $endSeq) {
-//                for ($c = $startCol; $c <= $endCol; $c++) {
-//                    $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'foliation' => $pageFoliation,  'column' => $c];
-//                }
-//                continue;
-//            }
-//            // more than 1 page
-//            for ($c = $startCol; $c <= $pageInfo['num_cols']; $c++) {
-//                $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'foliation' => $pageFoliation, 'column' => $c];
-//            }
-//            for ($pageSeq = $startSeq + 1; $pageSeq < $endSeq; $pageSeq++) {
-//                $pageInfo = $this->getPageInfoByDocSeq($docId, $pageSeq);
-//                $pageFoliation = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
-//                for ($c = 1; $c <= $pageInfo['num_cols']; $c++) {
-//                    $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'foliation' => $pageFoliation, 'column' => $c];
-//                }
-//            }
-//            $pageInfo = $this->getPageInfoByDocSeq($docId, $endSeq);
-//            $pageFoliation = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
-//            for ($c = 1; $c <= $endCol; $c++) {
-//                $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'foliation' => $pageFoliation,  'column' => $c];
-//            }
-//        }
-//
-//        $lastTime = '0000-00-00 00:00:00.000000';  // times will be compared as strings, this works because MySQL stores times as 'YYYY-MM-DD HH:MM:SS.mmmmmm'
-//        $lastAuthorName = '';
-//        $lastAuthorId = 0;
-//        $lastAuthorUsername = '';
-//        foreach($returnArray as $key => &$segmentLoc) {
-//            foreach($segmentLoc['columns'] as &$column) {
-//                $column['versions'] = $this->getTranscriptionVersionsWithAuthorInfo($column['pageId'], $column['column']);
-//                if (count($column['versions']) > 0) {
-//                    $lastVersionTime = $column['versions'][count($column['versions'])-1]['time_from'];
-//                    $column['lastTime'] = $lastVersionTime;
-//                    $column['lastAuthorName'] = $column['versions'][count($column['versions'])-1]['author_name'];
-//                    $column['lastAuthorId'] = intval($column['versions'][count($column['versions'])-1]['author_id']);
-//                    $column['lastAuthorUsername'] = $column['versions'][count($column['versions'])-1]['author_username'];
-//                    if (strcmp($lastTime, $lastVersionTime)<0) {
-//                        $lastTime = $lastVersionTime;
-//                        $lastAuthorName = $column['lastAuthorName'];
-//                        $lastAuthorId = $column['lastAuthorId'];
-//                        $lastAuthorUsername =$column['lastAuthorUsername'];
-//                    }
-//                } else {
-//                    $column['lastTime'] = '0000-00-00 00:00:00.000000';
-//                    $column['lastAuthorName'] = 'nobody';
-//                    $column['lastAuthorId'] = 0;
-//                    $column['lastAuthorUsername'] = 'nobody';
-//                }
-//            }
-//            $segmentLoc['lastTime'] = $lastTime;
-//            $segmentLoc['lastAuthorName'] = $lastAuthorName;
-//            $segmentLoc['lastAuthorId'] = $lastAuthorId;
-//            $segmentLoc['lastAuthorUsername'] = $lastAuthorUsername;
-//        }
-//
-//        return $returnArray;
-//
-//    }
-
-//    /**
-//     * Returns an array with the chunk start and end locations
-//     * for the given document, work and chunk numbers
-//     *
-//     * Each row has the following fields:
-//     *  page_seq : page sequence number within the document
-//     *  foliation: page foliation
-//     *  column_number: column
-//     *  e_seq: element sequence number within the column
-//     *  item_seq: item sequence number within the element
-//     *  type: 'start' or 'end'
-//     *  segment: chunk segment number
-//     *
-//     * @param int $docId
-//     * @param string $workId
-//     * @param int $chunkNumber
-//     * @param string $localWitnessId
-//     * @param string $timeString
-//     * @return array
-//     */
-//    public function getChunkLocationsForDocRaw($docId, $workId, $chunkNumber, $localWitnessId = 'A', $timeString = '')
-//    {
-//        $ti = $this->tNames['items'];
-//        $te = $this->tNames['elements'];
-//        $tp = $this->tNames['pages'];
-//
-//        if ($timeString === '') {
-//            $timeString = TimeString::now();
-//        }
-//
-//
-//        $this->getSqlQueryCounterTracker()->incrementSelect();
-//
-//        $query = "SELECT $tp.seq as 'page_seq'," .
-//            " $tp.foliation," .
-//            " $te.column_number," .
-//            " $te.seq as 'e_seq'," .
-//            " $ti.seq as 'item_seq'," .
-//            " $ti.alt_text as 'type'," .
-//            " $ti.extra_info as 'lwid'," .
-//            " $ti.length as 'segment'" .
-//            " FROM $tp" .
-//            " JOIN ($te, $ti)" .
-//            " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" .
-//            " WHERE $ti.type=" . Item::CHUNK_MARK .
-//            " AND $ti.text='$workId'" .
-//            " AND $ti.target=$chunkNumber" .
-//            " AND $ti.extra_info='$localWitnessId'" .
-//            " AND $tp.doc_id=$docId" .
-//            " AND $ti.valid_from<='$timeString'" .
-//            " AND $te.valid_from<='$timeString'" .
-//            " AND $tp.valid_from<='$timeString'" .
-//            " AND $ti.valid_until>'$timeString'" .
-//            " AND $te.valid_until>'$timeString'" .
-//            " AND $tp.valid_until>'$timeString'" .
-////            " AND $ti.valid_until='9999-12-31 23:59:59.999999'" .
-////            " AND $te.valid_until='9999-12-31 23:59:59.999999'" .
-////            " AND $tp.valid_until='9999-12-31 23:59:59.999999'" .
-//            " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
-//
-//        $r = $this->databaseHelper->query($query);
-//
-//        $rows = [];
-//        while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
-//            $rows[] = $row;
-//        }
-//        $this->logger->debug("ChunkLocations for doc $docId, work $workId, chunk $chunkNumber, lwid $localWitnessId", $rows);
-//        return $rows;
-//    }
-
-    /**
-     * Returns true if $loc1 represents
-     * an item location that is located after
-     * $loc2
-     *
-     *
-     *
-     * @param array $loc1
-     * @param array $loc2
-     * @return bool
-     */
-    private function isAfter(array $loc1, array $loc2): bool
-    {
-        
-        $loc1Nr = $loc1['page_seq']*100000000 + 
-            $loc1['column_number']*1000000 +
-            $loc1['e_seq'] * 1000 + $loc1['item_seq'];
-        
-         $loc2Nr = $loc2['page_seq']*100000000 + 
-            $loc2['column_number']*1000000 +
-            $loc2['e_seq'] * 1000 + $loc2['item_seq'];
-        
-         return $loc1Nr > $loc2Nr;
-    }
-
-    /**
-     * Returns an array containing the start and end locations
-     * for every chunk segment in the given array of locations
-     * ordered by segment
-     *
-     * The given locations arrays is supposed to contain the
-     * locations for a single chunk in a particular document
-     *
-     * The returned array has the following structure:
-     *
-     *   $results[n] = [ 'valid' => is_this_segment_valid (boolean)
-     *                   'start' => start_location (or null)
-     *                   'end' => end_location (or null),
-     *                   'warnings' => array of string messages ]
-     *
-     *  n = 0,1,2,... up to the number of segments found in the input array
-     *
-     *
-     * @param array $locationRows
-     * @return array
-     */
-    public function getChunkLocationArrayFromRawLocations(array $locationRows): array
-    {
-        $chunkLocations = [];
-        
-        foreach($locationRows as &$locationRow) {
-            if (is_null($locationRow['segment'])) {
-                $locationRow['segment'] = 1;
-            }
-            $chunkSegment = $locationRow['segment'];
-            
-            if (is_null($locationRow['foliation'])) {
-                $locationRow['foliation'] = $locationRow['page_seq'];
-            }
-            if (!isset($chunkLocations[$chunkSegment])) {
-                $chunkLocations[$chunkSegment] = [];
-                $chunkLocations[$chunkSegment]['warnings'] = [];
-                $chunkLocations[$chunkSegment]['valid'] = true;
-            }
-            if (isset($chunkLocations[$chunkSegment][$locationRow['type']])) {
-                // the location is already in the array, this is not good!
-                $chunkLocations[$chunkSegment]['valid'] = false;
-                $chunkLocations[$chunkSegment]['warnings'][] = 'Duplicate ' . 
-                        $locationRow['type'] . ' location found ';
-                continue;
-            }
-            $chunkLocations[$chunkSegment][$locationRow['type']] = $locationRow;
-        }
-
-        // check for other inconsistencies
-        foreach($chunkLocations as $key => &$segmentLoc) {
-            if (!$segmentLoc['valid']) {
-                continue;
-            }
-            if (!isset($segmentLoc['start'])) {
-                $segmentLoc['valid'] = false;
-                $segmentLoc['warnings'][] = 'No chunk segment start found for segment ' . $key;
-                continue;
-            }
-            if (!isset($segmentLoc['end'])) {
-                $segmentLoc['valid'] = false;
-                $segmentLoc['warnings'][] = 'No chunk segment end found for segment ' . $key;
-                continue;
-            }
-            if ($this->isAfter($segmentLoc['start'], $segmentLoc['end'])) {
-                $segmentLoc['valid'] = false;
-                $segmentLoc['warnings'][] = 'Chunk segment start is after chunk end in segment ' . $key;
-            }
-        }
-        
-        ksort($chunkLocations);
-
-
-        return $chunkLocations;
-    }
-    
-    public function getAdditionItemWithGivenTarget(int $target) {
-        $ti = $this->tNames['items'];
-
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        
-        $query = "SELECT * from $ti WHERE type=" . Item::ADDITION . " AND target=$target AND valid_until='9999-12-31 23:59:59.999999' LIMIT 1";
-        $r = $this->databaseHelper->query($query);
-        
-        return $r->fetch(PDO::FETCH_ASSOC);
-    }
-    
-    public function getAdditionElementIdWithGivenReference(int $reference): bool|int
-    {
-        $te = $this->tNames['elements'];
-
-        $query = "SELECT id from $te where type=" . Element::SUBSTITUTION . " AND reference=$reference AND valid_until='9999-12-31 23:59:59.999999' LIMIT 1";
-        $r = $this->databaseHelper->query($query);
-        $row = $r->fetch(PDO::FETCH_ASSOC);
-        if ($row) {
-            return (int) $row['id'];
-        } 
-        return false;
-    }
-            
-    
-    public function getItemStreamForElementId(int $elementId): array
-    {
-        $ti = $this->tNames['items'];
-        $te = $this->tNames['elements'];
-        $tp = $this->tNames['pages'];
-
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        
-        $query = "SELECT $ti.id, $ti.type, $ti.seq, $ti.ce_id, $ti.lang, $ti.hand_id, $ti.text, $ti.alt_text, $ti.extra_info, $ti.length, $ti.target, " .
-                "$te.type as 'e.type', $te.page_id, $te.column_number as col, $te.seq as 'e.seq', $te.hand_id as 'e.hand_id', $te.reference, $te.placement, " .
-                "$tp.seq as 'p.seq', $tp.foliation" . 
-            " FROM $ti" . 
-            " JOIN ($te FORCE INDEX (page_id_2), $tp)" . 
-            " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" . 
-            " WHERE $te.id=$elementId" . 
-            " AND $ti.valid_until='9999-12-31 23:59:59.999999'" . 
-            " AND $te.valid_until='9999-12-31 23:59:59.999999'" .
-            " AND $tp.valid_until='9999-12-31 23:59:59.999999'" . 
-            " ORDER BY $ti.seq ASC";
-        
-        $r = $this->databaseHelper->query($query);
-        
-        $rows = [];
-        while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
-            $rows[] = $row;
-        }
-        return $rows;
-    }
-    
-    public function calcSeqNumber($loc)
-    {
-        return $loc['page_seq']*1000000 + $loc['column_number'] * 10000 + $loc['e_seq']*100 + $loc['item_seq'];
-    }
-    
-    /**
-     * Returns an ordered list with the items between the given locations
-     * but not including the items at the locations themselves.
-     * 
-     *  The list of items includes the text of all inline and marginal additions
-     * at the appropriate places. That is, all references are resolved and the
-     * returned list of items is the actual text between the given locations
-     * 
-     * @param int $docId
-     * @param array $loc1
-     * @param array $loc2
-     * @return array
-     */
-    public function getItemStreamBetweenLocations(int $docId, array $loc1, array $loc2): array
-    {
-        $ti = $this->tNames['items'];
-        $te = $this->tNames['elements'];
-        $tp = $this->tNames['pages'];
-
-
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        
-        $seqNumberStart = $this->calcSeqNumber($loc1);
-        $seqNumberEnd = $this->calcSeqNumber($loc2);
-        if ($seqNumberStart >= $seqNumberEnd) {
-            return [];
-        }
-        
-        $query = "SELECT $ti.id, $ti.type, $ti.seq, $ti.ce_id, $ti.lang, $ti.hand_id, $ti.text, $ti.alt_text, $ti.extra_info, $ti.length, $ti.target, " .
-                "$te.type as 'e.type', $te.page_id, $te.column_number as col, $te.seq as 'e.seq', $te.hand_id as 'e.hand_id', $te.reference, $te.placement, " .
-                "$tp.seq as 'p.seq', $tp.foliation" . 
-            " FROM $ti" . 
-            " JOIN ($te FORCE INDEX (page_id_2), $tp)" . 
-            " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" . 
-            " WHERE $tp.doc_id=$docId" . 
-            " AND $te.type=" . Element::LINE . 
-            " AND ($tp.seq*1000000 + $te.column_number*10000 + $te.seq * 100 + $ti.seq) > $seqNumberStart" . 
-            " AND ($tp.seq*1000000 + $te.column_number*10000 + $te.seq * 100 + $ti.seq) < $seqNumberEnd" .             
-            " AND $ti.valid_until='9999-12-31 23:59:59.999999'" . 
-            " AND $te.valid_until='9999-12-31 23:59:59.999999'" .
-            " AND $tp.valid_until='9999-12-31 23:59:59.999999'" . 
-            " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
-        
-        $r = $this->databaseHelper->query($query);
-        
-        $rows = [];
-        while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
-            $rows[] = $row;
-        }
-        
-        // Deal with targets and references
-        $items = [];
-        $additionItemsAlreadyInOutput = [];
-        foreach($rows as $inputRow) {
-            switch( (int) $inputRow['type']) {
-                case Item::DELETION:
-                case Item::UNCLEAR:
-                case Item::MARGINAL_MARK:
-                    $items[] = $inputRow;
-                    $additionItem  = $this->getAdditionItemWithGivenTarget((int) $inputRow['id']);
-                    if ($additionItem) {
-                        $fieldsToCopy = ['e.type', 'page_id', 'col', 'e.seq', 'e.hand_id', 'reference', 'placement', 'p.seq', 'foliation'];
-                        foreach ($fieldsToCopy as $field) {
-                            $additionItem[$field] = $inputRow[$field];
-                        }
-                        $items[] = $additionItem;
-                        $additionItemsAlreadyInOutput[] = (int) $additionItem['id'];
-                    } else {
-                        $additionElementId = $this->getAdditionElementIdWithGivenReference((int) $inputRow['id']);
-                        if ($additionElementId) {
-                            $additionElementItemStream = $this->getItemStreamForElementId($additionElementId);
-                            foreach($additionElementItemStream as $additionItem) {
-                                $items[] = $additionItem;
-                            }
-                        }
-                    }
-                    break;
-                
-                case Item::ADDITION:
-                    if (!in_array((int)$inputRow['id'], $additionItemsAlreadyInOutput)) {
-                        $items[] = $inputRow;
-                    }
-                    break;
-                    
-                default:
-                    $items[] = $inputRow;
-            }
-        }
-        return $items;
-    }
 
     /**
      * Looks up the page id for a document and page number.
@@ -1458,26 +584,6 @@ class DataManager implements  SqlQueryCounterTrackerAware
             ],1);
         if (count($rows) === 0) {
             return -1;
-        }
-        return $rows->getFirst()['id'];
-    }
-
-    /**
-     * @param $docId
-     * @param $seq
-     * @return false|mixed
-     * @deprecated use equivalent DocumentManager function
-     */
-     public function getPageIdByDocSeq($docId, $seq) : bool|int
-    {
-
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        $rows = $this->pagesDataTable->findRows([
-            'doc_id' => $docId, 
-            'seq'=> $seq
-            ],1);
-        if (count($rows) === 0) {
-            return false;
         }
         return $rows->getFirst()['id'];
     }
@@ -1549,6 +655,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @throws InvalidTimeStringException
      * @throws RowAlreadyExists
      * @throws RowDoesNotExist
+     * @deprecated
      */
     public function insertNewElement(Element $element, bool $insertAtEnd = true, array $itemIds = [], string $time = ''): bool|Element
     {
@@ -1830,18 +937,6 @@ class DataManager implements  SqlQueryCounterTrackerAware
         }
         return -1;
     }
-    
-    public function getItemById(int $itemId): Item|bool
-    {
-
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        $row = $this->itemsDataTable->getRow($itemId);
-        if ($row === null) {
-            $this->logger->error("Item id $itemId not found");
-            return false;
-        }
-        return self::createItemObjectFromRow($row);
-    }
 
 
     public function getElementById($elementId): bool|Element
@@ -1862,7 +957,13 @@ class DataManager implements  SqlQueryCounterTrackerAware
         }
         return $e;
     }
-    
+
+    /**
+     * @param $fields
+     * @param $row
+     * @return Element
+     * @deprecated use ApmTranscriptionManager method
+     */
     public static function createElementObjectFromArbitraryRow($fields, $row) : Element {
         
         switch ($row[$fields['type']]){
@@ -1916,28 +1017,6 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return $e;
     }
 
-    /**
-     * Creates an array of Element objects from an array such
-     * as the one created by the TranscriptionEditor
-     * @param array $theArray
-     * @return array
-     */
-    public static function createElementArrayFromArray(array $theArray): array
-    {
-        $elements = [];
-        //print "Creating element array from array";
-        foreach($theArray as $elementArray) {
-            $e = self::createElementObjectFromArray($elementArray);
-            $e->items = [];
-            foreach($elementArray['items'] as $itemArray) {
-                $item = self::createItemObjectFromArray($itemArray);
-                $e->items[] = $item;
-            }
-            $elements[] = $e;
-        }
-        return $elements;
-    }
-    
     private function createElementObjectFromRow($row): Element
     {
         $fields = [ 
@@ -1955,25 +1034,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         ];
         return self::createElementObjectFromArbitraryRow($fields, $row);
     }
-    
-    public static function createElementObjectFromArray($theArray): Element
-    {
-        $fields = [ 
-            'id' => 'id',
-            'type'=> 'type',
-            'page_id' => 'pageId',
-            'column_number' => 'columnNumber',
-            'seq' => 'seq',
-            'lang' => 'lang',
-//            'editor_id' => 'editorId',
-            'editor_tid' => 'editorTid',
-            'hand_id' => 'handId',
-            'reference' => 'reference',
-            'placement' => 'placement'
-        ];
-        return self::createElementObjectFromArbitraryRow($fields, $theArray);
-    }
-    
+
     public static function createItemObjectFromArbitraryRow($fields, $row) : Item{
         switch ($row[$fields['type']]){
             case Item::TEXT:
@@ -2145,24 +1206,6 @@ class DataManager implements  SqlQueryCounterTrackerAware
             'target' => 'target',
         ];
         return self::createItemObjectFromArbitraryRow($fields, $row);
-    }
-    
-    public static function createItemObjectFromArray($theArray)  : Item
-    {
-        $fields = [ 
-            'id' => 'id',
-            'type'=> 'type',
-            'ce_id' => 'columnElementId',
-            'seq' => 'seq',
-            'lang' => 'lang',
-            'hand_id' => 'handId',
-            'text' => 'theText',
-            'alt_text' => 'altText',
-            'extra_info' => 'extraInfo',
-            'length' => 'length',
-            'target' => 'target',
-        ];
-        return self::createItemObjectFromArbitraryRow($fields, $theArray);
     }
 
     /**
@@ -2453,108 +1496,6 @@ class DataManager implements  SqlQueryCounterTrackerAware
         }
         return true;
     }
-
-    /**
-     * Returns true if the given page does not any transcription data
-     * associated with it
-     * @param int $pageId
-     * @return bool
-     */
-    public function isPageEmpty(int $pageId): bool
-    {
-        $pageInfo = $this->getPageInfo($pageId);
-        if ($pageInfo['num_cols'] === 0) {
-            return true;
-        }
-        for ($i = 1; $i <= $pageInfo['num_cols']; $i++) {
-            try {
-                $elements = $this->getColumnElementsByPageId($pageId, $i);
-            } catch (InvalidTimeStringException $e) {
-                // should NEVER happen
-                throw new RuntimeException($e->getMessage());
-            }
-            if (count($elements) > 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * @param $docId
-     * @param $pageNum
-     * @return bool
-     * @throws Exception
-     * @deprecated use equivalent function in DocumentManager
-     */
-    public function deletePage($docId, $pageNum): bool
-    {
-        $pageId = $this->getPageIdByDocPage($docId, $pageNum);
-        if ($pageId === -1) {
-            return true;
-        }
-        if (!$this->isPageEmpty($pageId)) {
-            return false;
-        }
-        
-        $deletedPageInfo = $this->getPageInfo($pageId);
-        $deletedPageNum = $deletedPageInfo['page_number'];
-        $deletedSeq = $deletedPageInfo['seq'];
-        
-        $docPageCount = $this->getPageCountByDocId($docId);
-
-        // Update page number and sequence for the other pages
-        for ($i = 1; $i <= $docPageCount; $i++) {
-            $page = $this->getPageInfoByDocPage($docId, $i);
-            $newPageNum = $page['page_number'];
-            $newSeq = $page['seq'];
-            if ($page['page_number'] > $deletedPageNum) {
-                $newPageNum = $page['page_number'] - 1;
-            }
-            if ($page['seq'] > $deletedSeq) {
-                $newSeq = $page['seq'] - 1;
-            }
-            if ($newPageNum != $page['page_number'] || $newSeq != $page['seq']) {
-                 $this->pagesDataTable->updateRow([
-                    'id' => $page['id'],
-                    'page_number' => $newPageNum,
-                    'seq' => $newSeq
-                ]);
-            }
-        }
-        
-        // Delete page in pages table
-        $this->getSqlQueryCounterTracker()->incrementDelete();
-        if ($this->pagesDataTable->deleteRow($pageId) !== 1) {
-            // This means a database error
-            // Can't reproduce in testing for now
-            return false; // @codeCoverageIgnore 
-        }
-        return true;
-    }
-
-//    public function registerTranscriptionVersion(int $pageId, int $col, string $timeFrom, int $authorId, string $descr = '', bool $isMinor = false, bool $isReview= false) {
-//
-//        $currentVersions = $this->getTranscriptionVersions($pageId, $col);
-//
-//        if (count($currentVersions) !== 0 ) {
-//            $lastVersion = $currentVersions[count($currentVersions)-1];
-//            $this->updateVersionUntilTime(intval($lastVersion['id']), $timeFrom);
-//        }
-//
-//        $this->getSqlQueryCounterTracker()->incrementCreate();
-//
-//        return $this->txVersionsTable->createRow([
-//            'page_id' => $pageId,
-//            'col' => $col,
-//            'time_from' => $timeFrom,
-//            'time_until' => TimeString::END_OF_TIMES,
-//            'author_id' => $authorId,
-//            'descr' => $descr,
-//            'minor' => $isMinor ? 1 : 0,
-//            'review' => $isReview ? 1 : 0
-//        ]);
-//    }
 
     /**
      * Gets all the transcriptions versions associated with the given pageId and columns.

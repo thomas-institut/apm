@@ -198,7 +198,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             $this->logger->info("SITE PROFILER " . SystemProfiler::getName(), SystemProfiler::getLaps());
             return $responseToReturn;
         } catch (LoaderError|RuntimeError|SyntaxError $e) {
-            $this->logger->error("Twig error rendering page: " . $e->getMessage());
+            $this->logger->error("Twig error rendering page: " . $e->getMessage(), [ 'exception' => get_class($e)]);
             return $this->getSystemErrorPage($response, "Error rendering page", []);
         }
     }
@@ -233,12 +233,19 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return $this->systemManager->getBaseUrl();
     }
 
-    // Utility function
-    protected function buildPageArray($pagesInfo, $transcribedPages): array
+    /**
+     * Utility function to create an array of custom page info for the
+     * document and page viewer website pages.
+     *
+     * @param array $legacyPageInfoArray
+     * @param int[] $transcribedPages  array with the page numbers that have transcriptions
+     * @return array
+     */
+    protected function buildPageArray(array $legacyPageInfoArray, array $transcribedPages): array
     {
-        $thePages = array();
-        foreach ($pagesInfo as $page) {
-            $thePage = array();
+        $thePages = [];
+        foreach ($legacyPageInfoArray as $page) {
+            $thePage = [];
             $thePage['number'] = $page['page_number'];
             $thePage['seq'] = $page['seq'];
             $thePage['type'] = $page['type'];

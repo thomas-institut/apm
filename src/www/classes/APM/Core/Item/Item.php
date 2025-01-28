@@ -33,17 +33,17 @@ abstract class Item {
     
     
     /** @var string */
-    protected $location;
+    protected string $location;
     const LOCATION_INLINE = '';
     
     /** @var int */
-    protected $textualFlow;
+    protected int $textualFlow;
     const FLOW_MAIN_TEXT = 0;
     const FLOW_ADDITION = 1;
     const FLOW_GLOSS = 2;
     
     /** @var array */
-    protected $notes;
+    protected array $notes;
     
     abstract public function getPlainText();
     abstract public function getNormalizedText();
@@ -53,7 +53,8 @@ abstract class Item {
         $this->setLocation(self::LOCATION_INLINE);
         $this->notes = [];
     }
-    public function setLocation(string $loc) {
+    public function setLocation(string $loc): void
+    {
         $this->location = $loc;
     }
     
@@ -61,7 +62,8 @@ abstract class Item {
         return $this->location;
     }
     
-    public function setTextualFlow(int $textualFlow) {
+    public function setTextualFlow(int $textualFlow): void
+    {
         $this->textualFlow = $textualFlow;
     }
     
@@ -73,7 +75,7 @@ abstract class Item {
         return $this->notes;
     }
     
-    public function setNotes(array $notes) {
+    public function setNotes(array $notes) : void{
         $this->notes = [];
         foreach($notes as $note) {
             if (!is_a($note, Note::class)) {
@@ -83,7 +85,8 @@ abstract class Item {
         }
     }
     
-    public function addNote(Note $note) {
+    public function addNote(Note $note): void
+    {
         $this->notes[] = $note;
     }
 

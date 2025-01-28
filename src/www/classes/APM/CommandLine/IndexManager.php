@@ -152,12 +152,9 @@ class IndexManager extends CommandLineUtility {
      * @return true
      */
     private function buildIndexTranscriptions(): bool {
-        // get a list of all docIDs in the sql-database
-        // $doc_list = $this->getDm()->getDocIdList('title');
 
-        // HERE
-        $doc_list = $this->getDm()->getDocIdList('title');
-        // $doc_list = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType('doc');
+        // get a list of all docIDs in the sql-database
+        $doc_list = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
 
         // get all relevant data for every transcription and index it
         foreach ($doc_list as $doc_id) {
@@ -311,11 +308,13 @@ class IndexManager extends CommandLineUtility {
         // get a list of triples with data about all transcribed columns, their pageIDs and their timestamps from the database
         $columnsInDatabase = [];
 
-        $docs = $this->getDm()->getDocIdList('title');
+        $docs = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
 
         foreach ($docs as $doc) {
+
+            print($doc . "\n");
             // get a list of transcribed pages of the document
-            $pages_transcribed = $this->getDm()->getTranscribedPageListByDocId($doc);
+            $pages_transcribed = $this->getSystemManager()->getTranscriptionManager()->getTranscribedPageListByDocId($doc);
 
             foreach ($pages_transcribed as $page) {
 
@@ -325,15 +324,16 @@ class IndexManager extends CommandLineUtility {
 
                 for ($col = 1; $col <= $num_cols; $col++) {
 
-                    $versions = $this->getDm()->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
+                    // $versions = $this->getDm()->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
+                    $versions = $versionManager->getColumnVersionInfoByPageCol($page_id, $col);
                     if (count($versions) === 0) {
                         // no transcription in this column
                         continue;
                     }
 
                     // get timestamp
-                    $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($page_id, $col);
-                    $currentVersionInfo = (array)(end($versionsInfo));
+                    // $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($page_id, $col);
+                    $currentVersionInfo = (array)(end($versions));
                     $timeFrom = (string)$currentVersionInfo['timeFrom'];
 
                     $columnsInDatabase[] = [$page_id, $col, $timeFrom];
@@ -659,8 +659,8 @@ class IndexManager extends CommandLineUtility {
 
         // Get timestamp
         $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
-        $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($pageID, $col);
-        $currentVersionInfo = (array)(end($versionsInfo));
+        $versions = $versionManager->getColumnVersionInfoByPageCol($pageID, $col);
+        $currentVersionInfo = (array)(end($versions));
         $timeFrom = (string) $currentVersionInfo['timeFrom'];
 
         if ($timeFrom === '') {
@@ -1026,8 +1026,7 @@ class IndexManager extends CommandLineUtility {
         $title = $this->getTitle($doc_id);
 
         // get a list of transcribed pages of the document
-        $pages_transcribed = $this->getDm()->getTranscribedPageListByDocId($doc_id);
-
+        $pages_transcribed = $this->getSystemManager()->getTranscriptionManager()->getTranscribedPageListByDocId($doc_id);
 
         // iterate over transcribed pages
         foreach ($pages_transcribed as $page) {
@@ -1035,12 +1034,12 @@ class IndexManager extends CommandLineUtility {
             // get pageID, number of columns and sequence number of the page
             $page_id = $this->getPageID($doc_id, $page);
             $page_info = $this->getSystemManager()->getDocumentManager()->getPageInfo($page_id);
-            $num_cols = $page_info['num_cols'];
+            $num_cols = $page_info->numCols;
             $seq = $this->getSeq($doc_id, $page);
 
             // iterate over all columns of the page and get the corresponding transcripts and transcribers
             for ($col = 1; $col <= $num_cols; $col++) {
-                $versions = $this->getDm()->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
+                $versions = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager()->getColumnVersionInfoByPageCol($page_id, $col);
                 if (count($versions) === 0) {
                     // no transcription in this column
                     continue;
@@ -1196,8 +1195,7 @@ class IndexManager extends CommandLineUtility {
             $edition_data['lang'] = $data['lang'];
             $edition_data['chunk_id'] = explode('-', $data['chunkId'])[1];
             $work_id = explode('-', $data['chunkId'])[0];
-            // HERE
-            $edition_data['title'] = (string) $this->getDm()->getWorkInfoByDareId($work_id)['title'];
+            $edition_data['title'] = (string) $this->getSystemManager()->getWorkManager()->getWorkDataByDareId($work_id)->title;
             $edition_data['timeFrom'] = $timeFrom;
         }
 
@@ -1357,12 +1355,11 @@ class IndexManager extends CommandLineUtility {
      * @return string
      */
     private function getDocIdByPageId (string $pageID): string {
-// HERE
-        $docList = $this->getDm()->getDocIdList('title');
-        //$docList = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
+
+        $docList = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
 
         foreach ($docList as $doc) {
-            $pages_transcribed = $this->getDm()->getTranscribedPageListByDocId($doc);
+            $pages_transcribed = $this->getSystemManager()->getTranscriptionManager()->getTranscribedPageListByDocId($doc);
             foreach ($pages_transcribed as $page_transcribed) {
                 $currentPageID = $this->getPageID($doc, $page_transcribed);
                 if ((string) $currentPageID === $pageID) {
@@ -1448,7 +1445,7 @@ class IndexManager extends CommandLineUtility {
     private function getTranscription(int $doc_id, int $page, int $col): string
     {
         $page_id = $this->getSystemManager()->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
-        $elements = $this->getDm()->getColumnElementsBypageID($page_id, $col);
+        $elements = $this->getSystemManager()->getTranscriptionManager()->getColumnElementsBypageID($page_id, $col);
         return $this->getPlainTextFromElements($elements);
     }
 
@@ -1460,13 +1457,15 @@ class IndexManager extends CommandLineUtility {
      */
     private function getTranscriber(int $doc_id, int $page, int $col): string {
         $page_id = $this->getSystemManager()->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
-        $versions = $this->getDm()->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
+        $versions = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager()->getColumnVersionInfoByPageCol($page_id, $col);
+
         if ($versions === []) {
             return '';
         }
         else {
-            $latranscriptions_version = count($versions) - 1;
-            return $versions[$latranscriptions_version]['author_name'];
+            $transcriptions_version = count($versions) - 1;
+            $authorTid = $versions[$transcriptions_version]->authorTid;
+            return $this->getSystemManager()->getEntitySystem()->getEntityName($authorTid);
         }
     }
 

@@ -740,7 +740,7 @@ class ApmTranscriptionManager extends TranscriptionManager
 
         $dbDocId = $this->getDocumentManager()->getLegacyDocId($docId);
 
-        $this->logger->debug("Doc Id $docId, DB docId $dbDocId");
+        // $this->logger->debug("Doc Id $docId, DB docId $dbDocId");
 
 
         $query = 'SELECT DISTINCT p.`page_number` AS page_number FROM ' .
@@ -755,7 +755,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         while ($row = $r->fetch(PDO::FETCH_ASSOC)){
             $pages[] = intval($row['page_number']);
         }
-        $this->logger->debug("Pages", [ 'pages' => $pages]);
+        // $this->logger->debug("Pages", [ 'pages' => $pages]);
         return $pages;
     }
 

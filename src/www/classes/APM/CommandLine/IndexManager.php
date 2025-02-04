@@ -22,9 +22,7 @@ namespace APM\CommandLine;
 
 use APM\CollationTable\CollationTableManager;
 use APM\EntitySystem\Schema\Entity;
-use APM\EntitySystem\Schema\EntityTypes;
 use APM\System\ApmConfigParameter;
-use APM\System\Document\PageInfo;
 use APM\System\Lemmatizer;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
@@ -312,7 +310,6 @@ class IndexManager extends CommandLineUtility {
 
         foreach ($docs as $doc) {
 
-            print($doc . "\n");
             // get a list of transcribed pages of the document
             $pages_transcribed = $this->getSystemManager()->getTranscriptionManager()->getTranscribedPageListByDocId($doc);
 
@@ -1446,6 +1443,7 @@ class IndexManager extends CommandLineUtility {
     {
         $page_id = $this->getSystemManager()->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
         $elements = $this->getSystemManager()->getTranscriptionManager()->getColumnElementsBypageID($page_id, $col);
+        print_r($elements);
         return $this->getPlainTextFromElements($elements);
     }
 

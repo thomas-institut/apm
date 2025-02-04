@@ -20,9 +20,9 @@ class TranscriptionTool extends CommandLineUtility implements AdminUtility
      transcription <option>
      
      Options:
-        info <doc:page[:col]>|<pageId[:col]> : print info about a transcription
-        delete <doc:page[:col]>|<pageId[:col]> : delete a transcription
-        move <doc:page[:col]>|<pageId[:col]> <doc:page[:col]>|<pageId[:col]>: move a transcription
+        info <doc:page[:col]>|<page:pageId[:col]> : print info about a transcription
+        delete <doc:page[:col]>|<page:pageId[:col]> : delete a transcription
+        move <doc:page[:col]>|<page:pageId[:col]> <doc:page[:col]>|<page:pageId[:col]>: move a transcription
 TXT;
 
     const DESCRIPTION = "Transcription management functions";
@@ -185,7 +185,7 @@ TXT;
 
         } else {
             if (isset($fields[2])) {
-                $givenColumnNumber = intval($fields[3]);
+                $givenColumnNumber = intval($fields[2]);
             }
             $givenPageId = intval($fields[1]);
             if ($givenColumnNumber > 0 && $givenPageId > 0) {
@@ -241,7 +241,7 @@ TXT;
         $pageId = $pageInfo->pageId;
         $docId = $pageInfo->docId;
 
-        if ($this->printTranscriptionInfo($pageInfo,$column, 1)) {
+        if (!$this->printTranscriptionInfo($pageInfo,$column, 1)) { // "!" added by lukas, correct?
             if ($this->userRespondsYes("Are you sure you want to delete this transcription?")) {
                 $tableNames = $this->getSystemManager()->getTableNames();
                 $dbConn = $this->getDbConn();
@@ -291,8 +291,59 @@ TXT;
         }
     }
 
-    private function moveTranscription(PageInfo $fromPage, int $column, PageInfo $toPage, int $toColumn) : void {
-        print "... just kidding, not implemented yet\n";
+    private function moveTranscription(PageInfo $fromPage, int $fromColumn, PageInfo $toPage, int $toColumn) : void {
+
+        // get page and doc ids
+        $fromPageId = $fromPage->pageId;
+        $toPageId = $toPage->pageId;
+        $toDocId = $toPage->docId;
+
+        // get versions and last author of fromPage
+        $txManager = $this->getSystemManager()->getTranscriptionManager();
+        $versions = $txManager->getColumnVersionManager()->getColumnVersionInfoByPageCol($fromPageId, $fromColumn);
+        $lastAuthor = $versions[count($versions) - 1]->authorTid;
+
+        if (!$this->printTranscriptionInfo($fromPage, $fromColumn) and count($versions) != 0) { // check if there is data to move
+            if ($this->userRespondsYes("Are you sure you want to move this transcription?")) {
+
+                // get table names and setup database connection
+                $tableNames = $this->getSystemManager()->getTableNames();
+                $elements = $tableNames[ApmMySqlTableName::TABLE_ELEMENTS];
+                $versionsTable = $tableNames[ApmMySqlTableName::TABLE_VERSIONS_TX];
+
+                $dbConn = $this->getDbConn();
+                $dbConn->beginTransaction();
+
+                // check if toPage not already has elements
+                $checkToPageElements= "SELECT * FROM $elements WHERE $elements.page_id=$toPageId AND $elements.column_number=$toColumn";
+                $resultCheck = $dbConn->query($checkToPageElements);
+                $num_elements = $resultCheck->rowCount();
+
+                if ($resultCheck->rowCount() != 0) {
+                    print("There exist(s) already $num_elements element(s) with page id $toPageId and column number $toColumn. Abort.\n");
+                } else {
+
+                    // move elements
+                    $changeElements = "UPDATE $elements SET page_id=$toPageId, column_number=$toColumn WHERE page_id=$fromPageId AND column_number=$fromColumn";
+                    $resultChangeElements = $dbConn->query($changeElements);
+                    print " - Moved " . $resultChangeElements->rowCount() . " elements\n";
+
+                    // move versions
+                    $changeVersions = "UPDATE $versionsTable SET page_id=$toPageId, col=$toColumn WHERE page_id=$fromPageId AND col=$fromColumn";
+                    $resultChangeVersions = $dbConn->query($changeVersions);
+                    print " - Moved " . $resultChangeVersions->rowCount() . " versions\n\n";
+
+                    // commit changes and schedule update jobs
+                    $dbConn->commit();
+                    $this->getSystemManager()->onTranscriptionUpdated($lastAuthor, $toDocId, $toPageId, $toColumn);
+
+                    print("\nRESULT:\n");
+                    $this->printTranscriptionInfo($toPage,$toColumn);
+                }
+            }
+        } else {
+            print "\nNothing to move\n";
+        }
     }
 
 

@@ -43,7 +43,7 @@ export class SearchPage extends NormalPage {
         <th id="doc-or-edition"><span title="Choose a specific document to search">Document</span></th>
         <th id="transcriber-or-editor"><span title="Limit your search to transcriptions by a specific transcriber.">Transcriber</span></th>
         <th style="text-align: center"><span title="Number of tokens, i. e. words or punctuation marks, that are allowed to occur between your first keyword and the following ones. A value of 0 means that only the occurrence of directly consecutive keywords counts as a match.">Keyword Distance</span></th>
-        <th class="text-center"><span title="If checked, all conjugated or declined forms of your keywords will count as matches.">Lemmatization</span></th>
+        <th class="text-center"><span title="If checked, all conjugated or declined forms of your keywords will count as matches. Be aware, that searches containing articles or conjunctions like ,and‘ can cause too many and not desired matches. Best practice is searching only for nouns, verbs and/or adjectives.">Lemmatization</span></th>
     </tr>
     <tr>
         <td>
@@ -126,8 +126,8 @@ export function setupSearchPage() {
   let errorMessageDiv = $("#error_message")
 
   // Get lists for creator and title forms
-  getCreatorsAndTitles ('transcriptions', errorMessageDiv)
-  getCreatorsAndTitles ('transcribers', errorMessageDiv)
+  getCreatorsAndTitles ('apisearchtranscriptions', errorMessageDiv)
+  getCreatorsAndTitles ('apisearchtranscribers', errorMessageDiv)
 
   // Start query when the search button is pressed
   $("#searchButton").on("click", function () {
@@ -186,16 +186,16 @@ export function setupSearchPage() {
       trans_or_editor.text("Transcriber")
 
       // Get lists for transcription and transcriber forms
-      getCreatorsAndTitles ('transcriptions', errorMessageDiv)
-      getCreatorsAndTitles ('transcribers', errorMessageDiv)
+      getCreatorsAndTitles ('apisearchtranscriptions', errorMessageDiv)
+      getCreatorsAndTitles ('apisearchtranscribers', errorMessageDiv)
     }
     else {
       doc_or_edition.text("Edition Title")
       trans_or_editor.text("Editor")
 
       // Get lists for edition and editor forms
-      getCreatorsAndTitles ('editions', errorMessageDiv)
-      getCreatorsAndTitles ('editors', errorMessageDiv)
+      getCreatorsAndTitles ('apisearcheditions', errorMessageDiv)
+      getCreatorsAndTitles ('apisearcheditors', errorMessageDiv)
     }
   })
 }
@@ -207,19 +207,19 @@ function getCreatorsAndTitles(category, errorMessageDiv) {
   let apiUrl = ''
   let listSelector = ''
 
-  if (category === 'transcriptions') {
+  if (category === 'apisearchtranscriptions') {
     apiUrl = urlGen.apiSearchTranscriptionTitles()
     listSelector = '#titleList'
   }
-  else if (category === 'transcribers') {
+  else if (category === 'apisearchtranscribers') {
     apiUrl = urlGen.apiSearchTranscribers()
     listSelector = '#creatorList'
   }
-  else if (category === 'editors') {
+  else if (category === 'apisearcheditors') {
     apiUrl = urlGen.apiSearchEditors()
     listSelector = '#creatorList'
   }
-  else if (category === 'editions') {
+  else if (category === 'apisearcheditions') {
     apiUrl = urlGen.apiSearchEditionTitles()
     listSelector = '#titleList'
   }
@@ -242,6 +242,7 @@ function getCreatorsAndTitles(category, errorMessageDiv) {
     }
 
     console.log(apiResponse);
+    console.log(category);
 
     // Get items from apiResponse
     let items = apiResponse[category];
@@ -295,9 +296,11 @@ function search() {
 
   state = STATE_WAITING_FOR_SERVER
 
+
   // Make API Call
   $.post(urlGen.apiSearchKeyword(), inputs)
     .done((apiResponse) => {
+
 
       // Catch Error
       if (apiResponse.status !== 'OK') {
@@ -309,6 +312,7 @@ function search() {
         state = STATE_INIT
         return;
       }
+
 
       p.lap('Got results from server')
 
@@ -577,9 +581,16 @@ function removeBlanks (text) {
   text = text.replaceAll(" ,", ",")
   text = text.replaceAll(" :", ":")
   text = text.replaceAll("[ ", "[")
-  text = text.replaceAll(" ]", "]")
+  text = text.replaceAll(" ;", ";")
+  text = text.replaceAll("( ", "(")
+  text = text.replaceAll(" )", ")")
 
-  return text
+  if (text.substring(0, 1) === "." || text.substring(0, 1) === ",") {
+    text = text.replace(".", "")
+    text = text.replace(",", "")
+  }
+
+  return text.trimStart()
 }
 
 function fillResultsTable(passage, title, identifier, transcriber, link, lang, zoom, prev_title=' ', k) {

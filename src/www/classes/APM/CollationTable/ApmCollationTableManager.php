@@ -95,7 +95,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
 
 
         if (!isset($ctData['tableId']) || ($ctData['tableId'] !== $collationTableId)) {
-            $this->logger->warning("Wrong collation table id found in table $collationTableId", [ 'wrongId' => $ctData['tableId'] ?? 'N/A']);
+            // $this->logger->warning("Wrong collation table id found in table $collationTableId", [ 'wrongId' => $ctData['tableId'] ?? 'N/A']);
             $ctData['tableId'] = $collationTableId;
         }
 

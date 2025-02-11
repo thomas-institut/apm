@@ -508,6 +508,30 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
 
     /**
+<<<<<<< HEAD
+     *  Get data for a work
+     * @param string $dareId
+     * @return bool|array
+     */
+    public function getWorkInfoByDareId(string $dareId) : bool|array
+    {
+        $rows = $this->worksTable->findRows(['dare_id' => $dareId], 1);
+        if (count($rows)===0) {
+            return false;
+        }
+        $workInfo = $rows->getFirst();
+        try {
+            $authorInfo = $this->pm->getPersonEssentialData($workInfo['author_tid']);
+//            $this->logger->info("Author info retrieved", get_object_vars($authorInfo));
+            $workInfo['author_name'] = $authorInfo->name;
+        } catch (PersonNotFoundException) {
+            $this->logger->error("Author not found " . $workInfo['author_tid']);
+            $workInfo['author_name'] = '';
+        }
+        return $workInfo;
+    }
+
+    /**
      * Gets an array of chunk Numbers with a transcription in the database for
      * the given work id
      *

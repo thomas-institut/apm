@@ -86,6 +86,8 @@ class PageInfo
         $this->imageNumber = 0;
         $this->sequence = 0;
         $this->type = 0;
+        $this->lang = 0; // ADDED by Lukas
+        $this->langCode = '';
         $this->numCols = 0;
         $this->foliation = '';
         $this->foliationIsSet = false;
@@ -100,6 +102,7 @@ class PageInfo
         $this->lang = intval($row['lang']);
         $this->sequence = intval($row['seq']);
         $this->type = intval($row['type']);
+        $this->lang = intval($row['lang']); // ADDED by Lukas
         $this->numCols = (int)$row['num_cols'];
         if (is_null($row['foliation'])) {
             $this->foliation = $this->sequence;

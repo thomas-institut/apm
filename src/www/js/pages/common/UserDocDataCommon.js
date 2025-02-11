@@ -23,6 +23,14 @@ export class UserDocDataCommon {
     }).join('')
   }
 
+  static getPageInfoFromPageInfoArray(pageInfoArray, pageId) {
+    let f = pageInfoArray.filter( r => r.pageId === pageId );
+    if (f.length === 0) {
+      return [];
+    }
+    return f[0];
+  }
+
   static generateTranscriptionListHtml(apiData) {
     // in JS docInfoArray is not actually an array but an object
     let docArray = Object.keys(apiData['docInfoArray']).map( (key) => { return apiData['docInfoArray'][key] })
@@ -34,7 +42,7 @@ export class UserDocDataCommon {
       html = docs.map( (docInfo) => {
         let docUrl = urlGen.siteDocPage(docInfo.tid)
         let pageListHtml = docInfo['pageIds'].map( (pageId) => {
-          let pageInfo = apiData['pageInfoArray'][pageId]
+          let pageInfo = this.getPageInfoFromPageInfoArray(apiData['pageInfoArray'], pageId);
           let pageUrl = urlGen.sitePageView(docInfo.tid, pageInfo.sequence)
           return `<a href="${pageUrl}" title="${tr('Click to view page in new tab/window')}" target="_blank">${pageInfo['foliation']}</a>`
         }).join('&nbsp; ')

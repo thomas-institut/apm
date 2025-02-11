@@ -270,19 +270,19 @@ class SiteDocuments extends SiteController
                                     'numColumns' => $pageInfo->numCols
                                 ];
                             }
-                            if ($location->end->hasNotBeenSet()) {
+                            if ($location->getEnd()->hasNotBeenSet()) {
                                 $end = '';
                             } else {
                                 try {
-                                    $pageInfo = $docManager->getPageInfo($docManager->getPageIdByDocSeq($docId, $location->end->pageSequence));
+                                    $pageInfo = $docManager->getPageInfo($docManager->getPageIdByDocSeq($docId, $location->getEnd()->pageSequence));
                                 } catch (DocumentNotFoundException|PageNotFoundException $e) {
                                     // should never happen
                                     throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
                                 }
                                 $end = [
-                                    'seq' => $location->end->pageSequence,
+                                    'seq' => $location->getEnd()->pageSequence,
                                     'foliation' => $pageInfo->foliation,
-                                    'column' => $location->end->columnNumber,
+                                    'column' => $location->getEnd()->columnNumber,
                                     'numColumns' => $pageInfo->numCols
                                 ];
                             }

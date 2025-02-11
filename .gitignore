@@ -32,3 +32,4 @@ src/python/.idea
 **/public/config.js
 /src/www/test/php/*config.php
 /src/www/test/php/.phpunit.cache/
+.run/**

@@ -29,17 +29,17 @@ class ApmChunkMarkLocation extends ApmItemLocation
     /**
      * @var string
      */
-    public $workId;
+    public string $workId;
 
     /**
      * @var int
      */
-    public $chunkNumber;
+    public int $chunkNumber;
 
     /**
      * @var int
      */
-    public $segmentNumber;
+    public int $segmentNumber;
 
     /**
      * @var int
@@ -48,19 +48,19 @@ class ApmChunkMarkLocation extends ApmItemLocation
     /**
      * @var string
      */
-    public $type;
+    public string $type;
     /**
      * @var string
      */
-    public $witnessLocalId;
+    public string $witnessLocalId;
     /**
      * @var string
      */
-    public $validFrom;
+    public string $validFrom;
     /**
      * @var string
      */
-    public $validUntil;
+    public string $validUntil;
 
 
     public function __construct()

@@ -28,7 +28,6 @@ namespace APM\Site;
 
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\System\DataRetrieveHelper;
-use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Transcription\ApmChunkSegmentLocation;
 use APM\System\Transcription\ColumnVersionInfo;
@@ -37,6 +36,7 @@ use APM\System\WitnessType;
 use APM\System\Work\WorkNotFoundException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use RuntimeException;
 use ThomasInstitut\TimeString\TimeString;
 
 
@@ -56,7 +56,6 @@ class SiteChunkPage extends SiteController
     public function singleChunkPage(Request $request, Response $response): Response
     {
        
-        $dm = $this->systemManager->getDataManager();
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $ctManager = $this->systemManager->getCollationTableManager();
         $workId = $request->getAttribute('work');
@@ -73,11 +72,11 @@ class SiteChunkPage extends SiteController
         $savedCollationTableIds = $ctManager->getCollationTableIdsForChunk("$workId-$chunkNumber", $time);
 
         $savedCollationTableInfoArray = [];
-        $authorsMentioned = [];
+//        $authorsMentioned = [];
         foreach ($savedCollationTableIds as $tableId) {
             $tableVersions = $ctManager->getCollationTableVersionManager()->getCollationTableVersionInfo($tableId, 1);
             if (count($tableVersions) !== 0 ){
-                $authorsMentioned[] =  $tableVersions[0]->authorTid;
+//                $authorsMentioned[] =  $tableVersions[0]->authorTid;
                 $ctInfo = $ctManager->getCollationTableInfo($tableId, $time);
                 if ($ctInfo->archived) {
                     continue;
@@ -96,16 +95,18 @@ class SiteChunkPage extends SiteController
         // get pages, authors and languages from witnesses
         $pagesMentioned = [];
         $languageInfoArray = [];
-
+        $this->startCodeDebug();
         $witnessInfoArrayForPage = [];
         foreach($witnessInfoArray as $witnessInfo) {
 
             $witnessInfoForPage = get_object_vars($witnessInfo);
+
+            $this->codeDebug("Processing witness info", $witnessInfoForPage);
             try {
                 $witnessInfoForPage['languageCode'] = $this->systemManager->getLangCodeFromId($witnessInfo->language);
             } catch (EntityDoesNotExistException $e) {
                 // should never happen
-                throw new \RuntimeException($e->getMessage(), $e->getCode());
+                throw new RuntimeException($e->getMessage(), $e->getCode());
             }
             $witnessInfoArrayForPage[] = $witnessInfoForPage;
 
@@ -116,9 +117,9 @@ class SiteChunkPage extends SiteController
                         $docLangCode = $this->systemManager->getLangCodeFromId($docInfo->language);
                     } catch (EntityDoesNotExistException $e) {
                         // should never happen
-                        throw new \RuntimeException($e->getMessage(), $e->getCode());
+                        throw new RuntimeException($e->getMessage(), $e->getCode());
                     }
-                    $this->logger->debug("Doc lang code from witness $docLangCode");
+//                    $this->logger->debug("Doc lang code from witness $docLangCode");
                     if (!isset($languageInfoArray[$docLangCode])) {
                         $languageInfoArray[$docLangCode] = $this->getLanguagesByCode()[$docLangCode];
                         $languageInfoArray[$docLangCode]['totalWitnesses'] = 0;
@@ -130,8 +131,10 @@ class SiteChunkPage extends SiteController
                     }
                     $lastVersion = $witnessInfo->typeSpecificInfo['lastVersion'];
                     /** @var $lastVersion ColumnVersionInfo */
-                    $authorsMentioned[] = $lastVersion->authorTid;
-                    $pagesMentioned[] = $lastVersion->pageId;
+//                    $authorsMentioned[] = $lastVersion->authorTid;
+                        $pagesMentioned[] = $lastVersion->pageId;
+
+
                     $segmentArray =  $witnessInfo->typeSpecificInfo['segments'];
                     foreach ($segmentArray as $segment) {
                         /** @var $segment ApmChunkSegmentLocation */
@@ -154,6 +157,7 @@ class SiteChunkPage extends SiteController
         $helper = new DataRetrieveHelper();
         $helper->setLogger($this->logger);
 
+        $pagesMentioned = array_values(array_filter($pagesMentioned, function($page) { return $page !== 0;}));
         $pageInfoArray = array_map( function ($pageId) {
             return $this->systemManager->getDocumentManager()->getPageInfo($pageId);
         }, $pagesMentioned);

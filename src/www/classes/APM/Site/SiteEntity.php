@@ -7,7 +7,6 @@ use APM\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
-use ThomasInstitut\EntitySystem\Tid;
 
 
 class SiteEntity extends SiteController

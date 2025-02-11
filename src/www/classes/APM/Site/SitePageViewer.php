@@ -33,6 +33,7 @@ use APM\ToolBox\HttpStatus;
 use AverroesProject\Data\DataManager;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use RuntimeException;
 use ThomasInstitut\EntitySystem\Tid;
 
 /**
@@ -61,7 +62,7 @@ class SitePageViewer extends SiteController
                $workData = $this->systemManager->getWorkManager()->getWorkData($work);
            } catch (WorkNotFoundException $e) {
                // should never happen
-               throw new \RuntimeException($e->getMessage());
+               throw new RuntimeException($e->getMessage());
            }
            $activeWorks[] = [
                'title' => '(' . $workData->workId . ') ' . $workData->shortTitle,
@@ -152,7 +153,7 @@ class SitePageViewer extends SiteController
             'imageUrl' => $imageUrl,
             'languagesArray' => $languagesArray,
             'deepZoom' => $deepZoom
-        ], true);
+        ]);
     }
 
 }

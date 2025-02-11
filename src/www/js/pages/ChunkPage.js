@@ -493,12 +493,20 @@ export class ChunkPage extends HeaderAndContentPage {
       if (!segments.hasOwnProperty(s)) {
         continue
       }
-      let segmenthtml = this.genPageLink(docInfo.id, segments[s].start.pageId, segments[s].start.columnNumber)
-      if (segments[s].start.pageId !==segments[s].end.pageId ) {
-        segmenthtml +=  '&ndash;' +
-          this.genPageLink(docInfo.id, segments[s].end.pageId, segments[s].end.columnNumber)
+      if (segments[s] === undefined) {
+        console.warn(`Segment ${s} is undefined`);
       }
-      segmentHtmlArray.push(segmenthtml)
+      if (segments[s].start === undefined) {
+        console.warn(`Segment ${s} start is undefined`, segments[s]);
+        segmentHtmlArray.push(`Undefined segment ${s}`);
+      } else {
+        let segmenthtml = this.genPageLink(docInfo.id, segments[s].start.pageId, segments[s].start.columnNumber)
+        if (segments[s].start.pageId !==segments[s].end.pageId ) {
+          segmenthtml +=  '&ndash;' +
+            this.genPageLink(docInfo.id, segments[s].end.pageId, segments[s].end.columnNumber)
+        }
+        segmentHtmlArray.push(segmenthtml)
+      }
     }
     info['location'] = segmentHtmlArray.join(', ')
 
@@ -535,9 +543,25 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
     if (pageId === 0) {
       return '???'
     }
-    let numColumns = this.options.pageInfo[pageId].numCols
-    let foliation = this.options.pageInfo[pageId].foliation
-    let sequence = this.options.pageInfo[pageId].sequence
+    let pia = this.options.pageInfo.filter( r => r.pageId === pageId);
+    let pageInfo = null;
+    if (pia.length !== 0) {
+      pageInfo = pia[0];
+    } else {
+      console.warn(`No page info for page ${pageId}`);
+    }
+
+    let numColumns, foliation, sequence;
+    if (pageInfo === null) {
+      numColumns = 0;
+      foliation = '';
+      sequence = 0;
+    } else {
+      numColumns =pageInfo.numCols
+      foliation = pageInfo.foliation
+      sequence = pageInfo.sequence
+    }
+
 
     let label = foliation
     if (numColumns > 1) {

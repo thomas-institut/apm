@@ -1,0 +1,10 @@
+#
+# Docker compose file to run the Collatex service
+#
+
+services:
+  apm-collatex:
+    build: .
+    container_name: apm-collatex
+    ports:
+      - "7369:7369"

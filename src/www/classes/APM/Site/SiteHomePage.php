@@ -25,9 +25,8 @@
 
 namespace APM\Site;
 
-use APM\ToolBox\HttpStatus;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 
 /**
  * Site Controller class

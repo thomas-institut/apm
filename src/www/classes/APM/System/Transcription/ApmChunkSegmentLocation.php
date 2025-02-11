@@ -27,9 +27,9 @@ namespace APM\System\Transcription;
 class ApmChunkSegmentLocation
 {
 
-    private ApmChunkMarkLocation $start;
-    private ApmChunkMarkLocation $end;
-    private int $status;
+    public ApmChunkMarkLocation $start;
+    public ApmChunkMarkLocation $end;
+    public int $status;
 
     public function __construct()
     {

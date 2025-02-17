@@ -23,7 +23,6 @@ namespace APM\System;
 
 class ApmConfigParameter
 {
-    const DEFAULT_TIMEZONE = 'default_timezone';
     const LOG_FILENAME = 'log_filename';
     const LOG_INCLUDE_DEBUG_INFO = 'log_include_debug_info';
     const LOG_APP_NAME = 'log_app_name';
@@ -31,18 +30,6 @@ class ApmConfigParameter
     const DB = 'db';
     const DB_TABLE_PREFIX  = 'db_table_prefix';
     const COLLATION_ENGINE = 'collation_engine';
-    /**
-     * @deprecated
-     */
-    const COLLATEX_JAR_FILE = 'collatex_jar_file';
-    /**
-     * @deprecated
-     */
-    const COLLATEX_TEMP_DIR = 'collatex_temp_dir';
-    /**
-     * @deprecated
-     */
-    const JAVA_EXECUTABLE = 'java_executable';
 
     const COLLATEX_HTTP_HOST = 'collatex_http_host';
     const COLLATEX_HTTP_PORT = 'collatex_http_port';

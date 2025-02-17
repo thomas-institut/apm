@@ -110,7 +110,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 
        $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
        $this->apiUserId = $ci->get(ApmContainerKey::API_USER_ID); // this should be set by the authenticator!
-       $this->languages = $this->systemManager->getConfig()[ApmConfigParameter::LANGUAGES];
+       $this->languages = $this->systemManager->getConfig()['languages'];
        $this->logger = $this->systemManager->getLogger()->withName('API');
        $this->router = $this->systemManager->getRouter();
        $this->apiCallName = self::CLASS_NAME . ":generic";

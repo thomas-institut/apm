@@ -54,7 +54,7 @@ class MinimalContainer implements ContainerInterface
     /**
      * @inheritDoc
      */
-    public function has($id)
+    public function has($id): bool
     {
         return isset($this->theArray[$id]);
     }

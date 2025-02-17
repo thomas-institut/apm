@@ -2,6 +2,7 @@
 config.php
 config.*.php
 testconfig.php
+config.yaml
 *.zip
 *.bak
 *.js.map

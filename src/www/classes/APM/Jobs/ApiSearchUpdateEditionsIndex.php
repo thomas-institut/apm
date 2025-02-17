@@ -10,18 +10,14 @@ use APM\System\SystemManager;
 class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
 {
 
-    /**
-     * @throws PersonNotFoundException
-     */
+
     public function run(SystemManager $sm, array $payload): bool
     {
         $logger = $sm->getLogger();
         $config = $sm->getConfig();
 
-        try {
-            $this->initializeOpenSearchClient($config);
-        } catch (\Exception $e) {
-            $logger->debug('Connecting to OpenSearch server failed.');
+        $client = $sm->getOpensearchClient();
+        if ($client === null) {
             return false;
         }
 

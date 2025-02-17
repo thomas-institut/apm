@@ -28,6 +28,6 @@ class ApiSystem extends ApiController
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
-        return $this->responseWithJson($response, $this->systemManager->getConfig()[ApmConfigParameter::LANGUAGES]);
+        return $this->responseWithJson($response, $this->systemManager->getConfig()['languages']);
     }
 }

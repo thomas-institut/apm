@@ -2,44 +2,40 @@
 
 namespace APM\System;
 
-global $standardFilePaths;
 
-$standardFilePaths = [
-    'config.php',
-    '~/ti-apm/config.php',
-    '/etc/ti-apm/config.php'
-];
 
-class ConfigLoader
-{
 
-    static public function loadConfig($altFilePaths = [], $onlyAltFilePaths = false) : bool {
-        global $standardFilePaths;
-        $configFilePaths = [];
-        if (!$onlyAltFilePaths) {
-            foreach ($standardFilePaths as $path) {
-                $configFilePaths[] = $path;
-            }
+use ThomasInstitut\ToolBox\ArrayUtils;
+use ThomasInstitut\ToolBox\FileLoader;
+
+class ConfigLoader {
+    static private string $errorMessage = '';
+
+    static public function getConfig(string $defaultConfigFile, array $configFilePaths) : array|null {
+        $defaultConfigYaml = file_get_contents($defaultConfigFile);
+        if ($defaultConfigYaml === false) {
+            self::$errorMessage = 'Unable to open default config file';
+            return null;
         }
-        foreach ($altFilePaths as $path) {
-            $configFilePaths[] = $path;
+        $defaultConfig = yaml_parse($defaultConfigYaml);
+        if ($defaultConfig === false) {
+            self::$errorMessage = 'Unable to parse the default config file';
+            return null;
         }
-
-        $configLoaded = false;
-        $configLoadedFilePath = '';
-        foreach ($configFilePaths as $filePath) {
-            if (!$configLoaded && file_exists($filePath)) {
-                $configLoaded = (@include_once $filePath);
-                $configLoadedFilePath = $filePath;
-            }
+        $configYaml = FileLoader::fileGetContents($configFilePaths);
+        if ($configYaml === null) {
+            self::$errorMessage = 'Config YAML file not found';
+            return null;
         }
-
-        if (!$configLoaded) {
-            return false;
+        $extraConfig = yaml_parse($configYaml);
+        if ($extraConfig === false) {
+            self::$errorMessage = 'Unable to parse config file';
+            return null;
         }
+        return ArrayUtils::getUpdatedArray($defaultConfig, $extraConfig);
+    }
 
-        global $config;
-        $config[ApmConfigParameter::CONFIG_FILE_PATH] = $configLoadedFilePath;
-        return true;
+    static public function getErrorMessage() : string {
+        return self::$errorMessage;
     }
 }

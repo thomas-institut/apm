@@ -284,8 +284,8 @@ class ApiSearch extends ApiController
         $config = $systemManager->getConfig();
 
         return (new ClientBuilder())
-            ->setHosts($config[ApmConfigParameter::OPENSEARCH_HOSTS])
-            ->setBasicAuthentication($config[ApmConfigParameter::OPENSEARCH_USER], $config[ApmConfigParameter::OPENSEARCH_PASSWORD])
+            ->setHosts($config['opensearch']['hosts'])
+            ->setBasicAuthentication($config['opensearch']['user'], $config['opensearch']['password'])
             ->setSSLVerification(false) // For testing only. Use certificate for validation
             ->build();
     }

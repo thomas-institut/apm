@@ -31,7 +31,6 @@ use APM\Site\SiteEntity;
 use APM\Site\SiteMetadataEditor;
 use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePeople;
-use APM\System\ConfigLoader;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Logger;
@@ -73,6 +72,8 @@ use APM\Api\ApiSearch;
 use ThomasInstitut\MinimalContainer\MinimalContainer;
 use Twig\Error\LoaderError;
 
+
+error_reporting(E_ALL ^ E_WARNING);
 // Load system profiler first
 require 'classes/APM/SystemProfiler.php';
 SystemProfiler::start();
@@ -80,17 +81,16 @@ SystemProfiler::start();
 // autoload
 require 'vendor/autoload.php';
 
-// Load configuration
-require 'config_setup.php';
-require 'version.php';
-if (!ConfigLoader::loadConfig()) {
-    exitWithErrorMessage('Config file not found');
+
+$config = SystemConfig::get();
+if (!is_array($config)) {
+    exitWithErrorMessage($config);
 }
-global $config;
 
 // Set up logger
 $logger = new Logger('APM');
 $logger->pushHandler(new ErrorLogHandler());
+
 
 // Build System Manager
 $systemManager = new ApmSystemManager($config);
@@ -138,8 +138,8 @@ $app->run();
  */
 #[NoReturn] function exitWithErrorMessage(string $msg): void
 {
-    http_response_code(503);
-    print "<pre>ERROR: $msg";
+    http_response_code(500);
+    print "<pre>SERVER ERROR: $msg</pre>";
     exit();
 }
 

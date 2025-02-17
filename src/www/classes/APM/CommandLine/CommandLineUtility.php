@@ -55,7 +55,7 @@ abstract class CommandLineUtility {
         $this->argc = $argc;
         $this->argv = $argv;
 
-        $authorizedUsers = $config[ApmConfigParameter::AUTHORIZED_COMMAND_LINE_USERS];
+        $authorizedUsers = $config['authorizedCommandLineUsers'] ?? [];
         $authorizedUsers[] = 'root';
 
         if (!in_array($this->processUserInfoArray['name'], $authorizedUsers)) {

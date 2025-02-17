@@ -89,11 +89,11 @@ class ApmDaemon extends CommandLineUtility
     }
 
     private function writePidFile() : bool {
-        return file_put_contents($this->config[ApmConfigParameter::APM_DAEMON_PID_FILE], "$this->pid") !== false;
+        return file_put_contents($this->config['daemonPidFile'], "$this->pid") !== false;
     }
 
     private  function erasePidFile() : bool {
-        return unlink($this->config[ApmConfigParameter::APM_DAEMON_PID_FILE]);
+        return unlink($this->config['daemonPidFile']);
     }
 
     private function reestablishCacheItems(array $cacheItemInfo) : bool {

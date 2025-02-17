@@ -109,7 +109,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     }
 
     protected function getLanguages() : array {
-        return $this->systemManager->getConfig()[ApmConfigParameter::LANGUAGES];
+        return $this->systemManager->getConfig()['languages'];
     }
 
     /**
@@ -180,15 +180,15 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 
         if ($withBaseData) {
             $data['commonData'] = [
-                'appName' => $this->config[ApmConfigParameter::APP_NAME],
-                'appVersion' => $this->config[ApmConfigParameter::VERSION],
-                'copyrightNotice' => $this->config[ApmConfigParameter::COPYRIGHT_NOTICE],
+                'appName' => $this->config['appName'],
+                'appVersion' => $this->config['version'],
+                'copyrightNotice' => $this->config['copyrightNotice'],
                 'renderTimestamp' =>  time(),
-                'cacheDataId' => $this->config[ApmConfigParameter::JS_APP_CACHE_DATA_ID],
+                'cacheDataId' => $this->config['jsAppCacheDataId'],
                 'userInfo' => $this->getSiteUserInfo(),
-                'showLanguageSelector' => $this->config[ApmConfigParameter::SITE_SHOW_LANGUAGE_SELECTOR],
+                'showLanguageSelector' => $this->config['siteShowLanguageSelector'],
                 'baseUrl' => $this->getBaseUrl(),
-                'wsServerUrl' => $this->config[ApmConfigParameter::WS_SERVER_URL]
+                'wsServerUrl' => $this->config['wsServerUrl'],
             ];
             $data['baseUrl'] = $this->getBaseUrl();
         }

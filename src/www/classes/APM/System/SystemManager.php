@@ -39,6 +39,7 @@ use APM\System\User\UserManagerInterface;
 use APM\System\Work\WorkManager;
 use AverroesProject\Data\DataManager;
 use Monolog\Logger;
+use OpenSearch\Client;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
@@ -170,6 +171,7 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     abstract public function getWorkManager() : WorkManager;
     abstract public function getEntitySystem() : ApmEntitySystemInterface;
     abstract public function getDocumentManager() : DocumentManager;
+    abstract public function getOpensearchClient() : Client|null;
 
     /**
      * @internal

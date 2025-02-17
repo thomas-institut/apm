@@ -77,6 +77,8 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Level;
 use Monolog\Logger;
 use Monolog\Processor\WebProcessor;
+use OpenSearch\Client;
+use OpenSearch\ClientBuilder;
 use PDO;
 use PDOException;
 use RuntimeException;
@@ -126,19 +128,17 @@ class ApmSystemManager extends SystemManager {
     const DefaultSystemCacheTtl = 30 * 24 * 3600;  // 30 days
 
     const REQUIRED_CONFIG_VARIABLES = [
-        ApmConfigParameter::APP_NAME,
-        ApmConfigParameter::VERSION,
-        ApmConfigParameter::COPYRIGHT_NOTICE,
-        ApmConfigParameter::DB,
-        ApmConfigParameter::SUB_DIR,
-        ApmConfigParameter::LOG_FILENAME,
-        ApmConfigParameter::LANGUAGES,
-        ApmConfigParameter::LANG_CODES,
-        ApmConfigParameter::DB_TABLE_PREFIX,
-        ApmConfigParameter::APM_DAEMON_PID_FILE,
-        ApmConfigParameter::OPENSEARCH_HOSTS,
-        ApmConfigParameter::OPENSEARCH_USER,
-        ApmConfigParameter::OPENSEARCH_PASSWORD
+        'appName',
+        'version',
+        'copyrightNotice',
+        'db',
+        'subDir',
+        'log',
+        'languages',
+        'langCodes',
+        'dbTablePrefix',
+        'daemonPidFile',
+        'opensearch'
     ];
     
     const REQUIRED_CONFIG_VARIABLES_DB = [ 'host', 'db', 'user', 'pwd'];
@@ -182,6 +182,7 @@ class ApmSystemManager extends SystemManager {
     private ?ApmEntitySystem $apmEntitySystem;
 
     private ?ApmDocumentManager $documentManager;
+    private ?Client $openSearchClient = null;
 
 
     public function __construct(array $configArray) {
@@ -207,13 +208,13 @@ class ApmSystemManager extends SystemManager {
         }
 
         // Set timezone
-        date_default_timezone_set($this->config[ApmConfigParameter::DEFAULT_TIMEZONE]);
+        date_default_timezone_set($this->config['defaultTimeZone']);
 
         // Create table names
-        $this->tableNames = $this->createTableNames($this->config[ApmConfigParameter::DB_TABLE_PREFIX]);
+        $this->tableNames = $this->createTableNames($this->config['dbTablePrefix']);
 
         $this->imageSources = [
-            Entity::ImageSourceBilderberg => new BilderbergImageSource($this->config[ApmConfigParameter::BILDERBERG_URL]),
+            Entity::ImageSourceBilderberg => new BilderbergImageSource($this->config['url']['bilderberg']),
             Entity::ImageSourceAverroesServer => new OldBilderbergStyleRepository('https://averroes.uni-koeln.de/localrep')
         ];
 
@@ -392,19 +393,11 @@ class ApmSystemManager extends SystemManager {
 
         if ($this->collationEngine === null) {
             // Set up Collation Engine
-            switch($this->config[ApmConfigParameter::COLLATION_ENGINE]) {
-                case ApmCollationEngine::COLLATEX:
-                    $this->collationEngine = new Collatex(
-                        $this->config[ApmConfigParameter::COLLATEX_JAR_FILE],
-                        $this->config[ApmConfigParameter::COLLATEX_TEMP_DIR],
-                        $this->config[ApmConfigParameter::JAVA_EXECUTABLE]
-                    );
-                    break;
-
+            switch($this->config['collationEngine']) {
                 case ApmCollationEngine::COLLATEX_HTTP:
                     $this->collationEngine = new CollatexHttp(
-                        $this->config[ApmConfigParameter::COLLATEX_HTTP_HOST],
-                        $this->config[ApmConfigParameter::COLLATEX_HTTP_PORT]);
+                        $this->config['collatexHttp']['host'],
+                        $this->config['collatexHttp']['port']);
                     break;
 
                 case ApmCollationEngine::DO_NOTHING:
@@ -431,14 +424,14 @@ class ApmSystemManager extends SystemManager {
     protected function createLogger(): Logger
     {
         $loggerLevel = Level::Info;
-        if ($this->config[ApmConfigParameter::LOG_INCLUDE_DEBUG_INFO]) {
+        if ($this->config['log']['includeDebugInfo'] ) {
             $loggerLevel = Level::Debug;
         }
         
-        $logger = new Logger($this->config[ApmConfigParameter::LOG_APP_NAME]);
+        $logger = new Logger($this->config['log']['appName']);
 
         try {
-            $logStream = new StreamHandler($this->config[ApmConfigParameter::LOG_FILENAME],
+            $logStream = new StreamHandler($this->config['log']['fileName'],
                 $loggerLevel);
         } catch (Exception) { // @codeCoverageIgnore
             // TODO: Handle errors properly!
@@ -446,7 +439,7 @@ class ApmSystemManager extends SystemManager {
         }
         $logger->pushHandler($logStream);
         
-        if ($this->config[ApmConfigParameter::LOG_IN_PHP_ERROR_HANDLER]) {
+        if ($this->config['log']['inPhpErrorHandler']) {
             // Cannot set this in testing, so, let's ignore it
             $phpLog = new ErrorLogHandler(); // @codeCoverageIgnore
             $logger->pushHandler($phpLog); // @codeCoverageIgnore
@@ -550,7 +543,7 @@ class ApmSystemManager extends SystemManager {
      * @return string
      */
     public function getBaseUrlSubDir() : string {
-        return $this->config[ApmConfigParameter::SUB_DIR];
+        return $this->config['subDir'];
     }
 
     public function getTranscriptionManager(): TranscriptionManager
@@ -615,8 +608,8 @@ class ApmSystemManager extends SystemManager {
     public function getTwig(): Twig
     {
         if ($this->twig === null) {
-            $this->twig = Twig::create($this->config[ApmConfigParameter::TWIG_TEMPLATE_DIR],
-                ['cache' => $this->config[ApmConfigParameter::TWIG_USE_CACHE]]);
+            $this->twig = Twig::create($this->config['twig']['templateDir'],
+                ['cache' => $this->config['twig']['useCache']]);
         }
         return $this->twig;
     }
@@ -1001,7 +994,7 @@ class ApmSystemManager extends SystemManager {
         if ($this->dataManager === null) {
 //            $this->logger->debug("Creating DataManager");
             $dataManager = new DataManager($this->getDbConnection(), $this->getPersonManager(), $this->tableNames,
-                $this->logger, $this->imageSources, $this->config[ApmConfigParameter::LANG_CODES]);
+                $this->logger, $this->imageSources, $this->config['langCodes']);
             $dataManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
             $this->dataManager = $dataManager;
         }
@@ -1034,5 +1027,28 @@ class ApmSystemManager extends SystemManager {
             $this->documentManager->setLogger($this->logger);
         }
         return $this->documentManager;
+    }
+
+    public function getOpensearchClient(): Client|null
+    {
+        if ($this->openSearchClient === null) {
+            try {
+                $config = $this->getConfig();
+                $builder = new ClientBuilder();
+                $builder->setHosts($config['opensearch']['hosts']);
+                $user = $config['opensearch']['user'] ?? '';
+                $password = $config['opensearch']['password'] ?? '';
+                if ($user !== '' && $password !== '') {
+                    $builder->setBasicAuthentication($user, $password);
+                }
+                $builder->setSSLVerification(false);
+                $this->openSearchClient = $builder->build();
+            } catch (Exception $e) {
+                $this->logger->error("Error creating opensearch client: " . $e->getMessage());
+                return null;
+            }
+        }
+
+        return $this->openSearchClient;
     }
 }

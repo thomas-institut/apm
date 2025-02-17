@@ -69,7 +69,7 @@ class ApiTypesetPdf extends ApiController
         $this->codeDebug('Json data', [ 'length' => strlen($inputData) ]);
 
         $jsonDataHash = hash('sha256', $inputData);
-        $tempDir = $this->systemManager->getConfig()[ApmConfigParameter::PDF_RENDERER_TEMP_DIR];
+        $tempDir = $this->systemManager->getConfig()['pdfRendererTempDir'];
         $tempTypesetterInputFileName = "$tempDir/$jsonDataHash-ts-input.json";
         $tempTypesetterOutputFileName = "$tempDir/$jsonDataHash-ts-output.json";
         $tempTypesetterCmdLineOutputFileName = "$tempDir/$jsonDataHash-ts-cmd_output.txt";
@@ -79,7 +79,7 @@ class ApiTypesetPdf extends ApiController
             return $this->responseWithJson($response, $errorData, HttpStatus::INTERNAL_SERVER_ERROR);
         }
 
-        $typesetter = $this->systemManager->getConfig()[ApmConfigParameter::TYPESETTER];
+        $typesetter = $this->systemManager->getConfig()['typeSetter'];
 
 
         $this->codeDebug("About to call typesetter, input: $tempTypesetterInputFileName, output $tempTypesetterOutputFileName");
@@ -169,7 +169,7 @@ class ApiTypesetPdf extends ApiController
 
         // File is not there, do the conversion
         // 1. Create a temporary file and put the typesetter data in it
-        $tempDir = $this->systemManager->getConfig()[ApmConfigParameter::PDF_RENDERER_TEMP_DIR];
+        $tempDir = $this->systemManager->getConfig()['pdfRendererTempDir'];
 
         $tmpInputFileName = "$tempDir/$pdfId-renderer-input.json";
         $rendererCmdOutputFileName = "$tempDir/$pdfId-renderer-cmd_output.txt";
@@ -178,13 +178,13 @@ class ApiTypesetPdf extends ApiController
             return [ 'status' => 'error', 'errorCode' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE];
         }
 
-        $pythonVenv = $this->systemManager->getConfig()[ApmConfigParameter::PYTHON_VENV];
-        $renderer = $this->systemManager->getConfig()[ApmConfigParameter::PDF_RENDERER];
-        if (isset($this->systemManager->getConfig()[ApmConfigParameter::PYTHON_VENV])) {
+        $renderer = $this->systemManager->getConfig()['pdfRenderer'];
+        if (isset($this->systemManager->getConfig()['pythonVenv'])) {
+            $pythonVenv = $this->systemManager->getConfig()['pythonVenv'];
             $renderer = "$pythonVenv/bin/python $renderer";
         }
 
-        $apmFullPath = $this->systemManager->getConfig()[ApmConfigParameter::BASE_FULL_PATH];
+        $apmFullPath = $this->systemManager->getConfig()['baseFullPath'];
         $outputFileName = "$apmFullPath/$fileToDownload";
 
         $this->logger->debug("About to call PDF renderer '$renderer', input: $tmpInputFileName, output $outputFileName");

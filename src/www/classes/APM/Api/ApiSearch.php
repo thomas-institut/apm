@@ -517,8 +517,6 @@ class ApiSearch extends ApiController
     // Function to filter out data, which do not match additional tokens in the searched phrase
     private function filterData (array $data, string $token_plain, string $lemma, bool $lemmatize): array {
 
-        $this->logger->debug("JUHU!");
-
         if ($lemmatize) { // Lemmatization requested
 
             // Remove all passages from $data, which do not match the additional keyword
@@ -529,15 +527,11 @@ class ApiSearch extends ApiController
 
                     foreach ($passage as $k => $token) {
 
-                        $this->logger->debug("TADA!");
-
-
                         // Add matched tokens to tokens_matched array and make it unique
                         if ((str_contains($token, " " . $lemma . " ") or $token === $lemma) and strlen($lemma) > 1) { // filter out matches of single character lemmata like articles
                             $data[$i]['tokens_matched'][] = $match['passage_tokenized'][$j][$k];
                             $data[$i]['tokens_matched'] = array_unique($data[$i]['tokens_matched']);
                             $data[$i]['matched_token_positions'][$j][] = $data[$i]['passage_coordinates'][$j][0] + $k;
-                            $this->logger->debug("BUMM!");
                             $noMatch = false;
                         }
                     }

@@ -87,8 +87,9 @@ class MultiCacheDataCache implements DataCache, LoggerAwareInterface
                 if (count($cachesWithoutData) > 0) {
                     $remainingTtl = $dataCache->getRemainingTtl($key);
                     if ($remainingTtl >= 0) {
-                        $this->logger->debug("Reestablishing cache for '$key' with ttl $remainingTtl in caches ["
-                            . implode(", ", $cachesWithoutData) . "]");
+                        // Commented out by Lukas because of the message getting printed in the command line when using the indexmanager
+                        //$this->logger->debug("Reestablishing cache for '$key' with ttl $remainingTtl in caches ["
+                            //. implode(", ", $cachesWithoutData) . "]");
                         foreach ($cachesWithoutData as $cacheIndex) {
                             $this->getDataCache($cacheIndex)->set($this->prefixes[$cacheIndex] . $key, $data, $remainingTtl);
                         }

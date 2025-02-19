@@ -35,4 +35,4 @@ include_once __DIR__ . '/../version.php';
 
 global $config;
 
-(new CommandLine\IndexManager($config, $argc, $argv))->run();
+(new CommandLine\IndexManager_Typesense($config, $argc, $argv))->run();

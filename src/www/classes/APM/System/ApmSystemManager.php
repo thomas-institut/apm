@@ -300,7 +300,6 @@ class ApmSystemManager extends SystemManager {
         return $this->imageSources;
     }
 
-
     /**
      * @param string $prefix
      * @return string[]
@@ -314,7 +313,6 @@ class ApmSystemManager extends SystemManager {
             ApmMySqlTableName::TABLE_ITEMS,
             ApmMySqlTableName::TABLE_USERS,
             ApmMySqlTableName::TABLE_TOKENS,
-//            ApmMySqlTableName::TABLE_RELATIONS,
             ApmMySqlTableName::TABLE_DOCS,
             ApmMySqlTableName::TABLE_PEOPLE,
             ApmMySqlTableName::TABLE_PAGES,
@@ -333,12 +331,6 @@ class ApmSystemManager extends SystemManager {
             ApmMySqlTableName::ES_Merges,
             ApmMySqlTableName::TABLE_SESSIONS_REGISTER,
             ApmMySqlTableName::TABLE_SESSIONS_LOG,
-//            ApmMySqlTableName::ES_Statements_Person,
-//            ApmMySqlTableName::ES_Statements_Document,
-//            ApmMySqlTableName::ES_Statements_Work,
-//            ApmMySqlTableName::ES_Cache_Person,
-//            ApmMySqlTableName::ES_Cache_Document,
-//            ApmMySqlTableName::ES_Cache_Work,
         ];
         
         $tables = [];
@@ -408,11 +400,7 @@ class ApmSystemManager extends SystemManager {
         }
         return $this->collationEngine;
     }
-    
-    public function getDatabaseVersion() : int {
-        return self::DB_VERSION;
-    }
-    
+
     public function getBaseUrl() : string {
         return BaseUrlDetector::detectBaseUrl($this->getBaseUrlSubDir());
     }
@@ -608,8 +596,7 @@ class ApmSystemManager extends SystemManager {
     public function getTwig(): Twig
     {
         if ($this->twig === null) {
-            $this->twig = Twig::create($this->config['twig']['templateDir'],
-                ['cache' => $this->config['twig']['useCache']]);
+            $this->twig = Twig::create('templates');
         }
         return $this->twig;
     }

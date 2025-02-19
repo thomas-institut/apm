@@ -8,7 +8,6 @@
 subDir: ''
 
 # Database access configuration
-
 db:
   host: 'localhost'
   user: 'someUser'

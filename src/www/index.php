@@ -72,8 +72,7 @@ use APM\Api\ApiSearch;
 use ThomasInstitut\MinimalContainer\MinimalContainer;
 use Twig\Error\LoaderError;
 
-
-error_reporting(E_ALL ^ E_WARNING);
+error_reporting(E_ERROR | E_PARSE | E_NOTICE);
 // Load system profiler first
 require 'classes/APM/SystemProfiler.php';
 SystemProfiler::start();
@@ -91,7 +90,6 @@ if (!is_array($config)) {
 $logger = new Logger('APM');
 $logger->pushHandler(new ErrorLogHandler());
 
-
 // Build System Manager
 $systemManager = new ApmSystemManager($config);
 if ($systemManager->fatalErrorOccurred()) {
@@ -106,10 +104,18 @@ $container->set(ApmContainerKey::API_USER_ID, -1); // set by authenticator
 
 // Setup Slim App
 $app = new App(new ResponseFactory(), $container);
-$subDir = $systemManager->getBaseUrlSubDir();
+
+// setup app's basePath if necessary
+$subDir = $config['subDir'];
+$reverseProxied = $config['reverseProxied'];
+//if ($subDir !== '' && !$reverseProxied) {
+//    $app->setBasePath("/$subDir");
+//}
+
 if ($subDir !== '') {
     $app->setBasePath("/$subDir");
 }
+
 $app->addErrorMiddleware(true, true, true);
 $router = $app->getRouteCollector()->getRouteParser();
 $systemManager->setRouter($router);
@@ -149,7 +155,7 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
         // HOME
         $group->get('/',
             function(Request $request, Response $response) use ($container){
-                return (new SiteHomePage($container))->homePage($request, $response);
+                return (new SiteHomePage($container))->homePage($response);
             })
             ->setName('home');
 

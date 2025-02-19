@@ -28,10 +28,6 @@ languages:
 
 langCodes:  [ 'ar', 'jrb', 'he', 'la']
 
-twig:
-  templateDir: 'templates'
-  useCache: false
-
 pdfRenderer:  '../python/pdf-renderer.py'
 typeSetter:  'node ../node/typesetStdinJson.mjs'
 daemonPidFile: '/tmp/apmd.pid'

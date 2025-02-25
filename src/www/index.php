@@ -69,7 +69,7 @@ use APM\Api\ApiElements;
 use APM\Api\ApiCollationTableConversion;
 use APM\Api\ApiTypesetPdf;
 use APM\Api\ApiWitness;
-use APM\Api\ApiSearch;
+use APM\Api\ApiSearch_Typesense;
 use ThomasInstitut\MinimalContainer\MinimalContainer;
 use Twig\Error\LoaderError;
 
@@ -730,31 +730,31 @@ function createApiSearchRoutes(RouteCollectorProxy $group, ContainerInterface $c
     // SEARCH
     $group->post("/search/keyword",
         function(Request $request, Response $response) use ($container){
-            return (new ApiSearch($container))->search($request, $response);
+            return (new ApiSearch_Typesense($container))->search($request, $response);
         })
         ->setName('search.keyword');
 
     $group->post("/search/transcriptions",
         function(Request $request, Response $response) use ($container){
-            return (new ApiSearch($container))->getTranscriptionTitles($request, $response);
+            return (new ApiSearch_Typesense($container))->getTranscriptionTitles($request, $response);
         })
         ->setName('search.titles');
 
     $group->post("/search/transcribers",
         function(Request $request, Response $response) use ($container){
-            return (new ApiSearch($container))->getTranscribers($request, $response);
+            return (new ApiSearch_Typesense($container))->getTranscribers($request, $response);
         })
         ->setName('search.transcribers');
 
     $group->post("/search/editions",
         function(Request $request, Response $response) use ($container){
-            return (new ApiSearch($container))->getEditionTitles($request, $response);
+            return (new ApiSearch_Typesense($container))->getEditionTitles($request, $response);
         })
         ->setName('search.editions');
 
     $group->post("/search/editors",
         function(Request $request, Response $response) use ($container){
-            return (new ApiSearch($container))->getEditors($request, $response);
+            return (new ApiSearch_Typesense($container))->getEditors($request, $response);
         })
         ->setName('search.editors');
 

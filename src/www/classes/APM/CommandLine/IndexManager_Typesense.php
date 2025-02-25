@@ -51,22 +51,7 @@ class IndexManager_Typesense extends CommandLineUtility {
     public function main($argc, $argv): bool
     {
         // Instantiate Typesense client
-        try {
-            $this->client = new Client(
-                [
-                    'api_key' => 'xyz',
-                    'nodes' => [
-                        [
-                            'host' => 'localhost', // For Typesense Cloud use xxx.a1.typesense.net
-                            'port' => '8108',      // For Typesense Cloud use 443
-                            'protocol' => 'http',      // For Typesense Cloud use https
-                        ],
-                    ],
-                    'connection_timeout_seconds' => 2,
-                ]
-            );
-        } catch (\Typesense\Exceptions\ConfigError $e) {
-        }
+        $this->instantiateTypesenseClient();
 
         // print help
         if ($argv[1] === '-h') {
@@ -276,7 +261,7 @@ class IndexManager_Typesense extends CommandLineUtility {
             $editionsInDatabase[$i] = $edition;
         }
 
-        // get all relevant data from the opensearch index
+        // get all relevant data from the index
         $indexedEditions = [];
 
         foreach ($this->indices as $indexName) {
@@ -350,22 +335,13 @@ class IndexManager_Typesense extends CommandLineUtility {
         $indexedColumns = [];
 
         foreach ($this->indices as $indexName) {
-            $query = $this->client->search([
-                'index' => $indexName,
-                'size' => 20000,
-                'body' => [
-                    "query" => [
-                        "match_all" => [
-                            "boost" => 1.0
-                        ]
-                    ],
-                ]
-            ]);
 
-            foreach ($query['hits']['hits'] as $match) {
-                $page_id = $match['_source']['pageID'];
-                $col = $match['_source']['column'];
-                $timeFrom = $match['_source']['time_from'];
+            $hits = $this->getItemsFromIndex($indexName);
+
+            foreach ($hits as $hit) {
+                $page_id = $hit['document']['pageID'];
+                $col = $hit['document']['column'];
+                $timeFrom = $hit['document']['time_from'];
                 $indexedColumns[] = [$page_id, $col, $timeFrom];
             }
         }
@@ -973,7 +949,7 @@ class IndexManager_Typesense extends CommandLineUtility {
         $hits = [];
         $page=1;
 
-        // collect all docments from the index
+        // collect all documents from the index
         while (count($query['hits']) !== 0) {
             $searchParameters = [
                 'q' => '*',
@@ -1024,10 +1000,14 @@ class IndexManager_Typesense extends CommandLineUtility {
 
         foreach ($this->indices as $index) {
 
-            $query = $this->client->collections[$index]->documents->search($searchParameters);
+            try {
+                $query = $this->client->collections[$index]->documents->search($searchParameters);
 
-            if ($query['found'] !== 0) {
-                return ['index' => $index, 'id' => $query['hits'][0]['document']['id']];
+                if ($query['found'] !== 0) {
+                    return ['index' => $index, 'id' => $query['hits'][0]['document']['id']];
+                }
+            } catch (Exception) {
+
             }
         }
 
@@ -1477,5 +1457,27 @@ class IndexManager_Typesense extends CommandLineUtility {
         }
         return $info->foliation;
 
+    }
+
+    public function instantiateTypesenseClient() {
+        try {
+            $this->client = new Client(
+                [
+                    'api_key' => 'xyz',
+                    'nodes' => [
+                        [
+                            'host' => 'localhost', // For Typesense Cloud use xxx.a1.typesense.net
+                            'port' => '8108',      // For Typesense Cloud use 443
+                            'protocol' => 'http',      // For Typesense Cloud use https
+                        ],
+                    ],
+                    'connection_timeout_seconds' => 2,
+                ]
+            );
+
+            return $this->client;
+        } catch (\Typesense\Exceptions\ConfigError $e) {
+            return false;
+        }
     }
 }

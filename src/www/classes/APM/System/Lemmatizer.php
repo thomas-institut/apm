@@ -83,6 +83,7 @@ class Lemmatizer
             }
 
             $sentence = array_values($sentence);
+            //print_r($sentence);
 
             $complexTokenPositions = [];
             $numComplexTokens = 0;
@@ -91,10 +92,13 @@ class Lemmatizer
             foreach ($sentence as $k => $token) {
                 if (str_contains(substr($token, 0, 4), '-')) {
                     $token = explode('-', $token);
+                    //print_r($token);
                     $start = (int)$token[0] + $numComplexTokens;
-                    $end = (int)explode('\t', $token[1])[0] + $numComplexTokens;
-                    $complexTokenPositions[] = [$start, $end];
-                    $numComplexTokens++;
+                    if (is_numeric($token[1][0])) {
+                        $end = (int) explode('\t', $token[1])[0] + $numComplexTokens;
+                        $complexTokenPositions[] = [$start, $end];
+                        $numComplexTokens++;
+                    }
                 }
             }
 
@@ -131,12 +135,20 @@ class Lemmatizer
                 $sentence[$l] = $decToken;
             }
 
+            //print("SENTENCE COUNT: " . count($sentence) .  "\n");
+            //if (count($sentence) === 58) {
+                //print_r($sentence);
+                //print_r($complexTokenPositions);
+            //}
+
+
             // normalize complex tokens with blanks
             foreach ($complexTokenPositions as $positions) {
                 for ($n = $positions[0]; $n <= $positions[1]; $n++) {
                     if ($n === $positions[0]) {
                         $sentence[$positions[0]-1][2] = " " . $sentence[$n][2] . " ";
                     } else {
+                        //print($n . "\n");
                         $sentence[$positions[0]-1][2] = $sentence[$positions[0]-1][2] . " " . $sentence[$n][2] . " ";
                     }
                     unset($sentence[$n]);

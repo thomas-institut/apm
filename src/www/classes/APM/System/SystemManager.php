@@ -37,7 +37,6 @@ use APM\System\Transcription\ApmTranscriptionWitness;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\Work\WorkManager;
-use AverroesProject\Data\DataManager;
 use Monolog\Logger;
 use OpenSearch\Client;
 use Slim\Interfaces\RouteParserInterface;
@@ -46,10 +45,6 @@ use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
-use ThomasInstitut\Profiler\CacheTrackerAware;
-use ThomasInstitut\Profiler\SimpleCacheTrackerAware;
-use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
-use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 
 /**
  * Integration class for putting together all the elements necessary
@@ -61,24 +56,22 @@ use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAware, CacheTrackerAware {
+abstract class SystemManager implements ErrorReporter {
 
     use SimpleErrorReporterTrait;
-    use SimpleSqlQueryCounterTrackerAware;
-    use SimpleCacheTrackerAware;
 
-    const ERROR_NO_ERROR = 0;
+    const int ERROR_NO_ERROR = 0;
 
     // User roles
 //    const ROLE_READ_ONLY = 'readOnly';
 
 
     // Tool Ids (for presets)
-    const TOOL_AUTOMATIC_COLLATION_V1 = 'automaticCollation';
-    const TOOL_AUTOMATIC_COLLATION = 'automaticCollation_v2';
-    const TOOL_SIGLA = 'sigla';
+    const string TOOL_AUTOMATIC_COLLATION_V1 = 'automaticCollation';
+    const string TOOL_AUTOMATIC_COLLATION = 'automaticCollation_v2';
+    const string TOOL_SIGLA = 'sigla';
 
-    const VALID_TOOL_IDS = [ self::TOOL_AUTOMATIC_COLLATION];
+    const array VALID_TOOL_IDS = [ self::TOOL_AUTOMATIC_COLLATION];
     
     /** @var array */
     protected array $config;
@@ -87,8 +80,6 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     public function __construct(array $config) {
         $this->resetError();
         $this->config = $config;
-        $this->initSqlQueryCounterTracker();
-        $this->initCacheTracker();
     }
     
     public function fatalErrorOccurred() : bool {
@@ -146,7 +137,9 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     /**
      * Get methods for the different components
      */
-    abstract public function getDataManager() : DataManager;
+
+
+
     abstract public function getPresetsManager() : PresetManager;
     abstract public function getAvailableImageSources() : array;
     abstract public function getImageSources() : array;

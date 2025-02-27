@@ -20,9 +20,7 @@
 
 namespace APM\CommandLine;
 
-use APM\System\ApmConfigParameter;
 use APM\System\ApmSystemManager;
-use AverroesProject\Data\DataManager;
 use JetBrains\PhpStorm\NoReturn;
 use PDO;
 use Psr\Log\LoggerInterface;
@@ -64,10 +62,6 @@ abstract class CommandLineUtility {
         }
         $this->systemManager = null;
         $this->logger = new NullLogger();
-    }
-
-    public function getDm() : DataManager {
-        return $this->getSystemManager()->getDataManager();
     }
 
     public function getSystemManager() : ApmSystemManager {

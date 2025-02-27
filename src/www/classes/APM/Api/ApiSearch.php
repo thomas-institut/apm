@@ -33,7 +33,7 @@ class ApiSearch extends ApiController
         $status = 'OK';
         $now = TimeString::now();
 
-        $this->profiler->start();
+        
 
         // Get all user input!
         $corpus = $_POST['corpus'];
@@ -58,8 +58,6 @@ class ApiSearch extends ApiController
             return $this->responseWithJson($response, ['searched_phrase' => $searched_phrase,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
 
-        $this->profiler->lap("Setup");
-
         // If wished, lemmatize searched keywords
         if ($lemmatize) {
             $tokensForQuery = $this->getLemmata($searched_phrase, $lang);
@@ -75,8 +73,6 @@ class ApiSearch extends ApiController
 
         // Count tokens
         $numTokens = count($tokensForQuery);
-
-        $this->profiler->lap("Lemmatization");
 
         // Query index
         try {
@@ -95,12 +91,8 @@ class ApiSearch extends ApiController
                 ]);
         }
 
-        $this->profiler->lap("Opensearch query");
-
         // Get all information about the matched entries, including passages with the matched token as lists of tokens
         $data = $this->getData($query, $tokensForQuery[0], $tokensForQuery, $lemmata, $keywordDistance, $lemmatize, $corpus);
-
-        $this->profiler->lap("getData");
 
         $this->logger->debug(count($data));
 
@@ -128,8 +120,7 @@ class ApiSearch extends ApiController
             $cropped = true;
         }
 
-        $this->profiler->stop();
-        $this->logTimeProfile();
+
 
         // ApiResponse
         return $this->responseWithJson($response, [

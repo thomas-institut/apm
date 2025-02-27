@@ -30,7 +30,6 @@ class ApiEditionEngine extends ApiController
         if (!is_array($inputDataObject)) {
             return $inputDataObject;
         }
-        $this->profiler->start();
 
         $editionEngine = new BasicEditionEngine('BasicEditionEngine2');
 

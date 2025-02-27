@@ -850,7 +850,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
           }
           //console.log('Adding hidden form')
           $('body').append('<form id="theform" class="hidden" method="POST" target="_blank" action="' +
-                  urlGen.siteCollationTableCustom(thisObject.options.work, thisObject.options.chunk, urls[u].lang) + '">' +
+                  urlGen.siteCollationTableCustom(thisObject.options.workId, thisObject.options.chunkNumber, urls[u].lang) + '">' +
                   '<input type="text" name="data" value=\'' + JSON.stringify({options: e.detail})  + '\'></form>')
           //console.log('Submitting')
           document.getElementById('theform').submit()

@@ -370,6 +370,35 @@ class ApmEntitySystemKernel
         return false;
     }
 
+    public function getStatements(?int $subject, ?int $predicate, int|string|null $object) : array{
+        $statementDataArray = [];
+        foreach ($this->systemStatements as $statementTriplet) {
+            [ $stSubject, $stPredicate, $stObject] = $statementTriplet;
+
+            if ($subject !== null && $subject !== $stSubject) {
+                continue;
+            }
+            if ($predicate !== null && $predicate !== $stPredicate) {
+                continue;
+            }
+            if ($object !== null && $object !== $stObject) {
+                continue;
+            }
+
+            $statement = new StatementData();
+
+            $statement->subject = $stSubject;
+            $statement->predicate = $stPredicate;
+            $statement->object = $stObject;
+            $statement->statementMetadata = [];
+            $statementDataArray[] = $statement;
+        }
+
+        return $statementDataArray;
+
+
+    }
+
 
 
     /**

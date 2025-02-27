@@ -7,10 +7,7 @@ use APM\System\ApmMySqlTableName;
 use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataTable\MySqlDataTable;
-use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
-use ThomasInstitut\EntitySystem\Tid;
-use ThomasInstitut\TimeString\TimeString;
-use ThomasInstitut\UUID\Uuid;
+use ThomasInstitut\ToolBox\Uuid;
 use function DeepCopy\deep_copy;
 
 class MigrateEditionSources extends CommandLineUtility

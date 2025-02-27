@@ -2,7 +2,6 @@
 
 namespace APM\Api;
 
-use APM\EntitySystem\Schema\Entity;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\Work\WorkNotFoundException;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -97,7 +96,7 @@ class ApiWorks extends ApiController
         $workId =  $request->getAttribute('workId');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $workId);
 
-        $chunks = $this->systemManager->getDataManager()->getChunksWithTranscriptionForWorkId($workId);
+        $chunks = $this->systemManager->getTranscriptionManager()->getChunksWithTranscriptionForWorkId($workId);
 
         return $this->responseWithJson($response, [
            'workId' => $workId,

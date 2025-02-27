@@ -749,7 +749,8 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 
     public function getStatements(?int $subject, ?int $predicate, int|string|null $object, bool $includeCancelled = false): array
     {
-        return $this->getInnerEntitySystem()->getStatementsData($subject, $predicate, $object, $includeCancelled);
+        $systemStatements = $this->getKernel()->getStatements($subject,$predicate,$object);
+        return [...$systemStatements, ...$this->getInnerEntitySystem()->getStatementsData($subject, $predicate, $object, $includeCancelled)];
     }
 
     /**

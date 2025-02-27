@@ -116,7 +116,6 @@ class ApiTypesetPdf extends ApiController
         $typesetData = file_get_contents($tempTypesetterOutputFileName);
 
         $result = $this->renderPdfFromJsonData($typesetData, $jsonDataHash, false);
-//        $this->profiler->stop();
 //        $totalProcessingTime = $this->getProfilerTotalTime() * 1000;
         if ($result['status'] === 'error') {
             return $this->responseWithJson($response, ['error' => $result['error'] ?? 'No error reported'], 409);
@@ -223,7 +222,7 @@ class ApiTypesetPdf extends ApiController
 //        if (!is_array($inputData)) {
 //            return $inputData;
 //        }
-//        $this->profiler->start();
+//        
 //
 //        $pdfId = '';
 //        // Check if there's a PDF Id
@@ -260,7 +259,7 @@ class ApiTypesetPdf extends ApiController
 //        if (!is_array($inputData)) {
 //            return $inputData;
 //        }
-//        $this->profiler->start();
+//        
 //
 //
 //        $pdfId = '';

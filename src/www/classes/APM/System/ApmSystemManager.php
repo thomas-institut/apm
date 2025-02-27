@@ -21,7 +21,6 @@
 namespace APM\System;
 
 use APM\Api\ApiPeople;
-use APM\CollationEngine\Collatex;
 use APM\CollationEngine\CollatexHttp;
 use APM\CollationEngine\CollationEngine;
 use APM\CollationEngine\DoNothingCollationEngine;
@@ -70,7 +69,6 @@ use APM\System\User\UserManagerInterface;
 use APM\System\Work\EntitySystemWorkManager;
 use APM\System\Work\WorkManager;
 use APM\ToolBox\BaseUrlDetector;
-use AverroesProject\Data\DataManager;
 use Exception;
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Handler\StreamHandler;
@@ -160,7 +158,6 @@ class ApmSystemManager extends SystemManager {
     // Components
     //
     private ?DataTablePresetManager $presetsManager;
-    private ?DataManager $dataManager;
     private ?SettingsManager $settingsMgr;
     private ?CollationEngine $collationEngine;
     private ?PDO $dbConn;
@@ -236,7 +233,6 @@ class ApmSystemManager extends SystemManager {
         $this->transcriptionManager = null;
         $this->collationTableManager = null;
         $this->sessionManager = null;
-        $this->dataManager = null;
         $this->memDataCache = null;
         $this->apmEntitySystem = null;
         $this->documentManager = null;
@@ -277,8 +273,6 @@ class ApmSystemManager extends SystemManager {
             }
 
             $this->settingsMgr = new SettingsManager($settingsTable);
-            $this->settingsMgr->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
-
 
             // Check that the database is up-to-date
             if (!$this->isDatabaseUpToDate()) {
@@ -368,7 +362,6 @@ class ApmSystemManager extends SystemManager {
                 $this->tableNames[ApmMySqlTableName::TABLE_PRESETS]);
             $this->presetsManager =
                 new DataTablePresetManager($presetsManagerDataTable, ['lang' => 'key1']);
-            $this->presetsManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
         }
         return $this->presetsManager;
     }
@@ -557,7 +550,6 @@ class ApmSystemManager extends SystemManager {
                 [
                     $this->getMemDataCache(),
                     function ()  {
-//                        $this->logger->info("Creating datatable cache");
                         $dataTableCache = new DataTableDataCache(new MySqlDataTable($this->getDbConnection(),
                             $this->tableNames[ApmMySqlTableName::TABLE_SYSTEM_CACHE], true));
                         $dataTableCache->setLogger($this->getLogger()->withName('CACHE'));
@@ -582,9 +574,7 @@ class ApmSystemManager extends SystemManager {
             $ctVersionsTable = new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_VERSIONS_CT]);
             $ctVersionManager = new ApmCollationTableVersionManager($ctVersionsTable);
             $ctVersionManager->setLogger($this->logger);
-            $ctVersionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
             $this->collationTableManager = new ApmCollationTableManager($ctTable, $ctVersionManager, $this->logger);
-            $this->collationTableManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
         }
         return $this->collationTableManager;
     }
@@ -679,7 +669,6 @@ class ApmSystemManager extends SystemManager {
         if ($this->multiChunkEditionManager === null) {
             $mceTable = new MySqlUnitemporalDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_MULTI_CHUNK_EDITIONS]);
             $this->multiChunkEditionManager = new ApmMultiChunkEditionManager($mceTable, $this->logger);
-            $this->multiChunkEditionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
         }
         return $this->multiChunkEditionManager;
     }
@@ -971,21 +960,6 @@ class ApmSystemManager extends SystemManager {
             }
         }
         return $this->typedMultiStorageEntitySystem;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getDataManager(): DataManager
-    {
-        if ($this->dataManager === null) {
-//            $this->logger->debug("Creating DataManager");
-            $dataManager = new DataManager($this->getDbConnection(), $this->getPersonManager(), $this->tableNames,
-                $this->logger, $this->imageSources, $this->config['langCodes']);
-            $dataManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
-            $this->dataManager = $dataManager;
-        }
-        return $this->dataManager;
     }
 
     public function getSessionManager(): SessionManager

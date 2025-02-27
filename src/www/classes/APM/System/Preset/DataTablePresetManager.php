@@ -25,8 +25,6 @@ use ThomasInstitut\DataTable\DataTable;
 use Exception;
 use InvalidArgumentException;
 use ThomasInstitut\DataTable\RowAlreadyExists;
-use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
-use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 
 /**
  * An implementation of a PresetManager using a DataTable as the underlying storage.
@@ -44,26 +42,21 @@ use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class DataTablePresetManager extends PresetManager implements SqlQueryCounterTrackerAware {
+class DataTablePresetManager extends PresetManager  {
 
-    use SimpleSqlQueryCounterTrackerAware;
 
     private DataTable $dataTable;
     
     /** @var array */
     private array $expandedKeys;
 
-    /**
-     * @deprecated
-     */
-    const FIELD_USERID = 'user_id';
-    const FIELD_USER_TID = 'user_tid';
-    const FIELD_TOOL = 'tool';
-    const FIELD_TITLE = 'title';
-    const FIELD_KEY_ARRAY = 'key_array';
-    const FIELD_DATA = 'data';
+    const string FIELD_USER_TID = 'user_tid';
+    const string FIELD_TOOL = 'tool';
+    const string FIELD_TITLE = 'title';
+    const string FIELD_KEY_ARRAY = 'key_array';
+    const string FIELD_DATA = 'data';
     
-    const ROW_ID_NOT_FOUND = -1;
+    const int ROW_ID_NOT_FOUND = -1;
     
     /**
      * Creates a new DataTablePresetManager with the given DataTable and
@@ -73,7 +66,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
      * stored in their own field in the DataTable rows. The $expandedKeys
      * array must provide an association of keys from keyArray to
      * field names in the DataTable:
-     *   $expandedKeys = [ 'key1' => 'dataTableFieldName1', 'key2 => 'fieldName2, ... ] 
+     *   $expandedKeys = [ 'key1' => 'dataTableFieldName1', 'key2 => 'fieldName2', ... ]
      * 
      * 
      * @param DataTable $dt
@@ -82,7 +75,6 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
     public function __construct(DataTable $dt, array $expandedKeys = []) {
         $this->dataTable = $dt;
         $this->expandedKeys  = $expandedKeys;
-        $this->initSqlQueryCounterTracker();
     }
 
      /**
@@ -99,7 +91,6 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
         if ($this->correspondingPresetExists($preset)) {
             return false;
         }
-        $this->getSqlQueryCounterTracker()->incrementCreate();
         try {
             $this->dataTable->createRow($this->createDataTableRowFromPreset($preset));
         } catch (RowAlreadyExists $e) {
@@ -124,7 +115,6 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
         if ($id === self::ROW_ID_NOT_FOUND) {
             return true;
         }
-        $this->getSqlQueryCounterTracker()->incrementDelete();
         return $this->dataTable->deleteRow($id)===1;
     }
 
@@ -188,7 +178,6 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
     }
     
     public function getPresetById(int $id) : Preset {
-        $this->getSqlQueryCounterTracker()->incrementSelect();
         $row = $this->dataTable->getRow($id);
         if ($row === null) {
             throw $this->newPresetNotFoundException();
@@ -206,7 +195,6 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
         $updatedRow = $this->createDataTableRowFromPreset($updatedPreset);
         $updatedRow['id'] = $currentPreset->getPresetId();
         try {
-            $this->getSqlQueryCounterTracker()->incrementUpdate();
             $this->dataTable->updateRow($updatedRow);
         } catch (Exception) { // @codeCoverageIgnore
             return false; // @codeCoverageIgnore
@@ -215,7 +203,6 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
     }
     
     public function erasePresetById(int $id) : bool {
-        $this->getSqlQueryCounterTracker()->incrementDelete();
         $this->dataTable->deleteRow($id);
         return true;
     }
@@ -307,7 +294,6 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
             self::FIELD_USER_TID => $userTid,
             self::FIELD_TITLE => $title
         ];
-        $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows = $this->dataTable->findRows($rowToFind, 1);
         if (count($rows) < 1) {
             return [];
@@ -350,7 +336,6 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
                 $rowToFind[$this->expandedKeys[$key]] = $value;
             }
         }
-        $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows = $this->dataTable->findRows($rowToFind);
         foreach ($rows as $theRow) {
             if ($this->match($this->decodeStringToArray($theRow[self::FIELD_KEY_ARRAY]), $keysToMatch)) {

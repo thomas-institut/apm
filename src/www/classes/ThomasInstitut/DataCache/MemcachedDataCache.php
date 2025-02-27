@@ -7,9 +7,9 @@ use Memcached;
 class MemcachedDataCache implements DataCache
 {
 
-    const defaultPort = 11211;
-    const defaultHost = '127.0.0.1';
-    const defaultWeight = 0;
+    const int defaultPort = 11211;
+    const string defaultHost = '127.0.0.1';
+    const int defaultWeight = 0;
     private Memcached $memCached;
     private int $defaultTtl;
 

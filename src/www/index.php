@@ -107,10 +107,6 @@ $app = new App(new ResponseFactory(), $container);
 
 // setup app's basePath if necessary
 $subDir = $config['subDir'];
-$reverseProxied = $config['reverseProxied'];
-//if ($subDir !== '' && !$reverseProxied) {
-//    $app->setBasePath("/$subDir");
-//}
 
 if ($subDir !== '') {
     $app->setBasePath("/$subDir");
@@ -126,6 +122,7 @@ try {
     $systemManager->getLogger()->error("Loader error exception, aborting", [ 'msg' => $e->getMessage()]);
     exitWithErrorMessage("Could not set up application, please report to administrators");
 }
+
 
 // Create routes
 createLoginRoutes($app, $container);
@@ -536,13 +533,6 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
         })
         ->setName('api.doc.create');
 
-    // API -> delete document
-    $group->get('/doc/{id}/delete',
-        function(Request $request, Response $response) use ($container){
-            return (new ApiDocuments($container))->deleteDocument($request, $response);
-        })
-        ->setName('api.doc.delete');
-
     // API -> add pages to a document
     $group->post('/doc/{id}/addpages',
         function(Request $request, Response $response) use ($container){
@@ -550,12 +540,6 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
         })
         ->setName('api.doc.addpages');
 
-    // API -> update document settings
-    $group->post('/doc/{id}/update',
-        function(Request $request, Response $response) use ($container){
-            return (new ApiDocuments($container))->updateDocSettings($request, $response);
-        })
-        ->setName('api.doc.update');
 
     // API -> numColumns
     $group->get('/{document}/{page}/numcolumns',
@@ -602,6 +586,8 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
 }
 function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void
 {
+
+
     $group->get("/entity/statementQualificationObjects/data", function(Request $request, Response $response) use ($container){
         return (new ApiEntity($container))->getValidQualificationObjects($request, $response, false);
     })->setName("api.entity.statementQualificationObjects.data");
@@ -628,9 +614,6 @@ function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $c
     $group->get("/entity/nameSearch/{inputString}/{typeList}", function(Request $request, Response $response) use ($container){
         return (new ApiEntity($container))->nameSearch($request, $response);
     })->setName("api.entity.nameSearch");
-
-
-
 
 }
 function createApiPresetsRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {

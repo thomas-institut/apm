@@ -24,7 +24,6 @@ use APM\Core\Item\ItemWithAddress;
 use APM\Core\Witness\TranscriptionWitness;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
-use AverroesProjectToApm\DatabaseItemStream;
 
 
 /**

@@ -10,7 +10,7 @@ config.yaml
 *.log
 *.swp
 /src/www/test/.*
-/src/www/test/php/.phpunit.result.cache
+.phpunit.result.cache
 /src/www/package-lock.json
 php-sessions/
 **/vendor

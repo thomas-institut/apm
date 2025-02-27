@@ -20,9 +20,8 @@
 
 namespace APM\Api;
 
-use AverroesProject\Image\EditorImages;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 
 // TODO: Get rid of this class!
 

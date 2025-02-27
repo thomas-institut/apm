@@ -19,6 +19,8 @@
 
 namespace APM\Api;
 
+use APM\Api\ItemStreamFormatter\WitnessPageFormatter;
+use APM\Api\PersonInfoProvider\ApmPersonInfoProvider;
 use APM\Core\Witness\SimpleHtmlWitnessDecorator;
 use APM\Decorators\Witness\ApmTxWitnessDecorator;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
@@ -29,8 +31,6 @@ use APM\System\Transcription\ApmTranscriptionWitness;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use APM\ToolBox\HttpStatus;
-use AverroesProjectToApm\ApmPersonInfoProvider;
-use AverroesProjectToApm\Formatter\WitnessPageFormatter;
 use Exception;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -58,7 +58,7 @@ class ApiWitness extends ApiController
 
         $witnessId = $request->getAttribute('witnessId');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $witnessId);
-        $this->profiler->start();
+        
         $outputType = $request->getAttribute('outputType', 'full');
         $useCache = $request->getAttribute('cache',  'usecache') === 'usecache';
 
@@ -89,7 +89,7 @@ class ApiWitness extends ApiController
     public function checkWitnessUpdates(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $this->profiler->start();
+        
         $inputData = $this->checkAndGetInputData($request, $response, ['witnesses']);
         //$this->debug('Input data', [ $inputData ]);
         if (!is_array($inputData)) {
@@ -242,7 +242,6 @@ class ApiWitness extends ApiController
 
         // at this point we can check the cache
         $systemCache = $this->systemManager->getSystemDataCache();
-        $cacheTracker = $this->systemManager->getCacheTracker();
 
         // if output is html it can be even faster
         if ($useCache && $outputType === 'html') {
@@ -253,12 +252,12 @@ class ApiWitness extends ApiController
                 $cachedHtml = $systemCache->get($cacheKeyHtmlOutput);
             } catch (KeyNotInCacheException $e) {
                 $this->codeDebug("Cache miss :(");
-                $cacheTracker->incrementMisses();
+
                 $cacheHit = false;
             }
             if ($cacheHit) {
                 $this->codeDebug("Cache hit!!");
-                $cacheTracker->incrementHits();
+
                 return $this->responseWithText($response, $cachedHtml ?? 'Error');
             }
         }
@@ -270,7 +269,7 @@ class ApiWitness extends ApiController
             try {
                 $cachedBlob = $systemCache->get($cacheKey);
             } catch (KeyNotInCacheException) {
-                $cacheTracker->incrementMisses();
+
                 $cacheHit = false;
             }
         }
@@ -347,7 +346,7 @@ class ApiWitness extends ApiController
             $returnData['usingCache'] = $useCache;
         } else {
             //$this->codeDebug('Cache hit!');
-            $cacheTracker->incrementHits();
+
             $returnData = unserialize(gzuncompress($cachedBlob));
 
             if ($outputType === 'standardData') {
@@ -364,11 +363,9 @@ class ApiWitness extends ApiController
                 }
 
                 if (!$cacheHit) {
-                    $cacheTracker->incrementMisses();
                     $this->codeDebug("Cache miss trying to get html output ");
                     $returnData['status'] = 'Error getting html from cache';
                 }
-                $cacheTracker->incrementHits();
                 $returnData['html']  = $html;
 
             }

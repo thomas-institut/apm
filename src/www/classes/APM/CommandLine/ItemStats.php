@@ -22,9 +22,9 @@ namespace APM\CommandLine;
 
 use APM\System\ApmMySqlTableName;
 use APM\ToolBox\StringFilter;
-use AverroesProject\Data\MySqlHelper;
 use IntlChar;
 use ThomasInstitut\TimeString\TimeString;
+use ThomasInstitut\ToolBox\MySqlHelper;
 
 class ItemStats extends CommandLineUtility
 {

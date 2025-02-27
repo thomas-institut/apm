@@ -19,9 +19,9 @@
 
 namespace APM\CommandLine;
 
-use AverroesProject\ColumnElement\Element;
-use AverroesProject\TxText\ChapterMark;
-use AverroesProject\TxText\Item;
+use APM\System\Transcription\ColumnElement\Element;
+use APM\System\Transcription\TxText\ChapterMark;
+use APM\System\Transcription\TxText\Item;
 use InvalidArgumentException;
 use XMLReader;
 use function json_encode;

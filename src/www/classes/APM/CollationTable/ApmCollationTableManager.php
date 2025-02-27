@@ -30,17 +30,12 @@ use ThomasInstitut\DataTable\InvalidWhereClauseException;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use ThomasInstitut\DataTable\UnitemporalDataTable;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
-use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
-use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 use ThomasInstitut\TimeString\TimeString;
 
-class ApmCollationTableManager extends CollationTableManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
+class ApmCollationTableManager extends CollationTableManager implements LoggerAwareInterface
 {
     use SimpleErrorReporterTrait;
     use LoggerAwareTrait;
-    use SimpleSqlQueryCounterTrackerAware;
-
-    const ERROR_CANNOT_SAVE = 101;
 
     /**
      * @var UnitemporalDataTable

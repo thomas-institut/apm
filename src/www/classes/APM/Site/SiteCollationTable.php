@@ -78,7 +78,7 @@ class SiteCollationTable extends SiteController
     }
 
     public function newChunkEdition(Request $request, Response $response) : Response{
-        $this->profiler->start();
+        
         $workId  = $request->getAttribute('workId');
         $chunkNumber = $request->getAttribute('chunkNumber');
         $lang = $request->getAttribute('lang');
@@ -145,7 +145,7 @@ class SiteCollationTable extends SiteController
         $tableId = intval($request->getAttribute('tableId'));
         $versionId = intval($request->getAttribute('versionId'));
 
-        $this->profiler->start();
+        
         $this->logger->debug("Edit collation table id $tableId, version $versionId");
         $ctManager = $this->systemManager->getCollationTableManager();
         $versionInfoArray = $ctManager->getCollationTableVersions($tableId);
@@ -230,11 +230,6 @@ class SiteCollationTable extends SiteController
         $docInfoArray  = array_map( function ($id) use ($docManager) {
             return $docManager->getDocInfo($id);
         }, $docs);
-
-
-        $this->profiler->stop();
-        $this->logProfilerData("Edit Collation Table");
-        $this->codeDebug('Editor Type', [$request->getAttribute('type')]);
 
         if ($ctData['type'] === 'edition') {
             $template = self::TEMPLATE_EDITION_COMPOSER;
@@ -575,10 +570,9 @@ class SiteCollationTable extends SiteController
 
         $this->codeDebug('apiCallOptions', $apiCallOptions);
 
-        $dm = $this->systemManager->getDataManager();
         $pageName = "AutomaticCollation-$workId-$chunkNumber-$language";
         
-        $this->profiler->start();
+        
         $warnings = [];
 
         
@@ -605,7 +599,7 @@ class SiteCollationTable extends SiteController
         // get work info
         try {
             $workInfo = $this->systemManager->getWorkManager()->getWorkDataByDareId($workId);
-        } catch (WorkNotFoundException $e) {
+        } catch (WorkNotFoundException) {
             return $this->getBasicErrorPage($response, 'Error', "Work $workId not found", 404);
         }
 
@@ -657,9 +651,6 @@ class SiteCollationTable extends SiteController
             }
         }
 
-        $this->profiler->stop();
-        $this->logProfilerData($pageName);
-        
         $templateOptions = [
             'work' => $workId,
             'chunk' => $chunkNumber,
@@ -692,17 +683,26 @@ class SiteCollationTable extends SiteController
      * @return WitnessInfo[]
      */
     protected function getValidWitnessesForChunkLang(string $workId, int $chunkNumber, string $langCode) : array {
-        $this->logger->debug("Getting valid witnesses for $workId, $chunkNumber, $langCode");
+//        $this->logger->debug("Getting valid witnesses for $workId, $chunkNumber, $langCode");
         $tm = $this->systemManager->getTranscriptionManager();
         $vw = $tm->getWitnessesForChunk($workId, $chunkNumber);
         $langId = $this->systemManager->getLangIdFromCode($langCode);
+        if ($langId === null) {
+            $this->logger->error("Invalid language code '$langCode'");
+            return [];
+        }
 
         $vWL = [];
         foreach($vw as $witnessInfo) {
+//            $this->logger->debug("Witness for chunk $witnessInfo->chunkNumber, testing langId $langId",
+//            [ 'lang' => $witnessInfo->language, 'isValid' => $witnessInfo->isValid]);
             if ($witnessInfo->language === $langId && $witnessInfo->isValid) {
                 $vWL[] = $witnessInfo;
             }
+
         }
+        $numWitnesses = count($vWL);
+        $this->logger->debug("There are $numWitnesses available witnesses for $workId, $chunkNumber, $langCode");
         return $vWL;
     }
 }

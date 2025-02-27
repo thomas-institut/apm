@@ -37,11 +37,13 @@ class ColumnVersionFixTool extends CommandLineUtility {
         switch ($argv[1]) {
             case 'doc' :
                 if ($argv[2] === 'all') {
-                    $docIds = $this->getDm()->getDocIdList();
-                    $this->logger->debug("Checking all documents in the system: " . count($docIds) . " in total");
-                    foreach($docIds as $docId) {
-                        $this->processDoc($docId, false, $coldRun);
-                    }
+//                    $docIds = $this->getDm()->getDocIdList();
+//                    $this->logger->debug("Checking all documents in the system: " . count($docIds) . " in total");
+//                    foreach($docIds as $docId) {
+//                        $this->processDoc($docId, false, $coldRun);
+//                    }
+//                    return true;
+                    echo "Processing all documents at once temporarily not supported\n";
                     return true;
                 } else {
                     $docId = (int) $argv[2];

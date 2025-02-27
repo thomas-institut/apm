@@ -584,6 +584,11 @@ class ApiEntity extends ApiController
     }
 
 
+    public static function test(Request $request, Response $response): Response {
+        $response->getBody()->write("Test!!!");
+        return $response;
+    }
+
 
 
     private function normalizeName(string $name) : string {
@@ -596,99 +601,5 @@ class ApiEntity extends ApiController
     }
 
 
-//    /**
-//     * API call:
-//     *
-//     *     GET  .../api/entity/{entityType}/schema
-//     *
-//     * Returns the editing schema for an entity of the given type.
-//     *
-//     * @param Request $request
-//     * @param Response $response
-//     * @return Response
-//     */
-
-//    public function getEntitySchema(Request $request, Response $response): Response {
-//
-//        $entityType = intval($request->getAttribute('entityType'));
-//        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':'  . $entityType);
-//
-//        switch($entityType) {
-//            case Entity::tPerson:
-//                return $this->responseWithJson($response, $this->getPersonSchema($this->systemManager->getBaseUrl()));
-//
-//            default:
-//                $this->logger->info("Invalid entity type: $entityType");
-//                return $this->responseWithStatus($response, HttpStatus::BAD_REQUEST);
-//        }
-//
-//    }
-
-
-//    private function getPersonSchema(string $baseUrl) : EditorSchema {
-//        $schema = new EditorSchema();
-//        $schema->typeId = Entity::tPerson;
-//
-//        $headerSection = new Section();
-//        $headerSection->type = SectionType::EditableHeader;
-//
-//        $bioSection = new Section();
-//        $bioSection->type = SectionType::VerticalList;
-//        $bioSection->title = 'Biographical Data';
-//
-//        $bioSection->predicates = [];
-//
-//        $dob = new Predicate();
-//        $dob->id = Entity::pDateOfBirth;
-//        $dob->title = 'Date of Birth';
-//        $dob->displayIfNotSet = true;
-//        $dob->isUniqueInSection = true;
-//
-//        $bioSection->predicates[] = $dob;
-//
-//        $dod = new Predicate();
-//        $dod->id = Entity::pDateOfDeath;
-//        $dod->title = 'Date of Death';
-//        $dod->displayIfNotSet = true;
-//        $dod->isUniqueInSection = true;
-//        $dob->validObjectTypes = [ Entity::ValueTypeVagueDate];
-//        $bioSection->predicates[] = $dod;
-//
-//
-//
-//        $externalIdsSection = new Section();
-//        $externalIdsSection->title = '';
-//        $externalIdsSection->type = SectionType::HorizontalList;
-//        $def = [
-//            Entity::pOrcid => "$baseUrl/images/orcid-logo.svg",
-//            Entity::pViafId => "$baseUrl/images/viaf-logo.svg",
-//            Entity::pGNDId => "$baseUrl/images/gnd-logo.svg",
-//        ];
-//
-//        foreach($def as $id => $logoUrl) {
-//            $predicate = new Predicate();
-//            $predicate->id = $id;
-//            $predicate->iconUrl = $logoUrl;
-//            $predicate->isRelation = false;
-//            $externalIdsSection->predicates[] = $predicate;
-//        }
-//
-//
-//        $externalLinksSection = new Section();
-//        $externalLinksSection->title= 'External Links';
-//        $externalLinksSection->type = SectionType::UrlList;
-//        $externalLinksSection->singlePredicate = true;
-//
-//        $urlPredicate = new Predicate();
-//        $urlPredicate->id = Entity::pUrl;
-//        $urlPredicate->isUniqueInSection = false;
-//        $urlPredicate->isRelation = false;
-//        $externalLinksSection->predicates = [$urlPredicate];
-//        $externalLinksSection->qualificationPredicates = [ Entity::pObjectUrlType];
-//
-//        $schema->sections = [ $headerSection, $bioSection, $externalIdsSection, $externalLinksSection ];
-//
-//        return $schema;
-//    }
 
 }

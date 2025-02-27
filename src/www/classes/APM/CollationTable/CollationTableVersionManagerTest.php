@@ -17,16 +17,11 @@ use ThomasInstitut\TimeString\TimeString;
 class CollationTableVersionManagerTest extends TestCase
 {
 
-    /**
-     * @var CollationTableVersionManager
-     */
-    private $collationTableVersionManager;
-    /**
-     * @var string
-     */
-    private $className;
+    private CollationTableVersionManager $collationTableVersionManager;
+    private string $className;
 
-    protected function setManager(CollationTableVersionManager $columnVersionManager, string $className) {
+    protected function setManager(CollationTableVersionManager $columnVersionManager, string $className): void
+    {
         $this->collationTableVersionManager = $columnVersionManager;
         $this->className = $className;
     }
@@ -38,16 +33,18 @@ class CollationTableVersionManagerTest extends TestCase
      *
      * @param CollationTableVersionManager $columnVersionManager
      * @param string $className
+     * @throws InvalidTimeZoneException
      */
-    public function runAllTests(CollationTableVersionManager $columnVersionManager, string $className) {
+    public function runAllTests(CollationTableVersionManager $columnVersionManager, string $className): void
+    {
         $this->setManager($columnVersionManager, $className);
-
         $this->basicTest();
         $this->exceptionTest();
         $this->testRegistrations();
     }
 
-    public function basicTest() {
+    public function basicTest(): void
+    {
 
         $testCollationTableId = 1;
         $this->assertCount(0, $this->collationTableVersionManager->getCollationTableVersionInfo($testCollationTableId), $this->className);
@@ -74,7 +71,8 @@ class CollationTableVersionManagerTest extends TestCase
 
     }
 
-    public function exceptionTest() {
+    public function exceptionTest(): void
+    {
 
         $testCollationTableId = 101;
         $testAuthorId = 1;
@@ -89,7 +87,7 @@ class CollationTableVersionManagerTest extends TestCase
         $exceptionCaught = false;
         try {
             $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId + 1, $goodVersionInfo);
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException) {
             $exceptionCaught = true;
         }
         $this->assertTrue($exceptionCaught);
@@ -100,7 +98,7 @@ class CollationTableVersionManagerTest extends TestCase
         $exceptionCaught = false;
         try {
             $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId, $badVersionInfo);
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException) {
             $exceptionCaught = true;
         }
         $this->assertTrue($exceptionCaught);
@@ -111,7 +109,7 @@ class CollationTableVersionManagerTest extends TestCase
         $exceptionCaught = false;
         try {
             $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId, $badVersionInfo);
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException) {
             $exceptionCaught = true;
         }
         $this->assertTrue($exceptionCaught);
@@ -121,7 +119,7 @@ class CollationTableVersionManagerTest extends TestCase
         $exceptionCaught = false;
         try {
             $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId, $goodVersionInfo);
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException) {
             $exceptionCaught = true;
         }
         $this->assertTrue($exceptionCaught);
@@ -196,7 +194,8 @@ class CollationTableVersionManagerTest extends TestCase
     /**
      * @param CollationTableVersionInfo[] $versions
      */
-    public function assertVersionSequenceIsCoherent(array $versions, string $context) {
+    public function assertVersionSequenceIsCoherent(array $versions, string $context): void
+    {
 
         $numVersions = count($versions);
 

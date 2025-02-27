@@ -58,7 +58,7 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
 
     /**
      * Constructs an entity system using the given $typePredicate as the predicate
-     * that assigns a type to an entity and using the storage and cache configuration
+     * that assigns a type to an entity and the storage and cache configuration
      * given in the config array.
      *
      * The $config array consists of an element for each entity type that should be stored in a different storage or
@@ -342,10 +342,9 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
             switch($commandName) {
 
                 case EntitySystem::MakeStatementCommand:
-                    [ , $subject, $predicate, $object, $metadata] = $command;
-                    if (!isset($metadata)) {
-                        $metadata = [];
-                    }
+                    [ , $subject, $predicate, $object ] = $command;
+                    $metadata = $command[4] ?? [] ;
+
                     try {
                         $storage = $this->getStorageForStatement($subject, $predicate, $object);
                     } catch (EntityDoesNotExistException) {

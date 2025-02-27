@@ -41,15 +41,15 @@ use ThomasInstitut\EntitySystem\Exception\StatementNotFoundException;
 class DataTableStatementStorage implements StatementStorage
 {
 
-    const StatementIdCol = 'statementId';
-    const SubjectCol = 'subject';
-    const PredicateCol = 'predicate';
-    const ObjectCol = 'object';
-    const ValueCol = 'value';
-    const CancellationIdCol = 'cancellationId';
+    const string StatementIdCol = 'statementId';
+    const string SubjectCol = 'subject';
+    const string PredicateCol = 'predicate';
+    const string ObjectCol = 'object';
+    const string ValueCol = 'value';
+    const string CancellationIdCol = 'cancellationId';
 
-    const StatementMetadataCol = 'statementMetadata';
-    const CancellationMetadataCol = 'cancellationMetadata';
+    const string StatementMetadataCol = 'statementMetadata';
+    const string CancellationMetadataCol = 'cancellationMetadata';
 
     use LoggerAwareTrait;
 
@@ -381,7 +381,7 @@ class DataTableStatementStorage implements StatementStorage
             $rows = $this->dataTable->findRows($findSpec);
         }
         foreach($rows as $row){
-            $cId = $row[$this->cancellationIdCol];
+            $cId = $row[$this->cancellationIdCol] ?? null;
             if ($cId === null || $includeCancelled) {
                 $statements[] = $this->getStatementFromRow($row, $withMetadata);
             }
@@ -395,7 +395,7 @@ class DataTableStatementStorage implements StatementStorage
             $row[$this->subjectCol],
             $row[$this->predicateCol],
             $row[$this->objectCol] === null ? $row[$this->valueCol] : $row[$this->objectCol],
-            $row[$this->cancellationIdCol],
+            $row[$this->cancellationIdCol] ?? null,
             null,
             null
         ];
@@ -424,7 +424,7 @@ class DataTableStatementStorage implements StatementStorage
                 }
             }
         }
-        if ($row[$metadataCol] !== null) {
+        if (isset($row[$metadataCol])) {
             $additionalMetadata = json_decode($row[$metadataCol], false);
             foreach($additionalMetadata as $additionalMetadatum) {
                 $metadata[] = $additionalMetadatum;
@@ -526,7 +526,7 @@ class DataTableStatementStorage implements StatementStorage
 
                 default:
                     $this->dataTable->rollBack();
-                    throw new \InvalidArgumentException("Invalid command '$commandName'");
+                    throw new InvalidArgumentException("Invalid command '$commandName'");
             }
         }
 

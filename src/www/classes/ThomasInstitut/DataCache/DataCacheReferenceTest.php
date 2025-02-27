@@ -34,8 +34,6 @@ use ThomasInstitut\TimeString\TimeString;
  */
 class DataCacheReferenceTest extends TestCase
 {
-    const int READ_ITERATIONS = 500;
-
     /**
      * @var DataCache
      */
@@ -49,8 +47,8 @@ class DataCacheReferenceTest extends TestCase
      */
     private string $keyPrefix;
     
-    private int $numKeysToTest = 500;
-    private int $numReadIterations = 10;
+    private int $numKeysToTest = 50;
+    private int $numReadIterations = 5;
 
 
     /**

@@ -272,6 +272,8 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         if ($entityData->isMerged()) {
             return $entityData;
         }
+
+//        print_r($entityData);
         // get type and name
         $entityData->type = $entityData->getObjectForPredicate(Entity::pEntityType);
         $entityData->name = $entityData->getObjectForPredicate(Entity::pEntityName);

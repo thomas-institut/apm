@@ -110,6 +110,17 @@ const PersonPredicateDefs = [
         'canBeCancelled' => true,
         'singleProperty' => true,
         'flags' => []
+    ],
+    [
+        'id' => Entity::pParentOf,
+        'type' => Entity::tRelation,
+        'name' => 'ParentOf',
+        'descr' => "The person's parent",
+        'allowedSubjectTypes' => [ Entity::tPerson],
+        'allowedObjectTypes'=> [ Entity::tPerson],
+        'canBeCancelled' => true,
+        'singleProperty' => false,
+        'flags' => []
     ]
 
 ];

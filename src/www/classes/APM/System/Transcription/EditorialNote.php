@@ -45,7 +45,7 @@ class EditorialNote {
         if ($editorialNote === false) {
             return false;
         }
-        $editorialNote->authorTid = intval($theRow['author_tid']) ?? 0;
+        $editorialNote->authorTid = intval($theRow['author_tid'] ?? 0);
         return $editorialNote;
     }
     
@@ -61,10 +61,10 @@ class EditorialNote {
             return false;
         }
         $editorialNote->setType($type);
-        $editorialNote->id = intval($theArray['id']) ?? 0;
+        $editorialNote->id = intval($theArray['id'] ?? 0) ;
         $editorialNote->authorTid = intval($theArray['authorTid'] ?? 0);
         $editorialNote->lang = $theArray['lang'] ?? '';
-        $editorialNote->target = intval($theArray['target']) ?? 0;
+        $editorialNote->target = intval($theArray['target'] ?? 0);
         $editorialNote->time = $theArray['time'] ?? '';
         $editorialNote->text = self::normalizeTextValue($theArray['text'] ?? '');
 

@@ -69,7 +69,7 @@ class ApiTypesetPdf extends ApiController
         $this->codeDebug('Json data', [ 'length' => strlen($inputData) ]);
 
         $jsonDataHash = hash('sha256', $inputData);
-        $tempDir = $this->systemManager->getConfig()['pdfRendererTempDir'];
+        $tempDir = $this->systemManager->getConfig()['pdfRendererTmpDir'];
         $tempTypesetterInputFileName = "$tempDir/$jsonDataHash-ts-input.json";
         $tempTypesetterOutputFileName = "$tempDir/$jsonDataHash-ts-output.json";
         $tempTypesetterCmdLineOutputFileName = "$tempDir/$jsonDataHash-ts-cmd_output.txt";
@@ -168,7 +168,7 @@ class ApiTypesetPdf extends ApiController
 
         // File is not there, do the conversion
         // 1. Create a temporary file and put the typesetter data in it
-        $tempDir = $this->systemManager->getConfig()['pdfRendererTempDir'];
+        $tempDir = $this->systemManager->getConfig()['pdfRendererTmpDir'];
 
         $tmpInputFileName = "$tempDir/$pdfId-renderer-input.json";
         $rendererCmdOutputFileName = "$tempDir/$pdfId-renderer-cmd_output.txt";

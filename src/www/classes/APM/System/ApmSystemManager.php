@@ -84,6 +84,7 @@ use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\DataTableDataCache;
+use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\MemcachedDataCache;
 use ThomasInstitut\DataCache\MultiCacheDataCache;
 use ThomasInstitut\DataTable\DataTable;
@@ -241,7 +242,7 @@ class ApmSystemManager extends SystemManager {
 
     public function getDbConnection() : PDO {
         if ($this->dbConn === null) {
-//            $this->logger->debug("Getting DB connection");
+            $this->logger->debug("Getting DB connection");
             // Set up database connection
             try {
                 $this->dbConn = $this->setUpDbConnection();
@@ -339,7 +340,7 @@ class ApmSystemManager extends SystemManager {
         $dbConfig = $this->config[ApmConfigParameter::DB];
 
         $dbh = new PDO('mysql:dbname='. $dbConfig['db'] . ';host=' .
-                $dbConfig['host'], $dbConfig['user'], 
+                $dbConfig['host'] . ':3306', $dbConfig['user'],
                 $dbConfig['pwd']);
         $dbh->query("set character set 'utf8'");
         $dbh->query("set names 'utf8'");
@@ -350,7 +351,8 @@ class ApmSystemManager extends SystemManager {
     public function getMemDataCache(): DataCache
     {
         if ($this->memDataCache === null) {
-            $this->memDataCache = new MemcachedDataCache();
+//            $this->memDataCache = new MemcachedDataCache();
+            $this->memDataCache = new InMemoryDataCache();
         }
         return $this->memDataCache;
     }

@@ -970,12 +970,13 @@ class ApmTranscriptionManager extends TranscriptionManager
         $lastVersions = $this->getLastChunkVersionFromVersionMap($versionMap);
 
         $docArray = $chunkLocationMap[$workId][$chunkNumber] ?? [];
+//        $this->logger->debug("docArray", array_keys($docArray));
         $docManager = $this->getDocumentManager();
         $witnessInfoArray = [];
 
 
         foreach($docArray as $docId => $localWitnessIdArray) {
-            $debug = $docId === 116;
+            $debug = true;
             foreach ($localWitnessIdArray as $localWitnessId => $segmentArray) {
                 try {
                     $docInfo = $docManager->getDocInfo($docId);
@@ -987,6 +988,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                 $lastVersion = $lastVersions[$workId][$chunkNumber][$docId][$localWitnessId];
 
                 $debug && $this->logger->debug("Last version", [ 'lastV' => $lastVersion]);
+                $debug && $this->logger->debug("doc info", get_object_vars($docInfo));
 
                 $witnessInfo = new WitnessInfo();
                 $witnessInfo->type = WitnessType::FULL_TRANSCRIPTION;

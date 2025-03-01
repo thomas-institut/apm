@@ -59,8 +59,8 @@ class MigrateEditionSources extends CommandLineUtility
                     $commands[] = [ StatementStorage::StoreStatementCommand, Tid::generateUnique(),
                         $tid, Entity::pDefaultSiglum, $defaultSiglum, $statementMetadata];
                 }
-                $commands[] = [ StatementStorage::StoreStatementCommand, Tid::generateUnique(),
-                    $tid, Entity::pLegacyApmDatabaseId, $dbId, $statementMetadata];
+//                $commands[] = [ StatementStorage::StoreStatementCommand, Tid::generateUnique(),
+//                    $tid, Entity::pLegacyApmDatabaseId, $dbId, $statementMetadata];
                 $statementStorage->storeMultipleStatementsAndCancellations($commands);
                 $createdSources[] = $tid;
             }

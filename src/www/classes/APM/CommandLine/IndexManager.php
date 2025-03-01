@@ -333,7 +333,7 @@ class IndexManager extends CommandLineUtility
     {
         $page_id = $this->getSystemManager()->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
         $elements = $this->getSystemManager()->getTranscriptionManager()->getColumnElementsBypageID($page_id, $col);
-        print_r($elements);
+//        print_r($elements);
         return $this->getPlainTextFromElements($elements);
     }
 

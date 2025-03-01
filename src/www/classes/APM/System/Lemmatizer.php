@@ -39,7 +39,7 @@ class Lemmatizer
         $rand = self::generateRandomString();
 
         // make new temp file and write the text to lemmatize into it
-        $tempfile = 'lemmatization_temp_' . $tempfile . '_' . $rand . '.txt';
+        $tempfile = '/tmp/lemmatization_temp_' . $tempfile . '_' . $rand . '.txt';
         exec("rm $tempfile 2>&1");
         exec("touch $tempfile");
         file_put_contents($tempfile, $text_clean);

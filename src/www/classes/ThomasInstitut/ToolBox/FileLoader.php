@@ -15,9 +15,11 @@ class FileLoader
     public static function fileGetContents(array $fileNames) : string|null {
         for ($i = 0; $i < count($fileNames); $i++) {
             $filePath = $fileNames[$i];
-            $fileContents = file_get_contents($filePath);
-            if ($fileContents !== false) {
-                return $fileContents;
+            if (file_exists($filePath)) {
+                $fileContents = file_get_contents($filePath);
+                if ($fileContents !== false) {
+                    return $fileContents;
+                }
             }
         }
         return null;

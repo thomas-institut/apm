@@ -10,7 +10,7 @@
 #   migrate_docs
 #
 
-DROP TABLE  `ap_edition_sources`;
+#DROP TABLE  `ap_edition_sources`;
 #DROP TABLE `ap_docs`;
 
 ALTER TABLE apm.ap_pages DROP FOREIGN KEY ap_pages_ibfk_1;

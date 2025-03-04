@@ -613,7 +613,7 @@ export class DocPage extends NormalPage {
                 <div class="tab-pane doc-metadata ${tabActiveClasses(TabId_DocDetails)}" id="tab-${TabId_DocDetails}">
                     <div class="metadata-editor">
                     </div>
-                    <div class="doc-admin">${this.getAdminHtml()}</div> 
+                   
                 </div>
                 <div class="tab-pane panel-with-toolbar page-list-panel ${tabActiveClasses(TabId_Pages)}" id="tab-${TabId_Pages}">
                    <div class="panel-toolbar">
@@ -621,8 +621,7 @@ export class DocPage extends NormalPage {
                    </div>
                    <div class="panel-content">
                     <div class="page-list"></div>
-                    <div class="page-admin">
-                </div>
+                    <div class="page-admin">                </div>
                     
                    </div>
                 </div>
@@ -644,13 +643,18 @@ export class DocPage extends NormalPage {
   }
 
   getPageAdminHtml() {
+    let defineDocPagesUrl = urlGen.siteDocDefinePages(Tid.toBase36String(this.docId));
+    let definePagesHtml = this.canDefinePages ?
+      `<a class="btn btn-sm btn-primary" href="${defineDocPagesUrl}">Define pages</a>` : '';
+
     return `
         <div class="page-admin-section">
-            <h5>Add pages</h5><div class="add-pages-widget-container"></div>
+            <h5>Add pages</h5><div class="add-pages-widget-container" style="margin-bottom: 2em"></div>
+            ${definePagesHtml}
+            </div>
         </div>
     `
   }
-
 
   /**
    * Shows a page in the viewer

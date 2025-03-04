@@ -372,7 +372,7 @@ async function displayResults (data, lang, num_passages, zoom, keywordDistance, 
     else { // For editions
       results_head.empty()
       results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th><span title="Number of tokens, i. e. words or punctuation marks, to display before and after your first keyword. A value of 0 means that only the tokens matching your first keyword are displayed."><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}></span>
-                                </th><th>Edition (${num_titles})</th><th>Chunk</th><th>Editor</th><th>Link</th></tr>`)
+                                </th><th>Edition (${num_titles})</th><th>Chunk</th><th>Table ID</th><th>Editor</th><th>Link</th></tr>`)
     }
     results_body.empty()
 
@@ -434,10 +434,10 @@ async function displayResults (data, lang, num_passages, zoom, keywordDistance, 
 
         // Fill table with results
         if (corpus === 'transcriptions') {
-          fillResultsTable(passage, title, foliation, creator, link, lang, zoom, prev_title, k)
+          fillResultsTable(passage, title, foliation, null, creator, link, lang, zoom, prev_title, k)
         }
         else {
-          fillResultsTable(passage, title, chunk, creator, link, lang, zoom, prev_title, k)
+          fillResultsTable(passage, title, chunk, table_id, creator, link, lang, zoom, prev_title, k)
         }
         prev_title = title
       }
@@ -593,40 +593,66 @@ function removeBlanks (text) {
   return text.trimStart()
 }
 
-function fillResultsTable(passage, title, identifier, transcriber, link, lang, zoom, prev_title=' ', k) {
+function fillResultsTable(passage, title, identifier, identifier2, transcriber, link, lang, zoom, prev_title=' ', k) {
 
   // Get selector
   let results_body = $("#resultsTable tbody")
 
-  // Don't write title into the results table, if it is identical to the title of the previous passage
-  if (title === prev_title) {
 
-    if (lang==='la') {
-      results_body.append(
-        `<tr><td class="text-la" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+  if (identifier2 !== null) {
+
+    // Don't write title into the results table, if it is identical to the title of the previous passage
+    if (title === prev_title) {
+
+      if (lang === 'la') {
+        results_body.append(
+            `<tr><td class="text-la" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td class="text-center">${identifier2}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+      } else if (lang === 'he') {
+        results_body.append(
+            `<tr><td class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td class="text-center">${identifier2}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+      } else if (lang === 'ar') {
+        results_body.append(
+            `<tr><td class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td class="text-center">${identifier2}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+      }
+    } else {
+      if (lang === 'la') {
+        results_body.append(
+            `<tr><td class="text-la" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td class="text-center">${identifier2}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+      } else if (lang === 'he') {
+        results_body.append(
+            `<tr><td class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td class="text-center">${identifier2}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+      } else if (lang === 'ar') {
+        results_body.append(
+            `<tr><td class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td class="text-center">${identifier2}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+      }
     }
-    else if (lang==='he') {
-      results_body.append(
-        `<tr><td class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-    }
-    else if (lang==='ar') {
-      results_body.append(
-        `<tr><td class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+  } else {
+    if (title === prev_title) {
+
+      if (lang === 'la') {
+        results_body.append(
+            `<tr><td class="text-la" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+      } else if (lang === 'he') {
+        results_body.append(
+            `<tr><td class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+      } else if (lang === 'ar') {
+        results_body.append(
+            `<tr><td class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+      }
+    } else {
+      if (lang === 'la') {
+        results_body.append(
+            `<tr><td class="text-la" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+      } else if (lang === 'he') {
+        results_body.append(
+            `<tr><td class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+      } else if (lang === 'ar') {
+        results_body.append(
+            `<tr><td class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
+      }
     }
   }
 
-  else {
-    if (lang === 'la') {
-      results_body.append(
-        `<tr><td class="text-la" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-    } else if (lang === 'he') {
-      results_body.append(
-        `<tr><td class="text-he" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-    } else if (lang === 'ar') {
-      results_body.append(
-        `<tr><td class="text-ar" style="width: 50em">${passage}</td><td style="text-align: right"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td class="text-center">${identifier}</td><td>${transcriber}</td><td class="text-center">${link}</td></tr>`)
-    }
-  }
 
   // Implement zoom handling
   for (let i=1; i<(k+1); i++) {

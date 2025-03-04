@@ -33,6 +33,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use RuntimeException;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
+use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\TimeString\TimeString;
 
 /**
@@ -42,9 +43,9 @@ use ThomasInstitut\TimeString\TimeString;
 class ApiElements extends ApiController
 {
 
-    const CLASS_NAME = 'TranscriptionElements';
+    const string CLASS_NAME = 'TranscriptionElements';
 
-    const API_ERROR_INVALID_VERSION_REQUESTED = 5001;
+    const int API_ERROR_INVALID_VERSION_REQUESTED = 5001;
 
     /**
      * @param Request $request
@@ -83,6 +84,8 @@ class ApiElements extends ApiController
         if (isset($postData['data'])) {
             $inputDataObject = json_decode($postData['data'], true);
         }
+
+        $this->logger->debug("Input element data", $inputDataObject);
         
         // Some checks: all required arrays, data with given docId, pageNo and colNumber
         if (is_null($inputDataObject) ) {
@@ -364,6 +367,8 @@ class ApiElements extends ApiController
 
         $docManager = $this->systemManager->getDocumentManager();
         $txManager = $this->systemManager->getTranscriptionManager();
+
+        $docId = Tid::fromString($docId);
 
         // Get a list of versions
         try {

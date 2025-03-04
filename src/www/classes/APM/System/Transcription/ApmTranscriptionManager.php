@@ -91,11 +91,11 @@ class ApmTranscriptionManager extends TranscriptionManager
     use SimpleCacheAware;
     use CodeDebugWithLoggerTrait;
 
-    const ERROR_DOCUMENT_NOT_FOUND = 50;
-    const ERROR_CACHE_ERROR = 51;
-    const ERROR_NO_LOCATIONS = 52;
-    const DEFAULT_CACHE_KEY_PREFIX = 'ApmTM-';
-    const CACHE_TTL = 30 * 24 * 3600;  // 30 days
+    const int ERROR_DOCUMENT_NOT_FOUND = 50;
+    const int ERROR_CACHE_ERROR = 51;
+    const int ERROR_NO_LOCATIONS = 52;
+    const string DEFAULT_CACHE_KEY_PREFIX = 'ApmTM-';
+    const int CACHE_TTL = 30 * 24 * 3600;  // 30 days
 
     // Components that are generated when needed
     private ?PDO $dbConn = null;
@@ -1156,6 +1156,13 @@ class ApmTranscriptionManager extends TranscriptionManager
         return $elements;
     }
 
+    /**
+     * @throws RowAlreadyExists
+     * @throws InvalidTimeStringException
+     * @throws InvalidRowUpdateTime
+     * @throws RowDoesNotExist
+     * @throws Exception
+     */
     public function updateColumnElements(int $pageId, int $columnNumber, array $newElements, string $time = ''): bool|array
     {
         $this->logger->debug("UPDATING COLUMN ELEMENTS, pageId=$pageId, col=$columnNumber");
@@ -1379,7 +1386,7 @@ class ApmTranscriptionManager extends TranscriptionManager
 
 
 
-        if ($element->columnNumber > $pageInfo['num_cols']) {
+        if ($element->columnNumber > $pageInfo->numCols) {
             $this->logger->error('Element being inserted in '
                 . 'non-existent colum',
                 [' pageId' => $element->pageId,
@@ -1518,6 +1525,8 @@ class ApmTranscriptionManager extends TranscriptionManager
             return -1;
         }
     }
+
+
 
 
 

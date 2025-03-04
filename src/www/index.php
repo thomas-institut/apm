@@ -25,7 +25,6 @@ use APM\Api\ApiLog;
 use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiPeople;
 use APM\Api\ApiSystem;
-use APM\Api\ApiTranscription;
 use APM\Api\ApiWorks;
 use APM\Site\SiteEntity;
 use APM\Site\SiteMetadataEditor;
@@ -129,7 +128,6 @@ createLoginRoutes($app, $container);
 createSiteRoutes($app, $container);
 createSiteDevRoutes($app, $container);
 createApiAuthenticatedRoutes($app, $container);
-createDareApiRoutes($app, $container);
 
 // RUN!!
 SystemProfiler::lap('Ready to run');
@@ -844,24 +842,5 @@ function createSiteDevRoutes(App $app, ContainerInterface $container) : void {
             ->setName('metadata-editor');
     })->add( function(Request $request, RequestHandlerInterface $handler) use($container){
         return (new Authenticator($container))->authenticateSiteRequest($request, $handler);
-    });
-
-
-}
-function createDareApiRoutes(App $app, ContainerInterface $container) : void {
-    $app->group('/api/data', function(RouteCollectorProxy $group) use($container){
-        // get list of transcriptions available for download
-        $group->get('/transcription/list',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiTranscription($container))->getList($request, $response);
-            });
-
-        // get the transcription for a given document and page
-        $group->get('/transcription/get/{docId}/{page}',
-            function(Request $request, Response $response) use ($container){
-                return (new ApiTranscription($container))->getTranscription($request, $response);
-            });
-    })->add( function(Request $request, RequestHandlerInterface $handler) use($container){
-        return (new Authenticator($container))->authenticateDataApiRequest($request, $handler);
     });
 }

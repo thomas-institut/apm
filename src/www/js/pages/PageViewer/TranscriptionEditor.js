@@ -118,8 +118,8 @@ export class TranscriptionEditor
     $('body').append(modalsHtml)
     
     this.quillObject = new Quill('#editor-container-' + this.id, {})
-    this.setDefaultLang(this.options.defaultLang)
-    this.setFontSize(this.options.langDef[this.defaultLang].fontsize)
+    this.setDefaultLang(this.options.defaultLang);
+    this.setFontSize(this.options.langDef[this.defaultLangId].fontsize)
     this.setData(null) // start with empty data
    
     // EVENT HANDLERS
@@ -165,13 +165,14 @@ export class TranscriptionEditor
     let langDef = this.options.langDef
     langDef.forEach( (langDefEntry) => {
       // language button
-      let buttonId = langDefEntry['code'] + '-button-' + this.id
+      let buttonId = `${langDefEntry['code']}-button-${this.id}`;
       $('#langButtons-'+this.id).append(
-        '<button id="' + buttonId +  '" class="langButton" ' +
-        'title="' + langDefEntry['name'] + '" disabled>' +
-        langDefEntry['code'] + '</button>'
+        `<button id="${buttonId}" class="langButton" title="${langDefEntry['name']}" disabled>${langDefEntry['code']}</button>`
+        // '<button id="' + buttonId +  '" class="langButton" ' +
+        // 'title="' + langDefEntry['name'] + '" disabled>' +
+        // langDefEntry['code'] + '</button>'
       )
-      $('#' + buttonId).on('click', this.genOnClickLangButton(langDefEntry['id']))
+      $(`#${buttonId}`).on('click', this.genOnClickLangButton(langDefEntry['id']))
       // option in default language menu
       let optionId = 'set-' +langDefEntry['code'] + '-' + this.id
       $('#set-lang-dd-menu-' + id).append('<a class="dropdown-item" href="#" id="'+ optionId +'">'
@@ -436,7 +437,7 @@ export class TranscriptionEditor
     
     // defaultLang :  language code
     if (options.defaultLang === undefined) {
-      options.defaultLang = Entity.LangLatin
+      options.defaultLang = 'la'
     }
     
     
@@ -477,19 +478,27 @@ export class TranscriptionEditor
     return options
   }
     
-  setDefaultLang(lang)
+  setDefaultLang(langCode)
   {
 
     let langDef = this.options.langDef
-    // console.log(`Setting default lang ${lang}`, langDef);
-    if (langDef[lang] === undefined) {
-      console.log('Invalid default language: ' + lang)
+    console.log(`Setting default lang ${langCode}`, langDef);
+    let theLangId = -1;
+    langDef.forEach(langDefEntry => {
+      if (langDefEntry['code'] === langCode) {
+        theLangId = langDefEntry['id'];
+      }
+    })
+
+
+    if (theLangId=== -1) {
+      console.log('Invalid default language: ' + langCode)
       return false
     }
     let editorContainer = $('#editor-container-container-' + this.id);
 
     langDef.forEach( (langDefEntry, langId) => {
-      if (lang === langId) {
+      if (langId === theLangId) {
         console.log(`Testing lang ${langId}`);
         editorContainer.addClass(langDefEntry['code'] + '-text')
       } else {
@@ -498,10 +507,10 @@ export class TranscriptionEditor
     });
 
     $('#lang-button-' + this.id)
-      .attr('title', langDef[lang].name)
-      .html(langDef[lang].code)
-    this.defaultLang = lang;
-    this.defaultLangCode = langDef[lang]['code'];
+      .attr('title', langDef[theLangId].name)
+      .html(langDef[theLangId].code)
+    this.defaultLang = langCode;
+    this.defaultLangId = theLangId;
     this.setEditorMargin();
   }
 
@@ -559,7 +568,7 @@ export class TranscriptionEditor
   {
     let marginSize = this.getEditorMarginSize();
     let qlEditor = $('#editor-container-' + this.id + ' .ql-editor');
-    if (this.options.langDef[this.defaultLang].rtl) {
+    if (this.options.langDef[this.defaultLangId].rtl) {
       qlEditor.css('margin-left', '0')
         .css('margin-right', marginSize + 'px')
         .css('border-right', 'solid 1px #e0e0e0')
@@ -1643,10 +1652,10 @@ export class TranscriptionEditor
     }
   }
 
-  genOnClickLangButton(langCode) {
+  genOnClickLangButton(langDef) {
     let quillObject = this.quillObject
     return  ()=> {
-      quillObject.format('lang', langCode);
+      quillObject.format('lang', langDef['code']);
       const range = quillObject.getSelection()
       quillObject.setSelection(range.index + range.length)
     }

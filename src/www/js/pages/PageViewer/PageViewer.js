@@ -20,10 +20,8 @@
 
 import { TranscriptionEditor } from './TranscriptionEditor'
 import { urlGen } from '../common/SiteUrlGen'
-import { ApmUtil } from '../../ApmUtil'
 import { ApmPage } from '../ApmPage'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import * as Entity from '../../constants/Entity'
 import { TranscriptionLanguages } from '../../constants/TranscriptionLanguages'
 
 
@@ -233,7 +231,7 @@ export class PageViewer extends ApmPage {
                 editorTid: this.userId ,
                 activeWorks: this.options.activeWorks,
                 langDef: this.langDef,
-                defaultLang: this.options.defaultLang,
+                defaultLang: this.langDef[this.options.defaultLang]['code'],
                 containerId: 'editor-pane',
             })
             te.setData(respColData)

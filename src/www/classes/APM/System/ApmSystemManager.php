@@ -109,24 +109,24 @@ use Twig\Error\LoaderError;
 class ApmSystemManager extends SystemManager {
 
     // Error codes
-    const ERROR_DATABASE_CONNECTION_FAILED = 1001;
-    const ERROR_DATABASE_IS_NOT_INITIALIZED = 1003;
-    const ERROR_DATABASE_SCHEMA_NOT_UP_TO_DATE  = 1004;
-    const ERROR_CANNOT_READ_SETTINGS_FROM_DB = 1005;
-    const ERROR_CONFIG_ARRAY_IS_NOT_VALID = 1007;
+    const int ERROR_DATABASE_CONNECTION_FAILED = 1001;
+    const int ERROR_DATABASE_IS_NOT_INITIALIZED = 1003;
+    const int ERROR_DATABASE_SCHEMA_NOT_UP_TO_DATE  = 1004;
+    const int ERROR_CANNOT_READ_SETTINGS_FROM_DB = 1005;
+    const int ERROR_CONFIG_ARRAY_IS_NOT_VALID = 1007;
 
     // Database version
-    const DB_VERSION = 37;
+    const int DB_VERSION = 37;
 
     // Entity system Data ID: key for entity system caches
-    const ES_DATA_ID = 'es009';
+    const string ES_DATA_ID = 'es009';
 
-    const MemCachePrefix_Apm_ES = 'apm_es';
-    const MemCachePrefix_TypedMultiStorage_ES = 'apm_msEs_';
+    const string MemCachePrefix_Apm_ES = 'apm_es';
+    const string MemCachePrefix_TypedMultiStorage_ES = 'apm_msEs_';
 
-    const DefaultSystemCacheTtl = 30 * 24 * 3600;  // 30 days
+    const int DefaultSystemCacheTtl = 30 * 24 * 3600;  // 30 days
 
-    const REQUIRED_CONFIG_VARIABLES = [
+    const array REQUIRED_CONFIG_VARIABLES = [
         'appName',
         'version',
         'copyrightNotice',
@@ -140,7 +140,7 @@ class ApmSystemManager extends SystemManager {
         'opensearch'
     ];
     
-    const REQUIRED_CONFIG_VARIABLES_DB = [ 'host', 'db', 'user', 'pwd'];
+    const array REQUIRED_CONFIG_VARIABLES_DB = [ 'host', 'db', 'user', 'pwd'];
 
     private array $serverLoggerFields = [
         'method' => 'REQUEST_METHOD',
@@ -176,12 +176,9 @@ class ApmSystemManager extends SystemManager {
     private ?ApmSessionManager $sessionManager;
     private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem;
     private ?DataCache $memDataCache;
-
     private ?ApmEntitySystem $apmEntitySystem;
-
     private ?ApmDocumentManager $documentManager;
     private ?Client $openSearchClient = null;
-
 
     public function __construct(array $configArray) {
         $config = $this->getSanitizedConfigArray($configArray);
@@ -242,7 +239,7 @@ class ApmSystemManager extends SystemManager {
 
     public function getDbConnection() : PDO {
         if ($this->dbConn === null) {
-            $this->logger->debug("Getting DB connection");
+//            $this->logger->debug("Getting DB connection");
             // Set up database connection
             try {
                 $this->dbConn = $this->setUpDbConnection();
@@ -351,8 +348,8 @@ class ApmSystemManager extends SystemManager {
     public function getMemDataCache(): DataCache
     {
         if ($this->memDataCache === null) {
-//            $this->memDataCache = new MemcachedDataCache();
-            $this->memDataCache = new InMemoryDataCache();
+            $this->memDataCache = new MemcachedDataCache();
+//            $this->memDataCache = new InMemoryDataCache();
         }
         return $this->memDataCache;
     }

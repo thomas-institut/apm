@@ -447,7 +447,7 @@ class ApiCollation extends ApiController
         $collationEngineDetails = $collationEngine->getRunDetails();
         $collationEngineDetails['cached'] = false;
 
-        $collationEngineDetails['totalDuration'] =  intval(SystemProfiler::getCurrentTotalTimeInMs());
+        $collationEngineDetails['totalDuration'] =  intval(SystemProfiler::getCurrentTotalTimeInMs())/1000;
 
         $responseData = [
             'type' => 'auto',

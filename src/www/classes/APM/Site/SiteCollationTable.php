@@ -54,28 +54,16 @@ class SiteCollationTable extends SiteController
     // This will be added to the error pages within an HTML comment so
     // that unit testing can check that the right error pages are 
     // generated
-    const ERROR_SIGNATURE_PREFIX = 'CollationTableError_8kn7KjcyAp_';
+    const string ERROR_SIGNATURE_PREFIX = 'CollationTableError_8kn7KjcyAp_';
     
-    const ERROR_NO_DATA = 'NoData';
-    const ERROR_NO_OPTIONS = 'NoOptions';
-    const ERROR_MISSING_REQUIRED_OPTION = 'MissingRequiredOption';
-    const ERROR_UNKNOWN_PRESET = 'UnknownPreset';
-    const TEMPLATE_COLLATION_TABLE = 'collation-table.twig';
-    const TEMPLATE_EDIT_COLLATION_TABLE_OLD = 'collation-edit.twig';
-    const TEMPLATE_EDITION_COMPOSER = 'edition-composer.twig';
+    const string ERROR_NO_DATA = 'NoData';
+    const string ERROR_NO_OPTIONS = 'NoOptions';
+    const string ERROR_MISSING_REQUIRED_OPTION = 'MissingRequiredOption';
+    const string ERROR_UNKNOWN_PRESET = 'UnknownPreset';
+    const string TEMPLATE_COLLATION_TABLE = 'collation-table.twig';
+    const string TEMPLATE_EDIT_COLLATION_TABLE_OLD = 'collation-edit.twig';
+    const string TEMPLATE_EDITION_COMPOSER = 'edition-composer.twig';
 
-
-    /**
-     * @throws EntityDoesNotExistException
-     */
-    private function getWorkEntityIdFromApmId(string $apmId) : int{
-        $es = $this->systemManager->getEntitySystem();
-        $statements = $es->getStatements(null, Entity::pApmWorkId, $apmId);
-        if (count($statements) === 0){
-            throw new EntityDoesNotExistException();
-        }
-        return $statements[0]->subject;
-    }
 
     public function newChunkEdition(Request $request, Response $response) : Response{
         

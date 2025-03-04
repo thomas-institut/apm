@@ -878,16 +878,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                     foreach($localWitnessIdMap as $localWitnessId => $segmentMap) {
                         foreach($segmentMap as $segmentNumber => $segmentLocation) {
                             /** @var $segmentLocation ApmChunkSegmentLocation */
-                            $docId === 116 && $this->logger->debug("Chunk segment location",
-                                [
-                                    'valid' => $segmentLocation->isValid(),
-                                    'status' => $segmentLocation->getStatus(),
-                                    'start' => get_object_vars($segmentLocation->getStart()),
-                                    'end' => get_object_vars($segmentLocation->getEnd()),
-
-                                ]);
                             $versionMap[$workId][$chunkNumber][$docId][$localWitnessId][$segmentNumber] = $this->getVersionsForSegmentLocation($segmentLocation);
-                            $docId === 116 && $this->logger->debug("Versions $workId-$chunkNumber doc $docId seg $segmentNumber", [ 'v' =>  $versionMap[$workId][$chunkNumber][$docId][$localWitnessId][$segmentNumber]]);
                         }
                     }
                 }
@@ -987,8 +978,8 @@ class ApmTranscriptionManager extends TranscriptionManager
                 /** @var $lastVersion ColumnVersionInfo */
                 $lastVersion = $lastVersions[$workId][$chunkNumber][$docId][$localWitnessId];
 
-                $debug && $this->logger->debug("Last version", [ 'lastV' => $lastVersion]);
-                $debug && $this->logger->debug("doc info", get_object_vars($docInfo));
+//                $debug && $this->logger->debug("Last version", [ 'lastV' => $lastVersion]);
+//                $debug && $this->logger->debug("doc info", get_object_vars($docInfo));
 
                 $witnessInfo = new WitnessInfo();
                 $witnessInfo->type = WitnessType::FULL_TRANSCRIPTION;

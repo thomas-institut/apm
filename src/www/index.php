@@ -840,6 +840,16 @@ function createSiteDevRoutes(App $app, ContainerInterface $container) : void {
                 return (new SiteMetadataEditor($container))->metadataEditorPage($request, $response);
             })
             ->setName('metadata-editor');
+
+        $group->get("/php-info", function(Request $request, Response $response){
+            ob_start();
+            phpinfo();
+            $info = ob_get_contents();
+            ob_end_clean();
+            $response->getBody()->write($info);
+            return $response;
+        });
+
     })->add( function(Request $request, RequestHandlerInterface $handler) use($container){
         return (new Authenticator($container))->authenticateSiteRequest($request, $handler);
     });

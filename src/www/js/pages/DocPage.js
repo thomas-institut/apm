@@ -721,6 +721,7 @@ export class DocPage extends NormalPage {
             this.pages[pageIndex].foliationIsSet = true;
             this.rebuildPageList()
             this.selectPage(pageSequence, false);
+            $(`div.page-info .page-info-foliation`).html(newText);
           }).catch( (e) => {
             console.warn(`Error saving foliation for page ${pageIndex}: ${e}`);
             foliationWarningElement.html(`Error saving foliation`);
@@ -747,7 +748,7 @@ export class DocPage extends NormalPage {
    */
   async saveFoliation(pageIndex, newFoliation) {
     let page = this.pages[pageIndex]
-    await this.apmDataProxy.savePageSettings(page['pageId'], newFoliation, page['type'], page['langCode'])
+    await this.apmDataProxy.savePageSettings(page['pageId'], newFoliation, page['type'], page['lang'])
   }
 
   getPageInfoHtml(pageIndex) {

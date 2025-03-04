@@ -22,6 +22,7 @@ import { SimpleBlockBlot } from './TranscriptionEditorBlots'
 import { EditorData } from './EditorData'
 import { configureTranscriptionEditorBlots } from './TranscriptionEditorBlotConfig'
 import * as Entity from '../../constants/Entity'
+import { getLangCodeFromLangId, getLangIdFromLangCode } from '../../constants/TranscriptionLanguages'
 
 
 
@@ -168,9 +169,6 @@ export class TranscriptionEditor
       let buttonId = `${langDefEntry['code']}-button-${this.id}`;
       $('#langButtons-'+this.id).append(
         `<button id="${buttonId}" class="langButton" title="${langDefEntry['name']}" disabled>${langDefEntry['code']}</button>`
-        // '<button id="' + buttonId +  '" class="langButton" ' +
-        // 'title="' + langDefEntry['name'] + '" disabled>' +
-        // langDefEntry['code'] + '</button>'
       )
       $(`#${buttonId}`).on('click', this.genOnClickLangButton(langDefEntry['id']))
       // option in default language menu
@@ -482,24 +480,17 @@ export class TranscriptionEditor
   {
 
     let langDef = this.options.langDef
-    console.log(`Setting default lang ${langCode}`, langDef);
-    let theLangId = -1;
-    langDef.forEach(langDefEntry => {
-      if (langDefEntry['code'] === langCode) {
-        theLangId = langDefEntry['id'];
-      }
-    })
-
+    console.log(`Setting default lang ${langCode}`);
+    let theLangId = getLangIdFromLangCode(langCode);
 
     if (theLangId=== -1) {
-      console.log('Invalid default language: ' + langCode)
+      console.warn('Invalid default language: ' + langCode)
       return false
     }
     let editorContainer = $('#editor-container-container-' + this.id);
 
     langDef.forEach( (langDefEntry, langId) => {
       if (langId === theLangId) {
-        console.log(`Testing lang ${langId}`);
         editorContainer.addClass(langDefEntry['code'] + '-text')
       } else {
         editorContainer.removeClass(langDefEntry['code'] + '-text')
@@ -760,7 +751,7 @@ export class TranscriptionEditor
       let numberMargin = this.options.lineNumbers.margin;
       
        let lineNumberLeftPos = marginSize - numberMargin - numChars*fontCharWidth;
-      if (this.defaultLang !== Entity.LangLatin) {
+      if (this.defaultLang !== 'la') {
         lineNumberLeftPos = $(editorDiv).outerWidth() + numberMargin;
       }
       let overlay = ''
@@ -1092,7 +1083,6 @@ export class TranscriptionEditor
     }
     return mainLanguage
   }
-  
   /**
     * Loads the given elements and items into the editor.
     * @param {array} columnData Data from API
@@ -1122,10 +1112,13 @@ export class TranscriptionEditor
       this.minNoteId = Math.min(this.minNoteId, note.id)
     }
 
-    this.people = columnData.people
-    this.pageId = columnData.info.pageId
-    this.columnNumber = columnData.info.col
-    this.pageDefaultLang = columnData.info.lang ? columnData.info.lang : this.defaultLang
+    this.people = columnData['people'];
+    this.pageId = columnData['info'].pageId;
+    this.columnNumber = columnData['info'].col;
+    this.pageDefaultLang = this.defaultLang;
+    if (columnData['info']['lang'] !== undefined) {
+      this.pageDefaultLang = getLangCodeFromLangId(columnData['info']['lang']);
+    }
 
     //console.log(columnData)
     
@@ -2004,12 +1997,13 @@ export class TranscriptionEditor
     }
   }
 
-  genOnClickSetLang(lang)
+  genOnClickSetLang(langId)
   {
     return  () =>{
-      this.setDefaultLang(lang);
+      let langCode = getLangCodeFromLangId(langId);
+      this.setDefaultLang(langCode);
       this.setEditorMargin(this.fontSize);
-      $('#lang-button-' + this.id).html(this.options.langDef[lang]['code']);
+      $('#lang-button-' + this.id).html(langCode);
       // delay a little bit, wait for html elements to be ready
       window.setTimeout( ()=>  {
         this.numberLines();

@@ -31,8 +31,8 @@
         commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),
         pageId: {{pageInfo.id}},
         docId: {{ doc }},
+        pageInfo: JSON.parse('{{pageInfo|json_encode|e('js')}}'),
         imageUrl: '{{imageUrl}}',
-        pageType: {{pageInfo.type}},
         foliation: '{{pageInfo.foliation}}',
         pageNumber: {{ page }},
         seq: {{ seq }},
@@ -143,9 +143,9 @@
                 <p><strong>Sequence Number:</strong> {{pageInfo.seq}}</p>
                 <p><strong>Image Number:</strong> {{pageInfo.img_number}}</p>
                 <p style="margin-top: 50px"></p>
-                <p><strong>Page Type:</strong> {{attribute(pageTypeNames, pageInfo.type).descr}}</p>
+                <p><strong>Page Type:</strong> <span id="pageInfoType"></span></p>
                 <p><strong>Foliation:</strong> {% if pageInfo.foliation %}{{pageInfo.foliation}}{% else %}Undefined{% endif%}</p>
-                <p><strong>Default Language:</strong> {{pageInfo.lang}}</p>
+                    <p><strong>Default Language:</strong> <span id="pageInfoLang"></span></p>
                 <p><button type="button" id="editPageButton" class="btn btn-primary btn-sm">Edit Settings</button></p>
                 <p style="margin-top: 50px"></p>
                 <p><strong>Num Columns:</strong> {{pageInfo.num_cols}}</p>

@@ -17,6 +17,7 @@
  */
 import { PageRange } from './PageRange'
 import * as FoliationType from './constants/FoliationType'
+import * as Entity from './constants/Entity'
 
 export class DefPagesDefAll {
   
@@ -189,7 +190,7 @@ export class DefPagesDefAll {
           page: page
         }
         if (overwriteTypes) {
-          thePageDef.type = 2
+          thePageDef.type = Entity.PageTypeFrontMatter;
         }
 
         if (foliateFrontBackMatter) {
@@ -205,7 +206,7 @@ export class DefPagesDefAll {
           page: page
         }
         if (overwriteTypes) {
-          thePageDef.type = 1
+          thePageDef.type = Entity.PageTypeText;
         }
 
         if (foliateTextPages) {
@@ -225,7 +226,7 @@ export class DefPagesDefAll {
           page: page
         }
         if (overwriteTypes) {
-          thePageDef.type = 3
+          thePageDef.type = Entity.PageTypeBackMatter;
         }
 
         if (foliateFrontBackMatter) {

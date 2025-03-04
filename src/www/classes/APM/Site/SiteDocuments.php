@@ -51,12 +51,12 @@ use ThomasInstitut\EntitySystem\Tid;
 class SiteDocuments extends SiteController
 {
 
-    const DOCUMENT_DATA_CACHE_KEY = 'SiteDocuments-DocumentData';
-    const DOCUMENT_DATA_TTL = 8 * 24 * 3600;
+    const string DOCUMENT_DATA_CACHE_KEY = 'SiteDocuments-DocumentData';
+    const int DOCUMENT_DATA_TTL = 8 * 24 * 3600;
 
-    const TEMPLATE_DOCS_PAGE = 'documents-page.twig';
-    const TEMPLATE_SHOW_DOCS_PAGE = 'doc-details.twig';
-    const TEMPLATE_DEFINE_DOC_PAGES = 'doc-def-pages.twig';
+    const string TEMPLATE_DOCS_PAGE = 'documents-page.twig';
+    const string TEMPLATE_SHOW_DOCS_PAGE = 'doc-details.twig';
+    const string TEMPLATE_DEFINE_DOC_PAGES = 'doc-def-pages.twig';
 
     /**
      * @param Request $request
@@ -315,10 +315,9 @@ class SiteDocuments extends SiteController
      */
     public function defineDocPages(Request $request, Response $response): Response
     {
-        
 
+        $docId = Tid::fromString($request->getAttribute('id'));
 
-        $docId = $request->getAttribute('id');
         $docManager = $this->systemManager->getDocumentManager();
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $doc = [];

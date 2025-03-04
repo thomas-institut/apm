@@ -19,6 +19,8 @@
 
 import { PageRange } from './PageRange'
 import * as FoliationType from './constants/FoliationType'
+import { PageTypes } from './constants/PageTypes'
+import { PageTypeText } from './constants/Entity'
 
 export class DefPagesDefRange {
   
@@ -83,13 +85,12 @@ export class DefPagesDefRange {
     
     // Fill up types in drop down menu
     let optionsType = ''
-    for (const type of pageTypes) {
-      optionsType += '<option value="' + type.id + '"'
-      if (1 === parseInt(type.id)) {
-        optionsType += ' selected'
-      }
-      optionsType += '>' + type.descr + '</option>'
+    for (let i = 0; i < PageTypes.length; i++) {
+      let pageTypeDef = PageTypes[i];
+      let selected = pageTypeDef.id === PageTypeText ? 'selected' : '';
+      optionsType += `<option value="${pageTypeDef.id}" ${selected}>${pageTypeDef.name}</option>`
     }
+
     this.pageTypesSelect.html(optionsType)
 
     // Remove 'hidden' class from elements

@@ -300,6 +300,7 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
         $row['seq'] = intval($row['seq']);
         $row['num_cols'] = intval($row['num_cols']);
         $row['foliation'] = $row['foliation'] ?? strval($row['seq']);
+        $row['foliationIsSet'] = isset($row['foliation']);
         return $row;
     }
 
@@ -355,8 +356,8 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
         if ($newPageInfo->type === $currentPageInfo->type) {
             unset($databaseRow['type']);
         } else {
-            if (!$this->checkEntity($newPageInfo->type, Entity::tDocumentType)) {
-                throw new InvalidArgumentException("Given type '$newPageInfo->type' is not a valid document type");
+            if (!$this->checkEntity($newPageInfo->type, Entity::tPageType)) {
+                throw new InvalidArgumentException("Given type '$newPageInfo->type' is not a valid page type");
             }
         }
         if ($newPageInfo->lang === $currentPageInfo->lang) {

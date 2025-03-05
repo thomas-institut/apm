@@ -2,11 +2,11 @@
 
 namespace APM\Jobs;
 
+use APM\CommandLine\IndexManager_Typesense;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
-use APM\CommandLine\IndexManager;
 
-class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
+class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateTypesenseIndex implements JobHandlerInterface
 {
     public function run(SystemManager $sm, array $payload): bool
     {
@@ -14,7 +14,7 @@ class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateOpenSearchIndex 
         $config = $sm->getConfig();
 
         try {
-            $this->initializeOpenSearchClient($config);
+            $this->initializeTypesenseClient($config);
         } catch (\Exception $e) {
             $logger->debug('Connecting to OpenSearch server failed.');
             return false;
@@ -27,7 +27,7 @@ class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateOpenSearchIndex 
         $page_id = $sm->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
 
 
-        (new IndexManager($config, 0, [0, 'transcriptions', 'update-add', $page_id, $col]))->run();
+        (new IndexManager_Typesense($config, 0, [0, 'transcriptions', 'update-add', $page_id, $col]))->run();
 
     }
 

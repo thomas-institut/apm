@@ -41,6 +41,7 @@ class ApiSearch_Typesense extends ApiController
         $title = $_POST['title'];
         $creator = $_POST['creator'];
         $keywordDistance = $_POST['keywordDistance'];
+        $fuzzy = filter_var($_POST['fuzzy'], FILTER_VALIDATE_BOOLEAN);
         $lemmatize = filter_var($_POST['lemmatize'], FILTER_VALIDATE_BOOLEAN);
         $lang = $_POST['lang'] ?? 'detect';
 
@@ -48,14 +49,14 @@ class ApiSearch_Typesense extends ApiController
         $index_name = $this->getIndexName($corpus, $lang);
 
         // Log query
-        $this->logger->debug("Input parameters", [ 'text' => $searched_phrase, 'keywordDistance' => $keywordDistance, 'lang' => $lang, 'lemmatize' => $lemmatize]);
+        $this->logger->debug("Input parameters", [ 'text' => $searched_phrase, 'keywordDistance' => $keywordDistance, 'lang' => $lang, 'fuzzy' => $fuzzy, 'lemmatize' => $lemmatize]);
 
         // Instantiate Typesense client
         // Load authentication data from config-file
         $config = $this->systemManager->getConfig();
 
         try {
-            $client = $this->instantiateTypesenseClient();
+            $client = $this->instantiateTypesenseClient($config);
         } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
             $status = 'Connecting to OpenSearch server failed.';
             return $this->responseWithJson($response, ['searched_phrase' => $searched_phrase,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
@@ -83,7 +84,7 @@ class ApiSearch_Typesense extends ApiController
 
         // Query index
         try {
-            $query = $this->makeTypesenseSearchQuery($client, $index_name, $lang,  $title, $creator, $tokensForQuery, $lemmatize, $corpus);
+            $query = $this->makeTypesenseSearchQuery($client, $index_name, $lang,  $title, $creator, $tokensForQuery, $lemmatize, $fuzzy, $corpus);
         } catch (\Exception $e) {
             $status = "OpenSearch query problem";
             return $this->responseWithJson($response,
@@ -104,8 +105,6 @@ class ApiSearch_Typesense extends ApiController
         $data = $this->getData($query, $tokensForQuery[0], $tokensForQuery, $lemmata, $keywordDistance, $lemmatize, $corpus);
 
         $this->profiler->lap("getData");
-
-        $this->logger->debug(count($data));
 
         // Until now, there was no check, if the queried keywords are close enough to each other, depending on the keywordDistance value
         // If there is more than one token in the searched phrase, now  all columns and passages, which do not match all tokens in the desired way,
@@ -217,19 +216,19 @@ class ApiSearch_Typesense extends ApiController
             }
         }
         if (count($tokensToLemmatize) > 0) { // Get lemmata from lemmatizer
-            $this->logger->debug(count($tokensToLemmatize) . " tokens not in cache, need to run lemmatizer", $tokensToLemmatize);
+            $this->logger->debug(count($tokensToLemmatize) . " token(s) not in cache, need to run lemmatizer", $tokensToLemmatize);
             $phrase = implode(' ', $tokensToLemmatize);
             $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $phrase);
             $lemmata = $tokens_and_lemmata['lemmata'];
             foreach ($lemmata as $i => $lemma) {
                 $cacheKey = $this->getLemmaCacheKey($tokensToLemmatize[$i]);
                 $cache->set($cacheKey, $lemma);
+                $this->logger->debug("Cached lemma '$lemma' for token '$tokensToLemmatize[$i]' with cache key '$cacheKey'");
 
                 $lemma = explode(" ", $lemma); // check if it is a complex lemma, e. g. article + noun in arabic/hebrew
                 foreach ($lemma as $complexLemmaPart) {
                     $tokensForQuery[] = $complexLemmaPart;
                 }
-                $this->logger->debug("Cached lemma '$lemma' for token '$tokensToLemmatize[$i]' with cache key '$cacheKey'");
             }
         }
 
@@ -308,7 +307,7 @@ class ApiSearch_Typesense extends ApiController
     }
 
     // Function to query a given OpenSearch-index
-    private function makeTypesenseSearchQuery ($client, $index_name, $lang, $title, $creator, $tokens, $lemmatize, $corpus) {
+    private function makeTypesenseSearchQuery ($client, $index_name, $lang, $title, $creator, $tokens, $lemmatize, $fuzzy, $corpus) {
 
         $this->logger->debug("Making typesense query", [ 'index' => $index_name, 'tokens' => $tokens, 'title' => $title, 'creator' => $creator]);
 
@@ -327,12 +326,21 @@ class ApiSearch_Typesense extends ApiController
             }
             else {
                 $area_of_query = 'edition_tokens';
-            }        }
+            }
+        }
+
+        if ($fuzzy) {
+            $num_typos = 2;
+        } else {
+            $num_typos = 0;
+        }
 
         $searchParameters = [
             'q' => '',
             'query_by' => $area_of_query,
-            'filtered_by' => "lang:=$lang",
+            'filter_by' => "lang:=$lang",
+            'prefix' => false,
+            'num_typos' => $num_typos,
             'limit' => 250
         ];
 
@@ -342,11 +350,11 @@ class ApiSearch_Typesense extends ApiController
         }
 
         if ($creator !== '') {
-            $searchParameters['filtered_by'] = $searchParameters['filtered_by'] . " && creator:=$creator";
+            $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && creator:=$creator";
         }
 
         if ($title !== '') {
-            $searchParameters['filtered_by'] = $searchParameters['filtered_by'] . " && title:=$title";
+            $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && title:=$title";
         }
 
         $query=['hits' => [1]];
@@ -817,9 +825,11 @@ class ApiSearch_Typesense extends ApiController
 
         $cache = $systemManager->getSystemDataCache();
 
-        // Instantiate OpenSearch client
+        $config = $systemManager->getConfig();
+
+        // Instantiate typesense client
         try {
-            $client = self::instantiateTypesenseClient();
+            $client = self::instantiateTypesenseClient($config);
         } catch (Exception $e) {
             return false;
         }
@@ -867,6 +877,7 @@ class ApiSearch_Typesense extends ApiController
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $cache = $this->systemManager->getSystemDataCache();
+        $config = $this->systemManager->getConfig();
         $status = 'OK';
         $now = TimeString::now();
 
@@ -877,7 +888,7 @@ class ApiSearch_Typesense extends ApiController
         } catch (KeyNotInCacheException $e) {
             // Instantiate TypeSense client
             try {
-                $client = $this->instantiateTypesenseClient();
+                $client = $this->instantiateTypesenseClient($config);
             } catch (Exception $e) {
                 $status = 'Connecting to OpenSearch server failed.';
                 return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
@@ -900,16 +911,16 @@ class ApiSearch_Typesense extends ApiController
         return $this->responseWithJson($response, $responseData);
     }
 
-    public function instantiateTypesenseClient() {
+    public function instantiateTypesenseClient($config) {
         try {
             $this->client = new Client(
                 [
-                    'api_key' => 'xyz',
+                    'api_key' => $config[ApmConfigParameter::TYPESENSE_KEY],
                     'nodes' => [
                         [
-                            'host' => 'localhost', // For Typesense Cloud use xxx.a1.typesense.net
-                            'port' => '8108',      // For Typesense Cloud use 443
-                            'protocol' => 'http',      // For Typesense Cloud use https
+                            'host' => $config[ApmConfigParameter::TYPESENSE_HOST], // For Typesense Cloud use xxx.a1.typesense.net
+                            'port' => $config[ApmConfigParameter::TYPESENSE_PORT],      // For Typesense Cloud use 443
+                            'protocol' => $config[ApmConfigParameter::TYPESENSE_PROTOCOL],      // For Typesense Cloud use https
                         ],
                     ],
                     'connection_timeout_seconds' => 2,

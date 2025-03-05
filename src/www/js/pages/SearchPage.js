@@ -43,6 +43,7 @@ export class SearchPage extends NormalPage {
         <th id="doc-or-edition"><span title="Choose a specific document to search">Document</span></th>
         <th id="transcriber-or-editor"><span title="Limit your search to transcriptions by a specific transcriber.">Transcriber</span></th>
         <th style="text-align: center"><span title="Number of tokens, i. e. words or punctuation marks, that are allowed to occur between your first keyword and the following ones. A value of 0 means that only the occurrence of directly consecutive keywords counts as a match.">Keyword Distance</span></th>
+        <th class="text-center"><span title="If checked, words that match your search term roughly will be shown as results. This can help to handle typos in your search.">Fuzzy</span></th>
         <th class="text-center"><span title="If checked, all conjugated or declined forms of your keywords will count as matches. Be aware, that searches containing articles or conjunctions like ,and‘ can cause too many and not desired matches. Best practice is searching only for nouns, verbs and/or adjectives.">Lemmatization</span></th>
     </tr>
     <tr>
@@ -82,6 +83,11 @@ export class SearchPage extends NormalPage {
           <input type="number" id="keywordDistanceValue" name="keywordDistanceValue" min="0" max="80" value="10" style="padding: unset">
         </form>
       </td>
+        <td>
+        <div class="text-center">
+          <input type="checkbox" label="fuzzy" id="fuzzy" name="fuzzy" style="padding: unset">
+        </div>
+      </td>
       <td>
         <div class="text-center">
           <input type="checkbox" label="lemmatize" id="lemmatize" name="lemmatize" style="padding: unset">
@@ -120,6 +126,7 @@ export function setupSearchPage() {
   // Get selectors for catching user input
   let keywords_box = $("#keywordBox")
   let lemmatization_box = $("#lemmatize")
+  let fuzzy_box = $("#fuzzy")
   let corpus_selector = $("#corpus-select")
 
   // Get selector for signaling errors to user
@@ -155,8 +162,15 @@ export function setupSearchPage() {
     let user_input = keywords_box.val()
     if (checked && user_input.includes("*")) {
       errorMessageDiv.html(`You cannot use wildcards (*) combined with lemmatization`)
+      $("#searchButton").prop("disabled",true);
     } else {
       errorMessageDiv.html('')
+      $("#searchButton").prop("disabled",false);
+    }
+    if (checked) {
+      fuzzy_box.prop("disabled", true);
+    } else {
+      fuzzy_box.prop("disabled", false);
     }
   })
 
@@ -165,8 +179,19 @@ export function setupSearchPage() {
     let user_input = keywords_box.val()
     if (checked && user_input.includes("*")) {
       errorMessageDiv.html(`You cannot use wildcards (*) combined with lemmatization`)
+      $("#searchButton").prop("disabled",true);
     } else {
       errorMessageDiv.html('')
+      $("#searchButton").prop("disabled",false);
+    }
+  })
+
+  fuzzy_box.on("click",  function (event) {
+    let checked = fuzzy_box.prop("checked")
+    if (checked) {
+      lemmatization_box.prop("disabled", true);
+    } else {
+      lemmatization_box.prop("disabled", false);
     }
   })
 
@@ -277,6 +302,7 @@ function search() {
     creator: $("#creatorBox").val(),
     keywordDistance: parseInt($("#keywordDistanceValue").val()) + 1,
     zoom: $("#zoomValue").val(),
+    fuzzy: $("#fuzzy").prop("checked"),
     lemmatize: $("#lemmatize").prop("checked")
   };
 

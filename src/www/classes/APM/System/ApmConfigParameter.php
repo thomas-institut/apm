@@ -91,4 +91,8 @@ class ApmConfigParameter
     const THOMAS_INSTITUT_URL = 'thomas_institut_url';
 
     const WS_SERVER_URL = 'ws_server_url';
+    const TYPESENSE_HOST = 'typesense_host';
+    const TYPESENSE_KEY = 'typesense_key';
+    const TYPESENSE_PORT = 'typesense_port';
+    const TYPESENSE_PROTOCOL = 'typesense_protocol';
 }

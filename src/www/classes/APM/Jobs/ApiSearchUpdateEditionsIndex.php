@@ -3,11 +3,12 @@
 namespace APM\Jobs;
 
 use APM\CommandLine\IndexManager;
+use APM\CommandLine\IndexManager_Typesense;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
 
-class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
+class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateTypesenseIndex implements JobHandlerInterface
 {
 
     /**
@@ -19,16 +20,16 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateOpenSearchIndex implem
         $config = $sm->getConfig();
 
         try {
-            $this->initializeOpenSearchClient($config);
+            $this->initializeTypesenseClient($config);
         } catch (\Exception $e) {
-            $logger->debug('Connecting to OpenSearch server failed.');
+            $logger->debug('Connecting to typesense server failed.');
             return false;
         }
 
         // Fetch data from payload
         $table_id = $payload[0];
 
-        (new IndexManager($config, 0, [0, 'editions', 'update-add', $table_id]))->run();
+        (new IndexManager_Typesense($config, 0, [0, 'editions', 'update-add', $table_id]))->run();
     }
 
     public function mustBeUnique(): bool

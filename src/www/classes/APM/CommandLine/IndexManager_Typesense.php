@@ -51,7 +51,8 @@ class IndexManager_Typesense extends CommandLineUtility {
     public function main($argc, $argv): bool
     {
         // Instantiate Typesense client
-        $this->instantiateTypesenseClient();
+        $config = $this->getSystemManager()->getConfig();
+        $this->instantiateTypesenseClient($config);
 
         // print help
         if ($argv[1] === '-h') {
@@ -1459,16 +1460,16 @@ class IndexManager_Typesense extends CommandLineUtility {
 
     }
 
-    public function instantiateTypesenseClient() {
+    public function instantiateTypesenseClient($config) {
         try {
             $this->client = new Client(
                 [
-                    'api_key' => 'xyz',
+                    'api_key' => $config[ApmConfigParameter::TYPESENSE_KEY],
                     'nodes' => [
                         [
-                            'host' => 'localhost', // For Typesense Cloud use xxx.a1.typesense.net
-                            'port' => '8108',      // For Typesense Cloud use 443
-                            'protocol' => 'http',      // For Typesense Cloud use https
+                            'host' => $config[ApmConfigParameter::TYPESENSE_HOST], // For Typesense Cloud use xxx.a1.typesense.net
+                            'port' => $config[ApmConfigParameter::TYPESENSE_PORT],      // For Typesense Cloud use 443
+                            'protocol' => $config[ApmConfigParameter::TYPESENSE_PROTOCOL],      // For Typesense Cloud use https
                         ],
                     ],
                     'connection_timeout_seconds' => 2,

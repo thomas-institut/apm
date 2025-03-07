@@ -397,7 +397,7 @@ export class DocPage extends NormalPage {
       containerSelector: 'div.page-admin',
       title: 'Manage Pages',
       content: this.getPageAdminHtml(),
-      initiallyShown: false,
+      initiallyShown: true,
       iconWhenHidden: '<small><i class="bi bi-caret-right-fill"></i></small>',
       iconWhenShown: '<small><i class="bi bi-caret-down-fill"></i></small>',
       iconAtEnd: true,
@@ -649,8 +649,13 @@ export class DocPage extends NormalPage {
 
     return `
         <div class="page-admin-section">
-            <h5>Add pages</h5><div class="add-pages-widget-container" style="margin-bottom: 2em"></div>
+            <h5>Add pages</h5><div class="add-pages-widget-container indent-m"></div>
+            <h5>Set Default Language</h5>
+            <div class="set-default-language-container indent-m"></div>
+            <h5>Define Pages</h5>
+            <div class="indent-m">
             ${definePagesHtml}
+            </div>
             </div>
         </div>
     `

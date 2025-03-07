@@ -170,7 +170,7 @@ export class TranscriptionEditor
       $('#langButtons-'+this.id).append(
         `<button id="${buttonId}" class="langButton" title="${langDefEntry['name']}" disabled>${langDefEntry['code']}</button>`
       )
-      $(`#${buttonId}`).on('click', this.genOnClickLangButton(langDefEntry['id']))
+      $(`#${buttonId}`).on('click', this.genOnClickLangButton(langDefEntry))
       // option in default language menu
       let optionId = 'set-' +langDefEntry['code'] + '-' + this.id
       $('#set-lang-dd-menu-' + id).append('<a class="dropdown-item" href="#" id="'+ optionId +'">'
@@ -1130,10 +1130,11 @@ export class TranscriptionEditor
     this.minItemId = editorData.minItemId
     this.quillObject.setContents(editorData.delta)
     this.lastSavedData = this.quillObject.getContents()
-    let mainLang = editorData.mainLang
-    if (!mainLang) {
-      mainLang = this.pageDefaultLang
-    }
+    // let mainLang = editorData.mainLang
+    // if (!mainLang) {
+    //   mainLang = this.pageDefaultLang
+    // }
+    let mainLang = this.pageDefaultLang
 
     this.setVersions(columnData)
     
@@ -1648,9 +1649,10 @@ export class TranscriptionEditor
   genOnClickLangButton(langDef) {
     let quillObject = this.quillObject
     return  ()=> {
-      quillObject.format('lang', langDef['code']);
-      const range = quillObject.getSelection()
-      quillObject.setSelection(range.index + range.length)
+      let delta = quillObject.format('lang', langDef['code']);
+      console.log(`Set lang ${langDef['code']} at selection`, delta);
+      const range = quillObject.getSelection();
+      quillObject.setSelection(range.index + range.length);
     }
   }
   

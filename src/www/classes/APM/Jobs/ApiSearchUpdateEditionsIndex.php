@@ -3,9 +3,14 @@
 namespace APM\Jobs;
 
 use APM\CommandLine\IndexManager;
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
+use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
+use Exception;
+use ThomasInstitut\DataTable\InvalidTimeStringException;
 
 class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
 {
@@ -13,7 +18,6 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateOpenSearchIndex implem
 
     public function run(SystemManager $sm, array $payload): bool
     {
-        $logger = $sm->getLogger();
         $config = $sm->getConfig();
 
         $client = $sm->getOpensearchClient();
@@ -21,10 +25,20 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateOpenSearchIndex implem
             return false;
         }
 
+        $sm->getLogger()->debug("Updating EditionsIndex", [ 'payload' => $payload ]);
+
         // Fetch data from payload
         $table_id = $payload[0];
 
-        (new IndexManager($config, 0, [0, 'editions', 'update-add', $table_id]))->run();
+        $args = [0, 'editions', 'update-add', $table_id];
+        $argc = count($args);
+
+        try {
+            return (new IndexManager($config, $argc, $args))->main($argc, $args);
+        } catch (Exception $e) {
+            $sm->getLogger()->error("Exception", [ 'message' => $e->getMessage() ]);
+            return false;
+        }
     }
 
     public function mustBeUnique(): bool

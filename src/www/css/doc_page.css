@@ -38,6 +38,10 @@ div.doc-info-tag {
 
 }
 
+.page-admin-section h5{
+    margin-top: 1.5em;
+}
+
 div.doc-admin {
 margin-bottom: 2em;
 }
@@ -306,6 +310,10 @@ div.doc-def-pages-page-list div.page-div {
 
 .page-admin h5 {
     font-size: 1.1em;
+}
+
+.indent-m {
+    margin-left: 2em;
 }
 
 .page-admin-section {

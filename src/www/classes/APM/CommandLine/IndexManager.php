@@ -114,17 +114,17 @@ class IndexManager extends CommandLineUtility
 
             case 'add':
                 // adds a new single item to an index
-                $this->addItem($argv[3], $argv[4]);
+                $this->addItem($argv[3], $argv[4] ?? null);
                 break;
 
             case 'update':
                 // updates an existing item in an index
-                $this->updateItem($argv[3], $argv[4]);
+                $this->updateItem($argv[3], $argv[4] ?? null);
                 break;
 
             case 'update-add':
                 // updates an item if already indexed, otherwise adds the item to the index
-                $this->updateOrAddItem($argv[3], $argv[4]);
+                $this->updateOrAddItem($argv[3], $argv[4] ?? null);
                 break;
 
             case 'remove':
@@ -777,12 +777,12 @@ class IndexManager extends CommandLineUtility
     {
 
         if ($this->isAlreadyIndexed($arg1, $arg2) and $context !== 'update') {
-            print ("Item is already indexed in the corresponding index. Do you want to update it? (y/n)\n");
-            $input = rtrim(fgets(STDIN));
-
-            if ($input === 'y') {
+//            print ("Item is already indexed in the corresponding index. Do you want to update it? (y/n)\n");
+//            $input = rtrim(fgets(STDIN));
+//
+//            if ($input === 'y') {
                 $this->updateItem($arg1, $arg2);
-            }
+//            }
 
             return;
         }
@@ -871,12 +871,12 @@ class IndexManager extends CommandLineUtility
     {
 
         if (!$this->isAlreadyIndexed($arg1, $arg2)) {
-            print ("Item is not yet indexed and therefore cannot be updated.\nDo you want to index it? (y/n)\n");
-            $input = rtrim(fgets(STDIN));
+//            print ("Item is not yet indexed and therefore cannot be updated.\nDo you want to index it? (y/n)\n");
+//            $input = rtrim(fgets(STDIN));
 
-            if ($input === 'y') {
+//            if ($input === 'y') {
                 $this->addItem($arg1, $arg2);
-            }
+//            }
             return;
         }
 
@@ -1416,12 +1416,12 @@ class IndexManager extends CommandLineUtility
             if ($fix) {
                 $this->addItem($pageID, $col);
             } else {
-                print ("Do you want to index it? (y/n)\n");
-                $input = rtrim(fgets(STDIN));
+//                print ("Do you want to index it? (y/n)\n");
+//                $input = rtrim(fgets(STDIN));
 
-                if ($input === 'y') {
+//                if ($input === 'y') {
                     $this->addItem($pageID, $col);
-                }
+//                }
             }
         } else if ($transcriptionInIndex[0]['_source']['time_from'] === $transcriptionInDatabase['timeFrom']) {
             print("\nTranscription in index is up to date!\n");

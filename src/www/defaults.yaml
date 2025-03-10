@@ -4,14 +4,10 @@
 # DO NOT EDIT IN PRODUCTION
 #
 
-version: '0.67.8 (2025-Mar-10)'
-
 copyrightNotice: >
   2016-25, 
   <a href="https://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>,
   <a href="https://www.uni-koeln.de/"> Universität zu Köln </a>
-
-jsAppCacheDataId: '7b7e76789bafc2deb5e16b047c564c0d' # generated 2024-12-11 14:17 UTC+1
 
 
 appName: 'APM'

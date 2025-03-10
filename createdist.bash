@@ -74,7 +74,8 @@ cp src/www/composer.json "$TMP_DIR"/www
 cp src/www/composer.lock "$TMP_DIR"/www
 cp src/www/package.json "$TMP_DIR"/www
 cp src/www/package-lock.json "$TMP_DIR"/www
-cp src/www/config.default.yaml "$TMP_DIR"/www
+cp src/www/version.yaml "$TMP_DIR"/www
+cp src/www/defaults.yaml "$TMP_DIR"/www
 cp src/www/config.sample.yaml "$TMP_DIR"/www
 cp src/www/index.php "$TMP_DIR"/www
 

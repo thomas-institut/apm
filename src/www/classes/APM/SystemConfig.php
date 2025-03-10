@@ -15,7 +15,7 @@ class SystemConfig
      */
     static public function get() : array|string {
         $rootPath = __DIR__ . '/../..';
-        $config =  ConfigLoader::getConfig("$rootPath/config.default.yaml",
+        $config =  ConfigLoader::getConfig(["$rootPath/version.yaml" ,  "$rootPath/defaults.yaml"],
             [ "$rootPath/config.yaml", '/etc/ti/apm.config.yaml' ]);
         if ($config === null) {
             return ConfigLoader::getErrorMessage();

@@ -11,17 +11,33 @@ use ThomasInstitut\ToolBox\FileLoader;
 class ConfigLoader {
     static private string $errorMessage = '';
 
-    static public function getConfig(string $defaultConfigFile, array $configFilePaths) : array|null {
-        $defaultConfigYaml = file_get_contents($defaultConfigFile);
-        if ($defaultConfigYaml === false) {
-            self::$errorMessage = 'Unable to open default config file';
-            return null;
+
+    /**
+     * Loads a configuration array out of a number of default configuration files
+     * and a user configuration.
+     *
+     * @param array $defaultConfigFiles
+     * @param array $configFilePaths
+     * @return array|null
+     */
+    static public function getConfig(array $defaultConfigFiles, array $configFilePaths) : array|null {
+
+        $defaultConfig = [];
+        foreach ($defaultConfigFiles as $defaultConfigFile) {
+            $defaultConfigYaml = file_get_contents($defaultConfigFile);
+            if ($defaultConfigYaml === false) {
+                self::$errorMessage = "Unable to open default config file '$defaultConfigFile'";
+                return null;
+            }
+            $partialDefaultConfig = yaml_parse($defaultConfigYaml);
+            if ($partialDefaultConfig === false) {
+                self::$errorMessage = "Unable to parse default config file '$defaultConfigFile'";
+                return null;
+            }
+            $defaultConfig = ArrayUtils::getUpdatedArray($defaultConfig, $partialDefaultConfig);
         }
-        $defaultConfig = yaml_parse($defaultConfigYaml);
-        if ($defaultConfig === false) {
-            self::$errorMessage = 'Unable to parse the default config file';
-            return null;
-        }
+
+
         $configYaml = FileLoader::fileGetContents($configFilePaths);
         if ($configYaml === null) {
             self::$errorMessage = 'Config YAML file not found';

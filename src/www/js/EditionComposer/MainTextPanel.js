@@ -1755,10 +1755,6 @@ export class MainTextPanel extends PanelWithToolbar {
     }
   }
 
-
-
-
-
   /**
    *
    * @returns {(function(): void)|*}
@@ -1774,8 +1770,7 @@ export class MainTextPanel extends PanelWithToolbar {
       if ($(ev.target).hasClass('whitespace')) {
         return
       }
-      let tokenIndex = UiToolBox.getSingleIntIdFromClasses($(ev.target), 'main-text-token-')
-      // this.verbose && console.log(`Mouse up on main text ${tokenIndex} token in apparatus edit mode`)
+      let tokenIndex = UiToolBox.getSingleIntIdFromAncestor('SPAN', $(ev.target), 'main-text-token-')
       if (tokenIndex === -1) {
         this.verbose && console.log(`Mouse up on a token -1`)
         return

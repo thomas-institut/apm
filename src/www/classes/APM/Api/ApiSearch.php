@@ -1,12 +1,12 @@
 <?php
 namespace APM\Api;
 
+use APM\CommandLine\IndexManager;
 use APM\System\ApmConfigParameter;
 use APM\System\Cache\CacheKey;
 use APM\System\Lemmatizer;
 use APM\System\SystemManager;
-use OpenSearch\Client;
-use OpenSearch\ClientBuilder;
+use Typesense\Client;
 use PHPUnit\Util\Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -24,7 +24,7 @@ class ApiSearch extends ApiController
      * @throws KeyNotInCacheException
      */
 
-    // Function to search in an OpenSearch-Index – returns an api response to js
+    // Function to search in an Typesense -Index – returns an api response to js
     public function search(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
@@ -50,9 +50,12 @@ class ApiSearch extends ApiController
         // Log query
         $this->logger->debug("Input parameters", [ 'text' => $searched_phrase, 'keywordDistance' => $keywordDistance, 'lang' => $lang, 'lemmatize' => $lemmatize]);
 
-        // Instantiate OpenSearch client
+        // Instantiate Typesense client
+        // Load authentication data from config-file
+        $config = $this->systemManager->getConfig();
+
         try {
-            $client = $this->instantiateOpenSearchClient($this->systemManager);
+            $client = $this->instantiateTypesenseClient($config);
         } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
             $status = 'Connecting to OpenSearch server failed.';
             return $this->responseWithJson($response, ['searched_phrase' => $searched_phrase,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
@@ -68,7 +71,7 @@ class ApiSearch extends ApiController
             $tokensForQuery = explode(" ", $searched_phrase);
         }
 
-        $this->logger->debug($tokensForQuery[0]);
+        //$this->logger->debug($tokensForQuery[0]);
         //$this->logger->debug($tokensForQuery[1]);
 
         $lemmata = $tokensForQuery;
@@ -80,7 +83,7 @@ class ApiSearch extends ApiController
 
         // Query index
         try {
-            $query = $this->makeOpenSearchQuery($client, $index_name, $lang,  $title, $creator, $tokensForQuery, $lemmatize, $corpus);
+            $query = $this->makeTypesenseSearchQuery($client, $index_name, $lang,  $title, $creator, $tokensForQuery, $lemmatize, $corpus);
         } catch (\Exception $e) {
             $status = "OpenSearch query problem";
             return $this->responseWithJson($response,
@@ -95,14 +98,12 @@ class ApiSearch extends ApiController
                 ]);
         }
 
-        $this->profiler->lap("Opensearch query");
+        $this->profiler->lap("Typesense query");
 
         // Get all information about the matched entries, including passages with the matched token as lists of tokens
         $data = $this->getData($query, $tokensForQuery[0], $tokensForQuery, $lemmata, $keywordDistance, $lemmatize, $corpus);
 
         $this->profiler->lap("getData");
-
-        $this->logger->debug(count($data));
 
         // Until now, there was no check, if the queried keywords are close enough to each other, depending on the keywordDistance value
         // If there is more than one token in the searched phrase, now  all columns and passages, which do not match all tokens in the desired way,
@@ -113,8 +114,6 @@ class ApiSearch extends ApiController
 
         // REMOVE DUPLICATE PASSAGES
         $data = $this->removePassageDuplicates($data); // check search for "in summa dicatur"
-
-
 
         // Crop data if there are more than 999 passages matched
         $num_passages_total = $this->getnumPassages($data);
@@ -149,7 +148,7 @@ class ApiSearch extends ApiController
         // remove passages that include exactly the same matched tokens, only with different borders
         foreach ($data as $i=>$match) {
             $data[$i]['matched_token_positions'] = array_intersect_key($match['matched_token_positions'], array_unique(array_map('serialize', $match['matched_token_positions'])));
-
+            $data[$i]['matched_token_positions'] = $this->removeSubsetArrays($data[$i]['matched_token_positions']);
 
             foreach ($data[$i]['passage_tokenized'] as $j => $val) {
                 if (!array_key_exists($j, $data[$i]['matched_token_positions'])) {
@@ -161,9 +160,38 @@ class ApiSearch extends ApiController
                     $data[$i]['num_passages'] = $data[$i]['num_passages'] - 1;
                 }
             }
+
+            $data[$i]['passage_tokenized'] = array_values($data[$i]['passage_tokenized']);
+            $data[$i]['passage_lemmatized'] = array_values($data[$i]['passage_lemmatized']);
+            $data[$i]['passage_coordinates'] = array_values($data[$i]['passage_coordinates']);
+            $data[$i]['matched_token_positions'] = array_values($data[$i]['matched_token_positions']);
+            $data[$i]['positions'] = array_values($data[$i]['positions']);
         }
 
         return array_values($data);
+    }
+
+    private function removeSubsetArrays($array) {
+        $result = [];
+
+        // iterate over input array
+        foreach ($array as $currentIndex => $current) {
+            $isSubset = false;
+
+            foreach ($array as $existingIndex => $existing) {
+                //
+                if ($currentIndex != $existingIndex && empty(array_diff($current, $existing))) {
+                    $isSubset = true;
+                    break;
+                }
+            }
+
+            if (!$isSubset) {
+                $result[$currentIndex] = $current;
+            }
+        }
+
+        return $result;
     }
 
     // Get lemmata of words from cache or run lemmatizer
@@ -187,19 +215,19 @@ class ApiSearch extends ApiController
             }
         }
         if (count($tokensToLemmatize) > 0) { // Get lemmata from lemmatizer
-            $this->logger->debug(count($tokensToLemmatize) . " tokens not in cache, need to run lemmatizer", $tokensToLemmatize);
+            $this->logger->debug(count($tokensToLemmatize) . " token(s) not in cache, need to run lemmatizer", $tokensToLemmatize);
             $phrase = implode(' ', $tokensToLemmatize);
             $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $phrase);
             $lemmata = $tokens_and_lemmata['lemmata'];
             foreach ($lemmata as $i => $lemma) {
                 $cacheKey = $this->getLemmaCacheKey($tokensToLemmatize[$i]);
                 $cache->set($cacheKey, $lemma);
+                $this->logger->debug("Cached lemma '$lemma' for token '$tokensToLemmatize[$i]' with cache key '$cacheKey'");
 
                 $lemma = explode(" ", $lemma); // check if it is a complex lemma, e. g. article + noun in arabic/hebrew
                 foreach ($lemma as $complexLemmaPart) {
                     $tokensForQuery[] = $complexLemmaPart;
                 }
-                $this->logger->debug("Cached lemma '$lemma' for token '$tokensToLemmatize[$i]' with cache key '$cacheKey'");
             }
         }
 
@@ -230,14 +258,14 @@ class ApiSearch extends ApiController
 
     private function cropData (array $data, int $max_passages): array {
 
-            $num_passages_cropped = 0;
-            foreach ($data as $i=>$matched_column) {
-                if ($num_passages_cropped > $max_passages) {
-                    $data = array_slice($data,0, $i);
-                    break;
-                }
-                $num_passages_cropped = $num_passages_cropped + $matched_column['num_passages'];
+        $num_passages_cropped = 0;
+        foreach ($data as $i=>$matched_column) {
+            if ($num_passages_cropped > $max_passages) {
+                $data = array_slice($data,0, $i);
+                break;
             }
+            $num_passages_cropped = $num_passages_cropped + $matched_column['num_passages'];
+        }
 
         return  $data;
     }
@@ -277,23 +305,10 @@ class ApiSearch extends ApiController
         return $searched_phrase;
     }
 
-    // Function, which instantiates OpenSearch client
-    static private function instantiateOpenSearchClient ($systemManager): Client
-    {
-        // Load authentication data from config-file
-        $config = $systemManager->getConfig();
-
-        return (new ClientBuilder())
-            ->setHosts($config[ApmConfigParameter::OPENSEARCH_HOSTS])
-            ->setBasicAuthentication($config[ApmConfigParameter::OPENSEARCH_USER], $config[ApmConfigParameter::OPENSEARCH_PASSWORD])
-            ->setSSLVerification(false) // For testing only. Use certificate for validation
-            ->build();
-    }
-
     // Function to query a given OpenSearch-index
-    private function makeOpenSearchQuery ($client, $index_name, $lang, $title, $creator, $tokens, $lemmatize, $corpus) {
+    private function makeTypesenseSearchQuery ($client, $index_name, $lang, $title, $creator, $tokens, $lemmatize, $corpus) {
 
-        $this->logger->debug("Making opensearch query", [ 'index' => $index_name, 'tokens' => $tokens, 'title' => $title, 'creator' => $creator]);
+        $this->logger->debug("Making typesense query", [ 'index' => $index_name, 'tokens' => $tokens, 'title' => $title, 'creator' => $creator]);
 
         // Check lemmatize (boolean) and corpus to determine the target of the query
         if ($lemmatize) {
@@ -310,52 +325,50 @@ class ApiSearch extends ApiController
             }
             else {
                 $area_of_query = 'edition_tokens';
-            }        }
-
-        $mustConditions = [];
-
-        $mustConditions[] = [ 'match' => ['lang' => $lang]];
-
-        foreach ($tokens as $token) {
-            if ($lemmatize) {
-                // MODIFY HERE FOR HANDLING OF COMPLEX LEMMATA
-                $mustConditions[] = ['match' => [
-                    $area_of_query => " " . $token . " " // complex tokens are lemmatized as strings of lemmata, separated by blanks
-                ]];
-            } else {
-                $mustConditions[] = ['wildcard' => [
-                    $area_of_query => $token
-                ]];
             }
         }
 
+
+        $searchParameters = [
+            'q' => '',
+            'query_by' => $area_of_query,
+            'filter_by' => "lang:=$lang",
+            'prefix' => true,
+            'limit' => 250
+        ];
+
+        foreach ($tokens as $token) {
+            // MODIFY HERE FOR HANDLING OF COMPLEX LEMMATA
+            $searchParameters['q'] = $searchParameters['q'] . " " . $token; // complex tokens are lemmatized as strings of lemmata, separated by blanks
+        }
+
         if ($creator !== '') {
-            $mustConditions[] = [ 'match_phrase' => [
-                'creator' => [
-                    "query" => $creator
-                ]
-            ]];
+            $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && creator:=$creator";
         }
 
         if ($title !== '') {
-            $mustConditions[] = [ 'match_phrase' => [
-                'title' => [
-                    "query" => $title
-                ]
-            ]];
+            $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && title:=$title";
         }
 
-        return $client->search([
-            'index' => $index_name,
-            'body' => [
-                'size' => 20000,
-                'query' => [
-                    'bool' => [
-                        'must' => $mustConditions
-                    ]
-                ]
-            ]
-        ]);
+        $query=['hits' => [1]];
+        $hits = [];
+        $page=1;
+
+        // collect all documents from the index
+        while (count($query['hits']) !== 0) {
+            $searchParameters['page'] = $page;
+
+            $query = $client->collections[$index_name]->documents->search($searchParameters);
+
+            foreach ($query['hits'] as $hit) {
+                $hits[] = $hit;
+            }
+
+            $page++;
+        }
+
+        // $this->logger->debug("NUM DOCUMENTS " . count($hits));
+        return $hits;
     }
 
     // Get all information about matches, specified for a single document or all documents
@@ -369,7 +382,8 @@ class ApiSearch extends ApiController
         $data = [];
 
         // Get number of matched columns
-        $num_matches = $query['hits']['total']['value'];
+        // $num_matches = $query['hits']['total']['value'];
+        $num_matches = count($query);
 
         // If there are any matched columns, collect them all in an ordered and nested array of columns
         if ($num_matches !== 0) {
@@ -377,28 +391,28 @@ class ApiSearch extends ApiController
 
                 if ($corpus === 'transcriptions') {
                     // Get all relevant column-data
-                    $page = $query['hits']['hits'][$i]['_source']['page'];
-                    $seq = $query['hits']['hits'][$i]['_source']['seq'];
-                    $foliation = $query['hits']['hits'][$i]['_source']['foliation'];
-                    $column = $query['hits']['hits'][$i]['_source']['column'];
-                    $docID = $query['hits']['hits'][$i]['_source']['docID'];
-                    $pageID = $query['hits']['hits'][$i]['_source']['pageID'];
-                    $openSearchID = $query['hits']['hits'][$i]['_id'];
-                    $text_tokenized = $query['hits']['hits'][$i]['_source']['transcription_tokens'];
-                    $text_lemmatized = $query['hits']['hits'][$i]['_source']['transcription_lemmata'];
-                    $score = $query['hits']['hits'][$i]['_score'];
+                    $page = $query[$i]['document']['page'];
+                    $seq = $query[$i]['document']['seq'];
+                    $foliation = $query[$i]['document']['foliation'];
+                    $column = $query[$i]['document']['column'];
+                    $docID = $query[$i]['document']['docID'];
+                    $pageID = $query[$i]['document']['pageID'];
+                    $typesenseID = $query[$i]['document']['id'];
+                    $text_tokenized = $query[$i]['document']['transcription_tokens'];
+                    $text_lemmatized = $query[$i]['document']['transcription_lemmata'];
+                    //$score = $query[$i]['_score'];
                 }
                 else {
                     // Get all relevant column-data
-                    $table_id = $query['hits']['hits'][$i]['_source']['table_id'];
-                    $chunk = $query['hits']['hits'][$i]['_source']['chunk'];
-                    $text_tokenized = $query['hits']['hits'][$i]['_source']['edition_tokens'];
-                    $text_lemmatized = $query['hits']['hits'][$i]['_source']['edition_lemmata'];
-                    $score = $query['hits']['hits'][$i]['_score'];
+                    $table_id = $query[$i]['document']['table_id'];
+                    $chunk = $query[$i]['document']['chunk'];
+                    $text_tokenized = $query[$i]['document']['edition_tokens'];
+                    $text_lemmatized = $query[$i]['document']['edition_lemmata'];
+                    // $score = $query[$i]['_score'];
                 }
 
-                $title = $query['hits']['hits'][$i]['_source']['title'];
-                $creator = $query['hits']['hits'][$i]['_source']['creator'];
+                $title = $query[$i]['document']['title'];
+                $creator = $query[$i]['document']['creator'];
 
                 // Get all lower-case and upper-case token positions (lemmatized or unlemmatized) in the current column (measured in words)
                 if ($lemmatize) {
@@ -428,19 +442,19 @@ class ApiSearch extends ApiController
                 // Get all passages, which contain the matched token, as a list of tokens (and lemmata)
                 foreach ($pos_all as $pos) {
 
-                        // Get tokenized and lemmatized passage and passage coordinates (measured in tokens, relative to the column)
-                        $passage_data = $this->getPassage($text_tokenized, $pos, $keywordDistance);
-                        $passage_tokenized[] = $passage_data['passage'];
+                    // Get tokenized and lemmatized passage and passage coordinates (measured in tokens, relative to the column)
+                    $passage_data = $this->getPassage($text_tokenized, $pos, $keywordDistance);
+                    $passage_tokenized[] = $passage_data['passage'];
 
-                        if ($lemmatize) {
-                            $passage_data = $this->getPassage($text_lemmatized, $pos, $keywordDistance);
-                            $passage_lemmatized[] = $passage_data['passage'];
-                        }
+                    if ($lemmatize) {
+                        $passage_data = $this->getPassage($text_lemmatized, $pos, $keywordDistance);
+                        $passage_lemmatized[] = $passage_data['passage'];
+                    }
 
-                        $passage_coordinates[] = [$passage_data['start'], $passage_data['end']];
+                    $passage_coordinates[] = [$passage_data['start'], $passage_data['end']];
 
-                        // Collect all matched tokens contained in the current passage in an array – will be used for highlighting keywords in js
-                        $tokens_matched[] = $text_tokenized[$pos];
+                    // Collect all matched tokens contained in the current passage in an array – will be used for highlighting keywords in js
+                    $tokens_matched[] = $text_tokenized[$pos];
                 }
 
                 // Remove duplicates from the tokens_matched array – also adjust the keys
@@ -455,7 +469,7 @@ class ApiSearch extends ApiController
                     $matched_token_positions[] = [];
                 }
 
-            // Collect data
+                // Collect data
                 if ($corpus === 'transcriptions') {
                     $data[] = [
                         'title' => $title,
@@ -466,7 +480,7 @@ class ApiSearch extends ApiController
                         'column' => $column,
                         'creator' => $creator,
                         'pageID' => $pageID,
-                        'openSearchID' => $openSearchID,
+                        'openSearchID' => $typesenseID,
                         'docID' => $docID,
                         'text_tokenized' => $text_tokenized,
                         'text_lemmatized' => $text_lemmatized,
@@ -479,7 +493,7 @@ class ApiSearch extends ApiController
                         'passage_tokenized' => $passage_tokenized,
                         'passage_lemmatized' => $passage_lemmatized,
                         'lemmatize' => $lemmatize,
-                        'score' => $score,
+                        //'score' => $score,
                         'matched_token_positions' => $matched_token_positions
                     ];
                 }
@@ -501,7 +515,7 @@ class ApiSearch extends ApiController
                         'passage_tokenized' => $passage_tokenized,
                         'passage_lemmatized' => $passage_lemmatized,
                         'lemmatize' => $lemmatize,
-                        'score' => $score
+                        //'score' => $score
                     ];
                 }
 
@@ -564,15 +578,15 @@ class ApiSearch extends ApiController
 
                     $num_matched_tokens = count($data[$i]['tokens_matched']);
 
-                        foreach ($passage as $k => $token) {
+                    foreach ($passage as $k => $token) {
 
-                            if ($this->isMatching($token, $token_plain, $filter)) {
-                                $data[$i]['tokens_matched'][] = $passage[$k];
-                                $data[$i]['matched_token_positions'][$j][] = $data[$i]['passage_coordinates'][$j][0] + $k;
-                            }
+                        if ($this->isMatching($token, $token_plain, $filter)) {
+                            $data[$i]['tokens_matched'][] = $passage[$k];
+                            $data[$i]['matched_token_positions'][$j][] = $data[$i]['passage_coordinates'][$j][0] + $k;
                         }
+                    }
 
-                        // If there was no matching token in a passage, remove it
+                    // If there was no matching token in a passage, remove it
                     if ($num_matched_tokens === count($data[$i]['tokens_matched'])) {
 
                         unset($data[$i]['passage_tokenized'][$j]);
@@ -618,13 +632,13 @@ class ApiSearch extends ApiController
 
         if ($filter === 'match_full') {
             // MODIFY HERE FOR HANDLING OF COMPLEX LEMMATA
-                if ($token === $needle or $token === ucfirst($needle) or
+            if ($token === $needle or $token === ucfirst($needle) or
                 str_contains($token, $needleForLemmataCheck)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
+                return true;
+            }
+            else {
+                return false;
+            }
         }
         elseif ($filter === 'match_prefix') {
 
@@ -764,24 +778,33 @@ class ApiSearch extends ApiController
         $values = [];
 
         // Make a match_all query
+
         foreach ($index_names as $index_name) {
 
-            $query = $client->search([
-                'index' => $index_name,
-                'size' => 20000,
-                'body' => [
-                    "query" => [
-                        "match_all" => [
-                            "boost" => 1.0
-                        ]
-                    ],
-                ]
-            ]);
+            $query=['hits' => [1]];
+            $hits = [];
+            $page=1;
 
+            // collect all documents from the index
+            while (count($query['hits']) !== 0) {
+                $searchParameters = [
+                    'q' => '*',
+                    'page' => $page,
+                    'limit' => 250
+                ];
+
+                $query = $client->collections[$index_name]->documents->search($searchParameters);
+
+                foreach ($query['hits'] as $hit) {
+                    $hits[] = $hit;
+                }
+
+                $page++;
+            }
 
             // Append every value of the queried field to the $values-array, if not already done before (no duplicates)
-            foreach ($query['hits']['hits'] as $match) {
-                $value = $match['_source'][$queryKey];
+            foreach ($hits as $hit) {
+                $value = $hit['document'][$queryKey];
                 if (in_array($value, $values) === false) {
                     $values[] = $value;
                 }
@@ -795,20 +818,22 @@ class ApiSearch extends ApiController
 
         $cache = $systemManager->getSystemDataCache();
 
-        // Instantiate OpenSearch client
+        $config = $systemManager->getConfig();
+
+        // Instantiate typesense client
         try {
-            $client = self::instantiateOpenSearchClient($systemManager);
+            $client = self::instantiateTypesenseClient($config);
         } catch (Exception $e) {
             return false;
         }
-        
+
         if ($whichindex === 'transcriptions')
         {
             $transcriptions = self::getAllEntriesFromIndex($client, 'transcription');
             $transcribers = self::getAllEntriesFromIndex($client, 'transcriber');
             $cache->set(CacheKey::ApiSearchTranscriptions, serialize($transcriptions));
             $cache->set(CacheKey::ApiSearchTranscribers, serialize($transcribers));
-            
+
         }
         else if ($whichindex === 'editions') {
             $editions = self::getAllEntriesFromIndex($client, 'edition');
@@ -816,7 +841,7 @@ class ApiSearch extends ApiController
             $cache->set(CacheKey::ApiSearchEditions, serialize($editions));
             $cache->set(CacheKey::ApiSearchEditors, serialize($editors));
         }
-        
+
         return true;
     }
 
@@ -845,6 +870,7 @@ class ApiSearch extends ApiController
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $cache = $this->systemManager->getSystemDataCache();
+        $config = $this->systemManager->getConfig();
         $status = 'OK';
         $now = TimeString::now();
 
@@ -853,9 +879,9 @@ class ApiSearch extends ApiController
             $data = unserialize($cache->get($cacheKey));
             // $this->logger->debug(serialize($data));
         } catch (KeyNotInCacheException $e) {
-            // Instantiate OpenSearch client
+            // Instantiate TypeSense client
             try {
-                $client = $this->instantiateOpenSearchClient($this->systemManager);
+                $client = $this->instantiateTypesenseClient($config);
             } catch (Exception $e) {
                 $status = 'Connecting to OpenSearch server failed.';
                 return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
@@ -876,5 +902,27 @@ class ApiSearch extends ApiController
         ];
 
         return $this->responseWithJson($response, $responseData);
+    }
+
+    public function instantiateTypesenseClient($config) {
+        try {
+            $this->client = new Client(
+                [
+                    'api_key' => $config[ApmConfigParameter::TYPESENSE_KEY],
+                    'nodes' => [
+                        [
+                            'host' => $config[ApmConfigParameter::TYPESENSE_HOST], // For Typesense Cloud use xxx.a1.typesense.net
+                            'port' => $config[ApmConfigParameter::TYPESENSE_PORT],      // For Typesense Cloud use 443
+                            'protocol' => $config[ApmConfigParameter::TYPESENSE_PROTOCOL],      // For Typesense Cloud use https
+                        ],
+                    ],
+                    'connection_timeout_seconds' => 2,
+                ]
+            );
+
+            return $this->client;
+        } catch (\Typesense\Exceptions\ConfigError $e) {
+            return false;
+        }
     }
 }

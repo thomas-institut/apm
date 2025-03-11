@@ -27,12 +27,12 @@ use APM\System\Lemmatizer;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
 use Exception;
-use OpenSearch\ClientBuilder;
+use Typesense\Client;
 
 /**
  * Description of IndexManager
  *
- * Commandline utility to manage the open search indices for transcriptions and editions. 
+ * Commandline utility to manage the open search indices for transcriptions and editions.
  * Use option '-h' in the command line for getting information about how to use the index manager.
  *
  * @author Lukas Reichert
@@ -50,12 +50,9 @@ class IndexManager extends CommandLineUtility {
      */
     public function main($argc, $argv): bool
     {
-        // Instantiate OpenSearch client
-        $this->client =  (new ClientBuilder())
-            ->setHosts($this->config[ApmConfigParameter::OPENSEARCH_HOSTS])
-            ->setBasicAuthentication($this->config[ApmConfigParameter::OPENSEARCH_USER], $this->config[ApmConfigParameter::OPENSEARCH_PASSWORD])
-            ->setSSLVerification(false) // For testing only. Use certificate for validation
-            ->build();
+        // Instantiate Typesense client
+        $config = $this->getSystemManager()->getConfig();
+        $this->instantiateTypesenseClient($config);
 
         // print help
         if ($argv[1] === '-h') {
@@ -81,7 +78,9 @@ class IndexManager extends CommandLineUtility {
             case 'show':
                 print("Querying…\n");
                 $item = $this->getIndexedItemInfo($argv[3], $argv[4], 'show');
-                print_r($item);
+                if ($item !== []) {
+                    print_r($item);
+                }
                 break;
             case 'showdb':
                 print("Querying…");
@@ -263,28 +262,19 @@ class IndexManager extends CommandLineUtility {
             $editionsInDatabase[$i] = $edition;
         }
 
-        // get all relevant data from the opensearch index
+        // get all relevant data from the index
         $indexedEditions = [];
 
         foreach ($this->indices as $indexName) {
-                        $query = $this->client->search([
-                            'index' => $indexName,
-                            'size' => 20000,
-                            'body' => [
-                                "query" => [
-                                    "match_all" => [
-                                        "boost" => 1.0
-                                    ]
-                                ],
-                            ]
-                        ]);
 
-                        foreach ($query['hits']['hits'] as $match) {
-                            $tableID = $match['_source']['table_id'];
-                            $chunk = $match['_source']['chunk'];
-                            $timeFrom = $match['_source']['timeFrom'];
-                            $indexedEditions[] = [$tableID, $chunk, $timeFrom];
-                        }
+            $hits = $this->getItemsFromIndex($indexName);
+
+            foreach ($hits as $hit) {
+                $tableID = $hit['document']['table_id'];
+                $chunk = $hit['document']['chunk'];
+                $timeFrom = $hit['document']['timeFrom'];
+                $indexedEditions[] = [$tableID, $chunk, $timeFrom];
+            }
         }
 
         // check if every edition from the database is indexed in the most up-to-date version
@@ -346,22 +336,13 @@ class IndexManager extends CommandLineUtility {
         $indexedColumns = [];
 
         foreach ($this->indices as $indexName) {
-            $query = $this->client->search([
-                'index' => $indexName,
-                'size' => 20000,
-                'body' => [
-                    "query" => [
-                        "match_all" => [
-                            "boost" => 1.0
-                        ]
-                    ],
-                ]
-            ]);
 
-            foreach ($query['hits']['hits'] as $match) {
-                $page_id = $match['_source']['pageID'];
-                $col = $match['_source']['column'];
-                $timeFrom = $match['_source']['time_from'];
+            $hits = $this->getItemsFromIndex($indexName);
+
+            foreach ($hits as $hit) {
+                $page_id = $hit['document']['pageID'];
+                $col = $hit['document']['column'];
+                $timeFrom = $hit['document']['time_from'];
                 $indexedColumns[] = [$page_id, $col, $timeFrom];
             }
         }
@@ -393,7 +374,7 @@ class IndexManager extends CommandLineUtility {
 
         $transcriptionInIndex = $this->getIndexedItemInfo($pageID, $col);
 
-        if ($transcriptionInIndex === []) {
+        if ($transcriptionInIndex === [] or !isset($transcriptionInIndex['time_from'])) {
             print("\nTranscription is NOT INDEXED!\n");
 
             if ($fix) {
@@ -406,7 +387,7 @@ class IndexManager extends CommandLineUtility {
                     $this->addItem($pageID, $col);
                 }
             }
-        } else if ($transcriptionInIndex[0]['_source']['time_from'] === $transcriptionInDatabase['timeFrom']) {
+        } else if ($transcriptionInIndex['time_from'] === $transcriptionInDatabase['timeFrom']) {
             print("\nTranscription in index is up to date!\n");
         } else {
             print("\nTranscription in index is OUTDATED!\n");
@@ -456,7 +437,7 @@ class IndexManager extends CommandLineUtility {
                     $this->addItem($tableID);
                 }
             }
-        } else if ($editionInIndex[0]['_source']['timeFrom'] === $editionInDatabase['timeFrom']) {
+        } else if ($editionInIndex['timeFrom'] === $editionInDatabase['timeFrom']) {
             print("\nIndexed edition is up to date!\n");
         } else {
             print("\nIndexed edition is OUTDATED!\n");
@@ -730,7 +711,7 @@ class IndexManager extends CommandLineUtility {
 
         print ("Updating...\n");
 
-        $id = $this->getOpenSearchIDAndIndexName($arg1, $arg2)['id'];
+        $id = $this->getTypesenseIDAndIndexName($arg1, $arg2)['id'];
         $this->removeItem($arg1, $arg2, 'update');
         $this->addItem($arg1, $arg2, $id, 'update');
 
@@ -746,13 +727,13 @@ class IndexManager extends CommandLineUtility {
     private function updateOrAddItem (string $arg1, string $arg2=null): bool {
 
         if (!$this->isAlreadyIndexed($arg1, $arg2)) {
-                $this->addItem($arg1, $arg2);
+            $this->addItem($arg1, $arg2);
 
         } else {
 
             print ("Updating...\n");
 
-            $id = $this->getOpenSearchIDAndIndexName($arg1, $arg2)['id'];
+            $id = $this->getTypesenseIDAndIndexName($arg1, $arg2)['id'];
             $this->removeItem($arg1, $arg2, 'update');
             $this->addItem($arg1, $arg2, $id, 'update');
         }
@@ -769,21 +750,18 @@ class IndexManager extends CommandLineUtility {
      */
     private function removeItem (string $arg1, string $arg2=null, string $context='remove'): bool {
 
-        $data = $this->getOpenSearchIDAndIndexName($arg1, $arg2);
+        if ($context !== 'update') {
+            print ("Removing...\n");
+        }
+
+        $data = $this->getTypesenseIDAndIndexName($arg1, $arg2);
 
         if (isset($data['id'])) {
 
-            if ($context !== 'update') {
-                print ("Removing...\n");
-            }
-
-            $id = $data['id'];
             $index = $data['index'];
+            $id = $data['id'];
 
-            $this->client->delete([
-                'index' => $index,
-                'id' => $id
-            ]);
+            $this->client->collections[$index]->documents[$id]->delete();
 
             if ($context !== 'update') {
                 switch ($this->indexNamePrefix) {
@@ -855,21 +833,22 @@ class IndexManager extends CommandLineUtility {
         $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
         $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($pageID, $col);
         $currentVersionInfo = (array)(end($versionsInfo));
-        $timeFrom = (string) $currentVersionInfo['timeFrom'];
 
-        if ($timeFrom === '') {
+        if (!isset($currentVersionInfo['timeFrom'])) {
             print("\nNo transcription in database with page id $pageID and column number $col.\n");
             return [];
+        } else {
+            $timeFrom = (string) $currentVersionInfo['timeFrom'];
         };
 
         $data = ['title' => $title,
-                 'page' => $page,
-                 'seq' => $seq,
-                 'foliation' => $foliation,
-                 'transcriber' => $transcriber,
-                 'transcription' => $transcription,
-                 'lang' => $lang,
-                 'timeFrom' => $timeFrom] ;
+            'page' => $page,
+            'seq' => $seq,
+            'foliation' => $foliation,
+            'transcriber' => $transcriber,
+            'transcription' => $transcription,
+            'lang' => $lang,
+            'timeFrom' => $timeFrom] ;
 
         return $data;
     }
@@ -888,6 +867,7 @@ class IndexManager extends CommandLineUtility {
             $edition = $this->getEditionData($this->collationTableManager, $tableID);
         } catch (Exception) {
             print ("\nNo edition in database with table id $tableID.\n");
+            return [];
         }
 
         if ($edition === []) {
@@ -903,14 +883,14 @@ class IndexManager extends CommandLineUtility {
 
         if ($edition['table_id'] === (int) $tableID) {
             $data = ['title' => $edition['title'],
-                    'editor' => $edition['editor'],
-                    'table_id' => $edition['table_id'],
-                    'chunk' => $edition['chunk_id'],
-                    'text' => $edition['text'],
-                    "timeFrom" => $edition['timeFrom']];
+                'editor' => $edition['editor'],
+                'table_id' => $edition['table_id'],
+                'chunk' => $edition['chunk_id'],
+                'text' => $edition['text'],
+                "timeFrom" => $edition['timeFrom']];
 
-                $editionExists = true;
-            }
+            $editionExists = true;
+        }
 
         if (!$editionExists) {
             print ("\nNo edition in database with table id $tableID.\n");
@@ -929,31 +909,20 @@ class IndexManager extends CommandLineUtility {
      */
     private function getIndexedItemInfo (string $arg1, string $arg2=null, string $context=null): array {
 
-        $mustConditions = [];
-
         if ($this->indexNamePrefix === 'transcriptions') {
-            $mustConditions[] = [ 'match' => ['pageID' => $arg1]];
-            $mustConditions[] = [ 'match' => ['column' => $arg2]];
+            $searchParameters = ['q' => $arg1, 'query_by' => 'pageID', 'prefix' => false, 'filter_by' => "column:=$arg2"];
         } else if ($this->indexNamePrefix === 'editions') {
-            $mustConditions[] = [ 'match' => ['table_id' => $arg1]];
+            $searchParameters = ['q' => $arg1, 'query_by' => 'table_id', 'prefix' => false];
         }
 
         foreach ($this->indices as $indexName) {
-            $data = $this->client->search([
-                'index' => $indexName,
-                'body' => [
-                    'size' => 20000,
-                    'query' => [
-                        'bool' => [
-                            'must' => $mustConditions
-                        ]
-                    ]
-                ]
-            ]);
 
+            $data = $this->client->collections[$indexName]->documents->search($searchParameters);
 
-            if ($data['hits']['total']['value'] !== 0) {
-                return ($data['hits']['hits']);
+            if ($data['found'] === 1) {
+                return ($data['hits'][0]['document']);
+            } else if ($data['found'] > 1)  {
+                print("ERROR IN INDEX! Found more than one item matching the given identifier!\n");
             }
         }
 
@@ -971,6 +940,37 @@ class IndexManager extends CommandLineUtility {
     }
 
     /**
+     * @param string $indexname
+     * @return array
+     * @throws \Http\Client\Exception
+     * @throws \Typesense\Exceptions\TypesenseClientError
+     */
+    private function getItemsFromIndex(string $indexname): array {
+        $query=['hits' => [1]];
+        $hits = [];
+        $page=1;
+
+        // collect all documents from the index
+        while (count($query['hits']) !== 0) {
+            $searchParameters = [
+                'q' => '*',
+                'page' => $page,
+                'limit' => 250
+            ];
+
+            $query = $this->client->collections[$indexname]->documents->search($searchParameters);
+
+            foreach ($query['hits'] as $hit) {
+                $hits[] = $hit;
+            }
+
+            $page++;
+        }
+
+        return $hits;
+    }
+
+    /**
      * Checks if an item is already indexed.
      * @param string $arg1, page ID in case of transcriptions, table ID for editions
      * @param string|null $arg2, column number for transcriptions
@@ -978,7 +978,7 @@ class IndexManager extends CommandLineUtility {
      */
     private function isAlreadyIndexed (string $arg1, string $arg2=null): bool {
 
-        if (!isset($this->getOpenSearchIDAndIndexName($arg1, $arg2)['id'])) {
+        if (!isset($this->getTypesenseIDAndIndexName($arg1, $arg2)['id'])) {
             return false;
         } else {
             return true;
@@ -991,32 +991,24 @@ class IndexManager extends CommandLineUtility {
      * @param string|null $arg2, column number for transcriptions
      * @return array
      */
-    private function getOpenSearchIDAndIndexName (string $arg1, string $arg2=null): array {
-
-        $mustConditions = [];
+    private function getTypesenseIDAndIndexName (string $arg1, string $arg2=null): array {
 
         if ($this->indexNamePrefix === 'transcriptions') {
-            $mustConditions[] = [ 'match' => ['pageID' => $arg1]];
-            $mustConditions[] = [ 'match' => ['column' => $arg2]];
+            $searchParameters = ['q' => $arg1, 'query_by' => 'pageID', 'filter_by' => "column:=$arg2", 'prefix' => false];
         } else if ($this->indexNamePrefix === 'editions') {
-            $mustConditions[] = [ 'match' => ['table_id' => $arg1]];
+            $searchParameters = ['q' => $arg1, 'query_by' => 'table_id', 'prefix' => false];
         }
 
         foreach ($this->indices as $index) {
-            $query = $this->client->search([
-                'index' => $index,
-                'body' => [
-                    'size' => 20000,
-                    'query' => [
-                        'bool' => [
-                            'must' => $mustConditions
-                        ]
-                    ]
-                ]
-            ]);
 
-            if ($query['hits']['hits'] !== []) {
-                return ['index' => $index, 'id' => $query['hits']['hits'][0]['_id']];
+            try {
+                $query = $this->client->collections[$index]->documents->search($searchParameters);
+
+                if ($query['found'] !== 0) {
+                    return ['index' => $index, 'id' => $query['hits'][0]['document']['id']];
+                }
+            } catch (Exception) {
+
             }
         }
 
@@ -1123,45 +1115,20 @@ class IndexManager extends CommandLineUtility {
             $this->logger->debug("Error! Array of tokens and lemmata do not have the same length!\n");
         }
 
-        // data to be stored on the OpenSearch index
-        if ($id === null) {
-            $client->create([
-                'index' => $indexName,
-                'body' => [
-                    'title' => $title,
-                    'page' => $page,
-                    'seq' => $seq,
-                    'foliation' => $foliation,
-                    'column' => $col,
-                    'pageID' => $page_id,
-                    'docID' => $doc_id,
-                    'lang' => $lang,
-                    'creator' => $transcriber,
-                    'transcription_tokens' => $transcription_tokenized,
-                    'transcription_lemmata' => $transcription_lemmatized,
-                    'time_from' => $timeFrom
-                ]
-            ]);
-        } else {
-            $client->create([
-                'index' => $indexName,
-                'id' => $id,
-                'body' => [
-                    'title' => $title,
-                    'page' => $page,
-                    'seq' => $seq,
-                    'foliation' => $foliation,
-                    'column' => $col,
-                    'pageID' => $page_id,
-                    'docID' => $doc_id,
-                    'lang' => $lang,
-                    'creator' => $transcriber,
-                    'transcription_tokens' => $transcription_tokenized,
-                    'transcription_lemmata' => $transcription_lemmatized,
-                    'time_from' => $timeFrom
-                ]
-            ]);
-        }
+        $client->collections[$indexName]->documents->create([
+            'title' => $title,
+            'page' => $page,
+            'seq' => $seq,
+            'foliation' => $foliation,
+            'column' => (string) $col,
+            'pageID' => (string) $page_id,
+            'docID' => $doc_id,
+            'lang' => $lang,
+            'creator' => $transcriber,
+            'transcription_tokens' => $transcription_tokenized,
+            'transcription_lemmata' => $transcription_lemmatized,
+            'time_from' => $timeFrom
+        ]);
 
         $this->logger->debug("Indexed Document in $indexName – Doc ID: $doc_id ($title) Page ID: $page_id Page: $page Seq: $seq Foliation: $foliation Column: $col Transcriber: $transcriber Lang: $lang TimeFrom: $timeFrom\n");
         return true;
@@ -1253,37 +1220,16 @@ class IndexManager extends CommandLineUtility {
             $this->logger->debug("Error! Array of tokens and lemmata do not have the same length!\n");
         }
 
-        // data to be stored on the OpenSearch index
-        if ($id === null) {
-            $client->create([
-                'index' => $index_name,
-                'body' => [
-                    'table_id' => $table_id,
-                    'chunk' => $chunk,
-                    'creator' => $editor,
-                    'title' => $title,
-                    'lang' => $lang,
-                    'edition_tokens' => $edition_tokenized,
-                    'edition_lemmata' => $edition_lemmatized,
-                    'timeFrom' => $timeFrom
-                ]
-            ]);
-        } else {
-            $client->create([
-                'index' => $index_name,
-                'id' => $id,
-                'body' => [
-                    'table_id' => $table_id,
-                    'chunk' => $chunk,
-                    'creator' => $editor,
-                    'title' => $title,
-                    'lang' => $lang,
-                    'edition_tokens' => $edition_tokenized,
-                    'edition_lemmata' => $edition_lemmatized,
-                    'timeFrom' => $timeFrom
-                ]
-            ]);
-        }
+        $client->collections[$index_name]->documents->create([
+            'table_id' => (string) $table_id,
+            'chunk' => $chunk,
+            'creator' => $editor,
+            'title' => $title,
+            'lang' => $lang,
+            'edition_tokens' => $edition_tokenized,
+            'edition_lemmata' => $edition_lemmatized,
+            'timeFrom' => $timeFrom
+        ]);
 
         return true;
     }
@@ -1331,25 +1277,20 @@ class IndexManager extends CommandLineUtility {
      */
     private function resetIndex ($client, string $indexname): bool {
 
-        // delete existing index
-        if ($client->indices()->exists(['index' => $indexname])) {
-            $client->indices()->delete([
-                'index' => $indexname
-            ]);
-            $this->logger->debug("Existing index *$indexname* was deleted!\n");
+        // delete existing and create new collection
+        if ($client->collections[$indexname]->exists()) {
+            $client->collections[$indexname]->delete();
         }
 
-        // create new index
-        $client->indices()->create([
-            'index' => $indexname,
-            'body' => [
-                'settings' => [
-                    'index' => [
-                        'max_result_window' => 50000
-                    ]
-                ]
+        // adjusts the dataschema of the collection automatically to the indexed documents
+        $dataSchema = [
+            "name" => $indexname,
+            "fields" => [
+                ["name" => ".*", "type" => "auto"]
             ]
-        ]);
+        ];
+
+        $client->collections->create($dataSchema);
 
         $this->logger->debug("New index *$indexname* was created!\n");
 
@@ -1517,5 +1458,27 @@ class IndexManager extends CommandLineUtility {
         }
         return $info->foliation;
 
+    }
+
+    public function instantiateTypesenseClient($config) {
+        try {
+            $this->client = new Client(
+                [
+                    'api_key' => $config[ApmConfigParameter::TYPESENSE_KEY],
+                    'nodes' => [
+                        [
+                            'host' => $config[ApmConfigParameter::TYPESENSE_HOST], // For Typesense Cloud use xxx.a1.typesense.net
+                            'port' => $config[ApmConfigParameter::TYPESENSE_PORT],      // For Typesense Cloud use 443
+                            'protocol' => $config[ApmConfigParameter::TYPESENSE_PROTOCOL],      // For Typesense Cloud use https
+                        ],
+                    ],
+                    'connection_timeout_seconds' => 2,
+                ]
+            );
+
+            return $this->client;
+        } catch (\Typesense\Exceptions\ConfigError $e) {
+            return false;
+        }
     }
 }

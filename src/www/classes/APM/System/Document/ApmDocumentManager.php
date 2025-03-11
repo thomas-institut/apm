@@ -50,9 +50,9 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
     private InMemoryDataCache $cache;
     private PhpVarCacheSimpleEntityDataCache $entityCache;
 
-    const PAGE_ARRAY_LEGACY = 'legacy';
-    const PAGE_ARRAY_INFO = 'info';
-    const PAGE_ARRAY_IDS = 'ids';
+    const string PAGE_ARRAY_LEGACY = 'legacy';
+    const string PAGE_ARRAY_INFO = 'info';
+    const string PAGE_ARRAY_IDS = 'ids';
 
     public function __construct(callable $getEntitySystem, callable $getPagesDataTable)
     {
@@ -318,12 +318,7 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
      */
     public function getLegacyDocId(int $docId): int {
         $data = $this->getDocumentEntityData($docId);
-        try {
-            $dbId = $this->entityCache->getObject($data->id, Entity::pLegacyApmDatabaseId);
-        } catch (EntityNotInCacheException $e) {
-            // should never happen, we just got the data
-            throw new RuntimeException("Cache exception getting doc dbId: " . $e->getMessage(), 0, $e);
-        }
+        $dbId = $data->getObjectForPredicate(Entity::pLegacyApmDatabaseId);
         return $dbId !== null ? $dbId : $docId;
     }
 
@@ -461,17 +456,10 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
                 $this->cache->set("entity-id-$docId", $entityId);
             }
         }
-        // speed things up with a cache
         try {
-            return $this->entityCache->getEntityData($entityId);
-        } catch (EntityNotInCacheException) {
-            try {
-                $data = $this->getEntitySystem()->getEntityData($entityId);
-                $this->entityCache->storeEntityData($data);
-                return $data;
-            } catch (EntityDoesNotExistException) {
-                throw new DocumentNotFoundException("Document $docId not found");
-            }
+            return $this->getEntitySystem()->getEntityData($entityId);
+        } catch (EntityDoesNotExistException) {
+            throw new DocumentNotFoundException("Document $docId not found");
         }
     }
 
@@ -509,12 +497,7 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
      */
     private function getDocAttribute(int $docId, int $predicate) : int|string|null {
         $docData = $this->getDocumentEntityData($docId);
-        try {
-            return $this->entityCache->getObject($docData->id, $predicate);
-        } catch (EntityNotInCacheException $e) {
-            // should never happen, we just got the data
-            throw new RuntimeException("Cache exception getting doc image source: " . $e->getMessage(), 0, $e);
-        }
+        return $docData->getObjectForPredicate($predicate);
     }
 
     /**

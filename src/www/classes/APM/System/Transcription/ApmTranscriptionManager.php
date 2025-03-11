@@ -1920,7 +1920,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         $query = "SELECT DISTINCT $tp.id FROM $tp, $te " .
             "WHERE $te.editor_tid=$userTid AND $te.page_id = $tp.id  AND $tp.doc_id = $docId " .
             "AND $te.valid_until='$eot' AND $tp.valid_until='$eot'";
-        $this->logger->debug("Querying: '$query'");
+//        $this->logger->debug("Querying: '$query'");
         $res = $this->getDatabaseHelper()->query($query);
         if ($res === false) {
             return [];

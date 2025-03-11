@@ -70,12 +70,12 @@ class SiteDocuments extends SiteController
 
         $cache = $this->systemManager->getSystemDataCache();
         try {
-            $data = unserialize($cache->get(self::DOCUMENT_DATA_CACHE_KEY));
+            $data = json_decode($cache->get(self::DOCUMENT_DATA_CACHE_KEY), true);
         } catch (KeyNotInCacheException) {
             // not in cache
             $this->logger->debug("Cache miss for SiteDocuments document data");
             $data = self::buildDocumentData($this->systemManager);
-            $cache->set(self::DOCUMENT_DATA_CACHE_KEY, serialize($data));
+            $cache->set(self::DOCUMENT_DATA_CACHE_KEY, json_encode($data));
         }
         $docs = $data['docs'];
 
@@ -95,50 +95,95 @@ class SiteDocuments extends SiteController
         ]);
     }
 
+    /**
+     * @throws DocumentNotFoundException
+     */
+    static private function getDocData(SystemManager $systemManager, int $docId) : array {
+        $docManager = $systemManager->getDocumentManager();
+        $txManager = $systemManager->getTranscriptionManager();
+        $legacyDocId = $docManager->getLegacyDocId($docId);
+        $doc = [];
+        $doc['numPages'] = $docManager->getDocPageCount($docId);
+        $transcribedPages = $txManager->getTranscribedPageListByDocId($legacyDocId);
+        $doc['numTranscribedPages'] = count($transcribedPages);
+        $doc['transcribers'] = $txManager->getEditorTidsByDocId($legacyDocId);
+        $doc['docInfo'] = $docManager->getLegacyDocInfo($docId);
+        $doc['id'] = $docId;
+        return $doc;
+    }
+
     static public function buildDocumentData(SystemManager $systemManager): array
     {
         $docs = [];
 
         $docIds = $systemManager->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
-        $docManager = $systemManager->getDocumentManager();
-        $txManager = $systemManager->getTranscriptionManager();
 
         foreach ($docIds as $docId){
-            $doc = [];
-
             try {
-                $legacyDocId = $docManager->getLegacyDocId($docId);
-                $doc['numPages'] = $docManager->getDocPageCount($docId);
-                $transcribedPages = $txManager->getTranscribedPageListByDocId($legacyDocId);
-                $doc['numTranscribedPages'] = count($transcribedPages);
-                $doc['transcribers'] = $txManager->getEditorTidsByDocId($legacyDocId);
-                $doc['docInfo'] = $docManager->getLegacyDocInfo($docId);
-
+               $docs[] = self::getDocData($systemManager, $docId);
             } catch (DocumentNotFoundException $e) {
                 // should never happen
                 $systemManager->getLogger()->error("Document not found: " . $e->getMessage());
                 continue;
             }
-            $docs[] = $doc;
         }
 
         return [ 'docs' => $docs];
     }
 
 
-    public static function updateDataCache(SystemManager $systemManager): bool
+    public static function updateDataCache(SystemManager $systemManager, array $docIds) : bool
     {
-        try {
-            $data = self::buildDocumentData($systemManager);
-        } catch(Exception $e) {
-            $systemManager->getLogger()->error("Exception while building DocumentData",
-                [
-                    'code' => $e->getCode(),
-                    'msg' => $e->getMessage()
-                ]);
-            return false;
+//        $systemManager->getLogger()->info("Updating data cache",  ['docIds' => $docIds]);
+        $data = [];
+        $completeRebuild = false;
+        if (count($docIds) !== 0) {
+            try {
+                $data = json_decode($systemManager->getSystemDataCache()->get(self::DOCUMENT_DATA_CACHE_KEY), true);
+            } catch (KeyNotInCacheException) {
+                $completeRebuild = true;
+            }
         }
-        $systemManager->getSystemDataCache()->set(self::DOCUMENT_DATA_CACHE_KEY, serialize($data));
+        if ($completeRebuild || count($docIds) === 0 ) {
+            // redo the whole thing!
+            try {
+                $data = self::buildDocumentData($systemManager);
+            } catch(Exception $e) {
+                $systemManager->getLogger()->error("Exception while building DocumentData",
+                    [
+                        'code' => $e->getCode(),
+                        'msg' => $e->getMessage()
+                    ]);
+                return false;
+            }
+        }
+
+        if (count($docIds) !== 0) {
+            $updatedDocs = [];
+
+            foreach($data['docs'] as $docData) {
+                if (in_array($docData['id'],  $docIds)) {
+//                    $systemManager->getLogger()->info("Updating doc data for doc {$docData['id']}");
+                    try {
+                        $newDocData = self::getDocData($systemManager, $docData['id']);
+                    } catch (DocumentNotFoundException) {
+                        // a deleted document!
+                        // nothing to do
+                        continue;
+                    }
+//                    $systemManager->getLogger()->info("New doc data for doc {$docData['id']}", $newDocData);
+                    $updatedDocs[] = $newDocData;
+                } else {
+                    $updatedDocs[] = $docData;
+                }
+            }
+            $data['docs'] = $updatedDocs;
+        }
+
+        if (count($data) !== 0) {
+            $systemManager->getSystemDataCache()->set(self::DOCUMENT_DATA_CACHE_KEY, json_encode($data));
+        }
+
         return true;
     }
 

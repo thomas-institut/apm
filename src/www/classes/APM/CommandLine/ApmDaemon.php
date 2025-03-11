@@ -26,11 +26,13 @@ class ApmDaemon extends CommandLineUtility
             [
                 'cacheKey' => SiteWorks::WORK_DATA_CACHE_KEY,
                 'ttl' => SiteWorks::WORK_DATA_TTL,
+                'json' => false,
                 'builder' => function () { return SiteWorks::buildWorkData($this->getSystemManager(), $this->logger);}
             ],
             [
                 'cacheKey' => SiteDocuments::DOCUMENT_DATA_CACHE_KEY,
                 'ttl' => SiteDocuments::DOCUMENT_DATA_TTL,
+                'json' => true,
                 'builder' => function () {
                         return SiteDocuments::buildDocumentData($this->getSystemManager());
                 }
@@ -38,6 +40,7 @@ class ApmDaemon extends CommandLineUtility
             [
                 'cacheKey' => CacheKey::ApiPeople_PeoplePageData_All,
                 'ttl' => ApiPeople::AllPeopleDataForPeoplePageTtl,
+                'json' => false,
                 'builder' => function () {
                     return ApiPeople::buildAllPeopleDataForPeoplePage($this->getSystemManager()->getEntitySystem(),
                         $this->getSystemManager()->getSystemDataCache(), $this->getSystemManager()->getLogger());
@@ -113,7 +116,12 @@ class ApmDaemon extends CommandLineUtility
                     $this->logger->error("Exception trying to build data for $key", [ 'code'=> $e->getCode(), 'msg' => $e->getMessage()]);
                     continue;
                 }
-                $cache->set($item['cacheKey'], serialize($data), $item['ttl'] ?? 0);
+                if ($item['json']) {
+                    $cache->set($item['cacheKey'], json_encode($data), $item['ttl'] ?? 0);
+                } else {
+                    $cache->set($item['cacheKey'], serialize($data), $item['ttl'] ?? 0);
+                }
+
                 $dataBuilt = true;
                 $end = microtime(true);
                 $this->logger->info(sprintf("Data for %s built and cached successfully in %.3f seconds", $key, $end - $start));

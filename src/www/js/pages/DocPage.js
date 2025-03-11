@@ -37,6 +37,8 @@ import { MetadataEditorSchema } from '../defaults/MetadataEditorSchemata/Metadat
 import { MetadataEditor2 } from '../MetadataEditor/MetadataEditor2'
 import { WidgetAddPages } from '../WidgetAddPages'
 import { CollapsePanel } from '../widgets/CollapsePanel'
+import { SetLanguage } from '../widgets/SetLanguage'
+import { wait } from '../toolbox/FunctionUtil.mjs'
 
 const TabId_DocDetails = 'doc-info';
 const TabId_Pages = 'page-list';
@@ -404,6 +406,15 @@ export class DocPage extends NormalPage {
     });
 
     new WidgetAddPages('div.add-pages-widget-container', this.docId, this.doc.numPages);
+    new SetLanguage({
+      containerSelector: 'div.set-default-language-container',
+      defaultLanguage: this.doc.docInfo['lang'],
+      confirmMessage: `Are you sure you want to set this language as the default transcription language for ALL pages?`,
+      onSetLanguage: async (newLanguage) => {
+        return this.setDefaultLanguageForAllPages(newLanguage);
+      }
+    });
+
 
     this.selectPage(this.initialPage, false);
     this.maximizeElementsHeight();
@@ -413,6 +424,27 @@ export class DocPage extends NormalPage {
     });
 
 
+  }
+
+  setDefaultLanguageForAllPages(newLanguage) {
+    let pageDefs = [];
+    for(let i = 0; i < this.doc.numPages; i++) {
+      pageDefs.push({
+        docId: this.doc.docInfo['id'],
+        page: i+1,
+        lang: newLanguage
+      });
+    }
+    return new Promise ((resolve, reject) => {
+      $.post(
+        urlGen.apiBulkPageSettings(),
+        { data: JSON.stringify(pageDefs) }
+      ).done( () => {
+          resolve('');
+      }).fail((resp) => {
+         reject('Could not change page settings');
+        })
+    });
   }
 
   maximizeElementsHeight() {
@@ -650,8 +682,8 @@ export class DocPage extends NormalPage {
     return `
         <div class="page-admin-section">
             <h5>Add pages</h5><div class="add-pages-widget-container indent-m"></div>
-            <h5>Set Default Language</h5>
-            <div class="set-default-language-container indent-m"></div>
+            <h5>Set Default Language for All Pages</h5>
+            <div class="set-default-language-container indent-m" style="display: flex; flex-direction: row; gap: 0.5em"></div>
             <h5>Define Pages</h5>
             <div class="indent-m">
             ${definePagesHtml}

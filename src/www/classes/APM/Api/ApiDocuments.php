@@ -71,12 +71,13 @@ class ApiDocuments extends ApiController
 
         try {
             $pageInfo = $this->systemManager->getDocumentManager()->getPageInfo($pageId);
-        } catch (PageNotFoundException $e) {
+        } catch (PageNotFoundException) {
             $this->logger->info("Page not found", [ 'pageId' => $pageId]);
             return $this->responseWithText($response, "Page not found", HttpStatus::NOT_FOUND);
         }
         $pageInfo->foliation = $foliation;
         $pageInfo->foliationIsSet = true;
+        // TODO: check that this values are valid
         $pageInfo->type = $type;
         $pageInfo->lang = $lang;
 
@@ -301,6 +302,8 @@ class ApiDocuments extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws DocumentNotFoundException
+     * @throws PageNotFoundException
      */
     public function updatePageSettingsBulk(Request $request, Response $response) : Response
     {
@@ -368,11 +371,26 @@ class ApiDocuments extends ApiController
                     $this->debug("Asked for " . $pageDef['cols'] . " col(s), currently " . $pageInfo->numCols . " col(s). Nothing done. ");
                 }
             }
+            $validLanguages = $this->systemManager->getEntitySystem()->getAllEntitiesForType(Entity::tLanguage);
+            if (isset($pageDef['lang'])) {
+                $newLang = intval($pageDef['lang']);
+                if (in_array($newLang, $validLanguages)) {
+                    $newPageInfo->lang = $newLang;
+                } else {
+                    $this->logger->warning("Attempt to set a page language to invalid entity id $newLang");
+                }
+            }
             $this->logger->debug("Updating page settings for page $pageId", [
                 'oldData' => get_object_vars($pageInfo),
                 'newData' => get_object_vars($newPageInfo)
             ]);
-            $transcriptionManager->updatePageSettings($pageId, $newPageInfo, $this->apiUserId);
+            try {
+                $this->systemManager->getTranscriptionManager()->updatePageSettings($pageId, $newPageInfo, $this->apiUserId);
+            } catch (Exception $e) {
+                $this->logger->error("Can't update page settings for page $pageId: " . $e->getMessage(), get_object_vars($pageInfo));
+                return $this->responseWithText($response, "Error updating page $pageId ($docId:$pageNumber)", 409);
+            }
+            $this->systemManager->onUpdatePageSettings($this->apiUserId, $pageId);
         }
 
         $this->logger->info("Bulk page settings", [

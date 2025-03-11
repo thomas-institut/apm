@@ -11,7 +11,7 @@ class SiteDocumentsUpdateDataCache implements JobHandlerInterface
 
     public function run(SystemManager $sm, array $payload): bool
     {
-       return SiteDocuments::updateDataCache($sm);
+       return SiteDocuments::updateDataCache($sm, $payload);
     }
 
     public function mustBeUnique(): bool

@@ -37,7 +37,7 @@ export class ProcessingInfoWidget {
     if (message !== null) {
       this.processingMessage = message;
     }
-    this.container.html(`<div class="spinner-border spinner-border-sm ${this.options.processingClass}" role="status">
+    this.container.html(`<span class="${this.options.processingClass}">${this.processingMessage}...</span><div class="spinner-border spinner-border-sm ${this.options.processingClass}" role="status">
   <span class="sr-only">${this.processingMessage}...</span>
 </div>`)
   }
@@ -46,7 +46,7 @@ export class ProcessingInfoWidget {
     if (message !== null) {
       this.successMessage = message;
     }
-    this.container.html(`<span class="${this.options.successClass}">${this.processingMessage}...${this.successMessage}</span>`);
+    this.container.html(`<span class="${this.options.processingClass}">${this.processingMessage}...${this.successMessage}</span>`);
   }
 
   fail(message = null) {
@@ -54,7 +54,7 @@ export class ProcessingInfoWidget {
       this.failMessage = message;
     }
     this.container.html(`<span class="${this.options.processingClass}">${this.processingMessage}...</span>
-    <span class="${this.options.failClass}"${this.failMessage}</span>`);
+    <span class="${this.options.failClass}">${this.failMessage}</span>`);
   }
 
 }

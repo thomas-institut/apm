@@ -695,7 +695,7 @@ class ApmSystemManager extends SystemManager {
 
         $this->logger->debug("Scheduling update of SiteDocuments cache");
         $jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
-            '',[],0, 3, 20);
+            '',[$docId],0, 3, 20);
 
         $this->logger->debug("Scheduling update of TranscribedPages cache for user $userTid");
         $jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE,
@@ -736,23 +736,29 @@ class ApmSystemManager extends SystemManager {
 
         $this->logger->debug("Scheduling update of SiteDocuments cache");
         $this->getJobManager()->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
-            '', [],0, 3, 20);
+            '', [ $docId],0, 3, 20);
 
     }
 
     /**
      * @throws EntityDoesNotExistException
      */
-    public function onEntityDataChange(int|array $entityIdOrIds): void
+    public function onEntityDataChange(int|array $entityIdOrIds, int $userId): void
     {
-        parent::onEntityDataChange($entityIdOrIds);
+        parent::onEntityDataChange($entityIdOrIds, $userId);
         $entities = is_int($entityIdOrIds) ? [ $entityIdOrIds] : $entityIdOrIds;
         $es = $this->getEntitySystem();
 
         foreach ($entities as $entity) {
-            if ($es->getEntityType($entity) === Entity::tPerson) {
-                $this->onPersonDataChanged($entity);
-                break;
+            $entityType  = $es->getEntityType($entity);
+            switch ($entityType) {
+                case Entity::tPerson:
+                    $this->onPersonDataChanged($entity);
+                    break;
+
+                case Entity::tDocument:
+                    $this->onDocumentUpdated($userId, $entity);
+                    break;
             }
         }
     }
@@ -771,7 +777,7 @@ class ApmSystemManager extends SystemManager {
         parent::onDocumentUpdated($userTid, $docId);
         $this->logger->debug("Scheduling update of SiteDocuments cache");
         $this->getJobManager()->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
-            '', [],0, 3, 20);
+            '', [$docId],0, 3, 20);
     }
 
     public function onDocumentAdded(int $userTid, int $docId): void
@@ -779,7 +785,7 @@ class ApmSystemManager extends SystemManager {
         parent::onDocumentAdded($userTid, $docId);
         $this->logger->debug("Scheduling update of SiteDocuments cache");
         $this->getJobManager()->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
-            '', [],0, 3, 20);
+            '', [ $docId],0, 3, 20);
     }
 
     public function onWorkAdded(int $workId): void

@@ -44,3 +44,12 @@ export function getLangIdFromLangCode(langCode) {
     }
   }
 }
+
+export function getLangName(langId) {
+  for(let i = 0; i < TranscriptionLanguages.length; i++) {
+    if (TranscriptionLanguages[i].id === langId) {
+      return TranscriptionLanguages[i].name;
+    }
+  }
+  return '';
+}

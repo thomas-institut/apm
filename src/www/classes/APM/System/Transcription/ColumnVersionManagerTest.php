@@ -17,16 +17,11 @@ use ThomasInstitut\TimeString\TimeString;
 class ColumnVersionManagerTest extends TestCase
 {
 
-    /**
-     * @var ColumnVersionManager
-     */
-    private $columnVersionManager;
-    /**
-     * @var string
-     */
-    private $className;
+    private ColumnVersionManager $columnVersionManager;
+    private string $className;
 
-    protected function setManager(ColumnVersionManager $columnVersionManager, string $className) {
+    protected function setManager(ColumnVersionManager $columnVersionManager, string $className): void
+    {
         $this->columnVersionManager = $columnVersionManager;
         $this->className = $className;
     }
@@ -38,8 +33,10 @@ class ColumnVersionManagerTest extends TestCase
      *
      * @param ColumnVersionManager $columnVersionManager
      * @param string $className
+     * @throws InvalidTimeZoneException
      */
-    public function runAllTests(ColumnVersionManager $columnVersionManager, string $className) {
+    public function runAllTests(ColumnVersionManager $columnVersionManager, string $className): void
+    {
         $this->setManager($columnVersionManager, $className);
 
         $this->basicTest();
@@ -47,7 +44,8 @@ class ColumnVersionManagerTest extends TestCase
         $this->testRegistrations();
     }
 
-    public function basicTest() {
+    public function basicTest(): void
+    {
 
         $this->assertCount(0, $this->columnVersionManager->getColumnVersionInfoByPageCol(1,1), $this->className);
 
@@ -74,7 +72,8 @@ class ColumnVersionManagerTest extends TestCase
 
     }
 
-    public function exceptionTest() {
+    public function exceptionTest(): void
+    {
 
         $testPageId = 2;
         $testColumnNumber = 1;
@@ -87,7 +86,7 @@ class ColumnVersionManagerTest extends TestCase
         $goodVersionInfo->description = 'Test version';
         $goodVersionInfo->authorTid = $testAuthorId;
 
-        // wrong  page Id
+        // wrong  page id
         $exceptionCaught = false;
         try {
             $this->columnVersionManager->registerNewColumnVersion($testPageId+1, $testColumnNumber, $goodVersionInfo);
@@ -142,7 +141,7 @@ class ColumnVersionManagerTest extends TestCase
     /**
      * @throws InvalidTimeZoneException
      */
-    public function testRegistrations() {
+    public function testRegistrations() : void {
 
         $testPageId = 10;
         $testColumnNumber = 1;
@@ -212,7 +211,8 @@ class ColumnVersionManagerTest extends TestCase
     /**
      * @param ColumnVersionInfo[] $versions
      */
-    public function assertVersionSequenceIsCoherent(array $versions, string $context) {
+    public function assertVersionSequenceIsCoherent(array $versions, string $context): void
+    {
 
         $numVersions = count($versions);
 

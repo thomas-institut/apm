@@ -84,7 +84,7 @@ class SiteWorks extends SiteController
      */
     public function worksPage(Request $request, Response $response): Response
     {
-        $this->profiler->start();
+        
         $cache = $this->systemManager->getSystemDataCache();
         try {
             $works = unserialize($cache->get(self::WORK_DATA_CACHE_KEY));
@@ -93,8 +93,6 @@ class SiteWorks extends SiteController
             $works = self::buildWorkData($this->systemManager, $this->logger);
             $cache->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
         }
-        $this->profiler->stop();
-        $this->logProfilerData('worksPage');
         return $this->renderPage($response, self::TEMPLATE_WORKS_PAGE, [
             'works' => $works
         ]);
@@ -193,7 +191,7 @@ class SiteWorks extends SiteController
                 }
             }
         }
-        $worksWithTranscriptions = $systemManager->getDataManager()->getWorksWithTranscriptions();
+        $worksWithTranscriptions = $systemManager->getTranscriptionManager()->getWorksWithTranscription();
         $debug && $logger->debug('Got ' . count($worksWithTranscriptions) . ' works with transcriptions');
         foreach($worksWithTranscriptions as $workId) {
             if (!isset($works[$workId])) {
@@ -204,7 +202,7 @@ class SiteWorks extends SiteController
                 }
             }
             if ($works[$workId]['isValid']) {
-                $chunksWithTranscriptions = $systemManager->getDataManager()->getChunksWithTranscriptionForWorkId($workId);
+                $chunksWithTranscriptions = $systemManager->getTranscriptionManager()->getChunksWithTranscriptionForWorkId($workId);
                 foreach($chunksWithTranscriptions as $chunkNumber) {
                     if ($chunkNumber >= 1) {
                         if (!isset($works[$workId]['chunks'][$chunkNumber])) {

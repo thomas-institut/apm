@@ -412,15 +412,6 @@ export class ApmUrlGenerator {
 
 
 
-    apiDocumentUpdate(id) {
-        return `${this.base}/api/doc/${id}/update`
-    }
-
-    apiDocumentDelete(id) {
-        return `${this.base}/api/doc/${id}/delete`
-    }
-
-
 
     apiAutomaticCollation() {
         return this.base + '/api/collation-table/auto';

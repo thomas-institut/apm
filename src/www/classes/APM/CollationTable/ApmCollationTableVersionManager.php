@@ -23,20 +23,18 @@ namespace APM\CollationTable;
 use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use RuntimeException;
 use ThomasInstitut\DataTable\DataTable;
+use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\RowAlreadyExists;
-use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
-use ThomasInstitut\Profiler\SqlQueryCounterTracker;
-use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 use ThomasInstitut\TimeString\TimeString;
 
-class ApmCollationTableVersionManager extends CollationTableVersionManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
+class ApmCollationTableVersionManager extends CollationTableVersionManager implements LoggerAwareInterface
 {
 
     use LoggerAwareTrait;
-    use SimpleSqlQueryCounterTrackerAware;
 
-    const MAX_DESCRIPTION_LENGTH = 2000;
+    const int MAX_DESCRIPTION_LENGTH = 2000;
 
     /**
      * @var DataTable
@@ -46,7 +44,6 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
     public function __construct(DataTable $columnVersionTable)
     {
         $this->columnVersionTable = $columnVersionTable;
-        $this->setSqlQueryCounterTracker(new SqlQueryCounterTracker());
     }
 
     /**
@@ -54,7 +51,6 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
      */
     public function getCollationTableVersionInfo(int $collationTableId, int $numVersions = 0): array
     {
-        $this->sqlQueryCounterTracker->incrementSelect();
         $versionRows  = $this->columnVersionTable->findRows([ 'ct_id' => $collationTableId]);
 
         $versions = [];
@@ -108,10 +104,10 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
             // first version
             // just create a new entry with timeUntil in the EndOfTimes
             $versionInfo->timeUntil = TimeString::END_OF_TIMES;
-            $this->sqlQueryCounterTracker->incrementCreate();
+
             try {
                 $this->columnVersionTable->createRow($versionInfo->getDatabaseRow());
-            } catch (RowAlreadyExists $e) {
+            } catch (RowAlreadyExists) {
                 throw new InvalidArgumentException("Version has already existing ID but it should be new");
             }
             return;
@@ -149,25 +145,28 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
             $versionInfo->timeUntil = TimeString::END_OF_TIMES;
         }
 
-        $this->sqlQueryCounterTracker->incrementCreate();
         try {
             $this->columnVersionTable->createRow($versionInfo->getDatabaseRow());
-        } catch (RowAlreadyExists $e) {
+        } catch (RowAlreadyExists) {
             // should never happen
-            throw new \RuntimeException("Could not create DB row for version");
+            throw new RuntimeException("Could not create DB row for version");
         }
     }
 
     private function rawUpdateVersion(CollationTableVersionInfo $versionInfo): void
     {
-        $this->sqlQueryCounterTracker->incrementUpdate();
-        $this->columnVersionTable->updateRow($versionInfo->getDatabaseRow());
+        try {
+            $this->columnVersionTable->updateRow($versionInfo->getDatabaseRow());
+        } catch (InvalidRowForUpdate $e) {
+            // should never happen
+            $this->logger->error("Invalid DB row for update", $versionInfo->getDatabaseRow());
+            throw new RuntimeException("Invalid row for update exception");
+        }
     }
 
     public function getActiveCollationTableIdsForUser(int $userTid): array
     {
 
-        $this->getSqlQueryCounterTracker()->incrementSelect();
          $rows = $this->columnVersionTable->findRows(['author_tid' => $userTid, 'time_until' => TimeString::END_OF_TIMES]);
 
          $ids = [];
@@ -190,7 +189,6 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
     {
 
         // TODO: fix this, I'm just using a trick here
-        $this->getSqlQueryCounterTracker()->incrementSelect();
         $maxCtId = $this->columnVersionTable->getMaxValueInColumn('ct_id');
         $ids = [];
         for ($i=1; $i<= $maxCtId; $i++) {
@@ -199,8 +197,4 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
         return $ids;
     }
 
-//    public function fixVersionSequence(int $ctId): array
-//    {
-//        return [];
-//    }
 }

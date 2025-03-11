@@ -22,18 +22,14 @@
 namespace APM;
 
 use APM\CommandLine\Migration34to35\MigrateCollationTables;
-use APM\System\ConfigLoader;
 
 require __DIR__ . '/../../vendor/autoload.php';
 
-if (!ConfigLoader::loadConfig([__DIR__ . '/../../config.php'])) {
-    print "ERROR: cannot load system configuration file\n";
-    exit();
+$config = SystemConfig::get();
+if (!is_array($config)) {
+    print "ERROR: $config\n";
+    exit(1);
 }
 
-include_once __DIR__ . '/../../config_setup.php';
-include_once __DIR__ . '/../../version.php';
-
-global $config;
 
 (new MigrateCollationTables($config, $argc, $argv))->run();

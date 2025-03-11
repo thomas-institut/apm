@@ -31,7 +31,6 @@ use APM\Site\SiteEntity;
 use APM\Site\SiteMetadataEditor;
 use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePeople;
-use APM\System\ConfigLoader;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Logger;
@@ -73,6 +72,7 @@ use APM\Api\ApiSearch;
 use ThomasInstitut\MinimalContainer\MinimalContainer;
 use Twig\Error\LoaderError;
 
+error_reporting(E_ERROR | E_PARSE | E_NOTICE);
 // Load system profiler first
 require 'classes/APM/SystemProfiler.php';
 SystemProfiler::start();
@@ -80,13 +80,11 @@ SystemProfiler::start();
 // autoload
 require 'vendor/autoload.php';
 
-// Load configuration
-require 'config_setup.php';
-require 'version.php';
-if (!ConfigLoader::loadConfig()) {
-    exitWithErrorMessage('Config file not found');
+
+$config = SystemConfig::get();
+if (!is_array($config)) {
+    exitWithErrorMessage($config);
 }
-global $config;
 
 // Set up logger
 $logger = new Logger('APM');
@@ -106,10 +104,14 @@ $container->set(ApmContainerKey::API_USER_ID, -1); // set by authenticator
 
 // Setup Slim App
 $app = new App(new ResponseFactory(), $container);
-$subDir = $systemManager->getBaseUrlSubDir();
+
+// setup app's basePath if necessary
+$subDir = $config['subDir'];
+
 if ($subDir !== '') {
     $app->setBasePath("/$subDir");
 }
+
 $app->addErrorMiddleware(true, true, true);
 $router = $app->getRouteCollector()->getRouteParser();
 $systemManager->setRouter($router);
@@ -120,6 +122,7 @@ try {
     $systemManager->getLogger()->error("Loader error exception, aborting", [ 'msg' => $e->getMessage()]);
     exitWithErrorMessage("Could not set up application, please report to administrators");
 }
+
 
 // Create routes
 createLoginRoutes($app, $container);
@@ -138,8 +141,8 @@ $app->run();
  */
 #[NoReturn] function exitWithErrorMessage(string $msg): void
 {
-    http_response_code(503);
-    print "<pre>ERROR: $msg";
+    http_response_code(500);
+    print "<pre>SERVER ERROR: $msg</pre>";
     exit();
 }
 
@@ -149,7 +152,7 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
         // HOME
         $group->get('/',
             function(Request $request, Response $response) use ($container){
-                return (new SiteHomePage($container))->homePage($request, $response);
+                return (new SiteHomePage($container))->homePage($response);
             })
             ->setName('home');
 
@@ -530,13 +533,6 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
         })
         ->setName('api.doc.create');
 
-    // API -> delete document
-    $group->get('/doc/{id}/delete',
-        function(Request $request, Response $response) use ($container){
-            return (new ApiDocuments($container))->deleteDocument($request, $response);
-        })
-        ->setName('api.doc.delete');
-
     // API -> add pages to a document
     $group->post('/doc/{id}/addpages',
         function(Request $request, Response $response) use ($container){
@@ -544,12 +540,6 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
         })
         ->setName('api.doc.addpages');
 
-    // API -> update document settings
-    $group->post('/doc/{id}/update',
-        function(Request $request, Response $response) use ($container){
-            return (new ApiDocuments($container))->updateDocSettings($request, $response);
-        })
-        ->setName('api.doc.update');
 
     // API -> numColumns
     $group->get('/{document}/{page}/numcolumns',
@@ -596,6 +586,8 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
 }
 function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void
 {
+
+
     $group->get("/entity/statementQualificationObjects/data", function(Request $request, Response $response) use ($container){
         return (new ApiEntity($container))->getValidQualificationObjects($request, $response, false);
     })->setName("api.entity.statementQualificationObjects.data");
@@ -622,9 +614,6 @@ function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $c
     $group->get("/entity/nameSearch/{inputString}/{typeList}", function(Request $request, Response $response) use ($container){
         return (new ApiEntity($container))->nameSearch($request, $response);
     })->setName("api.entity.nameSearch");
-
-
-
 
 }
 function createApiPresetsRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {

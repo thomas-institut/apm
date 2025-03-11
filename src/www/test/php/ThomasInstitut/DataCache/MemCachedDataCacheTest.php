@@ -17,7 +17,7 @@
  *  
  */
 
-namespace Test\ThomasInstitut\DataCache;
+namespace ThomasInstitut\Test\DataCache;
 
 use PHPUnit\Framework\TestCase;
 use ThomasInstitut\DataCache\DataCacheReferenceTest;

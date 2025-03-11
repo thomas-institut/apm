@@ -54,11 +54,9 @@ class ApmChunkSegmentLocation
     }
 
     public function isValid() : bool  {
-        if ($this->status !== ChunkSegmentLocationStatus::UNDETERMINED) {
-            return $this->status === ChunkSegmentLocationStatus::VALID;
+        if ($this->status === ChunkSegmentLocationStatus::UNDETERMINED) {
+            $this->status = $this->determineStatus();
         }
-
-        $this->status = $this->determineStatus();
         return $this->status === ChunkSegmentLocationStatus::VALID;
     }
 

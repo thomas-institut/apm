@@ -36,6 +36,10 @@ class SystemProfiler
         self::$laps[] = [ 'name' => $name, 'start' => self::now() - self::$start];
     }
 
+    static public function getCurrentTotalTimeInMs() : float {
+         return (self::now() - self::$start) * 1000;
+    }
+
     static public function getTotalTimeInMs() : float {
         if (count(self::$laps) < 1) {
             return -1;
@@ -67,8 +71,6 @@ class SystemProfiler
         }
         return $lapReports;
     }
-
-
 
     static private function now() : float {
         return microtime(true);

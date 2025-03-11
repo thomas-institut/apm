@@ -38,12 +38,12 @@ class DataTableDataCache implements DataCache, LoggerAwareInterface
 {
 
     use LoggerAwareTrait;
-    const COLUMN_KEY = 'cache_key';
-    const COLUMN_VALUE = 'value';
+    const string COLUMN_KEY = 'cache_key';
+    const string COLUMN_VALUE = 'value';
 
-    const COLUMN_EXPIRES = 'expires';
+    const string COLUMN_EXPIRES = 'expires';
 
-    const COLUMN_SET = 'set_at';
+    const string COLUMN_SET = 'set_at';
 
     /**
      * @var DataTable
@@ -118,9 +118,9 @@ class DataTableDataCache implements DataCache, LoggerAwareInterface
             $expiresTs = intval(TimeString::toTimeStamp($row[$this->expiresColumn]));
             $ttl = $expiresTs - $now;
             return $ttl > 0 ? $ttl : -1;
-        } catch (InvalidTimeString|InvalidTimeZoneException $e) {
+        } catch (InvalidTimeString|InvalidTimeZoneException) {
             // should never happen
-            throw new \RuntimeException("Exception getting timestamp from timeString");
+            throw new RuntimeException("Exception getting timestamp from timeString");
         }
     }
 

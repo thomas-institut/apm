@@ -8,7 +8,7 @@
     "license": "GPL-3.0-or-later",
     
     "require": {
-        "php": ">=8.1",
+        "php": ">=8.3",
         "ext-pdo": "*",
         "ext-json": "*",
         "ext-intl": "*",
@@ -18,17 +18,18 @@
         "ext-pcntl": "*",
         "ext-posix": "*",
         "ext-sockets": "*",
+        "ext-yaml": "*",
+        "ext-gd": "*",
         "psr/log": "^3.0",
         "slim/slim": "^4.3",
         "slim/psr7": "^1.6",
-        "slim/twig-view": "3.3.0",
-        "php-di/slim-bridge" : "3.2.0",
+        "slim/twig-view": "^3.3.0",
         "dflydev/fig-cookies": "^v3.0.0",
         "rafaelnajera/xmlmatcher": "^0.4",
         "thomas-institut/datatable" : "^2.0.2",
-        "thomas-institut/timestring" : "^1.3",
+        "thomas-institut/timestring" : "^v1.3",
         "monolog/monolog": "^3.0",
-        "swaggest/json-schema": "^0.12.29",
+        "swaggest/json-schema": "^v0.12.43",
         "opensearch-project/opensearch-php": "^2.0",
         "php-http/curl-client": "^2.3",
         "typesense/typesense-php": "^4.9"
@@ -36,15 +37,12 @@
     
     "require-dev": {
         "guzzlehttp/guzzle": "^7.5",
-        "phpunit/phpunit": "^10.0"
+        "phpunit/phpunit": "^12.0"
     },
 
     "config": {
         "optimize-autoloader": true,
         "prepend-autoloader": false,
-        "platform": {
-            "php": "8.1.2"
-        },
         "allow-plugins": {
             "php-http/discovery": true
         }
@@ -53,7 +51,8 @@
     "autoload": {
         "psr-4": {
             "" : "classes/",
-            "Test\\": "test/php"
+            "APM\\Test\\": "test/php/APM",
+            "ThomasInstitut\\Test\\": "test/php/ThomasInstitut"
         }
     }
 }

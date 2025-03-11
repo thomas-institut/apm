@@ -197,26 +197,19 @@ class ApiUsers extends ApiController
      */
     public function getTranscribedPages(Request $request, Response $response) : Response
     {
-        $this->profiler->start();
+        
         $userTid =  (int) $request->getAttribute('userTid');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $userTid);
 
         $cacheKey = CacheKey::ApiUsersTranscribedPages . $userTid;
         $cacheHit = true;
         $dataCache = $this->systemManager->getSystemDataCache();
-        $this->systemManager->getSqlQueryCounterTracker()->incrementSelect();
         try {
             $data = unserialize($dataCache->get($cacheKey));
         } catch (KeyNotInCacheException) {
             $cacheHit = false;
             $data = self::buildTranscribedPagesData($this->systemManager, $userTid);
             $dataCache->set($cacheKey, serialize($data), self::CACHE_TTL_TRANSCRIBED_PAGES);
-        }
-
-        if ($cacheHit) {
-            $this->systemManager->getCacheTracker()->incrementHits();
-        } else {
-            $this->systemManager->getCacheTracker()->incrementMisses();
         }
 
         return $this->responseWithJson($response, $data);
@@ -275,7 +268,7 @@ class ApiUsers extends ApiController
 
     public function getCollationTableInfo(Request $request, Response $response) : Response
     {
-        $this->profiler->start();
+        
         $userTid =  (int) $request->getAttribute('userTid');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . Tid::toBase36String($userTid));
 
@@ -283,7 +276,6 @@ class ApiUsers extends ApiController
 
         $cacheHit = true;
         $dataCache = $this->systemManager->getSystemDataCache();
-        $this->systemManager->getSqlQueryCounterTracker()->incrementSelect();
         try {
             $data = unserialize($dataCache->get($cacheKey));
         } catch (KeyNotInCacheException) {
@@ -292,11 +284,6 @@ class ApiUsers extends ApiController
             $dataCache->set($cacheKey, serialize($data), self::CACHE_TTL_CT_INFO);
         }
 
-        if ($cacheHit) {
-            $this->systemManager->getCacheTracker()->incrementHits();
-        } else {
-            $this->systemManager->getCacheTracker()->incrementMisses();
-        }
         return $this->responseWithJson($response, $data);
     }
 

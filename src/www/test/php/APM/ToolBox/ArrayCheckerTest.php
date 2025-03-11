@@ -18,9 +18,10 @@
  *
  */
 
-namespace Test\APM\ToolBox;
+namespace APM\Test\ToolBox;
 
 use APM\ToolBox\ArrayChecker;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 
@@ -38,7 +39,7 @@ class ArrayCheckerTest extends TestCase
         $exceptionRaised = false;
         try {
             $checker->isArrayValid([], ['requiredFields' => 'test']);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException) {
             $exceptionRaised = true;
         }
         $this->assertTrue($exceptionRaised);
@@ -47,7 +48,7 @@ class ArrayCheckerTest extends TestCase
         $exceptionRaised = false;
         try {
             $checker->isArrayValid([], ['requiredFields' => [ 1, 2, 3]]);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException) {
             $exceptionRaised = true;
         }
         $this->assertTrue($exceptionRaised);
@@ -73,43 +74,43 @@ class ArrayCheckerTest extends TestCase
             ],
             [
                 'name' => 'Wrong type, int',
-                'arrayToTest' => ['f1' => 'somestring'],
+                'arrayToTest' => ['f1' => 'someString'],
                 'rules' => [ 'requiredFields' => [ [ 'name' => 'f1', 'requiredType' => 'int']]],
                 'expectedError' => ArrayChecker::ERROR_WRONG_FIELD_TYPE
             ],
             [
                 'name' => 'Wrong type, integer',
-                'arrayToTest' => ['f1' => 'somestring'],
+                'arrayToTest' => ['f1' => 'someString'],
                 'rules' => [ 'requiredFields' => [ [ 'name' => 'f1', 'requiredType' => 'integer']]],
                 'expectedError' => ArrayChecker::ERROR_WRONG_FIELD_TYPE
             ],
             [
                 'name' => 'Wrong type, bool',
-                'arrayToTest' => ['f1' => 'somestring'],
+                'arrayToTest' => ['f1' => 'someString'],
                 'rules' => [ 'requiredFields' => [ [ 'name' => 'f1', 'requiredType' => 'bool']]],
                 'expectedError' => ArrayChecker::ERROR_WRONG_FIELD_TYPE
             ],
             [
                 'name' => 'Wrong type, boolean',
-                'arrayToTest' => ['f1' => 'somestring'],
+                'arrayToTest' => ['f1' => 'someString'],
                 'rules' => [ 'requiredFields' => [ [ 'name' => 'f1', 'requiredType' => 'boolean']]],
                 'expectedError' => ArrayChecker::ERROR_WRONG_FIELD_TYPE
             ],
             [
                 'name' => 'Wrong type, float',
-                'arrayToTest' => ['f1' => 'somestring'],
+                'arrayToTest' => ['f1' => 'someString'],
                 'rules' => [ 'requiredFields' => [ [ 'name' => 'f1', 'requiredType' => 'float']]],
                 'expectedError' => ArrayChecker::ERROR_WRONG_FIELD_TYPE
             ],
             [
                 'name' => 'Wrong type, double',
-                'arrayToTest' => ['f1' => 'somestring'],
+                'arrayToTest' => ['f1' => 'someString'],
                 'rules' => [ 'requiredFields' => [ [ 'name' => 'f1', 'requiredType' => 'double']]],
                 'expectedError' => ArrayChecker::ERROR_WRONG_FIELD_TYPE
             ],
             [
                 'name' => 'Wrong type, array',
-                'arrayToTest' => ['f1' => 'somestring'],
+                'arrayToTest' => ['f1' => 'someString'],
                 'rules' => [ 'requiredFields' => [ [ 'name' => 'f1', 'requiredType' => 'array']]],
                 'expectedError' => ArrayChecker::ERROR_WRONG_FIELD_TYPE
             ]
@@ -139,7 +140,7 @@ class ArrayCheckerTest extends TestCase
         // Good types!
         $this->assertTrue($checker->isArrayValid(
             [
-                'stringField' => 'somestring',
+                'stringField' => 'someString',
                 'intField' => 25,
                 'intField2' => 35,
                 'boolField' => true,

@@ -17,10 +17,11 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *  
  */
-namespace Test\APM\Core\Token;
+namespace APM\Test\Core\Token;
 
 
 use APM\Core\Token\TokenType;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 use APM\Core\Token\Token;
@@ -46,23 +47,14 @@ class TokenTest extends TestCase {
         $exceptionCode = 0;
         try {
             $token->setType(20000);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             $exceptionCaught = true;
             $exceptionCode = $e->getCode();
         }
         $this->assertTrue($exceptionCaught);
         $this->assertEquals(Token::ERROR_INVALID_TYPE, $exceptionCode);
 
-//        $exceptionCaught = false;
-//        $exceptionCode = 0;
-//        try {
-//            $token->setNormalization('Text with spaces');
-//        } catch (\InvalidArgumentException $e) {
-//            $exceptionCaught = true;
-//            $exceptionCode = $e->getCode();
-//        }
-//        $this->assertTrue($exceptionCaught);
-//        $this->assertEquals(Token::ERROR_WHITESPACE_IN_TEXT, $exceptionCode);
+
     }
 
 }

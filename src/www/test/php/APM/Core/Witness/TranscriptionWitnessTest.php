@@ -17,11 +17,14 @@
  *  
  */
 
+namespace APM\Test\Core\Witness;
 
 use APM\Core\Token\TokenType;
-use APM\FullTranscription\ApmTranscriptionWitness;
-use AverroesProjectToApm\DatabaseItemStream;
+use APM\System\Transcription\ApmTranscriptionWitness;
+use APM\System\Transcription\DatabaseItemStream;
+
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use ThomasInstitut\TimeString\TimeString;
 
 class TranscriptionWitnessTest extends TestCase
@@ -29,7 +32,7 @@ class TranscriptionWitnessTest extends TestCase
 
     public function testLineElementsInARow()
     {
-        $txWitness = $this->getTxWitness('testcase01.csv', false);
+        $txWitness = $this->getTxWitness('testcase01.csv');
 
         $tokens = $txWitness->getTokens();
 
@@ -56,7 +59,8 @@ class TranscriptionWitnessTest extends TestCase
 //
 //    }
 
-    public function getTxWitness(string $csvFileName, $debugMode = false) {
+    public function getTxWitness(string $csvFileName, $debugMode = false): ApmTranscriptionWitness
+    {
         $inputRows = $this->readItemStreamRowCsv(__DIR__ . '/' . $csvFileName);
         $databaseItemStream = new DatabaseItemStream(1, [ $inputRows], 'la', [], $debugMode);
         $witness = new ApmTranscriptionWitness(1, 'AW47', 1, 'A', TimeString::now(), $databaseItemStream );
@@ -68,7 +72,7 @@ class TranscriptionWitnessTest extends TestCase
         $handle = fopen($fileName, 'r');
         $lines = [];
         if (!$handle) {
-            throw new \RuntimeException("Can't open file $fileName");
+            throw new RuntimeException("Can't open file $fileName");
         }
 
         while (($line = fgets($handle)) !== false) {
@@ -81,7 +85,7 @@ class TranscriptionWitnessTest extends TestCase
 
         $rows = [];
         foreach($lines as $line) {
-            if (preg_match('/^#/', $line)){
+            if (str_starts_with($line, '#')){
                 continue;
             }
             $line = rtrim($line);  // strip newlines and ws from the end

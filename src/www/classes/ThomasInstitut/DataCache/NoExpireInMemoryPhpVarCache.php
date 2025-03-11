@@ -2,8 +2,6 @@
 
 namespace ThomasInstitut\DataCache;
 
-use ThomasInstitut\DataCache\PhpVarCache;
-
 /**
  * The simplest PHPVarCache possible
  */

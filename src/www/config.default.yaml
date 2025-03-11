@@ -1,0 +1,56 @@
+#
+# Default configuration
+#
+# DO NOT EDIT IN PRODUCTION
+#
+
+version: '0.66.1 (2024-Dec-11)'
+
+copyrightNotice: >
+  2016-25, 
+  <a href="https://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>,
+  <a href="https://www.uni-koeln.de/"> Universität zu Köln </a>
+
+jsAppCacheDataId: '7b7e76789bafc2deb5e16b047c564c0d' # generated 2024-12-11 14:17 UTC+1
+
+
+appName: 'APM'
+
+dbTablePrefix:  'ap_'
+defaultTimeZone:  'UTC'
+
+languages:
+
+  - { code:  'ar', name:  'Arabic', rtl:  true, fontsize:  5}
+  - { code:  'jrb', name:  'Judeo Arabic', rtl:  true, fontsize:  3}
+  - { code:  'he', name:  'Hebrew', rtl:  true, fontsize:  3}
+  - { code:  'la', name:  'Latin', rtl:  false, fontsize:  3}
+
+langCodes:  [ 'ar', 'jrb', 'he', 'la']
+
+pdfRenderer:  '../python/pdf-renderer.py'
+typeSetter:  'node ../node/typesetStdinJson.mjs'
+daemonPidFile: '/tmp/apmd.pid'
+
+wsServerUrl: 'ws://localhost:5555'
+
+siteShowLanguageSelector:  false
+
+collationEngine: 'CollatexHttp'
+
+collatexHttp:
+  host: '127.0.0.1'
+  port: 7369
+
+log:
+  appName: 'APM'
+  fileName:  '/tmp/apm.log'
+  includeDebugInfo:  true
+  inPhpErrorHandler:  true
+
+url:
+  collatexHttp:  'http://localhost:7369'
+  dareApi: 'https://dare.uni-koeln.de/app/api/db/'
+  bilderberg:  'https://bilderberg.uni-koeln.de'
+  uniKoeln:  "https://www.uni-koeln.de/"
+  thomasInstitut:   "https://www.thomasinstitut.uni-koeln.de/"

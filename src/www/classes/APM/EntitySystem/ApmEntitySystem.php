@@ -272,6 +272,8 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         if ($entityData->isMerged()) {
             return $entityData;
         }
+
+//        print_r($entityData);
         // get type and name
         $entityData->type = $entityData->getObjectForPredicate(Entity::pEntityType);
         $entityData->name = $entityData->getObjectForPredicate(Entity::pEntityName);
@@ -749,7 +751,8 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 
     public function getStatements(?int $subject, ?int $predicate, int|string|null $object, bool $includeCancelled = false): array
     {
-        return $this->getInnerEntitySystem()->getStatementsData($subject, $predicate, $object, $includeCancelled);
+        $systemStatements = $this->getKernel()->getStatements($subject,$predicate,$object);
+        return [...$systemStatements, ...$this->getInnerEntitySystem()->getStatementsData($subject, $predicate, $object, $includeCancelled)];
     }
 
     /**

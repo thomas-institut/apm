@@ -17,7 +17,7 @@
  *  
  */
 
-namespace Test\APM\ToolBox;
+namespace APM\Test\ToolBox;
 
 
 use APM\ToolBox\StringFilter;
@@ -29,7 +29,7 @@ class StringFilterTest extends TestCase
     public function testRemoveBoms() {
 
         $testCases = [
-            'somestring',
+            'someString',
             'string with á and é',
             'اَلْعَرَبِيَّةُ'
         ];

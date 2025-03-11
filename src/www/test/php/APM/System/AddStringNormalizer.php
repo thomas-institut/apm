@@ -1,12 +1,10 @@
 <?php
 
 
-namespace APM\Core\Token\Normalizer;
+namespace APM\Test\System;
 
-/**
- * Test class
- * @package APM\Core\Token\Normalizer
- */
+use APM\Core\Token\Normalizer\SimpleStringNormalizer;
+
 class AddStringNormalizer extends SimpleStringNormalizer
 {
 

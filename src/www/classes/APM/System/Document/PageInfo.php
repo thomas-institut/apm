@@ -86,8 +86,7 @@ class PageInfo
         $this->imageNumber = 0;
         $this->sequence = 0;
         $this->type = 0;
-        $this->lang = 0; // ADDED by Lukas
-        $this->langCode = '';
+        $this->lang = 0;
         $this->numCols = 0;
         $this->foliation = '';
         $this->foliationIsSet = false;

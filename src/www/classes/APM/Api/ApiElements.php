@@ -24,14 +24,14 @@ use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\Transcription\ApmTranscriptionManager;
+use APM\System\Transcription\ColumnElement\Element;
 use APM\System\Transcription\ColumnVersionInfo;
+use APM\System\Transcription\EdNoteManager;
 use APM\System\User\UserTag;
-use AverroesProject\ColumnElement\Element;
-use AverroesProject\Data\DataManager;
-use AverroesProject\Data\EdNoteManager;
 use Exception;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use RuntimeException;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
 use ThomasInstitut\TimeString\TimeString;
 
@@ -55,10 +55,8 @@ class ApiElements extends ApiController
     public function updateElementsByDocPageCol(Request $request, Response $response): Response
     {
 
-        $dataManager = $this->getDataManager();
         $txManager = $this->systemManager->getTranscriptionManager();
         $docManager = $this->systemManager->getDocumentManager();
-        $this->profiler->start();
 
         $userManager = $this->systemManager->getUserManager();
          
@@ -299,7 +297,6 @@ class ApiElements extends ApiController
             }
             
         }
-        $this->profiler->lap('Checks Done');
         $updateTime = TimeString::now();
         $this->logger->info("UPDATE elements", 
                             [ 'apiUserTid' => $this->apiUserId,
@@ -314,9 +311,7 @@ class ApiElements extends ApiController
         // Get the editorial notes
         $edNotes  = EdNoteManager::buildEdNoteArrayFromInputArray($inputDataObject['ednotes'], $this->logger);
 
-        
-        $newItemIds = $dataManager->updateColumnElements($pageId, $columnNumber, $newElements, $updateTime);
-        $this->profiler->lap('Elements Updated');
+        $newItemIds = $txManager->updateColumnElements($pageId, $columnNumber, $newElements, $updateTime);
         // Update targets
         for ($i = 0; $i < count($edNotes); $i++) {
             $targetId = $edNotes[$i]->target;
@@ -328,7 +323,7 @@ class ApiElements extends ApiController
             }
         }
 //        $this->debug("Updating ednotes", $edNotes);
-        $dataManager->edNoteManager->updateNotesFromArray($edNotes);
+        $txManager->getEdNoteManager()->updateNotesFromArray($edNotes);
 
         // Register version
         $versionInfo = new ColumnVersionInfo();
@@ -356,8 +351,6 @@ class ApiElements extends ApiController
      * @param Response $response
      * @return Response
      * @throws PersonNotFoundException
-     * @throws DocumentNotFoundException
-     * @throws PageNotFoundException
      * @throws InvalidTimeStringException
      */
     public function getElementsByDocPageCol(Request $request, Response $response): Response
@@ -369,29 +362,35 @@ class ApiElements extends ApiController
         $versionId = $request->getAttribute('version');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":$docId:$pageNumber:$columnNumber");
 
-        $dataManager = $this->getDataManager();
         $docManager = $this->systemManager->getDocumentManager();
         $txManager = $this->systemManager->getTranscriptionManager();
 
         // Get a list of versions
-        $pageId = $docManager->getPageIdByDocPage($docId, $pageNumber);
-        $versions = $dataManager->getTranscriptionVersionsWithAuthorInfo($pageId, $columnNumber);
+        try {
+            $pageId = $docManager->getPageIdByDocPage($docId, $pageNumber);
+        } catch (DocumentNotFoundException) {
+            return $this->responseWithJson($response,['error' => self::API_ERROR_WRONG_DOCUMENT], 409);
+        } catch(PageNotFoundException) {
+            return $this->responseWithJson($response,['error' => self::API_ERROR_WRONG_PAGE_ID], 409);
+        }
+
+        $versionInfoArray = $txManager->getColumnVersionManager()->getColumnVersionInfoByPageCol($pageId, $columnNumber);
 
         $versionTime = TimeString::now();
-        if (count($versions) === 0) {
+        if (count($versionInfoArray) === 0) {
             $thisVersion = -1;
         } else {
             if (is_null($versionId)) {
                 // no version ID in request means get the latest version
-                $thisVersion = intval($versions[count($versions) - 1]['id']);
+                $thisVersion = $versionInfoArray[count($versionInfoArray)-1]->id;
                 $this->debug('No version requested, defaulting to last version, id = ' . $thisVersion);
             } else {
                 // first, check that the version id requested is actually in this page/col versions
                 $thisVersion = intval($versionId);
                 $requestVersionIsAValidVersion = false;
                 $versionIndex = 0;
-                foreach($versions as $v) {
-                    if (intval($v['id']) === $thisVersion) {
+                foreach($versionInfoArray as $v) {
+                    if ($v->id === $thisVersion) {
                         $requestVersionIsAValidVersion = true;
                         break;
                     }
@@ -409,22 +408,22 @@ class ApiElements extends ApiController
                     return $this->responseWithJson($response,['error' => self::API_ERROR_INVALID_VERSION_REQUESTED], 409);
                 }
                 // version is good, let's get the time
-                $versionTime = $versions[$versionIndex]['time_from'];
+                $versionTime = $versionInfoArray[$versionIndex]->timeFrom;
             }
         }
 
         // Get the elements
         $elements = $txManager->getColumnElementsByPageId($pageId, $columnNumber, $versionTime);
 
-//        $elements = $dataManager->getColumnElements($docId, $pageNumber,
-//            $columnNumber, $versionTime);
-
         // Get the editorial notes
         $ednotes = $txManager->getEdNoteManager()->getEditorialNotesByPageIdColWithTime($pageId, $columnNumber, $versionTime);
-        
-        $pageInfo = $docManager->getLegacyPageInfoByDocPage($docId, $pageNumber);
 
-        $goodPageInfo = $pageInfo === false ?  [ 'doc_id' => -1,  'id' => -1, 'lang' => '', 'num_cols' => 0] : $pageInfo;
+        try {
+            $pageInfo = $docManager->getPageInfo($pageId);
+        } catch (PageNotFoundException) {
+            // should never happen!
+            throw new RuntimeException("Page $pageId not found getting page Info");
+        }
 
         // Get the information about every person 
         // in the elements and editorial notes
@@ -447,12 +446,14 @@ class ApiElements extends ApiController
                 $this->systemManager->getPersonManager()->getPersonEssentialData($this->apiUserId)->getExportObject();
         }
 
+        $versionData = $this->getVersionDataWithAuthorInfo($versionInfoArray);
+
         $this->logger->info("QUERY Page Data", [ 
             'apiUserTid'=> $this->apiUserId,
             'col' => (int) $columnNumber,
             'docId' => $docId,
             'pageNumber' => $pageNumber,
-            'pageId' => $goodPageInfo['id'],
+            'pageId' => $pageId,
             'versionId' => $thisVersion,
             'versionTime' => $versionTime
             ]);
@@ -462,13 +463,64 @@ class ApiElements extends ApiController
             'people' => $people, 
             'info' => [
                 'col' => (int) $columnNumber,
-                'docId' => $goodPageInfo['doc_id'],
-                'pageId' => $goodPageInfo['id'],
-                'lang' => $goodPageInfo['lang'],
-                'numCols' => $goodPageInfo['num_cols'],
-                'versions' => $versions,
+                'docId' => $pageInfo->docId,
+                'pageId' => $pageId,
+                'lang' => $pageInfo->lang,
+                'numCols' => $pageInfo->numCols,
+                'versions' => $versionData,
                 'thisVersion' => $thisVersion
                 ]
          ]);
+   }
+
+
+    /**
+     * Returns an array of legacy version data elements from an
+     * array of ColumnVersion
+     * @param ColumnVersionInfo[] $versionInfoArray
+     * @return array
+     */
+    private function getVersionDataWithAuthorInfo(array $versionInfoArray): array
+    {
+        $authorIds = [];
+        foreach ($versionInfoArray as $versionInfo){
+            if (!in_array($versionInfo->authorTid, $authorIds)){
+                $authorIds[] = $versionInfo->authorTid;
+            }
+        }
+        $authorData = [];
+        $pm = $this->systemManager->getPersonManager();
+        foreach($authorIds as $authorId) {
+            try {
+                $authorData[$authorId] = $pm->getPersonEssentialData($authorId);
+            } catch (PersonNotFoundException) {
+                throw new RuntimeException("Person $authorId not found");
+            }
+        }
+        $dataArray = [];
+        for ($i = 0; $i < count($versionInfoArray); $i++) {
+            $versionInfo = $versionInfoArray[$i];
+            $data = $this->getLegacyVersionData($versionInfo);
+            $data['author_name'] = $authorData[$versionInfo->authorTid]->name;
+            $data['author_username'] = $authorData[$versionInfo->authorTid]->userName;
+            $data['number'] = $i + 1;
+            $dataArray[] = $data;
+        }
+        return $dataArray;
+    }
+
+   private function getLegacyVersionData(ColumnVersionInfo $versionInfo) : array {
+        return [
+            'id' => $versionInfo->id,
+            'page_id' => $versionInfo->pageId,
+            'col' => $versionInfo->column,
+            'time_from'=> $versionInfo->timeFrom,
+            'time_until' => $versionInfo->timeUntil,
+            'author_tid' => $versionInfo->authorTid,
+            'descr' => $versionInfo->description,
+            'minor' => $versionInfo->isMinor,
+            'review' => $versionInfo->isReview,
+            'is_published' => $versionInfo->isPublished,
+        ];
    }
 }

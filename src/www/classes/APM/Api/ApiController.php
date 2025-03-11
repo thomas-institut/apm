@@ -22,7 +22,6 @@ namespace APM\Api;
 
 use APM\CollationEngine\CollationEngine;
 use APM\SystemProfiler;
-use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
 use APM\ToolBox\HttpStatus;
 use Exception;
@@ -33,7 +32,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
-use AverroesProject\Data\DataManager;
 use APM\System\SystemManager;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
@@ -41,8 +39,6 @@ use Slim\Interfaces\RouteParserInterface;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\EntitySystem\Tid;
-use ThomasInstitut\Profiler\SimpleProfiler;
-use ThomasInstitut\Profiler\TimeTracker;
 
 /**
  * API Controller class
@@ -61,33 +57,30 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     const CLASS_NAME = 'Api';
 
     // Error codes
-    const API_ERROR_RUNTIME_ERROR = 1;
-    const API_ERROR_DEPRECATED = 2;
-    const API_ERROR_BAD_REQUEST = 3;
-    const API_ERROR_NO_DATA = 1000;
-    const API_ERROR_NO_ELEMENT_ARRAY = 1001;
-    const API_ERROR_NO_EDNOTES = 1002;
-    const API_ERROR_ZERO_ELEMENTS = 1003;
-    const API_ERROR_MISSING_ELEMENT_KEY = 1004;
-    const API_ERROR_WRONG_PAGE_ID = 1005;
-    const API_ERROR_WRONG_COLUMN_NUMBER = 1006;
-    const API_ERROR_WRONG_EDITOR_ID = 1007;
-    const API_ERROR_EMPTY_ELEMENT = 1008;
-    const API_ERROR_MISSING_ITEM_KEY = 1009;
-    const API_ERROR_DUPLICATE_ITEM_ID = 1010;
-    const API_ERROR_MISSING_EDNOTE_KEY = 1011;
-    const API_ERROR_WRONG_TARGET_FOR_EDNOTE = 1012;
-    const API_ERROR_WRONG_AUTHOR_ID = 1013;
-    const API_ERROR_WRONG_DOCUMENT = 1014;
-    const API_ERROR_DOC_CANNOT_BE_SAFELY_DELETED = 1015;
-    const API_ERROR_COLLATION_ENGINE_ERROR = 1016;
-    const API_ERROR_MISSING_REQUIRED_FIELD = 1017;
-    const API_ERROR_NOT_AUTHORIZED  = 1100;
-    const API_ERROR_DB_UPDATE_ERROR = 1200;
-    const API_ERROR_WRONG_TYPE = 1300;
+    const int API_ERROR_RUNTIME_ERROR = 1;
+    const int API_ERROR_BAD_REQUEST = 3;
+    const int API_ERROR_NO_DATA = 1000;
+    const int API_ERROR_NO_ELEMENT_ARRAY = 1001;
+    const int API_ERROR_NO_EDNOTES = 1002;
+    const int API_ERROR_ZERO_ELEMENTS = 1003;
+    const int API_ERROR_MISSING_ELEMENT_KEY = 1004;
+    const int API_ERROR_WRONG_PAGE_ID = 1005;
+    const int API_ERROR_WRONG_COLUMN_NUMBER = 1006;
+    const int API_ERROR_WRONG_EDITOR_ID = 1007;
+    const int API_ERROR_EMPTY_ELEMENT = 1008;
+    const int API_ERROR_MISSING_ITEM_KEY = 1009;
+    const int API_ERROR_DUPLICATE_ITEM_ID = 1010;
+    const int API_ERROR_MISSING_EDNOTE_KEY = 1011;
+    const int API_ERROR_WRONG_TARGET_FOR_EDNOTE = 1012;
+    const int API_ERROR_WRONG_AUTHOR_ID = 1013;
+    const int API_ERROR_WRONG_DOCUMENT = 1014;
+    const int API_ERROR_COLLATION_ENGINE_ERROR = 1016;
+    const int API_ERROR_MISSING_REQUIRED_FIELD = 1017;
+    const int API_ERROR_NOT_AUTHORIZED  = 1100;
+    const int API_ERROR_DB_UPDATE_ERROR = 1200;
+    const int API_ERROR_WRONG_TYPE = 1300;
 
     protected SystemManager $systemManager;
-    protected SimpleProfiler $profiler;
     protected array $languages;
     protected RouteParserInterface $router;
 
@@ -110,39 +103,14 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 
        $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
        $this->apiUserId = $ci->get(ApmContainerKey::API_USER_ID); // this should be set by the authenticator!
-       $this->languages = $this->systemManager->getConfig()[ApmConfigParameter::LANGUAGES];
+       $this->languages = $this->systemManager->getConfig()['languages'];
        $this->logger = $this->systemManager->getLogger()->withName('API');
        $this->router = $this->systemManager->getRouter();
        $this->apiCallName = self::CLASS_NAME . ":generic";
-       $this->profiler = new SimpleProfiler();
-       $this->profiler->registerProperty('time', new TimeTracker());
-       $this->profiler->registerProperty('mysql-queries', $this->systemManager->getSqlQueryCounterTracker());
-       $this->profiler->registerProperty('cache', $this->systemManager->getCacheTracker());
     }
     
     protected function setApiCallName(string $name) : void {
         $this->apiCallName  = $name;
-    }
-
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function setApiUserId(int $userTid=0): void
-    {
-        if ($userTid === 0) {
-            $this->apiUserId = $this->container->get(ApmContainerKey::API_USER_ID);
-        } else {
-            $this->container->set(ApmContainerKey::API_USER_ID, $userTid);
-            $this->apiUserId = $userTid;
-        }
-    }
-
-    /**
-     * @return DataManager
-     */
-    protected function getDataManager() : DataManager {
-        return $this->systemManager->getDataManager();
     }
 
     /**
@@ -272,10 +240,6 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 
     protected function logProfilers(string $endLapName): void
     {
-        if ($this->profiler->isRunning()) {
-            $this->profiler->stop();
-            $this->logMethodProfilerData();
-        }
         SystemProfiler::lap($endLapName);
         $this->logger->debug(
             sprintf("SYSTEM PROFILER %s Finished in %.3f ms", $this->apiCallName, SystemProfiler::getTotalTimeInMs()),
@@ -288,48 +252,6 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
             'errorMsg' => $e->getMessage(),
             'errorCode' => $e->getCode(),
             'trace' => $e->getTraceAsString()]);
-    }
-
-    protected function logMethodProfilerData($fullLapInfo = false) : void
-    {
-        $lapInfo = $this->profiler->getLaps();
-        if (count($lapInfo) === 0) {
-            $this->logger->warning("No laps to log for method $this->apiCallName");
-            return;
-        }
-        $totalTimeInMs = $this->getProfilerTotalTime() * 1000;
-        if ($totalTimeInMs == 0) {
-            $this->logger->warning("Total time is zero for $this->apiCallName, check code");
-            return;
-        }
-        $totalQueries = $lapInfo[count($lapInfo)-1]['mysql-queries']['cumulative']['Total'] ?? 0;
-        $cacheHits = $lapInfo[count($lapInfo)-1]['cache']['cumulative']['hits'] ?? 0;
-        $cacheMisses = $lapInfo[count($lapInfo)-1]['cache']['cumulative']['misses'] ?? 0;
-        $info = $fullLapInfo ? $lapInfo :[];
-        $this->logger->debug(sprintf("API method %s ran in %0.3f ms, %d MySql queries, %d cache hits, %d misses",
-            $this->apiCallName, $totalTimeInMs, $totalQueries, $cacheHits, $cacheMisses), $info);
-    }
-
-    protected function logTimeProfile() : void{
-        $lapInfoArray = $this->profiler->getLaps();
-        if (count($lapInfoArray) === 0) {
-            $this->logger->warning("No laps to log for method $this->apiCallName");
-            return;
-        }
-        $totalTimeInMs = $this->getProfilerTotalTime() * 1000;
-        $info = [];
-        foreach ($lapInfoArray as $i => $lapInfo) {
-            $info[] =  sprintf("(%d) %s : %.3f ms", $i+1, $lapInfo["LapName"], $lapInfo["time"]["delta"]*1000);
-        }
-
-        $this->logger->debug(sprintf("API method %s ran in %0.3f ms",
-            $this->apiCallName, $totalTimeInMs), $info);
-    }
-
-    protected function getProfilerTotalTime() : float
-    {
-        $lapInfo = $this->profiler->getLaps();
-        return $lapInfo[count($lapInfo)-1]['time']['cumulative'] ?? 0;
     }
 
 

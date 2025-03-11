@@ -17,7 +17,7 @@
  *  
  */
 
-namespace Test\APM\ToolBox;
+namespace APM\Test\ToolBox;
 
 
 use APM\ToolBox\FullName;

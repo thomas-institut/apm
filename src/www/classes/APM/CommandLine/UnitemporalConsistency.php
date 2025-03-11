@@ -3,6 +3,8 @@
 
 namespace APM\CommandLine;
 
+use ThomasInstitut\ToolBox\MySqlHelper;
+
 /**
  * Checks the consistency of a MySqlUnitemporal table
  * @package AverroesProject\CommandLine
@@ -14,10 +16,12 @@ class UnitemporalConsistency extends CommandLineUtility
     const USAGE="usage: unitemporalconsistency <table>\n";
     const EOT = '9999-12-31 23:59:59.999999';
 
-    public function main($argc, $argv)
+    public function main($argc, $argv): bool
     {
         $db = $this->getSystemManager()->getDbConnection();
-        $dbh = $this->getSystemManager()->getDataManager()->getMySqlHelper();
+//        $dbh = $this->getSystemManager()->getMySqlHelper();
+
+        $dbh = new MySqlHelper($db, $this->logger);
 
         if ($argc != 2) {
             print self::USAGE;
@@ -31,7 +35,7 @@ class UnitemporalConsistency extends CommandLineUtility
 //            return false;
 //        }
 
-        $allRows = $dbh->getAllRows("SELECT * from `$table` ORDER BY id, valid_from ASC");
+        $allRows = $dbh->getAllRows("SELECT * from `$table` ORDER BY id, valid_from");
 
         if ($allRows === false) {
             $this->printErrorMsg('Error reading data from database');
@@ -107,10 +111,12 @@ class UnitemporalConsistency extends CommandLineUtility
             }
         }
 
+        return true;
 
     }
 
-    protected function getTimeDiffInSeconds(string $t1, string $t2) {
+    protected function getTimeDiffInSeconds(string $t1, string $t2): float|int
+    {
 
         $dt1 = date_create_from_format(self::DB_TIME_FORMAT, $t1);
         $dt2 = date_create_from_format(self::DB_TIME_FORMAT, $t2);

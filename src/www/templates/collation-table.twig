@@ -32,6 +32,7 @@
     if (actOptions.isPreset) {
         actOptions.preset = JSON.parse("{{preset|json_encode|e('js')}}")
     }
+    console.log("ACT options", actOptions);
     
     new AutomaticCollationTable(actOptions, JSON.parse("{{apiCallOptions|json_encode|e('js')}}"))
   })

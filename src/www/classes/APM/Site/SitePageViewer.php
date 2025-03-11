@@ -26,11 +26,11 @@
 namespace APM\Site;
 
 use APM\System\ApmImageType;
+use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\HttpStatus;
-use AverroesProject\Data\DataManager;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use RuntimeException;
@@ -113,7 +113,7 @@ class SitePageViewer extends SiteController
             $pageNumber = $pageInfo['page_number'];
             $seq = $pageInfo['seq'];
             $docPageCount = $docManager->getDocPageCount($docId);
-            $legacyPageInfoArray = $docManager->getLegacyDocPageInfoArray($docId, DataManager::ORDER_BY_SEQ);
+            $legacyPageInfoArray = $docManager->getLegacyDocPageInfoArray($docId, DocumentManager::ORDER_BY_SEQ);
             $transcribedPages = $txManager->getTranscribedPageListByDocId($docId);
             $imageSources = $this->systemManager->getImageSources();
             $imageUrl = $docManager->getImageUrl($docId, $pageInfo['img_number'], ApmImageType::IMAGE_TYPE_DEFAULT, $imageSources);

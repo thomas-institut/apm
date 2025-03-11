@@ -1,7 +1,7 @@
 <?php
 
 
-namespace APM\Core\Token\Normalizer;
+namespace APM\Test\System;
 
 
 use APM\Core\Token\Token;

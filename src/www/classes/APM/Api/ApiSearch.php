@@ -1,15 +1,14 @@
 <?php
 namespace APM\Api;
 
-use APM\CommandLine\IndexManager;
 use APM\System\ApmConfigParameter;
 use APM\System\Cache\CacheKey;
 use APM\System\Lemmatizer;
 use APM\System\SystemManager;
 use Typesense\Client;
 use PHPUnit\Util\Exception;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
 
@@ -17,6 +16,8 @@ class ApiSearch extends ApiController
 {
 
     const CLASS_NAME = 'Search';
+    private $profiler;
+
     /**
      * @param Request $request
      * @param Response $response
@@ -25,7 +26,7 @@ class ApiSearch extends ApiController
      */
 
     // Function to search in an Typesense -Index – returns an api response to js
-    public function search(Request $request, Response $response): Response
+    public function search(Request  $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         // Name of the index, that should be queried and informative variables for the API response
@@ -33,7 +34,6 @@ class ApiSearch extends ApiController
         $status = 'OK';
         $now = TimeString::now();
 
-        $this->profiler->start();
 
         // Get all user input!
         $corpus = $_POST['corpus'];
@@ -53,15 +53,14 @@ class ApiSearch extends ApiController
         // Instantiate Typesense client
         // Load authentication data from config-file
         $config = $this->systemManager->getConfig();
+        $this->logger->debug('CONFIG ' . $config[ApmConfigParameter::TYPESENSE_HOST]);
 
         try {
             $client = $this->instantiateTypesenseClient($config);
         } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
-            $status = 'Connecting to OpenSearch server failed.';
+            $status = 'Connecting to Typesense server failed.';
             return $this->responseWithJson($response, ['searched_phrase' => $searched_phrase,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
-
-        $this->profiler->lap("Setup");
 
         // If wished, lemmatize searched keywords
         if ($lemmatize) {
@@ -79,13 +78,11 @@ class ApiSearch extends ApiController
         // Count tokens
         $numTokens = count($tokensForQuery);
 
-        $this->profiler->lap("Lemmatization");
-
         // Query index
         try {
             $query = $this->makeTypesenseSearchQuery($client, $index_name, $lang,  $title, $creator, $tokensForQuery, $lemmatize, $corpus);
         } catch (\Exception $e) {
-            $status = "OpenSearch query problem";
+            $status = "Typesense query problem";
             return $this->responseWithJson($response,
                 [
                     'searched_phrase' => $searched_phrase,
@@ -98,12 +95,13 @@ class ApiSearch extends ApiController
                 ]);
         }
 
-        $this->profiler->lap("Typesense query");
+        //$this->profiler->lap("Typesense query");
 
         // Get all information about the matched entries, including passages with the matched token as lists of tokens
         $data = $this->getData($query, $tokensForQuery[0], $tokensForQuery, $lemmata, $keywordDistance, $lemmatize, $corpus);
 
-        $this->profiler->lap("getData");
+        //$this->profiler->lap("getData");
+
 
         // Until now, there was no check, if the queried keywords are close enough to each other, depending on the keywordDistance value
         // If there is more than one token in the searched phrase, now  all columns and passages, which do not match all tokens in the desired way,
@@ -127,8 +125,7 @@ class ApiSearch extends ApiController
             $cropped = true;
         }
 
-        $this->profiler->stop();
-        $this->logTimeProfile();
+
 
         // ApiResponse
         return $this->responseWithJson($response, [
@@ -305,7 +302,8 @@ class ApiSearch extends ApiController
         return $searched_phrase;
     }
 
-    // Function to query a given OpenSearch-index
+
+    // Function to query a given TypeSense-index
     private function makeTypesenseSearchQuery ($client, $index_name, $lang, $title, $creator, $tokens, $lemmatize, $corpus) {
 
         $this->logger->debug("Making typesense query", [ 'index' => $index_name, 'tokens' => $tokens, 'title' => $title, 'creator' => $creator]);
@@ -906,7 +904,7 @@ class ApiSearch extends ApiController
 
     public function instantiateTypesenseClient($config) {
         try {
-            $this->client = new Client(
+            $client = new Client(
                 [
                     'api_key' => $config[ApmConfigParameter::TYPESENSE_KEY],
                     'nodes' => [
@@ -920,7 +918,7 @@ class ApiSearch extends ApiController
                 ]
             );
 
-            return $this->client;
+            return $client;
         } catch (\Typesense\Exceptions\ConfigError $e) {
             return false;
         }

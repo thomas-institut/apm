@@ -54,7 +54,6 @@ use Slim\Interfaces\RouteParserInterface;
 use Slim\Psr7\Response;
 use Slim\Views\Twig;
 use ThomasInstitut\EntitySystem\Tid;
-use ThomasInstitut\Profiler\SimpleProfiler;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
@@ -66,7 +65,7 @@ use Twig\Error\SyntaxError;
 class Authenticator {
 
 
-    const LOGIN_PAGE_SIGNATURE = 'Login-8gRSSm23HPdStrEid5Wi';
+    const string LOGIN_PAGE_SIGNATURE = 'Login-8gRSSm23HPdStrEid5Wi';
 
 
     /**
@@ -93,7 +92,6 @@ class Authenticator {
 
     private Twig $view;
     private SystemManager $systemManager;
-    private SimpleProfiler $profiler;
     private UserManagerInterface $userManager;
 
     /**
@@ -112,7 +110,6 @@ class Authenticator {
         $this->view = $this->systemManager->getTwig();
         $this->apiLogger = $this->logger->withName('AUTH-API');
         $this->siteLogger = $this->logger->withName('AUTH-SITE');
-        $this->profiler = new SimpleProfiler();
         $this->debugMode = false;
     }
 
@@ -163,10 +160,6 @@ class Authenticator {
      */
     public function authenticateSiteRequest(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if ($this->debugMode) {
-            $this->profiler->start();
-        }
-
         session_start();
 
         $this->debug('Starting authenticator middleware');
@@ -194,10 +187,6 @@ class Authenticator {
             $this->debug('SITE: Success, go ahead!');
             $_SESSION['userid'] = $userId;
             $this->container->set(ApmContainerKey::SITE_USER_ID, $userId);
-            if ($this->debugMode) {
-                $this->profiler->stop();
-                $this->debug("Profiler", $this->profiler->getLaps());
-            }
             return $handler->handle($request);
         } else {
             $this->debug("SITE : Authentication fail, logging out "
@@ -351,9 +340,6 @@ class Authenticator {
     
     public function authenticateApiRequest (ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if ($this->debugMode) {
-            $this->profiler->start();
-        }
         $userId = $this->getUserIdFromLongTermCookie($request);
         if ($userId <= 0){
             $this->apiLogger->notice("Authentication fail");
@@ -362,10 +348,6 @@ class Authenticator {
         }
         $this->debug('API : Success, go ahead!');
         $this->container->set(ApmContainerKey::API_USER_ID, $userId);
-        if ($this->debugMode) {
-            $this->profiler->stop();
-            $this->debug("Profiler", $this->profiler->getLaps());
-        }
         return $handler->handle($request);
     }
     

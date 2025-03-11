@@ -9,15 +9,12 @@ use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\DataTable\UnitemporalDataTable;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
-use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
-use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 use ThomasInstitut\TimeString\TimeString;
 
-class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
+class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements LoggerAwareInterface
 {
     use SimpleErrorReporterTrait;
     use LoggerAwareTrait;
-    use SimpleSqlQueryCounterTrackerAware;
 
 
     /**
@@ -35,8 +32,6 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
     public function getMultiChunkEditionsByUser(int $userTid): array
     {
         $ids = [];
-
-        $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows = $this->mceTable->findRowsWithTime([ 'author_tid' => $userTid], 0, TimeString::now());
 
         foreach($rows as $row) {
@@ -59,7 +54,6 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
         if ($timeString === '') {
             $timeString = TimeString::now();
         }
-        $this->sqlQueryCounterTracker->incrementSelect();
         $rows = $this->mceTable->findRowsWithTime([ 'id' => $id], 1, $timeString);
 
         if (count($rows) === 0) {

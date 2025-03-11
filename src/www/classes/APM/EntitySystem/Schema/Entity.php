@@ -9,9 +9,9 @@ use APM\EntitySystem\Kernel\TidDefinerTrait;
  * Constants that define tids for all system entities.
  *
  * The constant prefix indicate the kind of entity:
- *    eXXXX:  a particular entity
- *    tXXXX:  an entity type
- *    pXXXX:  a predicate
+ *    eXXX:  a particular entity
+ *    tXXX:  an entity type
+ *    pXXX:  a predicate
  *    ValueTypeXXXXX:  a value type
  *
  * Any tid under 100 million (< 100000000) can be used as
@@ -22,259 +22,246 @@ class Entity implements TidDefiner
     use TidDefinerTrait;
 
     // System Entity
-    const System = 1;
+    const int System = 1;
 
     // Entity Types
 
-    const tRelation = 101;
-    const tAttribute = 102;
-    const tEntityType = 103;
-    const tValueType = 104;
-    const tStatement = 105;
-    const tStatementGroup = 106;
-    const tPerson = 107;
-    const tGeographicalPlace = 108;
-    const tGeographicalArea = 109;
-    const tLanguage = 110;
-    const tUrlType = 111;
-    const tIdType = 112;
-    const tWork = 113;
-    const tAreaType = 114;
-    const tOrganization = 115;
-    const tOrganizationType = 116;
-    const tOccupation = 117;
-    const tOrganizationalRole = 118;
-    const tCalendar = 119;
-    const tDocument = 120;
-    const tGenericEditionSource = 121;
-    const tDocumentType = 122;
-    const tImageSource = 123;
-    const tPageType = 124;
+    const int tRelation = 101;
+    const int tAttribute = 102;
+    const int tEntityType = 103;
+    const int tValueType = 104;
+    const int tStatement = 105;
+    const int tStatementGroup = 106;
+    const int tPerson = 107;
+    const int tGeographicalPlace = 108;
+    const int tGeographicalArea = 109;
+    const int tLanguage = 110;
+    const int tUrlType = 111;
+    const int tIdType = 112;
+    const int tWork = 113;
+    const int tAreaType = 114;
+    const int tOrganization = 115;
+    const int tOrganizationType = 116;
+    const int tOccupation = 117;
+    const int tOrganizationalRole = 118;
+    const int tCalendar = 119;
+    const int tDocument = 120;
+    const int tGenericEditionSource = 121;
+    const int tDocumentType = 122;
+    const int tImageSource = 123;
+    const int tPageType = 124;
 
 
 
     // Value types
 
-    const ValueTypeText = 1001;
-    const ValueTypeNumber = 1002;
-    const ValueTypeInteger = 1003;
-    const ValueTypeBoolean = 1004;
-    const ValueTypeTimestamp = 1005;
-    const ValueTypeDate = 1006;
-    const ValueTypeVagueDate = 1007;
-    const ValueTypeTimeString = 1008;
-    const ValueTypeGpsCoordinates = 1009;
-    const ValueTypeUrl = 1010;
-    const ValueTypeWorkId = 1011;
-    const ValueTypeEmailAddress = 1111;
+    const int ValueTypeText = 1001;
+    const int ValueTypeNumber = 1002;
+    const int ValueTypeInteger = 1003;
+    const int ValueTypeBoolean = 1004;
+    const int ValueTypeTimestamp = 1005;
+    const int ValueTypeDate = 1006;
+    const int ValueTypeVagueDate = 1007;
+    const int ValueTypeTimeString = 1008;
+    const int ValueTypeGpsCoordinates = 1009;
+    const int ValueTypeUrl = 1010;
+    const int ValueTypeWorkId = 1011;
+    const int ValueTypeEmailAddress = 1111;
 
 
     // Basic entity predicates
 
-    const pEntityType = 2001;
-    const pEntityName = 2002;
-    const pEntityDescription = 2003;
-    const pEntityCreationTimestamp = 2004;
-    const pSortName = 2005;
-    const pNameInOriginalLanguage = 2006;
-    const pAlternateName = 2007;
-    const pExternalId = 2008;
-    const pUrl = 2009;
-    const pEmailAddress = 2010;
-    const pMember = 2011;
-    const pMemberOf = 2012;
-    const pDeprecated = 2013;
+    const int pEntityType = 2001;
+    const int pEntityName = 2002;
+    const int pEntityDescription = 2003;
+    const int pEntityCreationTimestamp = 2004;
+    const int pSortName = 2005;
+    const int pNameInOriginalLanguage = 2006;
+    const int pAlternateName = 2007;
+    const int pExternalId = 2008;
+    const int pUrl = 2009;
+    const int pEmailAddress = 2010;
+    const int pMember = 2011;
+    const int pMemberOf = 2012;
+    const int pDeprecated = 2013;
 
     // ID predicates that apply to different types of entities
-    const pGNDId = 2093;
-    const pLocId = 2094;
-    const pViafId = 2901;
-    const pWikiDataId = 2902;
+    const int pGNDId = 2093;
+    const int pLocId = 2094;
+    const int pViafId = 2901;
+    const int pWikiDataId = 2902;
 
     // Language predicates
-    const pLangIso639Code = 2951;
+    const int pLangIso639Code = 2951;
 
 
     // Basic statement metadata predicates
 
-    const pStatementAuthor = 3001;
-    const pStatementTimestamp = 3002;
-    const pStatementEditorialNote = 3003;
+    const int pStatementAuthor = 3001;
+    const int pStatementTimestamp = 3002;
+    const int pStatementEditorialNote = 3003;
 
     // Object qualification predicates
-    const pObjectLang = 4001;
-    const pObjectSequence = 4002;
-    const pObjectFrom = 4003;
-    const pObjectUntil = 4004;
-    const pObjectUrlType = 4005;
-    const pObjectIdType = 4006;
+    const int pObjectLang = 4001;
+    const int pObjectSequence = 4002;
+    const int pObjectFrom = 4003;
+    const int pObjectUntil = 4004;
+    const int pObjectUrlType = 4005;
+    const int pObjectIdType = 4006;
 
-    const pObjectCalendar = 4007;
-    const pQualificationsCalendar = 4008;
+    const int pObjectCalendar = 4007;
+    const int pQualificationsCalendar = 4008;
 
     // Cancellation predicates
-    const pCancelledBy = 5001;
-    const pCancellationTimestamp = 5002;
-    const pCancellationEditorialNote = 5003;
+    const int pCancelledBy = 5001;
+    const int pCancellationTimestamp = 5002;
+    const int pCancellationEditorialNote = 5003;
 
     // Merge predicates
-    const pMergedInto = 6001;
-    const pMergedBy = 6002;
-    const pMergeTimestamp = 6003;
-    const pMergeEditorialNote = 6004;
+    const int pMergedInto = 6001;
+    const int pMergedBy = 6002;
+    const int pMergeTimestamp = 6003;
+    const int pMergeEditorialNote = 6004;
 
     // Person predicates
-    const pOccupation = 7008;
-    const pDateOfBirth = 7009;
-    const pPlaceOfBirth = 7010;
-    const pDateOfDeath = 7011;
-    const pPlaceOfDeath = 7012;
-    const pIsUser = 7013;
-    const pIsEnabledUser = 7014;
-    const pOrcid = 7015;
+    const int pOccupation = 7008;
+    const int pDateOfBirth = 7009;
+    const int pPlaceOfBirth = 7010;
+    const int pDateOfDeath = 7011;
+    const int pPlaceOfDeath = 7012;
+    const int pIsUser = 7013;
+    const int pIsEnabledUser = 7014;
+    const int pOrcid = 7015;
+
+    const int pParentOf = 7016;
 
 
     // Work Predicates
 
-    const pWorkAuthor = 7501;
-    const pApmWorkId = 7502;
-    const pWorkShortTitle = 7503;
-    const pWorkIsEnabledInApm = 7504;
+    const int pWorkAuthor = 7501;
+    const int pApmWorkId = 7502;
+    const int pWorkShortTitle = 7503;
+    const int pWorkIsEnabledInApm = 7504;
 
 
     // Document Predicates
 
-    const pDocumentType = 7601;
-    const pDocumentLanguage = 7602;
-    const pImageSource = 7603;
-    const pInDare = 7604;
-    const pIsPublic = 7605;
-    const pImageSourceData = 7606;
-    const pUseDeepZoomForImages = 7607;
+    const int pDocumentType = 7601;
+    const int pDocumentLanguage = 7602;
+    const int pImageSource = 7603;
+    const int pInDare = 7604;
+    const int pIsPublic = 7605;
+    const int pImageSourceData = 7606;
+    const int pUseDeepZoomForImages = 7607;
 
 
 
 
     // Geographical Predicates
-    const pContainedBy = 8001;
-    const pContains = 8002;
-    const pCivicAddress = 8003;
-    const pGpsCoordinates = 8004;
+    const int pContainedBy = 8001;
+    const int pContains = 8002;
+    const int pCivicAddress = 8003;
+    const int pGpsCoordinates = 8004;
 
-    const pAreaType = 8005;
+    const int pAreaType = 8005;
 
     // Edition source predicates
 
-    const pDefaultSiglum = 8501;
-    const pApplicableLanguage = 8502;
-    const pApplicableWork = 8503;
-    const pSpecificSource = 8504;
+    const int pDefaultSiglum = 8501;
+    const int pApplicableLanguage = 8502;
+    const int pApplicableWork = 8503;
+    const int pSpecificSource = 8504;
 
     // Url Types
 
-    const UrlTypeGeneric = 9000;
-    const UrlTypeViaf = 9001;
-    const UrlTypeDb = 9002;
-    const UrlTypeDnb = 9003;
-    const UrlTypeWikipedia = 9004;
+    const int UrlTypeGeneric = 9000;
+    const int UrlTypeViaf = 9001;
+    const int UrlTypeDb = 9002;
+    const int UrlTypeDnb = 9003;
+    const int UrlTypeWikipedia = 9004;
 
-    const UrlTypePersonalHomePage = 9005;
-    const UrlTypeWorkHomePage = 9006;
+    const int UrlTypePersonalHomePage = 9005;
+    const int UrlTypeWorkHomePage = 9006;
 
 
     // Document types
 
-    const DocTypeManuscript = 9101;
-    const DocTypePrint = 9102;
-    const DocTypeIncunabulum = 9103;
+    const int DocTypeManuscript = 9101;
+    const int DocTypePrint = 9102;
+    const int DocTypeIncunabulum = 9103;
 
 
     // Image Sources
-    const ImageSourceBilderberg = 9201;
-    const ImageSourceAverroesServer = 9202;
+    const int ImageSourceBilderberg = 9201;
+    const int ImageSourceAverroesServer = 9202;
 
 
     // Page Types
-    const PageTypeNotSet = 9300;
-    const PageTypeText = 9301;
-    const PageTypeFrontMatter = 9302;
-    const PageTypeBackMatter = 9303;
+    const int PageTypeNotSet = 9300;
+    const int PageTypeText = 9301;
+    const int PageTypeFrontMatter = 9302;
+    const int PageTypeBackMatter = 9303;
 
 
     // Calendars
-    const CalendarGregorian = 9501;
-    const CalendarJulian = 9502;
-    const CalendarIslamicObservational = 9503;
-    const CalendarIslamicTabular = 9504;
-    const CalendarIslamicTabularUlughBeg = 9505;
-    const CalendarIslamicTabularBohras = 9506;
-    const CalendarHebrewObservational = 9507;
-    const CalendarHebrewCalculated = 9508;
+    const int CalendarGregorian = 9501;
+    const int CalendarJulian = 9502;
+    const int CalendarIslamicObservational = 9503;
+    const int CalendarIslamicTabular = 9504;
+    const int CalendarIslamicTabularUlughBeg = 9505;
+    const int CalendarIslamicTabularBohras = 9506;
+    const int CalendarHebrewObservational = 9507;
+    const int CalendarHebrewCalculated = 9508;
 
 
 
     // ID types
-    const IdTypeWikiData = 10001;
-    const IdTypeViaf = 10002;
-    const IdTypeGnd = 10003;
-    const IdTypeOrcid = 10004;
+    const int IdTypeWikiData = 10001;
+    const int IdTypeViaf = 10002;
+    const int IdTypeGnd = 10003;
+    const int IdTypeOrcid = 10004;
 
 
     // Area types
 
-    const AreaTypeCountry = 11001;
-    const AreaTypeCountryPart = 11002;
-    const AreaTypeProvince = 11003;
-    const AreaTypeState = 11004;
-    const AreaTypeCity = 11005;
-    const AreaTypeCounty = 11006;
-    const AreaTypeCanton = 11007;
+    const int AreaTypeCountry = 11001;
+    const int AreaTypeCountryPart = 11002;
+    const int AreaTypeProvince = 11003;
+    const int AreaTypeState = 11004;
+    const int AreaTypeCity = 11005;
+    const int AreaTypeCounty = 11006;
+    const int AreaTypeCanton = 11007;
 
 
     // Organization types
-//    const OrgUniversity = 12001;
-//    const OrgDepartment = 12002;
-//    const OrgInstitute = 12003;
-//    const OrgLibrary = 12004;
-//    const OrgReligiousOrder = 12005;
-//    const OrgPublishingHouse = 12006;
-//    const OrgEditorialBoard = 12007;
+
 
 
     // Occupation types
-//    const OccupationPhilosopher = 13001;
-//    const OccupationTranslator = 13002;
-//    const OccupationProfessor = 13003;
-//    const OccupationScholar = 13004;
-//    const OccupationPoet = 13005;
-//    const OccupationRabbi = 13006;
-//    const OccupationMonk = 13007;
-//    const OccupationPriest = 13008;
-//    const OccupationStudent = 13009;
-//    const OccupationEditor = 13010;
+
 
 
     // Legacy or external database ids
 
-    const pDarePersonId = 14001;
+    const int pDarePersonId = 14001;
 
-    const pLegacyApmDatabaseId = 14002;
+    const int pLegacyApmDatabaseId = 14002;
 
     // languages
 
-    const LangArabic = 20001;
-    const LangHebrew = 20002;
-    const LangLatin = 20003;
-    const LangJudeoArabic = 20004;
-    const LangAncientGreek = 20005;
+    const int LangArabic = 20001;
+    const int LangHebrew = 20002;
+    const int LangLatin = 20003;
+    const int LangJudeoArabic = 20004;
+    const int LangAncientGreek = 20005;
 
-    const LangEnglish = 20021;
-    const LangGerman = 20022;
-    const LangFrench = 20023;
-    const LangItalian = 20024;
-    const LangSpanish = 20025;
-    const LangPortuguese = 20026;
-    const LangTurkish = 20027;
+    const int LangEnglish = 20021;
+    const int LangGerman = 20022;
+    const int LangFrench = 20023;
+    const int LangItalian = 20024;
+    const int LangSpanish = 20025;
+    const int LangPortuguese = 20026;
+    const int LangTurkish = 20027;
 
 
 

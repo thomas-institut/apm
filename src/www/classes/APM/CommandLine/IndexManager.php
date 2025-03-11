@@ -21,13 +21,19 @@
 namespace APM\CommandLine;
 
 use APM\CollationTable\CollationTableManager;
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
-use APM\System\ApmConfigParameter;
+use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Lemmatizer;
-use AverroesProject\ColumnElement\Element;
-use AverroesProject\TxText\Item;
+use APM\System\Person\PersonNotFoundException;
+use APM\System\Transcription\ColumnElement\Element;
+use APM\System\Transcription\TxText\Item;
+use APM\System\Work\WorkNotFoundException;
 use Exception;
+use ThomasInstitut\DataTable\InvalidTimeStringException;
 use Typesense\Client;
+
 
 /**
  * Description of IndexManager
@@ -37,8 +43,14 @@ use Typesense\Client;
  *
  * @author Lukas Reichert
  */
-
-class IndexManager extends CommandLineUtility {
+class IndexManager extends CommandLineUtility
+{
+    private ?Client $client = null;
+    private string $indexNamePrefix;
+    /**
+     * @var string[]
+     */
+    private array $indices;
 
 
     /**
@@ -47,6 +59,9 @@ class IndexManager extends CommandLineUtility {
      * @param $argc
      * @param $argv
      * @return bool
+     * @throws DocumentNotFoundException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException|EntityDoesNotExistException
      */
     public function main($argc, $argv): bool
     {
@@ -54,6 +69,10 @@ class IndexManager extends CommandLineUtility {
         $config = $this->getSystemManager()->getConfig();
         $this->instantiateTypesenseClient($config);
 
+
+        if ($this->client === null) {
+            return false;
+        }
         // print help
         if ($argv[1] === '-h') {
             $this->printHelp();
@@ -75,6 +94,7 @@ class IndexManager extends CommandLineUtility {
             case 'build': // create new or replace existing index with a specific name
                 $this->buildIndex();
                 break;
+
             case 'show':
                 print("Querying…\n");
                 $item = $this->getIndexedItemInfo($argv[3], $argv[4], 'show');
@@ -82,32 +102,46 @@ class IndexManager extends CommandLineUtility {
                     print_r($item);
                 }
                 break;
+
             case 'showdb':
                 print("Querying…");
                 $item = $this->getItemInfoFromDatabase($argv[3], $argv[4]);
+
                 if ($item !== []) {
                     print("\n");
                     print_r($item);
                 }
                 break;
-            case 'check': // check if the chosen index mirrors all data from the sql database or if a specific item is indexed
+
+            case 'check':
+                // check if the chosen index mirrors all data from the sql database or if a specific item is indexed
                 $this->checkIndex($argv[3], $argv[4]);
                 break;
+
             case 'fix':
                 $this->checkAndfixIndex($argv[3], $argv[4]);
                 break;
-            case 'add': // adds a new single item to an index
+
+            case 'add':
+                // adds a new single item to an index
                 $this->addItem($argv[3], $argv[4]);
                 break;
-            case 'update': // updates an existing item in an index
+
+            case 'update':
+                // updates an existing item in an index
                 $this->updateItem($argv[3], $argv[4]);
                 break;
-            case 'update-add': // updates an item if already indexed, otherwise adds the item to the index
+
+            case 'update-add':
+                // updates an item if already indexed, otherwise adds the item to the index
                 $this->updateOrAddItem($argv[3], $argv[4]);
                 break;
-            case 'remove': // removes an item from an index
+
+            case 'remove':
+                // removes an item from an index
                 $this->removeItem($argv[3], $argv[4]);
                 break;
+
             default:
                 print("Command not found. You will find some help via 'indexmanager -h'\n.");
         }
@@ -116,7 +150,7 @@ class IndexManager extends CommandLineUtility {
     }
 
     /**
-     * Prints information about how to use the index manager command line tool. Use option ‘-h‘ in the command line to get the information.
+     * Prints information about how to use the index manager command line tool. Use option -h in the command line to get the information.
      * @return void
      */
     private function printHelp(): void
@@ -126,9 +160,13 @@ class IndexManager extends CommandLineUtility {
 
     /**
      * Builds the transcriptions or editions index in open search after getting all relevant data from the sql database. Deletes already existing transcriptions or editions index.
-     * @return true
+     * @return void
+     * @throws DocumentNotFoundException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException|EntityDoesNotExistException
      */
-    private function buildIndex (): bool {
+    private function buildIndex(): void
+    {
 
         print ("Building index...\n");
 
@@ -145,14 +183,17 @@ class IndexManager extends CommandLineUtility {
                 $this->buildIndexEditions();
                 break;
         }
-        return true;
     }
 
     /**
      * Builds the transcriptions index in open search after getting all relevant data from the sql database.
-     * @return true
+     * @return void
+     * @throws DocumentNotFoundException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException|EntityDoesNotExistException
      */
-    private function buildIndexTranscriptions(): bool {
+    private function buildIndexTranscriptions(): void
+    {
 
         // get a list of all docIDs in the sql-database
         $doc_list = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
@@ -162,24 +203,146 @@ class IndexManager extends CommandLineUtility {
             $this->getAndIndexTranscriptionsByDocId($doc_id);
         }
 
-        return true;
     }
 
     /**
-     * Builds the editions index in open search after getting all relevant data from the sql database.
-     * @return true
+     * @param string $doc_id
+     * @return string
+     * @throws DocumentNotFoundException
      */
-    private function buildIndexEditions(): bool {
+    public function getTitle(string $doc_id): string
+    {
+        $doc_info = $this->getSystemManager()->getDocumentManager()->getLegacyDocInfo((int)$doc_id);
+        return $doc_info['title'];
+    }
+
+    /**
+     * @param int $doc_id
+     * @param int $page
+     * @return int
+     * @throws DocumentNotFoundException
+     * @throws PageNotFoundException
+     */
+    private function getPageID(int $doc_id, int $page): int
+    {
+        return $this->getSystemManager()->getDocumentManager()->getpageIDByDocPage($doc_id, $page);
+    }
+
+    /**
+     * @param int $doc_id
+     * @param int $page
+     * @return string
+     * @throws DocumentNotFoundException
+     * @throws PageNotFoundException
+     */
+    public function getSeq(int $doc_id, int $page): string
+    {
+        $page_id = $this->getSystemManager()->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
+        $page_info = $this->getSystemManager()->getDocumentManager()->getPageInfo($page_id);
+        return $page_info->sequence;
+    }
+
+    /**
+     * @param int $doc_id
+     * @param int $page
+     * @param int $col
+     * @return string
+     * @throws DocumentNotFoundException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
+     */
+    private function getTranscription(int $doc_id, int $page, int $col): string
+    {
+        $page_id = $this->getSystemManager()->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
+        $elements = $this->getSystemManager()->getTranscriptionManager()->getColumnElementsBypageID($page_id, $col);
+        print_r($elements);
+        return $this->getPlainTextFromElements($elements);
+    }
+
+    /**
+     * @throws PageNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws DocumentNotFoundException
+     */
+    private function getTranscriber(int $doc_id, int $page, int $col): string
+    {
+        $page_id = $this->getSystemManager()->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
+        $versions = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager()->getColumnVersionInfoByPageCol($page_id, $col);
+
+        if ($versions === []) {
+            return '';
+        } else {
+            $transcriptions_version = count($versions) - 1;
+            $authorTid = $versions[$transcriptions_version]->authorTid;
+            return $this->getSystemManager()->getEntitySystem()->getEntityName($authorTid);
+        }
+    }
+
+    /**
+     * @param string $page_id
+     * @return string
+     * @throws PageNotFoundException
+     */
+    private function getLang(string $page_id): string
+    {
+        $langId = $this->getSystemManager()->getDocumentManager()->getPageInfo($page_id)->lang;
+
+        return match ($langId) {
+            Entity::LangLatin => 'la',
+            Entity::LangArabic => 'ar',
+            Entity::LangHebrew => 'he',
+            Entity::LangJudeoArabic => 'jrb',
+            default => false,
+        };
+
+    }
+
+    /**
+     * @param int $doc_id
+     * @param int $page
+     * @return string
+     */
+    public function getFoliation(int $doc_id, int $page): string
+    {
+        try {
+            $seq = $this->getSeq($doc_id, $page);
+            $info = $this->getSystemManager()->getTranscriptionManager()->getPageInfoByDocSeq($doc_id, $seq);
+        } catch (DocumentNotFoundException|PageNotFoundException) {
+            return '';
+        }
+        return $info->foliation;
+    }
+
+    /**
+     * Encodes and cleans text for the lemmatizer.
+     * @param string $text
+     * @return string
+     */
+    private function encodeForLemmatization(string $text): string
+    {
+
+        $text_clean = str_replace("\n", " ", $text);
+        $text_clean = str_replace(' ', ' ', $text_clean);
+        $text_clean = str_replace(' ', ' ', $text_clean);
+        return str_replace('- ', '', $text_clean);
+    }
+
+    /**
+     * Builds the editions index in typesense after getting all relevant data from the sql database.
+     * @return void
+     */
+    private function buildIndexEditions(): void {
         // get collationTableManager
-        $this->collationTableManager = $this->getSystemManager()->getCollationTableManager();
+        $ctm = $this->collationTableManager = $this->getSystemManager()->getCollationTableManager();
+
 
         // get the data of up to 20 000 editions
         $editions = [];
         foreach (range(1, 20000) as $id) {
             try {
-                $editions[] = $this->getEditionData($this->collationTableManager, $id);
+                $editions[] = $this->getEditionData($ctm, $id);
             } catch (Exception) {
-                $num_editions = $id-1;
+                $num_editions = $id - 1;
                 $this->logger->debug("Found $num_editions potential editions.");
                 break;
             }
@@ -192,24 +355,153 @@ class IndexManager extends CommandLineUtility {
 
         // index editions
         foreach ($editions as $edition) {
-            $this->indexEdition ($this->client, null, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
+            $this->indexEdition($this->client, null, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
             $log_data = 'Title: ' . $edition['title'] . ', Editor: ' . $edition['editor'] . ', Table ID: ' . $edition['table_id'] . ', Chunk: ' . $edition['chunk_id'] . ", TimeFrom: " . $edition['timeFrom'];
             $this->logger->debug("Indexed Edition – $log_data\n");
         }
 
-        return true;
     }
+
+    /**
+     * Adds a new item to the transcriptions or editions index.
+     * @param string $arg1 , page ID in case of transcriptions, table ID for editions
+     * @param string|null $arg2 column no. in case of transcriptions
+     * @param string|null $id , open search id for the item, only necessary when an already indexed item with a given id becomes updated
+     * @param string|null $context , determines if the method is called in an updating process and if so, modifies its behavior slightly
+     * @return void
+     * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
+     */
+    private function addItem(string $arg1, string $arg2 = null, string $id = null, string $context = null): void
+    {
+
+        if ($this->isAlreadyIndexed($arg1, $arg2) and $context !== 'update') {
+            print ("Item is already indexed in the corresponding index. Do you want to update it? (y/n)\n");
+            $input = rtrim(fgets(STDIN));
+
+            if ($input === 'y') {
+                $this->updateItem($arg1, $arg2);
+            }
+
+            return;
+        }
+
+        if ($context === null) {
+            print ("Indexing...\n");
+        }
+
+        switch ($this->indexNamePrefix) {
+            case 'transcriptions':
+                $this->addItemToTranscriptionsIndex($arg1, $arg2, $id);
+                break;
+            case 'editions':
+                $this->addItemToEditionsIndex($arg1, $id);
+                break;
+        }
+
+    }
+
+    /**
+     * Returns open search id and index name of the target item
+     * @param string $arg1 , page ID in case of transcriptions, table ID for editions
+     * @param string|null $arg2 , column number for transcriptions
+     * @return array
+     */
+    private function getOpenSearchIDAndIndexName(string $arg1, string $arg2 = null): array
+    {
+
+        $mustConditions = [];
+
+        if ($this->indexNamePrefix === 'transcriptions') {
+            $mustConditions[] = ['match' => ['pageID' => $arg1]];
+            $mustConditions[] = ['match' => ['column' => $arg2]];
+        } else if ($this->indexNamePrefix === 'editions') {
+            $mustConditions[] = ['match' => ['table_id' => $arg1]];
+        }
+
+        foreach ($this->indices as $index) {
+            $query = $this->client->search([
+                'index' => $index,
+                'body' => [
+                    'size' => 20000,
+                    'query' => [
+                        'bool' => [
+                            'must' => $mustConditions
+                        ]
+                    ]
+                ]
+            ]);
+
+            if ($query['hits']['hits'] !== []) {
+                return ['index' => $index, 'id' => $query['hits']['hits'][0]['_id']];
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * Returns the doc id of a transcribed page.
+     * @param string $pageID
+     * @return string
+     * @throws DocumentNotFoundException|PageNotFoundException
+     */
+    private function getDocIdByPageId(string $pageID): string
+    {
+
+        $docList = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
+
+        foreach ($docList as $doc) {
+            $pages_transcribed = $this->getSystemManager()->getTranscriptionManager()->getTranscribedPageListByDocId($doc);
+            foreach ($pages_transcribed as $page_transcribed) {
+                $currentPageID = $this->getPageID($doc, $page_transcribed);
+                if ((string)$currentPageID === $pageID) {
+                    return $doc;
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Returns information about an item in the sql database.
+     * @param string $arg1 , page ID in case of transcriptions, table ID for editions
+     * @param string|null $arg2 , column number for transcriptions
+     * @return array
+     * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
+     */
+    private function getItemInfoFromDatabase(string $arg1, string $arg2 = null): array
+    {
+
+        return match ($this->indexNamePrefix) {
+            'transcriptions' => $this->getTranscriptionInfoFromDatabase($arg1, $arg2),
+            'editions' => $this->getEditionInfoFromDatabase($arg1),
+            default => [],
+        };
+    }
+
+
 
     /**
      * If called without values for any argument, the completeness of an index will be checked by comparison of its contents with the data in the corresponding sql database.
      * If called with values for the arguments 1 and 2 – in case of editions only argument 1 – the correctness of a single item will be checked.
-     * If ,fix‘ is true, not indexed or not updated items will be indexed or updated automatically
-     * @param $arg1, page ID for transcriptions, table ID for editions
-     * @param $arg2, column number for transcriptions
-     * @param $fix
-     * @return true
+     * If 'fix' is true, not indexed or not updated items will be indexed or updated automatically
+     * @param string|null $arg1 , page ID for transcriptions, table ID for editions
+     * @param string|null $arg2 , column number for transcriptions
+     * @param bool $fix
+     * @return void
+     * @throws DocumentNotFoundException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException|EntityDoesNotExistException
      */
-    private function checkIndex (string $arg1=null, string $arg2=null, bool $fix=false): bool {
+    private function checkIndex(string $arg1 = null, string $arg2 = null, bool $fix = false): void
+    {
 
         print ("Checking...");
 
@@ -229,7 +521,6 @@ class IndexManager extends CommandLineUtility {
                 }
                 break;
         }
-        return true;
     }
 
     /**
@@ -238,7 +529,7 @@ class IndexManager extends CommandLineUtility {
      * @param bool $fix
      * @return bool
      */
-    private function checkIndexEditions (bool $fix): bool {
+    private function checkIndexEditions (bool $fix): void {
 
         // get collationTableManager
         $this->collationTableManager = $this->getSystemManager()->getCollationTableManager();
@@ -282,16 +573,20 @@ class IndexManager extends CommandLineUtility {
 
         $this->evaluateCheckResults($checkResults, $fix);
 
-        return true;
     }
 
     /**
      * Gets all data for transcriptions from the sql database and from the open search index, then compares them and checks the completeness of the index.
-     * If ,fix‘ is true, not indexed or outdated transcriptions will be indexed or updated.
-     * @param $fix
-     * @return true
+     * If 'fix' is true, not indexed or outdated transcriptions will be indexed or updated.
+     * @param bool $fix
+     * @return void
+     * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
      */
-    private function checkIndexTranscriptions (bool $fix): bool {
+    private function checkIndexTranscriptions(bool $fix): void
+    {
 
         // get versionManager
         $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
@@ -352,24 +647,142 @@ class IndexManager extends CommandLineUtility {
 
         $this->evaluateCheckResults($checkResults, $fix);
 
-        return true;
     }
 
+    /**
+     * Compares transcription or edition data from the sql database with data from the open search index and returns
+     * information about not indexed and not updated items.
+     * @param array $dbData
+     * @param array $indexData
+     * @return array
+     */
+    private function compareDataFromDatabaseAndIndex(array $dbData, array $indexData): array
+    {
+
+        $notIndexedItems = [];
+        $notUpdatedItems = [];
+        $notInDatabaseItems = [];
+        $numNotIndexedItems = 0;
+        $numNotUpdatedItems = 0;
+        $numNotInDatabaseItems = 0;
+        $notUpdated = false;
+        $numItemsInDatabase = count($dbData);
+
+
+        foreach ($dbData as $dbItem) {
+
+            if (!in_array($dbItem, $indexData)) {
+                $numNotIndexedItems++;
+
+                foreach ($indexData as $indexedItem) {
+                    if (array_slice($dbItem, 0, 2) === array_slice($indexedItem, 0, 2)) {
+                        $numNotIndexedItems--;
+                        $numNotUpdatedItems++;
+                        $notUpdated = true;
+                        $notUpdatedItems[] = [$dbItem[0], $dbItem[1]];
+                    }
+                }
+
+                if (!$notUpdated) {
+                    $notIndexedItems[] = [$dbItem[0], $dbItem[1]];
+                }
+            }
+        }
+
+        foreach ($indexData as $indexedItem) {
+            if (!in_array($indexedItem, $dbData) and !in_array(array_slice($indexedItem, 0, 2), $notUpdatedItems)) {
+                $numNotInDatabaseItems++;
+                $notInDatabaseItems[] = $indexedItem[0];
+            }
+        }
+
+        if ($numNotIndexedItems === 0 && $numNotUpdatedItems === 0) {
+            print ("\nINDEX IS COMPLETE!.\n");
+        } else {
+            print ("\nINDEX IS NOT COMPLETE!\n
+            $numNotIndexedItems of $numItemsInDatabase items not indexed.\n
+            $numNotUpdatedItems of $numItemsInDatabase items not up to date.\n");
+        }
+
+        if ($numNotInDatabaseItems !== 0) {
+            print("\nINFO: The index contains $numNotInDatabaseItems items which could not be found in the database. Their ids are:\n");
+            print(implode(", ", $notInDatabaseItems) . "\n");
+        }
+
+        return ['notIndexed' => $notIndexedItems, 'outdated' => $notUpdatedItems, 'numNotIndexedItems' => $numNotIndexedItems, 'numNotUpdatedItems' => $numNotUpdatedItems];
+    }
 
     /**
-     * Checks if a given transcription is already indexed and up to date. If ,fix‘ is true, a not indexed transcription will be indexed and
-     * an outdated transcription will be updated.
-     * @param $pageID
-     * @param $col
-     * @param $fix
-     * @return true
+     * Evaluates given check results and communicates information about them to the user.
+     * If wished, automatically fixes an index on the basis of the given check results.
+     * @param array $checkResults
+     * @param bool $fix
+     * @return void
+     * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
      */
-    private function checkSingleTranscription (string $pageID, string $col, bool $fix): bool {
+    private function evaluateCheckResults(array $checkResults, bool $fix): void
+    {
+        // fix index if possible and desired
+        if (!$fix and ($checkResults['numNotIndexedItems'] !== 0 or $checkResults['numNotUpdatedItems'] !== 0)) {
+            print ("Do you want to fix the index? (y/n)\n");
+            $input = rtrim(fgets(STDIN));
+
+            if ($input === 'y') {
+                $this->fixIndex($checkResults);
+            }
+        } else if ($fix and $checkResults['numNotIndexedItems'] === 0 and $checkResults['numNotUpdatedItems'] === 0) {
+            print ("Index cannot and needs not to be fixed.\n");
+        } else if ($fix) {
+            $this->fixIndex($checkResults);
+        }
+
+    }
+
+    /**
+     * Fixes an index on the basis of given check results.
+     * @param array $checkResults
+     * @return void
+     * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
+     */
+    private function fixIndex(array $checkResults): void
+    {
+
+        print("Fixing index...\n");
+
+        foreach ($checkResults['notIndexed'] as $notIndexedItem) {
+            $this->addItem($notIndexedItem[0], $notIndexedItem[1], null, 'fix');
+        }
+
+        foreach ($checkResults['outdated'] as $outdatedItem) {
+            $this->updateItem($outdatedItem[0], $outdatedItem[1]);
+        }
+    }
+
+    /**
+     * Checks if a given transcription is already indexed and up to date. If fix is true, a not indexed transcription will be indexed and
+     * an outdated transcription will be updated.
+     * @param string $pageID
+     * @param string $col
+     * @param bool $fix
+     * @return void
+     * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
+     */
+    private function checkSingleTranscription(string $pageID, string $col, bool $fix): void
+    {
 
         $transcriptionInDatabase = $this->getTranscriptionInfoFromDatabase($pageID, $col);
 
         if ($transcriptionInDatabase === []) {
-            return true;
+            return;
         }
 
         $transcriptionInIndex = $this->getIndexedItemInfo($pageID, $col);
@@ -404,22 +817,26 @@ class IndexManager extends CommandLineUtility {
             }
         }
 
-        return true;
     }
 
     /**
-     * Checks if a given edition is already indexed and up to date. If ,fix‘ is true, a not indexed edition will be indexed and
+     * Checks if a given edition is already indexed and up to date. If 'fix' is true, a not indexed edition will be indexed and
      * an outdated edition will be updated.
      * @param string $tableID
      * @param bool $fix
-     * @return bool
+     * @return void
+     * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
      */
-    private function checkSingleEdition (string $tableID, bool $fix): bool {
+    private function checkSingleEdition(string $tableID, bool $fix): void
+    {
 
         $editionInDatabase = $this->getEditionInfoFromDatabase($tableID);
 
         if ($editionInDatabase === []) {
-            return true;
+            return;
         }
 
         $editionInIndex = $this->getIndexedItemInfo($tableID);
@@ -454,162 +871,19 @@ class IndexManager extends CommandLineUtility {
             }
         }
 
-        return true;
-    }
-
-    /**
-     * Compares transcription or edition data from the sql database with data from the open search index and returns
-     * information about not indexed and not updated items.
-     * @param $dbData
-     * @param $indexData
-     * @return array
-     */
-    private function compareDataFromDatabaseAndIndex(array $dbData, array $indexData): array {
-
-        $notIndexedItems = [];
-        $notUpdatedItems = [];
-        $notInDatabaseItems = [];
-        $numNotIndexedItems = 0;
-        $numNotUpdatedItems = 0;
-        $numNotInDatabaseItems = 0;
-        $notUpdated = false;
-        $numItemsInDatabase = count($dbData);
-
-
-        foreach ($dbData as $dbItem) {
-
-            if (!in_array($dbItem, $indexData)) {
-                $numNotIndexedItems++;
-
-                foreach ($indexData as $indexedItem) {
-                    if (array_slice($dbItem, 0, 2) === array_slice($indexedItem, 0, 2)) {
-                        $numNotIndexedItems--;
-                        $numNotUpdatedItems++;
-                        $notUpdated = true;
-                        $notUpdatedItems[] = [$dbItem[0], $dbItem[1]];
-                    }
-                }
-
-                if (!$notUpdated) {
-                    $notIndexedItems[] = [$dbItem[0], $dbItem[1]];
-                }
-            }
-        }
-
-        foreach ($indexData as $indexedItem) {
-            if (!in_array($indexedItem, $dbData)  and !in_array(array_slice($indexedItem, 0, 2), $notUpdatedItems)) {
-                $numNotInDatabaseItems++;
-                $notInDatabaseItems[] = $indexedItem[0];
-            }
-        }
-
-        if ($numNotIndexedItems === 0 && $numNotUpdatedItems === 0) {
-            print ("\nINDEX IS COMPLETE!.\n");
-        } else {
-            print ("\nINDEX IS NOT COMPLETE!\n
-            $numNotIndexedItems of $numItemsInDatabase items not indexed.\n
-            $numNotUpdatedItems of $numItemsInDatabase items not up to date.\n");
-        }
-
-        if ($numNotInDatabaseItems !== 0) {
-            print("\nINFO: The index contains $numNotInDatabaseItems items which could not be found in the database. Their ids are:\n");
-            print(implode(", ", $notInDatabaseItems) . "\n");
-        }
-
-        $checkResults = ['notIndexed' => $notIndexedItems, 'outdated' => $notUpdatedItems, 'numNotIndexedItems' => $numNotIndexedItems, 'numNotUpdatedItems' => $numNotUpdatedItems];
-
-        return $checkResults;
-    }
-
-    /**
-     * Evaluates given check results and communicates information about them to the user.
-     * If wished, automatically fixes an index on the basis of the given check results.
-     * @param array $checkResults
-     * @param bool $fix
-     * @return bool
-     */
-    private function evaluateCheckResults (array $checkResults, bool $fix): bool {
-        // fix index if possible and desired
-        if (!$fix and ($checkResults['numNotIndexedItems'] !== 0 or $checkResults['numNotUpdatedItems'] !== 0)) {
-            print ("Do you want to fix the index? (y/n)\n");
-            $input = rtrim(fgets(STDIN));
-
-            if ($input === 'y') {
-                $this->fixIndex($checkResults);
-            }
-        } else if ($fix and $checkResults['numNotIndexedItems'] === 0 and $checkResults['numNotUpdatedItems'] === 0) {
-            print ("Index cannot and needs not to be fixed.\n");
-        } else if ($fix) {
-            $this->fixIndex($checkResults);
-        }
-
-        return true;
-    }
-
-    /**
-     * Fixes an index on the basis of given check results.
-     * @param array $data
-     * @return bool
-     */
-    private function fixIndex (array $checkResults): bool {
-
-        print("Fixing index...\n");
-
-        foreach($checkResults['notIndexed'] as $notIndexedItem) {
-            $this->addItem($notIndexedItem[0], $notIndexedItem[1], null, 'fix');
-        }
-
-        foreach($checkResults['outdated'] as $outdatedItem) {
-            $this->updateItem($outdatedItem[0], $outdatedItem[1]);
-        }
-        return true;
     }
 
     /**
      * Checks the completeness of an index and fixes it.
      * @param string|null $arg1
      * @param string|null $arg2
-     * @return void
+     * @throws DocumentNotFoundException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException|EntityDoesNotExistException
      */
-    private function checkAndFixIndex (string $arg1=null, string $arg2=null): void {
+    private function checkAndFixIndex(string $arg1 = null, string $arg2 = null): void
+    {
         $this->checkIndex($arg1, $arg2, true);
-    }
-
-    /**
-     * Adds a new item to the transcriptions or editions index.
-     * @param string $arg1, page ID in case of transcriptions, table ID for editions
-     * @param string|null $arg2 column no. in case of transcriptions
-     * @param string|null $id, open search id for the item, only necessary when an already indexed item with a given id becomes updated
-     * @param string|null $context, determines if the method is called in an updating process and if so, modifies its behavior slightly
-     * @return bool
-     */
-    private function addItem (string $arg1, string $arg2=null, string $id=null, string $context=null): bool {
-
-        if ($this->isAlreadyIndexed($arg1, $arg2) and $context !== 'update') {
-            print ("Item is already indexed in the corresponding index. Do you want to update it? (y/n)\n");
-            $input = rtrim(fgets(STDIN));
-
-            if ($input === 'y') {
-                $this->updateItem($arg1, $arg2);
-            }
-
-            return true;
-        }
-
-        if ($context === null) {
-            print ("Indexing...\n");
-        }
-
-        switch ($this->indexNamePrefix) {
-            case 'transcriptions':
-                $this->addItemToTranscriptionsIndex($arg1, $arg2, $id);
-                break;
-            case 'editions':
-                $this->addItemToEditionsIndex($arg1, $id);
-                break;
-        }
-
-        return true;
     }
 
 
@@ -620,13 +894,13 @@ class IndexManager extends CommandLineUtility {
      * @param string|null $id, null if the adding is not part of an updating process
      * @return bool
      */
-    private function addItemToTranscriptionsIndex (string $pageID, string $col, string $id=null): bool {
+    private function addItemToTranscriptionsIndex (string $pageID, string $col, string $id = null): void {
 
         $doc_id = $this->getDocIdByPageId($pageID);
 
         if ($doc_id === null) {
             print("No transcription in database with page id $pageID and column number $col.\n");
-            return false;
+            return;
         }
 
         // Get other relevant data for indexing
@@ -646,12 +920,11 @@ class IndexManager extends CommandLineUtility {
 
         if ($timeFrom === '') {
             print("No transcription in database with page id $pageID and column number $col.\n");
-            return false;
+            return;
         };
 
         $this->indexTranscription($this->client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $pageID, $doc_id, $transcription, $lang, $timeFrom);
 
-        return true;
     }
 
     /**
@@ -660,7 +933,7 @@ class IndexManager extends CommandLineUtility {
      * @param string|null $id, null if the adding is not part of an updating process
      * @return bool
      */
-    private function addItemToEditionsIndex (string $tableID, string $id=null): bool {
+    private function addItemToEditionsIndex (string $tableID, string $id = null): void {
 
         // get collationTableManager
         $this->collationTableManager = $this->getSystemManager()->getCollationTableManager();
@@ -687,8 +960,6 @@ class IndexManager extends CommandLineUtility {
         if (!$editionExists) {
             print ("No edition in database with table id $tableID.\n");
         }
-
-        return true;
     }
 
     /**
@@ -697,7 +968,7 @@ class IndexManager extends CommandLineUtility {
      * @param string|null $arg2 column number in case of transcriptions
      * @return true
      */
-    private function updateItem (string $arg1, string $arg2=null): bool {
+    private function updateItem (string $arg1, string $arg2 = null): void {
 
         if (!$this->isAlreadyIndexed($arg1, $arg2)) {
             print ("Item is not yet indexed and therefore cannot be updated.\nDo you want to index it? (y/n)\n");
@@ -706,7 +977,7 @@ class IndexManager extends CommandLineUtility {
             if ($input === 'y') {
                 $this->addItem($arg1, $arg2);
             }
-            return true;
+            return;
         }
 
         print ("Updating...\n");
@@ -715,16 +986,20 @@ class IndexManager extends CommandLineUtility {
         $this->removeItem($arg1, $arg2, 'update');
         $this->addItem($arg1, $arg2, $id, 'update');
 
-        return true;
     }
 
     /**
      * Updates the target item if already indexed, otherwise adds it as a new item to the target index
      * @param string $arg1
      * @param string|null $arg2
-     * @return true
+     * @return void
+     * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
      */
-    private function updateOrAddItem (string $arg1, string $arg2=null): bool {
+    private function updateOrAddItem(string $arg1, string $arg2 = null): void
+    {
 
         if (!$this->isAlreadyIndexed($arg1, $arg2)) {
             $this->addItem($arg1, $arg2);
@@ -738,7 +1013,6 @@ class IndexManager extends CommandLineUtility {
             $this->addItem($arg1, $arg2, $id, 'update');
         }
 
-        return true;
     }
 
     /**
@@ -748,7 +1022,7 @@ class IndexManager extends CommandLineUtility {
      * @param string $context, value 'update' adjusts the communication behavior of the method to its role in an updating process
      * @return bool
      */
-    private function removeItem (string $arg1, string $arg2=null, string $context='remove'): bool {
+    private function removeItem (string $arg1, string $arg2 = null, string $context = 'remove'): void {
 
         if ($context !== 'update') {
             print ("Removing...\n");
@@ -783,26 +1057,6 @@ class IndexManager extends CommandLineUtility {
                     break;
             }
         }
-        return true;
-    }
-
-    /**
-     * Returns information about an item in the sql database.
-     * @param string $arg1, page ID in case of transcriptions, table ID for editions
-     * @param string|null $arg2, column number for transcriptions
-     * @return array
-     */
-    private function getItemInfoFromDatabase (string $arg1, string $arg2=null): array {
-
-        switch ($this->indexNamePrefix) {
-            case 'transcriptions':
-                $data = $this->getTranscriptionInfoFromDatabase($arg1, $arg2);
-                break;
-            case 'editions':
-                $data = $this->getEditionInfoFromDatabase($arg1);
-                break;
-        }
-        return $data;
     }
 
     /**
@@ -907,7 +1161,7 @@ class IndexManager extends CommandLineUtility {
      * @param $context, value 'show' adjusts the behavior of the method to the process of only showing information about an indexed item
      * @return array
      */
-    private function getIndexedItemInfo (string $arg1, string $arg2=null, string $context=null): array {
+    private function getIndexedItemInfo (string $arg1, string $arg2 = null, string $context = null): array {
 
         if ($this->indexNamePrefix === 'transcriptions') {
             $searchParameters = ['q' => $arg1, 'query_by' => 'pageID', 'prefix' => false, 'filter_by' => "column:=$arg2"];
@@ -1020,7 +1274,7 @@ class IndexManager extends CommandLineUtility {
      * @param string $doc_id
      * @return bool
      */
-    private function getAndIndexTranscriptionsByDocId (string $doc_id): bool {
+    private function getAndIndexTranscriptionsByDocId (string $doc_id): void {
 
         $title = $this->getTitle($doc_id);
 
@@ -1063,8 +1317,6 @@ class IndexManager extends CommandLineUtility {
 
             }
         }
-
-        return true;
     }
 
     /**
@@ -1082,9 +1334,9 @@ class IndexManager extends CommandLineUtility {
      * @param string $transcription
      * @param string $lang
      * @param string $timeFrom
-     * @return bool
+     * @return void
      */
-    private function indexTranscription ($client, string $id=null, string $title, int $page, int $seq, string $foliation, int $col, string $transcriber, int $page_id, int $doc_id, string $transcription, string $lang, string $timeFrom): bool {
+    private function indexTranscription ($client, string $id=null, string $title, int $page, int $seq, string $foliation, int $col, string $transcriber, int $page_id, int $doc_id, string $transcription, string $lang, string $timeFrom): void {
 
         if ($lang != 'jrb') {
             $indexName = $this->indexNamePrefix . '_' . $lang;
@@ -1131,7 +1383,6 @@ class IndexManager extends CommandLineUtility {
         ]);
 
         $this->logger->debug("Indexed Document in $indexName – Doc ID: $doc_id ($title) Page ID: $page_id Page: $page Seq: $seq Foliation: $foliation Column: $col Transcriber: $transcriber Lang: $lang TimeFrom: $timeFrom\n");
-        return true;
     }
 
     /**
@@ -1187,9 +1438,9 @@ class IndexManager extends CommandLineUtility {
      * @param string $lang
      * @param int $table_id
      * @param string $timeFrom
-     * @return bool
+     * @return void
      */
-    private function indexEdition ($client, string $id=null, string $editor, string $text, string $title, string $chunk, string $lang, int $table_id, string $timeFrom): bool {
+    private function indexEdition ($client, string $id=null, string $editor, string $text, string $title, string $chunk, string $lang, int $table_id, string $timeFrom): void {
 
         // Get name of the target index
         if ($lang != 'jrb') {
@@ -1231,7 +1482,6 @@ class IndexManager extends CommandLineUtility {
             'timeFrom' => $timeFrom
         ]);
 
-        return true;
     }
 
     /**
@@ -1255,27 +1505,12 @@ class IndexManager extends CommandLineUtility {
     }
 
     /**
-     * Encodes and cleans text for the lemmatizer.
-     * @param string $text
-     * @return string
-     */
-    private function encodeForLemmatization(string $text): string {
-
-        $text_clean = str_replace("\n", " ", $text);
-        $text_clean = str_replace(' ', ' ', $text_clean);
-        $text_clean = str_replace(' ', ' ', $text_clean);
-        $text_clean = str_replace('- ', '', $text_clean);
-
-        return $text_clean;
-    }
-
-    /**
      * Creates an empty open search index with the given name. If an index with the given name already existed, it will be deleted before.
      * @param $client
      * @param string $indexname
      * @return bool
      */
-    private function resetIndex ($client, string $indexname): bool {
+    private function resetIndex ($client, string $indexname): void {
 
         // delete existing and create new collection
         if ($client->collections[$indexname]->exists()) {
@@ -1294,30 +1529,8 @@ class IndexManager extends CommandLineUtility {
 
         $this->logger->debug("New index *$indexname* was created!\n");
 
-        return true;
     }
 
-    /**
-     * Returns the doc id of a transcribed page.
-     * @param string $pageID
-     * @return string
-     */
-    private function getDocIdByPageId (string $pageID): string {
-
-        $docList = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
-
-        foreach ($docList as $doc) {
-            $pages_transcribed = $this->getSystemManager()->getTranscriptionManager()->getTranscribedPageListByDocId($doc);
-            foreach ($pages_transcribed as $page_transcribed) {
-                $currentPageID = $this->getPageID($doc, $page_transcribed);
-                if ((string) $currentPageID === $pageID) {
-                    return $doc;
-                }
-            }
-        }
-
-        return '';
-    }
 
     /**
      * Converts column elements from the sql database into a plain text transcription (copied from the ApiTranscription class)
@@ -1352,112 +1565,6 @@ class IndexManager extends CommandLineUtility {
             }
         }
         return $text;
-    }
-
-    /**
-     * @param int $doc_id
-     * @param int $page
-     * @return int
-     */
-    private function getPageID (int $doc_id, int $page): int {
-        return $this->getSystemManager()->getDocumentManager()->getpageIDByDocPage($doc_id, $page);
-    }
-
-    /**
-     * @param string $doc_id
-     * @return string
-     */
-    public function getTitle(string $doc_id): string {
-        $doc_info = $this->getSystemManager()->getDocumentManager()->getLegacyDocInfo((int) $doc_id);
-        return $doc_info['title'];
-    }
-
-    /**
-     * @param int $doc_id
-     * @param int $page
-     * @return string
-     */
-    public function getSeq(int $doc_id, int $page): string {
-        $page_id = $this->getSystemManager()->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
-        $page_info = $this->getSystemManager()->getDocumentManager()->getPageInfo($page_id);
-        return $page_info->sequence;
-    }
-
-    /**
-     * @param int $doc_id
-     * @param int $page
-     * @param int $col
-     * @return string
-     * @throws \ThomasInstitut\DataTable\InvalidTimeStringException
-     */
-    private function getTranscription(int $doc_id, int $page, int $col): string
-    {
-        $page_id = $this->getSystemManager()->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
-        $elements = $this->getSystemManager()->getTranscriptionManager()->getColumnElementsBypageID($page_id, $col);
-        return $this->getPlainTextFromElements($elements);
-    }
-
-    /**
-     * @param int $doc_id
-     * @param int $page
-     * @param int $col
-     * @return string
-     */
-    private function getTranscriber(int $doc_id, int $page, int $col): string {
-        $page_id = $this->getSystemManager()->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
-        $versions = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager()->getColumnVersionInfoByPageCol($page_id, $col);
-
-        if ($versions === []) {
-            return '';
-        }
-        else {
-            $transcriptions_version = count($versions) - 1;
-            $authorTid = $versions[$transcriptions_version]->authorTid;
-            return $this->getSystemManager()->getEntitySystem()->getEntityName($authorTid);
-        }
-    }
-
-    /**
-     * @param int $doc_id
-     * @param int $page
-     * @return string
-     */
-    private function getLang(string $page_id): string {
-        $langId = $this->getSystemManager()->getDocumentManager()->getPageInfo($page_id)->lang;
-
-        switch ($langId) {
-            case Entity::LangLatin:
-                return 'la';
-            case Entity::LangArabic:
-                return 'ar';
-            case Entity::LangHebrew:
-                return 'he';
-            case Entity::LangJudeoArabic:
-                return 'jrb';
-        }
-
-        return false;
-    }
-
-
-    /**
-     * @param int $doc_id
-     * @param int $page
-     * @return string
-     */
-    public function getFoliation(int $doc_id, int $page): string
-    {
-        $seq = $this->getSeq($doc_id, $page);
-
-        $info = $this->getSystemManager()->getTranscriptionManager()->getPageInfoByDocSeq($doc_id, $seq);
-        if ($info === false) {
-            return '';
-        }
-        if (is_null($info->foliation)) {
-            return $info->pageNumber;
-        }
-        return $info->foliation;
-
     }
 
     public function instantiateTypesenseClient($config) {

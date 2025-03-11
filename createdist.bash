@@ -58,22 +58,26 @@ cp -R src/www/classes "$TMP_DIR"/www
 cp -R src/www/collatex "$TMP_DIR"/www
 cp -R src/www/css "$TMP_DIR"/www
 cp -R src/www/images "$TMP_DIR"/www
+
 cp -R src/www/js "$TMP_DIR"/www
 rm -fr "$TMP_DIR"/www/js/istanbul
 rm -f "$TMP_DIR"/www/js/Makefile
 rm -f "$TMP_DIR"/www/js/.eslintrc.json
-cp -R src/www/node_modules "$TMP_DIR"/www
+
+cp -R src/www/fonts "$TMP_DIR"/www
 cp -R src/www/templates "$TMP_DIR"/www
 cp -R src/www/utilities "$TMP_DIR"/www
+
 cp -R src/www/vendor "$TMP_DIR"/www
-cp -R src/www/fonts "$TMP_DIR"/www
+cp -R src/www/node_modules "$TMP_DIR"/www
+
 cp src/www/composer.json "$TMP_DIR"/www
 cp src/www/composer.lock "$TMP_DIR"/www
-cp src/www/config.sample.php "$TMP_DIR"/www
-cp src/www/index.php "$TMP_DIR"/www
 cp src/www/package.json "$TMP_DIR"/www
-cp src/www/config_setup.php "$TMP_DIR"/www
-cp src/www/version.php "$TMP_DIR"/www
+cp src/www/package-lock.json "$TMP_DIR"/www
+cp src/www/config.default.yaml "$TMP_DIR"/www
+cp src/www/config.sample.yaml "$TMP_DIR"/www
+cp src/www/index.php "$TMP_DIR"/www
 
 mkdir "$TMP_DIR"/www/downloads
 mkdir "$TMP_DIR"/www/downloads/pdf

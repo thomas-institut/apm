@@ -77,7 +77,7 @@ class ApiPresets extends ApiController
     public function  getPresets(Request $request,  Response $response) : Response{
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $this->profiler->start();
+        
         $inputData = $this->checkAndGetInputData($request, $response, ['tool', 'userId', 'keyArrayToMatch']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -158,7 +158,7 @@ class ApiPresets extends ApiController
     {
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $this->profiler->start();
+        
         $inputData = $this->checkAndGetInputData($request, $response, ['userId', 'lang', 'witnesses']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -259,7 +259,7 @@ class ApiPresets extends ApiController
     {
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $this->profiler->start();
+        
         $inputData = $this->checkAndGetInputData($request, $response, ['lang', 'witnesses']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -360,7 +360,7 @@ class ApiPresets extends ApiController
     public function saveSiglaPreset(Request $request, Response $response): array|Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $this->profiler->start();
+        
         $inputData = $this->checkAndGetInputData($request, $response, ['command', 'lang', 'witnesses']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -478,7 +478,7 @@ class ApiPresets extends ApiController
     public function  savePreset(Request $request, Response $response) : Response {
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $this->profiler->start();
+        
         $inputData = $this->checkAndGetInputData($request, $response, ['command', 'tool', 'title', 'presetId', 'presetData']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -585,7 +585,6 @@ class ApiPresets extends ApiController
     
      public function deletePreset(Request $request, Response $response) : Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $this->profiler->start();
         $presetId = intval($request->getAttribute('id'));
         
         $presetsManager = $this->systemManager->getPresetsManager();

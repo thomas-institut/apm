@@ -1,0 +1,35 @@
+#
+# APM Sample Configuration File
+#
+
+# APM url after /,
+#   e.g. if APM runs in https://test.com/apm,  sub_dir = 'apm'
+#   if it runs in https://test.com,  sub_dir = '';
+subDir: ''
+
+# Database access configuration
+db:
+  host: 'localhost'
+  user: 'someUser'
+  pwd: 'somePassword'
+  db: 'apm'
+
+# Opensearch Access configuration
+opensearch:
+  hosts: ['http://localhost:9200']
+  user: ''
+  password: ''
+
+daemonPidFile: '/tmp/apmd.pid'
+
+log:
+  fileName: '/tmp/apm.log'
+  includeDebugInfo: true
+  inPhpErrorHandler: true
+
+pdfRendererTmpDir: '/tmp'
+pythonVenv: '/path/to/apm-python-venv'
+authorizedCommandLineUsers: [ 'user1' , 'user2']
+siteShowLanguageSelector: false # default 'false'
+
+

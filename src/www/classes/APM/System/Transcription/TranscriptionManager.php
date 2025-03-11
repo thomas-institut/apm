@@ -23,9 +23,8 @@ use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Document\PageInfo;
+use APM\System\Transcription\ColumnElement\Element;
 use APM\System\WitnessInfo;
-use AverroesProject\ColumnElement\Element;
-use AverroesProject\Data\EdNoteManager;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
@@ -349,6 +348,33 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
     abstract public function getDocIdsTranscribedByUser(int $userTid) : array;
 
 
+    /**
+     * Returns an array with the ids of all users that have
+     * edited at least one element in the given document
+     *
+     * @param int $docId
+     * @return int[]
+     */
+    abstract public function getEditorTidsByDocId(int $docId) : array;
+
+
+    /**
+     * Returns an array of strings with the APM ids of the works
+     * with transcription in the system
+     *
+     * @return string[]
+     */
+    abstract public function getWorksWithTranscription() : array;
+
+
+    /**
+     * Returns an array with the chunk numbers of the given work that
+     * have a transcription in the system
+     *
+     * @param string $apmWorkId
+     * @return array
+     */
+    abstract public function getChunksWithTranscriptionForWorkId(string $apmWorkId) : array;
 
     /**
      * Returns the page Ids transcribed by a user in a given document

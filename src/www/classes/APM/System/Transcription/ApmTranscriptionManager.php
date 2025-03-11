@@ -27,46 +27,43 @@ use APM\System\Document\PageInfo;
 use APM\System\LegacyLangData;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
+use APM\System\Transcription\ColumnElement\Custodes;
+use APM\System\Transcription\ColumnElement\Element;
+use APM\System\Transcription\ColumnElement\ElementArray;
+use APM\System\Transcription\ColumnElement\Gloss;
+use APM\System\Transcription\ColumnElement\Head;
+use APM\System\Transcription\ColumnElement\Line;
+use APM\System\Transcription\ColumnElement\LineGap;
+use APM\System\Transcription\ColumnElement\PageNumber;
+use APM\System\Transcription\ColumnElement\Substitution;
+use APM\System\Transcription\TxText\Abbreviation;
+use APM\System\Transcription\TxText\Addition;
+use APM\System\Transcription\TxText\BoldText;
+use APM\System\Transcription\TxText\ChapterMark;
+use APM\System\Transcription\TxText\CharacterGap;
+use APM\System\Transcription\TxText\ChunkMark;
+use APM\System\Transcription\TxText\Deletion;
+use APM\System\Transcription\TxText\Gliph;
+use APM\System\Transcription\TxText\Heading;
+use APM\System\Transcription\TxText\Illegible;
+use APM\System\Transcription\TxText\Initial;
+use APM\System\Transcription\TxText\Item;
+use APM\System\Transcription\TxText\Item as ApItem;
+use APM\System\Transcription\TxText\ItemArray;
+use APM\System\Transcription\TxText\MarginalMark;
+use APM\System\Transcription\TxText\Mark;
+use APM\System\Transcription\TxText\MathText;
+use APM\System\Transcription\TxText\NoWordBreak;
+use APM\System\Transcription\TxText\ParagraphMark;
+use APM\System\Transcription\TxText\Rubric;
+use APM\System\Transcription\TxText\Sic;
+use APM\System\Transcription\TxText\Text;
+use APM\System\Transcription\TxText\Unclear;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use APM\ToolBox\ArraySort;
 use APM\ToolBox\MyersDiff;
-use AverroesProject\ColumnElement\Custodes;
-use AverroesProject\ColumnElement\Element;
-use AverroesProject\ColumnElement\ElementArray;
-use AverroesProject\ColumnElement\Gloss;
-use AverroesProject\ColumnElement\Head;
-use AverroesProject\ColumnElement\Line;
-use AverroesProject\ColumnElement\LineGap;
-use AverroesProject\ColumnElement\PageNumber;
-use AverroesProject\ColumnElement\Substitution;
-use AverroesProject\Data\EdNoteManager;
-use AverroesProject\Data\MySqlHelper;
-use AverroesProject\TxText\Abbreviation;
-use AverroesProject\TxText\Addition;
-use AverroesProject\TxText\BoldText;
-use AverroesProject\TxText\ChapterMark;
-use AverroesProject\TxText\CharacterGap;
-use AverroesProject\TxText\ChunkMark;
-use AverroesProject\TxText\Deletion;
-use AverroesProject\TxText\Gliph;
-use AverroesProject\TxText\Heading;
-use AverroesProject\TxText\Illegible;
-use AverroesProject\TxText\Initial;
-use AverroesProject\TxText\Item;
-use AverroesProject\TxText\Item as ApItem;
-use AverroesProject\TxText\ItemArray;
-use AverroesProject\TxText\MarginalMark;
-use AverroesProject\TxText\Mark;
-use AverroesProject\TxText\MathText;
-use AverroesProject\TxText\NoWordBreak;
-use AverroesProject\TxText\ParagraphMark;
-use AverroesProject\TxText\Rubric;
-use AverroesProject\TxText\Sic;
-use AverroesProject\TxText\Text;
-use AverroesProject\TxText\Unclear;
-use AverroesProjectToApm\DatabaseItemStream;
 use Exception;
 use InvalidArgumentException;
 use PDO;
@@ -86,6 +83,7 @@ use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\DataTable\RowDoesNotExist;
 use ThomasInstitut\TimeString\TimeString;
+use ThomasInstitut\ToolBox\MySqlHelper;
 
 class ApmTranscriptionManager extends TranscriptionManager
     implements CacheAware, CodeDebugInterface
@@ -214,8 +212,6 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @param int $docId
      * @param string $localWitnessId
      * @return string
-     * @throws DocumentNotFoundException
-     * @throws PageNotFoundException
      */
     public function getLastChangeTimestampForWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId) : string {
         $chunkWitnesses = $this->getWitnessesForChunk($workId, $chunkNumber);
@@ -248,8 +244,6 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @param string $timeStamp
      * @param string $defaultLanguageCode
      * @return ApmTranscriptionWitness
-     * @throws DocumentNotFoundException
-     * @throws PageNotFoundException
      */
     public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId,
                                             string $localWitnessId, string $timeStamp,
@@ -645,7 +639,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     private function getChunkLocationMapFromDatabase(array $conditions, string $timeString) : array
     {
 
-        $this->codeDebug('Getting chunk map from DB', [ $conditions, $timeString]);
+//        $this->codeDebug('Getting chunk map from DB', [ $conditions, $timeString]);
         $ti = $this->tNames[ApmMySqlTableName::TABLE_ITEMS];
         $te = $this->tNames[ApmMySqlTableName::TABLE_ELEMENTS];
         $tp = $this->tNames[ApmMySqlTableName::TABLE_PAGES];
@@ -833,7 +827,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             return [];
         }
 
-         $this->logger->debug("Start segment location for doc  $docId, page $startPageInfo->pageId");
+//         $this->logger->debug("Start segment location for doc  $docId, page $startPageInfo->pageId");
 
 
         $segmentVersions[$startPageSeq] = [];
@@ -863,7 +857,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         } catch (DocumentNotFoundException|PageNotFoundException) {
             return [];
         }
-        $this->logger->debug("End segment location for doc  $docId, page $endPageInfo->pageId");
+//        $this->logger->debug("End segment location for doc  $docId, page $endPageInfo->pageId");
         for($col = 1; $col <= $endPageInfo->numCols; $col++) {
             $segmentVersions[$endPageSeq][$col] = $this->getColumnVersionManager()->getColumnVersionInfoByPageCol($endPageInfo->pageId, $col);
         }
@@ -908,7 +902,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             foreach($chunkNumberMap as $chunkNumber => $docMap) {
                 foreach ($docMap as $docId => $localWitnessIdMap) {
                     foreach ($localWitnessIdMap as $localWitnessId => $segmentMap) {
-                        $this->logger->debug("Processing version map: $workId-$chunkNumber, doc $docId", [ 'segmentMap' => $segmentMap]);
+//                        $this->logger->debug("Processing version map: $workId-$chunkNumber, doc $docId", [ 'segmentMap' => $segmentMap]);
                         $lastVersion = new ColumnVersionInfo();
                         foreach ($segmentMap as $pageArray) {
                             foreach ($pageArray as $columnArray) {
@@ -962,13 +956,14 @@ class ApmTranscriptionManager extends TranscriptionManager
     public function getWitnessesForChunk(string $workId, int $chunkNumber): array
     {
 
-        //$this->codeDebug("Getting witnesses for chunk $workId-$chunkNumber");
+        $this->codeDebug("Getting witnesses for chunk $workId-$chunkNumber");
         $localCacheKey = 'getW4C:' . $workId . '-' . $chunkNumber;
         try {
             return unserialize($this->localMemCache->get($localCacheKey));
         } catch (KeyNotInCacheException) {
             // not in cache, we just keep going with the construction of the witness
         }
+        $this->codeDebug("Witness info not in cache");
 
         $chunkLocationMap = $this->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
         $versionMap = $this->getVersionsForChunkLocationMap($chunkLocationMap);
@@ -1033,13 +1028,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     {
         $chunkLocationMap = $this->getChunkLocationMapFromDatabase([], $timeString);
 
-        try {
-            $versionMap = $this->getVersionsForChunkLocationMap($chunkLocationMap);
-        } catch (DocumentNotFoundException|PageNotFoundException $e) {
-            // should never happen if the database is not corrupted
-            throw new RuntimeException("Exception thrown while getting versions for chunk location map : " . $e->getMessage(),
-                $e->getCode(), $e );
-        }
+        $versionMap = $this->getVersionsForChunkLocationMap($chunkLocationMap);
         return [
             'chunkLocationMap' => $chunkLocationMap,
             'versionMap' => $versionMap
@@ -1702,7 +1691,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                 break;
 
             case Element::ADDITION:
-                $e = new \AverroesProject\ColumnElement\Addition();
+                $e = new ColumnElement\Addition();
                 break;
 
             case Element::PAGE_NUMBER:
@@ -2108,5 +2097,77 @@ class ApmTranscriptionManager extends TranscriptionManager
             throw new RuntimeException($e->getMessage(), $e->getCode());
         }
         return true;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getEditorTidsByDocId(int $docId) : array {
+        $te = $this->tNames['elements'];
+        $tp = $this->tNames['pages'];
+
+        $query = "SELECT DISTINCT `$te`.`editor_tid` AS id" .
+            " FROM `$te`, `$tp`" .
+            " WHERE `$tp`.`doc_id`=$docId AND `$te`.`page_id`=`$tp`.`id`" .
+            " AND `$tp`.`valid_until`='9999-12-31 23:59:59.999999'" .
+            " AND `$te`.`valid_until`='9999-12-31 23:59:59.999999'";
+
+        $r = $this->getDatabaseHelper()->query($query);
+
+        $editors = [];
+        while ($row = $r->fetch()) {
+            $editors[] = intval($row['id']);
+        }
+        return $editors;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getWorksWithTranscription() : array {
+        $ti = $this->tNames['items'];
+        $te = $this->tNames['elements'];
+
+        $query = "SELECT DISTINCT $ti.text " .
+            " FROM $ti " .
+            " JOIN $te ON ($ti.ce_id=$te.id) " .
+            " WHERE $ti.type=" . Item::CHUNK_MARK .
+            " AND $ti.`valid_until`='9999-12-31 23:59:59.999999'" .
+            " AND $te.`valid_until`='9999-12-31 23:59:59.999999'" .
+            " ORDER BY $ti.text";
+
+        $r = $this->getDatabaseHelper()->query($query);
+
+        $works = [];
+        while ($row = $r->fetch()) {
+            $works[] = $row['text'];
+        }
+        return $works;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getChunksWithTranscriptionForWorkId($apmWorkId) : array
+    {
+        $ti = $this->tNames['items'];
+        $te = $this->tNames['elements'];
+
+        $query = "SELECT DISTINCT $ti.target " .
+            " FROM $ti " .
+            " JOIN $te ON ($ti.ce_id=$te.id) " .
+            " WHERE $ti.type=" . Item::CHUNK_MARK .
+            " AND $ti.text='" . $apmWorkId . "'"  .
+            " AND $ti.`valid_until`='9999-12-31 23:59:59.999999'" .
+            " AND $te.`valid_until`='9999-12-31 23:59:59.999999'" .
+            " ORDER BY $ti.target";
+
+        $r = $this->getDatabaseHelper()->query($query);
+
+        $chunks = [];
+        while ($row = $r->fetch()) {
+            $chunks[] = intval($row['target']);
+        }
+        return $chunks;
     }
 }

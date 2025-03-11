@@ -18,10 +18,13 @@
  *  
  */
 
-namespace Test\APM\Core\Address;
+namespace APM\Test\Core\Address;
 
 
 
+use InvalidArgumentException;
+use LogicException;
+use OutOfBoundsException;
 use PHPUnit\Framework\TestCase;
 use APM\Core\Address\Point;
 use APM\Core\Address\Address;
@@ -62,11 +65,11 @@ class PointTest extends TestCase {
         $p2->setCoord(1, 21);
         $this->assertTrue($p5->isEqualTo($p2));
         
-        // non-existent coord
+        // non-existent coordinates
         $exceptionCaught = false;
         try {
             $p5->setCoord(10, 25);
-        } catch (\OutOfBoundsException $ex) {
+        } catch (OutOfBoundsException) {
             $exceptionCaught = true;
         } 
         $this->assertTrue($exceptionCaught);
@@ -80,7 +83,7 @@ class PointTest extends TestCase {
         $exceptionCaught = false;
         try {
             $p6->distanceTo(new Point([1,2,3]));
-        } catch (\InvalidArgumentException $ex) {
+        } catch (InvalidArgumentException) {
             $exceptionCaught = true;
         } 
         $this->assertTrue($exceptionCaught);
@@ -89,7 +92,7 @@ class PointTest extends TestCase {
         $exceptionCaught = false;
         try {
             $p6->distanceTo(new Point(2));
-        } catch (\LogicException $ex) {
+        } catch (LogicException) {
             $exceptionCaught = true;
         } 
         $this->assertTrue($exceptionCaught);

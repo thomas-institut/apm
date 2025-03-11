@@ -17,7 +17,7 @@
  *  
  */
 
-namespace Test\APM\Core\Token;
+namespace APM\Test\Core\Token;
 
 
 use APM\Core\Token\TokenType;

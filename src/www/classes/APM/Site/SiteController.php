@@ -46,8 +46,6 @@ use Slim\Routing\RouteParser;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\EntitySystem\Tid;
-use ThomasInstitut\Profiler\SimpleProfiler;
-use ThomasInstitut\Profiler\TimeTracker;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
@@ -60,7 +58,7 @@ use Twig\Error\SyntaxError;
 class SiteController implements LoggerAwareInterface, CodeDebugInterface
 {
 
-    const TEMPLATE_ERROR_PAGE = 'error-page.twig';
+    const string TEMPLATE_ERROR_PAGE = 'error-page.twig';
 
 
     use LoggerAwareTrait;
@@ -72,7 +70,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 
     protected bool $userAuthenticated;
     protected RouteParser $router;
-    protected SimpleProfiler $profiler;
     protected int $userId;
 
     /**
@@ -90,12 +87,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         $this->router = $this->systemManager->getRouter();
         $this->userAuthenticated = false;
 
-        $this->profiler = new SimpleProfiler();
-        $this->profiler->registerProperty('time', new TimeTracker());
-        $this->profiler->registerProperty('mysql-queries', $this->systemManager->getSqlQueryCounterTracker());
-        $this->profiler->registerProperty('cache', $this->systemManager->getCacheTracker());
-
-       
        // Check if the user has been authenticated by the authentication middleware
         //$this->logger->debug('Checking user authentication');
         if ($ci->has(ApmContainerKey::SITE_USER_ID)) {
@@ -109,7 +100,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     }
 
     protected function getLanguages() : array {
-        return $this->systemManager->getConfig()[ApmConfigParameter::LANGUAGES];
+        return $this->systemManager->getConfig()['languages'];
     }
 
     /**
@@ -147,25 +138,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return $langArrayByCode;
     }
 
-    protected function logProfilerData(string $pageTitle, $fullLapInfo = false) : void
-    {
-        $lapInfo = $this->profiler->getLaps();
-        $totalTimeInMs = $this->getProfilerTotalTime() * 1000;
-        $totalQueries = $lapInfo[count($lapInfo)-1]['mysql-queries']['cumulative']['Total'];
-        $cacheHits = $lapInfo[count($lapInfo)-1]['cache']['cumulative']['hits'];
-        $cacheMisses = $lapInfo[count($lapInfo)-1]['cache']['cumulative']['misses'];
-        $info = $fullLapInfo ? $lapInfo :[];
-        $this->logger->debug(sprintf("PROFILER %s, finished in %0.2f ms, %d MySql queries, %d cache hits, %d misses",
-            $pageTitle, $totalTimeInMs, $totalQueries, $cacheHits, $cacheMisses), $info);
-    }
-
-    protected function getProfilerTotalTime() : float
-    {
-        $lapInfo = $this->profiler->getLaps();
-        return $lapInfo[count($lapInfo)-1]['time']['cumulative'];
-    }
-
-
     /**
      * @param ResponseInterface $response
      * @param string $template
@@ -180,15 +152,15 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 
         if ($withBaseData) {
             $data['commonData'] = [
-                'appName' => $this->config[ApmConfigParameter::APP_NAME],
-                'appVersion' => $this->config[ApmConfigParameter::VERSION],
-                'copyrightNotice' => $this->config[ApmConfigParameter::COPYRIGHT_NOTICE],
+                'appName' => $this->config['appName'],
+                'appVersion' => $this->config['version'],
+                'copyrightNotice' => $this->config['copyrightNotice'],
                 'renderTimestamp' =>  time(),
-                'cacheDataId' => $this->config[ApmConfigParameter::JS_APP_CACHE_DATA_ID],
+                'cacheDataId' => $this->config['jsAppCacheDataId'],
                 'userInfo' => $this->getSiteUserInfo(),
-                'showLanguageSelector' => $this->config[ApmConfigParameter::SITE_SHOW_LANGUAGE_SELECTOR],
+                'showLanguageSelector' => $this->config['siteShowLanguageSelector'],
                 'baseUrl' => $this->getBaseUrl(),
-                'wsServerUrl' => $this->config[ApmConfigParameter::WS_SERVER_URL]
+                'wsServerUrl' => $this->config['wsServerUrl'],
             ];
             $data['baseUrl'] = $this->getBaseUrl();
         }

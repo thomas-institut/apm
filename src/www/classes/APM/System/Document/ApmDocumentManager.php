@@ -16,21 +16,20 @@ use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\ImageSource\ImageSourceInterface;
 use APM\System\ImageSource\NullImageSource;
-use Exception;
 use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 use RuntimeException;
-use ThomasInstitut\DataCache\EntityNotInCacheException;
+use ThomasInstitut\EntitySystem\EntityDataCache\EntityNotInCacheException;
 use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataCache\NoExpireInMemoryPhpVarCache;
-use ThomasInstitut\DataCache\PhpVarCacheEntityDataCache;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\EntitySystem\EntityData;
+use ThomasInstitut\EntitySystem\EntityDataCache\PhpVarCacheSimpleEntityDataCache;
 
 class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
 {
@@ -49,7 +48,7 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
 
     private bool $debug;
     private InMemoryDataCache $cache;
-    private PhpVarCacheEntityDataCache $entityCache;
+    private PhpVarCacheSimpleEntityDataCache $entityCache;
 
     const PAGE_ARRAY_LEGACY = 'legacy';
     const PAGE_ARRAY_INFO = 'info';
@@ -61,7 +60,7 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
         $this->getPagesDataTable = $getPagesDataTable;
         $this->logger = new NullLogger();
         $this->debug = true;
-        $this->entityCache = new PhpVarCacheEntityDataCache(new NoExpireInMemoryPhpVarCache());
+        $this->entityCache = new PhpVarCacheSimpleEntityDataCache(new NoExpireInMemoryPhpVarCache());
         $this->cache = new InMemoryDataCache();
     }
 
@@ -357,14 +356,14 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
             unset($databaseRow['type']);
         } else {
             if (!$this->checkEntity($newPageInfo->type, Entity::tDocumentType)) {
-                throw new InvalidArgumentException("Given type '{$newPageInfo->type}' is not a valid document type");
+                throw new InvalidArgumentException("Given type '$newPageInfo->type' is not a valid document type");
             }
         }
         if ($newPageInfo->lang === $currentPageInfo->lang) {
             unset($databaseRow['lang']);
         } else {
             if (!$this->checkEntity($newPageInfo->lang, Entity::tLanguage)) {
-                throw new InvalidArgumentException("Given language '{$newPageInfo->lang}' is not a valid language");
+                throw new InvalidArgumentException("Given language '$newPageInfo->lang' is not a valid language");
             }
         }
 
@@ -422,7 +421,7 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
             self::PAGE_ARRAY_INFO => array_map(function ($row) {
                 return PageInfo::createFromDatabaseRow($row);
             }, $rows),
-            default => throw new InvalidArgumentException("Unknown data type '{$dataType}'"),
+            default => throw new InvalidArgumentException("Unknown data type '$dataType'"),
         };
     }
 

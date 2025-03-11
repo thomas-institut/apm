@@ -11,11 +11,11 @@ class BackTraceData
     /**
      * @var string
      */
-    public $sourceCodeFilename;
+    public string $sourceCodeFilename;
     /**
      * @var int
      */
-    public $lineNumber;
+    public int $lineNumber;
 
     public function __construct(string $sourceCodeFilename, int $lineNumber)
     {

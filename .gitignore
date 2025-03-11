@@ -2,6 +2,7 @@
 config.php
 config.*.php
 testconfig.php
+config.yaml
 *.zip
 *.bak
 *.js.map
@@ -9,7 +10,7 @@ testconfig.php
 *.log
 *.swp
 /src/www/test/.*
-/src/www/test/php/.phpunit.result.cache
+.phpunit.result.cache
 /src/www/package-lock.json
 php-sessions/
 **/vendor

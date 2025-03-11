@@ -17,7 +17,7 @@
  *  
  */
 
-namespace Test\APM\ToolBox;
+namespace APM\Test\ToolBox;
 
 
 use APM\ToolBox\ArraySort;
@@ -57,13 +57,12 @@ class ArraySortTest extends TestCase
                     $extraKey1 => "Extra $nTestCase :  $nElement",
                     $extraKey2 => $nTestCase * 1000 + $nElement
                 ];
-                $nElement++;
             }
 
             ArraySort::byKey($arrayToSort, $testKey);
 
             foreach($arrayToSort as $i => $element) {
-                $this->assertEquals($sortedArrays[$nTestCase][$i], $element[$testKey], "Test case $nTestCase, element $i");
+                $this->assertEquals($theArray[$i], $element[$testKey], "Test case $nTestCase, element $i");
             }
         }
     }

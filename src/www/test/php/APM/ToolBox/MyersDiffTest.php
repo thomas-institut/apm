@@ -18,12 +18,12 @@
  *  
  */
 
-namespace Test\APM\ToolBox;
+namespace APM\Test\ToolBox;
 
+use APM\System\Transcription\TxText\Text;
 use APM\ToolBox\MyersDiff;
 use PHPUnit\Framework\TestCase;
 
-use AverroesProject\TxText\Text;
 
 
 /**

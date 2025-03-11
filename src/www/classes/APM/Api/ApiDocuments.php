@@ -50,7 +50,6 @@ class ApiDocuments extends ApiController
     public function updatePageSettings(Request $request, Response $response) : Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $this->profiler->start();
 
         if ($this->systemManager->getUserManager()->hasTag($this->apiUserId, UserTag::READ_ONLY)) {
             $this->logger->error("User is not authorized to update page settings",
@@ -93,69 +92,8 @@ class ApiDocuments extends ApiController
 
     public function getPageTypes(Request $request, Response $response): Response
     {
-        $this->profiler->start();
         return $this->responseWithJson($response,
             $this->systemManager->getEntitySystem()->getAllEntitiesForType(Entity::tPageType));
-    }
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     * @deprecated Documents can not be deleted!
-     */
-    public function deleteDocument(Request $request, Response $response) : Response
-    {
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-
-
-//        $dataManager = $this->getDataManager();
-//        $this->profiler->start();
-//        $docId = (int) $request->getAttribute('id');
-//
-//        if (!$this->systemManager->getUserManager()->isRoot($this->apiUserId)){
-//            $this->logger->warning("deleteDocument: unauthorized request",
-//                    [ 'apiUserTid' => $this->apiUserId, 'docId' => $docId]
-//                );
-//            return $this->responseWithStatus($response, 403);
-//        }
-//        $docManager = $this->systemManager->getDocumentManager();
-//        try {
-//            $docEntityData = $docManager->getDocumentEntityData($docId);
-//        } catch (DocumentNotFoundException $e) {
-//            $this->logger->error("Delete document: document does not exist",
-//                [ 'apiUserTid' => $this->apiUserId,
-//                    'apiError' => ApiController::API_ERROR_WRONG_DOCUMENT,
-//                    'docId' => $docId ]);
-//            return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_WRONG_DOCUMENT, 'msg' => 'Document does not exist'], 409);
-//        }
-//
-//        // Make sure the document is safe to delete
-//        $nPages = $dataManager->getPageCountByDocIdAllTime($docId);
-//        if ($nPages !== 0) {
-//            $this->logger->error("Delete document: document cannot be safely deleted",
-//                    [ 'apiUserTid' => $this->apiUserId,
-//                      'apiError' => ApiController::API_ERROR_DOC_CANNOT_BE_SAFELY_DELETED,
-//                      'docId' => $docId,
-//                      'pageCountAllTime' => $nPages]);
-//            return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_DOC_CANNOT_BE_SAFELY_DELETED, 'msg' => 'Document cannot be safely deleted'], 409);
-//        }
-//
-//        $result = $dataManager->deleteDocById($docId);
-//        if ($result === false) {
-//            $this->logger->error("Delete document: cannot delete",
-//                    [ 'apiUserTid' => $this->apiUserId,
-//                      'apiError' => ApiController::API_ERROR_DB_UPDATE_ERROR,
-//                      'docId' => $docId]);
-//            return $this->responseWithJson($response,['error' => ApiController::API_ERROR_DB_UPDATE_ERROR, 'msg' => 'Database error'], 409);
-//        }
-//        $this->systemManager->onDocumentDeleted($this->apiUserId, $docId);
-
-        $docId = (int) $request->getAttribute('id');
-        $this->logger->error("Deprecated API call: delete document with id $docId");
-        return $this->responseWithJson($response,
-            [   'error' => ApiController::API_ERROR_DEPRECATED,
-                'msg' => 'Documents cannot be deleted'], HttpStatus::BAD_REQUEST);
     }
 
     /**
@@ -168,8 +106,6 @@ class ApiDocuments extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $this->debugMode = true;
         $documentManager = $this->systemManager->getDocumentManager();
-
-        $this->profiler->start();
 
         $docId = (int) $request->getAttribute('id');
         try {
@@ -250,8 +186,6 @@ class ApiDocuments extends ApiController
     public function createDocument(Request $request, Response $response, array $args): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $this->profiler->start();
-
 
         // TODO: implement proper user permissions
         if (!$this->systemManager->getUserManager()->isRoot($this->apiUserId)) {
@@ -298,8 +232,7 @@ class ApiDocuments extends ApiController
     public function newDocumentOld(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $this->profiler->start();
-        
+
         if (!$this->systemManager->getUserManager()->isRoot($this->apiUserId)){
             $this->logger->warning("New Doc: unauthorized request",
                     [ 'apiUserTid' => $this->apiUserId]
@@ -361,96 +294,6 @@ class ApiDocuments extends ApiController
         }
         $this->systemManager->onDocumentAdded($this->apiUserId, $docId);
         return  $this->responseWithJson($response, ['newDocId' => $docId]);
-        
-    }
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-    public function updateDocSettings(Request $request, Response $response): Response
-    {
-
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $dataManager = $this->getDataManager();
-        $docManager = $this->systemManager->getDocumentManager();
-
-        $docId = (int) $request->getAttribute('id');
-        
-        $rawData = $request->getBody()->getContents();
-        $postData = [];
-        parse_str($rawData, $postData);
-        $newSettings = null;
-        if (isset($postData['data'])) {
-            $newSettings = json_decode($postData['data'], true);
-        }
-        
-        if (is_null($newSettings) ) {
-            $this->logger->error("Doc settings update: no data in input",
-                    [ 'apiUserTid' => $this->apiUserId,
-                      'apiError' => ApiController::API_ERROR_NO_DATA,
-                      'data' => $postData]);
-            return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_DATA], 409);
-        }
-
-        if (isset($newSettings['lang'])) {
-            $langId = $this->systemManager->getLangIdFromCode($newSettings['lang']);
-            if ($langId === null) {
-                $this->logger->error("Invalid language " . $newSettings['lang'],
-                    [ 'apiUserTid' => $this->apiUserId,
-                        'apiError' => ApiController::API_ERROR_NO_DATA,
-                        'data' => $postData]);
-                return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_BAD_REQUEST], 409);
-            }
-            $newSettings['lang'] = $langId;
-        }
-
-        try {
-            $docInfo = $docManager->getLegacyDocInfo($docId);
-        } catch (DocumentNotFoundException) {
-            $this->logger->error("Doc  settings update: document does not exist",
-                [ 'apiUserTid' => $this->apiUserId,
-                    'apiError' => ApiController::API_ERROR_NO_DATA,
-                    'data' => $postData]);
-            return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_WRONG_DOCUMENT], 409);
-        }
-
-
-        try {
-            $dataManager->updateDocSettings($docId, $newSettings);
-        } catch (Exception $e) {
-            $this->logger->error("Error writing new doc settings to DB",
-                [ 'apiUserTid' => $this->apiUserId,
-                    'apiError' => ApiController::API_ERROR_DB_UPDATE_ERROR,
-                    'exception' => $e->getCode(),
-                    'exceptionMsg' => $e->getMessage(),
-                    'data' => $postData]);
-            return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_DB_UPDATE_ERROR], 409);
-        }
-
-        $this->logger->info("Doc update settings", [
-            'apiUserTid' => $this->apiUserId,
-            'newSettings' => $newSettings
-            ]);
-
-
-        // update pages
-        if ($docInfo['lang'] !== $newSettings['lang']) {
-            try {
-                $pages = $docManager->getLegacyDocPageInfoArray($docId);
-            } catch (DocumentNotFoundException $e) {
-                // should never happen
-                $this->logger->error("Document not found getting page info for doc $docId: " . $e->getMessage());
-                return $this->responseWithStatus($response, HttpStatus::INTERNAL_SERVER_ERROR);
-            }
-            foreach($pages as $page) {
-                $docManager->updatePageSettings($page['id'], [ 'lang' => $newSettings['lang']]);
-            }
-        }
-
-        $this->systemManager->onDocumentUpdated($this->apiUserId, $docId);
-        return $this->responseWithStatus($response, 200);
         
     }
 

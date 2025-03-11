@@ -1,21 +1,20 @@
 <?php
 
-namespace Test\APM\System\EntitySystem;
+namespace APM\Test\System\EntitySystem;
 
-use APM\System\EntitySystem\Exception\Exception\Exception\ApmEntitySystem;
-use APM\System\EntitySystem\Exception\Exception\Exception\ApmEntitySystemInterface;
-use APM\System\EntitySystem\Exception\Exception\Exception\EntityAlreadyMergedException;
-use APM\System\EntitySystem\Exception\Exception\Exception\EntityDoesNotExistException;
-use APM\System\EntitySystem\Exception\Exception\Exception\EntityType;
-use APM\System\EntitySystem\Exception\Exception\Exception\InvalidEntityTypeException;
-use APM\System\EntitySystem\Exception\Exception\Exception\InvalidObjectException;
-use APM\System\EntitySystem\Exception\Exception\Exception\InvalidStatementException;
-use APM\System\EntitySystem\Exception\Exception\Exception\InvalidSubjectException;
-use APM\System\EntitySystem\Exception\Exception\Exception\PersonPredicate;
-use APM\System\EntitySystem\Exception\Exception\Exception\SystemPredicate;
+
+use APM\EntitySystem\ApmEntitySystem;
+use APM\EntitySystem\Exception\EntityAlreadyMergedException;
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
+use APM\EntitySystem\Exception\InvalidEntityTypeException;
+use APM\EntitySystem\Exception\InvalidObjectException;
+use APM\EntitySystem\Exception\InvalidStatementException;
+use APM\EntitySystem\Exception\InvalidSubjectException;
+use APM\EntitySystem\Schema\Entity;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use ThomasInstitut\DataCache\InMemoryDataCache;
+use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\InMemoryDataTable;
 use ThomasInstitut\EntitySystem\DataTableStatementStorage;
 use ThomasInstitut\EntitySystem\EntityDataCache\DataTableEntityDataCache;
@@ -25,6 +24,12 @@ use ThomasInstitut\EntitySystem\TypeStorageConfig;
 
 class ApmEntitySystemTest extends TestCase
 {
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        error_reporting(E_ALL);
+    }
 
 
     public function makeEmptyEntitySystem(): ApmEntitySystem
@@ -47,17 +52,22 @@ class ApmEntitySystemTest extends TestCase
         return new ApmEntitySystem(
             function () use ($defaultTypeConfig, $memCache): TypedMultiStorageEntitySystem {
                 return new TypedMultiStorageEntitySystem(
-                    SystemPredicate::EntityType,
+                    Entity::pEntityType,
                     [ $defaultTypeConfig],
                     'asdf' ,
-                    $memCache, 'TMSES');
-            }, $mergesDataTable, $memCache, 'ApmES');
+                    $memCache, 'TmSes');
+            }, 
+            function() use ($mergesDataTable) : DataTable {
+                return $mergesDataTable;
+            },
+            $memCache, 
+            'ApmES');
     }
 
 
 
     public function testEmptySystem() {
-        $allPeople = $this->makeEmptyEntitySystem()->getAllEntitiesForType(EntityType::Person);
+        $allPeople = $this->makeEmptyEntitySystem()->getAllEntitiesForType(Entity::tPerson);
         $this->assertCount(0, $allPeople);
     }
 
@@ -67,7 +77,7 @@ class ApmEntitySystemTest extends TestCase
      */
     public function testBadType() {
         $this->expectException(InvalidEntityTypeException::class);
-        $this->makeEmptyEntitySystem()->createEntity(Tid::generateUnique(), 'asd', 'asd', ApmEntitySystemInterface::SystemEntity);
+        $this->makeEmptyEntitySystem()->createEntity(Tid::generateUnique(), 'asd', 'asd', Entity::System);
     }
 
     /**
@@ -75,7 +85,7 @@ class ApmEntitySystemTest extends TestCase
      */
     public function testBadAuthor() {
         $this->expectException(InvalidArgumentException::class);
-        $this->makeEmptyEntitySystem()->createEntity(EntityType::Person, 'asd', 'asd', Tid::generateUnique());
+        $this->makeEmptyEntitySystem()->createEntity(Entity::tPerson, 'asd', 'asd', Tid::generateUnique());
     }
 
     /**
@@ -88,8 +98,8 @@ class ApmEntitySystemTest extends TestCase
     public function testPeopleCreation() : void{
         $entitySystem = $this->makeEmptyEntitySystem();
 
-        $peopleCreator = $entitySystem->createEntity(EntityType::Person,
-            "People Creator", '', ApmEntitySystemInterface::SystemEntity);
+        $peopleCreator = $entitySystem->createEntity(Entity::tPerson,
+            "People Creator", '', Entity::System);
 
         $peopleToCreate = [
             [ 'name' => 'John', 'sortName' => 'Lennon, John', 'newName' => "John Lennon"],
@@ -99,8 +109,8 @@ class ApmEntitySystemTest extends TestCase
         ];
         $createdPeople = [];
         foreach ($peopleToCreate as $personToCreate) {
-            $tid = $entitySystem->createEntity(EntityType::Person, $personToCreate['name'], '', $peopleCreator);
-            $entitySystem->makeStatement($tid, PersonPredicate::SortName, $personToCreate['sortName'], $peopleCreator);
+            $tid = $entitySystem->createEntity(Entity::tPerson, $personToCreate['name'], '', $peopleCreator);
+            $entitySystem->makeStatement($tid, Entity::pSortName, $personToCreate['sortName'], $peopleCreator);
             $createdPeople[] = [
                 'name' => $personToCreate['name'],
                 'sortName' => $personToCreate['sortName'],
@@ -109,33 +119,33 @@ class ApmEntitySystemTest extends TestCase
             ];
         }
 
-        $allPeople = $entitySystem->getAllEntitiesForType(EntityType::Person);
+        $allPeople = $entitySystem->getAllEntitiesForType(Entity::tPerson);
 
         foreach ($createdPeople as $createdPerson) {
             $this->assertContains($createdPerson['tid'], $allPeople);
-            $this->assertEquals(EntityType::Person, $entitySystem->getEntityType($createdPerson['tid']));
+            $this->assertEquals(Entity::tPerson, $entitySystem->getEntityType($createdPerson['tid']));
             $data = $entitySystem->getEntityData($createdPerson['tid']);
             $this->assertFalse($data->isMerged());
-            $this->assertCount(1, $data->getAllObjectsForPredicate(SystemPredicate::EntityName));
-            $this->assertEquals($createdPerson['name'], $data->getObjectForPredicate(SystemPredicate::EntityName));
-            $this->assertCount(1, $data->getAllObjectsForPredicate(PersonPredicate::SortName));
-            $this->assertEquals($createdPerson['sortName'], $data->getObjectForPredicate(PersonPredicate::SortName));
+            $this->assertCount(1, $data->getAllObjectsForPredicate(Entity::pEntityName));
+            $this->assertEquals($createdPerson['name'], $data->getObjectForPredicate(Entity::pEntityName));
+            $this->assertCount(1, $data->getAllObjectsForPredicate(Entity::pSortName));
+            $this->assertEquals($createdPerson['sortName'], $data->getObjectForPredicate(Entity::pSortName));
         }
 
         // change names
         foreach ($createdPeople as $createdPerson) {
-            $entitySystem->makeStatement($createdPerson['tid'], SystemPredicate::EntityName, $createdPerson['newName'], $peopleCreator);
+            $entitySystem->makeStatement($createdPerson['tid'], Entity::pEntityName, $createdPerson['newName'], $peopleCreator);
         }
 
-        $allPeople = $entitySystem->getAllEntitiesForType(EntityType::Person);
+        $allPeople = $entitySystem->getAllEntitiesForType(Entity::tPerson);
         foreach($createdPeople as $createdPerson) {
             $this->assertContains($createdPerson['tid'], $allPeople);
-            $this->assertEquals(EntityType::Person, $entitySystem->getEntityType($createdPerson['tid']));
+            $this->assertEquals(Entity::tPerson, $entitySystem->getEntityType($createdPerson['tid']));
             $data = $entitySystem->getEntityData($createdPerson['tid']);
-            $this->assertCount(1, $data->getAllObjectsForPredicate(SystemPredicate::EntityName));
-            $this->assertEquals($createdPerson['newName'], $data->getObjectForPredicate(SystemPredicate::EntityName));
-            $this->assertCount(1, $data->getAllObjectsForPredicate(PersonPredicate::SortName));
-            $this->assertEquals($createdPerson['sortName'], $data->getObjectForPredicate(PersonPredicate::SortName));
+            $this->assertCount(1, $data->getAllObjectsForPredicate(Entity::pEntityName));
+            $this->assertEquals($createdPerson['newName'], $data->getObjectForPredicate(Entity::pEntityName));
+            $this->assertCount(1, $data->getAllObjectsForPredicate(Entity::pSortName));
+            $this->assertEquals($createdPerson['sortName'], $data->getObjectForPredicate(Entity::pSortName));
         }
     }
 
@@ -151,14 +161,14 @@ class ApmEntitySystemTest extends TestCase
     public function testMerges() : void {
 
         $entitySystem = $this->makeEmptyEntitySystem();
-        $peopleCreator = $entitySystem->createEntity(EntityType::Person,
-            "People Creator", '', ApmEntitySystemInterface::SystemEntity);
+        $peopleCreator = $entitySystem->createEntity(Entity::tPerson,
+            "People Creator", '', Entity::System);
 
-        $peopleMerger = $entitySystem->createEntity(EntityType::Person,
+        $peopleMerger = $entitySystem->createEntity(Entity::tPerson,
             "People Merger", '', $peopleCreator);
 
 
-        $theFather = $entitySystem->createEntity(EntityType::Person,
+        $theFather = $entitySystem->createEntity(Entity::tPerson,
             "Peter Senior", '', $peopleCreator);
 
 
@@ -168,10 +178,10 @@ class ApmEntitySystemTest extends TestCase
         $tids = [];
 
         foreach ($names as $name) {
-            $tids[] = $entitySystem->createEntity(EntityType::Person, $name, '', $peopleCreator);
+            $tids[] = $entitySystem->createEntity(Entity::tPerson, $name, '', $peopleCreator);
         }
 
-        $entitySystem->makeStatement($theFather, PersonPredicate::FatherOf, $tids[0], $peopleCreator);
+        $entitySystem->makeStatement($theFather, Entity::pParentOf, $tids[0], $peopleCreator);
 
         for($i = 1; $i < count($tids); $i++) {
             $context = "Merging into person $i";
@@ -180,7 +190,7 @@ class ApmEntitySystemTest extends TestCase
             $entitySystem->mergeEntity($oldPerson, $newPerson, $peopleMerger, "Merging " . ($i-1) . " into $i");
             $newPersonData = $entitySystem->getEntityData($newPerson);
             $this->assertFalse($newPersonData->isMerged(), $context);
-            $allPeople = $entitySystem->getAllEntitiesForType(EntityType::Person);
+            $allPeople = $entitySystem->getAllEntitiesForType(Entity::tPerson);
             $this->assertContains($newPerson, $allPeople);
             // all the previous people must be now $newPerson
             for ($j = 0; $j < $i; $j++) {
@@ -188,11 +198,11 @@ class ApmEntitySystemTest extends TestCase
                 $loopContext  = "Checking person $j when the newest person is $i";
                 $this->assertTrue($data->isMerged(), $loopContext);
                 $this->assertEquals($newPerson, $data->mergedInto, $loopContext);
-                $this->assertEquals($tids[$j+1], $data->getObjectForPredicate(SystemPredicate::MergedInto), $loopContext);
+                $this->assertEquals($tids[$j+1], $data->getObjectForPredicate(Entity::pMergedInto), $loopContext);
                 $this->assertFalse(in_array($oldPerson, $allPeople));
             }
             $fatherData = $entitySystem->getEntityData($theFather);
-            $this->assertEquals($newPerson, $fatherData->getObjectForPredicate(PersonPredicate::FatherOf), $context);
+            $this->assertEquals($newPerson, $fatherData->getObjectForPredicate(Entity::pParentOf), $context);
         }
     }
 

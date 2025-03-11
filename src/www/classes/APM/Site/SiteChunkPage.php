@@ -60,7 +60,7 @@ class SiteChunkPage extends SiteController
         $ctManager = $this->systemManager->getCollationTableManager();
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
-        $this->profiler->start();
+        
         try {
             $workInfo = get_object_vars($this->systemManager->getWorkManager()->getWorkDataByDareId($workId));
         } catch (WorkNotFoundException) {
@@ -167,7 +167,7 @@ class SiteChunkPage extends SiteController
             $showAdminInfo = true;
         }
 
-        $validChunks = $this->systemManager->getDataManager()->getChunksWithTranscriptionForWorkId($workId);
+        $validChunks = $this->systemManager->getTranscriptionManager()->getChunksWithTranscriptionForWorkId($workId);
         $tablesInfo = $this->systemManager->getCollationTableManager()->getTablesInfo(false, $workId);
         foreach ($tablesInfo as $tableInfo) {
             if (!in_array($tableInfo['chunkNumber'], $validChunks)) {
@@ -176,8 +176,6 @@ class SiteChunkPage extends SiteController
         }
         sort($validChunks, SORT_NUMERIC);
 
-        $this->profiler->stop();
-        $this->logProfilerData("ChunkPage-$workId-$chunkNumber");
         return $this->renderPage($response, self::TEMPLATE_CHUNK_PAGE, [
             'workId' => $workId,
             'chunkNumber' => $chunkNumber,

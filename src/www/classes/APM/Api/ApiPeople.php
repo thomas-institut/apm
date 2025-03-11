@@ -35,7 +35,7 @@ class ApiPeople extends ApiController
     const PeoplePageData_PeoplePerPart = 25;
 
     public function getPersonEssentialData(Request $request, Response $response): Response {
-        $this->profiler->start();
+
         $personTid =  (int) $request->getAttribute('tid');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . Tid::toBase36String($personTid));
 
@@ -208,7 +208,7 @@ class ApiPeople extends ApiController
     }
 
     public function getWorksByPerson(Request $request, Response $response): Response {
-        $this->profiler->start();
+
         $personTid =  (int) $request->getAttribute('tid');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . Tid::toBase36String($personTid));
         // check cache

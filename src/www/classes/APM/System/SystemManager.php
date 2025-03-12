@@ -197,9 +197,10 @@ abstract class SystemManager implements ErrorReporter {
      * A single entity id or an array of id can be given
      *
      * @param int|array $entityIdOrIds
+     * @param int $userId
      * @return void
      */
-    public function onEntityDataChange(int|array $entityIdOrIds) : void {
+    public function onEntityDataChange(int|array $entityIdOrIds, int $userId) : void {
     }
 
     public function onTranscriptionUpdated(int $userTid, int $docId, int $pageNumber, int $columnNumber) : void {

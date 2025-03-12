@@ -22,6 +22,7 @@ import { SimpleBlockBlot } from './TranscriptionEditorBlots'
 import { EditorData } from './EditorData'
 import { configureTranscriptionEditorBlots } from './TranscriptionEditorBlotConfig'
 import * as Entity from '../../constants/Entity'
+import { getLangCodeFromLangId, getLangIdFromLangCode } from '../../constants/TranscriptionLanguages'
 
 
 
@@ -118,8 +119,8 @@ export class TranscriptionEditor
     $('body').append(modalsHtml)
     
     this.quillObject = new Quill('#editor-container-' + this.id, {})
-    this.setDefaultLang(this.options.defaultLang)
-    this.setFontSize(this.options.langDef[this.defaultLang].fontsize)
+    this.setDefaultLang(this.options.defaultLang);
+    this.setFontSize(this.options.langDef[this.defaultLangId].fontsize)
     this.setData(null) // start with empty data
    
     // EVENT HANDLERS
@@ -165,13 +166,11 @@ export class TranscriptionEditor
     let langDef = this.options.langDef
     langDef.forEach( (langDefEntry) => {
       // language button
-      let buttonId = langDefEntry['code'] + '-button-' + this.id
+      let buttonId = `${langDefEntry['code']}-button-${this.id}`;
       $('#langButtons-'+this.id).append(
-        '<button id="' + buttonId +  '" class="langButton" ' +
-        'title="' + langDefEntry['name'] + '" disabled>' +
-        langDefEntry['code'] + '</button>'
+        `<button id="${buttonId}" class="langButton" title="${langDefEntry['name']}" disabled>${langDefEntry['code']}</button>`
       )
-      $('#' + buttonId).on('click', this.genOnClickLangButton(langDefEntry['id']))
+      $(`#${buttonId}`).on('click', this.genOnClickLangButton(langDefEntry))
       // option in default language menu
       let optionId = 'set-' +langDefEntry['code'] + '-' + this.id
       $('#set-lang-dd-menu-' + id).append('<a class="dropdown-item" href="#" id="'+ optionId +'">'
@@ -436,7 +435,7 @@ export class TranscriptionEditor
     
     // defaultLang :  language code
     if (options.defaultLang === undefined) {
-      options.defaultLang = Entity.LangLatin
+      options.defaultLang = 'la'
     }
     
     
@@ -477,20 +476,21 @@ export class TranscriptionEditor
     return options
   }
     
-  setDefaultLang(lang)
+  setDefaultLang(langCode)
   {
 
     let langDef = this.options.langDef
-    // console.log(`Setting default lang ${lang}`, langDef);
-    if (langDef[lang] === undefined) {
-      console.log('Invalid default language: ' + lang)
+    console.log(`Setting default lang ${langCode}`);
+    let theLangId = getLangIdFromLangCode(langCode);
+
+    if (theLangId=== -1) {
+      console.warn('Invalid default language: ' + langCode)
       return false
     }
     let editorContainer = $('#editor-container-container-' + this.id);
 
     langDef.forEach( (langDefEntry, langId) => {
-      if (lang === langId) {
-        console.log(`Testing lang ${langId}`);
+      if (langId === theLangId) {
         editorContainer.addClass(langDefEntry['code'] + '-text')
       } else {
         editorContainer.removeClass(langDefEntry['code'] + '-text')
@@ -498,10 +498,10 @@ export class TranscriptionEditor
     });
 
     $('#lang-button-' + this.id)
-      .attr('title', langDef[lang].name)
-      .html(langDef[lang].code)
-    this.defaultLang = lang;
-    this.defaultLangCode = langDef[lang]['code'];
+      .attr('title', langDef[theLangId].name)
+      .html(langDef[theLangId].code)
+    this.defaultLang = langCode;
+    this.defaultLangId = theLangId;
     this.setEditorMargin();
   }
 
@@ -559,7 +559,7 @@ export class TranscriptionEditor
   {
     let marginSize = this.getEditorMarginSize();
     let qlEditor = $('#editor-container-' + this.id + ' .ql-editor');
-    if (this.options.langDef[this.defaultLang].rtl) {
+    if (this.options.langDef[this.defaultLangId].rtl) {
       qlEditor.css('margin-left', '0')
         .css('margin-right', marginSize + 'px')
         .css('border-right', 'solid 1px #e0e0e0')
@@ -751,7 +751,7 @@ export class TranscriptionEditor
       let numberMargin = this.options.lineNumbers.margin;
       
        let lineNumberLeftPos = marginSize - numberMargin - numChars*fontCharWidth;
-      if (this.defaultLang !== Entity.LangLatin) {
+      if (this.defaultLang !== 'la') {
         lineNumberLeftPos = $(editorDiv).outerWidth() + numberMargin;
       }
       let overlay = ''
@@ -1083,7 +1083,6 @@ export class TranscriptionEditor
     }
     return mainLanguage
   }
-  
   /**
     * Loads the given elements and items into the editor.
     * @param {array} columnData Data from API
@@ -1113,10 +1112,13 @@ export class TranscriptionEditor
       this.minNoteId = Math.min(this.minNoteId, note.id)
     }
 
-    this.people = columnData.people
-    this.pageId = columnData.info.pageId
-    this.columnNumber = columnData.info.col
-    this.pageDefaultLang = columnData.info.lang ? columnData.info.lang : this.defaultLang
+    this.people = columnData['people'];
+    this.pageId = columnData['info'].pageId;
+    this.columnNumber = columnData['info'].col;
+    this.pageDefaultLang = this.defaultLang;
+    if (columnData['info']['lang'] !== undefined) {
+      this.pageDefaultLang = getLangCodeFromLangId(columnData['info']['lang']);
+    }
 
     //console.log(columnData)
     
@@ -1128,10 +1130,11 @@ export class TranscriptionEditor
     this.minItemId = editorData.minItemId
     this.quillObject.setContents(editorData.delta)
     this.lastSavedData = this.quillObject.getContents()
-    let mainLang = editorData.mainLang
-    if (!mainLang) {
-      mainLang = this.pageDefaultLang
-    }
+    // let mainLang = editorData.mainLang
+    // if (!mainLang) {
+    //   mainLang = this.pageDefaultLang
+    // }
+    let mainLang = this.pageDefaultLang
 
     this.setVersions(columnData)
     
@@ -1643,12 +1646,13 @@ export class TranscriptionEditor
     }
   }
 
-  genOnClickLangButton(langCode) {
+  genOnClickLangButton(langDef) {
     let quillObject = this.quillObject
     return  ()=> {
-      quillObject.format('lang', langCode);
-      const range = quillObject.getSelection()
-      quillObject.setSelection(range.index + range.length)
+      let delta = quillObject.format('lang', langDef['code']);
+      console.log(`Set lang ${langDef['code']} at selection`, delta);
+      const range = quillObject.getSelection();
+      quillObject.setSelection(range.index + range.length);
     }
   }
   
@@ -1995,12 +1999,13 @@ export class TranscriptionEditor
     }
   }
 
-  genOnClickSetLang(lang)
+  genOnClickSetLang(langId)
   {
     return  () =>{
-      this.setDefaultLang(lang);
+      let langCode = getLangCodeFromLangId(langId);
+      this.setDefaultLang(langCode);
       this.setEditorMargin(this.fontSize);
-      $('#lang-button-' + this.id).html(this.options.langDef[lang]['code']);
+      $('#lang-button-' + this.id).html(langCode);
       // delay a little bit, wait for html elements to be ready
       window.setTimeout( ()=>  {
         this.numberLines();

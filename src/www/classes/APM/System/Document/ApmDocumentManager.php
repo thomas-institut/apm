@@ -21,15 +21,12 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 use RuntimeException;
-use ThomasInstitut\EntitySystem\EntityDataCache\EntityNotInCacheException;
 use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
-use ThomasInstitut\DataCache\NoExpireInMemoryPhpVarCache;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\EntitySystem\EntityData;
-use ThomasInstitut\EntitySystem\EntityDataCache\PhpVarCacheSimpleEntityDataCache;
 
 class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
 {
@@ -48,11 +45,12 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
 
     private bool $debug;
     private InMemoryDataCache $cache;
-    private PhpVarCacheSimpleEntityDataCache $entityCache;
 
-    const PAGE_ARRAY_LEGACY = 'legacy';
-    const PAGE_ARRAY_INFO = 'info';
-    const PAGE_ARRAY_IDS = 'ids';
+    const string PAGE_ARRAY_LEGACY = 'legacy';
+    const string PAGE_ARRAY_INFO = 'info';
+    const string PAGE_ARRAY_IDS = 'ids';
+
+    const int MemoryCacheTtl = 1;
 
     public function __construct(callable $getEntitySystem, callable $getPagesDataTable)
     {
@@ -60,7 +58,6 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
         $this->getPagesDataTable = $getPagesDataTable;
         $this->logger = new NullLogger();
         $this->debug = true;
-        $this->entityCache = new PhpVarCacheSimpleEntityDataCache(new NoExpireInMemoryPhpVarCache());
         $this->cache = new InMemoryDataCache();
     }
 
@@ -300,6 +297,7 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
         $row['seq'] = intval($row['seq']);
         $row['num_cols'] = intval($row['num_cols']);
         $row['foliation'] = $row['foliation'] ?? strval($row['seq']);
+        $row['foliationIsSet'] = isset($row['foliation']);
         return $row;
     }
 
@@ -317,12 +315,7 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
      */
     public function getLegacyDocId(int $docId): int {
         $data = $this->getDocumentEntityData($docId);
-        try {
-            $dbId = $this->entityCache->getObject($data->id, Entity::pLegacyApmDatabaseId);
-        } catch (EntityNotInCacheException $e) {
-            // should never happen, we just got the data
-            throw new RuntimeException("Cache exception getting doc dbId: " . $e->getMessage(), 0, $e);
-        }
+        $dbId = $data->getObjectForPredicate(Entity::pLegacyApmDatabaseId);
         return $dbId !== null ? $dbId : $docId;
     }
 
@@ -355,8 +348,8 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
         if ($newPageInfo->type === $currentPageInfo->type) {
             unset($databaseRow['type']);
         } else {
-            if (!$this->checkEntity($newPageInfo->type, Entity::tDocumentType)) {
-                throw new InvalidArgumentException("Given type '$newPageInfo->type' is not a valid document type");
+            if (!$this->checkEntity($newPageInfo->type, Entity::tPageType)) {
+                throw new InvalidArgumentException("Given type '$newPageInfo->type' is not a valid page type");
             }
         }
         if ($newPageInfo->lang === $currentPageInfo->lang) {
@@ -457,16 +450,17 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
                     throw new DocumentNotFoundException("Document with legacy docId $docId not found");
                 }
                 $entityId = $statements[0]->subject;
+                // this never changes, so it's OK not to expire it in the cache
                 $this->cache->set("entity-id-$docId", $entityId);
             }
         }
-        // speed things up with a cache
+
         try {
-            return $this->entityCache->getEntityData($entityId);
-        } catch (EntityNotInCacheException) {
+            return unserialize($this->cache->get("doc-data-$docId"));
+        } catch (KeyNotInCacheException) {
             try {
                 $data = $this->getEntitySystem()->getEntityData($entityId);
-                $this->entityCache->storeEntityData($data);
+                $this->cache->set("doc-data-$docId", serialize($data), self::MemoryCacheTtl);
                 return $data;
             } catch (EntityDoesNotExistException) {
                 throw new DocumentNotFoundException("Document $docId not found");
@@ -507,13 +501,29 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
      * @throws DocumentNotFoundException
      */
     private function getDocAttribute(int $docId, int $predicate) : int|string|null {
-        $docData = $this->getDocumentEntityData($docId);
+
+        $key = "doc_attribute-$docId-$predicate";
         try {
-            return $this->entityCache->getObject($docData->id, $predicate);
-        } catch (EntityNotInCacheException $e) {
-            // should never happen, we just got the data
-            throw new RuntimeException("Cache exception getting doc image source: " . $e->getMessage(), 0, $e);
+            [ $type, $val ] = explode("|", $this->cache->get($key));
+            return match ($type) {
+                'int' => intval($val),
+                'null' => null,
+                default => $val,
+            };
+        } catch (KeyNotInCacheException) {
+            $docData = $this->getDocumentEntityData($docId);
+            $val = $docData->getObjectForPredicate($predicate);
+            $type = 'string';
+            if (is_int($val)) {
+                $type = 'int';
+            }
+            if (is_null($val)) {
+                $type = 'null';
+            }
+            $this->cache->set($key, implode("|", [ $type, $val ]), self::MemoryCacheTtl);
+            return $val;
         }
+
     }
 
     /**

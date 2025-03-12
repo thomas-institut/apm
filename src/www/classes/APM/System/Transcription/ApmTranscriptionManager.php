@@ -91,11 +91,11 @@ class ApmTranscriptionManager extends TranscriptionManager
     use SimpleCacheAware;
     use CodeDebugWithLoggerTrait;
 
-    const ERROR_DOCUMENT_NOT_FOUND = 50;
-    const ERROR_CACHE_ERROR = 51;
-    const ERROR_NO_LOCATIONS = 52;
-    const DEFAULT_CACHE_KEY_PREFIX = 'ApmTM-';
-    const CACHE_TTL = 30 * 24 * 3600;  // 30 days
+    const int ERROR_DOCUMENT_NOT_FOUND = 50;
+    const int ERROR_CACHE_ERROR = 51;
+    const int ERROR_NO_LOCATIONS = 52;
+    const string DEFAULT_CACHE_KEY_PREFIX = 'ApmTM-';
+    const int CACHE_TTL = 30 * 24 * 3600;  // 30 days
 
     // Components that are generated when needed
     private ?PDO $dbConn = null;
@@ -878,16 +878,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                     foreach($localWitnessIdMap as $localWitnessId => $segmentMap) {
                         foreach($segmentMap as $segmentNumber => $segmentLocation) {
                             /** @var $segmentLocation ApmChunkSegmentLocation */
-                            $docId === 116 && $this->logger->debug("Chunk segment location",
-                                [
-                                    'valid' => $segmentLocation->isValid(),
-                                    'status' => $segmentLocation->getStatus(),
-                                    'start' => get_object_vars($segmentLocation->getStart()),
-                                    'end' => get_object_vars($segmentLocation->getEnd()),
-
-                                ]);
                             $versionMap[$workId][$chunkNumber][$docId][$localWitnessId][$segmentNumber] = $this->getVersionsForSegmentLocation($segmentLocation);
-                            $docId === 116 && $this->logger->debug("Versions $workId-$chunkNumber doc $docId seg $segmentNumber", [ 'v' =>  $versionMap[$workId][$chunkNumber][$docId][$localWitnessId][$segmentNumber]]);
                         }
                     }
                 }
@@ -970,12 +961,13 @@ class ApmTranscriptionManager extends TranscriptionManager
         $lastVersions = $this->getLastChunkVersionFromVersionMap($versionMap);
 
         $docArray = $chunkLocationMap[$workId][$chunkNumber] ?? [];
+//        $this->logger->debug("docArray", array_keys($docArray));
         $docManager = $this->getDocumentManager();
         $witnessInfoArray = [];
 
 
         foreach($docArray as $docId => $localWitnessIdArray) {
-            $debug = $docId === 116;
+            $debug = true;
             foreach ($localWitnessIdArray as $localWitnessId => $segmentArray) {
                 try {
                     $docInfo = $docManager->getDocInfo($docId);
@@ -986,7 +978,8 @@ class ApmTranscriptionManager extends TranscriptionManager
                 /** @var $lastVersion ColumnVersionInfo */
                 $lastVersion = $lastVersions[$workId][$chunkNumber][$docId][$localWitnessId];
 
-                $debug && $this->logger->debug("Last version", [ 'lastV' => $lastVersion]);
+//                $debug && $this->logger->debug("Last version", [ 'lastV' => $lastVersion]);
+//                $debug && $this->logger->debug("doc info", get_object_vars($docInfo));
 
                 $witnessInfo = new WitnessInfo();
                 $witnessInfo->type = WitnessType::FULL_TRANSCRIPTION;
@@ -1154,6 +1147,13 @@ class ApmTranscriptionManager extends TranscriptionManager
         return $elements;
     }
 
+    /**
+     * @throws RowAlreadyExists
+     * @throws InvalidTimeStringException
+     * @throws InvalidRowUpdateTime
+     * @throws RowDoesNotExist
+     * @throws Exception
+     */
     public function updateColumnElements(int $pageId, int $columnNumber, array $newElements, string $time = ''): bool|array
     {
         $this->logger->debug("UPDATING COLUMN ELEMENTS, pageId=$pageId, col=$columnNumber");
@@ -1377,7 +1377,7 @@ class ApmTranscriptionManager extends TranscriptionManager
 
 
 
-        if ($element->columnNumber > $pageInfo['num_cols']) {
+        if ($element->columnNumber > $pageInfo->numCols) {
             $this->logger->error('Element being inserted in '
                 . 'non-existent colum',
                 [' pageId' => $element->pageId,
@@ -1516,6 +1516,8 @@ class ApmTranscriptionManager extends TranscriptionManager
             return -1;
         }
     }
+
+
 
 
 
@@ -1918,7 +1920,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         $query = "SELECT DISTINCT $tp.id FROM $tp, $te " .
             "WHERE $te.editor_tid=$userTid AND $te.page_id = $tp.id  AND $tp.doc_id = $docId " .
             "AND $te.valid_until='$eot' AND $tp.valid_until='$eot'";
-        $this->logger->debug("Querying: '$query'");
+//        $this->logger->debug("Querying: '$query'");
         $res = $this->getDatabaseHelper()->query($query);
         if ($res === false) {
             return [];

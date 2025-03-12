@@ -9,7 +9,6 @@ use APM\System\SystemManager;
 class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateTypesenseIndex implements JobHandlerInterface
 {
 
-
     public function run(SystemManager $sm, array $payload): bool
     {
         $logger = $sm->getLogger();
@@ -25,7 +24,7 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateTypesenseIndex impleme
         // Fetch data from payload
         $table_id = $payload[0];
 
-        (new IndexManager($config, 0, [0, 'editions', 'update-add', $table_id]))->run();
+        (new IndexManager($config, 0, [0, 'e', 'update-add', $table_id]))->run();
     }
 
     public function mustBeUnique(): bool

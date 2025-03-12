@@ -88,8 +88,7 @@ export class UiToolBox {
     if (ancestor === null) {
       return -1;
     }
-    return this.getSingleIntIdFromClasses(element, prefix);
-
+    return this.getSingleIntIdFromClasses(ancestor, prefix);
   }
 
   /**
@@ -107,18 +106,23 @@ export class UiToolBox {
    */
   static findAncestorWithTag(element, ancestorTagName, maxAncestorLevel=3, includeElement = true) {
     let currentAncestorLevel = 0;
+    // console.log(`Find ancestor with tag ${ancestorTagName} on max ${maxAncestorLevel} levels`, element);
     if (!includeElement) {
       element = element.parent();
       currentAncestorLevel++;
     }
-    while (currentAncestorLevel <= maxAncestorLevel && element.get(0).tagName !== ancestorTagName) {
+
+    while (currentAncestorLevel <= maxAncestorLevel && element.get(0).tagName.toLowerCase() !== ancestorTagName.toLowerCase()) {
+      // console.log(`Tag ${ancestorTagName} not in level ${currentAncestorLevel}`, element.get(0));
       element = element.parent();
       currentAncestorLevel++;
     }
     if (currentAncestorLevel > maxAncestorLevel) {
       // could not find the tag
+      // console.log(`Could not find tag ${ancestorTagName}, level ${currentAncestorLevel}`, element.get(0));
       return null;
     }
+    // console.log(`Tag ${ancestorTagName} found in level ${currentAncestorLevel}`)
     return element;
   }
 

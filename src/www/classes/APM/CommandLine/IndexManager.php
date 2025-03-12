@@ -23,6 +23,7 @@ namespace APM\CommandLine;
 use APM\CollationTable\CollationTableManager;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
+use APM\System\ApmConfigParameter;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Lemmatizer;
@@ -77,10 +78,18 @@ class IndexManager extends CommandLineUtility
         if ($argv[1] === '-h') {
             $this->printHelp();
             return true;
+        } else if ($argv[1] === 't') {
+            // get target index and operation
+            $this->indexNamePrefix = 'transcriptions';
+        } else if ($argv[1] === 'e') {
+            // get target index and operation
+            $this->indexNamePrefix = 'editions';
+        } else {
+            print ("Command not found. Please check the help via -h.\n");
+            return false;
         }
 
-        // get target index and operation
-        $this->indexNamePrefix = $argv[1];
+        // get t operation
         $operation = $argv[2];
 
         // get names of the indices in OpenSearch
@@ -155,7 +164,7 @@ class IndexManager extends CommandLineUtility
      */
     private function printHelp(): void
     {
-        print("Usage: indexmanager [transcriptions/editions] [operation] [pageID/tableID] [column]\nAvailable operations are:\nbuild - builds the index, deletes already existing one\nadd [arg1] ([arg2]) - adds a single item to an index\nremove [arg1] ([arg2]) - removes a single item from an index\nupdate [arg1] ([arg2]) - updates an already indexed item\nshow [arg1] ([arg2]) - shows an indexed item\nshowdb [arg1] ([arg2]) - shows an item from the database\ncheck ([arg1] ([arg2])) - checks the completeness of an index in total or the correctness of a single item in it\nfix ([arg1] ([arg2])) - fixes a single item or an index in total by indexing not indexed items and updating outdated items\n");
+        print("Usage: indexmanager [t/e] [operation] [pageID/tableID] [column]\nAvailable operations are:\nbuild - builds the index, deletes already existing one\nadd [arg1] ([arg2]) - adds a single item to an index\nremove [arg1] ([arg2]) - removes a single item from an index\nupdate [arg1] ([arg2]) - updates an already indexed item\nshow [arg1] ([arg2]) - shows an indexed item\nshowdb [arg1] ([arg2]) - shows an item from the database\ncheck ([arg1] ([arg2])) - checks the completeness of an index in total or the correctness of a single item in it\nfix ([arg1] ([arg2])) - fixes a single item or an index in total by indexing not indexed items and updating outdated items\n");
     }
 
     /**
@@ -255,7 +264,7 @@ class IndexManager extends CommandLineUtility
     {
         $page_id = $this->getSystemManager()->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
         $elements = $this->getSystemManager()->getTranscriptionManager()->getColumnElementsBypageID($page_id, $col);
-        print_r($elements);
+        //print_r($elements);
         return $this->getPlainTextFromElements($elements);
     }
 
@@ -527,7 +536,11 @@ class IndexManager extends CommandLineUtility
      * Gets all data for editions from the sql database and from the open search index, then compares them and checks the completeness of the index.
      * If ,fix‘ is true, not indexed or outdated editions will be indexed or updated.
      * @param bool $fix
-     * @return bool
+     * @return void
+     * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
      */
     private function checkIndexEditions (bool $fix): void {
 
@@ -892,7 +905,10 @@ class IndexManager extends CommandLineUtility
      * @param string $pageID
      * @param string $col
      * @param string|null $id, null if the adding is not part of an updating process
-     * @return bool
+     * @return void
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
+     * @throws DocumentNotFoundException|EntityDoesNotExistException
      */
     private function addItemToTranscriptionsIndex (string $pageID, string $col, string $id = null): void {
 
@@ -966,7 +982,11 @@ class IndexManager extends CommandLineUtility
      * Checks if the target item is already indexed, and if so, removes it and adds it again in the latest version from sql database.
      * @param string $arg1, page id in case of transcriptions, table id in case of editions
      * @param string|null $arg2 column number in case of transcriptions
-     * @return true
+     * @return void
+     * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
      */
     private function updateItem (string $arg1, string $arg2 = null): void {
 
@@ -1064,6 +1084,10 @@ class IndexManager extends CommandLineUtility
      * @param string $pageID
      * @param string $col
      * @return array
+     * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
      */
     private function getTranscriptionInfoFromDatabase (string $pageID, string $col): array {
 
@@ -1160,6 +1184,10 @@ class IndexManager extends CommandLineUtility
      * @param string $arg2, column number for transcriptions
      * @param $context, value 'show' adjusts the behavior of the method to the process of only showing information about an indexed item
      * @return array
+     * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
      */
     private function getIndexedItemInfo (string $arg1, string $arg2 = null, string $context = null): array {
 
@@ -1272,8 +1300,11 @@ class IndexManager extends CommandLineUtility
     /**
      * Gets all transcriptions for a specific doc id and indexes them.
      * @param string $doc_id
-     * @return bool
-     */
+     * @return void
+     * @throws DocumentNotFoundException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException|EntityDoesNotExistException
+ */
     private function getAndIndexTranscriptionsByDocId (string $doc_id): void {
 
         $title = $this->getTitle($doc_id);
@@ -1390,7 +1421,8 @@ class IndexManager extends CommandLineUtility
      * @param CollationTableManager $ctm
      * @param int $id, collation table ID
      * @return array
-     * @throws \APM\System\Person\PersonNotFoundException
+     * @throws PersonNotFoundException
+     * @throws WorkNotFoundException
      */
     private function getEditionData (CollationTableManager $ctm, int $tableID): array
     {

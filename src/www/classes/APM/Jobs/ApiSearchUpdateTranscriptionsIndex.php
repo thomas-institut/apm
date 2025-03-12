@@ -2,12 +2,18 @@
 
 namespace APM\Jobs;
 
-use APM\CommandLine\IndexManager_Typesense;
+use APM\CommandLine\IndexManager;
+use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
 
 class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateTypesenseIndex implements JobHandlerInterface
 {
+    /**
+     * @throws PageNotFoundException
+     * @throws DocumentNotFoundException
+     */
     public function run(SystemManager $sm, array $payload): bool
     {
         $logger = $sm->getLogger();
@@ -20,15 +26,23 @@ class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateTypesenseIndex i
             return false;
         }
 
+
         // Fetch data from payload
         $doc_id = $payload['doc_id'];
         $page = $payload['page'];
         $col = $payload['col'];
         $page_id = $sm->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
 
+        $argv = [0, 'transcriptions', 'update-add', $page_id, $col];
+        $argc = count($argv);
 
-        (new IndexManager_Typesense($config, 0, [0, 'transcriptions', 'update-add', $page_id, $col]))->run();
 
+       try {
+            (new IndexManager ($config, 0, [0, 't', 'update-add', $page_id, $col]))->run();
+        } catch (\Exception $e) {
+            $sm->getLogger()->error("Exception: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function mustBeUnique(): bool

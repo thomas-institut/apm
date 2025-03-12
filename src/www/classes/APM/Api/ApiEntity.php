@@ -328,7 +328,7 @@ class ApiEntity extends ApiController
             }
         }
 
-        $this->systemManager->onEntityDataChange($entitiesInvolved);
+        $this->systemManager->onEntityDataChange($entitiesInvolved, $this->apiUserId);
 
 
         return $this->responseWithJson($response, [

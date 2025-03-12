@@ -106,7 +106,7 @@ export class DocDefPages extends NormalPage {
     this.pageDiv.html(this.getPageListHtml());
     new DefPagesDefAll(this.options.numPages, 'dap-', this.docInfo['id'], urlGen);
     new DefPagesDefRange(this.options.numPages, 'dr-', this.docInfo['id'], this.pageTypes, urlGen);
-    new WidgetAddPages(this.options.numPages, 'ap-', this.docInfo['id'], urlGen);
+    // new WidgetAddPages(this.options.numPages, 'ap-', this.docInfo['id'], urlGen);
   }
 
   setThumbnailSize(size) {
@@ -314,22 +314,6 @@ export class DocDefPages extends NormalPage {
     </div>
 
 </div>
-</div>
-    
-<div class="row with-top-margin with-bottom-margin def-pages-edit-div">
-    <div class="col-md-6">
-        <h3>Add Pages</h3>
-        <div id="ap-div" class="with-margin-left-sm">
-            <form id="ap-form">
-                 <div id="ap-addpages-fg" class="form-group form-inline" >
-                    Add <input type="number" class="form-control in-text" id="ap-num-pages" value="0" min="0" max="2000"
-                               style="width: 100px;" aria-label="Number of page to add"/> pages at the end of the document
-                 </div>
-                <button type="button" class="btn btn-primary hidden" id="ap-submit-button">Go for it!</button>
-            </form>
-            <span id="ap-status"></span>
-        </div>
-    </div>
 </div>`
   }
 

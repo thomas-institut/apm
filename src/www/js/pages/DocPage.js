@@ -37,6 +37,8 @@ import { MetadataEditorSchema } from '../defaults/MetadataEditorSchemata/Metadat
 import { MetadataEditor2 } from '../MetadataEditor/MetadataEditor2'
 import { WidgetAddPages } from '../WidgetAddPages'
 import { CollapsePanel } from '../widgets/CollapsePanel'
+import { SetLanguage } from '../widgets/SetLanguage'
+import { wait } from '../toolbox/FunctionUtil.mjs'
 
 const TabId_DocDetails = 'doc-info';
 const TabId_Pages = 'page-list';
@@ -397,13 +399,22 @@ export class DocPage extends NormalPage {
       containerSelector: 'div.page-admin',
       title: 'Manage Pages',
       content: this.getPageAdminHtml(),
-      initiallyShown: false,
+      initiallyShown: true,
       iconWhenHidden: '<small><i class="bi bi-caret-right-fill"></i></small>',
       iconWhenShown: '<small><i class="bi bi-caret-down-fill"></i></small>',
       iconAtEnd: true,
     });
 
     new WidgetAddPages('div.add-pages-widget-container', this.docId, this.doc.numPages);
+    new SetLanguage({
+      containerSelector: 'div.set-default-language-container',
+      defaultLanguage: this.doc.docInfo['lang'],
+      confirmMessage: `Are you sure you want to set this language as the default transcription language for ALL pages?`,
+      onSetLanguage: async (newLanguage) => {
+        return this.setDefaultLanguageForAllPages(newLanguage);
+      }
+    });
+
 
     this.selectPage(this.initialPage, false);
     this.maximizeElementsHeight();
@@ -413,6 +424,27 @@ export class DocPage extends NormalPage {
     });
 
 
+  }
+
+  setDefaultLanguageForAllPages(newLanguage) {
+    let pageDefs = [];
+    for(let i = 0; i < this.doc.numPages; i++) {
+      pageDefs.push({
+        docId: this.doc.docInfo['id'],
+        page: i+1,
+        lang: newLanguage
+      });
+    }
+    return new Promise ((resolve, reject) => {
+      $.post(
+        urlGen.apiBulkPageSettings(),
+        { data: JSON.stringify(pageDefs) }
+      ).done( () => {
+          resolve('');
+      }).fail((resp) => {
+         reject('Could not change page settings');
+        })
+    });
   }
 
   maximizeElementsHeight() {
@@ -613,7 +645,7 @@ export class DocPage extends NormalPage {
                 <div class="tab-pane doc-metadata ${tabActiveClasses(TabId_DocDetails)}" id="tab-${TabId_DocDetails}">
                     <div class="metadata-editor">
                     </div>
-                    <div class="doc-admin">${this.getAdminHtml()}</div> 
+                   
                 </div>
                 <div class="tab-pane panel-with-toolbar page-list-panel ${tabActiveClasses(TabId_Pages)}" id="tab-${TabId_Pages}">
                    <div class="panel-toolbar">
@@ -621,8 +653,7 @@ export class DocPage extends NormalPage {
                    </div>
                    <div class="panel-content">
                     <div class="page-list"></div>
-                    <div class="page-admin">
-                </div>
+                    <div class="page-admin">                </div>
                     
                    </div>
                 </div>
@@ -644,13 +675,23 @@ export class DocPage extends NormalPage {
   }
 
   getPageAdminHtml() {
+    let defineDocPagesUrl = urlGen.siteDocDefinePages(Tid.toBase36String(this.docId));
+    let definePagesHtml = this.canDefinePages ?
+      `<a class="btn btn-sm btn-primary" href="${defineDocPagesUrl}">Define pages</a>` : '';
+
     return `
         <div class="page-admin-section">
-            <h5>Add pages</h5><div class="add-pages-widget-container"></div>
+            <h5>Add pages</h5><div class="add-pages-widget-container indent-m"></div>
+            <h5>Set Default Language for All Pages</h5>
+            <div class="set-default-language-container indent-m" style="display: flex; flex-direction: row; gap: 0.5em"></div>
+            <h5>Define Pages</h5>
+            <div class="indent-m">
+            ${definePagesHtml}
+            </div>
+            </div>
         </div>
     `
   }
-
 
   /**
    * Shows a page in the viewer
@@ -721,6 +762,7 @@ export class DocPage extends NormalPage {
             this.pages[pageIndex].foliationIsSet = true;
             this.rebuildPageList()
             this.selectPage(pageSequence, false);
+            $(`div.page-info .page-info-foliation`).html(newText);
           }).catch( (e) => {
             console.warn(`Error saving foliation for page ${pageIndex}: ${e}`);
             foliationWarningElement.html(`Error saving foliation`);
@@ -747,7 +789,7 @@ export class DocPage extends NormalPage {
    */
   async saveFoliation(pageIndex, newFoliation) {
     let page = this.pages[pageIndex]
-    await this.apmDataProxy.savePageSettings(page['pageId'], newFoliation, page['type'], page['langCode'])
+    await this.apmDataProxy.savePageSettings(page['pageId'], newFoliation, page['type'], page['lang'])
   }
 
   getPageInfoHtml(pageIndex) {

@@ -20,11 +20,10 @@
 
 import { TranscriptionEditor } from './TranscriptionEditor'
 import { urlGen } from '../common/SiteUrlGen'
-import { ApmUtil } from '../../ApmUtil'
 import { ApmPage } from '../ApmPage'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import * as Entity from '../../constants/Entity'
 import { TranscriptionLanguages } from '../../constants/TranscriptionLanguages'
+import { getPageTypeName, getPageTypes } from '../../constants/PageTypes'
 
 
 
@@ -43,6 +42,7 @@ export class PageViewer extends ApmPage {
         docId: { type: 'integer', required: true},
         pageId: { type: 'integer', required: true},
         activeColumn: { type: 'integer', required: true},
+        pageInfo: { type: 'object', required: true },
       }
     });
 
@@ -55,7 +55,10 @@ export class PageViewer extends ApmPage {
     this.pageNumber  = this.options.pageNumber;
     this.seq = this.options.seq;
     this.pageId = this.options.pageId;
+    this.pageInfo = this.options.pageInfo;
+    console.log("Page Info", this.pageInfo);
     this.column = this.options.activeColumn;
+    this.defaultLang = this.options.pageInfo.lang;
 
     TranscriptionEditor.init(this.commonData.baseUrl);
 
@@ -111,7 +114,11 @@ export class PageViewer extends ApmPage {
     })
 
     this.splitPaneElements.on('dividerdragend', this.genOnDividerDragEnd())
-    this.osdViewer.addHandler('zoom', this.genOnOsdZoom())
+    this.osdViewer.addHandler('zoom', this.genOnOsdZoom());
+
+
+    $('#pageInfoLang').html(this.langDef[this.defaultLang]['name']);
+    $('#pageInfoType').html(getPageTypeName(this.pageInfo['type']));
     
     $('#realAddColumnButton').on('click', 
       this.genOnClickRealAddColumnButton())
@@ -233,7 +240,7 @@ export class PageViewer extends ApmPage {
                 editorTid: this.userId ,
                 activeWorks: this.options.activeWorks,
                 langDef: this.langDef,
-                defaultLang: this.options.defaultLang,
+                defaultLang: this.langDef[this.options.defaultLang]['code'],
                 containerId: 'editor-pane',
             })
             te.setData(respColData)
@@ -342,8 +349,13 @@ export class PageViewer extends ApmPage {
     return  () => {
       let pageSettingsForm = $('#pageSettingsForm');
       console.log('Updating page settings');
-      console.log(pageSettingsForm.serialize());
-      $.post(apiUpdatePageSettingsUrl, pageSettingsForm.serialize())
+      let apiPostData = {
+        type: parseInt($('#editPage-type').val()),
+        foliation: $('#editPage-foliation').val(),
+        lang: parseInt($('#editPage-lang').val()),
+      }
+      console.log('Updating page settings', apiPostData, pageSettingsForm.serialize());
+      $.post(apiUpdatePageSettingsUrl, apiPostData)
         .done(() =>  {
           location.replace('');
         })
@@ -450,30 +462,23 @@ export class PageViewer extends ApmPage {
     return  ()=>  {
 
       let optionsHtml = ''
-      let langDef = this.langDef
-      for (const lang in langDef) {
-        if (!langDef.hasOwnProperty(lang)) {
-          continue
-        }
-        optionsHtml += '<option value="' + lang + '"'
-        if (this.options.defaultLang === lang) {
-          optionsHtml += ' selected'
-        }
-        optionsHtml += '>' + langDef[lang].name + '</option>'
+
+
+      for(let i = 0; i < TranscriptionLanguages.length; i++) {
+        let langData = TranscriptionLanguages[i];
+        let selected = langData['id'] === this.pageInfo['lang'] ? 'selected' : '';
+        optionsHtml += `<option value=${langData['id']} ${selected}>${langData['name']}</option>`
       }
+
       $('#editPage-lang').html(optionsHtml)
 
       let optionsType = ''
-      for (const type of this.options.pageTypeNames) {
-        optionsType += '<option value="' + type.id + '"'
-        if (this.options.pageType === parseInt(type.id)) {
-          optionsType += ' selected'
-        }
-        optionsType += '>' + type.descr + '</option>'
+      let pageTypes = getPageTypes();
+      for (let i = 0; i < pageTypes.length; i++) {
+        let selected = pageTypes[i] === this.pageInfo['type'] ? 'selected' : '';
+        optionsType += `<option value="${pageTypes[i]}" ${selected}>${getPageTypeName(pageTypes[i])}</option>`
       }
       $('#editPage-type').html(optionsType)
-
-
       $('#editPage-foliation').val(this.options.foliation)
       $('#editPageModal').modal('show')
     }

@@ -1,12 +1,12 @@
 {
-    
+
     "name": "thomas-institut/apm",
     "description": "Averroes Project Manager",
     "type": "application",
     "keywords": ["mss"],
     "homepage": "https://averroes.uni-koeln.de",
     "license": "GPL-3.0-or-later",
-    
+
     "require": {
         "php": ">=8.3",
         "ext-pdo": "*",
@@ -34,7 +34,7 @@
         "php-http/curl-client": "^2.3",
         "typesense/typesense-php": "^4.9"
     },
-    
+
     "require-dev": {
         "guzzlehttp/guzzle": "^7.5",
         "phpunit/phpunit": "^12.0"
@@ -47,7 +47,7 @@
             "php-http/discovery": true
         }
     },
-    
+
     "autoload": {
         "psr-4": {
             "" : "classes/",

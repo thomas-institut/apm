@@ -34,7 +34,6 @@ class ApiSearch extends ApiController
         $status = 'OK';
         $now = TimeString::now();
 
-
         // Get all user input!
         $corpus = $_POST['corpus'];
         $searched_phrase = $this->removeBlanks(strtolower($_POST['searched_phrase'])); // Lower-case and without additional blanks
@@ -102,7 +101,6 @@ class ApiSearch extends ApiController
 
         //$this->profiler->lap("getData");
 
-
         // Until now, there was no check, if the queried keywords are close enough to each other, depending on the keywordDistance value
         // If there is more than one token in the searched phrase, now  all columns and passages, which do not match all tokens in the desired way,
         // get filtered out
@@ -124,8 +122,6 @@ class ApiSearch extends ApiController
             $num_passages_cropped = $this->getNumPassages($data);
             $cropped = true;
         }
-
-
 
         // ApiResponse
         return $this->responseWithJson($response, [
@@ -241,7 +237,6 @@ class ApiSearch extends ApiController
         return array_values($tokensForQuery);
     }
 
-
     // Get full number of passages stored in data-array
     private function getNumPassages(array $data): int {
 
@@ -258,7 +253,7 @@ class ApiSearch extends ApiController
         $num_passages_cropped = 0;
         foreach ($data as $i=>$matched_column) {
             if ($num_passages_cropped > $max_passages) {
-                $data = array_slice($data,0, $i);
+                $data = array_slice($data, $i);
                 break;
             }
             $num_passages_cropped = $num_passages_cropped + $matched_column['num_passages'];
@@ -302,7 +297,6 @@ class ApiSearch extends ApiController
         return $searched_phrase;
     }
 
-
     // Function to query a given TypeSense-index
     private function makeTypesenseSearchQuery ($client, $index_name, $lang, $title, $creator, $tokens, $lemmatize, $corpus) {
 
@@ -325,7 +319,6 @@ class ApiSearch extends ApiController
                 $area_of_query = 'edition_tokens';
             }
         }
-
 
         $searchParameters = [
             'q' => '',
@@ -424,7 +417,6 @@ class ApiSearch extends ApiController
                 // Merge positions to one ordered array without duplicates
                 $pos_all = array_unique(array_merge($pos_lower, $pos_upper));
                 sort($pos_all);
-
 
 //                if (count($pos_all) === 2 && ($pos_all[1]-$pos_all[0])<$keywordDistance) {
 //                        unset($pos_all[0]);
@@ -812,18 +804,11 @@ class ApiSearch extends ApiController
         return $values;
     }
 
-    static public function updateDataCache (SystemManager $systemManager, string $whichindex) {
+    static public function updateDataCache (SystemManager $systemManager, $client, string $whichindex) {
 
         $cache = $systemManager->getSystemDataCache();
 
         $config = $systemManager->getConfig();
-
-        // Instantiate typesense client
-        try {
-            $client = self::instantiateTypesenseClient($config);
-        } catch (Exception $e) {
-            return false;
-        }
 
         if ($whichindex === 'transcriptions')
         {
@@ -903,6 +888,28 @@ class ApiSearch extends ApiController
     }
 
     public function instantiateTypesenseClient($config) {
+        try {
+            $client = new Client(
+                [
+                    'api_key' => $config[ApmConfigParameter::TYPESENSE_KEY],
+                    'nodes' => [
+                        [
+                            'host' => $config[ApmConfigParameter::TYPESENSE_HOST], // For Typesense Cloud use xxx.a1.typesense.net
+                            'port' => $config[ApmConfigParameter::TYPESENSE_PORT],      // For Typesense Cloud use 443
+                            'protocol' => $config[ApmConfigParameter::TYPESENSE_PROTOCOL],      // For Typesense Cloud use https
+                        ],
+                    ],
+                    'connection_timeout_seconds' => 2,
+                ]
+            );
+
+            return $client;
+        } catch (\Typesense\Exceptions\ConfigError $e) {
+            return false;
+        }
+    }
+
+    static public function getTypesenseClient($config) {
         try {
             $client = new Client(
                 [

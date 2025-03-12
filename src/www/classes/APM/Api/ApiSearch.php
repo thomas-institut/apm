@@ -11,6 +11,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
+use function MongoDB\BSON\toRelaxedExtendedJSON;
 
 class ApiSearch extends ApiController
 {
@@ -333,6 +334,8 @@ class ApiSearch extends ApiController
             $searchParameters['q'] = $searchParameters['q'] . " " . $token; // complex tokens are lemmatized as strings of lemmata, separated by blanks
         }
 
+        $searchParameters['q'] = $tokens[0];
+
         if ($creator !== '') {
             $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && creator:=$creator";
         }
@@ -358,7 +361,9 @@ class ApiSearch extends ApiController
             $page++;
         }
 
-        // $this->logger->debug("NUM DOCUMENTS " . count($hits));
+        //$print = print_r($hits, true);
+        //file_put_contents('hits.txt', $print);
+        $this->logger->debug("NUM DOCUMENTS " . count($hits));
         return $hits;
     }
 
@@ -506,6 +511,7 @@ class ApiSearch extends ApiController
                         'passage_lemmatized' => $passage_lemmatized,
                         'lemmatize' => $lemmatize,
                         //'score' => $score
+                        'matched_token_positions' => $matched_token_positions
                     ];
                 }
 

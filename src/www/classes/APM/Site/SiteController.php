@@ -26,7 +26,6 @@
 
 namespace APM\Site;
 
-use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
 use APM\System\ApmImageType;
 use APM\System\ApmSystemManager;
@@ -159,8 +158,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
                 'cacheDataId' => $this->config['jsAppCacheDataId'],
                 'userInfo' => $this->getSiteUserInfo(),
                 'showLanguageSelector' => $this->config['siteShowLanguageSelector'],
-                'baseUrl' => $this->getBaseUrl(),
-                'wsServerUrl' => $this->config['wsServerUrl'],
+                'baseUrl' => $this->getBaseUrl()
             ];
             $data['baseUrl'] = $this->getBaseUrl();
         }

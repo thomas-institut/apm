@@ -57,26 +57,30 @@ class IntRange implements Range {
         }
         return new IntRange($start, $end-$start+1);
     }
-    
+
     /**
      * Utility factory method, same as normal constructor
      * @param int $start
      * @param int $length
-     * @return \AverroesProject\Core\Range
+     * @return IntRange
      */
-    static public function RangeFromStartLength(int $start, int $length){
+    static public function RangeFromStartLength(int $start, int $length): IntRange
+    {
         return new IntRange($start, $length);
     }
     
-    public function getLength() {
+    public function getLength(): int
+    {
         return $this->length;
     }
     
-    public function getStart() {
+    public function getStart(): int
+    {
         return $this->start;
     }
     
-    public function getEnd() {
+    public function getEnd(): int
+    {
         return $this->start + $this->length - 1;
     }
     

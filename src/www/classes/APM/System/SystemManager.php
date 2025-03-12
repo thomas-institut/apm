@@ -28,7 +28,6 @@ use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
-use APM\Session\SessionManager;
 use APM\System\Document\DocumentManager;
 use APM\System\Job\JobQueueManager;
 use APM\System\Person\PersonManagerInterface;
@@ -150,7 +149,6 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getTranscriptionManager() : TranscriptionManager;
     abstract public function getCollationTableManager() : CollationTableManager;
     abstract public function getMultiChunkEditionManager() : MultiChunkEditionManager;
-    abstract public function getSessionManager() : SessionManager;
     abstract public function getSystemDataCache() : DataCache;
     abstract public function getMemDataCache() : DataCache;
     abstract public function getBaseUrl(): string;

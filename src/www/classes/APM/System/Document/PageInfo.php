@@ -98,10 +98,9 @@ class PageInfo
         $this->docId = intval($row['doc_id']);
         $this->pageNumber = intval($row['page_number']);
         $this->imageNumber = intval($row['img_number']);
-        $this->lang = intval($row['lang']);
         $this->sequence = intval($row['seq']);
         $this->type = intval($row['type']);
-        $this->lang = intval($row['lang']); // ADDED by Lukas
+        $this->lang = intval($row['lang']);
         $this->numCols = (int)$row['num_cols'];
         if (is_null($row['foliation'])) {
             $this->foliation = $this->sequence;

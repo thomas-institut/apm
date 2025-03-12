@@ -3,14 +3,9 @@
 namespace APM\Jobs;
 
 use APM\CommandLine\IndexManager;
-use APM\EntitySystem\Exception\EntityDoesNotExistException;
-use APM\System\Document\Exception\DocumentNotFoundException;
-use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Job\JobHandlerInterface;
-use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
 use Exception;
-use ThomasInstitut\DataTable\InvalidTimeStringException;
 
 class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
 {

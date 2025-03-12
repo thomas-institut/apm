@@ -13,9 +13,11 @@ use APM\System\SystemManager;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use APM\ToolBox\HttpStatus;
+use Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
@@ -164,7 +166,7 @@ class ApiPeople extends ApiController
                         $personData = $es->getEntityData($tid);
                     } catch (EntityDoesNotExistException) {
                         // should never happen
-                        throw new \RuntimeException("Entity from all people list does not exist: $tid");
+                        throw new RuntimeException("Entity from all people list does not exist: $tid");
                     }
 
                     $partData[] = [
@@ -189,7 +191,7 @@ class ApiPeople extends ApiController
             $data = self::buildAllPeopleDataForPeoplePage($systemManager->getEntitySystem(), $systemManager->getSystemDataCache(), $systemManager->getLogger());
             $systemManager->getSystemDataCache()->set(CacheKey::ApiPeople_PeoplePageData_All,
                 serialize($data), self::AllPeopleDataForPeoplePageTtl);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $systemManager->getLogger()->error("Exception while updating cached AllPeopleEssentialData",
                 [
                     'code' => $e->getCode(),
@@ -253,7 +255,7 @@ class ApiPeople extends ApiController
             $this->logger->error("Invalid name creating person");
             return $this->responseWithJson($response, [ 'errorMsg' => 'Invalid name' ], HttpStatus::BAD_REQUEST);
         }
-        $this->systemManager->onEntityDataChange($tid);
+        $this->systemManager->onEntityDataChange($tid, $this->apiUserId);
         // the person has been created
         return $this->responseWithJson($response, [ 'tid' => $tid ], HttpStatus::SUCCESS);
 

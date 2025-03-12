@@ -39,7 +39,7 @@ use RuntimeException;
 class ApiDocuments extends ApiController
 {
 
-    const CLASS_NAME = 'Documents';
+    const string CLASS_NAME = 'Documents';
 
     /**
      * @param Request $request
@@ -302,8 +302,6 @@ class ApiDocuments extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DocumentNotFoundException
-     * @throws PageNotFoundException
      */
     public function updatePageSettingsBulk(Request $request, Response $response) : Response
     {

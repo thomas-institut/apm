@@ -5,13 +5,9 @@ namespace APM\CommandLine\Migration31to32;
 use APM\CommandLine\CommandLineUtility;
 use APM\System\ApmMySqlTableName;
 use APM\ToolBox\FullName;
-use DateTime;
 use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\RowDoesNotExist;
-use ThomasInstitut\EntitySystem\Tid;
-use ThomasInstitut\TimeString\InvalidTimeZoneException;
-use Transliterator;
 
 class GenerateSlugs extends CommandLineUtility
 {

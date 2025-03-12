@@ -20,7 +20,7 @@
 
 namespace APM\System\Transcription\TxText;
 
-use AverroesProject\TxText\InvalidArgumentException;
+use InvalidArgumentException;
 
 /**
  * Description of TtiRubric

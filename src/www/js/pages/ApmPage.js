@@ -35,7 +35,6 @@ export class ApmPage {
             userInfo: { type: 'object'},
             siteLanguage: { type: 'string', default: ''},
             showLanguageSelector: { type: 'boolean', default: false},
-            // wsServerUrl: { required: true, type: 'object'}
           }
         }
       }

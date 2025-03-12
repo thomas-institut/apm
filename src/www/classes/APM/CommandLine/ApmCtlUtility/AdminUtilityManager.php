@@ -1,9 +1,11 @@
 <?php
 
-namespace APM\CommandLine;
+namespace APM\CommandLine\ApmCtlUtility;
 
 
 
+
+use APM\CommandLine\CommandLineUtility;
 
 class AdminUtilityManager extends CommandLineUtility
 {

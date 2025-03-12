@@ -90,7 +90,7 @@ class WitnessSystemId
         $witnessInfo->systemId = $witnessSystemId;
         $witnessInfo->typeSpecificInfo = [
             'docId' => intval($fields[3]),
-            'localWitnessId' => isset($fields[4]) ? $fields[4] : 'A',
+            'localWitnessId' => $fields[4] ?? 'A',
             'timeStamp' => isset($fields[5]) ? TimeString::compactDecode($fields[5]) : '',
         ];
 

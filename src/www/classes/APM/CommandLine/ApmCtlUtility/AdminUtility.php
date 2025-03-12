@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\CommandLine;
+namespace APM\CommandLine\ApmCtlUtility;
 
 interface AdminUtility
 {

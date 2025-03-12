@@ -28,34 +28,34 @@ use ThomasInstitut\DataCache\KeyNotInCacheException;
 class ApiEntity extends ApiController
 {
 
-    const Error_NoError = 0;
-    const Error_UserNotAuthorized = 2001;
-    const Error_InvalidInput = 2002;
-    const Error_NoCommandsInInput = 2003;
+    const int Error_NoError = 0;
+    const int Error_UserNotAuthorized = 2001;
+    const int Error_InvalidInput = 2002;
+    const int Error_NoCommandsInInput = 2003;
 
-    const Error_NoCommand = 2004;
-    const Error_NoStatementId = 2005;
-    const Error_InvalidCommand = 2006;
-    const Error_PredicateCannotBeCancelled = 2007;
-    const Error_StatementAlreadyCancelled = 2008;
-    const Error_StatementNotFound = 2009;
+    const int Error_NoCommand = 2004;
+    const int Error_NoStatementId = 2005;
+    const int Error_InvalidCommand = 2006;
+    const int Error_PredicateCannotBeCancelled = 2007;
+    const int Error_StatementAlreadyCancelled = 2008;
+    const int Error_StatementNotFound = 2009;
 
-    const Error_MissingRequiredParameter = 2010;
-    const Error_InvalidQualificationsArray = 2011;
+    const int Error_MissingRequiredParameter = 2010;
+    const int Error_InvalidQualificationsArray = 2011;
 
-    const Error_InvalidObject = 2012;
-    const Error_InvalidSubject = 2013;
-    const Error_InvalidStatement = 2014;
+    const int Error_InvalidObject = 2012;
+    const int Error_InvalidSubject = 2013;
+    const int Error_InvalidStatement = 2014;
 
-    const Error_SomeCommandsFailed = 2015;
+    const int Error_SomeCommandsFailed = 2015;
 
-    const Error_InvalidParameter = 2016;
-    const Error_PredicateNotFound = 2017;
-    const Error_SystemPredicateNotAllowedForApiUsers = 2018;
+    const int Error_InvalidParameter = 2016;
+    const int Error_PredicateNotFound = 2017;
+    const int Error_SystemPredicateNotAllowedForApiUsers = 2018;
 
 
-    const MaxNameSearchMatches = 10;
-    const CacheId = '001';
+    const int MaxNameSearchMatches = 10;
+    const string CacheId = '001';
 
     /**
      * API call:
@@ -582,13 +582,6 @@ class ApiEntity extends ApiController
         }
         return $index;
     }
-
-
-    public static function test(Request $request, Response $response): Response {
-        $response->getBody()->write("Test!!!");
-        return $response;
-    }
-
 
 
     private function normalizeName(string $name) : string {

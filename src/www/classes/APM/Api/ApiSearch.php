@@ -1,27 +1,25 @@
 <?php
 namespace APM\Api;
 
-use APM\System\ApmConfigParameter;
 use APM\System\Cache\CacheKey;
 use APM\System\Lemmatizer;
 use APM\System\SystemManager;
 use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
 use PHPUnit\Util\Exception;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
 
 class ApiSearch extends ApiController
 {
 
-    const CLASS_NAME = 'Search';
+    const string CLASS_NAME = 'Search';
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws KeyNotInCacheException
      */
 
     // Function to search in an OpenSearch-Index – returns an api response to js
@@ -256,12 +254,12 @@ class ApiSearch extends ApiController
         $searched_phrase = preg_replace('!\s+!', ' ', $searched_phrase);
 
         // Remove blank at the end of the keyword
-        if (substr($searched_phrase, -1) == " ") {
+        if (str_ends_with($searched_phrase, " ")) {
             $searched_phrase = substr($searched_phrase, 0, -1);
         }
 
         // Remove blank at the beginning of the keyword
-        if (substr($searched_phrase, 0, 1) == " ") {
+        if (str_starts_with($searched_phrase, " ")) {
             $searched_phrase = substr($searched_phrase, 1);
         }
 

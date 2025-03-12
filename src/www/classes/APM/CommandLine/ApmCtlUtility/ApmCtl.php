@@ -1,12 +1,6 @@
 <?php
 
-namespace APM\CommandLine;
-
-use APM\CommandLine\ApmCtlUtility\CacheTool;
-use APM\CommandLine\ApmCtlUtility\EntityTool;
-use APM\CommandLine\ApmCtlUtility\JobQueueTool;
-use APM\CommandLine\ApmCtlUtility\TranscriptionTool;
-use APM\CommandLine\ApmCtlUtility\UserTool;
+namespace APM\CommandLine\ApmCtlUtility;
 
 class ApmCtl extends AdminUtilityManager
 {

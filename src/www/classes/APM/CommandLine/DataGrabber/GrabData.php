@@ -1,10 +1,9 @@
 <?php
 
-namespace APM\CommandLine;
+namespace APM\CommandLine\DataGrabber;
 
 
-use APM\CommandLine\DataGrabber\ViafIdGrabber;
-use APM\CommandLine\DataGrabber\WikiDataGrabber;
+use APM\CommandLine\ApmCtlUtility\AdminUtilityManager;
 
 class GrabData extends AdminUtilityManager
 {

@@ -20,8 +20,6 @@
 namespace APM\CollationTable;
 
 
-use APM\Core\Collation\CollationTable;
-use APM\Core\Token\TokenType;
 use APM\StandardData\StandardTokenClass;
 use APM\StandardData\StandardTokenType;
 use APM\System\WitnessSystemId;
@@ -34,7 +32,7 @@ use ThomasInstitut\TimeString\TimeString;
  *
  * Manages stored collation table standard data structures in the system
  *
- * Each collation table has an integer Id and a number of versions identified by
+ * Each collation table has an integer id and a number of versions identified by
  * a TimeString
  *
  *
@@ -188,7 +186,7 @@ abstract class CollationTableManager implements ErrorReporter
         $editionWitnessIndex = count($collationTableData['sigla']);
         $newData['sigla'][] = '-';
         $newData['witnessTitles'][] = 'Edition';
-        $oldOrder = isset($collationTableData['witnessOrder']) ? $collationTableData['witnessOrder'] : [];
+        $oldOrder = $collationTableData['witnessOrder'] ?? [];
         if ($oldOrder === []) {
             for($i=0; $i<count($collationTableData['witnesses']); $i++){
                 $oldOrder[] = $i;
@@ -229,8 +227,8 @@ abstract class CollationTableManager implements ErrorReporter
                             'tokenClass' => StandardTokenClass::EDITION,
                             'tokenType' => $witnessToken['tokenType'],
                             'text' => $witnessToken['text'],
-                            'normalizedText' => isset($witnessToken['normalizedText']) ? $witnessToken['normalizedText'] : '',
-                            'normalizationSource' => isset($witnessToken['normalizationSource']) ? $witnessToken['normalizationSource'] : '',
+                            'normalizedText' => $witnessToken['normalizedText'] ?? '',
+                            'normalizationSource' => $witnessToken['normalizationSource'] ?? '',
                             ];
                     }
 

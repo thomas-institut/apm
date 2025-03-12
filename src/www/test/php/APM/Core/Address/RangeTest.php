@@ -18,13 +18,12 @@
  *  
  */
 
-namespace Test\APM;
-
-use PHPUnit\Framework\TestCase;
+namespace APM\Test\Core\Address;
 
 use APM\Core\Address\IntRange;
-use APM\Core\Address\PointRange;
 use APM\Core\Address\Point;
+use APM\Core\Address\PointRange;
+use PHPUnit\Framework\TestCase;
 
 
 /**
@@ -47,19 +46,19 @@ class RangeTest extends TestCase {
         
         $exceptionRaised1 = false;
         try {
-            $range3 = new IntRange(10,0);
+            new IntRange(10,0);
         } catch (\RangeException $ex) {
             $exceptionRaised1 = true;
         }
         $this->assertTrue($exceptionRaised1);
         
         $range3 = IntRange::RangeFromStartEnd(1, 2);
-        $this->assertEquals(1, $range1->getLength());
+        $this->assertEquals(2, $range3->getLength());
         
         $exceptionRaised2 = false;
         try {
-            $range4 = IntRange::RangeFromStartEnd(1, 0);
-        } catch (\RangeException $ex) {
+            IntRange::RangeFromStartEnd(1, 0);
+        } catch (\RangeException) {
             $exceptionRaised2 = true;
         }
         $this->assertTrue($exceptionRaised2);

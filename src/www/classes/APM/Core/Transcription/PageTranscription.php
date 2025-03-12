@@ -20,7 +20,6 @@
 
 namespace APM\Core\Transcription;
 
-use APM\Core\Transcription\ItemInPage;
 use OutOfBoundsException;
 
 /**

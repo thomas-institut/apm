@@ -41,6 +41,7 @@ use DateInterval;
 use DateTime;
 use Exception;
 use Monolog\Logger;
+use PHPUnit\Framework\Attributes\CodeCoverageIgnore;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -142,12 +143,11 @@ class Authenticator {
 
     /**
      * Logs a debug message in the logger
-     * @codeCoverageIgnore
      *
      * @param string $msg
      * @param array $data
      */
-    private function debug(string $msg, array $data=[]): void
+    #[CodeCoverageIgnore] private function debug(string $msg, array $data=[]): void
     {
         if ($this->debugMode){
             $this->logger->debug($msg, $data);

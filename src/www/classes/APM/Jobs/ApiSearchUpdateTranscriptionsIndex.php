@@ -7,6 +7,7 @@ use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
 use APM\CommandLine\IndexManager;
+use Exception;
 
 class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateOpenSearchIndex implements JobHandlerInterface
 {
@@ -32,7 +33,7 @@ class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateOpenSearchIndex 
 
         try {
             return (new IndexManager($config, $argc, $argv))->main($argc, $argv);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $sm->getLogger()->error("Exception: " . $e->getMessage());
             return false;
         }

@@ -17,10 +17,10 @@
  *  
  */
 
-namespace Test\AverroesProjectToApm;
+namespace APM\Test\System\Transcription;
 
-use AverroesProject\ColumnElement\Element;
-use AverroesProjectToApm\AddressInDatabaseItemStream;
+use APM\System\Transcription\AddressInDatabaseItemStream;
+use APM\System\Transcription\ColumnElement\Element;
 use PHPUnit\Framework\TestCase;
 
 class AddressInDatabaseItemStreamTest extends TestCase

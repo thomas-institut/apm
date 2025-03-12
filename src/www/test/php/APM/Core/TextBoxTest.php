@@ -18,7 +18,7 @@
  *  
  */
 
-namespace Test\APM;
+namespace APM\Test\Core;
 
 
 use InvalidArgumentException;

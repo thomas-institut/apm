@@ -5,8 +5,6 @@ namespace APM\CommandLine\ApmCtlUtility;
 
 
 use APM\Api\ApiPeople;
-use APM\Api\ApiSystem;
-use APM\CommandLine\AdminUtility;
 use APM\CommandLine\CommandLineUtility;
 use APM\System\ApmMySqlTableName;
 use APM\System\Cache\CacheKey;

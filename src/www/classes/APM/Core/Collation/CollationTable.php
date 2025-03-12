@@ -249,14 +249,14 @@ class CollationTable implements LoggerAwareInterface, CodeDebugInterface {
     public function setReferencesForRow($siglum, $referenceArray) {
         // check token counts
         if (count($referenceArray) !== $this->getTokenCount()) {
-            throw new \InvalidArgumentException("Expected " . $this->getTokenCount() . " references in array, got" . count($referenceArray));
+            throw new InvalidArgumentException("Expected " . $this->getTokenCount() . " references in array, got" . count($referenceArray));
         }
 
         //make sure that each reference in the given reference array points to an existing token in the witness
         $maxValidReference = count($this->getWitness($siglum)->getTokens()) - 1;
         foreach($referenceArray as $ref) {
             if ($ref !== -1 && $ref > $maxValidReference) {
-                throw new \InvalidArgumentException("Invalid reference $ref in reference array");
+                throw new InvalidArgumentException("Invalid reference $ref in reference array");
             }
         }
         $this->referenceMatrix[$siglum] = $referenceArray;

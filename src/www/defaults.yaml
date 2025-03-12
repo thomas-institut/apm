@@ -28,8 +28,6 @@ pdfRenderer:  '../python/pdf-renderer.py'
 typeSetter:  'node ../node/typesetStdinJson.mjs'
 daemonPidFile: '/tmp/apmd.pid'
 
-wsServerUrl: 'ws://localhost:5555'
-
 siteShowLanguageSelector:  false
 
 collationEngine: 'CollatexHttp'

@@ -20,6 +20,8 @@
 
 namespace APM\System\Decorators;
 
+use APM\Api\PersonInfoProvider\PersonInfoProvider;
+use APM\Api\PersonInfoProvider\SimplePersonInfoProvider;
 use APM\Core\Address\IntRange;
 use APM\Core\Address\Point;
 use APM\Core\Collation\CollationTable;
@@ -32,8 +34,7 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
-use ThomasInstitut\UserManager\PersonInfoProvider;
-use ThomasInstitut\UserManager\SimplePersonInfoProvider;
+
 
 /**
  * Decorator for AverroesProject collation tables
@@ -96,7 +97,7 @@ class ApmCollationTableDecorator implements CollationTableDecorator, LoggerAware
         }
         $decoratedCollationTable['people'] = $people;
 
-        // aggregate non token indexes for each witness
+        // aggregate non-token indexes for each witness
         // Attention: the keys of each aggregatedIndexes array refers to the
         // an item index!
 

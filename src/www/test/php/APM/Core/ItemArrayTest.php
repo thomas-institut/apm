@@ -18,16 +18,19 @@
  *  
  */
 
-namespace Test\APM;
+namespace APM\Test\Core;
 
 
+
+use APM\System\Transcription\ColumnElement\Line;
+use APM\System\Transcription\TxText\Item;
+use APM\System\Transcription\TxText\ItemArray;
+use APM\System\Transcription\TxText\Rubric;
+use APM\System\Transcription\TxText\Text;
 use APM\ToolBox\MyersDiff;
-use AverroesProject\ColumnElement\Line;
+use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
-use AverroesProject\TxText\Item;
-use AverroesProject\TxText\ItemArray;
-use AverroesProject\TxText\Text;
-use AverroesProject\TxText\Rubric;
 
 /**
  * Description of ItemArrayTest
@@ -40,15 +43,15 @@ class ItemArrayTest extends TestCase
     public function testAddBadItem()
     {
         $ia = [];
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         ItemArray::addItem($ia, new Line());
     }
 
     public function testAddBadItem2()
     {
         $ia = [];
-        $this->expectException(\InvalidArgumentException::class);
-        ItemArray::addItem($ia, "somestring");
+        $this->expectException(InvalidArgumentException::class);
+        ItemArray::addItem($ia, "someString");
     }
     
     public function testAddItemsWithSequence()
@@ -104,10 +107,9 @@ class ItemArrayTest extends TestCase
     }
 
     /**
-     * @depends testAddOrderedItems
      * @param array $ia
      */
-    public function testSetLang(array $ia)
+    #[Depends('testAddOrderedItems')] public function testSetLang(array $ia)
     {
         foreach($ia as $item) {
             $this->assertEquals(Item::LANG_NOT_SET, $item->lang);
@@ -129,10 +131,9 @@ class ItemArrayTest extends TestCase
     }
 
     /**
-     * @depends testAddOrderedItems
      * @param array  $ia
      */
-    public function testSetHandId(array $ia)
+    #[Depends('testAddOrderedItems')] public function testSetHandId(array $ia)
     {
         foreach($ia as $item) {
             $this->assertEquals(Item::ID_NOT_SET, $item->handId);
@@ -166,9 +167,8 @@ class ItemArrayTest extends TestCase
     
     /**
      * @todo Make a more sensible test here!
-     * @depends testAddOrderedItems
      */
-    public function testSetCElementId($ia)
+    #[Depends('testAddOrderedItems')] public function testSetCElementId($ia)
     {
         foreach($ia as $item) {
             $item->setColumnElementId(200);
@@ -249,7 +249,7 @@ class ItemArrayTest extends TestCase
         );
 
         $this->assertCount(10, $script2);
-        // First five should be deletes, next 5 should be inserts
+        // First five should be 'delete', next 5 should be 'insert'
         for ($i = 0; $i < 5; $i++) {
             $this->assertEquals(MyersDiff::DELETE, $script2[$i][1]);
             $this->assertEquals($i,$script2[$i][0]);
@@ -287,12 +287,5 @@ class ItemArrayTest extends TestCase
             $this->assertEquals($expectedCommandSequence[$i], $script3[$i][1]);
         }
     }
-    
-    private function printCommandSequence($script) {
-        $cmds = [-1 => 'D', 0 => 'K', 1=>'I'];
-        foreach ($script as $cmd) {
-            print $cmds[$cmd[1]] . " ";
-        }
-        print "\n";
-    }
+
 }

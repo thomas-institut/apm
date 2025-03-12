@@ -18,13 +18,14 @@
  *  
  */
 
-namespace Test\APM;
+namespace APM\Test\Core;
 
 
-use AverroesProject\TxText\Abbreviation;
-use AverroesProject\TxText\Item;
-use AverroesProject\TxText\Rubric;
-use AverroesProject\TxText\Text;
+use APM\System\Transcription\TxText\Abbreviation;
+
+use APM\System\Transcription\TxText\Item;
+use APM\System\Transcription\TxText\Rubric;
+use APM\System\Transcription\TxText\Text;
 use PHPUnit\Framework\TestCase;
 /**
  * Description of ItemsTest

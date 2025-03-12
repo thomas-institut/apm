@@ -3,7 +3,6 @@
 namespace APM\System\ImageSource;
 
 use APM\System\ApmImageType;
-use APM\System\ImageSource\ImageSourceInterface;
 
 class OldBilderbergStyleRepository implements ImageSourceInterface
 {

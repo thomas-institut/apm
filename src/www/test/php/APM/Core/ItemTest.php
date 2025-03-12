@@ -18,11 +18,13 @@
  *  
  */
 
-namespace Test\APM;
+namespace APM\Test\Core;
 
 
+use APM\Core\Item\Item;
 use APM\Core\Item\MarkType;
 use APM\Core\Item\Note;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 use APM\Core\Item\TextualItem;
@@ -59,7 +61,7 @@ class ItemTest extends TestCase {
         $exceptionRaised0 = false;
         try {
             $item1->setNotes([1, 2, 3]);
-        } catch (\InvalidArgumentException $ex) {
+        } catch (InvalidArgumentException) {
             $exceptionRaised0 = true;
         }
         $this->assertTrue($exceptionRaised0);
@@ -75,7 +77,7 @@ class ItemTest extends TestCase {
         $exceptionRaised1 = false;
         try {
             $item1 = new TextualItem('');
-        } catch (\InvalidArgumentException $ex) {
+        } catch (InvalidArgumentException) {
             $exceptionRaised1 = true;
         }
         $this->assertTrue($exceptionRaised1);
@@ -107,7 +109,7 @@ class ItemTest extends TestCase {
         $this->assertEquals('some text', $item1->getPlainText());
         $this->assertEquals('some text', $item1->getNormalizedText());
         $this->assertEquals(TextualItem::FORMAT_NONE, $item1->getFormat());
-        $this->assertEquals(TextualItem::FLOW_MAIN_TEXT, $item1->getTextualFlow());
+        $this->assertEquals(Item::FLOW_MAIN_TEXT, $item1->getTextualFlow());
         
         
         $item2 = $if->createAbbreviationItem('Dr', 'Doctor');
@@ -116,7 +118,7 @@ class ItemTest extends TestCase {
         $this->assertEquals('Dr', $item2->getPlainText());
         $this->assertEquals('Doctor', $item2->getNormalizedText());
         $this->assertEquals(TextualItem::FORMAT_NONE, $item2->getFormat());
-        $this->assertEquals(TextualItem::FLOW_MAIN_TEXT, $item2->getTextualFlow());
+        $this->assertEquals(Item::FLOW_MAIN_TEXT, $item2->getTextualFlow());
         
         $item3 = $if->createRubricItem('Some rubric');
         $this->assertEquals($defaultLang, $item3->getLanguage());
@@ -124,7 +126,7 @@ class ItemTest extends TestCase {
         $this->assertEquals('Some rubric', $item3->getPlainText());
         $this->assertEquals('Some rubric', $item3->getNormalizedText());
         $this->assertEquals(ItemFactory::FORMAT_RUBRIC, $item3->getFormat());
-        $this->assertEquals(TextualItem::FLOW_MAIN_TEXT, $item3->getTextualFlow());
+        $this->assertEquals(Item::FLOW_MAIN_TEXT, $item3->getTextualFlow());
         
         $item4 = $if->createReferenceMark('someText');
         $this->assertEquals('someText', $item4->getMarkText());
@@ -146,7 +148,7 @@ class ItemTest extends TestCase {
         $this->assertEquals(MarkType::GAP, $item8->getMarkType());
         $this->assertEquals(5, $item8->getLength());
         
-        $item9 = $if->createChunkMark(ChunkMark::TYPE_START, 'AW38', 100, 1);
+        $item9 = $if->createChunkMark(ChunkMark::TYPE_START, 'AW38', 100);
         $this->assertTrue(is_a($item9, get_class(new ChunkMark('', '', 0, 0))));
         $this->assertEquals(ChunkMark::TYPE_START, $item9->getType());
         $this->assertEquals('AW38', $item9->getWork());
@@ -159,21 +161,21 @@ class ItemTest extends TestCase {
         $this->assertEquals('text', $item10->getNormalizedText());
         $this->assertEquals(ItemFactory::NORM_SIC, $item10->getNormalizationType());
         $this->assertEquals(TextualItem::FORMAT_NONE, $item10->getFormat());
-        $this->assertEquals(TextualItem::FLOW_MAIN_TEXT, $item10->getTextualFlow());
+        $this->assertEquals(Item::FLOW_MAIN_TEXT, $item10->getTextualFlow());
         
         $item11 = $if->createAbbreviationItem('Mr', 'Mister');
         $this->assertEquals('Mr', $item11->getPlainText());
         $this->assertEquals('Mister', $item11->getNormalizedText());
         $this->assertEquals(ItemFactory::NORM_ABBREVIATION, $item11->getNormalizationType());
         $this->assertEquals(TextualItem::FORMAT_NONE, $item11->getFormat());
-        $this->assertEquals(TextualItem::FLOW_MAIN_TEXT, $item11->getTextualFlow());
+        $this->assertEquals(Item::FLOW_MAIN_TEXT, $item11->getTextualFlow());
 
         $item12 = $if->createUnclearItem('text', 'damaged', 'textus');
         $this->assertEquals('text', $item12->getPlainText());
         $this->assertEquals(TextualItem::CLARITY_UNCLEAR, $item12->getClarityValue());
         $this->assertEquals('damaged', $item12->getClarityReason());
         $this->assertEquals(TextualItem::FORMAT_NONE, $item12->getFormat());
-        $this->assertEquals(TextualItem::FLOW_MAIN_TEXT, $item12->getTextualFlow());
+        $this->assertEquals(Item::FLOW_MAIN_TEXT, $item12->getTextualFlow());
         $this->assertCount(1, $item12->getAlternateTexts());
         $this->assertEquals('textus', $item12->getAlternateTexts()[0]);
         
@@ -182,7 +184,7 @@ class ItemTest extends TestCase {
         $this->assertEquals(TextualItem::CLARITY_ILLEGIBLE, $item13->getClarityValue());
         $this->assertEquals('damaged', $item13->getClarityReason());
         $this->assertEquals(TextualItem::FORMAT_NONE, $item13->getFormat());
-        $this->assertEquals(TextualItem::FLOW_MAIN_TEXT, $item13->getTextualFlow());
+        $this->assertEquals(Item::FLOW_MAIN_TEXT, $item13->getTextualFlow());
         
         $item14 = $if->createMathTextItem('Text');
         $this->assertEquals($defaultLang, $item14->getLanguage());
@@ -190,7 +192,7 @@ class ItemTest extends TestCase {
         $this->assertEquals('Text', $item14->getPlainText());
         $this->assertEquals('Text', $item14->getNormalizedText());
         $this->assertEquals(ItemFactory::FORMAT_MATH, $item14->getFormat());
-        $this->assertEquals(TextualItem::FLOW_MAIN_TEXT, $item14->getTextualFlow());
+        $this->assertEquals(Item::FLOW_MAIN_TEXT, $item14->getTextualFlow());
         
         $item15 = $if->createGliphItem('Text');
         $this->assertEquals($defaultLang, $item15->getLanguage());
@@ -198,7 +200,7 @@ class ItemTest extends TestCase {
         $this->assertEquals('Text', $item15->getPlainText());
         $this->assertEquals('Text', $item15->getNormalizedText());
         $this->assertEquals(ItemFactory::FORMAT_GLIPH, $item15->getFormat());
-        $this->assertEquals(TextualItem::FLOW_MAIN_TEXT, $item15->getTextualFlow());
+        $this->assertEquals(Item::FLOW_MAIN_TEXT, $item15->getTextualFlow());
         
         $item16 = $if->createInitialItem('Text');
         $this->assertEquals($defaultLang, $item16->getLanguage());
@@ -206,11 +208,11 @@ class ItemTest extends TestCase {
         $this->assertEquals('Text', $item16->getPlainText());
         $this->assertEquals('Text', $item16->getNormalizedText());
         $this->assertEquals(ItemFactory::FORMAT_INITIAL, $item16->getFormat());
-        $this->assertEquals(TextualItem::FLOW_MAIN_TEXT, $item16->getTextualFlow());
+        $this->assertEquals(Item::FLOW_MAIN_TEXT, $item16->getTextualFlow());
         
         $item17 = $if->createAdditionItem('addition', 'margin left');
         $this->assertEquals('margin left', $item17->getLocation());
-        $this->assertEquals(TextualItem::FLOW_ADDITION, $item17->getTextualFlow());
+        $this->assertEquals(Item::FLOW_ADDITION, $item17->getTextualFlow());
         $this->assertEquals('addition', $item17->getPlainText());
         $this->assertEquals(TextualItem::FORMAT_NONE, $item17->getFormat());
         
@@ -218,7 +220,7 @@ class ItemTest extends TestCase {
         $this->assertEquals('deletion', $item18->getPlainText());
         $this->assertEquals('strikeout', $item18->getDeletion());
         $this->assertEquals(TextualItem::FORMAT_NONE, $item18->getFormat());
-        $this->assertEquals(TextualItem::FLOW_MAIN_TEXT, $item18->getTextualFlow());
+        $this->assertEquals(Item::FLOW_MAIN_TEXT, $item18->getTextualFlow());
         
         
     }

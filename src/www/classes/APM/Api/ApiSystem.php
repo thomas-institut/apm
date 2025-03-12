@@ -3,16 +3,13 @@
 
 namespace APM\Api;
 
-use APM\System\ApmConfigParameter;
-use Monolog\Level;
-use Monolog\Logger;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
 class ApiSystem extends ApiController
 {
-    const CLASS_NAME = 'System';
+    const string CLASS_NAME = 'System';
 
     public function __construct(ContainerInterface $ci)
     {

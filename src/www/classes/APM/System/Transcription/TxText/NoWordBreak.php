@@ -39,15 +39,5 @@ class NoWordBreak extends Item {
     function getText(){
         return '';
     }
-    
-    function getNiceText(){
-        switch ($this->lang){
-            case 'ar':
-            case 'he':
-                return '🠸';
-                
-            default: 
-                return '🠺';
-        }
-    }
+
 }

@@ -129,7 +129,7 @@ createSiteDevRoutes($app, $container);
 createApiAuthenticatedRoutes($app, $container);
 
 // RUN!!
-SystemProfiler::lap('Ready to run');
+SystemProfiler::lap('Ready');
 $app->run();
 
 /**

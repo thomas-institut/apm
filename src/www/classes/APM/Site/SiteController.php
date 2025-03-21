@@ -44,10 +44,12 @@ use RuntimeException;
 use Slim\Routing\RouteParser;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
+use Twig\Node\Expression\Test\OddTest;
 
 
 /**
@@ -58,6 +60,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 {
 
     const string TEMPLATE_ERROR_PAGE = 'error-page.twig';
+    const string StandardPageTemplate = 'standard-page.twig';
 
 
     use LoggerAwareTrait;
@@ -117,6 +120,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             $userInfo = $userData->getExportObject();
             unset($userInfo['passwordHash']);
             $userInfo['name'] = $personData->name;
+//            $userInfo['name'] = 'Mengano';
             $userInfo['email'] = '';
             $userInfo['isRoot'] = $userData->root;
             $userInfo['manageUsers'] = $userData->root;
@@ -137,6 +141,137 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return $langArrayByCode;
     }
 
+    private function getCommonData() : array {
+        return [
+            'appName' => $this->config['appName'],
+            'appVersion' => $this->config['version'],
+            'copyrightNotice' => $this->config['copyrightNotice'],
+            'renderTimestamp' =>  time(),
+            'cacheDataId' => $this->config['jsAppCacheDataId'],
+            'userInfo' => $this->getSiteUserInfo(),
+            'showLanguageSelector' => $this->config['siteShowLanguageSelector'],
+            'baseUrl' => $this->getBaseUrl()
+        ];
+    }
+
+
+    /**
+     * Returns the JS literal representation of a PHP variable
+     * @param array $phpVar
+     * @return string
+     */
+    private function getJsObject(mixed $phpVar) : string {
+        if (is_string($phpVar)) {
+            return "'$phpVar'";
+        }
+        if (is_bool($phpVar)) {
+            return $phpVar ? 'true' : 'false';
+        }
+        if (is_integer($phpVar) ||  is_float($phpVar) || is_double($phpVar)) {
+            return "$phpVar";
+        }
+        if (is_array($phpVar)) {
+            $keys = array_keys($phpVar);
+            if (count($keys) > 0) {
+                if (is_int($keys[0])) {
+                    // array with numeric keys
+                    return "[" .
+                        implode(", ", array_map(function($key) use ($phpVar){
+                            return $this->getJsObject($phpVar[$key]);
+                        },  $keys)) .
+                        "]";
+                } else {
+                    // array with string keys
+                    return "{" .
+                        implode(", ", array_map(function($key) use ($phpVar){
+                            return "$key: " . $this->getJsObject($phpVar[$key]);
+                        },  $keys)) .
+                        "}";
+                }
+            } else {
+                return '{}';
+            }
+        }
+        return '';
+
+    }
+
+    protected function renderStandardPage(ResponseInterface $response, string $cacheKey, string $title, string $jsClassName, array $extraCss, ?array $data = null) : ResponseInterface {
+        SystemProfiler::lap("Ready to render");
+        if ($cacheKey !== '') {
+            try {
+                $html = $this->systemManager->getSystemDataCache()->get($cacheKey);
+                $response->getBody()->write($html);
+                SystemProfiler::lap('Cached Response ready');
+                $this->logger->debug(sprintf("SITE PROFILER %s Finished in %.3f ms",  SystemProfiler::getName(), SystemProfiler::getTotalTimeInMs()),
+                    SystemProfiler::getLaps());
+                return $response;
+            } catch (KeyNotInCacheException) {
+                // just continue
+            }
+        }
+        $commonData = $this->getCommonData();
+
+        $baseUrl = $this->getBaseUrl();
+        $extraCssHtml = implode("\n", array_map(function($css) use ($baseUrl) {
+            return "<link rel=\"stylesheet\" type=\"text/css\" href=\"$baseUrl/css/$css\"/>";
+            }, $extraCss));
+
+        $jsOptions = [ 'commonData' => $commonData ];
+        if ($data !== null) {
+            foreach ($data as $key => $value) {
+                $jsOptions[$key] = $value;
+            }
+        }
+//        $this->logger->debug("Js options",  $jsOptions);
+
+        $dataJs = $this->getJsObject($jsOptions);
+
+        $script = "$(() => {new $jsClassName(( $dataJs)) });";
+
+        $html = <<<END
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" type="text/css" href="$baseUrl/node_modules/bootstrap/dist/css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="$baseUrl/node_modules/bootstrap-icons/font/bootstrap-icons.css"/>
+    <link rel="stylesheet" type="text/css" href="$baseUrl/node_modules/datatables.net-dt/css/jquery.dataTables.min.css"/>
+    <link rel="stylesheet" type="text/css" href="$baseUrl/css/styles.css"/>
+    $extraCssHtml
+    <link href='$baseUrl/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
+
+    <title>$title</title>
+
+    <script type="text/javascript" src="$baseUrl/node_modules/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="$baseUrl/node_modules/moment/moment.js"></script>
+    <script type="text/javascript" src="$baseUrl/node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
+    <script type="text/javascript" src="$baseUrl/node_modules/datatables.net/js/jquery.dataTables.js"></script>
+    <script type="text/javascript" src="$baseUrl/node_modules/datatables.net-dt/js/dataTables.dataTables.js"></script>
+    <script type="text/javascript" src="$baseUrl/js/SimpleProfiler.js"></script>
+    <script type="text/javascript" src="$baseUrl/js/dist/$jsClassName.bundle.js"></script>   
+</head>
+<body>
+Loading...
+</body>
+<script>
+    $script
+</script>   
+</html>        
+END;
+        $response->getBody()->write($html);
+        if ($cacheKey !== '') {
+            $this->systemManager->getSystemDataCache()->set($cacheKey, $html, 3600);
+        }
+        SystemProfiler::lap('Response ready');
+        $this->logger->debug(sprintf("SITE PROFILER %s Finished in %.3f ms",  SystemProfiler::getName(), SystemProfiler::getTotalTimeInMs()),
+            SystemProfiler::getLaps());
+        return $response;
+    }
+
     /**
      * @param ResponseInterface $response
      * @param string $template
@@ -150,16 +285,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     {
 
         if ($withBaseData) {
-            $data['commonData'] = [
-                'appName' => $this->config['appName'],
-                'appVersion' => $this->config['version'],
-                'copyrightNotice' => $this->config['copyrightNotice'],
-                'renderTimestamp' =>  time(),
-                'cacheDataId' => $this->config['jsAppCacheDataId'],
-                'userInfo' => $this->getSiteUserInfo(),
-                'showLanguageSelector' => $this->config['siteShowLanguageSelector'],
-                'baseUrl' => $this->getBaseUrl()
-            ];
+            $data['commonData'] = $this->getCommonData();
             $data['baseUrl'] = $this->getBaseUrl();
         }
         try {

@@ -12,9 +12,9 @@ use ThomasInstitut\ToolBox\MySqlHelper;
 class UnitemporalConsistency extends CommandLineUtility
 {
 
-    const DB_TIME_FORMAT = 'Y-m-d H:i:s.u';
-    const USAGE="usage: unitemporalconsistency <table>\n";
-    const EOT = '9999-12-31 23:59:59.999999';
+    const string DB_TIME_FORMAT = 'Y-m-d H:i:s.u';
+    const string USAGE="usage: unitemporalconsistency <table>\n";
+    const string EOT = '9999-12-31 23:59:59.999999';
 
     public function main($argc, $argv): bool
     {
@@ -121,8 +121,8 @@ class UnitemporalConsistency extends CommandLineUtility
         $dt1 = date_create_from_format(self::DB_TIME_FORMAT, $t1);
         $dt2 = date_create_from_format(self::DB_TIME_FORMAT, $t2);
 
-        $tdiffsecs = $dt2->getTimestamp() - $dt1->getTimestamp();
-        $tdiffsecs += (intval($dt2->format('u')) - intval($dt1->format('u')))/1000000.0;
-        return $tdiffsecs;
+        $tDiffSecs = $dt2->getTimestamp() - $dt1->getTimestamp();
+        $tDiffSecs += (intval($dt2->format('u')) - intval($dt1->format('u')))/1000000.0;
+        return $tDiffSecs;
     }
 }

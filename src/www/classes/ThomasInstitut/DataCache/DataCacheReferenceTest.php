@@ -127,7 +127,7 @@ class DataCacheReferenceTest extends TestCase
         $this->randomRead($newValuesTestSet, $this->numKeysToTest);
 
         // empty cache
-        $this->dataCache->clear();
+        $this->dataCache->flush();
 
         // read the cache randomly again
         for($i = 0; $i < $this->numReadIterations; $i++){

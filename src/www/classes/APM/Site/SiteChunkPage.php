@@ -34,6 +34,7 @@ use APM\System\Transcription\ColumnVersionInfo;
 use APM\System\User\UserNotFoundException;
 use APM\System\WitnessType;
 use APM\System\Work\WorkNotFoundException;
+use APM\SystemProfiler;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use RuntimeException;
@@ -47,7 +48,7 @@ use ThomasInstitut\TimeString\TimeString;
 class SiteChunkPage extends SiteController
 {
 
-    const TEMPLATE_CHUNK_PAGE = 'chunk-page.twig';
+    const string TEMPLATE_CHUNK_PAGE = 'chunk-page.twig';
 
     /**
      * @throws UserNotFoundException
@@ -60,6 +61,7 @@ class SiteChunkPage extends SiteController
         $ctManager = $this->systemManager->getCollationTableManager();
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
+        SystemProfiler::setName("Site:" . __FUNCTION__ . ":$workId-$chunkNumber");
         
         try {
             $workInfo = get_object_vars($this->systemManager->getWorkManager()->getWorkDataByDareId($workId));
@@ -101,7 +103,7 @@ class SiteChunkPage extends SiteController
 
             $witnessInfoForPage = get_object_vars($witnessInfo);
 
-            $this->codeDebug("Processing witness info", $witnessInfoForPage);
+//            $this->codeDebug("Processing witness info", $witnessInfoForPage);
             try {
                 $witnessInfoForPage['languageCode'] = $this->systemManager->getLangCodeFromId($witnessInfo->language);
             } catch (EntityDoesNotExistException $e) {

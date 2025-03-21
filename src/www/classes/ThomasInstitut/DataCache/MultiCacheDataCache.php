@@ -137,10 +137,10 @@ class MultiCacheDataCache implements DataCache, LoggerAwareInterface
     /**
      * @inheritDoc
      */
-    public function clear(): void
+    public function flush(): void
     {
         foreach(array_keys($this->caches) as $i) {
-            $this->getDataCache($i)->clear();
+            $this->getDataCache($i)->flush();
         }
     }
 

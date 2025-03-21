@@ -242,7 +242,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     {
         SystemProfiler::lap($endLapName);
         $this->logger->debug(
-            sprintf("SYSTEM PROFILER %s Finished in %.3f ms", $this->apiCallName, SystemProfiler::getTotalTimeInMs()),
+            sprintf("API PROFILER %s Finished in %.3f ms", $this->apiCallName, SystemProfiler::getTotalTimeInMs()),
             SystemProfiler::getLaps());
     }
 

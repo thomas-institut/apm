@@ -28,6 +28,7 @@ namespace APM\Site;
 
 use APM\System\SystemManager;
 use APM\System\Work\WorkNotFoundException;
+use APM\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use Exception;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -45,15 +46,16 @@ use ThomasInstitut\EntitySystem\Tid;
 class SiteWorks extends SiteController
 {
 
-    const WORK_DATA_CACHE_KEY = 'SiteWorks-WorkData';
-    const WORK_DATA_TTL = 8 * 24 * 3600;
-    const TEMPLATE_WORKS_PAGE = 'works-page.twig';
-    const TEMPLATE_WORK_PAGE = 'work-page.twig';
+    const string WORK_DATA_CACHE_KEY = 'SiteWorks-WorkData';
+    const int WORK_DATA_TTL = 8 * 24 * 3600;
+    const string TEMPLATE_WORKS_PAGE = 'works-page.twig';
+    const string TEMPLATE_WORK_PAGE = 'work-page.twig';
 
 
     public function workPage(Request $request, Response $response): Response {
 
         $id = $request->getAttribute('id');
+        SystemProfiler::setName("Site:" . __FUNCTION__);
 
         $workManager = $this->systemManager->getWorkManager();
 
@@ -84,7 +86,7 @@ class SiteWorks extends SiteController
      */
     public function worksPage(Request $request, Response $response): Response
     {
-        
+        SystemProfiler::setName("Site:" . __FUNCTION__);
         $cache = $this->systemManager->getSystemDataCache();
         try {
             $works = unserialize($cache->get(self::WORK_DATA_CACHE_KEY));
@@ -93,9 +95,12 @@ class SiteWorks extends SiteController
             $works = self::buildWorkData($this->systemManager, $this->logger);
             $cache->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
         }
-        return $this->renderPage($response, self::TEMPLATE_WORKS_PAGE, [
-            'works' => $works
-        ]);
+
+        return $this->renderStandardPage($response, "Site:Works:$this->userId",
+            "Works", "WorksPage", [ 'works_page.css'], [ 'works' => $works ]);
+//        return $this->renderPage($response, self::TEMPLATE_WORKS_PAGE, [
+//            'works' => $works
+//        ]);
     }
 
     private static function getWorkDataBasicInfo(string $workId, SystemManager $systemManager) : array {

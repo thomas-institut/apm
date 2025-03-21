@@ -218,7 +218,7 @@ class DataTableDataCache implements DataCache, LoggerAwareInterface
         }
     }
 
-    public function clear(): void
+    public function flush(): void
     {
         $ids = $this->dataTable->getUniqueIds();
         $this->deleteMultipleRows($ids);

@@ -37,6 +37,7 @@ use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNotFoundException;
+use APM\SystemProfiler;
 use DateInterval;
 use DateTime;
 use Exception;

@@ -559,7 +559,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     public function getSegmentLocationsForFullTxWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeString) : array
     {
         $this->startCodeDebug();
-        $this->codeDebug('getSegmentLocations', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeString]);
+//        $this->codeDebug('getSegmentLocations', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeString]);
         $chunkLocationMap = $this->getChunkLocationMapFromDatabase(
             [
                 'work_id' => "='$workId'",
@@ -947,14 +947,14 @@ class ApmTranscriptionManager extends TranscriptionManager
     public function getWitnessesForChunk(string $workId, int $chunkNumber): array
     {
 
-        $this->codeDebug("Getting witnesses for chunk $workId-$chunkNumber");
+//        $this->codeDebug("Getting witnesses for chunk $workId-$chunkNumber");
         $localCacheKey = 'getW4C:' . $workId . '-' . $chunkNumber;
         try {
             return unserialize($this->localMemCache->get($localCacheKey));
         } catch (KeyNotInCacheException) {
             // not in cache, we just keep going with the construction of the witness
         }
-        $this->codeDebug("Witness info not in cache");
+//        $this->codeDebug("Witness info not in cache");
 
         $chunkLocationMap = $this->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
         $versionMap = $this->getVersionsForChunkLocationMap($chunkLocationMap);

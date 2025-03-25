@@ -168,15 +168,15 @@ export const arabicDeGruyterScheherazadeNew = {
     },
   postLineRangeSeparator: {
     glue: {
-      width: "0.25 em",
-      shrink: "0.03 em",
-      stretch: "0.18 em"
+      width: "0.35 em",
+      shrink: "0.02 em",
+      stretch: "0.5 em"
     }
   },
   preEntrySeparator : {
     glue: {
       width: "0.25 em",
-      shrink: "0.03 em",
+      shrink: "0.04 em",
       stretch: "0.15 em"
     }
   },
@@ -188,7 +188,7 @@ export const arabicDeGruyterScheherazadeNew = {
   postEntrySeparator: {
     glue: {
       width: "0.25 em",
-      shrink: "0.03 em",
+      shrink: "0.04 em",
       stretch: "0.15 em"
     }
   },
@@ -218,7 +218,7 @@ export const arabicDeGruyterScheherazadeNew = {
     },
     glue: {
       width: "0.25 em",
-      shrink: "0.03 em",
+      shrink: "0.035 em",
       stretch: "0.08 em"
     },
   },

@@ -280,13 +280,14 @@ export class BasicTypesetter extends Typesetter2 {
         line.setHeight(line.getHeight())
 
         // align item baselines
-        let lineHeight = line.getHeight()
+        let lineHeight = line.getHeight(); // lineHeight is now the height of the tallest item in the list
         line.setList( line.getList().map( (item) => {
           if (item instanceof TextBox) {
             if (item.getHeight() < lineHeight) {
               let oldShiftY = item.getShiftY()
               let newShiftY = lineHeight - item.getHeight() + oldShiftY
-              // this.debug && console.log(`Adjusting shiftY to align baselines. Text: '${item.getText()}', lineHeight: ${lineHeight}, item's Height: ${item.getHeight()}, new shiftY: ${newShiftY}`)
+              this.debug && console.log(`Adjusting shiftY to align baselines. 
+              Text: '${item.getText()}', font ${item.getFontFamily()}, lineHeight: ${lineHeight}, item's Height: ${item.getHeight()}, new shiftY: ${newShiftY}`)
               item.setShiftY(newShiftY)
             }
           }
@@ -461,7 +462,7 @@ export class BasicTypesetter extends Typesetter2 {
 
 
   /**
-   * Typesets a list of paragraphs into document
+   * Typesets a list of paragraphs into a document.
    *
    * Each vertical item in the input list must be either a horizontal list
    * containing a paragraph or vertical glue.

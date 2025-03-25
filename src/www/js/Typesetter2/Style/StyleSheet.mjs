@@ -66,7 +66,8 @@ export class StyleSheet {
       console.error('Undefined styles!!!')
     }
     this.names = this.__getNameArray(this.styles)
-    this.fontConversionDefinitions = this.styles.fontConversions !== undefined ? this.styles.fontConversions : []
+    this.fontConversionDefinitions = this.styles.fontConversions !== undefined ? this.styles.fontConversions : [];
+    this.specialStrings = this.styles.specialStrings ?? [];
     this.debug = true
   }
 
@@ -149,32 +150,35 @@ export class StyleSheet {
    */
   apply(item, styles) {
     return new Promise( async (resolve) => {
-
       let stylesToApply = this.__getStylesToApply(styles)
       if (stylesToApply.length === 0) {
-        stylesToApply = ['default']
+        stylesToApply = ['default'];
       }
 
       let styleDefs = stylesToApply.map( (styleName) => {
         return this.getStyleDef(styleName)
-      })
+      });
       let baseTextBox = new TextBox()
       for (let i = 0;  i < styleDefs.length; i++) {
         let styleDef = styleDefs[i]
         if (item instanceof Glue) {
           [item, baseTextBox] = await this.applyStyleToGlue(item, styleDef, baseTextBox)
         } else if (item instanceof TextBox) {
-          // if (item.getText() === 'scripts') {
-          //   console.log(`Applying style to TB: ${stylesToApply[i]}`)
-          //   console.log(styleDef)
-          // }
-          // console.log(`Applying style to TB`)
-          // console.log(styleDef)
           item = await this.applyStyleToTextBox(item, styleDef)
-          // console.log('Item after applying style to text box')
-          // console.log(item)
         }
       }
+      // Special characters that need specific font conversions
+      if (item instanceof TextBox) {
+        for (let i = 0; i < this.specialStrings.length; i++) {
+          let specialString = this.specialStrings[i];
+          if (item.getText() === specialString.string) {
+            console.log(`Found special string '${specialString.string}', setting font ${specialString.fontFamily}`);
+            item.setFontFamily(specialString.fontFamily);
+            break;
+          }
+        }
+      }
+
       resolve(item)
     })
   }
@@ -238,10 +242,6 @@ export class StyleSheet {
           }
           let newFontSize = await this.getPixelValue(fontDef.fontSize, textBox)
           textBox.setFontSize(newFontSize)
-          if (textBox.getText() === 'scripts') {
-            console.log(`new font size: ${fontDef.fontSize} = ${textBox.getFontSize()}`)
-          }
-
         }
         if (fontDef.shiftY !== undefined && fontDef.shiftY !== '') {
           let newShiftY = await this.getPixelValue(fontDef.shiftY, textBox)

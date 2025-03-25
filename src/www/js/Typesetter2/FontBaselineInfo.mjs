@@ -17,13 +17,27 @@
  */
 
 /**
- * Baseline height information for specific fonts
+ * Baseline information for specific fonts
  */
 
+/**
+ * Multiplier is the ratio of the font size to the position of the baseline
+ * from the top of the font.
+ * @type {[{family: string, multiplier: number},{family: string, multiplier: number},{family: string, multiplier: number}]}
+ */
+// const fontData = [
+//   { family: 'FreeSerif', multiplier: 0.9},
+//   { family: 'Arial', multiplier: 0.9052736842105263},
+//   { family: 'Linux Libertine', multiplier: 0.8940447368421053}
+// ]
+
 const fontData = [
-  // { family: 'FreeSerif', multiplier: 0.9},
-  { family: 'Arial', multiplier: 0.9052736842105263},
-  { family: 'Linux Libertine', multiplier: 0.8940447368421053}
+  { family: 'FreeSerif', multiplier: 0.8},
+  { family: 'Arial', multiplier: 0.776},
+  { family: 'Linux Libertine', multiplier: 0.785},
+  { family: 'Amiri', multiplier: 0.643},
+  { family: 'Scheherazade New', multiplier: 0.659},
+  { family: 'ScheherazadeNew', multiplier: 0.659},
 ]
 
 

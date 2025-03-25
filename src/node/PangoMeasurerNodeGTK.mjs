@@ -34,7 +34,7 @@ export class PangoMeasurerNodeGTK extends PangoMeasurer {
     const surface = new Cairo.ImageSurface(Cairo.Format.RGB24, 300, 300)
     this.ctx = new Cairo.Context(surface)
     this.layout = PangoCairo.createLayout(this.ctx)
-    // this.debug = true
+    this.debug = true
   }
 
   measureText(text, fontDesc) {

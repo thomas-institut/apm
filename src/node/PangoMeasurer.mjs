@@ -27,9 +27,8 @@ const pythonMeasurer =  '../python/text-measurer.py'
 export class PangoMeasurer extends TextBoxMeasurer {
 
   constructor () {
-    super()
-    this.heightCache = new Map()
-    this.widthCache = new Map()
+    super();
+    this.cache = new Map();
     this.cacheHits = 0
     this.realMeasurements = 0
     this.debug = false
@@ -48,46 +47,32 @@ export class PangoMeasurer extends TextBoxMeasurer {
     return `${textBox.getText()}${textBox.getFontFamily()}${textBox.getFontSize()}${textBox.getFontWeight()}${textBox.getFontStyle()}`
   }
 
-  getBoxHeight (textBox) {
-    // let cacheKey = this.__getCacheKeyForTextBox(textBox)
-    // if (this.heightCache.has(cacheKey)) {
-    //   this.debug && console.log(`Getting height from cache`)
-    //   this.cacheHits++
-    //   return resolvedPromise(this.heightCache.get(cacheKey))
-    // }
-    // this.realMeasurements++
-    return resolvedPromise(FontBaselineInfo.getBaseline(textBox.getFontFamily(), textBox.getFontSize()))
-    // return new Promise ( (resolve) => {
-    //   this.__getPangoMeasurements(textBox).then ( (measurements) => {
-    //     this.debug && console.log(`Saving w=${measurements.width}, h=${ measurements.baseline} in cache with key '${cacheKey}'`)
-    //     this.debug && console.log(`baseline / fontsize = ${measurements.baseline / textBox.getFontSize()}`)
-    //     this.debug && console.log(`height / fontsize = ${measurements.height / textBox.getFontSize()}`)
-    //     this.widthCache.set(cacheKey, measurements.width)
-    //     this.heightCache.set(cacheKey, measurements.baseline)
-    //
-    //     resolve(measurements.baseline)
-    //   })
-    // })
+  async getBoxHeight (textBox) {
+    let measurements = await this.getMeasurements(textBox);
+    return measurements.baseline
   }
 
-  getBoxWidth (textBox) {
-    let cacheKey = this.__getCacheKeyForTextBox(textBox)
-    if (this.widthCache.has(cacheKey)) {
-      this.debug && console.log(`Getting width from cache`)
-      this.cacheHits++
-      return resolvedPromise(this.widthCache.get(cacheKey))
+  getMeasurements (textBox) {
+    let cacheKey = this.__getCacheKeyForTextBox(textBox);
+    if (this.cache.has(cacheKey)) {
+      this.cacheHits++;
+      return resolvedPromise(this.cache.get(cacheKey));
     }
+    this.realMeasurements++;
     return new Promise ( (resolve) => {
-      this.realMeasurements++
-      this.__getPangoMeasurements(textBox).then ( (measurements) => {
-        this.widthCache.set(cacheKey, measurements.width)
-        this.heightCache.set(cacheKey, measurements.baseline)
-        this.debug && console.log(`baseline / fontsize = ${measurements.baseline / textBox.getFontSize()}`)
-        this.debug && console.log(`height / fontsize = ${measurements.height / textBox.getFontSize()}`)
-        this.debug && console.log(`Saving w=${measurements.width}, h=${ measurements.baseline} in cache with key '${cacheKey}'`)
-        resolve(measurements.width)
+      this.__getPangoMeasurements(textBox).then((measurements) => {
+        // this.debug && console.log(`Saving w=${measurements.width}, h=${measurements.baseline} in cache with key '${cacheKey}'`);
+        this.cache.set(cacheKey, measurements);
+        resolve(measurements);
       })
     })
+  }
+
+
+
+  async getBoxWidth (textBox) {
+    let measurements = await this.getMeasurements(textBox);
+    return measurements.width
   }
 
   __getPangoMeasurements(textBox) {

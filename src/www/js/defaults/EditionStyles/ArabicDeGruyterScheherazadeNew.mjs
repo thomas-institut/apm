@@ -28,6 +28,12 @@ export const arabicDeGruyterScheherazadeNew = {
     // },
     // { from: { script: 'la'}, to: { fontFamily: 'FreeSerif'}}
   ],
+  specialStrings: [
+    { string: String.fromCharCode(0xfeeb), fontFamily: 'Amiri'},
+    { string: String.fromCharCode(0xfbaa), fontFamily: 'Amiri'},
+    { string: String.fromCharCode(0xfbac), fontFamily: 'Amiri'},
+    { string: String.fromCharCode(0x2016), fontFamily: 'Amiri'},
+  ],
   default: {
       strings : {
         omission: "نقص",
@@ -35,7 +41,7 @@ export const arabicDeGruyterScheherazadeNew = {
         ante: "قبل",
         post: "بعد",
         defaultLemmaSeparator: "]",
-        lineRangeSeparator: "\u2016",  // double vertical line
+        lineRangeSeparator: String.fromCharCode(0x2016),  // double vertical line
         entrySeparator:  "\u007c" // single vertical line
         // entrySeparator: "\u2016",  // double vertical line
       },
@@ -63,7 +69,7 @@ export const arabicDeGruyterScheherazadeNew = {
         spaceAfter: "0"
       },
       text: {
-        fontFamily: "ScheherazadeNew",
+        fontFamily: "Scheherazade New",
         fontSize: "12 pt",
         fontStyle: "",
         fontWeight: "",
@@ -157,7 +163,7 @@ export const arabicDeGruyterScheherazadeNew = {
     },
     lineRangeSeparator: {
       text: {
-        fontFamily: 'ScheherazadeNew'
+        fontFamily: 'Scheherazade New'
       }
     },
   postLineRangeSeparator: {
@@ -176,7 +182,7 @@ export const arabicDeGruyterScheherazadeNew = {
   },
   entrySeparator: {
     text: {
-      fontFamily: 'ScheherazadeNew'
+      fontFamily: 'Scheherazade New'
     }
   },
   postEntrySeparator: {

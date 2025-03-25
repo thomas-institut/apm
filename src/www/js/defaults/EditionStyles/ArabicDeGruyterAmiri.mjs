@@ -28,6 +28,9 @@ export const arabicDeGruyterAmiri = {
     // },
     // { from: { script: 'la'}, to: { fontFamily: 'FreeSerif'}}
   ],
+  specialStrings: [
+    { string: String.fromCharCode(0xfeeb), fontFamily: 'FreeSans'},
+  ],
   default: {
       strings : {
         omission: "نقص",

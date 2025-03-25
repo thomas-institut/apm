@@ -166,12 +166,18 @@ export function setupSearchPage() {
     let checked = lemmatization_box.prop("checked")
     let user_input = keywords_box.val()
     if (checked && user_input.includes("*")) {
-      errorMessageDiv.html(`You cannot use wildcards (*) combined with lemmatization`)
+      $("#searchButton").prop("disabled",false);
       $("#searchButton").prop("disabled",true);
     } else {
       errorMessageDiv.html('')
       $("#searchButton").prop("disabled",false);
     }
+
+    // if (user_input) {
+    //   errorMessageDiv.html(`You cannot search wildcards (*) combined with lemmatization`)
+    //   $("#searchButton").prop("disabled",false);
+    // }
+
   })
 
   // Adjust search form and creator/title lists to selected corpus

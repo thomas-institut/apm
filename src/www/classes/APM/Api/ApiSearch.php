@@ -11,13 +11,11 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
-use function MongoDB\BSON\toRelaxedExtendedJSON;
 
 class ApiSearch extends ApiController
 {
 
     const CLASS_NAME = 'Search';
-    private $profiler;
 
     /**
      * @param Request $request
@@ -65,18 +63,17 @@ class ApiSearch extends ApiController
         // If wished, lemmatize searched keywords
         if ($lemmatize) {
             $tokensForQuery = $this->getLemmata($searched_phrase, $lang);
+            $lemmata = $tokensForQuery;
         }
         else {
             $tokensForQuery = explode(" ", $searched_phrase);
+            $tokensForQuery = $this->sortTokensForQuery($tokensForQuery);
+            $lemmata = [''];
+
+            foreach ($tokensForQuery as $token) {
+                $lemmata[] = '';
+            }
         }
-
-        //$this->logger->debug($tokensForQuery[0]);
-        //$this->logger->debug($tokensForQuery[1]);
-
-        $lemmata = $tokensForQuery;
-
-        // Count tokens
-        $numTokens = count($tokensForQuery);
 
         // Query index
         try {
@@ -95,12 +92,17 @@ class ApiSearch extends ApiController
                 ]);
         }
 
-        //$this->profiler->lap("Typesense query");
+        if ($tokensForQuery[0] === '*') {
+            unset($tokensForQuery[0]);
+            $tokensForQuery = array_values($tokensForQuery);
+        }
+
+        // Count tokens
+        $numTokens = count($tokensForQuery);
+
 
         // Get all information about the matched entries, including passages with the matched token as lists of tokens
         $data = $this->getData($query, $tokensForQuery[0], $tokensForQuery, $lemmata, $keywordDistance, $lemmatize, $corpus);
-
-        //$this->profiler->lap("getData");
 
         // Until now, there was no check, if the queried keywords are close enough to each other, depending on the keywordDistance value
         // If there is more than one token in the searched phrase, now  all columns and passages, which do not match all tokens in the desired way,
@@ -128,6 +130,7 @@ class ApiSearch extends ApiController
         return $this->responseWithJson($response, [
             'index' => $index_name,
             'searched_phrase' => $searched_phrase,
+            'lemmata' => $lemmata,
             'lang' => $lang,
             'num_passages_total' => $num_passages_total,
             'cropped' => $cropped,
@@ -298,6 +301,28 @@ class ApiSearch extends ApiController
         return $searched_phrase;
     }
 
+    private function sortTokensForQuery (array $tokensForQuery): array {
+
+        $suffixes = [];
+
+        foreach ($tokensForQuery as $i=>$token) {
+            if (str_starts_with($token, "*")) {
+                $suffixes[] = $token;
+                unset($tokensForQuery[$i]);
+            }
+        }
+
+        usort($tokensForQuery, function($a, $b) {
+            return strlen($b) - strlen($a);
+        });
+
+        if (count($tokensForQuery) === 0) {
+            $tokensForQuery[] = "*";
+        }
+
+        return array_values(array_merge($tokensForQuery, $suffixes));
+    }
+
     // Function to query a given TypeSense-index
     private function makeTypesenseSearchQuery ($client, $index_name, $lang, $title, $creator, $tokens, $lemmatize, $corpus) {
 
@@ -325,16 +350,20 @@ class ApiSearch extends ApiController
             'q' => '',
             'query_by' => $area_of_query,
             'filter_by' => "lang:=$lang",
+            'num_typos' => 0,
             'prefix' => true,
+            'infix' => 'off',
             'limit' => 250
         ];
 
-        foreach ($tokens as $token) {
-            // MODIFY HERE FOR HANDLING OF COMPLEX LEMMATA
-            $searchParameters['q'] = $searchParameters['q'] . " " . $token; // complex tokens are lemmatized as strings of lemmata, separated by blanks
+        if ($lemmatize) {
+            foreach ($tokens as $token) {
+                // MODIFY HERE FOR HANDLING OF COMPLEX LEMMATA
+                $searchParameters['q'] = $searchParameters['q'] . " " . $token; // complex tokens are lemmatized as strings of lemmata, separated by blanks
+            }
+        } else {
+            $searchParameters['q'] = $tokens[0];
         }
-
-        $searchParameters['q'] = $tokens[0];
 
         if ($creator !== '') {
             $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && creator:=$creator";
@@ -363,7 +392,7 @@ class ApiSearch extends ApiController
 
         //$print = print_r($hits, true);
         //file_put_contents('hits.txt', $print);
-        $this->logger->debug("NUM DOCUMENTS " . count($hits));
+        $this->logger->debug("got " . count($hits) . " documents from typesense");
         return $hits;
     }
 

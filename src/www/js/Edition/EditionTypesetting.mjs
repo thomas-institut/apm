@@ -27,7 +27,12 @@ import * as ListType from '../Typesetter2/ListType.mjs'
 import { Glue } from '../Typesetter2/Glue.mjs'
 import * as MainTextTokenType from './MainTextTokenType.mjs'
 import { TextBox } from '../Typesetter2/TextBox.mjs'
-import {  GOOD_POINT_FOR_A_BREAK, INFINITE_PENALTY, Penalty} from '../Typesetter2/Penalty.mjs'
+import {
+  GOOD_POINT_FOR_A_BREAK,
+  INFINITE_PENALTY,
+  Penalty, REALLY_BAD_POINT_FOR_A_BREAK,
+  REALLY_GOOD_POINT_FOR_A_BREAK
+} from '../Typesetter2/Penalty.mjs'
 import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
 import { deepCopy, getTextDirectionForLang, isRtl, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
@@ -77,6 +82,7 @@ export class EditionTypesetting {
     this.textDirection = getTextDirectionForLang(this.edition.lang)
     this.textBoxMeasurer = this.options.textBoxMeasurer
 
+    /** @var {StyleSheet} */
     this.ss = this.options.editionStyleSheet
     this.editionStyle = this.ss.getStyleDefinitions()
     this.fontConversionDefinitions = this.ss.getFontConversionDefinitions()
@@ -201,9 +207,13 @@ export class EditionTypesetting {
           let textItems
           switch(mainTextToken.type) {
             case MainTextTokenType.GLUE:
-              let glue = await this.createNormalSpaceGlue(paragraphStyle)
-              glue.addMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX, mainTextToken.originalIndex)
-              paragraphToTypeset.pushItem(glue)
+              if (paragraphStyle === 'normal' && tokenIndex > mainTextParagraph.tokens.length - 4) {
+                // do not leave words hanging!
+                paragraphToTypeset.pushItem(this.createPenalty(INFINITE_PENALTY));
+              }
+              let glue = await this.createGlue(paragraphStyle);
+              glue.addMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX, mainTextToken.originalIndex);
+              paragraphToTypeset.pushItem(glue);
               break
 
             case MainTextTokenType.NUMBERING_LABEL:
@@ -389,24 +399,24 @@ export class EditionTypesetting {
                   continue
                 }
                 pushArray(items, await this.getSubEntryTsItems(subEntry))
-                if (subEntryIndex !== entry.subEntries.length -1) {
-                  items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
+                if (subEntryIndex < entry.subEntries.length-1) {
+                  items.push(this.createPenalty(GOOD_POINT_FOR_A_BREAK));
+                  items.push((await this.createGlue('apparatus', 2)).setTextDirection(textDirection));
                 }
               }
-              if (entryIndex !== lineRange.entries.length -1) {
+              if (entryIndex < lineRange.entries.length-1) {
                 items.push(this.createPenalty(INFINITE_PENALTY))  // do not break just before the entry separator
-                items.push((await this.createNormalSpaceGlue('apparatus preEntrySeparator')).setTextDirection(textDirection))
+                items.push((await this.createGlue('apparatus preEntrySeparator')).setTextDirection(textDirection))
                 pushArray(items, await this.getTsItemsForString(entrySeparatorCharacter, 'apparatus entrySeparator', textDirection))
                 items.push(this.createPenalty(GOOD_POINT_FOR_A_BREAK))
-                items.push((await this.createNormalSpaceGlue('apparatus postEntrySeparator')).setTextDirection(textDirection))
+                items.push((await this.createGlue('apparatus postEntrySeparator')).setTextDirection(textDirection))
               }
             }
             items.push(this.createPenalty(INFINITE_PENALTY))  // do not break just before the lineRange separator
-            items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
-            items.push(this.createPenalty(INFINITE_PENALTY))  // do not break just before the lineRange separator
+            items.push((await this.createGlue('apparatus')).setTextDirection(textDirection))
             items.push(...await this.getTsItemsForString(lineRangeSeparatorCharacter, 'apparatus lineRangeSeparator', textDirection))
-            items.push(this.createPenalty(GOOD_POINT_FOR_A_BREAK)) // right after the line separator is a good place to break the line
-            items.push((await this.createNormalSpaceGlue('apparatus postLineRangeSeparator')).setTextDirection(textDirection))
+            items.push(this.createPenalty(REALLY_GOOD_POINT_FOR_A_BREAK));
+            items.push((await this.createGlue('apparatus postLineRangeSeparator')).setTextDirection(textDirection))
             lineRange.itemsToTypeset = items
             // save the export objects, which will be used to create copies of the typesetter items when adding
             // them to the output horizontal list
@@ -438,7 +448,7 @@ export class EditionTypesetting {
           this.getLineStringFromRange(lineRange.lineFrom, lineRange.lineTo, resetFirstLineNumber, firstLine, lastLine),
           'apparatus apparatusLineNumbers', textDirection))
         lineNumberItems.push(this.createPenalty(INFINITE_PENALTY))
-        lineNumberItems.push(await this.createNormalSpaceGlue('apparatus'))
+        lineNumberItems.push(await this.createGlue('apparatus'))
         outputList.pushItemArray(this.getTsItemsFromExportObjectsArray(this.getItemExportObjectsArray(lineNumberItems)))
         outputList.pushItemArray(this.getTsItemsFromExportObjectsArray(lineRange.tsItemsExportObjects))
       }
@@ -504,7 +514,7 @@ export class EditionTypesetting {
           items.push(...await this.getTsItemsForString(removeExtraWhiteSpace(FmtText.getPlainText(entry.separator)), 'apparatus', this.textDirection))
           break
       }
-      items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+      items.push((await this.createGlue('apparatus')).setTextDirection(this.textDirection))
       resolve(items)
     })
   }
@@ -535,7 +545,7 @@ export class EditionTypesetting {
 
         default:
           // a custom post lemma
-          items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+          items.push((await this.createGlue('apparatus')).setTextDirection(this.textDirection))
           // TODO: check formatting here
           let customPostLemmaBox = await this.ss.apply((new TextBox()).setText(FmtText.getPlainText(entry.postLemma)).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
           items.push(customPostLemmaBox)
@@ -564,7 +574,7 @@ export class EditionTypesetting {
           let keyword = this.ss.getStrings()[entry.preLemma]
           let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
           items.push(keywordTextBox)
-          items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+          items.push((await this.createGlue('apparatus')).setTextDirection(this.textDirection))
           break
 
         default:
@@ -577,7 +587,7 @@ export class EditionTypesetting {
               .setTextDirection(this.textDirection),
             'apparatus apparatusKeyword')
           items.push(customPreLemmaBox)
-          items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
+          items.push((await this.createGlue('apparatus')).setTextDirection(this.textDirection))
       }
 
       resolve(items)
@@ -727,7 +737,7 @@ export class EditionTypesetting {
         case 'variant':
           items.push(...this.setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, apparatusStyle), 'detect'))
           items.push(this.createPenalty(INFINITE_PENALTY))
-          items.push((await this.createNormalSpaceGlue(apparatusStyle)).setTextDirection(this.textDirection))
+          items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection))
           items.push(...await this.getTsItemsForSigla(subEntry))
           break
 
@@ -739,11 +749,11 @@ export class EditionTypesetting {
           if (subEntry.type === 'omission') {
             items.push(this.createPenalty(INFINITE_PENALTY))
           }
-          items.push((await this.createNormalSpaceGlue(apparatusStyle)).setTextDirection(this.textDirection))
+          items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection))
           if (subEntry.type === 'addition') {
             items.push(...this.setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, apparatusStyle), 'detect'))
             items.push(this.createPenalty(INFINITE_PENALTY))
-            items.push((await this.createNormalSpaceGlue(apparatusStyle)).setTextDirection(this.textDirection))
+            items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection))
           }
           items.push(...await this.getTsItemsForSigla(subEntry))
           break
@@ -757,7 +767,7 @@ export class EditionTypesetting {
             let keywordTextBox = await this.ss.apply((new TextBox()).setText(keywordString).setTextDirection(this.textDirection), keywordStyle)
             items.push(keywordTextBox)
             if (keyword !== 'omission') {
-              items.push((await this.createNormalSpaceGlue(apparatusStyle)).setTextDirection(this.textDirection))
+              items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection))
             }
           }
           if (keyword !== 'omission') {
@@ -765,7 +775,7 @@ export class EditionTypesetting {
           }
           if (subEntry.witnessData.length !== 0) {
             items.push(this.createPenalty(INFINITE_PENALTY))
-            items.push((await this.createNormalSpaceGlue(apparatusStyle)).setTextDirection(this.textDirection))
+            items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection))
             items.push(...await this.getTsItemsForSigla(subEntry))
           }
           // console.log(`TS item for full custom entry:`)
@@ -976,17 +986,21 @@ export class EditionTypesetting {
    }
 
   /**
+   * Creates a glue item with the given style and
+   * scales with by the given factor
    *
-   * @param style
-   * @return {Promise<unknown>}
+   * @param {string} style
+   * @param {number}factor
+   * @return {Promise<Glue>}
    * @private
    */
-   createNormalSpaceGlue(style) {
-    return new Promise( (resolve) => {
-      this.ss.apply( new Glue(), style).then( (glue) => {
-        resolve(glue)
-      })
-    })
+   async createGlue(style, factor = 1) {
+    /** @var {Glue} glue */
+     let glue = await this.ss.apply( new Glue(), style);
+     glue.setWidth(glue.getWidth() * factor);
+     glue.setStretch(glue.getStretch() * factor);
+     glue.setShrink(glue.getShrink() * factor);
+     return glue;
   }
 
   /**

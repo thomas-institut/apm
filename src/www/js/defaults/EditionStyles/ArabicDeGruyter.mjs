@@ -47,8 +47,8 @@ export const arabicDeGruyter = {
         marginLeft: "2.5 cm",
         marginBottom: "2.5 cm",
         marginRight: "2 cm",
-        minDistanceFromApparatusToText: "12 pt",
-        minInterApparatusDistance: "12 pt",
+        minDistanceFromApparatusToText: "15 pt",
+        minInterApparatusDistance: "15 pt",
         lineNumbers: "arabic",   //  "western", "arabic", "none"
         lineNumbersToTextDistance: "0.7 cm",
         lineNumbersFontSize: "0.9 em",
@@ -70,9 +70,9 @@ export const arabicDeGruyter = {
         shiftY: "0"
       },
       glue: {
-        width: "0.25 em",
-        shrink: "0.03 em",
-        stretch: "0.08 em"
+        width: "0.23 em",
+        shrink: "0.04 em",
+        stretch: "0.07 em"
       },
     },
   small:  {
@@ -150,9 +150,9 @@ export const arabicDeGruyter = {
         lineSkip: "14 pt"
       },
       glue: {
-        width: "0.25 em",
-        shrink: "0.03 em",
-        stretch: "0.08 em"
+        width: "0.23 em",
+        shrink: "0.04 em",
+        stretch: "0.07 em"
       },
     },
     lineRangeSeparator: {
@@ -162,16 +162,16 @@ export const arabicDeGruyter = {
     },
   postLineRangeSeparator: {
     glue: {
-      width: "0.25 em",
-      shrink: "0.03 em",
-      stretch: "0.18 em"
+      width: "0.23 em",
+      shrink: "0.04 em",
+      stretch: "0.14em"
     }
   },
   preEntrySeparator : {
     glue: {
-      width: "0.25 em",
-      shrink: "0.03 em",
-      stretch: "0.15 em"
+      width: "0.23 em",
+      shrink: "0.04 em",
+      stretch: "0.14 em"
     }
   },
   entrySeparator: {
@@ -181,9 +181,9 @@ export const arabicDeGruyter = {
   },
   postEntrySeparator: {
     glue: {
-      width: "0.25 em",
-      shrink: "0.03 em",
-      stretch: "0.15 em"
+      width: "0.23 em",
+      shrink: "0.04 em",
+      stretch: "0.14 em"
     }
   },
     apparatusLineNumbers: {
@@ -211,9 +211,9 @@ export const arabicDeGruyter = {
       lineSkip: "15 pt"
     },
     glue: {
-      width: "0.25 em",
-      shrink: "0.03 em",
-      stretch: "0.08 em"
+      width: "0.23 em",
+      shrink: "0.04 em",
+      stretch: "0.07 em"
     },
   },
   marginaliaKeyword: {

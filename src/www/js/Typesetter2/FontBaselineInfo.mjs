@@ -31,7 +31,6 @@ const fontData = [
   { family: 'Linux Libertine', multiplier: 0.8940625},
   { family: 'Amiri', multiplier: 1.124},
   { family: 'Scheherazade New', multiplier: 1.3428125},
-  { family: 'ScheherazadeNew', multiplier: 1.3428125},
   { family: 'Noto Naskh Arabic', multiplier: 1.069},
   { family: 'Adobe Arabic', multiplier: 0.74709375},
 ]

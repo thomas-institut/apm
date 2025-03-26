@@ -49,7 +49,7 @@ export const arabicDeGruyterScheherazadeNew = {
       page: {
         width: "17 cm",
         height: "24 cm",
-        marginTop: "2.2 cm",
+        marginTop: "2.5 cm",
         marginLeft: "2.5 cm",
         marginBottom: "2.5 cm",
         marginRight: "2 cm",
@@ -76,7 +76,7 @@ export const arabicDeGruyterScheherazadeNew = {
         shiftY: "0"
       },
       glue: {
-        width: "0.35 em",
+        width: "0.23 em",
         shrink: "0.02 em",
         stretch: "0.08 em"
       },
@@ -156,7 +156,7 @@ export const arabicDeGruyterScheherazadeNew = {
         lineSkip: "16 pt"
       },
       glue: {
-        width: "0.35 em",
+        width: "0.23 em",
         shrink: "0.02 em",
         stretch: "0.08 em"
       },
@@ -168,16 +168,16 @@ export const arabicDeGruyterScheherazadeNew = {
     },
   postLineRangeSeparator: {
     glue: {
-      width: "0.35 em",
-      shrink: "0.02 em",
-      stretch: "0.5 em"
+      width: "0.25 em",
+      shrink: "0.03 em",
+      stretch: "1 em"
     }
   },
   preEntrySeparator : {
     glue: {
-      width: "0.25 em",
-      shrink: "0.04 em",
-      stretch: "0.15 em"
+      width: "0.23 em",
+      shrink: "0.02 em",
+      stretch: "0.16 em"
     }
   },
   entrySeparator: {
@@ -187,9 +187,9 @@ export const arabicDeGruyterScheherazadeNew = {
   },
   postEntrySeparator: {
     glue: {
-      width: "0.25 em",
-      shrink: "0.04 em",
-      stretch: "0.15 em"
+      width: "0.23 em",
+      shrink: "0.02 em",
+      stretch: "0.16 em"
     }
   },
     apparatusLineNumbers: {
@@ -217,8 +217,8 @@ export const arabicDeGruyterScheherazadeNew = {
       lineSkip: "15 pt"
     },
     glue: {
-      width: "0.25 em",
-      shrink: "0.035 em",
+      width: "0.23 em",
+      shrink: "0.02 em",
       stretch: "0.08 em"
     },
   },

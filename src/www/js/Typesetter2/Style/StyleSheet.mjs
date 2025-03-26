@@ -146,7 +146,7 @@ export class StyleSheet {
    *
    * @param {TypesetterItem}item
    * @param {string|string[]}styles
-   * @return {Promise}
+   * @return {Promise<TypesetterItem|Glue|TextBox>}
    */
   apply(item, styles) {
     return new Promise( async (resolve) => {

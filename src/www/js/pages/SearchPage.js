@@ -42,7 +42,7 @@ export class SearchPage extends NormalPage {
         <th><span title="Enter words to search. You can use the wildcard '*' to search for words with a specific part, like 'philosoph*', '*losophus' or '*soph*'.">Keywords</span></th>
         <th id="doc-or-edition"><span title="Choose a specific document to search">Document</span></th>
         <th id="transcriber-or-editor"><span title="Limit your search to transcriptions by a specific transcriber.">Transcriber</span></th>
-        <th style="text-align: center"><span title="Number of tokens, i. e. words or punctuation marks, that are allowed to occur between your first keyword and the following ones. A value of 0 means that only the occurrence of directly consecutive keywords counts as a match.">Keyword Distance</span></th>
+        <th style="text-align: center"><span title="Number of tokens, i. e. words or punctuation marks, that are allowed to occur between the longest given keyword and each of the others. Having two keywords a value of 0 means that only the occurrence of directly consecutive words counts as a match. Having three keywords a value of 0 means that only the occurrence of your longest keyword in the middle of the other two counts as a match. Having four keywords a value of 0 cannot deliver any matches, because at least one of the keywords will have the distance 1 from the longest given keyword. It is recommended not to use too low values for the keyword distance. This could result in overlooking possible matches.">Keyword Distance</span></th>
         <th class="text-center"><span title="If checked, all conjugated or declined forms of your keywords will count as matches. Be aware, that searches containing articles or conjunctions like ,and‘ can cause too many and not desired matches. Best practice is searching only for nouns, verbs and/or adjectives.">Lemmatization</span></th>
     </tr>
     <tr>
@@ -173,11 +173,37 @@ export function setupSearchPage() {
       $("#searchButton").prop("disabled",false);
     }
 
-    // if (user_input) {
-    //   errorMessageDiv.html(`You cannot search wildcards (*) combined with lemmatization`)
-    //   $("#searchButton").prop("disabled",false);
-    // }
+    let numKeywords = user_input.split(' ').length
+    let minimumKeywordDistance
 
+    if (numKeywords%2 === 0) {
+      minimumKeywordDistance = numKeywords - (~~(numKeywords/2)+1)
+    } else {
+      minimumKeywordDistance = numKeywords - (~~(numKeywords/2)+2)
+    }
+    if ($("#keywordDistanceValue").val() < minimumKeywordDistance) {
+      $("#keywordDistanceValue").val(minimumKeywordDistance)
+    }
+  })
+
+  $("#keywordDistanceValue").on("change", function (event) {
+
+    let user_input = keywords_box.val()
+    let numKeywords = user_input.split(' ').length
+    let minimumKeywordDistance
+
+    if (numKeywords%2 === 0) {
+      minimumKeywordDistance = numKeywords - (~~(numKeywords/2)+1)
+    } else {
+      minimumKeywordDistance = numKeywords - (~~(numKeywords/2)+2)
+    }
+
+    if ($("#keywordDistanceValue").val() < minimumKeywordDistance) {
+      $("#keywordDistanceValue").val(minimumKeywordDistance)
+      errorMessageDiv.html(`The keyword distance for ${numKeywords} keywords needs to be at least ${minimumKeywordDistance} to deliver any matches. For more information hover over the title ,Keyword Distance‘ above.`)
+    } else {
+      errorMessageDiv.html('')
+    }
   })
 
   // Adjust search form and creator/title lists to selected corpus

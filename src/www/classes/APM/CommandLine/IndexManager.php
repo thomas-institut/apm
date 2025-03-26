@@ -92,7 +92,7 @@ class IndexManager extends CommandLineUtility
         // get t operation
         $operation = $argv[2];
 
-        // get names of the indices in OpenSearch
+        // get names of the indices in typesense
         $this->indices = [$this->indexNamePrefix . '_la', $this->indexNamePrefix . '_ar', $this->indexNamePrefix . '_he'];
 
         // handle empty arguments
@@ -413,45 +413,6 @@ class IndexManager extends CommandLineUtility
     }
 
     /**
-     * Returns open search id and index name of the target item
-     * @param string $arg1 , page ID in case of transcriptions, table ID for editions
-     * @param string|null $arg2 , column number for transcriptions
-     * @return array
-     */
-    private function getOpenSearchIDAndIndexName(string $arg1, string $arg2 = null): array
-    {
-
-        $mustConditions = [];
-
-        if ($this->indexNamePrefix === 'transcriptions') {
-            $mustConditions[] = ['match' => ['pageID' => $arg1]];
-            $mustConditions[] = ['match' => ['column' => $arg2]];
-        } else if ($this->indexNamePrefix === 'editions') {
-            $mustConditions[] = ['match' => ['table_id' => $arg1]];
-        }
-
-        foreach ($this->indices as $index) {
-            $query = $this->client->search([
-                'index' => $index,
-                'body' => [
-                    'size' => 20000,
-                    'query' => [
-                        'bool' => [
-                            'must' => $mustConditions
-                        ]
-                    ]
-                ]
-            ]);
-
-            if ($query['hits']['hits'] !== []) {
-                return ['index' => $index, 'id' => $query['hits']['hits'][0]['_id']];
-            }
-        }
-
-        return [];
-    }
-
-    /**
      * Returns the doc id of a transcribed page.
      * @param string $pageID
      * @return string
@@ -562,7 +523,7 @@ class IndexManager extends CommandLineUtility
         $editionsInDatabase = $this->cleanEditionData($editionsinDatabase);
 
         foreach ($editionsInDatabase as $i => $edition) {
-            $edition = [$edition['table_id'], $edition['chunk_id'], $edition['timeFrom']];
+            $edition = [(string) $edition['table_id'], (string) $edition['chunk_id'], (string) $edition['timeFrom']];
             $editionsInDatabase[$i] = $edition;
         }
 
@@ -574,9 +535,9 @@ class IndexManager extends CommandLineUtility
             $hits = $this->getItemsFromIndex($indexName);
 
             foreach ($hits as $hit) {
-                $tableID = $hit['document']['table_id'];
-                $chunk = $hit['document']['chunk'];
-                $timeFrom = $hit['document']['timeFrom'];
+                $tableID = (string) $hit['document']['table_id'];
+                $chunk = (string) $hit['document']['chunk'];
+                $timeFrom = (string) $hit['document']['timeFrom'];
                 $indexedEditions[] = [$tableID, $chunk, $timeFrom];
             }
         }
@@ -634,13 +595,13 @@ class IndexManager extends CommandLineUtility
                     $currentVersionInfo = (array)(end($versions));
                     $timeFrom = (string)$currentVersionInfo['timeFrom'];
 
-                    $columnsInDatabase[] = [$page_id, $col, $timeFrom];
+                    $columnsInDatabase[] = [(string) $page_id, (string) $col, (string) $timeFrom];
                     print(".");
                 }
             }
         }
 
-        // get all relevant data from the opensearch index
+        // get all relevant data from the typesearch index
         $indexedColumns = [];
 
         foreach ($this->indices as $indexName) {
@@ -648,9 +609,9 @@ class IndexManager extends CommandLineUtility
             $hits = $this->getItemsFromIndex($indexName);
 
             foreach ($hits as $hit) {
-                $page_id = $hit['document']['pageID'];
-                $col = $hit['document']['column'];
-                $timeFrom = $hit['document']['time_from'];
+                $page_id = (string) $hit['document']['pageID'];
+                $col = (string) $hit['document']['column'];
+                $timeFrom = (string) $hit['document']['time_from'];
                 $indexedColumns[] = [$page_id, $col, $timeFrom];
             }
         }
@@ -671,46 +632,59 @@ class IndexManager extends CommandLineUtility
      */
     private function compareDataFromDatabaseAndIndex(array $dbData, array $indexData): array
     {
-
         $notIndexedItems = [];
         $notUpdatedItems = [];
         $notInDatabaseItems = [];
         $numNotIndexedItems = 0;
         $numNotUpdatedItems = 0;
         $numNotInDatabaseItems = 0;
-        $notUpdated = false;
         $numItemsInDatabase = count($dbData);
 
-
+        // iterate over dbData
         foreach ($dbData as $dbItem) {
+            $foundInIndex = false;
 
-            if (!in_array($dbItem, $indexData)) {
-                $numNotIndexedItems++;
+            foreach ($indexData as $indexedItem) {
 
-                foreach ($indexData as $indexedItem) {
-                    if (array_slice($dbItem, 0, 2) === array_slice($indexedItem, 0, 2)) {
-                        $numNotIndexedItems--;
+                // compare the items without looking at their timestamps
+                if (array_slice($dbItem, 0, 2) === array_slice($indexedItem, 0, 2)) {
+                    $foundInIndex = true;
+
+                    // if items matched, compare their timestamps
+                    if ($dbItem[2] !== $indexedItem[2]) {
                         $numNotUpdatedItems++;
-                        $notUpdated = true;
                         $notUpdatedItems[] = [$dbItem[0], $dbItem[1]];
                     }
+                    break;
                 }
+            }
 
-                if (!$notUpdated) {
-                    $notIndexedItems[] = [$dbItem[0], $dbItem[1]];
-                }
+            // mark item as not indexed
+            if (!$foundInIndex) {
+                $numNotIndexedItems++;
+                $notIndexedItems[] = [$dbItem[0], $dbItem[1]];
             }
         }
 
+        // check for items in the index, that are not in the database without looking at their timestamps
         foreach ($indexData as $indexedItem) {
-            if (!in_array($indexedItem, $dbData) and !in_array(array_slice($indexedItem, 0, 2), $notUpdatedItems)) {
+            $foundInDb = false;
+
+            foreach ($dbData as $dbItem) {
+                if (array_slice($indexedItem, 0, 2) === array_slice($dbItem, 0, 2)) {
+                    $foundInDb = true;
+                    break;
+                }
+            }
+
+            if (!$foundInDb) {
                 $numNotInDatabaseItems++;
                 $notInDatabaseItems[] = $indexedItem[0];
             }
         }
 
         if ($numNotIndexedItems === 0 && $numNotUpdatedItems === 0) {
-            print ("\nINDEX IS COMPLETE!.\n");
+            print ("\nINDEX IS COMPLETE!\n");
         } else {
             print ("\nINDEX IS NOT COMPLETE!\n
             $numNotIndexedItems of $numItemsInDatabase items not indexed.\n
@@ -724,6 +698,7 @@ class IndexManager extends CommandLineUtility
 
         return ['notIndexed' => $notIndexedItems, 'outdated' => $notUpdatedItems, 'numNotIndexedItems' => $numNotIndexedItems, 'numNotUpdatedItems' => $numNotUpdatedItems];
     }
+
 
     /**
      * Evaluates given check results and communicates information about them to the user.
@@ -1051,7 +1026,7 @@ class IndexManager extends CommandLineUtility
         $data = $this->getTypesenseIDAndIndexName($arg1, $arg2);
 
         if (isset($data['id'])) {
-
+            
             $index = $data['index'];
             $id = $data['id'];
 

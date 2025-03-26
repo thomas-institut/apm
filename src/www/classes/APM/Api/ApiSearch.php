@@ -18,13 +18,12 @@ class ApiSearch extends ApiController
     const CLASS_NAME = 'Search';
 
     /**
+     * searches in an typesense index and returns an api response to js
      * @param Request $request
      * @param Response $response
      * @return Response
      * @throws KeyNotInCacheException
      */
-
-    // Function to search in an Typesense -Index – returns an api response to js
     public function search(Request  $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
@@ -77,7 +76,7 @@ class ApiSearch extends ApiController
 
         // Query index
         try {
-            $query = $this->makeTypesenseSearchQuery($client, $index_name, $lang,  $title, $creator, $tokensForQuery, $lemmatize, $corpus);
+            $query = $this->makeSingleTokenTypesenseSearchQuery($client, $index_name, $lang,  $title, $creator, $tokensForQuery[0], $lemmatize, $corpus);
         } catch (\Exception $e) {
             $status = "Typesense query problem";
             return $this->responseWithJson($response,
@@ -102,7 +101,7 @@ class ApiSearch extends ApiController
 
 
         // Get all information about the matched entries, including passages with the matched token as lists of tokens
-        $data = $this->getData($query, $tokensForQuery[0], $tokensForQuery, $lemmata, $keywordDistance, $lemmatize, $corpus);
+        $data = $this->collectData($query, $tokensForQuery[0], $tokensForQuery, $lemmata, $keywordDistance, $lemmatize, $corpus);
 
         // Until now, there was no check, if the queried keywords are close enough to each other, depending on the keywordDistance value
         // If there is more than one token in the searched phrase, now  all columns and passages, which do not match all tokens in the desired way,
@@ -140,7 +139,13 @@ class ApiSearch extends ApiController
             'status' => $status]);
     }
 
-    private function removePassageDuplicates ($data) {
+    /**
+     * removes overlapping passages which contain exactly the same matched tokens
+     * @param array $data
+     * @return array
+     */
+    private function removePassageDuplicates (array $data): array
+    {
 
         // remove passages that include exactly the same matched tokens, only with different borders
         foreach ($data as $i=>$match) {
@@ -168,7 +173,13 @@ class ApiSearch extends ApiController
         return array_values($data);
     }
 
-    private function removeSubsetArrays($array) {
+    /**
+     * removes every array A from an array B, that is a subset of another array C in the array B
+     * @param array $array
+     * @return array
+     */
+    private function removeSubsetArrays(array $array): array
+    {
         $result = [];
 
         // iterate over input array
@@ -176,7 +187,7 @@ class ApiSearch extends ApiController
             $isSubset = false;
 
             foreach ($array as $existingIndex => $existing) {
-                //
+
                 if ($currentIndex != $existingIndex && empty(array_diff($current, $existing))) {
                     $isSubset = true;
                     break;
@@ -191,8 +202,14 @@ class ApiSearch extends ApiController
         return $result;
     }
 
-    // Get lemmata of words from cache or run lemmatizer
-    private function getLemmata (string $searched_phrase, $lang): array {
+    /**
+     * returns the lemmata for all the words in a given phrase, gets them either from cache or runs the lemmatizer and caches them
+     * @param string $searched_phrase
+     * @param string $lang
+     * @return array
+     * @throws KeyNotInCacheException
+     */
+    private function getLemmata (string $searched_phrase, string $lang): array {
 
         // Lemmatization can be slow, so we cache it as much as possible
         $cache = $this->systemManager->getSystemDataCache();
@@ -241,18 +258,30 @@ class ApiSearch extends ApiController
         return array_values($tokensForQuery);
     }
 
-    // Get full number of passages stored in data-array
-    private function getNumPassages(array $data): int {
+    /**
+     * counts the matched passages stored in an array of matched items, e. g. transcriptions or editions
+     * @param array $data
+     * @return int
+     */
+    private function getNumPassages(array $data): int
+    {
 
         $num_passages_total = 0;
-        foreach ($data as $matched_column) {
-            $num_passages_total = $num_passages_total + $matched_column['num_passages'];
+        foreach ($data as $matched_item) {
+            $num_passages_total = $num_passages_total + $matched_item['num_passages'];
         }
 
         return $num_passages_total;
     }
 
-    private function cropData (array $data, int $max_passages): array {
+    /**
+     * crops the matched data to a given number of passages
+     * @param array $data
+     * @param int $max_passages
+     * @return array
+     */
+    private function cropData (array $data, int $max_passages): array
+    {
 
         $num_passages_cropped = 0;
         foreach ($data as $i=>$matched_column) {
@@ -266,7 +295,14 @@ class ApiSearch extends ApiController
         return  $data;
     }
 
-    private function getIndexName(string $corpus, string $lang): string {
+    /**
+     * gets the name of a transcriptions- or editions-index relative to a given language
+     * @param string $corpus
+     * @param string $lang
+     * @return string
+     */
+    private function getIndexName(string $corpus, string $lang): string
+    {
         if ($lang != 'jrb') {
             $index_name = $corpus . '_' . $lang;
         }
@@ -277,12 +313,22 @@ class ApiSearch extends ApiController
         return $index_name;
     }
 
-    private  function getLemmaCacheKey($word): string
+    /**
+     * returns the cache key for a given word
+     * @param string $word
+     * @return string
+     */
+    private  function getLemmaCacheKey(string $word): string
     {
         return CacheKey::ApiSearchLemma . $word;
     }
 
-    private function removeBlanks ($searched_phrase): array|string|null
+    /**
+     * removes all blanks from a given string, that are not single blanks between words
+     * @param string $searched_phrase
+     * @return array|string|null
+     */
+    private function removeBlanks (string $searched_phrase): array|string|null
     {
 
         // Reduce multiple blanks following each other anywhere in the keyword to one single blank
@@ -301,7 +347,13 @@ class ApiSearch extends ApiController
         return $searched_phrase;
     }
 
-    private function sortTokensForQuery (array $tokensForQuery): array {
+    /**
+     * sorts an array of strings by length and moves words suffixes beginning with '*' to the end of the array
+     * @param array $tokensForQuery
+     * @return array
+     */
+    private function sortTokensForQuery (array $tokensForQuery): array
+    {
 
         $suffixes = [];
 
@@ -323,10 +375,24 @@ class ApiSearch extends ApiController
         return array_values(array_merge($tokensForQuery, $suffixes));
     }
 
-    // Function to query a given TypeSense-index
-    private function makeTypesenseSearchQuery ($client, $index_name, $lang, $title, $creator, $tokens, $lemmatize, $corpus) {
+    /**
+     * make a single token query for a specific typesearch index
+     * @param Client $client
+     * @param string $index_name
+     * @param string $lang
+     * @param string $title
+     * @param string $creator
+     * @param array $tokens
+     * @param bool $lemmatize
+     * @param string $corpus
+     * @return array
+     * @throws \Http\Client\Exception
+     * @throws \Typesense\Exceptions\TypesenseClientError
+     */
+    private function makeSingleTokenTypesenseSearchQuery (Client $client, string $index_name, string $lang, string $title, string $creator, string $token, bool $lemmatize, string $corpus): array
+    {
 
-        $this->logger->debug("Making typesense query", [ 'index' => $index_name, 'tokens' => $tokens, 'title' => $title, 'creator' => $creator]);
+        $this->logger->debug("Making typesense query", [ 'index' => $index_name, 'token' => $token, 'title' => $title, 'creator' => $creator]);
 
         // Check lemmatize (boolean) and corpus to determine the target of the query
         if ($lemmatize) {
@@ -347,7 +413,7 @@ class ApiSearch extends ApiController
         }
 
         $searchParameters = [
-            'q' => '',
+            'q' => $token,
             'query_by' => $area_of_query,
             'filter_by' => "lang:=$lang",
             'num_typos' => 0,
@@ -355,16 +421,7 @@ class ApiSearch extends ApiController
             'infix' => 'off',
             'limit' => 250
         ];
-
-        if ($lemmatize) {
-            foreach ($tokens as $token) {
-                // MODIFY HERE FOR HANDLING OF COMPLEX LEMMATA
-                $searchParameters['q'] = $searchParameters['q'] . " " . $token; // complex tokens are lemmatized as strings of lemmata, separated by blanks
-            }
-        } else {
-            $searchParameters['q'] = $tokens[0];
-        }
-
+        
         if ($creator !== '') {
             $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && creator:=$creator";
         }
@@ -389,15 +446,24 @@ class ApiSearch extends ApiController
 
             $page++;
         }
-
-        //$print = print_r($hits, true);
-        //file_put_contents('hits.txt', $print);
-        $this->logger->debug("got " . count($hits) . " documents from typesense");
+        
+        $this->logger->debug("got " . count($hits) . " matching items from typesense");
         return $hits;
     }
 
-    // Get all information about matches, specified for a single document or all documents
-    private function getData (array $query, string $token, array $tokens_for_query, array $lemmata, int $keywordDistance, bool $lemmatize, string $corpus): array {
+    /**
+     * collects all information about the matches in a given typesearch query
+     * @param array $query
+     * @param string $token
+     * @param array $tokens_for_query
+     * @param array $lemmata
+     * @param int $keywordDistance
+     * @param bool $lemmatize
+     * @param string $corpus
+     * @return array
+     */
+    private function collectData (array $query, string $token, array $tokens_for_query, array $lemmata, int $keywordDistance, bool $lemmatize, string $corpus): array
+    {
 
         // Choose filter algorithm based on asterisks in the queried token - remove asterisks for further processing
         $filter = $this->getFilterType($token);
@@ -407,7 +473,6 @@ class ApiSearch extends ApiController
         $data = [];
 
         // Get number of matched columns
-        // $num_matches = $query['hits']['total']['value'];
         $num_matches = count($query);
 
         // If there are any matched columns, collect them all in an ordered and nested array of columns
@@ -415,7 +480,6 @@ class ApiSearch extends ApiController
             for ($i = 0; $i<$num_matches; $i++) {
 
                 if ($corpus === 'transcriptions') {
-                    // Get all relevant column-data
                     $page = $query[$i]['document']['page'];
                     $seq = $query[$i]['document']['seq'];
                     $foliation = $query[$i]['document']['foliation'];
@@ -425,15 +489,13 @@ class ApiSearch extends ApiController
                     $typesenseID = $query[$i]['document']['id'];
                     $text_tokenized = $query[$i]['document']['transcription_tokens'];
                     $text_lemmatized = $query[$i]['document']['transcription_lemmata'];
-                    //$score = $query[$i]['_score'];
                 }
                 else {
-                    // Get all relevant column-data
                     $table_id = $query[$i]['document']['table_id'];
                     $chunk = $query[$i]['document']['chunk'];
+                    $typesenseID = $query[$i]['document']['id'];
                     $text_tokenized = $query[$i]['document']['edition_tokens'];
                     $text_lemmatized = $query[$i]['document']['edition_lemmata'];
-                    // $score = $query[$i]['_score'];
                 }
 
                 $title = $query[$i]['document']['title'];
@@ -451,11 +513,6 @@ class ApiSearch extends ApiController
                 // Merge positions to one ordered array without duplicates
                 $pos_all = array_unique(array_merge($pos_lower, $pos_upper));
                 sort($pos_all);
-
-//                if (count($pos_all) === 2 && ($pos_all[1]-$pos_all[0])<$keywordDistance) {
-//                        unset($pos_all[0]);
-//                        $pos_all = array_values($pos_all);
-//                }
 
                 // Arrays to store matched passages and tokens in them as well as passage-coordinates and matched tokens
                 $passage_tokenized = [];
@@ -504,7 +561,7 @@ class ApiSearch extends ApiController
                         'column' => $column,
                         'creator' => $creator,
                         'pageID' => $pageID,
-                        'openSearchID' => $typesenseID,
+                        'typesenseID' => $typesenseID,
                         'docID' => $docID,
                         'text_tokenized' => $text_tokenized,
                         'text_lemmatized' => $text_lemmatized,
@@ -517,7 +574,6 @@ class ApiSearch extends ApiController
                         'passage_tokenized' => $passage_tokenized,
                         'passage_lemmatized' => $passage_lemmatized,
                         'lemmatize' => $lemmatize,
-                        //'score' => $score,
                         'matched_token_positions' => $matched_token_positions
                     ];
                 }
@@ -528,6 +584,7 @@ class ApiSearch extends ApiController
                         'chunk' => $chunk,
                         'creator' => $creator,
                         'table_id' => $table_id,
+                        'typesenseID' => $typesenseID,
                         'text_tokenized' => $text_tokenized,
                         'text_lemmatized' => $text_lemmatized,
                         'tokens_for_query' => $tokens_for_query,
@@ -539,7 +596,6 @@ class ApiSearch extends ApiController
                         'passage_tokenized' => $passage_tokenized,
                         'passage_lemmatized' => $passage_lemmatized,
                         'lemmatize' => $lemmatize,
-                        //'score' => $score
                         'matched_token_positions' => $matched_token_positions
                     ];
                 }
@@ -553,10 +609,18 @@ class ApiSearch extends ApiController
         return $data;
     }
 
-    // Function to filter out data, which do not match additional tokens in the searched phrase
-    private function filterData (array $data, string $token_plain, string $lemma, bool $lemmatize): array {
+    /**
+     * filter out items from the collected matches, which do not also match a given token
+     * @param array $data
+     * @param string $token_plain
+     * @param string $lemma
+     * @param bool $lemmatize
+     * @return array
+     */
+    private function filterData (array $data, string $token_plain, string $lemma, bool $lemmatize): array
+    {
 
-        if ($lemmatize) { // Lemmatization requested
+        if ($lemmatize) { // lemmatization requested
 
             // Remove all passages from $data, which do not match the additional keyword
             foreach ($data as $i => $match) {
@@ -650,13 +714,19 @@ class ApiSearch extends ApiController
         return array_values($data);
     }
 
-    // Function, to check if $needle is matching $token in one of four different modes
-    private function isMatching (string $token, string $needle, string $filter): bool {
+    /**
+     * checks if a given string matches another one in one of four different filter modes
+     * @param string $token
+     * @param string $needle
+     * @param string $filter
+     * @return bool
+     */
+    private function isMatching (string $token, string $needle, string $filter): bool
+    {
 
         $needleForLemmataCheck = " " . $needle . " ";
 
         if ($filter === 'match_full') {
-            // MODIFY HERE FOR HANDLING OF COMPLEX LEMMATA
             if ($token === $needle or $token === ucfirst($needle) or
                 str_contains($token, $needleForLemmataCheck)) {
                 return true;
@@ -698,8 +768,13 @@ class ApiSearch extends ApiController
         }
     }
 
-    // Function to return needed search algorithm based on the asterisks contained in the queried token
-    private function getFilterType (string $token): string {
+    /**
+     * calculates the desired filter type based on the asterisk positions contained in a token
+     * @param string $token
+     * @return string
+     */
+    private function getFilterType (string $token): string
+    {
 
         if (substr_count($token, '*') !== 0) {
             $num_chars = strlen($token);
@@ -720,18 +795,25 @@ class ApiSearch extends ApiController
         return $filter;
     }
 
-    // Function to get all positions of a given token (plain or lemma) in a transcript
-    private function getPositions (array $transcript, string $token, string $filter): array {
+    /**
+     * calculates all numerical positions of a given token (word or lemma) in a text
+     * @param array $transcript
+     * @param string $token
+     * @param string $filter
+     * @return array
+     */
+    private function getPositions (array $text, string $token, string $filter): array
+    {
 
         // Array, which will be returned
         $positions = [];
 
-        // Check every token in the transcript (which may be lemmatized), if it matches the queried token
-        for ($i=0; $i<count($transcript); $i++) {
+        // Check every token in the text (which may be lemmatized), if it matches the queried token
+        for ($i=0; $i<count($text); $i++) {
 
-            $current_token = $transcript[$i];
+            $current_token = $text[$i];
 
-            // Depending on the filter algorithm, append all positions of the queried token in the transcript to the positions array
+            // Depending on the filter algorithm, append all positions of the queried token in the text to the positions array
             if ($current_token !== null && $this->isMatching($current_token, $token, $filter)) {
                 $positions[] = $i;
             }
@@ -740,22 +822,29 @@ class ApiSearch extends ApiController
         return $positions;
     }
 
-    // Function to cut out a passage of a transcript
-    private function getPassage (array $transcript, int $pos, int $keywordDistance): array {
+    /**
+     * cuts out a passage from a text based on the numerical position of a token and a given keyword distance
+     * @param array $transcript
+     * @param int $pos
+     * @param int $keywordDistance
+     * @return array
+     */
+    private function getPassage (array $text, int $pos, int $keywordDistance): array
+    {
 
         // Store the token at the given position into an array and use this array in the next steps to collect the passage in it
-        $passage = [$transcript[$pos]];
+        $passage = [$text[$pos]];
 
         // Variables to store passage borders in
         $passage_start = 0;
         $passage_end = 0;
 
         // Get total number of tokens in the transcript (could be lemmatized)
-        $num_tokens = count($transcript);
+        $num_tokens = count($text);
 
         // Get a list of all preceding and all succeeding tokens of the token at pos and count these tokens
-        $prec_tokens = array_slice($transcript, 0, $pos);
-        $suc_tokens = array_slice($transcript, $pos+1, $num_tokens);
+        $prec_tokens = array_slice($text, 0, $pos);
+        $suc_tokens = array_slice($text, $pos+1, $num_tokens);
         $num_prec_tokens = count($prec_tokens);
         $num_suc_tokens = count($suc_tokens);
 
@@ -780,8 +869,16 @@ class ApiSearch extends ApiController
         return ['passage' => $passage, 'start' => $passage_start, 'end' => $passage_end];
     }
 
-    // Function to get a full list of i. e. titles or transcribers values in the index
-    static private function getAllEntriesFromIndex ($client, string $queryKey): array { // $queryKey can be 'transcription' or 'transcriber' or 'editor' or 'edition'
+    /**
+     * returns all creators or titles stored in the transcriptions or editions indices
+     * @param Client $client
+     * @param string $queryKey, can be 'transcription' or 'transcriber' or 'editor' or 'edition'
+     * @return array
+     * @throws \Http\Client\Exception
+     * @throws \Typesense\Exceptions\TypesenseClientError
+     */
+    static private function getAllEntriesFromIndex (Client $client, string $queryKey): array
+    {
 
         // Get names of target indices
         if ($queryKey === 'transcription' or $queryKey === 'transcriber') {
@@ -839,11 +936,19 @@ class ApiSearch extends ApiController
         return $values;
     }
 
-    static public function updateDataCache (SystemManager $systemManager, $client, string $whichindex) {
+    /**
+     * updates the data cache for transcribers and transcription titles or editors and edition titles
+     * @param SystemManager $systemManager
+     * @param Client $client
+     * @param string $whichindex
+     * @return bool
+     * @throws \Http\Client\Exception
+     * @throws \Typesense\Exceptions\TypesenseClientError
+     */
+    static public function updateDataCache (SystemManager $systemManager, Client $client, string $whichindex): bool
+    {
 
         $cache = $systemManager->getSystemDataCache();
-
-        $config = $systemManager->getConfig();
 
         if ($whichindex === 'transcriptions')
         {
@@ -863,27 +968,61 @@ class ApiSearch extends ApiController
         return true;
     }
 
-    // ApiCall – Function to get all doc titles
+    /**
+     * returns all transcription titles from the cache or the corresponding indices
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     *
+     */
     public function getTranscriptionTitles(Request $request, Response $response): Response
     {
         return $this->getDataFromCacheOrIndex($request, $response, CacheKey::ApiSearchTranscriptions, 'transcription');
     }
 
+    /**
+     * returns all transcriber names from the cache or the corresponding  indices
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function getTranscribers(Request $request, Response $response): Response
     {
         return $this->getDataFromCacheOrIndex($request, $response, CacheKey::ApiSearchTranscribers, 'transcriber');
     }
 
+    /**
+     * returns all edition titles from the cache or the corresponding indices
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function getEditionTitles(Request $request, Response $response): Response
     {
         return $this->getDataFromCacheOrIndex($request, $response, CacheKey::ApiSearchEditions, 'edition');
     }
 
+    /**
+     * returns all editor names from the cache or the corresponding indices
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function getEditors(Request $request, Response $response): Response
     {
         return $this->getDataFromCacheOrIndex($request, $response, CacheKey::ApiSearchEditors, 'editor');
     }
 
+    /**
+     * returns data from cache or the corresponding indices for given cache and query-keys
+     * @param Request $request
+     * @param Response $response
+     * @param string $cacheKey
+     * @param string $queryKey
+     * @return Response
+     * @throws \Http\Client\Exception
+     * @throws \Typesense\Exceptions\TypesenseClientError
+     */
     private function getDataFromCacheOrIndex(Request $request, Response $response, string $cacheKey, string $queryKey): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
@@ -901,7 +1040,7 @@ class ApiSearch extends ApiController
             try {
                 $client = $this->instantiateTypesenseClient($config);
             } catch (Exception $e) {
-                $status = 'Connecting to OpenSearch server failed.';
+                $status = 'Connecting to typesense server failed.';
                 return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
             }
 
@@ -922,7 +1061,12 @@ class ApiSearch extends ApiController
         return $this->responseWithJson($response, $responseData);
     }
 
-    public function instantiateTypesenseClient($config) {
+    /**
+     * instantiates and returns a typesearch client
+     * @param array $config
+     * @return false|Client
+     */
+    public function instantiateTypesenseClient(array $config) {
         try {
             $client = new Client(
                 [
@@ -944,7 +1088,12 @@ class ApiSearch extends ApiController
         }
     }
 
-    static public function getTypesenseClient($config) {
+    /**
+     * instantiates and returns a typesense client via a static function
+     * @param array $config
+     * @return false|Client
+     */
+    static public function getTypesenseClient(array $config) {
         try {
             $client = new Client(
                 [

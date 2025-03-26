@@ -25,19 +25,15 @@
  * from the top of the font.
  * @type {[{family: string, multiplier: number},{family: string, multiplier: number},{family: string, multiplier: number}]}
  */
-// const fontData = [
-//   { family: 'FreeSerif', multiplier: 0.9},
-//   { family: 'Arial', multiplier: 0.9052736842105263},
-//   { family: 'Linux Libertine', multiplier: 0.8940447368421053}
-// ]
-
 const fontData = [
-  { family: 'FreeSerif', multiplier: 0.8},
-  { family: 'Arial', multiplier: 0.776},
-  { family: 'Linux Libertine', multiplier: 0.785},
-  { family: 'Amiri', multiplier: 0.643},
-  { family: 'Scheherazade New', multiplier: 0.659},
-  { family: 'ScheherazadeNew', multiplier: 0.659},
+  { family: 'FreeSerif', multiplier: 0.9},
+  { family: 'Arial', multiplier: 0.9},
+  { family: 'Linux Libertine', multiplier: 0.8940625},
+  { family: 'Amiri', multiplier: 1.124},
+  { family: 'Scheherazade New', multiplier: 1.3428125},
+  { family: 'ScheherazadeNew', multiplier: 1.3428125},
+  { family: 'Noto Naskh Arabic', multiplier: 1.069},
+  { family: 'Adobe Arabic', multiplier: 0.74709375},
 ]
 
 

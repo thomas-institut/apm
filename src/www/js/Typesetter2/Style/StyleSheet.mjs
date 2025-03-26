@@ -172,7 +172,6 @@ export class StyleSheet {
         for (let i = 0; i < this.specialStrings.length; i++) {
           let specialString = this.specialStrings[i];
           if (item.getText() === specialString.string) {
-            console.log(`Found special string '${specialString.string}', setting font ${specialString.fontFamily}`);
             item.setFontFamily(specialString.fontFamily);
             break;
           }

@@ -47,10 +47,6 @@ export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
 
   getBoxWidth (textBox) {
     let myDebug = false
-    // if (textBox.getText().charAt(0) === 'f' && textBox.getFontSize() === 16) {
-    //    myDebug = true
-    // }
-
     if (this.useCache) {
       let cacheKey = this.__getCacheKeyForTextBox(textBox)
       if (this.widthCache.has(cacheKey)) {
@@ -61,7 +57,6 @@ export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
         this.realMeasurements++
       }
     }
-    this.debug && console.log(`Measuring width`)
 
     let context = this.__getContext()
     let fontWeight = textBox.getFontWeight() === '' ? 'normal' : textBox.getFontWeight()
@@ -75,8 +70,7 @@ export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
   }
 
   getBoxHeight (token) {
-    // TODO: change this to a better measurement
-    // no need to cache this
+    // use font data collected from Cairo so that canvas preview and PDF typesetting are almost identical
     return resolvedPromise(FontBaselineInfo.getBaseline(token.getFontFamily(), token.getFontSize()))
   }
 

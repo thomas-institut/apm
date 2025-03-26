@@ -286,8 +286,6 @@ export class BasicTypesetter extends Typesetter2 {
             if (item.getHeight() < lineHeight) {
               let oldShiftY = item.getShiftY()
               let newShiftY = lineHeight - item.getHeight() + oldShiftY
-              this.debug && console.log(`Adjusting shiftY to align baselines. 
-              Text: '${item.getText()}', font ${item.getFontFamily()}, lineHeight: ${lineHeight}, item's Height: ${item.getHeight()}, new shiftY: ${newShiftY}`)
               item.setShiftY(newShiftY)
             }
           }

@@ -403,6 +403,7 @@ export class EditionTypesetting {
             }
             items.push(this.createPenalty(INFINITE_PENALTY))  // do not break just before the lineRange separator
             items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(textDirection))
+            items.push(this.createPenalty(INFINITE_PENALTY))  // do not break just before the lineRange separator
             items.push(...await this.getTsItemsForString(lineRangeSeparatorCharacter, 'apparatus lineRangeSeparator', textDirection))
             items.push(this.createPenalty(GOOD_POINT_FOR_A_BREAK)) // right after the line separator is a good place to break the line
             items.push((await this.createNormalSpaceGlue('apparatus postLineRangeSeparator')).setTextDirection(textDirection))

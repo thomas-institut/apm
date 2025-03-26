@@ -49,7 +49,7 @@ export const arabicDeGruyterScheherazadeNew = {
       page: {
         width: "17 cm",
         height: "24 cm",
-        marginTop: "2.5 cm",
+        marginTop: "2.2 cm",
         marginLeft: "2.5 cm",
         marginBottom: "2.5 cm",
         marginRight: "2 cm",

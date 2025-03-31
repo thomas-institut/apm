@@ -4,7 +4,6 @@ namespace APM\EntitySystem\Schema;
 
 use APM\EntitySystem\Kernel\DefsFromArray;
 use APM\EntitySystem\Kernel\PredicateDefiner;
-use APM\EntitySystem\Kernel\PredicateFlag;
 
 
 const EditionSourcePredicateDefs = [

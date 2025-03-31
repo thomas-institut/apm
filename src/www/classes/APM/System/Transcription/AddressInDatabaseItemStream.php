@@ -43,16 +43,16 @@ use APM\System\Transcription\ColumnElement\Element;
  */
 class AddressInDatabaseItemStream extends ItemAddressInDocument {
     
-    const COORD_ITEMID = 0;
-    const COORD_ITEMSEQ = 1;
-    const COORD_ELEMENTID = 2;
-    const COORD_ELEMENTSEQ = 3;
-    const COORD_COL = 4;
-    const COORD_PAGE_ID = 5;
-    const COORD_PAGESEQ = 6;
-    const COORD_PAGEFOL = 7;
-    const COORD_DOCID = 8;
-    const COORD_TBINDEX = 9;
+    const int COORD_ITEMID = 0;
+    const int COORD_ITEMSEQ = 1;
+    const int COORD_ELEMENTID = 2;
+    const int COORD_ELEMENTSEQ = 3;
+    const int COORD_COL = 4;
+    const int COORD_PAGE_ID = 5;
+    const int COORD_PAGESEQ = 6;
+    const int COORD_PAGEFOL = 7;
+    const int COORD_DOCID = 8;
+    const int COORD_TBINDEX = 9;
     
     /**
      *

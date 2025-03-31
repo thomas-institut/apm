@@ -22,9 +22,7 @@ if (size <= 0) {
 let text = process.argv[4]
 
 let measurer =  new PangoMeasurerNodeGTK()
-//
-// let textBox = new TextBox()
-// textBox.setText(text).setFontFamily(font).setFontSize(size)
+
 
 const scale= 1000
 

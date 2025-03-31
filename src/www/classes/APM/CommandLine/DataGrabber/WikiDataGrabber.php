@@ -2,14 +2,10 @@
 
 namespace APM\CommandLine\DataGrabber;
 
-use APM\CommandLine\AdminUtility;
+use APM\CommandLine\ApmCtlUtility\AdminUtility;
 use APM\CommandLine\CommandLineUtility;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
-use APM\EntitySystem\Exception\PredicateCannotBeCancelledException;
-use APM\EntitySystem\Exception\StatementAlreadyCancelledException;
-use APM\EntitySystem\Exception\StatementNotFoundException;
 use APM\EntitySystem\Schema\Entity;
-use APM\ToolBox\HttpStatus;
 use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;

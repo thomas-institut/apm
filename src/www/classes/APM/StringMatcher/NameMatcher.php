@@ -2,8 +2,6 @@
 
 namespace APM\StringMatcher;
 
-use APM\StringMatcher\SimpleIndexStringMatcher;
-
 /**
  * String matcher that attempts to find meaningful matches to names consisting
  * of a number of words.

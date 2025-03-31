@@ -40,22 +40,19 @@ class CharacterGap extends Item
         $this->setLength($l);
     }
     
-    public function getText()
+    public function getText(): string
     {
         $spaceCharacter = ' ';
-        $str = '';
-        for ($i = 0; $i < $this->length; $i++) {
-            $str .= $spaceCharacter;
-        }
-        return $str;
+        return str_repeat($spaceCharacter, $this->length);
     }
     
-    public function setLength(int $l) 
+    public function setLength(int $l): void
     {
         $this->length = $l;
     }
     
-    public function getPlainText() {
+    public function getPlainText(): string
+    {
         return '[...]';
     }
 }

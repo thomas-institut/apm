@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Font Measurements</title>
+    <link rel="stylesheet" type="text/css" href="../css/styles.css"/>
+    <script src="../node_modules/fontmetrics/output/FontMetrics.min.js" type="text/javascript"></script>
+    <style>
+        .specimen {
+            font-size: 1.2em;
+            margin:0;
+            padding: 0;
+            line-height: 1.2em;
+            border: 1px solid silver;
+        }
+    </style>
+</head>
+<body>
+<h1>Font Measurements</h1>
+<div id="fonts">
+
+</div>
+</body>
+<script type="text/javascript">
+  window.onload = function() {
+
+    let fonts = [ 'Arial', 'Noto Sans', 'Linux Libertine', 'FreeSerif', 'Libertine', 'Amiri', 'Scheherazade New'];
+
+    document.getElementById('fonts').innerHTML = fonts.map( (fontFamily) => {
+      const metrics = FontMetrics({
+        fontFamily: fontFamily,
+        fontWeight: 'normal',
+        fontSize: 1000,
+        origin: 'top'
+      });
+
+      return `<p class="specimen" style="font-family: ${fontFamily}">
+        ${fontFamily}: baseline ${metrics.baseline}, cap height: ${metrics.capHeight}</p><p>&nbsp;</p>`;
+    }).join('');
+
+
+  }
+</script>
+</html>

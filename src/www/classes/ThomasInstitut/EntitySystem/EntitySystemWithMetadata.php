@@ -2,6 +2,7 @@
 
 namespace ThomasInstitut\EntitySystem;
 
+use ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException;
 use ThomasInstitut\EntitySystem\Exception\InvalidStatementException;
 use ThomasInstitut\EntitySystem\Exception\StatementAlreadyCancelledException;
 use ThomasInstitut\EntitySystem\Exception\StatementNotFoundException;
@@ -115,6 +116,12 @@ interface EntitySystemWithMetadata extends EntitySystem
 
 
     /**
+     * Finds all statements involving the given subject, predicate and object.
+     * Null means any. So, for example: getStatements($entity, null, null) returns all the
+     * statements in which $entity is a subject, with any predicate and any object.
+     *
+     * Returns an array of StatementData objects
+     *
      * @param int|null $subject
      * @param int|null $predicate
      * @param string|int|null $object
@@ -122,6 +129,14 @@ interface EntitySystemWithMetadata extends EntitySystem
      * @return StatementData[]
      */
     public function getStatementsData(int|null $subject, int|null $predicate, string|int|null $object, bool $includeCancelled = false) : array;
+
+    /**
+     * Returns an entity's data as an EntityData object
+     *
+     * @param int $entity
+     * @return EntityData
+     * @throws EntityDoesNotExistException
+     */
     public function getEntityData(int $entity) : EntityData;
 
 }

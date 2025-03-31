@@ -21,8 +21,7 @@
 
 namespace APM;
 
-use APM\CommandLine\GrabData;
-use APM\System\ConfigLoader;
+use APM\CommandLine\DataGrabber\GrabData;
 
 require __DIR__ . '/../www/vendor/autoload.php';
 

@@ -2,7 +2,7 @@
 
 namespace APM\CommandLine\DataGrabber;
 
-use APM\CommandLine\AdminUtility;
+use APM\CommandLine\ApmCtlUtility\AdminUtility;
 use APM\CommandLine\CommandLineUtility;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Exception\PredicateCannotBeCancelledException;

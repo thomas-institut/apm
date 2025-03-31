@@ -20,8 +20,6 @@
 
 namespace APM\Core\Item;
 
-use APM\Core\Person\Person;
-use Cassandra\Time;
 use InvalidArgumentException;
 use ThomasInstitut\TimeString\TimeString;
 

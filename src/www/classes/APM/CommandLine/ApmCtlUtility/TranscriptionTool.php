@@ -4,7 +4,6 @@
 namespace APM\CommandLine\ApmCtlUtility;
 
 
-use APM\CommandLine\AdminUtility;
 use APM\CommandLine\CommandLineUtility;
 use APM\System\ApmMySqlTableName;
 use APM\System\Document\Exception\DocumentNotFoundException;

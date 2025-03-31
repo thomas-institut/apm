@@ -22,6 +22,7 @@ namespace APM\Site;
 use APM\SystemProfiler;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
 
 /**
  * Site Controller class
@@ -30,7 +31,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 class SiteDashboard extends SiteController
 {
 
-    const TEMPLATE_DASHBOARD = 'dashboard.twig';
+    const string TEMPLATE_DASHBOARD = 'dashboard.twig';
 
     /**
      * @param Request $request
@@ -40,6 +41,6 @@ class SiteDashboard extends SiteController
     public function DashboardPage(Request $request, Response $response): Response
     {
         SystemProfiler::setName("Site:" . __FUNCTION__);
-        return $this->renderPage($response, self::TEMPLATE_DASHBOARD, []);
+        return $this->renderStandardPage($response, "Site:Dashboard:$this->userId", "Dashboard", "DashboardPage", [ 'dashboard.css']);
     }
 }

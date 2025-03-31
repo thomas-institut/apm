@@ -66,7 +66,7 @@ export class CanvasRenderer extends TypesetterRenderer {
     // hack to work around Firefox's bug with single RTL brackets
     let brackets = [ '[', ']', '(', ')', '{', '}', '«', '»']
     if (brackets.indexOf(text) !== -1  && textBoxItem.getTextDirection() === 'rtl') {
-      // insert a RTL marker before the text to force correct display
+      // insert an RTL marker before the text to force correct display
       text = String.fromCodePoint(0x202B) + text
     }
     let [shiftX, shiftY] = this.getDeviceCoordinates(textBoxItem.getShiftX(), textBoxItem.getShiftY())

@@ -34,27 +34,27 @@ class MyersDiff
 {
     /** Instruction to delete a token which only appears in the 
      * first sequence */
-    const DELETE = -1;
+    const int DELETE = -1;
 
     /** Instruction to keep a token which is common to both sequences */
-    const KEEP = 0;
+    const int KEEP = 0;
 
     /** Instruction to insert a token which only appears in the 
      * last sequence */
-    const INSERT = 1;
+    const int INSERT = 1;
 
     /**
      * Backtrack through the intermediate results to extract the 
      * "snakes" that
      * are visited on the chosen "D-path".
      *
-     * @param int[] $v_save Intermediate results
-     * @param int      $x      End position
-     * @param int      $y      End position
+     * @param int[][] $v_save Intermediate results
+     * @param int $x      End position
+     * @param int $y      End position
      *
      * @return int[][]
      */
-    private static function extractSnakes(array $v_save, $x, $y) : array
+    private static function extractSnakes(array $v_save, int $x, int $y) : array
     {
         //print_r($v_save);
         $snakes = array();
@@ -129,7 +129,7 @@ class MyersDiff
      *                    $command (-1 = DEL, 0 = KEEP, 1 = ADD),
      *                    $seq : $index in the edited array
      */
-    public static function calculate(array &$a, array &$b, callable $equals) : array
+    public static function calculate(array $a, array $b, callable $equals) : array
     {
         // The algorithm uses array keys numbered from zero.
         $n = count($a);

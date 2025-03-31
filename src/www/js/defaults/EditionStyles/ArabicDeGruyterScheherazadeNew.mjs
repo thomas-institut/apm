@@ -28,6 +28,12 @@ export const arabicDeGruyterScheherazadeNew = {
     // },
     // { from: { script: 'la'}, to: { fontFamily: 'FreeSerif'}}
   ],
+  specialStrings: [
+    { string: String.fromCharCode(0xfeeb), fontFamily: 'Amiri'},
+    { string: String.fromCharCode(0xfbaa), fontFamily: 'Amiri'},
+    { string: String.fromCharCode(0xfbac), fontFamily: 'Amiri'},
+    { string: String.fromCharCode(0x2016), fontFamily: 'Adobe Arabic'},
+  ],
   default: {
       strings : {
         omission: "نقص",
@@ -35,7 +41,7 @@ export const arabicDeGruyterScheherazadeNew = {
         ante: "قبل",
         post: "بعد",
         defaultLemmaSeparator: "]",
-        lineRangeSeparator: "\u2016",  // double vertical line
+        lineRangeSeparator: String.fromCharCode(0x2016),  // double vertical line
         entrySeparator:  "\u007c" // single vertical line
         // entrySeparator: "\u2016",  // double vertical line
       },
@@ -63,18 +69,26 @@ export const arabicDeGruyterScheherazadeNew = {
         spaceAfter: "0"
       },
       text: {
-        fontFamily: "ScheherazadeNew",
+        fontFamily: "Scheherazade New",
         fontSize: "12 pt",
         fontStyle: "",
         fontWeight: "",
         shiftY: "0"
       },
       glue: {
-        width: "0.35 em",
+        width: "0.23 em",
         shrink: "0.02 em",
         stretch: "0.08 em"
       },
     },
+  emGlue: {
+    parent: "",
+    glue: {
+      width: "1 em",
+      shrink: "0.02 em",
+      stretch: "0.08 em"
+    }
+  },
   small:  {
       parent: "",
       text: {
@@ -150,40 +164,40 @@ export const arabicDeGruyterScheherazadeNew = {
         lineSkip: "16 pt"
       },
       glue: {
-        width: "0.35 em",
+        width: "0.23 em",
         shrink: "0.02 em",
         stretch: "0.08 em"
       },
     },
     lineRangeSeparator: {
       text: {
-        fontFamily: 'ScheherazadeNew'
+        fontFamily: 'Scheherazade New'
       }
     },
   postLineRangeSeparator: {
     glue: {
       width: "0.25 em",
       shrink: "0.03 em",
-      stretch: "0.18 em"
+      stretch: "1 em"
     }
   },
   preEntrySeparator : {
     glue: {
-      width: "0.25 em",
-      shrink: "0.03 em",
-      stretch: "0.15 em"
+      width: "0.23 em",
+      shrink: "0.02 em",
+      stretch: "0.16 em"
     }
   },
   entrySeparator: {
     text: {
-      fontFamily: 'ScheherazadeNew'
+      fontFamily: 'Scheherazade New'
     }
   },
   postEntrySeparator: {
     glue: {
-      width: "0.25 em",
-      shrink: "0.03 em",
-      stretch: "0.15 em"
+      width: "0.23 em",
+      shrink: "0.02 em",
+      stretch: "0.16 em"
     }
   },
     apparatusLineNumbers: {
@@ -211,8 +225,8 @@ export const arabicDeGruyterScheherazadeNew = {
       lineSkip: "15 pt"
     },
     glue: {
-      width: "0.25 em",
-      shrink: "0.03 em",
+      width: "0.23 em",
+      shrink: "0.02 em",
       stretch: "0.08 em"
     },
   },

@@ -64,7 +64,7 @@ class StringType
      * punctuation signs
      *
      * @param string $someString
-     * @return int
+     * @return bool
      */
     static public function isPunctuation(string $someString) {
         for ($i = 0 ; $i < mb_strlen($someString); $i++) {

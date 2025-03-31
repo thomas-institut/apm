@@ -67,6 +67,7 @@ export const defaultLatinEditionStyle =  {
       stretch: "0.08 em"
     },
   },
+
   small:  {
     parent: "",
     text: {
@@ -139,12 +140,7 @@ export const defaultLatinEditionStyle =  {
     },
     paragraph: {
       lineSkip: "15 pt"
-    },
-    glue: {
-      width: "0.25 em",
-      shrink: "0.03 em",
-      stretch: "0.08 em"
-    },
+    }
   },
   lineRangeSeparator: {
     text: {
@@ -154,15 +150,15 @@ export const defaultLatinEditionStyle =  {
 
   postLineRangeSeparator: {
     glue: {
-      width: "0.5 em",
+      width: "1 em",
       stretch: "0.25 em",
       shrink: "0.1 em"
     }
   },
   preEntrySeparator : {
     glue: {
-      width: "0.5 em",
-      stretch: "0.25 em",
+      width: "0.8 em",
+      stretch: "0.2 em",
       shrink: "0.1 em"
     }
   },
@@ -172,11 +168,7 @@ export const defaultLatinEditionStyle =  {
     // }
   },
   postEntrySeparator: {
-    glue: {
-      width: "0.5 em",
-      stretch: "0.25 em",
-      shrink: "0.1 em"
-    }
+    parent: "preEntrySeparator",
   },
   apparatusLineNumbers: {
     text: {
@@ -189,7 +181,9 @@ export const defaultLatinEditionStyle =  {
     }
   },
   sigla: {
-    // nothing in Latin
+    text: {
+      fontStyle: 'italic',
+    }
   },
   hand: {
     parent: 'superscript'

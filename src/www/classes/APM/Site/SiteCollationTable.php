@@ -28,8 +28,6 @@ namespace APM\Site;
 
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
-use APM\EntitySystem\Exception\EntityDoesNotExistException;
-use APM\EntitySystem\Schema\Entity;
 use APM\System\Document\DocInfo;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
@@ -439,7 +437,7 @@ class SiteCollationTable extends SiteController
         foreach ($presetData['witnesses'] as $presetId) {
             if (is_int($presetId)) {
                 // old preset!
-                $docId = intval($presetId);
+                $docId = $presetId;
                 if ($docId !== 0) {
                     $collationPageOptions['witnesses'][] = [
                         'type' => WitnessType::FULL_TRANSCRIPTION,

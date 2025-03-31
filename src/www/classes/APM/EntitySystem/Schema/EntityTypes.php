@@ -3,7 +3,6 @@
 namespace APM\EntitySystem\Schema;
 
 use APM\EntitySystem\Kernel\DefsFromArray;
-use APM\EntitySystem\Kernel\EntityDefiner;
 use APM\EntitySystem\Kernel\EntityTypeDefiner;
 
 

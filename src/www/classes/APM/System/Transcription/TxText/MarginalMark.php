@@ -21,7 +21,7 @@
 namespace APM\System\Transcription\TxText;
 
 
-use AverroesProject\TxText\InvalidArgumentException;
+use InvalidArgumentException;
 
 /**
  * Description of TtiMark
@@ -43,7 +43,8 @@ class MarginalMark extends Item {
         $this->theText = $theText;
     }
     
-    function getText(){
+    function getText(): string
+    {
         return '';
     }
 

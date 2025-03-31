@@ -20,6 +20,8 @@
 
 namespace APM\System\Transcription\TxText;
 
+use InvalidArgumentException;
+
 /**
  * Description of TtiUnclear
  *
@@ -38,17 +40,12 @@ class Unclear extends Item {
     function __construct($id, $s, $reason, $firstReading, $altReading='') {
         parent::__construct($id, $s);
         $this->type = parent::UNCLEAR;
-        switch($reason){
-            case 'unclear':
-            case 'damaged':
-                $this->extraInfo = $reason;
-                break;
-            
-            default:
-                throw new \InvalidArgumentException("Unrecognized reason for UNCLEAR item, reason given: " . $reason);
-        }
+        $this->extraInfo = match ($reason) {
+            'unclear', 'damaged' => $reason,
+            default => throw new InvalidArgumentException("Unrecognized reason for UNCLEAR item, reason given: " . $reason),
+        };
         if ($firstReading === NULL or $firstReading === ''){
-            throw new \InvalidArgumentException("Transcription items of type UNCLEAR need at least one reading, use ILLEGIBLE");
+            throw new InvalidArgumentException("Transcription items of type UNCLEAR need at least one reading, use ILLEGIBLE");
         }
         $this->theText = $firstReading;
         $this->altText = $altReading;

@@ -62,7 +62,6 @@ use APM\Api\ApiDocuments;
 use APM\Api\ApiUsers;
 use APM\Api\ApiCollation;
 use APM\Api\ApiPresets;
-use APM\Api\ApiEditionEngine;
 use APM\Api\ApiElements;
 use APM\Api\ApiCollationTableConversion;
 use APM\Api\ApiTypesetPdf;
@@ -130,7 +129,7 @@ createSiteDevRoutes($app, $container);
 createApiAuthenticatedRoutes($app, $container);
 
 // RUN!!
-SystemProfiler::lap('Ready to run');
+SystemProfiler::lap('Ready');
 $app->run();
 
 /**
@@ -373,14 +372,7 @@ function createApiEditionRoutes(RouteCollectorProxy $group, ContainerInterface $
         })
         ->setName('api.multi_chunk.save');
 
-    //  EDITION ENGINE
 
-    // TODO: check this, most likely obsolete
-    $group->post('/edition/auto',
-        function(Request $request, Response $response) use ($container){
-            return (new ApiEditionEngine($container))->automaticEditionEngine($request, $response);
-        })
-        ->setName('api.edition.auto');
 
 }
 function createApiCollationTableRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {

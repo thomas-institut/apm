@@ -16,8 +16,8 @@ class ApmUserManager implements UserManagerInterface
 
     use LoggerAwareTrait;
 
-    const DataId = 'um001';
-    const DefaultTtl = 24 * 3600;
+    const string DataId = 'um001';
+    const int DefaultTtl = 24 * 3600;
 
 
     /**

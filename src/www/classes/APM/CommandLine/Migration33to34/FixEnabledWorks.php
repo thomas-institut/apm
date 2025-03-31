@@ -11,8 +11,6 @@ use APM\EntitySystem\ValueToolBox;
 use APM\System\ApmMySqlTableName;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use ThomasInstitut\DataTable\MySqlDataTable;
-use ThomasInstitut\EntitySystem\StatementStorage;
-use ThomasInstitut\EntitySystem\Tid;
 
 class FixEnabledWorks extends CommandLineUtility
 {

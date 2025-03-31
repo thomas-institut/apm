@@ -5,7 +5,6 @@ namespace APM\CommandLine;
 use APM\Api\ApiPeople;
 use APM\Site\SiteWorks;
 use APM\Site\SiteDocuments;
-use APM\System\ApmConfigParameter;
 use APM\System\Cache\CacheKey;
 use Exception;
 use Monolog\Logger;
@@ -54,7 +53,7 @@ class ApmDaemon extends CommandLineUtility
                 $this->logger = $this->logger->withName('APM_D');
             }
 
-            $this->logger->info("Starting as a (pseudo) daemon, pid is $this->pid");
+            $this->logger->info("Starting as a daemon, pid is $this->pid");
             if (!$this->writePidFile()) {
                 $this->logger->error("Could not write PID file, exiting");
                 exit(1);

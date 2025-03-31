@@ -2,6 +2,7 @@
 
 namespace APM\Api;
 
+use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use ThomasInstitut\EntitySystem\Tid;
@@ -9,7 +10,7 @@ use ThomasInstitut\EntitySystem\Tid;
 class ApiEditionSources extends ApiController
 {
 
-    const CLASS_NAME = 'EditionSources';
+    const string CLASS_NAME = 'EditionSources';
 
     public function getAllSources(Request $request, Response $response): Response
     {
@@ -36,7 +37,7 @@ class ApiEditionSources extends ApiController
         $mgr = $this->systemManager->getEditionSourceManager();
         try {
             $data = $mgr->getSourceByTid($tid);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             $this->logger->error("Source with tid '$tidString' not found", [ 'error' => $e->getMessage()]);
             return $this->responseWithJson($response,  [
                 'tidString' => $tidString,

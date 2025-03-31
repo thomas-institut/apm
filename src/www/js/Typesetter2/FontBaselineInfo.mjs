@@ -17,13 +17,27 @@
  */
 
 /**
- * Baseline height information for specific fonts
+ * Baseline information for specific fonts
  */
 
+/**
+ * Multiplier is the ratio of the font size to the position of the baseline
+ * from the top of the font.
+ *
+ * This can be calculated using the OS/2 metric values for the font, which
+ * can be found using, for example, FontForge. The multiplier is the ratio
+ * between the ascent and the em-size (normally 1000 or 2048)
+ *
+ * @type {[{family: string, multiplier: number},{family: string, multiplier: number},{family: string, multiplier: number}]}
+ */
 const fontData = [
-  // { family: 'FreeSerif', multiplier: 0.9},
-  { family: 'Arial', multiplier: 0.9052736842105263},
-  { family: 'Linux Libertine', multiplier: 0.8940447368421053}
+  { family: 'FreeSerif', multiplier: 0.9},
+  { family: 'Arial', multiplier: 0.9},
+  { family: 'Linux Libertine', multiplier: 1831/2048},
+  { family: 'Amiri', multiplier: 1.124},
+  { family: 'Scheherazade New', multiplier: 2750/2048},
+  { family: 'Noto Naskh Arabic', multiplier: 2189/2048},
+  { family: 'Adobe Arabic', multiplier: 1530/2048},
 ]
 
 

@@ -19,23 +19,21 @@
 
 namespace APM\Api;
 
-use APM\System\ApmConfigParameter;
 use APM\ToolBox\HttpStatus;
+use Exception;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
 class ApiTypesetPdf extends ApiController
 {
 
-    const CLASS_NAME = 'PDF_Typesetting';
+    const string CLASS_NAME = 'PDF_Typesetting';
 
-    const API_ERROR_CANNOT_CREATE_TEMP_FILE = 5001;
-    const API_ERROR_PDF_RENDERER_ERROR = 5002;
-    const API_TYPESETTER_ERROR = 5003;
-    const PDF_FILE_PREFIX = 'ApmPdf-';
-    const TEMP_SVG_FILE_PREFIX = 'svg-';
-    const TEMP_TYPESETTER_DATA_FILE_PREFIX = 'typesetter-';
-    const PDF_DOWNLOAD_SUBDIR = 'downloads/pdf';
+    const int API_ERROR_CANNOT_CREATE_TEMP_FILE = 5001;
+    const int API_ERROR_PDF_RENDERER_ERROR = 5002;
+    const int API_TYPESETTER_ERROR = 5003;
+    const string PDF_FILE_PREFIX = 'ApmPdf-';
+    const string PDF_DOWNLOAD_SUBDIR = 'downloads/pdf';
 
 
     /**
@@ -105,7 +103,7 @@ class ApiTypesetPdf extends ApiController
         $typesetterReturnData = [];
         try {
             $typesetterReturnData = json_decode($returnArray[0], true);
-        } catch (\Exception $e) {
+        } catch (Exception) {
             $this->logger->debug("Bad Json returned by typesetter", [ 'array' => $returnArray, 'value' => $returnValue]);
         }
         $typesetterDuration = -1;

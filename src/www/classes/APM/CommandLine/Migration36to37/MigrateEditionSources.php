@@ -4,7 +4,6 @@ namespace APM\CommandLine\Migration36to37;
 
 use APM\CommandLine\CommandLineUtility;
 use APM\EntitySystem\Schema\Entity;
-use APM\EntitySystem\ValueToolBox;
 use APM\System\ApmMySqlTableName;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use ThomasInstitut\DataTable\MySqlDataTable;

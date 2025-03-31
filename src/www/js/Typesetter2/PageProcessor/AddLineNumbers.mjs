@@ -42,7 +42,8 @@ export class AddLineNumbers extends PageProcessor {
  }
 
   /**
-   * Adds line numbers for the main text in a TypesetterPage
+   * Adds line numbers for the main text in a TypesetterPage.
+   *
    * The main text is the vertical list identified with the 'type' metadata key set to 'MainText'
    * Each horizontal list that has the 'type' metadata set with 'line' and has
    * a 'lineNumber' metadata key set will be considered. A line number may be added so that it will print at

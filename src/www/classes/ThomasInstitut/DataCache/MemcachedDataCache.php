@@ -80,7 +80,7 @@ class MemcachedDataCache implements DataCache
     /**
      * @inheritDoc
      */
-    public function clear(): void
+    public function flush(): void
     {
         $this->memCached->flush();
     }

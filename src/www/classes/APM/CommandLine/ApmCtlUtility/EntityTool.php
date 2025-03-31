@@ -2,9 +2,7 @@
 
 namespace APM\CommandLine\ApmCtlUtility;
 
-use APM\CommandLine\AdminUtility;
 use APM\CommandLine\CommandLineUtility;
-use APM\EntitySystem\Exception\EntityAlreadyMergedException;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Exception\InvalidEntityTypeException;
 use APM\EntitySystem\Schema\Entity;
@@ -198,7 +196,7 @@ class EntityTool extends CommandLineUtility implements AdminUtility
 
         $id = $es->createEntity($type, $name, '', Entity::System);
 
-        $this->getSystemManager()->onEntityDataChange($id);
+        $this->getSystemManager()->onEntityDataChange($id, Entity::System);
         printf("New entity created, id = %d = %s\n", $id, Tid::toBase36String($id));
     }
 

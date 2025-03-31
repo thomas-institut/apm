@@ -23,16 +23,21 @@
 /**
  * Multiplier is the ratio of the font size to the position of the baseline
  * from the top of the font.
+ *
+ * This can be calculated using the OS/2 metric values for the font, which
+ * can be found using, for example, FontForge. The multiplier is the ratio
+ * between the ascent and the em-size (normally 1000 or 2048)
+ *
  * @type {[{family: string, multiplier: number},{family: string, multiplier: number},{family: string, multiplier: number}]}
  */
 const fontData = [
   { family: 'FreeSerif', multiplier: 0.9},
   { family: 'Arial', multiplier: 0.9},
-  { family: 'Linux Libertine', multiplier: 0.8940625},
+  { family: 'Linux Libertine', multiplier: 1831/2048},
   { family: 'Amiri', multiplier: 1.124},
-  { family: 'Scheherazade New', multiplier: 1.3428125},
-  { family: 'Noto Naskh Arabic', multiplier: 1.069},
-  { family: 'Adobe Arabic', multiplier: 0.74709375},
+  { family: 'Scheherazade New', multiplier: 2750/2048},
+  { family: 'Noto Naskh Arabic', multiplier: 2189/2048},
+  { family: 'Adobe Arabic', multiplier: 1530/2048},
 ]
 
 

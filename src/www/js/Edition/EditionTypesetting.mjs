@@ -401,7 +401,7 @@ export class EditionTypesetting {
                 pushArray(items, await this.getSubEntryTsItems(subEntry))
                 if (subEntryIndex < entry.subEntries.length-1) {
                   items.push(this.createPenalty(GOOD_POINT_FOR_A_BREAK));
-                  items.push((await this.createGlue('apparatus', 2)).setTextDirection(textDirection));
+                  items.push((await this.createGlue('apparatus emGlue')).setTextDirection(textDirection));
                 }
               }
               if (entryIndex < lineRange.entries.length-1) {
@@ -412,11 +412,7 @@ export class EditionTypesetting {
                 items.push((await this.createGlue('apparatus postEntrySeparator')).setTextDirection(textDirection))
               }
             }
-            items.push(this.createPenalty(INFINITE_PENALTY))  // do not break just before the lineRange separator
-            items.push((await this.createGlue('apparatus')).setTextDirection(textDirection))
-            items.push(...await this.getTsItemsForString(lineRangeSeparatorCharacter, 'apparatus lineRangeSeparator', textDirection))
-            items.push(this.createPenalty(REALLY_GOOD_POINT_FOR_A_BREAK));
-            items.push((await this.createGlue('apparatus postLineRangeSeparator')).setTextDirection(textDirection))
+
             lineRange.itemsToTypeset = items
             // save the export objects, which will be used to create copies of the typesetter items when adding
             // them to the output horizontal list
@@ -449,8 +445,18 @@ export class EditionTypesetting {
           'apparatus apparatusLineNumbers', textDirection))
         lineNumberItems.push(this.createPenalty(INFINITE_PENALTY))
         lineNumberItems.push(await this.createGlue('apparatus'))
-        outputList.pushItemArray(this.getTsItemsFromExportObjectsArray(this.getItemExportObjectsArray(lineNumberItems)))
-        outputList.pushItemArray(this.getTsItemsFromExportObjectsArray(lineRange.tsItemsExportObjects))
+        outputList.pushItemArray(this.getTsItemsFromExportObjectsArray(this.getItemExportObjectsArray(lineNumberItems)));
+        outputList.pushItemArray(this.getTsItemsFromExportObjectsArray(lineRange.tsItemsExportObjects));
+        if (lineRangeKeyIndex !== lineRangesKeysToTypeset.length -1) {
+          let separatorItems = [];
+          // add line range separator to all but the last line range
+          separatorItems.push(this.createPenalty(INFINITE_PENALTY));  // do not break just before the lineRange separator
+          separatorItems.push((await this.createGlue('apparatus')).setTextDirection(textDirection))
+          separatorItems.push(...await this.getTsItemsForString(lineRangeSeparatorCharacter, 'apparatus lineRangeSeparator', textDirection))
+          separatorItems.push(this.createPenalty(REALLY_GOOD_POINT_FOR_A_BREAK));
+          separatorItems.push((await this.createGlue('apparatus postLineRangeSeparator')).setTextDirection(textDirection));
+          outputList.pushItemArray(this.getTsItemsFromExportObjectsArray(this.getItemExportObjectsArray(separatorItems)));
+        }
       }
       if (outputList.getList().length !== 0) {
         outputList.pushItem(Glue.createLineFillerGlue().setTextDirection(textDirection))

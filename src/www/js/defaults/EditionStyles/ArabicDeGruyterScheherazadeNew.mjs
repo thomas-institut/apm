@@ -32,7 +32,7 @@ export const arabicDeGruyterScheherazadeNew = {
     { string: String.fromCharCode(0xfeeb), fontFamily: 'Amiri'},
     { string: String.fromCharCode(0xfbaa), fontFamily: 'Amiri'},
     { string: String.fromCharCode(0xfbac), fontFamily: 'Amiri'},
-    { string: String.fromCharCode(0x2016), fontFamily: 'Amiri'},
+    { string: String.fromCharCode(0x2016), fontFamily: 'Adobe Arabic'},
   ],
   default: {
       strings : {
@@ -81,6 +81,14 @@ export const arabicDeGruyterScheherazadeNew = {
         stretch: "0.08 em"
       },
     },
+  emGlue: {
+    parent: "",
+    glue: {
+      width: "1 em",
+      shrink: "0.02 em",
+      stretch: "0.08 em"
+    }
+  },
   small:  {
       parent: "",
       text: {

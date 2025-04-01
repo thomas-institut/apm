@@ -45,7 +45,7 @@ class NullDataCache implements DataCache
     /**
      * @inheritDoc
      */
-    public function clear(): void
+    public function flush(): void
     {
         // do nothing
     }

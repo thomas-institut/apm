@@ -20,7 +20,6 @@
 
 namespace APM\Core\Transcription;
 
-use APM\Core\Transcription\TextBox;
 use OutOfBoundsException;
 
 /**
@@ -32,7 +31,7 @@ use OutOfBoundsException;
  */
 class PageTranscriptionBasic extends PageTranscription {
     
-    protected $textBoxes;
+    protected array $textBoxes;
     
     public function __construct() {
         $this->textBoxes = [];

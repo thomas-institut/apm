@@ -59,7 +59,7 @@ export class TypesetterItem extends TypesetterObject {
      * distance that a renderer would advance horizontally after the item is rendered.
      *
      * A value of -1 means that the width is not set.  Typesetter classes should decide
-     * what to do with undefined widths,  but normally some sort of measurement process will be
+     * what to do with undefined widths, but normally some sort of measurement process will be
      * called
      * @type {number}
      */
@@ -70,10 +70,10 @@ export class TypesetterItem extends TypesetterObject {
      *
      * Not necessarily the actual height of the rendered item, but rather the
      * distance that a renderer would advance in the vertical direction after the
-     * item is rendered. For text boxes this distance is actually the
+     * item is rendered. For text boxes it should be the
      * distance from the current vertical position to the text's baseline.
      * Individual glyphs may go under the baseline or above the current
-     * vertical position.
+     * vertical position depending on the font.
      *
      * A value of -1 means that the height is not set.
      *

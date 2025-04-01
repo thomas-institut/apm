@@ -2,7 +2,6 @@
 
 namespace APM\StringMatcher;
 
-use APM\StringMatcher\SimpleIndexStringMatcher;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;

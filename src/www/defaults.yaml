@@ -4,11 +4,7 @@
 # DO NOT EDIT IN PRODUCTION
 #
 
-copyrightNotice: >
-  2016-25, 
-  <a href="https://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>,
-  <a href="https://www.uni-koeln.de/"> Universität zu Köln </a>
-
+copyrightNotice: '2016-25, <a href="https://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="https://www.uni-koeln.de/"> Universität zu Köln </a>'
 
 appName: 'APM'
 
@@ -28,11 +24,13 @@ pdfRenderer:  '../python/pdf-renderer.py'
 typeSetter:  'node ../node/typesetStdinJson.mjs'
 daemonPidFile: '/tmp/apmd.pid'
 
-wsServerUrl: 'ws://localhost:5555'
-
 siteShowLanguageSelector:  false
 
 collationEngine: 'CollatexHttp'
+
+typesense_host: 'localhost'
+typesense_protocol: 'http'
+typesense_port: 8108
 
 collatexHttp:
   host: '127.0.0.1'

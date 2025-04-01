@@ -49,8 +49,6 @@ use APM\Jobs\SiteDocumentsUpdateDataCache;
 use APM\Jobs\SiteWorksUpdateDataCache;
 use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
-use APM\Session\ApmSessionManager;
-use APM\Session\SessionManager;
 use APM\System\Document\ApmDocumentManager;
 use APM\System\Document\DocumentManager;
 use APM\System\ImageSource\BilderbergImageSource;
@@ -84,7 +82,6 @@ use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\DataTableDataCache;
-use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\MemcachedDataCache;
 use ThomasInstitut\DataCache\MultiCacheDataCache;
 use ThomasInstitut\DataTable\DataTable;
@@ -173,7 +170,6 @@ class ApmSystemManager extends SystemManager {
     private ?ApmJobQueueManager $jobManager;
     private ?EntitySystemEditionSourceManager $editionSourceManager;
     private ?WorkManager $workManager;
-    private ?ApmSessionManager $sessionManager;
     private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem;
     private ?DataCache $memDataCache;
     private ?ApmEntitySystem $apmEntitySystem;
@@ -230,7 +226,6 @@ class ApmSystemManager extends SystemManager {
         $this->presetsManager = null;
         $this->transcriptionManager = null;
         $this->collationTableManager = null;
-        $this->sessionManager = null;
         $this->memDataCache = null;
         $this->apmEntitySystem = null;
         $this->documentManager = null;
@@ -810,7 +805,7 @@ class ApmSystemManager extends SystemManager {
     private function getWorkAuthor(int $workId) : int {
         try {
             $data = $this->getWorkManager()->getWorkData($workId);
-        } catch (Work\WorkNotFoundException $e) {
+        } catch (Work\WorkNotFoundException) {
             return -1;
         }
         return $data->authorId;
@@ -965,18 +960,6 @@ class ApmSystemManager extends SystemManager {
             }
         }
         return $this->typedMultiStorageEntitySystem;
-    }
-
-    public function getSessionManager(): SessionManager
-    {
-        if ($this->sessionManager === null) {
-            $sessionsTable = new MySqlDataTable($this->getDbConnection(),
-                $this->getTableNames()[ApmMySqlTableName::TABLE_SESSIONS_REGISTER], true);
-            $logTable = new MySqlDataTable($this->getDbConnection(),
-                $this->getTableNames()[ApmMySqlTableName::TABLE_SESSIONS_LOG], true);
-            $this->sessionManager = new ApmSessionManager($sessionsTable, $logTable, $this->logger);
-        }
-        return $this->sessionManager;
     }
 
     public function getDocumentManager(): DocumentManager

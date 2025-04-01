@@ -21,7 +21,7 @@
 namespace APM\CommandLine;
 
 use APM\System\ApmMySqlTableName;
-use \PDO;
+use PDO;
 
 /**
  * Check element sequences in the database looking for duplicate

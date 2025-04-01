@@ -35,7 +35,7 @@ class BoundaryDetector {
      * @param array $things
      * @param callable $getValueFunction  
      * @param callable $isEmptyFunction
-     * @param type $initialValue
+     * @param $initialValue
      * @return array
      */
     public function findEdges(array $things, callable $getValueFunction, callable $isEmptyFunction, $initialValue = null) : array {
@@ -63,7 +63,7 @@ class BoundaryDetector {
      * @param array $things
      * @param callable $getValueFunction
      * @param callable $isEmptyFunction
-     * @param type $nextValue
+     * @param $nextValue
      * @return array
      */
     public function findBoundaries(array $things, callable $getValueFunction, callable $isEmptyFunction, $nextValue = null) : array {

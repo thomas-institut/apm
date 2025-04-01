@@ -27,8 +27,8 @@ use ThomasInstitut\TimeString\TimeString;
 
 class ApiCollationTableConversion extends  ApiController
 {
-    const CLASS_NAME = 'CollationTableConversion';
-    const ERROR_CANNOT_CONVERT = 6001;
+    const string CLASS_NAME = 'CollationTableConversion';
+    const int ERROR_CANNOT_CONVERT = 6001;
 
     public function convertCollationTableToChunkEdition(Request $request, Response $response): Response
     {

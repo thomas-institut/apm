@@ -14,9 +14,9 @@ class CollatexHttp extends CollationEngine
     private int $port;
     private Client $guzzleClient;
 
-    const ERROR_GUZZLE_EXCEPTION = 2025;
-    const ERROR_COULD_NOT_DECODE_JSON = 2026;
-    const ERROR_COLLATEX_DID_NOT_RETURN_AN_ARRAY = 2027;
+    const int ERROR_GUZZLE_EXCEPTION = 2025;
+    const int ERROR_COULD_NOT_DECODE_JSON = 2026;
+    const int ERROR_COLLATEX_DID_NOT_RETURN_AN_ARRAY = 2027;
 
     public function __construct(string $host='127.0.0.1', int $port=7369)
     {

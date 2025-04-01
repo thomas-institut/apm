@@ -5,8 +5,6 @@ namespace APM\CommandLine\ApmCtlUtility;
 
 
 use APM\Api\ApiPeople;
-use APM\Api\ApiSystem;
-use APM\CommandLine\AdminUtility;
 use APM\CommandLine\CommandLineUtility;
 use APM\System\ApmMySqlTableName;
 use APM\System\Cache\CacheKey;
@@ -115,7 +113,7 @@ class CacheTool extends CommandLineUtility implements AdminUtility
 
         $query = 'TRUNCATE ' . $this->getCacheTableName();
         $this->getDbConn()->query($query);
-        $this->getSystemManager()->getMemDataCache()->clear();
+        $this->getSystemManager()->getMemDataCache()->flush();
         $this->logger->info("Cache flushed");
 
     }

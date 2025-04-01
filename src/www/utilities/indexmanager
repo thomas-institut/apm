@@ -1,4 +1,4 @@
-#!/opt/homebrew/bin/php -q
+#!/bin/php -q
 <?php
 
 /*

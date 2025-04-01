@@ -57,15 +57,15 @@ class ApiCollation extends ApiController
     /**
      * Class Name for reporting purposes
      */
-    const CLASS_NAME = 'CollationTables';
-//    const ERROR_NO_WITNESSES = 2000;
-    const ERROR_NOT_ENOUGH_WITNESSES = 2001;
-    const ERROR_BAD_WITNESS = 2002;
-    const ERROR_FAILED_COLLATION_ENGINE_PROCESSING = 2003;
-    const ERROR_INVALID_LANGUAGE = 2004;
-    const ERROR_INVALID_COLLATION_TABLE_ID = 2005;
-    const ERROR_COLLATION_TABLE_DOES_NOT_EXIST = 2006;
-//    const ERROR_MISSING_VERSION_INFO = 2007;
+    const string CLASS_NAME = 'CollationTables';
+
+    const int ERROR_NOT_ENOUGH_WITNESSES = 2001;
+    const int ERROR_BAD_WITNESS = 2002;
+    const int ERROR_FAILED_COLLATION_ENGINE_PROCESSING = 2003;
+    const int ERROR_INVALID_LANGUAGE = 2004;
+    const int ERROR_INVALID_COLLATION_TABLE_ID = 2005;
+    const int ERROR_COLLATION_TABLE_DOES_NOT_EXIST = 2006;
+
 
 
     public function  getActiveEditions(Response $response): Response

@@ -2,6 +2,7 @@
 
 namespace APM\Api;
 
+use Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\TimeString\TimeString;
@@ -19,7 +20,7 @@ class ApiMultiChunkEdition extends ApiController
         $timeStamp = $request->getAttribute('timestamp',  TimeString::now());
         try {
             $data = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionById($editionId, $timeStamp);
-        } catch (\Exception $e) {
+        } catch (Exception) {
             // this should almost never happen!
             $this->logger->error("Edition $editionId not found");
             return $this->responseWithJson($response,  [
@@ -50,7 +51,7 @@ class ApiMultiChunkEdition extends ApiController
 
         try {
             $editionId = $this->systemManager->getMultiChunkEditionManager()->saveMultiChunkEdition($editionId, $mceData, $authorTid, $description);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logger->error("Error saving multi chunk edition", [
                 'id' => $editionId,
                 'author'=> $authorTid,
@@ -66,7 +67,7 @@ class ApiMultiChunkEdition extends ApiController
 
         try {
             $data = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionById($editionId);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // this should almost never happen!
             $this->logger->error("Edition $editionId not found");
             return $this->responseWithJson($response,  [

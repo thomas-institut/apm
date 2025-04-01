@@ -16,10 +16,10 @@ use ThomasInstitut\EntitySystem\Exception\StatementNotFoundException;
 
 /**
  * An entity system with multiple storages where data is partitioned
- * according to the object of a specific relation that each entity
+ * according to the object of a specific predicate that each entity
  * has.
  *
- * In the context of this class, this defining predicate is called
+ * In the context of this class, this predicate is called
  * the entity's type, but in principle it can be any predicate.
  *
  * In the constructor, the different statement storages and entity caches are
@@ -27,7 +27,7 @@ use ThomasInstitut\EntitySystem\Exception\StatementNotFoundException;
  * types.
  *
  * An entity is considered to exist in the system if it is the subject of any
- * statement. Entities must have at least one statement, the one with the
+ * statement. Entities MUST have at least one statement, the one with the
  * type predicate.
  *
  */
@@ -235,14 +235,14 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
         throw new StatementNotFoundException();
     }
 
+
     /**
+     * @param int $entity
+     * @return EntityData
      * @throws EntityDoesNotExistException
      */
     public function getEntityData(int $entity): EntityData
    {
-
-//       $this->logger->debug("TypedMSES: getEntityData for $entity");
-
        $entityData = parent::getEntityData($entity);
 
        if(count($entityData->statements) === 0) {

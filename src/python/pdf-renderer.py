@@ -111,6 +111,8 @@ def get_horizontal_list_width(horizontal_list):
 def print_text_box(context, x, y, text_box):
     shift_x = px2pt(get_value(text_box, 'shiftX', 0))
     shift_y = px2pt(get_value(text_box, 'shiftY', 0))
+    if (shift_y != 0):
+        debug_msg("Shift Y != 0 in text box: " + str(shift_y) + ", y=" + str(y) + ", text = '" + text_box['text'] + "', font " + text_box['fontFamily'])
     tb_text_direction = get_value(text_box, 'textDirection', '')
 
     # text_box_height = px2pt(get_value(text_box, 'height', 0))

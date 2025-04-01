@@ -2,7 +2,6 @@
 
 namespace APM\CommandLine\ApmCtlUtility;
 
-use APM\CommandLine\AdminUtility;
 use APM\CommandLine\CommandLineUtility;
 use APM\Jobs\ApmJobName;
 use APM\System\Job\ScheduledJobState;
@@ -11,19 +10,19 @@ use APM\System\Job\ScheduledJobState;
 class JobQueueTool extends CommandLineUtility implements AdminUtility
 {
 
-    const CMD = 'jobs';
+    const string CMD = 'jobs';
 
-    const DESCRIPTION = "Job queue management functions";
+    const string DESCRIPTION = "Job queue management functions";
 
-    const NUM_TEST_JOBS = 5;
+    const int NUM_TEST_JOBS = 5;
 
-    const CMD_TEST = 'test';
-    const CMD_PROCESS = 'process';
-    const CMD_CLEAN = 'clean';
-    const CMD_INFO = 'info';
+    const string CMD_TEST = 'test';
+    const string CMD_PROCESS = 'process';
+    const string CMD_CLEAN = 'clean';
+    const string CMD_INFO = 'info';
 
-    const CMD_LIST = 'list';
-    const CMD_RESCHEDULE = 'reschedule';
+    const string CMD_LIST = 'list';
+    const string CMD_RESCHEDULE = 'reschedule';
 
     private array $commandInfo = [];
 

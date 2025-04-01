@@ -149,15 +149,15 @@ class Item {
         mb_regex_encoding('UTF-8');
         $theText = $this->getText();
         $normalized = mb_ereg_replace('\s\s+', ' ', $theText);
-        $normalized = mb_ereg_replace('\n', ' ', $normalized);
-        return $normalized;
+        return mb_ereg_replace('\n', ' ', $normalized);
     }
     
     public function getLang(){
         return $this->lang;
     }
     
-    function setLang($l){
+    function setLang($l): void
+    {
         $this->lang = $l;
     }
     
@@ -191,20 +191,6 @@ class Item {
         $this->seq = (int) $s;
         $this->columnElementId = self::ID_NOT_SET;
     }
-    
-    function isRtl()
-    {
-        switch($this->lang){
-            case 'ar':
-            case 'he':
-                return TRUE;
-                break;
-            
-            default:
-                return FALSE;
-            
-        }
-    }
 
     /**
      * Normalizes a string according to rules for textual items:
@@ -221,8 +207,7 @@ class Item {
         if (trim(mb_substr($str, -1)) === ''){
             $normalized .= ' ';
         }
-        $normalized = mb_ereg_replace('\s+', ' ', $normalized);
-        return $normalized;
+        return mb_ereg_replace('\s+', ' ', $normalized);
     }
     
     

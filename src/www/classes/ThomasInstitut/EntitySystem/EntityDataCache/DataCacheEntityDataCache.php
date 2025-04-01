@@ -74,7 +74,7 @@ class DataCacheEntityDataCache implements EntityDataCache
      */
     public function clear(): void
     {
-       $this->dataCache->clear();
+       $this->dataCache->flush();
     }
 
 

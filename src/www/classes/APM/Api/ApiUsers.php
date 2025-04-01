@@ -22,7 +22,6 @@ namespace APM\Api;
 
 use APM\System\Cache\CacheKey;
 use APM\System\DataRetrieveHelper;
-use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
@@ -36,7 +35,6 @@ use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\HttpStatus;
 use Exception;
 use InvalidArgumentException;
-use OpenSearch\Common\Exceptions\Missing404Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use RuntimeException;

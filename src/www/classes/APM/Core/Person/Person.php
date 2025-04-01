@@ -41,6 +41,6 @@ class Person {
     }
     
     public function getId(string $idType) {
-        return isset($this->ids[$idType]) ? $this->ids[$idType] : self::ID_NULL;
+        return $this->ids[$idType] ?? self::ID_NULL;
     }
 }

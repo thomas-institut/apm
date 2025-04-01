@@ -5,20 +5,25 @@ use APM\System\ApmConfigParameter;
 use APM\System\Cache\CacheKey;
 use APM\System\Lemmatizer;
 use APM\System\SystemManager;
+use APM\ToolBox\HttpStatus;
+use Http\Client\Exception;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Typesense\Client;
-use PHPUnit\Util\Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
+use Typesense\Exceptions\ConfigError;
+use Typesense\Exceptions\TypesenseClientError;
 
 class ApiSearch extends ApiController
 {
 
-    const CLASS_NAME = 'Search';
+    const string CLASS_NAME = 'Search';
 
     /**
-     * searches in an typesense index and returns an api response to js
+     * searches in a Typesense index and returns an api response to js
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -26,7 +31,7 @@ class ApiSearch extends ApiController
      */
     public function search(Request  $request, Response $response): Response
     {
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+
         // Name of the index, that should be queried and informative variables for the API response
         // Informative variables for the API response
         $status = 'OK';
@@ -44,6 +49,8 @@ class ApiSearch extends ApiController
         // Name of the index to query
         $index_name = $this->getIndexName($corpus, $lang);
 
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $index_name);
+
         // Log query
         $this->logger->debug("Input parameters", [ 'text' => $searched_phrase, 'keywordDistance' => $keywordDistance, 'lang' => $lang, 'lemmatize' => $lemmatize]);
 
@@ -52,12 +59,13 @@ class ApiSearch extends ApiController
         $config = $this->systemManager->getConfig();
         $this->logger->debug('CONFIG ' . $config[ApmConfigParameter::TYPESENSE_HOST]);
 
-        try {
-            $client = $this->instantiateTypesenseClient($config);
-        } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
+        $client = $this->instantiateTypesenseClient($config);
+        if ($client === false) {
             $status = 'Connecting to Typesense server failed.';
-            return $this->responseWithJson($response, ['searched_phrase' => $searched_phrase,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
+            return $this->responseWithJson($response,
+                ['searched_phrase' => $searched_phrase,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
+
 
         // If wished, lemmatize searched keywords
         if ($lemmatize) {
@@ -77,7 +85,7 @@ class ApiSearch extends ApiController
         // Query index
         try {
             $query = $this->makeSingleTokenTypesenseSearchQuery($client, $index_name, $lang,  $title, $creator, $tokensForQuery[0], $lemmatize, $corpus);
-        } catch (\Exception $e) {
+        } catch (Exception|TypesenseClientError $e) {
             $status = "Typesense query problem";
             return $this->responseWithJson($response,
                 [
@@ -376,18 +384,18 @@ class ApiSearch extends ApiController
     }
 
     /**
-     * make a single token query for a specific typesearch index
+     * make a single token query for a specific Typesense index
      * @param Client $client
      * @param string $index_name
      * @param string $lang
      * @param string $title
      * @param string $creator
-     * @param array $tokens
+     * @param string $token
      * @param bool $lemmatize
      * @param string $corpus
      * @return array
-     * @throws \Http\Client\Exception
-     * @throws \Typesense\Exceptions\TypesenseClientError
+     * @throws TypesenseClientError
+     * @throws Exception
      */
     private function makeSingleTokenTypesenseSearchQuery (Client $client, string $index_name, string $lang, string $title, string $creator, string $token, bool $lemmatize, string $corpus): array
     {
@@ -419,7 +427,7 @@ class ApiSearch extends ApiController
             'num_typos' => 0,
             'prefix' => true,
             'infix' => 'off',
-            'limit' => 250
+            'limit' => 100
         ];
         
         if ($creator !== '') {
@@ -438,12 +446,16 @@ class ApiSearch extends ApiController
         while (count($query['hits']) !== 0) {
             $searchParameters['page'] = $page;
 
+            $start = microtime(true);
             $query = $client->collections[$index_name]->documents->search($searchParameters);
+
+            $this->logger->debug(sprintf("TS query with %d hits done in %.2f ms",
+                count($query['hits']), 1000*(microtime(true) - $start)));
+
 
             foreach ($query['hits'] as $hit) {
                 $hits[] = $hit;
             }
-
             $page++;
         }
         
@@ -452,7 +464,7 @@ class ApiSearch extends ApiController
     }
 
     /**
-     * collects all information about the matches in a given typesearch query
+     * collects all information about the matches in a given Typesense query
      * @param array $query
      * @param string $token
      * @param array $tokens_for_query
@@ -872,14 +884,16 @@ class ApiSearch extends ApiController
     /**
      * returns all creators or titles stored in the transcriptions or editions indices
      * @param Client $client
-     * @param string $queryKey, can be 'transcription' or 'transcriber' or 'editor' or 'edition'
+     * @param string $queryKey , can be 'transcription' or 'transcriber' or 'editor' or 'edition'
+     * @param LoggerInterface|null $logger
      * @return array
-     * @throws \Http\Client\Exception
-     * @throws \Typesense\Exceptions\TypesenseClientError
      */
-    static private function getAllEntriesFromIndex (Client $client, string $queryKey): array
+    static private function getAllEntriesFromIndex (Client $client, string $queryKey, ?LoggerInterface $logger): array
     {
 
+        if ($logger === null) {
+            $logger = new NullLogger();
+        }
         // Get names of target indices
         if ($queryKey === 'transcription' or $queryKey === 'transcriber') {
             $index_names = ['transcriptions_la', 'transcriptions_ar', 'transcriptions_he'];
@@ -915,7 +929,12 @@ class ApiSearch extends ApiController
                     'limit' => 250
                 ];
 
-                $query = $client->collections[$index_name]->documents->search($searchParameters);
+                try {
+                    $query = $client->collections[$index_name]->documents->search($searchParameters);
+                } catch (Exception|TypesenseClientError $e) {
+                    $logger->error("Search Exception: " . $e->getMessage(), [ 'index' => $index_name]);
+                    return [];
+                }
 
                 foreach ($query['hits'] as $hit) {
                     $hits[] = $hit;
@@ -940,27 +959,25 @@ class ApiSearch extends ApiController
      * updates the data cache for transcribers and transcription titles or editors and edition titles
      * @param SystemManager $systemManager
      * @param Client $client
-     * @param string $whichindex
+     * @param string $whichIndex
      * @return bool
-     * @throws \Http\Client\Exception
-     * @throws \Typesense\Exceptions\TypesenseClientError
      */
-    static public function updateDataCache (SystemManager $systemManager, Client $client, string $whichindex): bool
+    static public function updateDataCache (SystemManager $systemManager, Client $client, string $whichIndex, ?LoggerInterface $logger): bool
     {
 
         $cache = $systemManager->getSystemDataCache();
 
-        if ($whichindex === 'transcriptions')
+        if ($whichIndex === 'transcriptions')
         {
-            $transcriptions = self::getAllEntriesFromIndex($client, 'transcription');
-            $transcribers = self::getAllEntriesFromIndex($client, 'transcriber');
+            $transcriptions = self::getAllEntriesFromIndex($client, 'transcription', $logger);
+            $transcribers = self::getAllEntriesFromIndex($client, 'transcriber', $logger);
             $cache->set(CacheKey::ApiSearchTranscriptions, serialize($transcriptions));
             $cache->set(CacheKey::ApiSearchTranscribers, serialize($transcribers));
 
         }
-        else if ($whichindex === 'editions') {
-            $editions = self::getAllEntriesFromIndex($client, 'edition');
-            $editors = self::getAllEntriesFromIndex($client, 'editor');
+        else if ($whichIndex === 'editions') {
+            $editions = self::getAllEntriesFromIndex($client, 'edition', $logger);
+            $editors = self::getAllEntriesFromIndex($client, 'editor', $logger);
             $cache->set(CacheKey::ApiSearchEditions, serialize($editions));
             $cache->set(CacheKey::ApiSearchEditors, serialize($editors));
         }
@@ -1020,12 +1037,9 @@ class ApiSearch extends ApiController
      * @param string $cacheKey
      * @param string $queryKey
      * @return Response
-     * @throws \Http\Client\Exception
-     * @throws \Typesense\Exceptions\TypesenseClientError
      */
     private function getDataFromCacheOrIndex(Request $request, Response $response, string $cacheKey, string $queryKey): Response
     {
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $cache = $this->systemManager->getSystemDataCache();
         $config = $this->systemManager->getConfig();
         $status = 'OK';
@@ -1034,21 +1048,19 @@ class ApiSearch extends ApiController
         // Get data from cache, if data is not cached, get data from open search index and set the cache
         try {
             $data = unserialize($cache->get($cacheKey));
-            // $this->logger->debug(serialize($data));
-        } catch (KeyNotInCacheException $e) {
-            // Instantiate TypeSense client
-            try {
-                $client = $this->instantiateTypesenseClient($config);
-            } catch (Exception $e) {
-                $status = 'Connecting to typesense server failed.';
-                return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
+        } catch (KeyNotInCacheException) {
+            $client = $this->instantiateTypesenseClient($config);
+            if ($client === false) {
+                return $this->responseWithStatus($response, HttpStatus::INTERNAL_SERVER_ERROR);
             }
 
             // Get a list of all items
-            $data = self::getAllEntriesFromIndex($client, $queryKey);
-
-            // Set cache
-            $cache->set($cacheKey, serialize($data));
+            $data = self::getAllEntriesFromIndex($client, $queryKey, $this->logger);
+            if (count($data) !== 0) {
+                // Set cache if there's some data
+                // (if there are no items it's probably because the index hasn't been populated yet)
+                $cache->set($cacheKey, serialize($data));
+            }
         }
 
         // Api Response
@@ -1062,40 +1074,28 @@ class ApiSearch extends ApiController
     }
 
     /**
-     * instantiates and returns a typesearch client
+     * instantiates and returns a Typesense client
      * @param array $config
      * @return false|Client
      */
-    public function instantiateTypesenseClient(array $config) {
-        try {
-            $client = new Client(
-                [
-                    'api_key' => $config[ApmConfigParameter::TYPESENSE_KEY],
-                    'nodes' => [
-                        [
-                            'host' => $config[ApmConfigParameter::TYPESENSE_HOST], // For Typesense Cloud use xxx.a1.typesense.net
-                            'port' => $config[ApmConfigParameter::TYPESENSE_PORT],      // For Typesense Cloud use 443
-                            'protocol' => $config[ApmConfigParameter::TYPESENSE_PROTOCOL],      // For Typesense Cloud use https
-                        ],
-                    ],
-                    'connection_timeout_seconds' => 2,
-                ]
-            );
-
-            return $client;
-        } catch (\Typesense\Exceptions\ConfigError $e) {
-            return false;
-        }
+    public function instantiateTypesenseClient(array $config): Client|false
+    {
+       return self::getTypesenseClient($config, $this->logger);
     }
 
     /**
      * instantiates and returns a typesense client via a static function
      * @param array $config
+     * @param LoggerInterface|null $logger
      * @return false|Client
      */
-    static public function getTypesenseClient(array $config) {
+    static public function getTypesenseClient(array $config, ?LoggerInterface $logger = null): Client|false
+    {
+        if ($logger === null) {
+            $logger = new NullLogger();
+        }
         try {
-            $client = new Client(
+            return new Client(
                 [
                     'api_key' => $config[ApmConfigParameter::TYPESENSE_KEY],
                     'nodes' => [
@@ -1105,12 +1105,11 @@ class ApiSearch extends ApiController
                             'protocol' => $config[ApmConfigParameter::TYPESENSE_PROTOCOL],      // For Typesense Cloud use https
                         ],
                     ],
-                    'connection_timeout_seconds' => 2,
+                    'connection_timeout_seconds' => 1,
                 ]
             );
-
-            return $client;
-        } catch (\Typesense\Exceptions\ConfigError $e) {
+        } catch (ConfigError $e) {
+            $logger->error("Typesense configuration exception: " . $e->getMessage());
             return false;
         }
     }

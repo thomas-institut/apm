@@ -24,24 +24,20 @@ use APM\Core\Token\TokenType;
 
 class StandardTokenType
 {
-    const WORD = 'word';
-    const WHITESPACE = 'whitespace';
-    const PUNCTUATION = 'punctuation';
-    const EMPTY = 'empty';
+    const string WORD = 'word';
+    const string WHITESPACE = 'whitespace';
+    const string PUNCTUATION = 'punctuation';
+    const string EMPTY = 'empty';
 
-    const UNDEFINED = '';
+    const string UNDEFINED = '';
 
     static public function getStandardTypeFromDbType(int $dbTokenType): string
     {
-        switch($dbTokenType) {
-            case TokenType::WORD:
-                return self::WORD;
-            case TokenType::WHITESPACE:
-                return self::WHITESPACE;
-            case TokenType::PUNCTUATION:
-                return self::PUNCTUATION;
-            default:
-                return self::UNDEFINED;
-        }
+        return match ($dbTokenType) {
+            TokenType::WORD => self::WORD,
+            TokenType::WHITESPACE => self::WHITESPACE,
+            TokenType::PUNCTUATION => self::PUNCTUATION,
+            default => self::UNDEFINED,
+        };
     }
 }

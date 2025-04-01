@@ -41,8 +41,8 @@ interface DataCache
 
 
     /**
-     * Returns the number of seconds until the item expires.
-     * If the cache cannot determine this.
+     * Returns the number of seconds until the item expires or
+     * -1 if the cache cannot determine this.
      * @param string $key
      * @return int
      * @throws KeyNotInCacheException
@@ -78,8 +78,10 @@ interface DataCache
     public function setDefaultTtl(int $ttl) : void;
 
     /**
-     * Deletes the cache entry for the given key
-     * If the key is not the cache, does not do anything.
+     * Deletes the cache entry for the given key.
+     * No exception is thrown if the cache entry did not exist
+     * in the first place.
+     *
      * @param string $key
      */
     public function delete(string $key) : void;
@@ -87,13 +89,18 @@ interface DataCache
 
     /**
      * Deletes all entries in the cache
+     *
      * @return void
      */
-    public function clear() : void;
+    public function flush() : void;
 
 
     /**
-     * Deletes all expired entries
+     * Tries to delete all expired entries.
+     *
+     * Depending on the cache this may not do anything
+     * right away.
+     *
      * @return void
      */
     public function clean() : void;

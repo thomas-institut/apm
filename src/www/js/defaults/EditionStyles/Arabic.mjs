@@ -44,7 +44,7 @@ export const defaultArabicEditionStyle = {
         lineNumbersToTextDistance: "0.5 cm",
         lineNumbersFontSize: "0.9 em",
         lineNumbersPosition: "right",
-        resetLineNumbersEachPage: false
+        resetLineNumbersEachPage: true
       },
       paragraph: {
         lineSkip: "18 pt",
@@ -61,9 +61,9 @@ export const defaultArabicEditionStyle = {
         shiftY: "0"
       },
       glue: {
-        width: "0.25 em",
+        width: "0.23 em",
         shrink: "0.03 em",
-        stretch: "0.08 em"
+        stretch: "0.07 em"
       },
     },
     small:  {
@@ -98,7 +98,7 @@ export const defaultArabicEditionStyle = {
     normal: {
       parent: "default",
       paragraph: {
-        indent: "1 em"
+        indent: "1.5 em"
       }
     },
     h1: {
@@ -137,15 +137,15 @@ export const defaultArabicEditionStyle = {
     apparatus: {
       parent: "default",
       text: {
-        fontSize: "0.9 em",
+        fontSize: "10 pt",
       },
       paragraph: {
-        lineSkip: "16 pt"
+        lineSkip: "15 pt"
       },
       glue: {
-        width: "0.25 em",
+        width: "0.23 em",
         shrink: "0.03 em",
-        stretch: "0.08 em"
+        stretch: "0.07 em"
       },
     },
     lineRangeSeparator: {
@@ -155,16 +155,16 @@ export const defaultArabicEditionStyle = {
     },
     postLineRangeSeparator: {
       glue: {
-        width: "0.5 em",
-        stretch: "0.25 em",
-        shrink: "0.1 em"
+        width: "0.23 em",
+        shrink: "0.03 em",
+        stretch: "0.2 em"
       }
     },
     preEntrySeparator : {
       glue: {
-        width: "0.5 em",
-        stretch: "0.25 em",
-        shrink: "0.1 em"
+        width: "0.23 em",
+        shrink: "0.03 em",
+        stretch: "0.14 em"
       }
     },
     entrySeparator: {
@@ -174,9 +174,9 @@ export const defaultArabicEditionStyle = {
     },
     postEntrySeparator: {
       glue: {
-        width: "0.5 em",
-        stretch: "0.25 em",
-        shrink: "0.1 em"
+        width: "0.23 em",
+        shrink: "0.03 em",
+        stretch: "0.14 em"
       }
     },
     apparatusLineNumbers: {
@@ -204,9 +204,9 @@ export const defaultArabicEditionStyle = {
       lineSkip: "15 pt"
     },
     glue: {
-      width: "0.25 em",
+      width: "0.23 em",
       shrink: "0.03 em",
-      stretch: "0.08 em"
+      stretch: "0.07 em"
     },
   },
   marginaliaKeyword: {

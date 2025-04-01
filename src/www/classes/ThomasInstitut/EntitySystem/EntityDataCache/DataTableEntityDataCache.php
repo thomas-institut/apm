@@ -34,12 +34,12 @@ use ThomasInstitut\EntitySystem\EntityData;
 class DataTableEntityDataCache implements EntityDataCache
 {
 
-    const IdColumn = 'id';
-    const TidColumn = 'tid';
-    const DataIdColumn = 'dataId';
-    const SetAtColumn = 'setAt';
-    const ExpiresColumn = 'expires';
-    const DataColumn = 'data';
+    const string IdColumn = 'id';
+    const string TidColumn = 'tid';
+    const string DataIdColumn = 'dataId';
+    const string SetAtColumn = 'setAt';
+    const string ExpiresColumn = 'expires';
+    const string DataColumn = 'data';
 
     use LoggerAwareTrait;
     private DataTable $dataTable;
@@ -64,7 +64,6 @@ class DataTableEntityDataCache implements EntityDataCache
      *    $extraColumnsMap = [
      *       'extraColumnName' => callable  // e.g. function (EntityData $ed) { return 'value' }
      *       'anotherColumn' => callable
-     *
      *    ]
      *
      * The optional $columnNames parameter that allows the data table to use custom names for the different columns:
@@ -72,8 +71,9 @@ class DataTableEntityDataCache implements EntityDataCache
      *   $columnNames = [  defaultColumnName => 'customName', .... ]
      *
      * @param DataTable $dataTable
-     * @param bool $deleteRowsWhenInvalidating
      * @param array $extraColumnsMap
+     * @param bool $deleteRowsWhenInvalidating
+     * @param bool $nullifyColumnsWhenInvalidating
      * @param array $columnNames
      */
     public function __construct(DataTable $dataTable,
@@ -167,7 +167,7 @@ class DataTableEntityDataCache implements EntityDataCache
     /**
      * @inheritDoc
      */
-    public function setData(int $tid, EntityData $entityData, string $dataId, int $ttl = -1, ): void
+    public function setData(int $tid, EntityData $entityData, string $dataId, int $ttl = -1 ): void
     {
         $createNewRow = false;
         $currentRows = $this->dataTable->findRows([ $this->tidCol => $tid]);

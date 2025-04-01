@@ -98,7 +98,7 @@ class InMemoryDataCache implements DataCache
         return isset($this->theCache[$key]);
     }
 
-    public function clear(): void
+    public function flush(): void
     {
        $this->theCache = [];
     }

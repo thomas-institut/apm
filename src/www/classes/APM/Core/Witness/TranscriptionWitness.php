@@ -30,7 +30,6 @@ use APM\Core\Item\TextualItem;
 use APM\Core\Item\NoWbMark;
 use APM\Core\Token\StringTokenizer;
 use APM\Core\Token\TranscriptionToken;
-use APM\Core\Token\StringToken;
 use APM\Core\Address\PointRange;
 use APM\Core\Address\IntRange;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;

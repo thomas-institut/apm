@@ -2,7 +2,6 @@
 
 namespace APM\CommandLine\ApmCtlUtility;
 
-use APM\CommandLine\AdminUtility;
 use APM\CommandLine\CommandLineUtility;
 use APM\EntitySystem\Schema\Entity;
 use APM\System\Person\InvalidPersonNameException;

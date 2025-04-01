@@ -20,15 +20,14 @@
  * Typesets the JSON given in stdin
  */
 //
-import process from 'node:process'
+import process, { hrtime } from 'node:process'
 import fs from 'node:fs'
-import { hrtime } from 'node:process'
 
-import {ObjectFactory} from '../www/js/Typesetter2/ObjectFactory.mjs'
-import {PangoMeasurerNodeGTK} from './PangoMeasurerNodeGTK.mjs'
-import {BasicTypesetter} from '../www/js/Typesetter2/BasicTypesetter.mjs'
-import {EditionTypesetting} from '../www/js/Edition/EditionTypesetting.mjs'
-import {resolvedPromise} from '../www/js/toolbox/FunctionUtil.mjs'
+import { ObjectFactory } from '../www/js/Typesetter2/ObjectFactory.mjs'
+import { PangoMeasurerNodeGTK } from './PangoMeasurerNodeGTK.mjs'
+import { BasicTypesetter } from '../www/js/Typesetter2/BasicTypesetter.mjs'
+import { EditionTypesetting } from '../www/js/Edition/EditionTypesetting.mjs'
+import { resolvedPromise } from '../www/js/toolbox/FunctionUtil.mjs'
 import { SystemStyleSheet } from '../www/js/Typesetter2/Style/SystemStyleSheet.mjs'
 
 const debug = true
@@ -80,27 +79,7 @@ if (data.helperOptions !== undefined) {
 
   data.helperOptions.textBoxMeasurer = data.options.textBoxMeasurer
     debug && console.log(`Edition lang: '${data.helperOptions.edition.lang}', style Id = ${data.helperOptions.styleId}`)
-  let stylesheet = SystemStyleSheet.getStyleSheet(data.helperOptions.edition.lang, data.helperOptions.styleId);
-  // pdfFontsConversions.forEach( (conv) => {
-  //   let [ fromFont, toFont] = conv;
-  //   if (stylesheet.styles.default.text.fontFamily === fromFont) {
-  //     stylesheet.styles.default.text.fontFamily = toFont;
-  //   }
-  //   if (data.helperOptions.edition.defaultFontFamily === fromFont) {
-  //     data.helperOptions.edition.defaultFontFamily = toFont;
-  //   }
-  //   if (data.options.defaultFontFamily === fromFont) {
-  //     data.options.defaultFontFamily = toFont;
-  //   }
-  //   if (data.options.lineNumbersOptions.fontFamily === fromFont) {
-  //     data.options.lineNumbersOptions.fontFamily = toFont;
-  //   }
-  //   if (data.options.pageNumbersOptions.fontFamily === fromFont) {
-  //     data.options.pageNumbersOptions.fontFamily = toFont;
-  //   }
-  // })
-
-  data.helperOptions.editionStyleSheet = stylesheet;
+  data.helperOptions.editionStyleSheet = SystemStyleSheet.getStyleSheet(data.helperOptions.edition.lang, data.helperOptions.styleId);
   let editionTypesettingHelper = new EditionTypesetting(data.helperOptions)
   data.options.getApparatusListToTypeset = (mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine) => {
     return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine)

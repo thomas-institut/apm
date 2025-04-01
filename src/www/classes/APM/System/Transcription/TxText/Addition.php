@@ -20,6 +20,8 @@
 
 namespace APM\System\Transcription\TxText;
 
+use InvalidArgumentException;
+
 /**
  * Description of TtiAddition
  *
@@ -60,10 +62,10 @@ class Addition extends Item {
         parent::__construct($id, $s);
         $this->type = parent::ADDITION;
         if (!self::isPlaceValid($place)){
-            throw new \InvalidArgumentException("Unrecognized placement for ADDITION item, placement given: " . $place);
+            throw new InvalidArgumentException("Unrecognized placement for ADDITION item, placement given: " . $place);
         }
         if ($text === NULL or $text === ''){
-            throw new \InvalidArgumentException("Transcription items of type ADDITION need some text");
+            throw new InvalidArgumentException("Transcription items of type ADDITION need some text");
         }
         $this->theText = $text;
         $this->setTarget($target);

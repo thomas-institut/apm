@@ -1026,7 +1026,7 @@ class IndexManager extends CommandLineUtility
         $data = $this->getTypesenseIDAndIndexName($arg1, $arg2);
 
         if (isset($data['id'])) {
-            
+
             $index = $data['index'];
             $id = $data['id'];
 

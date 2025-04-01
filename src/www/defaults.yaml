@@ -28,6 +28,10 @@ siteShowLanguageSelector:  false
 
 collationEngine: 'CollatexHttp'
 
+typesense_host: 'localhost'
+typesense_protocol: 'http'
+typesense_port: 8108
+
 collatexHttp:
   host: '127.0.0.1'
   port: 7369

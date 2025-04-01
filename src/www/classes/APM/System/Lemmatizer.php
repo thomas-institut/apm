@@ -105,7 +105,7 @@ class Lemmatizer
             // normalize the tokens
             // drop integers at the beginning of every encoded tokens and drop the token duplicates which are not lemmatized
             // (it seems like the api lemmatizer returns articles of nouns and the nouns twice (each as a single token with lemmatization
-            // and as complex token without lemmatization, these ones are removed)
+            // and as complex token without lemmatization, these are removed)
             for ($i = 0; $i < 5; $i++) {
                 // Iterate the process 4 times to make sure that all integers, which represent token numbers, will be deleted,
                 // even for very long sentences with a token number with four digits
@@ -164,11 +164,11 @@ class Lemmatizer
         }
         
         // signal missing words or lemmata in the returned data
-        foreach ($tokens_and_lemmata['tokens'] as $word) {
-            if ($word === null or $word === '') {
-                print("EMPTY WORD IN LIST OF WORDS!\n");
-            }
-        }
+//        foreach ($tokens_and_lemmata['tokens'] as $word) {
+//            if ($word === null or $word === '') {
+//                print("EMPTY WORD IN LIST OF WORDS!\n");
+//            }
+//        }
 
         // in some rare cases, there seems to be no lemma returned from the api, then: use the word itself as the lemma
         /** @var string $key */

@@ -713,13 +713,13 @@ function createApiSearchRoutes(RouteCollectorProxy $group, ContainerInterface $c
         })
         ->setName('search.keyword');
 
-    $group->post("/search/transcriptions",
+    $group->any("/search/transcriptions",
         function(Request $request, Response $response) use ($container){
             return (new ApiSearch($container))->getTranscriptionTitles($request, $response);
         })
         ->setName('search.titles');
 
-    $group->post("/search/transcribers",
+    $group->any("/search/transcribers",
         function(Request $request, Response $response) use ($container){
             return (new ApiSearch($container))->getTranscribers($request, $response);
         })

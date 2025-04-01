@@ -41,13 +41,13 @@ use ThomasInstitut\TimeString\TimeString;
 abstract class CollationTableManager implements ErrorReporter
 {
 
-    const ERROR_ALREADY_AN_EDITION = 101;
-    const ERROR_DOES_NOT_EXIST = 102;
-    const ERROR_INVALID_TIME_FROM = 103;
-    const ERROR_STRATEGY_NOT_SUPPORTED = 104;
+    const int ERROR_ALREADY_AN_EDITION = 101;
+    const int ERROR_DOES_NOT_EXIST = 102;
+    const int ERROR_INVALID_TIME_FROM = 103;
+    const int ERROR_STRATEGY_NOT_SUPPORTED = 104;
 
-    const INIT_STRATEGY_TOP_WITNESS = 'topWitness';
-    const INIT_STRATEGY_MOST_COMMON_VARIANT = 'mostCommonVariant';
+    const string INIT_STRATEGY_TOP_WITNESS = 'topWitness';
+    const string INIT_STRATEGY_MOST_COMMON_VARIANT = 'mostCommonVariant';
 
     /**
      * Saves a new collation table in the system. Returns the id of the new collation table

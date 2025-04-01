@@ -24,12 +24,14 @@ use APM\Api\ApiEntity;
 use APM\Api\ApiLog;
 use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiPeople;
+use APM\Api\ApiSearchNew;
 use APM\Api\ApiSystem;
 use APM\Api\ApiWorks;
 use APM\Site\SiteEntity;
 use APM\Site\SiteMetadataEditor;
 use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePeople;
+use APM\Site\SiteSearchNew;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Logger;
@@ -159,6 +161,12 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
                 return (new SiteSearch($container))->searchPage($request, $response);
             })
             ->setName('search');
+
+        $group->get('/searchnew',
+            function(Request $request, Response $response) use ($container){
+                return (new SiteSearchNew($container))->searchPage($request, $response);
+            })
+            ->setName('searchnew');
 
         // People and Person Pages
 
@@ -736,6 +744,38 @@ function createApiSearchRoutes(RouteCollectorProxy $group, ContainerInterface $c
             return (new ApiSearch($container))->getEditors($request, $response);
         })
         ->setName('search.editors');
+
+    // NEW SEARCH
+
+    $group->post("/searchnew/keyword",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiSearchNew($container))->search($request, $response);
+        })
+        ->setName('searchnew.keyword');
+
+    $group->any("/searchnew/transcriptions",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiSearchNew($container))->getTranscriptionTitles($request, $response);
+        })
+        ->setName('searchnew.titles');
+
+    $group->any("/searchnew/transcribers",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiSearchNew($container))->getTranscribers($request, $response);
+        })
+        ->setName('searchnew.transcribers');
+
+    $group->post("/searchnew/editions",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiSearchNew($container))->getEditionTitles($request, $response);
+        })
+        ->setName('searchnew.editions');
+
+    $group->post("/searchnew/editors",
+        function(Request $request, Response $response) use ($container){
+            return (new ApiSearchNew($container))->getEditors($request, $response);
+        })
+        ->setName('searchnew.editors');
 
 }
 function createApiTranscriptionRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {

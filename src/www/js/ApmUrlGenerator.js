@@ -140,6 +140,10 @@ export class ApmUrlGenerator {
         return this.base + '/search'
     }
 
+    siteSearchNew() {
+        return this.base + '/searchnew'
+    }
+
     sitePerson(id) {
         return `${this.base}/person/${this.getFormattedId(id)}`;
     }

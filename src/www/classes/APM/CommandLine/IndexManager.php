@@ -1224,9 +1224,9 @@ END;
     private function getIndexedItemInfo (string $arg1, string $arg2 = null, string $context = null): array {
 
         if ($this->indexNamePrefix === 'transcriptions') {
-            $searchParameters = ['q' => $arg1, 'query_by' => 'pageID', 'prefix' => false, 'filter_by' => "column:=$arg2"];
+            $searchParameters = ['q' => $arg1, 'query_by' => 'pageID', 'prefix' => false, 'num_typos' => 0, 'filter_by' => "column:=$arg2"];
         } else if ($this->indexNamePrefix === 'editions') {
-            $searchParameters = ['q' => $arg1, 'query_by' => 'table_id', 'prefix' => false];
+            $searchParameters = ['q' => $arg1, 'query_by' => 'table_id', 'prefix' => false, 'num_typos' => 0];
         }
 
         foreach ($this->indices as $indexName) {
@@ -1310,9 +1310,9 @@ END;
     private function getTypesenseIDAndIndexName (string $arg1, string $arg2=null): array {
 
         if ($this->indexNamePrefix === 'transcriptions') {
-            $searchParameters = ['q' => $arg1, 'query_by' => 'pageID', 'filter_by' => "column:=$arg2", 'prefix' => false];
+            $searchParameters = ['q' => $arg1, 'query_by' => 'pageID', 'filter_by' => "column:=$arg2", 'prefix' => false, 'num_typos' => 0];
         } else if ($this->indexNamePrefix === 'editions') {
-            $searchParameters = ['q' => $arg1, 'query_by' => 'table_id', 'prefix' => false];
+            $searchParameters = ['q' => $arg1, 'query_by' => 'table_id', 'prefix' => false, 'num_typos' => 0];
         }
 
         foreach ($this->indices as $index) {

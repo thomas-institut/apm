@@ -99,7 +99,7 @@ class ApiSearchNew extends ApiController
                 ]);
         }
 
-        if ($tokensForQuery[0] === '*') {
+        /*if ($tokensForQuery[0] === '*') {
             unset($tokensForQuery[0]);
             $tokensForQuery = array_values($tokensForQuery);
         }
@@ -131,18 +131,19 @@ class ApiSearchNew extends ApiController
             $data = $this->cropData($data, $max_passages);
             $num_passages_cropped = $this->getNumPassages($data);
             $cropped = true;
-        }
+        }*/
 
         // ApiResponse
         return $this->responseWithJson($response, [
             'index' => $index_name,
             'searched_phrase' => $searched_phrase,
+            'lemmatize' => $lemmatize,
             'lemmata' => $lemmata,
             'lang' => $lang,
-            'num_passages_total' => $num_passages_total,
-            'cropped' => $cropped,
-            'num_passages_cropped' => $num_passages_cropped,
-            'data' => $data,
+            'corpus' => $corpus,
+            'keywordDistance' => $keywordDistance,
+            'tokensForQuery' => $tokensForQuery,
+            'query' => $query,
             'serverTime' => $now,
             'status' => $status]);
     }

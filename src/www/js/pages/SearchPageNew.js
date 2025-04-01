@@ -334,7 +334,7 @@ function search() {
 
 
   // Make API Call
-  $.post(urlGen.apiSearchKeyword(), inputs)
+  $.post(urlGen.apiSearchNewKeyword(), inputs)
     .done((apiResponse) => {
 
 
@@ -355,15 +355,59 @@ function search() {
       // Log API response
       console.log(apiResponse);
 
+      // ************* NEW CODE HERE *************
+
+      let tokensForQuery = apiResponse.tokensForQuery;
+      let lemmatize = apiResponse.lemmatize;
+      let lemmata = apiResponse.lemmata;
+      let keywordDistance = apiResponse.keywordDistance;
+
+      if (tokensForQuery[0] === '*') {
+        tokensForQuery.shift();
+      }
+      console.log(tokensForQuery)
+
+      // Count tokens
+      let numTokens = tokensForQuery.length;
+      console.log(numTokens);
+
+      // Get all information about the matched entries, including passages with the matched token as lists of tokens
+      let data = collectData(apiResponse.query, tokensForQuery[0], tokensForQuery, lemmata, keywordDistance, lemmatize, apiResponse.corpus);
+      console.log(data);
+
+      // Filter out columns and passages that do not match all tokens
+      for (let i = 0; i < numTokens; i++) {
+        data = filterData(data, tokensForQuery[i], lemmata[i], lemmatize);
+      }
+      console.log(data);
+
+      // Remove duplicate passages
+      data = removePassageDuplicates(data);
+      console.log(data);
+
+      // Crop data if there are more than 999 passages matched
+      let numPassagesTotal = getNumPassages(data);
+      const maxPassages = 999;
+      let cropped = false;
+      let numPassagesCropped = numPassagesTotal;
+
+      if (numPassagesTotal > maxPassages) {
+        data = cropData(data, maxPassages);
+        numPassagesCropped = getNumPassages(data);
+        cropped = true;
+      }
+
+      // ************* NEW CODE HERE *************
+
       // Remove spinner
       spinner.empty();
 
       // Make array to store zoom data in – default zoom values are dependent on the keyword distance values
-      let zoom = new Array(apiResponse.num_passages_cropped+1).fill(inputs.keywordDistance)
+      let zoom = new Array(numPassagesCropped+1).fill(inputs.keywordDistance)
 
       // Display results
       state = STATE_DISPLAYING_RESULTS
-      displayResults(apiResponse.data, apiResponse.lang, apiResponse.num_passages_cropped, zoom, inputs.keywordDistance, apiResponse.num_passages_total, apiResponse.cropped, corpus).then( () => {
+      displayResults(data, apiResponse.lang, numPassagesCropped, zoom, inputs.keywordDistance, numPassagesTotal, cropped, corpus).then( () => {
         p.stop('Results displayed')
         state = STATE_INIT
       })
@@ -376,6 +420,271 @@ function search() {
     });
 }
 
+function collectData(query, token, tokensForQuery, lemmata, keywordDistance, lemmatize, corpus) {
+
+  // Choose filter algorithm based on asterisks in the queried token - remove asterisks for further processing
+  const filter = getFilterType(token);
+  token = token.replace(/\*/g, "");
+
+  let data = [];
+  const numMatches = query.length;
+
+  if (numMatches !== 0) {
+    for (let i = 0; i < numMatches; i++) {
+      let page, seq, foliation, column, docID, pageID, typesenseID, textTokenized, textLemmatized;
+      let tableId, chunk;
+
+      if (corpus === 'transcriptions') {
+        ({ page, seq, foliation, column, docID, pageID, id: typesenseID, transcription_tokens: textTokenized, transcription_lemmata: textLemmatized } = query[i].document);
+      } else {
+        ({ table_id: tableId, chunk, id: typesenseID, edition_tokens: textTokenized, edition_lemmata: textLemmatized } = query[i].document);
+      }
+
+      const { title, creator } = query[i].document;
+
+      let posLower, posUpper;
+      if (lemmatize) {
+        posLower = getPositions(textLemmatized, lemmata[0], filter);
+        posUpper = getPositions(textLemmatized, capitalizeFirstLetter(lemmata[0]), filter);
+      } else {
+        posLower = getPositions(textTokenized, token, filter);
+        posUpper = getPositions(textTokenized, capitalizeFirstLetter(token), filter);
+      }
+
+      const posAll = [...new Set([...posLower, ...posUpper])].sort((a, b) => a - b);
+
+      let passageTokenized = [], passageLemmatized = [], passageCoordinates = [], tokensMatched = [];
+
+      posAll.forEach(pos => {
+        let passageData = getPassage(textTokenized, pos, keywordDistance);
+        passageTokenized.push(passageData.passage);
+
+        if (lemmatize) {
+          passageData = getPassage(textLemmatized, pos, keywordDistance);
+          passageLemmatized.push(passageData.passage);
+        }
+
+        passageCoordinates.push([passageData.start, passageData.end]);
+        tokensMatched.push(textTokenized[pos]);
+      });
+
+      tokensMatched = [...new Set(tokensMatched)];
+      const numPassages = passageTokenized.length;
+      const matchedTokenPositions = Array(numPassages).fill([]);
+
+      let entry = {
+        title,
+        positions: posAll,
+        creator,
+        typesenseID,
+        text_tokenized: textTokenized,
+        text_lemmatized: textLemmatized,
+        tokens_for_query: tokensForQuery,
+        lemmata,
+        filters: [],
+        tokens_matched: tokensMatched,
+        num_passages: numPassages,
+        passage_coordinates: passageCoordinates,
+        passage_tokenized: passageTokenized,
+        passage_lemmatized: passageLemmatized,
+        lemmatize,
+        matched_token_positions: matchedTokenPositions
+      };
+
+      if (corpus === 'transcriptions') {
+        Object.assign(entry, { page, seq, foliation, column, pageID, docID });
+      } else {
+        Object.assign(entry, { chunk, table_id: tableId });
+      }
+
+      data.push(entry);
+    }
+
+    data.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+  }
+
+  return data;
+}
+
+function capitalizeFirstLetter(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function getFilterType(token) {
+  if ((token.match(/\*/g) || []).length !== 0) {
+    const numChars = token.length;
+    if (token[0] === '*' && token[numChars - 1] !== '*') {
+      return 'match_suffix';
+    } else if (token[0] === '*' && token[numChars - 1] === '*') {
+      return 'match_body';
+    } else if (token[numChars - 1] === '*') {
+      return 'match_prefix';
+    }
+  } else {
+    return 'match_full';
+  }
+}
+
+function getPositions(text, token, filter) {
+  let positions = [];
+
+  for (let i = 0; i < text.length; i++) {
+    let currentToken = text[i];
+
+    if (currentToken !== null && isMatching(currentToken, token, filter)) {
+      positions.push(i);
+    }
+  }
+
+  return positions;
+}
+
+function getPassage(text, pos, keywordDistance) {
+  let passage = [text[pos]];
+  let passageStart = 0;
+  let passageEnd = 0;
+
+  const numTokens = text.length;
+  const precTokens = text.slice(0, pos).reverse();
+  const sucTokens = text.slice(pos + 1, numTokens);
+
+  for (let i = 0; i < keywordDistance && i < precTokens.length; i++) {
+    passage.unshift(precTokens[i]);
+    passageStart = pos - i - 1;
+  }
+
+  for (let i = 0; i < keywordDistance && i < sucTokens.length; i++) {
+    passage.push(sucTokens[i]);
+    passageEnd = pos + i + 1;
+  }
+
+  if (!passage[0] || ".,:;- –]/".includes(passage[0])) {
+    passage.shift();
+    passageStart += 1;
+  }
+
+  return { passage, start: passageStart, end: passageEnd };
+}
+
+function isMatching(token, needle, filter) {
+  const needleForLemmataCheck = ` ${needle} `;
+
+  if (filter === 'match_full') {
+    return token === needle || token === needle.charAt(0).toUpperCase() + needle.slice(1) || token.includes(needleForLemmataCheck);
+  } else if (filter === 'match_prefix') {
+    return token.startsWith(needle) || token.startsWith(needle.charAt(0).toUpperCase() + needle.slice(1));
+  } else if (filter === 'match_suffix') {
+    return token.endsWith(needle) && token.indexOf(needle) === token.length - needle.length;
+  } else if (filter === 'match_body') {
+    return token.includes(needle) && token.indexOf(needle) !== 0 && token.indexOf(needle) !== token.length - needle.length;
+  }
+  return false;
+}
+
+function filterData(data, tokenPlain, lemma, lemmatize) {
+  if (lemmatize) {
+    data.forEach((match, i) => {
+      match.passage_lemmatized.forEach((passage, j) => {
+        let noMatch = true;
+        passage.forEach((token, k) => {
+          if ((` ${lemma} `.includes(token) || token === lemma) && lemma.length > 1) {
+            data[i].tokens_matched.push(match.passage_tokenized[j][k]);
+            data[i].tokens_matched = [...new Set(data[i].tokens_matched)];
+            data[i].matched_token_positions[j].push(data[i].passage_coordinates[j][0] + k);
+            noMatch = false;
+          }
+        });
+        if (noMatch) {
+          delete data[i].passage_tokenized[j];
+          delete data[i].passage_lemmatized[j];
+          delete data[i].passage_coordinates[j];
+          delete data[i].positions[j];
+          delete data[i].matched_token_positions[j];
+          data[i].num_passages -= 1;
+        }
+      });
+    });
+  } else {
+    let filter = getFilterType(tokenPlain);
+    tokenPlain = tokenPlain.replace(/\*/g, "");
+
+    data.forEach((match, i) => {
+      data[i].filters.push(filter);
+      match.passage_tokenized.forEach((passage, j) => {
+        let numMatchedTokens = data[i].tokens_matched.length;
+        passage.forEach((token, k) => {
+          if (isMatching(token, tokenPlain, filter)) {
+            data[i].tokens_matched.push(passage[k]);
+            data[i].matched_token_positions[j].push(data[i].passage_coordinates[j][0] + k);
+          }
+        });
+        if (numMatchedTokens === data[i].tokens_matched.length) {
+          delete data[i].passage_tokenized[j];
+          delete data[i].passage_lemmatized[j];
+          delete data[i].passage_coordinates[j];
+          delete data[i].matched_token_positions[j];
+          delete data[i].positions[j];
+          data[i].num_passages -= 1;
+        } else {
+          data[i].tokens_matched = [...new Set(data[i].tokens_matched)];
+        }
+      });
+    });
+  }
+
+  return data.filter(match => match.passage_tokenized.length > 0).map(match => {
+    match.passage_tokenized = Object.values(match.passage_tokenized);
+    match.passage_lemmatized = Object.values(match.passage_lemmatized);
+    match.tokens_matched = Object.values(match.tokens_matched);
+    match.passage_coordinates = Object.values(match.passage_coordinates);
+    match.matched_token_positions = Object.values(match.matched_token_positions);
+    match.positions = Object.values(match.positions);
+    return match;
+  });
+}
+
+function removePassageDuplicates(data) {
+  return data.map(match => {
+    match.matched_token_positions = Object.values(match.matched_token_positions.reduce((acc, curr) => {
+      acc[JSON.stringify(curr)] = curr;
+      return acc;
+    }, {}));
+
+    match.matched_token_positions = removeSubsetArrays(match.matched_token_positions);
+
+    match.passage_tokenized = match.passage_tokenized.filter((_, j) => match.matched_token_positions[j]);
+    match.passage_lemmatized = match.passage_lemmatized.filter((_, j) => match.matched_token_positions[j]);
+    match.passage_coordinates = match.passage_coordinates.filter((_, j) => match.matched_token_positions[j]);
+    match.positions = match.positions.filter((_, j) => match.matched_token_positions[j]);
+
+    match.num_passages = match.passage_tokenized.length;
+
+    return match;
+  }).filter(match => match.num_passages > 0);
+}
+
+function getNumPassages(data) {
+  return data.reduce((total, match) => total + match.num_passages, 0);
+}
+
+function cropData(data, maxPassages) {
+  let numPassagesCropped = 0;
+  return data.filter(matchedColumn => {
+    if (numPassagesCropped >= maxPassages) {
+      return false;
+    }
+    numPassagesCropped += matchedColumn.num_passages;
+    return true;
+  });
+}
+
+function removeSubsetArrays(array) {
+  return array.filter((current, currentIndex, self) =>
+      !self.some((existing, existingIndex) =>
+          currentIndex !== existingIndex && current.every(val => existing.includes(val))
+      )
+  );
+}
 
 // Function to collect and display the search results in a readable form
 async function displayResults (data, lang, num_passages, zoom, keywordDistance, num_passages_total, cropped, corpus) {

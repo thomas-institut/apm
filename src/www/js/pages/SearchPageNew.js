@@ -112,7 +112,7 @@ export class SearchPageNew extends NormalPage {
 }
 
 
-window.SearchPage = SearchPageNew;
+window.SearchPageNew = SearchPageNew;
 
 
 export function setupSearchPage() {

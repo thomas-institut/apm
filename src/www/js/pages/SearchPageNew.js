@@ -333,7 +333,7 @@ function search() {
   state = STATE_WAITING_FOR_SERVER
 
 
-  // Make API Call
+  // Make API Call, namely make a prefix query in typesense for the longest keyword in the searched phrase, which does not begin with an asterisk
   $.post(urlGen.apiSearchNewKeyword(), inputs)
     .done((apiResponse) => {
 
@@ -341,6 +341,7 @@ function search() {
       // Catch Error
       if (apiResponse.status !== 'OK') {
         console.log(`Error in query`);
+        spinner.empty();
         if (apiResponse.errorData !== undefined) {
           console.log(apiResponse.errorData);
         }
@@ -355,8 +356,6 @@ function search() {
       // Log API response
       console.log(apiResponse);
 
-      // ************* NEW CODE HERE *************
-
       let tokensForQuery = apiResponse.tokensForQuery;
       let lemmatize = apiResponse.lemmatize;
       let lemmata = apiResponse.lemmata;
@@ -365,24 +364,20 @@ function search() {
       if (tokensForQuery[0] === '*') {
         tokensForQuery.shift();
       }
-      console.log(tokensForQuery)
 
       // Count tokens
       let numTokens = tokensForQuery.length;
-      console.log(numTokens);
 
       // Get all information about the matched entries, including passages with the matched token as lists of tokens
       let data = collectData(apiResponse.query, tokensForQuery[0], tokensForQuery, lemmata, keywordDistance, lemmatize, apiResponse.corpus);
-      console.log(data);
-
+      
       // Filter out columns and passages that do not match all tokens
       for (let i = 0; i < numTokens; i++) {
         data = filterData(data, tokensForQuery[i], lemmata[i], lemmatize);
       }
-      console.log(data);
 
       // Remove duplicate passages
-      data = removePassageDuplicates(data);
+      data = removeOverlappingPassagesOrDuplicates(data);
       console.log(data);
 
       // Crop data if there are more than 999 passages matched
@@ -397,7 +392,8 @@ function search() {
         cropped = true;
       }
 
-      // ************* NEW CODE HERE *************
+      console.log('data to display');
+      console.log(data);
 
       // Remove spinner
       spinner.empty();
@@ -444,8 +440,8 @@ function collectData(query, token, tokensForQuery, lemmata, keywordDistance, lem
 
       let posLower, posUpper;
       if (lemmatize) {
-        posLower = getPositions(textLemmatized, lemmata[0], filter);
-        posUpper = getPositions(textLemmatized, capitalizeFirstLetter(lemmata[0]), filter);
+        posLower = getPositions(textLemmatized, lemmata[0], 'lemma');
+        posUpper = getPositions(textLemmatized, capitalizeFirstLetter(lemmata[0]), 'lemma');
       } else {
         posLower = getPositions(textTokenized, token, filter);
         posUpper = getPositions(textTokenized, capitalizeFirstLetter(token), filter);
@@ -470,7 +466,7 @@ function collectData(query, token, tokensForQuery, lemmata, keywordDistance, lem
 
       tokensMatched = [...new Set(tokensMatched)];
       const numPassages = passageTokenized.length;
-      const matchedTokenPositions = Array(numPassages).fill([]);
+      const matchedTokenPositions = Array.from({ length: numPassages }, () => []);
 
       let entry = {
         title,
@@ -531,7 +527,9 @@ function getPositions(text, token, filter) {
   for (let i = 0; i < text.length; i++) {
     let currentToken = text[i];
 
-    if (currentToken !== null && isMatching(currentToken, token, filter)) {
+    if (filter === 'lemma' && currentToken !== null && isLemmaOfWord(token, currentToken)) {
+      positions.push(i);
+    } else if (currentToken !== null && isMatching(currentToken, token, filter)) {
       positions.push(i);
     }
   }
@@ -581,30 +579,35 @@ function isMatching(token, needle, filter) {
   return false;
 }
 
+// filters out prefix matches returned from typesense, when a query was intended as a full-match-query
+// searches for additional keywords in the data returned from typesense for the longest keyword
+// makes the actual search in cases where typesense returns all indexed items, e. g. when it is searched only for a suffix like '*losophia‘
 function filterData(data, tokenPlain, lemma, lemmatize) {
-  if (lemmatize) {
+  if (lemmatize && lemma.length > 1) {
     data.forEach((match, i) => {
       match.passage_lemmatized.forEach((passage, j) => {
         let noMatch = true;
         passage.forEach((token, k) => {
-          if ((` ${lemma} `.includes(token) || token === lemma) && lemma.length > 1) {
+          if (isLemmaOfWord(lemma, token)) {
             data[i].tokens_matched.push(match.passage_tokenized[j][k]);
-            data[i].tokens_matched = [...new Set(data[i].tokens_matched)];
             data[i].matched_token_positions[j].push(data[i].passage_coordinates[j][0] + k);
             noMatch = false;
           }
         });
+
         if (noMatch) {
           delete data[i].passage_tokenized[j];
           delete data[i].passage_lemmatized[j];
           delete data[i].passage_coordinates[j];
-          delete data[i].positions[j];
           delete data[i].matched_token_positions[j];
+          delete data[i].positions[j];
           data[i].num_passages -= 1;
+        } else {
+          data[i].tokens_matched = [...new Set(data[i].tokens_matched)];
         }
       });
     });
-  } else {
+  } else if (!lemmatize) {
     let filter = getFilterType(tokenPlain);
     tokenPlain = tokenPlain.replace(/\*/g, "");
 
@@ -632,7 +635,7 @@ function filterData(data, tokenPlain, lemma, lemmatize) {
     });
   }
 
-  return data.filter(match => match.passage_tokenized.length > 0).map(match => {
+  return data.map(match => {
     match.passage_tokenized = Object.values(match.passage_tokenized);
     match.passage_lemmatized = Object.values(match.passage_lemmatized);
     match.tokens_matched = Object.values(match.tokens_matched);
@@ -640,22 +643,62 @@ function filterData(data, tokenPlain, lemma, lemmatize) {
     match.matched_token_positions = Object.values(match.matched_token_positions);
     match.positions = Object.values(match.positions);
     return match;
-  });
+  }).filter(match => match.passage_tokenized.length > 0);
 }
 
-function removePassageDuplicates(data) {
+function isLemmaOfWord(lemma, token) {
+  return token.includes(" "+lemma+" ") || token === lemma;
+}
+
+function getUniqueIndices(array) {
+  const uniqueIndices = new Set(array.keys());
+  const seenItems = new Map();
+
+  array.forEach((item, index) => {
+    const key = JSON.stringify(item);
+
+    if (seenItems.has(key)) {
+      // Behalte nur das erste Vorkommen eines Duplikats
+      uniqueIndices.delete(index);
+    } else {
+      seenItems.set(key, index);
+    }
+  });
+
+  array.forEach((item, index) => {
+    array.forEach((existingItem, existingIndex) => {
+      if (
+          index !== existingIndex &&
+          uniqueIndices.has(index) &&
+          uniqueIndices.has(existingIndex)
+      ) {
+        const isSubset = item.every(val => existingItem.includes(val));
+        const isSuperset = existingItem.every(val => item.includes(val));
+
+        if (isSubset) {
+          uniqueIndices.delete(index);
+        } else if (isSuperset) {
+          uniqueIndices.delete(existingIndex);
+        }
+      }
+    });
+  });
+
+  return [...uniqueIndices];
+}
+
+function removeOverlappingPassagesOrDuplicates(data) {
   return data.map(match => {
-    match.matched_token_positions = Object.values(match.matched_token_positions.reduce((acc, curr) => {
-      acc[JSON.stringify(curr)] = curr;
-      return acc;
-    }, {}));
 
-    match.matched_token_positions = removeSubsetArrays(match.matched_token_positions);
+    // remove duplicates
+    let uniqueIndices = getUniqueIndices(match.matched_token_positions);
+    console.log(uniqueIndices);
 
-    match.passage_tokenized = match.passage_tokenized.filter((_, j) => match.matched_token_positions[j]);
-    match.passage_lemmatized = match.passage_lemmatized.filter((_, j) => match.matched_token_positions[j]);
-    match.passage_coordinates = match.passage_coordinates.filter((_, j) => match.matched_token_positions[j]);
-    match.positions = match.positions.filter((_, j) => match.matched_token_positions[j]);
+    match.matched_token_positions = match.matched_token_positions.filter((_, index) => uniqueIndices.includes(index));
+    match.passage_tokenized = match.passage_tokenized.filter((_, index) => uniqueIndices.includes(index));
+    match.passage_lemmatized = match.passage_lemmatized.filter((_, index) => uniqueIndices.includes(index));
+    match.passage_coordinates = match.passage_coordinates.filter((_, index) => uniqueIndices.includes(index));
+    match.positions = match.positions.filter((_, index) => uniqueIndices.includes(index));
 
     match.num_passages = match.passage_tokenized.length;
 
@@ -679,11 +722,24 @@ function cropData(data, maxPassages) {
 }
 
 function removeSubsetArrays(array) {
-  return array.filter((current, currentIndex, self) =>
-      !self.some((existing, existingIndex) =>
-          currentIndex !== existingIndex && current.every(val => existing.includes(val))
-      )
-  );
+  const result = {};
+
+  // Iteriere über das Eingangsarray
+  array.forEach((current, currentIndex) => {
+    let isSubset = false;
+
+    array.forEach((existing, existingIndex) => {
+      if (currentIndex !== existingIndex && current.every(val => existing.includes(val))) {
+        isSubset = true;
+      }
+    });
+
+    if (!isSubset) {
+      result[currentIndex] = current; // Behalte den ursprünglichen Index bei
+    }
+  });
+
+  return result;
 }
 
 // Function to collect and display the search results in a readable form
@@ -851,7 +907,7 @@ function updateResults (data, zoom, keywordDistance, index) {
 
 // Function to add a link to a string in html
 function getLink (url) {
-  return `<a class="fas fa-external-link-alt" corpus="_blank" href=${url} </a>`;
+  return `<a class="fas fa-external-link-alt" target="_blank" href=${url} </a>`;
 }
 
 // Function to calculate total number of matched documents

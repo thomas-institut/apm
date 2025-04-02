@@ -10,9 +10,9 @@ class ApmJobName
     const string API_PEOPLE_UPDATE_CACHE = 'ApiPeople Update Cache';
     const string API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE = 'ApiUsers Update TranscribedPages Cache';
     const string API_USERS_UPDATE_CT_INFO_CACHE = 'ApiUsers Update CT Info Cache';
-    const string API_SEARCH_UPDATE_TRANSCRIPTIONS_OPENSEARCH_INDEX = 'ApiSearch Update Transcriptions OpenSearch Index';
+    const string API_SEARCH_UPDATE_TRANSCRIPTIONS_INDEX = 'ApiSearch Update Transcriptions Index';
     const string API_SEARCH_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE = 'ApiSearch Update Transcribers and Titles Cache';
-    const string API_SEARCH_UPDATE_EDITIONS_OPENSEARCH_INDEX = 'ApiSearch Update Editions OpenSearch Index';
+    const string API_SEARCH_UPDATE_EDITIONS_INDEX = 'ApiSearch Update Editions Index';
     const string API_SEARCH_UPDATE_EDITORS_AND_TITLES_CACHE = 'ApiSearch Update Editors and Titles Cache';
 
 }

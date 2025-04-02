@@ -12,7 +12,7 @@ class ApiSearchUpdateEditorsAndEditionsCache implements JobHandlerInterface
 {
     public function run(SystemManager $sm, array $payload): bool
     {
-        return ApiSearch_Typesense::updateDataCache($sm, 'editions');
+        return ApiSearch::updateDataCache($sm, 'editions');
     }
 
     public function mustBeUnique(): bool

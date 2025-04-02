@@ -958,14 +958,15 @@ class ApiSearch extends ApiController
     /**
      * updates the data cache for transcribers and transcription titles or editors and edition titles
      * @param SystemManager $systemManager
-     * @param Client $client
      * @param string $whichIndex
      * @return bool
      */
-    static public function updateDataCache (SystemManager $systemManager, Client $client, string $whichIndex, ?LoggerInterface $logger): bool
+    static public function updateDataCache (SystemManager $systemManager, string $whichIndex): bool
     {
 
         $cache = $systemManager->getSystemDataCache();
+        $client = $systemManager->getTypesenseClient();
+        $logger = $systemManager->getLogger();
 
         if ($whichIndex === 'transcriptions')
         {

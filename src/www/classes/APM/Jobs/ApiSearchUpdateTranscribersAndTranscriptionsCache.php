@@ -11,9 +11,7 @@ class ApiSearchUpdateTranscribersAndTranscriptionsCache implements JobHandlerInt
 {
     public function run(SystemManager $sm, array $payload): bool
     {
-        $config = $sm->getConfig();
-        $client = ApiSearch::getTypesenseClient($config, $sm->getLogger());
-        return ApiSearch::updateDataCache($sm, $client, 'transcriptions', $sm->getLogger());
+        return ApiSearch::updateDataCache($sm, 'transcriptions');
     }
 
     public function mustBeUnique(): bool

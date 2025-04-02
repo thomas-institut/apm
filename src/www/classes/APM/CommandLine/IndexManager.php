@@ -64,8 +64,11 @@ class IndexManager extends CommandLineUtility
      * @param $argv
      * @return bool
      * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
      * @throws InvalidTimeStringException
-     * @throws PageNotFoundException|EntityDoesNotExistException
+     * @throws PageNotFoundException
+     * @throws TypesenseClientError
+     * @throws \Http\Client\Exception
      */
     public function main($argc, $argv): bool
     {
@@ -85,10 +88,10 @@ class IndexManager extends CommandLineUtility
         if ($argv[1] === '-h') {
             $this->printHelp();
             return true;
-        } else if ($argv[1] === 'transcriptions') {
+        } else if ($argv[1] === 'transcriptions' || $argv[1] === 't') {
             // get target index and operation
             $this->indexNamePrefix = 'transcriptions';
-        } else if ($argv[1] === 'editions') {
+        } else if ($argv[1] === 'editions' || $argv[1] === 'e') {
             // get target index and operation
             $this->indexNamePrefix = 'editions';
         } else {
@@ -1086,7 +1089,7 @@ END;
 
         print ("Updating...\n");
 
-        $id = $this->getTypesenseIDAndIndexName($arg1, $arg2)['id'];
+        $id = $this->getTypesenseIdAndIndexName($arg1, $arg2)['id'];
         $this->removeItem($arg1, $arg2, 'update');
         $this->addItem($arg1, $arg2, $id, 'update');
 
@@ -1094,27 +1097,23 @@ END;
 
     /**
      * Updates the target item if already indexed, otherwise adds it as a new item to the target index
-     * @param string $arg1
-     * @param string|null $arg2
+     * @param string $tableOrDocId
+     * @param string|null $columnNumber
      * @return void
      * @throws DocumentNotFoundException
      * @throws EntityDoesNotExistException
      * @throws InvalidTimeStringException
      * @throws PageNotFoundException
      */
-    private function updateOrAddItem(string $arg1, string $arg2 = null): void
+    public function updateOrAddItem(string $tableOrDocId, string $columnNumber = null): void
     {
-
-        if (!$this->isAlreadyIndexed($arg1, $arg2)) {
-            $this->addItem($arg1, $arg2);
+        if (!$this->isAlreadyIndexed($tableOrDocId, $columnNumber)) {
+            $this->addItem($tableOrDocId, $columnNumber);
 
         } else {
-
-            print ("Updating...\n");
-
-            $id = $this->getTypesenseIDAndIndexName($arg1, $arg2)['id'];
-            $this->removeItem($arg1, $arg2, 'update');
-            $this->addItem($arg1, $arg2, $id, 'update');
+            $id = $this->getTypesenseIdAndIndexName($tableOrDocId, $columnNumber)['id'];
+            $this->removeItem($tableOrDocId, $columnNumber, 'update');
+            $this->addItem($tableOrDocId, $columnNumber, $id, 'update');
         }
 
     }
@@ -1132,7 +1131,7 @@ END;
             print ("Removing...\n");
         }
 
-        $data = $this->getTypesenseIDAndIndexName($arg1, $arg2);
+        $data = $this->getTypesenseIdAndIndexName($arg1, $arg2);
 
         if (isset($data['id'])) {
             
@@ -1340,14 +1339,12 @@ END;
 
     /**
      * Checks if an item is already indexed.
-     * @param string $arg1 , page ID in case of transcriptions, table ID for editions
-     * @param string|null $arg2 , column number for transcriptions
+     * @param string $id , page ID in case of transcriptions, table ID for editions
+     * @param string|null $columnNumber , column number for transcriptions
      * @return bool
-     * @throws \Http\Client\Exception
      */
-    private function isAlreadyIndexed (string $arg1, string $arg2=null): bool {
-
-        if (!isset($this->getTypesenseIDAndIndexName($arg1, $arg2)['id'])) {
+    private function isAlreadyIndexed (string $id, string $columnNumber=null): bool {
+        if (!isset($this->getTypesenseIdAndIndexName($id, $columnNumber)['id'])) {
             return false;
         } else {
             return true;
@@ -1355,30 +1352,30 @@ END;
     }
 
     /**
-     * Returns open search id and index name of the target item
-     * @param string $arg1 , page ID in case of transcriptions, table ID for editions
-     * @param string|null $arg2 , column number for transcriptions
+     * Returns Typesense id and index name of the target item
+     * @param string $id , page ID in case of transcriptions, table ID for editions
+     * @param string|null $columnNumber , column number for transcriptions
      * @return array
-     * @throws \Http\Client\Exception
      */
-    private function getTypesenseIDAndIndexName (string $arg1, string $arg2=null): array {
+    private function getTypesenseIdAndIndexName (string $id, string $columnNumber=null): array {
 
         if ($this->indexNamePrefix === 'transcriptions') {
-            $searchParameters = ['q' => $arg1, 'query_by' => 'pageID', 'filter_by' => "column:=$arg2", 'prefix' => false];
+            $searchParameters = ['q' => $id, 'query_by' => 'pageID', 'filter_by' => "column:=$columnNumber", 'prefix' => false];
         } else if ($this->indexNamePrefix === 'editions') {
-            $searchParameters = ['q' => $arg1, 'query_by' => 'table_id', 'prefix' => false];
+            $searchParameters = ['q' => $id, 'query_by' => 'table_id', 'prefix' => false];
+        } else {
+            return [];
         }
 
         foreach ($this->indices as $index) {
-
             try {
                 $query = $this->client->collections[$index]->documents->search($searchParameters);
-
                 if ($query['found'] !== 0) {
                     return ['index' => $index, 'id' => $query['hits'][0]['document']['id']];
                 }
-            } catch (Exception) {
-
+            } catch (\Http\Client\Exception|TypesenseClientError $e) {
+                $this->logger->error("Exception searching for index $id:$columnNumber: " . $e->getMessage());
+                return [];
             }
         }
 

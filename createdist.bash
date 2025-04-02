@@ -54,19 +54,14 @@ cp -R src/python "$TMP_DIR"
 cp -R src/db "$TMP_DIR"
 cp -R src/bin "$TMP_DIR"
 mkdir "$TMP_DIR"/www || exit
+
 cp -R src/www/classes "$TMP_DIR"/www
 cp -R src/www/css "$TMP_DIR"/www
 cp -R src/www/images "$TMP_DIR"/www
-
-cp -R src/www/js "$TMP_DIR"/www
-rm -fr "$TMP_DIR"/www/js/istanbul
-rm -f "$TMP_DIR"/www/js/Makefile
-rm -f "$TMP_DIR"/www/js/.eslintrc.json
-
+cp -R src/www/hyphenation "$TMP_DIR"/www
 cp -R src/www/fonts "$TMP_DIR"/www
 cp -R src/www/templates "$TMP_DIR"/www
 cp -R src/www/utilities "$TMP_DIR"/www
-
 cp -R src/www/vendor "$TMP_DIR"/www
 cp -R src/www/node_modules "$TMP_DIR"/www
 
@@ -79,12 +74,16 @@ cp src/www/defaults.yaml "$TMP_DIR"/www
 cp src/www/config.sample.yaml "$TMP_DIR"/www
 cp src/www/index.php "$TMP_DIR"/www
 
+cp -R src/www/js "$TMP_DIR"/www
+rm -fr "$TMP_DIR"/www/js/istanbul
+rm -f "$TMP_DIR"/www/js/Makefile
+rm -f "$TMP_DIR"/www/js/.eslintrc.json
+
 mkdir "$TMP_DIR"/www/downloads
-mkdir "$TMP_DIR"/www/downloads/pdf
-
 chmod a+w "$TMP_DIR"/www/downloads
-chmod a+w "$TMP_DIR"/www/downloads/pdf
 
+mkdir "$TMP_DIR"/www/downloads/pdf
+chmod a+w "$TMP_DIR"/www/downloads/pdf
 
 cd "$TMP" || exit
 

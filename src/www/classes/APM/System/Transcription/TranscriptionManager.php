@@ -58,8 +58,8 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
 
     use SimpleErrorReporterTrait;
     use LoggerAwareTrait;
-    const ORDER_BY_PAGE_NUMBER = 100;
-    const ORDER_BY_SEQ = 101;
+    const int ORDER_BY_PAGE_NUMBER = 100;
+    const int ORDER_BY_SEQ = 101;
 
 
     /**
@@ -384,4 +384,11 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @return int[]
      */
     abstract public function getPageIdsTranscribedByUser(int $userTid, int $docId) : array;
+
+
+    /**
+     * Returns the number of pages that have transcriptions in the system
+     * @return int
+     */
+    abstract public function getTranscribedPageCount() : int;
 }

@@ -102,7 +102,13 @@ export class SearchPageNew extends NormalPage {
     <div id="noMatchesDiv">
     </div>
 
-    <table class="doctable dataTable no-footer" id="resultsTable">
+    <table class="doctable dataTable no-footer fixed" id="resultsTable">
+        <col width="40%" />
+        <col width="5%" />
+        <col width="20%" />
+        <col width="10%" />
+        <col width="20%" />
+        <col width="5%" />
         <thead></thead>
         <tbody></tbody>
     </table>
@@ -291,8 +297,6 @@ function getCreatorsAndTitles(category, errorMessageDiv) {
 // Function to query the OpenSearch index
 function search() {
 
-  let p = new SimpleProfiler('search')
-
   // Clear data_for_zooming
   data_for_zooming = []
 
@@ -328,92 +332,111 @@ function search() {
   errorMessage.html('');
 
   // Show spinner
-  spinner.html(`<span style="font-size: 2em">Getting results from server</span> ${spinnerHtml}`);
+  //spinner.html(`<span style="font-size: 2em">Getting results from server</span> ${spinnerHtml}`);
 
   state = STATE_WAITING_FOR_SERVER
 
 
   // Make API Call, namely make a prefix query in typesense for the longest keyword in the searched phrase, which does not begin with an asterisk
+  makeApiCall(inputs)
+}
+
+
+function makeApiCall(inputs) {
+
+  let p = new SimpleProfiler('search')
+
+  // Selectors
+  const spinner = $("#spinner");
+  const errorMessage = $("#error_message");
+  let corpus = $("#corpus-select").find(":selected").val()
+
+
   $.post(urlGen.apiSearchNewKeyword(), inputs)
-    .done((apiResponse) => {
+      .done((apiResponse) => {
 
-
-      // Catch Error
-      if (apiResponse.status !== 'OK') {
-        console.log(`Error in query`);
-        spinner.empty();
-        if (apiResponse.errorData !== undefined) {
-          console.log(apiResponse.errorData);
+        // Catch Error
+        if (apiResponse.status !== 'OK') {
+          console.log(`Error in query`);
+          spinner.empty();
+          if (apiResponse.errorData !== undefined) {
+            console.log(apiResponse.errorData);
+          }
+          errorMessage.html('Error while searching, please report to technical administrators.').removeClass('text-error');
+          state = STATE_INIT
+          return;
         }
-        errorMessage.html('Error while searching, please report to technical administrators.').removeClass('text-error');
-        state = STATE_INIT
-        return;
-      }
 
 
-      p.lap('Got results from server')
+        p.lap('Got results from server')
 
-      // Log API response
-      console.log(apiResponse);
+        // Log API response
+        console.log(apiResponse);
 
-      let tokensForQuery = apiResponse.tokensForQuery;
-      let lemmatize = apiResponse.lemmatize;
-      let lemmata = apiResponse.lemmata;
-      let keywordDistance = apiResponse.keywordDistance;
+        if (apiResponse.queryFinished !== true) {
+          inputs.queryPage = apiResponse.queryPage + 1;
+          makeApiCall(inputs);
+        }
 
-      if (tokensForQuery[0] === '*') {
-        tokensForQuery.shift();
-      }
+        let tokensForQuery = apiResponse.tokensForQuery;
+        let lemmatize = apiResponse.lemmatize;
+        let lemmata = apiResponse.lemmata;
+        let keywordDistance = apiResponse.keywordDistance;
 
-      // Count tokens
-      let numTokens = tokensForQuery.length;
+        if (tokensForQuery[0] === '*') {
+          tokensForQuery.shift();
+        }
 
-      // Get all information about the matched entries, including passages with the matched token as lists of tokens
-      let data = collectData(apiResponse.query, tokensForQuery[0], tokensForQuery, lemmata, keywordDistance, lemmatize, apiResponse.corpus);
-      
-      // Filter out columns and passages that do not match all tokens
-      for (let i = 0; i < numTokens; i++) {
-        data = filterData(data, tokensForQuery[i], lemmata[i], lemmatize);
-      }
+        // Count tokens
+        let numTokens = tokensForQuery.length;
 
-      // Remove duplicate passages
-      data = removeOverlappingPassagesOrDuplicates(data);
-      console.log(data);
+        // Get all information about the matched entries, including passages with the matched token as lists of tokens
+        let data = collectData(apiResponse.query, tokensForQuery[0], tokensForQuery, lemmata, keywordDistance, lemmatize, apiResponse.corpus);
 
-      // Crop data if there are more than 999 passages matched
-      let numPassagesTotal = getNumPassages(data);
-      const maxPassages = 999;
-      let cropped = false;
-      let numPassagesCropped = numPassagesTotal;
+        // Filter out columns and passages that do not match all tokens
+        for (let i = 0; i < numTokens; i++) {
+          data = filterData(data, tokensForQuery[i], lemmata[i], lemmatize);
+        }
 
-      if (numPassagesTotal > maxPassages) {
-        data = cropData(data, maxPassages);
-        numPassagesCropped = getNumPassages(data);
-        cropped = true;
-      }
+        // Remove duplicate passages
+        data = removeOverlappingPassagesOrDuplicates(data);
+        // console.log(data);
 
-      console.log('data to display');
-      console.log(data);
+        // Crop data if there are more than 999 passages matched
+        let numPassagesTotal = getNumPassages(data);
+        const maxPassages = 999;
+        let cropped = false;
+        let numPassagesCropped = numPassagesTotal;
 
-      // Remove spinner
-      spinner.empty();
+        if (numPassagesTotal > maxPassages) {
+          data = cropData(data, maxPassages);
+          numPassagesCropped = getNumPassages(data);
+          cropped = true;
+        }
 
-      // Make array to store zoom data in – default zoom values are dependent on the keyword distance values
-      let zoom = new Array(numPassagesCropped+1).fill(inputs.keywordDistance)
+        // console.log('data to display');
+        console.log(data);
 
-      // Display results
-      state = STATE_DISPLAYING_RESULTS
-      displayResults(data, apiResponse.lang, numPassagesCropped, zoom, inputs.keywordDistance, numPassagesTotal, cropped, corpus).then( () => {
-        p.stop('Results displayed')
-        state = STATE_INIT
+        // Remove spinner
+        spinner.empty();
+
+        // Make array to store zoom data in – default zoom values are dependent on the keyword distance values
+        let zoom = new Array(numPassagesCropped+1).fill(inputs.keywordDistance)
+
+        // Display results
+        state = STATE_DISPLAYING_RESULTS
+
+          displayResults(data, apiResponse.lang, numPassagesCropped, zoom, inputs.keywordDistance, numPassagesTotal, cropped, corpus, apiResponse.queryPage).then(() => {
+            p.stop(`results from page ${apiResponse.queryPage} displayed`)
+            state = STATE_INIT
+          })
       })
+      .fail((status) => {
+        console.log(status);
+        spinner.empty();
+        errorMessage.html('Search is currently not available. Please try again later.').removeClass('text-error');
+      });
 
-    })
-    .fail((status) => {
-      console.log(status);
-      spinner.empty();
-      errorMessage.html('Search is currently not available. Please try again later.').removeClass('text-error');
-    });
 }
 
 function collectData(query, token, tokensForQuery, lemmata, keywordDistance, lemmatize, corpus) {
@@ -632,6 +655,20 @@ function filterData(data, tokenPlain, lemma, lemmatize) {
           data[i].tokens_matched = [...new Set(data[i].tokens_matched)];
         }
       });
+
+      // remove tokens from matched token arrays which are outside the now filtered passages
+      data[i].tokens_matched.forEach((token) => {
+        let inPassage = false
+        data[i].passage_tokenized.forEach((passage) => {
+          if (passage.includes(token)) {
+            inPassage = true
+          }
+        })
+
+        if (!inPassage) {
+          data[i].tokens_matched = data[i].tokens_matched.filter(e => e !== token);
+        }
+      })
     });
   }
 
@@ -692,7 +729,7 @@ function removeOverlappingPassagesOrDuplicates(data) {
 
     // remove duplicates
     let uniqueIndices = getUniqueIndices(match.matched_token_positions);
-    console.log(uniqueIndices);
+    // console.log(uniqueIndices);
 
     match.matched_token_positions = match.matched_token_positions.filter((_, index) => uniqueIndices.includes(index));
     match.passage_tokenized = match.passage_tokenized.filter((_, index) => uniqueIndices.includes(index));
@@ -743,7 +780,7 @@ function removeSubsetArrays(array) {
 }
 
 // Function to collect and display the search results in a readable form
-async function displayResults (data, lang, num_passages, zoom, keywordDistance, num_passages_total, cropped, corpus) {
+async function displayResults (data, lang, num_passages, zoom, keywordDistance, num_passages_total, cropped, corpus, queryPage) {
 
   // Get selectors for displaying results
   let results_body = $("#resultsTable tbody")
@@ -756,34 +793,39 @@ async function displayResults (data, lang, num_passages, zoom, keywordDistance, 
   let num_titles = getNumTitles(data, num_matches)
 
   // If there are no matches, display this to the user and empty the results table
-  if (num_passages === 0) {
+  if (num_passages === 0 && queryPage === 1) {
     results_head.empty()
     results_body.empty()
     error_message.html(`<br>Nothing found!<br><br>`)
-  }
-
-  else {
+  } else {
 
     // Make table head
-    if (corpus === 'transcriptions') { // For transcriptions
-      results_head.empty()
-      results_head.append(`<tr><th><span title="Passages can overlap, if a keyword occurs multiple times inside the chosen keyword distance.">Matched Passage (${num_passages})</span></th><th><span title="Number of tokens, i. e. words or punctuation marks, to display before and after your first keyword. A value of 0 means that only the tokens matching your first keyword are displayed."><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}></span>
-                                </th><th>Document (${num_titles})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
-    }
-    else { // For editions
-      results_head.empty()
-      results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th><span title="Number of tokens, i. e. words or punctuation marks, to display before and after your first keyword. A value of 0 means that only the tokens matching your first keyword are displayed."><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}></span>
+    if (queryPage === 1) {
+      if (corpus === 'transcriptions') { // For transcriptions
+        results_head.empty()
+        results_head.append(`<tr><th><span id="matchedPassage" title="Passages can overlap, if a keyword occurs multiple times inside the chosen keyword distance.">Matched Passage (${num_passages})</span></th><th><span title="Number of tokens, i. e. words or punctuation marks, to display before and after your first keyword. A value of 0 means that only the tokens matching your first keyword are displayed."><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}></span>
+                                </th><th id="documentName">Document (${num_titles})</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
+      } else { // For editions
+        results_head.empty()
+        results_head.append(`<tr><th>Matched Passage (${num_passages})</th><th><span title="Number of tokens, i. e. words or punctuation marks, to display before and after your first keyword. A value of 0 means that only the tokens matching your first keyword are displayed."><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}></span>
                                 </th><th>Edition (${num_titles})</th><th>Chunk</th><th>Table ID</th><th>Editor</th><th>Link</th></tr>`)
+      }
+      results_body.empty()
+    } else {
+      let numDisplayedPassages = parseInt($("#matchedPassage").html().replace(/[^0-9]/g,""));
+      let numDisplayedDocuments = parseInt($("#documentName").html().replace(/[^0-9]/g,""));
+      $("#matchedPassage").html(`Matched Passage (${numDisplayedPassages + num_passages})`);
+      $("#documentName").html(`Document (${numDisplayedDocuments + num_titles})`);
+
     }
-    results_body.empty()
 
     // Make variable for storing title of previous column in the dataset to display only the title only once,
     // if there are plenty matched columns/passages in the same work
     let prev_title = ' '
     let k=0
 
-    spinner.html(`Processing result ${k} of ${num_passages} (${(100*(k+1)/num_passages).toFixed(0)}%)`)
-    await wait(1)
+    //spinner.html(`Processing result ${k} of ${num_passages} (${(100*(k+1)/num_passages).toFixed(0)}%)`)
+    //await wait(1)
 
     // Write all matches into the results table
     for (let i = 0; i < num_matches; i++) {

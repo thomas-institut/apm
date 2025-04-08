@@ -82,4 +82,5 @@ class ApmConfigParameter
     const TYPESENSE_KEY = 'typesense_key';
     const TYPESENSE_PORT = 'typesense_port';
     const TYPESENSE_PROTOCOL = 'typesense_protocol';
+    const TYPESENSE_PAGESIZE = 'typesense_pagesize';
 }

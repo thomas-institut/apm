@@ -46,6 +46,9 @@ class ApiSearchNew extends ApiController
         $lemmatize = filter_var($_POST['lemmatize'], FILTER_VALIDATE_BOOLEAN);
         $lang = $_POST['lang'] ?? 'detect';
 
+        // Check if it as a new query or a query for more pages of a running query
+        $queryPage = $_POST['queryPage'] ?? 1;
+
         // Name of the index to query
         $index_name = $this->getIndexName($corpus, $lang);
 
@@ -84,7 +87,7 @@ class ApiSearchNew extends ApiController
 
         // Query index
         try {
-            $query = $this->makeSingleTokenTypesenseSearchQuery($client, $index_name, $lang,  $title, $creator, $tokensForQuery[0], $lemmatize, $corpus);
+            $query = $this->makeSingleTokenTypesenseSearchQuery($client, $index_name, $lang,  $title, $creator, $tokensForQuery[0], $lemmatize, $corpus, $queryPage);
         } catch (Exception|TypesenseClientError $e) {
             $status = "Typesense query problem";
             return $this->responseWithJson($response,
@@ -143,7 +146,9 @@ class ApiSearchNew extends ApiController
             'corpus' => $corpus,
             'keywordDistance' => $keywordDistance,
             'tokensForQuery' => $tokensForQuery,
-            'query' => $query,
+            'query' => $query['hits'],
+            'queryPage' => $query['page'],
+            'queryFinished' => $query['finished'],
             'serverTime' => $now,
             'status' => $status]);
     }
@@ -398,10 +403,12 @@ class ApiSearchNew extends ApiController
      * @throws TypesenseClientError
      * @throws Exception
      */
-    private function makeSingleTokenTypesenseSearchQuery (Client $client, string $index_name, string $lang, string $title, string $creator, string $token, bool $lemmatize, string $corpus): array
+    private function makeSingleTokenTypesenseSearchQuery (Client $client, string $index_name, string $lang, string $title, string $creator, string $token, bool $lemmatize, string $corpus, int $page=1): array
     {
 
         $this->logger->debug("Making typesense query", [ 'index' => $index_name, 'token' => $token, 'title' => $title, 'creator' => $creator]);
+
+        $config = $this->systemManager->getConfig();
 
         // Check lemmatize (boolean) and corpus to determine the target of the query
         if ($lemmatize) {
@@ -425,10 +432,11 @@ class ApiSearchNew extends ApiController
             'q' => $token,
             'query_by' => $area_of_query,
             'filter_by' => "lang:=$lang",
+            //"sort_by" => "title:desc,_text_match:desc",
             'num_typos' => 0,
             'prefix' => true,
             'infix' => 'off',
-            'limit' => 100
+            'limit' => $config[ApmConfigParameter::TYPESENSE_PAGESIZE]
         ];
         
         if ($creator !== '') {
@@ -439,29 +447,27 @@ class ApiSearchNew extends ApiController
             $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && title:=$title";
         }
 
-        $query=['hits' => [1]];
-        $hits = [];
-        $page=1;
+        $queryFinished = true;
 
-        // collect all documents from the index
-        while (count($query['hits']) !== 0) {
-            $searchParameters['page'] = $page;
+        $this->logger->debug("getting typesense matches page no. " . $page);
 
-            $start = microtime(true);
-            $query = $client->collections[$index_name]->documents->search($searchParameters);
+        $searchParameters['page'] = $page;
 
-            $this->logger->debug(sprintf("TS query with %d hits done in %.2f ms",
-                count($query['hits']), 1000*(microtime(true) - $start)));
+        $start = microtime(true);
+        $query = $client->collections[$index_name]->documents->search($searchParameters);
+        $hits = $query['hits'];
 
+        $this->logger->debug(sprintf("TS query with %d hits done in %.2f ms",
+            count($query['hits']), 1000*(microtime(true) - $start)));
 
-            foreach ($query['hits'] as $hit) {
-                $hits[] = $hit;
-            }
-            $page++;
-        }
         
-        $this->logger->debug("got " . count($hits) . " matching items from typesense");
-        return $hits;
+        $this->logger->debug("got " . count($hits) . " matching items from typesense matches page no. " . $page);
+
+        if (count($hits) !== 0) {
+            $queryFinished = false;
+        }
+
+        return ['hits' => $hits, 'page' => $page, 'finished' => $queryFinished];
     }
 
     /**

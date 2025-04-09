@@ -1561,8 +1561,8 @@ END;
         }
 
         $client->collections[$index_name]->documents->create([
-            'table_id' => (string) $table_id,
-            'chunk' => $chunk,
+            'table_id' => $table_id,
+            'chunk' => (int) $chunk,
             'creator' => $editor,
             'title' => $title,
             'lang' => $lang,
@@ -1607,14 +1607,93 @@ END;
         }
 
         // adjusts the data schema of the collection automatically to the indexed documents
-        $dataSchema = [
+/*        $dataSchema = [
             "name" => $indexname,
             "fields" => [
                 ["name" => ".*", "type" => "auto"]
             ]
         ];
 
-        $client->collections->create($dataSchema);
+        $client->collections->create($dataSchema);*/
+
+        if ($this->indexNamePrefix === 'transcriptions') {
+            $schema = [
+                'name' => $indexname,
+                'fields' => [
+                    [
+                        'name' => 'title',
+                        'type' => 'string',
+                        'sort' => true
+                    ],
+                    [
+                        'name' => 'foliation',
+                        'type' => 'string',
+                        'sort' => true
+                    ],
+                    [
+                        'name' => 'pageID',
+                        'type' => 'string',
+                        'sort' => true
+                    ],
+                    [
+                        'name' => 'column',
+                        'type' => 'string',
+                        'sort' => true
+                    ],
+                    [
+                        'name' => 'creator',
+                        'type' => 'string',
+                        'sort' => true
+                    ]
+                ],
+                'default_sorting_field' => 'title'
+            ];
+        } else if ($this->indexNamePrefix === 'editions')  {
+            $schema = [
+                'name' => $indexname,
+                'fields' => [
+                    [
+                        'name' => 'title',
+                        'type' => 'string',
+                        'sort' => true
+                    ],
+                    [
+                        'name' => 'table_id',
+                        'type' => 'int32',
+                        'sort' => true
+                    ],
+                    [
+                        'name' => 'chunk',
+                        'type' => 'int32',
+                        'sort' => true
+                    ],
+                    [
+                        'name' => 'edition_tokens',
+                        'type' => 'string[]',
+                    ],
+                    [
+                        'name' => 'edition_lemmata',
+                        'type' => 'string[]',
+                    ],
+                    [
+                        'name' => 'timeFrom',
+                        'type' => 'string',
+                        'sort' => true
+                    ],
+                    [
+                        'name' => 'lang',
+                        'type' => 'string',
+                    ],
+                    [
+                        'name' => 'creator',
+                        'type' => 'string',
+                        'sort' => true
+                    ]
+                ],
+            ];
+        }
+
+        $client->collections->create($schema);
 
         $this->logger->debug("New index *$indexname* was created!\n");
 

@@ -87,7 +87,7 @@ class ApiSearchNew extends ApiController
 
         // Query index
         try {
-            $query = $this->makeSingleTokenTypesenseSearchQuery($client, $index_name, $lang,  $title, $creator, $tokensForQuery[0], $lemmatize, $corpus, $queryPage);
+            $query = $this->makeSingleTokenTypesenseSearchQuery($client, $index_name, $lang,  $title, $creator, $tokensForQuery[0], $lemmatize, $corpus, $queryPage, $tokensForQuery);
         } catch (Exception|TypesenseClientError $e) {
             $status = "Typesense query problem";
             return $this->responseWithJson($response,
@@ -403,7 +403,7 @@ class ApiSearchNew extends ApiController
      * @throws TypesenseClientError
      * @throws Exception
      */
-    private function makeSingleTokenTypesenseSearchQuery (Client $client, string $index_name, string $lang, string $title, string $creator, string $token, bool $lemmatize, string $corpus, int $page=1): array
+    private function makeSingleTokenTypesenseSearchQuery (Client $client, string $index_name, string $lang, string $title, string $creator, string $token, bool $lemmatize, string $corpus, int $page=1, array $allTokens): array
     {
 
         $this->logger->debug("Making typesense query", [ 'index' => $index_name, 'token' => $token, 'title' => $title, 'creator' => $creator]);
@@ -428,15 +428,26 @@ class ApiSearchNew extends ApiController
             }
         }
 
+
+        if ($token === '*') {
+            $pagesize = 30;
+        } else if (count($allTokens) > 1) {
+            $pagesize = 10;
+        } else if (count($allTokens) > 2) {
+            $pagesize = 20;
+        } else {
+            $pagesize = $config[ApmConfigParameter::TYPESENSE_PAGESIZE];
+        }
+
         $searchParameters = [
             'q' => $token,
             'query_by' => $area_of_query,
             'filter_by' => "lang:=$lang",
-            //"sort_by" => "title:desc,_text_match:desc",
+            "sort_by" => "title:asc, chunk:asc, table_id:asc",
             'num_typos' => 0,
             'prefix' => true,
             'infix' => 'off',
-            'limit' => $config[ApmConfigParameter::TYPESENSE_PAGESIZE]
+            'limit' => $pagesize
         ];
         
         if ($creator !== '') {

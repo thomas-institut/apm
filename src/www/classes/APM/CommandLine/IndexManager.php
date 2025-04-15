@@ -1561,7 +1561,7 @@ END;
         }
 
         $client->collections[$index_name]->documents->create([
-            'table_id' => $table_id,
+            'table_id' => (string) $table_id,
             'chunk' => (int) $chunk,
             'creator' => $editor,
             'title' => $title,
@@ -1606,16 +1606,7 @@ END;
             $client->collections[$indexname]->delete();
         }
 
-        // adjusts the data schema of the collection automatically to the indexed documents
-/*        $dataSchema = [
-            "name" => $indexname,
-            "fields" => [
-                ["name" => ".*", "type" => "auto"]
-            ]
-        ];
-
-        $client->collections->create($dataSchema);*/
-
+        // create data schemata
         if ($this->indexNamePrefix === 'transcriptions') {
             $schema = [
                 'name' => $indexname,
@@ -1623,6 +1614,21 @@ END;
                     [
                         'name' => 'title',
                         'type' => 'string',
+                        'sort' => true
+                    ],
+                    [
+                        'name' => 'page',
+                        'type' => 'int32',
+                        'sort' => true
+                    ],
+                    [
+                        'name' => 'seq',
+                        'type' => 'int32',
+                        'sort' => true
+                    ],
+                    [
+                        'name' => 'docID',
+                        'type' => 'int32',
                         'sort' => true
                     ],
                     [
@@ -1639,6 +1645,23 @@ END;
                         'name' => 'column',
                         'type' => 'string',
                         'sort' => true
+                    ],
+                    [
+                        'name' => 'transcription_tokens',
+                        'type' => 'string[]',
+                    ],
+                    [
+                        'name' => 'transcription_lemmata',
+                        'type' => 'string[]',
+                    ],
+                    [
+                        'name' => 'time_from',
+                        'type' => 'string',
+                        'sort' => true
+                    ],
+                    [
+                        'name' => 'lang',
+                        'type' => 'string',
                     ],
                     [
                         'name' => 'creator',
@@ -1659,7 +1682,7 @@ END;
                     ],
                     [
                         'name' => 'table_id',
-                        'type' => 'int32',
+                        'type' => 'string',
                         'sort' => true
                     ],
                     [

@@ -414,27 +414,32 @@ class ApiSearchNew extends ApiController
         if ($lemmatize) {
             if ($corpus === 'transcriptions') {
                 $area_of_query = 'transcription_lemmata';
+                $sortingSchema = "title:asc, seq:asc, column:asc";
             }
             else {
                 $area_of_query = 'edition_lemmata';
+                $sortingSchema = "title:asc, chunk:asc, table_id:asc";
+
             }
         }
         else {
             if ($corpus === 'transcriptions') {
                 $area_of_query = 'transcription_tokens';
+                $sortingSchema = "title:asc, seq:asc, column:asc";
             }
             else {
                 $area_of_query = 'edition_tokens';
+                $sortingSchema = "title:asc, chunk:asc, table_id:asc";
             }
         }
 
-
+        // adjust pagesize for typesense query depending on the search token and the number of total tokens in the searched phrase
         if ($token === '*') {
             $pagesize = 30;
-        } else if (count($allTokens) > 1) {
-            $pagesize = 10;
         } else if (count($allTokens) > 2) {
             $pagesize = 20;
+        } else if (count($allTokens) > 1) {
+            $pagesize = 10;
         } else {
             $pagesize = $config[ApmConfigParameter::TYPESENSE_PAGESIZE];
         }
@@ -443,7 +448,7 @@ class ApiSearchNew extends ApiController
             'q' => $token,
             'query_by' => $area_of_query,
             'filter_by' => "lang:=$lang",
-            "sort_by" => "title:asc, chunk:asc, table_id:asc",
+            "sort_by" => $sortingSchema,
             'num_typos' => 0,
             'prefix' => true,
             'infix' => 'off',

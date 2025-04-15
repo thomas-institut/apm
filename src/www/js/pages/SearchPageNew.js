@@ -8,6 +8,7 @@ let data_for_zooming = []
 let zoom = []
 let noPassageMatchedInTotal = true
 let numDisplayedPassages = 0
+let prevTitle = ''
 
 const STATE_INIT = 0
 const STATE_WAITING_FOR_SERVER = 1
@@ -41,8 +42,15 @@ export class SearchPageNew extends NormalPage {
 
   <br>
   <table class="docTable dataTable" id="searchTable">
+        <col width="10%" />
+        <col width="15%" />
+        <col width="15%" />
+        <col width="15%" />
+        <col width="15%" />
+        <col width="15%" />
+        <col width="5%" />
     <tr>
-        <th class="text-center"><span title="Choose transcriptions (T) or editions (E) as the target corpus of your search.">Corpus</span></th>
+        <th><span title="Choose transcriptions (T) or editions (E) as the target corpus of your search.">Corpus</span></th>
         <th><span title="Enter words to search. You can use the wildcard '*' to search for words with a specific part, like 'philosoph*', '*losophus' or '*soph*'.">Keywords</span></th>
         <th id="doc-or-edition"><span title="Choose a specific document to search">Document</span></th>
         <th id="transcriber-or-editor"><span title="Limit your search to transcriptions by a specific transcriber.">Transcriber</span></th>
@@ -51,10 +59,10 @@ export class SearchPageNew extends NormalPage {
     </tr>
     <tr>
         <td>
-            <div id="corpus-select" class="text-center">
+            <div id="corpus-select">
                 <select name="corpus-select" id="corpus-select" style="border: 0; background-color: white; padding: unset; -webkit-appearance: none">
-                <option value="transcriptions">T</option>
-                <option value="editions">E</option>
+                <option value="transcriptions">Transcriptions</option>
+                <option value="editions">Editions</option>
             </select>
             </div>
         </td>
@@ -108,7 +116,6 @@ export class SearchPageNew extends NormalPage {
         <col width="5%" />
         <col width="20%" />
         <col width="10%" />
-        <col id="extra-col-for-editions-display" width="10%" />
         <col width="20%" />
         <col width="5%" />
         <thead></thead>
@@ -304,6 +311,7 @@ function search() {
   zoom = [parseInt($("#keywordDistanceValue").val())+1]
   noPassageMatchedInTotal = true
   numDisplayedPassages = 0
+  prevTitle = ''
 
   // Get searched text, its language and the target corpus
   let ld = new LanguageDetector({ defaultLang: 'la'})
@@ -432,7 +440,6 @@ function makeApiCall(inputs) {
 
           displayResults(data, apiResponse.lang, numPassagesCropped, zoom, inputs.keywordDistance, numPassagesTotal, cropped, corpus, apiResponse.queryPage, apiResponse.queryFinished).then(() => {
             p.stop(`results from page ${apiResponse.queryPage} displayed`)
-            state = STATE_INIT
           })
         }
       })
@@ -524,7 +531,6 @@ function collectData(query, token, tokensForQuery, lemmata, keywordDistance, lem
       data.push(entry);
     }
 
-    data.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
   }
 
   return data;
@@ -800,13 +806,11 @@ async function displayResults (data, lang, num_passages, zoom, keywordDistance, 
   if (queryPage === 1) {
     if (corpus === 'transcriptions') { // For transcriptions
       results_head.empty()
-      $("#extra-col-for-editions-display").hide()
         results_head.append(`<tr><th><span id="matchedPassage" title="Passages can overlap, but in total do never contain exactly the same matched words.">Matched Passage (0)</span></th><th id="spinner-or-global-zoom"><div id="spinner" class="spinner-border" style="width: 15px; height: 15px;" role="status"></div></th>
                                 <th id="documentName">Title (0)</th><th>Foliation</th><th>Transcriber</th><th>Link</th></tr>`)
     } else { // For editions
       results_head.empty()
-      $("#extra-col-for-editions-display").show()
-      results_head.append(`<tr><th><span id="matchedPassage" title="Passages can overlap, but in total do never contain exactly the same matched words.">Matched Passage (0)</span></th><th id="spinner-or-global-zoom"><div id="spinner" class="spinner-border" style="width: 15px; height: 15px;" role="status"></div></th><th id="documentName">Title (0)</th><th>Chunk</th><th>Table ID</th><th>Editor</th><th>Link</th></tr>`)
+      results_head.append(`<tr><th><span id="matchedPassage" title="Passages can overlap, but in total do never contain exactly the same matched words.">Matched Passage (0)</span></th><th id="spinner-or-global-zoom"><div id="spinner" class="spinner-border" style="width: 15px; height: 15px;" role="status"></div></th><th id="documentName">Title (0)</th><th>Chunk</th><th>Editor</th><th>Link</th></tr>`)
     }
     results_body.empty()
 
@@ -820,20 +824,29 @@ async function displayResults (data, lang, num_passages, zoom, keywordDistance, 
     results_body.empty()
     results_body.html(`<br>&nbsp;&nbsp;Nothing found!<br><br>`)
     $("#spinner").remove()
+    state = STATE_INIT
   } else {
     numDisplayedPassages = parseInt($("#matchedPassage").html().replace(/[^0-9]/g, ""));
-    let numDisplayedDocuments = parseInt($("#documentName").html().replace(/[^0-9]/g, ""));
+    let numDisplayedTitles = parseInt($("#documentName").html().replace(/[^0-9]/g, ""));
 
     $("#matchedPassage").html(`Matched Passage (${numDisplayedPassages + num_passages})`);
-    $("#documentName").html(`Title (${numDisplayedDocuments + num_titles})`);
 
+    if (num_matches !== 0 && data[0].title !== prevTitle) {
+        $("#documentName").html(`Title (${numDisplayedTitles + num_titles})`);
+    }
+    
+    if (num_titles>1 && data[0].title === prevTitle) {
+      $("#documentName").html(`Title (${numDisplayedTitles + num_titles - 1})`);
+    } else if (num_titles>1 && data[0].title !== prevTitle) {
+      $("#documentName").html(`Title (${numDisplayedTitles + num_titles})`);
+    }
+    
     if ((numDisplayedPassages + num_passages) > 0) {
       noPassageMatchedInTotal = false
     }
 
     // Make variable for storing title of previous column in the dataset to display only the title only once,
     // if there are plenty matched columns/passages in the same work
-    let prev_title = ' '
     let k = 0
 
     //spinner.html(`Processing result ${k} of ${num_passages} (${(100*(k+1)/num_passages).toFixed(0)}%)`)
@@ -889,11 +902,11 @@ async function displayResults (data, lang, num_passages, zoom, keywordDistance, 
 
         // Fill table with results
         if (corpus === 'transcriptions') {
-          fillResultsTable(passage, title, foliation, null, creator, link, lang, zoom, prev_title, numDisplayedPassages+k)
+          fillResultsTable(passage, title, foliation, creator, link, lang, zoom, prevTitle, numDisplayedPassages+k)
         } else {
-          fillResultsTable(passage, title, chunk, table_id, creator, link, lang, zoom, prev_title, numDisplayedPassages+k)
+          fillResultsTable(passage, title, chunk, creator, link, lang, zoom, prevTitle, numDisplayedPassages+k)
         }
-        prev_title = title
+        prevTitle = title
       }
     }
 
@@ -904,6 +917,8 @@ async function displayResults (data, lang, num_passages, zoom, keywordDistance, 
 
     // Implement zoom handling
     if (queryFinished) {
+
+      state = STATE_INIT
 
       $("#spinner-or-global-zoom").html(`<span title="Number of tokens, i. e. words or punctuation marks, to display before and after your first keyword. A value of 0 means that only the tokens matching your first keyword are displayed."><label for="zoomGlobal"></label><input type="number" id="zoomGlobal" name="zoomGlobal" min="0" max="80" value=${zoom[0]}></span>`);
 
@@ -1052,40 +1067,12 @@ function removeBlanks (text) {
   return text.trimStart()
 }
 
-function fillResultsTable(passage, title, identifier, identifier2, transcriber, link, lang, zoom, prev_title=' ', k) {
+function fillResultsTable(passage, title, identifier, transcriber, link, lang, zoom, prev_title=' ', k) {
 
   // Get selector
   let results_body = $("#resultsTable tbody")
 
 
-  if (identifier2 !== null) {
-
-    // Don't write title into the results table, if it is identical to the title of the previous passage
-    if (title === prev_title) {
-
-      if (lang === 'la') {
-        results_body.append(
-            `<tr><td class="text-la" style="width: 50em">${passage}</td><td style="text-align: left"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td >${identifier}</td><td >${identifier2}</td><td>${transcriber}</td><td >${link}</td></tr>`)
-      } else if (lang === 'he') {
-        results_body.append(
-            `<tr><td class="text-he" style="width: 50em">${passage}</td><td style="text-align: left"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td >${identifier}</td><td >${identifier2}</td><td>${transcriber}</td><td >${link}</td></tr>`)
-      } else if (lang === 'ar') {
-        results_body.append(
-            `<tr><td class="text-ar" style="width: 50em">${passage}</td><td style="text-align: left"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td></td><td >${identifier}</td><td >${identifier2}</td><td>${transcriber}</td><td >${link}</td></tr>`)
-      }
-    } else {
-      if (lang === 'la') {
-        results_body.append(
-            `<tr><td class="text-la" style="width: 50em">${passage}</td><td style="text-align: left"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td >${identifier}</td><td >${identifier2}</td><td>${transcriber}</td><td >${link}</td></tr>`)
-      } else if (lang === 'he') {
-        results_body.append(
-            `<tr><td class="text-he" style="width: 50em">${passage}</td><td style="text-align: left"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td >${identifier}</td><td >${identifier2}</td><td>${transcriber}</td><td >${link}</td></tr>`)
-      } else if (lang === 'ar') {
-        results_body.append(
-            `<tr><td class="text-ar" style="width: 50em">${passage}</td><td style="text-align: left"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td >${identifier}</td><td >${identifier2}</td><td>${transcriber}</td><td >${link}</td></tr>`)
-      }
-    }
-  } else {
     if (title === prev_title) {
 
       if (lang === 'la') {
@@ -1110,8 +1097,6 @@ function fillResultsTable(passage, title, identifier, identifier2, transcriber, 
             `<tr><td class="text-ar" style="width: 50em">${passage}</td><td style="text-align: left"><label for="zoomValue${k}"></label><input type="number" id="zoomValue${k}" name="zoomValue${k}" min="0" max="80" value=${zoom[k]} </td><td>${title}</td><td >${identifier}</td><td>${transcriber}</td><td >${link}</td></tr>`)
       }
     }
-  }
-
 
   // Implement zoom handling
   for (let i=1; i<(k+1); i++) {

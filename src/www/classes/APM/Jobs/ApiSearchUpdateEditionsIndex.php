@@ -23,8 +23,9 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateTypesenseIndex impleme
 
         // Fetch data from payload
         $table_id = $payload[0];
+        $argv = [0, 'editions', 'update-add', $table_id];
 
-        (new IndexManager($config, 0, [0, 'e', 'update-add', $table_id]))->run();
+        (new IndexManager($config, 0, $argv))->run();
     }
 
     public function mustBeUnique(): bool

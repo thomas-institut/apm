@@ -32,6 +32,8 @@ class Lemmatizer
             case 'he':
                 $lang = 'hebrew';
                 break;
+            case 'jrb':
+                $lang = 'hebrew';
         }
 
         // get random code for lemmatization-temp-file to avoid

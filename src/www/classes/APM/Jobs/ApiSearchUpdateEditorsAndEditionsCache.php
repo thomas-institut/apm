@@ -2,8 +2,7 @@
 
 namespace APM\Jobs;
 
-use APM\Api\ApiSearch;
-use APM\Api\ApiSearch_Typesense;
+use APM\Api\ApiSearchNew;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
 
@@ -12,7 +11,9 @@ class ApiSearchUpdateEditorsAndEditionsCache implements JobHandlerInterface
 {
     public function run(SystemManager $sm, array $payload): bool
     {
-        return ApiSearch_Typesense::updateDataCache($sm, 'editions');
+        $config = $sm->getConfig();
+        $client= ApiSearchNew::getTypesenseClient($config,  $sm->getLogger());
+        return ApiSearchNew::updateDataCache($sm, $client, 'editions',  $sm->getLogger());
     }
 
     public function mustBeUnique(): bool

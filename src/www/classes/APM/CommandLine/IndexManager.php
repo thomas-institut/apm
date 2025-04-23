@@ -210,6 +210,13 @@ END;
                 $this->buildIndexEditions();
                 break;
         }
+
+        print("Check and fix the index...\n ");
+
+        $this->checkAndFixIndex();
+
+        print("BUILDING COMPLETE!\n ");
+
     }
 
     /**
@@ -395,6 +402,8 @@ END;
         $this->logger->debug(sprintf("There are %d active tables in the system of which %d are editions",
             count($tablesInfo), count($editionIds)));
 
+        // print_r($editionIds);
+
         foreach ($editionIds as $id) {
             $edition =  $this->getEditionData($ctm, $id);
             if (count($edition) === 0) {
@@ -573,12 +582,12 @@ END;
             if (count($edition) === 0) {
                 continue;
             }
-            $editionsInDatabase[] = [(string) $edition['table_id'], (string) $edition['chunk_id'], (string) $edition['timeFrom']]; ;
+            $editionsInDatabase[] = [(string) $edition['table_id'], (string) $edition['chunk_id'], (string) $edition['timeFrom'], $edition['text']]; ;
         }
 
         printf("   %d editions processed", count($editionIds));
 
-        print "Getting data from index...";
+        print "\nGetting data from index...";
 
         // get all relevant data from the index
         $indexedEditions = [];
@@ -591,7 +600,9 @@ END;
                 $tableID = (string) $hit['document']['table_id'];
                 $chunk = (string) $hit['document']['chunk'];
                 $timeFrom = (string) $hit['document']['timeFrom'];
-                $indexedEditions[] = [$tableID, $chunk, $timeFrom];
+                $edition_tokens = $hit['document']['edition_tokens'];
+                $edition_lemmata = $hit['document']['edition_lemmata'];
+                $indexedEditions[] = [$tableID, $chunk, $timeFrom, $edition_tokens, $edition_lemmata];
             }
         }
         print "done\n";
@@ -628,8 +639,10 @@ END;
         $columnsInDatabase = [];
 
         $docs = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
+        shuffle($docs); // this is only done to have a temporally more uniform process of transcribed pages, in the given order to the last docs in the array belong much lesser transcribed pages
+        printf("Found %d documents in the entity system.\n", count($docs));
 
-        foreach ($docs as $doc) {
+        foreach ($docs as $i=>$doc) {
 
             // get a list of transcribed pages of the document
             $pages_transcribed = $this->getSystemManager()->getTranscriptionManager()->getTranscribedPageListByDocId($doc);
@@ -639,10 +652,10 @@ END;
                 $page_id = $this->getPageId($doc, $page);
                 $page_info = $this->getSystemManager()->getDocumentManager()->getPageInfo($page_id);
                 $num_cols = $page_info->numCols;
+                $docID = $page_info->docId;
 
                 for ($col = 1; $col <= $num_cols; $col++) {
 
-                    // $versions = $this->getDm()->getTranscriptionVersionsWithAuthorInfo($page_id, $col);
                     $versions = $versionManager->getColumnVersionInfoByPageCol($page_id, $col);
                     if (count($versions) === 0) {
                         // no transcription in this column
@@ -650,14 +663,19 @@ END;
                     }
 
                     // get timestamp
-                    // $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($page_id, $col);
                     $currentVersionInfo = (array)(end($versions));
-                    $timeFrom = (string)$currentVersionInfo['timeFrom'];
+                    $timeFrom = (string) $currentVersionInfo['timeFrom'];
+                    $transcription= $this->getTranscription($docID, $page, $col);
 
-                    $columnsInDatabase[] = [(string) $page_id, (string) $col, (string) $timeFrom];
-                    print(".");
+                    $columnsInDatabase[] = [(string) $page_id, (string) $col, $timeFrom, $transcription];
                 }
             }
+
+            $i++;
+            if ($i % 10 === 0) {
+                print "   $i documents processed\r";
+            }
+
         }
 
         // get all relevant data from the Typesense index
@@ -667,13 +685,19 @@ END;
 
             $hits = $this->getItemsFromIndex($indexName);
 
-            foreach ($hits as $hit) {
+            foreach ($hits as $i=>$hit) {
                 $page_id = (string) $hit['document']['pageID'];
                 $col = (string) $hit['document']['column'];
                 $timeFrom = (string) $hit['document']['time_from'];
-                $indexedColumns[] = [$page_id, $col, $timeFrom];
+                $transcription_tokens = $hit['document']['transcription_tokens'];
+                $transcription_lemmata = $hit['document']['transcription_lemmata'];
+                $indexedColumns[] = [$page_id, $col, $timeFrom, $transcription_tokens, $transcription_lemmata];
+
             }
+            printf("Processed %d columns from the index '$indexName'.\n", count($hits));
         }
+
+        print("Comparing data...");
 
         // check if every column from the database is indexed in the most up-to-date version
         $checkResults = $this->compareDataFromDatabaseAndIndex($columnsInDatabase, $indexedColumns);
@@ -694,9 +718,11 @@ END;
         $notIndexedItems = [];
         $notUpdatedItems = [];
         $notInDatabaseItems = [];
+        $emptyItems = [];
         $numNotIndexedItems = 0;
         $numNotUpdatedItems = 0;
         $numNotInDatabaseItems = 0;
+        $numEmptyItems = 0;
         $numItemsInDatabase = count($dbData);
 
         // iterate over dbData
@@ -713,6 +739,12 @@ END;
                     if ($dbItem[2] !== $indexedItem[2]) {
                         $numNotUpdatedItems++;
                         $notUpdatedItems[] = [$dbItem[0], $dbItem[1]];
+                    } else if (($indexedItem[3] === [] || $indexedItem[4] === []) &&
+                        (preg_match("/[a-z]/i", $dbItem[3]) or
+                            preg_match('/\p{Hebrew}/u', $dbItem[3]) or
+                            preg_match('/\p{Arabic}/u', $dbItem[3]))) {
+                        $numEmptyItems++;
+                        $emptyItems[] = [$dbItem[0], $dbItem[1]];
                     }
                     break;
                 }
@@ -742,12 +774,13 @@ END;
             }
         }
 
-        if ($numNotIndexedItems === 0 && $numNotUpdatedItems === 0) {
+        if ($numNotIndexedItems === 0 && $numNotUpdatedItems === 0 && $numEmptyItems === 0) {
             print ("\nINDEX IS COMPLETE!\n");
         } else {
             print ("\nINDEX IS NOT COMPLETE!\n
             $numNotIndexedItems of $numItemsInDatabase items not indexed.\n
-            $numNotUpdatedItems of $numItemsInDatabase items not up to date.\n");
+            $numNotUpdatedItems of $numItemsInDatabase items not up to date.\n
+            $numEmptyItems of $numItemsInDatabase items have an empty list of tokens or lemmata.\n");
         }
 
         if ($numNotInDatabaseItems !== 0) {
@@ -755,7 +788,7 @@ END;
             print(implode(", ", $notInDatabaseItems) . "\n");
         }
 
-        return ['notIndexed' => $notIndexedItems, 'outdated' => $notUpdatedItems, 'numNotIndexedItems' => $numNotIndexedItems, 'numNotUpdatedItems' => $numNotUpdatedItems];
+        return ['notIndexed' => $notIndexedItems, 'outdated' => $notUpdatedItems, 'empty' => $emptyItems, 'numNotIndexedItems' => $numNotIndexedItems, 'numNotUpdatedItems' => $numNotUpdatedItems, 'numEmptyItems' => $numEmptyItems];
     }
 
 
@@ -773,19 +806,18 @@ END;
     private function evaluateCheckResults(array $checkResults, bool $fix): void
     {
         // fix index if possible and desired
-        if (!$fix and ($checkResults['numNotIndexedItems'] !== 0 or $checkResults['numNotUpdatedItems'] !== 0)) {
+        if (!$fix and ($checkResults['numNotIndexedItems'] !== 0 or $checkResults['numNotUpdatedItems'] !== 0 or $checkResults['numEmptyItems'] !== 0)) {
             print ("Do you want to fix the index? (y/n)\n");
             $input = rtrim(fgets(STDIN));
 
             if ($input === 'y') {
                 $this->fixIndex($checkResults);
             }
-        } else if ($fix and $checkResults['numNotIndexedItems'] === 0 and $checkResults['numNotUpdatedItems'] === 0) {
+        } else if ($fix and $checkResults['numNotIndexedItems'] === 0 and $checkResults['numNotUpdatedItems'] === 0 and $checkResults['numEmptyItems'] === 0) {
             print ("Index cannot and needs not to be fixed.\n");
         } else if ($fix) {
             $this->fixIndex($checkResults);
         }
-
     }
 
     /**
@@ -809,6 +841,10 @@ END;
         foreach ($checkResults['outdated'] as $outdatedItem) {
             $this->updateItem($outdatedItem[0], $outdatedItem[1]);
         }
+
+        foreach ($checkResults['empty'] as $emptyItem) {
+            $this->updateItem($emptyItem[0], $emptyItem[1]);
+        }
     }
 
     /**
@@ -826,7 +862,18 @@ END;
     private function checkSingleTranscription(string $pageID, string $col, bool $fix): void
     {
 
-        $transcriptionInDatabase = $this->getTranscriptionInfoFromDatabase($pageID, $col);
+        $page_info = $this->getSystemManager()->getDocumentManager()->getPageInfo($pageID);
+        $docID = $page_info->docId;
+        $page = $page_info->pageNumber;
+        $transcription = $this->getTranscription($docID, $page, $col);
+
+        $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
+        $versions = $versionManager->getColumnVersionInfoByPageCol($pageID, $col);
+        $currentVersionInfo = (array)(end($versions));
+        $timeFrom = (string) $currentVersionInfo['timeFrom'];
+
+        $transcriptionInDatabase = ['transcription' => $transcription, 'timeFrom' => $timeFrom];
+
 
         if ($transcriptionInDatabase === []) {
             return;
@@ -849,6 +896,25 @@ END;
             }
         } else if ($transcriptionInIndex['time_from'] === $transcriptionInDatabase['timeFrom']) {
             print("\nTranscription in index is up to date!\n");
+
+            if (($transcriptionInIndex['transcription_tokens'] === [] || $transcriptionInIndex['transcription_lemmata'] === []) &&
+                (preg_match("/[a-z]/i", $transcriptionInDatabase['transcription']) or
+                    preg_match('/\p{Hebrew}/u', $transcriptionInDatabase['transcription']) or
+                    preg_match('/\p{Arabic}/u', $transcriptionInDatabase['transcription']))) {
+                print("\nBut the transcription and/or its lemmatized version is empty!\n");
+
+                if ($fix) {
+                    $this->updateItem($pageID, $col);
+                } else {
+                    print ("Do you want to reindex the transcription? (y/n)\n");
+                    $input = rtrim(fgets(STDIN));
+
+                    if ($input === 'y') {
+                        $this->updateItem($pageID, $col);
+                    }
+                }
+            }
+
         } else {
             print("\nTranscription in index is OUTDATED!\n");
 
@@ -903,6 +969,25 @@ END;
             }
         } else if ($editionInIndex['timeFrom'] === $editionInDatabase['timeFrom']) {
             print("\nIndexed edition is up to date!\n");
+
+            if (($editionInIndex['edition_tokens'] === [] || $editionInIndex['edition_lemmata'] === []) &&
+                (preg_match("/[a-z]/i", $editionInDatabase['text']) or
+                    preg_match('/\p{Hebrew}/u', $editionInDatabase['text']) or
+                    preg_match('/\p{Arabic}/u', $editionInDatabase['text']))) {
+                print("\nBut the edition and/or its lemmatized version is empty!\n");
+
+                if ($fix) {
+                    $this->updateItem($tableID);
+                } else {
+                    print ("Do you want to reindex the edition? (y/n)\n");
+                    $input = rtrim(fgets(STDIN));
+
+                    if ($input === 'y') {
+                        $this->updateItem($tableID);
+                    }
+                }
+            }
+
         } else {
             print("\nIndexed edition is OUTDATED!\n");
 
@@ -1135,7 +1220,7 @@ END;
         $page = $this->getSystemManager()->getDocumentManager()->getPageInfo($pageID)->pageNumber;
         $seq = $this->getSeq($doc_id, $page);
         $foliation = $this->getFoliation($doc_id, $page);
-        $transcriber = $this->getTranscriber($doc_id, $page, $col);
+        $transcriber = $this->getTranscriber($doc_id, $page,  $col);
         $transcription = $this->getTranscription($doc_id, $page, $col);
         $lang = $this->getLang($pageID);
 
@@ -1476,7 +1561,7 @@ END;
         $edition_data = [];
         $data = $ctm->getCollationTableById($tableID);
 
-        if ($data['type'] === 'edition') {
+        if ($data['type'] === 'edition' && !$data['archived']) {
             $edition_data['table_id'] = $data['tableId']; // equals $tableID
             $edition_data['edition_witness_index'] = $data['witnessOrder'][0];
             $edition_json = $data['witnesses'][$edition_data['edition_witness_index']];

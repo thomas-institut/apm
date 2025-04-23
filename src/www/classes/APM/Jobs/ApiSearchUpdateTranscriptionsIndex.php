@@ -32,13 +32,10 @@ class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateTypesenseIndex i
         $page = $payload['page'];
         $col = $payload['col'];
         $page_id = $sm->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
-
         $argv = [0, 'transcriptions', 'update-add', $page_id, $col];
-        $argc = count($argv);
-
 
        try {
-            (new IndexManager ($config, 0, [0, 't', 'update-add', $page_id, $col]))->run();
+            (new IndexManager ($config, 0, $argv))->run();
         } catch (\Exception $e) {
             $sm->getLogger()->error("Exception: " . $e->getMessage());
             return false;

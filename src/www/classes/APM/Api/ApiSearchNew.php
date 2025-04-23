@@ -372,7 +372,7 @@ class ApiSearchNew extends ApiController
         $suffixes = [];
 
         foreach ($tokensForQuery as $i=>$token) {
-            if (str_starts_with($token, "*")) {
+            if (str_contains($token, "*")) {
                 $suffixes[] = $token;
                 unset($tokensForQuery[$i]);
             }
@@ -403,7 +403,7 @@ class ApiSearchNew extends ApiController
      * @throws TypesenseClientError
      * @throws Exception
      */
-    private function makeSingleTokenTypesenseSearchQuery (Client $client, string $index_name, string $lang, string $title, string $creator, string $token, bool $lemmatize, string $corpus, int $page=1, array $allTokens): array
+    private function makeSingleTokenTypesenseSearchQuery (Client $client, string $index_name, string $lang, string $title, string $creator, string $token, bool $lemmatize, string $corpus, int $page=1, array $numSearchedTokens): array
     {
 
         $this->logger->debug("Making typesense query", [ 'index' => $index_name, 'token' => $token, 'title' => $title, 'creator' => $creator]);
@@ -436,9 +436,9 @@ class ApiSearchNew extends ApiController
         // adjust pagesize for typesense query depending on the search token and the number of total tokens in the searched phrase
         if ($token === '*') {
             $pagesize = 30;
-        } else if (count($allTokens) > 2) {
+        } else if (count($numSearchedTokens) > 2) {
             $pagesize = 20;
-        } else if (count($allTokens) > 1) {
+        } else if (count($numSearchedTokens) > 1) {
             $pagesize = 10;
         } else {
             $pagesize = $config[ApmConfigParameter::TYPESENSE_PAGESIZE];
@@ -452,6 +452,7 @@ class ApiSearchNew extends ApiController
             'num_typos' => 0,
             'prefix' => true,
             'infix' => 'off',
+            'page' => $page,
             'limit' => $pagesize
         ];
         
@@ -467,7 +468,6 @@ class ApiSearchNew extends ApiController
 
         $this->logger->debug("getting typesense matches page no. " . $page);
 
-        $searchParameters['page'] = $page;
 
         $start = microtime(true);
         $query = $client->collections[$index_name]->documents->search($searchParameters);

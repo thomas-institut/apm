@@ -2,7 +2,7 @@
 
 namespace APM\Jobs;
 
-use APM\Api\ApiSearch;
+use APM\Api\ApiSearchNew;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
 
@@ -12,8 +12,8 @@ class ApiSearchUpdateTranscribersAndTranscriptionsCache implements JobHandlerInt
     public function run(SystemManager $sm, array $payload): bool
     {
         $config = $sm->getConfig();
-        $client = ApiSearch::getTypesenseClient($config, $sm->getLogger());
-        return ApiSearch::updateDataCache($sm, $client, 'transcriptions', $sm->getLogger());
+        $client = ApiSearchNew::getTypesenseClient($config, $sm->getLogger());
+        return ApiSearchNew::updateDataCache($sm, $client, 'transcriptions', $sm->getLogger());
     }
 
     public function mustBeUnique(): bool

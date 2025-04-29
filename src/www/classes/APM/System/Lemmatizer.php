@@ -2,6 +2,8 @@
 
 namespace APM\System;
 
+use APM\System\Document\Exception\PageNotFoundException;
+
 /**
  * Description of Lemmatizer
  *
@@ -16,7 +18,7 @@ class Lemmatizer
      * Returns an array of tokens and lemmata for a given text in a given language.
      * @param string $lang
      * @param string $text_clean
-     * @param string $tempfile, on this value depends the name of the tempfile that is necessary to create for lemmatizing
+     * @param string $tempfile
      * @return array|array[]
      */
     static public function runLemmatizer(string $lang, string $text_clean, string $tempfile='undefined'): array {
@@ -36,21 +38,30 @@ class Lemmatizer
                 $lang = 'hebrew';
         }
 
-        // get random code for lemmatization-temp-file to avoid
-        // errors when running multiple lemmatization processes in parallel
-        $rand = self::generateRandomString();
+        $hash = hash('sha512', $text_clean);
 
-        // make new temp file and write the text to lemmatize into it
-        $tempfile = '/tmp/lemmatization_temp_' . $tempfile . '_' . $rand . '.txt';
-        exec("rm $tempfile 2>&1");
-        exec("touch $tempfile");
-        file_put_contents($tempfile, $text_clean);
+        $tempDir = '/tmp';
+        $resultFileName = "$tempDir/lemmatizer-$hash-out.txt";
+        $inputFileName =  "$tempDir/lemmatizer-$hash-in.txt";
 
-        // make api call
-        exec("curl -s -F data=@$tempfile -F model=$lang -F tokenizer= -F tagger= https://lindat.mff.cuni.cz/services/udpipe/api/process", $data);
+        $data = null;
+        if (file_exists($resultFileName)) {
+            $fileContents = file_get_contents($resultFileName);
+            if ($fileContents !== false) {
+                $data = unserialize($fileContents);
+            }
+        }
 
-        // remove temp file after lemmatization
-        exec("rm $tempfile");
+        if ($data === null) {
+            if (!file_put_contents($inputFileName, $text_clean)) {
+                throw new \RuntimeException("Cannot write temp file for lemmatization");
+            };
+            // make api call
+            exec("curl -s -F data=@$inputFileName -F model=$lang -F tokenizer= -F tagger= https://lindat.mff.cuni.cz/services/udpipe/api/process", $data);
+            // remove temp file after lemmatization
+            unlink($inputFileName);
+            file_put_contents($resultFileName, serialize($data));
+        }
 
         // return tokens and lemmata
         return self::getTokensAndLemmata($data[6]);

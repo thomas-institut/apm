@@ -2172,4 +2172,12 @@ class ApmTranscriptionManager extends TranscriptionManager
         }
         return $chunks;
     }
+
+    public function getTranscribedPageCount() : int {
+        $te = $this->tNames['elements'];
+        $query = "SELECT count(DISTINCT(page_id)) AS c FROM `$te`";
+        $r = $this->getDatabaseHelper()->query($query);
+        $row = $r->fetch();
+        return intval($row['c']);
+    }
 }

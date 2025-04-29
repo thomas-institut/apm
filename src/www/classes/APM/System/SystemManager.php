@@ -37,13 +37,13 @@ use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\Work\WorkManager;
 use Monolog\Logger;
-use OpenSearch\Client;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
+use Typesense\Client;
 
 /**
  * Integration class for putting together all the elements necessary
@@ -162,7 +162,9 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getWorkManager() : WorkManager;
     abstract public function getEntitySystem() : ApmEntitySystemInterface;
     abstract public function getDocumentManager() : DocumentManager;
-    abstract public function getOpensearchClient() : Client|null;
+//    abstract public function getOpensearchClient() : Client|null;
+
+    abstract public function getTypesenseClient() : Client;
 
     /**
      * @internal

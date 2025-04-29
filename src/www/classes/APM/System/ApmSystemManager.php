@@ -73,8 +73,6 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Level;
 use Monolog\Logger;
 use Monolog\Processor\WebProcessor;
-use OpenSearch\Client;
-use OpenSearch\ClientBuilder;
 use PDO;
 use PDOException;
 use RuntimeException;
@@ -95,6 +93,8 @@ use ThomasInstitut\EntitySystem\StatementStorage;
 use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 use ThomasInstitut\EntitySystem\TypeStorageConfig;
 use Twig\Error\LoaderError;
+use Typesense\Client;
+use Typesense\Exceptions\ConfigError;
 
 
 /**
@@ -174,7 +174,9 @@ class ApmSystemManager extends SystemManager {
     private ?DataCache $memDataCache;
     private ?ApmEntitySystem $apmEntitySystem;
     private ?ApmDocumentManager $documentManager;
-    private ?Client $openSearchClient = null;
+
+    private ?Client $typesenseClient;
+
 
     public function __construct(array $configArray) {
         $config = $this->getSanitizedConfigArray($configArray);
@@ -229,6 +231,7 @@ class ApmSystemManager extends SystemManager {
         $this->memDataCache = null;
         $this->apmEntitySystem = null;
         $this->documentManager = null;
+        $this->typesenseClient = null;
     }
 
 
@@ -697,7 +700,7 @@ class ApmSystemManager extends SystemManager {
             "User $userTid", ['userTid' => $userTid],0, 3, 20);
 
         $this->logger->debug("Scheduling update of open search index");
-        $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_OPENSEARCH_INDEX,
+        $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_INDEX,
             '', ['doc_id' => $docId, 'page' => $pageNumber, 'col' => $columnNumber],0, 3, 20);
 
         $this->logger->debug("Scheduling update of Transcribers cache and Titles cache");
@@ -719,7 +722,7 @@ class ApmSystemManager extends SystemManager {
         $this->logger->debug("Invalidating CollationTablesInfo cache for user $userTid");
         $jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE,
             "User $userTid", ['userTid' => $userTid],0, 3, 20);
-        $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_OPENSEARCH_INDEX,
+        $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_INDEX,
             '', [$ctId],0, 3, 20);
         $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITORS_AND_TITLES_CACHE,
             '', [],0, 3, 20);
@@ -874,9 +877,9 @@ class ApmSystemManager extends SystemManager {
         $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE, new ApiUsersUpdateTranscribedPagesData());
         $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE, new ApiUsersUpdateCtDataForUser());
         $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE, new ApiSearchUpdateTranscribersAndTranscriptionsCache());
-        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_OPENSEARCH_INDEX, new ApiSearchUpdateTranscriptionsIndex());
+        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_INDEX, new ApiSearchUpdateTranscriptionsIndex());
         $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_EDITORS_AND_TITLES_CACHE, new ApiSearchUpdateEditorsAndEditionsCache());
-        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_OPENSEARCH_INDEX, new ApiSearchUpdateEditionsIndex());
+        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_INDEX, new ApiSearchUpdateEditionsIndex());
     }
 
     public function getEntitySystem(): ApmEntitySystemInterface
@@ -978,26 +981,31 @@ class ApmSystemManager extends SystemManager {
         return $this->documentManager;
     }
 
-    public function getOpensearchClient(): Client|null
-    {
-        if ($this->openSearchClient === null) {
+    public function getTypesenseClient() : Client {
+
+        if ($this->typesenseClient === null) {
+            $config = $this->getConfig();
             try {
-                $config = $this->getConfig();
-                $builder = new ClientBuilder();
-                $builder->setHosts($config['opensearch']['hosts']);
-                $user = $config['opensearch']['user'] ?? '';
-                $password = $config['opensearch']['password'] ?? '';
-                if ($user !== '' && $password !== '') {
-                    $builder->setBasicAuthentication($user, $password);
-                }
-                $builder->setSSLVerification(false);
-                $this->openSearchClient = $builder->build();
-            } catch (Exception $e) {
-                $this->logger->error("Error creating opensearch client: " . $e->getMessage());
-                return null;
+                $this->typesenseClient = new Client(
+                    [
+                        'api_key' => $config[ApmConfigParameter::TYPESENSE_KEY],
+                        'nodes' => [
+                            [
+                                'host' => $config[ApmConfigParameter::TYPESENSE_HOST], // For Typesense Cloud use xxx.a1.typesense.net
+                                'port' => $config[ApmConfigParameter::TYPESENSE_PORT],      // For Typesense Cloud use 443
+                                'protocol' => $config[ApmConfigParameter::TYPESENSE_PROTOCOL],      // For Typesense Cloud use https
+                            ],
+                        ],
+                        'connection_timeout_seconds' => 2,
+                    ]
+                );
+
+                return $this->typesenseClient;
+            } catch (ConfigError) {
+                throw new \RuntimeException("Typesense incorrectly configured");
             }
         }
-
-        return $this->openSearchClient;
+        return $this->typesenseClient;
     }
+
 }

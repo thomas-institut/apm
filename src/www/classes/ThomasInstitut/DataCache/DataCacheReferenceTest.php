@@ -79,10 +79,12 @@ class DataCacheReferenceTest extends TestCase
      * @throws KeyNotInCacheException
      * @throws Exception
      */
-    public function runAllTests(DataCache $dc, string $testClassName) : void{
+    public function runAllTests(DataCache $dc, string $testClassName, bool $cacheSupportsTtl = true) : void{
         $this->setDataCache($dc, $testClassName);
         $this->basicTest();
-        $this->expirationTest();
+        if ($cacheSupportsTtl) {
+            $this->expirationTest();
+        }
     }
 
     /**

@@ -38,36 +38,23 @@ class DataTableDataCache implements DataCache, LoggerAwareInterface
 {
 
     use LoggerAwareTrait;
-    const string COLUMN_KEY = 'cache_key';
-    const string COLUMN_VALUE = 'value';
+    const string ColumnKey = 'cache_key';
+    const string ColumnValue = 'value';
+    const string ColumnExpires = 'expires';
+    const string ColumnSet = 'set_at';
 
-    const string COLUMN_EXPIRES = 'expires';
-
-    const string COLUMN_SET = 'set_at';
-
-    /**
-     * @var DataTable
-     */
     private DataTable $dataTable;
-    /**
-     * @var string
-     */
     private string $keyColumn;
-    /**
-     * @var string
-     */
     private string $valueColumn;
-
     private string $expiresColumn;
-
     private string $setColumn;
     private int $defaultTtl;
 
     public function __construct(DataTable $dt,
-                                string $keyColumn = self::COLUMN_KEY,
-                                string $valueColumn = self::COLUMN_VALUE,
-                                string $expiresColumn = self::COLUMN_EXPIRES,
-                                string $setColumn = self::COLUMN_SET
+                                string $keyColumn = self::ColumnKey,
+                                string $valueColumn = self::ColumnValue,
+                                string $expiresColumn = self::ColumnExpires,
+                                string $setColumn = self::ColumnSet
     ) {
         $this->dataTable = $dt;
         $this->keyColumn = $keyColumn;
@@ -80,7 +67,9 @@ class DataTableDataCache implements DataCache, LoggerAwareInterface
 
     public function setDefaultTtl(int $ttl): void
     {
-        $this->defaultTtl = max(0, $ttl);
+        if ($ttl >=0) {
+            $this->defaultTtl = $ttl;
+        }
     }
 
     /**

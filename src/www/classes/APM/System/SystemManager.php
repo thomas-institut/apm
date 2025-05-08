@@ -30,6 +30,7 @@ use APM\EntitySystem\Schema\Entity;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\System\Document\DocumentManager;
 use APM\System\Job\JobQueueManager;
+use APM\System\Lemmatizer\LemmatizerInterface;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
 use APM\System\Transcription\ApmTranscriptionWitness;
@@ -162,9 +163,8 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getWorkManager() : WorkManager;
     abstract public function getEntitySystem() : ApmEntitySystemInterface;
     abstract public function getDocumentManager() : DocumentManager;
-//    abstract public function getOpensearchClient() : Client|null;
-
     abstract public function getTypesenseClient() : Client;
+    abstract public function getLemmatizer() : LemmatizerInterface;
 
     /**
      * @internal

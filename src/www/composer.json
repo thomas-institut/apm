@@ -33,11 +33,11 @@
         "swaggest/json-schema": "^v0.12.43",
         "opensearch-project/opensearch-php": "^2.0",
         "php-http/curl-client": "^2.3",
-        "typesense/typesense-php": "^4.9"
+        "typesense/typesense-php": "^4.9",
+        "guzzlehttp/guzzle": "^7.5"
     },
 
     "require-dev": {
-        "guzzlehttp/guzzle": "^7.5",
         "phpunit/phpunit": "^12.0"
     },
 

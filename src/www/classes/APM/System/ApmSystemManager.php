@@ -56,6 +56,8 @@ use APM\System\ImageSource\OldBilderbergStyleRepository;
 use APM\System\Job\ApmJobQueueManager;
 use APM\System\Job\JobQueueManager;
 use APM\System\Job\NullJobHandler;
+use APM\System\Lemmatizer\LemmatizerInterface;
+use APM\System\Lemmatizer\UdPipeLemmatizer;
 use APM\System\Person\EntitySystemPersonManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\DataTablePresetManager;
@@ -174,8 +176,9 @@ class ApmSystemManager extends SystemManager {
     private ?DataCache $memDataCache;
     private ?ApmEntitySystem $apmEntitySystem;
     private ?ApmDocumentManager $documentManager;
-
     private ?Client $typesenseClient;
+    private ?UdPipeLemmatizer $lemmatizer;
+
 
 
     public function __construct(array $configArray) {
@@ -232,6 +235,7 @@ class ApmSystemManager extends SystemManager {
         $this->apmEntitySystem = null;
         $this->documentManager = null;
         $this->typesenseClient = null;
+        $this->lemmatizer = null;
     }
 
 
@@ -1008,4 +1012,13 @@ class ApmSystemManager extends SystemManager {
         return $this->typesenseClient;
     }
 
+    public function getLemmatizer(): LemmatizerInterface
+    {
+        if ($this->lemmatizer === null) {
+            $config = $this->getConfig();
+
+        }
+        return $this->lemmatizer;
+
+    }
 }

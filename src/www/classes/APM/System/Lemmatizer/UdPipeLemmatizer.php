@@ -1,74 +1,87 @@
 <?php
 
-namespace APM\System;
+namespace APM\System\Lemmatizer;
 
 
-/**
- * Description of Lemmatizer
- *
- * Lemmatizes a clean text via an api call to udpipe 2 in arabic, hebrew or latin.
- *
- * @author Lukas Reichert
- */
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
+use InvalidArgumentException;
+use RuntimeException;
+use ThomasInstitut\DataCache\DataCache;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\NullDataCache;
 
-class Lemmatizer
+class UdPipeLemmatizer implements LemmatizerInterface
 {
-    /**
-     * Returns an array of tokens and lemmata for a given text in a given language.
-     * @param string $lang
-     * @param string $text_clean
-     * @return array|array[]
-     */
-    static public function runLemmatizer(string $lang, string $text_clean): array {
 
-        // get language code for api call to udpipe2
-        switch ($lang) {
-            case 'la':
-                $lang = 'latin';
-                break;
-            case 'ar':
-                $lang = 'arabic';
-                break;
-            case 'he':
-                $lang = 'hebrew';
-                break;
+    const string DefaultUdPipeApiUrl = 'https://lindat.mff.cuni.cz/services/udpipe/api/process';
+    private DataCache $dataCache;
+    private string $udPipeApiUrl;
+
+
+
+    public function __construct(?DataCache $cache = null, string $udPipeApiUrl = self::DefaultUdPipeApiUrl)
+    {
+        if ($cache === null) {
+            $this->dataCache = new NullDataCache();
+        } else {
+            $this->dataCache = $cache;
         }
+        $this->udPipeApiUrl = $udPipeApiUrl;
+    }
 
-        $hash = hash('sha512', $text_clean);
-
-        $tempDir = '/tmp';
-        $resultFileName = "$tempDir/lemmatizer-$hash-out.txt";
-        $inputFileName =  "$tempDir/lemmatizer-$hash-in.txt";
-
-        $data = null;
-        if (file_exists($resultFileName)) {
-            $fileContents = file_get_contents($resultFileName);
-            if ($fileContents !== false) {
-                $data = unserialize($fileContents);
-            }
-        }
-
-        if ($data === null) {
-            if (!file_put_contents($inputFileName, $text_clean)) {
-                throw new \RuntimeException("Cannot write temp file for lemmatization");
-            };
-            // make api call
-            exec("curl -s -F data=@$inputFileName -F model=$lang -F tokenizer= -F tagger= https://lindat.mff.cuni.cz/services/udpipe/api/process", $data);
-            // remove temp file after lemmatization
-            unlink($inputFileName);
-            file_put_contents($resultFileName, serialize($data));
-        }
-
-        // return tokens and lemmata
-        return self::getTokensAndLemmata($data[6]);
+    private function getCacheKey(string $text, string $langCode) : string {
+        $hash = hash('sha256', $text);
+        return "UdPipeLemmatizer-$langCode-$hash";
     }
 
     /**
-     * Extracts the tokens and its lemmata from the api response, which is plain text that contains a lot more information than needed here.
-     * @param string|null $data
-     * @return array|array[]
+     * @inheritDoc
      */
-    static private function getTokensAndLemmata(string $data = null): array {
+    public function lemmatize(string $text, string $langCode): array
+    {
+        $cacheKey = $this->getCacheKey($text, $langCode);
+        try {
+            return unserialize($this->dataCache->get($cacheKey));
+        } catch (KeyNotInCacheException) {
+        }
+
+        $lang = match ($langCode) {
+            'la' => 'latin',
+            'ar' => 'arabic',
+            'he', 'jrb' => 'hebrew',
+            default => null, // Optional: handle cases where $langCode doesn't match any case
+        };
+
+        if ($lang === null) {
+            throw new InvalidArgumentException("Language $langCode is not a valid language code.");
+        }
+
+        $text = preg_replace('/\s+/', '', $text);
+
+        $guzzleClient = new Client();
+
+        try {
+            $response = $guzzleClient->request('POST', $this->udPipeApiUrl, [
+                'form_params' => [
+                    'data' => $text,
+                    'model' => $lang,
+                    'tokenizer' => '',
+                    'tagger' => ''
+                ]
+            ]);
+        } catch (GuzzleException $e) {
+            throw new RuntimeException("Error getting response from UdPipe API: " . $e->getMessage());
+        }
+
+        $data = $response->getBody()->getContents();
+        $result = $this->getTokensAndLemmata($data);
+        $this->dataCache->set($cacheKey, serialize($result));
+        return $result;
+    }
+
+
+    private function getTokensAndLemmata(string $data): array {
 
         // Array of arrays to be returned
         $tokensAndLemmata = ['tokens' => [], 'lemmata' => []];

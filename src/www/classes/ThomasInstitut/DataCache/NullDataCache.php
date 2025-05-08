@@ -2,6 +2,9 @@
 
 namespace ThomasInstitut\DataCache;
 
+/**
+ * A DataCache that does not actually cache anything
+ */
 class NullDataCache implements DataCache
 {
 

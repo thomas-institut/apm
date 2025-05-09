@@ -14,8 +14,8 @@ use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
-use ThomasInstitut\DataCache\MemcachedDataCache;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
+use ThomasInstitut\MemcachedDataCache\MemcachedDataCache;
 
 class ViafIdGrabber extends CommandLineUtility implements AdminUtility
 {
@@ -247,7 +247,7 @@ class ViafIdGrabber extends CommandLineUtility implements AdminUtility
 
         try {
             return [ true, unserialize($this->memCache->get(self::MemCachedPrefix . $viafId))];
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             try {
                 $viafJson = $this->guzzleClient->get("https://viaf.org/viaf/$viafId/justlinks.json")->getBody()->getContents();
             } catch (ClientException $e) {

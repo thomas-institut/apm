@@ -41,7 +41,7 @@ use Exception;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use RuntimeException;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 
 /**
@@ -71,7 +71,7 @@ class SiteDocuments extends SiteController
         $cache = $this->systemManager->getSystemDataCache();
         try {
             $data = json_decode($cache->get(self::DOCUMENT_DATA_CACHE_KEY), true);
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             // not in cache
             $this->logger->debug("Cache miss for SiteDocuments document data");
             $data = self::buildDocumentData($this->systemManager);
@@ -140,7 +140,7 @@ class SiteDocuments extends SiteController
         if (count($docIds) !== 0) {
             try {
                 $data = json_decode($systemManager->getSystemDataCache()->get(self::DOCUMENT_DATA_CACHE_KEY), true);
-            } catch (KeyNotInCacheException) {
+            } catch (ItemNotInCacheException) {
                 $completeRebuild = true;
             }
         }

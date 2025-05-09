@@ -22,7 +22,7 @@ use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 use RuntimeException;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\EntitySystem\EntityData;
@@ -133,7 +133,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             $kernelKey = $this->getCacheKeyKernel();
             try {
                 return unserialize($this->memCache->get($kernelKey));
-            } catch (KeyNotInCacheException) {
+            } catch (ItemNotInCacheException) {
                 $this->kernel = new ApmEntitySystemKernel();
                 $this->memCache->set($kernelKey, serialize($this->kernel), self::kernelCacheTtl);
             }
@@ -164,7 +164,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         $cacheKey = $this->getCacheKeyMergedInto($entity);
         try {
             $mergedInto = $this->memCache->get($cacheKey);
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
 //            $this->logger->debug("MergedInto info for $entity not in mem cache");
             $rows = $this->getMergesDataTable()->findRows([ self::ColEntity => $entity]);
             if ($rows->count() === 0) {
@@ -546,7 +546,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             $this->logger->debug("Using cache for type $type entity list");
             try {
                 return unserialize($this->memCache->get($cacheKey));
-            } catch (KeyNotInCacheException) {
+            } catch (ItemNotInCacheException) {
                 $this->logger->debug("Cache miss for type $type entity list");
                 $inCache = false;
                 $nonSystemEntities =  $this->getInnerEntitySystem()->getAllEntitiesForType($type);
@@ -727,7 +727,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             if ($useCache) {
                 try {
                     return $this->memCache->get($cacheKey);
-                } catch (KeyNotInCacheException) {
+                } catch (ItemNotInCacheException) {
                 }
             }
             $name = $this->getEntityData($entity)->getObjectForPredicate(Entity::pEntityName);
@@ -770,7 +770,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         $cacheKey = $this->getCacheKeyValidQualificationObjects();
         try {
             $objectData =  unserialize($this->memCache->get($cacheKey));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
 
             $objectData = array_map( function (int $id) : EntityData {
                 try {

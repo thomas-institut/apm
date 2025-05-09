@@ -81,12 +81,11 @@ use RuntimeException;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataCache\DataTableDataCache;
-use ThomasInstitut\DataCache\MemcachedDataCache;
 use ThomasInstitut\DataCache\MultiCacheDataCache;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
+use ThomasInstitut\DataTableDataCache\DataTableDataCache;
 use ThomasInstitut\EntitySystem\DataTableStatementStorage;
 use ThomasInstitut\EntitySystem\EntityData;
 use ThomasInstitut\EntitySystem\EntityDataCache\DataTableEntityDataCache;
@@ -94,6 +93,7 @@ use ThomasInstitut\EntitySystem\Exception\InvalidArgumentException;
 use ThomasInstitut\EntitySystem\StatementStorage;
 use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 use ThomasInstitut\EntitySystem\TypeStorageConfig;
+use ThomasInstitut\MemcachedDataCache\MemcachedDataCache;
 use Twig\Error\LoaderError;
 use Typesense\Client;
 use Typesense\Exceptions\ConfigError;
@@ -560,7 +560,6 @@ class ApmSystemManager extends SystemManager {
                 [ 'ApmSystem_', ''],
                 true
             );
-            $this->systemDataCache->setLogger($this->getLogger());
             $this->systemDataCache->setDefaultTtl(self::DefaultSystemCacheTtl);
         }
 

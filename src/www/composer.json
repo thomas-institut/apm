@@ -29,6 +29,7 @@
         "rafaelnajera/xmlmatcher": "^0.4",
         "thomas-institut/datatable" : "^2.0.2",
         "thomas-institut/timestring" : "^v1.3",
+        "thomas-institut/datacache": "^v1.0.1",
         "monolog/monolog": "^3.0",
         "swaggest/json-schema": "^v0.12.43",
         "opensearch-project/opensearch-php": "^2.0",

@@ -3,9 +3,8 @@
 namespace ThomasInstitut\EntitySystem\EntityDataCache;
 
 use Psr\Log\LoggerAwareTrait;
-use Psr\Log\LoggerInterface;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\EntityData;
 
 class DataCacheEntityDataCache implements EntityDataCache
@@ -39,7 +38,7 @@ class DataCacheEntityDataCache implements EntityDataCache
                 throw new EntityNotInCacheException();
             }
             return $data['entityData'];
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             throw new EntityNotInCacheException();
         }
     }

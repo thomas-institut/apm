@@ -22,7 +22,7 @@ use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 use RuntimeException;
 use ThomasInstitut\DataCache\InMemoryDataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\RowAlreadyExists;
@@ -444,7 +444,7 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
             // use the mem cache, in case we need to get this info many times
             try {
                 $entityId = $this->cache->get("entity-id-$docId");
-            } catch (KeyNotInCacheException) {
+            } catch (ItemNotInCacheException) {
                 $statements = $this->getEntitySystem()->getStatements(null, Entity::pLegacyApmDatabaseId, strval($docId));
                 if (count($statements) === 0) {
                     throw new DocumentNotFoundException("Document with legacy docId $docId not found");
@@ -457,7 +457,7 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
 
         try {
             return unserialize($this->cache->get("doc-data-$docId"));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             try {
                 $data = $this->getEntitySystem()->getEntityData($entityId);
                 $this->cache->set("doc-data-$docId", serialize($data), self::MemoryCacheTtl);
@@ -510,7 +510,7 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
                 'null' => null,
                 default => $val,
             };
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             $docData = $this->getDocumentEntityData($docId);
             $val = $docData->getObjectForPredicate($predicate);
             $type = 'string';

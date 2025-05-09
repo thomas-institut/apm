@@ -22,7 +22,7 @@ namespace APM\Site;
 use APM\SystemProfiler;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 
 /**
  * Site Controller class

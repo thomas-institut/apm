@@ -20,17 +20,13 @@
 namespace ThomasInstitut\Test\DataCache;
 
 use PHPUnit\Framework\TestCase;
-use ThomasInstitut\DataCache\DataCacheReferenceTest;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
-use ThomasInstitut\DataCache\MemcachedDataCache;
+use ThomasInstitut\DataCache\Reference\DataCacheReferenceTest;
+use ThomasInstitut\MemcachedDataCache\MemcachedDataCache;
 
 
 class MemCachedDataCacheTest extends TestCase
 {
 
-    /**
-     * @throws KeyNotInCacheException
-     */
     public function testStandardTests() {
 
         $tester = new DataCacheReferenceTest('Memcached');

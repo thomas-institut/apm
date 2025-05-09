@@ -8,7 +8,7 @@ use APM\Site\SiteDocuments;
 use APM\System\Cache\CacheKey;
 use Exception;
 use Monolog\Logger;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 
 class ApmDaemon extends CommandLineUtility
 {
@@ -104,7 +104,7 @@ class ApmDaemon extends CommandLineUtility
         foreach ($cacheItemInfo as $item) {
             try {
                 $cache->get($item['cacheKey']);
-            } catch (KeyNotInCacheException) {
+            } catch (ItemNotInCacheException) {
                 // not in cache
                 $key = $item['cacheKey'];
                 $this->logger->info("$key not in cache, re-building data");

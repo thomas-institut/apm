@@ -10,8 +10,8 @@ use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
-use ThomasInstitut\DataCache\MemcachedDataCache;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
+use ThomasInstitut\MemcachedDataCache\MemcachedDataCache;
 
 class WikiDataGrabber extends CommandLineUtility implements AdminUtility
 {
@@ -216,7 +216,7 @@ class WikiDataGrabber extends CommandLineUtility implements AdminUtility
 
         try {
             return [ true, unserialize($this->memCache->get(self::MemCachedPrefix . $wikiDataId . $wikidataProperty))];
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             $sparqlQuery= "SELECT ?val WHERE {wd:$wikiDataId wdt:$wikidataProperty ?val.}";
             $queryUrl = "https://query.wikidata.org/sparql?query=" . urldecode($sparqlQuery) . "&format=json";
             try {

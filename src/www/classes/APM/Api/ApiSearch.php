@@ -11,7 +11,7 @@ use Psr\Log\NullLogger;
 use Typesense\Client;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
 use Typesense\Exceptions\TypesenseClientError;
 
@@ -25,7 +25,7 @@ class ApiSearch extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws KeyNotInCacheException
+     * @throws ItemNotInCacheException
      */
     public function search(Request  $request, Response $response): Response
     {
@@ -118,7 +118,7 @@ class ApiSearch extends ApiController
      * @param string $searchedPhrase
      * @param string $lang
      * @return array
-     * @throws KeyNotInCacheException
+     * @throws ItemNotInCacheException
      */
     private function getLemmata (string $searchedPhrase, string $lang): array {
 
@@ -505,7 +505,7 @@ class ApiSearch extends ApiController
         // Get data from cache, if data is not cached, get data from the Typesense index and set the cache
         try {
             $data = unserialize($cache->get($cacheKey));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             // Get a list of all items
             $data = self::getAllEntriesFromIndex($client, $queryKey, $this->logger);
             if (count($data) !== 0) {

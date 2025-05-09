@@ -44,7 +44,7 @@ use RuntimeException;
 use Slim\Routing\RouteParser;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -206,7 +206,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
                 $this->logger->debug(sprintf("SITE PROFILER %s Finished in %.3f ms",  SystemProfiler::getName(), SystemProfiler::getTotalTimeInMs()),
                     SystemProfiler::getLaps());
                 return $response;
-            } catch (KeyNotInCacheException) {
+            } catch (ItemNotInCacheException) {
                 // just continue
             }
         }

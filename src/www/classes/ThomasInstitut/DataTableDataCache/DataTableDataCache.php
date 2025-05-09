@@ -17,7 +17,7 @@
  *  
  */
 
-namespace ThomasInstitut\DataCache;
+namespace ThomasInstitut\DataTableDataCache;
 
 
 use InvalidArgumentException;
@@ -26,6 +26,8 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use ThomasInstitut\DataCache\DataCache;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\DataTableResultsIterator;
 use ThomasInstitut\DataTable\InvalidRowForUpdate;
@@ -79,14 +81,14 @@ class DataTableDataCache implements DataCache, LoggerAwareInterface
     {
         $rows =  $this->getRowsForKey($key);
         if (count($rows) === 0) {
-            throw new KeyNotInCacheException();
+            throw new ItemNotInCacheException();
         }
         $row = $rows->getFirst();
         $now = TimeString::now();
         if ($row[$this->expiresColumn] !== TimeString::END_OF_TIMES && $row[$this->expiresColumn] < $now) {
             // expired!
             $this->delete($key);
-            throw new KeyNotInCacheException("Key '$key' not in cache");
+            throw new ItemNotInCacheException("Key '$key' not in cache");
         }
         return $row[$this->valueColumn];
     }

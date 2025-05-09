@@ -5,7 +5,7 @@ namespace ThomasInstitut\EntitySystem;
 
 use RuntimeException;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\DataTable\NullLogger;
 use ThomasInstitut\EntitySystem\EntityDataCache\EntityNotInCacheException;
 use ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException;
@@ -140,7 +140,7 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
 
         try {
             return intval($this->memCache->get($this->getMemCacheKey($tid)));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             $type = $this->getEntityData($tid)->getObjectForPredicate($this->typePredicate);
             $this->memCache->set($this->getMemCacheKey($tid), $type);
             return $type;
@@ -458,7 +458,7 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
                 if ($typeConfig->useMemCache) {
                     try {
                         return unserialize($this->memCache->get($this->getMemCacheKey($entityId, 'data')));
-                    } catch (KeyNotInCacheException) {
+                    } catch (ItemNotInCacheException) {
                     }
                 }
 //                $this->logger->debug("TypedMSESS: entity data for $entityId not in mem cache");

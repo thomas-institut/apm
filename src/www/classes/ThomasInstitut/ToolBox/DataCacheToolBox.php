@@ -1,6 +1,6 @@
 <?php
 
-namespace ThomasInstitut\DataCache;
+namespace ThomasInstitut\ToolBox;
 
 class DataCacheToolBox
 {

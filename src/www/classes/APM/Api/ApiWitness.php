@@ -35,23 +35,23 @@ use Exception;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
 
 
 class ApiWitness extends ApiController
 {
 
-    const CLASS_NAME = 'Witnesses';
+    const string CLASS_NAME = 'Witnesses';
 
-    const ERROR_WITNESS_TYPE_NOT_IMPLEMENTED = 1001;
-    const ERROR_UNKNOWN_WITNESS_TYPE = 1002;
-    const ERROR_SYSTEM_ID_ERROR = 1003;
+    const int ERROR_WITNESS_TYPE_NOT_IMPLEMENTED = 1001;
+    const int ERROR_UNKNOWN_WITNESS_TYPE = 1002;
+    const int ERROR_SYSTEM_ID_ERROR = 1003;
 
-    const WITNESS_DATA_CACHE_KEY_PREFIX = 'ApiWitness-WitnessData-';
-    const WITNESS_HTML_CACHE_KEY_POSTFIX = '-html';
+    const string WITNESS_DATA_CACHE_KEY_PREFIX = 'ApiWitness-WitnessData-';
+    const string WITNESS_HTML_CACHE_KEY_POSTFIX = '-html';
 
-    const WITNESS_DATA_CACHE_TTL = 30 * 24 * 3600; // 30 days
+    const int WITNESS_DATA_CACHE_TTL = 30 * 24 * 3600; // 30 days
 
     public function getWitness(Request $request, Response $response): Response
     {
@@ -250,7 +250,7 @@ class ApiWitness extends ApiController
             $cacheHit = true;
             try {
                 $cachedHtml = $systemCache->get($cacheKeyHtmlOutput);
-            } catch (KeyNotInCacheException $e) {
+            } catch (ItemNotInCacheException $e) {
                 $this->codeDebug("Cache miss :(");
 
                 $cacheHit = false;
@@ -268,7 +268,7 @@ class ApiWitness extends ApiController
             $cacheKey = $this->getWitnessDataCacheKey($requestedWitnessId);
             try {
                 $cachedBlob = $systemCache->get($cacheKey);
-            } catch (KeyNotInCacheException) {
+            } catch (ItemNotInCacheException) {
 
                 $cacheHit = false;
             }
@@ -358,7 +358,7 @@ class ApiWitness extends ApiController
                 $cacheHit = true;
                 try {
                     $html = $systemCache->get($cacheKeyHtmlOutput);
-                } catch (KeyNotInCacheException $e) {
+                } catch (ItemNotInCacheException $e) {
                     $cacheHit = false;
                 }
 

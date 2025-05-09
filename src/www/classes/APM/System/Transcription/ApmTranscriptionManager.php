@@ -72,10 +72,9 @@ use RuntimeException;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\DataCache\CacheAware;
-use ThomasInstitut\DataCache\DataCacheToolBox;
 use ThomasInstitut\DataCache\InMemoryDataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
-use ThomasInstitut\DataCache\SimpleCacheAware;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
+use ThomasInstitut\DataCache\SimpleCacheAwareTrait;
 use ThomasInstitut\DataTable\InvalidRowUpdateTime;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
 use ThomasInstitut\DataTable\MySqlDataTable;
@@ -83,12 +82,13 @@ use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\DataTable\RowDoesNotExist;
 use ThomasInstitut\TimeString\TimeString;
+use ThomasInstitut\ToolBox\DataCacheToolBox;
 use ThomasInstitut\ToolBox\MySqlHelper;
 
 class ApmTranscriptionManager extends TranscriptionManager
     implements CacheAware, CodeDebugInterface
 {
-    use SimpleCacheAware;
+    use SimpleCacheAwareTrait;
     use CodeDebugWithLoggerTrait;
 
     const int ERROR_DOCUMENT_NOT_FOUND = 50;
@@ -264,7 +264,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             $inCache = true;
             try {
                 $cacheValue = $this->dataCache->get($cacheKey);
-            } catch (KeyNotInCacheException) {
+            } catch (ItemNotInCacheException) {
                 $inCache = false;
             }
 
@@ -951,7 +951,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         $localCacheKey = 'getW4C:' . $workId . '-' . $chunkNumber;
         try {
             return unserialize($this->localMemCache->get($localCacheKey));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             // not in cache, we just keep going with the construction of the witness
         }
 //        $this->codeDebug("Witness info not in cache");

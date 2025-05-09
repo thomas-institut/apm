@@ -19,7 +19,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\Exportable\ExportableObject;
 
@@ -70,7 +70,7 @@ class ApiPeople extends ApiController
         $cache = $this->systemManager->getSystemDataCache();
         try {
             return $this->responseWithJson($response, unserialize($cache->get(CacheKey::ApiPeople_PeoplePageData_All)));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             $dataToServe = self::buildAllPeopleDataForPeoplePage($this->systemManager->getEntitySystem(), $cache, $this->logger);
             $cache->set(CacheKey::ApiPeople_PeoplePageData_All, serialize($dataToServe), self::AllPeopleDataForPeoplePageTtl);
             return $this->responseWithJson($response, $dataToServe);
@@ -130,7 +130,7 @@ class ApiPeople extends ApiController
         // check the parts cache
         try {
             $parts = unserialize($cache->get(CacheKey::ApiPeople_PeoplePageData_Parts));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             // build parts structure
             $logger->debug("People page data: parts info not in cache, rebuilding");
             // get all tids, including merged ones so that there's no need to deal with deletions in the cache
@@ -157,7 +157,7 @@ class ApiPeople extends ApiController
             // check if the part is already built
             try {
                 $partData = unserialize($cache->get($partCacheKey));
-            } catch (KeyNotInCacheException) {
+            } catch (ItemNotInCacheException) {
                 // build part data
                 $logger->debug("People page data: part $i not in cache, rebuilding");
                 $partData  = [];
@@ -220,7 +220,7 @@ class ApiPeople extends ApiController
         try {
             $cachedString = $cache->get($cacheKey);
             $data = unserialize($cachedString);
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             try {
                 $this->systemManager->getPersonManager()->getPersonEssentialData($personTid);
             } catch (PersonNotFoundException) {

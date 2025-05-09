@@ -8,8 +8,8 @@ use GuzzleHttp\Exception\GuzzleException;
 use InvalidArgumentException;
 use RuntimeException;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
-use ThomasInstitut\DataCache\NullDataCache;
+use ThomasInstitut\DataCache\InMemoryDataCache;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 
 class UdPipeLemmatizer implements LemmatizerInterface
 {
@@ -23,7 +23,7 @@ class UdPipeLemmatizer implements LemmatizerInterface
     public function __construct(?DataCache $cache = null, string $udPipeApiUrl = self::DefaultUdPipeApiUrl)
     {
         if ($cache === null) {
-            $this->dataCache = new NullDataCache();
+            $this->dataCache = new InMemoryDataCache();
         } else {
             $this->dataCache = $cache;
         }
@@ -43,7 +43,7 @@ class UdPipeLemmatizer implements LemmatizerInterface
         $cacheKey = $this->getCacheKey($text, $langCode);
         try {
             return unserialize($this->dataCache->get($cacheKey));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
         }
 
         $lang = match ($langCode) {

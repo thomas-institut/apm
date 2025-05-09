@@ -35,7 +35,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 
 
@@ -90,7 +90,7 @@ class SiteWorks extends SiteController
         $cache = $this->systemManager->getSystemDataCache();
         try {
             $works = unserialize($cache->get(self::WORK_DATA_CACHE_KEY));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             // not in cache
             $works = self::buildWorkData($this->systemManager, $this->logger);
             $cache->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);

@@ -34,7 +34,7 @@ class ApiPeople extends ApiController
      * When changing this number, stop the ApmDaemon, delete the PeoplePageData cache and restart
      * the daemon again to ensure the cache is regenerated
      */
-    const PeoplePageData_PeoplePerPart = 25;
+    const int PeoplePageData_PeoplePerPart = 25;
 
     public function getPersonEssentialData(Request $request, Response $response): Response {
 

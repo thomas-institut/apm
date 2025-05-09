@@ -454,11 +454,6 @@ export class ApmUrlGenerator {
     apiSearchKeyword() {
         return `${this.base}/api/search/keyword`
     }
-
-    apiSearchNewKeyword() {
-        return `${this.base}/api/searchnew/keyword`
-    }
-
     apiSearchTranscribers() {
         return `${this.base}/api/search/transcribers`
     }

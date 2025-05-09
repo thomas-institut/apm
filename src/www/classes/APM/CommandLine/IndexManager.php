@@ -195,13 +195,17 @@ END;
     /**
      * Builds the transcriptions or editions index in open search after getting all relevant data from the sql database. Deletes already existing transcriptions or editions index.
      * @return void
+     * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
      */
     private function buildIndex(): void
     {
 
         print ("Building index $this->indexNamePrefix\n");
 
-        // delete existing and create new index
+        // delete existing and create a new index
         foreach ($this->indices as $indexName) {
             $this->resetIndex($this->client, $indexName);
         }
@@ -224,7 +228,7 @@ END;
     }
 
     /**
-     * Builds the transcriptions index in open search after getting all relevant data from the sql database.
+     * Builds the transcription index in Typesense after getting all relevant data from the MySQL database.
      * @return void
      */
     private function buildIndexTranscriptions(): void
@@ -239,7 +243,7 @@ END;
         $absStart = microtime(true);
         $pagesIndexed = 0;
         foreach ($docIds as $docId) {
-            // get a list of transcribed pages of the document
+            // get the list of transcribed pages
             try {
                 $title = $this->getTitle($docId);
                 $pages_transcribed = $this->getSystemManager()->getTranscriptionManager()->getTranscribedPageListByDocId($docId);
@@ -271,10 +275,10 @@ END;
                         $transcription = $this->getTranscription($docId, $page, $col);
                         $transcriber = $this->getTranscriber($docId, $page, $col);
 
-                        // get language of current column (same as document)
+                        // get language of the current column (same as the document)
                         $lang = $this->getLang($pageId);
 
-                        // get foliation number of the current page/sequence number
+                        // get the foliation number of the current page/sequence number
                         $foliation = $this->getFoliation($docId, $page);
 
                         // get timestamp
@@ -386,13 +390,13 @@ END;
     }
 
     /**
-     * @param string $page_id
+     * @param string $pageId
      * @return string
      * @throws PageNotFoundException
      */
-    private function getLang(string $page_id): string
+    private function getLang(string $pageId): string
     {
-        $langId = $this->getSystemManager()->getDocumentManager()->getPageInfo($page_id)->lang;
+        $langId = $this->getSystemManager()->getDocumentManager()->getPageInfo($pageId)->lang;
 
         return match ($langId) {
             Entity::LangLatin => 'la',
@@ -472,7 +476,7 @@ END;
     }
 
     /**
-     * Adds a new item to the transcriptions or editions index.
+     * Adds a new item to the transcription or editions index.
      * @param string $arg1 , page ID in case of transcriptions, table ID for editions
      * @param string|null $arg2 column no. in case of transcriptions
      * @param string|null $id , open search id for the item, only necessary when an already indexed item with a given id becomes updated

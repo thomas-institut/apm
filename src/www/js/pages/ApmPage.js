@@ -101,7 +101,7 @@ export class ApmPage {
 
 
   /**
-   * Generates html for a standard loading message with a spinner
+   * Generates HTML for a standard loading message with a spinner
    * @param msg
    * @return {string}
    */

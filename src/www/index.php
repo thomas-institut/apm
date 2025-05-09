@@ -24,7 +24,7 @@ use APM\Api\ApiEntity;
 use APM\Api\ApiLog;
 use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiPeople;
-use APM\Api\ApiSearchNew;
+use APM\Api\ApiSearch;
 use APM\Api\ApiSystem;
 use APM\Api\ApiWorks;
 use APM\Site\SiteEntity;
@@ -55,7 +55,6 @@ use APM\Site\SitePageViewer;
 use APM\Site\SiteChunkPage;
 use APM\Site\SiteCollationTable;
 use APM\Site\SiteDocuments;
-use APM\Site\SiteSearch;
 
 use APM\System\Auth\Authenticator;
 
@@ -68,7 +67,6 @@ use APM\Api\ApiElements;
 use APM\Api\ApiCollationTableConversion;
 use APM\Api\ApiTypesetPdf;
 use APM\Api\ApiWitness;
-use APM\Api\ApiSearch;
 use ThomasInstitut\MinimalContainer\MinimalContainer;
 use Twig\Error\LoaderError;
 
@@ -156,17 +154,17 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
             ->setName('home');
 
         // Search Page
-        $group->get('/search',
-            function(Request $request, Response $response) use ($container){
-                return (new SiteSearch($container))->searchPage($request, $response);
-            })
-            ->setName('search');
+//        $group->get('/search',
+//            function(Request $request, Response $response) use ($container){
+//                return (new SiteSearch($container))->searchPage($request, $response);
+//            })
+//            ->setName('search');
 
-        $group->get('/searchnew',
+        $group->get('/search',
             function(Request $request, Response $response) use ($container){
                 return (new SiteSearchNew($container))->searchPage($request, $response);
             })
-            ->setName('searchnew');
+            ->setName('search');
 
         // People and Person Pages
 
@@ -714,8 +712,7 @@ function createApiImageRoutes(RouteCollectorProxy $group, ContainerInterface $co
 
 }
 function createApiSearchRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
-    // SEARCH
-    $group->post("/search/keyword",
+     $group->post("/search/keyword",
         function(Request $request, Response $response) use ($container){
             return (new ApiSearch($container))->search($request, $response);
         })
@@ -744,38 +741,6 @@ function createApiSearchRoutes(RouteCollectorProxy $group, ContainerInterface $c
             return (new ApiSearch($container))->getEditors($request, $response);
         })
         ->setName('search.editors');
-
-    // NEW SEARCH
-
-    $group->post("/searchnew/keyword",
-        function(Request $request, Response $response) use ($container){
-            return (new ApiSearchNew($container))->search($request, $response);
-        })
-        ->setName('searchnew.keyword');
-
-    $group->any("/searchnew/transcriptions",
-        function(Request $request, Response $response) use ($container){
-            return (new ApiSearchNew($container))->getTranscriptionTitles($request, $response);
-        })
-        ->setName('searchnew.titles');
-
-    $group->any("/searchnew/transcribers",
-        function(Request $request, Response $response) use ($container){
-            return (new ApiSearchNew($container))->getTranscribers($request, $response);
-        })
-        ->setName('searchnew.transcribers');
-
-    $group->post("/searchnew/editions",
-        function(Request $request, Response $response) use ($container){
-            return (new ApiSearchNew($container))->getEditionTitles($request, $response);
-        })
-        ->setName('searchnew.editions');
-
-    $group->post("/searchnew/editors",
-        function(Request $request, Response $response) use ($container){
-            return (new ApiSearchNew($container))->getEditors($request, $response);
-        })
-        ->setName('searchnew.editors');
 
 }
 function createApiTranscriptionRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {

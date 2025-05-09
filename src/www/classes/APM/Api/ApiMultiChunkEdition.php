@@ -11,7 +11,7 @@ class ApiMultiChunkEdition extends ApiController
 {
 
 
-    const CLASS_NAME = 'MultiChunkEditions';
+    const string CLASS_NAME = 'MultiChunkEditions';
 
     public function  getEdition(Request $request, Response $response, array $args): Response
     {

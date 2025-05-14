@@ -69,7 +69,7 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
         // test existence of transcript and tokenize/lemmatize existing transcripts in python
         if (strlen($transcription_clean) > 3) {
 
-            $tokens_and_lemmata = Lemmatizer::runLemmatizer($langCode, $transcription_clean, self::TranscriptionIndexPrefix);
+            $tokens_and_lemmata = Lemmatizer::runLemmatizer($langCode, $transcription_clean);
 
             // get tokenized and lemmatized transcript
             $transcription_tokenized = $tokens_and_lemmata['tokens'];
@@ -131,7 +131,7 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
         // tokenization and lemmatization
         // test existence of text and tokenize/lemmatize existing texts
         if (strlen($cleanText) > 3) {
-            $tokensAndLemmata = Lemmatizer::runLemmatizer($langCode, $cleanText, self::EditionIndexPrefix);
+            $tokensAndLemmata = Lemmatizer::runLemmatizer($langCode, $cleanText);
             // Get tokenized and lemmatized transcript
             $editionTokenized = $tokensAndLemmata['tokens'];
             $edition_lemmatized = $tokensAndLemmata['lemmata'];

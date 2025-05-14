@@ -1,10 +1,37 @@
 #
-# Docker compose file to start collatex and opensearch for development
+# Docker compose file to start collatex, Valkey and Typesense
 #
-# Rafael Nájera, 31 Jan 2025
+#  Rafael Nájera, 13 May 2025
 #
 name: apm-development
 
 include:
-  - opensearch/compose.yaml
   - collatex-http/compose.yaml
+
+services:
+  valkey:
+    image: valkey/valkey:8.1-alpine
+    container_name: valkey
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey_data:/data
+    command: valkey-server --save 60 1 --loglevel warning --dir /data
+
+  typesense:
+    image: typesense/typesense:28.0
+    container_name: typesense
+    ports:
+      - "8108:8108"
+    volumes:
+      - typesense_data:/data
+    command: >
+      typesense-server
+      --data-dir /data
+      --api-key=devel1234
+      --listen-port=8108
+      --enable-cors
+
+volumes:
+  valkey_data:
+  typesense_data:

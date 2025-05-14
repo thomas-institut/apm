@@ -81,11 +81,10 @@ use RuntimeException;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataCache\MultiCacheDataCache;
+use ThomasInstitut\DataCache\DirectoryDataCache;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
-use ThomasInstitut\DataTableDataCache\DataTableDataCache;
 use ThomasInstitut\EntitySystem\DataTableStatementStorage;
 use ThomasInstitut\EntitySystem\EntityData;
 use ThomasInstitut\EntitySystem\EntityDataCache\DataTableEntityDataCache;
@@ -94,6 +93,7 @@ use ThomasInstitut\EntitySystem\StatementStorage;
 use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 use ThomasInstitut\EntitySystem\TypeStorageConfig;
 use ThomasInstitut\MemcachedDataCache\MemcachedDataCache;
+use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
 use Twig\Error\LoaderError;
 use Typesense\Client;
 use Typesense\Exceptions\ConfigError;
@@ -118,12 +118,15 @@ class ApmSystemManager extends SystemManager {
     const int DB_VERSION = 37;
 
     // Entity system Data ID: key for entity system caches
-    const string ES_DATA_ID = 'es009';
+    const string ES_DATA_ID = '0009';
 
-    const string MemCachePrefix_Apm_ES = 'apm_es';
-    const string MemCachePrefix_TypedMultiStorage_ES = 'apm_msEs_';
+    const string MemCachePrefix_Apm_ES = 'Es';
+    const string MemCachePrefix_TypedMultiStorage_ES = 'MsEs';
 
     const int DefaultSystemCacheTtl = 30 * 24 * 3600;  // 30 days
+    const int DefaultMemCacheTtl =  24 * 3600;  // 1 day
+
+    const int DefaultDirectoryDataCacheTtl = 365 * 24 * 3600; // 1 year
 
     const array REQUIRED_CONFIG_VARIABLES = [
         'appName',
@@ -162,7 +165,7 @@ class ApmSystemManager extends SystemManager {
     private ?CollationEngine $collationEngine;
     private ?PDO $dbConn;
     private ?ApmTranscriptionManager $transcriptionManager;
-    private ?MultiCacheDataCache $systemDataCache;
+
     private ?ApmCollationTableManager $collationTableManager;
     private ?ApmMultiChunkEditionManager $multiChunkEditionManager;
     private ?Twig $twig;
@@ -174,6 +177,8 @@ class ApmSystemManager extends SystemManager {
     private ?WorkManager $workManager;
     private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem;
     private ?DataCache $memDataCache;
+    private ?ValkeyDataCache $systemDataCache;
+    private ?DirectoryDataCache $directoryDataCache;
     private ?ApmEntitySystem $apmEntitySystem;
     private ?ApmDocumentManager $documentManager;
     private ?Client $typesenseClient;
@@ -232,6 +237,7 @@ class ApmSystemManager extends SystemManager {
         $this->transcriptionManager = null;
         $this->collationTableManager = null;
         $this->memDataCache = null;
+        $this->directoryDataCache = null;
         $this->apmEntitySystem = null;
         $this->documentManager = null;
         $this->typesenseClient = null;
@@ -347,14 +353,7 @@ class ApmSystemManager extends SystemManager {
         return $dbh;
     }
 
-    public function getMemDataCache(): DataCache
-    {
-        if ($this->memDataCache === null) {
-            $this->memDataCache = new MemcachedDataCache();
-//            $this->memDataCache = new InMemoryDataCache();
-        }
-        return $this->memDataCache;
-    }
+
 
     public function getPresetsManager() : PresetManager {
         if ($this->presetsManager === null) {
@@ -547,23 +546,28 @@ class ApmSystemManager extends SystemManager {
     public function getSystemDataCache(): DataCache
     {
         if ($this->systemDataCache === null) {
-            $this->systemDataCache = new MultiCacheDataCache(
-                [
-                    $this->getMemDataCache(),
-                    function ()  {
-                        $dataTableCache = new DataTableDataCache(new MySqlDataTable($this->getDbConnection(),
-                            $this->tableNames[ApmMySqlTableName::TABLE_SYSTEM_CACHE], true));
-                        $dataTableCache->setLogger($this->getLogger()->withName('CACHE'));
-                        return $dataTableCache;
-                    }
-                ],
-                [ 'ApmSystem_', ''],
-                true
-            );
+            $this->systemDataCache = new ValkeyDataCache("APM:Sys:");
             $this->systemDataCache->setDefaultTtl(self::DefaultSystemCacheTtl);
         }
 
         return $this->systemDataCache;
+    }
+
+    public function getMemDataCache(): DataCache
+    {
+        if ($this->memDataCache === null) {
+            $this->memDataCache = new ValkeyDataCache('APM:Mem:');
+            $this->memDataCache->setDefaultTtl(self::DefaultMemCacheTtl);
+        }
+        return $this->memDataCache;
+    }
+
+    public function getDirectoryDataCache() : DataCache {
+        if ($this->directoryDataCache === null) {
+            $this->directoryDataCache = new DirectoryDataCache($this->config['directoryCachePath'], 'apm');
+            $this->directoryDataCache->setDefaultTtl(self::DefaultDirectoryDataCacheTtl);
+        }
+        return $this->directoryDataCache;
     }
 
     public function getCollationTableManager(): CollationTableManager
@@ -925,17 +929,14 @@ class ApmSystemManager extends SystemManager {
     public function getRawEntitySystem(): TypedMultiStorageEntitySystem
     {
         if ($this->typedMultiStorageEntitySystem === null) {
-//            $this->logger->debug("Creating inner entity system");
 
             $defaultConfig = new TypeStorageConfig();
             $defaultConfig->withType(0);
             $defaultConfig->statementStorageCallable = function () {
-//                $this->logger->debug("Creating default statement storage");
                 return $this->createDefaultStatementStorage();
             };
             $defaultConfig->useCache = true;
             $defaultConfig->entityDataCacheCallable = function () {
-//                $this->logger->debug("Creating default entity data cache datatable");
                 $defaultEntityDataCacheDataTable = new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::ES_Cache_Default]);
                 return new DataTableEntityDataCache(
                     $defaultEntityDataCacheDataTable,
@@ -958,7 +959,7 @@ class ApmSystemManager extends SystemManager {
                     Entity::pEntityType, [$defaultConfig],
                     self::ES_DATA_ID,
                     $this->getMemDataCache(),
-                    self::MemCachePrefix_TypedMultiStorage_ES . self::ES_DATA_ID
+                    self::MemCachePrefix_TypedMultiStorage_ES . ':' . self::ES_DATA_ID
                 );
                 $this->typedMultiStorageEntitySystem->setLogger($this->logger);
             } catch (InvalidArgumentException) {

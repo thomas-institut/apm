@@ -195,7 +195,7 @@ class ApiSearch extends ApiController
      */
     private  function getLemmaCacheKey(string $word): string
     {
-        return CacheKey::ApiSearchLemma . $word;
+        return implode(':', [ CacheKey::ApiSearchLemma. $word]);
     }
 
     /**

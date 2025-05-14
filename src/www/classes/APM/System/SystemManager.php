@@ -144,7 +144,6 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getAvailableImageSources() : array;
     abstract public function getImageSources() : array;
     abstract public function getLogger() : Logger;
-//    abstract public function getHookManager() : HookManager;
     abstract public function getSettingsManager() : SettingsManager;
     abstract public function getCollationEngine() : CollationEngine;
     abstract public function getTranscriptionManager() : TranscriptionManager;
@@ -152,6 +151,7 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getMultiChunkEditionManager() : MultiChunkEditionManager;
     abstract public function getSystemDataCache() : DataCache;
     abstract public function getMemDataCache() : DataCache;
+    abstract public function getDirectoryDataCache() : DataCache;
     abstract public function getBaseUrl(): string;
     abstract public function getTwig() : Twig;
     abstract public function getRouter() : RouteParserInterface;

@@ -40,18 +40,17 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
      * Data id for internal kernel caches, needs to be changed every time there is a
      * change in the entity system schema or in the ApmEntitySystemKernel class
      */
-    const dataId = '2024.12.24-11:53:37';
+    const string dataId = '0001';
 
-    const kernelCacheKey = 'ApmEntitySystemKernel';
+    const string kernelCacheKey = 'ApmEntitySystemKernel';
 
-    const kernelCacheTtl = 8 * 24 * 3600; // 8 days
-    const minNameCacheTtl = 15 * 24 * 3600;
-    const maxNameCacheTtl = 21 * 24 * 3600;
+    const int kernelCacheTtl = 8 * 24 * 3600; // 8 days
+    const int minNameCacheTtl = 15 * 24 * 3600;
+    const int maxNameCacheTtl = 21 * 24 * 3600;
+    const int entityListCacheTtl =  30 * 24 * 3600;
 
-    const entityListCacheTtl =  30 * 24 * 3600;
-
-    const ColEntity = 'entity';
-    const ColMergedInto = 'mergedInto';
+    const string ColEntity = 'entity';
+    const string ColMergedInto = 'mergedInto';
 
     private ?TypedMultiStorageEntitySystem $innerEntitySystem;
     private ?ApmEntitySystemKernel $kernel;
@@ -109,23 +108,23 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
     }
 
     private function getCacheKeyKernel() : string {
-        return implode('_', [ $this->cachePrefix, self::dataId, self::kernelCacheKey]);
+        return implode(':', [ $this->cachePrefix, self::dataId, self::kernelCacheKey]);
     }
 
     private function getCacheKeyMergedInto(int $entity) : string {
-        return implode('_', [ $this->cachePrefix, self::dataId, 'mergedInto', $entity]);
+        return implode(':', [ $this->cachePrefix, self::dataId, $entity, 'mergedInto' ]);
     }
 
     private function getCacheKeyEntityName(int $entity) : string {
-        return implode('_', [ $this->cachePrefix, self::dataId, 'name', $entity]);
+        return implode(':', [ $this->cachePrefix, self::dataId,  $entity, 'name']);
     }
 
     private function getCacheKeyValidQualificationObjects() : string {
-        return implode('_', [ $this->cachePrefix, self::dataId, 'validQualificationObjects']);
+        return implode(':', [ $this->cachePrefix, self::dataId, 'validQualificationObjects']);
     }
 
     private function getCacheKeyEntityList(int $type, bool $withMerged) : string {
-        return implode('_', [ $this->cachePrefix, self::dataId, 'entityList', $type, $withMerged ? 'withMerged' : 'withoutMerged']);
+        return implode(':', [ $this->cachePrefix, self::dataId, 'entityList', $type, $withMerged ? 'withMerged' : 'withoutMerged']);
     }
 
     private function getKernel() : ApmEntitySystemKernel {

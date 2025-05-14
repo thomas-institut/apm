@@ -1515,7 +1515,7 @@ END;
         // test existence of transcript and tokenize/lemmatize existing transcripts in python
         if (strlen($transcription_clean) > 3) {
 
-            $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $transcription_clean, $this->indexNamePrefix);
+            $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $transcription_clean, $this->getSystemManager()->getDirectoryDataCache());
 
             // get tokenized and lemmatized transcript
             $transcription_tokenized = $tokens_and_lemmata['tokens'];
@@ -1628,7 +1628,7 @@ END;
         // tokenization and lemmatization
         // test existence of text and tokenize/lemmatize existing texts
         if (strlen($text_clean) > 3) {
-            $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $text_clean, $this->indexNamePrefix);
+            $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $text_clean, $this->getSystemManager()->getDirectoryDataCache());
 
             // Get tokenized and lemmatized transcript
             $edition_tokenized = $tokens_and_lemmata['tokens'];

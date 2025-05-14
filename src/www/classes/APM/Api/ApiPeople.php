@@ -26,8 +26,8 @@ use ThomasInstitut\Exportable\ExportableObject;
 class ApiPeople extends ApiController
 {
 
-    const AllPeopleDataForPeoplePageTtl = 8 * 24 * 3600;
-    const WorksByPersonTtl =  8 * 24 * 3600;
+    const int AllPeopleDataForPeoplePageTtl = 30 * 24 * 3600; // one month
+    const int WorksByPersonTtl =  8 * 24 * 3600;
 
     /**
      * Make this number so that rebuilding the data for a part does not take more than one second.
@@ -77,8 +77,12 @@ class ApiPeople extends ApiController
         }
     }
 
-    public static function invalidatePeoplePageDataPart(int $i, DataCache $cache) : void {
-        $cache->delete(CacheKey::ApiPeople_PeoplePageData_PartPrefix . $i);
+    private static function getPeoplePageDataPartCacheKey(int $partNumber) : string {
+        return implode(':', [ CacheKey::ApiPeople_PeoplePageData_PartPrefix, $partNumber]);
+    }
+
+    public static function invalidatePeoplePageDataPart(int $partNumber, DataCache $cache) : void {
+        $cache->delete(self::getPeoplePageDataPartCacheKey($partNumber));
     }
 
     public static function invalidatePeoplePageDataAllParts(ApmEntitySystemInterface $es, DataCache $cache, LoggerInterface $logger) : void {
@@ -153,7 +157,7 @@ class ApiPeople extends ApiController
         $dataArray = [];
         for ($i = 0; $i < count($parts); $i++) {
             $partTids = $parts[$i];
-            $partCacheKey = CacheKey::ApiPeople_PeoplePageData_PartPrefix . $i;
+            $partCacheKey = self::getPeoplePageDataPartCacheKey($i);
             // check if the part is already built
             try {
                 $partData = unserialize($cache->get($partCacheKey));

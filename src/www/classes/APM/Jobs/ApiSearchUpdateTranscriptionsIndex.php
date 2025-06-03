@@ -3,10 +3,12 @@
 namespace APM\Jobs;
 
 use APM\CommandLine\IndexManager;
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
+use ThomasInstitut\DataTable\InvalidTimeStringException;
 
 class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateTypesenseIndex implements JobHandlerInterface
 {
@@ -16,28 +18,24 @@ class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateTypesenseIndex i
      */
     public function run(SystemManager $sm, array $payload): bool
     {
-        $logger = $sm->getLogger();
+
         $config = $sm->getConfig();
 
-        try {
-            $this->initializeTypesenseClient($config);
-        } catch (\Exception $e) {
-            $logger->debug('Connecting to OpenSearch server failed.');
-            return false;
-        }
-
-
         // Fetch data from payload
-        $doc_id = $payload['doc_id'];
+        $docId = $payload['doc_id'];
         $page = $payload['page'];
         $col = $payload['col'];
-        $page_id = $sm->getDocumentManager()->getPageIdByDocPage($doc_id, $page);
-        $argv = [0, 'transcriptions', 'update-add', $page_id, $col];
+        $pageId = $sm->getDocumentManager()->getPageIdByDocPage($docId, $page);
 
-       try {
-            (new IndexManager ($config, 0, $argv))->run();
-        } catch (\Exception $e) {
-            $sm->getLogger()->error("Exception: " . $e->getMessage());
+        $im = new IndexManager($config, 0, []);
+        $im->setIndexNamePrefix('transcriptions');
+
+
+        try {
+            $im->updateOrAddItem($pageId, $col);
+            return true;
+        } catch (EntityDoesNotExistException|DocumentNotFoundException|PageNotFoundException|InvalidTimeStringException $e) {
+            $sm->getLogger()->error("Error updating transcription index for page $pageId col $col: " . $e->getMessage());
             return false;
         }
     }

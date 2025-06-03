@@ -3,8 +3,12 @@
 namespace APM\Jobs;
 
 use APM\CommandLine\IndexManager;
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
+use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
+use ThomasInstitut\DataTable\InvalidTimeStringException;
 
 class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateTypesenseIndex implements JobHandlerInterface
 {
@@ -14,18 +18,19 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateTypesenseIndex impleme
         $logger = $sm->getLogger();
         $config = $sm->getConfig();
 
-        try {
-            $this->initializeTypesenseClient($config);
-        } catch (\Exception $e) {
-            $logger->debug('Connecting to typesense server failed.');
-            return false;
-        }
-
         // Fetch data from payload
         $table_id = $payload[0];
-        $argv = [0, 'editions', 'update-add', $table_id];
 
-        (new IndexManager($config, 0, $argv))->run();
+        $im = new IndexManager($config, 0, []);
+        $im->setIndexNamePrefix('editions');
+
+        try {
+            $im->updateOrAddItem($table_id);
+            return true;
+        } catch (EntityDoesNotExistException|DocumentNotFoundException|PageNotFoundException|InvalidTimeStringException $e) {
+            $sm->getLogger()->error("Error updating editions index for table $table_id: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function mustBeUnique(): bool

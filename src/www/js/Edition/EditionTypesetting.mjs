@@ -642,21 +642,25 @@ export class EditionTypesetting {
 
       switch(lemmaComponents.type) {
         case 'custom':
+          // custom lemma
           tsItems = await this.getTsItemsForString(lemmaComponents.text, 'apparatus', 'detect');
           resolve(tsItems)
           return
 
         case 'full':
-          tsItems.push(...await this.getTsItemsForString(entry.lemmaText, 'apparatus', 'detect'))
+          // e.g., word1 word2 word3]
+          tsItems.push(...await this.getTsItemsForString(entry.lemmaText, 'apparatus', 'detect'));
+          tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.from, entry.to));
           resolve(tsItems)
           return
 
         case 'shortened':
+          // e.g. word1...wordN]
           tsItems.push(...await this.getTsItemsForString(lemmaComponents.from, 'apparatus', 'detect'))
-          tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.from))
+          tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.from));
           tsItems.push(...await this.getTsItemsForString(lemmaComponents.separator, 'apparatus', 'detect'))
           tsItems.push(...await this.getTsItemsForString(lemmaComponents.to, 'apparatus', 'detect'))
-          tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.to))
+          tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.to));
           resolve(tsItems)
           return
 
@@ -691,27 +695,53 @@ export class EditionTypesetting {
   }
 
   /**
+   * Returns an array of ts items with the superscript number that
+   * represents the occurrence number in the line for the given sequence
+   * of main text tokens.
    *
-   * @param mainTextIndex
+   * If there's only one occurrence in the line, returns an empty array
+   *
+   * @param {number}indexFrom
+   * @param {number}indexTo
    * @return {Promise<TypesetterItem[]>}
    * @private
    */
-  getTsItemsForLemmaOccurrenceNumber(mainTextIndex) {
-    return new Promise (async (resolve) => {
-      let tsItems = []
-      let lemmaNumberString = ''
-      let [occurrenceInLine, numberOfOccurrencesInLine] = this.getOccurrenceInLineInfo(mainTextIndex)
-      if (numberOfOccurrencesInLine > 1) {
-        lemmaNumberString = this.getNumberString(occurrenceInLine, this.edition.lang);
+  async getTsItemsForLemmaOccurrenceNumber(indexFrom, indexTo = -1) {
+    if (indexTo === -1) {
+      indexTo = indexFrom;
+    }
+    let tsItems = [];
+    let lemmaNumberString = '';
+    let [occurrenceInLine, numberOfOccurrencesInLine] = this.getOccurrenceInLineInfo(indexFrom);
+    if (numberOfOccurrencesInLine > 1) {
+      // if the first token only occurs once in the line, obviously the whole series of tokens only
+      // occurs once. Otherwise, we need to check the other tokens, if any.
+      // As soon as one of them only appears once in the line, we know that the whole series
+      // only appears once. Also, the lowest occurrenceInLine number is the occurrenceInLine number
+      // for the whole series, and the lowest numberOfOccurrencesInLine is the numberOfOccurrencesInLine
+      // for the whole series.
+      let seriesOccurrenceInLine = occurrenceInLine;
+      let seriesNumberOfOccurrencesInLine = numberOfOccurrencesInLine;
+      for (let tokenIndex = indexFrom+1; tokenIndex <= indexTo; tokenIndex++) {
+        let [ tokenOccurrenceInLine, tokenNumberOfOccurrencesInLine] = this.getOccurrenceInLineInfo(tokenIndex);
+        seriesOccurrenceInLine = Math.min(seriesOccurrenceInLine, tokenOccurrenceInLine);
+        seriesNumberOfOccurrencesInLine = Math.min(seriesNumberOfOccurrencesInLine, tokenNumberOfOccurrencesInLine);
+        if (tokenNumberOfOccurrencesInLine === 1) {
+          // no need to look any further
+          break;
+        }
       }
-      if (lemmaNumberString !== '') {
-        let lemmaNumberTextBox = TextBoxFactory.simpleText(lemmaNumberString)
-        await this.ss.apply(lemmaNumberTextBox, [ 'apparatus superscript'])
-        this.__detectAndSetTextBoxTextDirection(lemmaNumberTextBox)
-        tsItems.push(lemmaNumberTextBox)
+      if (seriesNumberOfOccurrencesInLine > 1) {
+        lemmaNumberString = this.getNumberString(seriesOccurrenceInLine, this.edition.lang);
       }
-      resolve(tsItems)
-    })
+    }
+    if (lemmaNumberString !== '') {
+      let lemmaNumberTextBox = TextBoxFactory.simpleText(lemmaNumberString)
+      await this.ss.apply(lemmaNumberTextBox, [ 'apparatus superscript'])
+      this.__detectAndSetTextBoxTextDirection(lemmaNumberTextBox)
+      tsItems.push(lemmaNumberTextBox)
+    }
+    return tsItems;
   }
 
   /**

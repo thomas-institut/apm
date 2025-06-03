@@ -626,7 +626,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                     $segmentLocation->setEnd($location);
                 } else {
                     // end location already set, this means the current location is a duplicate end mark
-                    $this->logger->debug('Duplicate chunk end mark found', [ $location]);
+//                    $this->logger->debug('Duplicate chunk end mark found', [ $location]);
                     $segmentLocation->setDuplicateChunkMarkStatus(false);
                 }
             }

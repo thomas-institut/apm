@@ -985,9 +985,7 @@ export class BasicTypesetter extends Typesetter2 {
    * @private
    */
   __addOccurrenceInLineMetadata(line) {
-    // TODO: fix this counter
-    //  The current version does not take into account the fact that some text tokens might be
-    //  merged with punctuation
+    // TODO: check, may still be counting merged items incorrectly
     if (line.getDirection() !== TypesetterItemDirection.HORIZONTAL) {
       // not a horizontal list, i.e., not a line => do nothing
       return line

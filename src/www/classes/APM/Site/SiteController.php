@@ -223,8 +223,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
                 $jsOptions[$key] = $value;
             }
         }
-//        $this->logger->debug("Js options",  $jsOptions);
-
         $dataJs = $this->getJsObject($jsOptions);
 
         $script = "$(() => {new $jsClassName(( $dataJs)) });";

@@ -14,7 +14,6 @@
         "ext-intl": "*",
         "ext-mbstring": "*",
         "ext-zlib": "*",
-        "ext-memcached": "*",
         "ext-pcntl": "*",
         "ext-posix": "*",
         "ext-sockets": "*",

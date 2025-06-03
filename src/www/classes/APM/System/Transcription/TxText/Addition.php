@@ -29,7 +29,7 @@ use InvalidArgumentException;
  */
 class Addition extends Item {
     
-    public static $validPlaces = [ 
+    public static array $validPlaces = [
         'above',
         'below',
         'inline',
@@ -40,16 +40,8 @@ class Addition extends Item {
         'margin top', 
         'margin bottom'
     ];
-    
-    
-    /**
-     * The Xml ID associated with the target
-     * (won't be stored in the database!)
-     * @var string
-     */
-    // Only needed to support inline targets!
-    //public $targetXmlId;
-     
+//    public string $targetXmlId;
+
     /**
      * 
      * @param int $id
@@ -58,7 +50,7 @@ class Addition extends Item {
      * @param string $place
      * @param int $target
      */
-    function __construct($id, $s, $text, $place, $target=0) {
+    function __construct($id, $s, $text, $place, int $target=0) {
         parent::__construct($id, $s);
         $this->type = parent::ADDITION;
         if (!self::isPlaceValid($place)){
@@ -70,34 +62,30 @@ class Addition extends Item {
         $this->theText = $text;
         $this->setTarget($target);
         $this->setPlace($place);
-        $this->targetXmlId = '';
+//        $this->targetXmlId = '';
     }
 
-    public static function isPlaceValid($place){
+    public static function isPlaceValid($place): bool
+    {
         return in_array($place, self::$validPlaces);
     }
     
-    public function setTarget($target)
+    public function setTarget($target): void
     {
         $this->target = $target;
-//        if ($target <= 0){
-//            $this->target = 0;
-//        } else {
-//            $this->target = $target;
-//        }
     }
     
-    public function getTarget()
+    public function getTarget(): int
     {
         return $this->target;
     }
     
-    public function setPlace($place) 
+    public function setPlace($place): void
     {
         $this->extraInfo = $place;
     }
     
-    public function getPlace()
+    public function getPlace(): string
     {
         return $this->extraInfo;
     }

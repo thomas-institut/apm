@@ -5,6 +5,9 @@ namespace APM\CommandLine\DataGrabber;
 use APM\CommandLine\ApmCtlUtility\AdminUtility;
 use APM\CommandLine\CommandLineUtility;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
+use APM\EntitySystem\Exception\InvalidObjectException;
+use APM\EntitySystem\Exception\InvalidStatementException;
+use APM\EntitySystem\Exception\InvalidSubjectException;
 use APM\EntitySystem\Exception\PredicateCannotBeCancelledException;
 use APM\EntitySystem\Exception\StatementAlreadyCancelledException;
 use APM\EntitySystem\Exception\StatementNotFoundException;
@@ -14,25 +17,25 @@ use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
+use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
-use ThomasInstitut\MemcachedDataCache\MemcachedDataCache;
 
 class ViafIdGrabber extends CommandLineUtility implements AdminUtility
 {
-    const CMD = 'viaf';
+    const string CMD = 'viaf';
 
-    const USAGE = self::CMD . " all | <tid1> <tid2> ... [doIt]";
-    const DESCRIPTION = "Grabs people external ids from VIAF";
+    const string USAGE = self::CMD . " all | <tid1> <tid2> ... [doIt]";
+    const string DESCRIPTION = "Grabs people external ids from VIAF";
 
-    const MemCachedPrefix = 'viaf_id_grabber-';
-    const MemCachedTtl = 86400;
-    private MemcachedDataCache $memCache;
+    const string MemCachedPrefix = 'ViafIdGrabber:';
+    const int MemCachedTtl = 86400;
+    private DataCache $memCache;
     private Client $guzzleClient;
 
     public function __construct(array $config, int $argc, array $argv)
     {
         parent::__construct($config, $argc, $argv);
-        $this->memCache = new MemcachedDataCache();
+        $this->memCache = $this->getSystemManager()->getMemDataCache();
         $this->guzzleClient = new Client();
     }
 
@@ -51,6 +54,11 @@ class ViafIdGrabber extends CommandLineUtility implements AdminUtility
         return self::DESCRIPTION;
     }
 
+    /**
+     * @throws InvalidObjectException
+     * @throws InvalidSubjectException
+     * @throws InvalidStatementException
+     */
     public function main($argc, $argv) : int
     {
         if ($argc === 1) {

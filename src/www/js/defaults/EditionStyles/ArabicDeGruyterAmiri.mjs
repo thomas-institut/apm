@@ -78,6 +78,11 @@ export const arabicDeGruyterAmiri = {
         stretch: "0.08 em"
       },
     },
+  emGlue: {
+    parent: '', glue: {
+      width: '1 em', shrink: '0.02 em', stretch: '0.08 em'
+    }
+  },
   small:  {
       parent: "",
       text: {

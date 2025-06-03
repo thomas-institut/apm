@@ -392,7 +392,7 @@ export class ChunkPage extends HeaderAndContentPage {
           if (localWitnessId !== 'A') {
             title += ' (' + localWitnessId + ')'
           }
-          html += this.getWitnessCard(witnessInfo.systemId, title, witnessInfo["typeSpecificInfo"].docInfo['languageCode']);
+          html += this.getWitnessCard(witnessInfo.systemId, title, witnessInfo['languageCode']);
           break
       }
     }

@@ -3,7 +3,7 @@
 #
 
 services:
-  apm-collatex:
+  collatex:
     build: .
     container_name: collatex
     ports:

@@ -92,7 +92,6 @@ use ThomasInstitut\EntitySystem\Exception\InvalidArgumentException;
 use ThomasInstitut\EntitySystem\StatementStorage;
 use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 use ThomasInstitut\EntitySystem\TypeStorageConfig;
-use ThomasInstitut\MemcachedDataCache\MemcachedDataCache;
 use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
 use Twig\Error\LoaderError;
 use Typesense\Client;
@@ -139,7 +138,6 @@ class ApmSystemManager extends SystemManager {
         'langCodes',
         'dbTablePrefix',
         'daemonPidFile',
-        'opensearch'
     ];
     
     const array REQUIRED_CONFIG_VARIABLES_DB = [ 'host', 'db', 'user', 'pwd'];
@@ -546,17 +544,33 @@ class ApmSystemManager extends SystemManager {
     public function getSystemDataCache(): DataCache
     {
         if ($this->systemDataCache === null) {
-            $this->systemDataCache = new ValkeyDataCache("APM:Sys:");
+            $this->systemDataCache = new ValkeyDataCache("APM:Sys:", $this->createValkeyClient());
             $this->systemDataCache->setDefaultTtl(self::DefaultSystemCacheTtl);
         }
 
         return $this->systemDataCache;
     }
 
+    private function createValkeyClient() : \Predis\Client {
+        $valkeyHost = '127.0.0.1';
+        if (isset($this->config['valkey_host'])) {
+            $valkeyHost = $this->config['valkey_host'];
+        }
+        $valkeyPort = '6379';
+        if (isset($this->config['valkey_port'])) {
+            $valkeyPort = $this->config['valkey_port'];
+        }
+        return new \Predis\Client([
+            'scheme' => 'tcp',
+            'host' => $valkeyHost,
+            'port' => $valkeyPort
+        ]);
+    }
+
     public function getMemDataCache(): DataCache
     {
         if ($this->memDataCache === null) {
-            $this->memDataCache = new ValkeyDataCache('APM:Mem:');
+            $this->memDataCache = new ValkeyDataCache('APM:Mem:', $this->createValkeyClient());
             $this->memDataCache->setDefaultTtl(self::DefaultMemCacheTtl);
         }
         return $this->memDataCache;
@@ -892,13 +906,11 @@ class ApmSystemManager extends SystemManager {
     public function getEntitySystem(): ApmEntitySystemInterface
     {
         if ($this->apmEntitySystem === null) {
-//            $this->logger->debug("Creating entity system");
             $this->apmEntitySystem = new ApmEntitySystem(
                 function () : TypedMultiStorageEntitySystem{
                     return $this->getRawEntitySystem();
                 },
                 function () : DataTable {
-//                    $this->logger->debug("Creating merges datatable");
                     return new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::ES_Merges], true);
                 },
                 $this->getMemDataCache(),

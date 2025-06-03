@@ -1,0 +1,51 @@
+#
+# Docker compose file to start collatex, Valkey and Typesense
+#
+#  Rafael Nájera, 13 May 2025
+#
+name: apm-development
+
+services:
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    ports:
+      - "8888:80"
+    volumes:
+      - ../src:/opt/apm
+      - ./nginx-dev.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../dev-tmp/logs/nginx:/var/log/nginx
+    depends_on:
+      - php
+  php:
+    container_name: php
+    build:
+      context: .
+      dockerfile: dev-php.Dockerfile
+    volumes:
+      - ../src:/opt/apm
+      - ../dev-tmp:/var/apm
+
+  collatex:
+    container_name: collatex
+    build: ./collatex-http
+
+  valkey:
+    container_name: valkey
+    image: valkey/valkey:8.1-alpine
+    volumes:
+      - ../dev-tmp/valkey-data:/data
+    command: valkey-server --save 60 1 --loglevel warning --dir /data
+
+  typesense:
+    container_name: typesense
+    image: typesense/typesense:28.0
+    volumes:
+      - ../dev-tmp/typesense-data:/data
+    command: >
+      typesense-server
+      --data-dir /data
+      --api-key=devel1234
+      --listen-port=8108
+      --enable-cors
+

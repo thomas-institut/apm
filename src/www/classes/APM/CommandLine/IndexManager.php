@@ -296,7 +296,7 @@ END;
                     $remainingTime = intval($timePerPage * ($transcribedPageCount - $pagesIndexed));
                     printf("%05d of %d pages indexed (%.2f%%) : Time elapsed %s : Est. Total %s : Est. Remaining %s : Doc %d, page %d of %d, %-50s\r" ,
                         $pagesIndexed, $transcribedPageCount, 100 * $pagesIndexed / $transcribedPageCount,
-                        DateTimeFormat::getFormattedTime($totalTime),
+                        DateTimeFormat::getFormattedTime(intval($totalTime)),
                         DateTimeFormat::getFormattedTime($estTotalTime),
                         DateTimeFormat::getFormattedTime($remainingTime),
                         $docId, $i+1, $pageCount, $title

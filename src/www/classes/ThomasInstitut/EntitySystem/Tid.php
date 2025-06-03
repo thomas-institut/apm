@@ -29,7 +29,7 @@ use ThomasInstitut\TimeString\TimeString;
  *
  * TIDs can be represented alphanumerically by converting their integer value to a base-36 (0-9, A-Z) string.
  * The maximum TID is 8RC4KBDVSS1R in base-36, a 12 character string. However, no more than 8 alphanumeric characters are
- * needed for TIDs generated before  2059-05-25 17:38:27 UTC, and no more than 9 for those before the year 5188. [N2]
+ * needed for TIDs generated before 2059-05-25 17:38:27 UTC, and no more than 9 for those before the year 5188. [N2]
  * Since the first TID with a base-36 representation of 8 characters would have been generated very early on Jan 1,
  * 1970, for all practical purposes we can safely assume that base-36 representations of generated TIDs are either 8 o 9
  * characters long.
@@ -41,7 +41,7 @@ use ThomasInstitut\TimeString\TimeString;
  * these rules.
  *
  * Notes:
- *   N1. Note that 0 is not a valid TID. The smallest TID is 1.
+ *   N1. Zero is not a valid TID. The smallest TID is 1.
  *   N2. Having a reasonably short alphanumeric representation of TIDs for the next few years is the reason why a
  *       1-millisecond clock resolution was chosen. A 1-microsecond resolution, which is the maximum technically
  *       possible, requires 10 alphanumeric characters, whereas lower resolutions are not desirable because
@@ -57,7 +57,7 @@ class Tid
 
 //    private static int $uniqueIdForUuidConversion = 47103254751;
 
-    const MAX_TID =  1152921504606846975;
+    const int MAX_TID =  1152921504606846975;
 
 
 
@@ -198,10 +198,6 @@ class Tid
 
     public static function fromTimestamp(float $timestamp) : int {
         return intval(1000*$timestamp);
-    }
-
-    public static function setLockFileName(string $lockFileName) : void {
-        self::$lockFileName = $lockFileName;
     }
 
     private static function getIdFromClock() : int{

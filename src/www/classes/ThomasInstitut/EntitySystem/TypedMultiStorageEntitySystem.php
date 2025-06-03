@@ -145,7 +145,6 @@ class TypedMultiStorageEntitySystem extends MultiStorageEntitySystem
      * @throws EntityDoesNotExistException
      */
     public function getEntityType(int $tid) : int {
-
         try {
             return intval($this->memCache->get($this->getMemCacheKey($tid, 'type')));
         } catch (ItemNotInCacheException) {

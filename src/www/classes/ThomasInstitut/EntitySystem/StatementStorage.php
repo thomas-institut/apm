@@ -7,22 +7,13 @@ use ThomasInstitut\EntitySystem\Exception\StatementAlreadyCancelledException;
 use ThomasInstitut\EntitySystem\Exception\StatementNotFoundException;
 
 /**
- * An interface for a generic storage for EntitySystem statements, their metadata
- * and cancellation metadata.
- *
- * In order to support efficient data storage, StatementStorages make a clear distinction between statements where
- * the subject is a statement (statement metadata),statements where the subject is a cancellation
- * (cancellation metadata) and statement where the subject is any other entity ("normal" statements).
- * In particular, metadata statements do not have statement ids, can be stored only when the statement or cancellation
- * it refers to is stored and can be retrieved only in connection with a "normal" statement. Clients can choose not to
- * store metadata in this way simply by not using metadata specific parameters in the different class methods.
- *
+ * An interface for a generic storage for EntitySystemWithMetadata statements.
  */
 interface StatementStorage extends LoggerAwareInterface
 {
 
-    const StoreStatementCommand = 'storeStatement';
-    const CancelStatementCommand = 'cancelStatement';
+    const string StoreStatementCommand = 'storeStatement';
+    const string CancelStatementCommand = 'cancelStatement';
 
     /**
      * Stores a statement and, optionally, statement metadata
@@ -43,18 +34,6 @@ interface StatementStorage extends LoggerAwareInterface
      * @return void
      */
     public function storeStatement(int $statementId, int $subject, int $predicate, string|int $object, array $statementMetadata = []) : void;
-//
-//    /**
-//     * Stores multiple statements at once.
-//     *
-//     * $statements in an array of 5-tuples:
-//     *
-//     *    [ statementId, subject, predicate, object, statementMetadata ]
-//     *
-//     * @param array $statements
-//     * @return void
-//     */
-//    public function storeMultipleStatements(array $statements) : void;
 
     /**
      * Retrieves a statement, optionally including the statement and cancellation metadata

@@ -116,7 +116,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
     }
 
     private function getCacheKeyEntityName(int $entity) : string {
-        return implode(':', [ $this->cachePrefix, self::dataId,  $entity, 'name']);
+        return implode(':', [ $this->cachePrefix, self::dataId, $entity, 'name']);
     }
 
     private function getCacheKeyValidQualificationObjects() : string {

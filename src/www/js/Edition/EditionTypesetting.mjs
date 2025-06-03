@@ -50,6 +50,7 @@ import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
 import { FontConversions } from '../Typesetter2/FontConversions.mjs'
 import { KeyStore } from '../toolbox/KeyStore.mjs'
 import { ItemLineInfo } from './ItemLineInfo.mjs'
+import { TOKEN_FOR_COUNTING_PURPOSES, TOKEN_OCCURRENCE_IN_LINE } from '../Typesetter2/MetadataKey.mjs'
 
 export const MAX_LINE_COUNT = 10000
 const enDash = '\u2013'
@@ -641,13 +642,12 @@ export class EditionTypesetting {
 
       switch(lemmaComponents.type) {
         case 'custom':
-          tsItems = await this.getTsItemsForString(lemmaComponents.text, 'apparatus', 'detect')
+          tsItems = await this.getTsItemsForString(lemmaComponents.text, 'apparatus', 'detect');
           resolve(tsItems)
           return
 
         case 'full':
           tsItems.push(...await this.getTsItemsForString(entry.lemmaText, 'apparatus', 'detect'))
-          tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.from))
           resolve(tsItems)
           return
 
@@ -702,7 +702,7 @@ export class EditionTypesetting {
       let lemmaNumberString = ''
       let [occurrenceInLine, numberOfOccurrencesInLine] = this.getOccurrenceInLineInfo(mainTextIndex)
       if (numberOfOccurrencesInLine > 1) {
-        lemmaNumberString = this.getNumberString(occurrenceInLine, this.edition.lang)
+        lemmaNumberString = this.getNumberString(occurrenceInLine, this.edition.lang);
       }
       if (lemmaNumberString !== '') {
         let lemmaNumberTextBox = TextBoxFactory.simpleText(lemmaNumberString)
@@ -901,7 +901,7 @@ export class EditionTypesetting {
   getLineInfoArrayFromItem(item, lineNumber) {
     if (!item.hasMetadata(MetadataKey.MERGED_ITEM || item.getMetadata(MetadataKey.MERGED_ITEM) === false)) {
       // normal, single item, just get the info if it exists and return
-      let infoObject = this.constructLineInfoObjectFromNonMergedItem(item, lineNumber)
+      let infoObject = this.constructLineInfoObjectFromItem(item, lineNumber, false)
       if (infoObject === undefined) {
         return []
       }
@@ -909,6 +909,17 @@ export class EditionTypesetting {
     }
 
     // merged item
+    if (item.hasMetadata(MetadataKey.TOKEN_OCCURRENCE_IN_LINE)) {
+      // no need to go down the tree, all info is right here!
+      console.log(`Item is merged but has info in it`, item.metadata);
+      let infoObject = this.constructLineInfoObjectFromItem(item, lineNumber, true)
+      if (infoObject === undefined) {
+        return []
+      }
+      return [ infoObject ]
+    }
+
+
     if (!item.hasMetadata(MetadataKey.SOURCE_ITEMS_EXPORT)) {
       // no data from source items, warn and return an empty array
       console.warn(`Found merged item without source items info`)
@@ -936,10 +947,11 @@ export class EditionTypesetting {
    *    }
    * @param {TypesetterItem}item
    * @param {number}lineNumber
+   * @param isMerged
    * @return {ItemLineInfo}
    * @private
    */
-  constructLineInfoObjectFromNonMergedItem(item, lineNumber) {
+  constructLineInfoObjectFromItem(item, lineNumber, isMerged = false) {
     if (!item.hasMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX)) {
       // the item does not correspond to a main text token
       return undefined
@@ -951,8 +963,12 @@ export class EditionTypesetting {
     info.text = ''
     info.mainTextIndex = item.getMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX)
 
-    if (item instanceof TextBox) {
+    if (!isMerged && item instanceof TextBox) {
       info.text = item.getText()
+    }
+
+    if (isMerged) {
+      info.text = item.getMetadata(MetadataKey.TOKEN_FOR_COUNTING_PURPOSES);
     }
 
     if (item.hasMetadata(MetadataKey.TOKEN_OCCURRENCE_IN_LINE)) {
@@ -970,8 +986,6 @@ export class EditionTypesetting {
     }
     return info
   }
-
-
   /**
    *
    * @return {Box}

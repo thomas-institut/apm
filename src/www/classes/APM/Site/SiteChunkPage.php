@@ -47,7 +47,6 @@ use ThomasInstitut\TimeString\TimeString;
  */
 class SiteChunkPage extends SiteController
 {
-
     const string TEMPLATE_CHUNK_PAGE = 'chunk-page.twig';
 
     /**

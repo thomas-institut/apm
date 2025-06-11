@@ -36,7 +36,8 @@ interface SearchManagerInterface
      * @return void
      * @throws SearchManagerException
      */
-    public function indexEdition(int $tableId, string $chunk, string $title, string $langCode, string $editionText, string $editorName,  string $timeFrom): void;
+    public function indexEdition(int $tableId, string $chunk, string $title, string $langCode,
+                                 string $editionText, string $editorName,  string $timeFrom): void;
 
 
 }

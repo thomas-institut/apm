@@ -27,8 +27,8 @@ namespace APM\System\Transcription\TxText;
  */
 class ChunkMark extends Item {
     
-    const CHUNK_START = 'start';
-    const CHUNK_END = 'end';
+    const string CHUNK_START = 'start';
+    const string CHUNK_END = 'end';
    
     
     function __construct($id, $seq, string $workId, int $chunkNumber,
@@ -48,21 +48,22 @@ class ChunkMark extends Item {
         $this->extraInfo = $localId;
     }
     
-    function getDareId()
+    public function getDareId(): string
     {
         return $this->theText;
     }
     
-    function getChunkNumber() 
+    function getChunkNumber(): int
     {
         return $this->target;
     }
     
-    function getType() {
+    function getType(): string
+    {
         return $this->altText;
     }
     
-    function getChunkSegment()
+    function getChunkSegment(): int
     {
         return $this->length;
     }

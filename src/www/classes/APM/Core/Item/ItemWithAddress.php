@@ -28,8 +28,8 @@ use APM\Core\Address\Address;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class ItemWithAddress {
-    protected $address;
-    protected $theItem;
+    protected Address $address;
+    protected Item $theItem;
     
     public function __construct(Address $address, Item $item) {
         $this->address = $address;

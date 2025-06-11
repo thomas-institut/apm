@@ -534,7 +534,8 @@ class ApmSystemManager extends SystemManager {
                 $this->tableNames,
                 $this->logger,
                 function () { return $this->getDocumentManager();},
-                function () { return $this->getPersonManager();}
+                function () { return $this->getPersonManager();},
+                function () { return $this->getSystemDataCache();},
             );
             $this->transcriptionManager->setCache($this->getSystemDataCache());
         }
@@ -708,30 +709,26 @@ class ApmSystemManager extends SystemManager {
 
         $jobManager = $this->getJobManager();
 
-        $this->logger->debug("Scheduling update of SiteChunks cache");
-        $jobManager->scheduleJob(ApmJobName::SITE_CHUNKS_UPDATE_DATA_CACHE,
-            '', [],0, 3, 20);
-
-        $this->logger->debug("Scheduling update of SiteDocuments cache");
+        $siteWorkUpdateCacheJobPayload = [
+            'type' => 'transcription',
+            'docId' => $docId,
+            'pageNumber' => $pageNumber,
+            'columnNumber' => $columnNumber
+        ];
+        $jobManager->scheduleJob(ApmJobName::SITE_WORKS_UPDATE_CACHE,
+            '', $siteWorkUpdateCacheJobPayload,0, 3, 20);
         $jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '',[$docId],0, 3, 20);
-
-        $this->logger->debug("Scheduling update of TranscribedPages cache for user $userTid");
         $jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE,
             "User $userTid", ['userTid' => $userTid],0, 3, 20);
-
-        $this->logger->debug("Scheduling update of open search index");
         $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_INDEX,
             '', ['doc_id' => $docId, 'page' => $pageNumber, 'col' => $columnNumber],0, 3, 20);
-
-        $this->logger->debug("Scheduling update of Transcribers cache and Titles cache");
         $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE,
             '', [], 0, 3, 20);
     }
 
     public function onUpdatePageSettings(int $userTid, int $pageId) : void {
         parent::onUpdatePageSettings($userTid, $pageId);
-        $this->logger->debug("Scheduling update of TranscribedPages cache for user $userTid after update of page $pageId");
         $this->getJobManager()->scheduleJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE,
             "User $userTid", ['userTid' => $userTid],0, 3, 20);
     }
@@ -740,7 +737,6 @@ class ApmSystemManager extends SystemManager {
     {
         parent::onCollationTableSaved($userTid, $ctId);
         $jobManager = $this->getJobManager();
-        $this->logger->debug("Invalidating CollationTablesInfo cache for user $userTid");
         $jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE,
             "User $userTid", ['userTid' => $userTid],0, 3, 20);
         $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_INDEX,
@@ -752,8 +748,6 @@ class ApmSystemManager extends SystemManager {
     public function onDocumentDeleted(int $userTid, int $docId): void
     {
         parent::onDocumentDeleted($userTid, $docId);
-
-        $this->logger->debug("Scheduling update of SiteDocuments cache");
         $this->getJobManager()->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '', [ $docId],0, 3, 20);
 
@@ -787,14 +781,12 @@ class ApmSystemManager extends SystemManager {
         parent::onPersonDataChanged($personTid);
         $part = ApiPeople::onPersonDataChanged($personTid, $this->getEntitySystem(), $this->getSystemDataCache(), $this->logger);
         $this->logger->debug("Invalidated ApiPeople data cache, part $part");
-        $this->logger->debug("Scheduling update to ApiPeople data cache, all");
         $this->getJobManager()->scheduleJob(ApmJobName::API_PEOPLE_UPDATE_CACHE, '', [], 0, 3, 20);
     }
 
     public function onDocumentUpdated(int $userTid, int $docId): void
     {
         parent::onDocumentUpdated($userTid, $docId);
-        $this->logger->debug("Scheduling update of SiteDocuments cache");
         $this->getJobManager()->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '', [$docId],0, 3, 20);
     }
@@ -802,7 +794,6 @@ class ApmSystemManager extends SystemManager {
     public function onDocumentAdded(int $userTid, int $docId): void
     {
         parent::onDocumentAdded($userTid, $docId);
-        $this->logger->debug("Scheduling update of SiteDocuments cache");
         $this->getJobManager()->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '', [ $docId],0, 3, 20);
     }
@@ -837,14 +828,11 @@ class ApmSystemManager extends SystemManager {
 
     public function getUserManager() : UserManagerInterface {
         if ($this->userManager === null) {
-//            $this->logger->debug("Creating UserManager");
             $this->userManager = new ApmUserManager(
                 function () {
-//                    $this->logger->debug("Creating Users DataTable");
                     return new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_USERS], false);
                 },
                 function () {
-//                    $this->logger->debug("Creating UserTokens DataTable");
                     return new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_TOKENS], true);
                 },
                 $this->getSystemDataCache(),
@@ -892,7 +880,7 @@ class ApmSystemManager extends SystemManager {
     private function registerSystemJobs() : void
     {
         $this->jobManager->registerJob(ApmJobName::NULL_JOB, new NullJobHandler());
-        $this->jobManager->registerJob(ApmJobName::SITE_CHUNKS_UPDATE_DATA_CACHE, new SiteWorksUpdateDataCache());
+        $this->jobManager->registerJob(ApmJobName::SITE_WORKS_UPDATE_CACHE, new SiteWorksUpdateDataCache());
         $this->jobManager->registerJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE, new SiteDocumentsUpdateDataCache());
         $this->jobManager->registerJob(ApmJobName::API_PEOPLE_UPDATE_CACHE, new ApiPeopleUpdateAllPeopleEssentialData());
         $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE, new ApiUsersUpdateTranscribedPagesData());
@@ -1018,7 +1006,7 @@ class ApmSystemManager extends SystemManager {
 
                 return $this->typesenseClient;
             } catch (ConfigError) {
-                throw new \RuntimeException("Typesense incorrectly configured");
+                throw new RuntimeException("Typesense incorrectly configured");
             }
         }
         return $this->typesenseClient;
@@ -1027,8 +1015,7 @@ class ApmSystemManager extends SystemManager {
     public function getLemmatizer(): LemmatizerInterface
     {
         if ($this->lemmatizer === null) {
-            $config = $this->getConfig();
-
+            $this->lemmatizer = new UdPipeLemmatizer($this->getSystemDataCache());
         }
         return $this->lemmatizer;
 

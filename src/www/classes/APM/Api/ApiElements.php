@@ -85,7 +85,7 @@ class ApiElements extends ApiController
             $inputDataObject = json_decode($postData['data'], true);
         }
 
-        $this->logger->debug("Input element data", $inputDataObject);
+//        $this->logger->debug("Input element data", $inputDataObject);
         
         // Some checks: all required arrays, data with given docId, pageNo and colNumber
         if (is_null($inputDataObject) ) {

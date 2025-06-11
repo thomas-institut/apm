@@ -8,15 +8,22 @@ use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
+use Http\Client\Exception;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
+use Typesense\Exceptions\TypesenseClientError;
 
 class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateTypesenseIndex implements JobHandlerInterface
 {
     /**
-     * @throws PageNotFoundException
+     * @param SystemManager $sm
+     * @param array $payload
+     * @return bool
      * @throws DocumentNotFoundException
+     * @throws PageNotFoundException
+     * @throws Exception
+     * @throws TypesenseClientError
      */
-    public function run(SystemManager $sm, array $payload): bool
+    public function run(SystemManager $sm, array $payload, string $jobName): bool
     {
 
         $config = $sm->getConfig();

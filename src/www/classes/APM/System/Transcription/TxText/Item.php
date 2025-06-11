@@ -27,15 +27,15 @@ namespace APM\System\Transcription\TxText;
  */
 class Item {
 
-    const ID_NOT_SET = -1;
-    const SEQ_NOT_SET = -1;
-    const LANG_NOT_SET = '';
+    const int ID_NOT_SET = -1;
+    const int SEQ_NOT_SET = -1;
+    const string LANG_NOT_SET = '';
     /**
      *
      * @var int 
      * The element's unique id 
      */
-    public $id;
+    public int $id;
     
     
    /**
@@ -44,115 +44,106 @@ class Item {
     * The column element Id to which
     * this item belongs
     */
-    public $columnElementId;
+    public int $columnElementId;
     /**
      *
      * @var int $seq
      * The element's sequence number within the column element 
      */
-    public $seq;
+    public int $seq;
     /**
      * @var int type
      * @brief the item's type
      */
-    public $type;
+    public int $type;
     
     //  
     //  Element type constants
     // 
-    const INVALID =         0;
-    const TEXT =            1;
-    const RUBRIC =          2;
-    const SIC =             3;
-    const UNCLEAR =         4;
-    const ILLEGIBLE =       5;
-    const GLIPH =           6;
-    const ADDITION =        7;  
-    const DELETION =        8;
-    const MARK =            9;
-    const NO_WORD_BREAK =   10;
-    const ABBREVIATION =   11;
-    const LINEBREAK    =   12;
-    const INITIAL  =   13;
-    const CHUNK_MARK = 14;
-    const CHARACTER_GAP = 15;
-    const PARAGRAPH_MARK = 16;
-    const MATH_TEXT = 17;
-    const MARGINAL_MARK = 18;
-    const BOLD_TEXT = 19;
-    const ITALIC = 20;
-    const HEADING = 21;
-    const CHAPTER_MARK = 22;
+    const int INVALID =         0;
+    const int TEXT =            1;
+    const int RUBRIC =          2;
+    const int SIC =             3;
+    const int UNCLEAR =         4;
+    const int ILLEGIBLE =       5;
+    const int GLIPH =           6;
+    const int ADDITION =        7;
+    const int DELETION =        8;
+    const int MARK =            9;
+    const int NO_WORD_BREAK =   10;
+    const int ABBREVIATION =   11;
+    const int LINEBREAK    =   12;
+    const int INITIAL  =   13;
+    const int CHUNK_MARK = 14;
+    const int CHARACTER_GAP = 15;
+    const int PARAGRAPH_MARK = 16;
+    const int MATH_TEXT = 17;
+    const int MARGINAL_MARK = 18;
+    const int BOLD_TEXT = 19;
+    const int ITALIC = 20;
+    const int HEADING = 21;
+    const int CHAPTER_MARK = 22;
 
 
     /**
-     *
-     * @var string  
-     * The element's language
+     * The item's language
      */
-    public $lang;
+    public string $lang;
     
     /**
-     * @var int $handId
-     * @brief The element's hand
+     * The item's hand
      */
-    public $handId;
-    
-    
+    public int $handId;
 
+    public string $theText;
     
     /**
-     *
-     * @var string
-     */
-    public $theText;
-    
-    /**
-     * @var string
      * For SIC items, the correction
      * For UNCLEAR items, an alternative to the reading given with $theText
      */
-    public $altText;
+    public string $altText = '';
     
     /**
-     *
-     * @var string
      * For ADDITION: the placement
      * For ILLEGIBLE: the reason 
      * For DELETION: the technique
      * For UNCLEAR: the reason
      */
-    public $extraInfo;
+    public string $extraInfo = '';
     
     /**
      *
-     * @var int
      * For ILLEGIBLE items, the number of illegible characters
      */
-    public $length;
+    public int $length = -1;
     /**
      *
-     * @var int
      * the id of the deletion to which an ADDITION corresponds
      */
-    public $target;
+    public int $target = -1;
     
-    public function getText(){
+    public function getText(): string
+    {
         return $this->theText;
     }
     
-    public function getAltText() {
-        return '';
+    public function getAltText(): string
+    {
+        return $this->altText;
     }
     
-    public function getPlainText() {
+    public function getPlainText() : string
+    {
         mb_regex_encoding('UTF-8');
         $theText = $this->getText();
         $normalized = mb_ereg_replace('\s\s+', ' ', $theText);
+        if ($normalized === false || $normalized === null) {
+            return '';
+        }
         return mb_ereg_replace('\n', ' ', $normalized);
     }
     
-    public function getLang(){
+    public function getLang() : string{
         return $this->lang;
     }
     
@@ -161,23 +152,17 @@ class Item {
         $this->lang = $l;
     }
     
-    /**
-     * 
-     * @return int
-     */
-    function getHandId(){
+
+    function getHandId(): int
+    {
         return $this->handId;
     }
     
-    /**
-     * 
-     * @param int $h
-     */
-    function setHandId($h){
+    function setHandId(int $h) : void{
         $this->handId = (int) $h;
     }
      
-    function setColumnElementId($id)
+    function setColumnElementId($id): void
     {
         $this->columnElementId = $id;
     }
@@ -190,6 +175,8 @@ class Item {
         $this->handId = (int) $h;
         $this->seq = (int) $s;
         $this->columnElementId = self::ID_NOT_SET;
+        $this->altText = '';
+        $this->extraInfo = '';
     }
 
     /**
@@ -202,7 +189,8 @@ class Item {
      * @param string $str
      * @return false|string
      */
-    public static function normalizeString(string $str){
+    public static function normalizeString(string $str): false|string
+    {
         $normalized = trim($str);
         if (trim(mb_substr($str, -1)) === ''){
             $normalized .= ' ';
@@ -219,7 +207,7 @@ class Item {
      * @param Item $b
      * @return boolean
      */
-    public static function isItemDataEqual(Item $a, Item $b) 
+    public static function isItemDataEqual(Item $a, Item $b): bool
     {
        $dataA = get_object_vars($a);
        $dataB = get_object_vars($b);

@@ -9,7 +9,7 @@ use APM\System\SystemManager;
 class SiteDocumentsUpdateDataCache implements JobHandlerInterface
 {
 
-    public function run(SystemManager $sm, array $payload): bool
+    public function run(SystemManager $sm, array $payload, string $jobName): bool
     {
        return SiteDocuments::updateDataCache($sm, $payload);
     }

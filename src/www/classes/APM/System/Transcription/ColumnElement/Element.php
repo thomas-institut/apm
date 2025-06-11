@@ -27,8 +27,8 @@ use APM\System\Transcription\TxText\Item;
  */
 class Element {
     
-    const LANG_NOT_SET = '';
-    const ID_NOT_SET = -1;
+    const string LANG_NOT_SET = '';
+    const int ID_NOT_SET = -1;
 
     /**
      *
@@ -93,16 +93,16 @@ class Element {
     public int $type;
     
     // type constants
-    const INVALID = 0;
-    const LINE = 1;
-    const HEAD = 2;
-    const GLOSS = 3;
-    const PAGE_NUMBER = 4;
-    const CUSTODES = 5;
-    const NOTE_MARK = 6;
-    const SUBSTITUTION = 7;
-    const LINE_GAP = 8;
-    const ADDITION = 9;
+    const int INVALID = 0;
+    const int LINE = 1;
+    const int HEAD = 2;
+    const int GLOSS = 3;
+    const int PAGE_NUMBER = 4;
+    const int CUSTODES = 5;
+    const int NOTE_MARK = 6;
+    const int SUBSTITUTION = 7;
+    const int LINE_GAP = 8;
+    const int ADDITION = 9;
     
     // 
     // Fields that may or may not be used depending on the type
@@ -111,7 +111,7 @@ class Element {
     
     /**
      *
-     * @var array  
+     * @var Item[]
      * The transcribed text  
      * 
      * In the DB it is not necessary because the transcribedText elements

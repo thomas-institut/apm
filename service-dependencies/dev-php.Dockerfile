@@ -11,5 +11,6 @@ RUN docker-php-ext-configure pcntl --enable-pcntl \
 ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 RUN install-php-extensions gd yaml pdo pdo_mysql intl mbstring iconv zlib sockets posix
 RUN apt-get update && apt-get upgrade -y
-RUN apt-get install nodejs
-
+RUN apt-get install -y nodejs
+# Override default PHP config
+RUN echo "memory_limit=1024M" > /usr/local/etc/php/conf.d/memory-limit.ini

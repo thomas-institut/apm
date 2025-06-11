@@ -10,7 +10,7 @@ use APM\System\SystemManager;
 class NullJobHandler implements JobHandlerInterface
 {
 
-    public function run(SystemManager $sm, array $payload): bool
+    public function run(SystemManager $sm, array $payload, string $jobName): bool
     {
        return $payload['returnValue'] ?? false;
     }

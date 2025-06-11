@@ -33,8 +33,7 @@ use ThomasInstitut\TimeString\MalformedStringException;
 
 
 /**
- *
- * In essence  an array of rows coming straight
+ * A DatabaseItemStream is in essence  an array of rows coming straight
  * from the database. The main purpose of this class is to couple this
  * raw data to the Witness abstractions in the new APM design.
  *

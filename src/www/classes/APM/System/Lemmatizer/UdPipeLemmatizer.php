@@ -32,7 +32,7 @@ class UdPipeLemmatizer implements LemmatizerInterface
 
     private function getCacheKey(string $text, string $langCode) : string {
         $hash = hash('sha256', $text);
-        return "UdPipeLemmatizer-$langCode-$hash";
+        return "UdPipeLemmatizer:$langCode:$hash";
     }
 
     /**

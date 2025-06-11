@@ -33,24 +33,27 @@ use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
 /**
  *
- * Management methods for APM's full transcriptions.
+ * Class with management methods for APM's full transcriptions.
  *
  * Full transcriptions in APM are associated with a page (which belongs to a
- * document) and a column number within that page.
+ * document) and a column number within that page. Every transcribed column in APM
+ * is fully versioned and each one of these versions has a starting and an end time
+ * in which they are valid. The last version is simply the version whose end
+ * time is infinite (actually an END_OF_TIMES constant).
  *
  * The full transcription of a page:column contains an ordered list of **column elements** which
- * capture the main text in the column, line gaps, page numbers, marginal glosses, long marginal additions, and so on.
+ * capture the main text in the column, as well as line gaps, page numbers, marginal glosses, long marginal additions,
+ * and so on.
  *
- * Each element, in turn, contains an ordered list of **items**, which capture textual phenomena like
+ * Each **element**, in turn, contains an ordered list of **items**, which capture textual phenomena like
  * plain text, abbreviations, deletions, short additions, gaps as well as information added by the
  * transcriber such as editorial notes, indication of unclear or illegible text, etc.
  *
  * Transcribers can also insert chunk start and end marks within the main text of columns. This allows
  * the system to extract the text of that chunk in particular document, provided the chunk marks are coherent.
- *
- * No data for a transcription entered in APM is ever deleted. Any update to the transcription of column
- * generates a new version of the column's transcription, and it is possible to get the exact state of a column's
- * transcription at any point in time in the past.
+ * The transcribed text of the chunk of a work in a document at a particular point in time is called a "transcription
+ * witness" for that chunk at work. This class contains methods to get information about these witnesses
+ * as well as to extract their text.
  *
  */
 abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterface
@@ -73,6 +76,11 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @return EdNoteManager
      */
     abstract public function getEdNoteManager() : EdNoteManager;
+
+    /**
+     * Returns the ColumnVersionManager associated with the TranscriptionManager
+     * @return ColumnVersionManager
+     */
     abstract public function getColumnVersionManager() : ColumnVersionManager;
 
     /**
@@ -84,9 +92,9 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @param string $workId an APM work ID, e.g.  'AW47'
      * @param int $chunkNumber
      * @param int $docId
-     * @param string $localWitnessId normally a letter to identify possible different versions of the same chunk in
+     * @param string $localWitnessId  a letter to identify possible different versions of the same chunk in
      *      the same document, e.g. 'A', 'B', etc.
-     * @param string $timeStamp
+     * @param string $timeStamp the desired time for the state of the transcription to query
      * @param string $defaultLanguageCode the language code to assign to items and elements that do not have one explicitly
      * @return ApmTranscriptionWitness
      */
@@ -168,9 +176,6 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @return array
      */
     abstract public function getChunkLocationMapForChunk(string $workId, int $chunkNumber, string $timeString) : array;
-
-
-//    abstract public function getPageInfoByDocSeq(int $docId, int $seq) : PageInfo;
 
     /**
      * Returns the page numbers of the pages with transcription

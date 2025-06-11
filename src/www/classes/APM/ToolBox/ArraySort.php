@@ -10,7 +10,7 @@ class ArraySort
      * @param array $theArray
      * @param string $key
      */
-    public static function byKey(array &$theArray, string $key)
+    public static function byKey(array &$theArray, string $key): void
     {
         usort(
             $theArray,

@@ -41,6 +41,6 @@ class SiteDashboard extends SiteController
     public function DashboardPage(Request $request, Response $response): Response
     {
         SystemProfiler::setName("Site:" . __FUNCTION__);
-        return $this->renderStandardPage($response, "Site:Dashboard:$this->userId", "Dashboard", "DashboardPage", [ 'dashboard.css']);
+        return $this->renderStandardPage($response, "Dashboard:$this->userId", "Dashboard", "DashboardPage", [ 'dashboard.css']);
     }
 }

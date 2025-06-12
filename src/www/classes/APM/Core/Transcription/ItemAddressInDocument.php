@@ -37,7 +37,8 @@ class ItemAddressInDocument extends ItemAddressInPage {
         $this->setPageId($pi);
     }
     
-    public static function NullAddress() {
+    public static function NullAddress(): ItemAddressInPage
+    {
         return new ItemAddressInDocument(null, null, null);
     }
     

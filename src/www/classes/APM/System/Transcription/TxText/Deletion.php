@@ -39,15 +39,7 @@ class Deletion extends Item {
         'no-sign',
         'vacat'
     ];
-    
-    /**
-     * the Xml Id associated with the deletion 
-     * so that it can be matched with additions
-     * (won't be stored in the database!)
-     * @var string
-     */
-    public string $modXmlId = '';
-    
+
     /**
      * 
      * @param int $id
@@ -67,7 +59,6 @@ class Deletion extends Item {
             throw new InvalidArgumentException("Transcription items of type DELETION need some deleted text");
         }
         $this->theText = $text;
-        $this->modXmlId = '';
     }
     
     /**
@@ -75,7 +66,8 @@ class Deletion extends Item {
      * @return string
      * Returns the deletion technique
      */
-    function getTechnique(){
+    function getTechnique(): string
+    {
         return $this->extraInfo;
     }
     
@@ -93,10 +85,7 @@ class Deletion extends Item {
     {
         return in_array($technique, self::$deletionTechniques);
     }
-    
-    public function getXmlId() {
-        return $this->modXmlId;
-    }
+
     
     public function getPlainText(): string
     {

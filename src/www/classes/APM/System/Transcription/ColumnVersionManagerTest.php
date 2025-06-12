@@ -90,7 +90,7 @@ class ColumnVersionManagerTest extends TestCase
         $exceptionCaught = false;
         try {
             $this->columnVersionManager->registerNewColumnVersion($testPageId+1, $testColumnNumber, $goodVersionInfo);
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException) {
             $exceptionCaught = true;
         }
         $this->assertTrue($exceptionCaught);
@@ -99,7 +99,7 @@ class ColumnVersionManagerTest extends TestCase
         $exceptionCaught = false;
         try {
             $this->columnVersionManager->registerNewColumnVersion($testPageId, $testColumnNumber+1, $goodVersionInfo);
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException) {
             $exceptionCaught = true;
         }
         $this->assertTrue($exceptionCaught);
@@ -111,7 +111,7 @@ class ColumnVersionManagerTest extends TestCase
         $exceptionCaught = false;
         try {
             $this->columnVersionManager->registerNewColumnVersion($testPageId, $testColumnNumber, $badVersionInfo);
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException) {
             $exceptionCaught = true;
         }
         $this->assertTrue($exceptionCaught);

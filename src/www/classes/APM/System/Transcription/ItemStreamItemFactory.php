@@ -23,7 +23,6 @@ namespace APM\System\Transcription;
 
 use APM\Core\Item\Item;
 use APM\Core\Item\ItemFactory;
-use APM\Core\Item\Mark;
 use APM\Core\Item\Note as ItemNote;
 use APM\Core\Item\TextualItem;
 use APM\System\Transcription\ColumnElement\Element;
@@ -40,21 +39,18 @@ use ThomasInstitut\TimeString\TimeString;
  */
 class ItemStreamItemFactory {
     
-    /**
-     *
-     * @var ItemFactory
-     */
-    private $if;
+
+    private ItemFactory $if;
     
-    /** @var string */
-    private $textualItemClass;
+
+    private string $textualItemClass;
     
-    private $markItemClass;
+//    private string $markItemClass;
     
     public function __construct(string $defaultLang) {
         $this->if = new ItemFactory($defaultLang, 0);
         $this->textualItemClass =  TextualItem::class;
-        $this->markItemClass = Mark::class;
+//        $this->markItemClass = Mark::class;
     }
     
     public function createItemFromRow(array $row) : Item {
@@ -221,7 +217,7 @@ class ItemStreamItemFactory {
     }
     
     private function getGoodString(array $someArray, string $someKey) : string {
-        if (!isset($someArray[$someKey]) || is_null($someArray[$someKey])) {
+        if (!isset($someArray[$someKey])) {
             return '';
         }
         
@@ -229,7 +225,7 @@ class ItemStreamItemFactory {
     }
     
     private function getGoodInt(array $someArray, string $someKey) : int {
-        if (!isset($someArray[$someKey]) || is_null($someArray[$someKey])) {
+        if (!isset($someArray[$someKey])) {
             return -1;
         }
         

@@ -37,7 +37,8 @@ class Line extends Element {
         $this->setLineNumber(0); // ignoring line numbers
     }
     
-    function getLineNumber(){
+    function getLineNumber(): ?int
+    {
         return $this->reference;
     }
     
@@ -45,7 +46,8 @@ class Line extends Element {
      * 
      * @param int $n
      */
-    function setLineNumber($n){
+    function setLineNumber(int $n): void
+    {
         $this->reference = $n;
     }
 }

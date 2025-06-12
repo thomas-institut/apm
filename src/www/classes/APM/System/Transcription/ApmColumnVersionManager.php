@@ -21,7 +21,9 @@ namespace APM\System\Transcription;
 
 
 use InvalidArgumentException;
+use RuntimeException;
 use ThomasInstitut\DataTable\DataTable;
+use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\TimeString\TimeString;
 
@@ -132,8 +134,8 @@ class ApmColumnVersionManager extends ColumnVersionManager
 
         try {
             $this->dataTable->createRow($versionInfo->getDatabaseRow());
-        } catch (RowAlreadyExists $e) {
-            throw new \RuntimeException("Already existing id in version info");
+        } catch (RowAlreadyExists) {
+            throw new RuntimeException("Already existing id in version info");
         }
     }
 
@@ -150,7 +152,12 @@ class ApmColumnVersionManager extends ColumnVersionManager
 
     private function rawUpdateVersion(ColumnVersionInfo $versionInfo): void
     {
-        $this->dataTable->updateRow($versionInfo->getDatabaseRow());
+
+        try {
+            $this->dataTable->updateRow($versionInfo->getDatabaseRow());
+        } catch (InvalidRowForUpdate $e) {
+            throw new RuntimeException("Invalid row for update while updating column version: "  . $e->getMessage());
+        }
     }
 
 

@@ -37,11 +37,12 @@ class Addition extends Element {
         $this->targetXmlId = '';
     }
     
-    function getTargetId(){
+    function getTargetId(): ?int
+    {
         return $this->reference;
     }
     
-    function setTargetId($id)
+    function setTargetId($id): void
     {
         $this->reference = $id;
     }

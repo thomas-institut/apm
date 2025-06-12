@@ -58,14 +58,15 @@ class AddressInDatabaseItemStream extends ItemAddressInDocument {
      *
      * @var Point
      */
-    private $fullAddress;
+    private Point $fullAddress;
     
     public function __construct() {
         $this->fullAddress = new Point(10);
         parent::__construct();
     }
     
-    public function setFromItemStreamRow(int $docId, array $itemStreamRow) {
+    public function setFromItemStreamRow(int $docId, array $itemStreamRow): void
+    {
         $this->fullAddress->setCoord(self::COORD_DOCID, $docId);
         $this->fullAddress->setCoord(self::COORD_ITEMID, intval($itemStreamRow['id']));
         $this->fullAddress->setCoord(self::COORD_ITEMSEQ, intval($itemStreamRow['seq']));
@@ -113,7 +114,8 @@ class AddressInDatabaseItemStream extends ItemAddressInDocument {
         return $this->fullAddress->getCoord(self::COORD_PAGE_ID);
     }
     
-    public function setPageId($pageId) {
+    public function setPageId($pageId): void
+    {
         $this->fullAddress->setCoord(self::COORD_PAGE_ID, $pageId);
     }
     
@@ -121,7 +123,8 @@ class AddressInDatabaseItemStream extends ItemAddressInDocument {
         return $this->fullAddress->getCoord(self::COORD_TBINDEX);
     }
     
-    public function setTbIndex($index) {
+    public function setTbIndex($index): void
+    {
         $this->fullAddress->setCoord(self::COORD_TBINDEX, $index);
     }
     
@@ -129,7 +132,8 @@ class AddressInDatabaseItemStream extends ItemAddressInDocument {
         return $this->fullAddress->getCoord(self::COORD_ITEMID);
     }
     
-    public function setItemIndex($index) {
+    public function setItemIndex($index): void
+    {
         $this->fullAddress->setCoord(self::COORD_ITEMID, $index);
     }
     

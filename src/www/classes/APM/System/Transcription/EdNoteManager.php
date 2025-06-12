@@ -22,8 +22,11 @@ namespace APM\System\Transcription;
 
 use PDO;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\DataTable\RowDoesNotExist;
 use ThomasInstitut\TimeString\TimeString;
 use ThomasInstitut\ToolBox\MySqlHelper;
 
@@ -142,12 +145,16 @@ class EdNoteManager {
                 'time' => TimeString::now(),
                 'text' => $text
             ]);
-        } catch (RowAlreadyExists $e) {
+        } catch (RowAlreadyExists) {
             // should never happen
-            throw new \RuntimeException("Could not create DB row for note");
+            throw new RuntimeException("Could not create DB row for note");
         }
     }
-    
+
+    /**
+     * @throws RowDoesNotExist
+     * @throws InvalidRowForUpdate
+     */
     public function updateNote(EditorialNote $note) : void {
         $this->edNotesDataTable->updateRow([
             'id' => $note->id,
@@ -163,6 +170,8 @@ class EdNoteManager {
     /**
      * @param EditorialNote[] $edNotes
      * @return void
+     * @throws InvalidRowForUpdate
+     * @throws RowDoesNotExist
      */
     public function updateNotesFromArray(array $edNotes): void
     {

@@ -20,6 +20,8 @@
 
 namespace APM\System\Transcription\TxText;
 
+use InvalidArgumentException;
+
 /**
  * Description of TtiUnclear
  *
@@ -43,7 +45,7 @@ class ChapterMark extends Item {
         $this->theText = implode(self::SEPARATOR, [self::normalizeString($appellation), self::normalizeString($title)]);
         $this->target = $chapterNumber;
         if ($type !== self::CHAPTER_START && $type !== self::CHAPTER_END) {
-             throw new \InvalidArgumentException("Wrong type, must be 'start' "
+             throw new InvalidArgumentException("Wrong type, must be 'start' "
                      . "or 'end'");
         }
         $this->altText = $type;

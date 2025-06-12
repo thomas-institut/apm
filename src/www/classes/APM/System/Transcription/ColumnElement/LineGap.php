@@ -27,19 +27,20 @@ namespace APM\System\Transcription\ColumnElement;
  */
 class LineGap extends Element {
         
-    public function __construct($id = Element::ID_NOT_SET, 
-            $colNumber = 0, $lang = Element::LANG_NOT_SET)
+    public function __construct(int $id = Element::ID_NOT_SET,
+            int $colNumber = 0, string $lang = Element::LANG_NOT_SET)
     {
         parent::__construct($id, $colNumber, $lang);
         $this->type = parent::LINE_GAP;
         $this->reference = 1;
     }
     
-    function getLineCount(){
+    function getLineCount(): int
+    {
         return $this->reference;
     }
     
-    function setLineCount($count)
+    function setLineCount($count): void
     {
         $this->reference = $count;
     }

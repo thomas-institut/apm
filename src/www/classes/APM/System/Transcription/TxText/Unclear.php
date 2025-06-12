@@ -37,21 +37,22 @@ class Unclear extends Item {
      * @param string $firstReading
      * @param string $altReading
      */
-    function __construct($id, $s, $reason, $firstReading, $altReading='') {
+    function __construct(int $id, int $s, string $reason, string $firstReading, string $altReading='') {
         parent::__construct($id, $s);
         $this->type = parent::UNCLEAR;
         $this->extraInfo = match ($reason) {
             'unclear', 'damaged' => $reason,
             default => throw new InvalidArgumentException("Unrecognized reason for UNCLEAR item, reason given: " . $reason),
         };
-        if ($firstReading === NULL or $firstReading === ''){
+        if ($firstReading === ''){
             throw new InvalidArgumentException("Transcription items of type UNCLEAR need at least one reading, use ILLEGIBLE");
         }
         $this->theText = $firstReading;
         $this->altText = $altReading;
     }
     
-    function getReason(){
+    function getReason(): string
+    {
         return $this->extraInfo;
     }
     

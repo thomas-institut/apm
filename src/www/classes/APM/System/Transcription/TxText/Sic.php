@@ -20,6 +20,8 @@
 
 namespace APM\System\Transcription\TxText;
 
+use InvalidArgumentException;
+
 /**
  * Description of TtiSic
  *
@@ -28,22 +30,24 @@ namespace APM\System\Transcription\TxText;
 
 class Sic extends Item {
     /**
-     * 
+     *
      * @param int $id
      * @param int $s
      * @param string $theText
+     * @param string $correction
      */
-    function __construct($id, $s, $theText, $correction='') {
+    function __construct(int $id, int $s, string $theText, string $correction='') {
         parent::__construct($id, $s);
         $this->type = parent::SIC;
-        if ($theText === NULL or $theText ===''){
-            throw new \InvalidArgumentException("SIC items need non-empty text");
+        if ($theText ===''){
+            throw new InvalidArgumentException("SIC items need non-empty text");
         }
         $this->theText = $theText;
         $this->altText = $correction;
     }
 
-    function getCorrection(){
+    function getCorrection(): string
+    {
         return $this->altText;
     }
     
@@ -52,7 +56,7 @@ class Sic extends Item {
         return $this->getCorrection();
     }
     
-    public function getPlainText(): false|string|null
+    public function getPlainText(): string
     {
         return $this->getCorrection();
     }

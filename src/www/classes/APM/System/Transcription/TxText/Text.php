@@ -36,10 +36,10 @@ class Text extends Item {
      * @param int $s
      * @param string $theText
      */
-    function __construct($id, $s, $theText) {
+    function __construct(int $id, int $s, string $theText) {
         parent::__construct($id, $s);
         $this->type = parent::TEXT;
-        if ($theText === NULL or $theText ===''){
+        if ($theText ===''){
             throw new InvalidArgumentException("TEXT items need non-empty text");
         }
         $this->theText = $theText;

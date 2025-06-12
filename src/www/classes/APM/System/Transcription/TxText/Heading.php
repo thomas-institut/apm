@@ -33,10 +33,10 @@ class Heading extends Item {
      * @param int $s
      * @param string $theText
      */
-    function __construct($id, $s,  $theText) {
+    function __construct(int $id, int $s, string $theText) {
         parent::__construct($id, $s);
         $this->type = parent::HEADING;
-        if ($theText === NULL or $theText ===''){
+        if ($theText ===''){
             throw new InvalidArgumentException("HEADING items need non-empty text");
         }
         $this->theText = $theText;

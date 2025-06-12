@@ -29,7 +29,7 @@ use InvalidArgumentException;
  */
 class Deletion extends Item {
     
-    public static $deletionTechniques = [ 
+    public static array $deletionTechniques = [
         'dot-above', 
         'dot-above-dot-under',
         'dots-above',
@@ -46,7 +46,7 @@ class Deletion extends Item {
      * (won't be stored in the database!)
      * @var string
      */
-    public $modXmlId;
+    public string $modXmlId = '';
     
     /**
      * 
@@ -55,7 +55,7 @@ class Deletion extends Item {
      * @param string $text
      * @param string $technique     
      */
-    function __construct($id, $s, $text, $technique) {
+    function __construct(int $id, int $s, string $text, $technique) {
         parent::__construct($id, $s);
         $this->type = parent::DELETION;
         if (self::isDeletionTechniqueAllowed($technique)){
@@ -63,7 +63,7 @@ class Deletion extends Item {
         } else {
             throw new InvalidArgumentException("Unrecognized technique for DELETION item, technique given: " . $technique);
         }
-        if ($text === NULL or $text === ''){
+        if ($text === ''){
             throw new InvalidArgumentException("Transcription items of type DELETION need some deleted text");
         }
         $this->theText = $text;
@@ -84,11 +84,13 @@ class Deletion extends Item {
      * @return string
      * An alias of getTechnique
      */
-    function getDeletionTechnique(){
+    function getDeletionTechnique(): string
+    {
         return $this->getTechnique();
     }
     
-    public static function isDeletionTechniqueAllowed($technique){
+    public static function isDeletionTechniqueAllowed($technique): bool
+    {
         return in_array($technique, self::$deletionTechniques);
     }
     
@@ -96,7 +98,8 @@ class Deletion extends Item {
         return $this->modXmlId;
     }
     
-    public function getPlainText() {
+    public function getPlainText(): string
+    {
         return '';
     }
     

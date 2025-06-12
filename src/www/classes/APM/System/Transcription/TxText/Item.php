@@ -35,7 +35,7 @@ class Item {
      * @var int 
      * The element's unique id 
      */
-    public int $id;
+    public int $id = -1;
     
     
    /**
@@ -44,18 +44,18 @@ class Item {
     * The column element Id to which
     * this item belongs
     */
-    public int $columnElementId;
+    public int $columnElementId = -1;
     /**
      *
      * @var int $seq
      * The element's sequence number within the column element 
      */
-    public int $seq;
+    public int $seq = -1;
     /**
      * @var int type
      * @brief the item's type
      */
-    public int $type;
+    public int $type = 0;
     
     //  
     //  Element type constants
@@ -88,14 +88,14 @@ class Item {
     /**
      * The item's language
      */
-    public string $lang;
+    public string $lang = '';
     
     /**
      * The item's hand
      */
-    public int $handId;
+    public int $handId = -1;
 
-    public string $theText;
+    public string $theText = '';
     
     /**
      * For SIC items, the correction
@@ -159,7 +159,7 @@ class Item {
     }
     
     function setHandId(int $h) : void{
-        $this->handId = (int) $h;
+        $this->handId = $h;
     }
      
     function setColumnElementId($id): void
@@ -167,13 +167,13 @@ class Item {
         $this->columnElementId = $id;
     }
     
-    function __construct($i=self::ID_NOT_SET, $s = self::SEQ_NOT_SET, 
-            $l = self::LANG_NOT_SET, $h = self::ID_NOT_SET)
+    function __construct(int $i=self::ID_NOT_SET, int $s = self::SEQ_NOT_SET,
+            string $l = self::LANG_NOT_SET, int $h = self::ID_NOT_SET)
     {
-        $this->id =(int) $i;
+        $this->id = $i;
         $this->lang = $l;
-        $this->handId = (int) $h;
-        $this->seq = (int) $s;
+        $this->handId = $h;
+        $this->seq = $s;
         $this->columnElementId = self::ID_NOT_SET;
         $this->altText = '';
         $this->extraInfo = '';

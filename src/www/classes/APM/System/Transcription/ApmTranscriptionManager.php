@@ -85,6 +85,7 @@ use ThomasInstitut\DataTable\RowDoesNotExist;
 use ThomasInstitut\TimeString\TimeString;
 use ThomasInstitut\ToolBox\DataCacheToolBox;
 use ThomasInstitut\ToolBox\MySqlHelper;
+use Throwable;
 
 class ApmTranscriptionManager extends TranscriptionManager
     implements CacheAware, CodeDebugInterface
@@ -1131,8 +1132,11 @@ class ApmTranscriptionManager extends TranscriptionManager
         $theRows = iterator_to_array($rows);
         ArraySort::byKey($theRows, 'seq');
         $elements = [];
+        $this->logger->debug("Got " . count($theRows) . " rows from database");
         foreach($theRows as $row) {
+            $this->logger->debug("Processing row ", $row);
             $e = $this->createElementObjectFromRow($row);
+            $this->logger->debug("Element ", get_object_vars($e));
             $e->items = $this->getItemsForElement($e, $timeString);
             $elements[] = $e;
         }
@@ -1612,14 +1616,19 @@ class ApmTranscriptionManager extends TranscriptionManager
             'ce_id' => $element->id
         ], 0, $time);
 
+
         $theRows = iterator_to_array($rows);
         ArraySort::byKey($theRows, 'seq');
 
         $tt=[];
 
         foreach ($theRows as $row) {
-            $item = self::createItemObjectFromRow($row);
-            ItemArray::addItem($tt, $item, true);
+            try {
+                $item = self::createItemObjectFromRow($row);
+                ItemArray::addItem($tt, $item, true);
+            } catch (Throwable $e) {
+                $this->logger->error($e->getMessage());
+            }
         }
         return $tt;
     }

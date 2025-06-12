@@ -358,7 +358,6 @@ class ApiElements extends ApiController
      */
     public function getElementsByDocPageCol(Request $request, Response $response): Response
     {
-
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');
         $columnNumber = $request->getAttribute('column');

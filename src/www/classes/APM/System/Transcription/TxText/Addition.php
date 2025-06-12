@@ -40,7 +40,6 @@ class Addition extends Item {
         'margin top', 
         'margin bottom'
     ];
-//    public string $targetXmlId;
 
     /**
      * 
@@ -50,19 +49,18 @@ class Addition extends Item {
      * @param string $place
      * @param int $target
      */
-    function __construct($id, $s, $text, $place, int $target=0) {
+    function __construct(int $id, int $s, string $text, string $place, int $target=0) {
         parent::__construct($id, $s);
         $this->type = parent::ADDITION;
         if (!self::isPlaceValid($place)){
             throw new InvalidArgumentException("Unrecognized placement for ADDITION item, placement given: " . $place);
         }
-        if ($text === NULL or $text === ''){
+        if ($text === ''){
             throw new InvalidArgumentException("Transcription items of type ADDITION need some text");
         }
         $this->theText = $text;
         $this->setTarget($target);
         $this->setPlace($place);
-//        $this->targetXmlId = '';
     }
 
     public static function isPlaceValid($place): bool

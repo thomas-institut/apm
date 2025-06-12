@@ -58,18 +58,21 @@ class Illegible extends Item {
         return $this->extraInfo;
     }
     
-    function getText(){
+    function getText(): string
+    {
         
         $unknownChar = 'ø';
         
         return str_repeat($unknownChar, $this->length);
     }
     
-    function getLength(){
+    function getLength(): int
+    {
         return $this->length;
     }
     
-    public static function isReasonValid($reason){
+    public static function isReasonValid($reason): bool
+    {
         return in_array($reason, self::$validReasons);
     }
 }

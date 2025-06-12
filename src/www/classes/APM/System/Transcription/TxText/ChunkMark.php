@@ -20,6 +20,8 @@
 
 namespace APM\System\Transcription\TxText;
 
+use InvalidArgumentException;
+
 /**
  * Description of TtiUnclear
  *
@@ -40,7 +42,7 @@ class ChunkMark extends Item {
         $this->theText = $workId;
         $this->target = $chunkNumber;
         if ($type !== self::CHUNK_START && $type !== self::CHUNK_END) {
-             throw new \InvalidArgumentException("Wrong type, must be 'start' "
+             throw new InvalidArgumentException("Wrong type, must be 'start' "
                      . "or 'end'");
         }
         $this->altText = $type;

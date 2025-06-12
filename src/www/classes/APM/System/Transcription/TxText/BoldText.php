@@ -20,6 +20,8 @@
 
 namespace APM\System\Transcription\TxText;
 
+use InvalidArgumentException;
+
 /**
  * Description of TtiRubric
  *
@@ -32,11 +34,11 @@ class BoldText extends Item {
      * @param int $s
      * @param string $theText
      */
-    function __construct($id, $s,  $theText) {
+    function __construct(int $id, int $s, string $theText) {
         parent::__construct($id, $s);
         $this->type = parent::BOLD_TEXT;
-        if ($theText === NULL or $theText ===''){
-            throw new \InvalidArgumentException("BOLD items need non-empty text");
+        if ($theText ===''){
+            throw new InvalidArgumentException("BOLD items need non-empty text");
         }
         $this->theText = $theText;
     }

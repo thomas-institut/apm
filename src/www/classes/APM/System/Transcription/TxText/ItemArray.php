@@ -45,13 +45,9 @@ class ItemArray
      *              number 
      * @throws InvalidArgumentException
      */
-    public static function addItem(&$itemArray, $item, $atTheEnd=false)
+    public static function addItem(array &$itemArray, Item $item, bool $atTheEnd=false): void
     {
-        if (!($item instanceof Item)) {
-             throw new InvalidArgumentException(
-                     "Objects added to an ItemArray should be of class Item");
-        }
-        $index = count($itemArray);
+           $index = count($itemArray);
         $maxSeq = -1;
         if ($index > 0) {
             $maxSeq = $itemArray[$index-1]->seq;
@@ -70,7 +66,7 @@ class ItemArray
      * @param array $itemArray
      * @return string
      */
-    public static function getText(array $itemArray)
+    public static function getText(array $itemArray): string
     {
         $text = '';
         foreach ($itemArray as $item) {
@@ -87,7 +83,7 @@ class ItemArray
      * @param string $lang 
      * @param boolean $force
      */
-    public static function setLang($itemArray, $lang, $force = false)
+    public static function setLang(array $itemArray, string $lang, bool $force = false): void
     {
         foreach ($itemArray as $item) {
             if ($force || $item->getLang() === Item::LANG_NOT_SET) {
@@ -104,7 +100,7 @@ class ItemArray
      * @param int $handId
      * @param boolean $force
      */
-    public static function setHandId($theItems, $handId, $force = false)
+    public static function setHandId($theItems, int $handId, bool $force = false): void
     {
         foreach ($theItems as $item) {
             if ($force || $item->getHandId() ===  Item::ID_NOT_SET) {
@@ -112,18 +108,22 @@ class ItemArray
             }
         }
     }
-    
-    public static function isRtl($theItems)
-    {
-        $n = count($theItems);
-        $rtl = 0;
-        foreach ($theItems as $item) {
-            if ($item->isRtl()) {
-                $rtl++;
-            }
-        }
-        return $rtl > ($n - $rtl);
-    }
+
+    /**
+     * @param array $theItems
+     * @return bool
+     */
+//    public static function isRtl(array $theItems): bool
+//    {
+//        $n = count($theItems);
+//        $rtl = 0;
+//        foreach ($theItems as $item) {
+//            if ($item->isRtl()) {
+//                $rtl++;
+//            }
+//        }
+//        return $rtl > ($n - $rtl);
+//    }
 
     /**
      * Gets the edit script that transform the array into the
@@ -137,7 +137,7 @@ class ItemArray
      * @param Item[] $newArray
      * @return array|array[]
      */
-    public static function getEditScript($oldArray, $newArray) 
+    public static function getEditScript(array $oldArray, array $newArray): array
     {
         return MyersDiff::calculate(
             $oldArray,

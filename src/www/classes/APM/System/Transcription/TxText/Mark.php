@@ -32,21 +32,14 @@ class Mark extends Item {
      * @param int $id
      * @param int $s
      */
-    function __construct($id, $s) {
+    public function __construct(int $id, int $s) {
         parent::__construct($id, $s);
         $this->type = parent::MARK;
     }
     
-    function getText(){
+    public function getText(): string
+    {
         return '';
     }
-    
-    function getXmlId(){
-        return $this->extraInfo;
-    }
-    
-    function setXmlId(string $xmlId) 
-    {
-        $this->extraInfo = $xmlId;
-    }
+
 }

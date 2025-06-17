@@ -730,13 +730,13 @@ function createApiSearchRoutes(RouteCollectorProxy $group, ContainerInterface $c
         })
         ->setName('search.transcribers');
 
-    $group->post("/search/editions",
+    $group->any("/search/editions",
         function(Request $request, Response $response) use ($container){
             return (new ApiSearch($container))->getEditionTitles($request, $response);
         })
         ->setName('search.editions');
 
-    $group->post("/search/editors",
+    $group->any("/search/editors",
         function(Request $request, Response $response) use ($container){
             return (new ApiSearch($container))->getEditors($request, $response);
         })

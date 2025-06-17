@@ -8,6 +8,7 @@ use APM\System\SystemManager;
 use Http\Client\Exception;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use RuntimeException;
 use Typesense\Client;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -407,7 +408,6 @@ class ApiSearch extends ApiController
                 }
             }
         }
-
         return $values;
     }
 
@@ -442,6 +442,44 @@ class ApiSearch extends ApiController
         return true;
     }
 
+    private function getStringArray(Request $request, Response $response, string $cacheKey): Response {
+
+        $sm = $this->systemManager->getSearchManager();
+
+        switch ($cacheKey) {
+            case CacheKey::ApiSearchTranscriptions:
+                $data = $sm->getTranscribedDocuments();
+                $dataTitle = 'transcriptions';
+                break;
+
+            case CacheKey::ApiSearchEditions:
+                $data = $sm->getEditionTitles();
+                $dataTitle = 'editions';
+                break;
+
+            case CacheKey::ApiSearchTranscribers:
+                $data = $sm->getTranscriberNames();
+                $dataTitle = 'transcribers';
+                break;
+
+            case CacheKey::ApiSearchEditors:
+                $data = $sm->getEditors();
+                $dataTitle = 'editors';
+                break;
+
+            default:
+                throw new RuntimeException("Unknown cache key: " . $cacheKey);
+        }
+
+
+        $responseData = [
+            $dataTitle => $data,
+            'serverTime' => TimeString::now(),
+            'status' => 'OK'
+        ];
+        return $this->responseWithJson($response, $responseData);
+    }
+
     /**
      * returns all transcription titles from the cache or the corresponding indices
      * @param Request $request
@@ -451,7 +489,8 @@ class ApiSearch extends ApiController
      */
     public function getTranscriptionTitles(Request $request, Response $response): Response
     {
-        return $this->getDataFromCacheOrIndex($request, $response, CacheKey::ApiSearchTranscriptions, 'transcription');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        return $this->getStringArray($request, $response, CacheKey::ApiSearchTranscriptions);
     }
 
     /**
@@ -462,7 +501,8 @@ class ApiSearch extends ApiController
      */
     public function getTranscribers(Request $request, Response $response): Response
     {
-        return $this->getDataFromCacheOrIndex($request, $response, CacheKey::ApiSearchTranscribers, 'transcriber');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        return $this->getStringArray($request, $response, CacheKey::ApiSearchTranscribers);
     }
 
     /**
@@ -473,7 +513,8 @@ class ApiSearch extends ApiController
      */
     public function getEditionTitles(Request $request, Response $response): Response
     {
-        return $this->getDataFromCacheOrIndex($request, $response, CacheKey::ApiSearchEditions, 'edition');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        return $this->getStringArray($request, $response, CacheKey::ApiSearchEditions);
     }
 
     /**
@@ -484,45 +525,8 @@ class ApiSearch extends ApiController
      */
     public function getEditors(Request $request, Response $response): Response
     {
-        return $this->getDataFromCacheOrIndex($request, $response, CacheKey::ApiSearchEditors, 'editor');
-    }
-
-    /**
-     * returns data from cache or the corresponding indices for given cache and query-keys
-     * @param Request $request
-     * @param Response $response
-     * @param string $cacheKey
-     * @param string $queryKey
-     * @return Response
-     */
-    private function getDataFromCacheOrIndex(Request $request, Response $response, string $cacheKey, string $queryKey): Response
-    {
-        $cache = $this->systemManager->getSystemDataCache();
-        $client = $this->systemManager->getTypesenseClient();
-        $status = 'OK';
-        $now = TimeString::now();
-
-        // Get data from cache, if data is not cached, get data from the Typesense index and set the cache
-        try {
-            $data = unserialize($cache->get($cacheKey));
-        } catch (ItemNotInCacheException) {
-            // Get a list of all items
-            $data = self::getAllEntriesFromIndex($client, $queryKey, $this->logger);
-            if (count($data) !== 0) {
-                // Set cache if there's some data
-                // (if there are no items, it's probably because the index hasn't been populated yet)
-                $cache->set($cacheKey, serialize($data));
-            }
-        }
-
-        // Api Response
-        $responseData = [
-            strtolower($cacheKey) => $data,
-            'serverTime' => $now,
-            'status' => $status
-        ];
-
-        return $this->responseWithJson($response, $responseData);
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        return $this->getStringArray($request, $response, CacheKey::ApiSearchEditors);
     }
 
 }

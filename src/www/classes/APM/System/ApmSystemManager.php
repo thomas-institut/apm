@@ -62,6 +62,8 @@ use APM\System\Person\EntitySystemPersonManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\DataTablePresetManager;
 use APM\System\Preset\PresetManager;
+use APM\System\Search\SearchManagerInterface;
+use APM\System\Search\TypesenseSearchManager;
 use APM\System\Transcription\ApmTranscriptionManager;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\ApmUserManager;
@@ -158,29 +160,31 @@ class ApmSystemManager extends SystemManager {
     //
     // Components
     //
-    private ?DataTablePresetManager $presetsManager;
-    private ?SettingsManager $settingsMgr;
-    private ?CollationEngine $collationEngine;
-    private ?PDO $dbConn;
-    private ?ApmTranscriptionManager $transcriptionManager;
+    // (all initialized to null)
+    private ?DataTablePresetManager $presetsManager = null;
+    private ?SettingsManager $settingsMgr = null;
+    private ?CollationEngine $collationEngine = null;
+    private ?PDO $dbConn = null;
+    private ?ApmTranscriptionManager $transcriptionManager = null;
+    private ?ApmCollationTableManager $collationTableManager = null;
+    private ?ApmMultiChunkEditionManager $multiChunkEditionManager = null;
+    private ?Twig $twig = null;
+    private ?ApmNormalizerManager $normalizerManager = null;
+    private ?ApmUserManager $userManager = null;
+    private ?PersonManagerInterface $personManager = null;
+    private ?ApmJobQueueManager $jobManager = null;
+    private ?EntitySystemEditionSourceManager $editionSourceManager = null;
+    private ?WorkManager $workManager = null;
+    private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem = null;
+    private ?DataCache $memDataCache = null;
+    private ?ValkeyDataCache $systemDataCache = null;
+    private ?DirectoryDataCache $directoryDataCache = null;
+    private ?ApmEntitySystem $apmEntitySystem = null;
+    private ?ApmDocumentManager $documentManager = null;
+    private ?Client $typesenseClient = null;
+    private ?UdPipeLemmatizer $lemmatizer = null;
 
-    private ?ApmCollationTableManager $collationTableManager;
-    private ?ApmMultiChunkEditionManager $multiChunkEditionManager;
-    private ?Twig $twig;
-    private ?ApmNormalizerManager $normalizerManager;
-    private ?ApmUserManager $userManager;
-    private ?PersonManagerInterface $personManager;
-    private ?ApmJobQueueManager $jobManager;
-    private ?EntitySystemEditionSourceManager $editionSourceManager;
-    private ?WorkManager $workManager;
-    private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem;
-    private ?DataCache $memDataCache;
-    private ?ValkeyDataCache $systemDataCache;
-    private ?DirectoryDataCache $directoryDataCache;
-    private ?ApmEntitySystem $apmEntitySystem;
-    private ?ApmDocumentManager $documentManager;
-    private ?Client $typesenseClient;
-    private ?UdPipeLemmatizer $lemmatizer;
+    private ?TypesenseSearchManager $searchManager = null;
 
 
 
@@ -216,30 +220,6 @@ class ApmSystemManager extends SystemManager {
             Entity::ImageSourceBilderberg => new BilderbergImageSource($this->config['url']['bilderberg']),
             Entity::ImageSourceAverroesServer => new OldBilderbergStyleRepository('https://averroes.uni-koeln.de/localrep')
         ];
-
-
-        // Initialize all components to null
-        $this->twig = null;
-        $this->normalizerManager = null;
-        $this->multiChunkEditionManager = null;
-        $this->editionSourceManager = null;
-        $this->userManager = null;
-        $this->personManager = null;
-        $this->workManager = null;
-        $this->typedMultiStorageEntitySystem = null;
-        $this->collationEngine = null;
-        $this->dbConn = null;
-        $this->systemDataCache = null;
-        $this->jobManager = null;
-        $this->presetsManager = null;
-        $this->transcriptionManager = null;
-        $this->collationTableManager = null;
-        $this->memDataCache = null;
-        $this->directoryDataCache = null;
-        $this->apmEntitySystem = null;
-        $this->documentManager = null;
-        $this->typesenseClient = null;
-        $this->lemmatizer = null;
     }
 
 
@@ -1019,5 +999,21 @@ class ApmSystemManager extends SystemManager {
         }
         return $this->lemmatizer;
 
+    }
+
+    public function getSearchManager(): SearchManagerInterface
+    {
+        if ($this->searchManager === null) {
+            $this->searchManager = new TypesenseSearchManager(
+                function() {
+                    return $this->getTypesenseClient();
+                },
+                function () {
+                    return $this->getSystemDataCache();
+                },
+                $this->getLogger()
+            );
+        }
+        return $this->searchManager;
     }
 }

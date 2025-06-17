@@ -33,6 +33,7 @@ use APM\System\Job\JobQueueManager;
 use APM\System\Lemmatizer\LemmatizerInterface;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
+use APM\System\Search\SearchManagerInterface;
 use APM\System\Transcription\ApmTranscriptionWitness;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserManagerInterface;
@@ -165,6 +166,7 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getDocumentManager() : DocumentManager;
     abstract public function getTypesenseClient() : Client;
     abstract public function getLemmatizer() : LemmatizerInterface;
+    abstract public function getSearchManager() : SearchManagerInterface;
 
     /**
      * @internal

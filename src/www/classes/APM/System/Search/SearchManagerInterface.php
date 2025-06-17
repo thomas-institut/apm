@@ -39,5 +39,36 @@ interface SearchManagerInterface
     public function indexEdition(int $tableId, string $chunk, string $title, string $langCode,
                                  string $editionText, string $editorName,  string $timeFrom): void;
 
+    /**
+     * Returns an array with the names of the people who have transcriptions in
+     * the system.
+     *
+     * @return string[]
+     */
+    public function getTranscriberNames(): array;
 
+    /**
+     * Returns an array with the names of the people who have editions in
+     * the system.
+     *
+     * @return string[]
+     */
+    public function getEditors(): array;
+
+
+    /**
+     * Returns an array with the titles of all documents transcribed in
+     * the system.
+     *
+     * @return string[]
+     */
+    public function getTranscribedDocuments() : array;
+
+    /**
+     * Returns an array with the titles of all the editions in the
+     * system.
+     *
+     * @return string[]
+     */
+    public function getEditionTitles() : array;
 }

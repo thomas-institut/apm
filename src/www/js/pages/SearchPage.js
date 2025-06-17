@@ -144,8 +144,8 @@ export function setupSearchPage() {
   let errorMessageDiv = $("#error_message")
 
   // make api calls to get list contents for the creator and title forms
-  getCreatorsAndTitles('apisearchtranscriptions', errorMessageDiv)
-  getCreatorsAndTitles('apisearchtranscribers', errorMessageDiv)
+  getCreatorsAndTitles('transcriptions', errorMessageDiv)
+  getCreatorsAndTitles('transcribers', errorMessageDiv)
 
   // search event
   $("#searchButton").on("click", function () {
@@ -243,16 +243,16 @@ export function setupSearchPage() {
       trans_or_editor.text("Transcriber")
 
       // Get lists for transcription and transcriber forms
-      getCreatorsAndTitles ('apisearchtranscriptions', errorMessageDiv)
-      getCreatorsAndTitles ('apisearchtranscribers', errorMessageDiv)
+      getCreatorsAndTitles ('transcriptions', errorMessageDiv)
+      getCreatorsAndTitles ('transcribers', errorMessageDiv)
     }
     else {
       doc_or_edition.text("Edition Title")
       trans_or_editor.text("Editor")
 
       // Get lists for edition and editor forms
-      getCreatorsAndTitles ('apisearcheditions', errorMessageDiv)
-      getCreatorsAndTitles ('apisearcheditors', errorMessageDiv)
+      getCreatorsAndTitles ('editions', errorMessageDiv)
+      getCreatorsAndTitles ('editors', errorMessageDiv)
     }
   })
 }
@@ -267,25 +267,25 @@ function getCreatorsAndTitles(category, errorMessageDiv) {
   let apiUrl = ''
   let listSelector = ''
 
-  if (category === 'apisearchtranscriptions') {
+  if (category === 'transcriptions') {
     apiUrl = urlGen.apiSearchTranscriptionTitles()
     listSelector = '#titleList'
   }
-  else if (category === 'apisearchtranscribers') {
+  else if (category === 'transcribers') {
     apiUrl = urlGen.apiSearchTranscribers()
     listSelector = '#creatorList'
   }
-  else if (category === 'apisearcheditors') {
+  else if (category === 'editors') {
     apiUrl = urlGen.apiSearchEditors()
     listSelector = '#creatorList'
   }
-  else if (category === 'apisearcheditions') {
+  else if (category === 'editions') {
     apiUrl = urlGen.apiSearchEditionTitles()
     listSelector = '#titleList'
   }
 
   // make API request
-  $.post(apiUrl).done((apiResponse) => {
+  $.get(apiUrl).done((apiResponse) => {
     // get list selector and clear the list
     let list = $(listSelector);
     list.empty();

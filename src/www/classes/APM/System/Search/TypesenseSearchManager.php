@@ -2,6 +2,7 @@
 
 namespace APM\System\Search;
 
+use APM\System\Cache\CacheKey;
 use APM\System\Document\PageInfo;
 use APM\System\Lemmatizer;
 use APM\System\Search\Exception\SearchManagerException;
@@ -10,13 +11,18 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use ThomasInstitut\DataCache\CacheAware;
+use ThomasInstitut\DataCache\DataCache;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
+use ThomasInstitut\DataCache\SimpleCacheAwareTrait;
 use Typesense\Client;
 use Typesense\Exceptions\TypesenseClientError;
 
-class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInterface
+class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInterface, CacheAware
 {
 
     use LoggerAwareTrait;
+    use SimpleCacheAwareTrait;
     const string TranscriptionIndexPrefix = 'transcriptions';
     const string EditionIndexPrefix = 'editions';
 
@@ -27,7 +33,7 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
 
     private ?Client $client = null;
 
-    public function __construct(callable $getTypesenseClient, ?LoggerInterface $logger = null)
+    public function __construct(callable $getTypesenseClient, callable|DataCache $dataCache, ?LoggerInterface $logger = null)
     {
         $this->getTypesenseClientCallable = $getTypesenseClient;
         if ($logger === null) {
@@ -35,6 +41,8 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
         } else {
             $this->logger = $logger;
         }
+
+        $this->setCache($dataCache);
 
     }
 
@@ -59,7 +67,7 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
                                        string   $docTitle, string $transcriptionText, string $langCode,
                                        string   $transcriberName, string $timeFrom): void
     {
-       $indexName = $this->getIndexNameForLanguage(self::TranscriptionIndexPrefix, $langCode);
+        $indexName = $this->getIndexNameForLanguage(self::TranscriptionIndexPrefix, $langCode);
 
 
         // encode transcript for avoiding errors in exec shell command because of characters like "(", ")" or " "
@@ -161,5 +169,110 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
             $this->logger->error($message);
             throw new SearchManagerException($message);
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getTranscriberNames(): array
+    {
+       return $this->getStringArray(CacheKey::ApiSearchTranscribers, 'transcribers');
+    }
+
+    private function getStringArray(string $cacheKey, $queryKey) : array {
+        try {
+            return unserialize($this->getDataCache()->get($cacheKey));
+        } catch (ItemNotInCacheException) {
+            // so, let's get it from the index
+            $strings = $this->getStringArrayFromIndex($queryKey);
+            $this->getDataCache()->set($cacheKey, serialize($strings));
+            return $strings;
+        }
+    }
+
+    private function getStringArrayFromIndex (string $queryKey): array
+    {
+        // Get names of target indices
+        if ($queryKey === 'transcriptions' || $queryKey === 'transcribers') {
+            $index_names = ['transcriptions_la', 'transcriptions_ar', 'transcriptions_he'];
+        }
+        else {
+            $index_names = ['editions_la', 'editions_ar', 'editions_he'];
+        }
+
+        // Get keys to query
+        if ($queryKey === 'transcribers' || $queryKey === 'editors') {
+            $queryKey = 'creator';
+        }
+        else {
+            $queryKey = 'title';
+        }
+
+        // Array to return
+        $values = [];
+
+        // Make a match_all query
+
+        foreach ($index_names as $index_name) {
+
+            $query=['hits' => [1]];
+            $hits = [];
+            $page=1;
+
+            // collect all documents from the index
+            while (count($query['hits']) !== 0) {
+                $searchParameters = [
+                    'q' => '*',
+                    'page' => $page,
+                    'limit' => 250
+                ];
+
+                try {
+                    $query = $this->getTypesenseClient()->collections[$index_name]->documents->search($searchParameters);
+                } catch (Exception|TypesenseClientError $e) {
+                    $this->logger->error("Search Exception: " . $e->getMessage(), [ 'index' => $index_name]);
+                    return [];
+                }
+
+                foreach ($query['hits'] as $hit) {
+                    $hits[] = $hit;
+                }
+
+                $page++;
+            }
+
+            // Append every value of the queried field to the $values-array, if not already done before (no duplicates)
+            foreach ($hits as $hit) {
+                $value = $hit['document'][$queryKey];
+                if (in_array($value, $values) === false) {
+                    $values[] = $value;
+                }
+            }
+        }
+        return $values;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getEditors(): array
+    {
+        return $this->getStringArray(CacheKey::ApiSearchEditors, 'editors');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getTranscribedDocuments(): array
+    {
+        return $this->getStringArray(CacheKey::ApiSearchTranscriptions, 'transcriptions');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getEditionTitles(): array
+    {
+        return $this->getStringArray(CacheKey::ApiSearchEditions, 'editions');
     }
 }

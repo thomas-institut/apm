@@ -1,7 +1,8 @@
 #
-# Docker compose file to start collatex, Valkey and Typesense
+# Docker compose file with all services necessary to run APM
+# locally
 #
-#  Rafael Nájera, 13 May 2025
+#  Rafael Nájera, 17 Jun 2025
 #
 name: apm-development
 
@@ -17,6 +18,21 @@ services:
       - ../dev-tmp/logs/nginx:/var/log/nginx
     depends_on:
       - php
+      - mysql
+
+  mysql:
+    container_name: mysql
+    image: mysql:8.0.42-bookworm
+    restart: always
+    ports:
+      - "4306:3306" # so that it can be accessed from the host machine!
+    environment:
+        MYSQL_ALLOW_EMPTY_PASSWORD: yes
+        MYSQL_ROOT_PASSWORD:
+    volumes:
+      - ../dev-tmp/mysql-data:/var/lib/mysql
+      - ../dev-tmp/share:/home/share
+
   php:
     container_name: php
     build:

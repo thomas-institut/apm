@@ -21,7 +21,7 @@
 
 
 body, .popover {
-    font-family:  var(--default-font-family);
+    font-family:  var(--default-font-family), sans-serif;
     font-size: var(--default-font-size);
     color: var(--default-font-color);
     text-align: inherit;
@@ -594,3 +594,26 @@ table.bpe-statement-history tr.event-creation {
 
 table.fixed { table-layout:fixed; }
 table.fixed td { overflow: hidden; }
+
+.nice-toggle-button-on {
+    font-size: 0.8em;
+    border: 1px solid  var(--default-font-color);
+    border-radius: 3px;
+    padding: 2px;
+    cursor: pointer;
+    color: var(--default-font-color);
+}
+
+.nice-toggle-button-off {
+    font-size: 0.8em;
+    font-weight: normal;
+    border: 1px solid silver;
+    border-radius: 3px;
+    padding: 2px;
+    color: gray;
+    cursor: pointer;
+}
+
+.strikethrough {
+    text-decoration: line-through;
+}

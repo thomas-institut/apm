@@ -1315,6 +1315,12 @@ export class EditionComposer extends ApmPage {
           changes.push('Formatting changes in edition text')
         }
       }
+      if (!ArrayUtil.varsAreEqual(this.ctData['excludeFromAutoCriticalApparatus'], this.lastSavedCtData['excludeFromAutoCriticalApparatus'])) {
+        changes.push(`Changes to automatic critical apparatus witnesses`);
+      }
+      if (!ArrayUtil.varsAreEqual(this.ctData['includeInAutoMarginalFoliation'], this.lastSavedCtData['includeInAutoMarginalFoliation'])) {
+        changes.push(`Changes to automatic marginal foliation witnesses`);
+      }
     }
 
     this.witnessUpdates.forEach( (updateInfo) => {

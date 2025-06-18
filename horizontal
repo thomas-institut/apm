@@ -1,8 +1,0 @@
-{
- "model": "latin-ittb-ud-2.12-230717",
- "acknowledgements": [
-  "http://ufal.mff.cuni.cz/udpipe/2#udpipe2_acknowledgements",
-  "https://ufal.mff.cuni.cz/udpipe/2/models#universal_dependencies_212_models"
- ],
- "result": "# generator = UDPipe 2, https://lindat.mff.cuni.cz/services/udpipe\n# udpipe_model = latin-ittb-ud-2.12-230717\n# udpipe_model_licence = CC BY-NC-SA\n# newdoc\n# newpar\n# sent_id = 1\n# text = philosophum dixit.\n1\tphilosophum\tphilosophus\tNOUN\tB1|grn1|casD|gen1\tCase=Acc|Gender=Masc|InflClass=IndEurO|Number=Sing\t_\t_\t_\t_\n2\tdixit\tdico\tVERB\tN3|modA|tem4|gen6\tAspect=Perf|InflClass=LatX|Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin|Voice=Act\t_\t_\t_\tSpaceAfter=No\n3\t.\t.\tPUNCT\tPunc\t_\t_\t_\t_\tSpacesAfter=\\n\n\n"
-}

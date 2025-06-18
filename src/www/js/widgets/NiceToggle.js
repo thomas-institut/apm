@@ -80,36 +80,30 @@ export class NiceToggle {
   }
 
   genOnClickButton() {
-    let thisObject = this
-    return function() {
-      if (thisObject.isOn) {
-        thisObject.toggleOff()
+    return () => {
+      if (this.isOn) {
+        this.toggleOff()
       } else {
-        thisObject.toggleOn()
+        this.toggleOn()
       }
     }
   }
   genOnMouseEnterButton() {
-    let thisObject = this
-    return function() {
-      $(thisObject.getButtonSelector()).addClass(thisObject.options.hoverClass)
+    return ()=> {
+      $(this.getButtonSelector()).addClass(this.options.hoverClass)
     }
   }
 
   genOnMouseLeaveButton() {
-    let thisObject = this
-    return function() {
-      $(thisObject.getButtonSelector()).removeClass(thisObject.options.hoverClass)
+    return () => {
+      $(this.getButtonSelector()).removeClass(this.options.hoverClass)
     }
   }
 
   getWidgetHtml() {
-
     let html = ''
-
     html += `<span class="${titleClass}">${this.options.title}</span>`
     html += `<span title="${this.options.onPopoverText}" class="${buttonClass} ${this.options.onClass}">${this.options.onIcon}</span>`
-
     return html
   }
 
@@ -136,6 +130,11 @@ export class NiceToggle {
     }
   }
 
+  /**
+   * Returns true if the toggle is on or false if
+   * the toggle if off
+   * @returns {boolean}
+   */
   getToggleStatus() {
     return this.isOn
   }

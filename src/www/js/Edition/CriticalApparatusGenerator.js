@@ -59,6 +59,8 @@ export class CriticalApparatusGenerator {
     // console.log(`ctIndexToMainTextMap`)
     // console.log(ctIndexToMainTextMap)
 
+    let excludedWitnesses = ctData['excludeFromAutoCriticalApparatus'] ?? [];
+
     let lang = ctData['lang']
 
     let columnGroups = this._getGroupsFromCtData(ctData)
@@ -122,8 +124,8 @@ export class CriticalApparatusGenerator {
         // collect additions
         let additions = []
         for (let witnessIndex = 0; witnessIndex < ctColumns[0].length; witnessIndex++) {
-          if (witnessIndex === baseWitnessIndex) {
-            // ignore base witness
+          if (witnessIndex === baseWitnessIndex || excludedWitnesses.indexOf(witnessIndex) !== -1) {
+            // ignore base witness and excluded witnesses
             continue
           }
           let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, false, lang)
@@ -172,8 +174,8 @@ export class CriticalApparatusGenerator {
 
       for (let witnessIndex = 0; witnessIndex < ctColumns[0].length; witnessIndex++) {
         // inspect every witness
-        if (witnessIndex === baseWitnessIndex) {
-          // ignore base witness
+        if (witnessIndex === baseWitnessIndex || excludedWitnesses.indexOf(witnessIndex) !== -1) {
+          // ignore base witness and excluded witnesses
           continue
         }
         let normalizedWitnessText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, true, lang)

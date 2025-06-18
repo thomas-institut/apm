@@ -52,12 +52,12 @@ export class CtDataEditionGenerator extends EditionGenerator{
   generateEdition () {
     // console.log(`Generating edition from ctData`)
     // CtData.reportCustomEntries(this.ctData)
-    let edition = super.generateEdition()
+    let edition = super.generateEdition();
     let baseWitnessIndex = this.ctData['editionWitnessIndex'] !== undefined ? this.ctData['editionWitnessIndex'] : this.ctData['witnessOrder'][0]
     // console.log(`Base witness index is ${baseWitnessIndex}`)
-    edition.setLang(this.ctData['lang'])
-    edition.siglaGroups = this.ctData['siglaGroups'].map ( (sg) => { return SiglaGroup.fromObject(sg)})
-    edition.infoText = `Edition from ctData, chunkId ${this.ctData['chunkId']}, baseWitnessIndex: ${baseWitnessIndex}`
+    edition.setLang(this.ctData['lang']);
+    edition.siglaGroups = this.ctData['siglaGroups'].map ( (sg) => { return SiglaGroup.fromObject(sg)});
+    edition.infoText = `Edition from ctData, chunkId ${this.ctData['chunkId']}, baseWitnessIndex: ${baseWitnessIndex}`;
     edition.info = {
       source: 'ctData',
       tableId: this.ctData['tableId'],
@@ -67,9 +67,9 @@ export class CtDataEditionGenerator extends EditionGenerator{
     }
     edition.witnesses = this.ctData['sigla'].map( (s, i) => {
       return new EditionWitnessInfo().setSiglum(s).setTitle(this.ctData['witnessTitles'][i])
-    })
-    let baseWitnessTokens = CtData.getCtWitnessTokens(this.ctData, baseWitnessIndex)
-    edition.setMainText(EditionMainTextGenerator.generateMainText(baseWitnessTokens, false, [], edition.getLang()))
+    });
+    let baseWitnessTokens = CtData.getCtWitnessTokens(this.ctData, baseWitnessIndex);
+    edition.setMainText(EditionMainTextGenerator.generateMainText(baseWitnessTokens, false, [], edition.getLang()));
     let apparatusGenerator = new CriticalApparatusGenerator()
     let generatedCriticalApparatus = apparatusGenerator.generateCriticalApparatusFromCtData(this.ctData, baseWitnessIndex, edition.mainText)
     // console.log(`Generated critical apparatus before merging custom apparatus entries`)

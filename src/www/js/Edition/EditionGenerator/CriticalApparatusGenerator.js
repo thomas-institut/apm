@@ -16,24 +16,24 @@
  *
  */
 
-import * as TokenType from '../Witness/WitnessTokenType.mjs'
-import { SequenceWithGroups } from './SequenceWithGroups'
+import * as TokenType from '../../Witness/WitnessTokenType.mjs'
+import { SequenceWithGroups } from '../SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
-import {ApparatusCommon} from '../EditionComposer/ApparatusCommon.js'
-import * as ApparatusEntryType from './SubEntryType.mjs'
-import * as ApparatusType from './ApparatusType'
-import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
-import * as SubEntrySource from './SubEntrySource.mjs'
-import { CtData } from '../CtData/CtData'
-import { Apparatus } from './Apparatus'
-import { ApparatusSubEntry } from './ApparatusSubEntry.mjs'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
-import { ApparatusEntry } from './ApparatusEntry.mjs'
+import {ApparatusCommon} from '../../EditionComposer/ApparatusCommon.js'
+import * as ApparatusEntryType from '../SubEntryType.mjs'
+import * as ApparatusType from '../ApparatusType'
+import * as WitnessTokenType from '../../Witness/WitnessTokenType.mjs'
+import * as SubEntrySource from '../SubEntrySource.mjs'
+import { CtData } from '../../CtData/CtData'
+import { Apparatus } from '../Apparatus'
+import { ApparatusSubEntry } from '../ApparatusSubEntry.mjs'
+import { FmtTextFactory } from '../../FmtText/FmtTextFactory.mjs'
+import { ApparatusEntry } from '../ApparatusEntry.mjs'
 
 
-import { Punctuation} from '../defaults/Punctuation.mjs'
+import { Punctuation} from '../../defaults/Punctuation.mjs'
 
-import {WitnessDataItem} from './WitnessDataItem.mjs'
+import {WitnessDataItem} from '../WitnessDataItem.mjs'
 
 export class CriticalApparatusGenerator {
 

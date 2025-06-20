@@ -18,12 +18,10 @@ services:
       - ../dev-tmp/logs/nginx:/var/log/nginx
     depends_on:
       - php
-      - mysql
 
   mysql:
     container_name: mysql
     image: mysql:8.0.42-bookworm
-    restart: always
     ports:
       - "4306:3306" # so that it can be accessed from the host machine!
     environment:
@@ -41,6 +39,8 @@ services:
     volumes:
       - ../src:/opt/apm
       - ../dev-tmp:/var/apm
+    depends_on:
+      - mysql
 
   collatex:
     container_name: collatex

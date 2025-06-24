@@ -10,7 +10,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 class ApiWorks extends ApiController
 {
 
-    const CLASS_NAME = 'Works';
+    const string CLASS_NAME = 'Works';
 
     /**
      * @param Request $request

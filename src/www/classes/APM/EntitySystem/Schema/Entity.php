@@ -6,15 +6,15 @@ use APM\EntitySystem\Kernel\TidDefiner;
 use APM\EntitySystem\Kernel\TidDefinerTrait;
 
 /**
- * Constants that define tids for all system entities.
+ * Constants that define ids for all system entities.
  *
- * The constant prefix indicate the kind of entity:
- *    eXXX:  a particular entity
- *    tXXX:  an entity type
- *    pXXX:  a predicate
- *    ValueTypeXXXXX:  a value type
+ * The constant prefix indicates the kind of entity:
+ *    - eXXX: a particular entity
+ *    - tXXX: an entity type
+ *    - pXXX: a predicate
+ *    - ValueTypeXXXXX: a value type
  *
- * Any tid under 100 million (< 100000000) can be used as
+ * Any id under 100 million (< 100000000) can be used as
  * a system entity
  */
 class Entity implements TidDefiner
@@ -244,7 +244,6 @@ class Entity implements TidDefiner
     // Legacy or external database ids
 
     const int pDarePersonId = 14001;
-
     const int pLegacyApmDatabaseId = 14002;
 
     // languages
@@ -262,9 +261,5 @@ class Entity implements TidDefiner
     const int LangSpanish = 20025;
     const int LangPortuguese = 20026;
     const int LangTurkish = 20027;
-
-
-
-
 
 }

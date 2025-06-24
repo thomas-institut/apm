@@ -114,8 +114,8 @@ use ThomasInstitut\EntitySystem\StatementData;
 interface ApmEntitySystemInterface
 {
 
-    const ValueFalse = '0';
-    const ValueTrue = '1';
+    const string ValueFalse = '0';
+    const string ValueTrue = '1';
 
     /**
      * Creates an entity of the given type, name and description.
@@ -138,6 +138,16 @@ interface ApmEntitySystemInterface
      */
     public function getEntityData(int $entity) : EntityData;
 
+
+    /**
+     * Returns true if the given entity exists and is of the
+     * given required type
+     *
+     * @param int $entity
+     * @param int $requiredType
+     * @return bool
+     */
+    public function validateEntity(int $entity, int $requiredType) : bool;
 
     /**
      * Returns an entity's type

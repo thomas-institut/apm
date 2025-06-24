@@ -779,7 +779,7 @@ function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $co
 
     // WORKS
 
-    // API -> work : get work info
+    // API -> work: get work info
     $group->get("/work/{workId}/old-info",
         function(Request $request, Response $response) use ($container){
             return (new ApiWorks($container))->getWorkInfoOld($request, $response);

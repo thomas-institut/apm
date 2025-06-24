@@ -15,3 +15,7 @@ other languages as well for the purpose of future Apm site translation. The clas
 
 Other entity types have different required data, as specified in the different `*Definition`
 classes in the Kernel namespace.
+
+After any update to the schema, the ``dataId`` constant in the class
+``ApmEntitySystem`` must be changed so that old schema is not loaded
+from the system cache.

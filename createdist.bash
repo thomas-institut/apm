@@ -25,14 +25,15 @@
 #
 
 
-USAGE="USAGE: createdist <version>"
+USAGE="USAGE: createdist <version> [--mac]"
 
-if (("$#" != 1)) ; then
+if (("$#" < 1)) ; then
    echo "$USAGE"
    exit
 fi
 
 VERSION=$1
+MAC=$2
 TMP=/tmp
 DIST_NAME=apm-$VERSION
 DIST_DIR=dist
@@ -87,7 +88,13 @@ chmod a+w "$TMP_DIR"/www/downloads/pdf
 
 cd "$TMP" || exit
 
-tar cfz "$TAR_NAME" "$DIST_NAME"
+if [ "$MAC" = "--mac" ]
+then
+  COPYFILE_DISABLE=1 tar cfz "$TAR_NAME" "$DIST_NAME"
+else
+  tar cfz "$TAR_NAME" "$DIST_NAME"
+fi
+
 rm -fr "$DIST_NAME"
 mv "$TAR_NAME" "$CUR_DIR"/$DIST_DIR/
 

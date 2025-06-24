@@ -215,7 +215,14 @@ class WorkTool extends CommandLineUtility implements AdminUtility
         }
 
         try {
-            $workId = $this->getSystemManager()->getWorkManager()->createWork($title, $author, $dareId, $enabled, Entity::System);
+            $workId = $this->getSystemManager()->getWorkManager()->createWork(
+                $title,
+                $shortTitle,
+                $authorData->tid,
+                $dareId,
+                $enabled,
+                Entity::System
+            );
         } catch (Exception $ex) {
             print "ERROR: Work creation failed: " .  $ex->getMessage() . "\n";
             return;

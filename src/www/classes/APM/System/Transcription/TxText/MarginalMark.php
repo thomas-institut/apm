@@ -30,11 +30,12 @@ use InvalidArgumentException;
  */
 class MarginalMark extends Item {
     /**
-     * 
+     *
      * @param int $id
      * @param int $s
+     * @param $theText
      */
-    function __construct($id, $s,  $theText) {
+    function __construct(int $id, int $s, $theText) {
         parent::__construct($id, $s);
         $this->type = parent::MARGINAL_MARK;
         if ($theText === NULL or $theText ===''){

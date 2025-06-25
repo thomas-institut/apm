@@ -5,7 +5,7 @@ namespace APM\CommandLine\Migration31to32;
 use APM\CommandLine\CommandLineUtility;
 use APM\System\ApmMySqlTableName;
 use ThomasInstitut\DataCache\InMemoryDataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\ToolBox\Uuid;
 use function DeepCopy\deep_copy;
@@ -15,7 +15,7 @@ class MigrateEditionSources extends CommandLineUtility
 
 
     /**
-     * @throws KeyNotInCacheException
+     * @throws ItemNotInCacheException
      */
     public function main($argc, $argv): void
     {

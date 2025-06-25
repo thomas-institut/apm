@@ -41,6 +41,7 @@ import { trimWhiteSpace } from '../toolbox/Util.mjs'
 import { SiglaGroupsUI } from './SiglaGroupsUI'
 import { ConfirmDialog, EXTRA_LARGE_DIALOG, LARGE_DIALOG, MEDIUM_DIALOG } from '../pages/common/ConfirmDialog'
 import { ApmFormats } from '../pages/common/ApmFormats'
+import {NiceToggle} from "../widgets/NiceToggle";
 
 const icons = {
   moveUp: '<i class="bi bi-arrow-up-short"></i>',
@@ -162,7 +163,7 @@ export class WitnessInfoPanel extends Panel{
   }
 
   async generateHtml() {
-    return `<div class="witnessinfotable">${this._genWitnessTableHtml()}</div>
+    return `<div class="witnessinfotable">${this.genWitnessTableHtml()}</div>
         <div class="witness-update-div">
             <span class="witness-update-info"></span>
             <button class="btn  btn-outline-secondary btn-sm check-witness-update-btn"  title="Click to check for updates to witness transcriptions">Check Now</button>
@@ -360,7 +361,7 @@ export class WitnessInfoPanel extends Panel{
 
     // set table html
     if (reRenderTable) {
-      $(this.containerSelector + ' .witnessinfotable').html(this._genWitnessTableHtml())
+      $(this.containerSelector + ' .witnessinfotable').html(this.genWitnessTableHtml())
     }
 
 
@@ -383,7 +384,12 @@ export class WitnessInfoPanel extends Panel{
       })
     }
     // update witness update check info
-    this.checkForWitnessUpdates()
+    if (this.currentWitnessUpdateData === '') {
+      this.checkForWitnessUpdates();
+    } else {
+      this.showWitnessUpdateData();
+    }
+
 
     // set up sigla presets buttons
     $(this.containerSelector + ' .save-sigla-btn').on('click', this.genOnClickSaveSiglaPreset())
@@ -393,7 +399,56 @@ export class WitnessInfoPanel extends Panel{
       $(this.containerSelector + ' .load-sigla-btn').addClass('hidden')
     }
 
-     this.fetchSiglaPresets()
+     this.fetchSiglaPresets();
+    // setup auto apparatus toggles
+    let excluded = this.ctData['excludeFromAutoCriticalApparatus'];
+    for (let i = 0; i < this.ctData['witnesses'].length; i++) {
+      let toggle = new NiceToggle({
+        containerSelector: `${this.containerSelector} td.auto-app-${i}`,
+        onPopoverText: `Click to exclude witness from automatic critical apparatus generation`,
+        offPopoverText: `Click to exclude witness from automatic critical apparatus`,
+        onIcon: `<span class="nice-toggle-button-on">AUTO</span>`,
+        offIcon: `<span class="nice-toggle-button-off">OFF</span>`,
+        initialValue: excluded.indexOf(i) === -1
+      });
+      toggle.on('toggle', () => {
+        console.log(`Clicked auto app ${i}`);
+        if (toggle.getToggleStatus()) {
+          this.ctData['excludeFromAutoCriticalApparatus'] =
+            this.ctData['excludeFromAutoCriticalApparatus'].filter( (v) => {
+            return v !== i;
+          })
+        } else {
+          this.ctData['excludeFromAutoCriticalApparatus'].push(i);
+        }
+        this.options.onCtDataChange(this.ctData);
+      })
+    }
+
+    // setup auto foliation toggles
+    // let included = this.ctData['includeInAutoMarginalFoliation'];
+    // for (let i = 0; i < this.ctData['witnesses'].length; i++) {
+    //   let toggle = new NiceToggle({
+    //     containerSelector: `${this.containerSelector} td.auto-fol-${i}`,
+    //     onPopoverText: `Click to remove automatic marginal foliation entries`,
+    //     offPopoverText: `Click to generate automatic marginal foliation entries`,
+    //     onIcon: `<span class="nice-toggle-button-on">AUTO</span>`,
+    //     offIcon: `<span class="nice-toggle-button-off">OFF</span>`,
+    //     initialValue: included.indexOf(i) !== -1
+    //   });
+    //   toggle.on('toggle', () => {
+    //     console.log(`Clicked auto fol ${i}`);
+    //     if (toggle.getToggleStatus()) {
+    //       this.ctData['includeInAutoMarginalFoliation'].push(i);
+    //     } else {
+    //       this.ctData['includeInAutoMarginalFoliation'] =
+    //         this.ctData['includeInAutoMarginalFoliation'].filter( (v) => {
+    //           return v !== i;
+    //         })
+    //     }
+    //     this.options.onCtDataChange(this.ctData);
+    //   })
+    // }
   }
 
   fetchSiglaPresets() {
@@ -748,7 +803,7 @@ export class WitnessInfoPanel extends Panel{
     if (this.currentWitnessUpdateData === '') {
       this.currentWitnessUpdateData = this.getInitialWitnessUpdateData()
     }
-    $(this.containerSelector + ' .witness-update-info').html(`Checking for witness updates..`)
+    $(this.containerSelector + ' .witness-update-info').html(`Checking for witness updates... <i class="fas fa-spinner fa-spin"></i>`)
     $(this.containerSelector + ' .check-witness-update-btn').prop('disabled', true)
     this.options.checkForWitnessUpdates(this.currentWitnessUpdateData).then( (newWitnessUpdateCheckData) => {
       this.currentWitnessUpdateData = newWitnessUpdateCheckData
@@ -922,7 +977,11 @@ export class WitnessInfoPanel extends Panel{
   }
 
 
-  _genWitnessTableHtml() {
+  /**
+   * @private
+   * @returns {string}
+   */
+  genWitnessTableHtml() {
     let witnessRows = this.ctData['witnessOrder']
       .map ( (witnessIndex, position) => {
         let witness = this.ctData['witnesses'][witnessIndex]
@@ -946,6 +1005,8 @@ export class WitnessInfoPanel extends Panel{
                 <td class="info-td-${witnessIndex}"></td>
                 <td class="timestamp-td-${witnessIndex}"></td>
                 <td class="siglum-${witnessIndex}">${siglum}</td>
+                <td></td>
+                <td></td>
                 <td class="warning-td-${witnessIndex}"></td>
                 <td class="outofdate-td-${witnessIndex}"></td>
             </tr>`
@@ -965,6 +1026,8 @@ export class WitnessInfoPanel extends Panel{
                 <td class="info-td-${witnessIndex}"></td>
                 <td class="timestamp-td-${witnessIndex}">${ApmFormats.timeString(witness['timeStamp'])}</td>
                 <td class="siglum-${witnessIndex}">${siglum}</td>
+                <td class="auto-app-${witnessIndex}"></td>
+                <td class="auto-fol-${witnessIndex}"></td>
                 <td class="warning-td-${witnessIndex}"></td>
                 <td class="outofdate-td-${witnessIndex}"></td>
             </tr>`
@@ -980,6 +1043,8 @@ export class WitnessInfoPanel extends Panel{
         <th>Siglum &nbsp;   <a class="tb-button load-sigla-btn" title="Load sigla from preset">${icons.loadPreset}</a>&nbsp;
                         <a class="tb-button save-sigla-btn" title="Save current sigla as preset">${icons.savePreset}</a>
         </th>
+        <th>Crit. App.</th>
+        <th></th>  <!-- TODO: add heading title, when ready -->
         <th></th>  <!-- Warning td-->
         <th></th>  <!-- Out of date td-->
       </tr>

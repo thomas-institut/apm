@@ -10,10 +10,8 @@ class StatementData
     public int $predicate = -1;
     public int|string $object = -1;
     public array $statementMetadata = [];
-
     public int $cancellationId = -1;
     public array $cancellationMetadata = [];
-
 
     public function isCancelled() : bool
     {

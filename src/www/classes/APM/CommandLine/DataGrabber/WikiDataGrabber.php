@@ -10,25 +10,25 @@ use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
-use ThomasInstitut\DataCache\MemcachedDataCache;
+use ThomasInstitut\DataCache\DataCache;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 
 class WikiDataGrabber extends CommandLineUtility implements AdminUtility
 {
-    const CMD = 'wikidata';
+    const string CMD = 'wikidata';
 
-    const USAGE = self::CMD . " all | <tid1> <tid2> ... [doIt]";
-    const DESCRIPTION = "Grabs people data from WikiData";
+    const string USAGE = self::CMD . " all | <tid1> <tid2> ... [doIt]";
+    const string DESCRIPTION = "Grabs people data from WikiData";
 
-    const MemCachedPrefix = 'wd_pg-';
-    const MemCachedTtl = 86400;
-    private MemcachedDataCache $memCache;
+    const string MemCachedPrefix = 'WikiDataGrabber:';
+    const int MemCachedTtl = 86400;
+    private DataCache $memCache;
     private Client $guzzleClient;
 
     public function __construct(array $config, int $argc, array $argv)
     {
         parent::__construct($config, $argc, $argv);
-        $this->memCache = new MemcachedDataCache();
+        $this->memCache = $this->getSystemManager()->getMemDataCache();
         $this->guzzleClient = new Client();
     }
 
@@ -216,7 +216,7 @@ class WikiDataGrabber extends CommandLineUtility implements AdminUtility
 
         try {
             return [ true, unserialize($this->memCache->get(self::MemCachedPrefix . $wikiDataId . $wikidataProperty))];
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             $sparqlQuery= "SELECT ?val WHERE {wd:$wikiDataId wdt:$wikidataProperty ?val.}";
             $queryUrl = "https://query.wikidata.org/sparql?query=" . urldecode($sparqlQuery) . "&format=json";
             try {

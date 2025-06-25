@@ -41,10 +41,10 @@ use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use RuntimeException;
-use ThomasInstitut\DataCache\DataCacheToolBox;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\TimeString\TimeString;
+use ThomasInstitut\ToolBox\DataCacheToolBox;
 
 
 /**
@@ -342,7 +342,7 @@ class ApiCollation extends ApiController
             $cacheHit = true;
             try {
                 $cachedData = $cache->get($cacheKey);
-            } catch ( KeyNotInCacheException) {
+            } catch ( ItemNotInCacheException) {
                 $cacheHit = false;
                 $cachedData = '';
             }

@@ -41,29 +41,21 @@ use InvalidArgumentException;
  */
 class TextBox {
 
-    const ERROR_INVALID_TYPE = 1001;
-    const ERROR_INVALID_ITEM_ARRAY = 1002;
+    const int ERROR_INVALID_TYPE = 1001;
+    const int ERROR_INVALID_ITEM_ARRAY = 1002;
 
-    /** @var string */
-    protected $placement;
-    
-    /** @var array */
-    protected $items;
-   
-    /** @var string */
-    protected $type;
-    
-    /** @var ItemAddressInPage */
-    protected $reference;
-    
-    /** @var bool */
-    protected $mainTextFlag;
+    protected string $placement;
+    protected array $items;
+    protected string $type;
+    protected ItemAddressInPage $reference;
+    protected bool $mainTextFlag;
 
     public function getPlacement() : string {
         return $this->placement;
     }
     
-    public function setPlacement(string $p){
+    public function setPlacement(string $p): void
+    {
         $this->placement = $p;
     }
 
@@ -73,11 +65,11 @@ class TextBox {
      * @param string $type
      * @param string $placement
      * @param bool $isMainText
-     * @param ItemAddressInPage $reference
+     * @param ItemAddressInPage|null $reference
      * @param array $theItems
      */
     public function __construct(string $type, string $placement, 
-            bool $isMainText, ItemAddressInPage $reference,
+            bool $isMainText, ?ItemAddressInPage $reference,
                                 array $theItems) {
         $this->setPlacement($placement);
         $this->setType($type);
@@ -96,7 +88,8 @@ class TextBox {
      * @param string $type
      * @throws InvalidArgumentException
      */
-    public function setType(string $type) {
+    public function setType(string $type): void
+    {
         if ($type === '') {
             throw new InvalidArgumentException('TextBox type cannot be an empty string', self::ERROR_INVALID_TYPE);
         }
@@ -106,7 +99,8 @@ class TextBox {
     /**
      * @return string
      */
-    public function getType() {
+    public function getType(): string
+    {
         return $this->type;
     }
 
@@ -120,7 +114,8 @@ class TextBox {
     /**
      * @param ItemAddressInPage $address
      */
-    public function setReference(ItemAddressInPage $address) {
+    public function setReference(ItemAddressInPage $address): void
+    {
         $this->reference = $address;
     }
 
@@ -139,7 +134,8 @@ class TextBox {
      * @param Item[] $items
      * @throws InvalidArgumentException  if there's a non-Item element in the given array
      */
-    public function setItems(array $items) {
+    public function setItems(array $items): void
+    {
         foreach ($items as $item) {
             if (!is_a($item, Item::class )) {
                 throw new InvalidArgumentException('Trying to set text box items with non Item object', self::ERROR_INVALID_ITEM_ARRAY);

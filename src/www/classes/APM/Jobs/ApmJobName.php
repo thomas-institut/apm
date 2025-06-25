@@ -5,7 +5,7 @@ namespace APM\Jobs;
 class ApmJobName
 {
     const string NULL_JOB = 'NullJob';
-    const string SITE_CHUNKS_UPDATE_DATA_CACHE = 'SiteWorks Update Cache';
+    const string SITE_WORKS_UPDATE_CACHE = 'SiteWorks Update Cache';
     const string SITE_DOCUMENTS_UPDATE_DATA_CACHE = 'SiteDocuments Update Cache';
     const string API_PEOPLE_UPDATE_CACHE = 'ApiPeople Update Cache';
     const string API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE = 'ApiUsers Update TranscribedPages Cache';

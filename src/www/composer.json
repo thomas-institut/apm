@@ -14,7 +14,6 @@
         "ext-intl": "*",
         "ext-mbstring": "*",
         "ext-zlib": "*",
-        "ext-memcached": "*",
         "ext-pcntl": "*",
         "ext-posix": "*",
         "ext-sockets": "*",
@@ -26,18 +25,20 @@
         "slim/psr7": "^1.6",
         "slim/twig-view": "^3.3.0",
         "dflydev/fig-cookies": "^v3.0.0",
+        "predis/predis": "^v3.0",
         "rafaelnajera/xmlmatcher": "^0.4",
         "thomas-institut/datatable" : "^2.0.2",
         "thomas-institut/timestring" : "^v1.3",
+        "thomas-institut/datacache": "^v1.0.1",
         "monolog/monolog": "^3.0",
         "swaggest/json-schema": "^v0.12.43",
         "opensearch-project/opensearch-php": "^2.0",
         "php-http/curl-client": "^2.3",
-        "typesense/typesense-php": "^4.9"
+        "typesense/typesense-php": "^4.9",
+        "guzzlehttp/guzzle": "^7.5"
     },
 
     "require-dev": {
-        "guzzlehttp/guzzle": "^7.5",
         "phpunit/phpunit": "^12.0"
     },
 

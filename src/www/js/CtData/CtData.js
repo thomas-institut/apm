@@ -44,6 +44,8 @@ import { UpdaterToOnePointThree } from './CtDataUpdater/UpdaterToOnePointThree'
 import { CleanerOnePointThree } from './CtDataCleaner/CleanerOnePointThree'
 import { CleanerOnePointFour } from './CtDataCleaner/CleanerOnePointFour'
 import { UpdaterToOnePointFour } from './CtDataUpdater/UpdaterToOnePointFour'
+import {UpdaterToOnePointFive} from "./CtDataUpdater/UpdaterToOnePointFive";
+import {CleanerOnePointFive} from "./CtDataCleaner/CleanerOnePointFive";
 
 
 
@@ -55,7 +57,7 @@ import { UpdaterToOnePointFour } from './CtDataUpdater/UpdaterToOnePointFour'
 
 
 
-const schemaVersions = [ '0', '1.0', '1.1', '1.2', '1.3', '1.4']
+const schemaVersions = [ '0', '1.0', '1.1', '1.2', '1.3', '1.4', '1.5']
 
 
 export class CtData  {
@@ -115,6 +117,9 @@ export class CtData  {
         case '1.4':
           return new CleanerOnePointFour({ verbose: verbose, debug: debug});
 
+        case '1.5':
+          return new CleanerOnePointFive({ verbose: verbose, debug: debug});
+
         default:
           throw new Error(`Invalid source schema ${sourceSchemaVersion} requested`);
       }
@@ -136,6 +141,9 @@ export class CtData  {
 
         case '1.4':
           return new UpdaterToOnePointFour({verbose: verbose, debug: debug});
+
+        case '1.5':
+          return new UpdaterToOnePointFive({verbose: verbose, debug: debug});
 
         default:
           throw new Error(`Invalid target schema ${targetSchemaVersion} requested`);
@@ -219,7 +227,7 @@ export class CtData  {
     console.log(`Updating customs apparatuses for apparatus '${apparatusType}'`)
     console.log(editedEntry)
 
-    // First, lets get the right apparatus
+    // First, let's get the right apparatus
     let apparatusIndex = ctData['customApparatuses'].map( (app) => {return app.type}).indexOf(apparatusType)
 
     if (apparatusIndex === -1) {

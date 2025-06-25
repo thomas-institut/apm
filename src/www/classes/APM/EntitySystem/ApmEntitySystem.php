@@ -22,7 +22,7 @@ use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 use RuntimeException;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\EntitySystem\EntityData;
@@ -40,18 +40,17 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
      * Data id for internal kernel caches, needs to be changed every time there is a
      * change in the entity system schema or in the ApmEntitySystemKernel class
      */
-    const dataId = '2024.12.24-11:53:37';
+    const string dataId = '0002';
 
-    const kernelCacheKey = 'ApmEntitySystemKernel';
+    const string kernelCacheKey = 'ApmEntitySystemKernel';
 
-    const kernelCacheTtl = 8 * 24 * 3600; // 8 days
-    const minNameCacheTtl = 15 * 24 * 3600;
-    const maxNameCacheTtl = 21 * 24 * 3600;
+    const int kernelCacheTtl = 8 * 24 * 3600; // 8 days
+    const int minNameCacheTtl = 15 * 24 * 3600;
+    const int maxNameCacheTtl = 21 * 24 * 3600;
+    const int entityListCacheTtl =  30 * 24 * 3600;
 
-    const entityListCacheTtl =  30 * 24 * 3600;
-
-    const ColEntity = 'entity';
-    const ColMergedInto = 'mergedInto';
+    const string ColEntity = 'entity';
+    const string ColMergedInto = 'mergedInto';
 
     private ?TypedMultiStorageEntitySystem $innerEntitySystem;
     private ?ApmEntitySystemKernel $kernel;
@@ -76,9 +75,9 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
      * keep track of entity merges. The constructor does not require the actual objects but callables that return them
      * when needed.
      *
-     * The merges table should have at least the following three columns:
+     * The "merges" table should have at least the following three columns:
      *   * id: int
-     *   * entity: big int, not null  (a Tid)
+     *   * entity: big int, not null (a Tid)
      *   * mergedInto: big int (a Tid)
      *
      * @param callable $getTypedMultiStorageEntitySystem a callable that takes no arguments and returns a
@@ -109,23 +108,23 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
     }
 
     private function getCacheKeyKernel() : string {
-        return implode('_', [ $this->cachePrefix, self::dataId, self::kernelCacheKey]);
+        return implode(':', [ $this->cachePrefix, self::dataId, self::kernelCacheKey]);
     }
 
     private function getCacheKeyMergedInto(int $entity) : string {
-        return implode('_', [ $this->cachePrefix, self::dataId, 'mergedInto', $entity]);
+        return implode(':', [ $this->cachePrefix, self::dataId, $entity, 'mergedInto' ]);
     }
 
     private function getCacheKeyEntityName(int $entity) : string {
-        return implode('_', [ $this->cachePrefix, self::dataId, 'name', $entity]);
+        return implode(':', [ $this->cachePrefix, self::dataId, $entity, 'name']);
     }
 
     private function getCacheKeyValidQualificationObjects() : string {
-        return implode('_', [ $this->cachePrefix, self::dataId, 'validQualificationObjects']);
+        return implode(':', [ $this->cachePrefix, self::dataId, 'validQualificationObjects']);
     }
 
     private function getCacheKeyEntityList(int $type, bool $withMerged) : string {
-        return implode('_', [ $this->cachePrefix, self::dataId, 'entityList', $type, $withMerged ? 'withMerged' : 'withoutMerged']);
+        return implode(':', [ $this->cachePrefix, self::dataId, 'entityList', $type, $withMerged ? 'withMerged' : 'withoutMerged']);
     }
 
     private function getKernel() : ApmEntitySystemKernel {
@@ -133,7 +132,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             $kernelKey = $this->getCacheKeyKernel();
             try {
                 return unserialize($this->memCache->get($kernelKey));
-            } catch (KeyNotInCacheException) {
+            } catch (ItemNotInCacheException) {
                 $this->kernel = new ApmEntitySystemKernel();
                 $this->memCache->set($kernelKey, serialize($this->kernel), self::kernelCacheTtl);
             }
@@ -149,7 +148,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
     }
 
     /**
-     * Returns the entity into which the given entity has been merged,
+     * Returns the entity into which the given entity has been merged.
      *
      * If the entity has not been merged, returns null
      *
@@ -164,7 +163,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         $cacheKey = $this->getCacheKeyMergedInto($entity);
         try {
             $mergedInto = $this->memCache->get($cacheKey);
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
 //            $this->logger->debug("MergedInto info for $entity not in mem cache");
             $rows = $this->getMergesDataTable()->findRows([ self::ColEntity => $entity]);
             if ($rows->count() === 0) {
@@ -176,7 +175,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 
             $this->memCache->set($cacheKey, $mergedInto);
         }
-        // at this point $mergedInto is either the string 'null', a numerical string or an integer
+        // at this point, $mergedInto is either the string 'null', a numerical string or an integer
         if ($mergedInto === 'null') {
             return null;
         }
@@ -355,7 +354,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
         if ($author !== Entity::System) {
             try {
                 $authorType = $this->getEntityType($author);
-            } catch (EntityDoesNotExistException $e) {
+            } catch (EntityDoesNotExistException) {
                 throw new InvalidArgumentException("Author $author not defined in the system");
             }
 
@@ -376,7 +375,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 
         try {
             $subjectType = $this->getEntityType($subject);
-        } catch (EntityDoesNotExistException $e) {
+        } catch (EntityDoesNotExistException) {
             throw new InvalidSubjectException("Subject $subject not an entity in the system");
         }
 
@@ -546,7 +545,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             $this->logger->debug("Using cache for type $type entity list");
             try {
                 return unserialize($this->memCache->get($cacheKey));
-            } catch (KeyNotInCacheException) {
+            } catch (ItemNotInCacheException) {
                 $this->logger->debug("Cache miss for type $type entity list");
                 $inCache = false;
                 $nonSystemEntities =  $this->getInnerEntitySystem()->getAllEntitiesForType($type);
@@ -727,7 +726,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             if ($useCache) {
                 try {
                     return $this->memCache->get($cacheKey);
-                } catch (KeyNotInCacheException) {
+                } catch (ItemNotInCacheException) {
                 }
             }
             $name = $this->getEntityData($entity)->getObjectForPredicate(Entity::pEntityName);
@@ -760,17 +759,17 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
      */
     public function getValidQualificationObjects(bool $onlyIds = false) : array {
 
-        // this is very fast operation since the kernel itself is cached
+        // this is a very fast operation since the kernel itself is cached
         $validObjects  = $this->getKernel()->getValidQualificationObjects();
         if ($onlyIds) {
             return $validObjects;
         }
         // entity data can be cached in memory "forever" since it will only change when
-        // there's a change in schema (and thus a change in the cache data id)
+        // there's a change in the schema (and thus a change in the cache data id)
         $cacheKey = $this->getCacheKeyValidQualificationObjects();
         try {
             $objectData =  unserialize($this->memCache->get($cacheKey));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
 
             $objectData = array_map( function (int $id) : EntityData {
                 try {
@@ -782,5 +781,14 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
             $this->memCache->set($cacheKey, serialize($objectData));
         }
         return $objectData;
+    }
+
+    public function validateEntity(int $entity, int $requiredType): bool
+    {
+        try {
+            return $this->getEntityType($entity) === $requiredType;
+        } catch (EntityDoesNotExistException) {
+            return false;
+        }
     }
 }

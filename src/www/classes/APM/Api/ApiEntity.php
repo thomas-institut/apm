@@ -22,7 +22,7 @@ use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use RuntimeException;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 
 
 class ApiEntity extends ApiController
@@ -473,7 +473,7 @@ class ApiEntity extends ApiController
         foreach($types as $type) {
             try {
                 $typeIndex = unserialize($cache->get($this->getTypeNamesIndexCacheKey($type)));
-            } catch (KeyNotInCacheException) {
+            } catch (ItemNotInCacheException) {
                 $typeIndex = $this->buildNamesIndex($type);
                 $cache->set($this->getTypeNamesIndexCacheKey($type), serialize($typeIndex));
             }

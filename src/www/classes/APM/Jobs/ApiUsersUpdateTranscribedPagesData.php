@@ -9,7 +9,7 @@ use APM\System\SystemManager;
 class ApiUsersUpdateTranscribedPagesData implements JobHandlerInterface
 {
 
-    public function run(SystemManager $sm, array $payload): bool
+    public function run(SystemManager $sm, array $payload, string $jobName): bool
     {
         if (!isset($payload['userTid'])) {
             return false;

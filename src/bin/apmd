@@ -30,4 +30,4 @@ if (!is_array($config)) {
 }
 
 
-(new CommandLine\ApmDaemon($config, $argc, $argv))->run();
+(new ApmDaemon\ApmDaemon($config, $argc, $argv))->run();

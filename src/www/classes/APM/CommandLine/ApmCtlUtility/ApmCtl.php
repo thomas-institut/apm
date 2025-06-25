@@ -12,6 +12,7 @@ class ApmCtl extends AdminUtilityManager
             new CacheTool($config, $this->commandArgc, $this->commandArgv),
             new JobQueueTool($config, $this->commandArgc, $this->commandArgv),
             new EntityTool($config, $this->commandArgc, $this->commandArgv),
+            new WorkTool($config, $this->commandArgc, $this->commandArgv),
             new UserTool($config, $this->commandArgc, $this->commandArgv),
             new TranscriptionTool($config, $this->commandArgc, $this->commandArgv),
         ];

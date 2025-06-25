@@ -29,11 +29,12 @@ namespace APM\System\Transcription\TxText;
 class CharacterGap extends Item
 {
     /**
-     * 
+     *
      * @param int $id
      * @param int $s
+     * @param int $l
      */
-    public function __construct($id, $s, $l = 1)
+    public function __construct(int $id, int $s, $l = 1)
     {
         parent::__construct($id, $s);
         $this->type = parent::CHARACTER_GAP;

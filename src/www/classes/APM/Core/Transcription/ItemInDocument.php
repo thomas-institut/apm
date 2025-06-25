@@ -22,7 +22,6 @@ namespace APM\Core\Transcription;
 
 use APM\Core\Item\Item;
 use APM\Core\Item\ItemWithAddress;
-
 /**
  * Description of ItemInDocument
  *

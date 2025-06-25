@@ -38,7 +38,7 @@ use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use RuntimeException;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 
 /**
@@ -48,9 +48,9 @@ use ThomasInstitut\EntitySystem\Tid;
 class ApiUsers extends ApiController
 {
 
-    const CLASS_NAME = 'Users';
-    const CACHE_TTL_TRANSCRIBED_PAGES = 7 * 24 * 3600;  // 7 days
-    const CACHE_TTL_CT_INFO = 7 * 24 * 3600;  // 7 days
+    const string CLASS_NAME = 'Users';
+    const int CACHE_TTL_TRANSCRIBED_PAGES = 7 * 24 * 3600;  // 7 days
+    const int CACHE_TTL_CT_INFO = 7 * 24 * 3600;  // 7 days
     /**
      * @param Request $request
      * @param Response $response
@@ -204,7 +204,7 @@ class ApiUsers extends ApiController
         $dataCache = $this->systemManager->getSystemDataCache();
         try {
             $data = unserialize($dataCache->get($cacheKey));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             $cacheHit = false;
             $data = self::buildTranscribedPagesData($this->systemManager, $userTid);
             $dataCache->set($cacheKey, serialize($data), self::CACHE_TTL_TRANSCRIBED_PAGES);
@@ -276,7 +276,7 @@ class ApiUsers extends ApiController
         $dataCache = $this->systemManager->getSystemDataCache();
         try {
             $data = unserialize($dataCache->get($cacheKey));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             $cacheHit = false;
             $data = self::buildCollationTableInfoForUser($this->systemManager, $userTid);
             $dataCache->set($cacheKey, serialize($data), self::CACHE_TTL_CT_INFO);

@@ -27,22 +27,22 @@ use APM\System\Transcription\TxText\Item;
  */
 class Element {
     
-    const LANG_NOT_SET = '';
-    const ID_NOT_SET = -1;
+    const string LANG_NOT_SET = '';
+    const int ID_NOT_SET = -1;
 
     /**
      *
      * @var int id
      * The element's unique id 
      */
-    public int $id;
+    public int $id = -1;
     
 
     /**
      * Page id to which the element belongs.
      * @var int 
      */
-    public int $pageId;
+    public int $pageId = -1;
     /**
      *
      * @var int 
@@ -50,7 +50,7 @@ class Element {
      * The column number. 0 means the element is associated with the 
      * page rather than with one of the text columns 
      */
-    public int $columnNumber;
+    public int $columnNumber = -1;
     /**
      *
      * @var int $seq
@@ -63,46 +63,43 @@ class Element {
      * @var string $lang 
      * @brief The element's language
      */
-    public string $lang;
+    public string $lang = '';
     
     /**
      * @var int $handId
      * @brief The element's hand
      */
-    public int $handId;
+    public int $handId = -1;
     
     /**
      * The editor's userId
      *
-     * Use editorTid instead
-     *
-     * @var int
-     * @deprecated
+     * @deprecated Use editorTid instead
      */
-    public int $editorId;
+//    public int $editorId = -1;
 
     /**
      * @var int
      */
-    public int $editorTid;
+    public int $editorTid = 0;
 
     /**
      * @var int type
      * @brief the element's type
      */
-    public int $type;
+    public int $type = 0;
     
     // type constants
-    const INVALID = 0;
-    const LINE = 1;
-    const HEAD = 2;
-    const GLOSS = 3;
-    const PAGE_NUMBER = 4;
-    const CUSTODES = 5;
-    const NOTE_MARK = 6;
-    const SUBSTITUTION = 7;
-    const LINE_GAP = 8;
-    const ADDITION = 9;
+    const int INVALID = 0;
+    const int LINE = 1;
+    const int HEAD = 2;
+    const int GLOSS = 3;
+    const int PAGE_NUMBER = 4;
+    const int CUSTODES = 5;
+    const int NOTE_MARK = 6;
+    const int SUBSTITUTION = 7;
+    const int LINE_GAP = 8;
+    const int ADDITION = 9;
     
     // 
     // Fields that may or may not be used depending on the type
@@ -111,40 +108,34 @@ class Element {
     
     /**
      *
-     * @var array  
+     * @var Item[]
      * The transcribed text  
      * 
      * In the DB it is not necessary because the transcribedText elements
      * will refer to the column element id.
      */
-    public array $items;
+    public array $items = [];
     /**
      *
      * @var ?int
      * For items of type LINE, the line number
      * For items of type ADDITION: the mark or deletion ID
      */
-    public ?int $reference;
+    public ?int $reference = null;
     /**
      *
      * @var ?string
      * For items of type GLOSS, ADDITION and PAGE_NUMBER, 
      * a string stating the placement within the page or column
      */
-    public ?string $placement;
+    public ?string $placement = null;
     
     public function __construct($id = self::ID_NOT_SET, 
             $colNumber = 0, $lang = self::LANG_NOT_SET)
     {
         $this->id = $id;
         $this->columnNumber = $colNumber;
-        $this->handId = self::ID_NOT_SET;
-        $this->items = [];
         $this->lang = $lang;
-        $this->editorId  = self::ID_NOT_SET;
-        $this->editorTid = 0;
-        $this->reference = null;
-        $this->placement = null;
     }
 
     /**

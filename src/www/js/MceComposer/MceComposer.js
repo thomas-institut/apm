@@ -738,7 +738,7 @@ export class MceComposer extends ApmPage {
       // really get from server
       let url = urlGen.apiGetCollationTable(tableId, TimeString.compactEncode(timeStamp))
       this.apmDataProxy.get(url).then( (data) => {
-        console.log(`Got data from server for table ${tableId}, timeStamp '${timeStamp}'`)
+        console.log(`Got data table ${tableId}, timeStamp '${timeStamp}'`)
         console.log(data)
         data.ctData = CtData.getCleanAndUpdatedCtData(data.ctData)
         // cache doc info

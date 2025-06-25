@@ -33,8 +33,8 @@ use APM\Core\Address\Point;
  */
 class ItemAddressInPage extends Point {
     
-    const ITEMINDEX_COORD = 0;
-    const TEXTBOXINDEX_COORD = 1;
+    const int ITEM_INDEX_COORD = 0;
+    const int TEXTBOX_INDEX_COORD = 1;
     
     public function __construct($tbi=null, $ii=null) {
         parent::__construct(2);
@@ -42,24 +42,27 @@ class ItemAddressInPage extends Point {
         $this->setTbIndex($tbi);
     }
     
-    public static function NullAddress() {
+    public static function NullAddress(): ItemAddressInPage
+    {
         return new ItemAddressInPage(null, null);
     }
     
     public function getTbIndex() {
-        return $this->getCoord(self::TEXTBOXINDEX_COORD);
+        return $this->getCoord(self::TEXTBOX_INDEX_COORD);
     }
     
-    protected function setTbIndex($index) {
-        $this->setCoord(self::TEXTBOXINDEX_COORD, $index);
+    protected function setTbIndex($index): void
+    {
+        $this->setCoord(self::TEXTBOX_INDEX_COORD, $index);
     }
     
     public function getItemIndex() {
-        return $this->getCoord(self::ITEMINDEX_COORD);
+        return $this->getCoord(self::ITEM_INDEX_COORD);
     }
     
-    protected function setItemIndex($index) {
-        $this->setCoord(self::ITEMINDEX_COORD, $index);
+    protected function setItemIndex($index): void
+    {
+        $this->setCoord(self::ITEM_INDEX_COORD, $index);
     }
 
     public function getData() : array {

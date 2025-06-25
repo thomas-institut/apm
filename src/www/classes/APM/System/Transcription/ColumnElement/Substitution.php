@@ -27,21 +27,22 @@ namespace APM\System\Transcription\ColumnElement;
  */
 class Substitution extends Element {
         
-    public $targetXmlId; 
+//    public string $targetXmlId;
     
     public function __construct($id = Element::ID_NOT_SET, 
             $colNumber = 0, $lang = Element::LANG_NOT_SET)
     {
         parent::__construct($id, $colNumber, $lang);
         $this->type = parent::SUBSTITUTION;
-        $this->targetXmlId = '';
+//        $this->targetXmlId = '';
     }
     
-    function getTargetId(){
+    function getTargetId(): ?int
+    {
         return $this->reference;
     }
     
-    function setTargetId($id)
+    function setTargetId($id): void
     {
         $this->reference = $id;
     }

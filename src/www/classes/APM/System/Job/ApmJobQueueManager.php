@@ -7,6 +7,7 @@ use Exception;
 use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use RuntimeException;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\InvalidSearchSpec;
@@ -75,9 +76,9 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
             if ($row['state'] !== ScheduledJobState::ERROR) {
                 try {
                     $timestamps[] = TimeString::toTimeStamp($row['scheduled_at']);
-                } catch (InvalidTimeString|InvalidTimeZoneException $e) {
+                } catch (InvalidTimeString|InvalidTimeZoneException) {
                     // should never happen
-                    throw new \RuntimeException("Exception converting timeString to timestamp: " . $row['scheduled_at']);
+                    throw new RuntimeException("Exception converting timeString to timestamp: " . $row['scheduled_at']);
                 }
             }
         }
@@ -236,12 +237,12 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
             $this->logger->error($e->getMessage());
             return;
         }
-        $handler = $this->registeredJobs[$jobRow['name']];
+        $handler = $this->registeredJobs[$jobName];
         $payload = unserialize($jobRow['payload']);
         $secondsBetweenRetries = intval($jobRow['secs_between_retries']);
         $start = microtime(true);
         try {
-            $result = $handler->run($this->systemManager, $payload);
+            $result = $handler->run($this->systemManager, $payload, $jobName);
         } catch (Exception $e) {
             $this->logger->info("Job '$jobTitle' caused an exception", [ 'class' => get_class($e), 'code' => $e->getCode(), 'msg' => $e->getMessage()]);
             $result = false;

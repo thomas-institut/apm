@@ -2,7 +2,9 @@
 
 namespace APM\System;
 
-use APM\System\Document\Exception\PageNotFoundException;
+use RuntimeException;
+use ThomasInstitut\DataCache\DataCache;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 
 /**
  * Description of Lemmatizer
@@ -14,14 +16,17 @@ use APM\System\Document\Exception\PageNotFoundException;
 
 class Lemmatizer
 {
+
+    const string CACHE_PREFIX = 'Lemmatizer';
+
     /**
      * Returns an array of tokens and lemmata for a given text in a given language.
      * @param string $lang
      * @param string $text_clean
-     * @param string $tempfile
+     * @param DataCache|null $dataCache
      * @return array|array[]
      */
-    static public function runLemmatizer(string $lang, string $text_clean, string $tempfile='undefined'): array {
+    static public function runLemmatizer(string $lang, string $text_clean, ?DataCache $dataCache = null): array {
 
         // get language code for api call to udpipe2
         switch ($lang) {
@@ -37,31 +42,49 @@ class Lemmatizer
             case 'jrb':
                 $lang = 'hebrew';
         }
-
-        $hash = hash('sha512', $text_clean);
-
-        $tempDir = '/tmp';
-        $resultFileName = "$tempDir/lemmatizer-$hash-out.txt";
-        $inputFileName =  "$tempDir/lemmatizer-$hash-in.txt";
-
         $data = null;
-        if (file_exists($resultFileName)) {
-            $fileContents = file_get_contents($resultFileName);
-            if ($fileContents !== false) {
-                $data = unserialize($fileContents);
+        $hash = hash('sha512', $text_clean);
+        $key = implode(':', [ self::CACHE_PREFIX, $hash ]);
+        if ($dataCache !== null) {
+            try {
+                $data = unserialize($dataCache->get($key));
+            } catch (ItemNotInCacheException $e) {
+                // just keep going
             }
         }
 
         if ($data === null) {
+            $tempDir = '/tmp';
+            $inputFileName =  "$tempDir/lemmatizer-$hash-in.txt";
             if (!file_put_contents($inputFileName, $text_clean)) {
-                throw new \RuntimeException("Cannot write temp file for lemmatization");
+                throw new RuntimeException("Cannot write temp file for lemmatization");
             };
-            // make api call
             exec("curl -s -F data=@$inputFileName -F model=$lang -F tokenizer= -F tagger= https://lindat.mff.cuni.cz/services/udpipe/api/process", $data);
-            // remove temp file after lemmatization
-            unlink($inputFileName);
-            file_put_contents($resultFileName, serialize($data));
+            $dataCache?->set($key, serialize($data));
         }
+
+//
+//        $resultFileName = "$tempDir/lemmatizer-$hash-out.txt";
+//
+//
+//        $data = null;
+//        if (file_exists($resultFileName)) {
+//            $fileContents = file_get_contents($resultFileName);
+//            if ($fileContents !== false) {
+//                $data = unserialize($fileContents);
+//            }
+//        }
+//
+//        if ($data === null) {
+//            if (!file_put_contents($inputFileName, $text_clean)) {
+//                throw new \RuntimeException("Cannot write temp file for lemmatization");
+//            };
+//            // make api call
+//            exec("curl -s -F data=@$inputFileName -F model=$lang -F tokenizer= -F tagger= https://lindat.mff.cuni.cz/services/udpipe/api/process", $data);
+//            // remove temp file after lemmatization
+//            unlink($inputFileName);
+//            file_put_contents($resultFileName, serialize($data));
+//        }
 
         // return tokens and lemmata
         return self::getTokensAndLemmata($data[6]);
@@ -150,8 +173,8 @@ class Lemmatizer
 
             //print("SENTENCE COUNT: " . count($sentence) .  "\n");
             //if (count($sentence) === 58) {
-                //print_r($sentence);
-                //print_r($complexTokenPositions);
+            //print_r($sentence);
+            //print_r($complexTokenPositions);
             //}
 
 
@@ -175,7 +198,7 @@ class Lemmatizer
                 $tokens_and_lemmata['lemmata'][] = $tokenAsList[2];
             }
         }
-        
+
         // signal missing words or lemmata in the returned data
 //        foreach ($tokens_and_lemmata['tokens'] as $word) {
 //            if ($word === null or $word === '') {

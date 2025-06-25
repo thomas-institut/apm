@@ -26,8 +26,8 @@ class EditorialNote {
     public int $id = 0;
     public int $type;
     
-    const OFFLINE = 1;
-    const INLINE = 2;
+    const int OFFLINE = 1;
+    const int INLINE = 2;
     public int $target = 0;
     public int $authorTid = 0;
     public string $text = '';

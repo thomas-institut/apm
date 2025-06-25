@@ -35,23 +35,23 @@ use Exception;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
 
 
 class ApiWitness extends ApiController
 {
 
-    const CLASS_NAME = 'Witnesses';
+    const string CLASS_NAME = 'Witnesses';
 
-    const ERROR_WITNESS_TYPE_NOT_IMPLEMENTED = 1001;
-    const ERROR_UNKNOWN_WITNESS_TYPE = 1002;
-    const ERROR_SYSTEM_ID_ERROR = 1003;
+    const int ERROR_WITNESS_TYPE_NOT_IMPLEMENTED = 1001;
+    const int ERROR_UNKNOWN_WITNESS_TYPE = 1002;
+    const int ERROR_SYSTEM_ID_ERROR = 1003;
 
-    const WITNESS_DATA_CACHE_KEY_PREFIX = 'ApiWitness-WitnessData-';
-    const WITNESS_HTML_CACHE_KEY_POSTFIX = '-html';
+    const string WITNESS_DATA_CACHE_KEY_PREFIX = 'Api:Witness:WitnessData:';
+    const string WITNESS_HTML_CACHE_KEY_POSTFIX = ':html';
 
-    const WITNESS_DATA_CACHE_TTL = 30 * 24 * 3600; // 30 days
+    const int WITNESS_DATA_CACHE_TTL = 60 * 24 * 3600; // 30 days
 
     public function getWitness(Request $request, Response $response): Response
     {
@@ -228,153 +228,67 @@ class ApiWitness extends ApiController
             return $this->responseWithJson($response, ['error' => self::API_ERROR_RUNTIME_ERROR, 'msg' => $msg], HttpStatus::INTERNAL_SERVER_ERROR);
         }
 
+        $systemCache = $this->systemManager->getSystemDataCache();
+
+        // Fast track html
+        if ($useCache && $outputType === 'html') {
+            $this->codeDebug("Fast tracking html output: trying to get html from cache");
+            $cacheKeyHtmlOutput = $this->getWitnessHtmlCacheKey($requestedWitnessId);
+            try {
+                $cachedHtml = $systemCache->get($cacheKeyHtmlOutput);
+                $this->codeDebug("Cache hit!!");
+                return $this->responseWithText($response, $cachedHtml);
+            } catch (ItemNotInCacheException) {
+                // just keep going
+            }
+        }
+
         /** @var ApmTranscriptionManager $transcriptionManager */
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
 
-
         $txManagerIsUsingCache = $transcriptionManager->isCacheInUse();
-
         if (!$useCache && $txManagerIsUsingCache) {
             // only turn off tx manager's cache if it's in use
             $this->codeDebug("Turning off tx manager's cache");
             $transcriptionManager->doNotUseCache();
         }
 
-        // at this point we can check the cache
-        $systemCache = $this->systemManager->getSystemDataCache();
-
-        // if output is html it can be even faster
-        if ($useCache && $outputType === 'html') {
-            $this->codeDebug("Fast tracking html output: trying to get html from cache");
-            $cacheKeyHtmlOutput = $this->getWitnessHtmlCacheKey($requestedWitnessId);
-            $cacheHit = true;
-            try {
-                $cachedHtml = $systemCache->get($cacheKeyHtmlOutput);
-            } catch (KeyNotInCacheException $e) {
-                $this->codeDebug("Cache miss :(");
-
-                $cacheHit = false;
-            }
-            if ($cacheHit) {
-                $this->codeDebug("Cache hit!!");
-
-                return $this->responseWithText($response, $cachedHtml ?? 'Error');
-            }
+        $locations = $transcriptionManager->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+        try {
+            $apmWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp, $docLangCode);
+        } catch (Exception $e) {
+            $msg = $e->getMessage();
+            $this->logger->error("Exception trying to get transcription witness. Msg = '$msg'",
+                [ 'locations' => $locations ] );
+            return $this->responseWithJson($response, [ 'error' => $msg ], 409);
+        }
+        $witnessId = WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $apmWitness->getTimeStamp());
+        $html = $this->getWitnessHtml($apmWitness);
+        $systemCache->set($this->getWitnessHtmlCacheKey($witnessId), $html, self::WITNESS_DATA_CACHE_TTL);
+        if ($outputType === 'html') {
+            // no need to further if only html is required
+            return $this->responseWithText($response, $html);
         }
 
-        $cacheHit = true;
-        if ($useCache) {
-            $this->codeDebug("Trying to get full witness info from cache");
-            $cacheKey = $this->getWitnessDataCacheKey($requestedWitnessId);
-            try {
-                $cachedBlob = $systemCache->get($cacheKey);
-            } catch (KeyNotInCacheException) {
+        $returnData = $apmWitness->getData();
 
-                $cacheHit = false;
-            }
-        }
-        if (!$useCache || !$cacheHit) {
-            $this->codeDebug("Need to build witness info from scratch");
-            // need to build everything from scratch
-            $locations = $transcriptionManager->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
-            try {
-                $apmWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp, $docLangCode);
-            } catch (Exception $e) {
-                $msg = $e->getMessage();
-                $this->logger->error("Exception trying to get transcription witness. Msg = '$msg'",
-                    [ 'locations' => $locations ] );
-                return $this->responseWithJson($response, [ 'error' => $msg ], 409);
-            }
-
-            $returnData = $apmWitness->getData();
-
-            // erase unneeded data
-            // TODO: do not calculate this data in the first place!
-            unset($returnData['tokens']);
-            unset($returnData['items']);
-            unset($returnData['nonTokenItemIndexes']);
-
-            // temporary code to spit out standard token data
-            $returnData['standardData'] = (new FullTxWitnessDataProvider($apmWitness))->getStandardData();
-
-
-            $witnessId = WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $returnData['timeStamp']);
-            $returnData['witnessId'] = $witnessId;
-            $returnData['segments'] = $locations;
-
+        // erase unneeded data
+        unset($returnData['tokens']);
+        unset($returnData['items']);
+        unset($returnData['nonTokenItemIndexes']);
+        // temporary code to spit out standard token data
+        $returnData['standardData'] = (new FullTxWitnessDataProvider($apmWitness))->getStandardData();
+        $returnData['witnessId'] = $witnessId;
+        $returnData['segments'] = $locations;
+        $returnData['requestedWitnessId'] = $requestedWitnessId;
+        $returnData['html'] = $html;
+        $returnData['apiStatus']  = 'OK';
+        if ($outputType === 'standardData') {
+            $returnData = [ 'witnessData' => $returnData['standardData']];
             $returnData['apiStatus']  = 'OK';
-            $returnData['requestedWitnessId'] = $requestedWitnessId;
-
-            // Plain text version
-            //$returnData['plainText'] = $apmWitness->getPlainText();
-
-            // HTML
-            $html = $this->getWitnessHtml($apmWitness);
-
-            // Save results in cache
-            $cacheKey = $this->getWitnessDataCacheKey($witnessId);
-            $cacheKeyHtmlOutput = $this->getWitnessHtmlCacheKey($witnessId);
-            $this->codeDebug("Saving API response data to cache with key '$cacheKey'");
-            $serializedReturnData = serialize($returnData);
-            $this->codeDebug("Size of serialized return data: " . strlen($serializedReturnData));
-            $dataToSave = gzcompress($serializedReturnData);
-            $this->codeDebug("Size of compressed witness data: " . strlen($dataToSave));
-            try {
-                $systemCache->set($cacheKey, $dataToSave, self::WITNESS_DATA_CACHE_TTL);
-            } catch (Exception $e) {
-                $this->codeDebug("Error saving data to cache: " . substr($e->getMessage(), 1, 1000) . '...' );
-            }
-
-            // save html on its own key in the cache to speed up html output later
-            $this->codeDebug("Saving html data to cache with key '$cacheKeyHtmlOutput'");
-            $this->codeDebug("Size of html data: " . strlen($html));
-            try {
-                $systemCache->set($cacheKeyHtmlOutput, $html, self::WITNESS_DATA_CACHE_TTL);
-            } catch(Exception $e) {
-                $this->codeDebug("Error saving data to cache: " . substr($e->getMessage(), 1, 1000) . '...' );
-            }
-
-            $returnData['html'] = $html;
-
-            if ($outputType === 'standardData') {
-                // no need to get html data if we're just serving standardData
-                $returnData = [ 'witnessData' => $returnData['standardData']];
-                $returnData['apiStatus']  = 'OK';
-            }
-
-            $returnData['cached'] = false;
-            $returnData['usingCache'] = $useCache;
-        } else {
-            //$this->codeDebug('Cache hit!');
-
-            $returnData = unserialize(gzuncompress($cachedBlob));
-
-            if ($outputType === 'standardData') {
-                // no need to get html data if we're just serving standardData
-                $returnData = [ 'witnessData' => $returnData['standardData']];
-                $returnData['apiStatus']  = 'OK';
-            } else {
-                $cacheKeyHtmlOutput = $this->getWitnessHtmlCacheKey($requestedWitnessId);
-                $cacheHit = true;
-                try {
-                    $html = $systemCache->get($cacheKeyHtmlOutput);
-                } catch (KeyNotInCacheException $e) {
-                    $cacheHit = false;
-                }
-
-                if (!$cacheHit) {
-                    $this->codeDebug("Cache miss trying to get html output ");
-                    $returnData['status'] = 'Error getting html from cache';
-                }
-                $returnData['html']  = $html;
-
-            }
-            $returnData['requestedWitnessId'] = $requestedWitnessId;
-            $returnData['cached'] = true;
-            $returnData['usingCache'] = $useCache;
         }
-
-        // at this point we have all data either from the cache or built from scratch
+        $returnData['cached'] = false;
+        $returnData['usingCache'] = $useCache;
 
         if (!$useCache && $txManagerIsUsingCache) {
             // turn on tx manager cache if we turned it off earlier
@@ -382,30 +296,28 @@ class ApiWitness extends ApiController
             $transcriptionManager->useCache();
         }
 
-        if ($outputType === 'html') {
-            return $this->responseWithText($response, $returnData['html']);
-        }
+//     TODO: Erase this eventually, I don't think it's needed anywhere
 
-        if ($outputType === 'deco1') {
-            $this->codeDebug("Output deco1");
-            $decorator = new SimpleHtmlWitnessDecorator();
-            $theWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
-            $theTokens = $decorator->getDecoratedTokens($theWitness);
-            $html = '';
-            foreach($theTokens as $decoratedToken) {
-                $html .=  $decoratedToken;
-            }
-            return $this->responseWithText($response, $html);
-        }
-
-        if ($outputType === 'deco2') {
-            $this->codeDebug("Output deco2");
-            $decorator = new ApmTxWitnessDecorator();
-            $decorator->setLogger($this->logger);
-            $theWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
-            $theTokens = $decorator->getDecoratedTokens($theWitness);
-            return $this->responseWithJson($response, $theTokens);
-        }
+//        if ($outputType === 'deco1') {
+//            $this->codeDebug("Output deco1");
+//            $decorator = new SimpleHtmlWitnessDecorator();
+//            $theWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+//            $theTokens = $decorator->getDecoratedTokens($theWitness);
+//            $html = '';
+//            foreach($theTokens as $decoratedToken) {
+//                $html .=  $decoratedToken;
+//            }
+//            return $this->responseWithText($response, $html);
+//        }
+//
+//        if ($outputType === 'deco2') {
+//            $this->codeDebug("Output deco2");
+//            $decorator = new ApmTxWitnessDecorator();
+//            $decorator->setLogger($this->logger);
+//            $theWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+//            $theTokens = $decorator->getDecoratedTokens($theWitness);
+//            return $this->responseWithJson($response, $theTokens);
+//        }
 
         return $this->responseWithJson($response, $returnData);
     }

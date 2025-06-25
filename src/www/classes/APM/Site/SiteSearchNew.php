@@ -7,7 +7,7 @@ use \Psr\Http\Message\ResponseInterface as Response;
 
 class SiteSearchNew extends SiteController
 {
-    const TEMPLATE_SCRATCH_PAGE = 'search-new.twig';
+    const string TEMPLATE_SEARCH_PAGE = 'search.twig';
 
     /**
      * @param Request $request
@@ -17,6 +17,6 @@ class SiteSearchNew extends SiteController
 
     public function searchPage(Request $request, Response $response): Response
     {
-        return $this->renderPage($response, self::TEMPLATE_SCRATCH_PAGE,[]);
+        return $this->renderPage($response, self::TEMPLATE_SEARCH_PAGE,[]);
     }
 }

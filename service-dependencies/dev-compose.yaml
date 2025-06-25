@@ -1,0 +1,67 @@
+#
+# Docker compose file with all services necessary to run APM
+# locally
+#
+#  Rafael Nájera, 17 Jun 2025
+#
+name: apm-development
+
+services:
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    ports:
+      - "8888:80"
+    volumes:
+      - ../src:/opt/apm
+      - ./nginx-dev.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../dev-tmp/logs/nginx:/var/log/nginx
+    depends_on:
+      - php
+
+  mysql:
+    container_name: mysql
+    image: mysql:8.0.42-bookworm
+    ports:
+      - "4306:3306" # so that it can be accessed from the host machine!
+    environment:
+        MYSQL_ALLOW_EMPTY_PASSWORD: yes
+        MYSQL_ROOT_PASSWORD:
+    volumes:
+      - ../dev-tmp/mysql-data:/var/lib/mysql
+      - ../dev-tmp/share:/home/share
+
+  php:
+    container_name: php
+    build:
+      context: .
+      dockerfile: dev-php.Dockerfile
+    volumes:
+      - ../src:/opt/apm
+      - ../dev-tmp:/var/apm
+    depends_on:
+      - mysql
+
+  collatex:
+    container_name: collatex
+    build: ./collatex-http
+
+  valkey:
+    container_name: valkey
+    image: valkey/valkey:8.1-alpine
+    volumes:
+      - ../dev-tmp/valkey-data:/data
+    command: valkey-server --save 60 1 --loglevel warning --dir /data
+
+  typesense:
+    container_name: typesense
+    image: typesense/typesense:28.0
+    volumes:
+      - ../dev-tmp/typesense-data:/data
+    command: >
+      typesense-server
+      --data-dir /data
+      --api-key=devel1234
+      --listen-port=8108
+      --enable-cors
+

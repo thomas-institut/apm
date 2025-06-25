@@ -56,10 +56,14 @@ use APM\System\ImageSource\OldBilderbergStyleRepository;
 use APM\System\Job\ApmJobQueueManager;
 use APM\System\Job\JobQueueManager;
 use APM\System\Job\NullJobHandler;
+use APM\System\Lemmatizer\LemmatizerInterface;
+use APM\System\Lemmatizer\UdPipeLemmatizer;
 use APM\System\Person\EntitySystemPersonManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\DataTablePresetManager;
 use APM\System\Preset\PresetManager;
+use APM\System\Search\SearchManagerInterface;
+use APM\System\Search\TypesenseSearchManager;
 use APM\System\Transcription\ApmTranscriptionManager;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\ApmUserManager;
@@ -79,9 +83,7 @@ use RuntimeException;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataCache\DataTableDataCache;
-use ThomasInstitut\DataCache\MemcachedDataCache;
-use ThomasInstitut\DataCache\MultiCacheDataCache;
+use ThomasInstitut\DataCache\DirectoryDataCache;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
@@ -92,6 +94,7 @@ use ThomasInstitut\EntitySystem\Exception\InvalidArgumentException;
 use ThomasInstitut\EntitySystem\StatementStorage;
 use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 use ThomasInstitut\EntitySystem\TypeStorageConfig;
+use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
 use Twig\Error\LoaderError;
 use Typesense\Client;
 use Typesense\Exceptions\ConfigError;
@@ -116,12 +119,15 @@ class ApmSystemManager extends SystemManager {
     const int DB_VERSION = 37;
 
     // Entity system Data ID: key for entity system caches
-    const string ES_DATA_ID = 'es009';
+    const string ES_DATA_ID = '0009';
 
-    const string MemCachePrefix_Apm_ES = 'apm_es';
-    const string MemCachePrefix_TypedMultiStorage_ES = 'apm_msEs_';
+    const string MemCachePrefix_Apm_ES = 'Es';
+    const string MemCachePrefix_TypedMultiStorage_ES = 'MsEs';
 
     const int DefaultSystemCacheTtl = 30 * 24 * 3600;  // 30 days
+    const int DefaultMemCacheTtl =  24 * 3600;  // 1 day
+
+    const int DefaultDirectoryDataCacheTtl = 365 * 24 * 3600; // 1 year
 
     const array REQUIRED_CONFIG_VARIABLES = [
         'appName',
@@ -134,7 +140,6 @@ class ApmSystemManager extends SystemManager {
         'langCodes',
         'dbTablePrefix',
         'daemonPidFile',
-        'opensearch'
     ];
     
     const array REQUIRED_CONFIG_VARIABLES_DB = [ 'host', 'db', 'user', 'pwd'];
@@ -155,27 +160,32 @@ class ApmSystemManager extends SystemManager {
     //
     // Components
     //
-    private ?DataTablePresetManager $presetsManager;
-    private ?SettingsManager $settingsMgr;
-    private ?CollationEngine $collationEngine;
-    private ?PDO $dbConn;
-    private ?ApmTranscriptionManager $transcriptionManager;
-    private ?MultiCacheDataCache $systemDataCache;
-    private ?ApmCollationTableManager $collationTableManager;
-    private ?ApmMultiChunkEditionManager $multiChunkEditionManager;
-    private ?Twig $twig;
-    private ?ApmNormalizerManager $normalizerManager;
-    private ?ApmUserManager $userManager;
-    private ?PersonManagerInterface $personManager;
-    private ?ApmJobQueueManager $jobManager;
-    private ?EntitySystemEditionSourceManager $editionSourceManager;
-    private ?WorkManager $workManager;
-    private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem;
-    private ?DataCache $memDataCache;
-    private ?ApmEntitySystem $apmEntitySystem;
-    private ?ApmDocumentManager $documentManager;
+    // (all initialized to null)
+    private ?DataTablePresetManager $presetsManager = null;
+    private ?SettingsManager $settingsMgr = null;
+    private ?CollationEngine $collationEngine = null;
+    private ?PDO $dbConn = null;
+    private ?ApmTranscriptionManager $transcriptionManager = null;
+    private ?ApmCollationTableManager $collationTableManager = null;
+    private ?ApmMultiChunkEditionManager $multiChunkEditionManager = null;
+    private ?Twig $twig = null;
+    private ?ApmNormalizerManager $normalizerManager = null;
+    private ?ApmUserManager $userManager = null;
+    private ?PersonManagerInterface $personManager = null;
+    private ?ApmJobQueueManager $jobManager = null;
+    private ?EntitySystemEditionSourceManager $editionSourceManager = null;
+    private ?WorkManager $workManager = null;
+    private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem = null;
+    private ?DataCache $memDataCache = null;
+    private ?ValkeyDataCache $systemDataCache = null;
+    private ?DirectoryDataCache $directoryDataCache = null;
+    private ?ApmEntitySystem $apmEntitySystem = null;
+    private ?ApmDocumentManager $documentManager = null;
+    private ?Client $typesenseClient = null;
+    private ?UdPipeLemmatizer $lemmatizer = null;
 
-    private ?Client $typesenseClient;
+    private ?TypesenseSearchManager $searchManager = null;
+
 
 
     public function __construct(array $configArray) {
@@ -210,28 +220,6 @@ class ApmSystemManager extends SystemManager {
             Entity::ImageSourceBilderberg => new BilderbergImageSource($this->config['url']['bilderberg']),
             Entity::ImageSourceAverroesServer => new OldBilderbergStyleRepository('https://averroes.uni-koeln.de/localrep')
         ];
-
-
-        // Initialize all components to null
-        $this->twig = null;
-        $this->normalizerManager = null;
-        $this->multiChunkEditionManager = null;
-        $this->editionSourceManager = null;
-        $this->userManager = null;
-        $this->personManager = null;
-        $this->workManager = null;
-        $this->typedMultiStorageEntitySystem = null;
-        $this->collationEngine = null;
-        $this->dbConn = null;
-        $this->systemDataCache = null;
-        $this->jobManager = null;
-        $this->presetsManager = null;
-        $this->transcriptionManager = null;
-        $this->collationTableManager = null;
-        $this->memDataCache = null;
-        $this->apmEntitySystem = null;
-        $this->documentManager = null;
-        $this->typesenseClient = null;
     }
 
 
@@ -343,14 +331,7 @@ class ApmSystemManager extends SystemManager {
         return $dbh;
     }
 
-    public function getMemDataCache(): DataCache
-    {
-        if ($this->memDataCache === null) {
-            $this->memDataCache = new MemcachedDataCache();
-//            $this->memDataCache = new InMemoryDataCache();
-        }
-        return $this->memDataCache;
-    }
+
 
     public function getPresetsManager() : PresetManager {
         if ($this->presetsManager === null) {
@@ -533,7 +514,8 @@ class ApmSystemManager extends SystemManager {
                 $this->tableNames,
                 $this->logger,
                 function () { return $this->getDocumentManager();},
-                function () { return $this->getPersonManager();}
+                function () { return $this->getPersonManager();},
+                function () { return $this->getSystemDataCache();},
             );
             $this->transcriptionManager->setCache($this->getSystemDataCache());
         }
@@ -543,24 +525,44 @@ class ApmSystemManager extends SystemManager {
     public function getSystemDataCache(): DataCache
     {
         if ($this->systemDataCache === null) {
-            $this->systemDataCache = new MultiCacheDataCache(
-                [
-                    $this->getMemDataCache(),
-                    function ()  {
-                        $dataTableCache = new DataTableDataCache(new MySqlDataTable($this->getDbConnection(),
-                            $this->tableNames[ApmMySqlTableName::TABLE_SYSTEM_CACHE], true));
-                        $dataTableCache->setLogger($this->getLogger()->withName('CACHE'));
-                        return $dataTableCache;
-                    }
-                ],
-                [ 'ApmSystem_', ''],
-                true
-            );
-            $this->systemDataCache->setLogger($this->getLogger());
+            $this->systemDataCache = new ValkeyDataCache("APM:Sys:", $this->createValkeyClient());
             $this->systemDataCache->setDefaultTtl(self::DefaultSystemCacheTtl);
         }
 
         return $this->systemDataCache;
+    }
+
+    private function createValkeyClient() : \Predis\Client {
+        $valkeyHost = '127.0.0.1';
+        if (isset($this->config['valkey_host'])) {
+            $valkeyHost = $this->config['valkey_host'];
+        }
+        $valkeyPort = '6379';
+        if (isset($this->config['valkey_port'])) {
+            $valkeyPort = $this->config['valkey_port'];
+        }
+        return new \Predis\Client([
+            'scheme' => 'tcp',
+            'host' => $valkeyHost,
+            'port' => $valkeyPort
+        ]);
+    }
+
+    public function getMemDataCache(): DataCache
+    {
+        if ($this->memDataCache === null) {
+            $this->memDataCache = new ValkeyDataCache('APM:Mem:', $this->createValkeyClient());
+            $this->memDataCache->setDefaultTtl(self::DefaultMemCacheTtl);
+        }
+        return $this->memDataCache;
+    }
+
+    public function getDirectoryDataCache() : DataCache {
+        if ($this->directoryDataCache === null) {
+            $this->directoryDataCache = new DirectoryDataCache($this->config['directoryCachePath'], 'apm');
+            $this->directoryDataCache->setDefaultTtl(self::DefaultDirectoryDataCacheTtl);
+        }
+        return $this->directoryDataCache;
     }
 
     public function getCollationTableManager(): CollationTableManager
@@ -687,30 +689,26 @@ class ApmSystemManager extends SystemManager {
 
         $jobManager = $this->getJobManager();
 
-        $this->logger->debug("Scheduling update of SiteChunks cache");
-        $jobManager->scheduleJob(ApmJobName::SITE_CHUNKS_UPDATE_DATA_CACHE,
-            '', [],0, 3, 20);
-
-        $this->logger->debug("Scheduling update of SiteDocuments cache");
+        $siteWorkUpdateCacheJobPayload = [
+            'type' => 'transcription',
+            'docId' => $docId,
+            'pageNumber' => $pageNumber,
+            'columnNumber' => $columnNumber
+        ];
+        $jobManager->scheduleJob(ApmJobName::SITE_WORKS_UPDATE_CACHE,
+            '', $siteWorkUpdateCacheJobPayload,0, 3, 20);
         $jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '',[$docId],0, 3, 20);
-
-        $this->logger->debug("Scheduling update of TranscribedPages cache for user $userTid");
         $jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE,
             "User $userTid", ['userTid' => $userTid],0, 3, 20);
-
-        $this->logger->debug("Scheduling update of open search index");
         $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_INDEX,
             '', ['doc_id' => $docId, 'page' => $pageNumber, 'col' => $columnNumber],0, 3, 20);
-
-        $this->logger->debug("Scheduling update of Transcribers cache and Titles cache");
         $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE,
             '', [], 0, 3, 20);
     }
 
     public function onUpdatePageSettings(int $userTid, int $pageId) : void {
         parent::onUpdatePageSettings($userTid, $pageId);
-        $this->logger->debug("Scheduling update of TranscribedPages cache for user $userTid after update of page $pageId");
         $this->getJobManager()->scheduleJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE,
             "User $userTid", ['userTid' => $userTid],0, 3, 20);
     }
@@ -719,7 +717,6 @@ class ApmSystemManager extends SystemManager {
     {
         parent::onCollationTableSaved($userTid, $ctId);
         $jobManager = $this->getJobManager();
-        $this->logger->debug("Invalidating CollationTablesInfo cache for user $userTid");
         $jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE,
             "User $userTid", ['userTid' => $userTid],0, 3, 20);
         $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_INDEX,
@@ -731,8 +728,6 @@ class ApmSystemManager extends SystemManager {
     public function onDocumentDeleted(int $userTid, int $docId): void
     {
         parent::onDocumentDeleted($userTid, $docId);
-
-        $this->logger->debug("Scheduling update of SiteDocuments cache");
         $this->getJobManager()->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '', [ $docId],0, 3, 20);
 
@@ -766,14 +761,12 @@ class ApmSystemManager extends SystemManager {
         parent::onPersonDataChanged($personTid);
         $part = ApiPeople::onPersonDataChanged($personTid, $this->getEntitySystem(), $this->getSystemDataCache(), $this->logger);
         $this->logger->debug("Invalidated ApiPeople data cache, part $part");
-        $this->logger->debug("Scheduling update to ApiPeople data cache, all");
         $this->getJobManager()->scheduleJob(ApmJobName::API_PEOPLE_UPDATE_CACHE, '', [], 0, 3, 20);
     }
 
     public function onDocumentUpdated(int $userTid, int $docId): void
     {
         parent::onDocumentUpdated($userTid, $docId);
-        $this->logger->debug("Scheduling update of SiteDocuments cache");
         $this->getJobManager()->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '', [$docId],0, 3, 20);
     }
@@ -781,7 +774,6 @@ class ApmSystemManager extends SystemManager {
     public function onDocumentAdded(int $userTid, int $docId): void
     {
         parent::onDocumentAdded($userTid, $docId);
-        $this->logger->debug("Scheduling update of SiteDocuments cache");
         $this->getJobManager()->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
             '', [ $docId],0, 3, 20);
     }
@@ -816,14 +808,11 @@ class ApmSystemManager extends SystemManager {
 
     public function getUserManager() : UserManagerInterface {
         if ($this->userManager === null) {
-//            $this->logger->debug("Creating UserManager");
             $this->userManager = new ApmUserManager(
                 function () {
-//                    $this->logger->debug("Creating Users DataTable");
                     return new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_USERS], false);
                 },
                 function () {
-//                    $this->logger->debug("Creating UserTokens DataTable");
                     return new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_TOKENS], true);
                 },
                 $this->getSystemDataCache(),
@@ -871,7 +860,7 @@ class ApmSystemManager extends SystemManager {
     private function registerSystemJobs() : void
     {
         $this->jobManager->registerJob(ApmJobName::NULL_JOB, new NullJobHandler());
-        $this->jobManager->registerJob(ApmJobName::SITE_CHUNKS_UPDATE_DATA_CACHE, new SiteWorksUpdateDataCache());
+        $this->jobManager->registerJob(ApmJobName::SITE_WORKS_UPDATE_CACHE, new SiteWorksUpdateDataCache());
         $this->jobManager->registerJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE, new SiteDocumentsUpdateDataCache());
         $this->jobManager->registerJob(ApmJobName::API_PEOPLE_UPDATE_CACHE, new ApiPeopleUpdateAllPeopleEssentialData());
         $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE, new ApiUsersUpdateTranscribedPagesData());
@@ -885,13 +874,11 @@ class ApmSystemManager extends SystemManager {
     public function getEntitySystem(): ApmEntitySystemInterface
     {
         if ($this->apmEntitySystem === null) {
-//            $this->logger->debug("Creating entity system");
             $this->apmEntitySystem = new ApmEntitySystem(
                 function () : TypedMultiStorageEntitySystem{
                     return $this->getRawEntitySystem();
                 },
                 function () : DataTable {
-//                    $this->logger->debug("Creating merges datatable");
                     return new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::ES_Merges], true);
                 },
                 $this->getMemDataCache(),
@@ -922,17 +909,14 @@ class ApmSystemManager extends SystemManager {
     public function getRawEntitySystem(): TypedMultiStorageEntitySystem
     {
         if ($this->typedMultiStorageEntitySystem === null) {
-//            $this->logger->debug("Creating inner entity system");
 
             $defaultConfig = new TypeStorageConfig();
             $defaultConfig->withType(0);
             $defaultConfig->statementStorageCallable = function () {
-//                $this->logger->debug("Creating default statement storage");
                 return $this->createDefaultStatementStorage();
             };
             $defaultConfig->useCache = true;
             $defaultConfig->entityDataCacheCallable = function () {
-//                $this->logger->debug("Creating default entity data cache datatable");
                 $defaultEntityDataCacheDataTable = new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::ES_Cache_Default]);
                 return new DataTableEntityDataCache(
                     $defaultEntityDataCacheDataTable,
@@ -955,7 +939,7 @@ class ApmSystemManager extends SystemManager {
                     Entity::pEntityType, [$defaultConfig],
                     self::ES_DATA_ID,
                     $this->getMemDataCache(),
-                    self::MemCachePrefix_TypedMultiStorage_ES . self::ES_DATA_ID
+                    self::MemCachePrefix_TypedMultiStorage_ES . ':' . self::ES_DATA_ID
                 );
                 $this->typedMultiStorageEntitySystem->setLogger($this->logger);
             } catch (InvalidArgumentException) {
@@ -1002,10 +986,34 @@ class ApmSystemManager extends SystemManager {
 
                 return $this->typesenseClient;
             } catch (ConfigError) {
-                throw new \RuntimeException("Typesense incorrectly configured");
+                throw new RuntimeException("Typesense incorrectly configured");
             }
         }
         return $this->typesenseClient;
     }
 
+    public function getLemmatizer(): LemmatizerInterface
+    {
+        if ($this->lemmatizer === null) {
+            $this->lemmatizer = new UdPipeLemmatizer($this->getSystemDataCache());
+        }
+        return $this->lemmatizer;
+
+    }
+
+    public function getSearchManager(): SearchManagerInterface
+    {
+        if ($this->searchManager === null) {
+            $this->searchManager = new TypesenseSearchManager(
+                function() {
+                    return $this->getTypesenseClient();
+                },
+                function () {
+                    return $this->getSystemDataCache();
+                },
+                $this->getLogger()
+            );
+        }
+        return $this->searchManager;
+    }
 }

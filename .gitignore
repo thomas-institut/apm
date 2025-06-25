@@ -34,3 +34,5 @@ src/python/.idea
 /src/www/test/php/*config.php
 /src/www/test/php/.phpunit.cache/
 .run/**
+/dev-logs/**
+/dev-tmp/

@@ -20,22 +20,20 @@
 namespace ThomasInstitut\Test\DataCache;
 
 use PHPUnit\Framework\TestCase;
-use ThomasInstitut\DataCache\DataCacheReferenceTest;
-use ThomasInstitut\DataCache\InMemoryDataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\Reference\DataCacheReferenceTest;
+use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
 
 
-class InMemoryDataCacheTest extends TestCase
+class ValkeyDataCacheTest extends TestCase
 {
 
-    /**
-     * @throws KeyNotInCacheException
-     */
     public function testStandardTests() {
 
-        $tester = new DataCacheReferenceTest('InMemory');
+        $tester = new DataCacheReferenceTest('Valkey');
 
-        $tester->runAllTests(new InMemoryDataCache(), 'InMemoryDataCache');
+        $prefix = "test_" . rand(1000000, 9999990) . ':';
+
+        $tester->runAllTests(new ValkeyDataCache($prefix), 'ValkeyDataCache');
     }
 
 }

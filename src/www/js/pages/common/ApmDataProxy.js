@@ -63,8 +63,10 @@ export class ApmDataProxy {
     }
 
     this.lockManager = new SimpleLockManager();
+    this.localCacheLockManager = new SimpleLockManager();
 
     this.cachedFetcher = new CachedFetcher(this.caches.session, 0, this.lockManager);
+    this.localCachedFetcher = new CachedFetcher(this.caches.local, 0, this.localCacheLockManager);
 
 
 
@@ -229,11 +231,13 @@ export class ApmDataProxy {
    * @param {boolean}forceActualFetch
    * @param {boolean}useRawData if true, the payload is posted as is, otherwise the payload is encapsulated on an object { data: payload}
    * @param {number} ttl
+   * @param sessionCache
    * @return {Promise<{}>}
    */
-  fetch(url, method = 'GET', payload = [] , forceActualFetch = false, useRawData = false, ttl = -1) {
+  fetch(url, method = 'GET', payload = [] , forceActualFetch = false, useRawData = false, ttl = -1, sessionCache = true) {
     let key = encodeURI(url);
-    return this.cachedFetcher.fetch(key, () => {
+    let fetcher = sessionCache ? this.cachedFetcher : this.localCachedFetcher;
+    return fetcher.fetch(key, () => {
       switch(method) {
         case 'GET':
           return $.get(url)
@@ -265,12 +269,13 @@ export class ApmDataProxy {
    * By default, an actual GET request will be done and the results will not be cached.
    *
    * @param {string} url
-   * @param {boolean} [forceGet=true] if true, the cache is not checked and the GET request is actually made to the URL
+   * @param {boolean} [forceGet=true] if true, the cache is not checked, and the GET request is actually made to the URL
    * @param {number} [ttl=-1] seconds to cache the results, or no caching if <=0
+   * @param sessionCache
    * @return {Promise<{}>}
    */
-  get(url, forceGet = true, ttl = -1) {
-    return this.fetch(url, 'GET', { }, forceGet, false, ttl)
+  get(url, forceGet = true, ttl = -1, sessionCache = true) {
+    return this.fetch(url, 'GET', { }, forceGet, false, ttl, sessionCache)
   }
 
   /**
@@ -442,10 +447,12 @@ export class ApmDataProxy {
    */
   getApmEntityData(entityType, dataType, entityId, cacheName = 'local') {
     return new Promise ( (resolve, reject) => {
+      let ttl = TtlOneDay;
       let getUrl = '';
       switch(entityType) {
         case 'Person':
           if (dataType === 'essential') {
+            ttl = TtlOneDay * 8;
             getUrl =  urlGen.apiPersonGetEssentialData(entityId);
           } else {
             reject(`Invalid data type for Person data: ${dataType}`)
@@ -485,7 +492,7 @@ export class ApmDataProxy {
           case 'Work':
             dataToStore = serverData;
         }
-        cache.store(cacheKey, dataToStore, TtlOneDay * (1+Math.random()));
+        cache.store(cacheKey, dataToStore, ttl * (1+Math.random()));
         resolve(dataToStore);
       }).catch( (e) => {
         reject(e);

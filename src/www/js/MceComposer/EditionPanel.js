@@ -218,7 +218,7 @@ export class EditionPanel extends Panel {
 
   __genChunksTable() {
     let html = '<table class="edition-panel-table chunk-table">'
-    html += '<tr><th></th><th>Chunk</thth><th>Title</th><th>Version</th><th>Break</th></tr>'
+    html += '<tr><th></th><th>Chunk</thth><th>Title</th><th>Version</th><th>Break After</th></tr>'
 
     this.mceData.chunkOrder.forEach( (chunkIndex, chunkPos) => {
       let chunk = this.mceData.chunks[chunkIndex]

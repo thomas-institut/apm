@@ -44,7 +44,7 @@ use RuntimeException;
 use Slim\Routing\RouteParser;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -141,10 +141,18 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return $langArrayByCode;
     }
 
+    private function getVersionTagLine() : string {
+        $tagLine = $this->config['version'] . " (" . $this->config['versionDate'] . ")";
+        if ($this->config['versionExtra'] !== '') {
+            $tagLine .= ' ' . $this->config['versionExtra'];
+        }
+        return $tagLine;
+    }
+
     private function getCommonData() : array {
         return [
             'appName' => $this->config['appName'],
-            'appVersion' => $this->config['version'],
+            'appVersion' => $this->getVersionTagLine(),
             'copyrightNotice' => $this->config['copyrightNotice'],
             'renderTimestamp' =>  time(),
             'cacheDataId' => $this->config['jsAppCacheDataId'],
@@ -199,6 +207,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     protected function renderStandardPage(ResponseInterface $response, string $cacheKey, string $title, string $jsClassName, array $extraCss, ?array $data = null) : ResponseInterface {
         SystemProfiler::lap("Ready to render");
         if ($cacheKey !== '') {
+            $cacheKey = implode(':', [ 'Site', $this->config['version'], $cacheKey]);
             try {
                 $html = $this->systemManager->getSystemDataCache()->get($cacheKey);
                 $response->getBody()->write($html);
@@ -206,7 +215,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
                 $this->logger->debug(sprintf("SITE PROFILER %s Finished in %.3f ms",  SystemProfiler::getName(), SystemProfiler::getTotalTimeInMs()),
                     SystemProfiler::getLaps());
                 return $response;
-            } catch (KeyNotInCacheException) {
+            } catch (ItemNotInCacheException) {
                 // just continue
             }
         }
@@ -223,8 +232,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
                 $jsOptions[$key] = $value;
             }
         }
-//        $this->logger->debug("Js options",  $jsOptions);
-
         $dataJs = $this->getJsObject($jsOptions);
 
         $script = "$(() => {new $jsClassName(( $dataJs)) });";

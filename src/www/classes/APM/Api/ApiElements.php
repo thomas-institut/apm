@@ -85,7 +85,7 @@ class ApiElements extends ApiController
             $inputDataObject = json_decode($postData['data'], true);
         }
 
-        $this->logger->debug("Input element data", $inputDataObject);
+//        $this->logger->debug("Input element data", $inputDataObject);
         
         // Some checks: all required arrays, data with given docId, pageNo and colNumber
         if (is_null($inputDataObject) ) {
@@ -358,7 +358,6 @@ class ApiElements extends ApiController
      */
     public function getElementsByDocPageCol(Request $request, Response $response): Response
     {
-
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');
         $columnNumber = $request->getAttribute('column');

@@ -54,7 +54,7 @@ class EditionWitness extends Witness
         return $this->tokens;
     }
 
-    public function applyTokenNormalization(WitnessTokenNormalizer $normalizer, bool $overWriteCurrentNormalizations, string $source = NormalizationSource::DEFAULT)
+    public function applyTokenNormalization(WitnessTokenNormalizer $normalizer, bool $overWriteCurrentNormalizations, string $source = NormalizationSource::DEFAULT): void
     {
         $this->tokenArray = WitnessTokenNormalizer::normalizeTokenArray($this->getTokens(), $normalizer, $overWriteCurrentNormalizations, $source);
     }

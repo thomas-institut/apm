@@ -6,6 +6,7 @@
 
 {% block finalBodyJS %}
     <script>
+
       $(() => {
         new SearchPage({
           commonData:  JSON.parse("{{commonData|json_encode|e('js')}}"),

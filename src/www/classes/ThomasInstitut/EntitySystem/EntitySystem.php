@@ -29,8 +29,8 @@ use ThomasInstitut\EntitySystem\Exception\StatementNotFoundException;
 interface EntitySystem
 {
 
-    const MakeStatementCommand = 'makeStatement';
-    const CancelStatementCommand = 'cancelStatement';
+    const string MakeStatementCommand = 'makeStatement';
+    const string CancelStatementCommand = 'cancelStatement';
 
 
 

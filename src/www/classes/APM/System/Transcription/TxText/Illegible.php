@@ -20,6 +20,8 @@
 
 namespace APM\System\Transcription\TxText;
 
+use InvalidArgumentException;
+
 /**
  * Description of TtiIllegible
  *
@@ -27,7 +29,7 @@ namespace APM\System\Transcription\TxText;
  */
 class Illegible extends Item {
     
-    public static $validReasons = [ 
+    public static array $validReasons = [
         'damaged', 
         'illegible'
     ];
@@ -39,37 +41,41 @@ class Illegible extends Item {
      * @param string $length
      * @param string $reason
      */
-    function __construct($id, $s, $length, $reason='illegible') {
+    function __construct(int $id, int $s, string $length, $reason='illegible') {
         parent::__construct($id, $s);
         $this->type = parent::ILLEGIBLE;
         
         if ($length <= 0 ){
-            throw new \InvalidArgumentException("Transcription items of type ILLEGIBLE need a length > 0, length given: " . $length);
+            throw new InvalidArgumentException("Transcription items of type ILLEGIBLE need a length > 0, length given: " . $length);
         }
         $this->length = (int) $length;
         
         if (!self::isReasonValid($reason)) {
-            throw new \InvalidArgumentException("Unrecognized reason for ILLEGIBLE item, reason given: " . $reason);
+            throw new InvalidArgumentException("Unrecognized reason for ILLEGIBLE item, reason given: " . $reason);
         }
         $this->extraInfo = $reason;
     }
     
-    function getReason(){
+    function getReason(): string
+    {
         return $this->extraInfo;
     }
     
-    function getText(){
+    function getText(): string
+    {
         
         $unknownChar = 'ø';
         
         return str_repeat($unknownChar, $this->length);
     }
     
-    function getLength(){
+    function getLength(): int
+    {
         return $this->length;
     }
     
-    public static function isReasonValid($reason){
+    public static function isReasonValid($reason): bool
+    {
         return in_array($reason, self::$validReasons);
     }
 }

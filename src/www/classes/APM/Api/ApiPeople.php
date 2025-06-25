@@ -19,22 +19,22 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\Exportable\ExportableObject;
 
 class ApiPeople extends ApiController
 {
 
-    const AllPeopleDataForPeoplePageTtl = 8 * 24 * 3600;
-    const WorksByPersonTtl =  8 * 24 * 3600;
+    const int AllPeopleDataForPeoplePageTtl = 30 * 24 * 3600; // one month
+    const int WorksByPersonTtl =  8 * 24 * 3600;
 
     /**
      * Make this number so that rebuilding the data for a part does not take more than one second.
      * When changing this number, stop the ApmDaemon, delete the PeoplePageData cache and restart
      * the daemon again to ensure the cache is regenerated
      */
-    const PeoplePageData_PeoplePerPart = 25;
+    const int PeoplePageData_PeoplePerPart = 25;
 
     public function getPersonEssentialData(Request $request, Response $response): Response {
 
@@ -70,15 +70,19 @@ class ApiPeople extends ApiController
         $cache = $this->systemManager->getSystemDataCache();
         try {
             return $this->responseWithJson($response, unserialize($cache->get(CacheKey::ApiPeople_PeoplePageData_All)));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             $dataToServe = self::buildAllPeopleDataForPeoplePage($this->systemManager->getEntitySystem(), $cache, $this->logger);
             $cache->set(CacheKey::ApiPeople_PeoplePageData_All, serialize($dataToServe), self::AllPeopleDataForPeoplePageTtl);
             return $this->responseWithJson($response, $dataToServe);
         }
     }
 
-    public static function invalidatePeoplePageDataPart(int $i, DataCache $cache) : void {
-        $cache->delete(CacheKey::ApiPeople_PeoplePageData_PartPrefix . $i);
+    private static function getPeoplePageDataPartCacheKey(int $partNumber) : string {
+        return implode(':', [ CacheKey::ApiPeople_PeoplePageData_PartPrefix, $partNumber]);
+    }
+
+    public static function invalidatePeoplePageDataPart(int $partNumber, DataCache $cache) : void {
+        $cache->delete(self::getPeoplePageDataPartCacheKey($partNumber));
     }
 
     public static function invalidatePeoplePageDataAllParts(ApmEntitySystemInterface $es, DataCache $cache, LoggerInterface $logger) : void {
@@ -130,7 +134,7 @@ class ApiPeople extends ApiController
         // check the parts cache
         try {
             $parts = unserialize($cache->get(CacheKey::ApiPeople_PeoplePageData_Parts));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             // build parts structure
             $logger->debug("People page data: parts info not in cache, rebuilding");
             // get all tids, including merged ones so that there's no need to deal with deletions in the cache
@@ -153,11 +157,11 @@ class ApiPeople extends ApiController
         $dataArray = [];
         for ($i = 0; $i < count($parts); $i++) {
             $partTids = $parts[$i];
-            $partCacheKey = CacheKey::ApiPeople_PeoplePageData_PartPrefix . $i;
+            $partCacheKey = self::getPeoplePageDataPartCacheKey($i);
             // check if the part is already built
             try {
                 $partData = unserialize($cache->get($partCacheKey));
-            } catch (KeyNotInCacheException) {
+            } catch (ItemNotInCacheException) {
                 // build part data
                 $logger->debug("People page data: part $i not in cache, rebuilding");
                 $partData  = [];
@@ -220,7 +224,7 @@ class ApiPeople extends ApiController
         try {
             $cachedString = $cache->get($cacheKey);
             $data = unserialize($cachedString);
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             try {
                 $this->systemManager->getPersonManager()->getPersonEssentialData($personTid);
             } catch (PersonNotFoundException) {

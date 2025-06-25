@@ -30,26 +30,29 @@ use InvalidArgumentException;
 
 class Abbreviation extends Item {
     /**
-     * 
+     *
      * @param int $id
      * @param int $s
      * @param string $theText
+     * @param $expansion
      */
-    function __construct($id, $s, $theText, $expansion) {
+    function __construct(int $id, int $s, string $theText, $expansion) {
         parent::__construct($id, $s);
         $this->type = parent::ABBREVIATION;
-        if ($theText === NULL or $theText ===''){
+        if ($theText ===''){
             throw new InvalidArgumentException("ABBREVIATION items need non-empty text");
         }
         $this->theText = $theText;
         $this->altText = $expansion;
     }
 
-    function getExpansion(){
+    function getExpansion(): string
+    {
         return $this->altText;
     }
     
-    public function getPlainText() {
+    public function getPlainText(): string
+    {
         return $this->getExpansion();
     }
 }

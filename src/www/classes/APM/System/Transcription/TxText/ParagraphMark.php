@@ -32,12 +32,13 @@ class ParagraphMark extends Item {
      * @param int $id
      * @param int $s
      */
-    function __construct($id, $s) {
+    function __construct(int $id, int $s) {
         parent::__construct($id, $s);
         $this->type = parent::PARAGRAPH_MARK;
     }
     
-    function getText(){
+    function getText(): string
+    {
         return '';
     }
     

@@ -20,6 +20,8 @@
 
 namespace APM\System\Transcription\TxText;
 
+use InvalidArgumentException;
+
 /**
  * Description of TtiUnclear
  *
@@ -27,10 +29,10 @@ namespace APM\System\Transcription\TxText;
  */
 class ChapterMark extends Item {
     
-    const CHAPTER_START = 'start';
-    const CHAPTER_END = 'end';
+    const string CHAPTER_START = 'start';
+    const string CHAPTER_END = 'end';
 
-    const SEPARATOR = "\t";
+    const string SEPARATOR = "\t";
    
     
     function __construct($id, $seq, string $workId, int $chapterNumber,
@@ -43,7 +45,7 @@ class ChapterMark extends Item {
         $this->theText = implode(self::SEPARATOR, [self::normalizeString($appellation), self::normalizeString($title)]);
         $this->target = $chapterNumber;
         if ($type !== self::CHAPTER_START && $type !== self::CHAPTER_END) {
-             throw new \InvalidArgumentException("Wrong type, must be 'start' "
+             throw new InvalidArgumentException("Wrong type, must be 'start' "
                      . "or 'end'");
         }
         $this->altText = $type;
@@ -51,21 +53,22 @@ class ChapterMark extends Item {
         $this->extraInfo = $workId;
     }
     
-    function getWorkId()
+    function getWorkId(): string
     {
         return $this->extraInfo;
     }
     
-    function getChapterNumber()
+    function getChapterNumber(): int
     {
         return $this->target;
     }
     
-    function getType() {
+    function getType(): string
+    {
         return $this->altText;
     }
     
-    function getChapterLevel()
+    function getChapterLevel(): int
     {
         return $this->length;
     }

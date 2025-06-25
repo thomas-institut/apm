@@ -50,6 +50,7 @@ import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
 import { FontConversions } from '../Typesetter2/FontConversions.mjs'
 import { KeyStore } from '../toolbox/KeyStore.mjs'
 import { ItemLineInfo } from './ItemLineInfo.mjs'
+import { TOKEN_FOR_COUNTING_PURPOSES, TOKEN_OCCURRENCE_IN_LINE } from '../Typesetter2/MetadataKey.mjs'
 
 export const MAX_LINE_COUNT = 10000
 const enDash = '\u2013'
@@ -641,22 +642,25 @@ export class EditionTypesetting {
 
       switch(lemmaComponents.type) {
         case 'custom':
-          tsItems = await this.getTsItemsForString(lemmaComponents.text, 'apparatus', 'detect')
+          // custom lemma
+          tsItems = await this.getTsItemsForString(lemmaComponents.text, 'apparatus', 'detect');
           resolve(tsItems)
           return
 
         case 'full':
-          tsItems.push(...await this.getTsItemsForString(entry.lemmaText, 'apparatus', 'detect'))
-          tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.from))
+          // e.g., word1 word2 word3]
+          tsItems.push(...await this.getTsItemsForString(entry.lemmaText, 'apparatus', 'detect'));
+          tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.from, entry.to));
           resolve(tsItems)
           return
 
         case 'shortened':
+          // e.g. word1...wordN]
           tsItems.push(...await this.getTsItemsForString(lemmaComponents.from, 'apparatus', 'detect'))
-          tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.from))
+          tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.from));
           tsItems.push(...await this.getTsItemsForString(lemmaComponents.separator, 'apparatus', 'detect'))
           tsItems.push(...await this.getTsItemsForString(lemmaComponents.to, 'apparatus', 'detect'))
-          tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.to))
+          tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.to));
           resolve(tsItems)
           return
 
@@ -691,27 +695,53 @@ export class EditionTypesetting {
   }
 
   /**
+   * Returns an array of ts items with the superscript number that
+   * represents the occurrence number in the line for the given sequence
+   * of main text tokens.
    *
-   * @param mainTextIndex
+   * If there's only one occurrence in the line, returns an empty array
+   *
+   * @param {number}indexFrom
+   * @param {number}indexTo
    * @return {Promise<TypesetterItem[]>}
    * @private
    */
-  getTsItemsForLemmaOccurrenceNumber(mainTextIndex) {
-    return new Promise (async (resolve) => {
-      let tsItems = []
-      let lemmaNumberString = ''
-      let [occurrenceInLine, numberOfOccurrencesInLine] = this.getOccurrenceInLineInfo(mainTextIndex)
-      if (numberOfOccurrencesInLine > 1) {
-        lemmaNumberString = this.getNumberString(occurrenceInLine, this.edition.lang)
+  async getTsItemsForLemmaOccurrenceNumber(indexFrom, indexTo = -1) {
+    if (indexTo === -1) {
+      indexTo = indexFrom;
+    }
+    let tsItems = [];
+    let lemmaNumberString = '';
+    let [occurrenceInLine, numberOfOccurrencesInLine] = this.getOccurrenceInLineInfo(indexFrom);
+    if (numberOfOccurrencesInLine > 1) {
+      // if the first token only occurs once in the line, obviously the whole series of tokens only
+      // occurs once. Otherwise, we need to check the other tokens, if any.
+      // As soon as one of them only appears once in the line, we know that the whole series
+      // only appears once. Also, the lowest occurrenceInLine number is the occurrenceInLine number
+      // for the whole series, and the lowest numberOfOccurrencesInLine is the numberOfOccurrencesInLine
+      // for the whole series.
+      let seriesOccurrenceInLine = occurrenceInLine;
+      let seriesNumberOfOccurrencesInLine = numberOfOccurrencesInLine;
+      for (let tokenIndex = indexFrom+1; tokenIndex <= indexTo; tokenIndex++) {
+        let [ tokenOccurrenceInLine, tokenNumberOfOccurrencesInLine] = this.getOccurrenceInLineInfo(tokenIndex);
+        seriesOccurrenceInLine = Math.min(seriesOccurrenceInLine, tokenOccurrenceInLine);
+        seriesNumberOfOccurrencesInLine = Math.min(seriesNumberOfOccurrencesInLine, tokenNumberOfOccurrencesInLine);
+        if (tokenNumberOfOccurrencesInLine === 1) {
+          // no need to look any further
+          break;
+        }
       }
-      if (lemmaNumberString !== '') {
-        let lemmaNumberTextBox = TextBoxFactory.simpleText(lemmaNumberString)
-        await this.ss.apply(lemmaNumberTextBox, [ 'apparatus superscript'])
-        this.__detectAndSetTextBoxTextDirection(lemmaNumberTextBox)
-        tsItems.push(lemmaNumberTextBox)
+      if (seriesNumberOfOccurrencesInLine > 1) {
+        lemmaNumberString = this.getNumberString(seriesOccurrenceInLine, this.edition.lang);
       }
-      resolve(tsItems)
-    })
+    }
+    if (lemmaNumberString !== '') {
+      let lemmaNumberTextBox = TextBoxFactory.simpleText(lemmaNumberString)
+      await this.ss.apply(lemmaNumberTextBox, [ 'apparatus superscript'])
+      this.__detectAndSetTextBoxTextDirection(lemmaNumberTextBox)
+      tsItems.push(lemmaNumberTextBox)
+    }
+    return tsItems;
   }
 
   /**
@@ -901,7 +931,7 @@ export class EditionTypesetting {
   getLineInfoArrayFromItem(item, lineNumber) {
     if (!item.hasMetadata(MetadataKey.MERGED_ITEM || item.getMetadata(MetadataKey.MERGED_ITEM) === false)) {
       // normal, single item, just get the info if it exists and return
-      let infoObject = this.constructLineInfoObjectFromNonMergedItem(item, lineNumber)
+      let infoObject = this.constructLineInfoObjectFromItem(item, lineNumber, false)
       if (infoObject === undefined) {
         return []
       }
@@ -909,6 +939,17 @@ export class EditionTypesetting {
     }
 
     // merged item
+    if (item.hasMetadata(MetadataKey.TOKEN_OCCURRENCE_IN_LINE)) {
+      // no need to go down the tree, all info is right here!
+      console.log(`Item is merged but has info in it`, item.metadata);
+      let infoObject = this.constructLineInfoObjectFromItem(item, lineNumber, true)
+      if (infoObject === undefined) {
+        return []
+      }
+      return [ infoObject ]
+    }
+
+
     if (!item.hasMetadata(MetadataKey.SOURCE_ITEMS_EXPORT)) {
       // no data from source items, warn and return an empty array
       console.warn(`Found merged item without source items info`)
@@ -936,10 +977,11 @@ export class EditionTypesetting {
    *    }
    * @param {TypesetterItem}item
    * @param {number}lineNumber
+   * @param isMerged
    * @return {ItemLineInfo}
    * @private
    */
-  constructLineInfoObjectFromNonMergedItem(item, lineNumber) {
+  constructLineInfoObjectFromItem(item, lineNumber, isMerged = false) {
     if (!item.hasMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX)) {
       // the item does not correspond to a main text token
       return undefined
@@ -951,8 +993,12 @@ export class EditionTypesetting {
     info.text = ''
     info.mainTextIndex = item.getMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX)
 
-    if (item instanceof TextBox) {
+    if (!isMerged && item instanceof TextBox) {
       info.text = item.getText()
+    }
+
+    if (isMerged) {
+      info.text = item.getMetadata(MetadataKey.TOKEN_FOR_COUNTING_PURPOSES);
     }
 
     if (item.hasMetadata(MetadataKey.TOKEN_OCCURRENCE_IN_LINE)) {
@@ -970,8 +1016,6 @@ export class EditionTypesetting {
     }
     return info
   }
-
-
   /**
    *
    * @return {Box}

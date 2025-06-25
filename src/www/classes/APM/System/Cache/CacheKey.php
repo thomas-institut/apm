@@ -14,7 +14,7 @@ class CacheKey
      *
      * Get/Set: ApiCollation->automaticCollationTable
      */
-    const ApiCollationAutomaticCollationTablePrefix = 'ApiCollation-ACT-';
+    const string ApiCollationAutomaticCollationTablePrefix = 'ApiCollation:ACT:';
 
     /**
      * Prefix for the names index for a given entity type.
@@ -26,7 +26,7 @@ class CacheKey
      * Get/Set: ApiEntity->nameSearch()
      *
      */
-    const ApiEntityEntityNamesIndexPrefix = 'ApmEntityNamesIndex';
+    const string ApiEntityEntityNamesIndexPrefix = 'EntityNamesIndex';
 
 
     /**
@@ -37,39 +37,39 @@ class CacheKey
      * Maintained up to date by the APM Daemon.
      *
      */
-    const ApiPeople_PeoplePageData_All =  'ApiPeople_PeoplePage_All';
+    const string ApiPeople_PeoplePageData_All =  'ApiPeople:PeoplePage:All';
 
 
-    const ApiPeople_PeoplePageData_Parts = 'ApiPeople_PeoplePage_Parts';
-    const ApiPeople_PeoplePageData_PartPrefix = 'ApiPeople_PeoplePage_Part_';
+    const string ApiPeople_PeoplePageData_Parts = 'ApiPeople:PeoplePage:Parts';
+    const string ApiPeople_PeoplePageData_PartPrefix = 'ApiPeople:PeoplePage:Part';
 
 
     /**
      * Transcription data for ApiSearch
      */
-    const ApiSearchTranscriptions = 'ApiSearchTranscriptions';
+    const string ApiSearchTranscriptions = 'ApiSearch:Transcriptions';
 
     /**
      * Editions data for ApiSearch
      */
-    const ApiSearchEditions = 'ApiSearchEditions';
+    const string ApiSearchEditions = 'ApiSearch:Editions';
 
     /**
      * Transcriber data for ApiSearch
      */
-    const ApiSearchTranscribers = 'ApiSearchTranscribers';
+    const string ApiSearchTranscribers = 'ApiSearch:Transcribers';
 
     /**
      * Editors data for ApiSearch
      */
-    const ApiSearchEditors = 'ApiSearchEditors';
+    const string ApiSearchEditors = 'ApiSearch:Editors';
 
     /**
      * Prefix for ApiSearch lemmata
      *
      * Schema: PREFIX{lemmaString}
      */
-    const ApiSearchLemma = 'ApiSearchLemma_';
+    const string ApiSearchLemma = 'ApiSearch:Lemma';
 
     /**
      * Prefix for a user's collation table data

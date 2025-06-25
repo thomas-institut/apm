@@ -4,8 +4,13 @@ namespace APM\System\Work;
 
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
+use APM\EntitySystem\Exception\InvalidEntityTypeException;
+use APM\EntitySystem\Exception\InvalidObjectException;
+use APM\EntitySystem\Exception\InvalidStatementException;
+use APM\EntitySystem\Exception\InvalidSubjectException;
 use APM\EntitySystem\Schema\Entity;
 use APM\EntitySystem\ValueToolBox;
+use InvalidArgumentException;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -27,11 +32,9 @@ class EntitySystemWorkManager implements WorkManager
      */
     public function getWorkDataByDareId(string $dareId): WorkData
     {
-//        $this->logger->debug("Getting work by dare Id $dareId");
         $statements = $this->entitySystem->getStatements(null, Entity::pApmWorkId, $dareId);
 
         if (count($statements) === 0) {
-//            $this->logger->debug("No work data found for dare $dareId");
             throw new WorkNotFoundException("No work with given Dare Id $dareId");
         }
 
@@ -114,5 +117,107 @@ class EntitySystemWorkManager implements WorkManager
             $ids[] = $statement->subject;
         }
         return $ids;
+    }
+
+    public function createWork(string $workTitle, string $shortTitle, int $workAuthor, string $dareId, bool $enabled, int $creator): int
+    {
+        $workTitle = trim($workTitle);
+
+        if (!$this->entitySystem->validateEntity($workAuthor, Entity::tPerson)) {
+            throw new InvalidArgumentException("Author entity $workAuthor does not exist or is not a Person");
+        }
+
+        if ($creator !== Entity::System) {
+            if (!$this->entitySystem->validateEntity($creator, Entity::tPerson)) {
+                throw new InvalidArgumentException("Creator entity $creator does not exist or is not a Person");
+            }
+        }
+
+        $dareId = trim($dareId);
+        $workTitle = trim($workTitle);
+        $shortTitle = trim($shortTitle);
+
+        if ($dareId === '' || $workTitle === '' || $shortTitle === '') {
+            throw new InvalidArgumentException("Empty dareId, title or short title");
+        }
+
+        if (!self::isValidDareId($dareId)) {
+            throw new InvalidArgumentException("Dare id $dareId is not valid");
+        }
+
+        // All good, create the entity
+        try {
+            $workId = $this->entitySystem->createEntity(
+                Entity::tWork,
+                $workTitle,
+                '',
+                $creator
+            );
+        } catch (InvalidEntityTypeException $e) {
+            // should never happen!
+            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+        }
+
+        // Now let's add some statements
+        try {
+            $this->entitySystem->makeStatement(
+                $workId,
+                Entity::pWorkAuthor,
+                $workAuthor,
+                $creator,
+                'Setting work author'
+            );
+            $this->entitySystem->makeStatement(
+                $workId,
+                Entity::pWorkShortTitle,
+                $shortTitle,
+                $creator,
+                'Setting short title'
+            );
+            $this->entitySystem->makeStatement(
+                $workId,
+                Entity::pApmWorkId,
+                $dareId,
+                $creator,
+                'Setting work id'
+            );
+            $this->entitySystem->makeStatement(
+                $workId,
+                Entity::pWorkIsEnabledInApm,
+                ValueToolBox::boolToValue($enabled),
+                $creator,
+                'Setting enabled flag'
+            );
+        } catch (InvalidObjectException|InvalidSubjectException|InvalidStatementException $e) {
+            // should never happen!
+            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+        }
+
+        return $workId;
+
+    }
+
+    public static function isValidDareId(string $dareId) : bool {
+
+        return preg_match('/^[A-Z]+\d+$/', $dareId) !== false;
+    }
+
+    public function setWorkEnableStatus(int $workId, bool $enabled): void
+    {
+        if (!$this->entitySystem->validateEntity($workId, Entity::tWork)) {
+            throw new WorkNotFoundException("Work $workId does not exist or entity is not a work");
+        }
+        try {
+            $this->entitySystem->makeStatement(
+                $workId,
+                Entity::pWorkIsEnabledInApm,
+                ValueToolBox::boolToValue($enabled),
+                Entity::System,
+                'Setting enabled flag'
+            );
+        } catch (InvalidObjectException|InvalidSubjectException|InvalidStatementException $e) {
+            // should never happen!
+            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+        }
     }
 }

@@ -72,10 +72,10 @@ use RuntimeException;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\DataCache\CacheAware;
-use ThomasInstitut\DataCache\DataCacheToolBox;
+use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\InMemoryDataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
-use ThomasInstitut\DataCache\SimpleCacheAware;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
+use ThomasInstitut\DataCache\SimpleCacheAwareTrait;
 use ThomasInstitut\DataTable\InvalidRowUpdateTime;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
 use ThomasInstitut\DataTable\MySqlDataTable;
@@ -83,19 +83,21 @@ use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use ThomasInstitut\DataTable\RowAlreadyExists;
 use ThomasInstitut\DataTable\RowDoesNotExist;
 use ThomasInstitut\TimeString\TimeString;
+use ThomasInstitut\ToolBox\DataCacheToolBox;
 use ThomasInstitut\ToolBox\MySqlHelper;
+use Throwable;
 
 class ApmTranscriptionManager extends TranscriptionManager
     implements CacheAware, CodeDebugInterface
 {
-    use SimpleCacheAware;
+    use SimpleCacheAwareTrait;
     use CodeDebugWithLoggerTrait;
 
     const int ERROR_DOCUMENT_NOT_FOUND = 50;
     const int ERROR_CACHE_ERROR = 51;
     const int ERROR_NO_LOCATIONS = 52;
-    const string DEFAULT_CACHE_KEY_PREFIX = 'ApmTM-';
-    const int CACHE_TTL = 30 * 24 * 3600;  // 30 days
+    const string DEFAULT_CACHE_KEY_PREFIX = 'TxMgr:';
+    const int CACHE_TTL = 60 * 24 * 3600;  // 30 days
 
     // Components that are generated when needed
     private ?PDO $dbConn = null;
@@ -134,7 +136,8 @@ class ApmTranscriptionManager extends TranscriptionManager
                                 array $tableNames,
                                 LoggerInterface $logger,
                                 callable $docManager,
-                                callable $personManager
+                                callable $personManager,
+                                callable|DataCache $dataCache
     )
     {
         $this->resetError();
@@ -142,7 +145,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         $this->docManagerCallable = $docManager;
         $this->personManagerCallable = $personManager;
         $this->tNames  = $tableNames;
-        $this->dataCache = new InMemoryDataCache();
+        $this->setCache($dataCache);
         $this->setCacheKeyPrefix( self::DEFAULT_CACHE_KEY_PREFIX);
         $this->localMemCache = new InMemoryDataCache();
         $this->setLogger($logger);
@@ -203,7 +206,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     }
 
     private function getCacheKeyForWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : string {
-        return  $this->cacheKeyPrefix . 'w-' . WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+        return  $this->cacheKeyPrefix . 'w:' . WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
     }
 
     /**
@@ -263,8 +266,8 @@ class ApmTranscriptionManager extends TranscriptionManager
             $cacheValue = '';
             $inCache = true;
             try {
-                $cacheValue = $this->dataCache->get($cacheKey);
-            } catch (KeyNotInCacheException) {
+                $cacheValue = $this->getDataCache()->get($cacheKey);
+            } catch (ItemNotInCacheException) {
                 $inCache = false;
             }
 
@@ -333,7 +336,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         if ($this->cacheOn) {
             $dataToSave = DataCacheToolBox::toStringToCache($txWitness, true);
             try {
-                $this->dataCache->set($cacheKey, $dataToSave,self::CACHE_TTL);
+                $this->getDataCache()->set($cacheKey, $dataToSave,self::CACHE_TTL);
             } catch(Exception $e) {
                 $this->setError("Cannot set cache for key $cacheKey : " . $e->getMessage(), self::ERROR_CACHE_ERROR);
                 throw new RuntimeException('Cannot set cache for key ' . $cacheKey);
@@ -558,8 +561,6 @@ class ApmTranscriptionManager extends TranscriptionManager
 
     public function getSegmentLocationsForFullTxWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeString) : array
     {
-        $this->startCodeDebug();
-//        $this->codeDebug('getSegmentLocations', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeString]);
         $chunkLocationMap = $this->getChunkLocationMapFromDatabase(
             [
                 'work_id' => "='$workId'",
@@ -572,11 +573,9 @@ class ApmTranscriptionManager extends TranscriptionManager
 
 
         if (!isset($chunkLocationMap[$workId][$chunkNumber][$docId][$localWitnessId])) {
-            $this->codeDebug("No segment locations found");
             return [];
         }
-        $this->codeDebug("Segment locations for $workId-$chunkNumber, doc $docId, local witness Id $localWitnessId", $chunkLocationMap[$workId][$chunkNumber][$docId][$localWitnessId] );
-        $this->stopCodeDebug();
+
         return $chunkLocationMap[$workId][$chunkNumber][$docId][$localWitnessId];
     }
 
@@ -626,7 +625,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                     $segmentLocation->setEnd($location);
                 } else {
                     // end location already set, this means the current location is a duplicate end mark
-                    $this->logger->debug('Duplicate chunk end mark found', [ $location]);
+//                    $this->logger->debug('Duplicate chunk end mark found', [ $location]);
                     $segmentLocation->setDuplicateChunkMarkStatus(false);
                 }
             }
@@ -951,23 +950,20 @@ class ApmTranscriptionManager extends TranscriptionManager
         $localCacheKey = 'getW4C:' . $workId . '-' . $chunkNumber;
         try {
             return unserialize($this->localMemCache->get($localCacheKey));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             // not in cache, we just keep going with the construction of the witness
         }
-//        $this->codeDebug("Witness info not in cache");
 
         $chunkLocationMap = $this->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
         $versionMap = $this->getVersionsForChunkLocationMap($chunkLocationMap);
         $lastVersions = $this->getLastChunkVersionFromVersionMap($versionMap);
 
         $docArray = $chunkLocationMap[$workId][$chunkNumber] ?? [];
-//        $this->logger->debug("docArray", array_keys($docArray));
         $docManager = $this->getDocumentManager();
         $witnessInfoArray = [];
 
 
         foreach($docArray as $docId => $localWitnessIdArray) {
-            $debug = true;
             foreach ($localWitnessIdArray as $localWitnessId => $segmentArray) {
                 try {
                     $docInfo = $docManager->getDocInfo($docId);
@@ -977,9 +973,6 @@ class ApmTranscriptionManager extends TranscriptionManager
                 }
                 /** @var $lastVersion ColumnVersionInfo */
                 $lastVersion = $lastVersions[$workId][$chunkNumber][$docId][$localWitnessId];
-
-//                $debug && $this->logger->debug("Last version", [ 'lastV' => $lastVersion]);
-//                $debug && $this->logger->debug("doc info", get_object_vars($docInfo));
 
                 $witnessInfo = new WitnessInfo();
                 $witnessInfo->type = WitnessType::FULL_TRANSCRIPTION;
@@ -1139,8 +1132,11 @@ class ApmTranscriptionManager extends TranscriptionManager
         $theRows = iterator_to_array($rows);
         ArraySort::byKey($theRows, 'seq');
         $elements = [];
+        $this->logger->debug("Got " . count($theRows) . " rows from database");
         foreach($theRows as $row) {
+            $this->logger->debug("Processing row ", $row);
             $e = $this->createElementObjectFromRow($row);
+            $this->logger->debug("Element ", get_object_vars($e));
             $e->items = $this->getItemsForElement($e, $timeString);
             $elements[] = $e;
         }
@@ -1156,7 +1152,7 @@ class ApmTranscriptionManager extends TranscriptionManager
      */
     public function updateColumnElements(int $pageId, int $columnNumber, array $newElements, string $time = ''): bool|array
     {
-        $this->logger->debug("UPDATING COLUMN ELEMENTS, pageId=$pageId, col=$columnNumber");
+//        $this->logger->debug("UPDATING COLUMN ELEMENTS, pageId=$pageId, col=$columnNumber");
         // force pageId and columnNumber in the elements in $newElements
         foreach ($newElements as $element ) {
             $element->pageId = $pageId;
@@ -1183,11 +1179,11 @@ class ApmTranscriptionManager extends TranscriptionManager
             list ($index, $cmd, $newSeq) = $editInstruction;
             switch ($cmd) {
                 case MyersDiff::KEEP:
-                    $this->logger->debug("KEEPING element @ pos " . $index . ", id=" . $oldElements[$index]->id);
+//                    $this->logger->debug("KEEPING element @ pos " . $index . ", id=" . $oldElements[$index]->id);
                     if ($oldElements[$index]->seq
                         !== $newSeq) {
-                        $this->logger->debug("... with new seq $newSeq");
-                        $this->logger->debug("... seq was " . $oldElements[$index]->seq );
+//                        $this->logger->debug("... with new seq $newSeq");
+//                        $this->logger->debug("... seq was " . $oldElements[$index]->seq );
                         $newElements[$newElementsIndex]->seq =
                             $newSeq;
                     }
@@ -1212,13 +1208,13 @@ class ApmTranscriptionManager extends TranscriptionManager
                     break;
 
                 case MyersDiff::DELETE:
-                    $this->logger->debug("DELETING element @ " . $index . ", id=" . $oldElements[$index]->id);
+//                    $this->logger->debug("DELETING element @ " . $index . ", id=" . $oldElements[$index]->id);
 //                    $this->logger->debug("... .... time=" . $time);
                     $this->deleteElement($oldElements[$index]->id, $time);
                     break;
 
                 case MyersDiff::INSERT:
-                    $this->logger->debug("INSERTING element @ " . $index);
+//                    $this->logger->debug("INSERTING element @ " . $index);
 //                    $this->logger->debug("...New Seq: " . $newSeq);
                     $newElements[$newElementsIndex]->seq = $newSeq;
                     if ($newElements[$index]->type === Element::SUBSTITUTION || $newElements[$index]->type === Element::ADDITION) {
@@ -1229,8 +1225,8 @@ class ApmTranscriptionManager extends TranscriptionManager
                             }
                             else {
                                 if ($newElements[$index]->reference !== $newItemsIds[$newElements[$index]->reference]) {
-                                    $this->logger->debug("... with new reference",
-                                        [ 'oldRef' => $newElements[$index]->reference, 'newRef'=> $newItemsIds[$newElements[$index]->reference] ]);
+//                                    $this->logger->debug("... with new reference",
+//                                        [ 'oldRef' => $newElements[$index]->reference, 'newRef'=> $newItemsIds[$newElements[$index]->reference] ]);
                                     $newElements[$index]->reference = $newItemsIds[$newElements[$index]->reference];
                                 }
                             }
@@ -1249,12 +1245,12 @@ class ApmTranscriptionManager extends TranscriptionManager
                         $givenId = $newElements[$newElementsIndex]->items[$j]->id;
                         $newItemsIds[$givenId] = $element->items[$j]->id;
                     }
-                    $this->logger->debug("...element id = " . $element->id);
+//                    $this->logger->debug("...element id = " . $element->id);
                     $newElementsIndex++;
                     break;
             }
         }
-        $this->logger->debug(":: finished UPDATING COLUMN ELEMENTS, pageId=$pageId, col=$columnNumber");
+//        $this->logger->debug(":: finished UPDATING COLUMN ELEMENTS, pageId=$pageId, col=$columnNumber");
         return $newItemsIds;
     }
 
@@ -1496,9 +1492,6 @@ class ApmTranscriptionManager extends TranscriptionManager
         }
         try {
             $handId = $item->handId;
-            if (!is_int($handId)) {
-                $handId = 0;
-            }
             return $this->getItemsDataTable()->createRowWithTime([
                 'ce_id' => $item->columnElementId,
                 'type' => $item->type,
@@ -1607,9 +1600,12 @@ class ApmTranscriptionManager extends TranscriptionManager
     }
 
     /**
+     * @param Element $element
+     * @param bool $time
+     * @return Item[]
      * @throws InvalidTimeStringException
      */
-    private function getItemsForElement($element, $time = false): array
+    private function getItemsForElement(Element $element, bool|string $time = false): array
     {
         if ($time === false) {
             $time = TimeString::now();
@@ -1620,14 +1616,19 @@ class ApmTranscriptionManager extends TranscriptionManager
             'ce_id' => $element->id
         ], 0, $time);
 
+
         $theRows = iterator_to_array($rows);
         ArraySort::byKey($theRows, 'seq');
 
         $tt=[];
 
         foreach ($theRows as $row) {
-            $item = self::createItemObjectFromRow($row);
-            ItemArray::addItem($tt, $item, true);
+            try {
+                $item = self::createItemObjectFromRow($row);
+                ItemArray::addItem($tt, $item, true);
+            } catch (Throwable $e) {
+                $this->logger->error($e->getMessage());
+            }
         }
         return $tt;
     }
@@ -1963,7 +1964,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             $newElement->id = $oldElement->id;
         }
 
-        $this->logger->debug("   UPDATING ELEMENT $oldElement->id");
+//        $this->logger->debug("   UPDATING ELEMENT $oldElement->id");
 
         // Force columnElementId in new element's items
         foreach ($newElement->items as $item) {
@@ -1983,10 +1984,10 @@ class ApmTranscriptionManager extends TranscriptionManager
             list ($index, $cmd, $newSeq) = $editInstruction;
             switch ($cmd) {
                 case MyersDiff::KEEP:
-                    $this->logger->debug("   Keeping item $index");
+//                    $this->logger->debug("   Keeping item $index");
                     if ($oldElement->items[$index]->seq
                         !== $newSeq) {
-                        $this->logger->debug("   ... with new seq $newSeq");
+//                        $this->logger->debug("   ... with new seq $newSeq");
                         $oldElement->items[$index]->seq =
                             $newSeq;
                         $this->updateItemInDB(
@@ -1996,16 +1997,16 @@ class ApmTranscriptionManager extends TranscriptionManager
                     }
 
                     if ($oldElement->items[$index]->type === Item::ADDITION) {
-                        $this->logger->debug("   Keeping an addition",get_object_vars($oldElement->items[$index]));
+//                        $this->logger->debug("   Keeping an addition",get_object_vars($oldElement->items[$index]));
                         if ($oldElement->items[$index]->target !== 0) {
-                            $this->logger->debug("   ...with non-zero target", [ 'target'=>$oldElement->items[$index]->target]);
+//                            $this->logger->debug("   ...with non-zero target", [ 'target'=>$oldElement->items[$index]->target]);
                             if (!isset($itemIds[$oldElement->items[$index]->target])) {
                                 $this->logger->warning("Addition without valid target @ pos $index", get_object_vars($oldElement->items[$index]));
                             }
                             else {
                                 if ($oldElement->items[$index]->target !== $itemIds[$oldElement->items[$index]->target]) {
                                     $oldElement->items[$index]->target = $itemIds[$oldElement->items[$index]->target];
-                                    $this->logger->debug("   ...with new target", [ 'target'=>$oldElement->items[$index]->target]);
+//                                    $this->logger->debug("   ...with new target", [ 'target'=>$oldElement->items[$index]->target]);
 //                                    $this->logger->debug("  ... .... time=" . $time);
                                     $this->updateItemInDB(
                                         $oldElement->items[$index],
@@ -2020,7 +2021,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                     break;
 
                 case MyersDiff::DELETE:
-                    $this->logger->debug("  Deleting item $index");
+//                    $this->logger->debug("  Deleting item $index");
 //                    $this->logger->debug("... .... time=" . $time);
                     $this->getItemsDataTable()->deleteRowWithTime(
                         $oldElement->items[$index]->id,
@@ -2030,7 +2031,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                     break;
 
                 case MyersDiff::INSERT:
-                    $this->logger->debug("   Inserting new item with seq $newSeq");
+//                    $this->logger->debug("   Inserting new item with seq $newSeq");
                     // This takes care of new addition with targets that
                     // come earlier in the item sequence in the same element,
                     // which is the most usual case
@@ -2056,7 +2057,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                         $this->logger->error("Could not create new item in DB", [ 'class' => __CLASS__, 'function' => __FUNCTION__]);
                         throw new RuntimeException("Could not add new item in DB");
                     }
-                    $this->logger->debug("   ... with item Id = $newItemId");
+//                    $this->logger->debug("   ... with item Id = $newItemId");
 
                     $itemIds[$newElement->items[$newItemsIndex]->id] = $newItemId;
                     $newItemsIndex++;
@@ -2064,11 +2065,11 @@ class ApmTranscriptionManager extends TranscriptionManager
                     break;
             }
         }
-        if (!$ignoreNewEditor && $newElement->editorTid !== $oldElement->editorTid) {
-            $this->logger->debug("   ...changes by new editor: $newElement->editorTid");
-        }
+//        if (!$ignoreNewEditor && $newElement->editorTid !== $oldElement->editorTid) {
+//            $this->logger->debug("   ...changes by new editor: $newElement->editorTid");
+//        }
         if (!Element::isElementDataEqual($newElement, $oldElement, true, $ignoreNewEditor, false)) {
-            $this->logger->debug("   ...updating element in DB");
+//            $this->logger->debug("   ...updating element in DB");
 //            $this->logger->debug("... .... time=" . $time);
             $this->updateElementInDB($newElement, $time);
         }

@@ -30,8 +30,10 @@ use APM\EntitySystem\Schema\Entity;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\System\Document\DocumentManager;
 use APM\System\Job\JobQueueManager;
+use APM\System\Lemmatizer\LemmatizerInterface;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
+use APM\System\Search\SearchManagerInterface;
 use APM\System\Transcription\ApmTranscriptionWitness;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserManagerInterface;
@@ -143,7 +145,6 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getAvailableImageSources() : array;
     abstract public function getImageSources() : array;
     abstract public function getLogger() : Logger;
-//    abstract public function getHookManager() : HookManager;
     abstract public function getSettingsManager() : SettingsManager;
     abstract public function getCollationEngine() : CollationEngine;
     abstract public function getTranscriptionManager() : TranscriptionManager;
@@ -151,6 +152,7 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getMultiChunkEditionManager() : MultiChunkEditionManager;
     abstract public function getSystemDataCache() : DataCache;
     abstract public function getMemDataCache() : DataCache;
+    abstract public function getDirectoryDataCache() : DataCache;
     abstract public function getBaseUrl(): string;
     abstract public function getTwig() : Twig;
     abstract public function getRouter() : RouteParserInterface;
@@ -162,9 +164,9 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getWorkManager() : WorkManager;
     abstract public function getEntitySystem() : ApmEntitySystemInterface;
     abstract public function getDocumentManager() : DocumentManager;
-//    abstract public function getOpensearchClient() : Client|null;
-
     abstract public function getTypesenseClient() : Client;
+    abstract public function getLemmatizer() : LemmatizerInterface;
+    abstract public function getSearchManager() : SearchManagerInterface;
 
     /**
      * @internal

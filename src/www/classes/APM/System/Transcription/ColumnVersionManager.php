@@ -62,12 +62,12 @@ abstract class ColumnVersionManager
     /**
      * Marks a version as published
      * @param int $versionId
-     * @return mixed
+     * @return void
      */
     abstract public function publishVersion(int $versionId) : void;
 
     /**
-     * Marks a version as unpulished
+     * Marks a version as unpublished
      * @param int $versionId
      */
     abstract public function unPublishVersion(int $versionId) : void;

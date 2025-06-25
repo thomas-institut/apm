@@ -26,7 +26,7 @@ namespace APM\Core\Address;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 abstract class Address {
-    const UNDEFINED = null;
+    const null UNDEFINED = null;
         
     abstract public function getCoord(int $coord);
     abstract public function setCoord(int $coord, $value);

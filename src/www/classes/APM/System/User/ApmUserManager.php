@@ -6,7 +6,7 @@ use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 use RuntimeException;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\RowAlreadyExists;
@@ -117,7 +117,7 @@ class ApmUserManager implements UserManagerInterface
         $cacheKey = $this->getDataCacheKey($userId);
         try {
             return unserialize($this->cache->get($cacheKey));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             $rows = $this->getUsersTable()->findRows(['id' => $userId]);
             if (count($rows) === 0) {
                 throw new UserNotFoundException();
@@ -340,7 +340,7 @@ class ApmUserManager implements UserManagerInterface
     private function getAllUserTokenRows(int $userId) {
         try {
             return unserialize($this->cache->get($this->getTokensCacheKey($userId)));
-        } catch (KeyNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             $rows =  $this->getTokensTable()->findRows( [
                 'user_tid' => $userId,
             ]);

@@ -30,7 +30,7 @@ namespace APM\System\Transcription\ColumnElement;
 class Gloss extends Element
 {
     
-    public static $validPlacements = [ 
+    public static array $validPlacements = [
         'margin top',
         'margin bottom',
         'margin right',
@@ -45,17 +45,17 @@ class Gloss extends Element
         $this->placement = 'margin left';
     }
     
-    public function setPlacement($placement) 
+    public function setPlacement($placement): void
     {
         $this->placement = $placement;
     }
     
-    public function getPlacement() 
+    public function getPlacement(): string
     {
         return $this->placement;
     }
     
-    public static function isPlacementValid($placement)
+    public static function isPlacementValid($placement): bool
     {
         return in_array($placement, self::$validPlacements);
     }

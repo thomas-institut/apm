@@ -53,7 +53,6 @@ use GuzzleHttp\Client as HttpClient;
  */
 class IndexManager extends CommandLineUtility
 {
-    private ?Client $client = null;
     private string $indexNamePrefix;
     /**
      * @var string[]
@@ -76,14 +75,7 @@ class IndexManager extends CommandLineUtility
      */
     public function main($argc, $argv): bool
     {
-        // Instantiate Typesense client
-        $config = $this->getSystemManager()->getConfig();
-        $this->instantiateTypesenseClient($config);
 
-
-        if ($this->client === false) {
-            return false;
-        }
         if (count($argv) < 2) {
             $this->printHelp();
             return true;
@@ -190,6 +182,11 @@ class IndexManager extends CommandLineUtility
         return true;
     }
 
+    public function setIndexNamePrefix(string $prefix): void {
+        $this->indexNamePrefix = $prefix;
+        $this->indices = [$this->indexNamePrefix . '_la', $this->indexNamePrefix . '_ar', $this->indexNamePrefix . '_he'];
+    }
+
     /**
      * Prints information about how to use the index manager command line tool. Use option -h in the command line to get the information.
      * @return void
@@ -217,15 +214,19 @@ END;
     /**
      * Builds the transcriptions or editions index in open search after getting all relevant data from the sql database. Deletes already existing transcriptions or editions index.
      * @return void
+     * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
      */
     private function buildIndex(): void
     {
 
         print ("Building index $this->indexNamePrefix\n");
 
-        // delete existing and create new index
+        // delete existing and create a new index
         foreach ($this->indices as $indexName) {
-            $this->resetIndex($this->client, $indexName);
+            $this->resetIndex($this->getSystemManager()->getTypesenseClient(), $indexName);
         }
 
         switch ($this->indexNamePrefix) {
@@ -246,7 +247,7 @@ END;
     }
 
     /**
-     * Builds the transcriptions index in open search after getting all relevant data from the sql database.
+     * Builds the transcription index in Typesense after getting all relevant data from the MySQL database.
      * @return void
      */
     private function buildIndexTranscriptions(): void
@@ -261,7 +262,7 @@ END;
         $absStart = microtime(true);
         $pagesIndexed = 0;
         foreach ($docIds as $docId) {
-            // get a list of transcribed pages of the document
+            // get the list of transcribed pages
             try {
                 $title = $this->getTitle($docId);
                 $pages_transcribed = $this->getSystemManager()->getTranscriptionManager()->getTranscribedPageListByDocId($docId);
@@ -293,10 +294,10 @@ END;
                         $transcription = $this->getTranscription($docId, $page, $col);
                         $transcriber = $this->getTranscriber($docId, $page, $col);
 
-                        // get language of current column (same as document)
+                        // get language of the current column (same as the document)
                         $lang = $this->getLang($pageId);
 
-                        // get foliation number of the current page/sequence number
+                        // get the foliation number of the current page/sequence number
                         $foliation = $this->getFoliation($docId, $page);
 
                         // get timestamp
@@ -304,7 +305,7 @@ END;
                         $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($pageId, $col);
                         $currentVersionInfo = (array)(end($versionsInfo));
                         $timeFrom = (string)$currentVersionInfo['timeFrom'];
-                        $this->indexTranscription($this->client, null, $title, $page, $seq, $foliation, $col, $transcriber, $pageId, $docId, $transcription, $lang, $timeFrom);
+                        $this->indexTranscription($this->getSystemManager()->getTypesenseClient(), null, $title, $page, $seq, $foliation, $col, $transcriber, $pageId, $docId, $transcription, $lang, $timeFrom);
                     }
 
                     $pagesIndexed++;
@@ -314,7 +315,7 @@ END;
                     $remainingTime = intval($timePerPage * ($transcribedPageCount - $pagesIndexed));
                     printf("%05d of %d pages indexed (%.2f%%) : Time elapsed %s : Est. Total %s : Est. Remaining %s : Doc %d, page %d of %d, %-50s\r" ,
                         $pagesIndexed, $transcribedPageCount, 100 * $pagesIndexed / $transcribedPageCount,
-                        DateTimeFormat::getFormattedTime($totalTime),
+                        DateTimeFormat::getFormattedTime(intval($totalTime)),
                         DateTimeFormat::getFormattedTime($estTotalTime),
                         DateTimeFormat::getFormattedTime($remainingTime),
                         $docId, $i+1, $pageCount, $title
@@ -408,13 +409,13 @@ END;
     }
 
     /**
-     * @param string $page_id
+     * @param string $pageId
      * @return string
      * @throws PageNotFoundException
      */
-    private function getLang(string $page_id): string
+    private function getLang(string $pageId): string
     {
-        $langId = $this->getSystemManager()->getDocumentManager()->getPageInfo($page_id)->lang;
+        $langId = $this->getSystemManager()->getDocumentManager()->getPageInfo($pageId)->lang;
 
         return match ($langId) {
             Entity::LangLatin => 'la',
@@ -487,14 +488,14 @@ END;
                 continue;
             }
 
-            $this->indexEdition($this->client, null, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
+            $this->indexEdition($this->getSystemManager()->getTypesenseClient(), null, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
             $log_data = 'Title: ' . $edition['title'] . ', Editor: ' . $edition['editor'] . ', Table ID: ' . $edition['table_id'] . ', Chunk: ' . $edition['chunk_id'] . ", TimeFrom: " . $edition['timeFrom'];
             $this->logger->debug("Indexed Edition – $log_data\n");
         }
     }
 
     /**
-     * Adds a new item to the transcriptions or editions index.
+     * Adds a new item to the transcription or editions index.
      * @param string $arg1 , page ID in case of transcriptions, table ID for editions
      * @param string|null $arg2 column no. in case of transcriptions
      * @param string|null $id , open search id for the item, only necessary when an already indexed item with a given id becomes updated
@@ -1145,7 +1146,7 @@ END;
             return;
         }
 
-        $this->indexTranscription($this->client, $id, $title, $page, $seq, $foliation, $col, $transcriber, $pageID, $doc_id, $transcription, $lang, $timeFrom);
+        $this->indexTranscription($this->getSystemManager()->getTypesenseClient(), $id, $title, $page, $seq, $foliation, $col, $transcriber, $pageID, $doc_id, $transcription, $lang, $timeFrom);
 
     }
 
@@ -1159,6 +1160,7 @@ END;
 
         // get collationTableManager
         $ctm = $this->getSystemManager()->getCollationTableManager();
+        $client = $this->getSystemManager()->getTypesenseClient();
 
         try {
             $edition = $this->getEditionData($ctm, $tableID);
@@ -1173,7 +1175,7 @@ END;
         $editionExists = false;
 
         if ($edition['table_id'] === (int) $tableID) {
-            $this->indexEdition($this->client, $id, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
+            $this->indexEdition($client, $id, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
             $log_data = 'Title: ' . $edition['title'] . ', Editor: ' . $edition['editor'] . ', Table ID: ' . $edition['table_id'] . ', Chunk: ' . $edition['chunk_id'] . ", TimeFrom: " . $edition['timeFrom'];
             $this->logger->debug("Indexed Edition – $log_data\n");
             $editionExists = true;
@@ -1223,6 +1225,8 @@ END;
      * @throws EntityDoesNotExistException
      * @throws InvalidTimeStringException
      * @throws PageNotFoundException
+     * @throws TypesenseClientError
+     * @throws \Http\Client\Exception
      */
     public function updateOrAddItem(string $tableOrDocId, string $columnNumber = null): void
     {
@@ -1241,8 +1245,10 @@ END;
      * Removes an item from an index.
      * @param string $arg1
      * @param string|null $arg2
-     * @param string $context, value 'update' adjusts the communication behavior of the method to its role in an updating process
-     * @return bool
+     * @param string $context , value 'update' adjusts the communication behavior of the method to its role in an updating process
+     * @return void
+     * @throws TypesenseClientError
+     * @throws \Http\Client\Exception
      */
     private function removeItem (string $arg1, string $arg2 = null, string $context = 'remove'): void {
 
@@ -1257,7 +1263,7 @@ END;
             $index = $data['index'];
             $id = $data['id'];
 
-            $this->client->collections[$index]->documents[$id]->delete();
+            $this->getSystemManager()->getTypesenseClient()->collections[$index]->documents[$id]->delete();
 
             if ($context !== 'update') {
                 switch ($this->indexNamePrefix) {
@@ -1401,7 +1407,7 @@ END;
 
         foreach ($this->indices as $indexName) {
 
-            $data = $this->client->collections[$indexName]->documents->search($searchParameters);
+            $data = $this->getSystemManager()->getTypesenseClient()->collections[$indexName]->documents->search($searchParameters);
 
             if ($data['found'] === 1) {
                 return ($data['hits'][0]['document']);
@@ -1441,7 +1447,7 @@ END;
             ];
 
             try {
-                $query = $this->client->collections[$indexName]->documents->search($searchParameters);
+                $query = $this->getSystemManager()->getTypesenseClient()->collections[$indexName]->documents->search($searchParameters);
             } catch (\Http\Client\Exception|TypesenseClientError $e) {
                 return [];
             }
@@ -1488,7 +1494,7 @@ END;
 
         foreach ($this->indices as $index) {
             try {
-                $query = $this->client->collections[$index]->documents->search($searchParameters);
+                $query = $this->getSystemManager()->getTypesenseClient()->collections[$index]->documents->search($searchParameters);
                 if ($query['found'] !== 0) {
                     return ['index' => $index, 'id' => $query['hits'][0]['document']['id']];
                 }
@@ -1534,7 +1540,7 @@ END;
         // test existence of transcript and tokenize/lemmatize existing transcripts in python
         if (strlen($transcription_clean) > 3) {
 
-            $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $transcription_clean, $this->indexNamePrefix);
+            $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $transcription_clean, $this->getSystemManager()->getDirectoryDataCache());
 
             // get tokenized and lemmatized transcript
             $transcription_tokenized = $tokens_and_lemmata['tokens'];
@@ -1647,7 +1653,7 @@ END;
         // tokenization and lemmatization
         // test existence of text and tokenize/lemmatize existing texts
         if (strlen($text_clean) > 3) {
-            $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $text_clean, $this->indexNamePrefix);
+            $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $text_clean, $this->getSystemManager()->getDirectoryDataCache());
 
             // Get tokenized and lemmatized transcript
             $edition_tokenized = $tokens_and_lemmata['tokens'];
@@ -1860,25 +1866,4 @@ END;
         return $text;
     }
 
-    public function instantiateTypesenseClient($config) : Client|bool{
-        try {
-            $this->client = new Client(
-                [
-                    'api_key' => $config[ApmConfigParameter::TYPESENSE_KEY],
-                    'nodes' => [
-                        [
-                            'host' => $config[ApmConfigParameter::TYPESENSE_HOST], // For Typesense Cloud use xxx.a1.typesense.net
-                            'port' => $config[ApmConfigParameter::TYPESENSE_PORT],      // For Typesense Cloud use 443
-                            'protocol' => $config[ApmConfigParameter::TYPESENSE_PROTOCOL],      // For Typesense Cloud use https
-                        ],
-                    ],
-                    'connection_timeout_seconds' => 2,
-                ]
-            );
-
-            return $this->client;
-        } catch (ConfigError) {
-            return false;
-        }
-    }
 }

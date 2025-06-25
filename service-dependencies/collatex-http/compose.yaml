@@ -3,8 +3,8 @@
 #
 
 services:
-  apm-collatex:
+  collatex:
     build: .
-    container_name: apm-collatex
+    container_name: collatex
     ports:
       - "7369:7369"

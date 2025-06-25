@@ -16,24 +16,24 @@
  *
  */
 
-import * as TokenType from '../Witness/WitnessTokenType.mjs'
-import { SequenceWithGroups } from './SequenceWithGroups'
+import * as TokenType from '../../Witness/WitnessTokenType.mjs'
+import { SequenceWithGroups } from '../SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
-import {ApparatusCommon} from '../EditionComposer/ApparatusCommon.js'
-import * as ApparatusEntryType from './SubEntryType.mjs'
-import * as ApparatusType from './ApparatusType'
-import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
-import * as SubEntrySource from './SubEntrySource.mjs'
-import { CtData } from '../CtData/CtData'
-import { Apparatus } from './Apparatus'
-import { ApparatusSubEntry } from './ApparatusSubEntry.mjs'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
-import { ApparatusEntry } from './ApparatusEntry.mjs'
+import {ApparatusCommon} from '../../EditionComposer/ApparatusCommon.js'
+import * as ApparatusEntryType from '../SubEntryType.mjs'
+import * as ApparatusType from '../ApparatusType'
+import * as WitnessTokenType from '../../Witness/WitnessTokenType.mjs'
+import * as SubEntrySource from '../SubEntrySource.mjs'
+import { CtData } from '../../CtData/CtData'
+import { Apparatus } from '../Apparatus'
+import { ApparatusSubEntry } from '../ApparatusSubEntry.mjs'
+import { FmtTextFactory } from '../../FmtText/FmtTextFactory.mjs'
+import { ApparatusEntry } from '../ApparatusEntry.mjs'
 
 
-import { Punctuation} from '../defaults/Punctuation.mjs'
+import { Punctuation} from '../../defaults/Punctuation.mjs'
 
-import {WitnessDataItem} from './WitnessDataItem.mjs'
+import {WitnessDataItem} from '../WitnessDataItem.mjs'
 
 export class CriticalApparatusGenerator {
 
@@ -58,6 +58,8 @@ export class CriticalApparatusGenerator {
     let ctIndexToMainTextMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens.length, mainText)
     // console.log(`ctIndexToMainTextMap`)
     // console.log(ctIndexToMainTextMap)
+
+    let excludedWitnesses = ctData['excludeFromAutoCriticalApparatus'] ?? [];
 
     let lang = ctData['lang']
 
@@ -122,8 +124,8 @@ export class CriticalApparatusGenerator {
         // collect additions
         let additions = []
         for (let witnessIndex = 0; witnessIndex < ctColumns[0].length; witnessIndex++) {
-          if (witnessIndex === baseWitnessIndex) {
-            // ignore base witness
+          if (witnessIndex === baseWitnessIndex || excludedWitnesses.indexOf(witnessIndex) !== -1) {
+            // ignore base witness and excluded witnesses
             continue
           }
           let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, false, lang)
@@ -172,8 +174,8 @@ export class CriticalApparatusGenerator {
 
       for (let witnessIndex = 0; witnessIndex < ctColumns[0].length; witnessIndex++) {
         // inspect every witness
-        if (witnessIndex === baseWitnessIndex) {
-          // ignore base witness
+        if (witnessIndex === baseWitnessIndex || excludedWitnesses.indexOf(witnessIndex) !== -1) {
+          // ignore base witness and excluded witnesses
           continue
         }
         let normalizedWitnessText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, true, lang)

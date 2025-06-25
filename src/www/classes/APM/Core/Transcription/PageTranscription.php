@@ -31,9 +31,9 @@ use OutOfBoundsException;
  * addition to the main text or simply a gloss.
  *
  * This model is a simplification of a more general model in which a page is construed as
- * a set of gliphs located in a surface, with the page transcription amounting to a
- * transcription of each of those gliphs together with some sort of ordering of the gliphs
- * to construct readable text.  Since most of the gliphs in a manuscript stand for one or
+ * a set of glyphs located in a surface, with the page transcription amounting to a
+ * transcription of each of those glyphs together with some sort of ordering of the glyphs
+ * to construct readable text.  Since most of the glyphs in a manuscript stand for one or
  * more letters arranged in lines of text in page regions, we can simply use text boxes to
  * capture the physical location of the text and textual items for the formatted text
  * inside them. This has the advantage of allowing an easier retrieval and arranging of
@@ -61,8 +61,8 @@ use OutOfBoundsException;
 abstract class PageTranscription {
         
     
-    const NO_TEXTBOX = -1;
-    const NO_ITEM = -1;
+    const int NO_TEXTBOX = -1;
+    const int NO_ITEM = -1;
 
     /**
      * Returns the TextBox object at the given index.
@@ -132,7 +132,8 @@ abstract class PageTranscription {
      * @param int $textBoxIndex
      * @return ItemInPage[]
      */
-    public function getItemsForTextBox(int $textBoxIndex) {
+    public function getItemsForTextBox(int $textBoxIndex): array
+    {
         $textBox = $this->getTextBoxByIndex($textBoxIndex);
         
         $items = $textBox->getItems();

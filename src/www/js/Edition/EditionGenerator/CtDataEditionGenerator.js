@@ -21,18 +21,16 @@ import { EditionGenerator } from './EditionGenerator'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { EditionMainTextGenerator } from './EditionMainTextGenerator.mjs'
 import { CtData } from '../../CtData/CtData'
-import { CriticalApparatusGenerator } from '../CriticalApparatusGenerator'
+import { CriticalApparatusGenerator } from './CriticalApparatusGenerator'
 import { EditionWitnessInfo } from '../EditionWitnessInfo'
 import { Apparatus } from '../Apparatus'
 import { ApparatusEntry } from '../ApparatusEntry.mjs'
 import { ApparatusSubEntry } from '../ApparatusSubEntry.mjs'
 import * as ApparatusType from '../ApparatusType'
-import * as SubEntryType from '../SubEntryType.mjs'
 import * as SubEntrySource from '../SubEntrySource.mjs'
 import { pushArray } from '../../toolbox/ArrayUtil.mjs'
 import { ApparatusCommon } from '../../EditionComposer/ApparatusCommon.js'
 import { SiglaGroup } from '../SiglaGroup.mjs'
-import { deepCopy } from '../../toolbox/Util.mjs'
 import { WitnessDataItem } from '../WitnessDataItem.mjs'
 
 export class CtDataEditionGenerator extends EditionGenerator{
@@ -52,12 +50,12 @@ export class CtDataEditionGenerator extends EditionGenerator{
   generateEdition () {
     // console.log(`Generating edition from ctData`)
     // CtData.reportCustomEntries(this.ctData)
-    let edition = super.generateEdition()
+    let edition = super.generateEdition();
     let baseWitnessIndex = this.ctData['editionWitnessIndex'] !== undefined ? this.ctData['editionWitnessIndex'] : this.ctData['witnessOrder'][0]
     // console.log(`Base witness index is ${baseWitnessIndex}`)
-    edition.setLang(this.ctData['lang'])
-    edition.siglaGroups = this.ctData['siglaGroups'].map ( (sg) => { return SiglaGroup.fromObject(sg)})
-    edition.infoText = `Edition from ctData, chunkId ${this.ctData['chunkId']}, baseWitnessIndex: ${baseWitnessIndex}`
+    edition.setLang(this.ctData['lang']);
+    edition.siglaGroups = this.ctData['siglaGroups'].map ( (sg) => { return SiglaGroup.fromObject(sg)});
+    edition.infoText = `Edition from ctData, chunkId ${this.ctData['chunkId']}, baseWitnessIndex: ${baseWitnessIndex}`;
     edition.info = {
       source: 'ctData',
       tableId: this.ctData['tableId'],
@@ -67,9 +65,9 @@ export class CtDataEditionGenerator extends EditionGenerator{
     }
     edition.witnesses = this.ctData['sigla'].map( (s, i) => {
       return new EditionWitnessInfo().setSiglum(s).setTitle(this.ctData['witnessTitles'][i])
-    })
-    let baseWitnessTokens = CtData.getCtWitnessTokens(this.ctData, baseWitnessIndex)
-    edition.setMainText(EditionMainTextGenerator.generateMainText(baseWitnessTokens, false, [], edition.getLang()))
+    });
+    let baseWitnessTokens = CtData.getCtWitnessTokens(this.ctData, baseWitnessIndex);
+    edition.setMainText(EditionMainTextGenerator.generateMainText(baseWitnessTokens, false, [], edition.getLang()));
     let apparatusGenerator = new CriticalApparatusGenerator()
     let generatedCriticalApparatus = apparatusGenerator.generateCriticalApparatusFromCtData(this.ctData, baseWitnessIndex, edition.mainText)
     // console.log(`Generated critical apparatus before merging custom apparatus entries`)

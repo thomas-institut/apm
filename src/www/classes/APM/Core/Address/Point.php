@@ -20,6 +20,7 @@
 
 namespace APM\Core\Address;
 
+use Exception;
 use InvalidArgumentException;
 use LogicException;
 
@@ -30,8 +31,7 @@ use LogicException;
  */
 class Point extends Address {
     
-    /** @var array */
-    protected $coords;
+    protected array $coords;
     
     public function __construct($param = 2) {
         $this->coords = [];
@@ -67,7 +67,8 @@ class Point extends Address {
         return Address::UNDEFINED;
     }
     
-    public function setCoord(int $coord, $value) {
+    public function setCoord(int $coord, $value): void
+    {
         if (!array_key_exists($coord, $this->coords)) {
             throw new \OutOfBoundsException('Undefined coord ' . $coord);
         }
@@ -80,7 +81,7 @@ class Point extends Address {
             // try to convert the parameter into a vector
             try {
                 $vector2 = new Point($param);
-            } catch (\Exception $ex) {
+            } catch (Exception) {
                 // didn't work, give up
                 return false;
             }
@@ -96,7 +97,8 @@ class Point extends Address {
         return true;
     }
     
-    public function distanceTo(Point $p2) {
+    public function distanceTo(Point $p2): float
+    {
         if ($this->getDimensionCount() !== $p2->getDimensionCount()) {
             throw new InvalidArgumentException('given point must be of the same cardinality');
         }

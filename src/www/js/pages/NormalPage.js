@@ -150,10 +150,8 @@ export class NormalPage extends ApmPage {
                 <li class="nav-item"><a class="nav-link" href="${urlGen.siteDashboard()}" title="${tr('Dashboard')}">${tr('Dashboard')}</a></li>
                 <li class="nav-item"><a class="nav-link" href="${urlGen.siteDocs()}" title="${tr('Documents')}">${tr('Documents')}</a></li>
                 <li class="nav-item"><a class="nav-link" href="${urlGen.siteChunks()}" title="${tr('Works')}">${tr('Works')}</a></li>
-                <!-- <li class="nav-item"><a class="nav-link" href="${urlGen.siteUsers()}" title="${tr('Users')}">${tr('Users')}</a></li> -->
                 <li class="nav-item"><a class="nav-link" href="${urlGen.sitePeople()}" title="${tr('People')}">${tr('People')}</a></li>
                 <li class="nav-item"><a class="nav-link" href="${urlGen.siteSearch()}" title="${tr('Search')}">${tr('Search')}</a></li>
-                <li class="nav-item"><a class="nav-link" href="${urlGen.siteSearchNew()}" title="${tr('SearchNew')}">${tr('SearchNew')}</a></li>
                 <li class="nav-item">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</li>
                 <li class="nav-item dropdown">
                 <li class="nav-item dropdown">

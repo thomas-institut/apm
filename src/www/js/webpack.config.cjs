@@ -31,7 +31,6 @@ module.exports = {
     ApmLogPage: './pages/ApmLogPage.js',
     DashboardPage: './pages/DashboardPage.js',
     SearchPage: './pages/SearchPage.js',
-    SearchPageNew: './pages/SearchPageNew.js',
     DevelopmentEntityDataEditor: './pages/DevelopmentEntityDataEditor.js',
     // JASMINE TESTS
     JasmineTests: {

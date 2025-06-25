@@ -51,6 +51,13 @@ class Entity implements TidDefiner
     const int tImageSource = 123;
     const int tPageType = 124;
 
+    // Location Types
+    const int tCountry = 125;
+    const int tCity = 126;
+    const int tInstitution = 127;
+
+    // Special
+    const int tDareMaterial = 128;
 
 
     // Value types
@@ -93,7 +100,6 @@ class Entity implements TidDefiner
 
     // Language predicates
     const int pLangIso639Code = 2951;
-
 
     // Basic statement metadata predicates
 
@@ -154,8 +160,59 @@ class Entity implements TidDefiner
     const int pImageSourceData = 7606;
     const int pUseDeepZoomForImages = 7607;
 
+    const int pStoredAt = 7608;
 
 
+// Dare Document Predicates
+
+    // Dare Document Predicates
+
+    const int pDareType = 7609;
+    const int pDareHasImages = 7610;
+    const int pDareImagesComplete = 7611;
+    const int pDareHasPlaceholders = 7612;
+    const int pDareIsFragmentary = 7613;
+    const int pDareIsDareFoliated = 7614;
+    const int pDarePageCount = 7615;
+    const int pDareIdno = 7617;
+    const int pDareAltRepository = 7618;
+    const int pDareContentTitle = 7619;
+    const int pDareContentSummary = 7620;
+    const int pDareIsSegmented = 7621;
+    const int pDareLeavesCount = 7622;
+    const int pDareMaterialType = 7623;
+    const int pDareLeavesFormat = 7624;
+    const int pDareLeavesHeight = 7625;
+    const int pDareLeavesWidth = 7626;
+    const int pDareWrittenLines = 7627;
+    const int pDareWrittenLinesText = 7628;
+    const int pDareColumnNo = 7629;
+    const int pDareWrittenHeight = 7630;
+    const int pDareWrittenWidth = 7631;
+    const int pDareHandNumber = 7632;
+    const int pDareContemporaryBinding = 7633;
+    const int pDareBindingWidth = 7634;
+    const int pDareBindingHeight = 7635;
+    const int pDareBindingDate = 7636;
+    const int pDareOriginNotBefore = 7637;
+    const int pDareOriginNotAfter = 7638;
+    const int pDareOriginDate = 7639;
+    const int pDareOriginPlace = 7640;
+    const int pDareFoliation = 7641;
+    const int pDareCollation = 7642;
+    const int pDareConditionDescription = 7643;
+    const int pDareDecoration = 7644;
+    const int pDareLayout = 7645;
+    const int pDareHandDescription = 7646;
+    const int pDareBindingDescription = 7647;
+    const int pDareAcquisition = 7648;
+    const int pDareProvenance = 7649;
+    const int pDareAdditions = 7650;
+    const int pDareGwNo = 7651;
+    const int pDareIstc = 7652;
+    const int pDareContent = 7656;
+    const int pDareMaterialDescription = 7657;
+    const int pDareOrigin = 7658;
 
     // Geographical Predicates
     const int pContainedBy = 8001;
@@ -164,6 +221,9 @@ class Entity implements TidDefiner
     const int pGpsCoordinates = 8004;
 
     const int pAreaType = 8005;
+
+    const int pLocatedIn = 8006;
+
 
     // Edition source predicates
 
@@ -247,7 +307,7 @@ class Entity implements TidDefiner
 
     const int pLegacyApmDatabaseId = 14002;
 
-    // languages
+    // Languages
 
     const int LangArabic = 20001;
     const int LangHebrew = 20002;
@@ -263,8 +323,12 @@ class Entity implements TidDefiner
     const int LangPortuguese = 20026;
     const int LangTurkish = 20027;
 
+    // Materials
 
-
-
+    const int MaterialPaper = 20028;
+    const int MaterialParchment = 20029;
+    const int MaterialMixed = 20030;
+    const int MaterialVellum = 20031;
+    const int MaterialTissue = 20032;
 
 }

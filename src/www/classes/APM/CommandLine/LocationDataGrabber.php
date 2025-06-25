@@ -26,10 +26,10 @@ use stdClass;
 use GuzzleHttp\Client as HttpClient;
 
 /**
- * Description of DareAndWikidataGrabber
+ * Description of LocationDataGrabber
  *
- * Commandline utility to grab country, city and institution data for all transcriptions in the apm and dare.
- * Use option '-h' in the command line for getting information about how to use the index manager.
+ * Commandline utility to grab country, city and institution data for all transcriptions in the apm and dare; writes the data into csv-files.
+ * Use option '-h' in the command line for getting information about how to use the location data grabber.
  *
  * @author Lukas Reichert
  */
@@ -76,7 +76,13 @@ class LocationDataGrabber extends CommandLineUtility
             case 'getCitiesAndCountriesFromDare':
                 $citiesAndCountries = $this->getCityAndCountryNamesFromDare();
                 print_r($citiesAndCountries);
-                
+                break;
+
+            case 'getDocumentsDataFromDare':
+                $data = $this->getDataFromDareDocumentsTable();
+                print_r($data);
+                break;
+
             default:
                 print("Command not found. You will find some help via 'locationgrabber -h'\n.");
         }
@@ -91,10 +97,10 @@ class LocationDataGrabber extends CommandLineUtility
     private function printHelp(): void
     {
         $help = <<<END
-Usage: locationgrabber [operation] ([arg])
+Usage: locationdatagrabber [operation] ([arg])
 
 Available operations are:
-  grabAndWriteAll - gets all location data and writes them into multiple csv-files, retrieved from dare and wikidata
+  grabAndWriteAll - collects all location data and writes them into multiple csv-files, retrieved from dare and wikidata
   getInstitutionsFromDare - returns the codes, cityCodes, cities and names of all institutions, retrieved only from dare
   getCityFromWikidata [arg] - returns the city name of a given UNLOCODE in english, german and italian, retrieved only from wikidata
   getCountryFromWikidata [arg] - returns the country name of a given ISO3166-1-alpha-2-code in english, german and italian, retrieved only from wikidata
@@ -124,7 +130,7 @@ END;
         // retrieve country and city names from the dare repos-data for all docs from the dare docs-data
         foreach ($documents as $doc) {
 
-            $bilderbergId = explode('-', $doc->bilderberg_id);
+            $bilderbergId = explode('-', $doc->bilderbergId);
 
             if (count($bilderbergId) > 4) { // excludes docs which definitely do not have a bilderberg id
 
@@ -138,7 +144,7 @@ END;
                 // get city and country names
                 foreach ($repositories as $repository) {
 
-                    if ($doc->repository_id === $repository->id) {
+                    if ($doc->repositoryId === $repository->id) {
 
                         // remove information about regions or so added in parantheses from city names
                         $cityName = $repository->settlement;
@@ -305,12 +311,24 @@ private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
         $documents = $this->readCsvToObjectArray($docsFromDareFile);
 
         foreach ($documents as $doc) {
-            $id = $doc->bilderberg_id;
+            $id = $doc->bilderbergId;
             $id = str_replace("BOOK-DARE-", "", $id);
             $ids[] = $id;
         }
         
         return $ids;
+    }
+
+    function toCamelCase($string): string
+    {
+        $string = strtolower($string);
+        $string = preg_replace('/[^a-z0-9]+/', ' ', $string);
+        $words = explode(' ', $string);
+        $camelCase = array_shift($words);
+        foreach ($words as $word) {
+            $camelCase .= ucfirst($word);
+        }
+        return $camelCase;
     }
 
     /**
@@ -327,7 +345,7 @@ private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
             while (($data = fgetcsv($handle)) !== FALSE) {
                 $obj = new stdClass();
                 foreach ($headers as $i => $header) {
-                    $obj->{$header} = $data[$i];
+                    $obj->{$this->toCamelCase($header)} = $data[$i];
                 }
                 $results[] = $obj;
             }
@@ -359,16 +377,16 @@ private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
 
         // get all institution names and ids
         foreach ($repositories as $entry) {
-            $institutionNamesAndIds[] = ['name' => $entry->repository_name, 'id' => $entry->id];
+            $institutionNamesAndIds[] = ['name' => $entry->repositoryName, 'id' => $entry->id];
         }
 
         // get institution codes and ids for every document
         foreach ($documents as $doc) {
 
             // get relevant data for doc
-            $bilderbergId = explode('-', $doc->bilderberg_id);
-            $contentTitle = explode('-', $doc->content_title);
-            $institutionId = $doc->repository_id;
+            $bilderbergId = explode('-', $doc->bilderbergId);
+            $contentTitle = explode('-', $doc->contentTitle);
+            $institutionId = $doc->repositoryId;
             
             // get city and institution code
             if ($institutionId !== "") {

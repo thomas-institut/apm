@@ -199,6 +199,38 @@ const EntityTypeDefinitions = [
         [],
         true
     ],
+    [
+        Entity::tCountry,
+        'Country',
+        "A country, e.g., Germany",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tCity,
+        'City',
+        "A city, e.g., Berlin",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tInstitution,
+        'Institution',
+        "An institution, e.g., Berliner Staatsbibliothek",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tDareMaterial,
+        'Document Material (Dare)',
+        "A material, e.g., paper",
+        [],
+        [],
+        false
+    ],
 ];
 
 class EntityTypes implements EntityTypeDefiner

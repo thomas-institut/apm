@@ -19,6 +19,7 @@ use APM\EntitySystem\Schema\EntityTypes;
 use APM\EntitySystem\Schema\GeoPredicates;
 use APM\EntitySystem\Schema\IdTypes;
 use APM\EntitySystem\Schema\Languages;
+use APM\EntitySystem\Schema\Materials;
 use APM\EntitySystem\Schema\OrganizationTypes;
 use APM\EntitySystem\Schema\PageTypes;
 use APM\EntitySystem\Schema\PersonPredicates;
@@ -109,6 +110,7 @@ class ApmEntitySystemKernel
             new OrganizationTypes(),
             new UrlTypes(),
             new Languages(),
+            new Materials(),
             new AreaTypes(),
             new Calendars(),
             new DocumentTypes(),

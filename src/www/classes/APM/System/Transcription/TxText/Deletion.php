@@ -47,7 +47,7 @@ class Deletion extends Item {
      * @param string $text
      * @param string $technique     
      */
-    function __construct(int $id, int $s, string $text, $technique) {
+    function __construct(int $id, int $s, string $text, string $technique) {
         parent::__construct($id, $s);
         $this->type = parent::DELETION;
         if (self::isDeletionTechniqueAllowed($technique)){

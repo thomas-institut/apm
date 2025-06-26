@@ -33,7 +33,7 @@ class ChunkMark extends Item {
     const string CHUNK_END = 'end';
    
     
-    function __construct($id, $seq, string $workId, int $chunkNumber,
+    function __construct(int $id, int $seq, string $workId, int $chunkNumber,
                          string $type, string $localId = 'A', int $segment = 1)
     {
         parent::__construct($id, $seq);

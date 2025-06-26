@@ -162,7 +162,7 @@ class Item {
         $this->handId = $h;
     }
      
-    function setColumnElementId($id): void
+    function setColumnElementId(int $id): void
     {
         $this->columnElementId = $id;
     }

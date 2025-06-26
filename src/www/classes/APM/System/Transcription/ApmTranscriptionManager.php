@@ -422,7 +422,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         // get all rows between seq numbers
         $rows = $this->getItemRowsBetweenSeqNumbers($seqNumberStart, $seqNumberEnd, $timeString, $location->getStart()->docId);
 
-        // Process the rows filtering out all but main text rows and including additions items at the proper
+        // Process the rows filtering out all but main text rows and including addition items at the proper
         // places
         $items = [];
         $additionItemsAlreadyInOutput = [];
@@ -531,7 +531,6 @@ class ApmTranscriptionManager extends TranscriptionManager
             " AND $ti.valid_until>'$timeString'" .
             " AND $te.valid_until>'$timeString'" .
             " AND $tp.valid_until>'$timeString'" .
-            //" AND $tp.valid_until='" . TimeString::END_OF_TIMES . "'" .
             " ORDER BY $ti.seq ASC";
 
         $r = $this->getDatabaseHelper()->query($query);
@@ -612,20 +611,15 @@ class ApmTranscriptionManager extends TranscriptionManager
             }
             if ($location->type === 'start') {
                 if ($segmentLocation->getStart()->hasNotBeenSet()) {
-                    // start location not set, set it now
                     $segmentLocation->setStart($location);
                 } else {
-                    // start location already set, this means the current location is a duplicate start mark
                     $this->logger->debug('Duplicate chunk start mark found', [ $location]);
                     $segmentLocation->setDuplicateChunkMarkStatus(true);
                 }
             } else {
                 if ($segmentLocation->getEnd()->hasNotBeenSet()) {
-                    // end location not set, set it now
                     $segmentLocation->setEnd($location);
                 } else {
-                    // end location already set, this means the current location is a duplicate end mark
-//                    $this->logger->debug('Duplicate chunk end mark found', [ $location]);
                     $segmentLocation->setDuplicateChunkMarkStatus(false);
                 }
             }
@@ -826,9 +820,6 @@ class ApmTranscriptionManager extends TranscriptionManager
             return [];
         }
 
-//         $this->logger->debug("Start segment location for doc  $docId, page $startPageInfo->pageId");
-
-
         $segmentVersions[$startPageSeq] = [];
         if ($startPageSeq === $endPageSeq) {
             for($col = $startColumn; $col <= $endColumn; $col++) {
@@ -856,7 +847,6 @@ class ApmTranscriptionManager extends TranscriptionManager
         } catch (DocumentNotFoundException|PageNotFoundException) {
             return [];
         }
-//        $this->logger->debug("End segment location for doc  $docId, page $endPageInfo->pageId");
         for($col = 1; $col <= $endPageInfo->numCols; $col++) {
             $segmentVersions[$endPageSeq][$col] = $this->getColumnVersionManager()->getColumnVersionInfoByPageCol($endPageInfo->pageId, $col);
         }
@@ -951,7 +941,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         try {
             return unserialize($this->localMemCache->get($localCacheKey));
         } catch (ItemNotInCacheException) {
-            // not in cache, we just keep going with the construction of the witness
+            // not in the cache, we just keep going with the construction of the witness
         }
 
         $chunkLocationMap = $this->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
@@ -1152,7 +1142,6 @@ class ApmTranscriptionManager extends TranscriptionManager
      */
     public function updateColumnElements(int $pageId, int $columnNumber, array $newElements, string $time = ''): bool|array
     {
-//        $this->logger->debug("UPDATING COLUMN ELEMENTS, pageId=$pageId, col=$columnNumber");
         // force pageId and columnNumber in the elements in $newElements
         foreach ($newElements as $element ) {
             $element->pageId = $pageId;
@@ -1230,9 +1219,6 @@ class ApmTranscriptionManager extends TranscriptionManager
                                     $newElements[$index]->reference = $newItemsIds[$newElements[$index]->reference];
                                 }
                             }
-                        } else {
-                            // nothing to do really!
-//                            $this->logger->debug("...with reference === 0");
                         }
                     }
 //                    $this->logger->debug("... .... time=" . $time);
@@ -1403,8 +1389,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         $maxSeq = $this->getMaxElementSeq($element->pageId,
             $element->columnNumber);
         if (!$insertAtEnd && $element->seq > $maxSeq) {
-            // No holes in sequence, insert at end for higher than max
-            // values
+            // No holes in sequence, insert at the end for higher than max values
             $insertAtEnd = true;
         }
         // Now we have a good element
@@ -1420,8 +1405,8 @@ class ApmTranscriptionManager extends TranscriptionManager
                 // should not happen!
                 throw new RuntimeException("Element's page info not found: " . $e->getMessage());
             }
-            $docId = $pageInfo['doc_id'];
-            $pageNumber = $pageInfo['page_number'];
+            $docId = $pageInfo->docId;
+            $pageNumber = $pageInfo->pageNumber;
             $columnElements = $this->getColumnElements($docId,
                 $pageNumber,
                 $newElement->columnNumber);
@@ -1563,7 +1548,7 @@ class ApmTranscriptionManager extends TranscriptionManager
 
         // TODO: do all deletes within a transaction
         /**
-         * Could there be a timing problem here? The deletes of element
+         * Could there be a timing problem here? The deletes of elements
          * and items will not have all the same valid_to value. There
          * might be problems if there's a query for elements for a time
          * right between those values (we're talking about 1/10th of a second
@@ -1633,7 +1618,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         return $tt;
     }
 
-    public static function createItemObjectFromRow($row) : Item
+    public static function createItemObjectFromRow(array $row) : Item
     {
         $fields = [
             'id' => 'id',
@@ -1651,7 +1636,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         return self::createItemObjectFromArbitraryRow($fields, $row);
     }
 
-    private function createElementObjectFromRow($row): Element
+    private function createElementObjectFromRow(array $row): Element
     {
         $fields = [
             'id' => 'id',
@@ -1670,11 +1655,9 @@ class ApmTranscriptionManager extends TranscriptionManager
 
     public static function createElementObjectFromArbitraryRow($fields, $row) : Element {
 
-        switch ($row[$fields['type']]){
+        switch (intval($row[$fields['type']])){
             case Element::LINE:
                 $e = new Line();
-                // the line number
-                //$e->setLineNumber($row[$fields['reference']]);
                 break;
 
             case Element::CUSTODES:
@@ -1721,97 +1704,129 @@ class ApmTranscriptionManager extends TranscriptionManager
     }
 
 
-    public static function createItemObjectFromArbitraryRow($fields, $row) : Item{
-        switch ($row[$fields['type']]){
+    /**
+     * @param string[] $fields
+     * @param array $row
+     * @return ApItem
+     */
+    public static function createItemObjectFromArbitraryRow(array $fields, array $row) : Item
+    {
+        switch (intval($row[$fields['type']])){
             case Item::TEXT:
-                $item = new Text($row[$fields['id']],
-                    $row[$fields['seq']],
-                    $row[$fields['text']]);
+                $item = new Text(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
+                    $row[$fields['text']]
+                );
                 break;
 
             case Item::RUBRIC:
-                $item = new Rubric($row[$fields['id']],
-                    $row[$fields['seq']],
-                    $row[$fields['text']]);
+                $item = new Rubric(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
+                    $row[$fields['text']]
+                );
                 break;
 
             case Item::INITIAL:
-                $item = new Initial($row[$fields['id']],
-                    $row[$fields['seq']],
-                    $row[$fields['text']]);
+                $item = new Initial(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
+                    $row[$fields['text']]
+                );
                 break;
 
             case Item::SIC:
-                $item = new Sic($row[$fields['id']],
-                    $row[$fields['seq']],
+                $item = new Sic(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
                     $row[$fields['text']],
-                    $row[$fields['alt_text']]);
+                    $row[$fields['alt_text']]
+                );
                 break;
 
             case Item::MARK:
-                $item = new Mark($row[$fields['id']],
-                    $row[$fields['seq']]);
+                $item = new Mark(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']])
+                );
                 break;
 
             case Item::UNCLEAR:
-                $item = new Unclear($row[$fields['id']],
-                    $row[$fields['seq']],
+                $item = new Unclear(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
                     $row[$fields['extra_info']],
                     $row[$fields['text']],
-                    $row[$fields['alt_text']]);
+                    $row[$fields['alt_text']]
+                );
                 break;
 
             case Item::ILLEGIBLE:
-                $item = new Illegible($row[$fields['id']],
-                    $row[$fields['seq']],
+                $item = new Illegible(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
                     $row[$fields['length']],
-                    $row[$fields['extra_info']]);
+                    $row[$fields['extra_info']]
+                );
                 break;
 
             case Item::ABBREVIATION:
-                $item = new Abbreviation($row[$fields['id']],
-                    $row[$fields['seq']],
+                $item = new Abbreviation(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
                     $row[$fields['text']],
-                    $row[$fields['alt_text']]);
+                    $row[$fields['alt_text']]
+                );
                 break;
 
             case Item::GLIPH:
-                $item = new Gliph($row[$fields['id']],
-                    $row[$fields['seq']],
-                    $row[$fields['text']]);
+                $item = new Gliph(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
+                    $row[$fields['text']]
+                );
                 break;
 
             case Item::DELETION:
-                $item = new Deletion($row[$fields['id']],
-                    $row[$fields['seq']],
+                $item = new Deletion(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
                     $row[$fields['text']],
-                    $row[$fields['extra_info']]);
+                    $row[$fields['extra_info']]
+                );
                 break;
 
             case Item::ADDITION:
-                $item = new Addition($row[$fields['id']],
-                    $row[$fields['seq']],
+                $item = new Addition(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
                     $row[$fields['text']],
                     $row[$fields['extra_info']],
-                    (int) $row[$fields['target']]);
+                    intval($row[$fields['target']])
+                );
                 break;
 
             case Item::NO_WORD_BREAK:
-                $item = new NoWordBreak($row[$fields['id']],
-                    $row[$fields['seq']]);
+                $item = new NoWordBreak(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']])
+                );
                 break;
 
             case Item::CHUNK_MARK:
                 if (!isset($row[$fields['length']])) {
                     $row[$fields['length']] = 1;
                 }
-                $item = new ChunkMark($row[$fields['id']],
-                    $row[$fields['seq']],
+                $item = new ChunkMark(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
                     $row[$fields['text']],
-                    (int) $row[$fields['target']],
+                    intval($row[$fields['target']]),
                     $row[$fields['alt_text']],
                     $row[$fields['extra_info']],
-                    $row[$fields['length']]);
+                    intval($row[$fields['length']])
+                );
                 break;
 
             case Item::CHAPTER_MARK:
@@ -1819,51 +1834,62 @@ class ApmTranscriptionManager extends TranscriptionManager
                 $appellation = $textFields[0];
                 $title = $textFields[1];
                 $item = new ChapterMark(
-                    $row[$fields['id']],
-                    $row[$fields['seq']],
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
                     $row[$fields['extra_info']],
-                    (int) $row[$fields['target']],
+                    intval($row[$fields['target']]),
                     $row[$fields['alt_text']],
                     $appellation,
                     $title,
-                    $row[$fields['length']]
+                    intval($row[$fields['length']])
                 );
                 break;
 
             case Item::CHARACTER_GAP:
                 $item = new CharacterGap(
-                    $row[$fields['id']],
-                    $row[$fields['seq']],
-                    $row[$fields['length']]);
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
+                    intval($row[$fields['length']])
+                );
                 break;
 
             case Item::PARAGRAPH_MARK:
-                $item = new ParagraphMark($row[$fields['id']],
-                    $row[$fields['seq']]);
+                $item = new ParagraphMark(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']])
+                );
                 break;
 
             case Item::MATH_TEXT:
-                $item = new MathText($row[$fields['id']],
-                    $row[$fields['seq']],
-                    $row[$fields['text']]);
+                $item = new MathText(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
+                    $row[$fields['text']]
+                );
                 break;
 
             case Item::MARGINAL_MARK:
-                $item = new MarginalMark($row[$fields['id']],
-                    $row[$fields['seq']],
-                    $row[$fields['text']]);
+                $item = new MarginalMark(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
+                    $row[$fields['text']]
+                );
                 break;
 
             case Item::BOLD_TEXT:
-                $item = new BoldText($row[$fields['id']],
-                    $row[$fields['seq']],
-                    $row[$fields['text']]);
+                $item = new BoldText(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
+                    $row[$fields['text']]
+                );
                 break;
 
             case Item::HEADING:
-                $item = new Heading($row[$fields['id']],
-                    $row[$fields['seq']],
-                    $row[$fields['text']]);
+                $item = new Heading(
+                    intval($row[$fields['id']]),
+                    intval($row[$fields['seq']]),
+                    $row[$fields['text']]
+                );
 
 
         }
@@ -1872,7 +1898,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         }
         $item->lang = $row[$fields['lang']];
         $item->handId = $row[$fields['hand_id']];
-        $item->setColumnElementId($row[$fields['ce_id']]);
+        $item->setColumnElementId(intval($row[$fields['ce_id']]));
         return $item;
     }
 
@@ -2031,7 +2057,6 @@ class ApmTranscriptionManager extends TranscriptionManager
                     break;
 
                 case MyersDiff::INSERT:
-//                    $this->logger->debug("   Inserting new item with seq $newSeq");
                     // This takes care of new addition with targets that
                     // come earlier in the item sequence in the same element,
                     // which is the most usual case
@@ -2105,7 +2130,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     /**
      * @inheritDoc
      */
-    public function getEditorTidsByDocId(int $docId) : array {
+    public function getEditorIdsByDocId(int $docId) : array {
         $te = $this->tNames['elements'];
         $tp = $this->tNames['pages'];
 

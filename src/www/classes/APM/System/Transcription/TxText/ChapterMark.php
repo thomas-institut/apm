@@ -35,7 +35,7 @@ class ChapterMark extends Item {
     const string SEPARATOR = "\t";
    
     
-    function __construct($id, $seq, string $workId, int $chapterNumber,
+    function __construct(int $id, int $seq, string $workId, int $chapterNumber,
                          string $type, string $appellation, string $title, int $chapterLevel)
     {
         parent::__construct($id, $seq);

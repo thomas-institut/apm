@@ -36,7 +36,7 @@ class Abbreviation extends Item {
      * @param string $theText
      * @param $expansion
      */
-    function __construct(int $id, int $s, string $theText, $expansion) {
+    function __construct(int $id, int $s, string $theText, string $expansion) {
         parent::__construct($id, $s);
         $this->type = parent::ABBREVIATION;
         if ($theText ===''){

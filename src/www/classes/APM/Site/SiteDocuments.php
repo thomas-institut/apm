@@ -106,7 +106,7 @@ class SiteDocuments extends SiteController
         $doc['numPages'] = $docManager->getDocPageCount($docId);
         $transcribedPages = $txManager->getTranscribedPageListByDocId($legacyDocId);
         $doc['numTranscribedPages'] = count($transcribedPages);
-        $doc['transcribers'] = $txManager->getEditorTidsByDocId($legacyDocId);
+        $doc['transcribers'] = $txManager->getEditorIdsByDocId($legacyDocId);
         $doc['docInfo'] = $docManager->getLegacyDocInfo($docId);
         $doc['id'] = $docId;
         return $doc;
@@ -247,7 +247,7 @@ class SiteDocuments extends SiteController
             $doc['docInfo'] = $docManager->getLegacyDocInfo($docId);
             $transcribedPages = $transcriptionManager->getTranscribedPageListByDocId($legacyDocId);
             $doc['numTranscribedPages'] = count($transcribedPages);
-            $editorTids = $transcriptionManager->getEditorTidsByDocId($legacyDocId);
+            $editorTids = $transcriptionManager->getEditorIdsByDocId($legacyDocId);
             $doc['editors'] = $editorTids;
             $doc['tableId'] = "doc-$docId-table";
             $doc['pages'] = $this->buildPageArrayNew($pageInfoArray, $transcribedPages, $doc['docInfo']);

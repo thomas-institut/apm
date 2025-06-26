@@ -41,7 +41,7 @@ class Illegible extends Item {
      * @param string $length
      * @param string $reason
      */
-    function __construct(int $id, int $s, string $length, $reason='illegible') {
+    function __construct(int $id, int $s, string $length, string $reason='illegible') {
         parent::__construct($id, $s);
         $this->type = parent::ILLEGIBLE;
         

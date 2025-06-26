@@ -360,7 +360,7 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @param int $docId
      * @return int[]
      */
-    abstract public function getEditorTidsByDocId(int $docId) : array;
+    abstract public function getEditorIdsByDocId(int $docId) : array;
 
 
     /**

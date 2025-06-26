@@ -30,7 +30,7 @@ class PageInfo
     /**
      * The doc id in the database
      *
-     * When setting it, make sure to transform document entity ids into database id
+     * When setting it, make sure to transform document entity ids into a database id
      * with the DocumentManager->getLegacyDocId() method
      *
      * @var int

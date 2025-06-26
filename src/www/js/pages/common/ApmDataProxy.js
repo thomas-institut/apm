@@ -28,6 +28,7 @@ import * as Entity from '../../constants/Entity'
 const TtlOneMinute = 60 // 1 minute
 const TtlOneHour = 3600; // 1 hour
 const TtlOneDay = 24 * 3600; // 24 hours
+const TtlForever = 2 * 365 * 24 * 3600; // 2 years
 
 const CleaningDelayInSeconds = 1;
 
@@ -113,6 +114,18 @@ export class ApmDataProxy {
 
   async getAuthors() {
     return this.get(urlGen.apiWorksGetAuthors(),  false, TtlOneMinute);
+  }
+
+  async getRealDocId(docId) {
+    let cacheKey = `docId-${docId}`;
+    let realDocId = this.caches.local.retrieve(cacheKey);
+    if (realDocId === null) {
+      let resp = await this.get(urlGen.apiDocGetDocId(docId), true);
+      realDocId = resp['docId'];
+      this.caches.local.store(cacheKey, realDocId);
+    }
+    return realDocId;
+
   }
 
   /**

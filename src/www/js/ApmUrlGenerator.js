@@ -253,6 +253,10 @@ export class ApmUrlGenerator {
         return this.base + '/api/' + docId + '/' + pageNumber + '/numcolumns';
     }
 
+    apiDocGetDocId(docId) {
+        return `${this.base}/api/doc/getId/${docId}`;
+    }
+
     apiAddColumn(docId, pageNumber) {
         return this.base + '/api/' + docId + '/' + pageNumber + '/newcolumn';
     }
@@ -265,24 +269,25 @@ export class ApmUrlGenerator {
     apiCreateUser(tid) {
         return `${this.base}/api/user/create/${tid}`;
     }
+
     apiUpdateProfile(tid) {
         return `${this.base}/api/user/${tid}/update`;
     }
 
     apiPersonGetEssentialData(tid) {
-        return `${this.base}/api/person/${tid}/data/essential`
+        return `${this.base}/api/person/${tid}/data/essential`;
     }
 
     apiPersonGetDataForPeoplePage() {
-        return `${this.base}/api/person/all/dataForPeoplePage`
+        return `${this.base}/api/person/all/dataForPeoplePage`;
     }
 
     apiPersonCreate() {
-        return `${this.base}/api/person/create`
+        return `${this.base}/api/person/create`;
     }
 
     apiEntityGetSchema(entityType) {
-        return `${this.base}/api/entity/${entityType}/schema`
+        return `${this.base}/api/entity/${entityType}/schema`;
     }
 
     apiEntityTypeGetEntities(entityType) {

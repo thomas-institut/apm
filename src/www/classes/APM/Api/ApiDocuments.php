@@ -30,6 +30,7 @@ use Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use RuntimeException;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 
 
 /**
@@ -40,6 +41,64 @@ class ApiDocuments extends ApiController
 {
 
     const string CLASS_NAME = 'Documents';
+
+
+    /**
+     * Returns the "true" docId, which the entity id
+     * for a given docId that might an old database id
+     *
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getDocId(Request $request, Response $response): Response
+    {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        $givenDocId = intval($request->getAttribute('docId'));
+
+        if ($givenDocId < 1) {
+            return $this->responseWithJson($response, [
+                'error' => "Invalid document Id"
+            ], HttpStatus::BAD_REQUEST);
+        }
+
+        if ($givenDocId > 2000) {
+            // for sure this the given id is not a database id,
+            // so just return it, no need to query anything
+            return $this->responseWithJson($response, [
+                'givenDocId' => $givenDocId,
+                'docId' => $givenDocId
+            ]);
+        }
+
+        // this info can be cached forever, it will never change
+        $cacheKey = implode(':', [ 'ApiDocuments', 'docId',  $givenDocId ]);
+
+        try {
+            $docId = intval($this->systemManager->getSystemDataCache()->get($cacheKey));
+            return $this->responseWithJson($response, [
+                'givenDocId' => $givenDocId,
+                'docId' => $docId,
+            ]);
+        }  catch (ItemNotInCacheException) {
+            // keep going
+        }
+
+        try {
+            $docInfo = $this->systemManager->getDocumentManager()->getDocInfo($givenDocId);
+        } catch (DocumentNotFoundException) {
+            return $this->responseWithJson($response, [
+                'error' => "Document not found"
+            ], HttpStatus::NOT_FOUND);
+        }
+        $this->systemManager->getSystemDataCache()->set($cacheKey, $docInfo->id, 0);
+
+        return $this->responseWithJson($response, [
+            'givenDocId' => $givenDocId,
+            'docId' => $docInfo->id,
+        ]);
+    }
 
     /**
      * @param Request $request

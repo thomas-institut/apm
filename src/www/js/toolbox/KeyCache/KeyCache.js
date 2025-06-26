@@ -33,7 +33,7 @@
  *
  * @type {number}
  */
-const MaxTtl = 7 * 24 * 3600;
+const MaxTtl = 365 * 24 * 3600;
 
 export class KeyCache {
 
@@ -56,7 +56,6 @@ export class KeyCache {
    * no longer be accessible.
    *
    * If the given dataId parameter is null, the default dataId is used,
-   * o
    *
    * @param {string}key
    * @param {any}data

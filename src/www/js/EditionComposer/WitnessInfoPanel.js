@@ -37,9 +37,8 @@ import { WitnessUpdateDialog } from './WitnessUpdateDialog'
 import { WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
 import { CtData } from '../CtData/CtData'
 import { flatten } from '../toolbox/ArrayUtil.mjs'
-import { trimWhiteSpace } from '../toolbox/Util.mjs'
 import { SiglaGroupsUI } from './SiglaGroupsUI'
-import { ConfirmDialog, EXTRA_LARGE_DIALOG, LARGE_DIALOG, MEDIUM_DIALOG } from '../pages/common/ConfirmDialog'
+import { ConfirmDialog, EXTRA_LARGE_DIALOG } from '../pages/common/ConfirmDialog'
 import { ApmFormats } from '../pages/common/ApmFormats'
 import {NiceToggle} from "../widgets/NiceToggle";
 
@@ -61,6 +60,7 @@ export class WitnessInfoPanel extends Panel{
     super(options)
 
     let optionsSpec = {
+      apmDataProxy: { type: 'object'},
       onSiglaChange: { type: 'function', default: doNothing},
       onWitnessOrderChange: { type: 'function', default: doNothing},
       checkForWitnessUpdates: {
@@ -163,7 +163,7 @@ export class WitnessInfoPanel extends Panel{
   }
 
   async generateHtml() {
-    return `<div class="witnessinfotable">${this.genWitnessTableHtml()}</div>
+    return `<div class="witnessinfotable">${await this.genWitnessTableHtml()}</div>
         <div class="witness-update-div">
             <span class="witness-update-info"></span>
             <button class="btn  btn-outline-secondary btn-sm check-witness-update-btn"  title="Click to check for updates to witness transcriptions">Check Now</button>
@@ -182,60 +182,62 @@ export class WitnessInfoPanel extends Panel{
        </div>`
   }
 
-  _updatePageInfo() {
-    let pageIds = CtData.getPageIds(this.ctData)
-    let allPageIds = flatten(pageIds)
-    this.options.getPageInfo(allPageIds).then( (pageInfoArray) => {
-      this.ctData['witnesses'].forEach( (witness, witnessIndex) => {
-        if (witness['witnessType'] === WitnessType.FULL_TX) {
-          let pageInfoHtml = CtData.getColumnsForWitness(this.ctData, witnessIndex).map( (col) => {
-            // 1. fill in page info into the column object
-            let pageInfoIndex = pageInfoArray.map((pi) => { return pi.id}).indexOf(col['pageId'])
-            if (pageInfoIndex === -1) {
-              return col
-            }
-            let pageInfo = pageInfoArray[pageInfoIndex]
-            col.docId = pageInfo.docId
-            col.foliation = pageInfo.foliation
-            col.seq = pageInfo.seq
-            col.numCols = pageInfo.numCols
+  async updatePageInfo() {
+    let pageIds = CtData.getPageIds(this.ctData);
+    let allPageIds = flatten(pageIds);
+    let pageInfoArray = await this.options.getPageInfo(allPageIds);
+    // fix docIds
+    for (let i = 0; i < pageInfoArray.length; i++) {
+      pageInfoArray[i].docId = await this.options.apmDataProxy.getRealDocId(pageInfoArray[i].docId);
+    }
+    this.ctData['witnesses'].forEach( (witness, witnessIndex) => {
+      if (witness['witnessType'] === WitnessType.FULL_TX) {
+        let pageInfoHtml = CtData.getColumnsForWitness(this.ctData, witnessIndex).map( (col) => {
+          // 1. fill in page info into the column object
+          let pageInfoIndex = pageInfoArray.map((pi) => { return pi.id}).indexOf(col['pageId'])
+          if (pageInfoIndex === -1) {
             return col
-          }).sort ( (colA, colB) => {
-            // 2. Sort by page sequence and column
-            if (colA.seq !== colB.seq) {
-              return colA.seq - colB.seq
+          }
+          let pageInfo = pageInfoArray[pageInfoIndex]
+          col.docId = pageInfo.docId
+          col.foliation = pageInfo.foliation
+          col.seq = pageInfo.seq
+          col.numCols = pageInfo.numCols
+          return col
+        }).sort ( (colA, colB) => {
+          // 2. Sort by page sequence and column
+          if (colA["seq"] !== colB["seq"]) {
+            return colA["seq"] - colB["seq"]
+          }
+          return colA.column - colB.column
+        }).map( (colWithInfo) => {
+          // 3. Build page info html
+          if (colWithInfo["docId"] === undefined) {
+            // this means that there was no page info
+            return ''
+          }
+          if (colWithInfo["numCols"] === 1)  {
+            let pageUrl = this.options.getPageUrl(colWithInfo.docId, colWithInfo.seq, 0)
+            if (pageUrl === '') {
+              return colWithInfo.foliation
             }
-            return colA.column - colB.column
-          }).map( (colWithInfo) => {
-            // 3. Build page info html
-            if (colWithInfo.docId === undefined) {
-              // this means that there was no page info
-              return ''
+            return `<a href="${pageUrl}" title="Click to open page transcription in a new tab" target="_blank">${colWithInfo.foliation}</a>`
+          } else {
+            let pageUrl = this.options.getPageUrl(colWithInfo.docId, colWithInfo.seq, colWithInfo.column)
+            let pageString = `${colWithInfo.foliation} c${colWithInfo.column}`
+            if (pageUrl === '') {
+              return pageString
             }
-            if (colWithInfo.numCols === 1)  {
-              let pageUrl = this.options.getPageUrl(colWithInfo.docId, colWithInfo.seq, 0)
-              if (pageUrl === '') {
-                return colWithInfo.foliation
-              }
-              return `<a href="${pageUrl}" title="Click to open page transcription in a new tab" target="_blank">${colWithInfo.foliation}</a>`
-            } else {
-              let pageUrl = this.options.getPageUrl(colWithInfo.docId, colWithInfo.seq, colWithInfo.column)
-              let pageString = `${colWithInfo.foliation} c${colWithInfo.column}`
-              if (pageUrl === '') {
-                return pageString
-              }
-              return `<a href="${pageUrl}" title="Click to open page transcription in a new tab" target="_blank">${pageString}</a>`
-            }
-          }).join(', ')
-          $(`${this.containerSelector} td.info-td-${witnessIndex}`).html(pageInfoHtml)
-        }
-      })
-    })
-
+            return `<a href="${pageUrl}" title="Click to open page transcription in a new tab" target="_blank">${pageString}</a>`
+          }
+        }).join(', ')
+        $(`${this.containerSelector} td.info-td-${witnessIndex}`).html(pageInfoHtml);
+      }
+    });
   }
 
   postRender () {
-    this._updatePageInfo()
+    this.updatePageInfo()
 
     this.updateWitnessInfoDiv(false)
     $(this.containerSelector + ' .check-witness-update-btn').on('click', () => {
@@ -351,7 +353,7 @@ export class WitnessInfoPanel extends Panel{
    * Updates the
    * @param {boolean} reRenderTable
    */
-  updateWitnessInfoDiv(reRenderTable = false) {
+  async updateWitnessInfoDiv(reRenderTable = false) {
 
     // Turn off current event handlers
     $(this.containerSelector + ' .move-up-btn').off()
@@ -361,7 +363,7 @@ export class WitnessInfoPanel extends Panel{
 
     // set table html
     if (reRenderTable) {
-      $(this.containerSelector + ' .witnessinfotable').html(this.genWitnessTableHtml())
+      $(this.containerSelector + ' .witnessinfotable').html(await this.genWitnessTableHtml())
     }
 
 
@@ -607,18 +609,18 @@ export class WitnessInfoPanel extends Panel{
     }
   }
 
-  _readSiglaGroupFromDialog(dialogSelector) {
-    let witnesses = []
-    this.ctData['sigla'].forEach( (s, i) => {
-      if ($(`${dialogSelector} .siglum-checkbox-${i}`).prop('checked')) {
-        witnesses.push(i)
-      }
-    })
-    return {
-      siglum: trimWhiteSpace($(`${dialogSelector} .group-siglum-input`).val()),
-      witnesses: witnesses
-    }
-  }
+  // _readSiglaGroupFromDialog(dialogSelector) {
+  //   let witnesses = []
+  //   this.ctData['sigla'].forEach( (s, i) => {
+  //     if ($(`${dialogSelector} .siglum-checkbox-${i}`).prop('checked')) {
+  //       witnesses.push(i)
+  //     }
+  //   })
+  //   return {
+  //     siglum: trimWhiteSpace($(`${dialogSelector} .group-siglum-input`).val()),
+  //     witnesses: witnesses
+  //   }
+  // }
 
   _addEditSiglaGroup(index) {
     let sigla = this.ctData['sigla'].filter( (s, i) => {
@@ -901,7 +903,7 @@ export class WitnessInfoPanel extends Panel{
    * @returns {function(...[*]=)}
    */
   genOnClickUpDownWitnessInfoButton(direction) {
-    return (ev) => {
+    return async (ev) => {
       if ($(ev.currentTarget).hasClass('disabled')) {
         return false
       }
@@ -950,8 +952,8 @@ export class WitnessInfoPanel extends Panel{
       ArrayUtil.swapElements(this.ctData['witnessOrder'],position, position+indexOffset)
 
       $(this.options.containerSelector + ' .witnessinfotable').html('Updating...')
-      this.updateWitnessInfoDiv(true)
-      this._updatePageInfo()
+      await this.updateWitnessInfoDiv(true)
+      await this.updatePageInfo()
       this._redrawSiglaGroupSigla()
       this.options.onWitnessOrderChange(this.ctData['witnessOrder'])
     }
@@ -981,24 +983,27 @@ export class WitnessInfoPanel extends Panel{
    * @private
    * @returns {string}
    */
-  genWitnessTableHtml() {
-    let witnessRows = this.ctData['witnessOrder']
-      .map ( (witnessIndex, position) => {
-        let witness = this.ctData['witnesses'][witnessIndex]
-        let siglum = this.ctData['sigla'][witnessIndex]
-        let witnessTitle = this.ctData['witnessTitles'][witnessIndex]
-        let witnessClasses = [
-          'witness-' + witnessIndex,
-          'witness-type-' + witness['witnessType'],
-          'witness-pos-' + position
-        ]
+  async genWitnessTableHtml() {
+    let witnessRows = '';
+    for (let i = 0; i < this.ctData['witnesses'].length; i++) {
+      let witnessIndex = this.ctData['witnessOrder'][i];
+      let position = i;
+      let witness = this.ctData['witnesses'][witnessIndex]
+      let siglum = this.ctData['sigla'][witnessIndex]
+      let witnessTitle = this.ctData['witnessTitles'][witnessIndex]
+      let witnessClasses = [
+        'witness-' + witnessIndex,
+        'witness-type-' + witness['witnessType'],
+        'witness-pos-' + position
+      ];
+      let row = '';
 
-        switch(this.ctData['witnesses'][witnessIndex]['witnessType'] ) {
-          case WitnessType.EDITION:
-            return ''
+      switch(this.ctData['witnesses'][witnessIndex]['witnessType'] ) {
+        case WitnessType.EDITION:
+          break;
 
-          case WitnessType.SOURCE:
-            return  `<tr>
+        case WitnessType.SOURCE:
+          row =  `<tr>
                 <td class="${witnessClasses.join(' ')} cte-witness-move-td">
                 </td>
                 <td>${witnessTitle}</td>
@@ -1010,14 +1015,15 @@ export class WitnessInfoPanel extends Panel{
                 <td class="warning-td-${witnessIndex}"></td>
                 <td class="outofdate-td-${witnessIndex}"></td>
             </tr>`
+          break;
 
-          case WitnessType.FULL_TX:
-              let docLink = this.options.getDocUrl(witness['docId'])
-              if (docLink !== '') {
-                witnessTitle = `<a href="${docLink}" target="_blank" title="Click to open document page in a new tab">
+        case WitnessType.FULL_TX:
+          let docLink = this.options.getDocUrl(await this.options.apmDataProxy.getRealDocId(witness['docId']));
+          if (docLink !== '') {
+            witnessTitle = `<a href="${docLink}" target="_blank" title="Click to open document page in a new tab">
                ${this.ctData['witnessTitles'][witnessIndex]}</a>`
-              }
-            return  `<tr>
+          }
+          row =  `<tr>
                 <td class="${witnessClasses.join(' ')} cte-witness-move-td">
                     <span class="btn move-up-btn" title="Move up">${icons.moveUp}</span>
                     <span class="btn move-down-btn" title="Move down">${icons.moveDown}</span>
@@ -1030,9 +1036,16 @@ export class WitnessInfoPanel extends Panel{
                 <td class="auto-fol-${witnessIndex}"></td>
                 <td class="warning-td-${witnessIndex}"></td>
                 <td class="outofdate-td-${witnessIndex}"></td>
-            </tr>`
-        }
-      }).join('')
+            </tr>`;
+          break;
+
+        default:
+          // nothing to do
+      }
+      witnessRows += row;
+    }
+
+
 
    return `<table class="witnesstable">
       <tr>

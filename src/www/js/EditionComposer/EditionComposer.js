@@ -231,6 +231,7 @@ export class EditionComposer extends ApmPage {
     this.witnessInfoPanel = new WitnessInfoPanel({
       verbose: true,
       userId: this.userId,
+      apmDataProxy: this.apmDataProxy,
       containerSelector: `#${witnessInfoTabId}`,
       ctData: this.ctData,
       onWitnessOrderChange: this.genOnWitnessOrderChange(),
@@ -1082,7 +1083,8 @@ export class EditionComposer extends ApmPage {
             pageInfoArrayFromServer.forEach( (pageInfo) => {
               this.cache.store(`PageInfo-${pageInfo.id}`, pageInfo)
             })
-            pushArray(pageInfoInCache, pageInfoArrayFromServer)
+            pushArray(pageInfoInCache, pageInfoArrayFromServer);
+            console.log(`Page Info`, pageInfoInCache)
             resolve(pageInfoInCache)
           })
           .fail( function(resp) {

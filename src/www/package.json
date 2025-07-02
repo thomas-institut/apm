@@ -7,9 +7,11 @@
   },
   "scripts": {
     "test": "node ../node/simple_unit_test.mjs test/js/simple/*.test.mjs",
-    "run": "echo \"Use make run in js directory\"",
     "build": "cd js; webpack",
-    "watch": "cd js; webpack watch"
+    "watch": "cd js; webpack watch",
+    "dev": "vite",
+    "serve": "vite preview",
+    "vite-build": "vite build"
   },
   "author": "Rafael Nájera <rafael.najera@uni-koeln.de>",
   "license": "GPL-3.0",
@@ -45,6 +47,7 @@
     "jest": "^29.5.0",
     "standard": "^17.0.0",
     "style-loader": "^3.3.1",
+    "vite": "^7.0.0",
     "webpack": "5.94.0",
     "webpack-cli": "^5.0.1"
   }

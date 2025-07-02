@@ -11,18 +11,25 @@ use Psr\Http\Message\ResponseInterface as Response;
 
 class SiteEntity extends SiteController
 {
-    const Template_AdminEntity = 'admin-entity.twig';
-
     public function adminEntityPage(Request $request, Response $response): Response
     {
         $tidString = $request->getAttribute('tid');
         $tid = $this->systemManager->getEntitySystem()->getEntityIdFromString($tidString);
 
-        SystemProfiler::setName(__FUNCTION__ . " $tid");
+        SystemProfiler::setName("Site:" . __FUNCTION__ . ":$tid");
         try {
-            return $this->renderPage($response, self::Template_AdminEntity, [
-                'entityData' => $this->systemManager->getEntitySystem()->getEntityData($tid),
-            ]);
+            return $this->renderStandardPage(
+                $response,
+                '',
+                'Admin Entity',
+                'AdminEntityPage',
+                'js/pages/AdminEntityPage/AdminEntityPage.js',
+                [
+                    'entityData' => $this->systemManager->getEntitySystem()->getEntityData($tid)
+                ],
+                [],
+                ['admin-entity.css']
+            );
         } catch (EntityDoesNotExistException) {
             return $this->getBasicErrorPage($response,  "Not found", "Entity $tid not found", HttpStatus::NOT_FOUND);
         }

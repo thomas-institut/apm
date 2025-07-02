@@ -31,8 +31,6 @@ use ThomasInstitut\DataCache\ItemNotInCacheException;
 class SiteDashboard extends SiteController
 {
 
-    const string TEMPLATE_DASHBOARD = 'dashboard.twig';
-
     /**
      * @param Request $request
      * @param Response $response
@@ -41,6 +39,15 @@ class SiteDashboard extends SiteController
     public function DashboardPage(Request $request, Response $response): Response
     {
         SystemProfiler::setName("Site:" . __FUNCTION__);
-        return $this->renderStandardPage($response, "Dashboard:$this->userId", "Dashboard", "DashboardPage", [ 'dashboard.css']);
+        return $this->renderStandardPage(
+            $response,
+            '',
+            "Dashboard",
+            "DashboardPage",
+            "js/pages/DashboardPage.js",
+            null,
+            [],
+            [ 'dashboard.css']
+        );
     }
 }

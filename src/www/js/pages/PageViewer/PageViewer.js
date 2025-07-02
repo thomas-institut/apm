@@ -24,6 +24,7 @@ import { ApmPage } from '../ApmPage'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { TranscriptionLanguages } from '../../constants/TranscriptionLanguages'
 import { getPageTypeName, getPageTypes } from '../../constants/PageTypes'
+import {ApmFormats} from "../common/ApmFormats";
 
 
 
@@ -341,7 +342,7 @@ export class PageViewer extends ApmPage {
   }
 
   formatVersionTime(time) {
-    return moment(time).format('D MMM YYYY, H:mm:ss')
+    return ApmFormats.time(time);
   }
 
   genOnClickEditPageSubmitButton(){

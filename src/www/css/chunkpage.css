@@ -31,3 +31,12 @@ div.cpheader a {
 .card-header p {
     margin: 0;
 }
+
+div#collationtablelinks {
+    margin-bottom: 50px;
+}
+
+div#witnessListNew {
+    margin-top: 50px;
+    margin-bottom: 50px;
+}

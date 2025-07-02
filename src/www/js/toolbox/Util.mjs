@@ -23,10 +23,6 @@ export function deepCopy(someVariable) {
   return JSON.parse(JSON.stringify(someVariable))
 }
 
-// export function formatVersionTime(time) {
-//   return moment(time).format('D MMM YYYY, H:mm:ss')
-// }
-
 export function removeWhiteSpace(someString) {
   return someString.replace(/\s/g, '')
 }

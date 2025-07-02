@@ -47,8 +47,6 @@ use ThomasInstitut\TimeString\TimeString;
  */
 class SiteChunkPage extends SiteController
 {
-    const string TEMPLATE_CHUNK_PAGE = 'chunk-page.twig';
-
     /**
      * @throws UserNotFoundException
      * @throws PageNotFoundException
@@ -177,17 +175,26 @@ class SiteChunkPage extends SiteController
         }
         sort($validChunks, SORT_NUMERIC);
 
-        return $this->renderPage($response, self::TEMPLATE_CHUNK_PAGE, [
-            'workId' => $workId,
-            'chunkNumber' => $chunkNumber,
-            'work_info' => $workInfo,
-            'showAdminInfo' => $showAdminInfo,
-            'witnessInfoArray' => $witnessInfoArrayForPage,
-            'pageInfo' => $pageInfoArray,
-            'languageInfo' => $fullLanguageInfo,
-            'validChunks' => $validChunks,
-            'savedCollationTables' => $savedCollationTableInfoArray
-        ]);
+        return $this->renderStandardPage(
+            $response,
+            '',
+            "Chunk $workId-$chunkNumber",
+            'ChunkPage',
+            'js/pages/ChunkPage.js',
+            [
+                'workId' => $workId,
+                'chunkNumber' => intval($chunkNumber),
+                'witnessInfo' => $witnessInfoArrayForPage,
+                'pageInfo' => $pageInfoArray,
+                'languageInfo' => $fullLanguageInfo,
+                'workInfo' => $workInfo,
+                'validChunks' => $validChunks,
+                'savedCollationTables' => $savedCollationTableInfoArray,
+                'showAdminInfo' => $showAdminInfo,
+            ],
+            [],
+            ['witness.css', 'act-settingsform.css', 'chunkpage.css']
+        );
     }
 
 

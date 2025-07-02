@@ -10,19 +10,36 @@ use Psr\Http\Message\ResponseInterface as Response;
 class SiteMultiChunkEdition extends SiteController
 {
 
-    const TEMPLATE_EDITION_COMPOSER = 'mc-edition-composer.twig';
-
     public function newMultiChunkEdition(Response $response): Response
     {
-        return $this->renderPage($response, self::TEMPLATE_EDITION_COMPOSER, [
-            'editionId' => -1
-        ]);
+        return $this->renderStandardPage(
+            $response,
+            '',
+            'MCE Edition',
+            'MceComposer',
+            'js/MceComposer/MceComposer.js',
+            [
+                'editionId' => -1
+            ],
+            [],
+            [ 'multi-panel-ui/styles.css', 'mc-edition-composer.css']
+        );
     }
 
     public function getMultiChunkEdition(Request $request, Response $response): Response
     {
-        return $this->renderPage($response, self::TEMPLATE_EDITION_COMPOSER, [
-            'editionId' => intval($request->getAttribute('editionId'))
-        ]);
+
+        return $this->renderStandardPage(
+            $response,
+            '',
+            'MCE Edition',
+            'MceComposer',
+            'js/MceComposer/MceComposer.js',
+            [
+                'editionId' => intval($request->getAttribute('editionId'))
+            ],
+            [],
+            [ 'multi-panel-ui/styles.css', 'mc-edition-composer.css']
+        );
     }
 }

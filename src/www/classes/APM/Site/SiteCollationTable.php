@@ -58,10 +58,6 @@ class SiteCollationTable extends SiteController
     const string ERROR_NO_OPTIONS = 'NoOptions';
     const string ERROR_MISSING_REQUIRED_OPTION = 'MissingRequiredOption';
     const string ERROR_UNKNOWN_PRESET = 'UnknownPreset';
-    const string TEMPLATE_COLLATION_TABLE = 'collation-table.twig';
-    const string TEMPLATE_EDIT_COLLATION_TABLE_OLD = 'collation-edit.twig';
-    const string TEMPLATE_EDITION_COMPOSER = 'edition-composer.twig';
-
 
     public function newChunkEdition(Request $request, Response $response) : Response{
         
@@ -85,34 +81,49 @@ class SiteCollationTable extends SiteController
                 "Work '$workId' not defined in the system", 404);
         }
 
-        $peopleTids = [];
-        $peopleTids[] = $workInfo->authorId;
+        $peopleIds = [];
+        $peopleIds[] = $workInfo->authorId;
         $pm = $this->systemManager->getPersonManager();
         $peopleInfo = [];
-        foreach($peopleTids as $personTid) {
+        foreach($peopleIds as $personId) {
             try {
-                $personData = $pm->getPersonEssentialData($personTid);
+                $personData = $pm->getPersonEssentialData($personId);
             } catch (PersonNotFoundException) {
-                $this->logger->error("Person $personTid mentioned in CT not found");
+                $this->logger->error("Person $personId mentioned in CT not found");
             }
             if (isset($personData)) {
-                $peopleInfo[$personTid] = $personData->getExportObject();
+                $peopleInfo[$personId] = $personData->getExportObject();
             }
         }
 
-        return $this->renderPage($response, self::TEMPLATE_EDITION_COMPOSER, [
-            'workId' => $workId,
-            'chunkNumber' => $chunkNumber,
-            'tableId' => -1,
-            'collationTableData' => $ctData,
-            'workInfo' => $workInfo,
-            'peopleInfo' => $peopleInfo,
-            'docInfo' => [],
-            'versionInfo' => [],
-            'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
-            'versionId' => -1,
-            'lastVersion' => true
-        ]);
+        return $this->renderStandardPage(
+            $response,
+            '',
+            'Edit Collation Table',
+            'EditionComposer',
+            'js/EditionComposer/EditionComposer.js',
+            [
+                'workId' => $workId,
+                'chunkNumber' => intval($chunkNumber),
+                'tableId' => -1,
+                'collationTableData' => $ctData,
+                'workInfo' => $workInfo,
+                'peopleInfo' => $peopleInfo,
+                'docInfo' => [],
+                'versionInfo' => [],
+                'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
+                'versionId' => -1,
+                'lastVersion' => true
+            ],
+            [],
+            [
+                'collationtable.css',
+                'multi-panel-ui/styles.css',
+                'edition-composer.css',
+                'collation.edit.css'
+            ],
+            [ 'js/SimpleProfiler.js']
+        );
 
     }
 
@@ -218,24 +229,61 @@ class SiteCollationTable extends SiteController
         }, $docs);
 
         if ($ctData['type'] === 'edition') {
-            $template = self::TEMPLATE_EDITION_COMPOSER;
+            return $this->renderStandardPage(
+              $response,
+              '',
+              'Edit Collation Table',
+              'EditionComposer',
+              'js/EditionComposer/EditionComposer.js',
+                [
+                  'workId' => $workId,
+                  'chunkNumber' => intval($chunkNumber),
+                  'tableId' => $tableId,
+                  'collationTableData' => $ctData,
+                  'workInfo' => $workInfo,
+                  'peopleInfo' => $peopleInfo,
+                  'docInfo' => $docInfoArray,
+                  'versionInfo' => $versionInfoArray,
+                  'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
+                  'versionId' => $versionId,
+                  'lastVersion' => $isLastVersion
+                ],
+                [],
+                [
+                    'collationtable.css',
+                    'multi-panel-ui/styles.css',
+                    'edition-composer.css',
+                    'collation.edit.css'
+                ],
+                [ 'js/SimpleProfiler.js']
+            );
         } else {
-            $template = self::TEMPLATE_EDIT_COLLATION_TABLE_OLD;
+            return $this->renderStandardPage(
+                $response,
+                '',
+                'Edit Collation Table',
+                'CollationTableEditor',
+                'js/pages/CollationTableEditor.js',
+                [
+                    'workId' => $workId,
+                    'chunkNumber' => intval($chunkNumber),
+                    'tableId' => $tableId,
+                    'collationTableData' => $ctData,
+                    'workInfo' => $workInfo,
+                    'peopleInfo' => $peopleInfo,
+                    'docInfo' => $docInfoArray,
+                    'versionInfo' => $versionInfoArray,
+                ],
+                [],
+                [
+                    'collationtable.css',
+                    'collation.edit.css'
+                ],
+                [ 'js/SimpleProfiler.js']
+            );
         }
 
-        return $this->renderPage($response, $template, [
-            'workId' => $workId,
-            'chunkNumber' => $chunkNumber,
-            'tableId' => $tableId,
-            'collationTableData' => $ctData,
-            'workInfo' => $workInfo,
-            'peopleInfo' => $peopleInfo,
-            'docInfo' => $docInfoArray,
-            'versionInfo' => $versionInfoArray,
-            'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
-            'versionId' => $versionId,
-            'lastVersion' => $isLastVersion
-        ]);
+
     }
 
     protected function getMentionedPeopleFromVersionArray($versionArray) : array {
@@ -324,26 +372,28 @@ class SiteCollationTable extends SiteController
                     if ($witnessType !== WitnessType::FULL_TRANSCRIPTION) {
                         $msg = 'Non-supported witness type given: ' . $witnessType;
                         $this->logger->error($msg, [ 'args' => $args]);
-                        return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-                            'work' => $workId,
-                            'chunk' => $chunkNumber,
-                            'lang' => $language,
-                            'error' => true,
-                            'errorMessage' => $msg
-                        ]);
+                        return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
+//                        return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
+//                            'work' => $workId,
+//                            'chunk' => $chunkNumber,
+//                            'lang' => $language,
+//                            'error' => true,
+//                            'errorMessage' => $msg
+//                        ]);
                     }
                     // for now, only full transcriptions are implemented, so the second field in
                     // the witness spec must be a number
                     if (!ctype_digit($specs[1])) {
                         $msg = 'Invalid doc id given: ' . $specs[1];
                         $this->logger->error($msg, [ 'args' => $args]);
-                        return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-                            'work' => $workId,
-                            'chunk' => $chunkNumber,
-                            'lang' => $language,
-                            'error' => true,
-                            'errorMessage' => $msg
-                        ]);
+                        return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
+//                        return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
+//                            'work' => $workId,
+//                            'chunk' => $chunkNumber,
+//                            'lang' => $language,
+//                            'error' => true,
+//                            'errorMessage' => $msg
+//                        ]);
                     }
                     $docId = intval($specs[1]);
                     $lwid = 'A';
@@ -362,13 +412,14 @@ class SiteCollationTable extends SiteController
                 //
                 $msg = 'Unrecognized option : ' . $argWitnessSpec;
                 $this->logger->error($msg, [ 'args' => $args]);
-                return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-                    'work' => $workId,
-                    'chunk' => $chunkNumber,
-                    'lang' => $language,
-                    'error' => true,
-                    'errorMessage' => $msg
-                ]);
+                return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
+//                return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
+//                    'work' => $workId,
+//                    'chunk' => $chunkNumber,
+//                    'lang' => $language,
+//                    'error' => true,
+//                    'errorMessage' => $msg
+//                ]);
             }
             $collationPageOptions['partialCollation'] = true;
         }
@@ -395,14 +446,14 @@ class SiteCollationTable extends SiteController
             $msg = 'Preset not found';
             $this->logger->error($msg,
                     [ 'presetId' => $presetId]);
-            
-            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-                'work' => $workId,
-                'chunk' => $chunkNumber,
-                'lang' => '??',
-                'error' => true,
-                'errorMessage' => $msg
-            ]);
+            return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
+//            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
+//                'work' => $workId,
+//                'chunk' => $chunkNumber,
+//                'lang' => '??',
+//                'error' => true,
+//                'errorMessage' => $msg
+//            ]);
         }
 
         $preset = $presetManager->getPresetById($presetId);
@@ -485,25 +536,27 @@ class SiteCollationTable extends SiteController
             $this->logger->error('Automatic Collation Table:  no data in input',
                     [ 'rawdata' => $postData]);
             $msg = 'Bad request: no data';
-            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-                'work' => '??',
-                'chunk' => '??',
-                'lang' => '??',
-                'error' => true,
-                'errorMessage' => $msg
-            ]);
+            return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
+//            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
+//                'work' => '??',
+//                'chunk' => '??',
+//                'lang' => '??',
+//                'error' => true,
+//                'errorMessage' => $msg
+//            ]);
         }
         if (!isset($inputData['options'])) {
             $this->logger->error('Automatic Collation Table:  no options in input',
                     [ 'rawdata' => $postData]);
             $msg = 'Bad request: no options';
-            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-                'work' => '??',
-                'chunk' => '??',
-                'lang' => '??',
-                'error' => true,
-                'errorMessage' => $msg
-            ]);
+            return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
+//            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
+//                'work' => '??',
+//                'chunk' => '??',
+//                'lang' => '??',
+//                'error' => true,
+//                'errorMessage' => $msg
+//            ]);
         }
         
         $collationPageOptions = $inputData['options'];
@@ -512,13 +565,14 @@ class SiteCollationTable extends SiteController
         foreach ($requiredFields as $requiredField) {
             if (!isset($collationPageOptions[$requiredField])) {
                 $msg = 'Bad request: missing required option ' . $requiredField ;
-                return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-                    'work' => '??',
-                    'chunk' => '??',
-                    'lang' => '??',
-                    'error' => true,
-                    'errorMessage' => $msg
-                ]);
+                return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
+//                return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
+//                    'work' => '??',
+//                    'chunk' => '??',
+//                    'lang' => '??',
+//                    'error' => true,
+//                    'errorMessage' => $msg
+//                ]);
             }
         }
         $collationPageOptions['isPreset'] = false;
@@ -573,13 +627,14 @@ class SiteCollationTable extends SiteController
         
         if (is_null($langInfo)) {
             $msg = 'Invalid language <b>' . $language . '</b>';
-            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-                'work' => $workId,
-                'chunk' => $chunkNumber,
-                'lang' => $language,
-                'error' => true,
-                'errorMessage' => $msg
-            ]);
+            return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
+//            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
+//                'work' => $workId,
+//                'chunk' => $chunkNumber,
+//                'lang' => $language,
+//                'error' => true,
+//                'errorMessage' => $msg
+//            ]);
         }
         
         // get work info
@@ -626,39 +681,54 @@ class SiteCollationTable extends SiteController
                 }
                 if (!$found) {
                     $msg = 'Requested witness not valid ' . $systemId;
-                    return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-                        'work' => $workId,
-                        'chunk' => $chunkNumber,
-                        'lang' => $language,
-                        'error' => true,
-                        'errorMessage' => $msg
-                    ]);
+                    return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
+//                    return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
+//                        'work' => $workId,
+//                        'chunk' => $chunkNumber,
+//                        'lang' => $language,
+//                        'error' => true,
+//                        'errorMessage' => $msg
+//                    ]);
                 }
             }
         }
 
-        $templateOptions = [
-            'work' => $workId,
-            'chunk' => $chunkNumber,
+        $data = [
+            'workId' => $workId,
+            'chunkNumber' => $chunkNumber,
             'lang' => $language,
-            'apiCallOptions' => $apiCallOptions,
+            'initialApiOptions' => $apiCallOptions,
             'langName' => $langInfo['name'],
             'isPartial' => $partialCollation,
             'isPreset' => $collationPageOptions['isPreset'],
-            'rtl' => $langInfo['rtl'],
-            'work_info' => get_object_vars($workInfo),
-            'num_docs' => $partialCollation ? count($apiCallOptions['witnesses']) : count($validWitnesses),
-            'total_num_docs' => count($validWitnesses),
             'availableWitnesses' => $validWitnesses,
             'suppressTimestampsInApiCalls' => $suppressTimestampsInApiCalls,
             'normalizerData' => $this->getNormalizerData($language, 'standard'),
-            'warnings' => $warnings
+            'loadNow' => true
         ];
-        if ($templateOptions['isPreset']) {
-            $templateOptions['preset'] = $collationPageOptions['preset'];
+        if ($data['isPreset']) {
+            $data['preset'] = $collationPageOptions['preset'];
         }
+        $title = "ACT $workId-$chunkNumber-$language";
+        if ($partialCollation) {
+            $title .= '-partial';
+        }
+
+        return $this->renderStandardPage(
+            $response,
+            '',
+            $title,
+            'AutomaticCollationTable',
+            'js/pages/AutomaticCollationTable/AutomaticCollationTable.js',
+            $data,
+            [],
+            ['collationtable.css', 'act-settingsform.css'],
+            ['js/SimpleProfiler.js']
+        );
+
+
         
-        return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, $templateOptions);
+//        return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, $data);
     }
     
 

@@ -59,9 +59,6 @@ use Twig\Node\Expression\Test\OddTest;
 class SiteController implements LoggerAwareInterface, CodeDebugInterface
 {
 
-    const string TEMPLATE_ERROR_PAGE = 'error-page.twig';
-    const string StandardPageTemplate = 'standard-page.twig';
-
 
     use LoggerAwareTrait;
     use CodeDebugWithLoggerTrait;
@@ -169,8 +166,11 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
      * @return string
      */
     private function getJsObject(mixed $phpVar) : string {
+        if (is_null($phpVar)) {
+            return 'null';
+        }
         if (is_string($phpVar)) {
-            return "'$phpVar'";
+            return "\"" . $this->escapeStringForJs($phpVar) . "\"";
         }
         if (is_bool($phpVar)) {
             return $phpVar ? 'true' : 'false';
@@ -178,18 +178,23 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         if (is_integer($phpVar) ||  is_float($phpVar) || is_double($phpVar)) {
             return "$phpVar";
         }
+        $isObject = false;
+        if (is_object($phpVar)) {
+            $phpVar = get_object_vars($phpVar);
+            $isObject = true;
+        }
         if (is_array($phpVar)) {
             $keys = array_keys($phpVar);
             if (count($keys) > 0) {
-                if (is_int($keys[0])) {
-                    // array with numeric keys
+                if ($keys[0] === 0 ) {
+                    // normal array with numeric keys
                     return "[" .
                         implode(", ", array_map(function($key) use ($phpVar){
                             return $this->getJsObject($phpVar[$key]);
                         },  $keys)) .
                         "]";
                 } else {
-                    // array with string keys
+                    // array with string keys (or numeric keys with empty slots)
                     return "{" .
                         implode(", ", array_map(function($key) use ($phpVar){
                             return "$key: " . $this->getJsObject($phpVar[$key]);
@@ -197,14 +202,44 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
                         "}";
                 }
             } else {
-                return '{}';
+                return $isObject ? '{}' : '[]';
             }
         }
+
         return '';
 
     }
 
-    protected function renderStandardPage(ResponseInterface $response, string $cacheKey, string $title, string $jsClassName, array $extraCss, ?array $data = null) : ResponseInterface {
+    private function escapeStringForJs(string $string) : string {
+        $string = preg_replace('/\n/','\n', $string);
+        return preg_replace('/\"/', '\"', $string);
+    }
+
+    /**
+     *
+     * Renders a standard page with the given parameters
+     *
+     * Pass null or an empty cache key to disable caching.
+     *
+     * @param ResponseInterface $response
+     * @param string $cacheKey
+     * @param string $title
+     * @param string $jsClassName
+     * @param string $viteEntryPoint
+     * @param array|null $data
+     * @param array $extraViteEntryPoints
+     * @param array $extraCss
+     * @param array $extraJss
+     * @return ResponseInterface
+     */
+    protected function renderStandardPage(ResponseInterface $response,
+                                          string            $cacheKey, string $title,
+                                          string            $jsClassName,
+                                          string            $viteEntryPoint,
+                                          ?array            $data = null,
+                                          array             $extraViteEntryPoints = [],
+                                          array             $extraCss = [],
+                                          array             $extraJss = []) : ResponseInterface {
         SystemProfiler::lap("Ready to render");
         if ($cacheKey !== '') {
             $cacheKey = implode(':', [ 'Site', $this->config['version'], $cacheKey]);
@@ -219,12 +254,33 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
                 // just continue
             }
         }
-        $commonData = $this->getCommonData();
 
+        $commonData = $this->getCommonData();
         $baseUrl = $this->getBaseUrl();
-        $extraCssHtml = implode("\n", array_map(function($css) use ($baseUrl) {
-            return "<link rel=\"stylesheet\" type=\"text/css\" href=\"$baseUrl/css/$css\"/>";
-            }, $extraCss));
+
+        $cssItems = [];
+        $cssItems[] = 'node_modules/bootstrap/dist/css/bootstrap.css';
+        $cssItems[] = 'node_modules/bootstrap-icons/font/bootstrap-icons.css';
+        $cssItems[] = 'node_modules/datatables.net-dt/css/jquery.dataTables.min.css';
+        $cssItems[] = 'css/styles.css';
+        foreach ($extraCss as $css) {
+            $cssItems[] = "css/$css";
+        }
+
+        $jsItems = [];
+        $jsItems[] = 'node_modules/jquery/dist/jquery.min.js';
+        $jsItems[] = 'node_modules/bootstrap/dist/js/bootstrap.bundle.min.js';
+        $jsItems[] = 'node_modules/datatables.net/js/jquery.dataTables.min.js';
+        $jsItems[] = 'node_modules/datatables.net-dt/js/dataTables.dataTables.min.js';
+        $jsItems = [ ...$jsItems, ...$extraJss];
+
+        $cssHtml = implode("\n", array_map(function($cssItem) use ($baseUrl) {
+            return "<link rel=\"stylesheet\" type=\"text/css\" href=\"$baseUrl/$cssItem\"/>";
+            }, $cssItems));
+
+        $jsHtml = implode("\n", array_map(function($js) use ($baseUrl) {
+            return "<script type=\"text/javascript\" src=\"$baseUrl/$js\"></script>";
+        }, $jsItems));
 
         $jsOptions = [ 'commonData' => $commonData ];
         if ($data !== null) {
@@ -233,6 +289,27 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             }
         }
         $dataJs = $this->getJsObject($jsOptions);
+
+
+        if ($this->systemManager->getConfig()['devMode']) {
+            $viteImportsHtml = <<<END
+   <script type="module" src="http://localhost:5173/@vite/client"></script>
+   <script type="module" src="http://localhost:5173/$viteEntryPoint"></script>
+END;
+        } else {
+            $viteEntryPoints = [ $viteEntryPoint, ...$extraViteEntryPoints];
+//            $this->logger->debug("ViteEntry Points ready", $viteEntryPoints);
+            $viteImports = [];
+            foreach ($viteEntryPoints as $entryPoint) {
+                $viteImports = [ ...$viteImports, ... $this->getViteImportsFromManifest($entryPoint) ];
+            }
+            $viteImportsHtml = '';
+            foreach ($viteImports as $import) {
+                $viteImportsHtml .= <<<END
+    <script type="module" src="$baseUrl/js/dist/vite/$import"></script>
+END;
+            }
+        }
 
         $script = "$(() => {new $jsClassName(( $dataJs)) });";
 
@@ -243,26 +320,17 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <link rel="stylesheet" type="text/css" href="$baseUrl/node_modules/bootstrap/dist/css/bootstrap.css"/>
-    <link rel="stylesheet" type="text/css" href="$baseUrl/node_modules/bootstrap-icons/font/bootstrap-icons.css"/>
-    <link rel="stylesheet" type="text/css" href="$baseUrl/node_modules/datatables.net-dt/css/jquery.dataTables.min.css"/>
-    <link rel="stylesheet" type="text/css" href="$baseUrl/css/styles.css"/>
-    $extraCssHtml
+    $cssHtml
     <link href='$baseUrl/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
-
     <title>$title</title>
-
-    <script type="text/javascript" src="$baseUrl/node_modules/jquery/dist/jquery.js"></script>
-    <script type="text/javascript" src="$baseUrl/node_modules/moment/moment.js"></script>
-    <script type="text/javascript" src="$baseUrl/node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
-    <script type="text/javascript" src="$baseUrl/node_modules/datatables.net/js/jquery.dataTables.js"></script>
-    <script type="text/javascript" src="$baseUrl/node_modules/datatables.net-dt/js/dataTables.dataTables.js"></script>
-    <script type="text/javascript" src="$baseUrl/js/SimpleProfiler.js"></script>
-    <script type="text/javascript" src="$baseUrl/js/dist/$jsClassName.bundle.js"></script>   
+    $jsHtml
+    $viteImportsHtml
 </head>
 <body>
-Loading...
+    <p>Loading...</p>
+    <div class="spinner-grow" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
 </body>
 <script>
     $script
@@ -277,6 +345,32 @@ END;
         $this->logger->debug(sprintf("SITE PROFILER %s Finished in %.3f ms",  SystemProfiler::getName(), SystemProfiler::getTotalTimeInMs()),
             SystemProfiler::getLaps());
         return $response;
+    }
+
+
+    private function getViteImportsFromManifest(string $entryPoint) : array {
+        $manifestFileName = './js/dist/vite/.vite/manifest.json';
+        $manifestFileContents = file_get_contents($manifestFileName );
+        if ($manifestFileContents === false) {
+            $this->logger->error("Vite manifest file not found: $manifestFileName");
+            return [];
+        }
+        $manifest = json_decode($manifestFileContents, true);
+        if (!isset($manifest[$entryPoint])) {
+            $this->logger->error("Page $entryPoint not found in Vite manifest");
+            return [];
+        }
+
+        $imports = [];
+        $imports[] = $manifest[$entryPoint]["file"];
+        foreach ($manifest[$entryPoint]["imports"] as $import) {
+            if (!isset($manifest[$import])) {
+                $this->logger->error("Import $import not found in Vite manifest");
+                continue;
+            }
+            $imports[] = $manifest[$import]["file"];
+        }
+        return $imports;
     }
 
     /**
@@ -323,12 +417,20 @@ END;
 
     protected function getErrorPage(ResponseInterface $response, string $title, string $errorMessage, int $httpStatus) : ResponseInterface
     {
-        return $this->renderPage($response, self::TEMPLATE_ERROR_PAGE,
+
+        return $this->renderStandardPage(
+            $response,
+            '',
+            $title,
+            'ErrorPage',
+            'js/pages/ErrorPage.js',
             [
                 'errorMessage' => $errorMessage,
                 'title' => $title
-            ])->withStatus($httpStatus);
-
+            ],
+            [],
+            [ 'error_page.css']
+        )->withStatus($httpStatus);
 
     }
 

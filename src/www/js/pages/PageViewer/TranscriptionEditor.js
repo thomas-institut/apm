@@ -23,6 +23,7 @@ import { EditorData } from './EditorData'
 import { configureTranscriptionEditorBlots } from './TranscriptionEditorBlotConfig'
 import * as Entity from '../../constants/Entity'
 import { getLangCodeFromLangId, getLangIdFromLangCode } from '../../constants/TranscriptionLanguages'
+import {ApmFormats} from "../common/ApmFormats";
 
 
 
@@ -1167,7 +1168,7 @@ export class TranscriptionEditor
 
     for (let i = this.versions.length -1; i >= 0; i--) {
       this.versions[i].buttonHtml = '<strong>v' + (i+1) + ':</strong> ' +
-        moment(this.versions[i].time_from).format('D MMM YYYY, H:mm:ss') + ', ' +
+        ApmFormats.time(this.versions[i].time_from) + ', ' +
         this.versions[i].author_name
       if (this.versions[i].minor) {
         this.versions[i].buttonHtml += '&nbsp;<em>[m]</em>'

@@ -31,7 +31,7 @@ use APM\Site\SiteEntity;
 use APM\Site\SiteMetadataEditor;
 use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePeople;
-use APM\Site\SiteSearchNew;
+use APM\Site\SiteSearch;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Logger;
@@ -83,7 +83,6 @@ $config = SystemConfig::get();
 if (!is_array($config)) {
     exitWithErrorMessage($config);
 }
-
 // Set up logger
 $logger = new Logger('APM');
 $logger->pushHandler(new ErrorLogHandler());
@@ -162,7 +161,7 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
 
         $group->get('/search',
             function(Request $request, Response $response) use ($container){
-                return (new SiteSearchNew($container))->searchPage($request, $response);
+                return (new SiteSearch($container))->searchPage($request, $response);
             })
             ->setName('search');
 

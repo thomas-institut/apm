@@ -4,6 +4,8 @@
 # DO NOT EDIT IN PRODUCTION
 #
 
+devMode: false
+
 copyrightNotice: '2016-25, <a href="https://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="https://www.uni-koeln.de/"> Universität zu Köln </a>'
 
 appName: 'APM'

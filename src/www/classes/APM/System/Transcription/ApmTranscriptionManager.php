@@ -1122,11 +1122,11 @@ class ApmTranscriptionManager extends TranscriptionManager
         $theRows = iterator_to_array($rows);
         ArraySort::byKey($theRows, 'seq');
         $elements = [];
-        $this->logger->debug("Got " . count($theRows) . " rows from database");
+//        $this->logger->debug("Got " . count($theRows) . " rows from database");
         foreach($theRows as $row) {
-            $this->logger->debug("Processing row ", $row);
+//            $this->logger->debug("Processing row ", $row);
             $e = $this->createElementObjectFromRow($row);
-            $this->logger->debug("Element ", get_object_vars($e));
+//            $this->logger->debug("Element ", get_object_vars($e));
             $e->items = $this->getItemsForElement($e, $timeString);
             $elements[] = $e;
         }

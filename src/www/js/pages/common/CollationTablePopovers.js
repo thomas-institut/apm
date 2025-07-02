@@ -311,6 +311,5 @@ function getNoteHtml(note, peopleInfo) {
 
 function formatNoteTime(timeStamp) {
   return ApmFormats.timeString(timeStamp, { withSeconds: false});
-  // return moment(timeStamp).format('D MMM YYYY, H:mm')
 }
 

@@ -7,8 +7,6 @@ use Psr\Http\Message\ResponseInterface as Response;
 
 class SiteMetadataEditor extends SiteController
 {
-    const TEMPLATE_SCRATCH_PAGE = 'metadataeditor-page.twig';
-
     /**
      * @param Request $request
      * @param Response $response
@@ -20,6 +18,18 @@ class SiteMetadataEditor extends SiteController
     {
         $id = $request->getAttribute('id');
         $this->logger->debug("Metadata editor with id $id");
-        return $this->renderPage($response, self::TEMPLATE_SCRATCH_PAGE, ['id' => $id]);
+
+        return $this->renderStandardPage(
+            $response,
+            '',
+            'Dev Metadata Editor',
+            'DevelopmentEntityDataEditor',
+            'js/pages/DevelopmentEntityDataEditor.js',
+            [
+                'id' => intval($id)
+            ],
+            [],
+            ['metadata-editor.css']
+        );
     }
 }

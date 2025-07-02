@@ -51,8 +51,6 @@ class SiteWorks extends SiteController
 
     const string WORK_DATA_CACHE_KEY = 'SiteWorks-WorkData';
     const int WORK_DATA_TTL = 8 * 24 * 3600;
-    const string TEMPLATE_WORK_PAGE = 'work-page.twig';
-
 
     public function workPage(Request $request, Response $response): Response {
 
@@ -68,8 +66,10 @@ class SiteWorks extends SiteController
                 '',
                 "Work $id",
                 "WorkPage",
-                [ 'work_page.css'],
-                [ 'workData' => $workData->getExportObject() ]
+                'js/pages/WorkPage.js',
+                [ 'workData' => $workData ],
+                [],
+                [ 'work_page.css']
             );
         } catch ( WorkNotFoundException) {
             try {
@@ -83,8 +83,10 @@ class SiteWorks extends SiteController
                     '',
                     "Work $workData->workId",
                     "WorkPage",
-                    [ 'work_page.css'],
-                    [ 'workData' => $workData->getExportObject() ]
+                    'js/pages/WorkPage.js',
+                    [ 'workData' => $workData ],
+                    [],
+                    [ 'work_page.css']
                 );
             } catch (WorkNotFoundException) {
                 return $this->getErrorPage($response, 'Error', "Work $id not found", HttpStatus::NOT_FOUND);
@@ -108,8 +110,16 @@ class SiteWorks extends SiteController
             $cache->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
         }
 
-        return $this->renderStandardPage($response, '',
-            "Works", "WorksPage", [ 'works_page.css'], [ 'works' => $works ]);
+        return $this->renderStandardPage(
+            $response,
+            '',
+            "Works",
+            "WorksPage",
+            'js/pages/WorksPage.js',
+            [ 'works' => $works ],
+            [],
+            [ 'works_page.css']
+        );
     }
 
     private static function getWorkDataBasicInfo(string $workId, SystemManager $systemManager) : array {

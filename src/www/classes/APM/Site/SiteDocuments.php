@@ -54,10 +54,6 @@ class SiteDocuments extends SiteController
     const string DOCUMENT_DATA_CACHE_KEY = 'SiteDocuments-DocumentData';
     const int DOCUMENT_DATA_TTL = 8 * 24 * 3600;
 
-    const string TEMPLATE_DOCS_PAGE = 'documents-page.twig';
-    const string TEMPLATE_SHOW_DOCS_PAGE = 'doc-details.twig';
-    const string TEMPLATE_DEFINE_DOC_PAGES = 'doc-def-pages.twig';
-
     /**
      * @param Request $request
      * @param Response $response
@@ -89,10 +85,19 @@ class SiteDocuments extends SiteController
             // should never happen though
         }
 
-        return $this->renderPage($response, self::TEMPLATE_DOCS_PAGE, [
-            'docs' => $docs,
-            'canManageDocuments' => $canManageDocuments ? '1' : '0'
-        ]);
+        return $this->renderStandardPage(
+            $response,
+            '',
+            'Documents',
+            'DocumentsPage',
+            'js/pages/DocumentsPage.js',
+            [
+                'docs' => $docs,
+                'canManageDocuments' => $canManageDocuments
+            ],
+            [],
+            [ 'documents_page.css']
+        );
     }
 
     /**
@@ -267,7 +272,7 @@ class SiteDocuments extends SiteController
 
         $chunkInfo = [];
 
-        $lastVersions = [];
+        $versionInfo = [];
         $authorInfo = [];
 
         foreach($lastSaves as $saveVersionInfo) {
@@ -283,7 +288,7 @@ class SiteDocuments extends SiteController
                 foreach($docArray as $docIdInMap => $witnessLocalIdArray) {
                     foreach($witnessLocalIdArray as $witnessLocalId => $segmentArray) {
                         $lastChunkVersion = $lastChunkVersions[$workId][$chunkNumber][$docIdInMap][$witnessLocalId];
-                        $lastVersions[$workId][$chunkNumber] = $lastChunkVersion;
+                        $versionInfo[$workId][$chunkNumber] = $lastChunkVersion;
                         if ($lastChunkVersion->authorTid !== 0 && !isset($authorInfo[$lastChunkVersion->authorTid])) {
                             $authorInfo[$lastChunkVersion->authorTid] = $this->systemManager->getPersonManager()->getPersonEssentialData($lastChunkVersion->authorTid);
                         }
@@ -338,19 +343,29 @@ class SiteDocuments extends SiteController
 
         }
 
-        return $this->renderPage($response, self::TEMPLATE_SHOW_DOCS_PAGE, [
-            'navByPage' => false,
-            'canDefinePages' => true,
-            'canEditDocuments' => $userManager->isUserAllowedTo($this->userId, UserTag::EDIT_DOCUMENTS),
-            'doc' => $doc,
-            'chunkInfo' => $chunkInfo,
-            'lastVersions' => $lastVersions,
-            'lastSaves' => $lastSaves,
-            'metaData' => [],
-            'userTid' => $this->userId,
-            'params' => explode('/', $args['params'] ?? ''),
-            'selectedPage' => $selectedPage
-        ]);
+        return $this->renderStandardPage(
+            $response,
+            '',
+            "Doc " . $doc['docInfo'][' title'],
+            "DocPage",
+            'js/pages/DocPage.js',
+            [
+                'navByPage' => false,
+                'canDefinePages' => true,
+                'canEditDocuments' => $userManager->isUserAllowedTo($this->userId, UserTag::EDIT_DOCUMENTS),
+                'doc' => $doc,
+                'chunkInfo' => $chunkInfo,
+                'versionInfo' => $versionInfo,
+                'lastSaves' => $lastSaves,
+                'metaData' => [],
+                'userTid' => $this->userId,
+                'params' => explode('/', $args['params'] ?? ''),
+                'selectedPage' => $selectedPage
+            ],
+            [],
+            [ 'doc_page.css'],
+            [ "node_modules/openseadragon/build/openseadragon/openseadragon.js"]
+        );
     }
 
     /**
@@ -379,8 +394,19 @@ class SiteDocuments extends SiteController
             $this->logger->info($e->getMessage());
             return $this->getBasicErrorPage($response, "Not found", "Document not found", HttpStatus::NOT_FOUND);
         }
-        return $this->renderPage($response, self::TEMPLATE_DEFINE_DOC_PAGES, [
-            'doc' => $doc
-        ]);
+
+        return $this->renderStandardPage(
+            $response,
+            '',
+            'Doc Def Pages',
+            'DocDefPages',
+            'js/pages/DocDefPages.js',
+            [
+                'doc' => $doc,
+                'numPages' => $doc['numPages'],
+            ],
+            [],
+            [ 'doc_page.css']
+        );
     }
 }

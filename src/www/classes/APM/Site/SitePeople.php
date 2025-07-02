@@ -14,8 +14,6 @@ use ThomasInstitut\EntitySystem\Tid;
 
 class SitePeople extends SiteController
 {
-    const TEMPLATE_PEOPLE = 'people-page.twig';
-    const TEMPLATE_PERSON = 'person-page.twig';
 
     /**
      * @param Request $request
@@ -26,7 +24,16 @@ class SitePeople extends SiteController
     public function peoplePage(Request $request, Response $response): Response
     {
         SystemProfiler::setName("Site:" . __FUNCTION__);
-        return $this->renderPage($response, self::TEMPLATE_PEOPLE,[]);
+        return $this->renderStandardPage(
+            $response,
+            '',
+            'People',
+            'PeoplePage',
+            'js/pages/PeoplePage.js',
+            null,
+            [],
+            [ 'people_page.css']
+        );
     }
 
     /**
@@ -79,40 +86,19 @@ class SitePeople extends SiteController
             }
         }
 
-//        $data['sortName'] = $rawEntityData->getObjectForPredicate(Entity::pSortName);
-//        $data['description'] = $rawEntityData->getObjectForPredicate(Entity::pEntityDescription) ?? '';
-//        $data['dateOfBirth'] = $rawEntityData->getObjectForPredicate(Entity::pDateOfBirth);
-//        $data['dateOfDeath'] = $rawEntityData->getObjectForPredicate(Entity::pDateOfDeath);
-//        $data['viafId'] = $rawEntityData->getObjectForPredicate(Entity::pViafId);
-//        $data['wikiDataId'] = $rawEntityData->getObjectForPredicate(Entity::pWikiDataId);
-//        $data['orcidId'] = $rawEntityData->getObjectForPredicate(Entity::pOrcid);
-//        $data['locId'] = $rawEntityData->getObjectForPredicate(Entity::pLocId);
-//        $data['gndId'] =  $rawEntityData->getObjectForPredicate(Entity::pGNDId);
-//        $data['urls']  = [];
-
-//        $urlObjectArray = $rawEntityData->getAllObjectsForPredicateByQualificationPredicate(Entity::pUrl, Entity::pObjectUrlType, 0);
-
-//        foreach($urlObjectArray as $key => $value) {
-//            if ($key === 0) {
-//                $name = "Other";
-//            } else {
-//                try {
-//                    $name = $this->systemManager->getEntitySystem()->getEntityData($key)->name;
-//                } catch (EntityDoesNotExistException) {
-//                    $this->logger->error("Found undefined url type $key in data");
-//                    $name = "Other";
-//                }
-//            }
-//            $data['urls'][] = [ 'name' => $name, 'url' => $value];
-//        }
-
-
-        return $this->renderPage($response,
-            self::TEMPLATE_PERSON,
+        return $this->renderStandardPage(
+            $response,
+            '',
+            'Person',
+            'PersonPage',
+            'js/pages/PersonPage.js',
             [
                 'personData' => $data,
                 'canManageUsers' => $canManageUsers
-            ]);
+            ],
+            [],
+            [ 'person_page.css']
+        );
     }
 
 }

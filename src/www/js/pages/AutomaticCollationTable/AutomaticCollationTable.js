@@ -37,16 +37,14 @@ import { HeaderAndContentPage } from '../HeaderAndContentPage'
 
 export class AutomaticCollationTable extends HeaderAndContentPage {
   
-  constructor(options, initialApiOptions) {
+  constructor(options) {
     super(options);
     console.log('ACT mini app starting')
     console.log('Available Witnesses:')
     console.log(options.availableWitnesses)
     console.log('ACT options')
     console.log(options)
-    console.log('Initial API options')
-    console.log(initialApiOptions)
-    
+
 
 
     let oc = new OptionsChecker({
@@ -55,6 +53,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
         error: { type: 'boolean', default: false},
         errorMessage: { type: 'string', default: ''},
         workId : { type: 'string', required: true},
+        initialApiOptions: {type: 'object', required: true},
         chunkNumber: {type: 'NonZeroNumber', required: true},
         langDef : { type: 'object', default: defaultLanguageDefinition },
         availableWitnesses: { type: 'Array', default: [] },
@@ -99,9 +98,9 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
 
       }
 
-      this.initialApiOptions = deepCopy(initialApiOptions);
+      this.initialApiOptions = deepCopy(this.options.initialApiOptions);
 
-      this.apiCallOptions = initialApiOptions
+      this.apiCallOptions = this.options.initialApiOptions
       // if there are no witnesses in the initialApiOptions witnesses array,
       // it means that ALL witnesses should be included
 

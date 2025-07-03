@@ -1,4 +1,5 @@
-/* global ArrayUtil */
+import { describe, expect, it } from 'vitest'
+import * as ArrayUtil from '../../../js/toolbox/ArrayUtil.mjs'
 
 describe('ArrayUtil', ()=> {
   describe('Basic Functions', () => {

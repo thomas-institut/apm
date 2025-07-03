@@ -35,5 +35,8 @@ export default defineConfig({
         assetFileNames: '[name]-[hash][extname]',
       }
     }
+  },
+  test: {
+    projects: ['test/js']
   }
 })

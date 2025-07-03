@@ -431,6 +431,7 @@ export class TranscriptionEditor
 
     // langDef : language definitions
     if (options.langDef === undefined) {
+      options.langDef = [];
       options.langDef[Entity.LangLatin] = { id: Entity.LangLatin, name: 'Latin', code: 'la', fontsize: 3, rtl: false};
     }
     
@@ -3181,3 +3182,8 @@ export class TranscriptionEditor
 function areEqual(var1, var2) {
   return JSON.stringify(var1) === JSON.stringify(var2)
 }
+
+
+TranscriptionEditor.formatBlots = [];
+TranscriptionEditor.blockBlots = [];
+TranscriptionEditor.imageBlots = [];

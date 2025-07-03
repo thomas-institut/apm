@@ -16,6 +16,9 @@
  *  
  */
 
+import { describe, expect, it } from 'vitest'
+import { PageRange } from '../../js/PageRange'
+import * as FoliationType from '../../js/constants/FoliationType'
 
 describe("PageRange", function() {
   

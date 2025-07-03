@@ -59,8 +59,8 @@ export class BidiDisplayOrder {
       return []
     }
     if (defaultTextDirection !== 'ltr' && defaultTextDirection !== 'rtl') {
-      console.warn(`Wrong defaultTextDirection '${defaultTextDirection}'`)
-      console.warn(`Detecting default text direction`)
+      // console.warn(`Wrong defaultTextDirection '${defaultTextDirection}'`)
+      // console.warn(`Detecting default text direction`)
       let detectedTextDirection = ''
       for (let i = 0; i < items.length; i++) {
         let itd = getItemIntrinsicTextDirection(items[i])
@@ -70,10 +70,10 @@ export class BidiDisplayOrder {
         }
       }
       if (detectedTextDirection === '') {
-        console.warn(`Cannot detect text direction`)
+        // console.warn(`Cannot detect text direction`)
         return []
       }
-      console.warn(`Setting text direction to ${detectedTextDirection}`)
+      // console.warn(`Setting text direction to ${detectedTextDirection}`)
       defaultTextDirection = detectedTextDirection
     }
 

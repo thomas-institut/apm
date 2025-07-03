@@ -1,9 +1,8 @@
-import { expect, test, testSuite } from '../../../js/SimpleUnitTest/SimpleUnitTest.mjs'
-import { isAllUpperCase, isWhiteSpace } from '../../../js/toolbox/Util.mjs'
-import { BidiDisplayOrder } from '../../../js/Typesetter2/Bidi/BidiDisplayOrder.mjs'
+import { BidiDisplayOrder } from '../../js/Typesetter2/Bidi/BidiDisplayOrder.mjs'
+import { isAllUpperCase, isWhiteSpace } from '../../js/toolbox/Util.mjs'
+import { describe, test, expect } from 'vitest'
 
-
-testSuite('Bidi Display Order', () => {
+describe('Bidi Display Order', () => {
   test('Unidirectional Strings', () => {
     let testCases = [
       {
@@ -111,7 +110,7 @@ testSuite('Bidi Display Order', () => {
 function doTestCases(testCaseArray, getItemIntrinsicTextDirection) {
   testCaseArray.forEach( (testCase) => {
     let result = BidiDisplayOrder.getDisplayOrder(testCase.testItems, testCase.defaultTextDirection, getItemIntrinsicTextDirection )
-    expect(result, testCase.context).toBeOfLength(testCase.testItems.length)
+    expect(result, testCase.context).toHaveLength(testCase.testItems.length)
     expectResults(testCase.context, result, testCase.expectedOrder, testCase.expectedDirections)
   })
 

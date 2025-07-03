@@ -3,11 +3,6 @@ const path = require('path');
 module.exports = {
   entry: {
     PageViewer: './pages/PageViewer/PageViewer.js',
-    // JASMINE TESTS
-    JasmineTests: {
-      import: '../test/js/modules-to-test.js',
-      filename: '../../test/js/JasmineTests.bundle.js'
-    },
   },
   externals: {
     jquery: 'jQuery'

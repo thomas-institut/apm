@@ -136,6 +136,8 @@ class SitePageViewer extends SiteController
                 HttpStatus::NOT_FOUND);
         }
 
+        $viteImportsHtml = $this->getViteImportHtml([ 'js/pages/PageViewer/PageViewer.js']);
+
         return $this->renderPage($response, self::PAGE_VIEWER_TWIG, [
             'navByPage' => $byPage,  // i.e., navigate by sequence
             'doc' => $docId,
@@ -152,7 +154,8 @@ class SitePageViewer extends SiteController
             'thePages' => $thePages,
             'imageUrl' => $imageUrl,
             'languagesArray' => $languagesArray,
-            'deepZoom' => $deepZoom
+            'deepZoom' => $deepZoom,
+            'viteImportsHtml' => $viteImportsHtml,
         ]);
     }
 

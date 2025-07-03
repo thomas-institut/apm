@@ -63,6 +63,8 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     use LoggerAwareTrait;
     use CodeDebugWithLoggerTrait;
 
+    const string VITE_DEV_BASE = 'http://localhost:5173';
+
     protected ContainerInterface $container;
     protected ApmSystemManager $systemManager;
     protected array $config;
@@ -290,26 +292,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         }
         $dataJs = $this->getJsObject($jsOptions);
 
-
-        if ($this->systemManager->getConfig()['devMode']) {
-            $viteImportsHtml = <<<END
-   <script type="module" src="http://localhost:5173/@vite/client"></script>
-   <script type="module" src="http://localhost:5173/$viteEntryPoint"></script>
-END;
-        } else {
-            $viteEntryPoints = [ $viteEntryPoint, ...$extraViteEntryPoints];
-//            $this->logger->debug("ViteEntry Points ready", $viteEntryPoints);
-            $viteImports = [];
-            foreach ($viteEntryPoints as $entryPoint) {
-                $viteImports = [ ...$viteImports, ... $this->getViteImportsFromManifest($entryPoint) ];
-            }
-            $viteImportsHtml = '';
-            foreach ($viteImports as $import) {
-                $viteImportsHtml .= <<<END
-    <script type="module" src="$baseUrl/js/dist/vite/$import"></script>
-END;
-            }
-        }
+        $viteImportsHtml = $this->getViteImportHtml([ $viteEntryPoint, ...$extraViteEntryPoints ]);
 
         $script = "$(() => {new $jsClassName(( $dataJs)) });";
 
@@ -347,8 +330,35 @@ END;
         return $response;
     }
 
+    protected function getViteImportHtml(array $viteEntryPoints) : string {
+        if ($this->systemManager->getConfig()['devMode']) {
+            $viteImportsHtml = sprintf(
+                "<script type=\"module\" src=\"%s/@vite/client\"></script>",
+                self::VITE_DEV_BASE
+            );
+            foreach ($viteEntryPoints as $viteEntryPoint) {
+                $viteImportsHtml .= sprintf(
+                    "<script type=\"module\" src=\"%s/$viteEntryPoint\"></script>",
+                    self::VITE_DEV_BASE
+                );
+            }
+        } else {
+            $baseUrl = $this->getBaseUrl();
+            $viteImports = [];
+            foreach ($viteEntryPoints as $entryPoint) {
+                $viteImports = [ ...$viteImports, ... $this->getViteImportsFromManifest($entryPoint) ];
+            }
+            $viteImportsHtml = '';
+            foreach ($viteImports as $import) {
+                $viteImportsHtml .= <<<END
+    <script type="module" src="$baseUrl/js/dist/vite/$import"></script>
+END;
+            }
+        }
+        return $viteImportsHtml;
+    }
 
-    private function getViteImportsFromManifest(string $entryPoint) : array {
+    protected function getViteImportsFromManifest(string $entryPoint) : array {
         $manifestFileName = './js/dist/vite/.vite/manifest.json';
         $manifestFileContents = file_get_contents($manifestFileName );
         if ($manifestFileContents === false) {

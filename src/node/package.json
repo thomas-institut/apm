@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "glob": "^10.3.0",
-    "node-gtk": "0.10.0"
+    "@thomas-inst/fmt-text": "^1.0.0",
+    "body-parser": "^2.2.0",
+    "express": "^5.1.0",
+    "node-gtk": "0.14.0",
+    "yaml": "^2.8.0"
   }
 }

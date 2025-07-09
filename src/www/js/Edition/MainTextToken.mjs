@@ -77,7 +77,7 @@ export class MainTextToken {
    * @return {string}
    */
   getPlainText() {
-      return FmtText.getPlainText(this.fmtText)
+    return FmtText.getPlainText(this.fmtText)
   }
 
   /**
@@ -133,4 +133,3 @@ export class MainTextToken {
     return this
   }
 }
-

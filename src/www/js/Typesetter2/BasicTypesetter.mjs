@@ -135,8 +135,8 @@ export class BasicTypesetter extends Typesetter2 {
     this.textAreaHeight = this.options.pageHeight - this.options.marginTop - this.options.marginBottom
     this.lineSkip = this.options.lineSkip
     this.minLineSkip = this.options.minLineSkip
-    // this.debug = this.options.debug;
-    this.debug = false;
+    this.debug = this.options.debug;
+
     // this.debug && console.log(`Options`)
     // this.debug && console.log(this.options)
     this.pageOutputProcessors = []
@@ -178,8 +178,7 @@ export class BasicTypesetter extends Typesetter2 {
         lnOptions.showLineOne = false
       }
       this.options.lineNumbersOptions = lnOptions
-      console.log(`Line Number clean options`)
-      console.log(lnOptions)
+      this.debug && console.log(`Line Number clean options`, lnOptions);
       this.addPageOutputProcessor(this.constructAddLineNumbersProcessor(lnOptions))
     }
 
@@ -201,9 +200,6 @@ export class BasicTypesetter extends Typesetter2 {
       align: this.options.marginaliaOptions.align
     }))
 
-
-    console.log('Basic typesetter clean options')
-    console.log(this.options)
 
   }
 

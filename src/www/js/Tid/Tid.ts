@@ -10,7 +10,7 @@ export class Tid {
    * @param {boolean} upperCase
    * @return {string}
    */
-  static toBase36String(tid, addCosmeticDash = true, upperCase = true) {
+  static toBase36String(tid: number, addCosmeticDash: boolean = true, upperCase: boolean = true): string {
     let str = tid.toString(36).padStart(8, '0');
     if (upperCase) {
       str = str.toUpperCase();

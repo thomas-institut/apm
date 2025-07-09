@@ -16,18 +16,31 @@
  *
  */
 
+
+import $ from 'jquery';
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
+import {resolvedPromise} from "../toolbox/FunctionUtil";
+
 
 /**
  * A generic collapsible panel consisting of a header, a show/collapse button and a panel div
  */
 
 
-
 export class CollapsePanel {
 
-  constructor (options) {
+  options: any = {};
+  debug = false;
+  shown = false;
+  containerSelector = '';
+  container: JQuery = $();
+  header: JQuery = $();
+  titleSpan: JQuery = $();
+  iconSpan : JQuery = $();
+  headerLink: JQuery = $();
+  contentDiv: JQuery = $();
+
+  constructor (options: any) {
     let optionsDefinition = {
       containerSelector: { type: 'string'},  // required container selector
       title: {type: 'string'},
@@ -43,22 +56,22 @@ export class CollapsePanel {
       initiallyShown: { type: 'boolean', default: true},
       // function that will be called when the panel is shown
       // should return a promise
-      onShow: { type: 'function', default: (panelObject)=> {
+      onShow: { type: 'function', default: (panelObject: any) : Promise<boolean> => {
           panelObject.debug && console.log(`Showing panel with selector '${panelObject.getContainerSelector()}'`)
           return resolvedPromise(true)
         }},
       // function that will be called when the panel is hidden
       onHide:
-        { type: 'function', default: (panelObject)=> {
+        { type: 'function', default: (panelObject : any) : Promise<boolean> => {
             panelObject.debug && console.log(`Hiding panel with selector '${panelObject.getContainerSelector()}'`)
             return resolvedPromise(true)
           }},
       debug: { type: 'boolean', default: false}
     }
     let oc = new OptionsChecker({
-     optionsDefinition: optionsDefinition,
+      optionsDefinition: optionsDefinition,
       context: 'CollapsePanelWidget'
-    })
+    });
     this.options = oc.getCleanOptions(options)
     this.debug = this.options.debug
     // this.debug && console.log(`Collapse Panel Options`)
@@ -80,7 +93,7 @@ export class CollapsePanel {
     })
   }
 
-  toggle() {
+  toggle() : void {
     if (this.shown) {
       this.contentDiv.addClass('hidden')
       this.iconSpan.html(this.options.iconWhenHidden)
@@ -96,15 +109,15 @@ export class CollapsePanel {
     }
   }
 
-  setContent(content) {
+  setContent(content : string) : void {
     this.contentDiv.html(content)
   }
 
-  getContainerSelector() {
+  getContainerSelector() : string {
     return this.containerSelector
   }
 
-  __getHtml() {
+  __getHtml() : string {
     let icon = this.shown ? this.options.iconWhenShown : this.options.iconWhenHidden
     let linkTitle = this.shown ? this.options.collapseLinkTitle: this.options.expandLinkTitle
     let iconLink = `<a href="#" class="cp-a" title="${linkTitle}"><span class="cp-icon">${icon}</span></a>`

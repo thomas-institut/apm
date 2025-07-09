@@ -2,7 +2,7 @@
 // functions to display user doc data: transcriptions, collation tables, etc
 
 
-import { numericFieldSort, stringFieldSort } from '../../toolbox/ArrayUtil.mjs'
+import { numericFieldSort, stringFieldSort } from '../../toolbox/ArrayUtil'
 import { tr } from './SiteLang'
 import { urlGen} from './SiteUrlGen'
 import { Tid } from '../../Tid/Tid'
@@ -13,7 +13,7 @@ function noneParagraph() {
 
 export class UserDocDataCommon {
 
-  static generateMultiChunkEditionsListHtml(apiData) {
+  static generateMultiChunkEditionsListHtml(apiData: any[]) {
     if (apiData.length === 0) {
       return noneParagraph()
     }
@@ -23,7 +23,7 @@ export class UserDocDataCommon {
     }).join('')
   }
 
-  static getPageInfoFromPageInfoArray(pageInfoArray, pageId) {
+  static getPageInfoFromPageInfoArray(pageInfoArray: any[], pageId: any) {
     let f = pageInfoArray.filter( r => r.pageId === pageId );
     if (f.length === 0) {
       return [];
@@ -31,9 +31,9 @@ export class UserDocDataCommon {
     return f[0];
   }
 
-  static generateTranscriptionListHtml(apiData) {
+  static generateTranscriptionListHtml(apiData: { [x: string]: any[] }) {
     // in JS docInfoArray is not actually an array but an object
-    let docArray = Object.keys(apiData['docInfoArray']).map( (key) => { return apiData['docInfoArray'][key] })
+    let docArray = Object.keys(apiData['docInfoArray']).map( (key:any) => { return apiData['docInfoArray'][key] })
     let html
     if (docArray.length === 0) {
       html= noneParagraph()
@@ -41,7 +41,7 @@ export class UserDocDataCommon {
       let docs = stringFieldSort(docArray, 'title')
       html = docs.map( (docInfo) => {
         let docUrl = urlGen.siteDocPage(docInfo.tid)
-        let pageListHtml = docInfo['pageIds'].map( (pageId) => {
+        let pageListHtml = docInfo['pageIds'].map( (pageId: any) => {
           let pageInfo = this.getPageInfoFromPageInfoArray(apiData['pageInfoArray'], pageId);
           let pageUrl = urlGen.sitePageView(docInfo.tid, pageInfo.sequence)
           return `<a href="${pageUrl}" title="${tr('Click to view page in new tab/window')}" target="_blank">${pageInfo['foliation']}</a>`
@@ -53,7 +53,7 @@ export class UserDocDataCommon {
     return html
   }
 
-  static expandChunkIdsInApiData(apiData) {
+  static expandChunkIdsInApiData(apiData: any[]) {
     return apiData.map ( (ctInfo) => {
       let chunkIdFields = ctInfo.chunkId.split('-')
       ctInfo.work = chunkIdFields[0]
@@ -62,7 +62,7 @@ export class UserDocDataCommon {
     })
   }
 
-  static generateCtTablesAndEditionsListHtml(apiData, workInfoObject = {}) {
+  static generateCtTablesAndEditionsListHtml(apiData: any[], workInfoObject = {}) {
     let expandedData = this.expandChunkIdsInApiData(apiData)
     let editions = expandedData.filter( (ctInfo) => { return ctInfo['type'] === 'edition'})
     let cTables = expandedData.filter( (ctInfo) => { return ctInfo['type'] === 'ctable'})
@@ -74,15 +74,15 @@ export class UserDocDataCommon {
 
 
 
-  static getWorksFromCtInfoArray(ctInfoArray) {
-    let works = {}
-    ctInfoArray.forEach( (ctInfo) => {
+  static getWorksFromCtInfoArray(ctInfoArray: any[]) {
+    let works:any = {}
+    ctInfoArray.forEach( (ctInfo:any) => {
       works[ctInfo.work] = true
     })
     return Object.keys(works)
   }
 
-  static __genCtList(ctInfoArray, workInfoObject, isCollationTable = true) {
+  static __genCtList(ctInfoArray: any[], workInfoObject: { [x: string]: any }, isCollationTable = true) {
     if (ctInfoArray.length === 0) {
       return noneParagraph();
     }

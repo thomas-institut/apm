@@ -19,8 +19,10 @@
 
 namespace APM\Api;
 
+use APM\SystemProfiler;
 use APM\ToolBox\HttpStatus;
-use Exception;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -31,8 +33,6 @@ class ApiTypesetPdf extends ApiController
 
     const int API_ERROR_CANNOT_CREATE_TEMP_FILE = 5001;
     const int API_ERROR_PDF_RENDERER_ERROR = 5002;
-    const int API_TYPESETTER_ERROR = 5003;
-    const string PDF_FILE_PREFIX = 'ApmPdf-';
     const string PDF_DOWNLOAD_SUBDIR = 'downloads/pdf';
 
 
@@ -43,90 +43,73 @@ class ApiTypesetPdf extends ApiController
      * @param Response $response
      * @return Response
      */
-    public function typesetRawData(Request  $request, Response $response) : Response {
+    public function generatePDF(Request $request, Response $response) : Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $requiredFields = [
-            'jsonData',
-        ];
-        // jsonData should parse into an object with two fields: options and mainTextList,
-        // but it's no use checking it here when the node js app will do it and
-        // generate an error if there's any problem
+        $inputJson = $request->getParsedBody()['jsonData'] ?? null;
 
-//        $inputData = $this->checkAndGetInputData($request, $response, $requiredFields);
-//        if (!is_array($inputData)) {
-//            return $inputData;
-//        }
-
-        $inputData = $request->getParsedBody()['jsonData'] ?? null;
-
-        if (is_null($inputData)) {
+        if (is_null($inputJson)) {
             $this->logger->error("$this->apiCallName: No data in request");
             return $this->responseWithStatus($response, HttpStatus::BAD_REQUEST);
         }
 
-        $this->codeDebug('Json data', [ 'length' => strlen($inputData) ]);
+        $this->logger->debug("GeneratePDF input data size is " . strlen($inputJson) . " bytes");
 
-        $jsonDataHash = hash('sha256', $inputData);
-        $tempDir = $this->systemManager->getConfig()['pdfRendererTmpDir'];
-        $tempTypesetterInputFileName = "$tempDir/$jsonDataHash-ts-input.json";
-        $tempTypesetterOutputFileName = "$tempDir/$jsonDataHash-ts-output.json";
-        $tempTypesetterCmdLineOutputFileName = "$tempDir/$jsonDataHash-ts-cmd_output.txt";
+        $requestId = "APM-" . hash('sha1', $inputJson);
+        $this->logger->debug("GeneratePDF request id is " . $requestId);
+        $inputData = json_decode($inputJson, true);
+        $inputData['id'] = $requestId;
+        $serviceUrl = sprintf(
+                "http://%s:%s/api/typeset",
+                $this->systemManager->getConfig()['typesettingService']['host'],
+                $this->systemManager->getConfig()['typesettingService']['port'],
+        );
 
-        if (! $this->saveStringToFile($tempTypesetterInputFileName, $inputData)) {
-            $errorData = [ 'status' => 'Error', 'error' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE];
-            return $this->responseWithJson($response, $errorData, HttpStatus::INTERNAL_SERVER_ERROR);
-        }
-
-        $typesetter = $this->systemManager->getConfig()['typeSetter'];
-
-
-        $this->codeDebug("About to call typesetter, input: $tempTypesetterInputFileName, output $tempTypesetterOutputFileName");
-
-        $returnValue = -1;
-        $returnArray = [];
-        $commandLine = "$typesetter $tempTypesetterOutputFileName <$tempTypesetterInputFileName";
-
-        // run typesetter
-        exec($commandLine, $returnArray, $returnValue);
-        $cmdLineReturn =  implode("\n", $returnArray);
-        $this->logger->debug("Typesetter returned " . strlen($cmdLineReturn) . " bytes in cmd line, saving in $tempTypesetterCmdLineOutputFileName");
-
-        if (! $this->saveStringToFile($tempTypesetterCmdLineOutputFileName,$cmdLineReturn)) {
-            $this->logger->error("Could not save typesetter cmd line output to $tempTypesetterCmdLineOutputFileName");
-        }
-
-        if ($returnValue !== 1) {
-            $this->logger->debug('Typesetter error', [ 'array' => $returnArray, 'value' => $returnValue]);
-            $errorData =  [ 'status' => 'Error', 'error' => self::API_TYPESETTER_ERROR];
-            return $this->responseWithJson($response, $errorData, HttpStatus::INTERNAL_SERVER_ERROR);
-        }
-        $typesetterReturnData = [];
-        try {
-            $typesetterReturnData = json_decode($returnArray[0], true);
-        } catch (Exception) {
-            $this->logger->debug("Bad Json returned by typesetter", [ 'array' => $returnArray, 'value' => $returnValue]);
-        }
-        $typesetterDuration = -1;
-        if (isset($typesetterReturnData['stats']['processingTime'])) {
-            $typesetterDuration = $typesetterReturnData['stats']['processingTime'];
-        }
-
-        $typesetData = file_get_contents($tempTypesetterOutputFileName);
-
-        $result = $this->renderPdfFromJsonData($typesetData, $jsonDataHash, false);
-//        $totalProcessingTime = $this->getProfilerTotalTime() * 1000;
-        if ($result['status'] === 'error') {
-            return $this->responseWithJson($response, ['error' => $result['error'] ?? 'No error reported'], 409);
-        }
-        return $this->responseWithJson($response, [
-            'status' => 'OK',
-            'cached' => $result['cached'],
-            'url' => $result['url'],
-            'typesetDocument' => json_decode($typesetData, true),
-            'typesetterProcessingTime' => $typesetterDuration,
-//            'pdfRenderingTime' => $totalProcessingTime - $typesetterDuration,
-//            'totalProcessingTime' => $totalProcessingTime
+        $guzzleClient = new Client([
+            'base_uri' => $serviceUrl,
+            'timeout'  => 10.0,
+            'headers' => [ 'Content-Type' => 'application/json' ]
         ]);
+
+        try {
+            $typesettingServiceResponse = $guzzleClient->post('', ['body' => json_encode($inputData)]);
+        } catch (GuzzleException $e) {
+            $this->logger->error("$this->apiCallName: " . $e->getMessage());
+            return $this->responseWithJson(
+                $response,
+                [ 'status' => 'Error', 'msg' => 'Could not contact typesetting service'],
+                HttpStatus::INTERNAL_SERVER_ERROR
+            );
+        }
+
+        if ($typesettingServiceResponse->getStatusCode() !== HttpStatus::SUCCESS) {
+            $this->logger->error("$this->apiCallName: " . $typesettingServiceResponse->getBody());
+            return $this->responseWithText(
+                $response,
+                "Internal Server Error: Typesetting service failed (status code {$typesettingServiceResponse->getStatusCode()})",
+                HttpStatus::INTERNAL_SERVER_ERROR);
+        }
+
+        $pdfString =  $typesettingServiceResponse->getBody();
+        $fileToDownload = self::PDF_DOWNLOAD_SUBDIR . '/' . $requestId . '.pdf';
+        $url = $this->systemManager->getBaseUrl() . '/' . $fileToDownload;
+
+
+        $this->logger->debug("$this->apiCallName: PDF generated in $url");
+        if ($this->saveStringToFile($fileToDownload, $pdfString)){
+            SystemProfiler::lap('Ready to send PDF');
+            return $this->responseWithJson($response, [
+                'status' => 'OK',
+                'url' => $url,
+                'typesetDocument' => [],
+                'typesetterProcessingTime' => SystemProfiler::getTotalTimeInMs(),
+            ]);
+        } else {
+           return $this->responseWithText(
+               $response,
+               "Internal Server Error: Could not save PDF in server",
+               HttpStatus::INTERNAL_SERVER_ERROR
+           );
+        }
     }
 
     private function saveStringToFile(string $tempFileName, string $data) : bool {
@@ -147,14 +130,15 @@ class ApiTypesetPdf extends ApiController
         return true;
     }
 
-    private function renderPdfFromJsonData($jsonData, $pdfId = '', $useCache = true): array
+    private function renderPdfFromTypesetData(array $typesetData, $pdfId = '', $useCache = true): array
     {
-        $jsonDataHash = hash('sha256', $jsonData);
+        $jsonData  = json_encode($typesetData);
         if ($pdfId === '') {
+            $jsonDataHash = hash('sha1', $jsonData);
             $pdfId = $jsonDataHash;
         }
 
-        $fileToDownload = self::PDF_DOWNLOAD_SUBDIR . '/' . self::PDF_FILE_PREFIX . $pdfId . '.pdf';
+        $fileToDownload = self::PDF_DOWNLOAD_SUBDIR . '/' . $pdfId . '.pdf';
         $baseUrl = $this->systemManager->getBaseUrl();
 
 
@@ -209,131 +193,5 @@ class ApiTypesetPdf extends ApiController
         return [ 'status' => 'OK', 'cached' => false,  'url' => $baseUrl . '/' . $fileToDownload];
     }
 
-//    public function convertTypesetterDataToPdf(Request  $request, Response $response): Response
-//    {
-//        $apiCall = 'ConvertTypesetterDataToPDF';
-//        $requiredFields = [
-//            'typesetterData',
-//        ];
-//
-//        $inputData = $this->checkAndGetInputData($request, $response, $requiredFields);
-//        if (!is_array($inputData)) {
-//            return $inputData;
-//        }
-//        
-//
-//        $pdfId = '';
-//        // Check if there's a PDF Id
-//        if (isset($inputData['pdfId'])) {
-//            $pdfId = $inputData['pdfId'];
-//        }
-//
-//        $useCache = true;
-//
-//        if (isset($inputData['noCache'])) {
-//            $useCache = false;
-//        }
-//
-//        $result = $this->renderPdfFromJsonData($inputData['typesetterData'], $pdfId, $useCache);
-//        if ($result['status'] === 'error') {
-//            return $this->responseWithJson($response, ['error' => $result['errorCode']], 409);
-//        }
-//        return $this->responseWithJson($response, [
-//            'status' =>  'OK',
-//            'cached'=> $result['cached'],
-//            'url' => $result['url']
-//        ]);
-//    }
-//
-//    public function convertSVGtoPDF(Request $request,  Response $response): Response
-//    {
-//        // TODO: Check if this is actually used right now
-//        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-//        $requiredFields = [
-//            'svg',
-//        ];
-//
-//        $inputData = $this->checkAndGetInputData($request, $response, $requiredFields);
-//        if (!is_array($inputData)) {
-//            return $inputData;
-//        }
-//        
-//
-//
-//        $pdfId = '';
-//        // Check if there's a PDF Id
-//        if (isset($inputData['pdfId'])) {
-//            $pdfId = $inputData['pdfId'];
-//        }
-//
-//        $svgHash = hash('sha256', $inputData['svg']);
-//
-//        $fileToDownload = self::PDF_DOWNLOAD_SUBDIR . '/' . self::PDF_FILE_PREFIX . $pdfId . '-'. $svgHash . '.pdf';
-//        $baseUrl = $this->systemManager->getBaseUrl();
-//        if (file_exists($fileToDownload)) {
-//            $this->codeDebug('Serving already converted file');
-//            return $this->responseWithJson($response, [ 'status' => 'OK (Cached)', 'url' => $baseUrl . '/' . $fileToDownload]);
-//        }
-//
-//
-//        // File is not there, do the conversion
-//
-//        $inkscapeExec = $this->systemManager->getConfig()[ApmConfigParameter::INKSCAPE_EXECUTABLE];
-//        $inkscapeVersion = $this->systemManager->getConfig()[ApmConfigParameter::INKSCAPE_VERSION];
-//        $tempDir = $this->systemManager->getConfig()[ApmConfigParameter::INKSCAPE_TEMP_DIR];
-//        $apmFullPath = $this->systemManager->getConfig()[ApmConfigParameter::BASE_FULL_PATH];
-//
-//        // 1. Create a temporary file and put the SVG in it
-//        $tmpInputFileName =  $tempDir . '/' . self::TEMP_SVG_FILE_PREFIX .  $svgHash . '.svg';
-//        $outputFileName = "$apmFullPath/$fileToDownload";
-//
-//        $handle = fopen($tmpInputFileName, "w");
-//        if ($handle === false) {
-//            // Cannot reproduce this condition in testing
-//            // @codeCoverageIgnoreStart
-//            $this->logger->error("Cannot create temporary SVG file",
-//                [ 'apiUserId' => $this->apiUserId,
-//                    'apiError' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE,
-//                    'data' => $inputData ]);
-//            return $this->responseWithJson($response, ['error' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE], 409);
-//            // @codeCoverageIgnoreEnd
-//        }
-//
-//        fwrite($handle, $inputData['svg']);
-//        fclose($handle);
-//
-//        $this->codeDebug("About to call inkscape, input: $tmpInputFileName, output $outputFileName");
-//
-//        if ($inkscapeVersion >= 1) {
-//            $commandLine = "$inkscapeExec --export-filename=$outputFileName $tmpInputFileName 2>&1";
-//        } else {
-//            $commandLine = "$inkscapeExec --export-pdf=$outputFileName $tmpInputFileName 2>&1";
-//        }
-//
-//        $returnValue = false;
-//        $returnArray = [];
-//
-//        // run Inkscape
-//        exec($commandLine, $returnArray, $returnValue);
-//
-//
-//        $this->logger->debug('Inkscape return', $returnArray);
-//
-//        $inkscapeErrors = [];
-//        foreach($returnArray as $returnLine) {
-//            if (preg_match('/Gtk-Message/', $returnLine) === false) {
-//                $inkscapeErrors[] = $returnLine;
-//            }
-//        }
-//
-//        if (count($inkscapeErrors) !== 0) {
-//            // there are errors!
-//            $this->logger->debug('Inkscape error', [ 'array' => $returnArray, 'value' => $returnValue]);
-//            return $this->responseWithJson($response, ['status' => 'Errors'], 409);
-//        }
-//
-//        return $this->responseWithJson($response, [ 'status' => 'OK', 'url' => $baseUrl . '/' . $fileToDownload]);
-//
-//    }
 
 }

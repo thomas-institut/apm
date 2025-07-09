@@ -816,7 +816,7 @@ function createApiTypesettingRoutes(RouteCollectorProxy $group, ContainerInterfa
 
     $group->post('/typeset/raw',
         function(Request $request, Response $response) use ($container){
-            return (new ApiTypesetPdf($container))->typesetRawData($request, $response);
+            return (new ApiTypesetPdf($container))->generatePDF($request, $response);
         })
         ->setName('api.typeset.raw');
 }

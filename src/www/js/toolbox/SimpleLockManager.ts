@@ -1,12 +1,10 @@
-import { wait } from './FunctionUtil.mjs'
+import { wait } from './FunctionUtil'
 
 export class SimpleLockManager {
 
-  constructor () {
-    this.locks = {};
-  }
+  locks: { [key:string] : any} = {}
 
-  async getLock(key, maxWaitTime = 2000) {
+  async getLock(key: string, maxWaitTime : number= 2000) {
     let tickSize = 100;
     let ticksToWait = maxWaitTime / tickSize;
     let ticksPassed = 0;
@@ -18,10 +16,8 @@ export class SimpleLockManager {
     return true;
   }
 
-  releaseLock(key) {
+  releaseLock(key: string) {
     delete this.locks[key];
   }
-
-
 
 }

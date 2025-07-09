@@ -44,7 +44,7 @@ class SiteDashboard extends SiteController
             '',
             "Dashboard",
             "DashboardPage",
-            "js/pages/DashboardPage.js",
+            "js/pages/DashboardPage.ts",
             null,
             [],
             [ 'dashboard.css']

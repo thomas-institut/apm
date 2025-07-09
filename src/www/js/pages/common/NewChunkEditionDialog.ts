@@ -3,8 +3,13 @@ import { tr } from './SiteLang'
 import { GetDataAndProcessDialog } from './GetDataAndProcessDialog'
 import { urlGen } from './SiteUrlGen'
 import { ApmDataProxy } from './ApmDataProxy'
+import {getIntVal, getStringVal} from "../../toolbox/UiToolBox";
 
 export class NewChunkEditionDialog {
+  private options: any;
+  private dialog!: GetDataAndProcessDialog;
+  private currentAuthor: number;
+  private systemLanguages: any;
   constructor (options = {}) {
     let oc = new OptionsChecker({
       context: 'NewChunkEditionDialog',
@@ -14,13 +19,11 @@ export class NewChunkEditionDialog {
       }
     })
     this.options = oc.getCleanOptions(options);
-    this.debug = this.options.debug;
-    this.dialog = null;
     this.currentAuthor = -1;
   }
 
   createNewChunkEdition() {
-    return new Promise( async (resolve) => {
+    return new Promise( async () => {
       this.systemLanguages = await this.options.apmDataProxy.getLegacySystemLanguagesArray();
 
 
@@ -32,7 +35,7 @@ export class NewChunkEditionDialog {
         initialData: { work: '', chunkNumber: 1, lang: 'la' },
         validateData: this.genValidateData(),
         getDataFromForm: this.genGetDataFromForm(),
-        processData: async (data) => {
+        processData: async (data: any) => {
           window.open(urlGen.siteChunkEditionNew(data.work, data.chunkNumber, data.lang));
           return { success: true}
         }
@@ -42,36 +45,36 @@ export class NewChunkEditionDialog {
   }
 
   genGetDataFromForm() {
-    return async (dialogSelector) => {
+    return async (dialogSelector: string) => {
       let authorInput = $(`${dialogSelector} .author-input`);
       let workInput = $(`${dialogSelector} .work-input`);
       let chunkNumberInput = $(`${dialogSelector} .chunk-number-input`);
       let languageInput = $(`${dialogSelector} .language-input`);
 
-      let author = parseInt(authorInput.val().toString());
+      let author = getIntVal(authorInput);
       if (author !== this.currentAuthor) {
         this.currentAuthor = author;
         if (author === -1) {
           workInput.html('<option value=""></option>');
           return {
               work: '',
-              chunkNumber: parseInt(chunkNumberInput.val().toString()),
+              chunkNumber: getIntVal(chunkNumberInput).toString(),
               lang: languageInput.val()
           }
         }
         // need to reload work input selector
         let works = (await this.options.apmDataProxy.getPersonWorks(author))['works'];
         workInput.html( '<option value=""></option>' +
-          works.map( (work) => { return `<option value="${work['workId']}">${work['workId']}: ${work['title'].substring(0, 80)}</option>` }).join('') );
+          works.map( (work: any) => { return `<option value="${work['workId']}">${work['workId']}: ${work['title'].substring(0, 80)}</option>` }).join('') );
         return {
           work: '',
-          chunkNumber: parseInt(chunkNumberInput.val().toString()),
+          chunkNumber:  getIntVal(chunkNumberInput).toString(),
           lang: languageInput.val()
         }
       }
       return {
-        work: workInput.val().trim(),
-        chunkNumber: parseInt(chunkNumberInput.val().toString()),
+        work:getStringVal(workInput).trim(),
+        chunkNumber: getIntVal(chunkNumberInput).toString(),
         lang: languageInput.val()
       }
     }
@@ -80,11 +83,11 @@ export class NewChunkEditionDialog {
   genGetBodyHtml() {
     return async () => {
       let languagesSelectHtml = '<select class="language-input">'  +
-          this.systemLanguages.map((lang) => { return `<option value="${lang.code}">${tr(lang.name)}</option>` }).join('') +
+          this.systemLanguages.map((lang: any) => { return `<option value="${lang.code}">${tr(lang.name)}</option>` }).join('') +
          '</select>';
 
       let authors = await this.options.apmDataProxy.getAuthors();
-      let authorData = await Promise.all( authors.map( (authorId) => { return this.options.apmDataProxy.getPersonEssentialData(authorId); }) );
+      let authorData = await Promise.all( authors.map( (authorId:number) => { return this.options.apmDataProxy.getPersonEssentialData(authorId); }) );
       // this.debug && console.log('Author data', authorData);
       let authorSelectHtml = '<select class="author-input">' +
         '<option value="-1"></option>' +
@@ -108,7 +111,7 @@ export class NewChunkEditionDialog {
   }
 
   genValidateData() {
-    return (data) => {
+    return (data: any) => {
       // this.debug && console.log("Validating data", data);
       if (data.work === '' ) {
         return `<span class="text-warning">${tr('Choose a work from the dropdown menu')}</span>`

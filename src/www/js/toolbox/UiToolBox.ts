@@ -7,11 +7,12 @@ export class UiToolBox {
    * @param jQueryElement
    * @returns {string[]}
    */
-  static getClassArray(jQueryElement) {
-    if (jQueryElement.attr('class') === undefined) {
+  static getClassArray(jQueryElement: JQuery): string[] {
+    let theClass = jQueryElement.attr("class");
+    if (theClass === undefined) {
       return [];
     }
-    return jQueryElement.attr("class").split(/\s+/);
+    return theClass.split(/\s+/);
   }
 
   /**
@@ -23,9 +24,12 @@ export class UiToolBox {
    * @param {number}offset
    * @param {boolean}verbose
    */
-  static maximizeElementHeightInParent(element, parent, offset = 0, verbose = false) {
+  static maximizeElementHeightInParent(element:JQuery, parent:JQuery, offset: number = 0, verbose: boolean = false) : void {
     let currentHeight = element.outerHeight();
     let parentHeight = parent.height();
+    if (parentHeight === undefined) {
+      return;
+    }
     verbose && console.log(`Maximizing height: current ${currentHeight}, parent ${parentHeight}, offset ${offset}`);
     let newHeight = parentHeight - offset;
     if (newHeight !== currentHeight) {
@@ -49,7 +53,7 @@ export class UiToolBox {
    * @param {string}prefix
    * @returns {number}
    */
-  static getSingleIntIdFromClasses(element, prefix) {
+  static getSingleIntIdFromClasses(element: JQuery, prefix: string): number {
     let classes = this.getClassArray(element);
     let id = -1;
     let found = false;
@@ -83,7 +87,7 @@ export class UiToolBox {
    * @param {boolean}includeElement
    * @returns {number}
    */
-  static getSingleIntIdFromAncestor(ancestorTagName, element, prefix, maxAncestorLevel=3, includeElement = true) {
+  static getSingleIntIdFromAncestor(ancestorTagName: string, element: JQuery, prefix: string, maxAncestorLevel: number = 3, includeElement: boolean = true): number {
     let ancestor = this.findAncestorWithTag(element, ancestorTagName, maxAncestorLevel, includeElement);
     if (ancestor === null) {
       return -1;
@@ -104,7 +108,7 @@ export class UiToolBox {
    * @param {boolean}includeElement
    * @return {JQuery|null}
    */
-  static findAncestorWithTag(element, ancestorTagName, maxAncestorLevel=3, includeElement = true) {
+  static findAncestorWithTag(element: JQuery, ancestorTagName: string, maxAncestorLevel: number = 3, includeElement: boolean = true): JQuery | null {
     let currentAncestorLevel = 0;
     // console.log(`Find ancestor with tag ${ancestorTagName} on max ${maxAncestorLevel} levels`, element);
     if (!includeElement) {
@@ -112,6 +116,7 @@ export class UiToolBox {
       currentAncestorLevel++;
     }
 
+    // @ts-ignore
     while (currentAncestorLevel <= maxAncestorLevel && element.get(0).tagName.toLowerCase() !== ancestorTagName.toLowerCase()) {
       // console.log(`Tag ${ancestorTagName} not in level ${currentAncestorLevel}`, element.get(0));
       element = element.parent();
@@ -141,9 +146,9 @@ export class UiToolBox {
    * @param {string}prefix
    * @returns {number[][]}
    */
-  static getIntArrayIdFromClasses(element, prefix) {
+  static getIntArrayIdFromClasses(element: JQuery, prefix: string): number[][] {
     let classes = this.getClassArray(element);
-    let idArray = []
+    let idArray: number[][] = []
     classes.forEach( (theClass) => {
       if (theClass.startsWith(prefix)) {
         let suffix = theClass.slice(prefix.length);
@@ -169,8 +174,8 @@ export class UiToolBox {
    * @return {number[][]}
    * @see getIntArrayIdFromClasses
    */
-  static getIntArrayIdFromAncestor(ancestorTag, element, prefix,maxAncestorLevel=3, includeElement = true) {
-    let ancestor = this.findAncestorWithTag(element, ancestorTag);
+  static getIntArrayIdFromAncestor(ancestorTag: string, element: JQuery, prefix: string, maxAncestorLevel: number = 3, includeElement: boolean = true): number[][] {
+    let ancestor = this.findAncestorWithTag(element, ancestorTag, maxAncestorLevel, includeElement);
     if (ancestor === null) {
       return [];
     }
@@ -179,7 +184,35 @@ export class UiToolBox {
 
 }
 
-
-function isStringAnInteger(str) {
+function isStringAnInteger(str: string) {
   return /^\d+$/.test(str);
+}
+
+export function getStringVal(element: JQuery): string {
+  let val = element.val();
+
+  if (val === undefined || Array.isArray(val)) {
+    console.warn("Undefined or array val found when a string or number was expected");
+    return ''
+  }
+
+  if (typeof val === 'number') {
+    return `val`;
+  }
+
+  return val;
+
+}
+
+export function getIntVal(element: JQuery) : number {
+  let val = element.val();
+
+  if (val === undefined || Array.isArray(val)) {
+    console.warn("Undefined or array val found when a string or number was expected");
+    return -1;
+  }
+  if (typeof val === 'number') {
+    return val;
+  }
+  return parseInt(val);
 }

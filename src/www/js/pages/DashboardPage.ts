@@ -16,7 +16,7 @@
  *
  */
 
-import { CollapsePanel } from '../widgets/CollapsePanel'
+import { CollapsePanel } from "../widgets/CollapsePanel"
 import { UserDocDataCommon } from './common/UserDocDataCommon'
 import { tr } from './common/SiteLang'
 import { NormalPage } from './NormalPage'
@@ -24,59 +24,30 @@ import { urlGen } from './common/SiteUrlGen'
 import { ApmPage } from './ApmPage'
 import { Tid } from '../Tid/Tid'
 import { NewChunkEditionDialog } from './common/NewChunkEditionDialog'
-// import { Calendar } from '../toolbox/Calendar'
 
 const newMceEditionIcon = '<i class="bi bi-file-plus"></i>'
 
 export class DashboardPage extends NormalPage {
-  constructor(options) {
+
+  mcEditionsCollapse! : CollapsePanel;
+  chunkEditionsCollapse!: CollapsePanel;
+  collationTablesCollapse! : CollapsePanel;
+  transcriptionsCollapse! : CollapsePanel;
+  adminCollapse!: CollapsePanel;
+
+  constructor(options: any) {
     super(options);
     console.log(`Dashboard Page`);
     console.log(options);
-    //this.calculationPlayGround();
     this.initPage().then( () => {
       console.log(`Dashboard page initialized`)
     })
   }
 
-  // calculationPlayGround() {
-  //   console.group(`Calculation playground`);
-  //
-  //   let today = Calendar.RD_fromJsDate(new Date());
-  //
-  //   console.log(`Today is RD ${today}`);
-  //
-  //   let results =
-  //   [ '1082-08-21', '1945-11-12', '1970-03-13', '1971-01-28', '2023-09-05'].map( (dateString) => {
-  //     let [ year, month, day ] = dateString.split('-');
-  //     let rd = Calendar.RD_fromGregorian(parseInt(year), parseInt(month), parseInt(day));
-  //     let dow = Calendar.dayOfTheWeek_fromRD(rd);
-  //     return {
-  //       dateString: dateString,
-  //       rd: rd,
-  //       dow: dow,
-  //       daysAgo: today - rd,
-  //       julian: Calendar.Julian_fromRD(rd)
-  //     }
-  //   })
-  //
-  //   let dayNames = [ '', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  //
-  //   results.forEach( (result) => {
-  //     console.log(`${result.dateString} = RD ${result.rd}, ${dayNames[result.dow]}`);
-  //     console.log(`   ${result.daysAgo} days ago  (${(result.daysAgo / 365.2425).toFixed(3)} solar years ago)`);
-  //     let [ julianYear, julianMonth, julianDay] = result.julian;
-  //     console.log(`   Julian:  ${Math.abs(julianYear)}-${julianMonth}-${julianDay} ${julianYear < 0 ? 'BCE' : 'CE'}`);
-  //   })
-  //
-  //
-  //   console.groupEnd();
-  //
-  // }
 
   async initPage() {
-    await super.initPage()
-    document.title = tr('Dashboard')
+    await super.initPage();
+    document.title = tr('Dashboard');
     this.mcEditionsCollapse = this.constructCollapse('#multi-chunk-editions', tr('Multi-Chunk Editions'), [ 'first'])
     this.chunkEditionsCollapse = this.constructCollapse('#chunk-editions', tr('Chunk Editions'))
     this.collationTablesCollapse = this.constructCollapse('#collation-tables', tr('Collation Tables'))
@@ -129,7 +100,7 @@ export class DashboardPage extends NormalPage {
    *
    * @return {Promise<string>}
    */
-  async genContentHtml() {
+  async genContentHtml(): Promise<string> {
     return `<div id="multi-chunk-editions" class="dashboard-section"></div>
         <div id="chunk-editions" class="dashboard-section"></div>
         <div id="collation-tables" class="dashboard-section"></div>
@@ -142,7 +113,7 @@ export class DashboardPage extends NormalPage {
         <p><a href="${urlGen.sitePerson(Tid.toBase36String(this.userId))}">${tr("Edit profile / Change Password")}</a></p>`
   }
 
-  constructCollapse(selector, title, headerClasses = []) {
+  constructCollapse(selector: string, title: string, headerClasses : string[] = []): CollapsePanel {
     return new CollapsePanel({
       containerSelector: selector,
       title: title,
@@ -159,5 +130,6 @@ export class DashboardPage extends NormalPage {
   }
 }
 
+declare const window:any;
 
 window.DashboardPage = DashboardPage

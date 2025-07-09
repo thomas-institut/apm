@@ -19,7 +19,7 @@ from gi.repository import PangoCairo
 
 HORIZONTAL = 0
 VERTICAL = 1
-debug = True
+debug = False
 
 if len(sys.argv) != 2:
     print("Need an out file name")
@@ -111,8 +111,8 @@ def get_horizontal_list_width(horizontal_list):
 def print_text_box(context, x, y, text_box):
     shift_x = px2pt(get_value(text_box, 'shiftX', 0))
     shift_y = px2pt(get_value(text_box, 'shiftY', 0))
-    if (shift_y != 0):
-        debug_msg("Shift Y != 0 in text box: " + str(shift_y) + ", y=" + str(y) + ", text = '" + text_box['text'] + "', font " + text_box['fontFamily'])
+    # if (shift_y != 0):
+    #    debug_msg("Shift Y != 0 in text box: " + str(shift_y) + ", y=" + str(y) + ", text = '" + text_box['text'] + "', font " + text_box['fontFamily'])
     tb_text_direction = get_value(text_box, 'textDirection', '')
 
     # text_box_height = px2pt(get_value(text_box, 'height', 0))
@@ -157,11 +157,11 @@ doc = json.loads(input_str)
 surface_pdf = cairo.PDFSurface(output_file_name, px2pt(doc['width']), px2pt(doc['height']))
 ctx_pdf = cairo.Context(surface_pdf)
 
-debug_msg("Rendering " + str(len(doc['pages'])) + " pages")
+debug_msg("Rendering " + str(len(doc['pages'])) + " page(s)")
 for page in doc['pages']:
     surface_pdf.set_size(px2pt(page['width']), px2pt(page['height']))
     for item in page['items']:
         print_item(ctx_pdf, 0, 0, item)
     ctx_pdf.show_page()
 
-exit(1)
+exit(0)

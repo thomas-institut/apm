@@ -1,4 +1,4 @@
-import { OptionsChecker } from '@thomas-inst/optionschecker'
+import { OptionsChecker} from "@thomas-inst/optionschecker";
 import { setBaseUrl } from './common/SiteUrlGen'
 import { ApmDataProxy } from './common/ApmDataProxy'
 import { defaultLanguage, setSiteLanguage, tr, validLanguages } from './common/SiteLang'
@@ -11,13 +11,24 @@ import { DataId_EC_ViewOptions } from '../constants/WebStorageDataId'
 const langCacheKey = 'apmSiteLanguage'
 const langCacheDataId = 'v1';
 const CachePrefix = 'Apm';
-// const SessionIdCacheKey = CachePrefix + 'SessionId';
-// const SessionIdDataId = 'SessionInfo_v0001';
-// const SessionIdTtl = 365.2422 * 24 * 3600; // 1 tropical year :)
 
 export class ApmPage {
 
-  constructor (options) {
+  commonData: any = {};
+  userId: number = -1;
+  /**
+   * Use userId instead
+   * @deprecated
+   */
+  userTid: number = -1;
+  userName: string = '';
+  apmDataProxy!: ApmDataProxy;
+  localCache!: WebStorageKeyCache;
+  showLanguageSelector: boolean = false;
+  siteLanguage: string = 'en';
+  timeZone: string = 'UTC';
+
+  constructor (options : any) {
     let optionsChecker = new OptionsChecker({
       context: 'ApmPage',
       optionsDefinition: {
@@ -45,11 +56,7 @@ export class ApmPage {
 
 
     this.userId = this.commonData.userInfo['id'];
-    /**
-     * Use userId instead
-     * @var {int} userId
-     * @deprecated
-     */
+
     this.userTid = this.commonData.userInfo['tid'];
     this.userName = this.commonData.userInfo.userName;
 
@@ -105,7 +112,7 @@ export class ApmPage {
    * @param msg
    * @return {string}
    */
-  static genLoadingMessageHtml(msg = 'Loading data') {
+  static genLoadingMessageHtml(msg = 'Loading data'): string {
     return `${tr(msg)} <span class="spinner-border spinner-border-sm" role="status"></span>`
   }
 
@@ -114,7 +121,7 @@ export class ApmPage {
    * APM's language-aware strings
    * @return {Object}
    */
-  getDataTablesLanguageOption() {
+  getDataTablesLanguageOption(): object {
     return {
       processing:     tr('Processing'),
         search:         tr('DataTables:Search'),
@@ -131,7 +138,7 @@ export class ApmPage {
   }
 
 
-  saveLangInCache(lang) {
+  saveLangInCache(lang : string) {
     this.localCache.store(langCacheKey, lang, 0, langCacheDataId);
   }
 
@@ -140,7 +147,7 @@ export class ApmPage {
    * If none of the user languages is available, returns the default language.
    * @return {string}
    */
-  detectBrowserLanguage() {
+  detectBrowserLanguage(): string {
     // First, let's see if there's something in the cache
     let cacheLang = this.localCache.retrieve(langCacheKey, langCacheDataId);
     if (validLanguages.indexOf(cacheLang) !== -1) {

@@ -14,4 +14,5 @@ RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y nodejs
 # Override default PHP config
 RUN echo "memory_limit=1024M" > /usr/local/etc/php/conf.d/memory-limit.ini
-RUN echo "php_value post_max_size 64M" >/usr/local/etc/php/conf.d/post-size.ini
+RUN echo "post_max_size=256M" >/usr/local/etc/php/conf.d/post-size.ini
+RUN echo "upload_max_filesize=256M" >/usr/local/etc/php/conf.d/max-file-size.ini

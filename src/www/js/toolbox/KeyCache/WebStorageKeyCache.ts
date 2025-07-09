@@ -1,6 +1,7 @@
-import { KeyCache } from './KeyCache'
+import {InternalCacheObject, KeyCache} from './KeyCache'
 
 export class WebStorageKeyCache extends KeyCache {
+  private storage: Storage;
 
   /**
    * Constructs a WebStorageKeyCache
@@ -11,16 +12,16 @@ export class WebStorageKeyCache extends KeyCache {
    * @param {string}dataId
    * @param {string}cachePrefix
    */
-  constructor (type = 'session', dataId = '', cachePrefix = '') {
+  constructor (type: string = 'session', dataId: string = '', cachePrefix: string = '') {
     super(dataId, cachePrefix)
     this.storage = type === 'session' ? window.sessionStorage : window.localStorage
   }
 
-  storeItemObject (key, itemObject) {
+  storeItemObject (key: string, itemObject : InternalCacheObject ):void {
       this.storage.setItem(this.getRealKey(key), JSON.stringify(itemObject))
   }
 
-  getItemObject (key) {
+  getItemObject (key : string) : InternalCacheObject|null {
     let val = this.storage.getItem(this.getRealKey(key))
     if (val === null) {
       return null
@@ -33,15 +34,18 @@ export class WebStorageKeyCache extends KeyCache {
     }
   }
 
-  deleteItemObject(key) {
+  deleteItemObject(key: string): void {
     this.storage.removeItem(this.getRealKey(key));
   }
 
-  getKeys () {
+  getKeys() : string[] {
     let storageLength = this.storage.length
     let realKeys = []
     for (let i = 0; i < storageLength; i++) {
-      realKeys.push(this.storage.key(i))
+      let key = this.storage.key(i);
+      if (key !== null) {
+        realKeys.push(key);
+      }
     }
     return this.getKeysFromRealKeysArray(realKeys);
   }

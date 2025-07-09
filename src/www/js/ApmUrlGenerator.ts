@@ -20,12 +20,13 @@ import * as Entity from './constants/Entity'
 import { Tid } from './Tid/Tid'
 
 export class ApmUrlGenerator {
+    private base: string;
 
     /**
      *
      * @param {string }baseUrl
      */
-    constructor(baseUrl) {
+    constructor(baseUrl: string) {
         this.base = baseUrl;
     }
 
@@ -33,7 +34,7 @@ export class ApmUrlGenerator {
      *
      * @param {string}url
      */
-    setBase(url) {
+    setBase(url: string) {
         this.base = url
     }
 
@@ -46,22 +47,22 @@ export class ApmUrlGenerator {
     // -------------------------------
 
     siteHome() {
-        return this.base
+        return this.base;
     }
 
-    siteDashboard() {
+    siteDashboard(): string {
         return `${this.base}/dashboard`
     }
 
-    siteLogout() {
+    siteLogout(): string {
         return `${this.base}/logout`
     }
 
-    siteCollationTableCustom(work, chunkno, lang) {
-        return this.base + '/collation-table/auto/' + work + '/' + chunkno + '/' + lang + '/custom';
+    siteCollationTableCustom(work: string, chunkNumber : number, lang : string) {
+        return this.base + '/collation-table/auto/' + work + '/' + chunkNumber + '/' + lang + '/custom';
     }
-    siteCollationTablePreset(work, chunkno, presetId) {
-        return this.base + '/collation-table/auto/' + work + '/' + chunkno + '/preset/' + presetId;
+    siteCollationTablePreset(work : string, chunkNumber: number, presetId: number) {
+        return this.base + '/collation-table/auto/' + work + '/' + chunkNumber + '/preset/' + presetId;
     }
 
     /**
@@ -70,10 +71,10 @@ export class ApmUrlGenerator {
      *
      * E.g.  'asdf' =>  'asdf',  1234 => '0000-00YA'
      *
-     * @param {string|number}id
+     * @param {any}id
      * @return {string}
      */
-    getFormattedId(id) {
+    getFormattedId(id:any): string {
         if (typeof id === 'string') {
             return id;
         }
@@ -84,43 +85,36 @@ export class ApmUrlGenerator {
         return Tid.toBase36String(parseInt(id.toString()));
     }
 
-    /**
-     *
-     * @param {string|number}docId
-     * @param {number}pageSequence
-     * @param {number|null}col
-     * @returns {string}
-     */
-    sitePageView(docId, pageSequence, col = null) {
+    sitePageView(docId: any, pageSequence: number, col: number|null = null): string {
         let url = `${this.base}/doc/${this.getFormattedId(docId)}/page/${pageSequence}/view`;
-        if (col > 0) {
+        if (col !== null && col > 0) {
             url += `/c/${col}`
         }
         return url;
     }
 
-    siteChunkPage(work, chunk) {
-        return `${this.base}/work/${work}/chunk/${chunk}`
+    siteChunkPage(work: string, chunkNumber : number): string {
+        return `${this.base}/work/${work}/chunk/${chunkNumber}`
     }
 
-    siteWorks() {
+    siteWorks() : string{
         return `${this.base}/works`;
     }
 
-    siteWorkPage(workId) {
+    siteWorkPage(workId: any): string {
         return `${this.base}/work/${this.getFormattedId(workId)}`;
     }
 
     /**
      *
-     * @param {string|number}docId
+     * @param {string}docId
      * @returns {string}
      */
-    siteDocPage(docId) {
+    siteDocPage(docId: string): string {
         return `${this.base}/doc/${this.getFormattedId(docId)}`;
     }
 
-    siteDocDefinePages(docId) {
+    siteDocDefinePages(docId: string) {
         return `${this.base}/doc/${docId}/definepages`
     }
 
@@ -144,7 +138,7 @@ export class ApmUrlGenerator {
         return this.base + '/searchnew'
     }
 
-    sitePerson(id) {
+    sitePerson(id: any) {
         return `${this.base}/person/${this.getFormattedId(id)}`;
     }
 
@@ -152,7 +146,7 @@ export class ApmUrlGenerator {
         return this.base + '/people'
     }
 
-    siteMultiChunkEdition(editionId) {
+    siteMultiChunkEdition(editionId:number) {
         return `${this.base}/multi-chunk-edition/${editionId}`
     }
 
@@ -160,14 +154,14 @@ export class ApmUrlGenerator {
         return `${this.base}/multi-chunk-edition/new`
     }
 
-    siteCollationTableAutomatic(work, chunkNumber, lang, ids = []) {
+    siteCollationTableAutomatic(work : string, chunkNumber: number, lang: string, ids : (number|string)[] = []) {
         let extra = '';
         if (ids.length > 0) {
             extra = '/' + ids.join('/');
         }
         return this.base + '/collation-table/auto/' + work + '/' + chunkNumber + '/' + lang + extra;
     }
-    siteCollationTableEdit(tableId, version = 0) {
+    siteCollationTableEdit(tableId: number, version = 0) {
         let postfix = ''
         if (version !== 0) {
             postfix = `/${version}`
@@ -175,7 +169,7 @@ export class ApmUrlGenerator {
         return `${this.base}/collation-table/${tableId}${postfix}`
     }
 
-    siteChunkEdition(editionId, version = 0) {
+    siteChunkEdition(editionId: number, version = 0) {
         let postfix = ''
         if (version !== 0) {
             postfix = `/${version}`
@@ -183,11 +177,11 @@ export class ApmUrlGenerator {
         return `${this.base}/chunk-edition/${editionId}${postfix}`
     }
 
-    siteChunkEditionNew(workId, chunkNumber, lang) {
+    siteChunkEditionNew(workId: string, chunkNumber: number, lang: string) {
         return `${this.base}/chunk-edition/new/${workId}/${chunkNumber}/${lang}`;
     }
 
-    siteEditCollationTableBeta(tableId) {
+    siteEditCollationTableBeta(tableId: number) {
         return this.base + '/collation-table/edit/' + tableId + '/beta'
     }
 
@@ -204,7 +198,7 @@ export class ApmUrlGenerator {
      * @param {number}entityType
      * @param {number}entityId
      */
-    siteEntityPage(entityType, entityId) {
+    siteEntityPage(entityType: number, entityId: number|string) {
         switch (entityType) {
             case Entity.tPerson:
                 return this.sitePerson(this.getFormattedId(entityId));
@@ -235,47 +229,47 @@ export class ApmUrlGenerator {
 
     // TRANSCRIPTIONS
 
-    apiTranscriptionsGetData(docId, pageNumber, col) {
+    apiTranscriptionsGetData(docId: any, pageNumber: number, col: number) {
         return `${this.base}/api/transcriptions/${docId}/${pageNumber}/${col}/get`
     }
-    apiTranscriptionsGetDataWithVersion(docId, pageNumber, col, versionID) {
+    apiTranscriptionsGetDataWithVersion(docId: any, pageNumber:number, col: number, versionID: number) {
         return `${this.base}/api/transcriptions/${docId}/${pageNumber}/${col}/get/version/${versionID}`
     }
-    apiTranscriptionsUpdateData(docId, pageNumber, col) {
+    apiTranscriptionsUpdateData(docId: any, pageNumber: number, col: number) {
         return `${this.base}/api/transcriptions/${docId}/${pageNumber}/${col}/update`
     }
 
-    apiTranscriptionsByUserDocPageData(userTid) {
+    apiTranscriptionsByUserDocPageData(userTid: number) {
         return `${this.base}/api/transcriptions/byUser/${userTid}/docPageData`
     }
 
-    apiGetNumColumns(docId, pageNumber) {
+    apiGetNumColumns(docId: any, pageNumber: number) {
         return this.base + '/api/' + docId + '/' + pageNumber + '/numcolumns';
     }
 
-    apiDocGetDocId(docId) {
+    apiDocGetDocId(docId: any) {
         return `${this.base}/api/doc/getId/${docId}`;
     }
 
-    apiAddColumn(docId, pageNumber) {
+    apiAddColumn(docId: any, pageNumber: number) {
         return this.base + '/api/' + docId + '/' + pageNumber + '/newcolumn';
     }
-    apiUpdatePageSettings(pageId) {
+    apiUpdatePageSettings(pageId: number) {
         return this.base + '/api/page/' + pageId + '/update';
     }
     openSeaDragonImagePrefix() {
         return this.base + '/node_modules/openseadragon/build/openseadragon/images/';
     }
-    apiCreateUser(tid) {
-        return `${this.base}/api/user/create/${tid}`;
+    apiCreateUser(personId: number) {
+        return `${this.base}/api/user/create/${personId}`;
     }
 
-    apiUpdateProfile(tid) {
-        return `${this.base}/api/user/${tid}/update`;
+    apiUpdateProfile(personId: number) {
+        return `${this.base}/api/user/${personId}/update`;
     }
 
-    apiPersonGetEssentialData(tid) {
-        return `${this.base}/api/person/${tid}/data/essential`;
+    apiPersonGetEssentialData(personId: number) {
+        return `${this.base}/api/person/${personId}/data/essential`;
     }
 
     apiPersonGetDataForPeoplePage() {
@@ -286,25 +280,25 @@ export class ApmUrlGenerator {
         return `${this.base}/api/person/create`;
     }
 
-    apiEntityGetSchema(entityType) {
+    apiEntityGetSchema(entityType: number) {
         return `${this.base}/api/entity/${entityType}/schema`;
     }
 
-    apiEntityTypeGetEntities(entityType) {
+    apiEntityTypeGetEntities(entityType: number) {
         return `${this.base}/api/entity/${entityType}/entities`
     }
 
-    apiUserGetCollationTableInfo(id) {
+    apiUserGetCollationTableInfo(id: number) {
         return this.base + '/api/user/' + id + '/collationTables';
     }
-    apiUserGetMultiChunkEditionInfo(tid) {
+    apiUserGetMultiChunkEditionInfo(tid: number) {
         return `${this.base}/api/user/${tid}/multiChunkEditions`
     }
 
     apiBulkPageSettings() {
         return this.base + '/api/page/bulkupdate';
     }
-    apiAddPages(docId) {
+    apiAddPages(docId:  any) {
         return this.base + '/api/doc/' + docId + '/addpages';
     }
 
@@ -320,15 +314,15 @@ export class ApmUrlGenerator {
         return this.base + '/api/typeset/raw'
     }
 
-    apiConvertCollationTable(tableId) {
+    apiConvertCollationTable(tableId: number) {
         return `${this.base}/api/collation-table/convert/${tableId}`;
     }
 
-    apiEntityGetData(tid) {
+    apiEntityGetData(tid: number) {
         return `${this.base}/api/entity/${tid}/data`
     }
 
-    apiEntityGetPredicateDefinitionsForType(type) {
+    apiEntityGetPredicateDefinitionsForType(type: number) {
         return `${this.base}/api/entity/${type}/predicateDefinitions`
     }
 
@@ -340,15 +334,15 @@ export class ApmUrlGenerator {
         return `${this.base}/api/entity/statements/edit`
     }
 
-    siteAdminEntity(tid) {
+    siteAdminEntity(tid: number) {
         return `${this.base}/entity/${tid}/admin`;
     }
 
-    siteDevMetadataEditor(tid) {
+    siteDevMetadataEditor(tid: number) {
         return `${this.base}/dev/metadata-editor/${tid}`;
     }
 
-    apiGetCollationTable(tableId, compactEncodedTimeString = '') {
+    apiGetCollationTable(tableId: number, compactEncodedTimeString = '') {
         if (compactEncodedTimeString !== '') {
             return `${this.base}/api/collation-table/get/${tableId}/${compactEncodedTimeString}`
         }
@@ -359,7 +353,7 @@ export class ApmUrlGenerator {
         return `${this.base}/api/collation-table/info/edition/active`
     }
 
-    apiGetMultiChunkEdition(editionId, timeStamp = '') {
+    apiGetMultiChunkEdition(editionId: number, timeStamp = '') {
         if (timeStamp !== '') {
             return `${this.base}/api/edition/multi/get/${editionId}/${timeStamp}`
         }
@@ -374,19 +368,19 @@ export class ApmUrlGenerator {
         return `${this.base}/api/edition/sources/all`
     }
 
-    apiEditionSourcesGet(tid) {
+    apiEditionSourcesGet(tid: number) {
         return `${this.base}/api/edition/source/get/${tid}`;
     }
 
-    apiWitnessToEdition(witnessId) {
+    apiWitnessToEdition(witnessId: string|number) {
         return `${this.base}/api/witness/${witnessId}/to/edition`;
     }
 
-    apiWorkGetInfoOld(workId) {
+    apiWorkGetInfoOld(workId: any) {
         return `${this.base}/api/work/${workId}/old-info`;
     }
 
-    apiWorkGetData(workId) {
+    apiWorkGetData(workId: any) {
         return `${this.base}/api/work/${workId}/data`;
     }
 
@@ -394,33 +388,20 @@ export class ApmUrlGenerator {
         return `${this.base}/api/works/authors`;
     }
 
-    apiWorkGetChunksWithTranscription(workId) {
+    apiWorkGetChunksWithTranscription(workId: any) {
         return `${this.base}/api/work/${workId}/chunksWithTranscription`;
     }
 
-    apiCollationTableGetActiveTablesForWork(workId) {
+    apiCollationTableGetActiveTablesForWork(workId: any) {
         return`${this.base}/api/collation-table/active/work/${workId}`
     }
 
-    apiPersonGetWorks(personTid) {
-        return `${this.base}/api/person/${personTid}/works`;
+    apiPersonGetWorks(personId: number) {
+        return `${this.base}/api/person/${personId}/works`;
     }
-
-    /**
-     *
-     * @returns {string}
-     * @deprecated
-     */
-    apiDocumentNew_deprecated() {
-        return `${this.base}/api/doc/new`
-    }
-
     apiDocumentCreate() {
         return `${this.base}/api/doc/create`
     }
-
-
-
 
     apiAutomaticCollation() {
         return this.base + '/api/collation-table/auto';
@@ -437,7 +418,7 @@ export class ApmUrlGenerator {
     apiPostPresets() {
         return this.base + '/api/presets/post';
     }
-    apiDeletePreset(id) {
+    apiDeletePreset(id: number) {
         return this.base + '/api/presets/delete/' + id;
     }
     apiGetAutomaticCollationPresets() {
@@ -449,7 +430,7 @@ export class ApmUrlGenerator {
     apiSaveSiglaPreset() {
         return this.base + '/api/presets/sigla/save';
     }
-    apiWitnessGet(witnessId, output = 'full') {
+    apiWitnessGet(witnessId: any, output = 'full') {
         return this.base + '/api/witness/get/' + witnessId + '/' + output;
     }
     apiWitnessCheckUpdates() {
@@ -497,19 +478,19 @@ export class ApmUrlGenerator {
 
     // External
 
-    viafPage(viafId) {
+    viafPage(viafId: string) {
         return `https://viaf.org/viaf/${viafId}`;
     }
 
-    wikiDataPage(wikiDataId) {
+    wikiDataPage(wikiDataId: string) {
         return `https://www.wikidata.org/wiki/${wikiDataId}`;
     }
 
-    orcidPage(orcidId) {
+    orcidPage(orcidId: string) {
         return `https://orcid.org/${orcidId}`;
     }
 
-    gndExplorePage(gndId) {
+    gndExplorePage(gndId: string) {
         return `https://explore.gnd.network/gnd/${gndId}`;
     }
 
@@ -520,7 +501,7 @@ export class ApmUrlGenerator {
      * @param {number}entityId
      * @return {string}
      */
-    entityLogoUrl(entityId) {
+    entityLogoUrl(entityId: number) {
         switch(entityId) {
             case Entity.pOrcid: return `${this.images()}/orcid-logo.svg`;
             case Entity.pViafId:  return `${this.images()}/viaf-logo.svg`;
@@ -535,16 +516,16 @@ export class ApmUrlGenerator {
      * Returns an external url for predicate and its object
      *
      * @param {number}predicateId
-     * @param {number|string}object
+     * @param {number|string}predicateObject
      * @return {string}
      */
-    entityExternalUrl(predicateId, object) {
+    entityExternalUrl(predicateId: number, predicateObject: string) {
         switch(predicateId) {
-            case Entity.pOrcid: return this.orcidPage(object);
-            case Entity.pViafId:  return this.viafPage(object);
-            case Entity.pGNDId:  return this.gndExplorePage(object);
-            case Entity.pWikiDataId: return this.wikiDataPage(object);
-            case Entity.pUrl: return object;
+            case Entity.pOrcid: return this.orcidPage(predicateObject);
+            case Entity.pViafId:  return this.viafPage(predicateObject);
+            case Entity.pGNDId:  return this.gndExplorePage(predicateObject);
+            case Entity.pWikiDataId: return this.wikiDataPage(predicateObject);
+            case Entity.pUrl: return predicateObject;
         }
         return ''
     }

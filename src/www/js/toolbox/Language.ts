@@ -1,7 +1,8 @@
 /**
  * A simple class to handle translated strings
  */
-import { trimWhiteSpace } from './Util.mjs'
+
+import {trimWhiteSpace} from "./Util";
 
 /**
  * A class to handle translated strings and simple templates
@@ -39,19 +40,19 @@ import { trimWhiteSpace } from './Util.mjs'
  *
  */
 export class Language {
-  /**
-   *
-   * @param { {}[]}templates  an array of template definitions and translations
-   * @param {[]}supportedLanguages a list of supported languages
-   * @param {string}defaultLang  the language the keys are in and thus the default language served if the key is not found
-   * @param {string}lang  the language to serve if no language is given to getTranslation()
-   */
-  constructor (templates, supportedLanguages, defaultLang = 'en', lang = '') {
+
+  private defaultLang: string;
+  private supportedLanguages: string[];
+  private lang: string;
+  private templates: any;
+  private debug: boolean = false;
+
+
+  constructor (templates: any, supportedLanguages: string[], defaultLang = 'en', lang = '') {
     this.defaultLang = defaultLang
     this.supportedLanguages = supportedLanguages
     this.lang = this.isLangSupported(lang) ? lang : this.defaultLang
     this.templates = templates
-    this.debug = false
     this.debug && console.log(`Language initialized: '${this.lang}'`)
   }
 
@@ -59,7 +60,7 @@ export class Language {
    * Sets the language to return if no language is given to getTranslation
    * @param {string}lang
    */
-  setLang(lang) {
+  setLang(lang: string) {
     if (this.isLangSupported(lang)) {
       this.lang = lang
       this.debug && console.log(`Language set to '${lang}'`)
@@ -73,7 +74,7 @@ export class Language {
    * @param {string}lang
    * @return {boolean}
    */
-  isLangSupported(lang) {
+  isLangSupported(lang: string): boolean {
     return this.supportedLanguages.indexOf(lang) !== -1
   }
 
@@ -83,7 +84,7 @@ export class Language {
    * @param {string}lang
    * @private
    */
-  getRawTemplate(key, lang = '') {
+  getRawTemplate(key: string, lang: string = ''): string {
     if (lang === '') {
       lang = this.lang
     } else {
@@ -106,31 +107,32 @@ export class Language {
   /**
    * Gets and parses a template/string in the given language
    * @param {string}key
-   * @param {{}}data
+   * @param data
    * @param lang
    */
-  getTranslation(key, data={}, lang = ''){
+  getTranslation(key: string, data: {[key:string]:any} = {}, lang = '') : string {
     let translatedTemplate = this.getRawTemplate(key, lang)
     let parts = this.parseTemplate(translatedTemplate)
-    return parts.map( (part) => {
+    return parts.map( (part: ParsedTemplatePart) : string => {
       if (part.type === 'text') {
-        return part.text
+        return part.text;
       }
       // var
-      let fields = trimWhiteSpace(part.text).split('.')
+      let fields = trimWhiteSpace(part.text).split('.');
       if (fields.length === 0) {
         // no var given
         return ''
       }
-      let object = data
+      let newData = data
       for (let i = 0; i < fields.length-1; i++) {
-        if (object[fields[i]] !== undefined) {
-          object = object[fields[i]]
+        let index: string = fields[i];
+        if (newData[index] !== undefined) {
+          newData = newData[fields[i]];
         }
       }
       let lastField = fields[fields.length-1]
-      return object[lastField] !== undefined ? object[lastField] :  this.getTranslation('undefined', {}, lang)
-    }).join('')
+      return newData[lastField] !== undefined ? newData[lastField] :  this.getTranslation('undefined', {}, lang)
+    }).join('');
   }
 
   /**
@@ -138,23 +140,17 @@ export class Language {
    * @param {string}key
    * @private
    */
-  findDefForKey(key) {
-    let index = this.templates.map( o => o.key).indexOf(key)
+  findDefForKey(key: string) {
+    let index = this.templates.map( (o:any) => o.key).indexOf(key)
     if (index === -1) {
       return null
     }
     return this.templates[index]
   }
 
-  /**
-   *
-   * @param template
-   * @return {*[]}
-   * @private
-   */
-  parseTemplate(template) {
+  parseTemplate(template: string) : ParsedTemplatePart[] {
     let state = 0
-    let parts = []
+    let parts: ParsedTemplatePart[] = []
     let currentText = ''
     let currentVar = ''
     for (let i= 0; i < template.length; i++) {
@@ -227,4 +223,9 @@ export class Language {
     }
     return parts
   }
+}
+
+interface ParsedTemplatePart {
+  type: string;
+  text: string;
 }

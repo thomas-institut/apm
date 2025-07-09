@@ -32,9 +32,16 @@ export const DIALOG = 'dialog'
 export const INLINE = 'inline'
 
 export class ConfirmDialog {
+  private options: any;
+  private readonly style: string;
+  private readonly formSelector: string;
+  private formElement: JQuery;
+  private acceptButton: JQuery;
+  private cancelButton: JQuery;
+  private status: string;
 
 
-  constructor (userOptions) {
+  constructor (userOptions: any) {
     let optionsDef = {
       id: { type: 'string', default: ''},
       style: { type: 'string', default: DIALOG},
@@ -44,9 +51,9 @@ export class ConfirmDialog {
       title: { type: 'string', default: 'Please confirm'},
       size: { type: 'string', default: LARGE_DIALOG},
       body: { type: 'string', default: 'Please confirm.'},
-      acceptFunction: { type: 'function', default: (id, formObject) => { }},
+      acceptFunction: { type: 'function', default: (id:any, formObject:any) => { }},
       hideOnAccept: { type: 'boolean', default: true},
-      cancelFunction: { type: 'function', default: (id, formObject) => { }},
+      cancelFunction: { type: 'function', default: (id:any, formObject:any) => { }},
       // TODO: change this to reuseForm
       reuseDialog: { type: 'boolean', default: false }
     }
@@ -96,6 +103,7 @@ export class ConfirmDialog {
       }
     })
     if (this.style === DIALOG) {
+      // @ts-ignore (.modal from Bootstrap)
       this.formElement.modal({
         backdrop: 'static',
         keyboard: false,
@@ -114,11 +122,11 @@ export class ConfirmDialog {
     this.status = STATUS_DONE
   }
 
-  setAcceptFunction(newFunction) {
+  setAcceptFunction(newFunction: any) {
     this.options.acceptFunction = newFunction
   }
 
-  setCancelFunction(newFunction) {
+  setCancelFunction(newFunction: any) {
     this.options.cancelFunction = newFunction
   }
 
@@ -138,14 +146,14 @@ export class ConfirmDialog {
     return this.formSelector
   }
 
-  setTitle(title) {
+  setTitle(title: string) {
     if (this.status === STATUS_READY) {
       this.options.title = title
       $(`${this.formSelector} .form-title`).html(title)
     }
   }
 
-  setBody(bodyHtml) {
+  setBody(bodyHtml: string) {
     if (this.status === STATUS_READY) {
       this.options.message = bodyHtml
       $(`${this.formSelector} .form-body`).html(bodyHtml)
@@ -176,14 +184,14 @@ export class ConfirmDialog {
     }
   }
 
-  setAcceptButtonLabel(newLabel) {
+  setAcceptButtonLabel(newLabel: string) {
     this.options.acceptButtonLabel = newLabel
     if (this.status === STATUS_READY) {
       this.acceptButton.html(newLabel)
     }
   }
 
-  setCancelButtonText(text) {
+  setCancelButtonText(text: string) {
     if (this.status === STATUS_READY) {
       this.cancelButton.text(text)
     }

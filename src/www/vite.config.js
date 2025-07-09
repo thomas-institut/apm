@@ -10,7 +10,7 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       input: {
-        DashboardPage: resolve(__dirname, 'js/pages/DashboardPage.js'),
+        DashboardPage: resolve(__dirname, 'js/pages/DashboardPage.ts'),
         WorkPage: resolve(__dirname, 'js/pages/WorkPage.js'),
         WorksPage: resolve(__dirname, 'js/pages/WorksPage.js'),
         DocPage: resolve(__dirname, 'js/pages/DocPage.js'),

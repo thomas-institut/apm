@@ -23,6 +23,12 @@ import { ApmFormats } from './common/ApmFormats'
 import { Tid } from '../Tid/Tid'
 
 
+export interface BreadCrumb {
+  label: string;
+  url?: string,
+  active?: boolean
+}
+
 
 /**
  * Base class for (eventually) all 'normal' web pages in the APM.
@@ -33,8 +39,11 @@ import { Tid } from '../Tid/Tid'
  *
  */
 export class NormalPage extends ApmPage {
+  private pageContentsDiv: JQuery = $();
+  private topBarDiv: JQuery = $();
+  private footerDiv: JQuery = $();
 
-  constructor(options) {
+  constructor(options : any) {
     super(options)
 
   }
@@ -57,7 +66,7 @@ export class NormalPage extends ApmPage {
    *
    * @return {Promise<void>}
    */
-  async initPage() {
+  async initPage(): Promise<void> {
     await this.bootstrapHtml();
     this.pageContentsDiv = $('div.page-content')
     this.topBarDiv = $('div.page-top-bar')
@@ -71,8 +80,8 @@ export class NormalPage extends ApmPage {
     }
   }
 
-  getBreadcrumbNavHtml(breadCrumbArray) {
-    let breadcrumbItemsHtml = breadCrumbArray.map( (breadcrumb) => {
+  getBreadcrumbNavHtml(breadCrumbArray: BreadCrumb[]): string {
+    let breadcrumbItemsHtml = breadCrumbArray.map( (breadcrumb : BreadCrumb) => {
       let activeClass = breadcrumb.active === true ? 'active' : '';
       let linkStart = '';
       let linkEnd = '';
@@ -88,14 +97,14 @@ export class NormalPage extends ApmPage {
 
   /**
    * Returns extra classes to add to the page content's div
-   * @return {*[]}
+   * @return {string[]}
    */
-  getExtraClassesForPageContentDiv() {
+  getExtraClassesForPageContentDiv(): string[] {
     return []
   }
 
-  genOnClickLangChange(lang) {
-    return (ev) => {
+  genOnClickLangChange(lang: string) {
+    return (ev :any) => {
       ev.preventDefault()
       this.saveLangInCache(lang)
       this.changeLanguage(lang)
@@ -106,11 +115,11 @@ export class NormalPage extends ApmPage {
    *
    * @return {Promise<string>}
    */
-  async genContentHtml() {
+  async genContentHtml(): Promise<string> {
     return `Page content will be here...`;
   }
 
-  changeLanguage(newLang) {
+  changeLanguage(newLang : string): void {
     if (newLang !== this.siteLanguage) {
       setSiteLanguage(newLang)
       this.siteLanguage = newLang
@@ -121,14 +130,14 @@ export class NormalPage extends ApmPage {
   }
 
 
-  async genFooterHtml() {
+  async genFooterHtml(): Promise<string> {
     let cd = this.commonData;
     let renderTimeString= ApmFormats.time(cd.renderTimestamp, { withTimeZoneOffset: true});
 
     return `${cd.appName} v${cd.appVersion} &bull; &copy ${cd.copyrightNotice} &bull; ${renderTimeString}`
   }
 
-  async genTopNavBarHtml() {
+  async genTopNavBarHtml() : Promise<string> {
     let languageSelectorHtml = ''
     if (this.showLanguageSelector) {
       languageSelectorHtml = `<ul class="navbar-nav">
@@ -180,7 +189,7 @@ export class NormalPage extends ApmPage {
         </nav>`
   }
 
-  getPredicateHtml(predicateName, predicateValue, divClass = 'entity-predicate') {
+  getPredicateHtml(predicateName: string, predicateValue:string, divClass = 'entity-predicate'):string {
     let val = predicateValue ?? '';
 
     return val === '' ? '' :  `<div class="${divClass}"><span class="predicate">${predicateName}</span>: ${predicateValue ?? ''}</div>`

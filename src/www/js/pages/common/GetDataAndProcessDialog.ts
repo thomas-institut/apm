@@ -1,6 +1,6 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { ConfirmDialog, LARGE_DIALOG } from './ConfirmDialog'
-import { ObjectUtil } from '../../toolbox/ObjectUtil.mjs'
+import { ObjectUtil } from '../../toolbox/ObjectUtil'
 import { tr } from './SiteLang'
 
 /**
@@ -18,6 +18,11 @@ import { tr } from './SiteLang'
  *
  **/
 export class GetDataAndProcessDialog {
+  private options: any;
+  private readonly debug: boolean = false;
+  private dialog!: ConfirmDialog;
+  private dialogSelector: string = '';
+  private infoArea: JQuery = $();
 
   /**
    * Constructs a new GetDataAndProcessDialog.
@@ -42,7 +47,7 @@ export class GetDataAndProcessDialog {
    * * debug: if true, the class will print debug messages in the JS console.
    * @param options
    */
-  constructor (options) {
+  constructor (options: any) {
     let oc = new OptionsChecker({
       context: 'FormConfirm Dialog',
       optionsDefinition: {
@@ -53,18 +58,15 @@ export class GetDataAndProcessDialog {
         processButtonLabel: { type: 'string', default: 'Process' },
         cancelButtonLabel: { type: 'string', default: 'Cancel' },
         initialData: { type: 'object', default: {}},
-        validateData: { type: 'function', default: async (data) => { return true } },
-        getDataFromForm: { type: 'function', default: async (dialogSelector) => { return {} }},
-        processData: { type: 'function', default: async (data, infoArea) => { return { success: false} }},
+        validateData: { type: 'function', default: async (data: any) => { return true } },
+        getDataFromForm: { type: 'function', default: async (dialogSelector: string) => { return {} }},
+        processData: { type: 'function', default: async (data: any, infoArea: any) => { return { success: false} }},
         debug: { type: 'boolean', default: false},
       }
     });
 
     this.options = oc.getCleanOptions(options);
     this.debug = this.options.debug;
-    this.dialog = null;
-    this.dialogSelector = null;
-    this.infoArea = null;
   }
 
   /**
@@ -129,8 +131,8 @@ export class GetDataAndProcessDialog {
    * @return {(function(): Promise<void>)|*}
    * @private
    */
-  genOnInputChange() {
-    return async () => {
+  genOnInputChange(): (() => Promise<void>) {
+    return async (): Promise<void> => {
       let data = await this.options.getDataFromForm(this.dialogSelector);
       if (ObjectUtil.deepAreEqual(data, this.options.initialData)) {
         this.infoArea.html('');
@@ -159,7 +161,6 @@ export class GetDataAndProcessDialog {
   hide() {
     this.dialog.hide();
     this.dialog.destroy();
-    this.dialog = null;
   }
 
   /**
@@ -167,7 +168,7 @@ export class GetDataAndProcessDialog {
    * @return {Promise<string>}
    * @private
    */
-  async getBodyHtml() {
+  async getBodyHtml(): Promise<string> {
     return `<div class="dialog-body">${await this.options.getBodyHtml()}</div>
         <div class="info-area"></div>
 `
@@ -179,7 +180,7 @@ export class GetDataAndProcessDialog {
    * @return {string}
    * @private
    */
-  getErrorHtml(msg) {
+  getErrorHtml(msg: string): string {
     return `<span class="text-danger">${msg}</span>`
   }
 }

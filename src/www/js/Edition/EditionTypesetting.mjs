@@ -941,7 +941,7 @@ export class EditionTypesetting {
     // merged item
     if (item.hasMetadata(MetadataKey.TOKEN_OCCURRENCE_IN_LINE)) {
       // no need to go down the tree, all info is right here!
-      console.log(`Item is merged but has info in it`, item.metadata);
+      this.debug && console.log(`Item is merged but has info in it`, item.metadata);
       let infoObject = this.constructLineInfoObjectFromItem(item, lineNumber, true)
       if (infoObject === undefined) {
         return []

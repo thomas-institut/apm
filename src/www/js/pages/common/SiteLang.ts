@@ -21,7 +21,6 @@ import { Language } from '../../toolbox/Language'
 
 export const defaultLanguage = 'en'
 
-// export const validLanguages = [ 'en', 'es', 'de', 'fr', 'it', 'he', 'ar']
 export const validLanguages = [ 'en', 'es']
 
 
@@ -155,14 +154,16 @@ const strings = [
 ]
 
 export class SiteLang {
+
+  static __languageStringManager: Language;
   /**
    * Sets the language to the used to look for translated strings
    * @param {string}lang Two letter code
    */
-  static setLang(lang) {
+  static setLang(lang: string) {
     this.__languageStringManager.setLang(lang)
   }
-  static t(template, data ={}) {
+  static t(template: string, data ={}) {
     return this.__languageStringManager.getTranslation(template, data)
   }
 
@@ -178,13 +179,8 @@ export class SiteLang {
 
 SiteLang.__languageStringManager = new Language(strings, validLanguages, defaultLanguage, defaultLanguage)
 
-/**
- * Translates the given template to the system language
- * @param {string}template
- * @param {{}}data
- * @return {string}
- */
-export function tr (template, data = {}) {
+
+export function tr (template: string, data = {}): string {
   return SiteLang.t(template, data)
 }
 
@@ -192,6 +188,6 @@ export function tr (template, data = {}) {
  * Sets the language to the used to look for translated strings
  * @param {string}lang
  */
-export function setSiteLanguage(lang) {
+export function setSiteLanguage(lang: string): void {
   SiteLang.setLang(lang)
 }

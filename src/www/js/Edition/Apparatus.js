@@ -47,18 +47,17 @@ export class Apparatus {
 }
 
 function compareEntryLocations( fromA, fromB, toA, toB) {
-   if (fromA === fromB) {
-     if (toA === toB) {
-       return 0
-     }
-     if (toA > toB) {
-       return 1
-     }
-     return -1
-   }
-   if (fromA > fromB) {
-     return 1
-   }
-   return -1
+  if (fromA === fromB) {
+    if (toA === toB) {
+      return 0
+    }
+    if (toA > toB) {
+      return 1
+    }
+    return -1
+  }
+  if (fromA > fromB) {
+    return 1
+  }
+  return -1
 }
-

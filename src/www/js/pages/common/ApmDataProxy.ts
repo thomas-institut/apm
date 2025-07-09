@@ -21,7 +21,7 @@ import { KeyCache } from '../../toolbox/KeyCache/KeyCache'
 import { WebStorageKeyCache } from '../../toolbox/KeyCache/WebStorageKeyCache'
 import { CachedFetcher } from '../../toolbox/CachedFetcher'
 import { urlGen } from './SiteUrlGen'
-import { wait } from '../../toolbox/FunctionUtil.mjs'
+import { wait } from '../../toolbox/FunctionUtil'
 import { SimpleLockManager } from '../../toolbox/SimpleLockManager'
 import * as Entity from '../../constants/Entity'
 
@@ -48,6 +48,12 @@ const MaxSystemEntityId = 10000000;
  * for different types of data
  */
 export class ApmDataProxy {
+  private readonly cacheDataId: string;
+  private readonly caches: { [ key: string]: KeyCache };
+  private readonly lockManager: any;
+  private readonly localCacheLockManager: any;
+  private readonly cachedFetcher: any;
+  private readonly localCachedFetcher: any;
 
   /**
    *
@@ -55,7 +61,7 @@ export class ApmDataProxy {
    * @param {string}cachePrefix
    * @param ignoreDataIds list of dataIds to ignore when cleaning
    */
-  constructor (cacheDataId, cachePrefix, ignoreDataIds = []) {
+  constructor (cacheDataId: string, cachePrefix: string, ignoreDataIds: string[] = []) {
     this.cacheDataId = cacheDataId;
     this.caches = {
       memory: new KeyCache(),
@@ -83,11 +89,11 @@ export class ApmDataProxy {
     })
   }
 
-  async getPersonEssentialData(personId) {
+  async getPersonEssentialData(personId: number):Promise<any> {
     return await this.getApmEntityData('Person', 'essential',  personId, 'local');
   }
 
-  async getAllPersonEssentialData(){
+  async getAllPersonEssentialData():Promise<any>{
     let data = this.caches.memory.retrieve("allPeopleData");
     if (data === null) {
       data = await this.get(urlGen.apiPersonGetDataForPeoplePage(), true);
@@ -96,27 +102,23 @@ export class ApmDataProxy {
     return data;
   }
 
-  async getWorkDataOld(workDareId) {
-    return await this.getApmEntityData('WorkOld', '', workDareId, 'local');
+  async getWorkDataOld(workId: number): Promise<any> {
+    return await this.getApmEntityData('WorkOld', '', workId, 'local');
   }
 
-  async getWorkData(workDareId) {
-    return await this.getApmEntityData('Work', '', workDareId, 'local');
+  async getWorkData(workId: number): Promise<any> {
+    return await this.getApmEntityData('Work', '', workId, 'local');
   }
 
-  /**
-   * 
-   * @returns {Promise<*|{}>}
-   */
-  async getLegacySystemLanguagesArray() {
+  async getLegacySystemLanguagesArray(): Promise<any> {
     return await this.getAlmostStaticData('SystemLanguages', urlGen.apiSystemGetLanguages());
   }
 
-  async getAuthors() {
+  async getAuthors():Promise<any> {
     return this.get(urlGen.apiWorksGetAuthors(),  false, TtlOneMinute);
   }
 
-  async getRealDocId(docId) {
+  async getRealDocId(docId: number):Promise<number> {
     let cacheKey = `docId-${docId}`;
     let realDocId = this.caches.local.retrieve(cacheKey);
     if (realDocId === null) {
@@ -134,9 +136,9 @@ export class ApmDataProxy {
    * 
    * `[ [ type1, 'name1'] , [ type2, 'name2'], .... ]` 
    * 
-   * @returns {Promise<*|{}>}
+   * @returns {Promise<any>}
    */
-  async getAvailablePageTypes() {
+  async getAvailablePageTypes(): Promise<any> {
     return this.getEntityNameTuples( await this.getAlmostStaticData('PageTypes', urlGen.apiGetPageTypes()));
   }
 
@@ -157,14 +159,14 @@ export class ApmDataProxy {
    * in the given array
    * @param {number[]}entityIdArray
    */
-  async getEntityNameTuples(entityIdArray) {
+  async getEntityNameTuples(entityIdArray: number[]) {
     return Promise.all( entityIdArray.map( async (id) => {
       return [ id, await this.getEntityName(id)];
     }))
   }
 
 
-  async getAlmostStaticData(name, url) {
+  async getAlmostStaticData(name: string, url: string): Promise<any> {
     let cache = this.caches['local'];
     let data = cache.retrieve(name);
     if (data !== null) {
@@ -181,9 +183,9 @@ export class ApmDataProxy {
    * @param {string}foliation
    * @param {number}type
    * @param {string}lang
-   * @return {Promise<void>}
+   * @return {Promise<any>}
    */
-  async savePageSettings(pageId, foliation, type, lang) {
+  async savePageSettings(pageId: number, foliation: string, type: number, lang: string): Promise<any> {
     return this.post(urlGen.apiUpdatePageSettings(pageId), {
       foliation: foliation,
       type: type,
@@ -191,7 +193,7 @@ export class ApmDataProxy {
     }, true);
   }
 
-  async updateUserProfile(userTid, email, password1, password2) {
+  async updateUserProfile(userTid: number, email: string, password1: string, password2: string): Promise<any> {
     return this.post(urlGen.apiUpdateProfile(userTid), {
       email: email,
       password1: password1,
@@ -199,13 +201,13 @@ export class ApmDataProxy {
     }, true);
   }
 
-  async createUser(personTid, username) {
+  async createUser(personTid: number, username: string): Promise<any> {
     return this.post(urlGen.apiCreateUser(personTid), {
       username: username,
     }, true);
   }
 
-  async createPerson(name, sortName){
+  async createPerson(name: string, sortName: string): Promise<any>{
     return this.post(urlGen.apiPersonCreate(), {
       name: name,
       sortName: sortName
@@ -221,7 +223,7 @@ export class ApmDataProxy {
    * @param imageSourceData
    * @returns {Promise<{}>}
    */
-  async createDocument(name, type = null, lang = null, imageSource = null, imageSourceData = null) {
+  async createDocument(name: string, type: string|null = null, lang: string|null = null, imageSource: string|null= null, imageSourceData: string|null = null): Promise<any> {
     return this.post(urlGen.apiDocumentCreate(), {
       name: name,
       type: type,
@@ -231,7 +233,7 @@ export class ApmDataProxy {
     }, true);
   }
 
-  async getPersonWorks(personTid){
+  async getPersonWorks(personTid: number): Promise<any>{
     return this.get(urlGen.apiPersonGetWorks(personTid), false, TtlOneMinute);
   }
 
@@ -247,7 +249,7 @@ export class ApmDataProxy {
    * @param sessionCache
    * @return {Promise<{}>}
    */
-  fetch(url, method = 'GET', payload = [] , forceActualFetch = false, useRawData = false, ttl = -1, sessionCache = true) {
+  fetch(url: string, method: string = 'GET', payload: any, forceActualFetch: boolean = false, useRawData: boolean = false, ttl: number = -1, sessionCache = true): Promise<any> {
     let key = encodeURI(url);
     let fetcher = sessionCache ? this.cachedFetcher : this.localCachedFetcher;
     return fetcher.fetch(key, () => {
@@ -272,7 +274,7 @@ export class ApmDataProxy {
    * @param {boolean}useRawData if true, the payload is posted as is, otherwise the payload is encapsulated in an object `{ data: payload}`
    * @return {Promise<{}>}
    */
-  post(url, payload, useRawData = false) {
+  post(url: string, payload: any, useRawData: boolean = false): Promise<any> {
     return this.fetch(url, 'POST', payload, true, useRawData)
   }
 
@@ -287,7 +289,7 @@ export class ApmDataProxy {
    * @param sessionCache
    * @return {Promise<{}>}
    */
-  get(url, forceGet = true, ttl = -1, sessionCache = true) {
+  get(url: string, forceGet: boolean = true, ttl: number = -1, sessionCache = true): Promise<any> {
     return this.fetch(url, 'GET', { }, forceGet, false, ttl, sessionCache)
   }
 
@@ -298,7 +300,7 @@ export class ApmDataProxy {
    * @param {?number} [ttl=null] if null, the default cache strategy will be used
    * @private
    */
-  storeEntityDataInCache(data, ttl = null) {
+  storeEntityDataInCache(data: any, ttl: number | null = null) {
     let cache = this.caches.session;
     if (ttl === null) {
       if (data.id <= MaxSystemEntityId) {
@@ -326,7 +328,7 @@ export class ApmDataProxy {
     cache.store(`${EntityDataCacheKeyPrefix}-${data.id}`, data, ttl)
   }
 
-  retrieveEntityDataFromCache(id) {
+  retrieveEntityDataFromCache(id : number) {
     let cache = this.caches.session
     if (id <= MaxSystemEntityId) {
       cache = this.caches.local;
@@ -339,7 +341,7 @@ export class ApmDataProxy {
    *
    * @param {number }id
    */
-  async getEntityType(id) {
+  async getEntityType(id: number) {
     // Since entities do not change types, these values can be
     // cached for a long time
     let cacheKey = `${EntityTypeCacheKeyPrefix}-${id}`;
@@ -358,7 +360,7 @@ export class ApmDataProxy {
    * @param {number}id
    * @return {Promise<string>}
    */
-  async getEntityName(id) {
+  async getEntityName(id: number): Promise<string> {
     if (id === null) {
       return 'Undefined';
     }
@@ -371,10 +373,10 @@ export class ApmDataProxy {
    * @param variability  +/- percentage of variability
    * @private
    */
-  getTtlWithVariability(ttl, variability = 5) {
+  getTtlWithVariability(ttl: number, variability = 5) {
     return  ttl * (1-variability/100) + (ttl/variability)*Math.random();
   }
-  async getEntityDataRaw(tid) {
+  async getEntityDataRaw(tid: number) {
     console.log(`Fetching data for entity ${tid} from the server`);
     let url = urlGen.apiEntityGetData(tid);
     // use a lock here too, just in case some guerrilla function somewhere
@@ -385,7 +387,7 @@ export class ApmDataProxy {
     return data;
   }
 
-  async apiEntityStatementsEdit(commands){
+  async apiEntityStatementsEdit(commands: any){
     return $.post(urlGen.apiEntityStatementsEdit(), JSON.stringify(commands));
 
   }
@@ -394,9 +396,9 @@ export class ApmDataProxy {
    * Gets the server's entity data using smart caching and locking
    * @param {number}id
    * @param {boolean}forceFetch
-   * @return {Promise<{}>}
+   * @return {Promise<any>}
    */
-  async getEntityData(id, forceFetch = false) {
+  async getEntityData(id: number, forceFetch: boolean = false): Promise<any> {
     let lockKey = `GetEntityData-${id}`;
     await this.lockManager.getLock(lockKey);
     let data;
@@ -429,9 +431,9 @@ export class ApmDataProxy {
       return data;
     }
 
-    let ids = [];
+    let ids: any[] = [];
 
-    data.forEach( (entityData) => {
+    data.forEach( (entityData: any) => {
       ids.push(entityData.id);
       this.storeEntityDataInCache(entityData);
     })
@@ -440,11 +442,11 @@ export class ApmDataProxy {
 
   }
 
-  getPredicateDefinitionsForType(type) {
+  getPredicateDefinitionsForType(type:number) {
     return this.fetch(urlGen.apiEntityGetPredicateDefinitionsForType(type), 'GET', {},false, false, TtlOneHour);
   }
 
-  getEntityListForType(typeTid) {
+  getEntityListForType(typeTid:number) {
     return this.fetch(urlGen.apiEntityTypeGetEntities(typeTid), 'GET', {}, false, false, TtlOneHour);
   }
 
@@ -458,7 +460,7 @@ export class ApmDataProxy {
    * @return {Promise<any>}
    * @private
    */
-  getApmEntityData(entityType, dataType, entityId, cacheName = 'local') {
+  getApmEntityData(entityType: string, dataType: string, entityId: number, cacheName: string = 'local'): Promise<any> {
     return new Promise ( (resolve, reject) => {
       let ttl = TtlOneDay;
       let getUrl = '';
@@ -519,7 +521,7 @@ export class ApmDataProxy {
    * @return {{name, id, username}}
    * @private
    */
-  getPersonDataToStoreFromServerData(serverData) {
+  getPersonDataToStoreFromServerData(serverData: any): { name:string; id: number; username: string } {
     return serverData
   }
 
@@ -529,7 +531,7 @@ export class ApmDataProxy {
    * @return {{id, dareId, authorId, title}}
    * @private
    */
-  getWorkDataToStoreFromServerData(serverData) {
+  getWorkDataToStoreFromServerData(serverData: any): { id : number; dareId: string; authorId: number; authorTid: number; title : string} {
     return {
       id: serverData['id'],
       dareId: serverData['dare_id'],
@@ -543,12 +545,12 @@ export class ApmDataProxy {
    *
    * @param {string}entityType
    * @param {string}dataType
-   * @param {int}entityId
+   * @param {number}entityId
    * @param {string}attribute
    * @return {string}
    * @private
    */
-  getCacheKey(entityType, dataType, entityId, attribute = '') {
+  getCacheKey(entityType: string, dataType: string, entityId: number, attribute: string = ''): string {
     if (dataType === '') {
       dataType = 'default';
     }
@@ -559,7 +561,7 @@ export class ApmDataProxy {
    * Gets edition source information from server
    * @param tid
    */
-  getEditionSource(tid) {
+  getEditionSource(tid: number): Promise<any> {
     return this.fetch(urlGen.apiEditionSourcesGet(tid), 'GET', {}, false, false, TtlOneHour);
   }
 

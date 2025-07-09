@@ -42,6 +42,45 @@ services:
     depends_on:
       - mysql
 
+  typesetting:
+    container_name: typesetting
+    build:
+      context: .
+      dockerfile: dev-typesetting.Dockerfile
+    ports:
+      - "4711:4711"
+    volumes:
+      - ../src:/opt/apm
+      - ../dev-tmp:/var/apm
+
+  #
+  # The configuration should be finished manually the first time the cointainer is started:
+  #
+  #
+  # Install node 18
+  #
+  #    nvm install 18
+  #
+  # Install node dependencies
+  #
+  #   cd /opt/apm/node
+  #   npm install
+  #
+  # Install python dependencies
+  #
+  #  cd /opt/apm/python
+  #  pip3 install -r requirements.txt --break-system-packages
+  #
+  # Install APM fonts:
+  #    in the host machine, copy the contents of the fontserver (on TI.one) to ../dev-tmp/apm-fonts
+  #
+  #    in the container:
+  #
+  #    cd /usr/share/fonts; ln -s /var/apm/apm-fonts .
+  #
+  # Restart the container
+
+
   collatex:
     container_name: collatex
     build: ./collatex-http

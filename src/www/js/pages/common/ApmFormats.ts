@@ -1,5 +1,5 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { TimeString } from '../../toolbox/TimeString.mjs'
+import { TimeString } from '../../toolbox/TimeString'
 
 let language = 'en';
 let timeZone = 'UTC';
@@ -12,7 +12,7 @@ export class ApmFormats {
    * @param {string}timeString
    * @param options
    */
-  static timeString(timeString, options = {}) {
+  static timeString(timeString: string, options: any = {}) {
     let dateObject = TimeString.toDate(timeString);
     return this.time(dateObject, options);
   }
@@ -43,7 +43,7 @@ export class ApmFormats {
    * @param options
    * @return {string}
    */
-  static time(dateTimeVar, options = {}) {
+  static time(dateTimeVar: any, options:any = {}) {
     let oc = new OptionsChecker({
       context: 'dateTimeString',
       optionsDefinition: {
@@ -56,7 +56,7 @@ export class ApmFormats {
     })
     let opt = oc.getCleanOptions(options);
 
-    const monthNames = {
+    const monthNames: {[key:string]: string[]} = {
       'en' : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
       'es' : ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'],
     }
@@ -120,7 +120,7 @@ export class ApmFormats {
    * @param {boolean}html
    * @return {string}
    */
-  static getTimeZoneOffsetStringForDate(dateObject, usingUTC = false, html = true) {
+  static getTimeZoneOffsetStringForDate(dateObject: Date, usingUTC: boolean = false, html: boolean = true): string {
     if (usingUTC) {
       return 'UTC';
     }
@@ -140,7 +140,7 @@ export class ApmFormats {
    * Sets the language to us in all format
    * @param {string} languageCode
    */
-  static setLanguage(languageCode) {
+  static setLanguage(languageCode: string) {
     language = languageCode;
   }
 
@@ -149,7 +149,7 @@ export class ApmFormats {
    * @param {string }tz
    *
    */
-  static setTimeZone(tz) {
+  static setTimeZone(tz: string) {
     timeZone = tz;
   }
 }

@@ -50,3 +50,10 @@ url:
   bilderberg:  'https://bilderberg.uni-koeln.de'
   uniKoeln:  "https://www.uni-koeln.de/"
   thomasInstitut:   "https://www.thomasinstitut.uni-koeln.de/"
+
+
+useTypesetterInCommandLine: true
+
+typesettingService:
+  host: 'localhost'
+  port: 4711

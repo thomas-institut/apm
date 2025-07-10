@@ -410,7 +410,7 @@ export class FirstFitLineBreaker extends LineBreaker {
       // is merged with merged item, the resulting MetadataKey.SOURCE_ITEMS_EXPORT metadata
       // will still be an array of two objects, the first one will
       // in turn have an array of two objects in its MetadataKey.SOURCE_ITEMS_EXPORT metadata
-      newItem.addMetadata(MetadataKey.SOURCE_ITEMS_EXPORT, [
+      newItem.addMetadata(MetadataKey.SOURCE_ITEMS, [
           item.getExportObject(),
           nextItem.getExportObject()
         ])

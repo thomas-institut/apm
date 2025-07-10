@@ -102,6 +102,7 @@ export class EditionViewerCanvas {
     this.debug = this.options.debug
     this.canvasRenderer = new CanvasRenderer(this.canvas, this.edition.lang === 'la' ? 'ltr' : 'rtl')
     BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(this.geometry.pageWidth), Math.round(this.geometry.pageHeight))
+
     this.canvasRenderer.setScale(this.options.scale).setPageMargin(pageMarginInCanvas)
     this.canvasMeasurer = new CanvasTextBoxMeasurer()
     this.currentScale = this.options.scale;

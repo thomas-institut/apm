@@ -51,6 +51,7 @@ import { FontConversions } from '../Typesetter2/FontConversions.mjs'
 import { KeyStore } from '../toolbox/KeyStore.mjs'
 import { ItemLineInfo } from './ItemLineInfo.mjs'
 import { TOKEN_FOR_COUNTING_PURPOSES, TOKEN_OCCURRENCE_IN_LINE } from '../Typesetter2/MetadataKey.mjs'
+import { TypesetterItem } from '../Typesetter2/TypesetterItem.mjs'
 
 export const MAX_LINE_COUNT = 10000
 const enDash = '\u2013'
@@ -687,8 +688,9 @@ export class EditionTypesetting {
 
     let infoIndex = this.mainTextIndices.indexOf(mainTextIndex)
     if (infoIndex === -1) {
-      console.warn(`No occurrence in line info found for main text index ${mainTextIndex}`)
-      // console.log(this.mainTextIndices)
+      // This is actually not a problem. It will happen for punctuation only text boxes.
+      // however, it might be good to check that it's happening only on those instances.
+      //console.warn(`No occurrence in line info found for main text index ${mainTextIndex}`)
       return [1, 1]
     }
     return [this.extractedItemLineInfoArray[infoIndex].occurrenceInLine, this.extractedItemLineInfoArray[infoIndex].totalOccurrencesInLine ]
@@ -877,10 +879,28 @@ export class EditionTypesetting {
       return -1
     }
     let infoIndex = this.mainTextIndices.indexOf(mainTextIndex)
-    if (infoIndex === -1) {
-      return -1
+    if (infoIndex !== -1) {
+      return this.extractedItemLineInfoArray[infoIndex].lineNumber
     }
+    // it maybe a merged item, let's look for it
+    for (let i=0; i < this.extractedItemLineInfoArray.length; i++) {
+      if (this.extractedItemLineInfoArray[i].isMerged) {
+        if (this.extractedItemLineInfoArray[i].mergedMainTextIndices.indexOf(mainTextIndex) !== -1) {
+          infoIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (infoIndex === -1) {
+      // not found!
+      console.warn(`Could not find line number for mainTextIndex ${mainTextIndex}`);
+      return -1;
+    }
+
     return this.extractedItemLineInfoArray[infoIndex].lineNumber
+
+
   }
 
   /**
@@ -891,6 +911,7 @@ export class EditionTypesetting {
    * @private
    */
   extractLineInfoFromMetadata(typesetMainTextVerticalList) {
+    /** @var {ItemLineInfo[]} lineInfoArray */
     let lineInfoArray = []
     // this.debug && console.log(`Extracting line info from metadata in typeset vertical list`)
     // this.debug && console.log(typesetMainTextVerticalList)
@@ -914,7 +935,14 @@ export class EditionTypesetting {
       }
     })
     // sort the array by mainTextIndex
-    lineInfoArray.sort( (a, b) => { return a.mainTextIndex - b.mainTextIndex})
+    lineInfoArray.sort( (a, b) => { return a.mainTextIndex - b.mainTextIndex});
+
+    // for debugging purposes, show the main text indices in merged Items
+    // lineInfoArray.forEach( (lineInfo) => {
+    //   if (lineInfo.isMerged) {
+    //     console.log(`Item ${lineInfo.mainTextIndex} is merged: ${lineInfo.mergedMainTextIndices.join(', ')}`)
+    //   }
+    // })
 
     return lineInfoArray
   }
@@ -942,7 +970,7 @@ export class EditionTypesetting {
     if (item.hasMetadata(MetadataKey.TOKEN_OCCURRENCE_IN_LINE)) {
       // no need to go down the tree, all info is right here!
       this.debug && console.log(`Item is merged but has info in it`, item.metadata);
-      let infoObject = this.constructLineInfoObjectFromItem(item, lineNumber, true)
+      let infoObject = this.constructLineInfoObjectFromItem(item, lineNumber, true);
       if (infoObject === undefined) {
         return []
       }
@@ -950,7 +978,7 @@ export class EditionTypesetting {
     }
 
 
-    if (!item.hasMetadata(MetadataKey.SOURCE_ITEMS_EXPORT)) {
+    if (!item.hasMetadata(MetadataKey.SOURCE_ITEMS)) {
       // no data from source items, warn and return an empty array
       console.warn(`Found merged item without source items info`)
       console.warn(item)
@@ -958,7 +986,7 @@ export class EditionTypesetting {
     }
     let outputInfoArray = []
     // get the data from each item
-    item.getMetadata(MetadataKey.SOURCE_ITEMS_EXPORT).forEach( (sourceItemExport) => {
+    item.getMetadata(MetadataKey.SOURCE_ITEMS).forEach( (sourceItemExport) => {
       let sourceItem = ObjectFactory.fromObject(sourceItemExport)
       let itemInfoArray = this.getLineInfoArrayFromItem(sourceItem, lineNumber)
       pushArray(outputInfoArray, itemInfoArray)
@@ -994,11 +1022,13 @@ export class EditionTypesetting {
     info.mainTextIndex = item.getMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX)
 
     if (!isMerged && item instanceof TextBox) {
-      info.text = item.getText()
+      info.text = item.getText();
     }
 
     if (isMerged) {
       info.text = item.getMetadata(MetadataKey.TOKEN_FOR_COUNTING_PURPOSES);
+      info.isMerged = true;
+      info.mergedMainTextIndices = this.getMainTextIndicesFromItem(item);
     }
 
     if (item.hasMetadata(MetadataKey.TOKEN_OCCURRENCE_IN_LINE)) {
@@ -1015,6 +1045,37 @@ export class EditionTypesetting {
       return undefined
     }
     return info
+  }
+
+  /**
+   *
+   * @param {TypesetterItem}item
+   * @return {number[]}
+   */
+  getMainTextIndicesFromItem(item) {
+    if (!(item instanceof TypesetterItem)){
+      item = ObjectFactory.fromObject(item);
+    }
+
+
+    const isMerged = item.getMetadata(MetadataKey.MERGED_ITEM) ?? false;
+    const index = item.getMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX) ?? null;
+    if (index === null) {
+      return []
+    }
+
+    if (!isMerged) {
+      return [index];
+    }
+
+    let indices = [];
+
+    item.getMetadata(MetadataKey.SOURCE_ITEMS).forEach( (mergedItem) => {
+      indices.push(...this.getMainTextIndicesFromItem(mergedItem));
+    });
+
+    return [... new Set(indices)].sort((a, b) => a - b);
+
   }
   /**
    *

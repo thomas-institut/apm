@@ -64,7 +64,7 @@ export class CanvasRenderer extends TypesetterRenderer {
     let debug = false
     let text = textBoxItem.getText()
     // hack to work around Firefox's bug with single RTL brackets
-    let brackets = [ '[', ']', '(', ')', '{', '}', '«', '»']
+    let brackets = [ '[', ']', '(', ')', '{', '}', '«', '»', '<', '>']
     if (brackets.indexOf(text) !== -1  && textBoxItem.getTextDirection() === 'rtl') {
       // insert an RTL marker before the text to force correct display
       text = String.fromCodePoint(0x202B) + text

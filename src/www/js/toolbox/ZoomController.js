@@ -72,26 +72,41 @@ export class ZoomController {
     this.zoomOutButton.on('click', this.__genOnClickZoomButton(false))
   }
 
-  __genOnClickZoomButton(zoomIn = true) {
-    return () => {
-      let newZoomStep
-      if (zoomIn) {
-        newZoomStep = this.currentZoomStep + 1
-      } else {
-        newZoomStep = this.currentZoomStep - 1
-      }
-      if (newZoomStep === zoomSteps.length) {
-        // at the end of the scale, do nothing
-        return
-      }
+  /**
+   * Sets the zoom step to the closes value to the given scale
+   * @param {number} scale
+   * @param {boolean} sendEvent
+   */
+  setZoomStepFromScale(scale, sendEvent = true) {
+    console.log(`Setting step from scale ${scale}`)
+    let scaledSteps = this.options.zoomSteps.map ( (step) => { return Math.abs(scale - step)});
+    let bestFit = Math.min(...scaledSteps);
+    console.log(`Best fit is ${bestFit}`);
+    let newZoomStep = scaledSteps.indexOf(bestFit);
+    console.log(`Changing zoom step to ${newZoomStep}`);
+    this.__setNewZoomStep(newZoomStep, sendEvent);
+  }
 
-      if (newZoomStep < 0) {
-        return
-        // at the other end of the scale, do nothing
-      }
+  /**
+   *
+   * @param {number} newZoomStep
+   * @param {boolean} sendEvent
+   * @private
+   */
+  __setNewZoomStep(newZoomStep, sendEvent= true) {
+    if (newZoomStep === zoomSteps.length) {
+      // at the end of the scale, do nothing
+      return
+    }
 
-      let newScale = this.options.zoomSteps[newZoomStep]
+    if (newZoomStep < 0) {
+      return
+      // at the other end of the scale, do nothing
+    }
 
+    let newScale = this.options.zoomSteps[newZoomStep]
+
+    if (sendEvent) {
       this.options.onZoom(newScale).then( (scale) => {
         this.debug && console.log(`OnZoom finished, scale = ${scale}`)
         if (scale === newScale) {
@@ -100,6 +115,25 @@ export class ZoomController {
           this.zoomLabel.html(this.__getZoomScaleString(this.currentScale))
         }
       })
+    } else {
+      this.currentZoomStep = newZoomStep
+      this.currentScale = newScale
+      this.zoomLabel.html(this.__getZoomScaleString(this.currentScale))
+    }
+
+
+  }
+
+  __genOnClickZoomButton(zoomIn = true) {
+    return () => {
+      let newZoomStep
+      if (zoomIn) {
+        newZoomStep = this.currentZoomStep + 1
+      } else {
+        newZoomStep = this.currentZoomStep - 1
+      }
+      this.__setNewZoomStep(newZoomStep);
+
     }
   }
 

@@ -132,14 +132,17 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
 
     this.updatePreviewButton.on('click', () => {
         this.updatePreview()
-    })
+    });
 
-    this.viewer = new EditionViewerCanvas(this.__getViewerOptions())
+    const viewerOptions = this.__getViewerOptions();
+
+    this.viewer = new EditionViewerCanvas(viewerOptions)
     this.zoomController = new ZoomController({
       containerSelector: `${this.containerSelector} div.zoom-controller`,
       onZoom: this.__genOnZoom(),
       debug: false
-    })
+    });
+    this.zoomController.setZoomStepFromScale(viewerOptions.scale, false)
     this.setupStyleSelector()
     if (this.options.automaticUpdate) {
       this.updatePreview()
@@ -192,6 +195,9 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
       console.warn(`Apparatus font size is not well defined in stylesheet: '${this.currentStyleSheet.getStyleDef('apparatus').text.fontSize}'`)
       apparatusFontSize = 14
     }
+    // adjust the initial scale to the device's pixel ratio
+    console.log(`Initial scale is ${initialScale}, device pixel ratio is ${window.devicePixelRatio}`)
+    initialScale = initialScale / window.devicePixelRatio;
     // this.debug && console.log(`Main text font size: ${defaultFontSize}; apparatus font size: ${apparatusFontSize}`)
     // console.log('Default Style def')
     // console.log(defaultStyleDef)
@@ -289,7 +295,9 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
     wait(100).then( () => {
       let profiler = new BasicProfiler('Update preview')
       profiler.start();
-      this.viewer = new EditionViewerCanvas(this.__getViewerOptions(this.viewer.getCurrentScale()));
+      // adjust the current scale to the device's  pixel ratio
+      let currentScale = this.viewer.currentScale * window.devicePixelRatio;
+      this.viewer = new EditionViewerCanvas(this.__getViewerOptions(currentScale));
       this.viewer.render().then( () => {
         profiler.stop()
         this.updatePreviewButton.html(currentButtonHtml).addClass('hidden')

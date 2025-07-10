@@ -6,10 +6,12 @@
 export class ItemLineInfo {
 
   constructor () {
-      this.lineNumber = -1
-      this.occurrenceInLine = 0
-      this.totalOccurrencesInLine = 0
-      this.text = ''
-      this.mainTextIndex = -1
+    this.lineNumber = -1;
+    this.occurrenceInLine = 0;
+    this.totalOccurrencesInLine = 0;
+    this.text = '';
+    this.mainTextIndex = -1;
+    this.isMerged = false;
+    this.mergedMainTextIndices = [];
   }
 }

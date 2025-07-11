@@ -1,8 +1,9 @@
 import * as Entity from '../../constants/Entity'
 import * as SectionType from './SectionType'
 import * as SchemaContext from './SchemaContext'
+import {SchemaInterface} from "./SchemaInterface";
 
-const schemata = {
+const schemata : { [key: string]: SchemaInterface } = {
   default: {
     type: Entity.tDocument,
     context: SchemaContext.Default,

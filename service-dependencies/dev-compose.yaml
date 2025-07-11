@@ -54,7 +54,7 @@ services:
       - ../dev-tmp:/var/apm
 
   #
-  # The configuration should be finished manually the first time the cointainer is started:
+  # The configuration should be finished manually the first time the container is started:
   #
   #
   # Install node 18

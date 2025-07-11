@@ -1,4 +1,4 @@
-import { compareStrings } from './Util.mjs'
+import { compareStrings } from './Util'
 
 export class WorkId {
 
@@ -18,7 +18,7 @@ export class WorkId {
    * @param {string }workId
    * @return []
    */
-  static split(workId) {
+  static split(workId:string) : any[] {
     let firstNumberIndex = -1;
     let numberRegEx = new RegExp('^[0-9]')
     for (let i = 0; i < workId.length; i++) {
@@ -47,7 +47,7 @@ export class WorkId {
    * @param {string} a
    * @param {string} b
    */
-  static compare(a, b) {
+  static compare(a:any, b:any) {
     let debug = false;
     debug && console.log(`Comparing ${a} and ${b}`)
     let componentsA = WorkId.split(a);

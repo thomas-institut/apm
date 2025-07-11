@@ -13,7 +13,7 @@ export class MetadataEditorSchema {
    * @param {string}context
    * @return {{}|null}
    */
-  static getSchema(entityType, context= SchemaContext.Default) {
+  static getSchema(entityType: number, context= SchemaContext.Default) {
     switch (entityType) {
       case Entity.tPerson:
         return PersonSchemata.getSchema(context);

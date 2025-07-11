@@ -188,6 +188,14 @@ function isStringAnInteger(str: string) {
   return /^\d+$/.test(str);
 }
 
+/**
+ * Retrieves the string value from a given jQuery element.
+ * If the value is undefined or an array, the method logs a warning and returns an empty string.
+ * If the value is a number, it converts it to a string.
+ *
+ * @param {JQuery} element - The jQuery element from which to retrieve the value.
+ * @return {string} The string representation of the element's value, or an empty string if the value is undefined or invalid.
+ */
 export function getStringVal(element: JQuery): string {
   let val = element.val();
 
@@ -204,6 +212,12 @@ export function getStringVal(element: JQuery): string {
 
 }
 
+/**
+ * Extracts an integer value from a JQuery element's value.
+ *
+ * @param {JQuery} element - The JQuery element to retrieve the value from.
+ * @return {number} The integer value of the element's value. If the value is undefined, an array, or cannot be converted to a number, returns -1.
+ */
 export function getIntVal(element: JQuery) : number {
   let val = element.val();
 

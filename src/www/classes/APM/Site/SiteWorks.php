@@ -115,7 +115,7 @@ class SiteWorks extends SiteController
             '',
             "Works",
             "WorksPage",
-            'js/pages/WorksPage.js',
+            'js/pages/WorksPage.ts',
             [ 'works' => $works ],
             [],
             [ 'works_page.css']

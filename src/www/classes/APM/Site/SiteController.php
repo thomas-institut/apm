@@ -49,7 +49,6 @@ use ThomasInstitut\EntitySystem\Tid;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
-use Twig\Node\Expression\Test\OddTest;
 
 
 /**
@@ -119,7 +118,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             $userInfo = $userData->getExportObject();
             unset($userInfo['passwordHash']);
             $userInfo['name'] = $personData->name;
-//            $userInfo['name'] = 'Mengano';
             $userInfo['email'] = '';
             $userInfo['isRoot'] = $userData->root;
             $userInfo['manageUsers'] = $userData->root;
@@ -263,7 +261,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         $cssItems = [];
         $cssItems[] = 'node_modules/bootstrap/dist/css/bootstrap.css';
         $cssItems[] = 'node_modules/bootstrap-icons/font/bootstrap-icons.css';
-        $cssItems[] = 'node_modules/datatables.net-dt/css/jquery.dataTables.min.css';
+//        $cssItems[] = 'node_modules/datatables.net-dt/css/jquery.dataTables.min.css';
         $cssItems[] = 'css/styles.css';
         foreach ($extraCss as $css) {
             $cssItems[] = "css/$css";
@@ -272,8 +270,8 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         $jsItems = [];
         $jsItems[] = 'node_modules/jquery/dist/jquery.min.js';
         $jsItems[] = 'node_modules/bootstrap/dist/js/bootstrap.bundle.min.js';
-        $jsItems[] = 'node_modules/datatables.net/js/jquery.dataTables.min.js';
-        $jsItems[] = 'node_modules/datatables.net-dt/js/dataTables.dataTables.min.js';
+//        $jsItems[] = 'node_modules/datatables.net/js/jquery.dataTables.min.js';
+//        $jsItems[] = 'node_modules/datatables.net-dt/js/dataTables.dataTables.min.js';
         $jsItems = [ ...$jsItems, ...$extraJss];
 
         $cssHtml = implode("\n", array_map(function($cssItem) use ($baseUrl) {
@@ -433,7 +431,7 @@ END;
             '',
             $title,
             'ErrorPage',
-            'js/pages/ErrorPage.js',
+            'js/pages/ErrorPage.ts',
             [
                 'errorMessage' => $errorMessage,
                 'title' => $title

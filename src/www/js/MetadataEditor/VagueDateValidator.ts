@@ -1,16 +1,16 @@
 import { ObjectValidator } from './ObjectValidator'
-import { isNumeric, trimWhiteSpace } from '../toolbox/Util.mjs'
+import { isNumeric, trimWhiteSpace } from '../toolbox/Util'
 
 export class VagueDateValidator extends ObjectValidator {
 
-  validateObject (object) {
+  validateObject (object: number|string):string[] {
     let value = trimWhiteSpace(object.toString().replace(/\s+/g, ' '));
     let dateStrings = value.split(' ');
     if (dateStrings.length > 2) {
       return [ `More than two dates given`];
     }
 
-    let issues = [];
+    let issues: string[] = [];
 
     let dates = dateStrings.map( (dateString) => {
       return this.getDateNumericRepresentation(dateString);
@@ -33,7 +33,7 @@ export class VagueDateValidator extends ObjectValidator {
     return issues;
   }
 
-  getHelp () {
+  getHelp():string {
     return `One or two dates in the chosen calendar, each one as [-]YYYY-MM-DD. The month and the day of the month are optional. 
           E.g.,'-200 -100' = an indeterminate date between 200 and 100 BCE, '1980-12' = an 
           indeterminate date in December 1980, '1550-04 1550-05' = an indeterminate date between April 1st and May
@@ -52,7 +52,7 @@ export class VagueDateValidator extends ObjectValidator {
    * @param dateString
    * @return {number}
    */
-  getDateNumericRepresentation(dateString) {
+  getDateNumericRepresentation(dateString:string): number {
 
     let multiplier = 1;
     let fields = dateString.split('-');
@@ -62,7 +62,7 @@ export class VagueDateValidator extends ObjectValidator {
       fields.unshift('');
     }
 
-    if (fields < 2 || fields > 4) {
+    if (fields.length < 2 || fields.length > 4) {
       return NaN;
     }
 

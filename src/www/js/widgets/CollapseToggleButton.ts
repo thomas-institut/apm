@@ -21,8 +21,12 @@
  */
 
 export class CollapseToggleButton {
+  private iconSpan: any;
+  private collapseElement: any;
+  private visibleIconHtml: string;
+  private hiddenIconHtml: string;
   
-  constructor (iconSpanElement, collapseElement, visibleIconHtml = '', hiddenIconHtml = '' ) {
+  constructor (iconSpanElement: JQuery<HTMLElement>, collapseElement: JQuery<HTMLElement>, visibleIconHtml = '', hiddenIconHtml = '' ) {
 
     this.iconSpan = iconSpanElement
     this.collapseElement = collapseElement

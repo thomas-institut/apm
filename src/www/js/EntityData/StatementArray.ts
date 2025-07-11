@@ -1,4 +1,13 @@
-import { Statement } from './Statement'
+import {Statement, StatementInterface} from './Statement'
+
+
+
+export interface EditOperation {
+  n: number;
+  operation: string;
+  timestamp: number;
+  statementId: any;
+}
 
 export class StatementArray {
 
@@ -14,14 +23,14 @@ export class StatementArray {
    *
    * @param statementArray
    */
-  static getEditHistory(statementArray) {
-    let ops = [];
+  static getEditHistory(statementArray: StatementInterface[]):EditOperation[] {
+    let ops: EditOperation[] = [];
     statementArray.forEach( (statement) => {
-      ops.push({ operation: 'creation', timestamp: Statement.getEditTimestamp(statement), statementId: statement.id });
+      ops.push({ operation: 'creation', timestamp: Statement.getEditTimestamp(statement), statementId: statement.id , n:0});
       if (statement['cancellationId'] !== -1) {
         let cancellationTimestamp = Statement.getCancellationTimestamp(statement);
         if (cancellationTimestamp !== null) {
-          ops.push({ operation: 'cancellation', timestamp: cancellationTimestamp, statementId: statement.id});
+          ops.push({ operation: 'cancellation', timestamp: cancellationTimestamp, statementId: statement.id, n:0});
         }
       }
 
@@ -38,11 +47,11 @@ export class StatementArray {
    * Returns all non-cancelled statements in the array
    * @param statementArray
    */
-  static getCurrentStatements(statementArray) {
+  static getCurrentStatements(statementArray: StatementInterface[]): StatementInterface[] {
     return statementArray.filter( (statement) => { return statement['cancellationId'] === -1});
   }
 
-  static getStatementsForPredicate(statementArray, predicate, includeCancelled = false) {
+  static getStatementsForPredicate(statementArray: StatementInterface[], predicate: number, includeCancelled = false): StatementInterface[] {
     return statementArray.filter( (statement) => {
         return statement.predicate === predicate && (statement['cancellationId'] === -1 || includeCancelled );
       });

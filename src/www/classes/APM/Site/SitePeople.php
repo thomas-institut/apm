@@ -29,10 +29,13 @@ class SitePeople extends SiteController
             '',
             'People',
             'PeoplePage',
-            'js/pages/PeoplePage.js',
+            'js/pages/PeoplePage.ts',
             null,
             [],
-            [ 'people_page.css']
+            [
+                '../node_modules/datatables.net-dt/css/jquery.dataTables.min.css',
+                'people_page.css'
+            ]
         );
     }
 

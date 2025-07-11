@@ -3,11 +3,20 @@ import { ConfirmDialog, LARGE_DIALOG } from './ConfirmDialog'
 import { tr } from './SiteLang'
 import { ApmDataProxy } from './ApmDataProxy'
 import { ApmPage } from '../ApmPage'
-import { wait } from '../../toolbox/FunctionUtil.mjs'
+import { wait } from '../../toolbox/FunctionUtil'
+import {getStringVal} from "../../toolbox/UiToolBox";
 
 export class UserProfileEditorDialog {
+  private options: any;
+  private readonly debug: boolean;
+  private dialog!: ConfirmDialog;
+  private currentEmail: string = '';
+  private inputEmailAddress!: JQuery<HTMLElement>;
+  private inputPassword1!: JQuery<HTMLElement>;
+  private inputPassword2!: JQuery<HTMLElement>;
+  private infoDiv!: JQuery<HTMLElement>;
 
-  constructor (options) {
+  constructor (options: any) {
     let oc = new OptionsChecker({
       context: 'UserProfileEditor',
       optionsDefinition: {
@@ -62,13 +71,13 @@ export class UserProfileEditorDialog {
     })
   }
 
-  genOnAccept(resolve) {
+  genOnAccept(resolve:any) {
     return () => {
       if (this.validateInput()) {
         let id = this.options.personData.id;
-        let email = this.inputEmailAddress.val().trim();
-        let password1 = this.inputPassword1.val().trim();
-        let password2 = this.inputPassword2.val().trim();
+        let email = getStringVal(this.inputEmailAddress).trim();
+        let password1 = getStringVal(this.inputPassword1).trim();
+        let password2 = getStringVal(this.inputPassword2).trim();
         this.dialog.hideAcceptButton();
         this.dialog.hideCancelButton();
         let loadingMessage = tr('Saving profile');
@@ -80,7 +89,7 @@ export class UserProfileEditorDialog {
             this.dialog.destroy();
             resolve(true)
           })
-        }).catch( (resp) => {
+        }).catch( (resp: any) => {
           let status = resp.status ?? -1;
           let errorMessage = resp.responseJSON.errorMsg ?? "Unknown error";
           this.infoDiv.html(`${tr('The server found an error')}: <b>(${status}) ${errorMessage}</b>`)
@@ -104,9 +113,9 @@ export class UserProfileEditorDialog {
 
   validateInput() {
     let errors = [];
-    let newEmail = this.inputEmailAddress.val().trim();
-    let pass1 = this.inputPassword1.val().trim();
-    let pass2 = this.inputPassword2.val().trim();
+    let newEmail = getStringVal(this.inputEmailAddress).trim();
+    let pass1 = getStringVal(this.inputPassword1).trim();
+    let pass2 = getStringVal(this.inputPassword2).trim();
     let changes = false;
 
     if (newEmail !== this.currentEmail) {
@@ -137,11 +146,11 @@ export class UserProfileEditorDialog {
     return changes && errors.length === 0;
   }
 
-  isUserNameValid(userName) {
-    return userName.length > 4 && /^[A-Za-z]+$/.test(userName)
-  }
+  // isUserNameValid(userName: string) {
+  //   return userName.length > 4 && /^[A-Za-z]+$/.test(userName)
+  // }
 
-  isEmailValid(email) {
+  isEmailValid(email: string) {
     if (email.length < 5 || email.indexOf('@') === -1 || email[0] === '@' || email[email.length-1] === '@') {
       return false;
     }

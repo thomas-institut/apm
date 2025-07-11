@@ -130,6 +130,4 @@ export class DashboardPage extends NormalPage {
   }
 }
 
-declare const window:any;
-
-window.DashboardPage = DashboardPage
+(window as any).DashboardPage = DashboardPage

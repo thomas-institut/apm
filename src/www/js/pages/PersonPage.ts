@@ -11,14 +11,27 @@ import { MakeUserDialog } from './common/MakeUserDialog'
 import * as Entity from '../constants/Entity'
 import { MetadataEditorSchema } from '../defaults/MetadataEditorSchemata/MetadataEditorSchema'
 import { MetadataEditor2 } from '../MetadataEditor/MetadataEditor2'
+import {SchemaInterface} from "../defaults/MetadataEditorSchemata/SchemaInterface";
 
 const CONTRIBUTION_MCE = 'mcEditions';
 const CONTRIBUTION_TX = 'transcriptions';
 const CONTRIBUTION_CT = 'collationTables';
 export class PersonPage extends NormalPage {
+  private personData: any;
+  private readonly personId: any;
+  private readonly canManageUsers: any;
+  private readonly userData: any;
+  private userContributions: any[];
+  private works: any[];
+  private entityData: any;
+  private schema: SchemaInterface | null = null;
+  private mcEditionsCollapse!: CollapsePanel;
+  private chunkEditionsCollapse!: CollapsePanel;
+  private collationTablesCollapse!: CollapsePanel;
+  private transcriptionsCollapse!: CollapsePanel;
 
 
-  constructor (options) {
+  constructor (options:any) {
     super(options);
 
     let oc = new OptionsChecker({
@@ -138,7 +151,7 @@ export class PersonPage extends NormalPage {
 
   }
 
-  constructCollapse(selector, title, headerClasses = []) {
+  constructCollapse(selector: string, title: string, headerClasses:string[] = []) {
     return new CollapsePanel({
       containerSelector: selector,
       title: title,
@@ -191,7 +204,7 @@ export class PersonPage extends NormalPage {
    * Get
    * @return {Promise<string>}
    */
-  async getUserDataHtml() {
+  async getUserDataHtml(): Promise<string> {
     if (!this.personData.isUser) {
 
       if (this.canManageUsers) {
@@ -269,4 +282,4 @@ export class PersonPage extends NormalPage {
 
 }
 
-window.PersonPage = PersonPage;
+(window as any).PersonPage = PersonPage;

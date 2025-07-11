@@ -3,11 +3,19 @@ import { ConfirmDialog, LARGE_DIALOG } from './ConfirmDialog'
 import { tr } from './SiteLang'
 import { ApmDataProxy } from './ApmDataProxy'
 import { ApmPage } from '../ApmPage'
-import { wait } from '../../toolbox/FunctionUtil.mjs'
+import { wait } from '../../toolbox/FunctionUtil'
+import {getStringVal} from "../../toolbox/UiToolBox";
 
 export class MakeUserDialog {
 
-  constructor (options) {
+  private options: any;
+  private readonly debug: boolean;
+  private dialog!: ConfirmDialog;
+  private currentUserName: string = '';
+  private inputUserName!: JQuery<HTMLElement>;
+  private infoDiv!: JQuery<HTMLElement>;
+
+  constructor (options:any) {
     let oc = new OptionsChecker({
       context: 'MakeUserDialog',
       optionsDefinition: {
@@ -51,11 +59,11 @@ export class MakeUserDialog {
     })
   }
 
-  genOnAccept(resolve) {
+  genOnAccept(resolve: any) {
     return () => {
       if (this.validateInput()) {
         let id = this.options.personData.id;
-        let username = this.inputUserName.val().trim();
+        let username = getStringVal(this.inputUserName).trim();
         this.dialog.hideAcceptButton();
         this.dialog.hideCancelButton();
         let loadingMessage = tr('Making new user');
@@ -67,7 +75,7 @@ export class MakeUserDialog {
             this.dialog.destroy();
             resolve(true)
           })
-        }).catch( (resp) => {
+        }).catch( (resp:any) => {
           let status = resp.status ?? -1;
           let errorMessage = resp.responseJSON.errorMsg ?? tr("Unknown error");
           this.infoDiv.html(`${tr('The server found an error')}: <b>(${status}) ${errorMessage}</b>`)
@@ -91,7 +99,7 @@ export class MakeUserDialog {
 
   validateInput() {
     let errors = [];
-    let newUserName = this.inputUserName.val().trim();
+    let newUserName = getStringVal(this.inputUserName).trim();
     let changes = false;
 
     if (newUserName !== this.currentUserName) {
@@ -112,9 +120,10 @@ export class MakeUserDialog {
     return changes && errors.length === 0;
   }
 
-  isUserNameValid(userName) {
+  isUserNameValid(userName: string) {
     return userName.length > 4 && /^[A-Za-z]+$/.test(userName)
   }
+
   getEditUserProfileFormHtml() {
     return `<div class="new-user-edit-form" style="display: grid; grid-template-columns: 25% auto">
         <div class="new-user-item">${tr('Username')}</div>

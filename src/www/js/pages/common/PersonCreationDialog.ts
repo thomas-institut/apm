@@ -1,13 +1,16 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { ConfirmDialog, LARGE_DIALOG } from './ConfirmDialog'
 import { tr } from './SiteLang'
 import { ApmDataProxy } from './ApmDataProxy'
 import { ApmPage } from '../ApmPage'
-import { wait } from '../../toolbox/FunctionUtil.mjs'
+import { wait } from '../../toolbox/FunctionUtil'
 import { GetDataAndProcessDialog } from './GetDataAndProcessDialog'
+import {getStringVal} from "../../toolbox/UiToolBox";
 
 export class PersonCreationDialog {
-  constructor (options) {
+  private options: any;
+  private readonly debug: boolean;
+  private dialog!: GetDataAndProcessDialog;
+  constructor (options:any) {
     let oc = new OptionsChecker({
       context: 'PersonCreationDialog',
       optionsDefinition: {
@@ -21,7 +24,7 @@ export class PersonCreationDialog {
     this.debug = this.options.debug;
   }
 
-  createPerson() {
+  createPerson():Promise<any> {
     this.dialog = new GetDataAndProcessDialog({
       title: tr('Create Person'),
       processButtonLabel: tr('Create Person'),
@@ -34,12 +37,12 @@ export class PersonCreationDialog {
     </div>`;
       },
       initialData: { name: '', sortName: ''},
-      getDataFromForm: async (dialogSelector) => {
+      getDataFromForm: async (dialogSelector:string) => {
         let inputName = $(`${dialogSelector} input.name-input`);
         let inputSortName = $(`${dialogSelector} input.sort-name-input`);
-        return { name: inputName.val().trim(), sortName: inputSortName.val().trim() };
+        return { name: getStringVal(inputName).trim(), sortName: getStringVal(inputSortName).trim() };
       },
-      validateData: async (data) => {
+      validateData: async (data: any) => {
         let name = data['name'];
         let sortName = data['sortName'];
 
@@ -48,17 +51,17 @@ export class PersonCreationDialog {
         }
         return `<span class="text-danger">Neither name nor sort name should be empty</span>`
       },
-      processData: (data, infoArea) => {
+      processData: (data:any, infoArea:any) => {
         return new Promise((resolve) => {
           let name = data['name'];
           let sortName = data['sortName'];
           infoArea.html(`<span class="text-info">${ApmPage.genLoadingMessageHtml(tr('Creating new person'))}</span>`)
-          this.options.apmDataProxy.createPerson(name, sortName).then( (resp) => {
+          this.options.apmDataProxy.createPerson(name, sortName).then( (resp:any) => {
             infoArea.html(ApmPage.genLoadingMessageHtml(tr('Person successfully created, reloading page')));
             wait(this.options.successWaitTime).then( () => {
               resolve({ success: true, result: resp.tid})
             })
-          }).catch( (resp) => {
+          }).catch( (resp:any) => {
             this.debug && console.log('Response', resp);
             let status = resp.status ?? -1;
             let errorMessage = resp.responseJSON.errorMsg ?? tr("Unknown error");

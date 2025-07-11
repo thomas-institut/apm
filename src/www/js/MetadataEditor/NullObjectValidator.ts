@@ -4,11 +4,11 @@ import { ObjectValidator } from './ObjectValidator'
  * A validator that does not check anything!
  */
 export class NullObjectValidator extends ObjectValidator {
-  validateObject (object) {
+  validateObject (object: number|string):string[] {
     return [];
   }
 
-  getHelp () {
+  getHelp():string {
     return '';
   }
 }

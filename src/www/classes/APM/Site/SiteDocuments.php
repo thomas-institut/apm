@@ -90,13 +90,16 @@ class SiteDocuments extends SiteController
             '',
             'Documents',
             'DocumentsPage',
-            'js/pages/DocumentsPage.js',
+            'js/pages/DocumentsPage.ts',
             [
                 'docs' => $docs,
                 'canManageDocuments' => $canManageDocuments
             ],
             [],
-            [ 'documents_page.css']
+            [
+                '../node_modules/datatables.net-dt/css/jquery.dataTables.min.css',
+                'documents_page.css'
+            ]
         );
     }
 

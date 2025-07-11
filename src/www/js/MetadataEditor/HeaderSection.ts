@@ -4,11 +4,15 @@ import * as Entity from '../constants/Entity'
 import { Tid } from '../Tid/Tid'
 
 export class HeaderSection extends MdeSection {
+  private readonly preDescriptionInfoStringProviders: any[];
+  private readonly postDescriptionInfoStringProviders: any[];
+  private nameElement!: JQuery;
+  private descriptionElement!: JQuery<HTMLElement>;
 
-  constructor (options) {
+  constructor (options:any) {
     super(options);
     this.preDescriptionInfoStringProviders = this.schema['preDescriptionInfoStrings'] ?? [];
-    this.postDescritionInfoStringProviders = this.schema['postDescriptionInfoStrings'] ?? [];
+    this.postDescriptionInfoStringProviders = this.schema['postDescriptionInfoStrings'] ?? [];
   }
 
   async getBootStrapHtml () {
@@ -22,9 +26,9 @@ export class HeaderSection extends MdeSection {
       preDescriptionDiv += '</div>';
     }
     let postDescriptionDiv = '';
-    if (this.postDescritionInfoStringProviders.length !== 0) {
+    if (this.postDescriptionInfoStringProviders.length !== 0) {
       postDescriptionDiv = '<div class="mde-header-post-description">';
-      postDescriptionDiv += this.postDescritionInfoStringProviders.map( (provider) => {
+      postDescriptionDiv += this.postDescriptionInfoStringProviders.map( (provider) => {
         return `<div class="info-string info-string-${provider}"></div>`
       }).join('');
       postDescriptionDiv += '</div>';
@@ -40,14 +44,14 @@ export class HeaderSection extends MdeSection {
   }
 
   async updateInfoStrings() {
-    let allProviders = [ ...this.preDescriptionInfoStringProviders, ...this.postDescritionInfoStringProviders];
+    let allProviders = [ ...this.preDescriptionInfoStringProviders, ...this.postDescriptionInfoStringProviders];
     for (let i = 0; i < allProviders.length; i++) {
       let providerName = allProviders[i];
       $(`${this.containerSelector} div.info-string-${providerName}`).html(await this.options.getInfoString(providerName) ?? '');
     }
   }
 
-  async updateEntityData (newEntityData, updatedPredicates) {
+  async updateEntityData (newEntityData:any, updatedPredicates:number[]): Promise<boolean> {
     await super.updateEntityData(newEntityData, updatedPredicates);
 
     if (updatedPredicates.includes(Entity.pEntityName)) {
@@ -61,9 +65,9 @@ export class HeaderSection extends MdeSection {
     return true;
   }
 
-  getDescription() {
+  getDescription():string {
     let descriptionStatement = EntityData.getSingleCurrentStatement(this.entityData, Entity.pEntityDescription)
-    return descriptionStatement === null ? '' : descriptionStatement.object;
+    return descriptionStatement === null ? '' : descriptionStatement.object.toString();
   }
 
   async init() {

@@ -5,8 +5,17 @@ import { ApmDataProxy } from '../pages/common/ApmDataProxy'
  * A section in the metadata editor
  */
 export class MdeSection {
+  protected options: any;
+  protected entityData: any;
+  protected schema: any;
+  protected title: string;
+  protected containerSelector: any;
+  protected apmDataProxy: ApmDataProxy;
+  protected predicateDefinitions: any;
+  protected qualificationDefinitions: any;
+  private bodyElement!: JQuery<HTMLElement>;
 
-  constructor (options) {
+  constructor (options:any) {
     const oc = new OptionsChecker({
       context: "MdeSection",
       optionsDefinition: {
@@ -20,7 +29,7 @@ export class MdeSection {
          * Async function to be called when the section originates a change in entity data
          * It should return a boolean.
          */
-        onEntityDataChange: { type: 'function', default: async (newData, changedPredicates) => {
+        onEntityDataChange: { type: 'function', default: async (newData:any, changedPredicates:any) => {
           console.log(`Faking onEntityDataChange`, newData, changedPredicates);
           return false;
         }},
@@ -28,7 +37,7 @@ export class MdeSection {
          * async function to be called when the section needs a string given by a named provider
          * it must return a string or null if the provider is undefined
          */
-        getInfoString: { type: 'function', default: async (providerName) => {
+        getInfoString: { type: 'function', default: async (providerName:string) : Promise<string|null> => {
           console.log(`getInfoString not set, called with provider name '${providerName}'`);
           return null;
         }}
@@ -60,10 +69,10 @@ export class MdeSection {
    * Should not be called when the section itself originated the change in data
    *
    * @param {{}}newEntityData
-   * @param {number[]}updatedPredicates a list of predicates that have changed in the new entity data
+   * @param {number[]}_updatedPredicates a list of predicates that have changed in the new entity data
    * @return {Promise<boolean>}
    */
-  async updateEntityData(newEntityData, updatedPredicates) {
+  async updateEntityData(newEntityData: any, _updatedPredicates:number[]): Promise<boolean> {
     this.entityData = newEntityData;
     return true;
   }

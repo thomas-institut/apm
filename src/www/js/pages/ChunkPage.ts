@@ -24,11 +24,11 @@ import {CollapseToggleButton} from '../widgets/CollapseToggleButton'
 import { ConfirmDialog } from './common/ConfirmDialog'
 import { urlGen } from './common/SiteUrlGen'
 import { ApmFormats } from './common/ApmFormats'
-import { TimeString } from '../toolbox/TimeString.mjs'
+import { TimeString } from '../toolbox/TimeString'
 import { tr } from './common/SiteLang'
 import { HeaderAndContentPage } from './HeaderAndContentPage'
 import { Tid } from '../Tid/Tid'
-
+import DataTable from 'datatables.net-dt';
 
 const convertToEditionIcon = '<i class="fas fa-file-alt"></i>'
 const showWitnessInfoIcon = '<i class="fas fa-cogs"></i>'
@@ -39,20 +39,33 @@ const convertToEditionLinkClass =  'cte-link'
  * Mini JS app running in the Chunk Page
  */
 export class ChunkPage extends HeaderAndContentPage {
+  private readonly options: any;
+  private readonly witnessTypeLabels: any;
+  private readonly invalidErrorCodes: string[] = [];
+  private getPresetsUrl: string;
+  private witnessesByLang: any;
+  private ctLinksElement!: JQuery;
+  private chunkIdDiv!: JQuery<HTMLElement>;
+  private witnessListNewDiv!: JQuery<HTMLElement>;
+  private witnessPanelsDiv!: JQuery<HTMLElement>;
+  private editionsDiv!: JQuery<HTMLElement>;
+  private savedCollationTablesDiv!: JQuery<HTMLElement>;
+  private workData: any;
+  private authorInfo: any;
 
-  constructor(options) {
+  constructor(options: any) {
     super(options);
     let optionsChecker = new OptionsChecker({
       context: 'ChunkPage',
       optionsDefinition: {
-        workId : { required: true, type: 'string'},
-        chunkNumber : { required: true, type: 'NumberGreaterThanZero' },
-        showAdminInfo : { type: 'boolean', default: false},
-        witnessInfo :{ type: 'Array', default: []},
-        pageInfo:  { type: 'object', default: []},
-        languageInfo : { type: 'object', default: []},
-        validChunks : {type: 'Array', default: []},
-        savedCollationTables: { type: 'Array', default: []}
+        workId: {required: true, type: 'string'},
+        chunkNumber: {required: true, type: 'NumberGreaterThanZero'},
+        showAdminInfo: {type: 'boolean', default: false},
+        witnessInfo: {type: 'Array', default: []},
+        pageInfo: {type: 'object', default: []},
+        languageInfo: {type: 'object', default: []},
+        validChunks: {type: 'Array', default: []},
+        savedCollationTables: {type: 'Array', default: []}
       }
     })
     this.options = optionsChecker.getCleanOptions(options);
@@ -63,18 +76,15 @@ export class ChunkPage extends HeaderAndContentPage {
     this.witnessTypeLabels = {};
     this.witnessTypeLabels[WitnessType.FULL_TX] = tr('Full Transcription');
 
-    this.docTypes = {
-      'mss' : tr('Manuscript'),
-      'print' : tr('Print')
-    }
 
-    this.invalidErrorCodes = {
-      1: tr('Chunk start not defined'),
-      2: tr('Chunk end not defined'),
-      3: tr('Chunk start after chunk end'),
-      4: tr('Duplicate chunk start marks'),
-      5: tr('Duplicate chunk end marks')
-    }
+    this.invalidErrorCodes = [
+      '',
+      tr('Chunk start not defined'),
+      tr('Chunk end not defined'),
+      tr('Chunk start after chunk end'),
+      tr('Duplicate chunk start marks'),
+      tr('Duplicate chunk end marks')
+    ]
 
     // // shortcuts to options
 
@@ -110,18 +120,18 @@ export class ChunkPage extends HeaderAndContentPage {
 
     this.witnessListNewDiv.html(await this.generateWitnessListNew());
 
-    this.options.witnessInfo.forEach( (info, i) => {
+    this.options.witnessInfo.forEach( (info:any, i:number) => {
       $(`.${convertToEditionLinkClass}-${i}`).on('click', this.genOnClickConvertToEditionButton(i, info))
     });
-    $("#witnessTableNew").DataTable({
+    new DataTable("#witnessTableNew",{
       paging: false,
       searching : false,
       info: false,
       columns : [
-        null, //title
-        null, // witness type
-        null, //doctype
-        null, // language
+        {}, //title
+        {}, // witness type
+        {}, //doctype
+        {}, // language
         { orderable: false}, //pages
         { orderable: false}, // info
         { orderable: false}, // actions
@@ -217,6 +227,7 @@ export class ChunkPage extends HeaderAndContentPage {
       }
     }
 
+    // @ts-ignore
     $('body').popover({
       container: 'body',
       html: true,
@@ -249,9 +260,8 @@ export class ChunkPage extends HeaderAndContentPage {
     <div id="witnesspanels"></div>`
   }
 
-  genOnClickConvertToEditionButton(index, info) {
-    let thisObject = this
-    return (ev) => {
+  genOnClickConvertToEditionButton(index: number, info:any) {
+    return (ev: any) => {
       ev.preventDefault()
       console.log(`Click on link for witness ${index}. Witness Id = ${info.systemId}`)
       console.log(info)
@@ -264,7 +274,7 @@ export class ChunkPage extends HeaderAndContentPage {
         acceptButtonLabel: 'Create',
         hideOnAccept: false,
         cancelButtonLabel: 'Cancel',
-        acceptFunction: (id, dialogObject) => {
+        acceptFunction: (id: any, dialogObject:any) => {
           $.get(
             urlGen.apiWitnessToEdition(info.systemId)
           ).done( function (apiResponse){
@@ -285,19 +295,21 @@ export class ChunkPage extends HeaderAndContentPage {
             console.log(resp)
           })
         },
-        cancelFunction: (id, dialogObject) => {
+        cancelFunction: (id:any, dialogObject:any) => {
           if (dialogObject.editionCreated) {
             console.log(`Cancel WITH edition created`)
             window.location.reload()
           }
         }
       })
+      // @ts-ignore
+      // TODO: fix this, cannot rely on adding a new member to the ConfirmDialog class
       confirmDialog.editionCreated = false
       confirmDialog.show()
     }
   }
 
-  async genSavedCollationTablesDivHtml(type) {
+  async genSavedCollationTablesDivHtml(type:string): Promise<string> {
     let html = ''
 
     const titles = {
@@ -305,9 +317,11 @@ export class ChunkPage extends HeaderAndContentPage {
       edition : tr('Chunk Editions')
     }
 
-    let tables = this.options.savedCollationTables.filter( savedCt => savedCt.type === type)
+    let tables = this.options.savedCollationTables.filter( (savedCt: { type: any }) => savedCt.type === type)
 
     if (tables.length !== 0) {
+      // @ts-ignore
+      // TODO: try to fix this, how can I index titles with a string in TS?
       html += `<h4>${titles[type]}</h4>`
       html += '<ul>'
       for(const ctInfo of tables) {
@@ -324,16 +338,16 @@ export class ChunkPage extends HeaderAndContentPage {
     return html
   }
 
-  getPreviousChunk(chunk, validChunks) {
-    let index = validChunks.findIndex(function(c) { return c===chunk })
+  getPreviousChunk(chunk:any, validChunks:any) {
+    let index = validChunks.findIndex(function(c:any) { return c===chunk })
     if (index===0) {
       return -1;
     }
     return validChunks[index-1]
   }
 
-  getNextChunk(chunk, validChunks) {
-    let index = validChunks.findIndex(function(c) { return c===chunk })
+  getNextChunk(chunk:any, validChunks:any) {
+    let index = validChunks.findIndex(function(c:any) { return c===chunk })
     if (index===(validChunks.length-1)) {
       return -1;
     }
@@ -407,7 +421,7 @@ export class ChunkPage extends HeaderAndContentPage {
    * @return {string}
    * @private
    */
-  getWitnessCard(witnessSystemId, title, lang) {
+  getWitnessCard(witnessSystemId : string, title:string, lang:string): string {
     return `<div class="card witness-card">
       <div class="card-header">
       <p>${title} &nbsp;&nbsp;&nbsp; <a role="button" title="Click to show/hide text" data-toggle="collapse" 
@@ -453,10 +467,10 @@ export class ChunkPage extends HeaderAndContentPage {
       html += '<td>' + this.witnessTypeLabels[witnessInfo['type']] + '</td>';
       html += '<td>' + (await this.apmDataProxy.getEntityName(docInfo['type'])) + '</td>';
       html += '<td>' + (await this.apmDataProxy.getEntityName(witnessInfo['language'])) + '</td>';
-      let info = ''
+      let info:any = ''
       switch (witnessInfo.type) {
         case WitnessType.FULL_TX:
-          info = await this.genFullTxInfo(witnessInfo, i)
+          info = await this.genFullTxInfo(witnessInfo, parseInt(i));
           break
 
         case WitnessType.PARTIAL_TX:
@@ -482,9 +496,9 @@ export class ChunkPage extends HeaderAndContentPage {
     return html
   }
 
-  async genFullTxInfo(witnessInfo, index) {
+  async genFullTxInfo(witnessInfo:any, index:number) {
 
-    let info = []
+    let info:any = []
     let docInfo = witnessInfo["typeSpecificInfo"].docInfo
     let segments = witnessInfo["typeSpecificInfo"]["segments"]
 
@@ -533,17 +547,17 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
     return info
   }
 
-  async getAuthorLink(authorId) {
+  async getAuthorLink(authorId: number) {
     let userData = await this.apmDataProxy.getPersonEssentialData(authorId);
     return `<a href="${urlGen.sitePerson(Tid.toBase36String(userData.tid))}" 
     title="${tr('View person data')}" target="_blank">${userData.name}</a>`
   }
 
-  genPageLink(docId, pageId, column) {
+  genPageLink(docId: any, pageId: number, column: any) {
     if (pageId === 0) {
       return '???'
     }
-    let pia = this.options.pageInfo.filter( r => r.pageId === pageId);
+    let pia = this.options.pageInfo.filter( (r: { pageId: number }) => r.pageId === pageId);
     let pageInfo = null;
     if (pia.length !== 0) {
       pageInfo = pia[0];
@@ -572,7 +586,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
     return '<a href="' + url + '" title="View page ' + foliation + ' col ' + column + ' in new tab" target="_blank">' + label + '</a>'
   }
 
-  getDocLink(docInfo) {
+  getDocLink(docInfo: { id: string; title: string }) {
     return '<a href="' + urlGen.siteDocPage(docInfo.id) + '" title="View document page" target="_blank">' +
       docInfo.title + '</a>'
   }
@@ -657,7 +671,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
              })
         // get applicable presets
         let thisObject = this
-        let apiCallOptions = {
+        let apiCallOptions:any = {
           lang: langInfo[l].code,
           userId: -1,
           witnesses: []
@@ -743,7 +757,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
     }
   }
   
-  fillCollationTableLinks(urls, containerId) {
+  fillCollationTableLinks(urls:any, containerId: string) {
     if (urls.length !== 0 ) {
 
       let html = ''
@@ -840,7 +854,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
            $('#' + liId + ' .cterasepresetbutton').removeClass('disabled')
         })
         let thisObject = this
-        ctSettingsFormManager.on('apply', function (e) {
+        ctSettingsFormManager.on('apply', function (e:any) {
           console.log('Opening automatic collation table')
           console.log(e.detail)
           let formElement = $('#theform')
@@ -853,6 +867,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
                   urlGen.siteCollationTableCustom(thisObject.options.workId, thisObject.options.chunkNumber, urls[u].lang) + '">' +
                   '<input type="text" name="data" value=\'' + JSON.stringify({options: e.detail})  + '\'></form>')
           //console.log('Submitting')
+          // @ts-ignore
           document.getElementById('theform').submit()
         })
         ctSettingsFormManager.on('preset-new', function(){
@@ -864,7 +879,5 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
 
 }
 
-
-
 // Load as global variable so that it can be referenced in the Twig template
-window.ChunkPage = ChunkPage
+(window as any).ChunkPage = ChunkPage

@@ -180,7 +180,7 @@ class SiteChunkPage extends SiteController
             '',
             "Chunk $workId-$chunkNumber",
             'ChunkPage',
-            'js/pages/ChunkPage.js',
+            'js/pages/ChunkPage.ts',
             [
                 'workId' => $workId,
                 'chunkNumber' => intval($chunkNumber),
@@ -193,7 +193,12 @@ class SiteChunkPage extends SiteController
                 'showAdminInfo' => $showAdminInfo,
             ],
             [],
-            ['witness.css', 'act-settingsform.css', 'chunkpage.css']
+            [
+                '../node_modules/datatables.net-dt/css/jquery.dataTables.min.css',
+                'witness.css',
+                'act-settingsform.css',
+                'chunkpage.css'
+            ]
         );
     }
 

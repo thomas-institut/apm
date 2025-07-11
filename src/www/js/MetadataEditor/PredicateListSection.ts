@@ -8,8 +8,14 @@ import { StatementArray } from '../EntityData/StatementArray'
 const ShowAllLabel =  'Show All';
 const ShowActiveDataLabel = 'Show Minimal'
 export class PredicateListSection extends MdeSection {
+  private readonly listType: string;
+  private toggleVisibilityButton!: JQuery<HTMLElement>;
+  private predicates: any;
+  private predicatesDiv!: JQuery<HTMLElement>;
+  private predicateEditors: BasicPredicateEditor[] = [];
+  private showingAll: boolean = false;
 
-  constructor (options) {
+  constructor (options:any) {
     super(options)
 
     const oc = new OptionsChecker({
@@ -35,7 +41,7 @@ export class PredicateListSection extends MdeSection {
     </div>`;
   }
 
-  predicateMustBeDisplayed(predicate) {
+  predicateMustBeDisplayed(predicate:any) : boolean {
     if (predicate.alwaysShow) {
       return true;
     }
@@ -48,7 +54,7 @@ export class PredicateListSection extends MdeSection {
   async init () {
     await super.init();
     this.toggleVisibilityButton = $(`${this.containerSelector} .visibility-toggle-button`);
-    this.predicates = this.schema.predicates.map ( (predicateSchema) => {
+    this.predicates = this.schema.predicates.map ( (predicateSchema: any) => {
       return {
         id: predicateSchema.id,
         predicateDefinition: this.predicateDefinitions[predicateSchema.id],
@@ -67,7 +73,7 @@ export class PredicateListSection extends MdeSection {
     console.log(`Section '${this.schema.title}' predicates`, this.predicates);
     this.predicatesDiv = $(`${this.containerSelector} .mde-section-body-predicates`);
 
-    this.predicatesDiv.addClass(this.getExtraClassForType()).html( this.predicates.map( (predicate, index) => {
+    this.predicatesDiv.addClass(this.getExtraClassForType()).html( this.predicates.map( (predicate: any, index:number) => {
       let classes = [ 'mde-predicate', `mde-predicate-index-${index}`, `mde-predicate-${predicate.id}`];
       if (!this.predicateMustBeDisplayed(predicate)) {
         classes.push('force-hidden');
@@ -76,7 +82,7 @@ export class PredicateListSection extends MdeSection {
       return `<div class="${classes.join(' ')}"></div>`;
     }).join(''))
 
-    this.predicateEditors = this.predicates.map( (predicate, index) => {
+    this.predicateEditors = this.predicates.map( (predicate:any, index:number) => {
       return new BasicPredicateEditor({
         predicateDefinition: predicate.predicateDefinition,
         qualificationDefinitions: this.qualificationDefinitions,
@@ -86,13 +92,13 @@ export class PredicateListSection extends MdeSection {
         label: predicate.label ?? '',
         multiLineInput: predicate.multiLineInput,
         logoUrl: predicate.showLogo ? urlGen.entityLogoUrl(predicate.id) : '',
-        getObjectUrl: async (object) => {
+        getObjectUrl: async (object: number|string) => {
           if (predicate.isRelation) {
-            let data = await this.apmDataProxy.getEntityData(object);
+            let data = await this.apmDataProxy.getEntityData(parseInt(object.toString()));
             let url = urlGen.siteEntityPage(data.type, object);
             return url === '' ? null : url;
           } else {
-            return predicate.showUrl ? urlGen.entityExternalUrl(predicate.id, object) : null;
+            return predicate.showUrl ? urlGen.entityExternalUrl(predicate.id, object.toString()) : null;
           }
         },
         getAllEntitiesForTypes: this.genGetAllEntitiesForTypes(),
@@ -123,7 +129,7 @@ export class PredicateListSection extends MdeSection {
 
   togglePredicateVisibility() {
     if (this.showingAll) {
-      this.predicates.forEach( (predicate, index) => {
+      this.predicates.forEach( (predicate: any, index: number) => {
         let predicateContainer =  $(`${this.containerSelector} .mde-predicate-index-${index}`);
         if (this.predicateMustBeDisplayed(predicate)) {
           predicateContainer.removeClass('force-hidden');
@@ -142,19 +148,19 @@ export class PredicateListSection extends MdeSection {
   }
 
   genGetEntityName() {
-    return async (id) => {
+    return async (id: number) => {
       return await this.apmDataProxy.getEntityName(id);
     }
   }
 
   genGetEntityType() {
-    return async (id) => {
+    return async (id:number) => {
       return await this.apmDataProxy.getEntityType(id);
     }
   }
 
   genGetAllEntitiesForTypes() {
-    return async (types) => {
+    return async (types:number[]) => {
       let entities = [];
       for (let i = 0; i < types.length; i++) {
         entities.push(...await this.apmDataProxy.getEntityListForType(types[i]));
@@ -163,7 +169,7 @@ export class PredicateListSection extends MdeSection {
     }
   }
 
-  async updateEntityData (newEntityData, updatedPredicates) {
+  async updateEntityData (newEntityData: any, updatedPredicates: number[]) {
     await super.updateEntityData(newEntityData, updatedPredicates);
     let promises = [];
     for (let index =0; index > this.predicates.length; index++) {
@@ -184,8 +190,8 @@ export class PredicateListSection extends MdeSection {
     return true;
   }
 
-  genSaveStatement(predicate) {
-    return async (newObject, qualifications, editorialNote, statementId = -1, cancellationNote = '') => {
+  genSaveStatement(predicate: any) {
+    return async (newObject: any, qualifications: any, editorialNote: any, statementId = -1, cancellationNote = '') => {
       let commands = [];
       if (!predicate.predicateDefinition['singleProperty'] && statementId !== -1) {
         // if the predicate is not a single property and there's a statement id,
@@ -211,8 +217,8 @@ export class PredicateListSection extends MdeSection {
     }
   }
 
-  genCancelStatement(predicate) {
-    return async (statementId, cancellationNote) => {
+  genCancelStatement(predicate: any) {
+    return async (statementId:number, cancellationNote: string) => {
       let commands= [{
         command: 'cancel',
         statementId: statementId,
@@ -222,15 +228,15 @@ export class PredicateListSection extends MdeSection {
     }
   }
 
-  async doStatementEditCommands(commands, predicate) {
+  async doStatementEditCommands(commands: any, predicate: any) {
     console.log(`Edit statement`, commands);
     let serverResponse = await this.apmDataProxy.apiEntityStatementsEdit(commands);
     console.log('Response from server', serverResponse);
     if (serverResponse.success === false) {
       return { success: false, msg: serverResponse.errorMessage, statements: []}
     }
-    let minorProblems = [];
-    serverResponse['commandResults'].forEach( (cmdResult) => {
+    let minorProblems: string[] = [];
+    serverResponse['commandResults'].forEach( (cmdResult: any) => {
       if (cmdResult['success'] === false) {
         minorProblems.push(cmdResult['errorMessage']);
       }
@@ -251,7 +257,7 @@ export class PredicateListSection extends MdeSection {
     return `mde-predicate-list-${this.listType}`;
   }
 
-  getPredicateIndexFromId(predicateId) {
+  getPredicateIndexFromId(predicateId:number) {
     for(let index = 0; index < this.predicates.length; index++) {
       if (predicateId === this.predicates[index].predicateDefinition.id) {
         return index;

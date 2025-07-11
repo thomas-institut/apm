@@ -1,9 +1,10 @@
 import { NormalPage } from './NormalPage'
 
 export class HeaderAndContentPage extends NormalPage {
+  protected headerDiv!: JQuery;
 
 
-  constructor (options) {
+  constructor (options:any) {
     super(options)
   }
 

@@ -22,6 +22,7 @@
  * collation table.
  */
 
+// TODO: redo all this with Typescript, it's not as straightforward as other files
 
 import { tr } from './SiteLang'
 
@@ -536,7 +537,7 @@ export class AutomaticCollationTableSettingsForm {
   /**
    * Attaches a callback function to an editor event
    * 
-   * @param {String} eventName
+   * @param {string} eventName
    * @param {function} f
    */
   on(eventName, f) 
@@ -1042,6 +1043,3 @@ export class AutomaticCollationTableSettingsForm {
   }
 }
 
-//  function arraysHaveTheSameValues(array1, array2) {
-//   return array1.sort().join(' ') === array2.sort().join(' ')
-// }

@@ -24,3 +24,5 @@ export const VARIANT = 'variant'
 
 export const FULL_CUSTOM = 'fullCustom'
 export const AUTO = 'auto'
+
+export const AUTO_FOLIATION = 'autoFoliation'

@@ -197,7 +197,8 @@ export class BasicTypesetter extends Typesetter2 {
     this.addPageOutputProcessor(new AddMarginalia({
       textBoxMeasurer: this.options.textBoxMeasurer,
       xPosition: this.options.marginaliaOptions.xPosition,
-      align: this.options.marginaliaOptions.align
+      align: this.options.marginaliaOptions.align,
+      defaultTextDirection: this.options.marginaliaOptions.defaultTextDirection,
     }))
 
 

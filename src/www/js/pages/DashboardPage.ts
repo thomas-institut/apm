@@ -81,7 +81,7 @@ export class DashboardPage extends NormalPage {
    let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo']);
    let newChunkEditionHtml = `<p class="new-mce"><a href="" class="new-chunk-edition-btn" 
         title="${tr("Click to create a new chunk edition")}">${newMceEditionIcon} ${tr('Create new chunk edition')}</a></p>`;
-   this.chunkEditionsCollapse.setContent(listHtml.editions + newChunkEditionHtml);
+   this.chunkEditionsCollapse.setContent(listHtml.singleChunkEditions + newChunkEditionHtml);
    this.collationTablesCollapse.setContent(listHtml.cTables)
 
 

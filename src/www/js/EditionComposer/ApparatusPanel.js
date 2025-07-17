@@ -34,10 +34,10 @@ import {
 } from '../toolbox/Util.mjs'
 import { varsAreEqual } from '../toolbox/ArrayUtil.mjs'
 import * as SubEntryType from '../Edition/SubEntryType.mjs'
+import * as SubEntrySource from '../Edition/SubEntrySource.mjs'
 import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry.mjs'
 import { MultiToggle } from '../widgets/MultiToggle'
 import { SiglaGroup }  from '../Edition/SiglaGroup.mjs'
-import { ApparatusUtil } from '../Edition/ApparatusUtil.mjs'
 import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
 import { ConfirmDialog } from '../pages/common/ConfirmDialog'
 import { WitnessDataEditor } from './WitnessDataEditor'
@@ -599,6 +599,10 @@ export class ApparatusPanel extends  PanelWithToolbar {
              typeLabel = ''
              break
 
+           case SubEntryType.AUTO_FOLIATION:
+              typeLabel = 'FOLIATION';
+              break;
+
            default:
              typeLabel= 'UNKNOWN'
              break
@@ -972,11 +976,10 @@ export class ApparatusPanel extends  PanelWithToolbar {
       }
 
       entryForCtData.subEntries = this.editedEntry.subEntries.map( (subEntry) => {
-        if (subEntry.source === 'auto') {
+        if (subEntry.source === SubEntrySource.AUTO) {
           // build a temporary ApparatusSubEntry object
           // in order to get a valid hash
           let se = new ApparatusSubEntry()
-          se.type = 'auto'
           se.fmtText = subEntry.fmtText
           se.source = subEntry.source
           se.type = subEntry.type
@@ -985,7 +988,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
           se.keyword = subEntry.keyword
           se.tags = [...subEntry.tags]
           return {
-            type: 'auto',
+            source: subEntry.source,
+            type: subEntry.type,
             enabled: subEntry.enabled,
             position: subEntry.position,
             tags: [...subEntry.tags],
@@ -994,7 +998,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
         }
         // custom entry
         return {
-          type: 'fullCustom',
+          type: SubEntryType.FULL_CUSTOM,
           enabled: subEntry.enabled,
           position: subEntry.position,
           fmtText: subEntry.fmtText,

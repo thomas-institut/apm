@@ -27,6 +27,11 @@ export class SiglaGroup {
     this.witnesses = []
   }
 
+  /**
+   *
+   * @param {any}obj
+   * @return {SiglaGroup}
+   */
   static fromObject(obj) {
     let sg = new SiglaGroup()
     if (obj.siglum !== undefined) {

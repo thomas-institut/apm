@@ -77,7 +77,7 @@ export class TypesetterPage extends TypesetterObject {
   setFromObject (object, mergeValues) {
     super.setFromObject(object, mergeValues)
     const template = {  width: 0, height: 0}
-    this._copyValues(template, object, mergeValues)
+    this.copyValues(template, object, mergeValues)
     if (object['items'] !== undefined && Array.isArray(object['items'])) {
       this.items = []
       object['items'].forEach( (itemObject, i) => {

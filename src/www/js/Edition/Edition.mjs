@@ -93,7 +93,6 @@ import { MainTextToken } from './MainTextToken.mjs'
 export class Edition {
 
   constructor () {
-
     this.lang = ''
     this.infoText = 'Empty Edition'
     this.info = {}
@@ -106,10 +105,7 @@ export class Edition {
      */
     this.apparatuses = []
 
-    /**
-     *
-     * @member {EditionWitnessInfo[]}
-     */
+
     this.witnesses = []
 
     /**
@@ -136,6 +132,11 @@ export class Edition {
   getLang() {
     return this.lang
   }
+
+  /**
+   *
+   * @return {string[]}
+   */
   getSigla() {
     return this.witnesses.map( w => w.siglum)
   }

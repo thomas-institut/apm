@@ -30,12 +30,13 @@ import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditio
 import { EditionPreviewPanelNew } from '../EditionComposer/EditionPreviewPanelNew'
 import { PdfDownloadUrl } from '../EditionComposer/PdfDownloadUrl'
 import { Edition } from '../Edition/Edition.mjs'
+import * as ApparatusType from '../constants/ApparatusType'
 
 
 import { defaultLanguageDefinition } from '../defaults/languages'
 import { EditionWitnessInfo } from '../Edition/EditionWitnessInfo'
 import { MainTextTokenFactory } from '../Edition/MainTextTokenFactory.mjs'
-import { pushArray, varsAreEqual } from '../toolbox/ArrayUtil.mjs'
+import { arraysAreEqual, varsAreEqual } from '../toolbox/ArrayUtil.mjs'
 import { Apparatus } from '../Edition/Apparatus'
 import { ApparatusEntry } from '../Edition/ApparatusEntry.mjs'
 import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry.mjs'
@@ -47,6 +48,8 @@ import { WitnessDataItem } from '../Edition/WitnessDataItem.mjs'
 import { urlGen } from '../pages/common/SiteUrlGen'
 import { ApmPage } from '../pages/ApmPage'
 import { ApmFormats } from '../pages/common/ApmFormats'
+import { FmtText } from '../FmtText/FmtText.mjs'
+import * as SubEntryType from '../Edition/SubEntryType'
 
 const defaultIcons = {
   moveUp: '&uarr;',
@@ -101,13 +104,17 @@ export class MceComposer extends ApmPage {
     this.errorDetected = false
     this.errorDetail = ''
 
+    /** @member {number} editionId*/
     this.editionId = this.options.editionId
 
     // create empty MceEdition
-    this.mceData = MceData.createEmpty()
+    /** @member {MceDataInterface} mceData */
+    this.mceData = MceData.createEmpty();
     this.lastSave = ''  // i.e., never
+    /** @member {MceDataInterface} lastSavedMceData */
     this.lastSavedMceData = deepCopy(this.mceData)
-    this.changes = []
+    this.changes = [];
+    /** @member {boolean[]} chunksToUpdateStatuses*/
     this.chunksToUpdateStatuses = []
     this.unsavedChanges = false
     this.saving = false
@@ -122,7 +129,7 @@ export class MceComposer extends ApmPage {
     document.title = this.mceData.title
     this.edition = new Edition()
     this.edition.setLang('la')  // so that there's a lang definition for it
-    this.editions = []
+    this.singleChunkEditions = []
 
     this.cache = new KeyCache()
     this._init().then(
@@ -137,14 +144,19 @@ export class MceComposer extends ApmPage {
   }
 
   async _init() {
-    await this._init_setupUi()
-    await this._init_saveArea()
-    await this._init_loadEdition()
-    await this._init_titleEdit()
+    await this._init_setupUi();
+    await this._init_saveArea();
+    await this._init_loadEdition();
+    await this._init_titleEdit();
   }
 
- _init_loadEdition() {
-    return new Promise( (resolve, reject) => {
+  /**
+   *
+   * @return {Promise<void>}
+   * @private
+   */
+  _init_loadEdition () {
+    return new Promise((resolve, reject) => {
       if (this.editionId === -1) {
         // create empty MceEdition
         this.editionId = -1
@@ -156,20 +168,20 @@ export class MceComposer extends ApmPage {
         console.log(`Loading edition ${this.editionId}`)
         this.editionPanel.updateLoadingMessage(`Loading multi-chunk edition`)
         let apiUrl = urlGen.apiGetMultiChunkEdition(this.editionId)
-        this.apmDataProxy.get(apiUrl).then( (data) => {
+        this.apmDataProxy.get(apiUrl).then((data) => {
           console.log(`Got data from server`)
           console.log(data)
           this.mceData = MceData.fix(data.mceData)
           this.lastSavedMceData = deepCopy(this.mceData)
           this.lastSave = data.validFrom
           document.title = this.mceData.title
-          this.loadAllSingleChunkEditions().then( () => {
-            this.regenerateEdition().then( () => {
+          this.loadAllSingleChunkEditions().then(() => {
+            this.regenerateEdition().then(() => {
               this.previewPanel.updateData(this.edition)
               this.editionPanel.updateData(this.mceData)
-              this.chunkSearchPanel.updateData(this.mceData).then( () => {
-                this.updateSaveUI();
-                resolve();
+              this.chunkSearchPanel.updateData(this.mceData).then(() => {
+                this.updateSaveUI()
+                resolve()
               })
             }, (error) => {
               console.error(error)
@@ -182,7 +194,7 @@ export class MceComposer extends ApmPage {
         })
       }
     })
- }
+  }
 
   /**
    *
@@ -199,7 +211,12 @@ export class MceComposer extends ApmPage {
      deleteChunk: (chunkIndex)=> { return this.chunkDelete(chunkIndex)},
      updateChunkOrder: (newOrder) => { return this.updateChunkOrder(newOrder)},
      updateSigla: (newSigla) => { return this.updateSigla(newSigla)},
-     updateSiglaGroups:  (newSiglaGroups) => { return this.updateSiglaGroups(newSiglaGroups, 'editionPanel')},
+     updateSiglaGroups:  (newSiglaGroups) => {
+       return this.updateSiglaGroups(newSiglaGroups, 'editionPanel')
+     },
+     updateAutoMarginalFoliation: (newAutoMarginalFoliation) => {
+       return this.updateAutoMarginalFoliation(newAutoMarginalFoliation);
+     },
      updateChunkBreak:  (chunkIndex, newBreak) => { return this.updateChunkBreak(chunkIndex, newBreak, 'editionPanel')},
      debug: true
    })
@@ -560,7 +577,7 @@ export class MceComposer extends ApmPage {
       }
       console.log(`Deleting chunk ${chunkIndex}`)
       let removedChunk = this.mceData.chunks.splice(chunkIndex, 1)
-      this.editions.splice(chunkIndex, 1)
+      this.singleChunkEditions.splice(chunkIndex, 1)
       this.chunksToUpdateStatuses.splice(chunkIndex, 1)
 
       this.mceData.chunkOrder = this.mceData.chunkOrder.map ( (index)=> {
@@ -591,15 +608,15 @@ export class MceComposer extends ApmPage {
   chunkUpdate(chunkIndex) {
     return new Promise((resolve, reject) => {
       let tableId = this.mceData.chunks[chunkIndex].chunkEditionTableId
-      this.getSingleChunkDataFromServer(tableId, '').then( (data) => {
-        let ctData = data['ctData']
+      this.getSingleChunkData(tableId, '').then( (data) => {
+        let ctData = data.ctData
         if (ctData.archived)  {
           reject(`Table ${tableId} is now archived`)
           return
         }
 
-        this.mceData.chunks[chunkIndex].version = data['timeStamp']
-        this.mceData.chunks[chunkIndex].title = ctData['title']
+        this.mceData.chunks[chunkIndex].version = data.timeStamp;
+        this.mceData.chunks[chunkIndex].title = ctData.title;
         this.chunksToUpdateStatuses[chunkIndex] = false
 
         // TODO: deal with changes in witnesses
@@ -616,7 +633,7 @@ export class MceComposer extends ApmPage {
         }
         console.log(`Generated edition for table ${tableId}, chunk ${ctData.chunkId}`)
         console.log(edition);
-        this.editions[chunkIndex] = edition;
+        this.singleChunkEditions[chunkIndex] = edition;
         this.editionPanel.updateData(this.mceData);
         this.chunkSearchPanel.updateData(this.mceData).then ( () => {
           this.updateSaveUI();
@@ -637,8 +654,9 @@ export class MceComposer extends ApmPage {
   chunkAdd(tableId, timeString) {
     return new Promise ( (resolve, reject) => {
       // first, get the table from the server
-      this.getSingleChunkDataFromServer(tableId, timeString).then( async (data) => {
-        let ctData = data['ctData']
+      this.getSingleChunkData(tableId, timeString).then( async (data) => {
+        let ctData = data.ctData;
+
         if (ctData.type !== 'edition') {
           reject(`Table ${tableId} is not an edition`)
           return
@@ -647,7 +665,7 @@ export class MceComposer extends ApmPage {
           reject(`Table ${tableId} is archived`)
           return
         }
-        if (! await this.addChunkToMceData(tableId, ctData, data['timeStamp'])){
+        if (! await this.addChunkToMceData(tableId, ctData, data.timeStamp)){
           reject(this.errorDetail)
           return
         }
@@ -677,6 +695,22 @@ export class MceComposer extends ApmPage {
         resolve()
       }, (error) => { reject(error)})
     })
+  }
+
+  async updateAutoMarginalFoliation(newAutoMarginalFoliation) {
+    console.log(`Current auto marginal foliation`, deepCopy(this.mceData.includeInAutoMarginalFoliation));
+    console.log(`Updating auto marginal foliation`, newAutoMarginalFoliation);
+    if (arraysAreEqual(this.mceData.includeInAutoMarginalFoliation, newAutoMarginalFoliation)) {
+      console.log(`No change in auto marginal foliation`);
+      return;
+    }
+    console.log(`Updating auto marginal foliation`, newAutoMarginalFoliation);
+    this.mceData.includeInAutoMarginalFoliation = newAutoMarginalFoliation;
+    this.singleChunkEditions = [];
+    this.editionPanel.updateData(this.mceData);
+    this.updateSaveUI();
+    await this.regenerateEdition();
+    this.previewPanel.updateData(this.edition);
   }
 
   updateSigla(newSigla) {
@@ -719,18 +753,23 @@ export class MceComposer extends ApmPage {
     })
   }
 
+
+
   /**
-   * Fetches a chunk edition from server
-   * @param tableId
-   * @param timeStamp
-   * @param useCache
-   * @return {Promise<{}>}
+   * Fetches chunk ctData.
+   *
+   * If the CtData object is not in the cache, fetches the data from the server
+   *
+   * @param {number}tableId
+   * @param {string}timeStamp
+   * @param {boolean}useCache
+   * @return {Promise<SingleChunkApiData>}
    */
-  getSingleChunkDataFromServer(tableId, timeStamp = '', useCache = true) {
+  getSingleChunkData(tableId, timeStamp = '', useCache = true) {
     return new Promise( (resolve, reject) => {
       let cacheKey = `SERVER-CHUNK-DATA-${tableId}-${timeStamp}`
       if (useCache) {
-        let cachedData = this.cache.retrieve(cacheKey)
+        let cachedData = this.cache.retrieve(cacheKey);
         if (cachedData !== null) {
           resolve(cachedData)
         }
@@ -738,6 +777,7 @@ export class MceComposer extends ApmPage {
       // really get from server
       let url = urlGen.apiGetCollationTable(tableId, TimeString.compactEncode(timeStamp))
       this.apmDataProxy.get(url).then( (data) => {
+        /** @var {SingleChunkApiData} data */
         console.log(`Got data table ${tableId}, timeStamp '${timeStamp}'`)
         console.log(data)
         data.ctData = CtData.getCleanAndUpdatedCtData(data.ctData)
@@ -754,151 +794,227 @@ export class MceComposer extends ApmPage {
     })
   }
 
+  /**
+   * Returns the CtData's includeInAutoFoliation array that is needed to include the witnesses
+   * given in the MceData
+   * @return {number[]}
+   * @param {MceDataInterface}mceData
+   * @param {number}chunkIndex
+   */
+  getSingleChunkIncludeInAutoFoliationArray(mceData, chunkIndex) {
+    // basically, translate the indices in MceData's includeInAutoMarginalFoliation into
+    // indices relative to the chunk's witnesses
+    const chunkWitnessIndices = mceData.chunks[chunkIndex].witnessIndices;
+    return mceData.includeInAutoMarginalFoliation.map( (mceWitnessIndex) => {
+      return chunkWitnessIndices.indexOf(mceWitnessIndex);
+    }).filter( (index) => { return index !== -1});
+  }
+
   async loadAllSingleChunkEditions() {
-    let numEditions = this.mceData.chunks.length
-    for (let i = 0; i < numEditions; i++) {
-      this.editionPanel.updateLoadingMessage(`Loading chunk edition ${i+1} of ${numEditions}`)
+    let numChunks = this.mceData.chunks.length
+    for (let i = 0; i < numChunks; i++) {
+      this.editionPanel.updateLoadingMessage(`Loading chunk edition ${i+1} of ${numChunks}`)
       let chunk = this.mceData.chunks[i]
-      let data = await this.getSingleChunkDataFromServer(chunk.chunkEditionTableId, chunk.version )
-      this.chunksToUpdateStatuses[i] = !data['isLatestVersion']
-      let eg = new CtDataEditionGenerator({ ctData: data['ctData']})
-      let edition
-      try {
-        edition = eg.generateEdition()
-      } catch (e) {
-        console.error(`Error generating edition`)
-        console.error(e)
-        this.errorDetail = `Error generating edition for table id ${chunk.chunkEditionTableId}, chunk ${chunk.chunkId}`
-        return
-      }
-      console.log(`Edition for edition id ${chunk.chunkEditionTableId}`)
-      console.log(edition)
-      this.editions.push(edition)
+      let data = await this.getSingleChunkData(
+        chunk.chunkEditionTableId,
+        chunk.version
+      );
+      this.chunksToUpdateStatuses[i] = !data.isLatestVersion;
     }
   }
 
-  regenerateEdition() {
-    return new Promise( (resolve) => {
-      console.log(`Regenerating edition with ${this.editions.length} chunks`)
-      if (this.editions.length === 0) {
-        console.log(`Nothing to do`)
-        resolve()
-        return
+  async regenerateSingleChunkEdition(chunkIndex) {
+    const chunk = this.mceData.chunks[chunkIndex];
+    if (chunk === undefined) {
+      console.warn(`Attempt to regenerate non-existent chunk ${chunkIndex}`)
+      return;
+    }
+    console.log(`Regenerating single chunk edition for chunk ${chunkIndex} ('${chunk.chunkId}' @ ${chunk.version})`);
+    const data =
+      await this.getSingleChunkData(chunk.chunkEditionTableId, chunk.version, true);
+
+    let singleChunkCtData = data.ctData;
+
+    const amendedIncludeInAutoFoliation = this.getSingleChunkIncludeInAutoFoliationArray(
+      this.mceData,
+      chunkIndex
+    );
+    const currentIncludeInAutoFoliation = deepCopy(singleChunkCtData.includeInAutoMarginalFoliation);
+    console.log(`Changing includeInAutoFoliation`, singleChunkCtData.includeInAutoMarginalFoliation, amendedIncludeInAutoFoliation);
+
+    singleChunkCtData.includeInAutoMarginalFoliation = amendedIncludeInAutoFoliation;
+    let eg = new CtDataEditionGenerator({ ctData:singleChunkCtData})
+    let edition
+    try {
+      edition = eg.generateEdition()
+    } catch (e) {
+      console.error(`Error generating edition`)
+      console.error(e)
+      this.errorDetail = `Error generating edition for table id ${chunk.chunkEditionTableId}, chunk ${chunk.chunkId}`
+      return
+    }
+    console.log(`Edition for edition id ${chunk.chunkEditionTableId}`)
+    console.log(edition);
+    this.singleChunkEditions[chunkIndex] = edition;
+  }
+
+  async regenerateEdition () {
+
+    console.log(`Regenerating edition with ${this.mceData.chunks.length} chunks`)
+     let profiler = new BasicProfiler('RegenerateEdition', true)
+
+    this.edition = new Edition()
+    this.edition.info = {
+      singleChunk: false,
+      source: 'multiChunk',
+      editionId: this.editionId,
+      chunkId: '',
+      baseWitnessIndex: 0
+    }
+    this.edition.infoText = `Multi chunk edition`
+
+    this.edition.siglaGroups = this.mceData.siglaGroups
+    this.edition.witnesses = this.mceData.witnesses.map((w, i) => {
+      return (new EditionWitnessInfo()).setSiglum(this.mceData.sigla[i]).setTitle(w.title)
+    })
+    // merge main text
+    let currentMainTextIndexShift = 0
+    let nextChunkShift = 0
+    /** @var {string[]}*/
+    let foliationMarginalia = []
+    for (let chunkOrderIndex = 0; chunkOrderIndex < this.mceData.chunkOrder.length; chunkOrderIndex++) {
+      let chunkIndex = this.mceData.chunkOrder[chunkOrderIndex];
+      if (this.singleChunkEditions[chunkIndex] === undefined || this.singleChunkEditions[chunkIndex] === null) {
+        await this.regenerateSingleChunkEdition(chunkIndex);
+      }
+      let singleChunkEdition = this.singleChunkEditions[chunkIndex]
+      if (singleChunkEdition === undefined || this.singleChunkEditions[chunkIndex] === null) {
+        console.warn(`Edition for chunk ${chunkIndex} is undefined`);
+        return;
+      }
+      if (chunkOrderIndex === 0) {
+        this.edition.lang = singleChunkEdition.lang
       }
 
-      let profiler = new BasicProfiler('RegenerateEdition', true)
+      currentMainTextIndexShift = nextChunkShift
 
-      this.edition = new Edition()
-      this.edition.info = {
-        singleChunk: false,
-        source: 'multiChunk',
-        editionId: this.editionId,
-        chunkId: '',
-        baseWitnessIndex: 0
-      }
-      this.edition.infoText = `Multi chunk edition`
-      this.edition.lang = this.editions[0].lang
-      this.edition.siglaGroups = this.mceData.siglaGroups
-      this.edition.witnesses = this.mceData.witnesses.map( (w, i) => {
-        return (new EditionWitnessInfo()).setSiglum( this.mceData.sigla[i]).setTitle(w.title)
-      })
-      // merge main text
-      let currentMainTextIndexShift = 0
-      let nextChunkShift = 0
-      for (let chunkOrderIndex = 0; chunkOrderIndex < this.mceData.chunkOrder.length; chunkOrderIndex++) {
-        let chunkIndex = this.mceData.chunkOrder[chunkOrderIndex]
-        let singleChunkEdition = this.editions[chunkIndex]
-        currentMainTextIndexShift = nextChunkShift
+      // Add main text
+      this.edition.mainText.push(...singleChunkEdition.mainText.map((mainTextToken) => {
+        let newToken = MainTextTokenFactory.clone(mainTextToken)
+        newToken.editionWitnessTokenIndex = mainTextToken.editionWitnessTokenIndex + currentMainTextIndexShift
+        return newToken
+      }))
 
-        // Add main text
-        pushArray(this.edition.mainText, singleChunkEdition.mainText.map( (mainTextToken) => {
-          let newToken = MainTextTokenFactory.clone(mainTextToken)
-          newToken.editionWitnessTokenIndex = mainTextToken.editionWitnessTokenIndex + currentMainTextIndexShift
-          return newToken
-        }))
-        nextChunkShift += singleChunkEdition.mainText.length
-        switch(this.mceData.chunks[chunkIndex].break) {
-          case 'paragraph':
-            if (chunkOrderIndex !== this.mceData.chunkOrder.length -1) {
-              // add a paragraph mark if not the last chunk
-              this.edition.mainText.push( MainTextTokenFactory.createParagraphEnd())
-              nextChunkShift++
-            }
-            break
-
-
-          case '':
-            if (chunkOrderIndex !== this.mceData.chunkOrder.length -1) {
-              // add a paragraph mark if not the last chunk
-              this.edition.mainText.push( MainTextTokenFactory.createNormalGlue())
-              nextChunkShift++
-            }
-            break
-
-          case 'page':
-            // TODO: implement page break
-            break
-
-          case 'section':
-            // TODO: implement section break
-            break
-
-
-          default:
-            // nothing to do!
-        }
-        // process apparatuses
-        for (let appIndex = 0; appIndex < singleChunkEdition.apparatuses.length; appIndex++) {
-          let app = singleChunkEdition.apparatuses[appIndex]
-          let currentApp
-          if (this.edition.apparatuses[appIndex] === undefined) {
-            currentApp = new Apparatus()
-            currentApp.type = app.type
-            this.edition.apparatuses.push(currentApp)
-          } else {
-            currentApp = this.edition.apparatuses[appIndex]
+      nextChunkShift += singleChunkEdition.mainText.length
+      switch (this.mceData.chunks[chunkIndex].break) {
+        case 'paragraph':
+          if (chunkOrderIndex !== this.mceData.chunkOrder.length - 1) {
+            // add a paragraph mark if not the last chunk
+            this.edition.mainText.push(MainTextTokenFactory.createParagraphEnd())
+            nextChunkShift++
           }
-          // process entries
-          pushArray(currentApp.entries, app.entries.map( (entry) => {
-            let newEntry = new ApparatusEntry()
-            newEntry.from = entry.from + currentMainTextIndexShift
-            newEntry.to = entry.to + currentMainTextIndexShift
-            newEntry.lemma = entry.lemma
-            newEntry.lemmaText = entry.lemmaText
-            newEntry.postLemma = entry.postLemma
-            newEntry.preLemma = entry.preLemma
-            newEntry.separator = entry.separator
-            newEntry.subEntries = entry.subEntries.map( (subEntry) => {
-              let newSubEntry = new ApparatusSubEntry()
-              newSubEntry.enabled = subEntry.enabled
-              newSubEntry.fmtText = subEntry.fmtText
-              newSubEntry.source = subEntry.source
-              newSubEntry.type = subEntry.type
-              newSubEntry.keyword = subEntry.keyword
-              newSubEntry.witnessData = subEntry.witnessData.map ( (wd) => {
-                let newWd = new WitnessDataItem()
-                newWd.setHand(wd.hand)
-                newWd.setWitnessIndex(this.mceData.chunks[chunkIndex].witnessIndices[wd.witnessIndex])
-                return newWd
-              })
-              return newSubEntry
-            })
-            return newEntry
-          }))
-        }
+          break
+
+        case '':
+          if (chunkOrderIndex !== this.mceData.chunkOrder.length - 1) {
+            // add a paragraph mark if not the last chunk
+            this.edition.mainText.push(MainTextTokenFactory.createNormalGlue())
+            nextChunkShift++
+          }
+          break
+
+        case 'page':
+          // TODO: implement page break
+          break
+
+        case 'section':
+          // TODO: implement section break
+          break
+
+        default:
+        // nothing to do!
       }
+
+      // process apparatuses
+      for (let appIndex = 0; appIndex < singleChunkEdition.apparatuses.length; appIndex++) {
+        let singleChunkApparatus = singleChunkEdition.apparatuses[appIndex]
+        let currentApparatus
+        if (this.edition.apparatuses[appIndex] === undefined) {
+          currentApparatus = new Apparatus()
+          currentApparatus.type = singleChunkApparatus.type
+          this.edition.apparatuses.push(currentApparatus)
+        } else {
+          currentApparatus = this.edition.apparatuses[appIndex]
+        }
+        /** @var {ApparatusEntry[]} */
+        let apparatusEntriesToAdd = singleChunkApparatus.entries.map((entry) => {
+          let newEntry = new ApparatusEntry()
+          newEntry.from = entry.from + currentMainTextIndexShift
+          newEntry.to = entry.to + currentMainTextIndexShift
+          newEntry.lemma = entry.lemma
+          newEntry.lemmaText = entry.lemmaText
+          newEntry.postLemma = entry.postLemma
+          newEntry.preLemma = entry.preLemma
+          newEntry.separator = entry.separator
+          newEntry.subEntries = entry.subEntries.map((subEntry) => {
+            let newSubEntry = new ApparatusSubEntry()
+            newSubEntry.enabled = subEntry.enabled
+            newSubEntry.fmtText = subEntry.fmtText
+            newSubEntry.source = subEntry.source
+            newSubEntry.type = subEntry.type
+            newSubEntry.keyword = subEntry.keyword
+            newSubEntry.witnessData = subEntry.witnessData.map((wd) => {
+              let newWd = new WitnessDataItem()
+              newWd.setHand(wd.hand)
+              newWd.setWitnessIndex(this.mceData.chunks[chunkIndex].witnessIndices[wd.witnessIndex])
+              return newWd
+            })
+            return newSubEntry
+          })
+          return newEntry
+        })
+
+        // process entries
+        if (currentApparatus.type === ApparatusType.MARGINALIA) {
+          // filter out duplicate auto foliation sub entries
+          apparatusEntriesToAdd = apparatusEntriesToAdd
+          .map((entry) => {
+            let filteredSubEntries = []
+            entry.subEntries.forEach((subEntry) => {
+              if (subEntry.type !== SubEntryType.AUTO_FOLIATION) {
+                filteredSubEntries.push(subEntry)
+                return
+              }
+              let text = FmtText.getPlainText(subEntry.fmtText)
+              // console.log(`Testing foliation marginal ${text}`, foliationMarginalia);
+              if (foliationMarginalia.indexOf(text) === -1) {
+                // new foliation, add it
+                // console.log(`Adding foliation ${text}`);
+                foliationMarginalia.push(text)
+                filteredSubEntries.push(subEntry)
+              }
+            })
+            entry.subEntries = filteredSubEntries
+            return entry
+          })
+          .filter((entry) => {
+            return entry.subEntries.length > 0
+          })
+        }
+
+        currentApparatus.entries.push(...apparatusEntriesToAdd)
+      }
+    }
 
       profiler.stop()
       console.log(`New Edition`)
       console.log(this.edition)
-      resolve()
-    })
   }
 
   /**
    * Adds a chunk to the multi-chunk edition
    * @param {number}tableId
-   * @param {{}}ctData
+   * @param {CtDataInterface}ctData
    * @param {string}chunkTimeString
    * @return {Promise<boolean>}
    * @private
@@ -1026,7 +1142,7 @@ export class MceComposer extends ApmPage {
     }
     // console.log(`Generated edition for table ${tableId}, chunk ${ctData.chunkId}`)
     // console.log(edition)
-    this.editions.push(edition)
+    this.singleChunkEditions.push(edition)
     this.editionPanel.updateData(this.mceData)
     await this.chunkSearchPanel.updateData(this.mceData)
     this.updateSaveUI()
@@ -1036,7 +1152,7 @@ export class MceComposer extends ApmPage {
   /**
    * Adds a witness siglum to the multi-chunk edition.
    *
-   * @param {{}} witnessInfo
+   * @param {any} witnessInfo
    * @param {string}siglum
    * @return {number}
    * @private

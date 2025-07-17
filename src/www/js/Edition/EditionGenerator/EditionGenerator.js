@@ -21,6 +21,10 @@ import { Edition } from '../Edition.mjs'
 
 export class EditionGenerator {
 
+  /**
+   *
+   * @param {any} options
+   */
   constructor (options) {
     let optionsSpec = {
       verbose: { type: 'boolean', default: false},
@@ -37,7 +41,11 @@ export class EditionGenerator {
     }
   }
 
+  /**
+   *
+   * @return {Edition}
+   */
   generateEdition() {
-    return new Edition()
+    return new Edition();
   }
 }

@@ -40,7 +40,7 @@ export class TypesetterItem extends TypesetterObject {
 
     /**
      * The item's direction: horizontal, vertical or undefined
-     * @type {number}
+     * @member {number}
      */
     this.direction = direction
 
@@ -61,7 +61,7 @@ export class TypesetterItem extends TypesetterObject {
      * A value of -1 means that the width is not set.  Typesetter classes should decide
      * what to do with undefined widths, but normally some sort of measurement process will be
      * called
-     * @type {number}
+     * @member {number}
      */
     this.width = -1  // not set
 
@@ -80,7 +80,7 @@ export class TypesetterItem extends TypesetterObject {
      * Typesetter classes should decide what to do with undefined heights,
      * but normally some sort of measurement process will be called
      *
-     * @type {number}
+     * @member {number}
      */
     this.height = -1 // not set
 
@@ -90,7 +90,7 @@ export class TypesetterItem extends TypesetterObject {
      *
      * This number is independent of the item's width.
      *
-     * @type {number}
+     * @member {number}
      */
     this.shiftX = 0
 
@@ -100,7 +100,7 @@ export class TypesetterItem extends TypesetterObject {
      *
      * This number is independent of the item's height.
      *
-     * @type {number}
+     * @member {number}
      */
     this.shiftY = 0
 
@@ -249,7 +249,7 @@ export class TypesetterItem extends TypesetterObject {
       direction: TypesetterItemDirection.UNDEFINED,
       textDirection: ''
     }
-    this._copyValues(template, object, mergeValues)
+    this.copyValues(template, object, mergeValues)
     return this
   }
 }

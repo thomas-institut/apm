@@ -30,6 +30,8 @@ import { SiglaGroupsUI } from '../EditionComposer/SiglaGroupsUI'
 import { MultiToggle } from '../widgets/MultiToggle'
 import { urlGen } from '../pages/common/SiteUrlGen'
 import { ApmFormats } from '../pages/common/ApmFormats'
+import { NiceToggle } from '../widgets/NiceToggle'
+import { deepCopy } from '../toolbox/Util'
 
 const defaultIcons = {
   alert: '<i class="fas fa-exclamation-triangle"></i>',
@@ -84,6 +86,13 @@ export class EditionPanel extends Panel {
             return resolvedPromise()
           }
         },
+        updateAutoMarginalFoliation: {
+          type: 'function',
+          default: async (newAutoMarginalFoliation) => {
+            console.log(`New auto marginal foliation`)
+            console.log(newAutoMarginalFoliation)
+          }
+        },
         updateSigla: {
           type: 'function',
           default: (newSigla) => {
@@ -113,6 +122,7 @@ export class EditionPanel extends Panel {
     this.options = oc.getCleanOptions(options)
     this.loading = this.options.showLoadingDataMessage;
 
+    /** @type {MceDataInterface} mceData */
     this.mceData = this.options.mceData
     this.options.getUpdateStatuses().then( (statuses) => {
       this.updateStatuses = statuses
@@ -163,6 +173,12 @@ export class EditionPanel extends Panel {
             </div>`
   }
 
+  /**
+   *
+   * @param {string}loadingMessage
+   * @return {string}
+   * @private
+   */
   __genLoadingStateHtml(loadingMessage) {
     return `<div class='empty-chunks-info'>
         <p class="text-warning">${loadingMessage}...</p>
@@ -204,11 +220,12 @@ export class EditionPanel extends Panel {
   __genSiglaTable() {
     return [
       '<table class="edition-panel-table sigla-table">',
-      '<tr><th>Witness</th><th>Siglum</th></tr>',
+      '<tr><th>Witness</th><th>Siglum</th><th>Marg. Fol.</th><th></th></tr>',
       this.mceData.witnesses.map( (witness, witnessIndex) => {
           return `<tr>
                 <td>${witness.title}</td>
                 <td class="siglum-${witnessIndex}">${this.mceData.sigla[witnessIndex]}</td>
+                <td class="siglum-${witnessIndex}-marg-fol"></td>
                 <td class="siglum-${witnessIndex}-info"></td>
                 </tr>`
       }).join(''),
@@ -276,6 +293,10 @@ export class EditionPanel extends Panel {
     this._setupEventHandlers()
   }
 
+  /**
+   *
+   * @param {MceDataInterface} mceData
+   */
   updateData(mceData) {
     this.mceData = mceData
     // console.log(`Updating mceData, ${this.mceData.chunks.length} chunks`)
@@ -340,7 +361,36 @@ export class EditionPanel extends Panel {
     }
 
     // setup sigla group table
-     this._setupSiglaGroupsTable()
+    this._setupSiglaGroupsTable();
+
+    // set up automatic marginal foliation toggles
+    let includedWitnesses = this.mceData.includeInAutoMarginalFoliation;
+    for (let witnessIndex = 0; witnessIndex < this.mceData.witnesses.length; witnessIndex++) {
+      let toggle = new NiceToggle({
+        containerSelector: `${this.containerSelector} td.siglum-${witnessIndex}-marg-fol`,
+        onPopoverText: `Click to remove automatic marginal foliation entries`,
+        offPopoverText: `Click to generate automatic marginal foliation entries`,
+        onIcon: `<span class="nice-toggle-button-on">ON</span>`,
+        offIcon: `<span class="nice-toggle-button-off">OFF</span>`,
+        initialValue: includedWitnesses.indexOf(witnessIndex) !== -1
+      });
+      toggle.on('toggle', () => {
+        console.log(`Clicked auto fol ${witnessIndex}`);
+        let includeArray = deepCopy(this.mceData.includeInAutoMarginalFoliation);
+        if (toggle.getToggleStatus()) {
+          includeArray.push(witnessIndex);
+        } else {
+          includeArray = includeArray.filter((v) => {
+              return v !== witnessIndex;
+            })
+        }
+        this.options.updateAutoMarginalFoliation(includeArray).then( () => {
+          console.log(`Auto marginal foliation updated`);
+        })
+      })
+    }
+
+
   }
 
   _genOnClickAddSiglaGroupButton() {
@@ -381,7 +431,7 @@ export class EditionPanel extends Panel {
     }
   }
 
-  _redrawSiglaGroupSigla(sigla) {
+  _redrawSiglaGroupSigla() {
     this.mceData.siglaGroups.forEach( (sg, i) => {
       $(`${this.containerSelector} .sigla-group-siglum-${i}`).html(sg.siglum)
       $(`${this.containerSelector} .sigla-group-sigla-${i}`).html(SiglaGroupsUI.getSiglaStringForWitnessIndexArray(this.mceData.sigla, sg.witnesses))

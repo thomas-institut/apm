@@ -1,6 +1,5 @@
 
-import * as ApparatusType from './ApparatusType'
-import { arraysAreEqual } from '../toolbox/ArrayUtil.mjs'
+import * as ApparatusType from '../constants/ApparatusType'
 
 export class Apparatus {
 

@@ -246,6 +246,9 @@ export class ApparatusCommon {
         }
         return `${keywordHtml}${theText}${siglaHtml}`
 
+      case ApparatusSubEntryType.AUTO_FOLIATION:
+        return `${theText}${this.getForcedTextDirectionSpace(textDirection)}<b>${siglaString}</b>`;
+
       default:
         console.warn(`Unsupported apparatus entry type: ${entryType}`)
         return '???'
@@ -323,6 +326,9 @@ export class ApparatusCommon {
           siglaHtml = `${this.getForcedTextDirectionSpace(textDirection)}<span class="force-rtl">${siglaString}</span>`
         }
         return `${keywordHtml}${theText}${siglaHtml}`
+
+      case ApparatusSubEntryType.AUTO_FOLIATION:
+        return `${theText}${this.getForcedTextDirectionSpace(textDirection)}<b>${siglaString}</b>`;
 
       default:
         console.warn(`Unsupported apparatus entry type: ${entryType}`)
@@ -404,6 +410,9 @@ export class ApparatusCommon {
             keywordHtml= `<i>${latinStyle.strings[subEntry.keyword]}</i> `
         }
         return `${keywordHtml}${theText} ${siglaString}`
+
+      case ApparatusSubEntryType.AUTO_FOLIATION:
+        return `${theText}<b>${siglaString}</b>`;
 
       default:
         console.warn(`Unsupported apparatus entry type: ${entryType}`)

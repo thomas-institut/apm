@@ -21,42 +21,18 @@ import { MainTextTokenFactory } from '../MainTextTokenFactory.mjs'
 import * as MainTextTokenType from '../MainTextTokenType.mjs'
 import { Punctuation } from '../../defaults/Punctuation.mjs'
 
-const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
-const INPUT_TOKEN_FIELD_TEXT = 'text'
-const INPUT_TOKEN_FIELD_NORMALIZED_TEXT = 'normalizedText'
-const INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE = 'normalizationSource'
-
-
 export class EditionMainTextGenerator {
 
   /**
-   * Takes an array of witness tokens and creates an array of MainTextSection objects with the
-   * main text, taking care of adding glue in the proper places
-   * @param witnessTokens
-   * @param {boolean}normalized
-   * @param {*[]}normalizationsToIgnore
-   * @param {string}lang
-   */
-  static generateMainText(witnessTokens, normalized = false, normalizationsToIgnore = [], lang = '') {
-
-    return this.generateMainTextTokensWithGlue(witnessTokens, normalized, normalizationsToIgnore, lang)
-  }
-
-  static generatePlainText(witnessTokens) {
-    return this.generateMainTextTokensWithGlue(witnessTokens, false).map( (token) => {
-      return token.getPlainText()
-    }).join('')
-  }
-
-  /**
    *
-   * @param witnessTokens
+   * @param {WitnessTokenInterface[]}witnessTokens
    * @param normalized
    * @param normalizationsToIgnore
    * @param lang
    * @return {*[]}
    */
-  static generateMainTextTokensWithGlue(witnessTokens, normalized = false, normalizationsToIgnore = [], lang = '') {
+  static generateMainText(witnessTokens,
+          normalized = false,  normalizationsToIgnore = [], lang = '') {
     let mainTextTokens = []
     for(let i = 0; i < witnessTokens.length; i++) {
       let witnessToken = witnessTokens[i]
@@ -64,39 +40,61 @@ export class EditionMainTextGenerator {
         console.warn(`Witness token ${i} is undefined`)
         continue
       }
-      let tokenType = witnessToken[INPUT_TOKEN_FIELD_TYPE]
+      let tokenType = witnessToken.tokenType;
       if (tokenType === WitnessTokenType.EMPTY){
-        continue
+        continue;
       }
       if (tokenType === WitnessTokenType.WHITESPACE) {
         // normally, there won't be whitespace in the collation table
         // but just in case, make sure that no raw whitespace appears in the main text
-        continue
+        continue;
       }
 
       if (tokenType === WitnessTokenType.FORMAT_MARK) {
-        mainTextTokens.push(MainTextTokenFactory.createParagraphEnd(witnessToken['style']))
-        continue
+        mainTextTokens.push(MainTextTokenFactory.createParagraphEnd(witnessToken.style))
+        continue;
       }
 
       if (tokenType === WitnessTokenType.NUMBERING_LABEL) {
         // console.log(`Generating main text token for numbering label '${witnessToken.text}'`)
-        mainTextTokens.push( MainTextTokenFactory.createSimpleText(MainTextTokenType.NUMBERING_LABEL, witnessToken.text, i, lang))
+        mainTextTokens.push(
+          MainTextTokenFactory.createSimpleText(
+            MainTextTokenType.NUMBERING_LABEL,
+            witnessToken.text,
+            i,
+            lang)
+        );
         continue
       }
       // token
 
       if (witnessToken.fmtText === undefined) {
         mainTextTokens.push(
-           MainTextTokenFactory.createSimpleText( MainTextTokenType.TEXT, getTextFromWitnessToken(witnessToken, normalized, normalizationsToIgnore), i, lang)
+           MainTextTokenFactory.createSimpleText(
+             MainTextTokenType.TEXT,
+             getTextFromWitnessToken(
+               witnessToken,
+               normalized,
+               normalizationsToIgnore
+             ),
+             i,
+             lang
+           )
         )
 
       } else {
         mainTextTokens.push(
-          MainTextTokenFactory.createWithFmtText( MainTextTokenType.TEXT, witnessToken.fmtText, i, lang)
+          MainTextTokenFactory.createWithFmtText(
+            MainTextTokenType.TEXT,
+            witnessToken.fmtText,
+            i,
+            lang
+          )
         )
       }
     }
+    // TODO: add foliation marks (vertical bars) if applicable
+
     // Add glue tokens
     let mainTextTokensWithGlue = []
     let firstWordAdded = false
@@ -151,19 +149,19 @@ export class EditionMainTextGenerator {
 /**
  *  Gets the text for the given token, the normal text or
  *  the normalized text if there is one
- * @param witnessToken
+ * @param {WitnessTokenInterface}witnessToken
  * @param {boolean} normalized
  * @param {string[]} normalizationSourcesToIgnore
- * @returns {*}
+ * @returns {string}
  */
 function getTextFromWitnessToken(witnessToken, normalized, normalizationSourcesToIgnore = []){
-  let text = witnessToken[INPUT_TOKEN_FIELD_TEXT]
+  let text = witnessToken.text;
   if (!normalized) {
-    return text
+    return text;
   }
-  if (witnessToken[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== undefined && witnessToken[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== '') {
-    let norm = witnessToken[INPUT_TOKEN_FIELD_NORMALIZED_TEXT]
-    let source = witnessToken[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] !== undefined ? witnessToken[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] : ''
+  if (witnessToken.normalizedText !== undefined && witnessToken.normalizedText !== '') {
+    let norm = witnessToken.normalizedText
+    let source = witnessToken.normalizationSource !== undefined ? witnessToken.normalizationSource : ''
     if (source === '' || normalizationSourcesToIgnore.indexOf(source) === -1) {
       // if source === '', this is  a normalization from the transcription
       text = norm

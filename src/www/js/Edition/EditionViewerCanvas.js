@@ -66,7 +66,7 @@ export class EditionViewerCanvas {
         apparatusLineHeightInPts: { type: 'NumberGreaterThanZero', default: 12},
         normalSpaceWidthInEms: { type: 'NumberGreaterThanZero', default: 0.33},
         textToLineNumbersInCm: { type: 'NumberGreaterThanZero', default: 0.5},
-        textToMarginaliaInCm: { type: 'NumberGreaterThanZero', default: 0.5},
+        textToMarginaliaInCm: { type: 'NumberGreaterThanZero', default: 0.3},
         textToApparatusInCm: { type: 'NumberGreaterThanZero', default: 1.5},
         interApparatusInCm: { type: 'NumberGreaterThanZero', default: 0.5},
         debug: {type: 'boolean', default: false}

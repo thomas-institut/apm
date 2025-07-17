@@ -34,7 +34,7 @@ import {
   REALLY_GOOD_POINT_FOR_A_BREAK
 } from '../Typesetter2/Penalty.mjs'
 import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
-import { deepCopy, getTextDirectionForLang, isRtl, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
+import { getTextDirectionForLang, isRtl, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
 import { ObjectFactory } from '../Typesetter2/ObjectFactory.mjs'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
@@ -50,8 +50,8 @@ import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
 import { FontConversions } from '../Typesetter2/FontConversions.mjs'
 import { KeyStore } from '../toolbox/KeyStore.mjs'
 import { ItemLineInfo } from './ItemLineInfo.mjs'
-import { TOKEN_FOR_COUNTING_PURPOSES, TOKEN_OCCURRENCE_IN_LINE } from '../Typesetter2/MetadataKey.mjs'
 import { TypesetterItem } from '../Typesetter2/TypesetterItem.mjs'
+import { deepCopy } from '../toolbox/Util.mjs'
 
 export const MAX_LINE_COUNT = 10000
 const enDash = '\u2013'
@@ -122,7 +122,7 @@ export class EditionTypesetting {
     if (this.consolidatedMarginalia === undefined) {
       this.consolidateMarginalia()
     }
-    console.log(`Getting marginalia for line range ${lineFrom} to ${lineTo}`);
+    // console.log(`Getting marginalia for line range ${lineFrom} to ${lineTo}`);
     return this.consolidatedMarginalia.filter( (m) => {
       return m.lineNumber >= lineFrom && m.lineNumber <= lineTo;
     })
@@ -134,13 +134,13 @@ export class EditionTypesetting {
    */
   consolidateMarginalia() {
     if (this.lineRanges[marginaliaApparatusType] === undefined) {
-      this.consolidatedMarginalia = []
-      return
+      this.consolidatedMarginalia = [];
+      return;
     }
-    let lineRangeKeys = Object.keys(this.lineRanges[marginaliaApparatusType])
-    let marginalia = []
+    let lineRangeKeys = Object.keys(this.lineRanges[marginaliaApparatusType]);
+    let marginalia = [];
     lineRangeKeys.forEach( (lineRangeKey) => {
-      let lineRange = this.lineRanges[marginaliaApparatusType][lineRangeKey]
+      let lineRange = this.lineRanges[marginaliaApparatusType][lineRangeKey];
       marginalia.push(  {
         lineNumber: lineRange.lineFrom,
         marginalSubEntries: lineRange.marginalSubEntries
@@ -334,7 +334,7 @@ export class EditionTypesetting {
           let lineFrom = this.getLineNumberForMainTextIndex(entry.from)
           let lineTo = this.getLineNumberForMainTextIndex(entry.to)
           return {
-            key: this.getRangeKey(lineFrom, lineTo),
+            key: this.getRangeKey(lineFrom.toString(), lineTo.toString()),
             lineFrom: lineFrom,
             lineTo: lineTo,
             entry: entry
@@ -421,10 +421,10 @@ export class EditionTypesetting {
             lineRange.tsItemsExportObjects = this.getItemExportObjectsArray(items)
           }
         }
-        if (apparatus.type === marginaliaApparatusType) {
-          console.log(`Marginalia line ranges cache built`)
-          console.log(this.lineRanges[apparatus.type])
-        }
+        // if (apparatus.type === marginaliaApparatusType) {
+        //   console.log(`Marginalia line ranges cache built`)
+        //   console.log(this.lineRanges[apparatus.type])
+        // }
       }
 
       // At this point all the line ranges in the apparatus should be completely built, we just need
@@ -796,7 +796,9 @@ export class EditionTypesetting {
           items.push(...await this.getTsItemsForSigla(subEntry))
           break
 
-        case 'fullCustom': {
+        case 'fullCustom':
+        case 'autoFoliation':
+        {
           let keyword = subEntry['keyword']
           let keywordString = ''
           // console.log(`Full custom entry; keyword: '${keyword}'`)

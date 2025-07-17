@@ -428,29 +428,29 @@ export class WitnessInfoPanel extends Panel{
     }
 
     // setup auto foliation toggles
-    // let included = this.ctData['includeInAutoMarginalFoliation'];
-    // for (let i = 0; i < this.ctData['witnesses'].length; i++) {
-    //   let toggle = new NiceToggle({
-    //     containerSelector: `${this.containerSelector} td.auto-fol-${i}`,
-    //     onPopoverText: `Click to remove automatic marginal foliation entries`,
-    //     offPopoverText: `Click to generate automatic marginal foliation entries`,
-    //     onIcon: `<span class="nice-toggle-button-on">AUTO</span>`,
-    //     offIcon: `<span class="nice-toggle-button-off">OFF</span>`,
-    //     initialValue: included.indexOf(i) !== -1
-    //   });
-    //   toggle.on('toggle', () => {
-    //     console.log(`Clicked auto fol ${i}`);
-    //     if (toggle.getToggleStatus()) {
-    //       this.ctData['includeInAutoMarginalFoliation'].push(i);
-    //     } else {
-    //       this.ctData['includeInAutoMarginalFoliation'] =
-    //         this.ctData['includeInAutoMarginalFoliation'].filter( (v) => {
-    //           return v !== i;
-    //         })
-    //     }
-    //     this.options.onCtDataChange(this.ctData);
-    //   })
-    // }
+    let included = this.ctData['includeInAutoMarginalFoliation'];
+    for (let i = 0; i < this.ctData['witnesses'].length; i++) {
+      let toggle = new NiceToggle({
+        containerSelector: `${this.containerSelector} td.auto-fol-${i}`,
+        onPopoverText: `Click to remove automatic marginal foliation entries`,
+        offPopoverText: `Click to generate automatic marginal foliation entries`,
+        onIcon: `<span class="nice-toggle-button-on">AUTO</span>`,
+        offIcon: `<span class="nice-toggle-button-off">OFF</span>`,
+        initialValue: included.indexOf(i) !== -1
+      });
+      toggle.on('toggle', () => {
+        console.log(`Clicked auto fol ${i}`);
+        if (toggle.getToggleStatus()) {
+          this.ctData['includeInAutoMarginalFoliation'].push(i);
+        } else {
+          this.ctData['includeInAutoMarginalFoliation'] =
+            this.ctData['includeInAutoMarginalFoliation'].filter( (v) => {
+              return v !== i;
+            })
+        }
+        this.options.onCtDataChange(this.ctData);
+      })
+    }
   }
 
   fetchSiglaPresets() {
@@ -1057,7 +1057,7 @@ export class WitnessInfoPanel extends Panel{
                         <a class="tb-button save-sigla-btn" title="Save current sigla as preset">${icons.savePreset}</a>
         </th>
         <th>Crit. App.</th>
-        <th></th>  <!-- TODO: add heading title, when ready -->
+        <th>Marg. Fol.</th> 
         <th></th>  <!-- Warning td-->
         <th></th>  <!-- Out of date td-->
       </tr>

@@ -2,6 +2,10 @@ import { urlGen } from '../pages/common/SiteUrlGen'
 
 export class PdfDownloadUrl {
 
+  /**
+   *
+   * @return {function(any): Promise<string>}
+   */
   static genGetPdfDownloadUrlForPreviewPanel() {
     return (rawData) => {
       return new Promise( (resolve, reject) => {

@@ -18,15 +18,14 @@
 
 import { PageProcessor } from './PageProcessor.mjs'
 import * as MetadataKey from '../MetadataKey.mjs'
-import { deepCopy } from '../../toolbox/Util.mjs'
 import { ItemList } from '../ItemList.mjs'
 import * as TypesetterItemDirection from '../TypesetterItemDirection.mjs'
 import * as ListType from '../ListType.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { TextBoxMeasurer } from '../TextBoxMeasurer/TextBoxMeasurer.mjs'
 import { Glue } from '../Glue.mjs'
-import { TextBoxFactory } from '../TextBoxFactory.mjs'
 import { ItemArray } from '../ItemArray.mjs'
+
 export class AddMarginalia extends PageProcessor {
 
   constructor (options) {
@@ -38,7 +37,9 @@ export class AddMarginalia extends PageProcessor {
         align: { type: 'string', default: 'right'},
         defaultTextDirection: { type: 'string', default: 'ltr'},
         textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
-        debug: { type: 'boolean', default: false}
+        //TODO: add this to actual constructors using value from stylesheet
+        glueWidth: { type: 'number', default: 5},
+        debug: { type: 'boolean', default: false},
       }
     })
     this.options = oc.getCleanOptions(options)
@@ -52,31 +53,33 @@ export class AddMarginalia extends PageProcessor {
   process (page) {
     return new Promise ( async (resolve) => {
 
+      this.debug = true;
       if (!page.hasMetadata(MetadataKey.PAGE_MARGINALIA)) {
         resolve(page)
         return
       }
 
+      /** @var {PageMarginalia[]} pageMarginalia */
       let pageMarginalia = page.getMetadata(MetadataKey.PAGE_MARGINALIA)
       if (pageMarginalia.length === 0) {
         resolve(page)
         return
       }
+      this.debug && console.log(`Page marginalia`, pageMarginalia);
       if (!page.hasMetadata(MetadataKey.MAIN_TEXT_LINE_DATA)) {
         console.warn(`No main text line data available, marginalia not added`)
         resolve(page)
         return
       }
       this.debug && console.log(`Processing marginalia for page ${page.getMetadata(MetadataKey.PAGE_NUMBER)}`);
+      /** @var {MainTextLineData}mainTextLineData */
       let mainTextLineData = page.getMetadata(MetadataKey.MAIN_TEXT_LINE_DATA);
-      this.debug && console.log(`MainTextLineData`);
-      this.debug && console.log(mainTextLineData);
       let mainTextIndex = mainTextLineData.mainTextListIndex
       if (mainTextIndex === -1) {
         // no main text block, nothing to do
         this.debug && console.log(`No main text block, nothing to do`)
-        resolve(page)
-        return
+        resolve(page);
+        return;
       }
       let mainTextList = page.getItems()[mainTextIndex]
       let mainTextListItems = mainTextList.getList()
@@ -87,8 +90,6 @@ export class AddMarginalia extends PageProcessor {
         marginaliaEntry.lineData = mainTextLineData.lineData[lineDataIndex]
         return marginaliaEntry
       })
-      console.log(`pageMarginalia`)
-      console.log(pageMarginalia)
       let marginaliaList = new ItemList(TypesetterItemDirection.VERTICAL)
       marginaliaList
         .setShiftX(this.options.xPosition)
@@ -99,43 +100,51 @@ export class AddMarginalia extends PageProcessor {
       let previousY = 0
 
       for (let i = 0; i < pageMarginalia.length; i++) {
-        let dataItem = pageMarginalia[i].lineData
+        this.debug && console.log(`Processing marginalia entry ${i}`)
+        let lineNumberData = pageMarginalia[i].lineData;
+        this.debug && console.log(`Previous Y: ${previousY}, line height: ${previousLineHeight}, shiftY: ${previousShiftYAdjustment}`);
 
-        // add inter number glue
-        let glueHeight = dataItem.y - previousY - previousLineHeight + previousShiftYAdjustment
+        // add inter marginalia glue
+        let glueHeight = lineNumberData.y - previousY - previousLineHeight + previousShiftYAdjustment
         if (glueHeight !== 0) {
           let glue = new Glue(TypesetterItemDirection.VERTICAL)
           glue.setHeight(glueHeight)
-          marginaliaList.pushItem(glue)
+          marginaliaList.pushItem(glue);
+          this.debug && console.log(`Adding inter marginalia glue ${glueHeight}`)
         }
 
-        // for now, just display the first sub entry
-        let marginalItemArray = pageMarginalia[i].marginalSubEntries[0]
-        // TODO: deal with bidirectional text
-        marginalItemArray.forEach( (item) => {
-          item.setTextDirection(this.options.defaultTextDirection)
-        })
+        let marginalItemArray = [];
+        for (let j = 0; j < pageMarginalia[i].marginalSubEntries.length; j++) {
+          marginalItemArray.push(...pageMarginalia[i].marginalSubEntries[j]);
+          if (j !== pageMarginalia[i].marginalSubEntries.length - 1) {
+            let interMarginGlue = new Glue();
+            interMarginGlue.setWidth(5);
+            marginalItemArray.push(interMarginGlue);
+          }
+        }
 
+        marginalItemArray = marginalItemArray.map( (item) => {
+          item.setTextDirection(this.options.defaultTextDirection);
+          return item;
+        })
 
         await ItemArray.measureTextBoxes(marginalItemArray, this.options.textBoxMeasurer)
         let entryList = new ItemList(TypesetterItemDirection.HORIZONTAL)
-        // TODO: check this, maybe it should be LTR always,like in the line numbers
         entryList.setList(marginalItemArray)
           .setTextDirection(this.options.defaultTextDirection)
-        let listWidth = entryList.getWidth()
         if (this.options.align === 'right') {
-          let listWidth = entryList.getWidth()
-          entryList.setShiftX(-listWidth)
+          entryList.setShiftX(-entryList.getWidth())
         }
-        let listHeight = entryList.getHeight()
-        console.log(`List height: ${listHeight}`)
-        let lineHeight = mainTextListItems[dataItem.listIndex].getHeight()
+        let listHeight = entryList.getHeight();
+        entryList.setHeight(listHeight);
+        let lineHeight = mainTextListItems[lineNumberData.listIndex].getHeight();
+        this.debug && console.log(`List height: ${listHeight}, Line height: ${lineHeight}, shiftY: ${previousShiftYAdjustment}`)
         if (listHeight !== lineHeight) {
           entryList.setShiftY(lineHeight - listHeight)
           previousShiftYAdjustment = lineHeight - listHeight
         }
         previousLineHeight = lineHeight
-        previousY = dataItem.y
+        previousY = lineNumberData.y
         marginaliaList.pushItem(entryList)
       }
       page.addItem(marginaliaList)

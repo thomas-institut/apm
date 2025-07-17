@@ -172,11 +172,14 @@ export const arabicDeGruyterScheherazadeNew = {
     parent: 'superscript'
   },
   marginalia: {
-    parent: 'default', text: {
-      fontSize: '10 pt',
-    }, paragraph: {
+    parent: 'default',
+    text: {
+      fontSize: '0.7 em',
+    },
+    paragraph: {
       lineSkip: '15 pt'
-    }, glue: {
+    },
+    glue: {
       width: '0.23 em', shrink: '0.02 em', stretch: '0.08 em'
     },
   },

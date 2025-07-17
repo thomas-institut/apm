@@ -87,7 +87,7 @@ def print_vertical_list(context, x, y, vertical_list):
         print_item(context, tmp_x, tmp_y, some_item)
         some_item_height = some_item.get('height')
         if (some_item_height == None):
-            debug_msg('Item in vertical list without height:')
+            print('Item in vertical list without height at x=' + str(tmp_x) + ', y=' + str(tmp_y))
             print(vertical_list.get('metadata'))
             print(some_item.get('class'))
         else:

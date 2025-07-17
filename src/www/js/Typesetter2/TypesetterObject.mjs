@@ -24,14 +24,14 @@ export class TypesetterObject {
     /**
      * Data associated with the object.
      *
-     * @type {{}}
+     * @type {any}
      */
     this.metadata = {}
   }
 
   /**
    *
-   * @return {Object}
+   * @return {{[key:string]: any}}
    */
   getExportObject() {
     let obj = {  class: 'TypesetterObject'}
@@ -45,7 +45,7 @@ export class TypesetterObject {
    * Sets the object's values from an object
    * if mergeValues is true, current values not given in the input object
    * are preserved, otherwise default values will be used
-   * @param {object}object
+   * @param {{[key:string]: any}}object
    * @param {boolean}mergeValues
    */
   setFromObject(object, mergeValues ) {
@@ -63,7 +63,7 @@ export class TypesetterObject {
   /**
    *
    * @param {string}key
-   * @param {object|string|number}someThing
+   * @param {any} someThing
    */
   addMetadata(key, someThing) {
     this.metadata[key] = someThing
@@ -99,12 +99,12 @@ export class TypesetterObject {
 
   /**
    * Utility function to copy scalar values from an object
-   * @param {object}template
-   * @param {object}inputObject
+   * @param{{[key:string]: any}}template
+   * @param {{[key:string]: any}}inputObject
    * @param {boolean} mergeValues
    * @protected
    */
-  _copyValues(template, inputObject, mergeValues) {
+  copyValues(template, inputObject, mergeValues) {
     Object.keys(template).forEach( (key) => {
       let defaultValue = mergeValues ? this[key] : template[key]
       this[key] = inputObject[key] !== undefined ? inputObject[key] : defaultValue

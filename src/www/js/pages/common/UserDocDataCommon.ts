@@ -67,7 +67,7 @@ export class UserDocDataCommon {
     let editions = expandedData.filter( (ctInfo) => { return ctInfo['type'] === 'edition'})
     let cTables = expandedData.filter( (ctInfo) => { return ctInfo['type'] === 'ctable'})
     return {
-      editions: this.__genCtList(editions, workInfoObject, false),
+      singleChunkEditions: this.__genCtList(editions, workInfoObject, false),
       cTables: this.__genCtList(cTables, workInfoObject, true)
     }
   }

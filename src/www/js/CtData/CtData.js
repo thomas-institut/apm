@@ -46,6 +46,7 @@ import { CleanerOnePointFour } from './CtDataCleaner/CleanerOnePointFour'
 import { UpdaterToOnePointFour } from './CtDataUpdater/UpdaterToOnePointFour'
 import {UpdaterToOnePointFive} from "./CtDataUpdater/UpdaterToOnePointFive";
 import {CleanerOnePointFive} from "./CtDataCleaner/CleanerOnePointFive";
+import { Punctuation } from '../defaults/Punctuation.mjs'
 
 
 
@@ -64,7 +65,7 @@ export class CtData  {
 
   /**
    * Returns the pageIds used in every witness in ctData
-   * @param ctData
+   * @param {CtDataInterface}ctData
    */
   static getPageIds(ctData) {
     return ctData['witnesses'].map( (witness) => {
@@ -96,7 +97,13 @@ export class CtData  {
 
   }
 
-
+  /**
+   *
+   * @param {any}sourceCtData
+   * @param {boolean}verbose
+   * @param {boolean}debug
+   * @return {CtDataInterface}
+   */
   static getCleanAndUpdatedCtData(sourceCtData, verbose = true, debug = false) {
 
     function getCleanerForSchemaVersion(sourceSchemaVersion, verbose, debug) {
@@ -217,24 +224,49 @@ export class CtData  {
   }
 
   /**
+   * Finds and returns a non-empty main text token index based on the given parameters.
+   * The method iterates through tokens, skipping those classified as punctuation-only or empty,
+   * moving forward or backward based on the `forward` parameter.
+   *
+   * @param {number} ctIndex - The starting index to search for a non-empty main text token.
+   * @param {number[]} ctIndexToMainTextMap - A mapping array that maps token indices to main text indices.
+   * @param {WitnessTokenInterface[]} baseWitnessTokens - An array of token objects, each with a `text` property.
+   * @param {boolean} forward - A flag indicating the search direction (true for forward, false for backward).
+   * @param {string} [lang=''] - The language code for interpreting punctuation (optional, defaults to an empty string).
+   * @return {number} The index of the found main text token, or -1 if no valid token is found.
+   */
+  static findNonEmptyMainTextToken (ctIndex, ctIndexToMainTextMap, baseWitnessTokens, forward, lang = '') {
+    while (ctIndex >= 0 && ctIndex < ctIndexToMainTextMap.length && (
+      ctIndexToMainTextMap[ctIndex] === -1 ||
+      Punctuation.stringIsAllPunctuation(baseWitnessTokens[ctIndex]['text'], lang))) {
+      ctIndex = forward ? ctIndex + 1 : ctIndex - 1
+    }
+    if (ctIndex < 0 || ctIndex >= ctIndexToMainTextMap.length) {
+      return -1
+    }
+    return ctIndexToMainTextMap[ctIndex]
+  }
+
+
+  /**
    * Updates ctData with the given entry, which is normally produced by the apparatus entry editor
    * in EditionComposer's ApparatusPanel
-   * @param ctData
-   * @param apparatusType
-   * @param {object}editedEntry
+   * @param {CtDataInterface}ctData
+   * @param {string}apparatusType
+   * @param {ApparatusEntry}editedEntry
    */
   static updateCustomApparatuses(ctData, apparatusType, editedEntry) {
     console.log(`Updating customs apparatuses for apparatus '${apparatusType}'`)
     console.log(editedEntry)
 
     // First, let's get the right apparatus
-    let apparatusIndex = ctData['customApparatuses'].map( (app) => {return app.type}).indexOf(apparatusType)
+    let apparatusIndex = ctData.customApparatuses.map( (app) => {return app.type}).indexOf(apparatusType)
 
     if (apparatusIndex === -1) {
       throw new Error(`Unknown apparatus type ${apparatusType}`)
     }
 
-    let customApparatus = ctData['customApparatuses'][apparatusIndex]
+    let customApparatus = ctData.customApparatuses[apparatusIndex]
 
     let newEntry = {
       from: editedEntry.from,
@@ -446,12 +478,13 @@ export class CtData  {
    * Returns an array with the given witness tokens as they are laid out
    * in the collation table, replacing empty references with empty tokens
    *
-   * @param ctData
-   * @param witnessIndex number
+   * @param {CtDataInterface}ctData
+   * @param {number} witnessIndex
+   * @return {WitnessTokenInterface[]}
    */
   static getCtWitnessTokens(ctData, witnessIndex) {
-    return ctData['collationMatrix'][witnessIndex]
-      .map( tokenRef => tokenRef === -1 ? { tokenType : WitnessTokenType.EMPTY } : ctData['witnesses'][witnessIndex]['tokens'][tokenRef])
+    return ctData.collationMatrix[witnessIndex]
+      .map( tokenRef => tokenRef === -1 ? { tokenType : WitnessTokenType.EMPTY } : ctData.witnesses[witnessIndex].tokens[tokenRef])
   }
 
   static getCollationMatrix(ctData) {

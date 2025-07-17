@@ -20,18 +20,16 @@ import * as FmtTokenType from '../FmtTextTokenType.mjs'
 import * as VerticalAlign from '../VerticalAlign.mjs'
 import * as DefaultStyleSheet from '../../Typesetter2/Style/DefaultStyleSheet.mjs'
 
-import {OptionsChecker} from '@thomas-inst/optionschecker'
+import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { Glue } from '../../Typesetter2/Glue.mjs'
-import { TextBoxFactory } from '../../Typesetter2/TextBoxFactory.mjs'
-import { StyleSheet} from '../../Typesetter2/Style/StyleSheet.mjs'
+import { StyleSheet } from '../../Typesetter2/Style/StyleSheet.mjs'
 import { TextBoxMeasurer } from '../../Typesetter2/TextBoxMeasurer/TextBoxMeasurer.mjs'
-import { AsyncFmtTextRenderer} from './AsyncFmtTextRenderer.mjs'
+import { AsyncFmtTextRenderer } from './AsyncFmtTextRenderer.mjs'
 import * as FontStyle from '../FontStyle.mjs'
 import * as FontWeight from '../FontWeight.mjs'
 import { TextBox } from '../../Typesetter2/TextBox.mjs'
 import { FmtTextClassProcessor } from './FmtTextClassProcessor.mjs'
 import { ObjectFactory } from '../../Typesetter2/ObjectFactory.mjs'
-
 
 export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
 
@@ -184,9 +182,7 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
     parts.push(theText.substring(initialsChars.length, theText.length - finalsChars.length))
     parts.push(...finalsChars)
 
-    let returnArray =  this.buildTextBoxArrayFromStringArray(parts, textBox)
-    // console.log(`Splitting text box '${theText}' into ${returnArray.length}: ${returnArray.map( tb => `'${tb.getText()}'`).join(' | ')}`)
-    return returnArray
+    return this.buildTextBoxArrayFromStringArray(parts, textBox)
   }
 
   /**

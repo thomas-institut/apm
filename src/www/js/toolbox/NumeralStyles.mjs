@@ -22,7 +22,7 @@ export class NumeralStyles {
 
   /**
    *
-   * @param n
+   * @param {number}n
    * @returns {string}
    */
   static toDecimalWestern(n) {
@@ -31,7 +31,7 @@ export class NumeralStyles {
 
   /**
    *
-   * @param n
+   * @param {number}n
    * @returns {string}
    */
   static toDecimalArabic(n) {

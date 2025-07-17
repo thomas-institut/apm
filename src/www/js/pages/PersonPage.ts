@@ -136,7 +136,7 @@ export class PersonPage extends NormalPage {
     if (data['tableInfo'].length !== 0) {
       this.userContributions.push(CONTRIBUTION_CT);
       let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo'])
-      this.chunkEditionsCollapse.setContent(listHtml.editions);
+      this.chunkEditionsCollapse.setContent(listHtml.singleChunkEditions);
       this.collationTablesCollapse.setContent(listHtml.cTables);
     }
 

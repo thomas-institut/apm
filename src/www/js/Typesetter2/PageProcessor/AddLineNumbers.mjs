@@ -48,16 +48,17 @@ export class AddLineNumbers extends PageProcessor {
    * Each horizontal list that has the 'type' metadata set with 'line' and has
    * a 'lineNumber' metadata key set will be considered. A line number may be added so that it will print at
    * the same Y position of the line. Line numbers will be added at frequency given in the options.
-   * @param page
+   * @param {TypesetterPage} page
    * @return {Promise<TypesetterPage>}
    */
  process (page) {
    return new Promise( async (resolve) => {
      if (!page.hasMetadata(MetadataKey.MAIN_TEXT_LINE_DATA)) {
-       console.warn(`No main text line data available, line numbers not added`)
-       resolve(page)
+       console.warn(`No main text line data available, line numbers not added`);
+       resolve(page);
      }
 
+     /** @var {MainTextLineData}mainTextLineData */
      let mainTextLineData = page.getMetadata(MetadataKey.MAIN_TEXT_LINE_DATA)
      let mainTextIndex = mainTextLineData.mainTextListIndex
      if (mainTextIndex === -1) {
@@ -67,14 +68,15 @@ export class AddLineNumbers extends PageProcessor {
      }
 
 
-     let data = deepCopy(mainTextLineData.lineData)
+     /** @var {LineNumberData[]}lineNumberData*/
+     let lineNumberData = deepCopy(mainTextLineData.lineData)
      // determine lineNumberShift, a number that will be ADDED to
      // the line number to determine the actual line number to show
-     let lineNumberShift = this.options.lineNumberShift
+     let lineNumberShift = this.options.lineNumberShift;
      if (this.options.resetEachPage) {
-       lineNumberShift -= (data[0].lineNumber -1)
+       lineNumberShift -= (lineNumberData[0].lineNumber -1)
      }
-     data = data.map( (dataItem) => {
+     lineNumberData = lineNumberData.map( (dataItem) => {
        dataItem.lineNumberToShow = dataItem.lineNumber + lineNumberShift
        return dataItem
      }).filter( (dataItem) => {
@@ -84,8 +86,8 @@ export class AddLineNumbers extends PageProcessor {
        return (dataItem.lineNumberToShow % this.options.frequency) === 0;
      })
      this.debug && console.log(`Updated line Number data`)
-     this.debug && console.log(data)
-     if (data.length ===0 ) {
+     this.debug && console.log(lineNumberData)
+     if (lineNumberData.length ===0 ) {
        // no lines with line number metadata, nothing to do
        resolve(page)
        return
@@ -104,8 +106,8 @@ export class AddLineNumbers extends PageProcessor {
      let previousShiftYAdjustment = 0
      let previousLineHeight = 0
      let previousY = 0
-     for (let i = 0; i < data.length; i++) {
-       let dataItem = data[i]
+     for (let i = 0; i < lineNumberData.length; i++) {
+       let dataItem = lineNumberData[i]
 
        // add inter number glue
        let glueHeight = dataItem.y - previousY - previousLineHeight + previousShiftYAdjustment

@@ -175,7 +175,7 @@ export class TextBox extends Box {
       fontWeight: '',
 
     }
-    this._copyValues(template, object, mergeValues)
+    this.copyValues(template, object, mergeValues)
     return this
   }
 }

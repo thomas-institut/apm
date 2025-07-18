@@ -1,5 +1,5 @@
-import {Statement, StatementInterface} from './Statement'
-
+import {Statement} from './Statement'
+import {StatementDataInterface} from "../../schema/Schema";
 
 
 export interface EditOperation {
@@ -11,35 +11,39 @@ export interface EditOperation {
 
 export class StatementArray {
 
-
-
   /**
    * Returns an array with an ordered list of edit operations inferred from the given
    * statement array.
    *
-   * Each edit operation is an object of the form
-   *
-   *   *{ operation: 'creation'|'cancellation', timestamp: someTimestamp; statementId: someId}*
-   *
    * @param statementArray
    */
-  static getEditHistory(statementArray: StatementInterface[]):EditOperation[] {
+  static getEditHistory(statementArray: StatementDataInterface[]): EditOperation[] {
     let ops: EditOperation[] = [];
-    statementArray.forEach( (statement) => {
-      ops.push({ operation: 'creation', timestamp: Statement.getEditTimestamp(statement), statementId: statement.id , n:0});
+    statementArray.forEach((statement) => {
+      ops.push({
+        operation: 'creation',
+        timestamp: Statement.getEditTimestamp(statement),
+        statementId: statement.id,
+        n: 0
+      });
       if (statement['cancellationId'] !== -1) {
         let cancellationTimestamp = Statement.getCancellationTimestamp(statement);
         if (cancellationTimestamp !== null) {
-          ops.push({ operation: 'cancellation', timestamp: cancellationTimestamp, statementId: statement.id, n:0});
+          ops.push({
+            operation: 'cancellation',
+            timestamp: cancellationTimestamp,
+            statementId: statement.id,
+            n: 0
+          });
         }
       }
-
     });
-    ops.sort( (a, b) => {
+    ops.sort((a, b) => {
       if (a.timestamp === b.timestamp) {
         return a.statementId - b.statementId;
       }
-      return a.timestamp - b.timestamp});
+      return a.timestamp - b.timestamp
+    });
     return ops;
   }
 
@@ -47,13 +51,13 @@ export class StatementArray {
    * Returns all non-cancelled statements in the array
    * @param statementArray
    */
-  static getCurrentStatements(statementArray: StatementInterface[]): StatementInterface[] {
-    return statementArray.filter( (statement) => { return statement['cancellationId'] === -1});
+  static getCurrentStatements(statementArray: StatementDataInterface[]): StatementDataInterface[] {
+    return statementArray.filter( (statement) => { return statement.cancellationId === -1});
   }
 
-  static getStatementsForPredicate(statementArray: StatementInterface[], predicate: number, includeCancelled = false): StatementInterface[] {
+  static getStatementsForPredicate(statementArray: StatementDataInterface[], predicate: number, includeCancelled = false): StatementDataInterface[] {
     return statementArray.filter( (statement) => {
-        return statement.predicate === predicate && (statement['cancellationId'] === -1 || includeCancelled );
+        return statement.predicate === predicate && (statement.cancellationId === -1 || includeCancelled );
       });
   }
 

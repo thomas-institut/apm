@@ -7,6 +7,11 @@
     "homepage": "https://averroes.uni-koeln.de",
     "license": "GPL-3.0-or-later",
 
+
+    "scripts" : {
+        "auto-schema": "./vendor/bin/openapi classes -o schema/auto/auto-schema.yaml"
+    },
+
     "require": {
         "php": ">=8.3",
         "ext-pdo": "*",
@@ -31,11 +36,10 @@
         "thomas-institut/timestring" : "^v1.3",
         "thomas-institut/datacache": "^v1.0.1",
         "monolog/monolog": "^3.0",
-        "swaggest/json-schema": "^v0.12.43",
-        "opensearch-project/opensearch-php": "^2.0",
         "php-http/curl-client": "^2.3",
         "typesense/typesense-php": "^4.9",
-        "guzzlehttp/guzzle": "^7.5"
+        "guzzlehttp/guzzle": "^7.5",
+        "zircote/swagger-php": "^5.1"
     },
 
     "require-dev": {

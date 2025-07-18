@@ -23,7 +23,8 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use RuntimeException;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
-
+use OpenApi\Attributes as OA;
+use ThomasInstitut\EntitySystem\EntityData;
 
 class ApiEntity extends ApiController
 {
@@ -356,13 +357,26 @@ class ApiEntity extends ApiController
            $responseData, $httpStatus);
     }
 
+    #[OA\Get(
+        path: '/api/entity/{tid}/data',
+        description: 'Returns the entity data for the given entity ID',
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Success',
+                content: new OA\MediaType(
+                    mediaType: 'application/json',
+                    schema: new OA\Schema(ref: EntityData::class)
+                )
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Entity not found'
+            )
+        ]
+    )]
+
     /**
-     *
-     * API call:
-     *
-     *    GET  .../api/entity/{tid}/data
-     *
-     * Returns the entity data for the given entity ID
      *
      * @param Request $request
      * @param Response $response

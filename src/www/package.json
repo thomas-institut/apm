@@ -9,7 +9,8 @@
     "test": "vitest run",
     "test-watch": "vitest",
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "gen-schema": "openapi-typescript ./schema/schema.yaml --root-types=true --properties-required-by-default=true -o ./schema/auto/auto-schema.d.ts"
   },
   "author": "Rafael Nájera <rafael.najera@uni-koeln.de>",
   "license": "GPL-3.0",
@@ -37,6 +38,7 @@
   "devDependencies": {
     "@types/jquery": "^3.5.5",
     "happy-dom": "^18.0.1",
+    "openapi-typescript": "^7.8.0",
     "standard": "^17.0.0",
     "typescript": "^5.8.3",
     "vite": "^7.0.0",

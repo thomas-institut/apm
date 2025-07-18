@@ -41,10 +41,14 @@ use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\EntitySystem\Tid;
 
-/**
- * API Controller class
- *
- */
+use OpenApi\Attributes as OA;
+
+#[OA\Info(
+    version: '1.0',
+    description: "Internal API for APM's frontend",
+    title: 'APM API'
+)
+]
 abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 {
 

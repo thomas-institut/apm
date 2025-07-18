@@ -24,6 +24,7 @@ import { urlGen } from './SiteUrlGen'
 import { wait } from '../../toolbox/FunctionUtil'
 import { SimpleLockManager } from '../../toolbox/SimpleLockManager'
 import * as Entity from '../../constants/Entity'
+import {EntityDataInterface} from "../../../schema/Schema";
 
 const TtlOneMinute = 60 // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -42,6 +43,7 @@ const EntityTypeCacheKeyPrefix = 'EntityType'
 const EntityDataCacheKeyPrefix = 'EntityData'
 
 const MaxSystemEntityId = 10000000;
+
 
 /**
  * Class to wrap most API calls to the APM and provide caching
@@ -376,13 +378,15 @@ export class ApmDataProxy {
   getTtlWithVariability(ttl: number, variability = 5) {
     return  ttl * (1-variability/100) + (ttl/variability)*Math.random();
   }
-  async getEntityDataRaw(tid: number) {
+
+
+  async getEntityDataRaw(tid: number): Promise<EntityDataInterface> {
     console.log(`Fetching data for entity ${tid} from the server`);
     let url = urlGen.apiEntityGetData(tid);
     // use a lock here too, just in case some guerrilla function somewhere
     // else in the code is trying to do the same
     await this.lockManager.getLock(url);
-    let data = await $.get(urlGen.apiEntityGetData(tid));
+    let data: EntityDataInterface = await $.get(urlGen.apiEntityGetData(tid));
     this.lockManager.releaseLock(url);
     return data;
   }

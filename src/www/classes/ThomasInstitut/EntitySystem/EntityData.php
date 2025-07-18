@@ -2,48 +2,57 @@
 
 namespace ThomasInstitut\EntitySystem;
 
-use ThomasInstitut\Exportable\Exportable;
-use ThomasInstitut\Exportable\ExportableObject;
 
+use OpenApi\Attributes as OA;
+
+#[OA\Schema()]
+/**
+ * Entity Data
+ */
 class EntityData
 {
+    #[OA\Property()]
     /**
      * Entity id
-     * @var int
      */
     public int $id = -1;
 
 
+    #[OA\Property()]
     /**
      * The entity's type
-     * @var int
      */
     public int $type = -1;
 
+    #[OA\Property()]
     /**
      * The entity's name
-     * @var string
      */
     public string $name = '';
+
+    #[OA\Property(
+        description: "Statements in which the entity appears as a subject.",
+    )]
     /**
-     * @var StatementData[]
+     * @var StatementData[] $statements
      */
     public array $statements = [];
+
+    #[OA\Property()]
     /**
-     * @var StatementData[]
+     * @var StatementData[] $statementsAsObject
      */
     public array $statementsAsObject = [];
 
-
+    #[OA\Property(
+        description: "If the entity is merged, the non-merged entity into which this entity resolves. Null otherwise",
+        nullable: true
+    )]
     /**
-     * Null is the entity is not merged.
-     *
-     * If the entity is merged, the currently non-merged entity into which this entity resolves.
-     * This may not be the same as the entity into which this entity was merged into originally.
-     * If A was merged into B, and later B was merged into C, the value here is C, not B.
-     * The original mergeInto entity can found as the object of the predicate MergedInto in the statements.
-     *
-     * @var int|null
+     * The currently non-merged entity into which this entity resolves may not be the same as the entity into which
+     * this entity was merged into originally. If A was merged into B, and later B was merged into C,
+     * the value here is C, not B. The original mergeInto entity can found as the object of the predicate
+     * MergedInto in the statements.
      */
     public ?int $mergedInto = null;
 

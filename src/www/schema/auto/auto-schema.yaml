@@ -1,0 +1,70 @@
+openapi: 3.0.0
+info:
+  title: 'APM API'
+  description: "Internal API for APM's frontend"
+  version: '1.0'
+paths:
+  '/api/entity/{tid}/data':
+    get:
+      description: 'Returns the entity data for the given entity ID'
+      operationId: fd64be920d5fd37a4a8509286bcb8e47
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityData'
+        '404':
+          description: 'Entity not found'
+components:
+  schemas:
+    EntityData:
+      description: 'Entity Data'
+      properties:
+        id:
+          description: 'Entity id'
+          type: integer
+        type:
+          description: "The entity's type"
+          type: integer
+        name:
+          description: "The entity's name"
+          type: string
+        statements:
+          description: 'Statements in which the entity appears as a subject.'
+          type: array
+          items:
+            $ref: '#/components/schemas/StatementData'
+        statementsAsObject:
+          description: $statementsAsObject
+          type: array
+          items:
+            $ref: '#/components/schemas/StatementData'
+        mergedInto:
+          description: 'If the entity is merged, the non-merged entity into which this entity resolves. Null otherwise'
+          type: integer
+          nullable: true
+      type: object
+    StatementData:
+      properties:
+        id:
+          type: integer
+        subject:
+          type: integer
+        predicate:
+          type: integer
+        object:
+          description: 'The object of the statement: an entity id or a literal value.'
+          oneOf:
+            -
+              type: string
+            -
+              type: integer
+        statementMetadata:
+          type: array
+        cancellationId:
+          type: integer
+        cancellationMetadata:
+          type: array
+      type: object

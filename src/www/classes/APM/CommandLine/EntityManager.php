@@ -117,7 +117,7 @@ class EntityManager extends CommandLineUtility
                     print("The second argument can only be 'v' for verbose. You will find some help via 'entitymanager -h'.\n");
                     break;
                 }
-                $result = $this->createDocumentEntitiesFromFile($verbose);
+                $result = $this->createDocumentEntitiesWithPredicatesFromDareData($verbose);
                 print_r($result);
                 break;
 
@@ -144,8 +144,8 @@ Available operations are:
   createCity [arg1] - creates an entity of the type ,city‘ with the given english name and adds german and italian names automatically
   createInstitution [arg1] - creates an entity of the type ,institution‘ with the given english name
   createDocument [arg] - creates an entity of the type ,document‘ for the given bilderberg id
-  buildLocations [v(erbose)] - creates country, city, institution and document entitites from the data of a given csv-file, which was created by the locationdatagrabber.
-  buildDocuments [v(erbose)] - creates document entitites and sets their predicates from the data of a given csv-file, which was created by the locationdatagrabber.
+  buildLocations [v(erbose)] - creates country, city, institution and document entitites from the data of a csv-file, which was created by the locationdatagrabber buildEssentials command.
+  buildDocuments [v(erbose)] - creates document entitites with a lot of predicates, retrieved from the dare documents table.
 END;
 
         print($help);
@@ -346,56 +346,53 @@ SPARQL;
         $detectedCountries = [''];
         $detectedCities = [''];
         $detectedInstitutions = [''];
-        $detectedBilderbergIds = [];
         $detectedTriples = [];
 
         // read csv-file
-        $filename = 'LocationData-DARE-APM.csv';
-        $data = $this->readCsvWithDoubleHeaderToObjectArray($filename);
+        $filename = '/var/apm/share/locationDataToBeRevised.csv';
+        $data = $this->readCsvWithSingleHeaderToObjectArray($filename);
 
         // make counters for documentation of results
         $numCreatedCountries = 0;
         $numCreatedCities = 0;
         $numCreatedInstitutions = 0;
-        $numCreatedDocuments = 0;
         $numCreatedRelations = 0;
         $numSkippedRows = 0;
+        $numSkippedCells = 0;
 
         // count table rows
         $numRows = count($data);
 
-        print("There are $numRows documents to process.\nThe processing begins after having collected all data.\n");
-        print($verbose);
+        print("There are $numRows rows to process.\nThe processing begins after having collected all data.\n");
+        // print($verbose);
 
         // create entities from the data and make the corresponding statements
         foreach ($data as $i=>$row) {
 
-            printf("    %d documents processed\r", $i);
-
+            printf("    %d rows processed\r", $i);
 
             // extract relevant entity data
-            $bilderbergId = $row->bilderbergId;
-
             $institutionName = '';
             $cityName = '';
             $countryName = '';
+            $locationCode = $row->locationCodeCountryCityInstitution;
 
-            if ($row->revisionCorrection->institutionReviewed !== '') {
-                $institutionName = $row->revisionCorrection->institutionReviewed;
+            if ($row->institutionDare !== '') {
+                $institutionName = $row->institutionDare;
             }
 
-            if ($row->revisionCorrection->cityReviewed !== '') {
-                $cityName = $row->revisionCorrection->cityReviewed;
+            if ($row->cityWikidataEnglish !== '') {
+                $cityName = $row->cityWikidataEnglish;
             }
 
-            if ($row->revisionCorrection->countryReviewed !== '') {
-                $countryName = $row->revisionCorrection->countryReviewed;
+            if ($row->countryWikidataEnglish !== '') {
+                $countryName = $row->countryWikidataEnglish;
             }
 
             $detectedTriple = [$countryName, $cityName, $institutionName];
 
             if ($verbose) {
-                print("detected document: $bilderbergId\n");
+                print("detected location code: $locationCode\n");
             }
 
             // check if the detected triple is empty or has not already been processed
@@ -413,13 +410,15 @@ SPARQL;
                             print($result['message']);
                         }
                         $countryTid = $result['tid'];
-                        if (str_starts_with($result['message'], 'NO')) {
+                        if (!str_starts_with($result['message'], "\tNO")) {
                             $numCreatedCountries++;
                         }
                         $this->addAltNamesToEntity($countryName, $countryTid, Entity::tCountry, $creatorTid, $verbose);
                     } else if ($verbose) {
                         print("\tcountry with name $countryName already created.\n");
                     }
+                } else {
+                    $numSkippedCells++;
                 }
 
                 if ($cityName !== '') {
@@ -429,13 +428,15 @@ SPARQL;
                             print($result['message']);
                         }
                         $cityTid = $result['tid'];
-                        if (str_starts_with($result['message'], 'NO')) {
+                        if (!str_starts_with($result['message'], "\tNO")) {
                             $numCreatedCities++;
                         }
                         $this->addAltNamesToEntity($cityName, $cityTid, Entity::tCity, $creatorTid, $verbose);
                     } else if ($verbose) {
                         print("\tcity with name $cityName already created.\n");
                     }
+                } else {
+                    $numSkippedCells++;
                 }
 
                 if ($institutionName !== '') {
@@ -445,12 +446,14 @@ SPARQL;
                             print($result['message']);
                         }
                         $institutionTid = $result['tid'];
-                        if (str_starts_with($result['message'], 'NO')) {
+                        if (!str_starts_with($result['message'], "\tNO")) {
                             $numCreatedInstitutions++;
                         }
                     } else if ($verbose) {
                         print("\tinstitution with name $institutionName already created.\n");
                     }
+                } else {
+                    $numSkippedCells++;
                 }
 
                 // save the entity names in the detected data arrays
@@ -460,58 +463,41 @@ SPARQL;
                 $detectedInstitutions[] = $institutionName;
 
                 // associate the entities to each other
-                $this->es->makeStatement($countryTid, Entity::pContains, $cityTid, $creatorTid, 'Associating country with city.');
-                $this->es->makeStatement($institutionTid, Entity::pLocatedIn, $cityTid, $creatorTid, 'Associating institution with city.');
-                $numCreatedRelations++;
-                $numCreatedRelations++;
+                if (!($countryName === '' or $cityName === '')) {
+                    $this->es->makeStatement($countryTid, Entity::pContains, $cityTid, $creatorTid, 'Associating country with city.');
+                    $numCreatedRelations++;
 
-                if ($verbose) {
-                    print("\tassociated: $countryName-->contains-->$cityName, $institutionName-->locatedIn-->$cityName.\n");
+
+                    if ($verbose) {
+                        print("\tassociated: $countryName-->contains-->$cityName.\n");
+                    }
                 }
+
+                if (!($cityName === '' or $institutionName === '')) {
+                    $this->es->makeStatement($institutionTid, Entity::pLocatedIn, $cityTid, $creatorTid, 'Associating institution with city.');
+                    $numCreatedRelations++;
+
+
+                    if ($verbose) {
+                        print("\tassociated: $institutionName-->locatedIn-->$cityName.\n");
+                    }
+                }
+
             } else if ($detectedTriple === ['', '', ''] and $verbose) {
                 print("\tNO location data detected.\n");
             } else if ($verbose) {
                 print("\tNO NEW location data detected.\n");
             }
 
-            // create document entity, if not already existing
-            if (!in_array($bilderbergId, $detectedBilderbergIds)) {
-                $result = $this->createDocument($bilderbergId);
-                if ($verbose) {
-                    print($result['message']);
-                }
-                $docTid = $result['tid'];
-                $detectedBilderbergIds[] = $bilderbergId;
-                if (str_starts_with($result['message'], "NO")) {
-                    $numCreatedDocuments++;
-                }
-            } else if ($verbose) {
-                print("\tdocument with name $bilderbergId already exists. no entity creation done.\n");
-            }
-
-            // associate document with institution
-            if ($institutionName !== '') {
-                $this->es->makeStatement($docTid, Entity::pStoredAt, $institutionTid, $creatorTid, 'Associating document with institution.');
-                $numCreatedRelations++;
-                if ($verbose) {
-                    print("\tassociated: $bilderbergId-->storedAt-->$institutionName.\n");
-                }
-            }
-
-            $numDocsRemaining = $numRows - $i - 1;
-
-            if ($verbose) {
-                print("There are $numDocsRemaining documents remaining to be processed.\n");
-            }
         }
 
         // display results to the user
-        print ("FINISHED ENTITY CREATIONS AND ASSOCIATIONS!\n");
-        print("\t$numCreatedDocuments documents created.\n\t
-       $numCreatedCountries countries created.\n\t
+        print ("FINISHED LOCATION ENTITY CREATIONS AND ASSOCIATIONS!\n\t");
+        print("$numCreatedCountries countries created.\n\t
        $numCreatedCities cities created.\n\t
        $numCreatedInstitutions institutions created.\n\t
        $numCreatedRelations relations between entities created.\n\t
+       $numSkippedCells cells skipped because of missing data\n\t
        $numSkippedRows of $numRows rows skipped because of missing data.\n");
     }
 
@@ -559,7 +545,16 @@ SPARQL;
         }
     }
 
-    private function createDocumentEntitiesFromFile($verbose=false, int $creatorTid=-1): array
+    /**
+     * creates document entities with predicates out of the dare documents table data
+     * @param $verbose
+     * @param int $creatorTid
+     * @return int[]
+     * @throws \APM\EntitySystem\Exception\InvalidObjectException
+     * @throws \APM\EntitySystem\Exception\InvalidStatementException
+     * @throws \APM\EntitySystem\Exception\InvalidSubjectException
+     */
+    private function createDocumentEntitiesWithPredicatesFromDareData($verbose=false, int $creatorTid=-1): array
     {
 
         $results = ['processedDocs' => 0, 'docsCreated' => 0, 'docsAlreadyExisted' => 0,  'setPredicates' => 0, 'skippedPredicates' => 0];
@@ -757,7 +752,7 @@ SPARQL;
      */
     private function getDataFromDareDocumentsTable() : array
     {
-        $docsFromDareFile = "documents_dare.csv";
+        $docsFromDareFile = "/var/apm/share/documents_dare.csv";
         return $this->readCsvWithSingleHeaderToObjectArray($docsFromDareFile);
     }
 

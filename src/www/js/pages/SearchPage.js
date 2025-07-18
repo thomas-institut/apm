@@ -44,13 +44,13 @@ export class SearchPage extends NormalPage {
 
   <br>
   <table class="docTable dataTable" id="searchTable">
-<!--        <col width="10%" />-->
-<!--        <col width="15%" />-->
-<!--        <col width="15%" />-->
-<!--        <col width="15%" />-->
-<!--        <col width="15%" />-->
-<!--        <col width="15%" />-->
-<!--        <col width="5%" />-->
+            <col width="10%" 
+            <col width="15%" />
+            <col width="15%" />
+            <col width="15%" />
+            <col width="15%" />
+            <col width="15%" />
+            <col width="20%" />
     <tr>
         <th><span title="Choose transcriptions or editions as the target corpus of your search.">Corpus</span></th>
         <th><span title="Enter words to search. You can use the wildcard '*' to search for words with a specific part, like 'philosoph*', '*losophus' or '*losoph*'. Be aware, that a wildcard requires at least one additional letter at the respective location of a word to count it as a match, e. g. searching for 'philosophi*' will not match the word 'philosophi'.">Keywords</span></th>
@@ -114,12 +114,12 @@ export class SearchPage extends NormalPage {
     </div>
 
     <table class="doctable dataTable no-footer fixed" id="resultsTable">
-<!--        <col width="40%" />-->
-<!--        <col width="5%" />-->
-<!--        <col width="20%" />-->
-<!--        <col width="10%" />-->
-<!--        <col width="20%" />-->
-<!--        <col width="5%" />-->
+        <col width="40%" />
+        <col width="5%" />
+        <col width="20%" />
+        <col width="10%" />
+        <col width="20%" />
+        <col width="5%" />
         <thead></thead>
         <tbody></tbody>
     </table>

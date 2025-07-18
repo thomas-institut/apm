@@ -21,7 +21,7 @@ services:
 
   mysql:
     container_name: mysql
-    image: mysql:8.0.42-bookworm
+    image: mysql:8.0
     ports:
       - "4306:3306" # so that it can be accessed from the host machine!
     environment:

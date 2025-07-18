@@ -54,33 +54,32 @@ class LocationDataGrabber extends CommandLineUtility
         $operation = $argv[1];
 
         switch ($operation) {
-            case 'grabAndWriteAll':
+            case 'buildAll':
                 $this->grabAllData();
                 break;
 
-            case 'getInstitutionsFromDare':
-                $institutionData = $this->getInstitutionsDataFromDare();
-                print_r($institutionData);
+            case 'buildEssentials':
+                $this->grabAndWriteEssentialData();
                 break;
 
-            case 'getCityFromWikidata':
+            case 'getCityNamesFromWikidata':
                 $city = $this->getCityNamesByUnlocodeFromWikidata($argv[2]);
                 print_r($city);
                 break;
 
-            case 'getCountryFromWikidata':
+            case 'getCountryNamesFromWikidata':
                 $country = $this->getCountryNamesByIsoAlpha2FromWikidata($argv[2]);
                 print_r($country);
                 break;
                 
-            case 'getCitiesAndCountriesFromDare':
+            case 'showCountriesAndCitiesFromDare':
                 $citiesAndCountries = $this->getCityAndCountryNamesFromDare();
                 print_r($citiesAndCountries);
                 break;
 
-            case 'getDocumentsDataFromDare':
-                $data = $this->getDataFromDareDocumentsTable();
-                print_r($data);
+            case 'showInstitutionsFromDare':
+                $institutionData = $this->getInstitutionsDataFromDare();
+                print_r($institutionData);
                 break;
 
             default:
@@ -100,10 +99,12 @@ class LocationDataGrabber extends CommandLineUtility
 Usage: locationdatagrabber [operation] ([arg])
 
 Available operations are:
-  grabAndWriteAll - collects all location data and writes them into multiple csv-files, retrieved from dare and wikidata
-  getInstitutionsFromDare - returns the codes, cityCodes, cities and names of all institutions, retrieved only from dare
-  getCityFromWikidata [arg] - returns the city name of a given UNLOCODE in english, german and italian, retrieved only from wikidata
-  getCountryFromWikidata [arg] - returns the country name of a given ISO3166-1-alpha-2-code in english, german and italian, retrieved only from wikidata
+  buildAll - collects all accessible location data from dare and wikidata and writes them into multiple csv-files
+  buildEssentials - collects specific location data (location code, country, city, institution) from wikidata and dare and writes them into a single csv-file
+  getCityNamesFromWikidata [arg] - returns the city names to a given UNLOCODE in english, german and italian, retrieved from wikidata
+  getCountryNamesFromWikidata [arg] - returns the country names to a given ISO3166-1-alpha-2-code in english, german and italian, retrieved from wikidata
+  showCountriesAndCitiesFromDare - returns the codes and names of all countries and cities, retrieved from dare
+  showInstitutionsFromDare - returns the location codes and names of all institutions, retrieved only from dare
 
 END;
 
@@ -121,8 +122,8 @@ END;
         $results = [];
 
         // get docs and repo data from dare
-        $docsFromDareFile = "documents_dare.csv";
-        $reposFromDareFile = "repositories_dare.csv";
+        $docsFromDareFile = "/var/apm/share/documents_dare.csv";
+        $reposFromDareFile = "/var/apm/share/repositories_dare.csv";
 
         $documents = $this->readCsvToObjectArray($docsFromDareFile);
         $repositories = $this->readCsvToObjectArray($reposFromDareFile);
@@ -177,7 +178,7 @@ END;
      * @return array|string[]
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array 
+private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
 {
     // process iso-code
     $isoCode = strtoupper(trim($isoCode));
@@ -198,7 +199,7 @@ private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
 
     // query wikidata
     $client = new HttpClient();
-    
+
     try {
         $response = $client->get('https://query.wikidata.org/sparql', [
             'headers' => [
@@ -211,12 +212,12 @@ private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
             ],
             'timeout' => 15,
         ]);
-           
+
         // get and return query results
         $results = json_decode($response->getBody(), true)['results']['bindings'] ?? [];
         if (empty($results)) return [];
         $row = $results[0];
-        
+
         return [
             'de' => $row['de']['value'] ?? '',
             'en' => $row['en']['value'] ?? '',
@@ -225,7 +226,7 @@ private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
         } catch (\Exception $e) {
         print('Error: ' . $e->getMessage());
     }
-    
+
         return [];
     }
 
@@ -235,7 +236,7 @@ private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
      * @return array|string[]
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    private function getCityNamesByUnlocodeFromWikidata(string $unlocode): array 
+    private function getCityNamesByUnlocodeFromWikidata(string $unlocode): array
     {
         // process unlocode
         $unlocode = strtoupper(trim($unlocode));
@@ -299,15 +300,15 @@ private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
     }
 
     /**
-     * returns all bilderberg ids contained in the dare documents csv-table 
+     * returns all bilderberg ids contained in the dare documents csv-table
      * @return array
      */
-    public function getAllBilderbergIdsFromDare() : array 
+    public function getAllBilderbergIdsFromDare() : array
     {
 
         $ids= [];
 
-        $docsFromDareFile = "documents_dare.csv";
+        $docsFromDareFile = "/var/apm/share/documents_dare.csv";
         $documents = $this->readCsvToObjectArray($docsFromDareFile);
 
         foreach ($documents as $doc) {
@@ -315,7 +316,7 @@ private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
             $id = str_replace("BOOK-DARE-", "", $id);
             $ids[] = $id;
         }
-        
+
         return $ids;
     }
 
@@ -336,10 +337,10 @@ private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
      * @param $filename
      * @return array
      */
-    public function readCsvToObjectArray($filename): array 
+    public function readCsvToObjectArray($filename): array
     {
         $results = [];
-        
+
         if (($handle = fopen($filename, "r")) !== FALSE) {
             $headers = fgetcsv($handle); // Read header row
             while (($data = fgetcsv($handle)) !== FALSE) {
@@ -353,7 +354,7 @@ private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
         } else {
             echo "Error: Unable to open file $filename\n";
         }
-        
+
         return $results;
     }
 
@@ -361,11 +362,12 @@ private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
      * returns the associations of city and institution codes with institution names from the dare data
      * @return array
      */
-    private function getInstitutionsDataFromDare() {
+    private function getInstitutionsDataFromDare(): array
+    {
 
         // get data from csv-files
-        $docsFromDareFile = "documents_dare.csv";
-        $reposFromDareFile = "repositories_dare.csv";
+        $docsFromDareFile = "/var/apm/share/documents_dare.csv";
+        $reposFromDareFile = "/var/apm/share/repositories_dare.csv";
         
         $documents = $this->readCsvToObjectArray($docsFromDareFile);
         $repositories = $this->readCsvToObjectArray($reposFromDareFile);
@@ -395,14 +397,17 @@ private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
                     $bilderbergId = $contentTitle;
                 } 
 
+                $countryCode = $bilderbergId[3];
                 $cityCode = $bilderbergId[4];
                 $institutionCode = $bilderbergId[5];
 
-                $institutionCodesAndIds[] = ['institutionCode' => $institutionCode, 'cityCode' => $cityCode, 'id' => $institutionId];
+                $institutionCodesAndIds[] = ['institutionCode' => $institutionCode, 'countryCode' => $countryCode, 'cityCode' => $cityCode, 'id' => $institutionId];
             }
         }
         
         // get institution codes and their associated names
+        $institutionName = '';
+        
         foreach ($institutionCodesAndIds as $entry) {
             
             $institutionCode = $entry['institutionCode'];
@@ -416,7 +421,7 @@ private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
             }
 
             // collect results
-            $result = ['institutionCode' => $institutionCode, 'cityCode' => $entry['cityCode'], 'institutionName' => $institutionName];
+            $result = ['institutionCode' => $institutionCode, 'cityCode' => $entry['cityCode'], 'countryCode' => $entry['countryCode'], 'institutionName' => $institutionName];
 
             // do not add duplicates to the array to be returned
             if (!in_array($result, $institutionCodesAndNames)) {
@@ -571,12 +576,128 @@ private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
         $completeTableData = $this->collectDataForCompleteTable($bilderbergIdsWithAllCodes, $institutionAndCityCodesWithInstitutionNames, $countryCodesWithNames, $cityCodesWithNames, $countryAndCityCodesWithNamesFromDare);
 
         // create csv tables
-        $this->writeXlsHtmlFile('bilderbergIdsWithAllCodes.xls', ['bilderbergID', 'countryCode', 'cityCode', 'institutionCode'], $bilderbergIdsWithAllCodes);
-        $this->writeXlsHtmlFile('countryCodesWithNames.xls', ['countryCode', 'en', 'de', 'it'], $countryCodesWithNames);
-        $this->writeXlsHtmlFile('cityCodesWithNames.xls', ['cityCode', 'en', 'de', 'it'], $cityCodesWithNames);
-        $this->writeXlsHtmlFile('institutionAndCityCodesWithInstitutionNames.xls', ['institutionCode', 'cityCode', 'institutionName'], $institutionAndCityCodesWithInstitutionNames);
-        $this->writeXlsHtmlFile('countryAndCityCodesWithNamesFromDare.xls', ['countryCode', 'cityCode', 'countryName', 'cityName'], $countryAndCityCodesWithNamesFromDare);
-        $this->writeXlsHtmlFile('locationDataComplete.xls', ['Formal Problem', 'Bilderberg ID', 'Code (Country-City-Institution)', 'Country (Wikidata)', 'City (Wikidata)', 'Country (DARE)', 'City (DARE)', 'Institution'], $completeTableData);
+        $this->writeXlsHtmlFile('/var/apm/share/bilderbergIdsWithAllCodes.xls', ['bilderbergID', 'countryCode', 'cityCode', 'institutionCode'], $bilderbergIdsWithAllCodes);
+        $this->writeXlsHtmlFile('/var/apm/share/countryCodesWithNames.xls', ['countryCode', 'en', 'de', 'it'], $countryCodesWithNames);
+        $this->writeXlsHtmlFile('/var/apm/share/cityCodesWithNames.xls', ['cityCode', 'en', 'de', 'it'], $cityCodesWithNames);
+        $this->writeXlsHtmlFile('/var/apm/share/institutionAndCityCodesWithInstitutionNames.xls', ['institutionCode', 'cityCode', 'institutionName'], $institutionAndCityCodesWithInstitutionNames);
+        $this->writeXlsHtmlFile('/var/apm/share/countryAndCityCodesWithNamesFromDare.xls', ['countryCode', 'cityCode', 'countryName', 'cityName'], $countryAndCityCodesWithNamesFromDare);
+        $this->writeXlsHtmlFile('/var/apm/share/locationDataComplete.xls', ['Formal Problem', 'Bilderberg ID', 'Code (Country-City-Institution)', 'Country (Wikidata)', 'City (Wikidata)', 'Country (DARE)', 'City (DARE)', 'Institution'], $completeTableData);
+
+        echo "FINISHED!\n";
+    }
+
+    /**
+     * grabs only the most important location data from dare and wikidata and writes them into a file
+     * @return void
+     * @throws DocumentNotFoundException
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    private function grabAndWriteEssentialData(): void
+    {
+        print("getting institutions data from exported dare table...\n");
+        $institutionDataFromDare = $this->getInstitutionsDataFromDare();
+
+        print("getting bilderberg ids from the apm database...\n");
+        $bilderbergIdsFromApm = [];
+        $docsFromApm = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
+        foreach ($docsFromApm as $docId) {
+            $bilderbergId = $this->getBilderbergIdFromApm($docId);
+            $bilderbergIdsFromApm[] = $bilderbergId;
+        }
+        $numBilderbergIdsApm = count($bilderbergIdsFromApm);
+        print("found $numBilderbergIdsApm bilderberg ids in the apm database.\n");
+
+        print("getting bilderberg ids from exported dare table...\n");
+        $bilderbergIdsFromDare = $this->getAllBilderbergIdsFromDare();
+        $numBilderbergIdsDare = count($bilderbergIdsFromDare);
+        print("found $numBilderbergIdsDare bilderberg ids in the exported dare table.\n");
+
+        // collect and sort bilderberg ids without duplicates
+        $allBilderbergIds = array_merge($bilderbergIdsFromApm, $bilderbergIdsFromDare);
+        $allBilderbergIds = array_unique($allBilderbergIds);
+        sort($allBilderbergIds);
+        $numAllBilderbergIds = count($allBilderbergIds);
+        print("found $numAllBilderbergIds unique bilderberg ids in total.\n");
+
+        $essentialLocationData = [];
+
+        print("iterating over all bilderberg ids...\n");
+        foreach ($allBilderbergIds as $i=>$bilderbergId) {
+
+            $institutionName = '';
+            
+            // check if the bilderberg id has the correct format
+            if (str_starts_with($bilderbergId, 'M-') || str_starts_with($bilderbergId, 'I-')) {
+
+                // split bilderberg id
+                $bilderbergIdSplitted = explode("-", $bilderbergId);
+
+                // extract country-, city- and institution codes from the bilderberg id
+                if (@$bilderbergIdSplitted[3] === "Add.27562") { // correct a specific incomplete bilderberg id
+
+                    $countryCode = 'GB';
+                    $cityCode = $bilderbergIdSplitted[1] ?? '';
+                    $institutionCode = $bilderbergIdSplitted[2] ?? '';
+
+                } else if (count($bilderbergIdSplitted) >= 4) {
+
+                    $countryCode = $bilderbergIdSplitted[1] ?? '';
+                    $cityCode = $bilderbergIdSplitted[2] ?? '';
+                    $institutionCode = $bilderbergIdSplitted[3] ?? '';
+
+                } else {
+                    fwrite(STDERR, "Could not create entry for $bilderbergId.\n");
+                    continue;
+                }
+
+                $code = $countryCode . "-" . $cityCode . "-" . $institutionCode;
+
+                // do not try to get data for empty codes
+                if ($code === '---') {
+                    continue;
+                }
+
+                // associate country and city code with country and city names in english, german and italian
+                $countryName = $this->getCountryNamesByIsoAlpha2FromWikidata($countryCode);
+                $cityName = $this->getCityNamesByUnlocodeFromWikidata($countryCode . $cityCode);
+
+                // get institution name
+                foreach ($institutionDataFromDare as $institutionEntry) {
+                    if ($institutionEntry['institutionCode'] === $institutionCode && $institutionEntry['cityCode'] === $cityCode && $institutionEntry['countryCode'] === $countryCode) {
+
+                        if ($institutionName === '') {
+                            $institutionName = $institutionEntry['institutionName'];
+                        } else {
+                            $institutionName = $institutionName . ' OR ' . $institutionEntry['institutionName'];
+                        }
+                    }
+                }
+
+
+                $entry = [
+                    'code' => $code,
+                    'country' => $countryName['en'] ?? '',
+                    'city' => $cityName['en'] ?? '',
+                    'institution' => $institutionName
+                ];
+
+                $essentialLocationData[] = $entry;
+
+                // signal progress to the user
+                printf("   %d bilderberg ids processed\r", $i);
+            }
+        }
+
+        print("\nALL DATA GRABBED!\n");
+
+        print("clean and sort data and write them into files...\n");
+
+        // sort and remove duplicates from  data
+        sort($essentialLocationData);
+        $essentialLocationData = $this->removeDuplicates($essentialLocationData);
+
+        // create csv table
+        $this->writeXlsHtmlFile('/var/apm/share/locationDataEssentials.xls', ['Location Code (Country-City-Institution)', 'Country (Wikidata, English)', 'City (Wikidata, English)', 'Institution (Dare)'], $essentialLocationData);
 
         echo "FINISHED!\n";
     }
@@ -738,6 +859,13 @@ private function getCountryNamesByIsoAlpha2FromWikidata(string $isoCode): array
         fclose($f);
     }
 
+    /**
+     * writes given data into a table file with the given table headers
+     * @param string $filename
+     * @param array $headers
+     * @param array $data
+     * @return void
+     */
     private function writeXlsHtmlFile(string $filename, array $headers, array $data): void
     {
         $f = fopen($filename, 'w');

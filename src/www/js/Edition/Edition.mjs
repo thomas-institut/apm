@@ -112,7 +112,13 @@ export class Edition {
      *
      * @member {SiglaGroup[]}
      */
-    this.siglaGroups = []
+    this.siglaGroups = [];
+
+    /**
+     *
+     * @member {FoliationChangeInfoInterface[] | null}
+     */
+    this.foliationChanges = null;
   }
 
   /**

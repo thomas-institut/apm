@@ -33,12 +33,6 @@ const TtlForever = 2 * 365 * 24 * 3600; // 2 years
 
 const CleaningDelayInSeconds = 1;
 
-
-const typeNames = {
-  'mss': 'Manuscript',
-  'print': 'Print'
-}
-
 const EntityTypeCacheKeyPrefix = 'EntityType'
 const EntityDataCacheKeyPrefix = 'EntityData'
 
@@ -52,10 +46,10 @@ const MaxSystemEntityId = 10000000;
 export class ApmDataProxy {
   private readonly cacheDataId: string;
   private readonly caches: { [ key: string]: KeyCache };
-  private readonly lockManager: any;
-  private readonly localCacheLockManager: any;
-  private readonly cachedFetcher: any;
-  private readonly localCachedFetcher: any;
+  private readonly lockManager: SimpleLockManager;
+  private readonly localCacheLockManager: SimpleLockManager;
+  private readonly cachedFetcher: CachedFetcher;
+  private readonly localCachedFetcher: CachedFetcher;
 
   /**
    *
@@ -244,28 +238,35 @@ export class ApmDataProxy {
    *
    * @param {string}url
    * @param {string} method
-   * @param {{}}payload
+   * @param {any}payload
    * @param {boolean}forceActualFetch
    * @param {boolean}useRawData if true, the payload is posted as is, otherwise the payload is encapsulated on an object { data: payload}
    * @param {number} ttl
    * @param sessionCache
-   * @return {Promise<{}>}
+   * @return {Promise<any>}
    */
   fetch(url: string, method: string = 'GET', payload: any, forceActualFetch: boolean = false, useRawData: boolean = false, ttl: number = -1, sessionCache = true): Promise<any> {
     let key = encodeURI(url);
     let fetcher = sessionCache ? this.cachedFetcher : this.localCachedFetcher;
     return fetcher.fetch(key, () => {
-      switch(method) {
-        case 'GET':
-          return $.get(url)
+      return new Promise( (resolve, reject) => {
+        if ([ 'GET', 'POST'].indexOf(method) === -1) {
+          reject(`Invalid method ${method} for URL ${url}`);
+        }
+        const actualPayload = useRawData ? payload : {data: JSON.stringify(payload)};
+        const fetchFunction = method === 'GET' ?
+            () => {return fetch(url)} :
+            () => { return  fetch(url, { method: method, body: JSON.stringify(actualPayload)})};
 
-        case 'POST':
-          if (useRawData) {
-            return $.post(url, payload)
-          }
-          return $.post(url, {data: JSON.stringify(payload)})
-      }
 
+        fetchFunction().then( (response) => {
+            if (response.status === 200) {
+              return response.json().then( (data) => { resolve(data)});
+            } else {
+              reject(`Error ${response.status} fetching ${url}`);
+            }
+          });
+      });
     }, forceActualFetch, ttl)
   }
 
@@ -292,7 +293,7 @@ export class ApmDataProxy {
    * @return {Promise<{}>}
    */
   get(url: string, forceGet: boolean = true, ttl: number = -1, sessionCache = true): Promise<any> {
-    return this.fetch(url, 'GET', { }, forceGet, false, ttl, sessionCache)
+    return this.fetch(url, 'GET', null, forceGet, false, ttl, sessionCache)
   }
 
   /**

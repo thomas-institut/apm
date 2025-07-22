@@ -35,11 +35,12 @@ import { SiglaGroup } from '../SiglaGroup.mjs'
 import { WitnessDataItem } from '../WitnessDataItem.mjs'
 import { MarginalFoliationGenerator } from './MarginalFoliationGenerator'
 
-export class CtDataEditionGenerator extends EditionGenerator{
+export class CtDataEditionGenerator extends EditionGenerator {
   constructor (options) {
     super(options)
     let optionsSpec = {
-      ctData: { type: 'object', required: true}
+      ctData: { type: 'object', required: true},
+      lastFoliationChanges: { type:'array', default: []},
     }
 
     let oc = new OptionsChecker(
@@ -48,11 +49,17 @@ export class CtDataEditionGenerator extends EditionGenerator{
 
     this.options = oc.getCleanOptions(options);
 
+
+    /** @member {FoliationChangeInfoInterface[]}  lastFoliationChanges */
+    this.lastFoliationChanges = this.options.lastFoliationChanges
+
     /** @member {CtDataInterface} ctData */
     this.ctData = this.options.ctData
     /** @member {boolean} debug */
-    this.debug = false
+    this.debug = false;
   }
+
+
 
   generateEdition () {
     let edition = super.generateEdition();
@@ -71,10 +78,6 @@ export class CtDataEditionGenerator extends EditionGenerator{
     edition.witnesses = this.ctData.sigla.map( (s, i) => {
       return new EditionWitnessInfo().setSiglum(s).setTitle(this.ctData.witnessTitles[i])
     });
-
-
-
-
 
     let baseWitnessTokens = CtData.getCtWitnessTokens(
       this.ctData,
@@ -108,9 +111,8 @@ export class CtDataEditionGenerator extends EditionGenerator{
     );
 
     // Automatic marginalia
-    const marginalFoliationGenerator = new MarginalFoliationGenerator(this.ctData);
+    const marginalFoliationGenerator = new MarginalFoliationGenerator(this.ctData, this.lastFoliationChanges);
     const autoMarginaliaApparatus = marginalFoliationGenerator.generateMarginaliaApparatus(edition.mainText);
-    console.log('autoMarginaliaApparatus', autoMarginaliaApparatus);
 
     let mergedMarginaliaApparatus = this._mergeCustomApparatusEntries(
       ApparatusType.MARGINALIA,
@@ -122,6 +124,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
       generatedCriticalApparatus,
       mergedMarginaliaApparatus
     ];
+    edition.foliationChanges =  marginalFoliationGenerator.getCurrentFoliationChanges();
 
     // Now add vertical bars for foliation changes in the main text
 
@@ -172,8 +175,6 @@ export class CtDataEditionGenerator extends EditionGenerator{
    */
   _mergeCustomApparatusEntries(apparatusType, generatedApparatus,
           baseWitnessTokens, ctIndexToMainTextMap) {
-
-    console.log(`Merging custom apparatus entries for apparatus type ${apparatusType}`)
 
     let customApparatus = this._getCustomEntriesForApparatusType(apparatusType);
     if (customApparatus === null) {

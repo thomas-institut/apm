@@ -1,7 +1,13 @@
 
 import { SimpleLockManager } from './SimpleLockManager'
+import {KeyCache} from "./KeyCache/KeyCache";
 
 export class CachedFetcher {
+  private cache: KeyCache;
+  private debug: boolean;
+  private readonly verbose: boolean;
+  private defaultTtl: number;
+  private lockManager: SimpleLockManager;
 
   /**
    *
@@ -9,7 +15,7 @@ export class CachedFetcher {
    * @param {number} defaultTtl if 0, no caching is done by default
    * @param lockManager
    */
-  constructor (cache, defaultTtl = 0, lockManager = null) {
+  constructor (cache: KeyCache, defaultTtl: number = 0, lockManager: SimpleLockManager|null = null) {
     this.cache = cache
     this.debug = false;
     this.verbose = true;
@@ -29,7 +35,7 @@ export class CachedFetcher {
    * @param {number} ttl
    * @return { Promise<{}>}
    */
-  fetch( key, fetcher, forceActualFetch = false , ttl = -1) {
+  fetch( key: string, fetcher: () => Promise<any>, forceActualFetch: boolean = false, ttl: number = -1): Promise<{}> {
     return new Promise(async (resolve, reject) => {
 
       await this.lockManager.getLock(key);
@@ -43,10 +49,8 @@ export class CachedFetcher {
         return;
       }
 
-      let startTime;
-      if (this.verbose) {
-        startTime = Date.now();
-      }
+      let  startTime = Date.now();
+
       this.verbose && console.log(`Doing actual fetch for '${key}' at ${startTime / 1000}`);
       fetcher().then((data) => {
         this.debug && console.log(`Got data for '${key}' in ${Date.now() - startTime} ms`);

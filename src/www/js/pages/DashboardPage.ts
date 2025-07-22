@@ -69,7 +69,7 @@ export class DashboardPage extends NormalPage {
   }
 
   async fetchMultiChunkEditions() {
-    let data = await this.apmDataProxy.get(urlGen.apiUserGetMultiChunkEditionInfo(this.userId))
+    let data = await this.apmDataProxy.get(urlGen.apiUserGetMultiChunkEditionInfo(this.userId));
     let html = UserDocDataCommon.generateMultiChunkEditionsListHtml(data)
     let newMceUrl = urlGen.siteMultiChunkEditionNew()
     html += `<p class="new-mce"><a href="${newMceUrl}" title="${tr('Click to start a new multi-chunk edition')}" target="_blank">${newMceEditionIcon} ${tr('Create new multi-chunk edition')}</a></p>`

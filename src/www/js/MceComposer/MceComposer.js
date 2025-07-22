@@ -16,7 +16,6 @@
  *
  */
 
-
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { MceData } from '../MceData/MceData.mjs'
 import { EditionPanel } from './EditionPanel'
@@ -30,8 +29,6 @@ import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditio
 import { EditionPreviewPanelNew } from '../EditionComposer/EditionPreviewPanelNew'
 import { PdfDownloadUrl } from '../EditionComposer/PdfDownloadUrl'
 import { Edition } from '../Edition/Edition.mjs'
-import * as ApparatusType from '../constants/ApparatusType'
-
 
 import { defaultLanguageDefinition } from '../defaults/languages'
 import { EditionWitnessInfo } from '../Edition/EditionWitnessInfo'
@@ -48,8 +45,6 @@ import { WitnessDataItem } from '../Edition/WitnessDataItem.mjs'
 import { urlGen } from '../pages/common/SiteUrlGen'
 import { ApmPage } from '../pages/ApmPage'
 import { ApmFormats } from '../pages/common/ApmFormats'
-import { FmtText } from '../FmtText/FmtText.mjs'
-import * as SubEntryType from '../Edition/SubEntryType'
 
 const defaultIcons = {
   moveUp: '&uarr;',
@@ -129,6 +124,10 @@ export class MceComposer extends ApmPage {
     document.title = this.mceData.title
     this.edition = new Edition()
     this.edition.setLang('la')  // so that there's a lang definition for it
+    /**
+     *
+     * @member{Edition[]}
+     */
     this.singleChunkEditions = []
 
     this.cache = new KeyCache()
@@ -521,6 +520,11 @@ export class MceComposer extends ApmPage {
      changes.push(`Chunk order changed`)
    }
 
+   // change in auto marginal foliation settings
+   if (!varsAreEqual(this.lastSavedMceData.includeInAutoMarginalFoliation, this.mceData.includeInAutoMarginalFoliation)) {
+     changes.push(`Auto marginal foliation settings changed`);
+   }
+
    // changes in chunks
    if (this.lastSavedMceData.chunks.length !== this.mceData.chunks.length) {
      let lastSavedTableIds = this.lastSavedMceData.chunks.map ( (chunk) => { return chunk.chunkEditionTableId})
@@ -771,7 +775,8 @@ export class MceComposer extends ApmPage {
       if (useCache) {
         let cachedData = this.cache.retrieve(cacheKey);
         if (cachedData !== null) {
-          resolve(cachedData)
+          resolve(cachedData);
+          return;
         }
       }
       // really get from server
@@ -823,27 +828,32 @@ export class MceComposer extends ApmPage {
     }
   }
 
-  async regenerateSingleChunkEdition(chunkIndex) {
+  /**
+   *
+   * @param {number}chunkIndex
+   * @param {FoliationChangeInfoInterface[]}currentFoliationChanges
+   * @return {Promise<void>}
+   */
+  async regenerateSingleChunkEdition(chunkIndex, currentFoliationChanges) {
     const chunk = this.mceData.chunks[chunkIndex];
     if (chunk === undefined) {
       console.warn(`Attempt to regenerate non-existent chunk ${chunkIndex}`)
       return;
     }
-    console.log(`Regenerating single chunk edition for chunk ${chunkIndex} ('${chunk.chunkId}' @ ${chunk.version})`);
+    console.log(`Regenerating single chunk edition for chunk ${chunkIndex} ('${chunk.chunkId}' @ ${chunk.version})`, currentFoliationChanges);
     const data =
       await this.getSingleChunkData(chunk.chunkEditionTableId, chunk.version, true);
 
     let singleChunkCtData = data.ctData;
 
-    const amendedIncludeInAutoFoliation = this.getSingleChunkIncludeInAutoFoliationArray(
+    singleChunkCtData.includeInAutoMarginalFoliation = this.getSingleChunkIncludeInAutoFoliationArray(
       this.mceData,
       chunkIndex
     );
-    const currentIncludeInAutoFoliation = deepCopy(singleChunkCtData.includeInAutoMarginalFoliation);
-    console.log(`Changing includeInAutoFoliation`, singleChunkCtData.includeInAutoMarginalFoliation, amendedIncludeInAutoFoliation);
-
-    singleChunkCtData.includeInAutoMarginalFoliation = amendedIncludeInAutoFoliation;
-    let eg = new CtDataEditionGenerator({ ctData:singleChunkCtData})
+    let eg = new CtDataEditionGenerator({
+      ctData:singleChunkCtData,
+      lastFoliationChanges: currentFoliationChanges
+    });
     let edition
     try {
       edition = eg.generateEdition()
@@ -880,18 +890,20 @@ export class MceComposer extends ApmPage {
     // merge main text
     let currentMainTextIndexShift = 0
     let nextChunkShift = 0
-    /** @var {string[]}*/
-    let foliationMarginalia = []
+    let currentFoliationChanges = [];
     for (let chunkOrderIndex = 0; chunkOrderIndex < this.mceData.chunkOrder.length; chunkOrderIndex++) {
       let chunkIndex = this.mceData.chunkOrder[chunkOrderIndex];
       if (this.singleChunkEditions[chunkIndex] === undefined || this.singleChunkEditions[chunkIndex] === null) {
-        await this.regenerateSingleChunkEdition(chunkIndex);
+        await this.regenerateSingleChunkEdition(chunkIndex, currentFoliationChanges);
       }
       let singleChunkEdition = this.singleChunkEditions[chunkIndex]
       if (singleChunkEdition === undefined || this.singleChunkEditions[chunkIndex] === null) {
         console.warn(`Edition for chunk ${chunkIndex} is undefined`);
         return;
       }
+
+      currentFoliationChanges  = singleChunkEdition.foliationChanges ?? [];
+
       if (chunkOrderIndex === 0) {
         this.edition.lang = singleChunkEdition.lang
       }
@@ -974,33 +986,10 @@ export class MceComposer extends ApmPage {
           return newEntry
         })
 
-        // process entries
-        if (currentApparatus.type === ApparatusType.MARGINALIA) {
-          // filter out duplicate auto foliation sub entries
-          apparatusEntriesToAdd = apparatusEntriesToAdd
-          .map((entry) => {
-            let filteredSubEntries = []
-            entry.subEntries.forEach((subEntry) => {
-              if (subEntry.type !== SubEntryType.AUTO_FOLIATION) {
-                filteredSubEntries.push(subEntry)
-                return
-              }
-              let text = FmtText.getPlainText(subEntry.fmtText)
-              // console.log(`Testing foliation marginal ${text}`, foliationMarginalia);
-              if (foliationMarginalia.indexOf(text) === -1) {
-                // new foliation, add it
-                // console.log(`Adding foliation ${text}`);
-                foliationMarginalia.push(text)
-                filteredSubEntries.push(subEntry)
-              }
-            })
-            entry.subEntries = filteredSubEntries
-            return entry
-          })
-          .filter((entry) => {
-            return entry.subEntries.length > 0
-          })
-        }
+        // filter out empty entries
+        apparatusEntriesToAdd = apparatusEntriesToAdd.filter((entry) => {
+          return entry.subEntries.length > 0
+        });
 
         currentApparatus.entries.push(...apparatusEntriesToAdd)
       }

@@ -16,6 +16,19 @@
  *
  */
 
+import {Panel} from './Panel';
+
+export interface TabConfigInterface {
+  id: string,
+  title: string,
+  linkTitle: string,
+  content: (tabId: string, mode: string, visible: boolean) => Promise<string>,
+  contentClasses: string[],
+  onResize: (id: string, visible: boolean) => void,
+  postRender: (id: string, mode: string, visible: boolean) => void,
+  onShown: (id: string) => void,
+  onHidden: (id: string) => void
+}
 
 export class TabConfig {
 
@@ -25,19 +38,20 @@ export class TabConfig {
    * @param {string}title
    * @param panelObject
    * @param {string}linkTitle
-   * @return {{onResize: function, postRender: function, contentClasses: ([]|*), onShown: function, onHidden: function, id, title, content: (function(*=, *=, *=): *)}}
+   * @return {TabConfigInterface}
+   *
    */
-  static createTabConfig(id, title,  panelObject, linkTitle = '') {
+  static createTabConfig(id: string, title: string, panelObject: Panel, linkTitle: string = ''): TabConfigInterface {
     return {
       id: id,
       title: title,
       linkTitle: linkTitle,
-      content: (tabId, mode, visible) => { return panelObject.generateHtml(tabId, mode, visible) },
+      content: (tabId: string, mode: string, visible: boolean) => { return panelObject.generateHtml(tabId, mode, visible) },
       contentClasses: panelObject.getContentClasses(),
       onResize: (id, visible) => {  panelObject.onResize(visible)},
       postRender: (id, mode, visible) => { panelObject.postRender(id, mode, visible) },
-      onShown: (id) => { panelObject.onShown(id)},
-      onHidden: (id) => { panelObject.onHidden(id)}
+      onShown: (id) => { panelObject.onShown()},
+      onHidden: (id) => { panelObject.onHidden()}
     }
   }
 

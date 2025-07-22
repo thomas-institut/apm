@@ -23,6 +23,11 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
  *
  */
 export class Panel {
+  private verbose: boolean;
+  private debug: boolean;
+  private containerSelector: string;
+  private visible: boolean;
+  private mode: string;
 
   constructor (options = {}) {
     let optionsSpec = {
@@ -43,12 +48,12 @@ export class Panel {
     this.mode = ''
   }
 
-  postRender(id, mode, visible) {
+  postRender(id:string, mode:string, visible: boolean): void {
     this.visible = visible
     this.mode = mode
   }
 
-  onResize(visible) {
+  onResize(visible: boolean) {
     this.visible = visible
   }
 
@@ -62,7 +67,7 @@ export class Panel {
     return []
   }
 
-  async generateHtml(tabId, mode, visible) {
+  async generateHtml(tabId: string, mode: string, visible: boolean) {
     this.visible = visible
     this.mode = mode
     return `Panel id ${tabId}, mode ${mode}, ${visible ? 'visible' : 'hidden'}`

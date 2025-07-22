@@ -1,44 +1,59 @@
-import { Apparatus } from '../Apparatus'
-import { MARGINALIA } from '../../constants/ApparatusType'
-import { ApparatusSubEntry } from '../ApparatusSubEntry.mjs'
-import * as SubEntryType from '../SubEntryType.mjs'
-import * as SubEntrySource from '../SubEntrySource.mjs'
-import { ApparatusEntry } from '../ApparatusEntry.mjs'
-import { FmtTextFactory } from '../../FmtText/FmtTextFactory.mjs'
-import { FmtTextTokenFactory } from '../../FmtText/FmtTextTokenFactory.mjs'
-import { NumeralStyles } from '../../toolbox/NumeralStyles.mjs'
+import {Apparatus} from '../Apparatus'
+import {MARGINALIA} from '../../constants/ApparatusType'
+import {ApparatusSubEntry} from '../ApparatusSubEntry'
+import * as SubEntryType from '../SubEntryType'
+import * as SubEntrySource from '../SubEntrySource'
+import {ApparatusEntry} from '../ApparatusEntry'
+import {FmtTextFactory} from '../../FmtText/FmtTextFactory'
+import {FmtTextTokenFactory} from '../../FmtText/FmtTextTokenFactory'
+import {NumeralStyles} from '../../toolbox/NumeralStyles'
+import {CtDataInterface, FullTxItemInterface, WitnessTokenInterface} from "../../CtData/CtDataInterface";
+import {FoliationChangeInfoInterface} from "./FoliationChangeInfoInterface";
+import {MainTextToken} from "../MainTextToken";
+import {FmtTextToken} from "../../FmtText/FmtTextToken";
 
 export class MarginalFoliationGenerator {
+  private ctData: CtDataInterface;
+  private readonly lastFoliations: FoliationChangeInfoInterface[];
+  private currentFoliationChanges: FoliationChangeInfoInterface[]|null = null;
 
   /**
    *
    * @param {CtDataInterface}ctData
+   * @param {FoliationChangeInfoInterface[]} lastFoliations
    */
-  constructor (ctData) {
-    /** @member {CtDataInterface} ctData */
+  constructor (ctData: CtDataInterface, lastFoliations: FoliationChangeInfoInterface[] = []) {
     this.ctData = ctData;
+    this.lastFoliations = lastFoliations;
   }
 
   /**
+   * Returns the last calculated foliation changes or null if the changes haven't been
+   * calculated.
+   *
+   * @return {FoliationChangeInfoInterface[]|null}
+   */
+  getCurrentFoliationChanges(): FoliationChangeInfoInterface[] | null {
+    return this.currentFoliationChanges;
+  }
+  /**
    * @param {MainTextToken[]} mainText
-   * @param {FoliationChangeInfoInterface[]} lastFoliations
    * @return {Apparatus}
    */
-  generateMarginaliaApparatus(mainText, lastFoliations = []) {
+  generateMarginaliaApparatus(mainText: MainTextToken[]): Apparatus {
     let app = new Apparatus();
     app.type = MARGINALIA;
     let mainTextCollationRow = this.ctData.collationMatrix[this.ctData.editionWitnessIndex];
-    const foliationChanges = this.getFoliationChangeInfoArray(lastFoliations);
-    console.log(`Foliation Changes`, foliationChanges);
+    this.currentFoliationChanges = this.getFoliationChangeInfoArray(this.lastFoliations);
 
     mainTextCollationRow.forEach( (mainTextTokenIndex, collationTableColumnNumber) => {
       if (mainTextTokenIndex === -1) {
         return;
       }
-      const changesInColumn = foliationChanges.filter( (change) => {
+      const changesInColumn = this.currentFoliationChanges?.filter( (change) => {
         return change.collationTableColumn === collationTableColumnNumber;
-      });
-      let subEntries = [];
+      }) ?? [];
+      let subEntries : ApparatusSubEntry[] = [];
       changesInColumn.forEach( (change) => {
         const siglum = this.ctData.sigla[change.witnessIndex];
         let subEntry = new ApparatusSubEntry();
@@ -79,7 +94,7 @@ export class MarginalFoliationGenerator {
    * @return {FmtTextToken[]}
    * @private
    */
-  getMarginalSubEntryFmtText(siglum, foliation) {
+  getMarginalSubEntryFmtText(siglum: string, foliation: string): FmtTextToken[] {
 
     if (this.ctData.lang === 'ar') {
       /** @var {FmtTextToken[]}*/
@@ -119,7 +134,7 @@ export class MarginalFoliationGenerator {
    * @param {MainTextToken[]} mainText
    * @return {number}
    */
-  getMainTextIndexFromCtIndex (ctIndex, mainText) {
+  getMainTextIndexFromCtIndex (ctIndex: number, mainText: MainTextToken[]): number {
 
 
     for (let i = 0; i < mainText.length; i++) {
@@ -139,19 +154,18 @@ export class MarginalFoliationGenerator {
    *
    * If an array of foliation change info objects is given, the last foliation found
    * for a witness will be considered and no changes will be recorded until the
-   * foliation for that witness change to a different value
+   * foliation for that witness changes to a different value
    *
    * @param {FoliationChangeInfoInterface[]} lastFoliations
    * @return {FoliationChangeInfoInterface[]}
    */
-  getFoliationChangeInfoArray(lastFoliations = []) {
-    let foliationChangeInfoArray = [];
+  getFoliationChangeInfoArray(lastFoliations: FoliationChangeInfoInterface[] = []): FoliationChangeInfoInterface[] {
+    let foliationChangeInfoArray: FoliationChangeInfoInterface[] = [];
     let mainTextCollationRow = this.ctData.collationMatrix[this.ctData.editionWitnessIndex];
     let baseWitnessTokens = this.ctData.witnesses[this.ctData.editionWitnessIndex].tokens;
     this.ctData.includeInAutoMarginalFoliation.forEach( (witnessIndex) => {
-      console.log(`Finding changes for witness ${witnessIndex}`)
       let lastFoliation = getLastFoliationForWitness(lastFoliations, witnessIndex);
-      const witnessItems = this.ctData.witnesses[witnessIndex].items;
+      const witnessItems = this.ctData.witnesses[witnessIndex].items ?? [];
       mainTextCollationRow.forEach( (baseWitnessTokenIndex, collationTableColumnNumber) => {
         if (baseWitnessTokenIndex === -1) {
           return;
@@ -191,8 +205,8 @@ export class MarginalFoliationGenerator {
  * @param {FullTxItemInterface[]} items
  * @return {string|null}
  */
-function getFoliationForToken(token, items) {
-  let sourceItemIndex = token.sourceItems[0]?.index
+function getFoliationForToken(token: WitnessTokenInterface, items: FullTxItemInterface[]): string | null {
+  let sourceItemIndex = token.sourceItems ? token.sourceItems[0].index : undefined;
   if (sourceItemIndex === undefined) {
     return null;
   }
@@ -207,7 +221,7 @@ function getFoliationForToken(token, items) {
  * @param {FoliationChangeInfoInterface[]}foliationChangeInfoArray
  * @param {number}witnessIndex
  */
-function getLastFoliationForWitness(foliationChangeInfoArray, witnessIndex) {
+function getLastFoliationForWitness(foliationChangeInfoArray: FoliationChangeInfoInterface[], witnessIndex: number) {
   const changes = foliationChangeInfoArray.filter( (change) => {
     return change.witnessIndex === witnessIndex;
   }).sort( (a, b) => { return a.collationTableColumn - b.collationTableColumn;});

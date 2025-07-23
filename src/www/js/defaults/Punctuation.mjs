@@ -22,7 +22,7 @@ import { trimCharacters } from '../toolbox/Util.mjs'
 // NOTE: if not explicitly set, isPunctuationInsideWord is true
 // such punctuation signs effectively split the words
 
-export const punctuationDefinition = [
+const punctuationDefinition = [
   { char: '.', // period
     default: {
       isPunctuation: true,
@@ -223,6 +223,13 @@ export class Punctuation {
     return true
   }
 
+  /**
+   *
+   * @param {string}char
+   * @param lang
+   * @param insideWord
+   * @return {boolean}
+   */
   static characterIsPunctuation(char, lang = '', insideWord = false) {
     let definitionObjectArray = getPunctuationDefinition(lang).filter( (def) => { return def['char'] === char})
     if (definitionObjectArray.length === 0) {
@@ -254,6 +261,12 @@ export class Punctuation {
     return false
   }
 
+  /**
+   *
+   * @param {string}char
+   * @param {string}lang
+   * @return {boolean}
+   */
   static sticksToPrevious(char, lang) {
     let definitionObjectArray = getPunctuationDefinition(lang).filter( (def) => { return def['char'] === char})
     if (definitionObjectArray.length === 0) {
@@ -262,6 +275,12 @@ export class Punctuation {
     return definitionObjectArray[0]['def']['sticksToPrevious']
   }
 
+  /**
+   *
+   * @param {string}char
+   * @param {string}lang
+   * @return {boolean}
+   */
   static sticksToNext(char, lang) {
     let definitionObjectArray = getPunctuationDefinition(lang).filter( (def) => { return def['char'] === char})
     if (definitionObjectArray.length === 0) {
@@ -283,8 +302,6 @@ function getPunctuationDefinition(lang = '') {
     return punctuationDefinitionsPerLanguage[langKey]
   }
   punctuationDefinitionsPerLanguage[langKey] = buildPunctuationDefinitionForLanguage(lang)
-  // console.log(`Punctuation definition created for lang ${lang}`)
-  // console.log(punctuationDefinitionsPerLanguage[langKey])
   return punctuationDefinitionsPerLanguage[langKey]
 }
 
@@ -303,37 +320,6 @@ function buildPunctuationDefinitionForLanguage(lang) {
   })
 }
 
-
-// export const common =  [
-//   '.',
-//   ',',
-//   ';',
-//   ':',
-//   '?',
-//   '¿',
-//   '¡',
-//   '!',
-//   '⊙',
-//   '¶',
-//   '«',
-//   '»',
-//   '“', // left double quote
-//   '”', // right double quote
-//   '‘', // left single quote
-//   '’', // right single quote
-//   String.fromCodePoint(0x2013), // en dash
-//   String.fromCodePoint(0x2014), // em dash
-//   String.fromCodePoint(0x2e3a), // two-em dash
-//
-//   String.fromCodePoint(0x61B), // Arabic semi-colon
-//   String.fromCodePoint(0x61F), // Arabic question mark
-//   String.fromCodePoint(0x60C), // Arabic comma
-//   String.fromCodePoint(0x60D), // Arabic date separator
-//
-//   String.fromCodePoint(0x5BE), // Hebrew maqaf
-//   String.fromCodePoint(0x5C0), // Hebrew paseq
-//   String.fromCodePoint(0x5C3) // Hebrew soft pasuq
-// ]
 /**
  * 
  * @param lang

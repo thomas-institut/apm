@@ -22,6 +22,15 @@ import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 
 export class MainTextTokenFactory {
 
+  /**
+   * Creates and returns a simple text token with the specified attributes.
+   *
+   * @param {string} type - The type of the text token to be created.
+   * @param {string} text - The textual content of the token.
+   * @param {number} editionWitnessTokenIndex - The index reference for edition witness within the token.
+   * @param {string} [lang=''] - The language code for the text token. Defaults to an empty string.
+   * @return {MainTextToken} The created text token with assigned properties.
+   */
   static createSimpleText(type, text, editionWitnessTokenIndex, lang = '') {
     let t = new MainTextToken()
     t.type = type
@@ -31,6 +40,15 @@ export class MainTextTokenFactory {
     return t
   }
 
+  /**
+   * Creates a new instance of MainTextToken with formatted text and specified attributes.
+   *
+   * @param {string} type - The type of the token to be created.
+   * @param {FmtTextToken[]} fmtText - The formatted text content for the token.
+   * @param {number} editionWitnessTokenIndex - The index representing the edition or witness token.
+   * @param {string} [lang=''] - The language code for the token (optional, defaults to an empty string).
+   * @return {MainTextToken} A new instance of MainTextToken with the specified attributes.
+   */
   static createWithFmtText(type, fmtText, editionWitnessTokenIndex, lang = '') {
     let t = new MainTextToken()
     t.type = type

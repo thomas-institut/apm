@@ -19,7 +19,7 @@
 
 import { EditionGenerator } from './EditionGenerator'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { EditionMainTextGenerator } from './EditionMainTextGenerator.mjs'
+import { EditionMainTextGenerator } from './EditionMainTextGenerator.ts'
 import { CtData } from '../../CtData/CtData'
 import { CriticalApparatusGenerator } from './CriticalApparatusGenerator'
 import { EditionWitnessInfo } from '../EditionWitnessInfo'
@@ -83,6 +83,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
       this.ctData,
       baseWitnessIndex
     );
+
     edition.setMainText(
       EditionMainTextGenerator.generateMainText(
         baseWitnessTokens,

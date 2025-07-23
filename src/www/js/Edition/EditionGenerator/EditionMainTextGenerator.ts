@@ -16,10 +16,13 @@
  *
  */
 
-import * as WitnessTokenType from '../../Witness/WitnessTokenType.mjs'
-import { MainTextTokenFactory } from '../MainTextTokenFactory.mjs'
-import * as MainTextTokenType from '../MainTextTokenType.mjs'
-import { Punctuation } from '../../defaults/Punctuation.mjs'
+import * as WitnessTokenType from '../../Witness/WitnessTokenType'
+import { MainTextTokenFactory } from '../MainTextTokenFactory'
+import * as MainTextTokenType from '../MainTextTokenType'
+import { Punctuation } from '../../defaults/Punctuation'
+import {WitnessTokenInterface} from "../../CtData/CtDataInterface";
+import {MainTextToken} from "../MainTextToken";
+import {FoliationChangeInfoInterface} from "./FoliationChangeInfoInterface";
 
 export class EditionMainTextGenerator {
 
@@ -29,10 +32,12 @@ export class EditionMainTextGenerator {
    * @param normalized
    * @param normalizationsToIgnore
    * @param lang
-   * @return {*[]}
+   * @return {MainTextToken[]}
    */
-  static generateMainText(witnessTokens,
-          normalized = false,  normalizationsToIgnore = [], lang = '') {
+  static generateMainText(witnessTokens: WitnessTokenInterface[],
+                          normalized = false,
+                          normalizationsToIgnore: string[] = [],
+                          lang = ''): MainTextToken[] {
     let mainTextTokens = []
     for(let i = 0; i < witnessTokens.length; i++) {
       let witnessToken = witnessTokens[i]
@@ -98,7 +103,7 @@ export class EditionMainTextGenerator {
     // Add glue tokens
     let mainTextTokensWithGlue = []
     let firstWordAdded = false
-    let nextTokenMustStickToPrevious = false
+    let nextTokenMustStickToPrevious: boolean = false
     for(let i = 0; i < mainTextTokens.length; i++) {
       let mainTextToken = mainTextTokens[i]
       if (mainTextToken.type === MainTextTokenType.PARAGRAPH_END) {
@@ -140,7 +145,8 @@ export class EditionMainTextGenerator {
       }
       mainTextTokensWithGlue.push(mainTextToken)
       firstWordAdded = true
-      nextTokenMustStickToPrevious = Punctuation.characterIsPunctuation(tokenPlainText, lang, false) && Punctuation.sticksToNext(tokenPlainText, lang);
+      nextTokenMustStickToPrevious = Punctuation.characterIsPunctuation(tokenPlainText, lang, false) &&
+          Punctuation.sticksToNext(tokenPlainText, lang);
     }
     return mainTextTokensWithGlue
   }
@@ -154,7 +160,7 @@ export class EditionMainTextGenerator {
  * @param {string[]} normalizationSourcesToIgnore
  * @returns {string}
  */
-function getTextFromWitnessToken(witnessToken, normalized, normalizationSourcesToIgnore = []){
+function getTextFromWitnessToken(witnessToken: WitnessTokenInterface, normalized: boolean, normalizationSourcesToIgnore: string[] = []): string{
   let text = witnessToken.text;
   if (!normalized) {
     return text;

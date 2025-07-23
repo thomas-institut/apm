@@ -55,6 +55,10 @@ import { FmtTextToken } from '../FmtText/FmtTextToken.mjs'
 export class MainTextToken {
 
   constructor () {
+    /**
+     *
+     * @member {string}
+     */
     this.type = MainTextTokenType.EMPTY
 
     /**
@@ -90,7 +94,7 @@ export class MainTextToken {
 
   /**
    *
-   * @param {string|array|FmtTextToken} theText
+   * @param {any} theText
    * @param {number} editionWitnessTokenIndex
    * @param {string} lang
    * @return {MainTextToken}

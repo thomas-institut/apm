@@ -31,7 +31,7 @@ export interface BreadCrumb {
 
 
 /**
- * Base class for (eventually) all 'normal' web pages in the APM.
+ * Base class for all 'normal' web pages in the APM.
  *
  * Normal web pages are all those that display a top menu, a user area and
  * (optionally) a language selector. Non-normal pages are specialized tools
@@ -43,9 +43,8 @@ export class NormalPage extends ApmPage {
   private topBarDiv: JQuery = $();
   private footerDiv: JQuery = $();
 
-  constructor(options : any) {
+  constructor(options : any = null) {
     super(options)
-
   }
 
   async bootstrapHtml() {
@@ -67,6 +66,7 @@ export class NormalPage extends ApmPage {
    * @return {Promise<void>}
    */
   async initPage(): Promise<void> {
+    await super.initPage();
     await this.bootstrapHtml();
     this.pageContentsDiv = $('div.page-content')
     this.topBarDiv = $('div.page-top-bar')

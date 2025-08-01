@@ -114,6 +114,23 @@ export class ApmDataProxy {
     return this.get(urlGen.apiWorksGetAuthors(),  false, TtlOneMinute);
   }
 
+  /**
+   * Makes an API call to whoami and returns the user data.
+   *
+   * If the API returns a non-authorized stats (401), returns null.
+   *
+   */
+  async whoAmI() : Promise<any> {
+    let response = await fetch(urlGen.apiWhoAmI());
+    if (response.status === 200) {
+      return response.json();
+    }
+    if (response.status === 401) {
+      return null;
+    }
+    throw new Error(`Error ${response.status} fetching ${urlGen.apiWhoAmI()}`);
+  }
+
   async getRealDocId(docId: number):Promise<number> {
     let cacheKey = `docId-${docId}`;
     let realDocId = this.caches.local.retrieve(cacheKey);

@@ -446,6 +446,11 @@ function createApiSystemRoutes(RouteCollectorProxy $group, ContainerInterface $c
             return (new ApiSystem($container))->getSystemLanguages($request, $response);
         })
         ->setName('api.system.languages');
+
+
+    $group->get('/whoami', function(Request $request, Response $response) use ($container){
+        return (new ApiSystem($container))->whoAmI($request, $response);
+    })->setName('api.frontend.whoami');
 }
 function createApiAdminRoutes(RouteCollectorProxy $group, ContainerInterface $container) : void {
     // LOG

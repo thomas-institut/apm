@@ -26,7 +26,7 @@ export class FmtTextToken {
 
 
     constructor (type:string = FmtTextTokenType.TEXT);
-    getPlainText() : string;
+    // getPlainText() : string;
     setText(text: string) :this;
     setFontSize(fontSize: string): this;
     setItalic(): this;

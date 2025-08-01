@@ -17,7 +17,7 @@
  */
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { MceData } from '../MceData/MceData.mjs'
+import { MceData } from '../MceData/MceData.ts'
 import { EditionPanel } from './EditionPanel'
 import { TabConfig } from '../MultiPanelUI/TabConfig'
 import { MultiPanelUI } from '../MultiPanelUI/MultiPanelUI'
@@ -34,7 +34,7 @@ import { defaultLanguageDefinition } from '../defaults/languages'
 import { EditionWitnessInfo } from '../Edition/EditionWitnessInfo'
 import { MainTextTokenFactory } from '../Edition/MainTextTokenFactory.mjs'
 import { arraysAreEqual, varsAreEqual } from '../toolbox/ArrayUtil.mjs'
-import { Apparatus } from '../Edition/Apparatus'
+import { ApparatusTools } from '../Edition/Apparatus'
 import { ApparatusEntry } from '../Edition/ApparatusEntry.mjs'
 import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry.mjs'
 import { EditableTextField } from '../widgets/EditableTextField'
@@ -952,7 +952,7 @@ export class MceComposer extends ApmPage {
         let singleChunkApparatus = singleChunkEdition.apparatuses[appIndex]
         let currentApparatus
         if (this.edition.apparatuses[appIndex] === undefined) {
-          currentApparatus = new Apparatus()
+          currentApparatus = ApparatusTools.createEmpty();
           currentApparatus.type = singleChunkApparatus.type
           this.edition.apparatuses.push(currentApparatus)
         } else {

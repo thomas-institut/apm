@@ -16,7 +16,7 @@
  *
  */
 
-import { FmtText } from '../FmtText.mjs'
+import { FmtTextUtil } from '../FmtTextUtil.mjs'
 
 /**
  * Base class for FmtText renderers
@@ -32,7 +32,7 @@ export class FmtTextRenderer {
    * @return {*}
    */
   render(fmtText, lang = '') {
-    return FmtText.getPlainText(fmtText)
+    return FmtTextUtil.getPlainText(fmtText)
   }
 
 }

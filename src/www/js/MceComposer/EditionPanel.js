@@ -19,9 +19,9 @@
 
 import { Panel } from '../MultiPanelUI/Panel'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { MceData } from '../MceData/MceData.mjs'
+import { MceData } from '../MceData/MceData.ts'
 import * as Util from '../toolbox/Util.mjs'
-import { resolvedPromise, wait } from '../toolbox/FunctionUtil.mjs'
+import { wait } from '../toolbox/FunctionUtil.mjs'
 import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
 import { EditableTextField } from '../widgets/EditableTextField'
 import { transientAlert } from '../widgets/TransientAlert'
@@ -59,7 +59,7 @@ export class EditionPanel extends Panel {
           if (force) {
             console.log(`Faking force get update statuses`)
           }
-          return resolvedPromise( this.mceData.chunks.map( () => { return 'false'}))
+          return Promise.resolve( this.mceData.chunks.map( () => { return 'false'}))
           }
         },
         updateChunk: { type: 'function', default: (chunkIndex) => {
@@ -83,7 +83,7 @@ export class EditionPanel extends Panel {
           default: (newOrder) => {
             console.log(`New chunk order`)
             console.log(newOrder)
-            return resolvedPromise()
+            return Promise.resolve()
           }
         },
         updateAutoMarginalFoliation: {
@@ -98,7 +98,7 @@ export class EditionPanel extends Panel {
           default: (newSigla) => {
             console.log(`Faking updating sigla`)
             console.log(newSigla)
-            return resolvedPromise()
+            return Promise.resolve()
           }
         },
         updateSiglaGroups: {
@@ -106,14 +106,14 @@ export class EditionPanel extends Panel {
           default: (newSiglaGroups) => {
             console.log(`Faking updating sigla groups`)
             console.log(newSiglaGroups)
-            return resolvedPromise()
+            return Promise.resolve()
           }
         },
         updateChunkBreak: {
           type: 'function',
           default: (chunkIndex, newBreak) => {
             console.log(`Faking update chunk break fro chunk ${chunkIndex}, new break is '${newBreak}'`)
-            return resolvedPromise()
+            return Promise.resolve()
           }
         },
       }

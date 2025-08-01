@@ -6,6 +6,7 @@
 import {MainTextToken} from "./MainTextToken";
 import {EditionWitnessInfo} from "./EditionWitnessInfo";
 import {FoliationChangeInfoInterface} from "./EditionGenerator/FoliationChangeInfoInterface";
+import {Apparatus} from "./Apparatus";
 
 export class Edition {
     constructor();
@@ -14,10 +15,10 @@ export class Edition {
     infoText: string;
     info: { [key: string]: any};
     mainText: MainTextToken[];
-    apparatuses: any[];
+    apparatuses: Apparatus[];
     witnesses: EditionWitnessInfo[];
-    siglaGroups: any[];
-    foliationChanges: FoliationChangeInfoInterface
+    siglaGroups: SiglaGroup[];
+    foliationChanges: FoliationChangeInfoInterface[];
 
     setMainText(mainText: MainTextToken[]): this;
 

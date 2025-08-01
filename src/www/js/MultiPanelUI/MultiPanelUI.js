@@ -21,7 +21,7 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import Split from 'split-grid'
 import { createIndexArray, prettyPrintArray } from '../toolbox/ArrayUtil.mjs'
 import { BootstrapTabGenerator } from './BootstrapTabGenerator'
-import { doNothing, returnEmptyString} from '../toolbox/FunctionUtil.mjs'
+import { doNothing} from '../toolbox/FunctionUtil.mjs'
 import { UiToolBox } from '../toolbox/UiToolBox'
 
 const defaultIcons = {
@@ -67,11 +67,11 @@ export class MultiPanelUI {
       },
       topBarContent: {
         type: 'function',
-        default: returnEmptyString
+        default: () => ''
       },
       topBarRightAreaContent: {
         type: 'function',
-        default: returnEmptyString
+        default: () => ''
       },
       icons: {
         type: 'object',
@@ -132,7 +132,7 @@ export class MultiPanelUI {
         // function to call to get the content of a panel of type 'simple
         // (panelId, mode) =>  string
         type: 'function',
-        default: returnEmptyString
+        default: () => ''
       },
       postRender: {
         // Function to call after a panel  is rendered

@@ -21,7 +21,7 @@ import { TypesetterTokenFactory } from '../Typesetter/TypesetterTokenFactory'
 import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
 import * as ApparatusSubEntryType from '../Edition/SubEntryType.mjs'
 import { NumeralStyles } from '../toolbox/NumeralStyles.mjs'
-import { FmtText } from '../FmtText/FmtText.mjs'
+import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
 import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
@@ -30,7 +30,7 @@ import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
 import { escapeHtml } from '../toolbox/Util.mjs'
 import { ApparatusUtil } from '../Edition/ApparatusUtil.mjs'
 import { Punctuation} from '../defaults/Punctuation.mjs'
-import * as MainTexTokenType from '../Edition/MainTextTokenType.mjs'
+import * as MainTextTokenType from '../Edition/MainTextTokenType.mjs'
 import { StringCounter } from '../toolbox/StringCounter.mjs'
 
 // const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
@@ -174,7 +174,7 @@ export class ApparatusCommon {
    */
   static getKeywordTypesetterTokens(keyword, lang) {
     if (typeof keyword !== 'string') {
-      keyword = FmtText.getPlainText(FmtTextFactory.fromAnything(keyword))
+      keyword = FmtTextUtil.getPlainText(FmtTextFactory.fromAnything(keyword))
     }
     let keywordString = this.getKeywordString(keyword, lang)
     let fmtText = FmtTextFactory.fromAnything(keywordString)
@@ -554,7 +554,7 @@ export class ApparatusCommon {
 
     verbose && console.log(`CT range: ${ctFromTokenIndex} - ${ctToTokenIndex}`)
     if (newEntry.isNew) {
-      if (FmtText.getPlainText(newEntry.text) !== '') {
+      if (FmtTextUtil.getPlainText(newEntry.text) !== '') {
         ctData = CtData.addCustomApparatusTextSubEntry(ctData,
           newEntry.apparatus,
           ctFromTokenIndex,
@@ -564,7 +564,7 @@ export class ApparatusCommon {
         )
       }
     } else {
-      if (FmtText.getPlainText(newEntry.text) === '') {
+      if (FmtTextUtil.getPlainText(newEntry.text) === '') {
         console.log(`Deleting current custom entry`)
         ctData = CtData.deleteCustomApparatusTextSubEntries(ctData,
           newEntry.apparatus,
@@ -632,7 +632,7 @@ export class ApparatusCommon {
         custom = true
     }
     if (custom) {
-      return FmtText.getPlainText(lemma)
+      return FmtTextUtil.getPlainText(lemma)
     }
     if (lemmaText === '') {
       lemmaText = 'pre'
@@ -658,7 +658,7 @@ export class ApparatusCommon {
   static getMainTextTypesettingInfo(containerSelector, classPrefix, tokens) {
     let yPositions = []
     let tokensWithInfo = tokens.map( (token, i) => {
-      if (token.type === MainTexTokenType.PARAGRAPH_END) {
+      if (token.type === MainTextTokenType.PARAGRAPH_END) {
         return token
       }
       let span = $(`${containerSelector} .${classPrefix}${i}`)
@@ -671,7 +671,8 @@ export class ApparatusCommon {
     })
 
     let uniqueYPositions = yPositions.filter((v, i, a) => a.indexOf(v) === i).sort( (a,b) => { return a > b ? 1 : 0})
-    let lineMap = calculateYPositionToLineMap(yPositions)
+    let lineMap = calculateYPositionToLineMap(yPositions);
+
     let tokensWithLineNumbers = tokensWithInfo.map( (t) => {
       t.lineNumber = getLineNumber(t.y, lineMap)
       return t
@@ -684,7 +685,7 @@ export class ApparatusCommon {
     tokensWithLineNumbers.forEach( (t) => {
       if (t.lineNumber !== currentLine) {
         currentLineTokens = currentLineTokens.map( (t) => {
-          if (t.type === MainTexTokenType.TEXT) {
+          if (t.type === MainTextTokenType.TEXT) {
             t.numberOfOccurrencesInLine = occurrenceInLineCounter.getCount(t.getPlainText())
           }
           return t
@@ -694,7 +695,7 @@ export class ApparatusCommon {
         currentLineTokens = []
         currentLine = t.lineNumber
       }
-      if (t.type === MainTexTokenType.TEXT ) {
+      if (t.type === MainTextTokenType.TEXT ) {
         let text = t.getPlainText()
         occurrenceInLineCounter.addString(text)
         t.occurrenceInLine = occurrenceInLineCounter.getCount(text)
@@ -703,7 +704,7 @@ export class ApparatusCommon {
     })
     if (currentLineTokens.length > 0) {
       currentLineTokens = currentLineTokens.map( (t) => {
-        if (t.type === MainTexTokenType.TEXT) {
+        if (t.type === MainTextTokenType.TEXT) {
           t.numberOfOccurrencesInLine = occurrenceInLineCounter.getCount(t.getPlainText())
         }
         return t

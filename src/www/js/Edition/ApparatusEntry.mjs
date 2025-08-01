@@ -54,24 +54,28 @@ export class ApparatusEntry {
   /**
    * Order the entry's sub-entries according to their current position
    * values and update those to reflect the new order
+   * @param {ApparatusEntry} theEntry
+   * @return {ApparatusEntry}
    */
-  orderSubEntries() {
+  static orderSubEntries(theEntry) {
+    let entry = ApparatusEntry.clone(theEntry);
 
-    let nonPositionedAutoSubEntries = this.subEntries
+    let nonPositionedAutoSubEntries = entry.subEntries
       .filter( (subEntry) => { return subEntry.type === SubEntryType.AUTO && subEntry.position === -1})
-    let positionedEntries = numericFieldSort(this.subEntries
+    let positionedEntries = numericFieldSort(theEntry.subEntries
       .filter( (subEntry) => { return subEntry.position !== -1}), 'position', true)
-    let nonPositionedCustomSubEntries = this.subEntries
+    let nonPositionedCustomSubEntries = theEntry.subEntries
       .filter( (subEntry) => { return subEntry.type !== SubEntryType.AUTO && subEntry.position === -1})
 
     let orderedSubEntries = nonPositionedAutoSubEntries
     pushArray(orderedSubEntries, positionedEntries)
     pushArray(orderedSubEntries, nonPositionedCustomSubEntries)
-    this.subEntries = orderedSubEntries.map ( (subEntry,
+    entry.subEntries = orderedSubEntries.map ( (subEntry,
       index) => {
         subEntry.position = index
         return subEntry
-    })
+    });
+    return entry;
   }
 
   /**

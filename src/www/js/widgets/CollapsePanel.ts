@@ -19,7 +19,6 @@
 
 import $ from 'jquery';
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import {resolvedPromise} from "../toolbox/FunctionUtil";
 
 
 /**
@@ -58,13 +57,13 @@ export class CollapsePanel {
       // should return a promise
       onShow: { type: 'function', default: (panelObject: any) : Promise<boolean> => {
           panelObject.debug && console.log(`Showing panel with selector '${panelObject.getContainerSelector()}'`)
-          return resolvedPromise(true)
+          return Promise.resolve(true)
         }},
       // function that will be called when the panel is hidden
       onHide:
         { type: 'function', default: (panelObject : any) : Promise<boolean> => {
             panelObject.debug && console.log(`Hiding panel with selector '${panelObject.getContainerSelector()}'`)
-            return resolvedPromise(true)
+            return Promise.resolve(true)
           }},
       debug: { type: 'boolean', default: false}
     }

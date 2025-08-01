@@ -56,7 +56,7 @@ import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenS
 import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
 import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
-import { FmtText } from '../FmtText/FmtText.mjs'
+import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
 import { Punctuation } from '../defaults/Punctuation.mjs'
 import { toolbarCharacters} from '../defaults/ToolbarCharacters'
 import { SimpleConfirmDialog } from '../pages/common/SimpleConfirmDialog'
@@ -1030,9 +1030,9 @@ export class CollationTablePanel extends PanelWithToolbar {
           console.log(`newText: ${newText}`)
           console.log(`current fmtText: `)
           console.log(this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText'])
-          let newFmtText = FmtText.withPlainText(this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText'], newText)
+          let newFmtText = FmtTextUtil.withPlainText(this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText'], newText)
           this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText'] = newFmtText
-          this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = FmtText.getPlainText(newFmtText)
+          this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = FmtTextUtil.getPlainText(newFmtText)
           console.log(`new fmtText: `)
           console.log(this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText'])
         }

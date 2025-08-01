@@ -27,7 +27,7 @@ import Sigla from './QuillBlots/Sigla'
 import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
 import { CustomApparatusQuillDeltaConverter } from './QuillDelta/CustomApparatusQuillDeltaConverter'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
-import { FmtText } from '../FmtText/FmtText.mjs'
+import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
 import { isRtl, removeWhiteSpace } from '../toolbox/Util.mjs'
 
 const toolbarSeparator = '<span class="mte-tb-sep">&nbsp;</span>'
@@ -130,7 +130,7 @@ export class ApparatusEntryTextEditor {
 
   getFmtText() {
     let fmtText = CustomApparatusQuillDeltaConverter.toFmtText(this.getQuillDelta())
-    if (removeWhiteSpace(FmtText.getPlainText(fmtText)) === '' ) {
+    if (removeWhiteSpace(FmtTextUtil.getPlainText(fmtText)) === '' ) {
       // only white space, report no text
       return []
     }

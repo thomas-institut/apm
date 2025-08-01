@@ -41,13 +41,15 @@ class SiteDashboard extends SiteController
         SystemProfiler::setName("Site:" . __FUNCTION__);
         return $this->renderStandardPage(
             $response,
-            '',
+            'Dashboard',
             "Dashboard",
             "DashboardPage",
             "js/pages/DashboardPage.ts",
             null,
             [],
-            [ 'dashboard.css']
+            [ 'dashboard.css'],
+            [],
+            false
         );
     }
 }

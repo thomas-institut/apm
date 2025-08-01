@@ -29,7 +29,7 @@ import { pushArray } from '../toolbox/ArrayUtil.mjs'
 import { ApparatusCommon } from '../EditionComposer/ApparatusCommon.js'
 
 import * as SubEntryType from './SubEntryType.mjs'
-import { FmtText } from '../FmtText/FmtText.mjs'
+import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
 
 import * as VerticalAlign from '../FmtText/VerticalAlign.mjs'
 import * as FontSize from '../FmtText/FontSize.mjs'
@@ -546,7 +546,7 @@ export class EditionViewerSvg {
 
         default:
           separatorTokens = (new TypesetterTokenRenderer()).render(
-            FmtTextFactory.fromString(removeExtraWhiteSpace(FmtText.getPlainText(apparatusEntry.separator)))
+            FmtTextFactory.fromString(removeExtraWhiteSpace(FmtTextUtil.getPlainText(apparatusEntry.separator)))
           )
       }
       pushArray(ttTokens, separatorTokens)
@@ -592,7 +592,7 @@ export class EditionViewerSvg {
   _getTypesetTokensFromCustomLemmaGroupValue(customText, lang) {
     console.log(`Getting typeset token from custom lemma group value, lang = ${lang}`)
     console.log(customText)
-    let text = removeExtraWhiteSpace(FmtText.getPlainText(FmtTextFactory.fromAnything(customText)))
+    let text = removeExtraWhiteSpace(FmtTextUtil.getPlainText(FmtTextFactory.fromAnything(customText)))
     console.log(`Processed plain text: '${text}'`)
     let fmtText
     switch (lang) {

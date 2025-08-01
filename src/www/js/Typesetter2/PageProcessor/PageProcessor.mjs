@@ -1,5 +1,3 @@
-import { resolvedPromise } from '../../toolbox/FunctionUtil.mjs'
-
 export class PageProcessor {
 
   /**
@@ -8,6 +6,6 @@ export class PageProcessor {
    * @return {Promise<TypesetterPage>}
    */
   process(page) {
-    return resolvedPromise(page)
+    return Promise.resolve(page)
   }
 }

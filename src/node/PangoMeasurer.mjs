@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2022 Universität zu Köln
  *
@@ -18,9 +20,7 @@
 
 
 import { TextBoxMeasurer } from '../www/js/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.mjs'
-import {resolvedPromise} from '../www/js/toolbox/FunctionUtil.mjs'
 import {exec} from 'node:child_process'
-import { FontBaselineInfo } from '../www/js/Typesetter2/FontBaselineInfo.mjs'
 
 const pythonMeasurer =  '../python/text-measurer.py'
 
@@ -56,7 +56,7 @@ export class PangoMeasurer extends TextBoxMeasurer {
     let cacheKey = this.__getCacheKeyForTextBox(textBox);
     if (this.cache.has(cacheKey)) {
       this.cacheHits++;
-      return resolvedPromise(this.cache.get(cacheKey));
+      return Promise.resolve(this.cache.get(cacheKey));
     }
     this.realMeasurements++;
     return new Promise ( (resolve) => {

@@ -25,7 +25,7 @@ import { Edition } from '../Edition/Edition.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { ZoomController } from '../toolbox/ZoomController'
 import { EditionViewerCanvas } from '../Edition/EditionViewerCanvas'
-import { resolvedPromise, wait } from '../toolbox/FunctionUtil.mjs'
+import { wait } from '../toolbox/FunctionUtil.mjs'
 import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
 import { CanvasTextBoxMeasurer } from '../Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer.mjs'
 import { Dimension } from '../Typesetter2/Dimension.mjs'
@@ -58,7 +58,7 @@ export class EditionPreviewPanelNew extends PanelWithToolbar {
         default: (data) => {
           this.debug && console.log(`Default getPdfDownloadUrl called`)
           this.debug && console.log(data)
-          return resolvedPromise('')}
+          return Promise.resolve('')}
         }
     }
     let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'Edition Preview Panel New'});

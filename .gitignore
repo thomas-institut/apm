@@ -36,3 +36,4 @@ src/python/.idea
 .run/**
 /dev-logs/**
 /dev-tmp/
+/src/www/app-settings.json

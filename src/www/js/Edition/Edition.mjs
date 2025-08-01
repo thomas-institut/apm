@@ -89,6 +89,7 @@ SubEntryWitnessInfo := {
  */
 
 import { MainTextToken } from './MainTextToken.mjs'
+import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
 
 export class Edition {
 
@@ -171,7 +172,7 @@ export class Edition {
     }
     return this.mainText.filter( (token, i) => {
       return i>=from && i<= to
-    }).map ( (token) => { return token.getPlainText()}).join('')
+    }).map ( (token) => { return  FmtTextUtil.tokenGetPlainText(token)}).join('')
   }
 
 }

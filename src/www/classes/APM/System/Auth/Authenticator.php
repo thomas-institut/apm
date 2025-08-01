@@ -38,6 +38,7 @@ use APM\System\SystemManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNotFoundException;
 use APM\SystemProfiler;
+use APM\ToolBox\HttpStatus;
 use DateInterval;
 use DateTime;
 use Exception;
@@ -345,7 +346,7 @@ class Authenticator {
         if ($userId <= 0){
             $this->apiLogger->notice("Authentication fail");
             $response = new Response();
-            return $response->withStatus(401);
+            return $response->withStatus(HttpStatus::UNAUTHORIZED);
         }
         $this->debug('API : Success, go ahead!');
         $this->container->set(ApmContainerKey::API_USER_ID, $userId);

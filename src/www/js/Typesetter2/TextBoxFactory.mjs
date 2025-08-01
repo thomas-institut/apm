@@ -23,6 +23,13 @@ import { TextBox } from './TextBox.mjs'
  */
 export class TextBoxFactory {
 
+  /**
+   *
+   * @param {string}text
+   * @param {FontDefinition}fontSpec
+   * @param {'rtl'|'ltr'|''}textDirection
+   * @return {TextBox}
+   */
   static simpleText(text, fontSpec = {}, textDirection = ''){
     let item = new TextBox()
     item.setText(text)

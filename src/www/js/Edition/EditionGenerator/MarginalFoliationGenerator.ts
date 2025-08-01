@@ -1,4 +1,4 @@
-import {Apparatus} from '../Apparatus'
+import {Apparatus, ApparatusTools} from '../Apparatus'
 import {MARGINALIA} from '../../constants/ApparatusType'
 import {ApparatusSubEntry} from '../ApparatusSubEntry'
 import * as SubEntryType from '../SubEntryType'
@@ -44,7 +44,7 @@ export class MarginalFoliationGenerator {
      * @return {Apparatus}
      */
     generateMarginaliaApparatus(mainText: MainTextToken[]): Apparatus {
-        let app = new Apparatus();
+        let app = ApparatusTools.createEmpty();
         app.type = MARGINALIA;
         let mainTextCollationRow = this.ctData.collationMatrix[this.ctData.editionWitnessIndex];
 

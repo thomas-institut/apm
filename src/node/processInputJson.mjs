@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 import { ObjectFactory } from '../www/js/Typesetter2/ObjectFactory.mjs'
 import { PangoMeasurerNodeGTK } from './PangoMeasurerNodeGTK.mjs'
 import { SystemStyleSheet } from '../www/js/Typesetter2/Style/SystemStyleSheet.mjs'

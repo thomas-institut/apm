@@ -17,7 +17,6 @@
  */
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { resolvedPromise } from './FunctionUtil.mjs'
 
 /**
  * A Class to handle zoom controls

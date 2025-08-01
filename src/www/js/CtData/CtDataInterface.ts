@@ -27,6 +27,12 @@ export interface SiglaGroupInterface {
     witnesses: number[];
 }
 
+export interface NonTokenItemIndex {
+    pre: number[];
+    post: number[];
+}
+
+
 export interface WitnessInterface {
     chunkId: string;
     lang: string;
@@ -41,7 +47,7 @@ export interface WitnessInterface {
     localWitnessId?: string;
     docId?: number;
     items?: FullTxItemInterface[];
-    nonTokenItemIndexes?: any;
+    nonTokenItemIndexes?: NonTokenItemIndex[];
 }
 
 

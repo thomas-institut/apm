@@ -38,7 +38,6 @@ import { MetadataEditor2 } from '../MetadataEditor/MetadataEditor2'
 import { WidgetAddPages } from '../WidgetAddPages'
 import { CollapsePanel } from '../widgets/CollapsePanel'
 import { SetLanguage } from '../widgets/SetLanguage'
-import { wait } from '../toolbox/FunctionUtil.mjs'
 
 const TabId_DocDetails = 'doc-info';
 const TabId_Pages = 'page-list';
@@ -881,7 +880,6 @@ export class DocPage extends NormalPage {
         tdHtml += '</small>';
         tdArray.push(tdHtml);
       }
-      // @ts-ignore
       html += ApmUtil.getTable(tdArray, 5, 'chunktable');
       html += '</ul>';
     }

@@ -1,5 +1,3 @@
-import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
-
 /**
  * An abstract container that can hold one or more components
  */
@@ -23,7 +21,7 @@ export class Container {
    * @return {Promise<boolean>}
    */
   preRender() {
-    return resolvedPromise(true)
+    return Promise.resolve(true)
   }
 
   /**
@@ -31,7 +29,7 @@ export class Container {
    * @return {Promise<boolean>}
    */
   render() {
-    return resolvedPromise(true)
+    return Promise.resolve(true)
   }
 
   /**
@@ -40,7 +38,7 @@ export class Container {
    * @return {Promise<boolean>}
    */
   postRender() {
-    return resolvedPromise(true)
+    return Promise.resolve(true)
   }
 
   /**
@@ -73,7 +71,7 @@ export class Container {
   }
 
   onResize() {
-    return resolvedPromise(true)
+    return Promise.resolve(true)
   }
 
 }

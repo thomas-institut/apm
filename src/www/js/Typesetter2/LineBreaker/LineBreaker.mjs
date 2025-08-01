@@ -1,4 +1,3 @@
-import { resolvedPromise } from '../../toolbox/FunctionUtil.mjs'
 import { ItemList } from '../ItemList.mjs'
 
 export class LineBreaker {
@@ -20,6 +19,6 @@ export class LineBreaker {
     // do nothing
     let theList = new ItemList()
     theList.setList(itemArray)
-    return resolvedPromise([ theList])
+    return Promise.resolve([ theList])
   }
 }

@@ -125,6 +125,10 @@ export class ItemList extends TypesetterItem {
     return numItemsTrimmed
   }
 
+  /**
+   *
+   * @return {string}
+   */
   getText() {
 
     let textArray = this.getList().map( (item) => {

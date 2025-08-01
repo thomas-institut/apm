@@ -16,8 +16,7 @@
  *
  */
 
-import { FmtText } from '../FmtText.mjs'
-import { resolvedPromise } from '../../toolbox/FunctionUtil.mjs'
+import { FmtTextUtil } from '../FmtTextUtil.mjs'
 
 export class AsyncFmtTextRenderer {
 
@@ -28,7 +27,7 @@ export class AsyncFmtTextRenderer {
    * @return {Promise}
    */
   render(fmtText, lang = '') {
-    return resolvedPromise(FmtText.getPlainText(fmtText))
+    return Promise.resolve(FmtTextUtil.getPlainText(fmtText))
   }
 
 }

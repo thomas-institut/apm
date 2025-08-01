@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 import express from 'express'
 import { PangoMeasurerNodeGTK } from './PangoMeasurerNodeGTK.mjs'
 import GI from 'node-gtk'

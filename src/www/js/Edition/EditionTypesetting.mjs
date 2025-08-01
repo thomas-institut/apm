@@ -38,14 +38,13 @@ import { getTextDirectionForLang, isRtl, removeExtraWhiteSpace } from '../toolbo
 import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
 import { ObjectFactory } from '../Typesetter2/ObjectFactory.mjs'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
-import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { Typesetter2StyleSheetTokenRenderer } from '../FmtText/Renderer/Typesetter2StyleSheetTokenRenderer.mjs'
 import { ApparatusUtil } from './ApparatusUtil.mjs'
 import { NumeralStyles } from '../toolbox/NumeralStyles.mjs'
 import { TextBoxFactory } from '../Typesetter2/TextBoxFactory.mjs'
 import { SiglaGroup } from './SiglaGroup.mjs'
 import { ApparatusEntry } from './ApparatusEntry.mjs'
-import { FmtText } from '../FmtText/FmtText.mjs'
+import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
 import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
 import { FontConversions } from '../Typesetter2/FontConversions.mjs'
 import { KeyStore } from '../toolbox/KeyStore.mjs'
@@ -104,7 +103,7 @@ export class EditionTypesetting {
 
   setup() {
     this.isSetup = true
-    return resolvedPromise(true)
+    return Promise.resolve(true)
   }
 
   /**
@@ -519,7 +518,7 @@ export class EditionTypesetting {
 
         default:
           // custom separator
-          items.push(...await this.getTsItemsForString(removeExtraWhiteSpace(FmtText.getPlainText(entry.separator)), 'apparatus', this.textDirection))
+          items.push(...await this.getTsItemsForString(removeExtraWhiteSpace(FmtTextUtil.getPlainText(entry.separator)), 'apparatus', this.textDirection))
           break
       }
       items.push((await this.createGlue('apparatus')).setTextDirection(this.textDirection))
@@ -555,7 +554,7 @@ export class EditionTypesetting {
           // a custom post lemma
           items.push((await this.createGlue('apparatus')).setTextDirection(this.textDirection))
           // TODO: check formatting here
-          let customPostLemmaBox = await this.ss.apply((new TextBox()).setText(FmtText.getPlainText(entry.postLemma)).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
+          let customPostLemmaBox = await this.ss.apply((new TextBox()).setText(FmtTextUtil.getPlainText(entry.postLemma)).setTextDirection(this.textDirection), 'apparatus apparatusKeyword')
           items.push(customPostLemmaBox)
           // items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
       }
@@ -587,7 +586,7 @@ export class EditionTypesetting {
 
         default:
           // a custom pre-lemma
-          let customPreLemmaText = FmtText.getPlainText(entry.preLemma)
+          let customPreLemmaText = FmtTextUtil.getPlainText(entry.preLemma)
           this.debug && console.log(`Custom pre-lemma: '${customPreLemmaText}'`)
           let customPreLemmaBox = await this.ss.apply(
             (new TextBox())

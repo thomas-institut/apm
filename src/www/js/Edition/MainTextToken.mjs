@@ -19,7 +19,7 @@
 
 import * as MainTextTokenType from './MainTextTokenType.mjs'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
-import { FmtText } from '../FmtText/FmtText.mjs'
+import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
 import { FmtTextToken } from '../FmtText/FmtTextToken.mjs'
 
 /**
@@ -81,7 +81,7 @@ export class MainTextToken {
    * @return {string}
    */
   getPlainText() {
-    return FmtText.getPlainText(this.fmtText)
+    return FmtTextUtil.getPlainText(this.fmtText)
   }
 
   /**

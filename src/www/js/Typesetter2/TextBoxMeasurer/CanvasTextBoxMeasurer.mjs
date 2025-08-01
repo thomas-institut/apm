@@ -18,7 +18,6 @@
 
 import { TextBoxMeasurer } from './TextBoxMeasurer.mjs'
 import { BrowserUtilities } from '../../toolbox/BrowserUtilities.mjs'
-import { resolvedPromise } from '../../toolbox/FunctionUtil.mjs'
 import { FontBaselineInfo } from '../FontBaselineInfo.mjs'
 
 
@@ -52,7 +51,7 @@ export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
       if (this.widthCache.has(cacheKey)) {
         this.debug && console.log(`Getting width from cache`)
         this.cacheHits++
-        return resolvedPromise(this.widthCache.get(cacheKey))
+        return Promise.resolve(this.widthCache.get(cacheKey))
       } else {
         this.realMeasurements++
       }
@@ -66,12 +65,12 @@ export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
     let metrics = context.measureText(textBox.text);
     myDebug && console.log(`Text width for '${textBox.getText()}', font '${context.font}'is ${metrics.width}px`)
     myDebug && console.log(metrics)
-    return resolvedPromise(metrics.width)
+    return Promise.resolve(metrics.width)
   }
 
   getBoxHeight (token) {
     // use font data collected from Cairo so that canvas preview and PDF typesetting are almost identical
-    return resolvedPromise(FontBaselineInfo.getBaseline(token.getFontFamily(), token.getFontSize()))
+    return Promise.resolve(FontBaselineInfo.getBaseline(token.getFontFamily(), token.getFontSize()))
   }
 
   __getCanvas() {

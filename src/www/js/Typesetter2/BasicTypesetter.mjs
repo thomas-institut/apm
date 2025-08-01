@@ -35,7 +35,6 @@ import { AddPageNumbers } from './PageProcessor/AddPageNumbers.mjs'
 import { AddLineNumbers } from './PageProcessor/AddLineNumbers.mjs'
 import { StringCounter } from '../toolbox/StringCounter.mjs'
 import { trimPunctuation } from '../defaults/Punctuation.mjs'
-import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { MAX_LINE_COUNT } from '../Edition/EditionTypesetting.mjs'
 import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
 import { BidiDisplayOrder } from './Bidi/BidiDisplayOrder.mjs'
@@ -89,7 +88,7 @@ export class BasicTypesetter extends Typesetter2 {
         // for a horizontal ItemList that will then be typeset and added to the document/page
         getApparatusListToTypeset: { type: 'function', default: (mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine) => {
           console.log(`Default typeset apparatus called `)
-          return resolvedPromise(new ItemList())
+          return Promise.resolve(new ItemList())
         }},
         // A function that will be called when ejecting a page to get the marginalia for the page's line range
         // it must return an array of
@@ -107,7 +106,7 @@ export class BasicTypesetter extends Typesetter2 {
         // with true that the process can continue.
         preTypesetApparatuses: { type: 'function', default: (apparatuses) => {
           console.log(`Default preTypesetApparatuses on ${apparatuses.length} apparatus(es)`)
-          return resolvedPromise(true)
+          return Promise.resolve(true)
           }},
         textToApparatusGlue: {
           type: 'object',

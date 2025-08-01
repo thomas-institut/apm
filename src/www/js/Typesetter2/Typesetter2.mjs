@@ -18,7 +18,6 @@
 
 import { ItemList } from './ItemList.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
-import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 import { TypesetterDocument } from './TypesetterDocument.mjs'
 
 /**
@@ -51,7 +50,7 @@ export class Typesetter2 {
     if (list.getDirection() !== TypesetterItemDirection.HORIZONTAL) {
       throw new Error('typesetHorizontalList called with a vertical list')
     }
-    return resolvedPromise(list)
+    return Promise.resolve(list)
   }
 
   /**
@@ -72,7 +71,7 @@ export class Typesetter2 {
     if (list.getDirection() !== TypesetterItemDirection.VERTICAL) {
       throw new Error('typesetVerticalList called with a horizontal list')
     }
-    return resolvedPromise(list)
+    return Promise.resolve(list)
   }
 
   /**
@@ -91,7 +90,7 @@ export class Typesetter2 {
    * @return {Promise<TypesetterDocument>}
    */
   typeset(list, data = null) {
-    return resolvedPromise(new TypesetterDocument())
+    return Promise.resolve(new TypesetterDocument())
   }
 
 

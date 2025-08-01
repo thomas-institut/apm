@@ -16,8 +16,6 @@
  *
  */
 
-import { resolvedPromise } from '../../toolbox/FunctionUtil.mjs'
-
 export class TextBoxMeasurer {
 
   /**
@@ -27,7 +25,7 @@ export class TextBoxMeasurer {
    */
   getBoxWidth(item) {
     // a wild guess based on a monospace font!
-    return resolvedPromise(item.text.length * item.fontSize)
+    return Promise.resolve(item.text.length * item.fontSize)
   }
 
   /**
@@ -37,7 +35,7 @@ export class TextBoxMeasurer {
    */
   getBoxHeight(item) {
     //just the fontSize... this will be different for different fonts
-    return resolvedPromise(item.fontSize)
+    return Promise.resolve(item.fontSize)
   }
 
 }

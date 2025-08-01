@@ -17,7 +17,6 @@
  */
 
 import { BidiOrderInfo} from './BidiOrderInfo.mjs'
-import { LevelInfo} from './LevelInfo.mjs'
 import { BidiOrderInfoArray } from './BidiOrderInfoArray.mjs'
 
 export class BidiDisplayOrder {
@@ -48,9 +47,9 @@ export class BidiDisplayOrder {
    * For example, input items with numbers and punctuation (e.g., '123.') may cause the algorithm to incorrectly
    * place the period.
    *
-   * @param {[]}items
+   * @param {string[]}items
    * @param {string}defaultTextDirection
-   * @param { function}getItemIntrinsicTextDirection
+   * @param { (string) => IntrinsicTextDirection }getItemIntrinsicTextDirection
    * @return {BidiOrderInfo[]}
    */
   static getDisplayOrder (items, defaultTextDirection, getItemIntrinsicTextDirection) {

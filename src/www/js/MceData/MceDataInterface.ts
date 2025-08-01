@@ -1,4 +1,4 @@
-import {SiglaGroupInterface} from "../CtData/CtDataInterface";
+import {SiglaGroupInterface} from "@/CtData/CtDataInterface";
 
 
 export interface MceDataInterface {

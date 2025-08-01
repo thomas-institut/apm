@@ -1,5 +1,4 @@
 import { DIRECTION } from './MultiPanelApp.mjs'
-import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 
 export class PanelController {
 
@@ -41,7 +40,7 @@ export class PanelController {
 
   renderPanel() {
     if (!this.visible) {
-      return resolvedPromise(true)
+      return Promise.resolve(true)
     }
     if (this.container === null) {
       this.container = $(this.containerSelector)
@@ -56,13 +55,13 @@ export class PanelController {
   async setDirection(direction, silent = false) {
     if (silent) {
       this.direction = direction
-      return resolvedPromise(true)
+      return Promise.resolve(true)
     }
     let result = await this.panel.onDirectionChange(this.container, direction)
     if (!result) {
       return this.renderPanel()
     }
-    return resolvedPromise(true)
+    return Promise.resolve(true)
   }
 
   async resize(){
@@ -74,7 +73,7 @@ export class PanelController {
     if (!result) {
       return this.renderPanel()
     }
-    return resolvedPromise(true)
+    return Promise.resolve(true)
   }
 
   show() {

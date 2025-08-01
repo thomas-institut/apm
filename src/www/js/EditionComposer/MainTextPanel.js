@@ -45,7 +45,7 @@ import * as EditionWitnessFormatMarkType from '../Witness/EditionWitnessFormatMa
 import * as EditionWitnessParagraphStyle from '../Witness/EditionWitnessParagraphStyle.mjs'
 import * as FmtTexTokenType from '../FmtText/FmtTextTokenType.mjs'
 import { WitnessToken } from '../Witness/WitnessToken.mjs'
-import { FmtText } from '../FmtText/FmtText.mjs'
+import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
 import { CollapsePanel } from '../widgets/CollapsePanel'
 import { EditionWitnessToken } from '../Witness/EditionWitnessToken.mjs'
 import { MainText } from '../Edition/MainText.mjs'
@@ -1181,12 +1181,12 @@ export class MainTextPanel extends PanelWithToolbar {
     let newText = []
     tokens.forEach( (t) => {
       let tokenFmtText = t['fmtText'] !== undefined ? t['fmtText'] : FmtTextFactory.fromString(t.text)
-      newText = FmtText.concat(newText, tokenFmtText)
+      newText = FmtTextUtil.concat(newText, tokenFmtText)
     })
 
     theToken.tokenType = type
     theToken.fmtText = newText
-    theToken.text = FmtText.getPlainText(theToken.fmtText)
+    theToken.text = FmtTextUtil.getPlainText(theToken.fmtText)
 
     return theToken
   }

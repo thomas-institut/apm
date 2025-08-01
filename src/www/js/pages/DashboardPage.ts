@@ -35,12 +35,12 @@ export class DashboardPage extends NormalPage {
   transcriptionsCollapse! : CollapsePanel;
   adminCollapse!: CollapsePanel;
 
-  constructor(options: any) {
+  constructor(options: any = null) {
+    const start = Date.now();
     super(options);
     console.log(`Dashboard Page`);
-    console.log(options);
     this.initPage().then( () => {
-      console.log(`Dashboard page initialized`)
+      console.log(`Dashboard page ready in ${Date.now() - start} ms`)
     })
   }
 

@@ -17,7 +17,7 @@
  */
 
 
-import { FmtText } from '../FmtText/FmtText.mjs'
+import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
 import { deepCopy } from '../toolbox/Util.mjs'
 
 const enDash = String.fromCodePoint(0x2013)
@@ -42,7 +42,7 @@ export class ApparatusUtil {
         custom = true
     }
     if (custom) {
-      return { type: 'custom', text:  FmtText.getPlainText(apparatusEntryLemma) }
+      return { type: 'custom', text:  FmtTextUtil.getPlainText(apparatusEntryLemma) }
     }
     if (lemmaText === '') {
       lemmaText = 'pre'

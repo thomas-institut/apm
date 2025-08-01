@@ -239,9 +239,11 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
                                           ?array            $data = null,
                                           array             $extraViteEntryPoints = [],
                                           array             $extraCss = [],
-                                          array             $extraJss = []) : ResponseInterface {
+                                          array             $extraJss = [],
+                                          bool              $withJsOptions = true
+    ) : ResponseInterface {
         SystemProfiler::lap("Ready to render");
-        if ($cacheKey !== '') {
+        if ($cacheKey !== '' && !$this->systemManager->getConfig()['devMode']) {
             $cacheKey = implode(':', [ 'Site', $this->config['version'], $cacheKey]);
             try {
                 $html = $this->systemManager->getSystemDataCache()->get($cacheKey);
@@ -255,13 +257,12 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             }
         }
 
-        $commonData = $this->getCommonData();
+
         $baseUrl = $this->getBaseUrl();
 
         $cssItems = [];
         $cssItems[] = 'node_modules/bootstrap/dist/css/bootstrap.css';
         $cssItems[] = 'node_modules/bootstrap-icons/font/bootstrap-icons.css';
-//        $cssItems[] = 'node_modules/datatables.net-dt/css/jquery.dataTables.min.css';
         $cssItems[] = 'css/styles.css';
         foreach ($extraCss as $css) {
             $cssItems[] = "css/$css";
@@ -270,8 +271,6 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         $jsItems = [];
         $jsItems[] = 'node_modules/jquery/dist/jquery.min.js';
         $jsItems[] = 'node_modules/bootstrap/dist/js/bootstrap.bundle.min.js';
-//        $jsItems[] = 'node_modules/datatables.net/js/jquery.dataTables.min.js';
-//        $jsItems[] = 'node_modules/datatables.net-dt/js/dataTables.dataTables.min.js';
         $jsItems = [ ...$jsItems, ...$extraJss];
 
         $cssHtml = implode("\n", array_map(function($cssItem) use ($baseUrl) {
@@ -282,17 +281,24 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             return "<script type=\"text/javascript\" src=\"$baseUrl/$js\"></script>";
         }, $jsItems));
 
-        $jsOptions = [ 'commonData' => $commonData ];
-        if ($data !== null) {
-            foreach ($data as $key => $value) {
-                $jsOptions[$key] = $value;
+        if ($withJsOptions) {
+            $commonData = $this->getCommonData();
+            $jsOptions = [ 'commonData' => $commonData ];
+            if ($data !== null) {
+                foreach ($data as $key => $value) {
+                    $jsOptions[$key] = $value;
+                }
             }
+            $dataJs = $this->getJsObject($jsOptions);
+            $script = "$(() => {new $jsClassName(( $dataJs)) });";
+        } else {
+            $script = "$(() => {new $jsClassName(); });";
         }
-        $dataJs = $this->getJsObject($jsOptions);
+
 
         $viteImportsHtml = $this->getViteImportHtml([ $viteEntryPoint, ...$extraViteEntryPoints ]);
 
-        $script = "$(() => {new $jsClassName(( $dataJs)) });";
+
 
         $html = <<<END
 <!doctype html>
@@ -308,9 +314,9 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     $viteImportsHtml
 </head>
 <body>
-    <p>Loading...</p>
+    <p>Initializing...</p>
     <div class="spinner-grow" role="status">
-        <span class="sr-only">Loading...</span>
+        <span class="sr-only">Initializing...</span>
     </div>
 </body>
 <script>
@@ -349,7 +355,7 @@ END;
             $viteImportsHtml = '';
             foreach ($viteImports as $import) {
                 $viteImportsHtml .= <<<END
-    <script type="module" src="$baseUrl/js/dist/vite/$import"></script>
+    <script type="module" src="$baseUrl/dist/$import"></script>
 END;
             }
         }
@@ -357,7 +363,7 @@ END;
     }
 
     protected function getViteImportsFromManifest(string $entryPoint) : array {
-        $manifestFileName = './js/dist/vite/.vite/manifest.json';
+        $manifestFileName = './dist/.vite/manifest.json';
         $manifestFileContents = file_get_contents($manifestFileName );
         if ($manifestFileContents === false) {
             $this->logger->error("Vite manifest file not found: $manifestFileName");

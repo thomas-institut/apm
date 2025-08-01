@@ -23,8 +23,7 @@ import { BrowserUtilities } from '../toolbox/BrowserUtilities.mjs'
 import { Typesetter2 } from '../Typesetter2/Typesetter2.mjs'
 import { EditionTypesetting } from './EditionTypesetting.mjs'
 import { BasicTypesetter } from '../Typesetter2/BasicTypesetter.mjs'
-import { deepCopy, isRtl } from '../toolbox/Util.mjs'
-import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
+import { isRtl } from '../toolbox/Util.mjs'
 import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
 import { Dimension } from '../Typesetter2/Dimension.mjs'
 import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
@@ -270,7 +269,7 @@ export class EditionViewerCanvas {
             },
             preTypesetApparatuses: () => {
               editionTypesettingHelper.resetExtractedMetadataInfo()
-              return resolvedPromise(true)
+              return Promise.resolve(true)
             },
             getMarginaliaForLineRange: (lineFrom, lineTo) =>{
               return editionTypesettingHelper.getMarginaliaForLineRange(lineFrom, lineTo)

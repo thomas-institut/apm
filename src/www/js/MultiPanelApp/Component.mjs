@@ -4,7 +4,7 @@
  * Implementations of this class should let handling of visibility and rendering
  * to the multi panel UI controller.
  */
-import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
+
 import { MP_APP_CLASS } from './MultiPanelApp.mjs'
 
 export class Component {
@@ -88,7 +88,7 @@ export class Component {
    */
   preRender() {
     this.hasBeenRendered = false
-    return resolvedPromise(true)
+    return Promise.resolve(true)
   }
 
   /**
@@ -98,7 +98,7 @@ export class Component {
    */
   postRender() {
     this.hasBeenRendered = true
-    return resolvedPromise(true)
+    return Promise.resolve(true)
   }
 
   /**
@@ -107,7 +107,7 @@ export class Component {
    * @return {Promise<boolean>}
    */
   onShow() {
-    return resolvedPromise(true)
+    return Promise.resolve(true)
   }
 
   /**
@@ -116,7 +116,7 @@ export class Component {
    * @return {Promise<boolean>}
    */
   onHide() {
-    return resolvedPromise(true)
+    return Promise.resolve(true)
   }
 
   /**
@@ -124,7 +124,7 @@ export class Component {
    * @return {Promise<boolean>}
    */
   onResize() {
-    return resolvedPromise(true)
+    return Promise.resolve(true)
   }
 
   /**
@@ -135,7 +135,7 @@ export class Component {
    */
   onDirectionChange(newDirection) {
     this.direction = newDirection
-    return resolvedPromise(true)
+    return Promise.resolve(true)
   }
 
 

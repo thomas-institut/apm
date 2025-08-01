@@ -23,7 +23,7 @@ import { PanelWithToolbar } from '../MultiPanelUI/PanelWithToolbar'
 import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import { CtData } from '../CtData/CtData'
 import { onClickAndDoubleClick } from '../toolbox/DoubleClick'
-import { FmtText } from '../FmtText/FmtText.mjs'
+import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { ApparatusEntryTextEditor } from './ApparatusEntryTextEditor'
 import {
@@ -655,7 +655,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     let option = this._getLemmaGroupVariableToggleOption(entry[variable])
     toggle.setOptionByName(option)
     if (option === 'custom') {
-      textInput.removeClass('hidden').val(FmtText.getPlainText(entry[variable]))
+      textInput.removeClass('hidden').val(FmtTextUtil.getPlainText(entry[variable]))
     } else {
       textInput.addClass('hidden').val('')
     }
@@ -1423,7 +1423,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
           break
 
         default:
-          preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(FmtText.getPlainText(apparatusEntry.preLemma), this.edition.lang)
+          preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(FmtTextUtil.getPlainText(apparatusEntry.preLemma), this.edition.lang)
       }
       let preLemmaSpan = preLemmaSpanHtml === '' ? '' : `<span class="pre-lemma">${preLemmaSpanHtml}</span> `
 
@@ -1432,7 +1432,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
       let postLemmaSpan = ''
       if (apparatusEntry.postLemma !== '') {
-        let postLemma = ApparatusCommon.getKeywordHtml(FmtText.getPlainText(apparatusEntry.postLemma), this.edition.lang)
+        let postLemma = ApparatusCommon.getKeywordHtml(FmtTextUtil.getPlainText(apparatusEntry.postLemma), this.edition.lang)
         postLemmaSpan = ` <span class="pre-lemma">${postLemma}</span>`
       }
 
@@ -1456,7 +1456,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
           break
 
         default:
-          separator = FmtText.getPlainText(apparatusEntry.separator)
+          separator = FmtTextUtil.getPlainText(apparatusEntry.separator)
       }
 
       html +=  `${lineHtml} ${preLemmaSpan}${lemmaSpan}${postLemmaSpan}${separator} `

@@ -1,16 +1,17 @@
-import {Apparatus, ApparatusTools} from '../Apparatus'
-import {MARGINALIA} from '../../constants/ApparatusType'
+import {Apparatus} from '../Apparatus'
+import {ApparatusTools} from "@/Edition/ApparatusTools";
+import {MARGINALIA} from '@/constants/ApparatusType'
 import {ApparatusSubEntry} from '../ApparatusSubEntry'
 import * as SubEntryType from '../SubEntryType'
 import * as SubEntrySource from '../SubEntrySource'
 import {ApparatusEntry} from '../ApparatusEntry'
-import {FmtTextFactory} from '../../FmtText/FmtTextFactory'
-import {FmtTextTokenFactory} from '../../FmtText/FmtTextTokenFactory'
-import {NumeralStyles} from '../../toolbox/NumeralStyles'
-import {CtDataInterface, FullTxItemInterface, WitnessTokenInterface} from "../../CtData/CtDataInterface";
-import {FoliationChangeInfoInterface} from "./FoliationChangeInfoInterface";
+import {FmtTextFactory} from '@/FmtText/FmtTextFactory'
+import {FmtTextTokenFactory} from '@/FmtText/FmtTextTokenFactory'
+import {NumeralStyles} from '@/toolbox/NumeralStyles'
+import {CtDataInterface, FullTxItemInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
+import {FoliationChangeInfoInterface} from "../FoliationChangeInfoInterface";
 import {MainTextToken} from "../MainTextToken";
-import {FmtTextToken} from "../../FmtText/FmtTextToken";
+import {FmtTextToken} from "@/FmtText/FmtTextToken";
 
 export class MarginalFoliationGenerator {
     private readonly ctData: CtDataInterface;
@@ -62,7 +63,13 @@ export class MarginalFoliationGenerator {
                 subEntry.source = SubEntrySource.AUTO;
                 subEntry.type = SubEntryType.AUTO_FOLIATION;
                 subEntry.fmtText = this.getMarginalSubEntryFmtText(siglum, change.newFoliation);
-                subEntry.witnessData = [];
+                subEntry.witnessData = [{
+                    witnessIndex: change.witnessIndex,
+                    hand: 0,
+                    forceHandDisplay: false,
+                    location: "",
+                    omitSiglum: true
+                }];
                 subEntries.push(subEntry);
             });
             if (subEntries.length > 0) {

@@ -1,4 +1,4 @@
-import {Apparatus} from "../Edition/Apparatus";
+import {Apparatus} from "@/Edition/Apparatus";
 
 export interface CtDataInterface {
     lang: string;

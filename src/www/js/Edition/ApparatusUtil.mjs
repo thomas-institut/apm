@@ -64,13 +64,17 @@ export class ApparatusUtil {
     }
   }
 
-
   static getSiglaData(witnessData, sigla, siglaGroups) {
+    /**
+     * @var {WitnessData[]}
+     */
     let wData = deepCopy(witnessData)
-    let wDataArray = wData.map ( (w) => {
+    let wDataArray = wData.filter( (w) => {
+      return w.omitSiglum !== true;
+    }).map ( (w) => {
       w.siglum = sigla[w.witnessIndex]
       return w
-    })
+    });
 
     siglaGroups.forEach ( (sg) => {
       let siglaIndexes = wDataArray.map ( (w) => {

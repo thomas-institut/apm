@@ -17,34 +17,34 @@
  */
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { MceData } from '../MceData/MceData.ts'
+import { MceData } from '@/MceData/MceData'
 import { EditionPanel } from './EditionPanel'
-import { TabConfig } from '../MultiPanelUI/TabConfig'
-import { MultiPanelUI } from '../MultiPanelUI/MultiPanelUI'
+import { TabConfig } from '@/MultiPanelUI/TabConfig'
+import { MultiPanelUI } from '@/MultiPanelUI/MultiPanelUI'
 import * as Util from '../toolbox/Util.mjs'
 import { deepCopy } from '../toolbox/Util.mjs'
 import { ChunkSearchPanel } from './ChunkSearchPanel'
-import { KeyCache } from '../toolbox/KeyCache/KeyCache'
-import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
-import { EditionPreviewPanelNew } from '../EditionComposer/EditionPreviewPanelNew'
-import { PdfDownloadUrl } from '../EditionComposer/PdfDownloadUrl'
+import { KeyCache } from '@/toolbox/KeyCache/KeyCache'
+import { CtDataEditionGenerator } from '@/Edition/EditionGenerator/CtDataEditionGenerator'
+import { EditionPreviewPanelNew } from '@/EditionComposer/EditionPreviewPanelNew'
+import { PdfDownloadUrl } from '@/EditionComposer/PdfDownloadUrl'
 import { Edition } from '../Edition/Edition.mjs'
 
-import { defaultLanguageDefinition } from '../defaults/languages'
-import { EditionWitnessInfo } from '../Edition/EditionWitnessInfo'
+import { defaultLanguageDefinition } from '@/defaults/languages'
+import { EditionWitnessInfo } from '@/Edition/EditionWitnessInfo'
 import { MainTextTokenFactory } from '../Edition/MainTextTokenFactory.mjs'
-import { arraysAreEqual, varsAreEqual } from '../toolbox/ArrayUtil.mjs'
-import { ApparatusTools } from '../Edition/Apparatus'
+import { arraysAreEqual, uniq, varsAreEqual } from '../toolbox/ArrayUtil.mjs'
+import { ApparatusTools } from '@/Edition/ApparatusTools'
 import { ApparatusEntry } from '../Edition/ApparatusEntry.mjs'
 import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry.mjs'
-import { EditableTextField } from '../widgets/EditableTextField'
+import { EditableTextField } from '@/widgets/EditableTextField'
 import { TimeString } from '../toolbox/TimeString.mjs'
 import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
-import { CtData } from '../CtData/CtData'
+import { CtData } from '@/CtData/CtData'
 import { WitnessDataItem } from '../Edition/WitnessDataItem.mjs'
-import { urlGen } from '../pages/common/SiteUrlGen'
-import { ApmPage } from '../pages/ApmPage'
-import { ApmFormats } from '../pages/common/ApmFormats'
+import { urlGen } from '@/pages/common/SiteUrlGen'
+import { ApmPage } from '@/pages/ApmPage'
+import { ApmFormats } from '@/pages/common/ApmFormats'
 
 const defaultIcons = {
   moveUp: '&uarr;',
@@ -902,7 +902,7 @@ export class MceComposer extends ApmPage {
         return;
       }
 
-      currentFoliationChanges  = singleChunkEdition.foliationChanges ?? [];
+      currentFoliationChanges  = this.mergeFoliationChanges(currentFoliationChanges, singleChunkEdition.foliationChanges);
 
       if (chunkOrderIndex === 0) {
         this.edition.lang = singleChunkEdition.lang
@@ -998,6 +998,43 @@ export class MceComposer extends ApmPage {
       profiler.stop()
       console.log(`New Edition`)
       console.log(this.edition)
+  }
+
+  /**
+   * Merges previous with current foliation changes making sure that the last foliation changes of
+   * a witness is copied into the result if there are no changes in that witness in the new foliation changes
+   *
+   * @param {FoliationChangeInfoInterface[]}previousFoliationChanges
+   * @param {FoliationChangeInfoInterface[]}currentFoliationChanges
+   * @return {FoliationChangeInfoInterface[]}
+   */
+  mergeFoliationChanges(previousFoliationChanges, currentFoliationChanges) {
+
+    let indicesInPrevious = [];
+    previousFoliationChanges.forEach( (previousFoliationChange) => {
+      indicesInPrevious.push(previousFoliationChange.witnessIndex);
+    });
+    indicesInPrevious = uniq(indicesInPrevious);
+
+    let indicesInCurrent = [];
+    currentFoliationChanges.forEach( (currentFoliationChange) => {
+      indicesInCurrent.push(currentFoliationChange.witnessIndex);
+    });
+    indicesInCurrent = uniq(indicesInCurrent);
+
+    const mergedChanges = [];
+    indicesInPrevious.forEach( (previousWitnessIndex) => {
+      if (indicesInCurrent.indexOf(previousWitnessIndex) === -1) {
+        const changes = previousFoliationChanges.filter( (previousFoliationChange) => {
+          return previousFoliationChange.witnessIndex === previousWitnessIndex;
+        });
+        if (changes.length > 0) {
+          mergedChanges.push(changes[changes.length - 1]);
+        }
+      }
+    });
+    mergedChanges.push(...currentFoliationChanges);
+    return mergedChanges;
   }
 
   /**

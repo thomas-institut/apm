@@ -16,30 +16,29 @@
  *
  */
 
-import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { Edition } from '../Edition'
+import {OptionsChecker} from '@thomas-inst/optionschecker';
+import {Edition} from '../Edition';
 
 export class EditionGenerator {
-  protected verbose: any;
-  protected debug: any;
+  protected verbose: boolean;
+  protected debug: boolean;
 
   /**
    *
    * @param {any} options
    */
-  constructor (options: any) {
+  constructor(options: any) {
     let optionsSpec = {
-      verbose: { type: 'boolean', default: false},
-      debug: { type: 'boolean', default: false}
-    }
+      verbose: {type: 'boolean', default: false}, debug: {type: 'boolean', default: false}
+    };
 
-    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'EditionGenerator'})
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'EditionGenerator'});
 
-    let cleanOptions = oc.getCleanOptions(options)
-    this.verbose = cleanOptions.verbose
-    this.debug = cleanOptions.debug
+    let cleanOptions = oc.getCleanOptions(options);
+    this.verbose = cleanOptions.verbose;
+    this.debug = cleanOptions.debug;
     if (this.debug) {
-      this.verbose = true
+      this.verbose = true;
     }
   }
 

@@ -5,6 +5,7 @@
 
 import {MainTextToken} from "./MainTextToken";
 import {EditionWitnessInfo} from "./EditionWitnessInfo";
+import {EditionInfoInterface} from "./EditionInfoInterface";
 import {FoliationChangeInfoInterface} from "./EditionGenerator/FoliationChangeInfoInterface";
 import {Apparatus} from "./Apparatus";
 
@@ -13,23 +14,18 @@ export class Edition {
 
     lang: string;
     infoText: string;
-    info: { [key: string]: any};
+    info: EditionInfoInterface;
     mainText: MainTextToken[];
     apparatuses: Apparatus[];
     witnesses: EditionWitnessInfo[];
     siglaGroups: SiglaGroup[];
-    foliationChanges: FoliationChangeInfoInterface[];
+    foliationChanges?: FoliationChangeInfoInterface[];
 
     setMainText(mainText: MainTextToken[]): this;
-
     setLang(lang: string): this;
-
     getLang(): string;
-
     getSigla(): string[];
-
     getMainTextToken(index: number): MainTextToken;
-
     getPlainTextForRange(from: number, to: number): string;
 }
 

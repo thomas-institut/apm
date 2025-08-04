@@ -25,6 +25,11 @@ import * as EditionMainTextTokenType from './MainTextTokenType.mjs'
 
 export class MainText {
 
+  /**
+   *
+   * @param {MainTextToken[]}mainTextTokens
+   * @return {MainTextParagraph[]}
+   */
   static getParagraphs(mainTextTokens) {
     if (mainTextTokens.length === 0) {
       return []

@@ -17,28 +17,21 @@
  */
 
 
-import { TypesetterTokenFactory } from '../Typesetter/TypesetterTokenFactory'
-import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
+import { TypesetterTokenFactory } from '@/Typesetter/TypesetterTokenFactory'
 import * as ApparatusSubEntryType from '../Edition/SubEntryType.mjs'
 import { NumeralStyles } from '../toolbox/NumeralStyles.mjs'
 import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
-import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'
+import { TypesetterTokenRenderer } from '@/FmtText/Renderer/TypesetterTokenRenderer'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
-import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
-import { CtData } from '../CtData/CtData'
+import { HtmlRenderer } from '@/FmtText/Renderer/HtmlRenderer'
 import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
 import { escapeHtml } from '../toolbox/Util.mjs'
 import { ApparatusUtil } from '../Edition/ApparatusUtil.mjs'
-import { Punctuation} from '../defaults/Punctuation.mjs'
 import * as MainTextTokenType from '../Edition/MainTextTokenType.mjs'
 import { StringCounter } from '../toolbox/StringCounter.mjs'
 
-// const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
-const INPUT_TOKEN_FIELD_TEXT = 'text'
-const INPUT_TOKEN_FIELD_NORMALIZED_TEXT = 'normalizedText'
-const INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE = 'normalizationSource'
 
-const enDash = String.fromCodePoint(0x2013)
+// const enDash = String.fromCodePoint(0x2013)
 
 const latinStyle = {
   strings: {
@@ -168,14 +161,12 @@ export class ApparatusCommon {
    *
    * Accepts also a FmtText array which will be converted to plain text before processing
    *
-   * @param {string|FmtTextToken[]}keyword
+   * @param {FmtText} keyword
    * @param {string}lang
    * @return {TypesetterToken}
    */
   static getKeywordTypesetterTokens(keyword, lang) {
-    if (typeof keyword !== 'string') {
-      keyword = FmtTextUtil.getPlainText(FmtTextFactory.fromAnything(keyword))
-    }
+    keyword = FmtTextUtil.getPlainText(keyword)
     let keywordString = this.getKeywordString(keyword, lang)
     let fmtText = FmtTextFactory.fromAnything(keywordString)
     switch(lang) {
@@ -349,7 +340,7 @@ export class ApparatusCommon {
 
   static typesetSubEntryLatin(subEntryType, theText, witnessIndices, sigla, siglaGroups) {
     // TODO: use witnessData instead of witnessIndices, like in the html version
-    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
+    // let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
     // convert the text tokens to proper typesetter tokens
     let theTextTokens = (new TypesetterTokenRenderer()).render(FmtTextFactory.fromAnything(theText))
 
@@ -420,68 +411,17 @@ export class ApparatusCommon {
     }
   }
 
-  static getCollationTableColumn(ctData, col) {
-    let column = [];
-    ctData['collationMatrix'].forEach( (tokenRefs, row) => {
-      let ref = tokenRefs[col]
-      if (ref === -1) {
-        column[row] = { tokenType: WitnessTokenType.EMPTY }
-      } else {
-        column[row] = ctData['witnesses'][row]['tokens'][ref]
-      }
-    })
-    return column
-  }
-
-  /**
-   *  Gets the text for the given token, the normal text or
-   *  the normalized text if there is one
-   * @param token
-   * @param normalizationSourcesToIgnore
-   * @returns {*}
-   */
-  static getNormalizedTextFromInputToken(token, normalizationSourcesToIgnore = []){
-    let text = token[INPUT_TOKEN_FIELD_TEXT]
-    if (token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== undefined && token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== '') {
-      let norm = token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT]
-      let source = token[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] !== undefined ? token[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] : ''
-      if (source === '' || normalizationSourcesToIgnore.indexOf(source) === -1) {
-        // if source === '', this is  a normalization from the transcription
-        text = norm
-      }
-    }
-    return text
-  }
-
-  static getMainTextForGroup(group, mainTextInputTokens, normalized = true, lang = '') {
-    return mainTextInputTokens
-      .filter( (t, i) => { return i>=group.from && i<=group.to}) // get group main text columns
-      .map( (t) => {   // get text for each column
-        if (t.tokenType === WitnessTokenType.EMPTY) { return ''}
-        if (t.tokenType === WitnessTokenType.NUMBERING_LABEL) { return ''}
-        if (Punctuation.stringIsAllPunctuation(t.text, lang)) { return  ''}
-        if (normalized) {
-          if (t.normalizedText !== undefined && t.normalizedText !== '') {
-            return t.normalizedText
-          }
-        }
-        return t.text
-      })
-      .filter( t => t !== '')   // filter out empty text
-      .join(' ')
-  }
-
-  static findNonEmptyMainTextToken(ctIndex, ctToMainTextMap, mainTextTokens, forward, lang = '') {
-    while (ctIndex >= 0 && ctIndex < ctToMainTextMap.length && (
-      ctToMainTextMap[ctIndex] === -1 ||
-      Punctuation.stringIsAllPunctuation(mainTextTokens[ctToMainTextMap[ctIndex]]['text'], lang)) ) {
-      ctIndex = forward ? ctIndex + 1 : ctIndex -1
-    }
-    if (ctIndex < 0 || ctIndex >= ctToMainTextMap.length) {
-      return -1
-    }
-    return ctToMainTextMap[ctIndex]
-  }
+  // static findNonEmptyMainTextToken(ctIndex, ctToMainTextMap, mainTextTokens, forward, lang = '') {
+  //   while (ctIndex >= 0 && ctIndex < ctToMainTextMap.length && (
+  //     ctToMainTextMap[ctIndex] === -1 ||
+  //     Punctuation.stringIsAllPunctuation(mainTextTokens[ctToMainTextMap[ctIndex]]['text'], lang)) ) {
+  //     ctIndex = forward ? ctIndex + 1 : ctIndex -1
+  //   }
+  //   if (ctIndex < 0 || ctIndex >= ctToMainTextMap.length) {
+  //     return -1
+  //   }
+  //   return ctToMainTextMap[ctIndex]
+  // }
 
   static __getSiglaHtmlFromFilledUpWitnessData(witnessData, numberStyle) {
     return witnessData.map ( (w) => {
@@ -494,7 +434,7 @@ export class ApparatusCommon {
 
   /**
    *
-   * @param subEntry
+   * @param {ApparatusSubEntry}subEntry
    * @param {string[]}sigla
    * @param {string}numberStyle
    * @param {SiglaGroup[]}siglaGroups
@@ -503,6 +443,10 @@ export class ApparatusCommon {
    * @private
    */
   static _genSiglaHtmlFromWitnessData(subEntry, sigla, numberStyle, siglaGroups, fullSiglaInBrackets = false) {
+
+    if (subEntry.witnessData.length === 0) {
+      return ''
+    }
 
     let fullSiglumDataArray = ApparatusUtil.getSiglaData(subEntry.witnessData, sigla, [])
     let fullSiglaHtml = this.__getSiglaHtmlFromFilledUpWitnessData(fullSiglumDataArray, numberStyle)
@@ -533,7 +477,7 @@ export class ApparatusCommon {
 
   /**
    *
-   * @param {object}ctData
+   * @param {CtDataInterface}ctData
    * @param {Edition}edition
    * @param {number} mainTextFromTokenIndex
    * @param {number} mainTextToTokenIndex
@@ -542,109 +486,109 @@ export class ApparatusCommon {
    * @param {array}currentApparatusEntries
    * @param {boolean}verbose
    */
-  static updateCtDataWithNewEntry(ctData, edition, mainTextFromTokenIndex, mainTextToTokenIndex, newEntry, lemma, currentApparatusEntries, verbose = false) {
-    verbose && console.log(`Updated apparatus entry `)
-    verbose && console.log(newEntry)
-
-    let fromMainTextToken = edition.getMainTextToken(mainTextFromTokenIndex)
-    let toMainTextToken = edition.getMainTextToken(mainTextToTokenIndex)
-
-    let ctFromTokenIndex = CtData.getCtIndexForEditionWitnessTokenIndex(ctData, fromMainTextToken.editionWitnessTokenIndex)
-    let ctToTokenIndex = CtData.getCtIndexForEditionWitnessTokenIndex(ctData, toMainTextToken.editionWitnessTokenIndex)
-
-    verbose && console.log(`CT range: ${ctFromTokenIndex} - ${ctToTokenIndex}`)
-    if (newEntry.isNew) {
-      if (FmtTextUtil.getPlainText(newEntry.text) !== '') {
-        ctData = CtData.addCustomApparatusTextSubEntry(ctData,
-          newEntry.apparatus,
-          ctFromTokenIndex,
-          ctToTokenIndex,
-          lemma,
-          newEntry
-        )
-      }
-    } else {
-      if (FmtTextUtil.getPlainText(newEntry.text) === '') {
-        console.log(`Deleting current custom entry`)
-        ctData = CtData.deleteCustomApparatusTextSubEntries(ctData,
-          newEntry.apparatus,
-          ctFromTokenIndex,
-          ctToTokenIndex
-        )
-      } else {
-        console.log('Updating custom entry....')
-        // just add and delete, perhaps do something more sophisticated later
-        ctData = CtData.deleteCustomApparatusTextSubEntries(ctData,
-          newEntry.apparatus,
-          ctFromTokenIndex,
-          ctToTokenIndex
-        )
-        ctData = CtData.addCustomApparatusTextSubEntry(ctData,
-          newEntry.apparatus,
-          ctFromTokenIndex,
-          ctToTokenIndex,
-          lemma,
-          newEntry
-        )
-      }
-    }
-
-    if (newEntry.changesInEnabledEntries) {
-      console.log(`Changes in enabled entries`)
-      newEntry.enabledEntriesArray.forEach( (enabled, i) => {
-        if (currentApparatusEntries[newEntry.apparatusIndex][i].enabled !== enabled) {
-          console.log(`Apparatus sub entry ${i} enabled change to ${enabled}`)
-          let theHash = currentApparatusEntries[newEntry.apparatusIndex][i].hashString()
-          CtData.changeEnableStatusForSubEntry(ctData,
-            newEntry.apparatus,
-            ctFromTokenIndex,
-            ctToTokenIndex,
-            theHash,
-            enabled,
-            lemma
-          )
-        }
-      })
-    }
-
-    return ctData
-  }
+  // static updateCtDataWithNewEntry(ctData, edition, mainTextFromTokenIndex, mainTextToTokenIndex, newEntry, lemma, currentApparatusEntries, verbose = false) {
+  //   verbose && console.log(`Updated apparatus entry `)
+  //   verbose && console.log(newEntry)
+  //
+  //   let fromMainTextToken = edition.getMainTextToken(mainTextFromTokenIndex)
+  //   let toMainTextToken = edition.getMainTextToken(mainTextToTokenIndex)
+  //
+  //   let ctFromTokenIndex = CtData.getCtIndexForEditionWitnessTokenIndex(ctData, fromMainTextToken.editionWitnessTokenIndex)
+  //   let ctToTokenIndex = CtData.getCtIndexForEditionWitnessTokenIndex(ctData, toMainTextToken.editionWitnessTokenIndex)
+  //
+  //   verbose && console.log(`CT range: ${ctFromTokenIndex} - ${ctToTokenIndex}`)
+  //   if (newEntry.isNew) {
+  //     if (FmtTextUtil.getPlainText(newEntry.text) !== '') {
+  //       ctData = CtData.addCustomApparatusTextSubEntry(ctData,
+  //         newEntry.apparatus,
+  //         ctFromTokenIndex,
+  //         ctToTokenIndex,
+  //         lemma,
+  //         newEntry
+  //       )
+  //     }
+  //   } else {
+  //     if (FmtTextUtil.getPlainText(newEntry.text) === '') {
+  //       console.log(`Deleting current custom entry`)
+  //       ctData = CtData.deleteCustomApparatusTextSubEntries(ctData,
+  //         newEntry.apparatus,
+  //         ctFromTokenIndex,
+  //         ctToTokenIndex
+  //       )
+  //     } else {
+  //       console.log('Updating custom entry....')
+  //       // just add and delete, perhaps do something more sophisticated later
+  //       ctData = CtData.deleteCustomApparatusTextSubEntries(ctData,
+  //         newEntry.apparatus,
+  //         ctFromTokenIndex,
+  //         ctToTokenIndex
+  //       )
+  //       ctData = CtData.addCustomApparatusTextSubEntry(ctData,
+  //         newEntry.apparatus,
+  //         ctFromTokenIndex,
+  //         ctToTokenIndex,
+  //         lemma,
+  //         newEntry
+  //       )
+  //     }
+  //   }
+  //
+  //   if (newEntry.changesInEnabledEntries) {
+  //     console.log(`Changes in enabled entries`)
+  //     newEntry.enabledEntriesArray.forEach( (enabled, i) => {
+  //       if (currentApparatusEntries[newEntry.apparatusIndex][i].enabled !== enabled) {
+  //         console.log(`Apparatus sub entry ${i} enabled change to ${enabled}`)
+  //         let theHash = currentApparatusEntries[newEntry.apparatusIndex][i].hashString()
+  //         CtData.changeEnableStatusForSubEntry(ctData,
+  //           newEntry.apparatus,
+  //           ctFromTokenIndex,
+  //           ctToTokenIndex,
+  //           theHash,
+  //           enabled,
+  //           lemma
+  //         )
+  //       }
+  //     })
+  //   }
+  //
+  //   return ctData
+  // }
 
   /**
    *
    * @param {string|FmtTextToken[]}lemma
    * @param {string}lemmaText
    */
-   static getLemmaString(lemma, lemmaText) {
-    let separator = ''
-    let custom = false
-    switch(lemma) {
-      case '':
-      case 'dash':
-        separator = ` ${enDash} `
-        break
-
-      case 'ellipsis':
-        separator = '...'
-        break
-
-      default:
-        custom = true
-    }
-    if (custom) {
-      return FmtTextUtil.getPlainText(lemma)
-    }
-    if (lemmaText === '') {
-      lemmaText = 'pre'
-    }
-    let lemmaTextWords = lemmaText.split(' ')
-    // if lemmaText is short,
-    if (lemmaTextWords.length <= 3) {
-      return lemmaText
-    }
-
-    return  `${lemmaTextWords[0]}${separator}${lemmaTextWords[lemmaTextWords.length-1]}`
-  }
+  //  static getLemmaString(lemma, lemmaText) {
+  //   let separator = ''
+  //   let custom = false
+  //   switch(lemma) {
+  //     case '':
+  //     case 'dash':
+  //       separator = ` ${enDash} `
+  //       break
+  //
+  //     case 'ellipsis':
+  //       separator = '...'
+  //       break
+  //
+  //     default:
+  //       custom = true
+  //   }
+  //   if (custom) {
+  //     return FmtTextUtil.getPlainText(lemma)
+  //   }
+  //   if (lemmaText === '') {
+  //     lemmaText = 'pre'
+  //   }
+  //   let lemmaTextWords = lemmaText.split(' ')
+  //   // if lemmaText is short,
+  //   if (lemmaTextWords.length <= 3) {
+  //     return lemmaText
+  //   }
+  //
+  //   return  `${lemmaTextWords[0]}${separator}${lemmaTextWords[lemmaTextWords.length-1]}`
+  // }
 
   /**
    * Returns an object with information about line and y positions for every

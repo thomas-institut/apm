@@ -26,10 +26,10 @@ const defaultApparatus = [
 ]
 
 import { CtDataCleaner } from './CtDataCleaner'
-import { deepCopy } from '../../toolbox/Util'
-import * as CollationTableType from '../../Witness/WitnessTokenClass'
+import { deepCopy } from '@/toolbox/Util'
+import * as CollationTableType from '@/Witness/WitnessTokenClass'
 import {CtDataInterface} from "../CtDataInterface";
-import {ApparatusTools} from "../../Edition/Apparatus";
+import {ApparatusTools} from "@/Edition/ApparatusTools";
 
 export class DefaultApparatusesCleaner extends CtDataCleaner {
 

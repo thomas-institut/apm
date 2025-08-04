@@ -17,19 +17,19 @@
  */
 
 import * as WitnessTokenType from '../Witness/WitnessTokenType'
-import { SequenceWithGroups } from '../Edition/SequenceWithGroups'
+import { SequenceWithGroups } from '@/Edition/SequenceWithGroups'
 // @ts-ignore
 import { Matrix } from '@thomas-inst/matrix'
 import * as CollationTableType from '../constants/CollationTableType'
-import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry'
+import { ApparatusSubEntry } from '@/Edition/ApparatusSubEntry'
 import * as SubEntryType from '../Edition/SubEntryType'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory'
-import { ApparatusEntry } from '../Edition/ApparatusEntry'
-import { deepCopy } from '../toolbox/Util'
+import { FmtTextFactory } from '@/FmtText/FmtTextFactory'
+import { ApparatusEntry } from '@/Edition/ApparatusEntry'
+import { deepCopy } from '@/toolbox/Util'
 import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
 import * as NormalizationSource from '../constants/NormalizationSource'
 import * as WitnessType from '../Witness/WitnessTokenClass'
-import { pushArray, uniq } from '../toolbox/ArrayUtil'
+import { uniq } from '@/toolbox/ArrayUtil'
 
 // cleaners
 import { CleanerZero } from './CtDataCleaner/CleanerZero'
@@ -46,17 +46,17 @@ import { CleanerOnePointFour } from './CtDataCleaner/CleanerOnePointFour'
 import { UpdaterToOnePointFour } from './CtDataUpdater/UpdaterToOnePointFour'
 import {UpdaterToOnePointFive} from "./CtDataUpdater/UpdaterToOnePointFive";
 import {CleanerOnePointFive} from "./CtDataCleaner/CleanerOnePointFive";
-import { Punctuation } from '../defaults/Punctuation'
+import { Punctuation } from '@/defaults/Punctuation'
 import {
   CtDataInterface,
   NonTokenItemIndex,
   WitnessInterface,
   WitnessTokenInterface
 } from "./CtDataInterface";
-import {FULL_TX} from "../Witness/WitnessType";
-import {Apparatus} from "../Edition/Apparatus";
-import {NormalizerRegister} from "../pages/common/NormalizerRegister";
-import {FmtTextUtil} from "../FmtText/FmtTextUtil";
+import {FULL_TX} from "@/Witness/WitnessType";
+import {Apparatus} from "@/Edition/Apparatus";
+import {NormalizerRegister} from "@/pages/common/NormalizerRegister";
+import {FmtTextUtil} from "@/FmtText/FmtTextUtil";
 
 
 
@@ -121,6 +121,27 @@ export class CtData  {
         column: parseInt(fields[1])
       }
     })
+  }
+
+
+  /**
+   * Returns an array of WitnessTokens with the tokens in the given column of the CtData's
+   * collation table
+   *
+   * @param ctData
+   * @param col
+   */
+  static getCollationTableColumn(ctData: CtDataInterface, col: number): WitnessTokenInterface[] {
+    let column: WitnessTokenInterface[] = [];
+    ctData.collationMatrix.forEach( (tokenRefs, row) => {
+      let ref = tokenRefs[col]
+      if (ref === -1) {
+        column[row] = {fmtText: [], text: "", tokenClass: "", tokenType: WitnessTokenType.EMPTY }
+      } else {
+        column[row] = ctData.witnesses[row].tokens[ref]
+      }
+    })
+    return column
   }
 
   static getCleanAndUpdatedCtData(sourceCtData: CtDataInterface, verbose = true, debug = false): CtDataInterface {
@@ -295,7 +316,7 @@ export class CtData  {
     // new entry, first get the auto subEntries
     newEntry.subEntries = editedEntry.subEntries.filter( (subEntry) => { return subEntry.type === 'auto'})
     // add all other subEntries
-    pushArray(newEntry.subEntries, editedEntry.subEntries.filter( (subEntry) => {return subEntry.type !== 'auto'}))
+    newEntry.subEntries.push(...editedEntry.subEntries.filter( (subEntry) => {return subEntry.type !== 'auto'}))
     console.log(`New Entry`)
     console.log(deepCopy(newEntry))
 

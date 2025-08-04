@@ -1861,6 +1861,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
           case EditionMainTextTokenType.TEXT:
           case EditionMainTextTokenType.NUMBERING_LABEL:
+          case EditionMainTextTokenType.FOLIATION_CHANGE_MARKER:
             let ctIndex = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, token.editionWitnessTokenIndex)
             let typeClass = token.type === EditionMainTextTokenType.TEXT ? 'edition-text' : 'numbering-label'
             tokenClasses = [ 'main-text-token', `main-text-token-${token.originalIndex}`, `ct-index-${ctIndex}`, typeClass]

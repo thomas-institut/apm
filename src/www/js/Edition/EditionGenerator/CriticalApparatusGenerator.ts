@@ -21,23 +21,23 @@ import { SequenceWithGroups } from '../SequenceWithGroups'
 
 // @ts-ignore
 import { Matrix } from '@thomas-inst/matrix'
-// @ts-ignore
-import {ApparatusCommon} from '../../EditionComposer/ApparatusCommon.js'
+
 import * as SubEntryType from '../SubEntryType'
 import * as ApparatusType from '../../constants/ApparatusType'
 import * as WitnessTokenType from '../../Witness/WitnessTokenType'
 import * as SubEntrySource from '../SubEntrySource'
-import { CtData } from '../../CtData/CtData'
-import {Apparatus, ApparatusTools} from '../Apparatus'
+import { CtData } from '@/CtData/CtData'
+import {Apparatus} from '../Apparatus'
+import {ApparatusTools} from '../ApparatusTools'
 import { ApparatusSubEntry } from '../ApparatusSubEntry'
-import { FmtTextFactory } from '../../FmtText/FmtTextFactory'
+import { FmtTextFactory } from '@/FmtText/FmtTextFactory'
 import { ApparatusEntry } from '../ApparatusEntry'
 
 
-import { Punctuation} from '../../defaults/Punctuation'
+import { Punctuation} from '@/defaults/Punctuation'
 
 import {WitnessDataItem} from '../WitnessDataItem'
-import {CtDataInterface, WitnessTokenInterface} from "../../CtData/CtDataInterface";
+import {CtDataInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
 import {MainTextToken} from "../MainTextToken";
 
 export class CriticalApparatusGenerator {
@@ -76,10 +76,10 @@ export class CriticalApparatusGenerator {
     //  a group together with the empty main text columns so that the apparatus indicate initial variants
     let entries : ApparatusEntry[]= []
     columnGroups.forEach((columnGroup) => {
-      let ctColumns = []
+      let ctColumns: WitnessTokenInterface[][] = []
       //let mainTextIndices = []
       for (let ctColNumber = columnGroup.from; ctColNumber <= columnGroup.to; ctColNumber++) {
-        ctColumns.push(ApparatusCommon.getCollationTableColumn(ctData, ctColNumber))
+        ctColumns.push(CtData.getCollationTableColumn(ctData, ctColNumber))
       }
 
       if (ctColumns.every(col => this._isCtTableColumnEmpty(col))) {
@@ -153,7 +153,6 @@ export class CriticalApparatusGenerator {
           entry.from = mainTextIndex
           entry.to = mainTextIndex
           // TODO: deal with 'pre' entries properly, the lemma text should be the first word in the text
-          //entry.lemmaText = mainTextIndex !== -1 ? ApparatusCommon.getNormalizedTextFromInputToken(baseWitnessTokens[ctIndex]) : 'pre'
           entry.lemmaText = mainTextIndex !== -1 ? baseWitnessTokens[ctIndex]['text'] : 'pre'
           entry.subEntries = subEntries
           // other info
@@ -164,7 +163,7 @@ export class CriticalApparatusGenerator {
         return
       }
       // 2. There's main text in the group, we need to find omissions and variants
-      let normalizedGroupMainText = ApparatusCommon.getMainTextForGroup(columnGroup, baseWitnessTokens, true, lang)
+      let normalizedGroupMainText = ApparatusTools.getMainTextForGroup(columnGroup, baseWitnessTokens, true, lang)
       if (normalizedGroupMainText === '') {
         // this.verbose && console.log(`Group ${columnGroup.from}-${columnGroup.to} has empty text, skipping.`)
         // ignore empty string (normally main text consisting only of punctuation)
@@ -226,7 +225,7 @@ export class CriticalApparatusGenerator {
         let entry = new ApparatusEntry()
         entry.from = mainTextIndexFrom
         entry.to = mainTextIndexTo
-        entry.lemmaText = ApparatusCommon.getMainTextForGroup(columnGroup, baseWitnessTokens, false, lang)
+        entry.lemmaText = ApparatusTools.getMainTextForGroup(columnGroup, baseWitnessTokens, false, lang)
         entry.subEntries = subEntries
         // other info
         entry.metadata.add('ctGroup', columnGroup)
@@ -311,7 +310,7 @@ export class CriticalApparatusGenerator {
         if (token.tokenType === TokenType.EMPTY) {
           return ''
         }
-        let theText = normalized ? ApparatusCommon.getNormalizedTextFromInputToken(token) : token['text']
+        let theText = normalized ? getNormalizedTextFromInputToken(token) : token.text
         if (Punctuation.stringIsAllPunctuation(theText, lang)) {
           return ''
         }
@@ -372,4 +371,18 @@ function findRangeInEntries(theArray: ApparatusEntry[], from: number, to: number
     }
   })
   return index
+}
+
+
+function getNormalizedTextFromInputToken(token: WitnessTokenInterface, normalizationSourcesToIgnore: string[] = []){
+  let text = token.text
+  if (token.normalizedText !== undefined && token.normalizedText !== '') {
+    let norm = token.normalizedText
+    let source = token.normalizationSource !== undefined ? token.normalizationSource : ''
+    if (source === '' || normalizationSourcesToIgnore.indexOf(source) === -1) {
+      // if source === '', this is  a normalization from the transcription
+      text = norm
+    }
+  }
+  return text
 }

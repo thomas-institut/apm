@@ -95,6 +95,10 @@ export class FmtTextFactory {
     return this.empty()
   }
 
+  /**
+   *
+   * @return {FmtTextToken[]}
+   */
   static empty() {
     return []
   }

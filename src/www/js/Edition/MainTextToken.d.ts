@@ -1,11 +1,12 @@
-import {FmtTextToken} from "../FmtText/FmtTextToken";
+import {FmtTextToken} from "@/FmtText/FmtTextToken";
 
 export class MainTextToken {
     type: string;
     fmtText: FmtTextToken[];
     editionWitnessTokenIndex: number;
     style: string;
-    lang: string;
+    lang?: string;
+    originalIndex?: number;
 
     getPlainText(): string;
     isEmpty(): boolean;

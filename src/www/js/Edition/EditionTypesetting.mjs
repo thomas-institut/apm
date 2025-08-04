@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2021-23 Universität zu Köln
  *
@@ -37,7 +39,7 @@ import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
 import { getTextDirectionForLang, isRtl, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
 import { ObjectFactory } from '../Typesetter2/ObjectFactory.mjs'
-import { pushArray } from '../toolbox/ArrayUtil.mjs'
+import { pushArray, uniq } from '../toolbox/ArrayUtil.mjs'
 import { Typesetter2StyleSheetTokenRenderer } from '../FmtText/Renderer/Typesetter2StyleSheetTokenRenderer.mjs'
 import { ApparatusUtil } from './ApparatusUtil.mjs'
 import { NumeralStyles } from '../toolbox/NumeralStyles.mjs'
@@ -51,6 +53,8 @@ import { KeyStore } from '../toolbox/KeyStore.mjs'
 import { ItemLineInfo } from './ItemLineInfo.mjs'
 import { TypesetterItem } from '../Typesetter2/TypesetterItem.mjs'
 import { deepCopy } from '../toolbox/Util.mjs'
+import { MARGINALIA } from '../constants/ApparatusType.mjs'
+import { AUTO_FOLIATION } from '../Edition/SubEntryType.mjs'
 
 export const MAX_LINE_COUNT = 10000
 const enDash = '\u2013'
@@ -230,10 +234,24 @@ export class EditionTypesetting {
               break
 
             case MainTextTokenType.TEXT:
-              textItems = await this.tokenRenderer.renderWithStyle(mainTextToken.fmtText, paragraphStyle)
+              textItems = [];
+
+              // Add foliation change markers if needed
+              let witnessIndices = this.getWitnessIndicesWithFoliationChanges(mainTextToken.originalIndex);
+              if (witnessIndices.length > 0) {
+                console.log(`Adding foliation change markers for main text token ${mainTextToken.originalIndex}`, witnessIndices);
+                textItems.push(...await this.tokenRenderer.renderWithStyle(FmtTextFactory.fromString('|'), paragraphStyle));
+                textItems.push(this.createPenalty(INFINITE_PENALTY));
+                textItems.push(await this.createGlue(paragraphStyle));
+
+              }
+              const firstActualTextTokenIndex = textItems.length;
+
+              // Add the text
+              textItems.push(...await this.tokenRenderer.renderWithStyle(mainTextToken.fmtText, paragraphStyle));
               if (textItems.length > 0) {
                 // tag the first item with the original index
-                textItems[0].addMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX, mainTextToken.originalIndex)
+                textItems[firstActualTextTokenIndex].addMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX, mainTextToken.originalIndex)
                 // detect text direction for text boxes
                 textItems = textItems.map ( (item) => {
                   if (item instanceof TextBox) {
@@ -241,9 +259,10 @@ export class EditionTypesetting {
                   }
                   return item
                 })
-                // this.debug && console.log(`Pushing items`)
-                // this.debug && console.log(textItems)
                 paragraphToTypeset.pushItemArray(textItems)
+              }
+              if (firstActualTextTokenIndex > 0) {
+                console.log(`After adding foliation change markers`, paragraphToTypeset);
               }
               break
 
@@ -263,9 +282,51 @@ export class EditionTypesetting {
     })
   }
 
+
+
   resetExtractedMetadataInfo() {
     this.extractedItemLineInfoArray = undefined
   }
+
+  /**
+   *
+   * @param {number} mainTextTokenIndex
+   * @return {number[]}
+   */
+  getWitnessIndicesWithFoliationChanges(mainTextTokenIndex) {
+    /** @var {Edition} */
+    const edition = this.options.edition;
+    const marginaliaApparatuses = edition.apparatuses.filter( (apparatus) => {
+      return apparatus.type === MARGINALIA
+    });
+    if (marginaliaApparatuses.length === 0) {
+      return [];
+    }
+    const apparatus = marginaliaApparatuses[0];
+    const entries = apparatus.entries.filter( (entry) => {
+      return entry.from === mainTextTokenIndex && entry.to === mainTextTokenIndex
+    });
+    if (entries.length === 0) {
+      return [];
+    }
+    /** @var {ApparatusSubEntry[]}*/
+    const subEntries = [];
+    entries.forEach( (entry) => {
+      subEntries.push(...entry.subEntries.filter( (subEntry) => {
+        return subEntry.type === AUTO_FOLIATION
+      }))
+      }
+    );
+    /** @var number[]*/
+    const indices = [];
+    subEntries.forEach( (subEntry) => {
+      subEntry.witnessData.forEach( (witnessData) => {
+        indices.push(witnessData.witnessIndex);
+      })
+    });
+    return uniq(indices);
+  }
+
 
 
 
@@ -812,7 +873,7 @@ export class EditionTypesetting {
           if (keyword !== 'omission') {
             items.push(...this.setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, apparatusStyle), 'detect'))
           }
-          if (subEntry.witnessData.length !== 0) {
+          if (subEntry.type !== 'autoFoliation' && subEntry.witnessData.length !== 0) {
             items.push(this.createPenalty(INFINITE_PENALTY))
             items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection))
             items.push(...await this.getTsItemsForSigla(subEntry))

@@ -74,6 +74,19 @@ const punctuationDefinition = [
   { char: '¶', // paragraph
     default: { isPunctuation: true, sticksToPrevious: false, sticksToNext: false }
   },
+  {
+    char: '|',
+    default: {isPunctuation: true, sticksToPrevious: false, sticksToNext: false}
+  },
+  {
+    char: '¦',
+    default: {isPunctuation: true, sticksToPrevious: false, sticksToNext: false}
+  },
+  {
+    char: '‖',
+    default: {isPunctuation: true, sticksToPrevious: false, sticksToNext: false}
+  },
+
   // The hyphen is taken to be a normal character, it should not be in this list
   // if it were to be ignored inside words, it has to be handled by a normalizer
   // { char:  '-', // hyphen

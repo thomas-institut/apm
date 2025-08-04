@@ -31,7 +31,7 @@ use stdClass;
 /**
  * Description of EntityManager
  *
- * Commandline utility to create entities and predicates for documents, countries, cities and institutions from the dare data contained in csv-files.
+ * Commandline utility to create entities (documents, countries, cities, institutions) and predicates for them.
  * Use option '-h' in the command line for getting information about how to use the entity manager.
  *
  * @author Lukas Reichert
@@ -69,31 +69,22 @@ class EntityManager extends CommandLineUtility
         $operation = $argv[1];
 
         switch ($operation) {
-            case 'showEntity':
-                $entity = $this->es->getEntityData($argv[2]);
-                print_r($entity);
-                break;
 
-            case 'createCountry':
-                $result = $this->createCountry($argv[2]);
-                print($result['message']);
-                $this->addAltNamesToEntity($argv[2], $result['tid'], Entity::tCountry);
-                break;
+            case 'buildEverything':
+                print("THIS WILL TAKE A WHILE (~1–2 hr)!\n--------- BUILDING LOCATIONS ---------\n");
+                $this->createLocationEntitiesFromFile();
 
-            case 'createCity':
-                $result = $this->createCity($argv[2]);
-                print($result['message']);
-                $this->addAltNamesToEntity($argv[2], $result['tid'], Entity::tCity);
-                break;
+                print("\n--------- BUILDING DOCUMENTS ---------\n");
+                $result = $this->createDocumentEntitiesWithPredicatesFromDareData();
+                print_r($result);
 
-            case 'createInstitution':
-                $result = $this->createInstitution($argv[2]);
-                print($result['message']);
-                break;
+                print("\n--------- ADDING SIGNATURES ---------\n");
+                $this->addSignaturePredicateToDocsFromApm();
 
-            case 'createDocument':
-                $result = $this->createDocument($argv[2]);
-                print($result['message']);
+                print("\n--------- ASSOCIATING DOCUMENTS AND INSTITUTIONS ---------\n");
+                $this->addStoredAtRelationToDocsFromApm();
+
+                print("\n--------- FINISHED EVERYTHING! ---------\n");
                 break;
 
             case 'buildLocations':
@@ -121,6 +112,57 @@ class EntityManager extends CommandLineUtility
                 print_r($result);
                 break;
 
+            case 'addSignatures':
+                if (!isset($argv[2])) {
+                    $verbose = false;
+                } else if ($argv[2] === "v") {
+                    $verbose = true;
+                } else {
+                    print("The second argument can only be 'v' for verbose. You will find some help via 'entitymanager -h'.\n");
+                    break;
+                }
+                $this->addSignaturePredicateToDocsFromApm($verbose);
+                break;
+
+            case 'associateDocsAndInstitutions':
+                if (!isset($argv[2])) {
+                    $verbose = false;
+                } else if ($argv[2] === "v") {
+                    $verbose = true;
+                } else {
+                    print("The second argument can only be 'v' for verbose. You will find some help via 'entitymanager -h'.\n");
+                    break;
+                }
+                $this->addStoredAtRelationToDocsFromApm($verbose);
+                break;
+
+            case 'showEntity':
+                $entity = $this->es->getEntityData($argv[2]);
+                print_r($entity);
+                break;
+
+            case 'createCountry':
+                $result = $this->createCountry($argv[2]);
+                print($result['message']);
+                $this->addAltNamesToEntity($argv[2], $result['tid'], Entity::tCountry);
+                break;
+
+            case 'createCity':
+                $result = $this->createCity($argv[2], $argv[3]);
+                print($result['message']);
+                $this->addAltNamesToEntity($argv[2], $result['tid'], Entity::tCity);
+                break;
+
+            case 'createInstitution':
+                $result = $this->createInstitution($argv[2], $argv[3], $argv[4]);
+                print($result['message']);
+                break;
+
+            case 'createDocument':
+                $result = $this->createDocument($argv[2]);
+                print($result['message']);
+                break;
+
             default:
                 print("You will find some help via 'entitymanager -h'\n.");
                 break;
@@ -139,20 +181,389 @@ class EntityManager extends CommandLineUtility
 Usage: entitymanager [operation] ([arg])
 
 Available operations are:
-  showEntity [arg1] – shows information about an entity with the given tid
-  createCountry [arg1]  - creates an entity of the type ,country‘ with the given english name and adds german and italian names automatically
-  createCity [arg1] - creates an entity of the type ,city‘ with the given english name and adds german and italian names automatically
-  createInstitution [arg1] - creates an entity of the type ,institution‘ with the given english name
-  createDocument [arg] - creates an entity of the type ,document‘ for the given bilderberg id
-  buildLocations [v(erbose)] - creates country, city, institution and document entitites from the data of a csv-file, which was created by the locationdatagrabber buildEssentials command.
-  buildDocuments [v(erbose)] - creates document entitites with a lot of predicates, retrieved from the dare documents table.
+  buildEverything - executes buildLocations, buildDocuments, addSignatures and associateDocsAndInstitutions. 
+  
+  buildLocations [v(erbose)] - creates country, city, institution and document entities from the data of the revised csv-file /var/apm/share/locationDataToBeRevised.csv, which was created by the locationdatagrabber collectEssentials command.
+  buildDocuments [v(erbose)] - creates document entities with a lot of predicates, retrieved from the dare documents table saved as /var/apm/share/documents_dare.csv.
+  
+  addSignatures  [v(erbose)] - derives the library or archive signatures of all documents in the apm entity system from their names and saves them as predicates of the doc entities.
+  associateDocsAndInstitutions  [v(erbose)] - adds a storedAt-relation with an institution as an object to each document entity depending on the location code in the document name.
+  
+  showEntity [tid] – shows information about an entity with the given tid
+  createCountry [name]  - creates an entity of the type ,country‘ with the given english name and adds german and italian names as aliases automatically
+  createCity [cityName] [countryName] - creates an entity of the type ,city‘ with the given english name and adds german and italian names automatically
+  createInstitution [name] [cityName] [countryName] - creates an entity of the type ,institution‘ with the given english name
+  createDocument [name] - creates an entity of the type ,document‘ for the given bilderberg id
 END;
 
         print($help);
     }
 
     /**
-     * Create an entity if it does not already exist.
+     * reads the names and associations of/between countries, cities, institutions and documents out of a csv-file,
+     * creates entities for them, if not already existing, and associates the entities to each other
+     * @param bool $verbose
+     * @param int $creatorTid
+     * @return void
+     * @throws EntityDoesNotExistException
+     * @throws \APM\EntitySystem\Exception\InvalidObjectException
+     * @throws \APM\EntitySystem\Exception\InvalidStatementException
+     * @throws \APM\EntitySystem\Exception\InvalidSubjectException
+     */
+    private function createLocationEntitiesFromFile(bool $verbose=false, int $creatorTid = -1): void
+    {
+
+        // set system as the creator
+        if ($creatorTid === -1) {
+            $creatorTid = Entity::System;
+        }
+
+        // make arrays for already detected entities to avoid duplicates
+        $detectedCountries = [''];
+        $detectedCities = [''];
+        $detectedInstitutions = [''];
+        $detectedTriples = [];
+
+        // read csv-file
+        $filename = '/var/apm/share/locationDataToBeRevised.csv';
+        $data = $this->readCsvWithSingleHeaderToObjectArray($filename);
+
+        // make counters for documentation of results
+        $numCreatedCountries = 0;
+        $numCreatedCities = 0;
+        $numCreatedInstitutions = 0;
+        $numCreatedRelations = 0;
+        $numSkippedRows = 0;
+        $numSkippedCells = 0;
+
+        // count table rows
+        $numRows = count($data);
+
+        print("There are $numRows rows to process.\nThe processing begins after having collected all data.\n");
+        // print($verbose);
+
+        // create entities from the data and make the corresponding statements
+        foreach ($data as $i=>$row) {
+
+            printf("    %d table rows processed\r", $i);
+
+            // extract relevant entity data
+            $institutionName = '';
+            $cityName = '';
+            $countryName = '';
+            $locationCode = $row->locationCodeCountryCityInstitution;
+            $locationCodeSplitted = explode('-', $locationCode);
+
+            if ($row->institutionDare !== '') {
+                $institutionName = $row->institutionDare;
+            }
+
+            if ($row->cityWikidataEnglish !== '') {
+                $cityName = $row->cityWikidataEnglish;
+            }
+
+            if ($row->countryWikidataEnglish !== '') {
+                $countryName = $row->countryWikidataEnglish;
+            }
+
+            $detectedTriple = [$countryName, $cityName, $institutionName];
+
+            if ($verbose) {
+                print("detected location code: $locationCode\n");
+            }
+
+            // check if the detected triple is empty or has not already been processed
+            if (!in_array($detectedTriple, $detectedTriples) or in_array('', $detectedTriple)) { // if not, process the triple
+
+                if ($verbose) {
+                    print("\tdetected location data: $countryName, $cityName, $institutionName\n");
+                }
+
+                // create country, city and institution entities
+                if ($countryName !== '') {
+                    if (!in_array($countryName, $detectedCountries)) {
+                        $result = $this->createCountry($countryName);
+                        if ($verbose) {
+                            print($result['message']);
+                        }
+                        $countryTid = $result['tid'];
+                        if (!str_starts_with($result['message'], "\tNO")) {
+                            $numCreatedCountries++;
+                        }
+                        $this->addAltNamesToEntity($countryName, $countryTid, Entity::tCountry, $creatorTid, $verbose);
+
+                        $this->es->makeStatement($countryTid, Entity::pDareCountryCode, $locationCodeSplitted[0], $creatorTid, "Adding country code $locationCodeSplitted[0] automatically.");
+                        if ($verbose) {
+                            print("\tassociated: $countryName-->pDareCountryCode-->$locationCodeSplitted[0]\n");
+                        }
+
+                    } else if ($verbose) {
+                        print("\tcountry with name $countryName already created.\n");
+                    }
+                } else {
+                    $numSkippedCells++;
+                }
+
+                if ($cityName !== '') {
+                    if (!in_array($cityName.$countryName, $detectedCities) or $countryName === '') {
+                        $result = $this->createCity($cityName, $countryName);
+                        if ($verbose) {
+                            print($result['message']);
+                        }
+                        $cityTid = $result['tid'];
+                        if (!str_starts_with($result['message'], "\tNO")) {
+                            $numCreatedCities++;
+                        }
+                        $this->addAltNamesToEntity($cityName, $cityTid, Entity::tCity, $creatorTid, $verbose);
+
+                        $this->es->makeStatement($cityTid, Entity::pDareCityCode, $locationCodeSplitted[1], $creatorTid, "Adding city code $locationCodeSplitted[1] automatically.");
+                        if ($verbose) {
+                            print("\tassociated: $cityName-->pDareCityCode-->$locationCodeSplitted[1]\n");
+                        }
+
+                    } else if ($verbose) {
+                        print("\tcity with name $cityName already created.\n");
+                    }
+                } else {
+                    $numSkippedCells++;
+                }
+
+                if ($institutionName !== '') {
+                    if (!in_array($institutionName.$cityName.$countryName, $detectedInstitutions) or $cityName === '' or $countryName === '') {
+                        $result = $this->createInstitution($institutionName, $cityName, $countryName);
+                        if ($verbose) {
+                            print($result['message']);
+                        }
+                        $institutionTid = $result['tid'];
+                        if (!str_starts_with($result['message'], "\tNO")) {
+                            $numCreatedInstitutions++;
+                        }
+
+                        $this->es->makeStatement($institutionTid, Entity::pDareInstCode, $locationCodeSplitted[2], $creatorTid, "Adding institution code $locationCodeSplitted[2] automatically.");
+                        if ($verbose) {
+                            print("\tassociated: $institutionName-->pDareInstCode-->$locationCodeSplitted[2]\n");
+                        }
+
+                    } else if ($verbose) {
+                        print("\tinstitution with name $institutionName already created.\n");
+                    }
+                } else {
+                    $numSkippedCells++;
+                }
+
+                // save the entity names in the detected data arrays
+                $detectedTriples[] = $detectedTriple;
+                $detectedCountries[] = $countryName;
+                $detectedCities[] = $cityName . $countryName;
+                $detectedInstitutions[] = $institutionName . $cityName . $countryName;
+
+                // associate the entities to each other
+                if (!($countryName === '' or $cityName === '')) {
+                    $this->es->makeStatement($cityTid, Entity::pLocatedIn, $countryTid, $creatorTid, 'Associating city with country.');
+
+                    $numCreatedRelations++;
+
+
+                    if ($verbose) {
+                        print("\tassociated: $cityName-->locatedIn-->$countryName.\n");
+                    }
+                }
+
+                if (!($cityName === '' or $institutionName === '')) {
+                    $this->es->makeStatement($institutionTid, Entity::pLocatedIn, $cityTid, $creatorTid, 'Associating institution with city.');
+                    $numCreatedRelations++;
+
+
+                    if ($verbose) {
+                        print("\tassociated: $institutionName-->locatedIn-->$cityName.\n");
+                    }
+                }
+
+            } else if ($detectedTriple === ['', '', ''] and $verbose) {
+                print("\tNO location data detected.\n");
+            } else if ($verbose) {
+                print("\tNO NEW location data detected.\n");
+            }
+
+        }
+
+        // display results to the user
+        print ("FINISHED!\n\t");
+        print("$numCreatedCountries countries created.\n\t
+       $numCreatedCities cities created.\n\t
+       $numCreatedInstitutions institutions created.\n\t
+       $numCreatedRelations relations between entities created.\n\t
+       $numSkippedCells cells skipped because of missing data\n\t
+       $numSkippedRows of $numRows rows skipped because of missing data.\n");
+    }
+
+    /**
+     * creates document entities with predicates out of the dare documents table data
+     * @param $verbose
+     * @param int $creatorTid
+     * @return int[]
+     * @throws \APM\EntitySystem\Exception\InvalidObjectException
+     * @throws \APM\EntitySystem\Exception\InvalidStatementException
+     * @throws \APM\EntitySystem\Exception\InvalidSubjectException
+     */
+    private function createDocumentEntitiesWithPredicatesFromDareData($verbose=false, int $creatorTid=-1): array
+    {
+
+        $results = ['processedDocs' => 0, 'docsCreated' => 0, 'docsAlreadyExisted' => 0,  'setPredicates' => 0, 'skippedEmptyPredicates' => 0];
+
+        // set system as the creator
+        if ($creatorTid === -1) {
+            $creatorTid = Entity::System;
+        }
+
+        // get all document data
+        $documents = $this->getDataFromDareDocumentsTable();
+        $numDocs = count($documents);
+
+        print("There are $numDocs documents to process.\nThe processing begins after having collected all data.\n");
+
+        if (!$verbose) {
+            printf("   %d documents processed\r", 0);
+        }
+
+        foreach ($documents as $i => $document) {
+
+            // create document entity, if not already existing
+            $bilderbergId = json_encode($document->bilderbergId);
+            $bilderbergIdSplitted = explode('-', $bilderbergId);
+            $signatureFromBilderbergId = end($bilderbergIdSplitted);
+            $signatureFromBilderbergId = str_replace('"', '', $signatureFromBilderbergId);
+
+            $createdDoc = $this->createDocument($bilderbergId);
+            $tid = $createdDoc['tid'];
+
+            if (str_starts_with($createdDoc['message'], 'NO')) {
+                $results['docsAlreadyExisted']++;
+            } else {
+                $results['docsCreated']++;
+            }
+
+            $tableKeysToSkip = ['id', 'bilderbergId', 'repositoryId', 'vd16', 'edit16', 'iAureliensis', 'docEditor'];
+
+            if ($verbose) {
+                print("\tAdding predicates to document...\n");
+            }
+
+            if ($verbose) {
+                $predicate = Entity::pDareSignature;
+                print("\t\tvalue for predicate $predicate has been set.\n");
+            }
+
+            // make statements
+            foreach ($document as $predicate => $value) {
+
+                if (!in_array($predicate, $tableKeysToSkip)) {
+
+                    if ($predicate === 'materialType') {
+                        switch ($value) {
+                            case '1':
+                                $value = Entity::MaterialPaper;
+                                break;
+
+                            case '2':
+                                $value = Entity::MaterialParchment;
+                                break;
+
+                            case '3':
+                                $value = Entity::MaterialMixed;
+                                break;
+
+                            case '4':
+                                $value = Entity::MaterialVellum;
+                                break;
+
+                            case '5':
+                                $value = Entity::MaterialTissue;
+                                break;
+
+                            default:
+                                $value = 'unknown';
+                                break;
+                        }
+
+                    }
+
+                    if ($value === '' or $value === 'unknown' or $value === null) {
+                        if ($verbose) {
+                            print("\t\tskipping predicate $predicate because of empty value.\n");
+                        }
+                        $results['skippedEmptyPredicates']++;
+                        continue;
+                    }
+
+                    if ($predicate === 'idno') { // this is the library or archive signature
+
+                        // depending on the relation of the saved signature to the signature encoded in the bilderberg id,
+                        // save the signature as different predicates
+                        if (!$this->signaturesAreIdentical($value, $signatureFromBilderbergId)) {
+                            $predicate = constant(Entity::class . '::pDareSignature');
+
+                            if ($verbose) {
+                                print("\t\tsignature '$value' in dare doc table differs from the signature '$signatureFromBilderbergId' derived from the bilderberg id.\n");
+                            }
+                        } else {
+                            $predicate = constant(Entity::class . '::pSignature');
+
+                            if ($verbose) {
+                                print("\t\tsignature $value in dare doc table identical with signature derived from the bilderberg id.\n");
+                            }
+                        }
+
+                    } else {
+                        $predicate = constant(Entity::class . '::pDare' . ucfirst($predicate));
+                    }
+
+                    $this->es->makeStatement($tid, $predicate, $value, $creatorTid, "Imported automatically from dare documents table.");
+
+                    if ($verbose) {
+                        print("\t\tvalue for predicate $predicate has been set.\n");
+                    }
+
+                    $results['setPredicates']++;
+                }
+            }
+
+            if (!$verbose) {
+                printf("   %d bilderberg ids processed\r", $i + 1);
+            } else {
+                $numRemainingDocs = $numDocs-($i+1);
+                print("There are $numRemainingDocs documents to process.\n");
+            }
+            $results['processedDocs']++;
+        }
+
+        print("\nFINISHED!\n");
+        return $results;
+    }
+
+
+    private function createCountry(string $name, int $creatorTid = -1): array
+    {
+        return $this->createEntityOfType(Entity::tCountry, $name, '', $creatorTid, true);
+    }
+
+    private function createCity(string $name, string $countryName='', int $creatorTid = -1): array
+    {
+        return $this->createEntityOfType(Entity::tCity, $name, '---'.$countryName.'---', $creatorTid, true);
+    }
+
+    private function createInstitution(string $name, string $cityName='', string $countryName='', int $creatorTid = -1): array
+    {
+        return $this->createEntityOfType(Entity::tInstitution, $name, '---'.$cityName.'---'.$countryName.'---', $creatorTid, true);
+    }
+
+    private function createDocument(string $bilderbergId, int $creatorTid = -1): array
+    {
+        return $this->createEntityOfType(Entity::tDocument, $bilderbergId, '', $creatorTid);
+    }
+
+    /**
+     * Create an entity of a given type with a given name if it does not already exist.
      * @param int $type one of Entity::tCountry, tCity, tInstitution, tDocument
      * @param string $name entity name
      * @param int $creatorTid
@@ -163,23 +574,50 @@ END;
      * @throws \APM\EntitySystem\Exception\InvalidStatementException
      * @throws \APM\EntitySystem\Exception\InvalidSubjectException
      */
-    private function createEntityOfType(int $type, string $name, int $creatorTid = -1, bool $addSortName = false): array
+    private function createEntityOfType(int $type, string $name, string $locatedIn='', int $creatorTid = -1, bool $addSortName = false): array
     {
         // set system as creator
         if ($creatorTid === -1) $creatorTid = Entity::System;
 
-        // get all existing entities of the given type
-        $namesToTids = [];
+        // get all existing entities of the given type and for existing cities and institutions also their locations
+        $entityNamesToTids = [];
 
-        if ($this->existingEntities[$type] === []) {
-            foreach ($this->es->getAllEntitiesForType($type) as $tid) {
-                $entityName = $this->es->getEntityData($tid)->name;
-                $namesToTids[$entityName] = $tid;
+        if ($this->existingEntities[$type] === []) { // if existingEntities have already been captured, do not do it again
+
+            foreach ($this->es->getAllEntitiesForType($type) as $tid) { // iterate over all entities of the given type
+
+                // get entity data and name
+                $entityData = $this->es->getEntityData($tid);
+                $entityName = $entityData->name;
+
+                if ($type === Entity::tCity or $type === Entity::tInstitution) { // get the locations of cities or institutions
+
+                    $locationEntity = $this->getEntityLocationFromSystem($entityData);
+                    $location = $locationEntity['location'];
+                    //print("location $location detected.\n");
+
+                    if ($type === Entity::tInstitution and $location !== '') { // for institutions also get the country of the city in which the institution is located
+
+                        $cityEntityTid = $locationEntity['tid'];
+                        $cityEntityData = $this->es->getEntityData((int) $cityEntityTid);
+                        $location = $location . '---' . $this->getEntityLocationFromSystem($cityEntityData)['location'];
+                        //print("full location $location detected.\n");
+
+                    }
+
+                    $entityNamesToTids[$entityName.'---'.$location.'---'] = $tid;
+
+                } else {
+                    $entityNamesToTids[$entityName] = $tid;
+                }
             }
-            $this->existingEntities[$type] = $namesToTids;
+
+            $this->existingEntities[$type] = $entityNamesToTids;
+
         } else {
-            $namesToTids = $this->existingEntities[$type];
+            $entityNamesToTids = $this->existingEntities[$type];
         }
+
 
         // this array will be used for the return message
         $typeNames = [
@@ -188,71 +626,94 @@ END;
             Entity::tInstitution => 'institution',
             Entity::tDocument => 'document'];
 
-        // if entity does not already exist, create it
-        if (!array_key_exists($name, $namesToTids)) {
+        // if entity does not already exist, create it – always create cities and institutions without given location data
+        if (!array_key_exists($name.$locatedIn, $entityNamesToTids) or
+            (($type === Entity::tCity or $type === Entity::tInstitution) and str_contains($locatedIn, '------'))) {
+
             try {
                 $tid = $this->es->createEntity($type, $name, '', $creatorTid);
                 if ($addSortName) {
                     $this->es->makeStatement($tid, Entity::pSortName, $name, $creatorTid, "Adding sort name $name automatically.");
                 }
+
             } catch (InvalidEntityTypeException) {
                 throw new \RuntimeException("Invalid type, should never happen");
             }
             return ['message' => "\tcreated {$typeNames[$type]} $name (tid: $tid).\n", 'tid' => $tid];
-        } else {
-            $existingTid = $namesToTids[$name];
+        } else if (array_key_exists($name.$locatedIn, $entityNamesToTids)) {
+            $existingTid = $entityNamesToTids[$name.$locatedIn];
             return ['message' => "\tNO {$typeNames[$type]} $name created, already exists (tid: $existingTid).\n", 'tid' => $existingTid];
+        } else {
+            return ['message' => "\tNO {$typeNames[$type]} $name created, REASON UNKNOWN.\n", 'tid' => null];
         }
-    }
-
-    private function createCountry(string $name, int $creatorTid = -1): array
-    {
-        return $this->createEntityOfType(Entity::tCountry, $name, $creatorTid, true);
-    }
-
-    private function createCity(string $name, int $creatorTid = -1): array
-    {
-        return $this->createEntityOfType(Entity::tCity, $name, $creatorTid, true);
-    }
-
-    private function createInstitution(string $name, int $creatorTid = -1): array
-    {
-        return $this->createEntityOfType(Entity::tInstitution, $name, $creatorTid, true);
-    }
-
-    private function createDocument(string $bilderbergId, int $creatorTid = -1): array
-    {
-        return $this->createEntityOfType(Entity::tDocument, $bilderbergId, $creatorTid);
     }
 
     /**
-     * sets up an http client and queries wikidata
-     * @param string $query
-     * @param string $userAgent
+     * returns the tid and name of the locatedIn-object for the given entity data
+     * @param object $entityData
      * @return array
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws EntityDoesNotExistException
      */
-    private function runWikidataSparqlQuery(string $query, string $userAgent = 'AltNameFetcherBot/1.0'): array
-    {
-        $client = new HttpClient();
-        try {
-            $response = $client->get('https://query.wikidata.org/sparql', [
-                'headers' => [
-                    'Accept' => 'application/sparql-results+json',
-                    'User-Agent' => $userAgent,
-                ],
-                'query' => [
-                    'format' => 'json',
-                    'query' => $query,
-                ],
-                'timeout' => 15,
-            ]);
-            $decoded = json_decode($response->getBody(), true);
-            return $decoded['results']['bindings'] ?? [];
-        } catch (\Exception $e) {
-            // Optional: handle error/log
+    private function getEntityLocationFromSystem(object $entityData): array {
+
+        $locatedInObjectTid = '';
+        $location = '';
+
+        $entityStatements = $entityData->statements;
+
+        foreach ($entityStatements as $entityStatement) {
+            if ($entityStatement->predicate === Entity::pLocatedIn) {
+                $locatedInObjectTid = $entityStatement->object;
+                $location = $this->es->getEntityData($locatedInObjectTid)->name;
+                break;
+            }
         }
-        return [];
+
+        return ['tid' => $locatedInObjectTid, 'location' => $location];
+    }
+
+
+    private function getLocationCodesForInstitutionEntityFromSystem (object $entityData): array {
+
+        $institutionCode = '';
+        $cityCode = '';
+        $countryCode = '';
+
+        $entityStatements = $entityData->statements;
+
+        foreach ($entityStatements as $entityStatement) {
+
+            // get institution code
+            if ($entityStatement->predicate === Entity::pDareInstCode) {
+                $institutionCode = $entityStatement->object;
+            }
+
+            // get city code
+            else if ($entityStatement->predicate === Entity::pLocatedIn) {
+                $cityTid = $entityStatement->object;
+                $cityStatements = $this->es->getEntityData($cityTid)->statements;
+
+                foreach ($cityStatements as $cityStatement) {
+                    if ($cityStatement->predicate === Entity::pDareCityCode) {
+                        $cityCode = $cityStatement->object;
+                    }
+
+                    // get country code
+                    else if ($cityStatement->predicate === Entity::pLocatedIn) {
+                        $countryTid = $cityStatement->object;
+                        $countryStatements = $this->es->getEntityData($countryTid)->statements;
+
+                        foreach ($countryStatements as $countryStatement) {
+                            if ($countryStatement->predicate === Entity::pDareCountryCode) {
+                                $countryCode = $countryStatement->object;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return ['institutionCode' => $institutionCode, 'cityCode' => $cityCode, 'countryCode' => $countryCode];
     }
 
     /**
@@ -322,185 +783,35 @@ SPARQL;
         ];
     }
 
-
     /**
-     * reads the names and associations of/between countries, cities, institutions and documents out of a csv-file,
-     * creates entities for them, if not already existing, and associates the entities to each other
-     * @param bool $verbose
-     * @param int $creatorTid
-     * @return void
-     * @throws EntityDoesNotExistException
-     * @throws \APM\EntitySystem\Exception\InvalidObjectException
-     * @throws \APM\EntitySystem\Exception\InvalidStatementException
-     * @throws \APM\EntitySystem\Exception\InvalidSubjectException
+     * sets up an http client and queries wikidata
+     * @param string $query
+     * @param string $userAgent
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    private function createLocationEntitiesFromFile(bool $verbose=false, int $creatorTid = -1): void
+    private function runWikidataSparqlQuery(string $query, string $userAgent = 'AltNameFetcherBot/1.0'): array
     {
-
-        // set system as the creator
-        if ($creatorTid === -1) {
-            $creatorTid = Entity::System;
+        $client = new HttpClient();
+        try {
+            $response = $client->get('https://query.wikidata.org/sparql', [
+                'headers' => [
+                    'Accept' => 'application/sparql-results+json',
+                    'User-Agent' => $userAgent,
+                ],
+                'query' => [
+                    'format' => 'json',
+                    'query' => $query,
+                ],
+                'timeout' => 15,
+            ]);
+            $decoded = json_decode($response->getBody(), true);
+            return $decoded['results']['bindings'] ?? [];
+        } catch (\Exception $e) {
+            // Optional: handle error/log
         }
-
-        // make arrays for already detected entities to avoid duplicates
-        $detectedCountries = [''];
-        $detectedCities = [''];
-        $detectedInstitutions = [''];
-        $detectedTriples = [];
-
-        // read csv-file
-        $filename = '/var/apm/share/locationDataToBeRevised.csv';
-        $data = $this->readCsvWithSingleHeaderToObjectArray($filename);
-
-        // make counters for documentation of results
-        $numCreatedCountries = 0;
-        $numCreatedCities = 0;
-        $numCreatedInstitutions = 0;
-        $numCreatedRelations = 0;
-        $numSkippedRows = 0;
-        $numSkippedCells = 0;
-
-        // count table rows
-        $numRows = count($data);
-
-        print("There are $numRows rows to process.\nThe processing begins after having collected all data.\n");
-        // print($verbose);
-
-        // create entities from the data and make the corresponding statements
-        foreach ($data as $i=>$row) {
-
-            printf("    %d rows processed\r", $i);
-
-            // extract relevant entity data
-            $institutionName = '';
-            $cityName = '';
-            $countryName = '';
-            $locationCode = $row->locationCodeCountryCityInstitution;
-
-            if ($row->institutionDare !== '') {
-                $institutionName = $row->institutionDare;
-            }
-
-            if ($row->cityWikidataEnglish !== '') {
-                $cityName = $row->cityWikidataEnglish;
-            }
-
-            if ($row->countryWikidataEnglish !== '') {
-                $countryName = $row->countryWikidataEnglish;
-            }
-
-            $detectedTriple = [$countryName, $cityName, $institutionName];
-
-            if ($verbose) {
-                print("detected location code: $locationCode\n");
-            }
-
-            // check if the detected triple is empty or has not already been processed
-            if (!in_array($detectedTriple, $detectedTriples) and $detectedTriple !== ['', '', '']) { // if not, process the triple
-
-                if ($verbose) {
-                    print("\tdetected location data: $countryName, $cityName, $institutionName\n");
-                }
-
-                // create country, city and institution entities
-                if ($countryName !== '') {
-                    if (!in_array($countryName, $detectedCountries)) {
-                        $result = $this->createCountry($countryName);
-                        if ($verbose) {
-                            print($result['message']);
-                        }
-                        $countryTid = $result['tid'];
-                        if (!str_starts_with($result['message'], "\tNO")) {
-                            $numCreatedCountries++;
-                        }
-                        $this->addAltNamesToEntity($countryName, $countryTid, Entity::tCountry, $creatorTid, $verbose);
-                    } else if ($verbose) {
-                        print("\tcountry with name $countryName already created.\n");
-                    }
-                } else {
-                    $numSkippedCells++;
-                }
-
-                if ($cityName !== '') {
-                    if (!in_array($cityName, $detectedCities)) {
-                        $result = $this->createCity($cityName);
-                        if ($verbose) {
-                            print($result['message']);
-                        }
-                        $cityTid = $result['tid'];
-                        if (!str_starts_with($result['message'], "\tNO")) {
-                            $numCreatedCities++;
-                        }
-                        $this->addAltNamesToEntity($cityName, $cityTid, Entity::tCity, $creatorTid, $verbose);
-                    } else if ($verbose) {
-                        print("\tcity with name $cityName already created.\n");
-                    }
-                } else {
-                    $numSkippedCells++;
-                }
-
-                if ($institutionName !== '') {
-                    if (!in_array($institutionName, $detectedInstitutions)) {
-                        $result = $this->createInstitution($institutionName);
-                        if ($verbose) {
-                            print($result['message']);
-                        }
-                        $institutionTid = $result['tid'];
-                        if (!str_starts_with($result['message'], "\tNO")) {
-                            $numCreatedInstitutions++;
-                        }
-                    } else if ($verbose) {
-                        print("\tinstitution with name $institutionName already created.\n");
-                    }
-                } else {
-                    $numSkippedCells++;
-                }
-
-                // save the entity names in the detected data arrays
-                $detectedTriples[] = $detectedTriple;
-                $detectedCountries[] = $countryName;
-                $detectedCities[] = $cityName;
-                $detectedInstitutions[] = $institutionName;
-
-                // associate the entities to each other
-                if (!($countryName === '' or $cityName === '')) {
-                    $this->es->makeStatement($countryTid, Entity::pContains, $cityTid, $creatorTid, 'Associating country with city.');
-                    $numCreatedRelations++;
-
-
-                    if ($verbose) {
-                        print("\tassociated: $countryName-->contains-->$cityName.\n");
-                    }
-                }
-
-                if (!($cityName === '' or $institutionName === '')) {
-                    $this->es->makeStatement($institutionTid, Entity::pLocatedIn, $cityTid, $creatorTid, 'Associating institution with city.');
-                    $numCreatedRelations++;
-
-
-                    if ($verbose) {
-                        print("\tassociated: $institutionName-->locatedIn-->$cityName.\n");
-                    }
-                }
-
-            } else if ($detectedTriple === ['', '', ''] and $verbose) {
-                print("\tNO location data detected.\n");
-            } else if ($verbose) {
-                print("\tNO NEW location data detected.\n");
-            }
-
-        }
-
-        // display results to the user
-        print ("FINISHED LOCATION ENTITY CREATIONS AND ASSOCIATIONS!\n\t");
-        print("$numCreatedCountries countries created.\n\t
-       $numCreatedCities cities created.\n\t
-       $numCreatedInstitutions institutions created.\n\t
-       $numCreatedRelations relations between entities created.\n\t
-       $numSkippedCells cells skipped because of missing data\n\t
-       $numSkippedRows of $numRows rows skipped because of missing data.\n");
+        return [];
     }
-
 
     /**
      * adds german and italian names to a country or city entity
@@ -545,179 +856,183 @@ SPARQL;
         }
     }
 
-    /**
-     * creates document entities with predicates out of the dare documents table data
-     * @param $verbose
-     * @param int $creatorTid
-     * @return int[]
-     * @throws \APM\EntitySystem\Exception\InvalidObjectException
-     * @throws \APM\EntitySystem\Exception\InvalidStatementException
-     * @throws \APM\EntitySystem\Exception\InvalidSubjectException
-     */
-    private function createDocumentEntitiesWithPredicatesFromDareData($verbose=false, int $creatorTid=-1): array
-    {
-
-        $results = ['processedDocs' => 0, 'docsCreated' => 0, 'docsAlreadyExisted' => 0,  'setPredicates' => 0, 'skippedPredicates' => 0];
+    private function addSignaturePredicateToDocsFromApm ($verbose=false, $creatorTid=-1) {
 
         // set system as the creator
         if ($creatorTid === -1) {
             $creatorTid = Entity::System;
         }
 
-        // get all document data
-        $documents = $this->getDataFromDareDocumentsTable();
-        $numDocs = count($documents);
+        $numProcessedDocs=0;
+        $numAddedSignatures=0;
+        $numSkippedDocs=0;
 
-        print("There are $numDocs documents to process.\nThe processing begins after having collected all data.\n");
+        $docsFromApm = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
+        $numFoundDocs = count($docsFromApm);
 
-        if (!$verbose) {
-            printf("   %d bilderberg ids processed\r", 0);
+        print("found $numFoundDocs documents in the apm entity system.\n");
+
+        foreach ($docsFromApm as $entityId) {
+
+            $docInfo = $this->getSystemManager()->getDocumentManager()->getLegacyDocInfo((int) $entityId);
+            $bilderbergId = $docInfo['title'];
+            $bilderbergIdSplitted = explode('-', $bilderbergId);
+
+            if ($bilderbergIdSplitted[0] === 'I' or $bilderbergIdSplitted[0] === 'M') {
+
+                $signature = end($bilderbergIdSplitted);
+                $this->es->makeStatement($entityId, Entity::pSignature, $signature, $creatorTid, "Derived automatically from the document title.");
+
+                if ($verbose) {
+                    print("\tassociated: $entityId (name: $bilderbergId)-->signature-->$signature\n");
+                }
+                $numAddedSignatures++;
+
+            } else {
+                if ($verbose) {
+                    print("\tNO document signature found for $bilderbergId.\n");
+                }
+                $numSkippedDocs++;
+            }
+
+            $numProcessedDocs++;
+
+            if (!$verbose) {
+                printf("   %d docs processed\r", $numProcessedDocs);
+            }
+
         }
 
-        foreach ($documents as $i => $document) {
+        print("FINISHED!\n
+                \t$numAddedSignatures signatures added.\n
+                \t$numSkippedDocs skipped because of wrong title format.\n");
 
-            // create document entity, if not already existing
-            $bilderbergId = json_encode($document->bilderbergId);
+        return true;
+    }
 
-            $createdDoc = $this->createDocument($bilderbergId);
-            $tid = $createdDoc['tid'];
 
-            if (str_starts_with($createdDoc['message'], 'NO')) {
-               $results['docsAlreadyExisted']++;
-            } else {
-                $results['docsCreated']++;
-            }
+    private function addStoredAtRelationToDocsFromApm ($verbose=false, $creatorTid=-1) {
 
-            $tableKeysToSkip = ['id', 'bilderbergId', 'repositoryId', 'vd16', 'edit16', 'iAureliensis', 'docEditor'];
+        // set system as the creator
+        if ($creatorTid === -1) {
+            $creatorTid = Entity::System;
+        }
 
-            if ($verbose) {
-                print("\tAdding predicates to document...\n");
-            }
+        $numProcessedDocs=0;
+        $numAddedStoredAtRelations=0;
+        $numSkippedDocs=0;
 
-            // make statements
-            foreach ($document as $predicate => $value) {
+        $docsFromApm = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
+        $numFoundDocs = count($docsFromApm);
+        print("found $numFoundDocs documents in the apm entity system.\n");
 
-                if (!in_array($predicate, $tableKeysToSkip)) {
 
-                    if ($predicate === 'materialType') {
-                        switch ($value) {
-                            case '1':
-                                $value = Entity::MaterialPaper;
-                                break;
+        $institutionEntities = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tInstitution);
+        $numInstitutionEntities = count($institutionEntities);
+        print("found $numInstitutionEntities institution entities in the apm entity system.\n");
 
-                            case '2':
-                                $value = Entity::MaterialParchment;
-                                break;
+        $institutionEntityData = [];
+        $locationCodes = [];
 
-                            case '3':
-                                $value = Entity::MaterialMixed;
-                                break;
+        print("collecting institution entities data and their location codes. this can take a moment...\n");
+        foreach ($institutionEntities as $institutionTid) {
+            $entityData = $this->es->getEntityData($institutionTid);
+            $institutionEntityData[] =  $entityData;
+            $locationCodes[] = $this->getLocationCodesForInstitutionEntityFromSystem($entityData);
+        }
 
-                            case '4':
-                                $value = Entity::MaterialVellum;
-                                break;
 
-                            case '5':
-                                $value = Entity::MaterialTissue;
-                                break;
+        foreach ($docsFromApm as $entityId) {
 
-                            default:
-                                $value = 'unknown';
-                                break;
-                        }
+            $docInfo = $this->getSystemManager()->getDocumentManager()->getLegacyDocInfo((int) $entityId);
+            $bilderbergId = $docInfo['title'];
+            $bilderbergIdSplitted = explode('-', $bilderbergId);
 
-                    }
+            if ($bilderbergIdSplitted[0] === 'I' or $bilderbergIdSplitted[0] === 'M') {
 
-                    if ($value === '' or $value === 'unknown' or $value === null) {
+                $countryCode = $bilderbergIdSplitted[1];
+                $cityCode = $bilderbergIdSplitted[2];
+                $instCode = $bilderbergIdSplitted[3];
+
+                $institutionFound = false;
+
+                foreach ($institutionEntities as $i=>$institutionTid) {
+
+                    // get entity data and institution name
+                    $entityData = $institutionEntityData[$i];
+                    $institutionName = $entityData->name;
+
+                    if ($locationCodes[$i]['institutionCode'] === $instCode and
+                        $locationCodes[$i]['countryCode'] === $countryCode and
+                        $locationCodes[$i]['cityCode'] === $cityCode) {
+
+                        $this->es->makeStatement($entityId, Entity::pStoredAt, $institutionTid, $creatorTid, "Derived automatically from the document title.");
+                        $numAddedStoredAtRelations++;
+                        $institutionFound = true;
+
                         if ($verbose) {
-                            print("\t\tskipping predicate $predicate because of empty value.\n");
+                            print("\tassociated: $entityId (name: $bilderbergId)-->storedAt-->$institutionTid (name: $institutionName)\n");
                         }
-                        $results['skippedPredicates']++;
-                        continue;
-                    }
 
-                    $predicate = constant(Entity::class . '::pDare' . ucfirst($predicate));
-                    $this->es->makeStatement($tid, $predicate, $value, $creatorTid, "Imported automatically from dare documents table.");
+                        break;
+                    }
+                }
+
+                if (!$institutionFound) {
+                    $numSkippedDocs++;
+
                     if ($verbose) {
-                        print("\t\tvalue for predicate $predicate has been set.\n");
+                        print("\tNO institution entity found for $bilderbergId because of missing institution entity.\n");
                     }
+                }
 
-                    $results['setPredicates']++;
+            } else {
+                $numSkippedDocs++;
+
+                if ($verbose) {
+                    print("\tNO institution entity found for $bilderbergId because of wrong title format.\n");
                 }
             }
 
+            $numProcessedDocs++;
+
             if (!$verbose) {
-                printf("   %d bilderberg ids processed\r", $i + 1);
-            } else {
-                $numRemainingDocs = $numDocs-($i+1);
-                print("There are $numRemainingDocs documents to process.\n");
+                printf("   %d docs processed\r", $numProcessedDocs);
             }
-            $results['processedDocs']++;
+
         }
 
-        print("\nFINISHED!\n");
-        return $results;
+        print("FINISHED!\n
+                \t$numAddedStoredAtRelations storedAt-relations added.\n
+                \t$numSkippedDocs skipped because of wrong title format or missing institution entity.\n");
+
+        return true;
+    }
+
+
+    /**
+     * returns the data contained in the dare documents csv-table
+     * @return array
+     */
+    private function getDataFromDareDocumentsTable() : array
+    {
+        $docsFromDareFile = "/var/apm/share/documents_dare.csv";
+        return $this->readCsvWithSingleHeaderToObjectArray($docsFromDareFile);
     }
 
     /**
-     * reads the data from a csv table with a two-line header and returns them in an array
-     * @param string $filename
-     * @return array
+     * checks if two given signatures contain identical information
+     * @param string $signatureFromTable
+     * @param string $signatureFromBilderbergId
+     * @return bool
      */
-    private function readCsvWithDoubleHeaderToObjectArray(string $filename): array
-    {
-        $results = [];
-        if (($handle = fopen($filename, "r")) !== FALSE) {
-            $header1 = fgetcsv($handle);
-            $header2 = fgetcsv($handle);
+    private function signaturesAreIdentical(string $signatureFromTable, string $signatureFromBilderbergId): bool {
 
-            // fill first header
-            $filledHeader1 = [];
-            $current = '';
-            foreach ($header1 as $h) {
-                $h = trim($h);
-                if ($h !== '') $current = $h;
-                $filledHeader1[] = $current;
-            }
+        $signatureFromTable = str_replace(' ', '', strtolower($signatureFromTable));
+        $signatureFromBilderbergId = str_replace(' ', '', strtolower($signatureFromBilderbergId));
 
-            // structure header
-            $colCount = max(count($filledHeader1), count($header2));
-            $colMap = [];
-            for ($col = 0; $col < $colCount; $col++) {
-                $parent = isset($filledHeader1[$col]) ? trim($filledHeader1[$col]) : '';
-                $child = isset($header2[$col]) ? trim($header2[$col]) : '';
-                if ($parent === '' && $child === '') {
-                    continue;
-                }
-                if ($parent !== '' && $child === '') {
-                    $colMap[$col] = [$this->toCamelCase($parent), null];
-                } elseif ($parent !== '' && $child !== '' && $parent !== $child) {
-                    $colMap[$col] = [$this->toCamelCase($parent), $this->toCamelCase($child)];
-                } else {
-                    $colMap[$col] = [$this->toCamelCase($child), null];
-                }
-            }
-
-            // read data
-            while (($data = fgetcsv($handle)) !== FALSE) {
-                $row = new \stdClass();
-                foreach ($colMap as $col => [$parent, $child]) {
-                    if ($child === null) {
-                        $row->{$parent} = $data[$col];
-                    } else {
-                        if (!isset($row->{$parent}) || !is_object($row->{$parent})) {
-                            $row->{$parent} = new \stdClass();
-                        }
-                        $row->{$parent}->{$child} = $data[$col];
-                    }
-                }
-                $results[] = $row;
-            }
-            fclose($handle);
-        } else {
-            echo "Error: Unable to open file $filename\n";
-        }
-        return $results;
+        return str_replace('.', '', $signatureFromTable) ===
+            str_replace('.', '', $signatureFromBilderbergId);
     }
 
     /**
@@ -734,7 +1049,7 @@ SPARQL;
             while (($data = fgetcsv($handle)) !== FALSE) {
                 $obj = new stdClass();
                 foreach ($headers as $i => $header) {
-                    $obj->{$this->toCamelCase($header)} = $data[$i];
+                        $obj->{$this->toCamelCase($header)} = $data[$i];
                 }
                 $results[] = $obj;
             }
@@ -744,16 +1059,6 @@ SPARQL;
         }
 
         return $results;
-    }
-
-    /**
-     * returns the data contained in the dare documents csv-table
-     * @return array
-     */
-    private function getDataFromDareDocumentsTable() : array
-    {
-        $docsFromDareFile = "/var/apm/share/documents_dare.csv";
-        return $this->readCsvWithSingleHeaderToObjectArray($docsFromDareFile);
     }
 
     /**

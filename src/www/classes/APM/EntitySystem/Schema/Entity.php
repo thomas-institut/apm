@@ -159,13 +159,13 @@ class Entity implements TidDefiner
     const int pIsPublic = 7605;
     const int pImageSourceData = 7606;
     const int pUseDeepZoomForImages = 7607;
-
     const int pStoredAt = 7608;
+    const int pSignature = 7670;
+
+
 
 
 // Dare Document Predicates
-
-    // Dare Document Predicates
 
     const int pDareType = 7609;
     const int pDareHasImages = 7610;
@@ -174,7 +174,6 @@ class Entity implements TidDefiner
     const int pDareIsFragmentary = 7613;
     const int pDareIsDareFoliated = 7614;
     const int pDarePageCount = 7615;
-    const int pDareIdno = 7617;
     const int pDareAltRepository = 7618;
     const int pDareContentTitle = 7619;
     const int pDareContentSummary = 7620;
@@ -213,16 +212,21 @@ class Entity implements TidDefiner
     const int pDareContent = 7656;
     const int pDareMaterialDescription = 7657;
     const int pDareOrigin = 7658;
+    const int pDareSignature = 7659;
+
 
     // Geographical Predicates
     const int pContainedBy = 8001;
     const int pContains = 8002;
     const int pCivicAddress = 8003;
     const int pGpsCoordinates = 8004;
-
     const int pAreaType = 8005;
 
     const int pLocatedIn = 8006;
+
+    const int pDareCountryCode = 8007;
+    const int pDareCityCode = 8008;
+    const int pDareInstCode = 8009;
 
 
     // Edition source predicates

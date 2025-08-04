@@ -40,9 +40,11 @@ export class DocumentsPage extends NormalPage {
           { data: 'title'},
           { data: 'type'},
           { data: 'lang'},
+          { data: 'institution'},
           { data: 'numPages', searchable: false},
           { data: 'numTranscribedPages', searchable: false},
           { data: 'transcribers'},
+          { data: 'locationAliases', visible: false},
         ],
         language: this.getDataTablesLanguageOption()
       });
@@ -99,6 +101,9 @@ export class DocumentsPage extends NormalPage {
         let transcriberData = await this.apmDataProxy.getPersonEssentialData(transcriberTid);
         transcribersHtmlArray.push(`<a href="${urlGen.sitePerson(Tid.toBase36String(transcriberTid))}" title="Click to view person details">${transcriberData.name}</a>`)
       }
+
+      let locationData = await this.getLocationData(doc['docInfo']['tid']);
+      
       data.push({
         title: `<a href="${urlGen.siteDocPage(Tid.toBase36String(doc['docInfo']['id']))}">${doc['docInfo']['title']}</a>`,
         type:  await this.apmDataProxy.getEntityName(doc['docInfo']['doc_type']),
@@ -106,10 +111,67 @@ export class DocumentsPage extends NormalPage {
         numPages: doc['numPages'],
         numTranscribedPages: doc['numTranscribedPages'],
         transcribers: transcribersHtmlArray.join(', '),
+        institution: locationData['institution'],
+        locationAliases: locationData['aliases'],
       })
     }
     return data;
   }
+
+  async getLocationData(tid) {
+
+    let institution = ''
+    let locationAliases = ''
+    let entityData = await this.apmDataProxy.getEntityData(tid)
+
+    for (let statement of entityData.statements) { // iterate over all statements of the document entity
+
+      if (statement.predicate === 7608) { // this checks for the storedAt relation to get its object, the institution 
+        let instTid = statement.object
+        institution = await this.apmDataProxy.getEntityName(instTid)
+        let instEntityData = await this.apmDataProxy.getEntityData(instTid)
+
+        for (let instStatement of instEntityData.statements) { // iterate over all statements of the institution entity
+
+          if (instStatement.predicate === 8006) { // this checks for the locatedIn relation to get its object, the city
+            let cityTid = instStatement.object
+            institution = institution + ', ' + await this.apmDataProxy.getEntityName(cityTid)
+            let cityEntityData = await this.apmDataProxy.getEntityData(cityTid)
+
+            for (let cityStatement of cityEntityData.statements) { // get all alternate names of the city
+              if (cityStatement.predicate === 2007) { 
+                locationAliases = locationAliases + " - " + cityStatement.object
+              }
+            }
+
+            for (let cityStatement of cityEntityData.statements) { // iterate over all statements of the city entity
+
+              if (cityStatement.predicate === 8006) { // this checks for the locatedIn relation to get its object, the country
+                let countryTid = cityStatement.object
+                institution = institution + ', ' + await this.apmDataProxy.getEntityName(countryTid)
+                let countryEntityData = await this.apmDataProxy.getEntityData(countryTid)
+
+                for (let countryStatement of countryEntityData.statements) { // get all alternate names of the country
+                  if (countryStatement.predicate === 2007) { 
+                    locationAliases = locationAliases + " - " + countryStatement.object
+                  }
+                }
+                
+                break;
+              }
+            }
+            
+            break;
+          }
+        }
+        
+        break;
+      }
+    }
+
+    return {institution: institution, aliases: locationAliases}
+  }
+
 
   async getDocumentsTableSkeleton() {
     return `<table class="docs-table">
@@ -117,10 +179,11 @@ export class DocumentsPage extends NormalPage {
                       <th>${tr('Title')}</th>
                       <th>${tr('Type')}</th>
                       <th>${tr('Language')}</th>
+                      <th>${tr('Institution')}</th>
                       <th>${tr('Pages')}</th>
                       <th>${tr('Pages:Transcribed')}</th>
                       <th>${tr('Transcribers')}</th>
-                      <th></th></tr>
+                      </tr>
                 </thead>
       </table>`;
   }

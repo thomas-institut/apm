@@ -1,7 +1,7 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { getLangName, TranscriptionLanguages } from '../constants/TranscriptionLanguages'
 import { ProcessingInfoWidget } from './ProcessingInfoWidget'
-import { wait } from '../toolbox/FunctionUtil.mjs'
+import { wait } from '../toolbox/wait.ts'
 import { ConfirmDialog } from '../pages/common/ConfirmDialog'
 
 export class SetLanguage {

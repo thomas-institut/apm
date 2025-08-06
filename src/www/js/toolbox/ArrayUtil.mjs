@@ -71,12 +71,6 @@ export function arraysHaveTheSameValues(array1, array2) {
 export function prettyPrintArray(array) {
   return '[' + array.map( (e) => { return e.toString()}).join(', ') + ']'
 }
-
-export function shuffleArray(array) {
-  array.sort(() => Math.random() - 0.5)
-  return array
-}
-
 export function createSequenceArray(from, to, increment = 1) {
   let theArray = []
   for (let i = from; i <= to; i+=increment) {
@@ -93,7 +87,7 @@ export function flatten(theArray) {
   let flattenedArray = []
   theArray.forEach( (arrayElement) => {
     if (Array.isArray(arrayElement)) {
-      pushArray(flattenedArray, flatten(arrayElement))
+      flattenedArray.push(...flatten(arrayElement))
     } else {
       flattenedArray.push(arrayElement)
     }
@@ -147,38 +141,13 @@ export function stringFieldSort(theArray, fieldName, asc = true) {
  * Pushes all the elements of an array into another one
  * @param theArray
  * @param arrayToPush
+ * @deprecated use  `theArray.push(...arrayToPush)`
  */
 export function pushArray(theArray, arrayToPush) {
   arrayToPush.forEach( (e) => {
     theArray.push(e)
   })
 }
-
-/**
- *
- * @param {array} sourceArray
- * @param {any} separator
- */
-export function joinWithArray(sourceArray, separator) {
-  let newArray = []
-  if (sourceArray.length === 0) {
-    return []
-  }
-
-  for (let i=0; i < sourceArray.length -1; i++) {
-    newArray.push(sourceArray[i])
-    newArray.push(separator)
-  }
-
-  newArray.push(sourceArray[sourceArray.length-1])
-  return newArray
-}
-
-
-export function maxValue(theArray) {
-  return theArray.reduce( (currentMax, val) => { return Math.max(currentMax, val)})
-}
-
 /**
  *
  * @param {any[]}someArray

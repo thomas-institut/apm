@@ -26,7 +26,7 @@ import { deepCopy } from '../toolbox/Util.mjs'
 import { ChunkSearchPanel } from './ChunkSearchPanel'
 import { KeyCache } from '@/toolbox/KeyCache/KeyCache'
 import { CtDataEditionGenerator } from '@/Edition/EditionGenerator/CtDataEditionGenerator'
-import { EditionPreviewPanelNew } from '@/EditionComposer/EditionPreviewPanelNew'
+import { EditionPreviewPanel } from '@/EditionComposer/EditionPreviewPanel'
 import { PdfDownloadUrl } from '@/EditionComposer/PdfDownloadUrl'
 import { Edition } from '../Edition/Edition.mjs'
 
@@ -39,7 +39,7 @@ import { ApparatusEntry } from '../Edition/ApparatusEntry.mjs'
 import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry.mjs'
 import { EditableTextField } from '@/widgets/EditableTextField'
 import { TimeString } from '../toolbox/TimeString.mjs'
-import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
+import { BasicProfiler } from '../toolbox/BasicProfiler.ts'
 import { CtData } from '@/CtData/CtData'
 import { WitnessDataItem } from '../Edition/WitnessDataItem.mjs'
 import { urlGen } from '@/pages/common/SiteUrlGen'
@@ -228,7 +228,7 @@ export class MceComposer extends ApmPage {
      },
      debug: true
    })
-   this.previewPanel = new EditionPreviewPanelNew({
+   this.previewPanel = new EditionPreviewPanel({
      containerSelector: `#${previewPanelId}`,
      edition: this.edition,
      langDef: this.options.langDef,

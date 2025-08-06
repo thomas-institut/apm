@@ -42,7 +42,7 @@ import {
   columnUngroupEvent, editModeGroup,
   editModeOff,
   TableEditor
-} from '../pages/common/TableEditor'
+} from '@/pages/common/TableEditor'
 import * as WitnessType from '../Witness/WitnessType'
 import * as TokenClass from '../Witness/WitnessTokenClass.mjs'
 import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
@@ -51,15 +51,14 @@ import * as CollationTableType from '../constants/CollationTableType'
 import * as CollationTableUtil from '../pages/common/CollationTableUtil'
 import * as PopoverFormatter from '../pages/common/CollationTablePopovers'
 import { FULL_TX } from '../Witness/WitnessTokenClass.mjs'
-import { CtData } from '../CtData/CtData'
+import { CtData } from '@/CtData/CtData'
 import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser.mjs'
 import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
-import { doNothing } from '../toolbox/FunctionUtil.mjs'
-import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
+import { HtmlRenderer } from '@/FmtText/Renderer/HtmlRenderer'
 import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
 import { Punctuation } from '../defaults/Punctuation.mjs'
-import { toolbarCharacters} from '../defaults/ToolbarCharacters'
-import { SimpleConfirmDialog } from '../pages/common/SimpleConfirmDialog'
+import { toolbarCharacters} from '@/defaults/ToolbarCharacters'
+import { SimpleConfirmDialog } from '@/pages/common/SimpleConfirmDialog'
 
 export class CollationTablePanel extends PanelWithToolbar {
   constructor (options = {}) {
@@ -71,7 +70,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       langDef : { type: 'object', default: defaultLanguageDefinition },
       peopleInfo: { type: 'object', default: []},
       onCtDataChange: { type: 'function', default: () => {  this.verbose && console.log(`New CT data, but no handler for change`)}},
-      editApparatusEntry: { type: 'function', default: doNothing}
+      editApparatusEntry: { type: 'function', default: () => {}}
     }
 
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  'Collation Table Panel'})

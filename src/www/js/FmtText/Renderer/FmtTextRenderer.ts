@@ -16,33 +16,21 @@
  *
  */
 
+import { FmtTextToken } from '../FmtTextToken'
+import {FmtTextUtil} from '../FmtTextUtil';
 
-import { TypesetterToken } from './TypesetterToken'
-
-
-export class TypesetterTokenFactory {
-  /**
-   *
-   * @param {string}theText
-   * @param {string}lang
-   * @returns {TypesetterToken}
-   */
-  static simpleText(theText, lang = '') {
-    return (new TypesetterToken()).setText(theText, lang)
-  }
+/**
+ * Base class for FmtText renderers
+ *
+ */
+export class FmtTextRenderer {
 
   /**
-   *
-   * @returns {TypesetterToken}
+   * The render method can return anything.
+   * The default is to return the plain text version of the text
    */
-  static normalSpace() {
-    return (new TypesetterToken()).setSpace('normal')
-  }
-
-  static paragraphBreak() {
-    return (new TypesetterToken()).setText("\n")
+  render(fmtText: FmtTextToken[], lang = ''): any {
+    return FmtTextUtil.getPlainText(fmtText)
   }
 
 }
-
-

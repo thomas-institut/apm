@@ -17,14 +17,13 @@
  */
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { doNothing } from '../toolbox/FunctionUtil.mjs'
-import {toolbarCharacters} from '../defaults/ToolbarCharacters'
+import {toolbarCharacters} from '@/defaults/ToolbarCharacters'
 
 import Quill from '../QuillLoader'
 import Small from './QuillBlots/Small'
 import Superscript from './QuillBlots/Superscript'
 import Sigla from './QuillBlots/Sigla'
-import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
+import { QuillDeltaRenderer } from '@/FmtText/Renderer/QuillDeltaRenderer'
 import { CustomApparatusQuillDeltaConverter } from './QuillDelta/CustomApparatusQuillDeltaConverter'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
@@ -63,7 +62,7 @@ export class ApparatusEntryTextEditor {
         verbose: { type: 'boolean', default: false},
         debug: { type: 'boolean', default: false},
         initialText: { type: 'array', default: []},
-        onChange: { type: 'function', default: doNothing}
+        onChange: { type: 'function', default: () => {}}
       }
     })
 

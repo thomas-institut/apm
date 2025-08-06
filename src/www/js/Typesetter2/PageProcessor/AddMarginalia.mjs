@@ -22,7 +22,7 @@ import { ItemList } from '../ItemList.mjs'
 import * as TypesetterItemDirection from '../TypesetterItemDirection.mjs'
 import * as ListType from '../ListType.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { TextBoxMeasurer } from '../TextBoxMeasurer/TextBoxMeasurer.mjs'
+import { TextBoxMeasurer } from '../TextBoxMeasurer/TextBoxMeasurer.js'
 import { Glue } from '../Glue.mjs'
 import { ItemArray } from '../ItemArray.mjs'
 

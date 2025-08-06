@@ -2,10 +2,10 @@ import { NormalPage } from './NormalPage'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { tr } from './common/SiteLang'
 import { urlGen } from './common/SiteUrlGen'
-import { CollapsePanel } from '../widgets/CollapsePanel'
-import { compareStrings } from '../toolbox/Util'
-import { Tid } from '../Tid/Tid'
-import { WorkId } from '../toolbox/WorkId'
+import { CollapsePanel } from '@/widgets/CollapsePanel'
+import { compareStrings } from '@/toolbox/Util'
+import { Tid } from '@/Tid/Tid'
+import { WorkId } from '@/toolbox/WorkId'
 
 interface GroupedWork {
   authorId: number;

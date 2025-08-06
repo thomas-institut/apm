@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021 Universität zu Köln
+ *  Copyright (C) 2022 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,10 +16,28 @@
  *
  */
 
+import {TextBox} from "../TextBox";
 
+export class TextBoxMeasurer {
 
-export const NORMAL = 'normal'
+  /**
+   *
+   * @param {TextBox} item
+   * @return {Promise}
+   */
+  getBoxWidth(item: TextBox): Promise<number> {
+    // a wild guess based on a monospace font!
+    return Promise.resolve(item.text.length * item.fontSize)
+  }
 
-export const NORMAL_SPACE_WIDTH_IN_EMS = 0.3333  // ~= 1/3 em
-export const NORMAL_STRETCH_IN_EMS = 0.1667      // ~= 1/6 em
-export const NORMAL_SHRINK_IN_EMS = 0.1111       // ~= 1/9 em
+  /**
+   * Returns the height of a text box from the baseline
+   * @param {TextBox} item
+   * @return {Promise}
+   */
+  getBoxHeight(item: TextBox): Promise<number> {
+    //just the fontSize... this will be different for different fonts
+    return Promise.resolve(item.fontSize)
+  }
+
+}

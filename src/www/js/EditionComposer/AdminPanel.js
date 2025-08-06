@@ -27,13 +27,12 @@
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 
-import { doNothingPromise } from '../toolbox/FunctionUtil.mjs'
-import { ConfirmDialog } from '../pages/common/ConfirmDialog'
+import { ConfirmDialog } from '@/pages/common/ConfirmDialog'
 import * as CollationTableType from '../constants/CollationTableType'
-import { Panel } from '../MultiPanelUI/Panel'
-import { ApmFormats } from '../pages/common/ApmFormats'
+import { Panel } from '@/MultiPanelUI/Panel'
+import { ApmFormats } from '@/pages/common/ApmFormats'
 import { TimeString } from '../toolbox/TimeString.mjs'
-import { urlGen } from '../pages/common/SiteUrlGen'
+import { urlGen } from '@/pages/common/SiteUrlGen'
 
 const archiveButtonId = 'archive-table-btn'
 const versionHistoryDiv = 'version-history-div'
@@ -49,7 +48,7 @@ export class AdminPanel extends  Panel {
       archived: { type: 'boolean', required: true},
       versionInfo: { type: 'array', default: []},
       peopleInfo: { type: 'object', default: []},
-      onConfirmArchive: { type: 'function', default: () => { return doNothingPromise()}},
+      onConfirmArchive: { type: 'function', default: () => { return Promise.resolve()}},
       canArchive: { type: 'boolean', default: true},
       cannotArchiveReason: { type: 'string', default: ''}
     }

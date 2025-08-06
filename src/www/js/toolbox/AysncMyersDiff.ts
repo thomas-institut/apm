@@ -17,7 +17,7 @@
  */
 
 
-import { wait } from './FunctionUtil.mjs'
+import { wait } from './wait'
 
 // Asynchronous version of the MyersDiff algorithm
 // When the input to the algorithm is large, it might take a
@@ -30,7 +30,31 @@ export const DEL = -1
 const STATE_WAITING = 'waiting'
 const STATE_RUNNING = 'running'
 
+interface IterationResult {
+  solutionFound: boolean,
+  v: V_Type,
+  v_save: V_Type[]
+}
+
+export type ArrayEqualityFunction = (a: any, b: any) => boolean;
+
+type V_Type = {
+  [key: number]: number
+}
+
+export interface EditCommand {
+  index: number,
+  command: number,
+  seq: number
+}
+
 export class AsyncMyersDiff {
+  private debugMode: boolean;
+  private abortNow: boolean;
+  private state: string;
+  private runCount: number;
+  private iterations: number;
+  private maxIterations: number;
 
   constructor () {
     this.debugMode = false
@@ -55,7 +79,7 @@ export class AsyncMyersDiff {
    *
    * @param {boolean}mode
    */
-  setDebugMode(mode) {
+  setDebugMode(mode: boolean) {
     this.debugMode = mode
   }
 
@@ -74,7 +98,7 @@ export class AsyncMyersDiff {
    *         seq : XX               // index in the edited array
    *        }
    */
-  calculate(arrayA, arrayB, isEqual) {
+  calculate(arrayA: any[], arrayB: any[], isEqual: ArrayEqualityFunction) : Promise<EditCommand[]|null>{
     return new Promise( async (resolve) => {
       this.state = 'running'
       this.runCount++
@@ -86,12 +110,11 @@ export class AsyncMyersDiff {
       let max = m + n
 
       // Keep a copy of $v after each iteration of $d.
-      let v_save = [];
+      let v_save: V_Type[] = [] ;
 
       // Find the shortest "D-path".
-
       // since v will have negative indexes, it is an object not an array
-      let v = {}
+      let v: V_Type = {}
       v[1] = 0  // $v = [1 => 0];
 
       this.maxIterations = max
@@ -108,33 +131,18 @@ export class AsyncMyersDiff {
         let solutionFound = false
         let iterationResult = await this.doOneIteration(d, v, v_save, m, n, arrayA, arrayB, isEqual)
         await wait(0) // give JS a chance to process other stuff
-        solutionFound = iterationResult['solutionFound']
-        v = iterationResult['v']
-        v_save = iterationResult['v_save']
+        solutionFound = iterationResult.solutionFound
+        v = iterationResult.v
+        v_save = iterationResult.v_save
         if (solutionFound) {
           break
         }
       }
 
-      // if (this.debugMode) {
-      //   console.log(`v_save`)
-      //   console.log(v_save)
-      // }
 
       // Extract the solution by back-tracking through the saved results.
       let snakes = await this.extractSnakes(v_save, n, m);
-
-      // if (this.debugMode) {
-      //   console.log(`Snakes`)
-      //   console.log(snakes)
-      // }
       let solution = await this.formatSolution(snakes)
-
-      // if (this.debugMode) {
-      //   console.log(`Solution`)
-      //   console.log(solution)
-      //   console.groupEnd()
-      // }
       this.state = 'waiting'
       this.debugMode && console.log(`Finished run ${runNumber}`)
       this.iterations = 1
@@ -163,7 +171,7 @@ export class AsyncMyersDiff {
    * @param isEqual
    * @return {Promise<unknown>}
    */
-  doOneIteration(d, v, v_save, m, n, arrayA, arrayB, isEqual) {
+  doOneIteration(d: number, v: V_Type, v_save: V_Type[], m: number, n: number, arrayA: any[], arrayB: any[], isEqual : ArrayEqualityFunction) : Promise<IterationResult> {
     return new Promise( (iterationResolve) => {
       // Examine all possible "K-lines" for this "D-path".
       for (let k = -d; k <= d; k += 2) {
@@ -199,9 +207,9 @@ export class AsyncMyersDiff {
    * @param snakes
    * @return {Promise<unknown>}
    */
-  formatSolution(snakes) {
+  formatSolution(snakes: number[][]) : Promise<EditCommand[]> {
     return new Promise( (resolve) => {
-      let solution = []
+      let solution: EditCommand[] = []
       let x = 0
       let y = 0
       let seq = 0
@@ -251,9 +259,9 @@ export class AsyncMyersDiff {
    * @param y
    * @return {Promise<unknown>}
    */
-  extractSnakes(v_save, x, y) {
+  extractSnakes(v_save: any, x: number, y: number) : Promise<number[][]> {
     return new Promise ( (resolve) => {
-      let snakes = [];
+      let snakes: number[][] = [];
 
       for (let d = v_save.length - 1; x >= 0 && y >= 0; --d) {
         snakes.unshift([x,y])  //  i.e. add [x,y] at the beginning of the snakes array

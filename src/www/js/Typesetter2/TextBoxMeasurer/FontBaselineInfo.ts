@@ -20,6 +20,12 @@
  * Baseline information for specific fonts
  */
 
+
+interface FontData {
+  family: string,
+  multiplier: number,
+}
+
 /**
  * Multiplier is the ratio of the font size to the position of the baseline
  * from the top of the font.
@@ -28,9 +34,8 @@
  * can be found using, for example, FontForge. The multiplier is the ratio
  * between the ascent and the em-size (normally 1000 or 2048)
  *
- * @type {[{family: string, multiplier: number},{family: string, multiplier: number},{family: string, multiplier: number}]}
  */
-const fontData = [
+const fontData :FontData[] = [
   { family: 'FreeSerif', multiplier: 0.9},
   { family: 'Arial', multiplier: 0.9},
   { family: 'Linux Libertine', multiplier: 1831/2048},
@@ -41,9 +46,10 @@ const fontData = [
 ]
 
 
+
 export class FontBaselineInfo {
 
-  static getBaseline(fontFamily, fontSize) {
+  static getBaseline(fontFamily: string, fontSize: number) {
     let index = fontData.map( fd => fd.family).indexOf(fontFamily)
     if (index === -1) {
       return fontSize

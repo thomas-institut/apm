@@ -29,7 +29,7 @@ export interface FmtTextToken {
     textDirection?: string;
 
 
-    space?: string;
+    space?: string| number;
     markType?: string;
 
 

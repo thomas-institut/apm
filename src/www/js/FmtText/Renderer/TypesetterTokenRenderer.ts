@@ -17,20 +17,21 @@
  */
 
 import { FmtTextRenderer } from './FmtTextRenderer'
-import * as FmtTokenType from '../FmtTextTokenType.mjs'
-import { TypesetterToken } from '../../Typesetter/TypesetterToken'
-import * as TypesetterTokenType from '../../Typesetter/TypesetterTokenType'
-import { TypesetterTokenFactory } from '../../Typesetter/TypesetterTokenFactory'
-import * as FontStyle from '../FontStyle.mjs'
-import * as FontWeight from '../FontWeight.mjs'
-import * as VerticalAlign from '../VerticalAlign.mjs'
+import * as FmtTokenType from '../FmtTextTokenType'
+import { TypesetterToken } from '@/Typesetter/TypesetterToken'
+import { TypesetterTokenFactory } from '@/Typesetter/TypesetterTokenFactory'
+import * as FontStyle from '../FontStyle'
+import * as FontWeight from '../FontWeight'
+import * as VerticalAlign from '../VerticalAlign'
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
+import {FmtTextToken} from "@/FmtText/FmtText";
 
 const superScriptFontSize = 0.58
 const subScriptFontSize = 0.58
 
 export class TypesetterTokenRenderer extends FmtTextRenderer {
+  private options: any;
 
   constructor (options = {}) {
     super()
@@ -44,20 +45,20 @@ export class TypesetterTokenRenderer extends FmtTextRenderer {
   }
 
 
-  render (fmtText, lang = '') {
+  render (fmtText: FmtTextToken[], lang = ''): TypesetterToken[] {
     // console.log(`Rendering fmtText as Typesetter2 tokens`)
 
-    return fmtText.filter( (t) => {return t.type !== FmtTokenType.EMPTY}).map ( (fmtTextToken) => {
+    return fmtText.filter( (t) => {return t.type !== FmtTokenType.EMPTY}).map ( (fmtTextToken) : TypesetterToken => {
       switch( fmtTextToken.type) {
         case FmtTokenType.GLUE:
-          if (fmtTextToken.space === -1) {
+          if (typeof fmtTextToken.space === 'number' || fmtTextToken.space === undefined) {
             // This is to deal with old fmtText, where normal was coded as space -1
             return (new TypesetterToken()).setSpace('normal')
           }
           if (fmtTextToken.space !== '') {
             return (new TypesetterToken()).setSpace(fmtTextToken.space)
           } else {
-            return (new TypesetterToken()).setGlue(fmtTextToken.width, fmtTextToken.stretch, fmtTextToken.shrink)
+            return (new TypesetterToken()).setGlue(fmtTextToken.width ?? 0.2, fmtTextToken.stretch, fmtTextToken.shrink)
           }
 
         case FmtTokenType.TEXT:
@@ -69,8 +70,10 @@ export class TypesetterTokenRenderer extends FmtTextRenderer {
             ttToken.setBold()
           }
           // TODO: deal properly with font sizes
-          if (fmtTextToken.fontSize < 1) {
-            ttToken.setFontSize(fmtTextToken.fontSize)
+          if (fmtTextToken.fontSize !== undefined && parseFloat(fmtTextToken.fontSize) < 1) {
+            ttToken.setFontSize(parseFloat(fmtTextToken.fontSize)* this.options.normalFontSize)
+          } else {
+            ttToken.setFontSize(this.options.normalFontSize);
           }
 
           if (fmtTextToken.verticalAlign === VerticalAlign.SUPERSCRIPT) {
@@ -84,9 +87,12 @@ export class TypesetterTokenRenderer extends FmtTextRenderer {
           }
 
           return ttToken
+
+
+        default:
+          throw new Error('Unknown token type');
       }
     })
-
   }
 
 }

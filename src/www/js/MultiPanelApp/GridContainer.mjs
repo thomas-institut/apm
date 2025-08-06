@@ -4,7 +4,7 @@ import { Container } from './Container.mjs'
 import { DIRECTION } from './MultiPanelApp.mjs'
 import { DivContainer } from './DivContainer.mjs'
 import { NullComponent } from './NullComponent.mjs'
-import { SplitGrid } from '../toolbox/SplitGrid.mjs'
+import { SplitGrid } from '../toolbox/SplitGrid.js'
 
 
 export const FRAME_TYPE = {

@@ -2,11 +2,18 @@
   "name": "apm-ti-node",
   "version": "1.0.0",
   "type": "module",
+  "scripts": {
+    "build": "rm -fr dist; tsc"
+  },
   "dependencies": {
     "@thomas-inst/fmt-text": "^1.0.0",
     "body-parser": "^2.2.0",
     "express": "^5.1.0",
     "node-gtk": "0.14.0",
     "yaml": "^2.8.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "typescript": "^5.9.2"
   }
 }

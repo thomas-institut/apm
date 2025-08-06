@@ -17,13 +17,14 @@
  */
 
 
+
 const maxCanvasDimension = 32000
 const maxCanvasArea  = 16000 * 16000
 
 
 export class BrowserUtilities {
 
-  static setCanvasHiPDI(canvasElement, width, height) {
+  static setCanvasHiPDI(canvasElement: HTMLCanvasElement, width: number, height: number): HTMLCanvasElement {
     let ratio = window.devicePixelRatio
     // let ratio = 1
     console.log(`Setting canvas to ${width} x ${height} pixels, pixel ratio = ${ratio}`)
@@ -39,7 +40,10 @@ export class BrowserUtilities {
 
     canvasElement.style.width = canvasWidth + "px"
     canvasElement.style.height = canvasHeight + "px"
-    let context = canvasElement.getContext("2d")
+    let context = canvasElement.getContext("2d");
+    if (context === null) {
+      throw Error(`Could not get canvas context`)
+    }
     try {
       context.scale(ratio, ratio);
     } catch (e) {
@@ -49,11 +53,11 @@ export class BrowserUtilities {
   }
 }
 
-function getDimension(dimension, ratio, max) {
+function getDimension(dimension: number, ratio:number, max:number): number {
   return dimension * ratio > max ? max : dimension * ratio
 }
 
-function getSafeCanvasDimensions(width, height, ratio, cropHeight = true) {
+function getSafeCanvasDimensions(width: number, height:number, ratio: number, cropHeight = true): [number, number] {
   let canvasWidth = getDimension(width, ratio, maxCanvasDimension)
   let canvasHeight = getDimension(height, ratio, maxCanvasDimension)
   let canvasArea = canvasHeight * canvasWidth

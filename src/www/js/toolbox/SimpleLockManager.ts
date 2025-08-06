@@ -1,4 +1,4 @@
-import { wait } from './FunctionUtil'
+import { wait } from './wait'
 
 export class SimpleLockManager {
 

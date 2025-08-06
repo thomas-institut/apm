@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2022 Universität zu Köln
  *
@@ -23,7 +25,7 @@ import * as DefaultStyleSheet from '../../Typesetter2/Style/DefaultStyleSheet.mj
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { Glue } from '../../Typesetter2/Glue.mjs'
 import { StyleSheet } from '../../Typesetter2/Style/StyleSheet.mjs'
-import { TextBoxMeasurer } from '../../Typesetter2/TextBoxMeasurer/TextBoxMeasurer.mjs'
+import { TextBoxMeasurer } from '../../Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js'
 import { AsyncFmtTextRenderer } from './AsyncFmtTextRenderer.mjs'
 import * as FontStyle from '../FontStyle.mjs'
 import * as FontWeight from '../FontWeight.mjs'

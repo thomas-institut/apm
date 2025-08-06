@@ -3,7 +3,7 @@ import { PageProcessor } from './PageProcessor.mjs'
 import * as MetadataKey from '../MetadataKey.mjs'
 import { TextBoxFactory } from '../TextBoxFactory.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { TextBoxMeasurer } from '../TextBoxMeasurer/TextBoxMeasurer.mjs'
+import { TextBoxMeasurer } from '../TextBoxMeasurer/TextBoxMeasurer.js'
 import { NumeralStyles } from '../../toolbox/NumeralStyles.mjs'
 
 export class AddPageNumbers extends PageProcessor {

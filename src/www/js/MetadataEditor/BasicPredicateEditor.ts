@@ -1,16 +1,16 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { Tid } from '../Tid/Tid'
-import { ApmFormats } from '../pages/common/ApmFormats'
-import {Statement} from '../EntityData/Statement'
-import { wait } from '../toolbox/FunctionUtil'
+import { Tid } from '@/Tid/Tid'
+import { ApmFormats } from '@/pages/common/ApmFormats'
+import {Statement} from '@/EntityData/Statement'
+import { wait } from '@/toolbox/wait'
 import * as Entity from '../constants/Entity'
-import { trimWhiteSpace } from '../toolbox/Util'
-import { GetDataAndProcessDialog } from '../pages/common/GetDataAndProcessDialog'
-import { ConfirmDialog, EXTRA_LARGE_DIALOG } from '../pages/common/ConfirmDialog'
+import { trimWhiteSpace } from '@/toolbox/Util'
+import { GetDataAndProcessDialog } from '@/pages/common/GetDataAndProcessDialog'
+import { ConfirmDialog, EXTRA_LARGE_DIALOG } from '@/pages/common/ConfirmDialog'
 import { VagueDateValidator } from './VagueDateValidator'
 import { NullObjectValidator } from './NullObjectValidator'
-import { StatementArray } from '../EntityData/StatementArray'
-import {getStringVal} from "../toolbox/UiToolBox";
+import { StatementArray } from '@/EntityData/StatementArray'
+import {getStringVal} from "@/toolbox/UiToolBox";
 import {StatementDataInterface} from "../../schema/Schema";
 
 

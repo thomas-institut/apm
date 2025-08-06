@@ -26,7 +26,7 @@ import { TypesetterTokenFactory } from '../Typesetter/TypesetterTokenFactory'
 import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'
 import { getTextDirectionForLang, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
-import { ApparatusCommon } from '../EditionComposer/ApparatusCommon.js'
+import { ApparatusCommon } from '../EditionComposer/ApparatusCommon.ts'
 
 import * as SubEntryType from './SubEntryType.mjs'
 import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'

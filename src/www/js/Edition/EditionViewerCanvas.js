@@ -17,14 +17,14 @@
  */
 import { Edition } from './Edition.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { CanvasTextBoxMeasurer } from '../Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer.mjs'
+import { CanvasTextBoxMeasurer } from '../Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer.ts'
 import { CanvasRenderer } from '../Typesetter2/Renderer/CanvasRenderer.mjs'
-import { BrowserUtilities } from '../toolbox/BrowserUtilities.mjs'
+import { BrowserUtilities } from '../toolbox/BrowserUtilities.ts'
 import { Typesetter2 } from '../Typesetter2/Typesetter2.mjs'
 import { EditionTypesetting } from './EditionTypesetting.mjs'
 import { BasicTypesetter } from '../Typesetter2/BasicTypesetter.mjs'
 import { isRtl } from '../toolbox/Util.mjs'
-import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
+import { BasicProfiler } from '../toolbox/BasicProfiler.ts'
 import { Dimension } from '../Typesetter2/Dimension.mjs'
 import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
 

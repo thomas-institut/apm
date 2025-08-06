@@ -39,7 +39,7 @@ import { CollationTablePanel } from './CollationTablePanel'
 import { AdminPanel } from './AdminPanel'
 import { MainTextPanel } from './MainTextPanel'
 import { ApparatusPanel } from './ApparatusPanel'
-import { EditionPreviewPanelNew } from './EditionPreviewPanelNew'
+import { EditionPreviewPanel } from './EditionPreviewPanel'
 import { TechSupportPanel } from './TechSupportPanel'
 
 // Widgets
@@ -314,7 +314,7 @@ export class EditionComposer extends ApmPage {
       edition: this.edition
     })
 
-    this.editionPreviewPanelNew = new EditionPreviewPanelNew({
+    this.editionPreviewPanelNew = new EditionPreviewPanel({
       containerSelector: `#${editionPreviewNewTabId}`,
       edition: this.edition,
       langDef: this.options.langDef,

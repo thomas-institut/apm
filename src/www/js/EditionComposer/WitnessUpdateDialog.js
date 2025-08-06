@@ -17,8 +17,6 @@
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import * as Util from '../toolbox/Util.mjs'
-import { failPromise } from '../toolbox/FunctionUtil.mjs'
 import { WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
 import { CtData } from '../CtData/CtData'
 import { ApmFormats } from '../pages/common/ApmFormats'

@@ -19,7 +19,6 @@
 import { WitnessToken } from './WitnessToken.mjs'
 import * as WitnessTokenType from './WitnessTokenType.mjs'
 import * as WitnessTokenClass from './WitnessTokenClass.mjs'
-import * as SpaceType from '../Typesetter/SpaceType.mjs'
 import * as WitnessFormat from './EditionWitnessFormatMark.mjs'
 import * as EditionWitnessParagraphStyle from './EditionWitnessParagraphStyle.mjs'
 import * as NormalizationSource from '../constants/NormalizationSource.mjs'
@@ -128,12 +127,12 @@ export class EditionWitnessToken extends WitnessToken {
    *
    * @param {string} spaceType
    */
-  setSpace(spaceType = SpaceType.NORMAL) {
-    this.type = WitnessTokenType.WHITESPACE
-    this.setWhitespace(' ')
-    this.style = spaceType
-    return this
-  }
+  // setSpace(spaceType = SpaceType.NORMAL) {
+  //   this.type = WitnessTokenType.WHITESPACE
+  //   this.setWhitespace(' ')
+  //   this.style = spaceType
+  //   return this
+  // }
 
   /**
    *

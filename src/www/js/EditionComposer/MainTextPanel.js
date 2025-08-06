@@ -24,36 +24,36 @@
  */
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { doNothing, wait } from '../toolbox/FunctionUtil.mjs'
-import { MultiToggle } from '../widgets/MultiToggle'
-import { ApparatusCommon } from './ApparatusCommon.js'
+import { wait } from '@/toolbox/wait'
+import { MultiToggle } from '@/widgets/MultiToggle'
+import { ApparatusCommon } from './ApparatusCommon.ts'
 import * as EditionMainTextTokenType from '../Edition/MainTextTokenType.mjs'
 import { Edition } from '../Edition/Edition.mjs'
-import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
-import { PanelWithToolbar } from '../MultiPanelUI/PanelWithToolbar'
-import { arraysAreEqual, numericSort, pushArray, varsAreEqual } from '../toolbox/ArrayUtil.mjs'
-import { CtData } from '../CtData/CtData'
+import { HtmlRenderer } from '@/FmtText/Renderer/HtmlRenderer'
+import { PanelWithToolbar } from '@/MultiPanelUI/PanelWithToolbar'
+import { arraysAreEqual, numericSort, varsAreEqual } from '../toolbox/ArrayUtil.mjs'
+import { CtData } from '@/CtData/CtData'
 
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { FmtTextTokenFactory } from '../FmtText/FmtTextTokenFactory.mjs'
 import { capitalizeFirstLetter, deepCopy, trimWhiteSpace } from '../toolbox/Util.mjs'
 import { EditionMainTextEditor } from './EditionMainTextEditor'
 import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser.mjs'
-import * as AsyncMyersDiff from '../toolbox/AysncMyersDiff.mjs'
+import * as AsyncMyersDiff from '../toolbox/AysncMyersDiff.ts'
 import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
 import * as EditionWitnessFormatMarkType from '../Witness/EditionWitnessFormatMark.mjs'
 import * as EditionWitnessParagraphStyle from '../Witness/EditionWitnessParagraphStyle.mjs'
 import * as FmtTexTokenType from '../FmtText/FmtTextTokenType.mjs'
 import { WitnessToken } from '../Witness/WitnessToken.mjs'
 import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
-import { CollapsePanel } from '../widgets/CollapsePanel'
+import { CollapsePanel } from '@/widgets/CollapsePanel'
 import { EditionWitnessToken } from '../Witness/EditionWitnessToken.mjs'
 import { MainText } from '../Edition/MainText.mjs'
-import { TokenMatchScorer } from '../Edition/TokenMatchScorer'
-import { NiceToggle, toggleEvent } from '../widgets/NiceToggle'
-import { EventThrottle } from '../toolbox/EventThrottle'
+import { TokenMatchScorer } from '@/Edition/TokenMatchScorer'
+import { NiceToggle, toggleEvent } from '@/widgets/NiceToggle'
+import { EventThrottle } from '@/toolbox/EventThrottle'
 import { PARSER_NORMALIZER } from '../constants/NormalizationSource.mjs'
-import { UiToolBox } from '../toolbox/UiToolBox'
+import { UiToolBox } from '@/toolbox/UiToolBox'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_APPARATUS = 'apparatus'
@@ -85,8 +85,8 @@ export class MainTextPanel extends PanelWithToolbar {
       ctData: { type: 'object' },
       edition: { type: 'object', objectClass: Edition },
       apparatusPanels: { type: 'array' },
-      onError: { type: 'function', default: doNothing},
-      onCtDataChange: { type: 'function', default: doNothing},
+      onError: { type: 'function', default: () => {}},
+      onCtDataChange: { type: 'function', default: () => {}},
       editionWitnessTokenNormalizer: { type: 'function', default: (token) => { return token}},
       editApparatusEntry : {
         // function that opens an apparatus entry editor, provided by EditionComposer
@@ -886,6 +886,14 @@ export class MainTextPanel extends PanelWithToolbar {
     p.stop(`onCtDataChange finished`)
   }
 
+  /**
+   *
+   * @param oldTokens
+   * @param newTokens
+   * @param {EditCommand[]}editScript
+   * @return {*[]}
+   * @private
+   */
   __getChangeList(oldTokens, newTokens, editScript) {
     const debugStateMachine = false
     debugStateMachine && console.log(`Get change list state machine`)
@@ -899,7 +907,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
 
     // add a fake END command
-    editScript.push( { command: FAKE_END_COMMAND});
+    editScript.push( { command: FAKE_END_COMMAND, index: -1, seq: -1});
 
 
     editScript.forEach( (editScriptItem, i) => {
@@ -1082,6 +1090,13 @@ export class MainTextPanel extends PanelWithToolbar {
     return changeList
   }
 
+  /**
+   *
+   * @param oldTokens
+   * @param newTokens
+   * @return {Promise<EditCommand[]|null>}
+   * @private
+   */
   async __getEditScript(oldTokens, newTokens) {
     const attributesToCompare = [ 'fontWeight', 'fontStyle']
     this.diffEngine.setDebugMode(true)
@@ -1245,7 +1260,7 @@ export class MainTextPanel extends PanelWithToolbar {
         console.log(`Parser returned ${tmpWitnessTokens.length} tokens`)
         console.log(tmpWitnessTokens)
       }
-      pushArray(witnessTokens, tmpWitnessTokens)
+      witnessTokens.push(...tmpWitnessTokens);
     })
     // console.log(`Intermediate tokens, before consolidation`)
     // console.log(witnessTokens)
@@ -1678,7 +1693,7 @@ export class MainTextPanel extends PanelWithToolbar {
   hoverEntriesInApparatusPanels(eventTargetElement, on) {
     let spanElement = UiToolBox.findAncestorWithTag(eventTargetElement, 'SPAN');
     if (spanElement === null) {
-      console.warn(`Could not find span element for token`, ev.target);
+      console.warn(`Could not find span element for token`, eventTargetElement);
       return;
     }
     if (spanElement.hasClass('token-in-app')) {

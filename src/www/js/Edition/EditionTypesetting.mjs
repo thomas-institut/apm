@@ -20,7 +20,7 @@
 
 import { MainText } from './MainText.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { TextBoxMeasurer } from '../Typesetter2/TextBoxMeasurer/TextBoxMeasurer.mjs'
+import { TextBoxMeasurer } from '../Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js'
 import { Box } from '../Typesetter2/Box.mjs'
 import { ItemList } from '../Typesetter2/ItemList.mjs'
 import * as TypesetterItemDirection from '../Typesetter2/TypesetterItemDirection.mjs'

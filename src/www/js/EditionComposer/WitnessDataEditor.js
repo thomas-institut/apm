@@ -1,5 +1,4 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import { WitnessDataItem } from '../Edition/WitnessDataItem.mjs'
 import { NumeralStyles } from '../toolbox/NumeralStyles.mjs'
 
@@ -24,7 +23,7 @@ export class WitnessDataEditor {
         },
         verbose: { type: 'boolean', default: false},
         debug: { type: 'boolean', default: false},
-        onChange: { type: 'function', default: doNothing}
+        onChange: { type: 'function', default: () => {}}
       }
     })
 

@@ -26,7 +26,7 @@ other/
 .idea/
 __pycache__
 src/python/*.pdf
-src/node/output*.json
+src/typesetting-service/output*.json
 src/python/venv
 src/python/.idea
 .DS_Store

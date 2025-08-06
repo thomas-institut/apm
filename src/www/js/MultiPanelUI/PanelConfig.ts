@@ -1,4 +1,3 @@
-import {doNothing} from "../toolbox/FunctionUtil";
 import {TabConfigInterface} from "./TabConfig";
 
 
@@ -44,13 +43,13 @@ export const PanelConfigOptionsSpec = {
         // Function to call after a panel  is rendered
         //  (panelId, mode) =>  void
         type: 'function',
-        default: doNothing
+        default: () => {}
     },
     onResize: {
         // Function to call after a panel is resized
         //  (panelId, mode) =>  void
         type: 'function',
-        default: doNothing
+        default: () => {}
     },
     activeTabId: {
         // id of the initially active tab

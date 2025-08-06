@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2022 Universität zu Köln
+ *  Copyright (C) 2021 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,26 +16,33 @@
  *
  */
 
-export class TextBoxMeasurer {
+
+import { TypesetterToken } from './TypesetterToken'
+
+
+export class TypesetterTokenFactory {
+  /**
+   *
+   * @param {string}theText
+   * @param {string}lang
+   * @returns {TypesetterToken}
+   */
+  static simpleText(theText: string, lang: string = ''): TypesetterToken {
+    return (new TypesetterToken()).setText(theText, lang)
+  }
 
   /**
    *
-   * @param {TextBox} item
-   * @return {Promise}
+   * @returns {TypesetterToken}
    */
-  getBoxWidth(item) {
-    // a wild guess based on a monospace font!
-    return Promise.resolve(item.text.length * item.fontSize)
+  static normalSpace(): TypesetterToken {
+    return (new TypesetterToken()).setSpace('normal')
   }
 
-  /**
-   * Returns the height of a text box from the baseline
-   * @param {TextBox} item
-   * @return {Promise}
-   */
-  getBoxHeight(item) {
-    //just the fontSize... this will be different for different fonts
-    return Promise.resolve(item.fontSize)
+  static paragraphBreak() {
+    return (new TypesetterToken()).setText("\n")
   }
 
 }
+
+

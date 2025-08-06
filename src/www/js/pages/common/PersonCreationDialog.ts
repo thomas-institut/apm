@@ -2,7 +2,7 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { tr } from './SiteLang'
 import { ApmDataProxy } from './ApmDataProxy'
 import { ApmPage } from '../ApmPage'
-import { wait } from '../../toolbox/FunctionUtil'
+import { wait } from '../../toolbox/wait'
 import { GetDataAndProcessDialog } from './GetDataAndProcessDialog'
 import {getStringVal} from "../../toolbox/UiToolBox";
 

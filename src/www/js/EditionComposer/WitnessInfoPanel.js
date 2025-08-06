@@ -24,23 +24,22 @@
  *  - Sigla (with preset)
  *  - Witness update: update status, check for updates and launch the witness update task
  */
-import { Panel } from '../MultiPanelUI/Panel'
-import { doNothing, failPromise } from '../toolbox/FunctionUtil.mjs'
+import { Panel } from '@/MultiPanelUI/Panel'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import * as Util from '../toolbox/Util.mjs'
-import { EditableTextField } from '../widgets/EditableTextField'
+import { EditableTextField } from '@/widgets/EditableTextField'
 import * as CollationTableType from '../constants/CollationTableType'
 import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
-import { transientAlert } from '../widgets/TransientAlert'
+import { transientAlert } from '@/widgets/TransientAlert'
 import * as WitnessType from '../Witness/WitnessType'
 import { WitnessUpdateDialog } from './WitnessUpdateDialog'
-import { WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
-import { CtData } from '../CtData/CtData'
+import { WitnessDiffCalculator } from '@/Edition/WitnessDiffCalculator'
+import { CtData } from '@/CtData/CtData'
 import { flatten } from '../toolbox/ArrayUtil.mjs'
 import { SiglaGroupsUI } from './SiglaGroupsUI'
-import { ConfirmDialog, EXTRA_LARGE_DIALOG } from '../pages/common/ConfirmDialog'
-import { ApmFormats } from '../pages/common/ApmFormats'
-import {NiceToggle} from "../widgets/NiceToggle";
+import { ConfirmDialog, EXTRA_LARGE_DIALOG } from '@/pages/common/ConfirmDialog'
+import { ApmFormats } from '@/pages/common/ApmFormats'
+import {NiceToggle} from '@/widgets/NiceToggle';
 
 const icons = {
   moveUp: '<i class="bi bi-arrow-up-short"></i>',
@@ -61,8 +60,8 @@ export class WitnessInfoPanel extends Panel{
 
     let optionsSpec = {
       apmDataProxy: { type: 'object'},
-      onSiglaChange: { type: 'function', default: doNothing},
-      onWitnessOrderChange: { type: 'function', default: doNothing},
+      onSiglaChange: { type: 'function', default: () => {}},
+      onWitnessOrderChange: { type: 'function', default: () => {}},
       checkForWitnessUpdates: {
         type: 'function',
         default: (lastCheckData) => {
@@ -90,7 +89,7 @@ export class WitnessInfoPanel extends Panel{
       getWitnessData: {
         type: 'function',
         default:
-          (witnessId) => { return failPromise(`Not really getting ${witnessId} from server`, 'Not implemented')}
+          (witnessId) => { console.warn(`Not really getting ${witnessId} from server`); return Promise.reject( 'Not implemented')}
       },
       updateWitness: {
         type: 'function',
@@ -124,7 +123,7 @@ export class WitnessInfoPanel extends Panel{
         type: 'function',
         required: true
       },
-      onCtDataChange: { type: 'function', default: doNothing},
+      onCtDataChange: { type: 'function', default: () => {}},
       userId: { type: 'NonZeroNumber', required: true},
       ctData: { type: 'object', required: true}
     }

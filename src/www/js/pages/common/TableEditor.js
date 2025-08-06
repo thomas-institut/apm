@@ -34,9 +34,8 @@
 
 import {escapeHtml} from '../../toolbox/Util.mjs'
 import { Matrix } from '@thomas-inst/matrix'
-import { SequenceWithGroups } from '../../Edition/SequenceWithGroups'
+import { SequenceWithGroups } from '@/Edition/SequenceWithGroups'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { doNothing } from '../../toolbox/FunctionUtil.mjs'
 
 // Table Edit Modes
 export const editModeOff = 'off'
@@ -257,7 +256,7 @@ export class TableEditor {
         // it can be used to change the value matrix
         //   (newCol) => { .. return nothing ... }
         type: 'function',
-        default:  doNothing
+        default: () => {}
       },
       onColumnDelete: {
         // a function to be called when a column is deleted
@@ -266,7 +265,7 @@ export class TableEditor {
         // set to false
         // (deletedCol, lastDeletedColumnInOperation) => { ... return nothing ... }
         type: 'function',
-        default: doNothing
+        default: () => {}
       },
       onContentChangedEventHandler: {
         required: false,

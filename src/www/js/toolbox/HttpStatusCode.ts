@@ -16,14 +16,14 @@
  *
  */
 
-export function getText(httpCode) {
+export function getText(httpCode: number) : string {
   if (httpCodeToText[httpCode] !== undefined) {
     return httpCodeToText[httpCode]
   }
   return 'Unknown Status Code'
 }
 
-let httpCodeToText = {
+const httpCodeToText: { [key: number]: string } = {
   0: "Unable to connect to server",
   // 2xx Success
   200: 'OK',

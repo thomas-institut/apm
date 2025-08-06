@@ -37,8 +37,16 @@ const zoomOutButtonClass = 'zoom-out-btn'
 const zoomLabelClass = 'zoom-label'
 
 export class ZoomController {
+  private readonly options: any;
+  private readonly debug: boolean;
+  private currentZoomStep: number;
+  private currentScale: number;
+  private container: JQuery<HTMLElement>;
+  private zoomInButton: JQuery<HTMLElement>;
+  private zoomOutButton: JQuery<HTMLElement>;
+  private zoomLabel: JQuery<HTMLElement>;
 
-  constructor (options) {
+  constructor (options: any) {
     let oc = new OptionsChecker({
       context: 'ZoomController',
       optionsDefinition: {
@@ -46,7 +54,7 @@ export class ZoomController {
         defaultZoomStep: { type: 'number', default: defaultZoomStep},
         icons: { type: 'object', default: defaultIcons},
         zoomSteps: { type: 'array', default: zoomSteps},
-        onZoom: { type: 'function', default: (scale) => {
+        onZoom: { type: 'function', default: (scale: number) => {
           return new Promise( (resolve) => {
             console.log(`Zooming to ${scale}`)
             resolve(scale)
@@ -63,12 +71,12 @@ export class ZoomController {
     this.currentZoomStep = this.options.defaultZoomStep
     this.currentScale = this.options.zoomSteps[this.currentZoomStep]
     this.container = $(this.options.containerSelector)
-    this.container.html(this.__getToolbarHtml())
-    this.zoomInButton = this.__getElement(zoomInButtonClass)
-    this.zoomOutButton = this.__getElement(zoomOutButtonClass)
-    this.zoomLabel = this.__getElement(zoomLabelClass)
-    this.zoomInButton.on('click', this.__genOnClickZoomButton(true))
-    this.zoomOutButton.on('click', this.__genOnClickZoomButton(false))
+    this.container.html(this.getToolbarHtml())
+    this.zoomInButton = this.getElement(zoomInButtonClass)
+    this.zoomOutButton = this.getElement(zoomOutButtonClass)
+    this.zoomLabel = this.getElement(zoomLabelClass)
+    this.zoomInButton.on('click', this.genOnClickZoomButton(true))
+    this.zoomOutButton.on('click', this.genOnClickZoomButton(false))
   }
 
   /**
@@ -76,14 +84,14 @@ export class ZoomController {
    * @param {number} scale
    * @param {boolean} sendEvent
    */
-  setZoomStepFromScale(scale, sendEvent = true) {
+  public setZoomStepFromScale(scale: number, sendEvent: boolean = true) {
     console.log(`Setting step from scale ${scale}`)
-    let scaledSteps = this.options.zoomSteps.map ( (step) => { return Math.abs(scale - step)});
+    let scaledSteps = this.options.zoomSteps.map ( (step: number) => { return Math.abs(scale - step)});
     let bestFit = Math.min(...scaledSteps);
     console.log(`Best fit is ${bestFit}`);
     let newZoomStep = scaledSteps.indexOf(bestFit);
     console.log(`Changing zoom step to ${newZoomStep}`);
-    this.__setNewZoomStep(newZoomStep, sendEvent);
+    this.setNewZoomStep(newZoomStep, sendEvent);
   }
 
   /**
@@ -92,7 +100,7 @@ export class ZoomController {
    * @param {boolean} sendEvent
    * @private
    */
-  __setNewZoomStep(newZoomStep, sendEvent= true) {
+  private setNewZoomStep(newZoomStep: number, sendEvent: boolean= true) {
     if (newZoomStep === zoomSteps.length) {
       // at the end of the scale, do nothing
       return
@@ -106,24 +114,24 @@ export class ZoomController {
     let newScale = this.options.zoomSteps[newZoomStep]
 
     if (sendEvent) {
-      this.options.onZoom(newScale).then( (scale) => {
+      this.options.onZoom(newScale).then( (scale: number) => {
         this.debug && console.log(`OnZoom finished, scale = ${scale}`)
         if (scale === newScale) {
           this.currentZoomStep = newZoomStep
           this.currentScale = newScale
-          this.zoomLabel.html(this.__getZoomScaleString(this.currentScale))
+          this.zoomLabel.html(this.getZoomScaleString(this.currentScale))
         }
       })
     } else {
       this.currentZoomStep = newZoomStep
       this.currentScale = newScale
-      this.zoomLabel.html(this.__getZoomScaleString(this.currentScale))
+      this.zoomLabel.html(this.getZoomScaleString(this.currentScale))
     }
 
 
   }
 
-  __genOnClickZoomButton(zoomIn = true) {
+  private genOnClickZoomButton(zoomIn = true) {
     return () => {
       let newZoomStep
       if (zoomIn) {
@@ -131,22 +139,22 @@ export class ZoomController {
       } else {
         newZoomStep = this.currentZoomStep - 1
       }
-      this.__setNewZoomStep(newZoomStep);
+      this.setNewZoomStep(newZoomStep);
 
     }
   }
 
 
-  __getToolbarHtml() {
-    return `Zoom: <span class="${zoomLabelClass}">${this.__getZoomScaleString(this.currentScale)}</span>
+  private getToolbarHtml() {
+    return `Zoom: <span class="${zoomLabelClass}">${this.getZoomScaleString(this.currentScale)}</span>
         <button class="${zoomButtonClass} ${zoomOutButtonClass}" title="Zoom Out">${this.options.icons.zoomOut}</button> 
         <button class="${zoomButtonClass} ${zoomInButtonClass}" title="Zoom In">${this.options.icons.zoomIn}</button>`
   }
 
-  __getZoomScaleString(scale) {
+  private getZoomScaleString(scale: number) {
     return `${scale*100}%`
   }
-  __getElement(elementClass) {
+  private getElement(elementClass: string): JQuery<HTMLElement> {
     return $(`${this.options.containerSelector} .${elementClass}`)
   }
 

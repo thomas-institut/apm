@@ -19,8 +19,8 @@
 import { Glue } from '../Glue.mjs'
 import { TextBox } from '../TextBox.mjs'
 import { Dimension } from '../Dimension.mjs'
-import { ObjectUtil } from '../../toolbox/ObjectUtil.mjs'
 import { uniq } from '../../toolbox/ArrayUtil.mjs'
+import { deepGetValuesForKey } from '../../toolbox/ObjectUtil.js'
 
 /**
  * A stylesheet is a tree of style definition
@@ -81,7 +81,7 @@ export class StyleSheet {
    * stylesheet
    */
   getFontFamilies() {
-    return uniq(ObjectUtil.deepGetValuesForKey(this.styles, 'fontFamily').filter( (family) => {
+    return uniq(deepGetValuesForKey(this.styles, 'fontFamily').filter( (family) => {
       return family !== ''
     }))
   }

@@ -18,7 +18,6 @@
 
 import { Punctuation} from '../defaults/Punctuation.mjs'
 import { WitnessToken } from '../Witness/WitnessToken.mjs'
-import { pushArray } from './ArrayUtil.mjs'
 import { NumeralStyles } from './NumeralStyles.mjs'
 import { EditionWitnessToken } from '../Witness/EditionWitnessToken.mjs'
 import { IgnoreIntraWordQuotationMark } from '../normalizers/ParserNormalizer/IgnoreIntraWordQuotationMark.mjs'
@@ -64,8 +63,8 @@ export class EditionWitnessTokenStringParser {
         case 1: // accumulating other characters
           if (this.hasWhiteSpace(ch)) {
             if (currentWordCharacters.length !== 0) {
-              let wordTokens = this.parseNonWhiteSpaceCharacters(currentWordCharacters, lang, detectNumberingLabels)
-              pushArray(tokenArray, wordTokens)
+              let wordTokens = this.parseNonWhiteSpaceCharacters(currentWordCharacters, lang, detectNumberingLabels);
+              tokenArray.push(...wordTokens);
               currentWordCharacters = []
               state = 0
             }
@@ -77,7 +76,8 @@ export class EditionWitnessTokenStringParser {
     debug && console.log(`End of input, state = ${state}, currentWord = '${currentWordCharacters.join('')}'`)
     if (currentWordCharacters.length !== 0) {
       let wordTokens = this.parseNonWhiteSpaceCharacters(currentWordCharacters, lang, detectNumberingLabels, detectIntraWordQuotationMarks)
-      pushArray(tokenArray, wordTokens)
+
+      tokenArray.push(...wordTokens);
     }
     debug && console.log('Output token array');
     debug && console.log(tokenArray);

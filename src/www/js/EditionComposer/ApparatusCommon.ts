@@ -18,17 +18,17 @@
 
 
 import { TypesetterTokenFactory } from '@/Typesetter/TypesetterTokenFactory'
-import * as ApparatusSubEntryType from '../Edition/SubEntryType.mjs'
-import { NumeralStyles } from '../toolbox/NumeralStyles.mjs'
-import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
+import * as ApparatusSubEntryType from '../Edition/SubEntryType'
+import { NumeralStyles } from '@/toolbox/NumeralStyles'
+import { FmtTextUtil } from '@/FmtText/FmtTextUtil'
 import { TypesetterTokenRenderer } from '@/FmtText/Renderer/TypesetterTokenRenderer'
-import { pushArray } from '../toolbox/ArrayUtil.mjs'
+import { pushArray } from '@/toolbox/ArrayUtil'
 import { HtmlRenderer } from '@/FmtText/Renderer/HtmlRenderer'
-import { FmtTextFactory} from '../FmtText/FmtTextFactory.mjs'
-import { escapeHtml } from '../toolbox/Util.mjs'
-import { ApparatusUtil } from '../Edition/ApparatusUtil.mjs'
-import * as MainTextTokenType from '../Edition/MainTextTokenType.mjs'
-import { StringCounter } from '../toolbox/StringCounter.mjs'
+import { FmtTextFactory} from '@/FmtText/FmtTextFactory'
+import { escapeHtml } from '@/toolbox/Util'
+import { ApparatusUtil } from '@/Edition/ApparatusUtil'
+import * as MainTextTokenType from '@/Edition/MainTextTokenType'
+import { StringCounter } from '@/toolbox/StringCounter'
 
 
 // const enDash = String.fromCodePoint(0x2013)
@@ -410,18 +410,6 @@ export class ApparatusCommon {
         return '???'
     }
   }
-
-  // static findNonEmptyMainTextToken(ctIndex, ctToMainTextMap, mainTextTokens, forward, lang = '') {
-  //   while (ctIndex >= 0 && ctIndex < ctToMainTextMap.length && (
-  //     ctToMainTextMap[ctIndex] === -1 ||
-  //     Punctuation.stringIsAllPunctuation(mainTextTokens[ctToMainTextMap[ctIndex]]['text'], lang)) ) {
-  //     ctIndex = forward ? ctIndex + 1 : ctIndex -1
-  //   }
-  //   if (ctIndex < 0 || ctIndex >= ctToMainTextMap.length) {
-  //     return -1
-  //   }
-  //   return ctToMainTextMap[ctIndex]
-  // }
 
   static __getSiglaHtmlFromFilledUpWitnessData(witnessData, numberStyle) {
     return witnessData.map ( (w) => {

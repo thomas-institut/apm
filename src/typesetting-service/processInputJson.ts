@@ -1,7 +1,5 @@
-// noinspection ES6PreferShortImport
-
 import { ObjectFactory } from '../www/js/Typesetter2/ObjectFactory.mjs'
-import { PangoMeasurerNodeGTK } from './PangoMeasurerNodeGTK.mjs'
+import { PangoMeasurerNodeGTK } from './PangoMeasurerNodeGTK.js'
 import { SystemStyleSheet } from '../www/js/Typesetter2/Style/SystemStyleSheet.mjs'
 import { BasicTypesetter } from '../www/js/Typesetter2/BasicTypesetter.mjs'
 import { hrtime } from 'node:process'
@@ -16,8 +14,21 @@ import { EditionTypesetting } from '../www/js/Edition/EditionTypesetting.mjs'
  */
 
 const debug = false;
-export async function processInputJson(data) {
-  let outputData = {
+
+export interface OutputData {
+  error: boolean;
+  errorMsg: string;
+  output?: any;
+  stats?: Stats;
+}
+
+export interface Stats {
+  measurer?: string;
+  measurerStats?: any;
+  processingTime?: number;
+}
+export async function processInputJson(data:any): Promise<OutputData> {
+  let outputData: OutputData = {
     error: false,
     errorMsg: '',
     output: {},
@@ -42,7 +53,7 @@ export async function processInputJson(data) {
 
   try {
     mainTextList = ObjectFactory.fromObject(data.mainTextList)
-  } catch (e) {
+  } catch (e: any) {
     outputData.errorMsg = `Error building typesetter object from input main text list: '${e.toString()}'`;
     outputData.error = true;
     return outputData;
@@ -58,7 +69,7 @@ export async function processInputJson(data) {
     debug && console.log(`Edition lang: '${data.helperOptions.edition.lang}', style Id = ${data.helperOptions.styleId}`)
     data.helperOptions.editionStyleSheet = SystemStyleSheet.getStyleSheet(data.helperOptions.edition.lang, data.helperOptions.styleId);
     let editionTypesettingHelper = new EditionTypesetting(data.helperOptions)
-    data.options.getApparatusListToTypeset = (mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine) => {
+    data.options.getApparatusListToTypeset = (mainTextVerticalList:any, apparatus:any, lineFrom:number, lineTo:number, resetFirstLine: boolean) => {
       return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine)
     }
     data.options.preTypesetApparatuses = () => {
@@ -66,7 +77,7 @@ export async function processInputJson(data) {
       return new Promise( (resolve) => { resolve(true)});
     }
 
-    data.options.getMarginaliaForLineRange =  (lineFrom, lineTo) =>{
+    data.options.getMarginaliaForLineRange =  (lineFrom: number, lineTo: number) =>{
       return editionTypesettingHelper.getMarginaliaForLineRange(lineFrom, lineTo)
     }
   }
@@ -84,9 +95,10 @@ export async function processInputJson(data) {
   return outputData;
 }
 
-function getStats(data) {
+function getStats(data:any) {
   return {
     measurer: 'PangoGtk',
-    measurerStats: data.options.textBoxMeasurer.getStats()
+    measurerStats: data.options.textBoxMeasurer.getStats(),
+    processingTime: 0,
   }
 }

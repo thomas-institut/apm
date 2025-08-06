@@ -18,17 +18,15 @@
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Edition } from '../Edition/Edition.mjs'
-import { ApparatusCommon } from './ApparatusCommon.js'
+import { ApparatusCommon } from './ApparatusCommon.ts'
 import { PanelWithToolbar } from '@/MultiPanelUI/PanelWithToolbar'
-import { doNothing } from '../toolbox/FunctionUtil.mjs'
 import { CtData } from '@/CtData/CtData'
 import { onClickAndDoubleClick } from '@/toolbox/DoubleClick'
 import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
 import { ApparatusEntryTextEditor } from './ApparatusEntryTextEditor'
 import {
-  capitalizeFirstLetter, deepCopy,
-  getTextDirectionForLang,
+  capitalizeFirstLetter, getTextDirectionForLang,
   removeExtraWhiteSpace,
   trimWhiteSpace
 } from '../toolbox/Util.mjs'
@@ -81,8 +79,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
       apparatusIndex: { type: 'number', required: true },
       entrySeparator: { type: 'string', default: verticalLine },
       apparatusLineSeparator: { type: 'string', default: doubleVerticalLine },
-      onCtDataChange: { type: 'function', default: doNothing },
-      onError: { type: 'function', default: doNothing },
+      onCtDataChange: { type: 'function', default: () => {} },
+      onError: { type: 'function', default: () => {} },
       highlightMainText: {
         // function to be called when main text needs to be highlighted
         // (entryIndex, on) => { ... return nothing }
@@ -105,7 +103,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
         // needs to be highlighted
         //  (colStart, colEnd) => { ... return nothing }
         type: 'function',
-        default: doNothing
+        default: () => {}
       },
       editApparatusEntry : {
         // function that opens an apparatus entry editor, provided by EditionComposer

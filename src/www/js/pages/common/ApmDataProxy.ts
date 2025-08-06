@@ -21,7 +21,7 @@ import { KeyCache } from '../../toolbox/KeyCache/KeyCache'
 import { WebStorageKeyCache } from '../../toolbox/KeyCache/WebStorageKeyCache'
 import { CachedFetcher } from '../../toolbox/CachedFetcher'
 import { urlGen } from './SiteUrlGen'
-import { wait } from '../../toolbox/FunctionUtil'
+import { wait } from '../../toolbox/wait'
 import { SimpleLockManager } from '../../toolbox/SimpleLockManager'
 import * as Entity from '../../constants/Entity'
 import {EntityDataInterface} from "../../../schema/Schema";

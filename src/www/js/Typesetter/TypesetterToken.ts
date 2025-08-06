@@ -19,7 +19,10 @@
 
 import * as TypesetterTokenType from './TypesetterTokenType'
 
-
+const UNDEFINED_WIDTH = -999999
+const INFINITE_STRETCH = 100000
+const INFINITE_PENALTY = 100000
+const MINUS_INFINITE_PENALTY = -100000
 
 /**
  *
@@ -74,6 +77,22 @@ import * as TypesetterTokenType from './TypesetterTokenType'
  *       flag: boolean, Knuth's algorithm tries to avoid two breaks at flagged penalties.
  */
 export class TypesetterToken {
+  type: string;
+  width: number;
+  stretch: number;
+  shrink: number;
+  penalty: number;
+  flagged: boolean;
+  text: string;
+  lang: string;
+  lineNumber: number;
+  occurrenceInLine: number;
+  space!: string;
+  fontSize!: number;
+  fontStyle!: string;
+  fontWeight!: string;
+  verticalAlign!: string;
+
 
   constructor () {
     this.type = TypesetterTokenType.BOX
@@ -94,11 +113,11 @@ export class TypesetterToken {
    * @param {string}lang
    * @return {TypesetterToken}
    */
-  setText(text, lang = '') {
+  setText(text: string, lang: string = ''): TypesetterToken {
     this.type = TypesetterTokenType.BOX
     this.text = text
     this.lang = lang
-    this.width = TypesetterToken.UNDEFINED_WIDTH
+    this.width = -1
     this.stretch = 0
     this.shrink = 0
     this.penalty = 0
@@ -111,7 +130,7 @@ export class TypesetterToken {
     return this
   }
 
-  setFontSize(fontSize) {
+  setFontSize(fontSize: number) {
     this.fontSize = fontSize
     return this
   }
@@ -135,19 +154,19 @@ export class TypesetterToken {
     return this
   }
 
-  setSpace(spaceLength) {
+  setSpace(spaceLength: string) {
     this.type = TypesetterTokenType.GLUE
     this.space = spaceLength
     this.stretch = 0
     this.shrink = 0
-    this.width = TypesetterToken.UNDEFINED_WIDTH
+    this.width = -1
     this.penalty = 0
     this.flagged = false
     this.text = ''
     return this
   }
 
-  setVerticalAlign(vAlign) {
+  setVerticalAlign(vAlign: string) {
     this.verticalAlign = vAlign
     return this
   }
@@ -158,7 +177,7 @@ export class TypesetterToken {
    * @param {number} stretch
    * @param {number} shrink
    */
-  setGlue(width, stretch=0, shrink=0) {
+  setGlue(width: number, stretch: number = 0, shrink: number=0) {
     this.type = TypesetterTokenType.GLUE
     this.width = width
     this.stretch = stretch
@@ -169,7 +188,7 @@ export class TypesetterToken {
     return this
   }
 
-  setEmptyBox(width) {
+  setEmptyBox(width: number) {
     this.type = TypesetterTokenType.BOX
     this.text = ''
     this.width = width
@@ -186,7 +205,4 @@ export class TypesetterToken {
 
 }
 
-TypesetterToken.UNDEFINED_WIDTH = -999999
-TypesetterToken.INFINITE_STRETCH = 100000
-TypesetterToken.INFINITE_PENALTY = 100000
-TypesetterToken.MINUS_INFINITE_PENALTY = -100000
+

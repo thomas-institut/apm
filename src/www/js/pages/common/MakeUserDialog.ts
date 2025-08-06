@@ -3,7 +3,7 @@ import { ConfirmDialog, LARGE_DIALOG } from './ConfirmDialog'
 import { tr } from './SiteLang'
 import { ApmDataProxy } from './ApmDataProxy'
 import { ApmPage } from '../ApmPage'
-import { wait } from '../../toolbox/FunctionUtil'
+import { wait } from '../../toolbox/wait'
 import {getStringVal} from "../../toolbox/UiToolBox";
 
 export class MakeUserDialog {

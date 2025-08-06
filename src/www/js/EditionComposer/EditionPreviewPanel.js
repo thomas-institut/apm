@@ -20,17 +20,17 @@
 
 
 
-import { PanelWithToolbar } from '../MultiPanelUI/PanelWithToolbar'
+import { PanelWithToolbar } from '@/MultiPanelUI/PanelWithToolbar'
 import { Edition } from '../Edition/Edition.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { ZoomController } from '../toolbox/ZoomController'
-import { EditionViewerCanvas } from '../Edition/EditionViewerCanvas'
-import { wait } from '../toolbox/FunctionUtil.mjs'
-import { BasicProfiler } from '../toolbox/BasicProfiler.mjs'
-import { CanvasTextBoxMeasurer } from '../Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer.mjs'
+import { ZoomController } from '@/toolbox/ZoomController'
+import { EditionViewerCanvas } from '@/Edition/EditionViewerCanvas'
+import { wait } from '@/toolbox/wait'
+import { BasicProfiler } from '@/toolbox/BasicProfiler'
+import { CanvasTextBoxMeasurer } from '@/Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer'
 import { Dimension } from '../Typesetter2/Dimension.mjs'
 import { SystemStyleSheet } from '../Typesetter2/Style/SystemStyleSheet.mjs'
-import { WebStorageKeyCache } from '../toolbox/KeyCache/WebStorageKeyCache'
+import { WebStorageKeyCache } from '@/toolbox/KeyCache/WebStorageKeyCache'
 
 const defaultIcons = {
   busy: '<i class="fas fa-circle-notch fa-spin"></i>',
@@ -42,7 +42,7 @@ const downloadPdfButtonId = 'export-pdf-btn-new'
 
 const webCacheDataId = 'epp-20240312.103420';
 
-export class EditionPreviewPanelNew extends PanelWithToolbar {
+export class EditionPreviewPanel extends PanelWithToolbar {
 
   constructor (options = {}) {
     super(options);

@@ -1,4 +1,4 @@
-import { wait } from './FunctionUtil.mjs'
+import { wait } from './wait.ts'
 
 
 const STATE_STANDBY = 'standby'

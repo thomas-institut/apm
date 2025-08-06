@@ -3,7 +3,7 @@ import { ConfirmDialog, LARGE_DIALOG } from './ConfirmDialog'
 import { tr } from './SiteLang'
 import { ApmDataProxy } from './ApmDataProxy'
 import { ApmPage } from '../ApmPage'
-import { wait } from '../../toolbox/FunctionUtil.mjs'
+import { wait } from '../../toolbox/wait.ts'
 
 export class CreatePersonDialog {
 

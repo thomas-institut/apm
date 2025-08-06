@@ -1,7 +1,7 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { ConfirmDialog, LARGE_DIALOG } from './ConfirmDialog'
-import { ObjectUtil } from '../../toolbox/ObjectUtil'
 import { tr } from './SiteLang'
+import {deepAreEqual} from "@/toolbox/ObjectUtil";
 
 /**
  * A class to show a generic form dialog for clients that need to get some data from the user
@@ -103,7 +103,7 @@ export class GetDataAndProcessDialog {
         .on('keyup', this.genOnInputChange());
       this.dialog.setAcceptFunction( async () => {
         let data = await this.options.getDataFromForm(this.dialogSelector);
-        if (ObjectUtil.deepAreEqual(data, this.options.initialData)) {
+        if (deepAreEqual(data, this.options.initialData)) {
           this.dialog.hideAcceptButton();
           this.infoArea.html('');
           return;
@@ -134,7 +134,7 @@ export class GetDataAndProcessDialog {
   genOnInputChange(): (() => Promise<void>) {
     return async (): Promise<void> => {
       let data = await this.options.getDataFromForm(this.dialogSelector);
-      if (ObjectUtil.deepAreEqual(data, this.options.initialData)) {
+      if (deepAreEqual(data, this.options.initialData)) {
         this.infoArea.html('');
         return;
       }

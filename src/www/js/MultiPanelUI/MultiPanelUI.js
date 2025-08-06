@@ -21,8 +21,7 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import Split from 'split-grid'
 import { createIndexArray, prettyPrintArray } from '../toolbox/ArrayUtil.mjs'
 import { BootstrapTabGenerator } from './BootstrapTabGenerator'
-import { doNothing} from '../toolbox/FunctionUtil.mjs'
-import { UiToolBox } from '../toolbox/UiToolBox'
+import { UiToolBox } from '@/toolbox/UiToolBox'
 
 const defaultIcons = {
   closePanel: '&times;',
@@ -93,7 +92,7 @@ export class MultiPanelUI {
         type: 'function',
         // called after a mode change
         //  (newMode) => { .... }
-        default: doNothing
+        default: () => {}
       }
     }
 
@@ -138,13 +137,13 @@ export class MultiPanelUI {
         // Function to call after a panel  is rendered
         //  (panelId, mode) =>  void
         type: 'function',
-        default: doNothing
+        default: () => {}
       },
       onResize: {
         // Function to call after a panel is resized
         //  (panelId, mode) =>  void
         type: 'function',
-        default: doNothing
+        default: () => {}
       },
       activeTabId: {
         // id of the initially active tab
@@ -186,25 +185,25 @@ export class MultiPanelUI {
         // Function to call after the tab's content is rendered
         //  (tabId, mode, visible) => void
         type: 'function',
-        default: doNothing
+        default: () => {}
       },
       onResize: {
         // Function to call after a tab is resized
         // (tabId, mode, visible) => void
         type: 'function',
-        default: doNothing
+        default: () => {}
       },
       onShown: {
         // function to call after a tab is activated by the user
         // (tabId, mode) => void
         type: 'function',
-        default: doNothing
+        default: () => {}
       },
       onHidden: {
         // function to call after a tab is hidden by the user
         // (tabId, mode) => void
         type: 'function',
-        default: doNothing
+        default: () => {}
       },
     }
     let goodPanelOptionsArray = []

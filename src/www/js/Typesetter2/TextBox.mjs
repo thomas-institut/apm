@@ -18,7 +18,6 @@
 
 import { Box } from './Box.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
-import { Typesetter2 } from './Typesetter2.mjs'
 
 const defaultFontFamily = 'FreeSerif'
 const defaultFontSize = 16

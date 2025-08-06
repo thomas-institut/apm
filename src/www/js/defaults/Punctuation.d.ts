@@ -24,9 +24,8 @@ export class Punctuation {
      */
     static stringHasPunctuation(theString: string, lang = ''): boolean;
 
-
     static sticksToPrevious(char:string, lang: string): boolean;
-
     static sticksToNext(char:string, lang:string): boolean;
-
 }
+
+export function trimPunctuation(someString:string, lang = ''): string;

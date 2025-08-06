@@ -55,6 +55,10 @@ export class PangoMeasurerNodeGTK extends PangoMeasurer {
     return {ink: extents[0], logical: extents[1], baseline: this.layout.getBaseline()};
   }
 
+  getStats() {
+    return {};
+  }
+
   getPangoMeasurements(textBox: TextBox): Promise<PangoMeasurements> {
     let fontDesc = `${textBox.getFontFamily()} ${textBox.getFontWeight()} ${textBox.getFontStyle()} ${Typesetter2.px2pt(textBox.getFontSize()) * measuringScale}`;
     let extents = this.measureText(textBox.getText(), fontDesc);

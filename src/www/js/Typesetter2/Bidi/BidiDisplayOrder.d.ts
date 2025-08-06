@@ -50,7 +50,7 @@ export class BidiDisplayOrder {
      * For example, input items with numbers and punctuation (e.g., '123.') may cause the algorithm to incorrectly
      * place the period.
      */
-    static getDisplayOrder (items: string[],
+    static getDisplayOrder (items: any[],
                             defaultTextDirection: string,
                             getItemIntrinsicTextDirection: (s: string) => IntrinsicTextDirection): BidiOrderInfo[];
 }

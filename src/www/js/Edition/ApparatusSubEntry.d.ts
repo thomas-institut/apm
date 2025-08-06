@@ -1,4 +1,4 @@
-import {FmtText} from "@/FmtText/FmtText";
+import {FmtText} from "../../FmtText/FmtText";
 
 export class ApparatusSubEntry {
     plainText: string;
@@ -13,6 +13,7 @@ export class ApparatusSubEntry {
     tags: string[];
     hash!: string;
 
+    static clone(subEntry: ApparatusSubEntry) : ApparatusSubEntry;
     hashString(): string;
 }
 

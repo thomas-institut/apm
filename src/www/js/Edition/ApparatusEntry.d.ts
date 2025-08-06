@@ -1,19 +1,17 @@
-import {FmtTextToken} from "@/FmtText/FmtTextToken";
+import {KeyStore} from "../../toolbox/KeyStore.mjs";
 
 export class ApparatusEntry {
-
-    constructor();
     section?: number[];
     from: number;
     to: number;
     preLemma: string;
-    lemma: string | FmtTextToken[];
+    lemma: string;
     postLemma: string;
     lemmaText: string;
     separator: string;
     tags: string[];
     subEntries: ApparatusSubEntry[];
-    metadata: any;
+    metadata: KeyStore;
     /**
      * Only used for a trick in CtData.ts, which needs to be fixed
      * @deprecated
@@ -21,7 +19,9 @@ export class ApparatusEntry {
      **/
     toDelete?: boolean;
 
+    allSubEntriesAreOmissions(): boolean;
 
     static orderSubEntries(theEntry: ApparatusEntry) : ApparatusEntry;
     static clone(entry: ApparatusEntry) : ApparatusEntry ;
+    static allSubEntriesInEntryObjectAreOmissions(entry: ApparatusEntry): boolean;
 }

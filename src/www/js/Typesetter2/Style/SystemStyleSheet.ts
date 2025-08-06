@@ -29,8 +29,8 @@ let systemStyles = {
 
 export class SystemStyleSheet {
 
-  static getStyleSheetsForLanguage(lang) {
-    let styleSheetList
+  static getStyleSheetsForLanguage(lang: string): { [id: string]: any} {
+    let styleSheetList: { [id: string]: any} = {}
     switch(lang) {
       case 'ar':
         styleSheetList = systemStyles['ar']
@@ -55,7 +55,7 @@ export class SystemStyleSheet {
    * @param {string}lang
    * @param {string}id
    */
-  static getStyleSheet(lang, id) {
+  static getStyleSheet(lang: string, id: string) {
     let styleSheetList = this.getStyleSheetsForLanguage(lang)
     let ssDef = styleSheetList[id]
     if (ssDef === undefined) {

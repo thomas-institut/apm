@@ -1,9 +1,10 @@
 import { ObjectFactory } from '../www/js/Typesetter2/ObjectFactory.mjs'
 import { PangoMeasurerNodeGTK } from './PangoMeasurerNodeGTK.js'
-import { SystemStyleSheet } from '../www/js/Typesetter2/Style/SystemStyleSheet.mjs'
-import { BasicTypesetter } from '../www/js/Typesetter2/BasicTypesetter.mjs'
+import { SystemStyleSheet } from '../www/js/Typesetter2/Style/SystemStyleSheet.js'
+import { BasicTypesetter } from '../www/js/Typesetter2/BasicTypesetter.js'
 import { hrtime } from 'node:process'
-import { EditionTypesetting } from '../www/js/Edition/EditionTypesetting.mjs'
+import { EditionTypesetting } from '../www/js/Edition/EditionTypesetting.js'
+import {ItemList} from "../www/js/Typesetter2/ItemList.mjs";
 
 /**
  * Processes an input data object containing a main text
@@ -49,10 +50,10 @@ export async function processInputJson(data:any): Promise<OutputData> {
     return outputData;
   }
 
-  let mainTextList;
+  let mainTextList : ItemList;
 
   try {
-    mainTextList = ObjectFactory.fromObject(data.mainTextList)
+    mainTextList = ObjectFactory.fromObject(data.mainTextList) as unknown as ItemList;
   } catch (e: any) {
     outputData.errorMsg = `Error building typesetter object from input main text list: '${e.toString()}'`;
     outputData.error = true;

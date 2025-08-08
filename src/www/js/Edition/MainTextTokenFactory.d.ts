@@ -1,4 +1,4 @@
-import {FmtTextToken} from "@/FmtText/FmtTextToken";
+import {FmtTextToken} from "@/lib/FmtText/FmtTextToken";
 import {MainTextToken} from "./MainTextToken";
 
 export class MainTextTokenFactory {

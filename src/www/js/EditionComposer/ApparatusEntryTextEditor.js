@@ -17,17 +17,19 @@
  */
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import {toolbarCharacters} from '@/defaults/ToolbarCharacters'
 
+import { FmtTextUtil } from '@/lib/FmtText/FmtTextUtil'
+import { FmtTextFactory } from '@/lib/FmtText/FmtTextFactory'
+import { isRtl, removeWhiteSpace } from '@/toolbox/Util.mjs'
+
+import { toolbarCharacters } from './ToolbarCharacters'
 import Quill from '../QuillLoader'
 import Small from './QuillBlots/Small'
 import Superscript from './QuillBlots/Superscript'
 import Sigla from './QuillBlots/Sigla'
-import { QuillDeltaRenderer } from '@/FmtText/Renderer/QuillDeltaRenderer'
+import { QuillDeltaRenderer } from './QuillDelta/QuillDeltaRenderer'
 import { CustomApparatusQuillDeltaConverter } from './QuillDelta/CustomApparatusQuillDeltaConverter'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
-import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
-import { isRtl, removeWhiteSpace } from '../toolbox/Util.mjs'
+
 
 const toolbarSeparator = '<span class="mte-tb-sep">&nbsp;</span>'
 

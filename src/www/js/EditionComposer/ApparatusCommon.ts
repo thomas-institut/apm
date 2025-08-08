@@ -20,16 +20,33 @@
 import { TypesetterTokenFactory } from '@/Typesetter/TypesetterTokenFactory'
 import * as ApparatusSubEntryType from '../Edition/SubEntryType'
 import { NumeralStyles } from '@/toolbox/NumeralStyles'
-import { FmtTextUtil } from '@/FmtText/FmtTextUtil'
-import { TypesetterTokenRenderer } from '@/FmtText/Renderer/TypesetterTokenRenderer'
+import { FmtTextUtil } from '@/lib/FmtText/FmtTextUtil'
+import { TypesetterTokenRenderer } from '@/lib/FmtText/Renderer/TypesetterTokenRenderer'
 import { pushArray } from '@/toolbox/ArrayUtil'
-import { HtmlRenderer } from '@/FmtText/Renderer/HtmlRenderer'
-import { FmtTextFactory} from '@/FmtText/FmtTextFactory'
+import { HtmlRenderer } from '@/lib/FmtText/Renderer/HtmlRenderer'
+import { FmtTextFactory} from '@/lib/FmtText/FmtTextFactory'
 import { escapeHtml } from '@/toolbox/Util'
 import { ApparatusUtil } from '@/Edition/ApparatusUtil'
 import * as MainTextTokenType from '@/Edition/MainTextTokenType'
 import { StringCounter } from '@/toolbox/StringCounter'
+import {ApparatusSubEntry, WitnessData} from "@/Edition/ApparatusSubEntry";
+import {SiglaGroup} from "@/Edition/SiglaGroup";
+import {TypesetterToken} from "@/Typesetter/TypesetterToken";
+import {FmtTextToken} from "@/lib/FmtText/FmtTextToken.js";
+import {MainTextToken} from "@/Edition/MainTextToken";
+import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 
+
+export interface MainTextTypesettingInfo {
+  yPositions: number[],
+  tokens: MainTextToken[],
+  lineMap: PositionToLineMapEntry[],
+}
+
+export interface PositionToLineMapEntry   {
+  pY: number,
+  line: number,
+}
 
 // const enDash = String.fromCodePoint(0x2013)
 
@@ -76,7 +93,7 @@ export class ApparatusCommon {
    * @param fullSiglaInBrackets
    * @return {string}
    */
-  static genSubEntryHtmlContent(style, subEntry, sigla, siglaGroups = [], fullSiglaInBrackets = false) {
+  static genSubEntryHtmlContent(style: string, subEntry: ApparatusSubEntry, sigla: string[], siglaGroups: SiglaGroup[] = [], fullSiglaInBrackets = false): string {
     switch(style) {
       case 'la':
         return this.genSubEntryHtmlContentLatin(subEntry, sigla, siglaGroups, fullSiglaInBrackets)
@@ -93,11 +110,11 @@ export class ApparatusCommon {
     }
   }
 
-  static typesetSubEntryHebrew(subEntryType, theText, witnessIndices, sigla, siglaGroups) {
+  static typesetSubEntryHebrew(subEntryType: string, theText: string, witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[]): TypesetterToken[] {
     // TODO: use witnessData instead of witnessIndices, like in the html version
 
     let theTextTokens = (new TypesetterTokenRenderer()).render(FmtTextFactory.fromAnything(theText))
-    let theTokens = []
+    let theTokens: TypesetterToken[] = []
 
     let siglaTokens = this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'he' ).map ( (t) => { return t.setBold()})
     // console.log(`Sigla tokens: `)
@@ -134,7 +151,7 @@ export class ApparatusCommon {
     }
   }
 
-  static getKeywordString(keyword, lang) {
+  static getKeywordString(keyword: string, lang: string): string {
     let stringsObject = {}
     switch(lang) {
       case 'la':
@@ -150,7 +167,9 @@ export class ApparatusCommon {
         break
     }
 
+    // @ts-expect-error Using array access
     if (stringsObject[keyword] !== undefined) {
+      // @ts-expect-error Using array access
       return stringsObject[keyword]
     }
     return keyword
@@ -165,7 +184,7 @@ export class ApparatusCommon {
    * @param {string}lang
    * @return {TypesetterToken}
    */
-  static getKeywordTypesetterTokens(keyword, lang) {
+  static getKeywordTypesetterTokens(keyword: FmtTextToken[] | string, lang: string): TypesetterToken[] {
     keyword = FmtTextUtil.getPlainText(keyword)
     let keywordString = this.getKeywordString(keyword, lang)
     let fmtText = FmtTextFactory.fromAnything(keywordString)
@@ -185,7 +204,7 @@ export class ApparatusCommon {
     return (new TypesetterTokenRenderer()).render(fmtText)
   }
 
-  static getKeywordHtml(keyword, lang) {
+  static getKeywordHtml(keyword: string, lang: string) {
     let keywordString = this.getKeywordString(keyword, lang)
     switch(lang) {
       case 'ar':
@@ -197,7 +216,7 @@ export class ApparatusCommon {
     }
   }
 
-  static getForcedTextDirectionSpace(textDirection) {
+  static getForcedTextDirectionSpace(textDirection: string) {
     return `<span class="force-${textDirection}">&nbsp;</span>`
   }
 
@@ -209,7 +228,7 @@ export class ApparatusCommon {
    * @param {boolean}fullSiglaInBrackets
    * @return {string}
    */
-  static genSubEntryHtmlContentHebrew(subEntry, sigla, siglaGroups, fullSiglaInBrackets) {
+  static genSubEntryHtmlContentHebrew(subEntry: ApparatusSubEntry, sigla: string[], siglaGroups: SiglaGroup[], fullSiglaInBrackets: boolean): string {
     let entryType = subEntry.type
     let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText)
     let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla, 'he', siglaGroups, fullSiglaInBrackets)
@@ -246,11 +265,11 @@ export class ApparatusCommon {
     }
   }
 
-  static typesetSubEntryArabic(entryType, theText, witnessIndices, sigla, siglaGroups) {
+  static typesetSubEntryArabic(entryType: string, theText: string, witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[]): TypesetterToken[] {
     // TODO: use witnessData instead of witnessIndices, like in the html version
 
     let theTextTokens = (new TypesetterTokenRenderer()).render(FmtTextFactory.fromAnything(theText))
-    let theTokens = []
+    let theTokens: TypesetterToken[] = []
     let siglaTokens = this._getSiglaTypesetterTokens(witnessIndices, sigla,siglaGroups, 'ar' )
     switch(entryType) {
       case ApparatusSubEntryType.VARIANT:
@@ -290,7 +309,7 @@ export class ApparatusCommon {
    * @param {boolean}fullSiglaInBrackets
    * @return {string}
    */
-  static genSubEntryHtmlContentArabic(subEntry, sigla, siglaGroups, fullSiglaInBrackets) {
+  static genSubEntryHtmlContentArabic(subEntry: ApparatusSubEntry, sigla: string[], siglaGroups: SiglaGroup[], fullSiglaInBrackets: boolean): string {
     let entryType = subEntry.type
     let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText)
     let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla,  'ar', siglaGroups, fullSiglaInBrackets)
@@ -327,7 +346,7 @@ export class ApparatusCommon {
     }
   }
 
-  static _getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, lang) {
+  static _getSiglaTypesetterTokens(witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[], lang: string) : TypesetterToken[] {
     // TODO: use witnessData instead of witnessIndices, like in the html version
     let witnessData = witnessIndices.map ( (i) => { return { witnessIndex: i, hand: 0}})
     let filledUpWitnessData = ApparatusUtil.getSiglaData(witnessData, sigla, siglaGroups)
@@ -338,13 +357,13 @@ export class ApparatusCommon {
   }
 
 
-  static typesetSubEntryLatin(subEntryType, theText, witnessIndices, sigla, siglaGroups) {
+  static typesetSubEntryLatin(subEntryType: string, theText: string, witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[] ): TypesetterToken[] {
     // TODO: use witnessData instead of witnessIndices, like in the html version
     // let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
     // convert the text tokens to proper typesetter tokens
     let theTextTokens = (new TypesetterTokenRenderer()).render(FmtTextFactory.fromAnything(theText))
 
-    let theTokens = []
+    let theTokens: TypesetterToken[] = []
     switch(subEntryType) {
       case ApparatusSubEntryType.VARIANT:
         pushArray(theTokens, theTextTokens)
@@ -376,9 +395,8 @@ export class ApparatusCommon {
     }
   }
 
-  static genSubEntryHtmlContentLatin(subEntry, sigla, siglaGroups, fullSiglaInBrackets) {
+  static genSubEntryHtmlContentLatin(subEntry: ApparatusSubEntry, sigla: string[], siglaGroups: SiglaGroup[], fullSiglaInBrackets: boolean) {
     let entryType = subEntry.type
-
 
     let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText)
 
@@ -411,7 +429,7 @@ export class ApparatusCommon {
     }
   }
 
-  static __getSiglaHtmlFromFilledUpWitnessData(witnessData, numberStyle) {
+  static __getSiglaHtmlFromFilledUpWitnessData(witnessData: WitnessData[], numberStyle: string) {
     return witnessData.map ( (w) => {
       if (w.hand === 0 && !w.forceHandDisplay) {
         return w.siglum
@@ -430,7 +448,7 @@ export class ApparatusCommon {
    * @return {string}
    * @private
    */
-  static _genSiglaHtmlFromWitnessData(subEntry, sigla, numberStyle, siglaGroups, fullSiglaInBrackets = false) {
+  static _genSiglaHtmlFromWitnessData(subEntry: ApparatusSubEntry, sigla: string[], numberStyle: string, siglaGroups: SiglaGroup[], fullSiglaInBrackets: boolean = false): string {
 
     if (subEntry.witnessData.length === 0) {
       return ''
@@ -456,127 +474,16 @@ export class ApparatusCommon {
    * @param {string}style
    * @return {string}
    */
-  static getNumberString(n, style) {
+  static getNumberString(n: number, style: string): string {
+    if (n < 0) {
+      return '???'
+    }
     if (style === 'ar') {
       return NumeralStyles.toDecimalArabic(n)
     }
     return NumeralStyles.toDecimalWestern(n)
   }
 
-  /**
-   *
-   * @param {CtDataInterface}ctData
-   * @param {Edition}edition
-   * @param {number} mainTextFromTokenIndex
-   * @param {number} mainTextToTokenIndex
-   * @param {object}newEntry
-   * @param {string}lemma
-   * @param {array}currentApparatusEntries
-   * @param {boolean}verbose
-   */
-  // static updateCtDataWithNewEntry(ctData, edition, mainTextFromTokenIndex, mainTextToTokenIndex, newEntry, lemma, currentApparatusEntries, verbose = false) {
-  //   verbose && console.log(`Updated apparatus entry `)
-  //   verbose && console.log(newEntry)
-  //
-  //   let fromMainTextToken = edition.getMainTextToken(mainTextFromTokenIndex)
-  //   let toMainTextToken = edition.getMainTextToken(mainTextToTokenIndex)
-  //
-  //   let ctFromTokenIndex = CtData.getCtIndexForEditionWitnessTokenIndex(ctData, fromMainTextToken.editionWitnessTokenIndex)
-  //   let ctToTokenIndex = CtData.getCtIndexForEditionWitnessTokenIndex(ctData, toMainTextToken.editionWitnessTokenIndex)
-  //
-  //   verbose && console.log(`CT range: ${ctFromTokenIndex} - ${ctToTokenIndex}`)
-  //   if (newEntry.isNew) {
-  //     if (FmtTextUtil.getPlainText(newEntry.text) !== '') {
-  //       ctData = CtData.addCustomApparatusTextSubEntry(ctData,
-  //         newEntry.apparatus,
-  //         ctFromTokenIndex,
-  //         ctToTokenIndex,
-  //         lemma,
-  //         newEntry
-  //       )
-  //     }
-  //   } else {
-  //     if (FmtTextUtil.getPlainText(newEntry.text) === '') {
-  //       console.log(`Deleting current custom entry`)
-  //       ctData = CtData.deleteCustomApparatusTextSubEntries(ctData,
-  //         newEntry.apparatus,
-  //         ctFromTokenIndex,
-  //         ctToTokenIndex
-  //       )
-  //     } else {
-  //       console.log('Updating custom entry....')
-  //       // just add and delete, perhaps do something more sophisticated later
-  //       ctData = CtData.deleteCustomApparatusTextSubEntries(ctData,
-  //         newEntry.apparatus,
-  //         ctFromTokenIndex,
-  //         ctToTokenIndex
-  //       )
-  //       ctData = CtData.addCustomApparatusTextSubEntry(ctData,
-  //         newEntry.apparatus,
-  //         ctFromTokenIndex,
-  //         ctToTokenIndex,
-  //         lemma,
-  //         newEntry
-  //       )
-  //     }
-  //   }
-  //
-  //   if (newEntry.changesInEnabledEntries) {
-  //     console.log(`Changes in enabled entries`)
-  //     newEntry.enabledEntriesArray.forEach( (enabled, i) => {
-  //       if (currentApparatusEntries[newEntry.apparatusIndex][i].enabled !== enabled) {
-  //         console.log(`Apparatus sub entry ${i} enabled change to ${enabled}`)
-  //         let theHash = currentApparatusEntries[newEntry.apparatusIndex][i].hashString()
-  //         CtData.changeEnableStatusForSubEntry(ctData,
-  //           newEntry.apparatus,
-  //           ctFromTokenIndex,
-  //           ctToTokenIndex,
-  //           theHash,
-  //           enabled,
-  //           lemma
-  //         )
-  //       }
-  //     })
-  //   }
-  //
-  //   return ctData
-  // }
-
-  /**
-   *
-   * @param {string|FmtTextToken[]}lemma
-   * @param {string}lemmaText
-   */
-  //  static getLemmaString(lemma, lemmaText) {
-  //   let separator = ''
-  //   let custom = false
-  //   switch(lemma) {
-  //     case '':
-  //     case 'dash':
-  //       separator = ` ${enDash} `
-  //       break
-  //
-  //     case 'ellipsis':
-  //       separator = '...'
-  //       break
-  //
-  //     default:
-  //       custom = true
-  //   }
-  //   if (custom) {
-  //     return FmtTextUtil.getPlainText(lemma)
-  //   }
-  //   if (lemmaText === '') {
-  //     lemmaText = 'pre'
-  //   }
-  //   let lemmaTextWords = lemmaText.split(' ')
-  //   // if lemmaText is short,
-  //   if (lemmaTextWords.length <= 3) {
-  //     return lemmaText
-  //   }
-  //
-  //   return  `${lemmaTextWords[0]}${separator}${lemmaTextWords[lemmaTextWords.length-1]}`
-  // }
 
   /**
    * Returns an object with information about line and y positions for every
@@ -587,14 +494,17 @@ export class ApparatusCommon {
    * @param {[]}tokens
    * @returns {{lineMap: *[], yPositions: *[], tokens: *[]}}
    */
-  static getMainTextTypesettingInfo(containerSelector, classPrefix, tokens) {
-    let yPositions = []
+  static getMainTextTypesettingInfo(containerSelector: string, classPrefix: string, tokens: MainTextToken[]): MainTextTypesettingInfo {
+    let yPositions: number[] = []
     let tokensWithInfo = tokens.map( (token, i) => {
       if (token.type === MainTextTokenType.PARAGRAPH_END) {
         return token
       }
       let span = $(`${containerSelector} .${classPrefix}${i}`)
-      let position = span.offset()
+      let position = span.offset();
+      if (position === undefined) {
+        throw new Error(`Position for token ${i} not found in DOM`)
+      }
       let pY = position.top
       yPositions.push(pY)
       token.x = position.left
@@ -606,14 +516,15 @@ export class ApparatusCommon {
     let lineMap = calculateYPositionToLineMap(yPositions);
 
     let tokensWithLineNumbers = tokensWithInfo.map( (t) => {
+      // @ts-expect-error y is guaranteed to be defined at this point
       t.lineNumber = getLineNumber(t.y, lineMap)
       return t
     })
     // get the occurrence number in each line
     let currentLine = -1
-    let tokensWithOccurrencesInfo = []
+    let tokensWithOccurrencesInfo: MainTextToken[] = []
     let occurrenceInLineCounter = new StringCounter()
-    let currentLineTokens = []
+    let currentLineTokens: MainTextToken[] = []
     tokensWithLineNumbers.forEach( (t) => {
       if (t.lineNumber !== currentLine) {
         currentLineTokens = currentLineTokens.map( (t) => {
@@ -622,9 +533,12 @@ export class ApparatusCommon {
           }
           return t
         })
-        pushArray(tokensWithOccurrencesInfo, currentLineTokens)
+        tokensWithOccurrencesInfo.push(...currentLineTokens);
         occurrenceInLineCounter.reset()
         currentLineTokens = []
+        if (t.lineNumber === undefined) {
+          throw new Error("Line number not found for token, this should never happen")
+        }
         currentLine = t.lineNumber
       }
       if (t.type === MainTextTokenType.TEXT ) {
@@ -657,16 +571,20 @@ export class ApparatusCommon {
    * @param {string}lang
    * @returns {string}
    */
-  static getLineNumberString(apparatusEntry, mainTextTypesettingInfo, lang) {
+  static getLineNumberString(apparatusEntry: ApparatusEntry, mainTextTypesettingInfo: MainTextTypesettingInfo, lang: string): string {
     if (mainTextTypesettingInfo.tokens[apparatusEntry.from] === undefined) {
       // before the main text
       return ApparatusCommon.getNumberString(1, lang)
     }
 
     let startLine = mainTextTypesettingInfo.tokens[apparatusEntry.from].lineNumber
-    let endLine = mainTextTypesettingInfo.tokens[apparatusEntry.to] === undefined ? '???' :
+    let endLine = mainTextTypesettingInfo.tokens[apparatusEntry.to] === undefined ? -1 :
       mainTextTypesettingInfo.tokens[apparatusEntry.to].lineNumber
 
+    if (startLine === undefined || endLine === undefined) {
+      console.warn(`Line number data not found for apparatus entry ${apparatusEntry.from}-${apparatusEntry.to}, this should never happen`);
+      return '???'
+    }
     if (startLine === endLine) {
       return ApparatusCommon.getNumberString(startLine, lang)
     }
@@ -679,11 +597,11 @@ export class ApparatusCommon {
    * @param mainTextTypesettingInfo
    * @returns {number}
    */
-  static getOccurrenceInLine(mainTextTokenIndex, mainTextTypesettingInfo) {
+  static getOccurrenceInLine(mainTextTokenIndex: number, mainTextTypesettingInfo: MainTextTypesettingInfo): number {
     if (mainTextTypesettingInfo.tokens[mainTextTokenIndex] === undefined) {
       return 1
     }
-    return mainTextTypesettingInfo.tokens[mainTextTokenIndex].occurrenceInLine
+    return mainTextTypesettingInfo.tokens[mainTextTokenIndex].occurrenceInLine ?? 1
   }
 
   /**
@@ -692,14 +610,14 @@ export class ApparatusCommon {
    * @param tokensWithTypesetInfo
    * @returns {number}
    */
-  static getTotalOccurrencesInLine(mainTextIndex, tokensWithTypesetInfo) {
+  static getTotalOccurrencesInLine(mainTextIndex: number, tokensWithTypesetInfo: MainTextToken[]): number {
     if (tokensWithTypesetInfo[mainTextIndex] === undefined) {
       return 1
     }
-    return tokensWithTypesetInfo[mainTextIndex].numberOfOccurrencesInLine
+    return tokensWithTypesetInfo[mainTextIndex].numberOfOccurrencesInLine ?? 1
   }
 
-  static getLemmaHtml(apparatusEntry, mainTextTypesettingInfo, lang) {
+  static getLemmaHtml(apparatusEntry: ApparatusEntry, mainTextTypesettingInfo: MainTextTypesettingInfo, lang: string): string {
 
     let lemmaComponents = ApparatusUtil.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText)
 
@@ -742,7 +660,7 @@ export class ApparatusCommon {
 }
 
 
-function calculateYPositionToLineMap(yPositions, textSizeInPixels = 16) {
+function calculateYPositionToLineMap(yPositions: number[], textSizeInPixels = 16) : PositionToLineMapEntry[] {
   let uniqueYPositions = yPositions.filter((v, i, a) => a.indexOf(v) === i).sort( (a,b) => { return a > b ? 1 : 0})
   let halfTextSize = textSizeInPixels / 2
   let currentYPosition = -1000
@@ -759,7 +677,7 @@ function calculateYPositionToLineMap(yPositions, textSizeInPixels = 16) {
 }
 
 
-function getLineNumber(y, lineMap) {
+function getLineNumber(y: number, lineMap: PositionToLineMapEntry[]) {
   for(let i = 0; i < lineMap.length; i++) {
     if (y === lineMap[i].pY) {
       return lineMap[i].line

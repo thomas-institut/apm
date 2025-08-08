@@ -29,13 +29,13 @@ import { MultiToggle } from '@/widgets/MultiToggle'
 import { ApparatusCommon } from './ApparatusCommon.ts'
 import * as EditionMainTextTokenType from '../Edition/MainTextTokenType.mjs'
 import { Edition } from '../Edition/Edition.mjs'
-import { HtmlRenderer } from '@/FmtText/Renderer/HtmlRenderer'
+import { HtmlRenderer } from '@/lib/FmtText/Renderer/HtmlRenderer'
 import { PanelWithToolbar } from '@/MultiPanelUI/PanelWithToolbar'
 import { arraysAreEqual, numericSort, varsAreEqual } from '../toolbox/ArrayUtil.mjs'
 import { CtData } from '@/CtData/CtData'
 
-import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
-import { FmtTextTokenFactory } from '../FmtText/FmtTextTokenFactory.mjs'
+import { FmtTextFactory } from '@/lib/FmtText/FmtTextFactory'
+import { FmtTextTokenFactory } from '@/lib/FmtText/FmtTextTokenFactory'
 import { capitalizeFirstLetter, deepCopy, trimWhiteSpace } from '../toolbox/Util.mjs'
 import { EditionMainTextEditor } from './EditionMainTextEditor'
 import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser.mjs'
@@ -43,9 +43,9 @@ import * as AsyncMyersDiff from '../toolbox/AysncMyersDiff.ts'
 import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
 import * as EditionWitnessFormatMarkType from '../Witness/EditionWitnessFormatMark.mjs'
 import * as EditionWitnessParagraphStyle from '../Witness/EditionWitnessParagraphStyle.mjs'
-import * as FmtTexTokenType from '../FmtText/FmtTextTokenType.mjs'
+import * as FmtTexTokenType from '@/lib/FmtText/FmtTextTokenType.js'
 import { WitnessToken } from '../Witness/WitnessToken.mjs'
-import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
+import { FmtTextUtil } from '@/lib/FmtText/FmtTextUtil'
 import { CollapsePanel } from '@/widgets/CollapsePanel'
 import { EditionWitnessToken } from '../Witness/EditionWitnessToken.mjs'
 import { MainText } from '../Edition/MainText.mjs'
@@ -121,6 +121,7 @@ export class MainTextPanel extends PanelWithToolbar {
     this.cursorInToken = false
     this.tokenIndexOne = -1
     this.tokenIndexTwo = -1
+    /** @member {MainTextTypesettingInfo | null} */
     this.lastMainTextTypesettingInfo = null
     this.detectNumberingLabels = false
     this.detectIntraWordQuotationMarks = (this.lang === 'he')
@@ -1802,17 +1803,13 @@ export class MainTextPanel extends PanelWithToolbar {
     }
   }
 
-  _updateLineNumbersAndApparatuses() {
-    return wait(typesetInfoDelay).then( () => {
-      this.lastMainTextTypesettingInfo = ApparatusCommon.getMainTextTypesettingInfo(this.containerSelector, 'main-text-token-', this.edition.mainText)
-      this._drawLineNumbers(this.lastMainTextTypesettingInfo)
-      this.options.apparatusPanels.forEach( (p) => { p.updateApparatus(this.lastMainTextTypesettingInfo)})
-    })
+  async _updateLineNumbersAndApparatuses () {
+    await wait(typesetInfoDelay)
+    this.lastMainTextTypesettingInfo = ApparatusCommon.getMainTextTypesettingInfo(this.containerSelector, 'main-text-token-', this.edition.mainText)
+    this._drawLineNumbers(this.lastMainTextTypesettingInfo)
+    this.options.apparatusPanels.forEach((p) => { p.updateApparatus(this.lastMainTextTypesettingInfo) })
   }
 
-  // _redrawMainText() {
-  //   $(this.getContentAreaSelector()).html(this._generateMainTextHtml())
-  // }
 
   _generateMainTextHtml() {
     switch(this.currentEditMode) {

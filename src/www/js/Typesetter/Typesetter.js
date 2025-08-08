@@ -64,12 +64,12 @@ import * as TypesetterTokenType from './TypesetterTokenType'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { NumeralStyles } from '../toolbox/NumeralStyles.mjs'
 import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
-import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
+import { LanguageDetector } from '@/toolbox/LanguageDetector'
 import { isRtl } from '../toolbox/Util.mjs'
 
-import * as VerticalAlign from '../FmtText/VerticalAlign.mjs'
+import * as VerticalAlign from '@/lib/FmtText/VerticalAlign.ts'
 import * as HorizontalAlign from './HorizontalAlign'
-import { StringCounter } from '../toolbox/StringCounter.mjs'
+import { StringCounter } from '@/toolbox/StringCounter'
 import { pushArray } from '../toolbox/ArrayUtil.mjs'
 
 export class Typesetter {
@@ -369,7 +369,7 @@ export class Typesetter {
     //   2) A product of the typeset process should be the size of the text box and the number of lines.
 
 
-    let langDetector = new LanguageDetector({defaultLang: this.options.lang})
+    let langDetector = new LanguageDetector( this.options.lang)
     paragraphs  = paragraphs.map( (paragraph) => {
       let pxLineHeight = paragraph.lineHeight
       let typesetTokens = []

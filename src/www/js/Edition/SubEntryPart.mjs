@@ -17,7 +17,7 @@
  */
 
 
-import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
+import { FmtTextFactory } from '@/lib/FmtText/FmtTextFactory.mjs'
 import * as SubEntryPartType from './SubEntryPartType.mjs'
 
 export class SubEntryPart {

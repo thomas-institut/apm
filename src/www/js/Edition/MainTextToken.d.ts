@@ -1,4 +1,4 @@
-import {FmtTextToken} from "@/FmtText/FmtTextToken";
+import {FmtTextToken} from "@/lib/FmtText/FmtTextToken";
 
 export class MainTextToken {
     type: string;
@@ -7,6 +7,11 @@ export class MainTextToken {
     style: string;
     lang?: string;
     originalIndex?: number;
+    x?: number;
+    y?: number;
+    lineNumber?: number;
+    numberOfOccurrencesInLine?: number;
+    occurrenceInLine?: number;
 
     getPlainText(): string;
     isEmpty(): boolean;

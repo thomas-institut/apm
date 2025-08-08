@@ -28,8 +28,8 @@ import { EditionViewerCanvas } from '@/Edition/EditionViewerCanvas'
 import { wait } from '@/toolbox/wait'
 import { BasicProfiler } from '@/toolbox/BasicProfiler'
 import { CanvasTextBoxMeasurer } from '@/Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer'
-import { Dimension } from '../Typesetter2/Dimension.mjs'
-import { SystemStyleSheet } from '../Typesetter2/Style/SystemStyleSheet.ts'
+import { Dimension } from '@/Typesetter2/Dimension'
+import { SystemStyleSheet } from '@/Typesetter2/Style/SystemStyleSheet'
 import { WebStorageKeyCache } from '@/toolbox/KeyCache/WebStorageKeyCache'
 
 const defaultIcons = {

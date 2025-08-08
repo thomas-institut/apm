@@ -30,7 +30,7 @@ import { CtData } from '@/CtData/CtData'
 import {Apparatus} from '../Apparatus'
 import {ApparatusTools} from '../ApparatusTools'
 import { ApparatusSubEntry } from '../ApparatusSubEntry'
-import { FmtTextFactory } from '@/FmtText/FmtTextFactory'
+import { FmtTextFactory } from '@/lib/FmtText/FmtTextFactory'
 import { ApparatusEntry } from '../ApparatusEntry'
 
 

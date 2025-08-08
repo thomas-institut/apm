@@ -16,7 +16,7 @@
  *
  */
 
-import {TextBox} from "../TextBox";
+import {TextBox} from "../TextBox.js";
 
 export class TextBoxMeasurer {
 
@@ -27,7 +27,7 @@ export class TextBoxMeasurer {
    */
   getBoxWidth(item: TextBox): Promise<number> {
     // a wild guess based on a monospace font!
-    return Promise.resolve(item.text.length * item.fontSize)
+    return Promise.resolve(item.getText().length * item.getFontSize())
   }
 
   /**
@@ -37,7 +37,7 @@ export class TextBoxMeasurer {
    */
   getBoxHeight(item: TextBox): Promise<number> {
     //just the fontSize... this will be different for different fonts
-    return Promise.resolve(item.fontSize)
+    return Promise.resolve(item.getFontSize())
   }
 
 }

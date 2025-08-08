@@ -17,15 +17,15 @@
  */
 import { Edition } from './Edition.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { CanvasTextBoxMeasurer } from '../Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer.ts'
-import { CanvasRenderer } from '../Typesetter2/Renderer/CanvasRenderer.mjs'
-import { BrowserUtilities } from '../toolbox/BrowserUtilities.ts'
-import { Typesetter2 } from '../Typesetter2/Typesetter2.mjs'
-import { EditionTypesetting } from './EditionTypesetting.ts'
-import { BasicTypesetter } from '../Typesetter2/BasicTypesetter.ts'
+import { CanvasTextBoxMeasurer } from '@/Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer'
+import { CanvasRenderer } from '@/Typesetter2/Renderer/CanvasRenderer'
+import { BrowserUtilities } from '@/toolbox/BrowserUtilities'
+import { Typesetter2 } from '@/Typesetter2/Typesetter2'
+import { EditionTypesetting } from './EditionTypesetting.js'
+import { BasicTypesetter } from '@/Typesetter2/BasicTypesetter'
 import { isRtl } from '../toolbox/Util.mjs'
-import { BasicProfiler } from '../toolbox/BasicProfiler.ts'
-import { Dimension } from '../Typesetter2/Dimension.mjs'
+import { BasicProfiler } from '@/toolbox/BasicProfiler'
+import { Dimension } from '@/Typesetter2/Dimension'
 import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
 
 const pageMarginInCanvas = 20
@@ -99,7 +99,7 @@ export class EditionViewerCanvas {
     this.edition = this.options.edition
     this.canvas = this.options.canvasElement
     this.debug = this.options.debug
-    this.canvasRenderer = new CanvasRenderer(this.canvas, this.edition.lang === 'la' ? 'ltr' : 'rtl')
+    this.canvasRenderer = new CanvasRenderer(this.canvas)
     BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(this.geometry.pageWidth), Math.round(this.geometry.pageHeight))
 
     this.canvasRenderer.setScale(this.options.scale).setPageMargin(pageMarginInCanvas)

@@ -17,8 +17,8 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { FmtTextToken } from '@/FmtText/FmtTextToken'
-import { FmtTextTokenFactory } from '@/FmtText/FmtTextTokenFactory'
+import { FmtTextToken } from '@/lib/FmtText/FmtTextToken.js'
+import { FmtTextTokenFactory } from '@/lib/FmtText/FmtTextTokenFactory'
 import * as FmtTextTokenType from '@/Edition/SubEntryPartType'
 
 
@@ -38,9 +38,7 @@ describe('FmtTextTokenFactory', ()=> {
     expect( () => { FmtTextTokenFactory.buildFromObject({text: singleWordText})}).toThrow()
 
     let newText = FmtTextTokenFactory.buildFromObject( { type: FmtTextTokenType.TEXT, text: singleWordText})
-    console.log(newText)
     expect(typeof newText).toBe('object')
-    // expect(newText.getPlainText()).toBe(singleWordText)
 
     newText = FmtTextTokenFactory.buildFromObject( {
       type: FmtTextTokenType.TEXT,
@@ -49,13 +47,11 @@ describe('FmtTextTokenFactory', ()=> {
       fontStyle: 'italic',
       other: 'other'
     })
-    console.log(newText)
     expect(typeof newText).toBe('object')
-    // expect(newText.getPlainText()).toBe(singleWordText)
     expect(newText.fontStyle).toBe('italic')
     expect(newText.fontWeight).toBe('bold')
     expect(newText.verticalAlign).toBe('')
-    // @ts-ignore
+    // @ts-expect-error Using array access on purpose on a non-existing property
     expect(newText['other'] === undefined).toBe(true)
   })
 

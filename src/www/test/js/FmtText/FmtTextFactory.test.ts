@@ -1,7 +1,7 @@
 
-import { FmtTextFactory } from '@/FmtText/FmtTextFactory'
-import * as FmtTextTokenType from '@/FmtText/FmtTextTokenType'
-import { FmtTextUtil } from '@/FmtText/FmtTextUtil'
+import { FmtTextFactory } from '@/lib/FmtText/FmtTextFactory'
+import * as FmtTextTokenType from '@/lib/FmtText/FmtTextTokenType'
+import { FmtTextUtil } from '@/lib/FmtText/FmtTextUtil'
 import { describe, expect, it } from 'vitest'
 
 const singleWordText = 'someText'

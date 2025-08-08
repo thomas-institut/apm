@@ -1,4 +1,4 @@
-import { Typesetter2 } from '../Typesetter2.mjs'
+import { Typesetter2 } from '../Typesetter2.js'
 
 export const defaultStyleSheet = {
   default: {

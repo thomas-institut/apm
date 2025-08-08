@@ -23,7 +23,7 @@ import { Matrix } from '@thomas-inst/matrix'
 import * as CollationTableType from '../constants/CollationTableType'
 import { ApparatusSubEntry } from '@/Edition/ApparatusSubEntry'
 import * as SubEntryType from '../Edition/SubEntryType'
-import { FmtTextFactory } from '@/FmtText/FmtTextFactory'
+import { FmtTextFactory } from '@/lib/FmtText/FmtTextFactory'
 import { ApparatusEntry } from '@/Edition/ApparatusEntry'
 import { deepCopy } from '@/toolbox/Util'
 import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
@@ -56,7 +56,7 @@ import {
 import {FULL_TX} from "@/Witness/WitnessType";
 import {Apparatus} from "@/Edition/Apparatus";
 import {NormalizerRegister} from "@/pages/common/NormalizerRegister";
-import {FmtTextUtil} from "@/FmtText/FmtTextUtil";
+import {FmtTextUtil} from "@/lib/FmtText/FmtTextUtil";
 
 
 

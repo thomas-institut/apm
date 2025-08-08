@@ -18,34 +18,35 @@
  *
  */
 
-import { Typesetter2 } from './Typesetter2.mjs'
-import { ItemList } from './ItemList.mjs'
-import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
-import { Glue } from './Glue.mjs'
-import { TextBox } from './TextBox.mjs'
+import { Typesetter2 } from './Typesetter2.js'
+import { ItemList } from './ItemList.js'
+import * as TypesetterItemDirection from './TypesetterItemDirection.js'
+import { Glue } from './Glue.js'
+import { TextBox } from './TextBox.js'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { TypesetterPage } from './TypesetterPage.mjs'
+import { TypesetterPage } from './TypesetterPage.js'
 import { TextBoxMeasurer } from './TextBoxMeasurer/TextBoxMeasurer.js'
-import { TypesetterDocument } from './TypesetterDocument.mjs'
-import * as MetadataKey from './MetadataKey.mjs'
-import * as ListType from './ListType.mjs'
-import * as LineType from './LineType.mjs'
-import * as GlueType from './GlueType.mjs'
+import { TypesetterDocument } from './TypesetterDocument.js'
+import * as MetadataKey from './MetadataKey.js'
+import * as ListType from './ListType.js'
+import * as LineType from './LineType.js'
+import * as GlueType from './GlueType.js'
 import { toFixedPrecision } from '../toolbox/Util.mjs'
-import { FirstFitLineBreaker } from './LineBreaker/FirstFitLineBreaker.mjs'
-import { AddPageNumbers } from './PageProcessor/AddPageNumbers.mjs'
-import { AddLineNumbers } from './PageProcessor/AddLineNumbers.mjs'
-import { StringCounter } from '../toolbox/StringCounter.mjs'
+import {FirstFitLineBreaker} from './LineBreaker/FirstFitLineBreaker.js';
+import { AddPageNumbers } from './PageProcessor/AddPageNumbers.js'
+import { AddLineNumbers } from './PageProcessor/AddLineNumbers.js'
+import { StringCounter } from '../toolbox/StringCounter.js'
 import { trimPunctuation } from '../defaults/Punctuation.mjs'
 import { MAX_LINE_COUNT } from '../Edition/EditionTypesetting.js'
-import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
-import { BidiDisplayOrder } from './Bidi/BidiDisplayOrder.mjs'
-import { AdjustmentRatio } from './AdjustmentRatio.mjs'
-import { MINUS_INFINITE_PENALTY, Penalty } from './Penalty.mjs'
-import { AddMainTextLinePositionMetadata } from './PageProcessor/AddMainTextLinePositionMetadata.mjs'
-import { AddMarginalia } from './PageProcessor/AddMarginalia.mjs'
-import {TypesetterItem} from "./TypesetterItem.mjs";
-import {PageProcessor} from "./PageProcessor/PageProcessor.mjs";
+import { LanguageDetector } from '../toolbox/LanguageDetector.js'
+import {BidiDisplayOrder, IntrinsicTextDirection} from './Bidi/BidiDisplayOrder.js';
+import { AdjustmentRatio } from './AdjustmentRatio.js'
+import { MINUS_INFINITE_PENALTY, Penalty } from './Penalty.js'
+import { AddMainTextLinePositionMetadata } from './PageProcessor/AddMainTextLinePositionMetadata.js'
+import { AddMarginalia } from './PageProcessor/AddMarginalia.js'
+import {TypesetterItem} from "./TypesetterItem.js";
+import {PageProcessor} from "./PageProcessor/PageProcessor.js";
+import {BidiOrderInfo} from "./Bidi/BidiOrderInfo.js";
 
 const signature = 'BasicTypesetter 1.0'
 
@@ -136,7 +137,7 @@ export class BasicTypesetter extends Typesetter2 {
         textToApparatusGlue: {
           type: 'object',
           default: {
-            height: DEFAULT_FONT_SIZE*1,
+            height: DEFAULT_FONT_SIZE,
             shrink: DEFAULT_FONT_SIZE*0.1,
             stretch: Typesetter2.cm2px(50)  // basically infinite stretch!
           }
@@ -144,7 +145,7 @@ export class BasicTypesetter extends Typesetter2 {
         interApparatusGlue: {
           type: 'object',
           default: {
-            height: DEFAULT_FONT_SIZE*1,
+            height: DEFAULT_FONT_SIZE,
             shrink: 0,
             stretch: DEFAULT_FONT_SIZE*0.25
           }
@@ -262,25 +263,28 @@ export class BasicTypesetter extends Typesetter2 {
 
       // Determine the bidirectional text item order for the whole list; this will be the basis for
       // potentially reordering items for each line
-      let displayOrderArray =  BidiDisplayOrder.getDisplayOrder(itemArray, inputList.getTextDirection(), (item) => {
-        return this.getItemIntrinsicTextDirection(item)
-      })
+      let displayOrderArray =  BidiDisplayOrder.getDisplayOrder(
+        itemArray,
+        inputList.getTextDirection(),
+        (item: TypesetterItem) => {
+          return this.getItemIntrinsicTextDirection(item)
+        });
 
       // compact the whole paragraph
-      let compactedBidiData = FirstFitLineBreaker.compactItemArray(itemArray, displayOrderArray)
+      let compactItemArrayResult = FirstFitLineBreaker.compactItemArray(itemArray, displayOrderArray);
 
-      let originalIndexToOrderMap: any[] = []
-      compactedBidiData.bidiOrderInfoArray.forEach( (orderInfo) => {
+      let originalIndexToOrderMap: number[] = []
+      compactItemArrayResult.bidiOrderInfoArray.forEach( (orderInfo: BidiOrderInfo) => {
         originalIndexToOrderMap[orderInfo.inputIndex] = orderInfo.displayOrder
       })
       let originalIndexToTextDirectionMap: any[] = []
-      compactedBidiData.bidiOrderInfoArray.forEach( (orderInfo) => {
+      compactItemArrayResult.bidiOrderInfoArray.forEach( (orderInfo) => {
         originalIndexToTextDirectionMap[orderInfo.inputIndex] = orderInfo.textDirection
       })
 
       // Run the First Fit algorithm on the input list
 
-      let lines = await FirstFitLineBreaker.breakIntoLines(compactedBidiData.itemArray, this.lineWidth, this.options.textBoxMeasurer, compactedBidiData.bidiOrderInfoArray)
+      let lines = await FirstFitLineBreaker.breakIntoLines(compactItemArrayResult.itemArray, this.lineWidth, this.options.textBoxMeasurer, compactItemArrayResult.bidiOrderInfoArray)
 
       // Post-process lines
       let lineNumberInParagraph = 1
@@ -299,7 +303,7 @@ export class BasicTypesetter extends Typesetter2 {
 
         // align item baselines
         let lineHeight = line.getHeight(); // lineHeight is now the height of the tallest item in the list
-        line.setList( line.getList().map( (item) => {
+        line.setList( line.getList().map( (item: TypesetterItem) => {
           if (item instanceof TextBox) {
             if (item.getHeight() < lineHeight) {
               let oldShiftY = item.getShiftY()
@@ -316,7 +320,7 @@ export class BasicTypesetter extends Typesetter2 {
         let unadjustedLineWidth = line.getWidth()
         line.addMetadata(MetadataKey.UNADJUSTED_LINE_WIDTH, toFixedPrecision(unadjustedLineWidth, 3))
         if (adjRatio !== null) {
-          line.setList( line.getList().map( (item) => {
+          line.setList( line.getList().map( (item: TypesetterItem) => {
             if (item instanceof Glue) {
               if (adjRatio>=0) {
                 item.setWidth(item.getWidth() + adjRatio*item.getStretch())
@@ -1026,18 +1030,18 @@ export class BasicTypesetter extends Typesetter2 {
   }
 
 
-  getItemIntrinsicTextDirection(item: TypesetterItem): string {
+  getItemIntrinsicTextDirection(item: TypesetterItem): IntrinsicTextDirection {
     if (item instanceof TextBox) {
       if (item.getTextDirection() === '') {
         // text direction not set, let's calculate it!
-        let ld = new LanguageDetector()
+        let ld = new LanguageDetector('la')
         return ld.detectTextDirection(item.getText())
       } else {
-        return  item.getTextDirection()
+        return  item.getTextDirection() as IntrinsicTextDirection
       }
     }
     // not a TextBox
-    return item.getTextDirection()
+    return item.getTextDirection() as IntrinsicTextDirection
   }
 
   /**
@@ -1189,7 +1193,7 @@ export class BasicTypesetter extends Typesetter2 {
       return Math.max(this.minLineSkip, this.lineSkip - nextLineHeight)
   }
 
-  private constructAddPageNumberProcessor(options: any): AddPageNumbers {
+  private constructAddPageNumberProcessor(options: any): PageProcessor {
     let pageNumbersMarginTop = this.options.pageHeight - this.options.marginBottom + options.margin
     let pageNumbersMarginLeft = this.options.marginLeft
     let lineWidth = this.options.pageWidth - this.options.marginRight - this.options.marginLeft
@@ -1209,8 +1213,7 @@ export class BasicTypesetter extends Typesetter2 {
     })
   }
 
-  private constructAddLineNumbersProcessor(options: any): AddLineNumbers {
-    // options.debug = this.debug
+  private constructAddLineNumbersProcessor(options: any): PageProcessor {
     options.textBoxMeasurer = this.options.textBoxMeasurer
     options.listTypeToNumber = ListType.MAIN_TEXT_BLOCK
     options.lineTypeToNumber = LineType.MAIN_TEXT_LINE

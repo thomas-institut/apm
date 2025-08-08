@@ -1,4 +1,4 @@
-import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
+import { LanguageDetector } from '../toolbox/LanguageDetector.ts'
 import { urlGen } from './common/SiteUrlGen'
 import { NormalPage } from './NormalPage'
 import { tr } from './common/SiteLang'
@@ -326,7 +326,7 @@ function search() {
   prevTitle = ''
 
   // get searched text, its language and the target corpus
-  let ld = new LanguageDetector({ defaultLang: 'la'})
+  let ld = new LanguageDetector('la')
   let searchText = $("#keywordBox").val()
   let detectedLang = ld.detectLang(searchText)
   let corpus = $("#corpus-select").find(":selected").val()

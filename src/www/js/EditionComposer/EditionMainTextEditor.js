@@ -17,18 +17,19 @@
  */
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { toolbarCharacters} from '@/defaults/ToolbarCharacters'
+import Inline from 'quill/blots/inline'
 
+import { FmtTextFactory } from '@/lib/FmtText/FmtTextFactory'
+import { isRtl } from '@/toolbox/Util.mjs'
+
+import { toolbarCharacters} from './ToolbarCharacters'
 import Quill from '../QuillLoader'
 import Small from './QuillBlots/Small'
 import Superscript from './QuillBlots/Superscript'
 import NumberingLabel from './QuillBlots/NumberingLabel'
-
-import { QuillDeltaRenderer } from '@/FmtText/Renderer/QuillDeltaRenderer'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
+import { QuillDeltaRenderer } from './QuillDelta/QuillDeltaRenderer'
 import { GenericQuillDeltaConverter } from './QuillDelta/GenericQuillDeltaConverter'
-import Inline from 'quill/blots/inline'
-import { isRtl } from '../toolbox/Util.mjs'
+
 
 const simpleFormats = [
   'bold',
@@ -100,7 +101,7 @@ export class EditionMainTextEditor {
         numberingLabel: (attr) => { attr.numberingLabel = true; return attr}
       },
       defaultTextAttrObject: { numberingLabel: false},
-      defaultGlueAttrObject: { numberingLabel: false}
+      defaultGlueAttrObject: {} // for some reason, putting any attribute in glue messes everything up!
     })
     this.quillDeltaConverter = new GenericQuillDeltaConverter({
       verbose: this.verbose,
@@ -177,11 +178,11 @@ export class EditionMainTextEditor {
    * @param {boolean} silent
    */
   setText(newText, silent = false) {
-    // this.debug && console.log(`Setting text`)
-    // this.debug && console.log(newText)
+    this.debug && console.log(`Setting text`)
+    this.debug && console.log(newText)
     let newDelta = this.quillDeltaRenderer.render(FmtTextFactory.fromAnything(newText))
-    // this.debug && console.log(`Setting text with new delta`)
-    // this.debug && console.log(newDelta)
+    this.debug && console.log(`Setting text with new delta`)
+    this.debug && console.log(newDelta)
     let source = silent ? 'silent' : 'api'
     this.quillEditor.setContents(newDelta, source)
   }

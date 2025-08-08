@@ -22,8 +22,8 @@ import { ApparatusCommon } from './ApparatusCommon.ts'
 import { PanelWithToolbar } from '@/MultiPanelUI/PanelWithToolbar'
 import { CtData } from '@/CtData/CtData'
 import { onClickAndDoubleClick } from '@/toolbox/DoubleClick'
-import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
+import { FmtTextUtil } from '@/lib/FmtText/FmtTextUtil'
+import { FmtTextFactory } from '@/lib/FmtText/FmtTextFactory'
 import { ApparatusEntryTextEditor } from './ApparatusEntryTextEditor'
 import {
   capitalizeFirstLetter, getTextDirectionForLang,

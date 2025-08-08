@@ -1,4 +1,4 @@
-import {FmtText} from "../../FmtText/FmtText";
+
 
 export class ApparatusSubEntry {
     plainText: string;
@@ -6,7 +6,7 @@ export class ApparatusSubEntry {
     type: string;
     enabled: boolean;
     source: string;
-    fmtText: FmtText;
+    fmtText: FmtTextToken[];
     witnessData: WitnessData[];
     keyword: string;
     position: number;

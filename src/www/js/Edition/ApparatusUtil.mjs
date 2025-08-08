@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2022 Universität zu Köln
  *
@@ -17,7 +19,7 @@
  */
 
 
-import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
+import { FmtTextUtil } from '../lib/FmtText/FmtTextUtil.js'
 import { deepCopy } from '../toolbox/Util.mjs'
 
 const enDash = String.fromCodePoint(0x2013)

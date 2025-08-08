@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -18,9 +20,8 @@
 
 
 import * as MainTextTokenType from './MainTextTokenType.mjs'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
-import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
-import { FmtTextToken } from '../FmtText/FmtTextToken.mjs'
+import { FmtTextFactory } from '../lib/FmtText/FmtTextFactory.js'
+import { FmtTextUtil } from '../lib/FmtText/FmtTextUtil.js'
 
 /**
  * A token that can appear in the main text of an edition.

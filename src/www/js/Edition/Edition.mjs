@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2022 Universität zu Köln
  *
@@ -89,7 +91,7 @@ SubEntryWitnessInfo := {
  */
 
 import { MainTextToken } from './MainTextToken.mjs'
-import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
+import { FmtTextUtil } from '@/lib/FmtText/FmtTextUtil.js'
 
 export class Edition {
 

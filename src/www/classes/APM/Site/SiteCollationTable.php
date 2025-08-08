@@ -250,6 +250,7 @@ class SiteCollationTable extends SiteController
                 ],
                 [],
                 [
+                    '../node_modules/quill/dist/quill.core.css',
                     'collationtable.css',
                     'multi-panel-ui/styles.css',
                     'edition-composer.css',

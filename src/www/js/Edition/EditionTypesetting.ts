@@ -21,32 +21,32 @@
 import {MainText} from './MainText.mjs';
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {TextBoxMeasurer} from '../Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js';
-import {Box} from '../Typesetter2/Box.mjs';
-import {ItemList} from '../Typesetter2/ItemList.mjs';
-import * as TypesetterItemDirection from '../Typesetter2/TypesetterItemDirection.mjs';
-import * as MetadataKey from '../Typesetter2/MetadataKey.mjs';
-import * as ListType from '../Typesetter2/ListType.mjs';
-import {Glue} from '../Typesetter2/Glue.mjs';
+import {Box} from '../Typesetter2/Box.js';
+import {ItemList} from '../Typesetter2/ItemList.js';
+import * as TypesetterItemDirection from '../Typesetter2/TypesetterItemDirection.js';
+import * as MetadataKey from '../Typesetter2/MetadataKey.js';
+import * as ListType from '../Typesetter2/ListType.js';
+import {Glue} from '../Typesetter2/Glue.js';
 import * as MainTextTokenType from './MainTextTokenType.mjs';
-import {TextBox} from '../Typesetter2/TextBox.mjs';
+import {TextBox} from '../Typesetter2/TextBox.js';
 import {
   GOOD_POINT_FOR_A_BREAK, INFINITE_PENALTY, Penalty, REALLY_GOOD_POINT_FOR_A_BREAK
-} from '../Typesetter2/Penalty.mjs';
-import {LanguageDetector} from '../toolbox/LanguageDetector.mjs';
+} from '../Typesetter2/Penalty.js';
+import {LanguageDetector} from '../toolbox/LanguageDetector.js';
 import {getTextDirectionForLang, isRtl, removeExtraWhiteSpace} from '../toolbox/Util.mjs';
-import {FmtTextFactory} from '../FmtText/FmtTextFactory.mjs';
-import {ObjectFactory} from '../Typesetter2/ObjectFactory.mjs';
+import {FmtTextFactory} from '../lib/FmtText/FmtTextFactory.js';
+import {ObjectFactory} from '../Typesetter2/ObjectFactory.js';
 import {uniq} from '../toolbox/ArrayUtil.mjs';
-import {Typesetter2StyleSheetTokenRenderer} from '../FmtText/Renderer/Typesetter2StyleSheetTokenRenderer.mjs';
+import {Typesetter2StyleSheetTokenRenderer} from '../lib/FmtText/Renderer/Typesetter2StyleSheetTokenRenderer.js';
 import {ApparatusUtil} from './ApparatusUtil.mjs';
 import {NumeralStyles} from '../toolbox/NumeralStyles.mjs';
-import {TextBoxFactory} from '../Typesetter2/TextBoxFactory.mjs';
+import {TextBoxFactory} from '../Typesetter2/TextBoxFactory.js';
 import {SiglaGroup} from './SiglaGroup.mjs';
-import {FmtTextUtil} from '../FmtText/FmtTextUtil.mjs';
+import {FmtTextUtil} from '../lib/FmtText/FmtTextUtil.js';
 import {StyleSheet} from '../Typesetter2/Style/StyleSheet.mjs';
-import {FontConversions} from '../Typesetter2/FontConversions.mjs';
+import {FontConversions} from '../Typesetter2/FontConversions.js';
 import {ItemLineInfo} from './ItemLineInfo.mjs';
-import {TypesetterItem} from '../Typesetter2/TypesetterItem.mjs';
+import {TypesetterItem} from '../Typesetter2/TypesetterItem.js';
 import {MARGINALIA} from '../constants/ApparatusType.mjs';
 import {AUTO_FOLIATION} from './SubEntryType.mjs';
 import {ApparatusSubEntry} from "./ApparatusSubEntry.mjs";
@@ -128,7 +128,7 @@ export class EditionTypesetting {
       styleSheet: this.editionStyle, defaultTextDirection: this.textDirection, textBoxMeasurer: this.textBoxMeasurer
     });
     this.isSetup = true;
-    this.languageDetector = new LanguageDetector({defaultLang: this.options.edition.lang});
+    this.languageDetector = new LanguageDetector(this.options.edition.lang);
   }
 
   setup() {
@@ -1124,12 +1124,15 @@ export class EditionTypesetting {
       return textBox;
     }
     let detectedLang;
-    // take care of neutral punctuation on its own
+    // take care of common neutral punctuation right away
     const neutralPunctuationCharacters = ['[', ']','<','>', '(', ')', '{', '}', '«', '»', '.', ',', ';', '...', '"'];
     if (neutralPunctuationCharacters.indexOf(textBox.getText()) !== -1) {
       detectedLang = this.edition.lang;
     } else {
       detectedLang = this.languageDetector.detectLang(textBox.getText());
+      if (detectedLang === '') {
+        detectedLang = this.edition.lang;
+      }
     }
     if (detectedLang !== this.edition.lang) {
       this.debug && console.log(`Text box with non '${this.edition.lang}' text: '${textBox.getText()}' ('${detectedLang}' detected)`);

@@ -18,7 +18,7 @@
 
 import { MainTextToken } from './MainTextToken.mjs'
 import * as EditionMainTextTokenType from './MainTextTokenType.mjs'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
+import { FmtTextFactory } from '../lib/FmtText/FmtTextFactory.js'
 
 export class MainTextTokenFactory {
 

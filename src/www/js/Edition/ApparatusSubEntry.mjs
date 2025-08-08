@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2022 Universität zu Köln
  *
@@ -18,8 +20,8 @@
 
 import * as SubEntryType from './SubEntryType.mjs'
 import * as SubEntrySource from './SubEntrySource.mjs'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory.mjs'
-import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
+import { FmtTextFactory } from '../lib/FmtText/FmtTextFactory.js'
+import { FmtTextUtil } from '../lib/FmtText/FmtTextUtil.js'
 import { hashCodeInt32 } from '../toolbox/Util.mjs'
 import { WitnessDataItem } from './WitnessDataItem.mjs'
 

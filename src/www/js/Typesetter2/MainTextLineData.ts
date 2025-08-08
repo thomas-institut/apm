@@ -10,5 +10,5 @@ export interface LineNumberData {
     listIndex: number;
     lineNumber: number;
     y: number;
-    lineNumberToShow?: number;
+    lineNumberToShow: number;
 }

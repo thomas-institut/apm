@@ -5,13 +5,13 @@ import {ApparatusSubEntry} from '../ApparatusSubEntry'
 import * as SubEntryType from '../SubEntryType'
 import * as SubEntrySource from '../SubEntrySource'
 import {ApparatusEntry} from '../ApparatusEntry'
-import {FmtTextFactory} from '@/FmtText/FmtTextFactory'
-import {FmtTextTokenFactory} from '@/FmtText/FmtTextTokenFactory'
+import {FmtTextFactory} from '@/lib/FmtText/FmtTextFactory'
+import {FmtTextTokenFactory} from '@/lib/FmtText/FmtTextTokenFactory'
 import {NumeralStyles} from '@/toolbox/NumeralStyles'
 import {CtDataInterface, FullTxItemInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
 import {FoliationChangeInfoInterface} from "../FoliationChangeInfoInterface";
 import {MainTextToken} from "../MainTextToken";
-import {FmtTextToken} from "@/FmtText/FmtTextToken";
+import {FmtTextToken} from "@/lib/FmtText/FmtTextToken.js";
 
 export class MarginalFoliationGenerator {
     private readonly ctData: CtDataInterface;

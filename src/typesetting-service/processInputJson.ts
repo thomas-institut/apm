@@ -1,10 +1,10 @@
-import { ObjectFactory } from '../www/js/Typesetter2/ObjectFactory.mjs'
+import { ObjectFactory } from '../www/js/Typesetter2/ObjectFactory.js'
 import { PangoMeasurerNodeGTK } from './PangoMeasurerNodeGTK.js'
 import { SystemStyleSheet } from '../www/js/Typesetter2/Style/SystemStyleSheet.js'
 import { BasicTypesetter } from '../www/js/Typesetter2/BasicTypesetter.js'
 import { hrtime } from 'node:process'
 import { EditionTypesetting } from '../www/js/Edition/EditionTypesetting.js'
-import {ItemList} from "../www/js/Typesetter2/ItemList.mjs";
+import {ItemList} from "../www/js/Typesetter2/ItemList.js";
 
 /**
  * Processes an input data object containing a main text

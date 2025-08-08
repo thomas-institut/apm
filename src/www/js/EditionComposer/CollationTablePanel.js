@@ -54,10 +54,10 @@ import { FULL_TX } from '../Witness/WitnessTokenClass.mjs'
 import { CtData } from '@/CtData/CtData'
 import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser.mjs'
 import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
-import { HtmlRenderer } from '@/FmtText/Renderer/HtmlRenderer'
-import { FmtTextUtil } from '../FmtText/FmtTextUtil.mjs'
+import { HtmlRenderer } from '@/lib/FmtText/Renderer/HtmlRenderer'
+import { FmtTextUtil } from '@/lib/FmtText/FmtTextUtil'
 import { Punctuation } from '../defaults/Punctuation.mjs'
-import { toolbarCharacters} from '@/defaults/ToolbarCharacters'
+import { toolbarCharacters} from '@/EditionComposer/ToolbarCharacters'
 import { SimpleConfirmDialog } from '@/pages/common/SimpleConfirmDialog'
 
 export class CollationTablePanel extends PanelWithToolbar {

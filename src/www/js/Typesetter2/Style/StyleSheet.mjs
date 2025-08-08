@@ -18,9 +18,9 @@
  *
  */
 
-import { Glue } from '../Glue.mjs'
-import { TextBox } from '../TextBox.mjs'
-import { Dimension } from '../Dimension.mjs'
+import { Glue } from '../Glue.js'
+import { TextBox } from '../TextBox.js'
+import { Dimension } from '../Dimension.js'
 import { uniq } from '../../toolbox/ArrayUtil.mjs'
 import { deepGetValuesForKey } from '../../toolbox/ObjectUtil.js'
 

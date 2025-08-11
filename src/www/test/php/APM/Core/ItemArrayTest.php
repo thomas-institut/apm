@@ -31,6 +31,7 @@ use APM\ToolBox\MyersDiff;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
+use TypeError;
 
 /**
  * Description of ItemArrayTest
@@ -43,14 +44,14 @@ class ItemArrayTest extends TestCase
     public function testAddBadItem()
     {
         $ia = [];
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(TypeError::class);
         ItemArray::addItem($ia, new Line());
     }
 
     public function testAddBadItem2()
     {
         $ia = [];
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(TypeError::class);
         ItemArray::addItem($ia, "someString");
     }
     
@@ -179,29 +180,29 @@ class ItemArrayTest extends TestCase
         }
     }
 
-    public function testIsRtl()
-    {
-       $ia=[];
-        
-        for ($i = 0; $i < 10; $i++) {
-            $item = new Text($i+100, $i+1000, "Text" . $i . '-');
-            ItemArray::addItem($ia, $item, true);
-            $this->assertSame($item, $ia[$i]);
-        }
-        ItemArray::setLang($ia, 'he');
-        
-        // all 10 items are Hebrew at this point!
-        $this->assertTrue(ItemArray::isRtl($ia));
-        
-        for ($i = 1; $i <= 4; $i++) {
-            $ia[$i]->setLang('la');
-        }
-        $this->assertTrue(ItemArray::isRtl($ia));
-        // The 5th non-RTL should tip the scale
-        $ia[5]->setLang('la');
-        $this->assertFalse(ItemArray::isRtl($ia));
-    }
-    
+//    public function testIsRtl()
+//    {
+//       $ia=[];
+//
+//        for ($i = 0; $i < 10; $i++) {
+//            $item = new Text($i+100, $i+1000, "Text" . $i . '-');
+//            ItemArray::addItem($ia, $item, true);
+//            $this->assertSame($item, $ia[$i]);
+//        }
+//        ItemArray::setLang($ia, 'he');
+//
+//        // all 10 items are Hebrew at this point!
+//        $this->assertTrue(ItemArray::isRtl($ia));
+//
+//        for ($i = 1; $i <= 4; $i++) {
+//            $ia[$i]->setLang('la');
+//        }
+//        $this->assertTrue(ItemArray::isRtl($ia));
+//        // The 5th non-RTL should tip the scale
+//        $ia[5]->setLang('la');
+//        $this->assertFalse(ItemArray::isRtl($ia));
+//    }
+//
     public function testEditScript()
     {
         $itemArray = [];

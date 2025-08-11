@@ -196,8 +196,8 @@ div.osd-div {
 div.page-div {
     padding: 5px;
     width: 3em;
-
     text-align: center;
+    cursor: pointer;
 }
 
 div.page-big-div {

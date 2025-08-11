@@ -52,6 +52,7 @@ import {AUTO_FOLIATION} from './SubEntryType.mjs';
 import {ApparatusSubEntry} from "./ApparatusSubEntry.mjs";
 import {Apparatus} from "./Apparatus.js";
 import {ApparatusEntry} from './ApparatusEntry.mjs';
+import {Edition} from "../Edition/Edition.js";
 
 export const MAX_LINE_COUNT = 10000;
 const enDash = '\u2013';
@@ -261,7 +262,6 @@ export class EditionTypesetting {
               // Add foliation change markers if needed
               let witnessIndices = this.getWitnessIndicesWithFoliationChanges(mainTextToken.originalIndex);
               if (witnessIndices.length > 0) {
-                console.log(`Adding foliation change markers for main text token ${mainTextToken.originalIndex}`, witnessIndices);
                 textItems.push(...await this.tokenRenderer.renderWithStyle(FmtTextFactory.fromString('|'), paragraphStyle));
                 textItems.push(this.createPenalty(INFINITE_PENALTY));
                 textItems.push(await this.createGlue(paragraphStyle));
@@ -283,9 +283,9 @@ export class EditionTypesetting {
                 });
                 paragraphToTypeset.pushItemArray(textItems);
               }
-              if (firstActualTextTokenIndex > 0) {
-                console.log(`After adding foliation change markers`, paragraphToTypeset);
-              }
+              // if (firstActualTextTokenIndex > 0) {
+              //   console.log(`After adding foliation change markers`, paragraphToTypeset);
+              // }
               break;
 
           }
@@ -315,8 +315,7 @@ export class EditionTypesetting {
    * @return {number[]}
    */
   getWitnessIndicesWithFoliationChanges(mainTextTokenIndex: number): number[] {
-    /** @var {Edition} */
-    const edition = this.options.edition;
+    const edition: Edition = this.options.edition;
     const marginaliaApparatuses: Apparatus[] = edition.apparatuses.filter((apparatus: Apparatus) => {
       return apparatus.type === MARGINALIA;
     });
@@ -338,10 +337,13 @@ export class EditionTypesetting {
       }));
     });
 
+    // console.log(`There are ${entries.length} entries with ${subEntries.length} auto foliation subEntries for main text token ${mainTextTokenIndex}`)
     const indices: number[] = [];
     subEntries.forEach((subEntry) => {
       subEntry.witnessData.forEach((witnessData) => {
-        indices.push(witnessData.witnessIndex);
+        if (witnessData.realFoliationChange === true) {
+          indices.push(witnessData.witnessIndex);
+        }
       });
     });
     return uniq(indices);

@@ -59,7 +59,7 @@ export class AddMarginalia extends PageProcessor {
   process (page: TypesetterPage): Promise<TypesetterPage> {
     return new Promise ( async (resolve) => {
 
-      this.debug = true;
+      this.debug = false;
       if (!page.hasMetadata(MetadataKey.PAGE_MARGINALIA)) {
         resolve(page)
         return
@@ -103,7 +103,7 @@ export class AddMarginalia extends PageProcessor {
       let previousY = 0
 
       for (let i = 0; i < pageMarginalia.length; i++) {
-        this.debug && console.log(`Processing marginalia entry ${i}`)
+        // this.debug && console.log(`Processing marginalia entry ${i}`)
         let lineNumberData = pageMarginalia[i].lineData;
         this.debug && console.log(`Previous Y: ${previousY}, line height: ${previousLineHeight}, shiftY: ${previousShiftYAdjustment}`);
 

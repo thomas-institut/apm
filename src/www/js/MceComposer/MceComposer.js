@@ -975,12 +975,14 @@ export class MceComposer extends ApmPage {
             newSubEntry.source = subEntry.source
             newSubEntry.type = subEntry.type
             newSubEntry.keyword = subEntry.keyword
-            newSubEntry.witnessData = subEntry.witnessData.map((wd) => {
-              let newWd = new WitnessDataItem()
-              newWd.setHand(wd.hand)
-              newWd.setWitnessIndex(this.mceData.chunks[chunkIndex].witnessIndices[wd.witnessIndex])
-              return newWd
-            })
+            newSubEntry.witnessData = subEntry.witnessData
+            // map((wd) => {
+            //   // let newWd = new WitnessDataItem()
+            //   // newWd.setHand(wd.hand)
+            //   // newWd.setWitnessIndex(this.mceData.chunks[chunkIndex].witnessIndices[wd.witnessIndex])
+            //   // return newWd
+            //   return wd;
+            // })
             return newSubEntry
           })
           return newEntry

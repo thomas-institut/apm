@@ -36,7 +36,7 @@ export class ApparatusSubEntry {
     this.fmtText = FmtTextFactory.empty()
     /**
      *
-     * @type {WitnessDataItem[]}
+     * @type {WitnessData[]}
      */
     this.witnessData = []
     this.keyword = ''

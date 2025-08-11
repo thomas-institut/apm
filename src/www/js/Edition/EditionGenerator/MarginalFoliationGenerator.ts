@@ -36,6 +36,7 @@ export class MarginalFoliationGenerator {
     getCurrentFoliationChanges(): FoliationChangeInfoInterface[] {
       if(this.currentFoliationChanges === null) {
         this.currentFoliationChanges = MarginalFoliationGenerator.getFoliationChangeInfoArray(this.ctData, this.lastFoliations);
+        console.log(`Current foliation changes`, this.currentFoliationChanges);
       }
       return this.currentFoliationChanges;
     }
@@ -68,8 +69,10 @@ export class MarginalFoliationGenerator {
                     hand: 0,
                     forceHandDisplay: false,
                     location: "",
-                    omitSiglum: true
+                    omitSiglum: true,
+                    realFoliationChange: (change.previousFoliation !== '')
                 }];
+                // console.log(`Adding marginalia sub entry`, subEntry);
                 subEntries.push(subEntry);
             });
             if (subEntries.length > 0) {
@@ -196,7 +199,8 @@ export class MarginalFoliationGenerator {
                     foliationChangeInfoArray.push({
                         collationTableColumn: collationTableColumnNumber,
                         witnessIndex: witnessIndex,
-                        newFoliation: newFoliation
+                        newFoliation: newFoliation,
+                        previousFoliation: lastFoliation,
                     });
                     lastFoliation = newFoliation;
                 }

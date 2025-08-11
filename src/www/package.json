@@ -6,7 +6,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run test/js",
     "test-watch": "vitest",
     "build": "vite build",
     "dev": "vite",

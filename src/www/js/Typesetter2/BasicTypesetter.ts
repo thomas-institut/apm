@@ -816,7 +816,7 @@ export class BasicTypesetter extends Typesetter2 {
     page.addMetadata(MetadataKey.PAGE_NUMBER, pageNumber)
 
     let marginalia = this.options.getMarginaliaForLineRange(firstLine, lastLine);
-    console.log(`Marginalia ${firstLine} to ${lastLine}: ${marginalia}`)
+    // console.log(`Marginalia ${firstLine} to ${lastLine}: ${marginalia}`)
     page.addMetadata(MetadataKey.PAGE_MARGINALIA, marginalia)
     return [page];
   }

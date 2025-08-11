@@ -19,7 +19,9 @@
 
 namespace ThomasInstitut\Test\DataCache;
 
+use Exception;
 use PHPUnit\Framework\TestCase;
+use Predis\Client;
 use ThomasInstitut\DataCache\Reference\DataCacheReferenceTest;
 use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
 
@@ -27,13 +29,25 @@ use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
 class ValkeyDataCacheTest extends TestCase
 {
 
+    /**
+     * @throws Exception
+     */
     public function testStandardTests() {
 
         $tester = new DataCacheReferenceTest('Valkey');
 
-        $prefix = "test_" . rand(1000000, 9999990) . ':';
+        $config = yaml_parse_file(__DIR__ . '/valkey.config.yaml');
+        if ($config === false) {
+            throw new Exception('Error parsing config file');
+        }
 
-        $tester->runAllTests(new ValkeyDataCache($prefix), 'ValkeyDataCache');
+        $host = $config['host'] ?? 'localhost';
+        $port = $config['port'] ?? 6379;
+
+        $prefix = "test_" . rand(1000000, 9999990) . ':';
+        $valkeyClient = new Client(['host' => $host, 'port' => $port]);
+
+        $tester->runAllTests(new ValkeyDataCache($prefix, $valkeyClient), 'ValkeyDataCache');
     }
 
 }

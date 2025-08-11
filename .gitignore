@@ -2,7 +2,7 @@
 config.php
 config.*.php
 testconfig.php
-config.yaml
+**/*config.yaml
 *.zip
 *.bak
 *.js.map
@@ -37,3 +37,4 @@ src/python/.idea
 /dev-logs/**
 /dev-tmp/
 /src/www/app-settings.json
+

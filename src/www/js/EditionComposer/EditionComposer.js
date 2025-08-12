@@ -17,21 +17,20 @@
  */
 
 // defaults
-import { defaultLanguageDefinition } from '../defaults/languages'
+import { defaultLanguageDefinition } from '@/defaults/languages'
 
 // utilities
 import * as Util from '../toolbox/Util.mjs'
 import { capitalizeFirstLetter, deepCopy } from '../toolbox/Util.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { pushArray } from '../toolbox/ArrayUtil.mjs'
 import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
-import { KeyCache } from '../toolbox/KeyCache/KeyCache'
-import { ServerLogger } from '../Server/ServerLogger'
+import { KeyCache } from '@/toolbox/KeyCache/KeyCache'
+import { ServerLogger } from '@/Server/ServerLogger'
 
 
 // MultiPanel UI
-import { horizontalMode, MultiPanelUI, verticalMode } from '../MultiPanelUI/MultiPanelUI'
-import { TabConfig } from '../MultiPanelUI/TabConfig'
+import { horizontalMode, MultiPanelUI, verticalMode } from '@/MultiPanelUI/MultiPanelUI'
+import { TabConfig } from '@/MultiPanelUI/TabConfig'
 
 // Panels
 import { WitnessInfoPanel } from './WitnessInfoPanel'
@@ -43,35 +42,34 @@ import { EditionPreviewPanel } from './EditionPreviewPanel'
 import { TechSupportPanel } from './TechSupportPanel'
 
 // Widgets
-import { EditableTextField } from '../widgets/EditableTextField'
+import { EditableTextField } from '@/widgets/EditableTextField'
 
 // Normalizations
-import { NormalizerRegister } from '../pages/common/NormalizerRegister'
-import { ToLowerCaseNormalizer } from '../normalizers/TokenNormalizer/ToLowerCaseNormalizer'
-import { IgnoreArabicVocalizationNormalizer } from '../normalizers/TokenNormalizer/IgnoreArabicVocalizationNormalizer'
-import { IgnoreShaddaNormalizer } from '../normalizers/TokenNormalizer/IgnoreShaddaNormalizer'
-import { RemoveHamzahMaddahFromAlifWawYahNormalizer } from '../normalizers/TokenNormalizer/RemoveHamzahMaddahFromAlifWawYahNormalizer'
-import { IgnoreTatwilNormalizer } from '../normalizers/TokenNormalizer/IgnoreTatwilNormalizer'
-import { IgnoreIsolatedHamzaNormalizer } from '../normalizers/TokenNormalizer/IgnoreIsolatedHamzaNormalizer'
+import { NormalizerRegister } from '@/pages/common/NormalizerRegister'
+import { ToLowerCaseNormalizer } from '@/normalizers/TokenNormalizer/ToLowerCaseNormalizer'
+import { IgnoreArabicVocalizationNormalizer } from '@/normalizers/TokenNormalizer/IgnoreArabicVocalizationNormalizer'
+import { IgnoreShaddaNormalizer } from '@/normalizers/TokenNormalizer/IgnoreShaddaNormalizer'
+import { RemoveHamzahMaddahFromAlifWawYahNormalizer } from '@/normalizers/TokenNormalizer/RemoveHamzahMaddahFromAlifWawYahNormalizer'
+import { IgnoreTatwilNormalizer } from '@/normalizers/TokenNormalizer/IgnoreTatwilNormalizer'
+import { IgnoreIsolatedHamzaNormalizer } from '@/normalizers/TokenNormalizer/IgnoreIsolatedHamzaNormalizer'
 
 
 // CtData and Edition core
-import { CtData } from '../CtData/CtData'
-import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
+import { CtData } from '@/CtData/CtData'
+import { CtDataEditionGenerator } from '@/Edition/EditionGenerator/CtDataEditionGenerator'
 import * as CollationTableType from '../constants/CollationTableType'
 import { Edition } from '../Edition/Edition.mjs'
 import * as NormalizationSource from '../constants/NormalizationSource.mjs'
 import * as WitnessType from '../Witness/WitnessType'
-import { EditionWitnessReferencesCleaner } from '../CtData/CtDataCleaner/EditionWitnessReferencesCleaner'
-import { CollationTableConsistencyCleaner } from '../CtData/CtDataCleaner/CollationTableConsistencyCleaner'
+import { EditionWitnessReferencesCleaner } from '@/CtData/CtDataCleaner/EditionWitnessReferencesCleaner'
+import { CollationTableConsistencyCleaner } from '@/CtData/CtDataCleaner/CollationTableConsistencyCleaner'
 import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
 
-import { PdfDownloadUrl } from './PdfDownloadUrl'
 // import { IgnoreHyphen } from '../normalizers/TokenNormalizer/IgnoreHyphen'
-import { ApmPage } from '../pages/ApmPage'
-import { ApmFormats } from '../pages/common/ApmFormats'
-import { urlGen } from '../pages/common/SiteUrlGen'
-import { DataId_EC_ViewOptions } from '../constants/WebStorageDataId'
+import { ApmPage } from '@/pages/ApmPage'
+import { ApmFormats } from '@/pages/common/ApmFormats'
+import { urlGen } from '@/pages/common/SiteUrlGen'
+import { DataId_EC_ViewOptions } from '@/constants/WebStorageDataId'
 
 // import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS
@@ -314,7 +312,7 @@ export class EditionComposer extends ApmPage {
       edition: this.edition
     })
 
-    this.editionPreviewPanelNew = new EditionPreviewPanel({
+    this.editionPreviewPanel = new EditionPreviewPanel({
       containerSelector: `#${editionPreviewNewTabId}`,
       edition: this.edition,
       langDef: this.options.langDef,
@@ -340,7 +338,7 @@ export class EditionComposer extends ApmPage {
          )
       })
       .concat([
-        TabConfig.createTabConfig(editionPreviewNewTabId, 'Edition Preview', this.editionPreviewPanelNew),
+        TabConfig.createTabConfig(editionPreviewNewTabId, 'Edition Preview', this.editionPreviewPanel),
         TabConfig.createTabConfig(adminPanelTabId, 'Admin', this.adminPanel),
     ])
 
@@ -605,7 +603,7 @@ export class EditionComposer extends ApmPage {
     await this.mainTextPanel.updateData(this.ctData, this.edition)  // mainTextPanel takes care of updating the apparatus panels
     this.collationTablePanel.updateCtData(this.ctData, 'EditionComposer')
     // this.editionPreviewPanel.updateData(this.ctData, this.edition)
-    this.editionPreviewPanelNew.updateData(this.edition)
+    this.editionPreviewPanel.updateData(this.edition)
     this.witnessInfoPanel.updateCtData(this.ctData, updateWitnessInfo)
     this.techSupportPanel.updateData(this.ctData, this.edition)
   }
@@ -806,40 +804,10 @@ export class EditionComposer extends ApmPage {
   }
 
   genGetPdfDownloadUrlForPreviewPanel() {
-    return PdfDownloadUrl.genGetPdfDownloadUrlForPreviewPanel()
+    return async (rawData) => {
+      return this.apmDataProxy.getPdfDownloadUrl(rawData)
+    }
   }
-
-
-  // genOnExportPdf() {
-  //   let thisObject = this
-  //   return (svg) => {
-  //     return new Promise( (resolve, reject) => {
-  //       let apiUrl = thisObject.options.urlGenerator.apiConvertSvg()
-  //       if (svg === '') {
-  //         console.log('No SVG for PDF export')
-  //         resolve('')
-  //       }
-  //       console.log(`Calling export PDF API`)
-  //       $.post(
-  //         apiUrl,
-  //         {data: JSON.stringify({
-  //             pdfId: `ct-${thisObject.options.tableId}`,
-  //             svg: svg
-  //           })}
-  //       ).done(
-  //         apiResponse => {
-  //           resolve(apiResponse.url)
-  //         }
-  //       ).fail (
-  //         error => {
-  //           console.error('PDF API error')
-  //           console.log(error)
-  //           reject()
-  //         }
-  //       )
-  //     })
-  //   }
-  // }
 
   /**
    * Changes the 'text-xxx' class to the new class, removing all others
@@ -1083,7 +1051,7 @@ export class EditionComposer extends ApmPage {
             pageInfoArrayFromServer.forEach( (pageInfo) => {
               this.cache.store(`PageInfo-${pageInfo.id}`, pageInfo)
             })
-            pushArray(pageInfoInCache, pageInfoArrayFromServer);
+            pageInfoInCache.push(...pageInfoArrayFromServer);
             console.log(`Page Info`, pageInfoInCache)
             resolve(pageInfoInCache)
           })
@@ -1267,7 +1235,7 @@ export class EditionComposer extends ApmPage {
       if (source !== 'collationTablePanel') {
         this.collationTablePanel.updateCtData(newCtData, 'EditionComposer')
       }
-      this.editionPreviewPanelNew.updateData(this.edition)
+      this.editionPreviewPanel.updateData(this.edition)
       this.witnessInfoPanel.updateCtData(this.ctData, true)
       this._updateSaveArea()
     }
@@ -1406,7 +1374,6 @@ export class EditionComposer extends ApmPage {
     let workTitle = this.options.workInfo['title']
     let workAuthorTid = this.options.workInfo['authorId']
     let workAuthorName = this.options.peopleInfo[workAuthorTid]['name']
-    let warningSign = ''
     return `<div id="ct-info" title="${workAuthorName}, ${workTitle}; table ID: ${this.tableId}">${this.options.workId}-${this.options.chunkNumber}</div>`
   }
 

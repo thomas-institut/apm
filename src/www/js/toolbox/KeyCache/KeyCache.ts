@@ -65,7 +65,7 @@ export class KeyCache {
    * @param {number}ttl
    * @param {string|null}dataId
    */
-  store(key: string, data: any, ttl: number = 0, dataId: string | null = null) : void {
+  public store(key: string, data: any, ttl: number = 0, dataId: string | null = null) : void{
     let now = this.now()
     this.storeItemObject(key, {
       data: data,
@@ -90,7 +90,7 @@ export class KeyCache {
    * @param {string | null} dataId
    * @return {*|null}
    */
-  retrieve(key: string, dataId: string | null = null): any | null {
+  public retrieve(key: string, dataId: string | null = null): any | null {
     let itemData = this.getItemObject(key)
     if (itemData === undefined || itemData === null)  {
       return null
@@ -118,7 +118,7 @@ export class KeyCache {
    * Deletes the item with the given key from the cache
    * @param {string} key
    */
-  delete(key: string) : void {
+  public delete(key: string) : void {
     this.deleteItemObject(key)
   }
 
@@ -133,7 +133,7 @@ export class KeyCache {
    * @param ignoreDataIds array of dataIds to ignore
    * @return {number}
    */
-  cleanCache(before = -1, ignoreDataIds: string[] = []): number {
+  public cleanCache(before = -1, ignoreDataIds: string[] = []): number {
     let now = this.now();
     let removedItemCount = 0;
     this.getKeys().forEach( (key) => {
@@ -165,17 +165,15 @@ export class KeyCache {
 
   }
 
-  now() : number {
+  private now() : number {
     return Date.now() / 1000;
   }
 
   /**
    * Returns all the keys currently in the cache, including
    * keys for expired items
-   * @return {string[]}
-   * @protected
    */
-  getKeys(): string[] {
+  protected getKeys(): string[] {
    return this.getKeysFromRealKeysArray(Object.keys(this.cache));
   }
 
@@ -193,9 +191,8 @@ export class KeyCache {
    *
    * @param {string} key
    * @return { InternalCacheObject}
-   * @protected
    */
-  getItemObject(key: string): InternalCacheObject|null {
+  protected getItemObject(key: string): InternalCacheObject|null {
     return this.cache[this.getRealKey(key)];
   }
 
@@ -204,7 +201,7 @@ export class KeyCache {
    * @param {string}key
    * @param {InternalCacheObject}itemObject
    */
-  storeItemObject(key : string, itemObject: InternalCacheObject): void {
+  protected storeItemObject(key : string, itemObject: InternalCacheObject): void {
     this.cache[this.getRealKey(key)] = itemObject;
   }
 
@@ -213,7 +210,7 @@ export class KeyCache {
    * @param {string}key
    * @protected
    */
-  deleteItemObject(key: string): void {
+  protected deleteItemObject(key: string): void {
     delete this.cache[this.getRealKey(key)];
   }
 

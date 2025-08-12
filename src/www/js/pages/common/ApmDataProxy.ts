@@ -17,12 +17,12 @@
  */
 
 
-import { KeyCache } from '../../toolbox/KeyCache/KeyCache'
-import { WebStorageKeyCache } from '../../toolbox/KeyCache/WebStorageKeyCache'
-import { CachedFetcher } from '../../toolbox/CachedFetcher'
+import { KeyCache } from '@/toolbox/KeyCache/KeyCache'
+import { WebStorageKeyCache } from '@/toolbox/KeyCache/WebStorageKeyCache'
+import { CachedFetcher } from '@/toolbox/CachedFetcher'
 import { urlGen } from './SiteUrlGen'
-import { wait } from '../../toolbox/wait'
-import { SimpleLockManager } from '../../toolbox/SimpleLockManager'
+import { wait } from '@/toolbox/wait'
+import { SimpleLockManager } from '@/toolbox/SimpleLockManager'
 import * as Entity from '../../constants/Entity'
 import {EntityDataInterface} from "../../../schema/Schema";
 
@@ -38,6 +38,22 @@ const EntityDataCacheKeyPrefix = 'EntityData'
 
 const MaxSystemEntityId = 10000000;
 
+
+
+export interface CollationTableVersionInfo {
+  tableId: number;
+  title: string;
+  type: string;
+  timeFrom: string;
+  timeUntil: string;
+  isLatestVersion: boolean;
+  archived: boolean
+}
+
+export interface PdfUrlResponse {
+  url: string | null;
+  errorMsg?: string;
+}
 
 /**
  * Class to wrap most API calls to the APM and provide caching
@@ -87,6 +103,39 @@ export class ApmDataProxy {
 
   async getPersonEssentialData(personId: number):Promise<any> {
     return await this.getApmEntityData('Person', 'essential',  personId, 'local');
+  }
+
+  async getPdfDownloadUrl(rawData: any): Promise<PdfUrlResponse> {
+    try {
+      const resp = await this.post(urlGen.apiTypesetRaw(), rawData, true);
+      console.log(`Got PDF download resp`, resp);
+      if (resp.status !== 'OK'){
+        return {
+          url: null,
+          errorMsg: `Could not get PDF download url: ${resp.status}`
+        }
+      }
+      return {
+        url: resp.url
+      }
+    } catch (error) {
+      console.warn(`Error getting PDF download url`, error);
+      return {
+        url: null,
+        errorMsg: `Could not get PDF download url`
+      }
+    }
+  }
+
+
+  async getCollationTableVersionInfo(tableId: number, versionTimeString: string): Promise<CollationTableVersionInfo|null> {
+
+    try {
+      return await this.get(urlGen.apiCollationTableVersionInfo(tableId, versionTimeString));
+    } catch (error) {
+      console.error(`Error getting collation table version info ${tableId}, ${versionTimeString}`, error);
+      return null;
+    }
   }
 
   async getAllPersonEssentialData():Promise<any>{
@@ -290,9 +339,8 @@ export class ApmDataProxy {
   /**
    * Post to the APM server.
    * @param {string}url
-   * @param {{}}payload
+   * @param {any}payload
    * @param {boolean}useRawData if true, the payload is posted as is, otherwise the payload is encapsulated in an object `{ data: payload}`
-   * @return {Promise<{}>}
    */
   post(url: string, payload: any, useRawData: boolean = false): Promise<any> {
     return this.fetch(url, 'POST', payload, true, useRawData)

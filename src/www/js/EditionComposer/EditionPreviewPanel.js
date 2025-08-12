@@ -232,7 +232,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
   }
 
   _genOnClickDownloadPdfButton() {
-    return () => {
+    return async () => {
       let typesettingParameters = this.viewer.getTypesettingParameters()
       if (typesettingParameters === undefined) {
         console.log(`Edition typesetting not ready yet`)
@@ -254,19 +254,18 @@ export class EditionPreviewPanel extends PanelWithToolbar {
         extraData: typesettingParameters.extraData
       }
       console.log(`About to call PDF API with the following data:`)
-      console.log(data)
+      console.log(data);
       let currentButtonHtml = this.downloadPdfButton.html()
-      this.downloadPdfButton.html(`Waiting for server's PDF... ${this.options.icons.busy}`)
-      this.options.getPdfDownloadUrl(data).then( (url) => {
-        this.debug && console.log(`PDF download URL: ${url}`)
-        this.downloadPdfButton.html(currentButtonHtml)
-        if (url !== undefined && url !== '') {
-          window.open(url)
-        }
-      }).catch( () => {
-        console.log('PDF export error')
-      })
-
+      this.downloadPdfButton.html(`Waiting for server's PDF... ${this.options.icons.busy}`);
+      /** @var {PdfUrlResponse}*/
+      const result = await this.options.getPdfDownloadUrl(data);
+      if (result.url === null) {
+        this.downloadPdfButton.html(currentButtonHtml + ` (Error)`);
+        return
+      }
+      this.debug && console.log(`PDF download URL: ${result.url}`)
+      this.downloadPdfButton.html(currentButtonHtml)
+      window.open(result.url);
     }
   }
 

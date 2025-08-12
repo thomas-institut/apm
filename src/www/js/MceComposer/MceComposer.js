@@ -27,7 +27,6 @@ import { ChunkSearchPanel } from './ChunkSearchPanel'
 import { KeyCache } from '@/toolbox/KeyCache/KeyCache'
 import { CtDataEditionGenerator } from '@/Edition/EditionGenerator/CtDataEditionGenerator'
 import { EditionPreviewPanel } from '@/EditionComposer/EditionPreviewPanel'
-import { PdfDownloadUrl } from '@/EditionComposer/PdfDownloadUrl'
 import { Edition } from '../Edition/Edition.mjs'
 
 import { defaultLanguageDefinition } from '@/defaults/languages'
@@ -39,12 +38,13 @@ import { ApparatusEntry } from '../Edition/ApparatusEntry.mjs'
 import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry.mjs'
 import { EditableTextField } from '@/widgets/EditableTextField'
 import { TimeString } from '../toolbox/TimeString.mjs'
-import { BasicProfiler } from '../toolbox/BasicProfiler.ts'
+import { BasicProfiler } from '@/toolbox/BasicProfiler'
 import { CtData } from '@/CtData/CtData'
-import { WitnessDataItem } from '../Edition/WitnessDataItem.mjs'
 import { urlGen } from '@/pages/common/SiteUrlGen'
 import { ApmPage } from '@/pages/ApmPage'
 import { ApmFormats } from '@/pages/common/ApmFormats'
+import { IndexedDbKeyCache } from '@/toolbox/KeyCache/IndexedDbKeyCache'
+import { ApmDataProxy } from '@/pages/common/ApmDataProxy'
 
 const defaultIcons = {
   moveUp: '&uarr;',
@@ -92,6 +92,8 @@ export class MceComposer extends ApmPage {
         langDef : { type: 'object', default: defaultLanguageDefinition },
       }
     })
+
+    this.dbCache = new IndexedDbKeyCache('APM', 1, 'CtData');
 
     this.options = oc.getCleanOptions(options)
     this.icons = defaultIcons
@@ -143,10 +145,11 @@ export class MceComposer extends ApmPage {
   }
 
   async _init() {
+    await this.dbCache.initialize();
     await this._init_setupUi();
     await this._init_saveArea();
     await this._init_loadEdition();
-    await this._init_titleEdit();
+    this._init_titleEdit()
   }
 
   /**
@@ -765,25 +768,29 @@ export class MceComposer extends ApmPage {
    * If the CtData object is not in the cache, fetches the data from the server
    *
    * @param {number}tableId
-   * @param {string}timeStamp
+   * @param {string}versionTimeString
    * @param {boolean}useCache
    * @return {Promise<SingleChunkApiData>}
    */
-  getSingleChunkData(tableId, timeStamp = '', useCache = true) {
-    return new Promise( (resolve, reject) => {
-      let cacheKey = `SERVER-CHUNK-DATA-${tableId}-${timeStamp}`
-      if (useCache) {
-        let cachedData = this.cache.retrieve(cacheKey);
+  getSingleChunkData(tableId, versionTimeString = '', useCache = true) {
+    return new Promise( async (resolve, reject) => {
+      let dbKey = `CtData-${tableId}-${TimeString.compactEncode(versionTimeString)}`;
+      if (versionTimeString !== '' && useCache) {
+        let cachedData = await this.dbCache.retrieve(dbKey);
         if (cachedData !== null) {
-          resolve(cachedData);
-          return;
+          const versionInfo = await this.apmDataProxy.getCollationTableVersionInfo(tableId, versionTimeString);
+          if (versionInfo !== null) {
+            cachedData.isLatestVersion = versionInfo.isLatestVersion;
+            resolve(cachedData);
+            return;
+          }
         }
       }
       // really get from server
-      let url = urlGen.apiGetCollationTable(tableId, TimeString.compactEncode(timeStamp))
-      this.apmDataProxy.get(url).then( (data) => {
+      let url = urlGen.apiCollationTableGet(tableId, TimeString.compactEncode(versionTimeString))
+      this.apmDataProxy.get(url).then( async (data) => {
         /** @var {SingleChunkApiData} data */
-        console.log(`Got data table ${tableId}, timeStamp '${timeStamp}'`)
+        console.log(`Got data table ${tableId}, timeStamp '${versionTimeString}'`)
         console.log(data)
         data.ctData = CtData.getCleanAndUpdatedCtData(data.ctData)
         // cache doc info
@@ -791,8 +798,7 @@ export class MceComposer extends ApmPage {
           this.cache.store(`DOC-${docInfo['docId']}`, docInfo)
         })
         // cache data
-        cacheKey = `SERVER-CHUNK-DATA-${tableId}-${data['timeStamp']}`
-        this.cache.store(cacheKey, data)
+        await this.dbCache.store(dbKey, data);
         resolve(data)
       },
         (error) => { reject(error)})
@@ -819,11 +825,13 @@ export class MceComposer extends ApmPage {
     let numChunks = this.mceData.chunks.length
     for (let i = 0; i < numChunks; i++) {
       this.editionPanel.updateLoadingMessage(`Loading chunk edition ${i+1} of ${numChunks}`)
-      let chunk = this.mceData.chunks[i]
-      let data = await this.getSingleChunkData(
-        chunk.chunkEditionTableId,
-        chunk.version
-      );
+
+      let chunk = this.mceData.chunks[i];
+      console.log(`Loading chunk edition ${i+1} of ${numChunks}, tableId: ${chunk.chunkEditionTableId}, version ${chunk.version}`);
+      let  data = await this.getSingleChunkData(
+          chunk.chunkEditionTableId,
+          chunk.version
+        );
       this.chunksToUpdateStatuses[i] = !data.isLatestVersion;
     }
   }
@@ -870,8 +878,9 @@ export class MceComposer extends ApmPage {
 
   async regenerateEdition () {
 
-    console.log(`Regenerating edition with ${this.mceData.chunks.length} chunks`)
-     let profiler = new BasicProfiler('RegenerateEdition', true)
+    this.editionPanel.updateLoadingMessage(`Regenerating edition with ${this.mceData.chunks.length} chunks`)
+
+   let profiler = new BasicProfiler('RegenerateEdition', true)
 
     this.edition = new Edition()
     this.edition.info = {
@@ -1221,7 +1230,9 @@ export class MceComposer extends ApmPage {
   }
 
   genGetPdfDownloadUrlForPreviewPanel() {
-    return PdfDownloadUrl.genGetPdfDownloadUrlForPreviewPanel()
+    return async (rawData) => {
+      return this.apmDataProxy.getPdfDownloadUrl(rawData)
+    }
   }
 
 }

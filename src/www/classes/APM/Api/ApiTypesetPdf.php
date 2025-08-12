@@ -45,12 +45,13 @@ class ApiTypesetPdf extends ApiController
      */
     public function generatePDF(Request $request, Response $response) : Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $inputJson = $request->getParsedBody()['jsonData'] ?? null;
 
-        if (is_null($inputJson)) {
-            $this->logger->error("$this->apiCallName: No data in request");
-            return $this->responseWithStatus($response, HttpStatus::BAD_REQUEST);
-        }
+        $inputJson = $request->getBody()->getContents();
+
+//        if (is_null($inputJson)) {
+//            $this->logger->error("$this->apiCallName: No data in request");
+//            return $this->responseWithStatus($response, HttpStatus::BAD_REQUEST);
+//        }
 
         $this->logger->debug("GeneratePDF input data size is " . strlen($inputJson) . " bytes");
 

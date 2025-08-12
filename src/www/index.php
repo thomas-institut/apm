@@ -406,6 +406,12 @@ function createApiCollationTableRoutes(RouteCollectorProxy $group, ContainerInte
         })
         ->setName('api.collation.get');
 
+    $group->get('/collation-table/versionInfo/{tableId}/{timestamp}',
+        function(Request $request, Response $response) use ($container){
+            return (new ApiCollation($container))->versionInfo($request, $response);
+        })
+        ->setName('api.collation.versionInfo');
+
     $group->get('/collation-table/info/edition/active',
         function(Request $request, Response $response) use ($container){
             return (new ApiCollation($container))->getActiveEditions($response);

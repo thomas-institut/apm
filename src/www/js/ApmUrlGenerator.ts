@@ -18,6 +18,7 @@
 
 import * as Entity from './constants/Entity'
 import { Tid } from './Tid/Tid'
+import {TimeString} from "@/toolbox/TimeString.mjs";
 
 export class ApmUrlGenerator {
     private base: string = '';
@@ -347,11 +348,15 @@ export class ApmUrlGenerator {
         return `${this.apiBase}/entity/statements/edit`
     }
 
-    apiGetCollationTable(tableId: number, compactEncodedTimeString = '') {
+    apiCollationTableGet(tableId: number, compactEncodedTimeString = '') {
         if (compactEncodedTimeString !== '') {
             return `${this.apiBase}/collation-table/get/${tableId}/${compactEncodedTimeString}`
         }
         return `${this.apiBase}/collation-table/get/${tableId}`
+    }
+
+    apiCollationTableVersionInfo(tableId: number, timeStamp: string) {
+        return `${this.apiBase}/collation-table/versionInfo/${tableId}/${TimeString.compactEncode(timeStamp)}`
     }
 
     apiGetActiveEditionInfo() {

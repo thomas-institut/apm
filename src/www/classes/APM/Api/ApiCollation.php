@@ -104,6 +104,30 @@ class ApiCollation extends ApiController
 
     }
 
+    public function versionInfo(Request $request, Response $response): Response {
+        $tableId = intval($request->getAttribute('tableId'));
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":$tableId");;
+        $ctManager = $this->systemManager->getCollationTableManager();
+        $timeStamp = '';
+        $compactEncodedTimeStamp =  $request->getAttribute('timestamp', '');
+        if ($compactEncodedTimeStamp !== '') {
+            $timeStamp = TimeString::compactDecode($compactEncodedTimeStamp);
+        } else {
+            return $this->responseWithText($response, "Bad timestamp", 400);
+        }
+
+        $ctInfo = $ctManager->getCollationTableInfo($tableId, $timeStamp);
+        return $this->responseWithJson($response, [
+           'tableId' => $tableId,
+           'type' => $ctInfo->type,
+           'title' => $ctInfo->title,
+           'timeFrom' => $ctInfo->timeFrom,
+           'timeUntil' => $ctInfo->timeUntil,
+           'archived' => $ctInfo->archived,
+           'isLatestVersion' => $ctInfo->timeUntil === TimeString::END_OF_TIMES
+        ]);
+    }
+
 
     public function getTable(Request $request, Response $response): Response
     {

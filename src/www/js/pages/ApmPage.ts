@@ -6,6 +6,7 @@ import { WebStorageKeyCache } from '../toolbox/KeyCache/WebStorageKeyCache'
 import { ApmFormats } from './common/ApmFormats'
 import { DataId_EC_ViewOptions } from '../constants/WebStorageDataId'
 import {CommonData, CommonDataOptionsDefinition} from "./CommonData";
+import {SimpleLockManager} from "@/toolbox/SimpleLockManager";
 
 
 
@@ -26,6 +27,7 @@ export class ApmPage {
   protected showLanguageSelector: boolean = false;
   protected siteLanguage: string = 'en';
   protected timeZone: string = 'UTC';
+  protected lockManager: SimpleLockManager = new SimpleLockManager();
 
   private readonly constructorPromise: Promise<void> | null = null;
 
@@ -92,7 +94,6 @@ export class ApmPage {
           }
 
           this.userName = this.commonData.userInfo.userName;
-
 
           this.localCache = new WebStorageKeyCache('local', this.commonData.cacheDataId);
 

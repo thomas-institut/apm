@@ -24,8 +24,8 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
  */
 export class Panel {
   private verbose: boolean;
-  private debug: boolean;
-  private containerSelector: string;
+  protected debug: boolean;
+  protected containerSelector: string;
   private visible: boolean;
   private mode: string;
 
@@ -48,7 +48,7 @@ export class Panel {
     this.mode = ''
   }
 
-  postRender(id:string, mode:string, visible: boolean): void {
+  postRender(_id:string, mode:string, visible: boolean): void {
     this.visible = visible
     this.mode = mode
   }
@@ -63,7 +63,7 @@ export class Panel {
   onHidden() {
     this.visible = false
   }
-  getContentClasses() {
+  getContentClasses(): string[] {
     return []
   }
 

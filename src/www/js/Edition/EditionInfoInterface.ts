@@ -4,4 +4,5 @@ export interface EditionInfoInterface {
   singleChunk: boolean,
   chunkId: string,
   baseWitnessIndex: number,
+  editionId: number,
 }

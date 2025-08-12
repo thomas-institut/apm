@@ -1,14 +1,16 @@
 import { Panel } from './Panel'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { UiToolBox } from '../toolbox/UiToolBox'
+import { UiToolBox } from '@/toolbox/UiToolBox'
 
-const toolbarClass = 'panel-toolbar'
+const toolbarClass: string = 'panel-toolbar'
 const contentAreaClass  = 'panel-content'
 const contentClass = 'panel-with-toolbar'
 
 export class PanelWithToolbar extends Panel {
+  private readonly maximizeContentArea: boolean
+  private readonly contentAreaId: string;
 
-  constructor (options) {
+  constructor (options: any) {
     super(options)
     let optionsSpec = {
       maximizeContentArea: { type: 'boolean', default: true},
@@ -21,7 +23,7 @@ export class PanelWithToolbar extends Panel {
     this.contentAreaId = cleanOptions.contentAreaId
   }
 
-  onResize (visible) {
+  onResize (visible: boolean) {
     super.onResize(visible)
     if (this.maximizeContentArea) {
       //console.log(`Resizing content area for '${this.containerSelector}'`)
@@ -29,7 +31,7 @@ export class PanelWithToolbar extends Panel {
     }
   }
 
-  async generateHtml (tabId, mode, visible) {
+  async generateHtml (tabId: string , mode: string , visible: boolean ) {
     let toolbarClassString = this.getToolbarClasses().concat( [ toolbarClass]).join(' ')
     let toolbarHtml = this.generateToolbarHtml(tabId, mode, visible)
     let contentAreaClassString = this.getContentAreaClasses().concat( [ contentAreaClass]).join(' ')
@@ -38,7 +40,7 @@ export class PanelWithToolbar extends Panel {
     return `<div class="${toolbarClassString}">${toolbarHtml}</div><div class="${contentAreaClassString}" ${contentAreaIdString}>${contentHtml}</div>`
   }
 
-  getContentClasses () {
+  getContentClasses(): string[] {
     return super.getContentClasses().concat([contentClass])
   }
 
@@ -50,19 +52,19 @@ export class PanelWithToolbar extends Panel {
     return `${this.containerSelector} .${toolbarClass}`
   }
 
-  getToolbarClasses() {
+  getToolbarClasses() : string[]{
     return []
   }
 
-  generateToolbarHtml(tabId, mode, visible) {
+  generateToolbarHtml(_tabId: string, _mode: string, _visible: boolean): string {
     return ''
   }
 
-  async generateContentHtml(tabId, mode, visible) {
+  async generateContentHtml(_tabId: string, _mode: string, _visible: boolean ): Promise<string> {
     return ''
   }
 
-  getContentAreaClasses() {
+  getContentAreaClasses(): string[] {
     return []
   }
 
@@ -74,7 +76,7 @@ export class PanelWithToolbar extends Panel {
     super.onHidden()
   }
 
-  postRender (id, mode, visible) {
+  postRender (id: string, mode: string, visible: boolean) {
     super.postRender(id, mode, visible)
     if (this.maximizeContentArea) {
       //console.log(`Resizing content area for '${this.containerSelector}'`)
@@ -82,7 +84,7 @@ export class PanelWithToolbar extends Panel {
     }
   }
 
-  replaceContent(newHtml) {
+  replaceContent(newHtml: string) {
     $(this.getContentAreaSelector()).html(newHtml)
   }
 

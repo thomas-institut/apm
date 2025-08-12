@@ -47,17 +47,12 @@ class ApiTypesetPdf extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
         $inputJson = $request->getBody()->getContents();
-
-//        if (is_null($inputJson)) {
-//            $this->logger->error("$this->apiCallName: No data in request");
-//            return $this->responseWithStatus($response, HttpStatus::BAD_REQUEST);
-//        }
-
-        $this->logger->debug("GeneratePDF input data size is " . strlen($inputJson) . " bytes");
+        $this->logger->debug("GeneratePDF input data size is " . strlen($inputJson) . " bytes", [substr($inputJson, 0, 50)]);
 
         $requestId = "APM-" . hash('sha1', $inputJson);
         $this->logger->debug("GeneratePDF request id is " . $requestId);
         $inputData = json_decode($inputJson, true);
+        $this->logger->debug("GeneratePDF input data", [ $inputData ]);
         $inputData['id'] = $requestId;
         $serviceUrl = sprintf(
                 "http://%s:%s/api/typeset",

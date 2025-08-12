@@ -75,7 +75,7 @@ export async function processInputJson(data:any): Promise<OutputData> {
     }
     data.options.preTypesetApparatuses = () => {
       editionTypesettingHelper.resetExtractedMetadataInfo();
-      return new Promise( (resolve) => { resolve(true)});
+      return Promise.resolve(true);
     }
 
     data.options.getMarginaliaForLineRange =  (lineFrom: number, lineTo: number) =>{

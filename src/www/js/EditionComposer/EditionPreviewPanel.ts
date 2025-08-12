@@ -16,18 +16,13 @@
  *
  */
 
-
-
-
-
 import { PanelWithToolbar } from '@/MultiPanelUI/PanelWithToolbar'
-import { Edition } from '../Edition/Edition.mjs'
+import { Edition } from '@/Edition/Edition'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { ZoomController } from '@/toolbox/ZoomController'
 import { EditionViewerCanvas } from '@/Edition/EditionViewerCanvas'
 import { wait } from '@/toolbox/wait'
 import { BasicProfiler } from '@/toolbox/BasicProfiler'
-import { CanvasTextBoxMeasurer } from '@/Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer'
 import { Dimension } from '@/Typesetter2/Dimension'
 import { SystemStyleSheet } from '@/Typesetter2/Style/SystemStyleSheet'
 import { WebStorageKeyCache } from '@/toolbox/KeyCache/WebStorageKeyCache'
@@ -43,6 +38,19 @@ const downloadPdfButtonId = 'export-pdf-btn-new'
 const webCacheDataId = 'epp-20240312.103420';
 
 export class EditionPreviewPanel extends PanelWithToolbar {
+  private options: any;
+  private edition: Edition;
+  private webCache: WebStorageKeyCache;
+  private cacheKey: string;
+  private styleSheets: { [p: string]: any };
+  private styleSheetIds: string[];
+  private currentStyleSheetId: string;
+  private currentStyleSheet: any;
+  private downloadPdfButton!: JQuery<HTMLElement>;
+  private updatePreviewButton!: JQuery<HTMLElement>;
+  private viewer!: EditionViewerCanvas;
+  private zoomController!: ZoomController;
+  private styleSelect!: JQuery<HTMLElement>;
 
   constructor (options = {}) {
     super(options);
@@ -55,7 +63,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
       onEditionTypeset: {type: 'function', default: () => {console.log(`Event triggered: onEditionTypeset`)}},
       getPdfDownloadUrl: {
         type: 'function',
-        default: (data) => {
+        default: (data: any) => {
           this.debug && console.log(`Default getPdfDownloadUrl called`)
           this.debug && console.log(data)
           return Promise.resolve('')}
@@ -64,7 +72,6 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'Edition Preview Panel New'});
     this.options = oc.getCleanOptions(options);
     this.edition = this.options.edition;
-    this.measurer = new CanvasTextBoxMeasurer();
     this.webCache = new WebStorageKeyCache('local', webCacheDataId);
     this.cacheKey = this.getStorageKeyFromEdition();
     this.styleSheets = SystemStyleSheet.getStyleSheetsForLanguage(this.edition.lang)
@@ -79,10 +86,8 @@ export class EditionPreviewPanel extends PanelWithToolbar {
   /**
    * Returns a string that identifies the edition for the
    * purposes of saving data in web storages.
-   * @return {string}
-   * @private
    */
-  getStorageKeyFromEdition() {
+  private getStorageKeyFromEdition(): string {
     if (this.edition.info.singleChunk) {
       return `ct-${this.edition.info.tableId}`;
     } else {
@@ -90,16 +95,13 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     }
   }
 
-  /**
-   * @private
-   */
-  reloadStyleSheets() {
+  private reloadStyleSheets() {
     this.styleSheets = SystemStyleSheet.getStyleSheetsForLanguage(this.edition.lang)
     this.styleSheetIds = Object.keys(this.styleSheets)
     this.currentStyleSheet = SystemStyleSheet.getStyleSheet(this.edition.lang, this.currentStyleSheetId)
   }
 
-  generateToolbarHtml (tabId, mode, visible) {
+  generateToolbarHtml (_tabId: string, _mode: string, _visible: boolean): string {
     return `<div class="styles-div"></div>
         <div class="zoom-controller"></div>
         <div>
@@ -113,16 +115,16 @@ export class EditionPreviewPanel extends PanelWithToolbar {
   }
 
 
-  async generateContentHtml (tabId, mode, visible) {
+  async generateContentHtml (_tabId: string, _mode: string, _visible: boolean): Promise<string> {
     return `<canvas id="${canvasId}"></canvas>`
   }
 
-  postRender (id, mode, visible) {
+  postRender (_id: string, _mode: string, _visible: boolean) {
 
     this.downloadPdfButton = $(`#${downloadPdfButtonId}`)
     this.downloadPdfButton
       .off('click')
-      .on('click', this._genOnClickDownloadPdfButton())
+      .on('click', this.genOnClickDownloadPdfButton())
       .addClass('hidden')
 
     this.updatePreviewButton = $(`${this.containerSelector} .update-preview-btn`)
@@ -134,12 +136,12 @@ export class EditionPreviewPanel extends PanelWithToolbar {
         this.updatePreview()
     });
 
-    const viewerOptions = this.__getViewerOptions();
+    const viewerOptions = this.getViewerOptions();
 
     this.viewer = new EditionViewerCanvas(viewerOptions)
     this.zoomController = new ZoomController({
       containerSelector: `${this.containerSelector} div.zoom-controller`,
-      onZoom: this.__genOnZoom(),
+      onZoom: this.genOnZoom(),
       debug: false
     });
     this.zoomController.setZoomStepFromScale(viewerOptions.scale, false)
@@ -150,11 +152,13 @@ export class EditionPreviewPanel extends PanelWithToolbar {
   }
 
 
-  setupStyleSelector(){
+  private setupStyleSelector(){
     $(`${this.containerSelector} div.styles-div`).html(this.genStyleDropdownHtml(this.currentStyleSheetId))
-    this.styleSelect = $('#style-select')
+    this.styleSelect = $('#style-select');
+
     this.styleSelect.on("change", () => {
       console.log(`Current option: '${this.styleSelect.val()}'`)
+      // @ts-expect-error this.styleSelect is defined at this point
       this.currentStyleSheetId = this.styleSelect.val().toString()
       this.currentStyleSheet = SystemStyleSheet.getStyleSheet(this.edition.lang, this.currentStyleSheetId)
       this.webCache.store(this.cacheKey, {
@@ -164,12 +168,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     })
   }
 
-  /**
-   * @param {string} currentStyleId
-   * @return {string}
-   * @private
-   */
-  genStyleDropdownHtml(currentStyleId) {
+  private genStyleDropdownHtml(currentStyleId: string): string {
     let optionsHtml = this.styleSheetIds.map( (styleId) => {
       let selected = styleId === currentStyleId ? 'selected' : '';
       return `<option value="${styleId}" ${selected}>${this.styleSheets[styleId]['_metaData']['name']}`;
@@ -180,7 +179,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     </select>`;
   }
 
-  __getViewerOptions(initialScale = 1) {
+  private getViewerOptions(initialScale = 1) {
     // for now, just use the first stylesheet
     let strings = this.currentStyleSheet.getStrings()
     let defaultStyleDef = this.currentStyleSheet.getStyleDef('default')
@@ -231,7 +230,8 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     }
   }
 
-  _genOnClickDownloadPdfButton() {
+
+  private genOnClickDownloadPdfButton(): () => Promise<void> {
     return async () => {
       let typesettingParameters = this.viewer.getTypesettingParameters()
       if (typesettingParameters === undefined) {
@@ -241,10 +241,16 @@ export class EditionPreviewPanel extends PanelWithToolbar {
       // delete browser specific options, these will
       // be set by the server-side process
 
+      // A little hack here... terrible
+      // @ts-ignore
       typesettingParameters.typesetterOptions.textBoxMeasurer = undefined
+      // @ts-ignore
       typesettingParameters.typesetterOptions.getApparatusListToTypeset = undefined
+      // @ts-ignore
       typesettingParameters.typesetterOptions.preTypesetApparatuses = undefined
+      // @ts-ignore
       typesettingParameters.helperOptions.textBoxMeasurer = undefined
+      // @ts-ignore
       typesettingParameters.helperOptions.styleId = this.currentStyleSheetId
 
       let data = {
@@ -269,7 +275,13 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     }
   }
 
-  updateData(edition) {
+  public disableUpdatePreview() {
+    if (!this.updatePreviewButton.hasClass('hidden')) {
+      this.updatePreviewButton.addClass('hidden');
+    }
+  }
+
+  public updateData(edition: Edition): void {
     // this.verbose && console.log(`Updating data`);
     // this.ctData = ctData
     this.edition = edition;
@@ -287,7 +299,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     }
   }
 
-  updatePreview() {
+  private updatePreview() {
     let currentButtonHtml = this.updatePreviewButton.html()
     this.updatePreviewButton.html(`Updating preview... ${this.options.icons.busy}`);
     // wait for browser to update toolbar span and button
@@ -296,7 +308,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
       profiler.start();
       // adjust the current scale to the device's  pixel ratio
       let currentScale = this.viewer.currentScale * window.devicePixelRatio;
-      this.viewer = new EditionViewerCanvas(this.__getViewerOptions(currentScale));
+      this.viewer = new EditionViewerCanvas(this.getViewerOptions(currentScale));
       this.viewer.render().then( () => {
         profiler.stop()
         this.updatePreviewButton.html(currentButtonHtml).addClass('hidden')
@@ -308,17 +320,16 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     })
   }
 
-  __genOnZoom() {
-    return (scale) => {
+  private genOnZoom() {
+    return (scale: number): Promise<number> => {
       return new Promise ( (resolve) => {
         this.viewer.setScale(scale).then( () => {
           // this.debug && console.log(`Resolving ${scale}`)
-          this.onResize()
+          this.onResize(true)
           resolve(scale)
         })
       })
     }
-
   }
 
 }

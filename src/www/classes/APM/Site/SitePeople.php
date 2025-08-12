@@ -94,7 +94,7 @@ class SitePeople extends SiteController
             '',
             'Person',
             'PersonPage',
-            'js/pages/PersonPage.js',
+            'js/pages/PersonPage.ts',
             [
                 'personData' => $data,
                 'canManageUsers' => $canManageUsers

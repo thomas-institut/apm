@@ -159,6 +159,7 @@ export class MceComposer extends ApmPage {
    */
   _init_loadEdition () {
     return new Promise((resolve, reject) => {
+      this.previewPanel.disableUpdatePreview();
       if (this.editionId === -1) {
         // create empty MceEdition
         this.editionId = -1
@@ -705,6 +706,12 @@ export class MceComposer extends ApmPage {
   }
 
   async updateAutoMarginalFoliation(newAutoMarginalFoliation) {
+    let lockAcquired = await this.lockManager.getLock('autoMarginalFoliation', 10000);
+    if (lockAcquired === false) {
+      console.warn(`Could not acquire lock for auto marginal foliation`)
+      return
+    }
+    console.log(`Acquired lock for auto marginal foliation`)
     console.log(`Current auto marginal foliation`, deepCopy(this.mceData.includeInAutoMarginalFoliation));
     console.log(`Updating auto marginal foliation`, newAutoMarginalFoliation);
     if (arraysAreEqual(this.mceData.includeInAutoMarginalFoliation, newAutoMarginalFoliation)) {
@@ -716,8 +723,10 @@ export class MceComposer extends ApmPage {
     this.singleChunkEditions = [];
     this.editionPanel.updateData(this.mceData);
     this.updateSaveUI();
+    this.previewPanel.disableUpdatePreview();
     await this.regenerateEdition();
     this.previewPanel.updateData(this.edition);
+    this.lockManager.releaseLock('autoMarginalFoliation');
   }
 
   updateSigla(newSigla) {

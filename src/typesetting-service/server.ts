@@ -79,6 +79,8 @@ typesettingServer.post('/api/typeset', async (req, res) => {
   let outputData = await processInputJson(data);
   if (outputData.error) {
     logIt(`Typeset ${inputId}: Error typesetting: ${outputData.errorMsg}`);
+    res.status(401).json({error: true, errorMsg: outputData.errorMsg});
+    return;
   } else {
     // @ts-ignore
     processingTime += Math.round(outputData.stats.processingTime);
@@ -94,6 +96,8 @@ typesettingServer.post('/api/typeset', async (req, res) => {
 
   let start = hrtime.bigint();
   let pdfRendererInput = JSON.stringify(outputData.output);
+
+  logIt(`Typeset ${inputId}: Sending JSON to PdfRenderer, size is ${pdfRendererInput.length} bytes`);
 
 
   let pdfRendererCmdParts = PdfRenderer.split(' ');

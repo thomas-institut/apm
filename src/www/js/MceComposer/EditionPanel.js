@@ -17,21 +17,21 @@
  */
 
 
-import { Panel } from '../MultiPanelUI/Panel'
+import { Panel } from '@/MultiPanelUI/Panel'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { MceData } from '../MceData/MceData.ts'
+import { MceData } from '@/MceData/MceData'
 import * as Util from '../toolbox/Util.mjs'
-import { wait } from '../toolbox/wait.ts'
+import { wait } from '@/toolbox/wait'
 import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
-import { EditableTextField } from '../widgets/EditableTextField'
-import { transientAlert } from '../widgets/TransientAlert'
-import { ConfirmDialog, SMALL_DIALOG } from '../pages/common/ConfirmDialog'
-import { SiglaGroupsUI } from '../EditionComposer/SiglaGroupsUI'
-import { MultiToggle } from '../widgets/MultiToggle'
-import { urlGen } from '../pages/common/SiteUrlGen'
-import { ApmFormats } from '../pages/common/ApmFormats'
-import { NiceToggle } from '../widgets/NiceToggle'
-import { deepCopy } from '../toolbox/Util'
+import { EditableTextField } from '@/widgets/EditableTextField'
+import { transientAlert } from '@/widgets/TransientAlert'
+import { ConfirmDialog, SMALL_DIALOG } from '@/pages/common/ConfirmDialog'
+import { SiglaGroupsUI } from '@/EditionComposer/SiglaGroupsUI'
+import { MultiToggle } from '@/widgets/MultiToggle'
+import { urlGen } from '@/pages/common/SiteUrlGen'
+import { ApmFormats } from '@/pages/common/ApmFormats'
+import { NiceToggle } from '@/widgets/NiceToggle'
+import { deepCopy } from '@/toolbox/Util'
 
 const defaultIcons = {
   alert: '<i class="fas fa-exclamation-triangle"></i>',

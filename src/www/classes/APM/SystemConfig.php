@@ -3,6 +3,7 @@
 namespace APM;
 
 use APM\System\ConfigLoader;
+use APM\ToolBox\BaseUrlDetector;
 use ThomasInstitut\TimeString\TimeString;
 
 class SystemConfig
@@ -40,7 +41,7 @@ class SystemConfig
         $now = TimeString::now();
         return [
             '_info' => "Auto generated $now, do not edit.",
-            'baseUrl' => $config['subDir'],
+            'baseUrl' => BaseUrlDetector::detectBaseUrl($config['subDir']),
             'devMode' => $config['devMode'],
             'showLanguageSelector' => $config['siteShowLanguageSelector'],
             'copyrightNotice' => $config['copyrightNotice'],

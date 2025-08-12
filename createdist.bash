@@ -64,6 +64,7 @@ cp -R src/www/templates "$TMP_DIR"/www
 cp -R src/www/utilities "$TMP_DIR"/www
 cp -R src/www/vendor "$TMP_DIR"/www
 cp -R src/www/node_modules "$TMP_DIR"/www
+cp -R src/www/dist "$TMP_DIR"/www
 
 cp src/www/composer.json "$TMP_DIR"/www
 cp src/www/composer.lock "$TMP_DIR"/www

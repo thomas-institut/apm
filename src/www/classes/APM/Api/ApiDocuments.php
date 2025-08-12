@@ -255,11 +255,13 @@ class ApiDocuments extends ApiController
             return $this->responseWithStatus($response, 403);
         }
 
-        $rawData = $request->getBody()->getContents();
-        $postData = [];
-        parse_str($rawData, $postData);
+        $inputJson = $request->getBody()->getContents();
+        $postData =  json_decode($inputJson, true);
 
-        $this->logger->debug("Post", [ 'rawData' => $rawData, 'postData' => $postData ]);
+        if (is_null($postData)) {
+            $this->logger->error("New Document: no data in input");
+            return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_DATA], 409);
+        }
 
         $name = $postData['name'] ?? '';
         $type = $postData['type'] ?? null;
@@ -281,81 +283,6 @@ class ApiDocuments extends ApiController
         return $this->responseWithJson($response, $newDocId);
     }
 
-
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     * @throws UserNotFoundException
-     */
-    public function newDocumentOld(Request $request, Response $response): Response
-    {
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-
-        if (!$this->systemManager->getUserManager()->isRoot($this->apiUserId)){
-            $this->logger->warning("New Doc: unauthorized request",
-                    [ 'apiUserTid' => $this->apiUserId]
-                );
-            return $this->responseWithStatus($response, 403);
-        }
-        
-        $rawData = $request->getBody()->getContents();
-        $postData = [];
-        parse_str($rawData, $postData);
-        $docSettings = null;
-        if (isset($postData['data'])) {
-            $docSettings = json_decode($postData['data'], true);
-        }
-        
-        if (is_null($docSettings) ) {
-            $this->logger->error("New document: no data in input",
-                    [ 'apiUserTid' => $this->apiUserId,
-                      'apiError' => ApiController::API_ERROR_NO_DATA,
-                      'data' => $postData]);
-            return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_DATA], 409);
-        }
-
-        $this->debug('New doc',[ 'apiUserTid' => $this->apiUserId,
-                      'docSettings' => $docSettings] );
-
-        $langId = $this->systemManager->getLangIdFromCode($docSettings['lang']);
-        if ($langId === null) {
-            $this->logger->error("Invalid language",
-                [ 'apiUserTid' => $this->apiUserId,
-                    'apiError' => ApiController::API_ERROR_NO_DATA,
-                    'data' => $postData]);
-            return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_BAD_REQUEST], 409);
-        }
-        $docType = Entity::DocTypeManuscript;
-        if ($docSettings['doc_type'] === 'print') {
-            $docType = Entity::DocTypePrint;
-        }
-        $imageSource = $docSettings['image_source'] === 'bilderberg' ? Entity::ImageSourceBilderberg : Entity::ImageSourceAverroesServer;
-
-        try {
-            $docId = $this->systemManager->getDocumentManager()->createDocument(
-                $docSettings['title'],
-                $langId,
-                $docType,
-                $imageSource,
-                $docSettings['image_source_data'],
-                $this->apiUserId
-            );
-        } catch (Exception $e) {
-            $this->logger->error("New document: cannot create",
-                [ 'apiUserTid' => $this->apiUserId,
-                    'apiError' => ApiController::API_ERROR_DB_UPDATE_ERROR,
-                    'docSettings' => $docSettings,
-                    'exceptionMessage' => $e->getMessage()
-                ]
-            );
-            return $this->responseWithJson($response,['error' => ApiController::API_ERROR_DB_UPDATE_ERROR], 409);
-        }
-        $this->systemManager->onDocumentAdded($this->apiUserId, $docId);
-        return  $this->responseWithJson($response, ['newDocId' => $docId]);
-        
-    }
 
     /**
      * @param Request $request

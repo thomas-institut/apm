@@ -154,6 +154,7 @@ class SiteDocuments extends SiteController
         }
         if ($completeRebuild || count($docIds) === 0 ) {
             // redo the whole thing!
+            $systemManager->getLogger()->info("Rebuilding document data cache entirely");
             try {
                 $data = self::buildDocumentData($systemManager);
             } catch(Exception $e) {
@@ -169,9 +170,9 @@ class SiteDocuments extends SiteController
         if (count($docIds) !== 0) {
             $updatedDocs = [];
 
+            // updating existing docs
             foreach($data['docs'] as $docData) {
                 if (in_array($docData['id'],  $docIds)) {
-//                    $systemManager->getLogger()->info("Updating doc data for doc {$docData['id']}");
                     try {
                         $newDocData = self::getDocData($systemManager, $docData['id']);
                     } catch (DocumentNotFoundException) {
@@ -179,10 +180,25 @@ class SiteDocuments extends SiteController
                         // nothing to do
                         continue;
                     }
-//                    $systemManager->getLogger()->info("New doc data for doc {$docData['id']}", $newDocData);
+                    $systemManager->getLogger()->info("Updating doc data for doc {$docData['id']}");
                     $updatedDocs[] = $newDocData;
                 } else {
                     $updatedDocs[] = $docData;
+                }
+            }
+
+            // adding new
+            foreach($docIds as $docId) {
+                if (!in_array($docId, array_column($updatedDocs, 'id'))) {
+                    $systemManager->getLogger()->info("Adding doc data for new doc $docId");
+                    try {
+                        $newDocData = self::getDocData($systemManager, $docId);
+                    } catch (DocumentNotFoundException) {
+                        // a deleted document!
+                        // nothing to do
+                        continue;
+                    }
+                    $updatedDocs[] = $newDocData;
                 }
             }
             $data['docs'] = $updatedDocs;

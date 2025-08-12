@@ -2,7 +2,7 @@
 import { NormalPage } from './NormalPage';
 import { tr } from './common/SiteLang';
 import { OptionsChecker } from '@thomas-inst/optionschecker';
-import { Tid } from '../Tid/Tid';
+import { Tid } from '@/Tid/Tid';
 import { urlGen } from './common/SiteUrlGen';
 import { ApmPage } from './ApmPage';
 import { DocumentCreationDialog } from './common/DocumentCreationDialog';

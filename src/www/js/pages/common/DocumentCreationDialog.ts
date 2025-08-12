@@ -81,7 +81,7 @@ export class DocumentCreationDialog {
           imageSource: getIntVal($(`${dialogSelector} .image-source-input`)),
           imageSourceData: getStringVal($(`${dialogSelector} input.image-source-data-input`)).trim()
         };
-        console.log(`Data from form`, data);
+        // console.log(`Data from form`, data);
         return data;
       },
       validateData: async (data:any) => {

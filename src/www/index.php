@@ -526,11 +526,11 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
     // DOCUMENTS
 
     // API -> create new document
-    $group->post('/doc/new',
-        function(Request $request, Response $response) use ($container){
-            return (new ApiDocuments($container))->newDocumentOld($request, $response);
-        })
-        ->setName('api.doc.new');
+//    $group->post('/doc/new',
+//        function(Request $request, Response $response) use ($container){
+//            return (new ApiDocuments($container))->newDocumentOld($request, $response);
+//        })
+//        ->setName('api.doc.new');
 
 
     $group->get('/doc/getId/{docId}',

@@ -18,9 +18,9 @@
 
 
 import { TypesetterRenderer } from './TypesetterRenderer.js'
-import {TypesetterDocument} from "../TypesetterDocument.mjs";
+import {TypesetterDocument} from "../TypesetterDocument.js";
 import {TextBox} from "../TextBox.js";
-import {TypesetterPage} from "../TypesetterPage.mjs";
+import {TypesetterPage} from "../TypesetterPage.js";
 
 export class CanvasRenderer extends TypesetterRenderer {
   private canvas: HTMLCanvasElement;

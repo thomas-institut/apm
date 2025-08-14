@@ -21,56 +21,110 @@
 import { Glue } from '../Glue.js'
 import { TextBox } from '../TextBox.js'
 import { Dimension } from '../Dimension.js'
-import { uniq } from '../../toolbox/ArrayUtil.mjs'
-import { deepGetValuesForKey } from '../../toolbox/ObjectUtil.js'
-
-/**
- * A stylesheet is a tree of style definition
- *
- * A style definition is a collection of attribute/value pairs
- * arranged in a number of categories:
- *   strings: a set of named strings
- *   page: width (D), height (D), marginTop, marginBottom,... (D),
- *        lineNumbers (E), lineNumbersToTextDistance (D)
- *        minDistanceFromApparatusToText (D), minInterApparatusDistance (D)
- *   paragraph: lineSkip (D), indent (D), align (S), spaceBefore (D), spaceAfter (D)
- *   text: fontFamily (S), fontSize (D), fontStyle (E), fontWeight (E),  shiftY (D)
- *   glue: width (D), shrink (D), stretch (D)
- *
- *   Attributes marked with (E) only allow specific values given in the enums object below
- *   (D) denotes an attribute whose value is taken to be a dimension string (e.g. "12 pt") that can
- *   be translated to a number of pixels.
- *
- *   Any dimension expressed in em assumes that the style in which it appears has or inherits
- *   a definite value for the attribute text.fontSize, which will be used to calculate its pixel
- *   value.
- *
- */
-
-const enums = {
-  lineNumbers: [ 'none', 'arabic', 'western'],
-  fontStyle: [ '', 'italic'],
-  fontWeight: [ '', 'bold'],
-}
+import { deepGetValuesForKey } from '../../../toolbox/ObjectUtil.js'
 
 const categories = [ 'strings', 'page', 'paragraph', 'text', 'glue']
 
+export interface StyleSheetDefinition {
+  _metaData: Metadata;
+  fontConversions?: FontConversionDefinitions;
+  specialStrings?: SpecialStringsDef;
+  default: StyleDef;
+  latinText?: StyleDef;
+  arabicText?: StyleDef;
+  hebrewText?: StyleDef;
+  greekText?: StyleDef;
+  normal?: StyleDef;
+  small?: StyleDef;
+  superscript?: StyleDef;
+  subscript?: StyleDef;
+  apparatus?: StyleDef;
+  marginalia?: StyleDef;
+  [ key: string ]: StyleDef | Metadata | FontConversionDefinitions | SpecialStringsDef | undefined;
+}
+
+interface FontConversionDefinition {
+  from: any;
+  to: any;
+}
+type FontConversionDefinitions = FontConversionDefinition[];
+
+interface Metadata {
+  name: string;
+  description: string;
+}
+
+interface SpecialStringDef {
+  string: string;
+  fontFamily: string;
+}
+
+type SpecialStringsDef = SpecialStringDef[];
+
+export interface StyleDef {
+  parent?: string;
+  strings?: any;
+  page?: PageStyleDef;
+  paragraph?: ParagraphStyleDef;
+  text?: TextStyleDef;
+  glue?: GlueStyleDef;
+}
+
+export interface TextStyleDef {
+  fontFamily?: string;
+  fontStyle?: string;
+  fontWeight?: string;
+  fontSize?: string;
+  shiftY?: string;
+}
+
+export interface ParagraphStyleDef {
+  lineSkip?: string;
+  indent?: string;
+  spaceBefore?: string;
+  spaceAfter?: string;
+  align?: string;
+
+}
+
+export interface GlueStyleDef {
+  width?: string;
+  stretch?: string;
+  shrink?: string;
+}
+
+export interface PageStyleDef {
+  width?: string,
+  height?: string,
+  marginTop?: string,
+  marginLeft?: string,
+  marginBottom?: string,
+  marginRight?: string,
+  minDistanceFromApparatusToText?: string,
+  minInterApparatusDistance?: string,
+  lineNumbers?: 'arabic' | 'western' | 'none',
+  lineNumbersToTextDistance?: string,
+  lineNumbersFontSize?: string,
+  lineNumbersPosition?: string,
+  resetLineNumbersEachPage?: boolean
+}
+
 
 export class StyleSheet {
+  private readonly styles: StyleSheetDefinition;
+  private names: string[];
+  private readonly fontConversionDefinitions: FontConversionDefinitions;
+  private readonly specialStrings: SpecialStringsDef;
 
-  /**
-   *
-   * @param {Object}styleSheetDef
-   */
-  constructor (styleSheetDef) {
-    this.styles = styleSheetDef
+
+  constructor(styleSheetDef: StyleSheetDefinition) {
+    this.styles = styleSheetDef;
     if (this.styles === undefined) {
-      console.error('Undefined styles!!!')
+      console.error('Undefined styles!!!');
     }
-    this.names = this.__getNameArray(this.styles)
-    this.fontConversionDefinitions = this.styles.fontConversions !== undefined ? this.styles.fontConversions : [];
+    this.names = this.getNameArray(this.styles);
+    this.fontConversionDefinitions = this.styles.fontConversions ?? [];
     this.specialStrings = this.styles.specialStrings ?? [];
-    this.debug = true
   }
 
   getStrings(style = 'default'){
@@ -82,17 +136,17 @@ export class StyleSheet {
    * Returns an array with all the font families mentioned in the
    * stylesheet
    */
-  getFontFamilies() {
-    return uniq(deepGetValuesForKey(this.styles, 'fontFamily').filter( (family) => {
-      return family !== ''
-    }))
+  getFontFamilies(): string[] {
+    return deepGetValuesForKey(this.styles, 'fontFamily')
+    .filter( (family) => { return family !== '' })
+    .filter( (item, pos, theArray) => { return theArray.indexOf(item) === pos})
   }
 
-  merge(anotherStyleSheetDef) {
+  merge(anotherStyleSheetDef: any) {
     Object.keys(anotherStyleSheetDef).forEach( (styleName) => {
       this.__updateStyle(styleName, anotherStyleSheetDef[styleName])
     })
-    this.names = this.__getNameArray(this.styles)
+    this.names = this.getNameArray(this.styles)
   }
 
   getStyleDefinitions() {
@@ -104,7 +158,7 @@ export class StyleSheet {
   }
 
 
-  __updateStyle(styleName, styleDef) {
+  __updateStyle(styleName: string, styleDef: StyleDef) {
     if (this.styleExists(styleName)) {
       // merge
       let currentDef = this.getStyleDef(styleName)
@@ -112,8 +166,10 @@ export class StyleSheet {
         currentDef.parent = styleDef.parent
       }
       categories.forEach( (category) => {
+        // @ts-expect-error Using def as object
         if (currentDef[category] !== undefined || styleDef[category] !== undefined) {
-          currentDef[category] = this.__mergeObjects(currentDef[category], styleDef[category])
+          // @ts-expect-error Using def as object
+          currentDef[category] = this.mergeObjects(currentDef[category], styleDef[category])
         }
       })
     } else {
@@ -122,8 +178,8 @@ export class StyleSheet {
     }
   }
 
-  __mergeObjects(objA, objB) {
-    let newObject = {}
+  private mergeObjects(objA: { [key: string]: any  }  , objB: { [key: string]: any  }) {
+    let newObject: { [key: string]: any  } = {}
     // first, copy all keys defined in objA
     if (objA !== undefined) {
       Object.keys(objA).forEach( (key) => {
@@ -140,19 +196,13 @@ export class StyleSheet {
   }
 
 
-  __getNameArray(styleDefArray) {
+  private getNameArray(styleDefArray: any): string[] {
     return Object.keys(styleDefArray)
   }
 
-  /**
-   *
-   * @param {TypesetterItem}item
-   * @param {string|string[]}styles
-   * @return {Promise<TypesetterItem|Glue|TextBox>}
-   */
-  apply(item, styles) {
+  apply<T>(item: T, styles: string | string[]): Promise<T> {
     return new Promise( async (resolve) => {
-      let stylesToApply = this.__getStylesToApply(styles)
+      let stylesToApply = this.getStylesToApply(styles)
       if (stylesToApply.length === 0) {
         stylesToApply = ['default'];
       }
@@ -160,13 +210,14 @@ export class StyleSheet {
       let styleDefs = stylesToApply.map( (styleName) => {
         return this.getStyleDef(styleName)
       });
-      let baseTextBox = new TextBox()
+      let baseTextBox = new TextBox();
+
       for (let i = 0;  i < styleDefs.length; i++) {
         let styleDef = styleDefs[i]
         if (item instanceof Glue) {
-          [item, baseTextBox] = await this.applyStyleToGlue(item, styleDef, baseTextBox)
+          [item as Glue, baseTextBox] = await this.applyStyleToGlue(item, styleDef, baseTextBox)
         } else if (item instanceof TextBox) {
-          item = await this.applyStyleToTextBox(item, styleDef)
+          (item as TextBox) = await this.applyStyleToTextBox(item, styleDef)
         }
       }
       // Special characters that need specific font conversions
@@ -191,7 +242,7 @@ export class StyleSheet {
    * @param {TextBox}baseTextBox
    * @return {Promise<[Glue, TextBox]>}
    */
-  applyStyleToGlue(glueItem, styleDef, baseTextBox) {
+  applyStyleToGlue(glueItem: Glue, styleDef: StyleDef, baseTextBox: TextBox): Promise<[Glue, TextBox]> {
     return new Promise( async (resolve) => {
       // first, apply the style to the base text box
       baseTextBox = await this.applyStyleToTextBox(baseTextBox, styleDef)
@@ -199,15 +250,15 @@ export class StyleSheet {
         // then set the glue
         let glueDef = styleDef.glue
         if (glueDef.width !== undefined && glueDef.width !== '') {
-          let pixelValue = await this.getPixelValue(glueDef.width, baseTextBox)
+          let pixelValue = Dimension.getPixelValue(glueDef.width, baseTextBox.getFontSize())
           glueItem.setWidth(pixelValue)
         }
         if (glueDef.stretch !== undefined && glueDef.stretch !== '') {
-          let pixelValue = await this.getPixelValue(glueDef.stretch, baseTextBox)
+          let pixelValue = Dimension.getPixelValue(glueDef.stretch, baseTextBox.getFontSize())
           glueItem.setStretch(pixelValue)
         }
         if (glueDef.shrink !== undefined && glueDef.shrink !== '') {
-          let pixelValue = await this.getPixelValue(glueDef.shrink, baseTextBox)
+          let pixelValue = Dimension.getPixelValue(glueDef.shrink, baseTextBox.getFontSize())
           glueItem.setShrink(pixelValue)
         }
       }
@@ -221,7 +272,7 @@ export class StyleSheet {
    * @param {{}}styleDef
    * @return {Promise<TextBox>}
    */
-  applyStyleToTextBox(textBox, styleDef) {
+  applyStyleToTextBox(textBox: TextBox, styleDef: StyleDef): Promise<TextBox> {
     return new Promise( async (resolve) => {
       // this.debug && console.log(`Applying style to text box`)
       // this.debug && console.log(styleDef)
@@ -241,52 +292,18 @@ export class StyleSheet {
           if (textBox.getText() === 'scripts') {
             console.log(`Changing font size text box, current font size = ${textBox.getFontSize()}`)
           }
-          let newFontSize = await this.getPixelValue(fontDef.fontSize, textBox)
+          let newFontSize = Dimension.getPixelValue(fontDef.fontSize, textBox.getFontSize())
           textBox.setFontSize(newFontSize)
         }
         if (fontDef.shiftY !== undefined && fontDef.shiftY !== '') {
-          let newShiftY = await this.getPixelValue(fontDef.shiftY, textBox)
+          let newShiftY = Dimension.getPixelValue(fontDef.shiftY, textBox.getFontSize())
           textBox.setShiftY(newShiftY)
         }
       }
       resolve(textBox)
     })
   }
-
-  /**
-   *
-   * @param someString
-   * @param {TextBox}textBox
-   * @return {Promise<number>}
-   */
-  getPixelValue(someString, textBox) {
-    return new Promise( async (resolve) => {
-      let [value, unit] = Dimension.parse(someString)
-      switch(unit) {
-        case 'em':
-          // assume the box's current fontSize is equal to 1em and apply
-          // the conversion
-          resolve(textBox.getFontSize()*value)
-          break
-
-        case 'sp':
-          let spaceWidth = 0.25 * textBox.getFontSize()
-          console.warn(`Found deprecated 'sp' unit when getting pixel value for '${someString}', using 0.25 em as normal space`)
-          resolve(spaceWidth*value)
-          break
-
-        default:
-          resolve(Dimension.valueUnit2px(value, unit))
-      }
-    })
-  }
-
-  /**
-   *
-   * @param {string|string[]}styles
-   * @private
-   */
-  __getStylesToApply(styles) {
+  private getStylesToApply(styles: string | string[]) {
     let styleString
     if (Array.isArray(styles)) {
       styleString = styles.join(' ')
@@ -301,7 +318,7 @@ export class StyleSheet {
         console.warn(`Style '${styleName}' does not exist`)
       }
       return styleExists})
-    let stylesToApply = []
+    let stylesToApply: string[] = []
     styleArray.forEach( (styleName) => {
       stylesToApply = stylesToApply.concat(this.__getStyleAncestryLine(styleName))
     })
@@ -309,7 +326,7 @@ export class StyleSheet {
   }
 
 
-  __getStyleAncestryLine(styleName) {
+  __getStyleAncestryLine(styleName: string): string[] {
     let line = [styleName]
 
     let styleDef = this.getStyleDef(styleName)
@@ -325,39 +342,27 @@ export class StyleSheet {
    * @param {string}styleName
    * @return {boolean}
    */
-  styleExists(styleName) {
+  styleExists(styleName: string): boolean {
     return this.names.indexOf(styleName) !== -1
   }
 
-  getStyleDef(styleName) {
-    return this.styles[styleName]
+  getStyleDef(styleName: string): StyleDef {
+    const def = this.styles[styleName];
+    if (def === undefined)  {
+      console.warn(`Style '${styleName}' does not exist`)
+      return { }
+    }
+    return def as StyleDef
   }
 
-  /**
-   *
-   * @param {string[]}styleList
-   */
-  // getCompiledStyle(styleList) {
-  //
-  //   let styleDefs = this.__getStylesToApply(styleList).map( (styleName) => {
-  //     return this.getStyleDef(styleName)
-  //   })
-  //   let compiledStyle = {}
-  //   styleDefs.forEach( (styleDef) => {
-  //
-  //   })
-  //
-  //
-  //
-  // }
 
   /**
    *
    * @param styles
    */
-  getParagraphStyle(styles) {
+  getParagraphStyle(styles: string | string[]): Promise<ParagraphStyleDef> {
     return new Promise ( async (resolve)=> {
-      let stylesToApply = this.__getStylesToApply(styles)
+      let stylesToApply = this.getStylesToApply(styles)
       if (stylesToApply.length === 0) {
         stylesToApply = [ 'default']
       }
@@ -368,7 +373,7 @@ export class StyleSheet {
       })
       // this.debug && console.log(styleDefs)
       let baseTextBox = new TextBox()
-      let paragraphStyle = {}
+      let paragraphStyle: ParagraphStyleDef = {}
       for (let i = 0;  i < styleDefs.length; i++) {
         let styleDef = styleDefs[i]
         if (styleDef === undefined) {
@@ -381,14 +386,8 @@ export class StyleSheet {
     })
   }
 
-  /**
-   *
-   * @param {Object} paragraphDef
-   * @param {{}}styleDef
-   * @param {TextBox}baseTextBox
-   * @return {Promise<[Object, TextBox]>}
-   */
-  applyStyleToParagraph(paragraphDef, styleDef, baseTextBox) {
+
+  applyStyleToParagraph(paragraphDef: ParagraphStyleDef, styleDef:StyleDef, baseTextBox: TextBox): Promise<[ParagraphStyleDef, TextBox]> {
 
     return new Promise( async (resolve) => {
       // first, apply the style to the base text box
@@ -399,8 +398,10 @@ export class StyleSheet {
         let dimensionFields = ['lineSkip', 'indent', 'spaceBefore', 'spaceAfter']
         for (let i = 0; i < dimensionFields.length; i++) {
           let field = dimensionFields[i]
+          // @ts-expect-error Using def as object
           if (parDef[field] !== undefined && parDef[field] !== '') {
-            paragraphDef[field] = await this.getPixelValue(parDef[field], baseTextBox)
+            // @ts-expect-error Using def as object
+            paragraphDef[field] = Dimension.getPixelValue(parDef[field], baseTextBox.getFontSize())
           }
         }
         if( parDef.align !== undefined && parDef.align !== '') {

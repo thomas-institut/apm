@@ -23,9 +23,10 @@ import { ZoomController } from '@/toolbox/ZoomController'
 import { EditionViewerCanvas } from '@/Edition/EditionViewerCanvas'
 import { wait } from '@/toolbox/wait'
 import { BasicProfiler } from '@/toolbox/BasicProfiler'
-import { Dimension } from '@/Typesetter2/Dimension'
-import { SystemStyleSheet } from '@/Typesetter2/Style/SystemStyleSheet'
+import { Dimension } from '@/lib/Typesetter2/Dimension'
+import {SystemStyles, SystemStyleSheet} from '@/defaults/EditionStyles/SystemStyleSheet';
 import { WebStorageKeyCache } from '@/toolbox/KeyCache/WebStorageKeyCache'
+import {StyleSheet} from "@/lib/Typesetter2/Style/StyleSheet";
 
 const defaultIcons = {
   busy: '<i class="fas fa-circle-notch fa-spin"></i>',
@@ -42,10 +43,10 @@ export class EditionPreviewPanel extends PanelWithToolbar {
   private edition: Edition;
   private webCache: WebStorageKeyCache;
   private cacheKey: string;
-  private styleSheets: { [p: string]: any };
+  private styleSheets: SystemStyles;
   private styleSheetIds: string[];
   private currentStyleSheetId: string;
-  private currentStyleSheet: any;
+  private currentStyleSheet: StyleSheet;
   private downloadPdfButton!: JQuery<HTMLElement>;
   private updatePreviewButton!: JQuery<HTMLElement>;
   private viewer!: EditionViewerCanvas;

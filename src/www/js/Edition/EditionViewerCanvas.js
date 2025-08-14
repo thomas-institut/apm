@@ -17,16 +17,16 @@
  */
 import { Edition } from './Edition.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { CanvasTextBoxMeasurer } from '@/Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer'
-import { CanvasRenderer } from '@/Typesetter2/Renderer/CanvasRenderer'
+import { CanvasTextBoxMeasurer } from '@/lib/Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer'
+import { CanvasRenderer } from '@/lib/Typesetter2/Renderer/CanvasRenderer'
 import { BrowserUtilities } from '@/toolbox/BrowserUtilities'
-import { Typesetter2 } from '@/Typesetter2/Typesetter2'
+import { Typesetter2 } from '@/lib/Typesetter2/Typesetter2'
 import { EditionTypesetting } from './EditionTypesetting.js'
-import { BasicTypesetter } from '@/Typesetter2/BasicTypesetter'
+import { BasicTypesetter } from '@/lib/Typesetter2/BasicTypesetter'
 import { isRtl } from '../toolbox/Util.mjs'
 import { BasicProfiler } from '@/toolbox/BasicProfiler'
-import { Dimension } from '@/Typesetter2/Dimension'
-import { StyleSheet } from '../Typesetter2/Style/StyleSheet.mjs'
+import { Dimension } from '@/lib/Typesetter2/Dimension'
+import { StyleSheet } from '@/lib/Typesetter2/Style/StyleSheet'
 
 const pageMarginInCanvas = 20
 

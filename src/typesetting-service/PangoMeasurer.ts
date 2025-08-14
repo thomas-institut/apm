@@ -17,8 +17,8 @@
  */
 
 
-import { TextBoxMeasurer } from '../www/js/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js'
-import {TextBox} from "../www/js/Typesetter2/TextBox.js";
+import { TextBoxMeasurer } from '../www/js/lib/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js'
+import {TextBox} from "../www/js/lib/Typesetter2/TextBox.js";
 
 
 export interface PangoMeasurements {

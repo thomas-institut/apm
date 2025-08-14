@@ -1,6 +1,6 @@
 // noinspection ES6PreferShortImport
 
-import { trimWhiteSpace } from '../toolbox/Util.mjs'
+import { trimWhiteSpace } from '../../toolbox/Util.mjs'
 import { Typesetter2 } from './Typesetter2.js'
 
 
@@ -13,6 +13,9 @@ export class Dimension {
    * @return{[number, string]}
    */
   static parse(someVariable: any): [number, string] {
+    if (someVariable === undefined) {
+      return [0, 'px'];
+    }
     if (typeof someVariable === 'number') {
       return [someVariable, 'px']
     }
@@ -46,6 +49,21 @@ export class Dimension {
 
   static str2cm(someVariable: any, emSize = 0, spaceSize =0) {
     return Typesetter2.px2cm(this.str2px(someVariable, emSize,spaceSize))
+  }
+
+  /**
+   * Returns the pixel value of a dimension
+   *
+   * For example "2em" returns 2*emSize
+   *
+   * @param someVariable
+   * @param emSize in pixels
+   * @param spaceSize in pixels
+   * @return {number}
+   */
+  static getPixelValue(someVariable: any, emSize: number, spaceSize  = emSize*0.25): number {
+    let [value, unit] = this.parse(someVariable)
+    return this.valueUnit2px(value, unit, emSize, spaceSize )
   }
 
 

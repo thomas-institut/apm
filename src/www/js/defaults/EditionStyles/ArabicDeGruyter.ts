@@ -1,27 +1,18 @@
-/*
- *  Copyright (C) 2022 Universität zu Köln
- *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
- */
+// noinspection ES6PreferShortImport
 
-export const defaultArabicEditionStyle = {
+import {StyleSheetDefinition} from "../../lib/Typesetter2/Style/StyleSheet.js";
+export const arabicDeGruyter: StyleSheetDefinition = {
   _metaData: {
-    name: 'Default',
-    description: 'A4 paper, Noto Naskh'
+    name: 'De Gruyter AdobeArabic',
+    description: 'De Gruyter format with Adobe Arabic as default font'
   },
-    default: {
+  fontConversions : [
+    {
+     from: { fontFamily: 'AdobeArabic', fontWeight: 'bold'},
+      to: { fontFamily: 'AdobeArabicBold', fontWeight: ''}
+    },
+  ],
+  default: {
       strings : {
         omission: "نقص",
         addition: "ز",
@@ -30,18 +21,20 @@ export const defaultArabicEditionStyle = {
         defaultLemmaSeparator: "]",
         lineRangeSeparator: "\u2016",  // double vertical line
         entrySeparator:  "\u007c" // single vertical line
+        // entrySeparator: "\u2016",  // double vertical line
       },
+
       page: {
-        width: "21 cm",
-        height: "29.7 cm",
-        marginTop: "2 cm",
-        marginLeft: "3 cm",
-        marginBottom: "2 cm",
-        marginRight: "3 cm",
+        width: "17 cm",
+        height: "24 cm",
+        marginTop: "2.5 cm",
+        marginLeft: "2.5 cm",
+        marginBottom: "2.5 cm",
+        marginRight: "2 cm",
         minDistanceFromApparatusToText: "15 pt",
         minInterApparatusDistance: "15 pt",
         lineNumbers: "arabic",   //  "western", "arabic", "none"
-        lineNumbersToTextDistance: "0.5 cm",
+        lineNumbersToTextDistance: "0.7 cm",
         lineNumbersFontSize: "0.9 em",
         lineNumbersPosition: "right",
         resetLineNumbersEachPage: true
@@ -54,15 +47,15 @@ export const defaultArabicEditionStyle = {
         spaceAfter: "0"
       },
       text: {
-        fontFamily: "Noto Naskh Arabic",
-        fontSize: "12 pt",
+        fontFamily: "AdobeArabic",
+        fontSize: "16 pt",
         fontStyle: "",
         fontWeight: "",
         shiftY: "0"
       },
       glue: {
         width: "0.23 em",
-        shrink: "0.03 em",
+        shrink: "0.04 em",
         stretch: "0.07 em"
       },
     },
@@ -71,46 +64,45 @@ export const defaultArabicEditionStyle = {
       width: '1 em', shrink: '0.02 em', stretch: '0.08 em'
     }
   },
-    small:  {
+  small:  {
       parent: "",
       text: {
         fontSize: "0.8 em"
       }
     },
-    superscript: {
+  superscript: {
       parent: "",
       text: {
         fontSize: "0.7 em",
         shiftY: "-0.6 em"
       }
     },
-    subscript:  {
+  subscript:  {
       parent: "",
       text: {
         fontSize: "0.7 em",
         shiftY: "0.6 em"
       }
     },
-    arabicText: {
+  arabicText: {
       parent: "",
     },
-    latinText: {
+  latinText: {
       parent: "",
       text: {
         fontFamily: "FreeSerif"
       }
     },
-    normal: {
+  normal: {
       parent: "default",
       paragraph: {
-        indent: "1.5 em"
+        indent: "1 em"
       }
     },
-    h1: {
+  h1: {
       parent: "default",
       text: {
-        fontSize: "1.5 em",
-        fontWeight: "bold",
+        fontSize: "1.25 em",
       },
       paragraph: {
         align: "center",
@@ -121,8 +113,7 @@ export const defaultArabicEditionStyle = {
     h2: {
       parent: "default",
       text: {
-        fontSize: "1.2 em",
-        fontWeight: "bold",
+        fontSize: "1.1 em",
       },
       paragraph: {
         spaceBefore: "1 em",
@@ -142,48 +133,48 @@ export const defaultArabicEditionStyle = {
     apparatus: {
       parent: "default",
       text: {
-        fontSize: "10 pt",
+        fontSize: "12 pt",
       },
       paragraph: {
-        lineSkip: "15 pt"
+        lineSkip: "14 pt"
       },
       glue: {
         width: "0.23 em",
-        shrink: "0.03 em",
+        shrink: "0.04 em",
         stretch: "0.07 em"
       },
     },
     lineRangeSeparator: {
       text: {
-        fontWeight: "bold",
+        fontFamily: 'FreeSerif'
       }
     },
-    postLineRangeSeparator: {
-      glue: {
-        width: "0.23 em",
-        shrink: "0.03 em",
-        stretch: "0.2 em"
-      }
-    },
-    preEntrySeparator : {
-      glue: {
-        width: "0.23 em",
-        shrink: "0.03 em",
-        stretch: "0.14 em"
-      }
-    },
-    entrySeparator: {
-      // text: {
-      //   fontWeight: "bold",
-      // }
-    },
-    postEntrySeparator: {
-      glue: {
-        width: "0.23 em",
-        shrink: "0.03 em",
-        stretch: "0.14 em"
-      }
-    },
+  postLineRangeSeparator: {
+    glue: {
+      width: "0.23 em",
+      shrink: "0.04 em",
+      stretch: "0.14em"
+    }
+  },
+  preEntrySeparator : {
+    glue: {
+      width: "0.23 em",
+      shrink: "0.04 em",
+      stretch: "0.14 em"
+    }
+  },
+  entrySeparator: {
+    text: {
+      fontFamily: 'FreeSerif'
+    }
+  },
+  postEntrySeparator: {
+    glue: {
+      width: "0.23 em",
+      shrink: "0.04 em",
+      stretch: "0.14 em"
+    }
+  },
     apparatusLineNumbers: {
       text: {
         fontWeight: "bold",
@@ -203,14 +194,14 @@ export const defaultArabicEditionStyle = {
   marginalia: {
     parent: "default",
     text: {
-      fontSize: "9 pt",
+      fontSize: "10 pt",
     },
     paragraph: {
       lineSkip: "15 pt"
     },
     glue: {
       width: "0.23 em",
-      shrink: "0.03 em",
+      shrink: "0.04 em",
       stretch: "0.07 em"
     },
   },

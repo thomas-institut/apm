@@ -23,8 +23,8 @@ import * as FontWeight from '../FontWeight.js'
 import * as VerticalAlign from '../VerticalAlign.js'
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { Glue } from '@/Typesetter2/Glue'
-import { TextBoxFactory } from '@/Typesetter2/TextBoxFactory'
+import { Glue } from '@/lib/Typesetter2/Glue'
+import { TextBoxFactory } from '@/lib/Typesetter2/TextBoxFactory'
 import {FmtTextToken} from "@/lib/FmtText/FmtTextToken.js";
 
 const superScriptFontSize = 0.58

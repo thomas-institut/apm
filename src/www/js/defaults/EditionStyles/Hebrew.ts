@@ -1,4 +1,8 @@
-export const defaultHebrewEditionStyle = {
+// noinspection ES6PreferShortImport
+
+import {StyleSheetDefinition} from "../../lib/Typesetter2/Style/StyleSheet.js";
+
+export const defaultHebrewEditionStyle: StyleSheetDefinition = {
   _metaData: {
     name: 'Default',
     description: 'A4 paper, Linux Libertine'
@@ -29,11 +33,11 @@ export const defaultHebrewEditionStyle = {
       resetLineNumbersEachPage: false
     },
     paragraph: {
-      lineSkip: "1.25 em",
-      indent: 0,
+      lineSkip: "18 pt",
+      indent: '0',
       align: 'justified',
-      spaceBefore: 0,
-      spaceAfter: 0
+      spaceBefore: '0',
+      spaceAfter: '0'
     },
     text: {
       fontFamily: 'Linux Libertine',

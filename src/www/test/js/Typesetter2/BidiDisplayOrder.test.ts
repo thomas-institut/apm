@@ -1,7 +1,7 @@
-import {BidiDisplayOrder, IntrinsicTextDirection} from '@/Typesetter2/Bidi/BidiDisplayOrder'
+import {BidiDisplayOrder, IntrinsicTextDirection} from '@/lib/Typesetter2/Bidi/BidiDisplayOrder'
 import { isAllUpperCase, isWhiteSpace } from '@/toolbox/Util'
 import { describe, test, expect } from 'vitest'
-import {BidiOrderInfo} from "@/Typesetter2/Bidi/BidiOrderInfo";
+import {BidiOrderInfo} from "@/lib/Typesetter2/Bidi/BidiOrderInfo";
 
 
 interface TestCase {

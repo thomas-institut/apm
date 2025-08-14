@@ -1,6 +1,6 @@
 import { ItemList } from './ItemList.js'
 import { TextBox } from './TextBox.js'
-import { LanguageDetector } from '../toolbox/LanguageDetector.js'
+import { LanguageDetector } from '../../toolbox/LanguageDetector.js'
 
 export interface FontConversionDefinition {
   from: FontDefinition;

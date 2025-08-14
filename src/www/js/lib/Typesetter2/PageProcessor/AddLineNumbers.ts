@@ -10,8 +10,8 @@ import { TextBoxFactory } from '../TextBoxFactory.js'
 import { Glue } from '../Glue.js'
 import { TextBoxMeasurer } from '../TextBoxMeasurer/TextBoxMeasurer.js'
 import { Typesetter2 } from '../Typesetter2.js'
-import { NumeralStyles } from '../../toolbox/NumeralStyles.mjs'
-import { deepCopy } from '../../toolbox/Util.mjs'
+import { NumeralStyles } from '../../../toolbox/NumeralStyles.mjs'
+import { deepCopy } from '../../../toolbox/Util.mjs'
 import {TypesetterPage} from "../TypesetterPage.js";
 import {LineNumberData} from "../MainTextLineData.js";
 

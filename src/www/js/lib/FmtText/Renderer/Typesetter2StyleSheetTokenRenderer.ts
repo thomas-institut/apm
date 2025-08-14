@@ -20,18 +20,18 @@
 
 import * as FmtTokenType from '../FmtTextTokenType.js'
 import * as VerticalAlign from '../VerticalAlign.js'
-import * as DefaultStyleSheet from '../../../Typesetter2/Style/DefaultStyleSheet.mjs'
+import * as DefaultStyleSheet from '../../../lib/Typesetter2/Style/DefaultStyleSheet.js'
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { Glue } from '../../../Typesetter2/Glue.js'
-import { StyleSheet } from '../../../Typesetter2/Style/StyleSheet.mjs'
-import { TextBoxMeasurer } from '../../../Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js'
+import { Glue } from '../../../lib/Typesetter2/Glue.js'
+import { StyleSheet } from '../../../lib/Typesetter2/Style/StyleSheet.js'
+import { TextBoxMeasurer } from '../../../lib/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js'
 import { AsyncFmtTextRenderer } from './AsyncFmtTextRenderer.js'
 import * as FontStyle from '../FontStyle.js'
 import * as FontWeight from '../FontWeight.js'
-import { TextBox } from '../../../Typesetter2/TextBox.js'
-import { ObjectFactory } from '../../../Typesetter2/ObjectFactory.js'
-import {TypesetterItem} from "../../../Typesetter2/TypesetterItem.js";
+import { TextBox } from '../../../lib/Typesetter2/TextBox.js'
+import { ObjectFactory } from '../../../lib/Typesetter2/ObjectFactory.js'
+import {TypesetterItem} from "../../../lib/Typesetter2/TypesetterItem.js";
 import {FmtTextToken} from "../FmtTextToken.js";
 
 export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
@@ -83,7 +83,6 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
             break
 
           case FmtTokenType.TEXT:
-            /**@var {TextBox}textBox*/
             let textBox = await this.ss.apply( (new TextBox().setText(token.text ?? 'Error')), styleNames)
 
             if (token.fontStyle === FontStyle.ITALIC) {

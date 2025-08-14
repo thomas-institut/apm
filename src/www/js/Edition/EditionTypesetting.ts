@@ -20,39 +20,40 @@
 
 import {MainText} from './MainText.mjs';
 import {OptionsChecker} from '@thomas-inst/optionschecker';
-import {TextBoxMeasurer} from '../Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js';
-import {Box} from '../Typesetter2/Box.js';
-import {ItemList} from '../Typesetter2/ItemList.js';
-import * as TypesetterItemDirection from '../Typesetter2/TypesetterItemDirection.js';
-import * as MetadataKey from '../Typesetter2/MetadataKey.js';
-import * as ListType from '../Typesetter2/ListType.js';
-import {Glue} from '../Typesetter2/Glue.js';
+import {TextBoxMeasurer} from '../lib/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js';
+import {Box} from '../lib/Typesetter2/Box.js';
+import {ItemList} from '../lib/Typesetter2/ItemList.js';
+import * as TypesetterItemDirection from '../lib/Typesetter2/TypesetterItemDirection.js';
+import * as MetadataKey from '../lib/Typesetter2/MetadataKey.js';
+import * as ListType from '../lib/Typesetter2/ListType.js';
+import {Glue} from '../lib/Typesetter2/Glue.js';
 import * as MainTextTokenType from './MainTextTokenType.mjs';
-import {TextBox} from '../Typesetter2/TextBox.js';
+import {TextBox} from '../lib/Typesetter2/TextBox.js';
 import {
   GOOD_POINT_FOR_A_BREAK, INFINITE_PENALTY, Penalty, REALLY_GOOD_POINT_FOR_A_BREAK
-} from '../Typesetter2/Penalty.js';
+} from '../lib/Typesetter2/Penalty.js';
 import {LanguageDetector} from '../toolbox/LanguageDetector.js';
 import {getTextDirectionForLang, isRtl, removeExtraWhiteSpace} from '../toolbox/Util.mjs';
 import {FmtTextFactory} from '../lib/FmtText/FmtTextFactory.js';
-import {ObjectFactory} from '../Typesetter2/ObjectFactory.js';
+import {ObjectFactory} from '../lib/Typesetter2/ObjectFactory.js';
 import {uniq} from '../toolbox/ArrayUtil.mjs';
 import {Typesetter2StyleSheetTokenRenderer} from '../lib/FmtText/Renderer/Typesetter2StyleSheetTokenRenderer.js';
 import {ApparatusUtil} from './ApparatusUtil.mjs';
 import {NumeralStyles} from '../toolbox/NumeralStyles.mjs';
-import {TextBoxFactory} from '../Typesetter2/TextBoxFactory.js';
+import {TextBoxFactory} from '../lib/Typesetter2/TextBoxFactory.js';
 import {SiglaGroup} from './SiglaGroup.mjs';
 import {FmtTextUtil} from '../lib/FmtText/FmtTextUtil.js';
-import {StyleSheet} from '../Typesetter2/Style/StyleSheet.mjs';
-import {FontConversions} from '../Typesetter2/FontConversions.js';
+import {ParagraphStyleDef, StyleSheet} from '../lib/Typesetter2/Style/StyleSheet.js';
+import {FontConversions} from '../lib/Typesetter2/FontConversions.js';
 import {ItemLineInfo} from './ItemLineInfo.mjs';
-import {TypesetterItem} from '../Typesetter2/TypesetterItem.js';
+import {TypesetterItem} from '../lib/Typesetter2/TypesetterItem.js';
 import {MARGINALIA} from '../constants/ApparatusType.mjs';
 import {AUTO_FOLIATION} from './SubEntryType.mjs';
 import {ApparatusSubEntry} from "./ApparatusSubEntry.mjs";
 import {Apparatus} from "./Apparatus.js";
 import {ApparatusEntry} from './ApparatusEntry.mjs';
 import {Edition} from "../Edition/Edition.js";
+import {Dimension} from "../lib/Typesetter2/Dimension.js";
 
 export const MAX_LINE_COUNT = 10000;
 const enDash = '\u2013';
@@ -210,21 +211,22 @@ export class EditionTypesetting {
         let mainTextParagraph = mainTextParagraphs[mainTextParagraphIndex];
         let paragraphToTypeset = new ItemList(TypesetterItemDirection.HORIZONTAL);
         paragraphToTypeset.setTextDirection(textDirection);
-        let paragraphStyle = mainTextParagraph.type;
+        let paragraphStyle: string = mainTextParagraph.type;
         // this.debug && console.log(`Main text paragraph style: '${paragraphStyle}'`)
         if (!this.ss.styleExists(paragraphStyle)) {
           this.debug && console.log(`Paragraph style is not defined, defaulting to 'normal'`);
           paragraphStyle = 'normal';
         }
-        let paragraphStyleDef = await this.ss.getParagraphStyle(paragraphStyle);
+        let paragraphStyleDef: ParagraphStyleDef = await this.ss.getParagraphStyle(paragraphStyle);
         // this.debug && console.log(`Paragraph style ${paragraphStyle}`)
         // this.debug && console.log(paragraphStyleDef)
-
-        if (paragraphStyleDef.spaceBefore !== 0) {
-          verticalItems.push((new Glue(TypesetterItemDirection.VERTICAL)).setHeight(paragraphStyleDef.spaceBefore));
+        const spaceBefore = Dimension.getPixelValue(paragraphStyleDef.spaceBefore, 12);
+        if (spaceBefore != 0) {
+          verticalItems.push((new Glue(TypesetterItemDirection.VERTICAL)).setHeight(spaceBefore));
         }
-        if (paragraphStyleDef.indent !== 0) {
-          paragraphToTypeset.pushItem(this.createIndentBox(paragraphStyleDef, textDirection));
+        const indent = Dimension.getPixelValue(paragraphStyleDef.indent, 12);
+        if (indent !== 0) {
+          paragraphToTypeset.pushItem(this.createIndentBox(indent, textDirection));
         }
         if (paragraphStyleDef.align === 'center') {
           paragraphToTypeset.pushItem((new Box().setWidth(0)));
@@ -294,8 +296,9 @@ export class EditionTypesetting {
         paragraphToTypeset.pushItem(Glue.createLineFillerGlue().setTextDirection(textDirection));
         paragraphToTypeset.pushItem(Penalty.createForcedBreakPenalty());
         verticalItems.push(paragraphToTypeset);
-        if (paragraphStyleDef.spaceAfter !== 0) {
-          verticalItems.push((new Glue(TypesetterItemDirection.VERTICAL)).setHeight(paragraphStyleDef.spaceAfter));
+        const spaceAfter = Dimension.getPixelValue(paragraphStyleDef.spaceAfter, 12);
+        if (spaceAfter !== 0) {
+          verticalItems.push((new Glue(TypesetterItemDirection.VERTICAL)).setHeight(spaceAfter));
         }
       }
       let verticalListToTypeset = new ItemList(TypesetterItemDirection.VERTICAL);
@@ -1082,8 +1085,8 @@ export class EditionTypesetting {
    * @return {Box}
    * @private
    */
-  createIndentBox(styleDef: any, textDirection: string): Box {
-    return (new Box()).setWidth(styleDef.indent).setTextDirection(textDirection);
+  createIndentBox(width: number, textDirection: string): Box {
+    return (new Box()).setWidth(width).setTextDirection(textDirection);
   }
 
   /**

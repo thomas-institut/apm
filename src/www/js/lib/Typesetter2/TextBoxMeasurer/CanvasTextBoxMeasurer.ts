@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2022 Universität zu Köln
  *
@@ -16,10 +18,10 @@
  *
  */
 
-import {TextBoxMeasurer} from './TextBoxMeasurer';
-import {BrowserUtilities} from '@/toolbox/BrowserUtilities';
-import {FontBaselineInfo} from './FontBaselineInfo';
-import {TextBox} from "@/Typesetter2/TextBox";
+import {TextBoxMeasurer} from './TextBoxMeasurer.js';
+import {BrowserUtilities} from '../../../toolbox/BrowserUtilities.js';
+import {FontBaselineInfo} from './FontBaselineInfo.js';
+import {TextBox} from "../TextBox.js";
 
 
 export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
@@ -64,8 +66,8 @@ export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
     let fontWeight = textBox.getFontWeight() === '' ? 'normal' : textBox.getFontWeight();
     let fontStyle = textBox.getFontStyle() === '' ? 'normal' : textBox.getFontStyle();
     let fontVariant = 'normal';
-    context.font = `${fontStyle} ${fontVariant} ${fontWeight} ${textBox.fontSize}px ${textBox.getFontFamily()}`;
-    let metrics = context.measureText(textBox.text);
+    context.font = `${fontStyle} ${fontVariant} ${fontWeight} ${textBox.getFontSize()}px ${textBox.getFontFamily()}`;
+    let metrics = context.measureText(textBox.getText());
     return Promise.resolve(metrics.width);
   }
 

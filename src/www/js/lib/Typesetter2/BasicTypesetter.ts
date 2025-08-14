@@ -36,7 +36,7 @@ import {FirstFitLineBreaker} from './LineBreaker/FirstFitLineBreaker.js';
 import { AddPageNumbers } from './PageProcessor/AddPageNumbers.js'
 import { AddLineNumbers } from './PageProcessor/AddLineNumbers.js'
 import { StringCounter } from '../../toolbox/StringCounter.js'
-import { trimPunctuation } from '../../defaults/Punctuation.mjs'
+import { trimPunctuation } from '../../defaults/Punctuation.js'
 import { MAX_LINE_COUNT } from '../../Edition/EditionTypesetting.js'
 import { LanguageDetector } from '../../toolbox/LanguageDetector.js'
 import {BidiDisplayOrder, IntrinsicTextDirection} from './Bidi/BidiDisplayOrder.js';

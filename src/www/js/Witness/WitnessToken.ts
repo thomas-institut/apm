@@ -17,7 +17,7 @@
  */
 
 import * as WitnessTokenType from './WitnessTokenType.js'
-import * as NormalizationSource from '../constants/NormalizationSource.mjs'
+import * as NormalizationSource from '../constants/NormalizationSource.js'
 import {WitnessTokenInterface} from "@/CtData/CtDataInterface";
 
 /**

@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -227,7 +229,7 @@ export class Punctuation {
    * @param lang
    * @return boolean
    */
-  static stringIsAllPunctuation(theString, lang = ''){
+  static stringIsAllPunctuation(theString: string, lang = ''): boolean{
     for (let i = 0; i < theString.length; i++) {
       if (!this.characterIsPunctuation(theString.charAt(i), lang)) {
         return false
@@ -243,8 +245,8 @@ export class Punctuation {
    * @param insideWord
    * @return {boolean}
    */
-  static characterIsPunctuation(char, lang = '', insideWord = false) {
-    let definitionObjectArray = getPunctuationDefinition(lang).filter( (def) => { return def['char'] === char})
+  static characterIsPunctuation(char: string, lang = '', insideWord = false): boolean {
+    let definitionObjectArray = getPunctuationDefinition(lang).filter( (def: any) => { return def['char'] === char})
     if (definitionObjectArray.length === 0) {
       return false
     }
@@ -262,7 +264,7 @@ export class Punctuation {
    * @param theString
    * @param lang
    */
-  static stringHasPunctuation(theString, lang = '') {
+  static stringHasPunctuation(theString: string, lang = '') {
     for (let i = 0; i < theString.length; i++) {
       let char = theString.charAt(i)
       let insideWord = i > 0 && i < theString.length-1
@@ -280,8 +282,8 @@ export class Punctuation {
    * @param {string}lang
    * @return {boolean}
    */
-  static sticksToPrevious(char, lang) {
-    let definitionObjectArray = getPunctuationDefinition(lang).filter( (def) => { return def['char'] === char})
+  static sticksToPrevious(char: string, lang: string): boolean {
+    let definitionObjectArray = getPunctuationDefinition(lang).filter( (def: any) => { return def['char'] === char})
     if (definitionObjectArray.length === 0) {
       return false
     }
@@ -294,8 +296,8 @@ export class Punctuation {
    * @param {string}lang
    * @return {boolean}
    */
-  static sticksToNext(char, lang) {
-    let definitionObjectArray = getPunctuationDefinition(lang).filter( (def) => { return def['char'] === char})
+  static sticksToNext(char: string, lang: string): boolean {
+    let definitionObjectArray = getPunctuationDefinition(lang).filter( (def: any) => { return def['char'] === char})
     if (definitionObjectArray.length === 0) {
       return false
     }
@@ -304,7 +306,7 @@ export class Punctuation {
 
 }
 
-let punctuationDefinitionsPerLanguage = {}
+let punctuationDefinitionsPerLanguage: any = {}
 const defaultLangKey = 'default'
 
 function getPunctuationDefinition(lang = '') {
@@ -318,8 +320,8 @@ function getPunctuationDefinition(lang = '') {
   return punctuationDefinitionsPerLanguage[langKey]
 }
 
-function buildPunctuationDefinitionForLanguage(lang) {
-  return punctuationDefinition.map( (def) => {
+function buildPunctuationDefinitionForLanguage(lang: string) {
+  return punctuationDefinition.map( (def: any) => {
     let charDef
     if (def[lang] !== undefined) {
         charDef = def[lang]
@@ -338,8 +340,8 @@ function buildPunctuationDefinitionForLanguage(lang) {
  * @param lang
  * @return {(string)[]}
  */
-export function getPunctuationCharactersForLang(lang = '') {
-  return punctuationDefinition.filter ( (def) => {
+export function getPunctuationCharactersForLang(lang = ''): string[] {
+  return punctuationDefinition.filter ( (def: any) => {
     if (def[lang] !== undefined) {
       return def[lang].isPunctuation
     }
@@ -353,7 +355,7 @@ export function getPunctuationCharactersForLang(lang = '') {
  * @param {string}someString
  * @param {string}lang
  */
-export function trimPunctuation(someString, lang = '') {
+export function trimPunctuation(someString: string, lang: string = '') {
   return trimCharacters(someString, getPunctuationCharactersForLang(lang))
 }
 

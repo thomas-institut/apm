@@ -52,7 +52,7 @@ import { MainText } from '@/Edition/MainText'
 import { TokenMatchScorer } from '@/Edition/TokenMatchScorer'
 import { NiceToggle, toggleEvent } from '@/widgets/NiceToggle'
 import { EventThrottle } from '@/toolbox/EventThrottle'
-import { PARSER_NORMALIZER } from '../constants/NormalizationSource.mjs'
+import { PARSER_NORMALIZER } from '../constants/NormalizationSource.ts'
 import { UiToolBox } from '@/toolbox/UiToolBox'
 
 const EDIT_MODE_OFF = 'off'

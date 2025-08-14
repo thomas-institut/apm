@@ -47,7 +47,7 @@ import {ParagraphStyleDef, StyleSheet} from '../lib/Typesetter2/Style/StyleSheet
 import {FontConversions} from '../lib/Typesetter2/FontConversions.js';
 import {ItemLineInfo} from './ItemLineInfo.js';
 import {TypesetterItem} from '../lib/Typesetter2/TypesetterItem.js';
-import {MARGINALIA} from '../constants/ApparatusType.mjs';
+import {MARGINALIA} from '../constants/ApparatusType.js';
 import {AUTO_FOLIATION} from './SubEntryType.js';
 import {ApparatusSubEntry} from "./ApparatusSubEntry.js";
 import {Apparatus} from "./Apparatus.js";

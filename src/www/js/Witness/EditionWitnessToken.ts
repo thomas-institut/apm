@@ -21,7 +21,7 @@ import * as WitnessTokenType from './WitnessTokenType.js'
 import * as WitnessTokenClass from './WitnessTokenClass.js'
 import * as WitnessFormat from './EditionWitnessFormatMark.js'
 import * as EditionWitnessParagraphStyle from './EditionWitnessParagraphStyle.js'
-import * as NormalizationSource from '../constants/NormalizationSource.mjs'
+import * as NormalizationSource from '../constants/NormalizationSource.js'
 
 /**
  * A token that can appear in an edition witness

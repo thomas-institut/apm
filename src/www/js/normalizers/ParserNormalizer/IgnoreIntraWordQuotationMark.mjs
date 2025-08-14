@@ -1,7 +1,7 @@
 import * as Util from '../../toolbox/Util.mjs'
 import { ParserNormalizer } from '../../Normalizer/ParserNormalizer.mjs'
 import { WitnessToken } from '../../Witness/WitnessToken.ts'
-import * as NormalizationSource from '../../constants/NormalizationSource.mjs'
+import * as NormalizationSource from '../../constants/NormalizationSource.ts'
 import { EditionWitnessTokenStringParser } from '../../toolbox/EditionWitnessTokenStringParser.mjs'
 import * as WitnessTokenType from '../../Witness/WitnessTokenType.ts'
 

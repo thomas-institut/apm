@@ -32,7 +32,7 @@ import { MultiToggle, optionChange } from '../widgets/MultiToggle'
 import { NiceToggle, toggleEvent } from '../widgets/NiceToggle'
 import { NormalizerRegister } from '../pages/common/NormalizerRegister'
 import * as ArrayUtil from '../lib/ToolBox/ArrayUtil.ts'
-import * as NormalizationSource from '../constants/NormalizationSource.mjs'
+import * as NormalizationSource from '../constants/NormalizationSource.ts'
 import * as TranscriptionTokenType from '../Witness/WitnessTokenType.ts'
 import { defaultLanguageDefinition } from '../defaults/languages'
 import {
@@ -56,7 +56,7 @@ import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenS
 import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
 import { HtmlRenderer } from '@/lib/FmtText/Renderer/HtmlRenderer'
 import { FmtTextUtil } from '@/lib/FmtText/FmtTextUtil'
-import { Punctuation } from '../defaults/Punctuation.mjs'
+import { Punctuation } from '@/defaults/Punctuation'
 import { toolbarCharacters} from '@/EditionComposer/ToolbarCharacters'
 import { SimpleConfirmDialog } from '@/pages/common/SimpleConfirmDialog'
 

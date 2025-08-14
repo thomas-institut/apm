@@ -12,6 +12,7 @@ import {CtDataInterface, FullTxItemInterface, WitnessTokenInterface} from "@/CtD
 import {FoliationChangeInfoInterface} from "../FoliationChangeInfoInterface";
 import {MainTextToken} from "../MainTextToken";
 import {FmtTextToken} from "@/lib/FmtText/FmtTextToken.js";
+import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 
 export class MarginalFoliationGenerator {
     private readonly ctData: CtDataInterface;
@@ -64,14 +65,14 @@ export class MarginalFoliationGenerator {
                 subEntry.source = SubEntrySource.AUTO;
                 subEntry.type = SubEntryType.AUTO_FOLIATION;
                 subEntry.fmtText = this.getMarginalSubEntryFmtText(siglum, change.newFoliation);
-                subEntry.witnessData = [{
-                    witnessIndex: change.witnessIndex,
-                    hand: 0,
-                    forceHandDisplay: false,
-                    location: "",
-                    omitSiglum: true,
-                    realFoliationChange: (change.previousFoliation !== '')
-                }];
+                let witnessData = new WitnessDataItem();
+                witnessData.witnessIndex = change.witnessIndex;
+                witnessData.hand = 0;
+                witnessData.forceHandDisplay = false;
+                witnessData.location = "";
+                witnessData.omitSiglum = true;
+                witnessData.realFoliationChange = (change.previousFoliation !== '');
+                subEntry.witnessData = [witnessData];
                 // console.log(`Adding marginalia sub entry`, subEntry);
                 subEntries.push(subEntry);
             });

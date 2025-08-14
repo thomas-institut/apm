@@ -16,10 +16,10 @@
  *
  */
 
-import { Punctuation} from '../defaults/Punctuation.mjs'
-import { WitnessToken } from '../Witness/WitnessToken.ts'
+import { Punctuation} from '@/defaults/Punctuation'
+import { WitnessToken } from '@/Witness/WitnessToken'
 import { NumeralStyles } from './NumeralStyles.mjs'
-import { EditionWitnessToken } from '../Witness/EditionWitnessToken.ts'
+import { EditionWitnessToken } from '@/Witness/EditionWitnessToken'
 import { IgnoreIntraWordQuotationMark } from '../normalizers/ParserNormalizer/IgnoreIntraWordQuotationMark.mjs'
 
 export class EditionWitnessTokenStringParser {

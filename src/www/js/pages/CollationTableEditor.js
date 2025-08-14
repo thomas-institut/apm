@@ -16,13 +16,13 @@
  *
  */
 
-import { defaultLanguageDefinition } from '../defaults/languages'
+import { defaultLanguageDefinition } from '@/defaults/languages'
 import * as CollationTableType from '../constants/CollationTableType'
 import * as CollationTableInitStrategy from '../constants/CollationTableConversionInitStrategy'
 import * as WitnessType from '../Witness/WitnessType'
 import * as TranscriptionTokenType from '../Witness/WitnessTokenType.ts'
 import * as TokenClass from '../Witness/WitnessTokenClass.ts'
-import * as NormalizationSource from '../constants/NormalizationSource.mjs'
+import * as NormalizationSource from '../constants/NormalizationSource.ts'
 
 
 import { editModeOff, columnGroupEvent, columnUngroupEvent, TableEditor } from './common/TableEditor'
@@ -30,10 +30,10 @@ import * as CollationTableUtil from './common/CollationTableUtil'
 import * as PopoverFormatter from './common/CollationTablePopovers'
 
 // widgets
-import { EditableTextField } from '../widgets/EditableTextField'
-import { transientAlert} from '../widgets/TransientAlert'
-import { NiceToggle, toggleEvent} from '../widgets/NiceToggle'
-import { MultiToggle, optionChange} from '../widgets/MultiToggle'
+import { EditableTextField } from '@/widgets/EditableTextField'
+import { transientAlert} from '@/widgets/TransientAlert'
+import { NiceToggle, toggleEvent} from '@/widgets/NiceToggle'
+import { MultiToggle, optionChange} from '@/widgets/MultiToggle'
 
 import * as HttpStatusCode from '../toolbox/HttpStatusCode'
 
@@ -43,25 +43,25 @@ import * as ArrayUtil from '../lib/ToolBox/ArrayUtil.ts'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Matrix } from '@thomas-inst/matrix'
 import { ConfirmDialog } from './common/ConfirmDialog'
-import { WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
-import { FULL_TX } from '../Witness/WitnessTokenClass.ts'
+import { WitnessDiffCalculator } from '@/Edition/WitnessDiffCalculator'
+import { FULL_TX } from '@/Witness/WitnessTokenClass'
 
 // Normalizations
 
 import { NormalizerRegister } from './common/NormalizerRegister'
-import { ToLowerCaseNormalizer } from '../normalizers/TokenNormalizer/ToLowerCaseNormalizer'
-import { IgnoreArabicVocalizationNormalizer } from '../normalizers/TokenNormalizer/IgnoreArabicVocalizationNormalizer'
-import { IgnoreShaddaNormalizer } from '../normalizers/TokenNormalizer/IgnoreShaddaNormalizer'
-import { RemoveHamzahMaddahFromAlifWawYahNormalizer } from '../normalizers/TokenNormalizer/RemoveHamzahMaddahFromAlifWawYahNormalizer'
-import { IgnoreTatwilNormalizer } from '../normalizers/TokenNormalizer/IgnoreTatwilNormalizer'
-import { IgnoreIsolatedHamzaNormalizer } from '../normalizers/TokenNormalizer/IgnoreIsolatedHamzaNormalizer'
+import { ToLowerCaseNormalizer } from '@/normalizers/TokenNormalizer/ToLowerCaseNormalizer'
+import { IgnoreArabicVocalizationNormalizer } from '@/normalizers/TokenNormalizer/IgnoreArabicVocalizationNormalizer'
+import { IgnoreShaddaNormalizer } from '@/normalizers/TokenNormalizer/IgnoreShaddaNormalizer'
+import { RemoveHamzahMaddahFromAlifWawYahNormalizer } from '@/normalizers/TokenNormalizer/RemoveHamzahMaddahFromAlifWawYahNormalizer'
+import { IgnoreTatwilNormalizer } from '@/normalizers/TokenNormalizer/IgnoreTatwilNormalizer'
+import { IgnoreIsolatedHamzaNormalizer } from '@/normalizers/TokenNormalizer/IgnoreIsolatedHamzaNormalizer'
 import { deepCopy } from '../toolbox/Util.mjs'
-import { CtData } from '../CtData/CtData'
+import { CtData } from '@/CtData/CtData'
 import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser.mjs'
-import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
-import { EditionViewerSvg } from '../Edition/EditionViewerSvg'
+import { CtDataEditionGenerator } from '@/Edition/EditionGenerator/CtDataEditionGenerator'
+import { EditionViewerSvg } from '@/Edition/EditionViewerSvg'
 
-import { Punctuation} from '../defaults/Punctuation.mjs'
+import { Punctuation} from '@/defaults/Punctuation'
 import { urlGen } from './common/SiteUrlGen'
 import { ApmFormats } from './common/ApmFormats'
 import { HeaderAndContentPage } from './HeaderAndContentPage'

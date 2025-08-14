@@ -1,6 +1,8 @@
-import * as WitnessTokenType from '../Witness/WitnessTokenType.mjs'
-import { arraysAreEqual } from '../toolbox/ArrayUtil.mjs'
-import text from 'quill/blots/text'
+// noinspection ES6PreferShortImport
+
+import * as WitnessTokenType from '../Witness/WitnessTokenType.js'
+import { arraysAreEqual } from '../lib/ToolBox/ArrayUtil.js'
+import {WitnessTokenInterface} from "../CtData/CtDataInterface.js";
 
 export const NO_MATCH = 0
 export const FULL_MATCH = 1
@@ -9,7 +11,6 @@ export const SAME_TYPE = 0.25
 
 /**
  * Weight of text match
- * @type {number}
  */
 export const TEXT_SIMILARITY_MULTIPLIER = 0.65
 
@@ -22,11 +23,8 @@ export class TokenMatchScorer {
    * Returns a number between 0 a 1 that represents how similar are the given tokens
    * Tokens of same type get at least 0.2, if the have the same text they get 0.9
    * and then they get more the more format attributes they share
-   * @param {WitnessToken} a
-   * @param {WitnessToken} b
-   * @return {number}
    */
-  getMatchScore(a, b) {
+  getMatchScore(a: WitnessTokenInterface, b: WitnessTokenInterface): number {
     const attributesToCompare = [ 'fontWeight', 'fontStyle']
 
     if (a.tokenType !== b.tokenType) {
@@ -42,15 +40,19 @@ export class TokenMatchScorer {
       if (a.style !== b.style) {
         return  SAME_TYPE + scoreForEachThing
       }
-      if (!arraysAreEqual(a.formats, b.formats)){
-        return SAME_TYPE + 2*scoreForEachThing
+      if (a.formats !== undefined && b.formats !== undefined) {
+        if (!arraysAreEqual(a.formats, b.formats)){
+          return SAME_TYPE + 2*scoreForEachThing
+        }
       }
+
+
       return FULL_MATCH
     }
     // other types: word, space, punctuation
     let score = SAME_TYPE
 
-    score += TEXT_SIMILARITY_MULTIPLIER*this.__getTextSimilarityScore(a.text, b.text)
+    score += TEXT_SIMILARITY_MULTIPLIER*this.getTextSimilarityScore(a.text, b.text)
     if (a.fmtText === undefined && b.fmtText === undefined) {
       return score
     }
@@ -65,6 +67,7 @@ export class TokenMatchScorer {
     // formatted texts
     let matchedAttributes = 0
     attributesToCompare.forEach( (attribute) => {
+      // @ts-expect-error Using fmtText as object
       if (a.fmtText[attribute] === b.fmtText[attribute]) {
         matchedAttributes++
       }
@@ -73,7 +76,7 @@ export class TokenMatchScorer {
     return score
   }
 
-  __getTextSimilarityScore(textA, textB) {
+  private getTextSimilarityScore(textA: string, textB: string): number {
     const lengthScore = 0.25
     const subStrScore = 0.75
     // Super rough implementation, this should have a proper edit distance algorithm

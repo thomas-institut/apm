@@ -1,5 +1,5 @@
 import { CtDataCleaner } from './CtDataCleaner'
-import { numericSort } from '../../toolbox/ArrayUtil'
+import { numericSort } from '../../lib/ToolBox/ArrayUtil'
 import {CtDataInterface} from "../CtDataInterface";
 
 export class SubEntryPositionsConsistencyCleaner extends CtDataCleaner {

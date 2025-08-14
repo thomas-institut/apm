@@ -1,5 +1,5 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { WitnessDataItem } from '../Edition/WitnessDataItem.mjs'
+import { WitnessDataItem } from '../Edition/WitnessDataItem.ts'
 import { NumeralStyles } from '../toolbox/NumeralStyles.mjs'
 
 

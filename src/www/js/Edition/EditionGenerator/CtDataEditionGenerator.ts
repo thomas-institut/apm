@@ -70,6 +70,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
     });
     edition.infoText = `Edition from ctData, chunkId ${this.ctData.chunkId}, baseWitnessIndex: ${baseWitnessIndex}`;
     edition.info = {
+      editionId: -1,
       source: 'ctData',
       tableId: this.ctData.tableId,
       singleChunk: true,
@@ -385,7 +386,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
     });
   }
 
-  private generateMainText(witnessTokens: WitnessTokenInterface[]){
+  private generateMainText(witnessTokens: WitnessTokenInterface[]): MainTextToken[]{
 
     // TODO: find out if we need to care about normalizations here
     const normalized = false;

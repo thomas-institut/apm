@@ -17,7 +17,7 @@
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { Edition } from '../Edition/Edition.mjs'
+import { Edition } from '@/Edition/Edition'
 import { ApparatusCommon } from './ApparatusCommon.ts'
 import { PanelWithToolbar } from '@/MultiPanelUI/PanelWithToolbar'
 import { CtData } from '@/CtData/CtData'
@@ -30,16 +30,16 @@ import {
   removeExtraWhiteSpace,
   trimWhiteSpace
 } from '../toolbox/Util.mjs'
-import { varsAreEqual } from '../toolbox/ArrayUtil.mjs'
-import * as SubEntryType from '../Edition/SubEntryType.mjs'
-import * as SubEntrySource from '../Edition/SubEntrySource.mjs'
-import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry.mjs'
+import { varsAreEqual } from '@/lib/ToolBox/ArrayUtil'
+import * as SubEntryType from '../Edition/SubEntryType.js'
+import * as SubEntrySource from '../Edition/SubEntrySource.js'
+import { ApparatusSubEntry } from '@/Edition/ApparatusSubEntry'
 import { MultiToggle } from '@/widgets/MultiToggle'
-import { SiglaGroup }  from '../Edition/SiglaGroup.mjs'
-import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
+import { SiglaGroup }  from '@/Edition/SiglaGroup'
+import * as ArrayUtil from '../lib/ToolBox/ArrayUtil'
 import { ConfirmDialog } from '@/pages/common/ConfirmDialog'
 import { WitnessDataEditor } from './WitnessDataEditor'
-import { ApparatusEntry } from '../Edition/ApparatusEntry.mjs'
+import { ApparatusEntry } from '@/Edition/ApparatusEntry'
 import { TagEditor } from '@/widgets/TagEditor'
 import { UiToolBox } from '@/toolbox/UiToolBox'
 import { horizontalMode, verticalMode } from '@/MultiPanelUI/MultiPanelUI'

@@ -17,11 +17,36 @@
  */
 
 
-import * as TranscriptionTokenType from '../Witness/WitnessTokenType.mjs'
+import * as TranscriptionTokenType from '../Witness/WitnessTokenType.js'
 import * as MyersDiff from '../toolbox/MyersDiff.mjs'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
+import {WitnessInterface} from "@/CtData/CtDataInterface";
+
+
+export interface Changes {
+  tokenConversionArray: number[],
+  nonCtChanges: any[],
+  ctChanges: CtChange[]
+}
+
+interface CtChange {
+  type?: string,
+  row?: number,
+  col?: number,
+  afterCol?: number,
+  tokenIndexInNewWitness?: number,
+  currentToken?: any,
+  newToken?: any,
+  oldIndex?: number,
+  newIndex?: number,
+  isStartOfWitness?: boolean,
+  index?: number,
+}
 
 export class WitnessDiffCalculator {
+  private options: any;
+  private readonly verbose: boolean;
+  private readonly debug: boolean;
 
   constructor ( userOptions = {}) {
     let optionsDefinition = {
@@ -38,8 +63,12 @@ export class WitnessDiffCalculator {
     }
   }
 
-  getChangesBetweenWitnesses(ctRowIndex, ctRow, oldWitness, newWitness) {
-    let changes = {}
+  getChangesBetweenWitnesses(ctRowIndex: number, ctRow: number[], oldWitness: WitnessInterface, newWitness: WitnessInterface) {
+    let changes: Changes = {
+      tokenConversionArray: [],
+      nonCtChanges: [],
+      ctChanges: []
+    }
 
     if (this.verbose) {
       console.groupCollapsed(`WitnessDiffCalculator : getChangesBetweenWitnesses (ctRowIndex = ${ctRowIndex})`)
@@ -55,7 +84,7 @@ export class WitnessDiffCalculator {
     if (this.debug) {
       MyersDiff.setDebugMode()
     }
-    let editScript = MyersDiff.calculate(oldWitness['tokens'], newWitness['tokens'], function(a,b) {
+    let editScript = MyersDiff.calculate(oldWitness['tokens'], newWitness['tokens'], function(a: any,b: any) {
       if (a['tokenType'] === b['tokenType']) {
         switch(a['tokenType']) {
           case TranscriptionTokenType.WHITESPACE:
@@ -81,13 +110,9 @@ export class WitnessDiffCalculator {
       console.log('Edit Script')
       console.log(editScript)
     }
-    changes.tokenConversionArray = []
-    changes.nonCtChanges = []
-    changes.ctChanges = []
-
     let lastCtColumn = -1
     let lastCtColumnTokenIndex = -1
-    let lastDel = {}
+    let lastDel: CtChange = {}
     let state = 0
 
     for(let i=0; i < editScript.length; i++) {
@@ -115,7 +140,7 @@ export class WitnessDiffCalculator {
             break
 
           case 'INS-CT':
-            let change = {
+            let change: CtChange = {
               type: 'insertColAfter',
               row: ctRowIndex,
               afterCol: lastCtColumn,
@@ -188,6 +213,9 @@ export class WitnessDiffCalculator {
             break
 
           case 'INS-CT':
+            if (lastDel.index === undefined) {
+              throw new Error('lastDel.index is undefined')
+            }
             changes.tokenConversionArray[lastDel.index] = scriptItem.seq
             let replaceChange ={
               type: 'replace',
@@ -219,6 +247,9 @@ export class WitnessDiffCalculator {
             break
 
           case 'DEL-CT':
+            if (lastDel.index === undefined) {
+              throw new Error('lastDel.index is undefined')
+            }
             changes.tokenConversionArray[lastDel.index] = -1
             let change = {
               type: 'emptyCell',
@@ -237,6 +268,9 @@ export class WitnessDiffCalculator {
             break
 
           case 'DEL':
+            if (lastDel.index === undefined) {
+              throw new Error('lastDel.index is undefined')
+            }
             changes.tokenConversionArray[lastDel.index] = -1
             changes.nonCtChanges.push({
               type: 'delete',
@@ -248,6 +282,9 @@ export class WitnessDiffCalculator {
     // no more scriptItem ===> 'END' event
     if (state === 1) {
       this.debug && console.log(`End of edit script, state = 1`)
+      if (lastDel.index === undefined) {
+        throw new Error('lastDel.index is undefined')
+      }
       changes.tokenConversionArray[lastDel.index] = -1
       changes.ctChanges.push({
         type: 'emptyCell',
@@ -267,7 +304,7 @@ export class WitnessDiffCalculator {
 
 
 
-function getFsmEvent(editScript, ctIndex, newTokens) {
+function getFsmEvent(editScript:any, ctIndex: number, newTokens: any[]) {
   switch(editScript.command) {
     case 0:
       if (ctIndex === -1) {

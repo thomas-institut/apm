@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -17,22 +19,15 @@
  */
 
 
-import { deepCopy, trimWhiteSpace } from '../toolbox/Util.mjs'
-import { arraysAreEqual, numericSort, uniq } from '../toolbox/ArrayUtil.mjs'
+import { deepCopy } from '../toolbox/Util.mjs'
+import { arraysAreEqual, numericSort, uniq } from '../lib/ToolBox/ArrayUtil.js'
+import {SiglaGroupInterface} from "../CtData/CtDataInterface";
 
 export class SiglaGroup {
+  public siglum: string = '';
+  private witnesses: number[] = [];
 
-  constructor () {
-    this.siglum = ''
-    this.witnesses = []
-  }
-
-  /**
-   *
-   * @param {any}obj
-   * @return {SiglaGroup}
-   */
-  static fromObject(obj) {
+  static fromObject(obj: SiglaGroupInterface): SiglaGroup {
     let sg = new SiglaGroup()
     if (obj.siglum !== undefined) {
       sg.siglum = obj.siglum
@@ -44,25 +39,6 @@ export class SiglaGroup {
     return sg
   }
 
-  /**
-   *
-   * @param {string}siglum
-   * @return {SiglaGroup}
-   */
-  withSiglum(siglum) {
-    this.siglum = siglum
-    return this
-  }
-
-  /**
-   *
-   * @param witnesses
-   * @return {SiglaGroup}
-   */
-  withWitnesses(witnesses) {
-    this.witnesses = witnesses
-    return this
-  }
 
 
   /**
@@ -71,11 +47,9 @@ export class SiglaGroup {
    * (in other words, if the sigla group does not match the
    * given witness list, it returns an empty array)
    *
-   * @param {number[]}witnessesToMatch
-   * @return {number[]}
    */
-  matchWitnesses(witnessesToMatch) {
-    let matchedWitnesses = []
+  matchWitnesses(witnessesToMatch: number[]): number[] {
+    let matchedWitnesses: number[] = []
     witnessesToMatch.forEach( (w) => {
       if (this.witnesses.indexOf(w) !== -1) {
         matchedWitnesses.push(w)
@@ -87,14 +61,4 @@ export class SiglaGroup {
     }
     return []
   }
-
-
-  _normalizeInternalData() {
-    this.siglum = trimWhiteSpace(this.siglum)
-    this.witnesses = numericSort(this.witnesses)
-  }
-
-
-
-
 }

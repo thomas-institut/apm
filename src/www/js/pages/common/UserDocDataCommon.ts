@@ -2,7 +2,7 @@
 // functions to display user doc data: transcriptions, collation tables, etc
 
 
-import { numericFieldSort, stringFieldSort } from '../../toolbox/ArrayUtil'
+import { numericFieldSort, stringFieldSort } from '../../lib/ToolBox/ArrayUtil'
 import { tr } from './SiteLang'
 import { urlGen} from './SiteUrlGen'
 import { Tid } from '../../Tid/Tid'

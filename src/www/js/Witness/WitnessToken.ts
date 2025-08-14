@@ -16,8 +16,9 @@
  *
  */
 
-import * as WitnessTokenType from './WitnessTokenType.mjs'
+import * as WitnessTokenType from './WitnessTokenType.js'
 import * as NormalizationSource from '../constants/NormalizationSource.mjs'
+import {WitnessTokenInterface} from "@/CtData/CtDataInterface";
 
 /**
  * A token that can appear in a witness
@@ -35,6 +36,11 @@ import * as NormalizationSource from '../constants/NormalizationSource.mjs'
 
 
 export class WitnessToken {
+  tokenType: string
+  text: string
+  tokenClass: string
+  normalizedText: string
+  normalizationSource: string
 
   constructor () {
     this.tokenType = WitnessTokenType.EMPTY
@@ -44,34 +50,20 @@ export class WitnessToken {
     this.normalizationSource = NormalizationSource.NONE
   }
 
-  /**
-   *
-   * @param {string}wordString
-   * @return {WitnessToken}
-   */
-  setWord(wordString) {
+
+  setWord(wordString: string): this {
     this.tokenType = WitnessTokenType.WORD
     this.text = wordString
     return this
   }
 
-  /**
-   *
-   * @param {string}punctuationString
-   * @return {WitnessToken}
-   */
-  setPunctuation(punctuationString) {
+  setPunctuation(punctuationString: string): this {
     this.tokenType = WitnessTokenType.PUNCTUATION
     this.text = punctuationString
     return this
   }
 
-  /**
-   *
-   * @param {string}whiteSpaceString
-   * @return {WitnessToken}
-   */
-  setWhitespace(whiteSpaceString = ' ') {
+  setWhitespace(whiteSpaceString: string = ' '): this {
     this.tokenType = WitnessTokenType.WHITESPACE
     this.text = whiteSpaceString
     this.normalizedText = ''
@@ -85,24 +77,23 @@ export class WitnessToken {
    *
    * @param {string} normalizedText
    * @param {string} normalizationSource
-   * @return {WitnessToken}
+   * @return {this}
    */
-  withNormalization(normalizedText, normalizationSource = NormalizationSource.DEFAULT) {
+  withNormalization(normalizedText: string, normalizationSource: string = NormalizationSource.DEFAULT): this {
     this.normalizedText = normalizedText
     this.normalizationSource = normalizationSource
     return this
   }
 
   /**
-   * Returns a generic object that can be used to store the token in CtData
-   *
-   * @return {{tokenClass: string, normalizedText: string, text: string, tokenType: string, normalizationSource: string}}
+   * Returns a WitnessTokenInterface object
    */
-  getCtDataObject() {
+  getCtDataObject() : WitnessTokenInterface {
     return {
       tokenClass: this.tokenClass,
       tokenType: this.tokenType,
       text: this.text,
+      fmtText: [],
       normalizedText: this.normalizedText,
       normalizationSource: this.normalizationSource
     }

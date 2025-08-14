@@ -4,7 +4,6 @@ import { LineBreaker } from './LineBreaker.js'
 import { TextBox } from '../TextBox.js'
 import { INFINITE_PENALTY, MINUS_INFINITE_PENALTY, Penalty } from '../Penalty.js'
 import { Box } from '../Box.js'
-import { makeCopyOfArray } from '../../../toolbox/ArrayUtil.mjs'
 import { ItemList } from '../ItemList.js'
 import * as TypesetterItemDirection from '../TypesetterItemDirection.js'
 import * as MetadataKey from '../MetadataKey.js'
@@ -219,12 +218,13 @@ export class FirstFitLineBreaker extends LineBreaker {
    */
   static calculateHorizontalBadness(itemArray: TypesetterItem[], lineWidth: number, textBoxMeasurer: TextBoxMeasurer, penalty: Penalty | null = null, flagsInARow: number = 0): Promise<number> {
     return new Promise( async (resolve) =>{
-      let lineItemArray =  makeCopyOfArray(itemArray)
+      let lineItemArray =  [...itemArray];
       let penaltyValue = 0
       if (penalty !== null) {
-        penaltyValue = penalty.getPenalty()
-        if (penalty.hasItemToInsert()) {
-          lineItemArray.push(penalty.getItemToInsert())
+        penaltyValue = penalty.getPenalty();
+        const itemToInsert = penalty.getItemToInsert();
+        if (itemToInsert !== null) {
+          lineItemArray.push(itemToInsert);
         }
         if (penalty.isFlagged()) {
           penaltyValue += (flagsInARow +1)*FLAG_PENALTY

@@ -22,19 +22,20 @@ import * as ApparatusSubEntryType from '../Edition/SubEntryType'
 import { NumeralStyles } from '@/toolbox/NumeralStyles'
 import { FmtTextUtil } from '@/lib/FmtText/FmtTextUtil'
 import { TypesetterTokenRenderer } from '@/lib/FmtText/Renderer/TypesetterTokenRenderer'
-import { pushArray } from '@/toolbox/ArrayUtil'
+import { pushArray } from '@/lib/ToolBox/ArrayUtil'
 import { HtmlRenderer } from '@/lib/FmtText/Renderer/HtmlRenderer'
 import { FmtTextFactory} from '@/lib/FmtText/FmtTextFactory'
 import { escapeHtml } from '@/toolbox/Util'
 import { ApparatusUtil } from '@/Edition/ApparatusUtil'
 import * as MainTextTokenType from '@/Edition/MainTextTokenType'
 import { StringCounter } from '@/toolbox/StringCounter'
-import {ApparatusSubEntry, WitnessData} from "@/Edition/ApparatusSubEntry";
+import {ApparatusSubEntry} from "@/Edition/ApparatusSubEntry";
 import {SiglaGroup} from "@/Edition/SiglaGroup";
 import {TypesetterToken} from "@/Typesetter/TypesetterToken";
 import {FmtTextToken} from "@/lib/FmtText/FmtTextToken.js";
 import {MainTextToken} from "@/Edition/MainTextToken";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
+import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 
 
 export interface MainTextTypesettingInfo {
@@ -429,7 +430,7 @@ export class ApparatusCommon {
     }
   }
 
-  static __getSiglaHtmlFromFilledUpWitnessData(witnessData: WitnessData[], numberStyle: string) {
+  static __getSiglaHtmlFromFilledUpWitnessData(witnessData: WitnessDataItem[], numberStyle: string) {
     return witnessData.map ( (w) => {
       if (w.hand === 0 && !w.forceHandDisplay) {
         return w.siglum

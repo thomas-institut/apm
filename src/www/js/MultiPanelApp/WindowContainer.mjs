@@ -1,5 +1,5 @@
 import { ParentContainer } from './ParentContainer.mjs'
-import { allTrue } from '../toolbox/ArrayUtil.mjs'
+import { allTrue } from '../lib/ToolBox/ArrayUtil.ts'
 
 export class WindowContainer extends ParentContainer {
 

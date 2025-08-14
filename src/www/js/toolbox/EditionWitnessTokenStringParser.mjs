@@ -17,9 +17,9 @@
  */
 
 import { Punctuation} from '../defaults/Punctuation.mjs'
-import { WitnessToken } from '../Witness/WitnessToken.mjs'
+import { WitnessToken } from '../Witness/WitnessToken.ts'
 import { NumeralStyles } from './NumeralStyles.mjs'
-import { EditionWitnessToken } from '../Witness/EditionWitnessToken.mjs'
+import { EditionWitnessToken } from '../Witness/EditionWitnessToken.ts'
 import { IgnoreIntraWordQuotationMark } from '../normalizers/ParserNormalizer/IgnoreIntraWordQuotationMark.mjs'
 
 export class EditionWitnessTokenStringParser {

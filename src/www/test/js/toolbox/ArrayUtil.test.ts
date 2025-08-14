@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import * as ArrayUtil from '@/toolbox/ArrayUtil'
+import * as ArrayUtil from '@/lib/ToolBox/ArrayUtil'
 
 describe('ArrayUtil', ()=> {
   describe('Basic Functions', () => {

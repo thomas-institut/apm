@@ -21,13 +21,24 @@
 
 import { FmtTextUtil } from '../lib/FmtText/FmtTextUtil.js'
 import { deepCopy } from '../toolbox/Util.mjs'
+import {WitnessDataItem} from "./WitnessDataItem.js";
+import {SiglaGroup} from "./SiglaGroup.js";
 
 const enDash = String.fromCodePoint(0x2013)
+
+export interface LemmaComponents {
+  type: string,
+  text: string,
+  from?: string,
+  separator?: string,
+  to?: string,
+  numWords?: number
+}
 
 
 export class ApparatusUtil {
 
-  static getLemmaComponents(apparatusEntryLemma, lemmaText) {
+  static getLemmaComponents(apparatusEntryLemma: string, lemmaText: string) : LemmaComponents {
     let separator = ''
     let custom = false
     switch(apparatusEntryLemma) {
@@ -59,6 +70,7 @@ export class ApparatusUtil {
       }
     }
     return {
+      text: '',
       type: 'shortened',
       from: lemmaTextWords[0],
       separator: separator,
@@ -66,15 +78,13 @@ export class ApparatusUtil {
     }
   }
 
-  static getSiglaData(witnessData, sigla, siglaGroups) {
-    /**
-     * @var {WitnessData[]}
-     */
-    let wData = deepCopy(witnessData)
+  static getSiglaData(witnessData: WitnessDataItem[], sigla: string[], siglaGroups: SiglaGroup[]) {
+
+    let wData: WitnessDataItem[] = deepCopy(witnessData);
     let wDataArray = wData.filter( (w) => {
-      return w.omitSiglum !== true;
+      return !w.omitSiglum;
     }).map ( (w) => {
-      w.siglum = sigla[w.witnessIndex]
+      w.siglum = sigla[w.witnessIndex].toString()
       return w
     });
 

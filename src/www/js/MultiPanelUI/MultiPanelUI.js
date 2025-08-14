@@ -19,7 +19,7 @@
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import Split from 'split-grid'
-import { createIndexArray, prettyPrintArray } from '../toolbox/ArrayUtil.mjs'
+import { createIndexArray, prettyPrintArray } from '../lib/ToolBox/ArrayUtil.ts'
 import { BootstrapTabGenerator } from './BootstrapTabGenerator'
 import { UiToolBox } from '@/toolbox/UiToolBox'
 

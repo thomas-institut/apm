@@ -1,5 +1,5 @@
 import { Container } from './Container.mjs'
-import { allTrue } from '../toolbox/ArrayUtil.mjs'
+import { allTrue } from '../lib/ToolBox/ArrayUtil.ts'
 
 /**
  * A container that holds other containers but no

@@ -1,7 +1,9 @@
-import * as ApparatusType from '@/constants/ApparatusType';
-import {WitnessTokenInterface} from "@/CtData/CtDataInterface";
-import * as WitnessTokenType from "@/Witness/WitnessTokenType";
-import {Punctuation} from "@/defaults/Punctuation";
+// noinspection ES6PreferShortImport
+
+import * as ApparatusType from '../constants/ApparatusType';
+import {WitnessTokenInterface} from "../CtData/CtDataInterface";
+import * as WitnessTokenType from "../Witness/WitnessTokenType";
+import {Punctuation} from "../defaults/Punctuation";
 
 import {Group} from "./SequenceWithGroups";
 import {Apparatus} from "./Apparatus";

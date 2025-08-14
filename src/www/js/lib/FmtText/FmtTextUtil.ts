@@ -18,7 +18,7 @@
 
 import * as FmtTextTokenType from './FmtTextTokenType.js'
 import {FmtTextTokenFactory} from './FmtTextTokenFactory.js'
-import {FmtTextToken} from "./FmtTextToken.js";
+import {FmtTextToken, FmtTextTokenInterface} from "./FmtTextToken.js";
 import {FmtTextFactory} from "./FmtTextFactory.js";
 
 
@@ -86,7 +86,7 @@ export class FmtTextUtil {
    * @param {FmtTextToken}token
    * @return {string}
    */
-  static tokenGetPlainText(token: FmtTextToken): string {
+  static tokenGetPlainText(token: FmtTextToken | FmtTextTokenInterface): string {
     switch(token.type) {
       case FmtTextTokenType.GLUE:
         return ' ';

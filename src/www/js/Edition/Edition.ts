@@ -90,89 +90,62 @@ SubEntryWitnessInfo := {
 
  */
 
-import { MainTextToken } from './MainTextToken.mjs'
-import { FmtTextUtil } from '@/lib/FmtText/FmtTextUtil.js'
+import { MainTextToken } from './MainTextToken.js'
+import { FmtTextUtil } from '../lib/FmtText/FmtTextUtil.js'
+import {EditionInfoInterface} from "./EditionInfoInterface.js";
+import {Apparatus} from "./Apparatus.js";
+import {EditionWitnessInfo} from "./EditionWitnessInfo.js";
+import {SiglaGroup} from "./SiglaGroup.js";
+import {FoliationChangeInfoInterface} from "./FoliationChangeInfoInterface.js";
 
 export class Edition {
+  lang: string = '';
+  infoText: string = 'Empty Edition';
+  info: EditionInfoInterface =  {
+    baseWitnessIndex: -1,
+    chunkId: "",
+    editionId: -1,
+    singleChunk: true,
+    source: "",
+    tableId: -1
+  };
+  mainText: MainTextToken[] = [];
+  apparatuses: Apparatus[] = [];
+  witnesses: EditionWitnessInfo[] = [];
+  siglaGroups: SiglaGroup[] = [];
+  foliationChanges?: FoliationChangeInfoInterface[] | null = null;
 
-  constructor () {
-    this.lang = ''
-    this.infoText = 'Empty Edition'
-    this.info = {}
-
-    this.mainText = []
-
-    /**
-     *
-     * @member {Apparatus[]}
-     */
-    this.apparatuses = []
-
-
-    this.witnesses = []
-
-    /**
-     *
-     * @member {SiglaGroup[]}
-     */
-    this.siglaGroups = [];
-
-    /**
-     *
-     * @member {FoliationChangeInfoInterface[] | null}
-     */
-    this.foliationChanges = null;
-  }
-
-  /**
-   *
-   * @param {MainTextToken[]}mainText
-   */
-  setMainText(mainText) {
+  setMainText(mainText: MainTextToken[]): this {
     this.mainText = mainText
     return this
   }
 
-  setLang(lang) {
+  setLang(lang: string): this {
     this.lang = lang
     return this
   }
 
-  getLang() {
+  getLang(): string {
     return this.lang
   }
 
-  /**
-   *
-   * @return {string[]}
-   */
-  getSigla() {
+  getSigla(): string[] {
     return this.witnesses.map( w => w.siglum)
   }
-
-  /**
-   *
-   * @return {MainTextToken}
-   * @param {number}index
-   */
-  getMainTextToken(index) {
-    return this.mainText[index] !== undefined ? this.mainText[index] : new MainTextToken()
-  }
-
   /**
    *
    * @param {number}from
    * @param {number}to
    * @return {string}
    */
-  getPlainTextForRange(from, to) {
+  getPlainTextForRange(from: number, to: number): string {
     if (to<0 || from > to) {
       return ''
     }
     if (from < 0) {
       from = 0
     }
-    return this.mainText.filter( (token, i) => {
+    return this.mainText.filter( (_token, i) => {
       return i>=from && i<= to
     }).map ( (token) => { return  FmtTextUtil.tokenGetPlainText(token)}).join('')
   }

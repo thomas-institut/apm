@@ -19,9 +19,10 @@
  */
 
 
-import * as MainTextTokenType from './MainTextTokenType.mjs'
+import * as MainTextTokenType from './MainTextTokenType.js'
 import { FmtTextFactory } from '../lib/FmtText/FmtTextFactory.js'
 import { FmtTextUtil } from '../lib/FmtText/FmtTextUtil.js'
+import {FmtTextToken} from "../lib/FmtText/FmtTextToken.js";
 
 /**
  * A token that can appear in the main text of an edition.
@@ -55,6 +56,20 @@ import { FmtTextUtil } from '../lib/FmtText/FmtTextUtil.js'
 
 export class MainTextToken {
 
+  type: string;
+  fmtText: FmtTextToken[];
+  editionWitnessTokenIndex: number;
+  style: string;
+  space?: string;
+  lang?: string;
+  originalIndex?: number;
+  x?: number;
+  y?: number;
+  lineNumber?: number;
+  numberOfOccurrencesInLine?: number;
+  occurrenceInLine?: number;
+
+
   constructor () {
     /**
      *
@@ -77,64 +92,22 @@ export class MainTextToken {
     this.style = ''
   }
 
-  /**
-   *
-   * @return {string}
-   */
-  getPlainText() {
+  getPlainText(): string {
     return FmtTextUtil.getPlainText(this.fmtText)
   }
-
-  /**
-   *
-   * @return {boolean}
-   */
-  isEmpty() {
-    return this.type === MainTextTokenType.EMPTY
-  }
-
-  /**
-   *
-   * @param {any} theText
-   * @param {number} editionWitnessTokenIndex
-   * @param {string} lang
-   * @return {MainTextToken}
-   */
-  setText(theText, editionWitnessTokenIndex = -1, lang = '') {
+  setText(theText: any, editionWitnessTokenIndex = -1, lang = ''): this {
     this.type = MainTextTokenType.TEXT
     this.fmtText = FmtTextFactory.fromAnything(theText)
     this.editionWitnessTokenIndex = editionWitnessTokenIndex
     return this.setLang(lang)
   }
 
-  /**
-   *
-   * @param {string}style
-   * @return {MainTextToken}
-   */
-  setStyle(style) {
+  setStyle(style: string): this {
     this.style = style
     return this
   }
-
-  /**
-   *
-   * @param {string} lang
-   */
-  setLang(lang) {
+  setLang(lang: string): this {
     this.lang = lang === '' ? undefined : lang
-    return this
-  }
-
-  /**
-   *
-   * @param {number} editionWitnessTokenIndex
-   * @return {MainTextToken}
-   */
-  setNormalSpace(editionWitnessTokenIndex = -1) {
-    this.type = MainTextTokenType.GLUE
-    this.fmtText = FmtTextFactory.oneNormalSpace()
-    this.editionWitnessTokenIndex = editionWitnessTokenIndex
     return this
   }
 }

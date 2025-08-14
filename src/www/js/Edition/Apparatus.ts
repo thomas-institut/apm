@@ -1,4 +1,4 @@
-import {ApparatusEntry} from "./ApparatusEntry";
+import {ApparatusEntry} from "./ApparatusEntry.js";
 
 
 export interface Apparatus {

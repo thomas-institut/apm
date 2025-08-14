@@ -185,14 +185,14 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     let strings = this.currentStyleSheet.getStrings()
     let defaultStyleDef = this.currentStyleSheet.getStyleDef('default')
     let apparatusStyleDef = this.currentStyleSheet.getStyleDef('apparatus')
-    let defaultFontSize = Dimension.str2px(defaultStyleDef.text.fontSize)
+    let defaultFontSize = Dimension.str2px(defaultStyleDef.text?.fontSize)
     if (defaultFontSize === 0) {
-      console.warn(`Default font size is not well defined in stylesheet: '${defaultStyleDef.text.fontSize}'`)
+      console.warn(`Default font size is not well defined in stylesheet: '${defaultStyleDef.text?.fontSize}'`)
       defaultFontSize = 16
     }
-    let apparatusFontSize =  Dimension.str2px(apparatusStyleDef.text.fontSize, defaultFontSize)
+    let apparatusFontSize =  Dimension.str2px(apparatusStyleDef.text?.fontSize, defaultFontSize)
     if (apparatusFontSize === 0) {
-      console.warn(`Apparatus font size is not well defined in stylesheet: '${this.currentStyleSheet.getStyleDef('apparatus').text.fontSize}'`)
+      console.warn(`Apparatus font size is not well defined in stylesheet: '${this.currentStyleSheet.getStyleDef('apparatus').text?.fontSize}'`)
       apparatusFontSize = 14
     }
     // adjust the initial scale to the device's pixel ratio
@@ -205,28 +205,28 @@ export class EditionPreviewPanel extends PanelWithToolbar {
       edition: this.edition,
       editionStyleSheet: this.currentStyleSheet,
       canvasElement: document.getElementById(`${canvasId}`),
-      fontFamily:  defaultStyleDef.text.fontFamily,
+      fontFamily:  defaultStyleDef.text?.fontFamily,
       scale: initialScale,
       entrySeparator: strings['entrySeparator'],
       apparatusLineSeparator: strings['lineRangeSeparator'],
-      pageWidthInCm: Dimension.str2cm(defaultStyleDef.page.width, defaultFontSize),
-      pageHeightInCm:  Dimension.str2cm(defaultStyleDef.page.height,defaultFontSize),
+      pageWidthInCm: Dimension.str2cm(defaultStyleDef.page?.width, defaultFontSize),
+      pageHeightInCm:  Dimension.str2cm(defaultStyleDef.page?.height,defaultFontSize),
       marginInCm: {
-        top: Dimension.str2cm(defaultStyleDef.page.marginTop,defaultFontSize),
-        left: Dimension.str2cm(defaultStyleDef.page.marginLeft,defaultFontSize),
-        bottom: Dimension.str2cm(defaultStyleDef.page.marginBottom,defaultFontSize),
-        right: Dimension.str2cm(defaultStyleDef.page.marginRight,defaultFontSize),
+        top: Dimension.str2cm(defaultStyleDef.page?.marginTop,defaultFontSize),
+        left: Dimension.str2cm(defaultStyleDef.page?.marginLeft,defaultFontSize),
+        bottom: Dimension.str2cm(defaultStyleDef.page?.marginBottom,defaultFontSize),
+        right: Dimension.str2cm(defaultStyleDef.page?.marginRight,defaultFontSize),
       },
       mainTextFontSizeInPts: Dimension.px2pt(defaultFontSize),
-      lineNumbersFontSizeInPts: Dimension.str2pt(defaultStyleDef.page.lineNumbersFontSize, defaultFontSize),
-      resetLineNumbersEachPage: defaultStyleDef.page.resetLineNumbersEachPage,
+      lineNumbersFontSizeInPts: Dimension.str2pt(defaultStyleDef.page?.lineNumbersFontSize, defaultFontSize),
+      resetLineNumbersEachPage: defaultStyleDef.page?.resetLineNumbersEachPage ?? false,
       apparatusFontSizeInPts: Dimension.px2pt(apparatusFontSize),
-      mainTextLineHeightInPts: Dimension.str2pt(defaultStyleDef.paragraph.lineSkip, defaultFontSize),
-      apparatusLineHeightInPts: Dimension.str2pt(apparatusStyleDef.paragraph.lineSkip, apparatusFontSize),
+      mainTextLineHeightInPts: Dimension.str2pt(defaultStyleDef.paragraph?.lineSkip, defaultFontSize),
+      apparatusLineHeightInPts: Dimension.str2pt(apparatusStyleDef.paragraph?.lineSkip, apparatusFontSize),
       normalSpaceWidthInEms: 0.25,  // TODO: Check usages and change to glue
-      textToLineNumbersInCm: Dimension.str2cm(defaultStyleDef.page.lineNumbersToTextDistance, defaultFontSize),
-      textToApparatusInCm: Dimension.str2cm(defaultStyleDef.page.minDistanceFromApparatusToText),
-      interApparatusInCm: Dimension.str2cm(defaultStyleDef.page.minInterApparatusDistance),
+      textToLineNumbersInCm: Dimension.str2cm(defaultStyleDef.page?.lineNumbersToTextDistance, defaultFontSize),
+      textToApparatusInCm: Dimension.str2cm(defaultStyleDef.page?.minDistanceFromApparatusToText),
+      interApparatusInCm: Dimension.str2cm(defaultStyleDef.page?.minInterApparatusDistance),
       debug: true
     }
   }

@@ -1,9 +1,9 @@
 import * as Util from '../../toolbox/Util.mjs'
 import { ParserNormalizer } from '../../Normalizer/ParserNormalizer.mjs'
-import { WitnessToken } from '../../Witness/WitnessToken.mjs'
+import { WitnessToken } from '../../Witness/WitnessToken.ts'
 import * as NormalizationSource from '../../constants/NormalizationSource.mjs'
 import { EditionWitnessTokenStringParser } from '../../toolbox/EditionWitnessTokenStringParser.mjs'
-import * as WitnessTokenType from '../../Witness/WitnessTokenType.mjs'
+import * as WitnessTokenType from '../../Witness/WitnessTokenType.ts'
 
 export class IgnoreIntraWordQuotationMark extends ParserNormalizer {
 

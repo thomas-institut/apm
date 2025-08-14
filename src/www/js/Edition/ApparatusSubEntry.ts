@@ -18,38 +18,38 @@
  *
  */
 
-import * as SubEntryType from './SubEntryType.mjs'
-import * as SubEntrySource from './SubEntrySource.mjs'
+import * as SubEntryType from './SubEntryType.js'
+import * as SubEntrySource from './SubEntrySource.js'
+import { FmtTextToken} from "../lib/FmtText/FmtTextToken";
 import { FmtTextFactory } from '../lib/FmtText/FmtTextFactory.js'
 import { FmtTextUtil } from '../lib/FmtText/FmtTextUtil.js'
 import { hashCodeInt32 } from '../toolbox/Util.mjs'
-import { WitnessDataItem } from './WitnessDataItem.mjs'
-
-
+import { WitnessDataItem } from './WitnessDataItem.js'
 export class ApparatusSubEntry {
 
-  constructor () {
+  plainText!: string;
+  type: string;
+  enabled: boolean;
+  source: string;
+  fmtText: FmtTextToken[];
+  witnessData: WitnessDataItem[];
+  keyword: string;
+  position: number;
+  tags: string[];
+  hash!: string;
 
+  constructor () {
     this.type = SubEntryType.EMPTY
     this.enabled = true
     this.source = SubEntrySource.UNKNOWN
     this.fmtText = FmtTextFactory.empty()
-    /**
-     *
-     * @type {WitnessData[]}
-     */
     this.witnessData = []
     this.keyword = ''
     this.position = -1;
     this.tags = [];
   }
 
-  /**
-   *
-   * @param {ApparatusSubEntry}subEntry
-   * @return {ApparatusSubEntry}
-   */
-  static clone(subEntry) {
+  static clone(subEntry: ApparatusSubEntry): ApparatusSubEntry {
     let copy = new ApparatusSubEntry()
     copy.type = subEntry.type;
     copy.enabled = subEntry.enabled;
@@ -67,9 +67,8 @@ export class ApparatusSubEntry {
 
   /**
    * Returns an Int32 hash code for the sub entry
-   * @return {string}
    */
-  hashString() {
+  hashString(): string {
     let witnessDataStringRep = this.witnessData.map( (w) => {
       return `${w.witnessIndex}:h${w.hand}`
       }).join('_')

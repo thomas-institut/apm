@@ -1,4 +1,4 @@
-import {MainTextToken} from "@/Edition/MainTextToken";
+import {MainTextToken} from "./MainTextToken.js";
 
 export interface MainTextParagraph {
   type: string;

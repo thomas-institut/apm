@@ -1,5 +1,5 @@
 import { ConfirmDialog, MEDIUM_DIALOG, SMALL_DIALOG } from '../pages/common/ConfirmDialog'
-import { varsAreEqual } from '../toolbox/ArrayUtil.mjs'
+import { varsAreEqual } from '../lib/ToolBox/ArrayUtil.ts'
 import { trimWhiteSpace } from '../toolbox/Util.mjs'
 
 export class SiglaGroupsUI {

@@ -29,7 +29,7 @@ import { deepCopy } from '@/toolbox/Util'
 import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
 import * as NormalizationSource from '../constants/NormalizationSource'
 import * as WitnessType from '../Witness/WitnessTokenClass'
-import { uniq } from '@/toolbox/ArrayUtil'
+import { uniq } from '@/lib/ToolBox/ArrayUtil'
 
 // cleaners
 import { CleanerZero } from './CtDataCleaner/CleanerZero'
@@ -57,6 +57,7 @@ import {FULL_TX} from "@/Witness/WitnessType";
 import {Apparatus} from "@/Edition/Apparatus";
 import {NormalizerRegister} from "@/pages/common/NormalizerRegister";
 import {FmtTextUtil} from "@/lib/FmtText/FmtTextUtil";
+import {KeyStore} from "@/toolbox/KeyStore.mjs";
 
 
 
@@ -300,19 +301,9 @@ export class CtData  {
     }
 
     let customApparatus = ctData.customApparatuses[apparatusIndex]
-
-    let newEntry: ApparatusEntry = {
-      from: editedEntry.from,
-      to: editedEntry.to,
-      preLemma: editedEntry.preLemma,
-      lemma: editedEntry.lemma,
-      postLemma: editedEntry.postLemma,
-      separator: editedEntry.separator,
-      tags: [...editedEntry.tags],
-      lemmaText: '',
-      subEntries: [],
-      metadata: undefined
-    }
+    let newEntry = ApparatusEntry.clone(editedEntry);
+    newEntry.lemmaText = ''
+    newEntry.metadata = new KeyStore()
     // new entry, first get the auto subEntries
     newEntry.subEntries = editedEntry.subEntries.filter( (subEntry) => { return subEntry.type === 'auto'})
     // add all other subEntries
@@ -736,11 +727,11 @@ export class CtData  {
 
     if (subEntryIndex === -1) {
       if (!enabled) {
-        ctData.customApparatuses[apparatusIndex].entries[entryIndex].subEntries.push( {
-          type: SubEntryType.AUTO,
-          enabled: false,
-          hash: subEntryHash,
-        })
+        let newSubEntry = new ApparatusSubEntry();
+        newSubEntry.type = SubEntryType.AUTO;
+        newSubEntry.enabled = false;
+        newSubEntry.hash = subEntryHash;
+        ctData.customApparatuses[apparatusIndex].entries[entryIndex].subEntries.push(newSubEntry)
       }
       // nothing to do if the entry needs to be enabled
     } else {

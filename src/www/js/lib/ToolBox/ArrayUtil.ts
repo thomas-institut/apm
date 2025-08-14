@@ -21,18 +21,18 @@
  * Does not work with object elements (i.e., only strings, numbers and boolean are supported
  * @param theArray
  */
-export function uniq(theArray) {
+export function uniq(theArray: any[]): any[] {
   return theArray.filter( (item, pos) =>{ return theArray.indexOf(item) === pos})
 }
 
-export function swapElements(theArray, index1, index2) {
+export function swapElements(theArray: any[], index1: number, index2: number): any[] {
   let element1 = theArray[index1]
   theArray[index1] = theArray[index2]
   theArray[index2] = element1
   return theArray
 }
 
-export function arraysAreEqual(array1, array2, comparisonFunction = function (a,b) { return a===b }, depth= 1) {
+export function arraysAreEqual(array1: any[], array2: any[], comparisonFunction = function (a: any,b: any) { return a===b }, depth= 1) {
   if (array1.length !== array2.length) {
     return false
   }
@@ -53,7 +53,7 @@ export function arraysAreEqual(array1, array2, comparisonFunction = function (a,
   return true
 }
 
-export function varsAreEqual(var1, var2) {
+export function varsAreEqual(var1:any, var2:any) {
   return JSON.stringify(var1) === JSON.stringify(var2)
 }
 
@@ -63,15 +63,15 @@ export function varsAreEqual(var1, var2) {
  * @param array1
  * @param array2
  */
-export function arraysHaveTheSameValues(array1, array2) {
+export function arraysHaveTheSameValues(array1: any[], array2: any[]) {
   return array1.sort().join(' ') === array2.sort().join(' ')
 }
 
 
-export function prettyPrintArray(array) {
+export function prettyPrintArray(array: any[]) {
   return '[' + array.map( (e) => { return e.toString()}).join(', ') + ']'
 }
-export function createSequenceArray(from, to, increment = 1) {
+export function createSequenceArray(from: number, to: number, increment = 1): number[] {
   let theArray = []
   for (let i = from; i <= to; i+=increment) {
     theArray.push(i)
@@ -79,12 +79,12 @@ export function createSequenceArray(from, to, increment = 1) {
   return theArray
 }
 
-export function createIndexArray(size) {
+export function createIndexArray(size: number): number[] {
   return createSequenceArray(0, size-1, 1)
 }
 
-export function flatten(theArray) {
-  let flattenedArray = []
+export function flatten(theArray: any[]): any[] {
+  let flattenedArray: any[] = []
   theArray.forEach( (arrayElement) => {
     if (Array.isArray(arrayElement)) {
       flattenedArray.push(...flatten(arrayElement))
@@ -95,7 +95,7 @@ export function flatten(theArray) {
   return flattenedArray
 }
 
-export function numericSort(theArray, asc = true) {
+export function numericSort(theArray: any[], asc = true): any[] {
   return theArray.sort( (a,b) => {
     if (asc) { return a-b}
     return b-a
@@ -104,12 +104,8 @@ export function numericSort(theArray, asc = true) {
 
 /**
  * Sorts an array based on the numeric value of a field in its elements
- * @param {*[]}theArray
- * @param {string}fieldName
- * @param {boolean}asc
- * @return {*}
  */
-export function numericFieldSort(theArray, fieldName, asc= true) {
+export function numericFieldSort(theArray:any[], fieldName: string, asc= true): any[] {
   return theArray.sort( (a,b) => {
     if (asc) { return a[fieldName]-b[fieldName]}
     return b[fieldName]-a[fieldName]
@@ -117,13 +113,12 @@ export function numericFieldSort(theArray, fieldName, asc= true) {
 }
 
 /**
- *
- * @param {*[]}theArray
- * @param {string}fieldName
- * @param {boolean}asc
- * @return {*[]}
+ * Sorts an array based on the string value of a field in its elements
+ * @param theArray
+ * @param fieldName
+ * @param asc
  */
-export function stringFieldSort(theArray, fieldName, asc = true) {
+export function stringFieldSort(theArray: any[], fieldName: string, asc = true): any[] {
   return theArray.sort( (a,b) => {
     let x = a[fieldName].toLowerCase()
     let y = b[fieldName].toLowerCase()
@@ -139,27 +134,12 @@ export function stringFieldSort(theArray, fieldName, asc = true) {
 
 /**
  * Pushes all the elements of an array into another one
- * @param theArray
- * @param arrayToPush
  * @deprecated use  `theArray.push(...arrayToPush)`
  */
-export function pushArray(theArray, arrayToPush) {
-  arrayToPush.forEach( (e) => {
-    theArray.push(e)
-  })
-}
-/**
- *
- * @param {any[]}someArray
- */
-export function makeCopyOfArray(someArray) {
-  let newArray = []
-  for (let i = 0; i < someArray.length; i++) {
-    newArray.push(someArray[i])
-  }
-  return newArray
+export function pushArray(theArray: any[], arrayToPush:any[]) {
+  return theArray.push(...arrayToPush)
 }
 
-export function allTrue(someArray) {
-  return someArray.every( element => element === true)
+export function allTrue(someArray: boolean[]) {
+  return someArray.every( element => element)
 }

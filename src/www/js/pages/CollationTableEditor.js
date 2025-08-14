@@ -20,8 +20,8 @@ import { defaultLanguageDefinition } from '../defaults/languages'
 import * as CollationTableType from '../constants/CollationTableType'
 import * as CollationTableInitStrategy from '../constants/CollationTableConversionInitStrategy'
 import * as WitnessType from '../Witness/WitnessType'
-import * as TranscriptionTokenType from '../Witness/WitnessTokenType.mjs'
-import * as TokenClass from '../Witness/WitnessTokenClass.mjs'
+import * as TranscriptionTokenType from '../Witness/WitnessTokenType.ts'
+import * as TokenClass from '../Witness/WitnessTokenClass.ts'
 import * as NormalizationSource from '../constants/NormalizationSource.mjs'
 
 
@@ -39,12 +39,12 @@ import * as HttpStatusCode from '../toolbox/HttpStatusCode'
 
 // utilities
 import * as Util from '../toolbox/Util.mjs'
-import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
+import * as ArrayUtil from '../lib/ToolBox/ArrayUtil.ts'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Matrix } from '@thomas-inst/matrix'
 import { ConfirmDialog } from './common/ConfirmDialog'
 import { WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
-import { FULL_TX } from '../Witness/WitnessTokenClass.mjs'
+import { FULL_TX } from '../Witness/WitnessTokenClass.ts'
 
 // Normalizations
 

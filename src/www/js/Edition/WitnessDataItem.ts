@@ -17,36 +17,47 @@
  */
 
 
+export class WitnessDataItem  {
 
-export class WitnessDataItem {
-
-  constructor () {
-    this.witnessIndex = -1
-    this.hand = -1
-    this.location = ''
-    this.forceHandDisplay = false
-  }
-
+  witnessIndex: number = -1;
+  hand: number = -1;
+  location: string = '';
+  forceHandDisplay: boolean = false;
+  siglum: string = '';
+  omitSiglum: boolean = false;
   /**
-   *
-   * @param {WitnessDataItem}dataItem
-   * @return {WitnessDataItem}
+   * If true, the data is used when there's a foliation change from
+   * a non-empty foliation to a another one. For example, from '20r' to '20v'.
+   * When a foliation changes from '' to other value, there's no actual foliation,
+   * it's simply the first time there's a foliation value for that witness.
    */
-  static clone(dataItem) {
+  realFoliationChange?: boolean;
+
+
+  static clone(dataItem: WitnessDataItem) {
     let copy = new WitnessDataItem()
     copy.witnessIndex = dataItem.witnessIndex
     copy.hand = dataItem.hand
     copy.location = dataItem.location
     copy.forceHandDisplay = dataItem.forceHandDisplay
+    if (dataItem.siglum !== undefined) {
+      copy.siglum = dataItem.siglum
+    }
+    if (dataItem.omitSiglum !== undefined) {
+      copy.omitSiglum = dataItem.omitSiglum
+    }
+    if (dataItem.realFoliationChange !== undefined) {
+      copy.realFoliationChange = dataItem.realFoliationChange
+    }
     return copy
   }
 
-  setWitnessIndex(witnessIndex) {
+  setWitnessIndex(witnessIndex: number): this {
     this.witnessIndex = witnessIndex
     return this
   }
 
-  setHand(hand) {
+  setHand(hand: number): this {
     this.hand = hand
     return this
   }

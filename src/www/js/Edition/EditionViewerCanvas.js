@@ -15,7 +15,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
-import { Edition } from './Edition.mjs'
+import { Edition } from './Edition'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { CanvasTextBoxMeasurer } from '@/lib/Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer'
 import { CanvasRenderer } from '@/lib/Typesetter2/Renderer/CanvasRenderer'

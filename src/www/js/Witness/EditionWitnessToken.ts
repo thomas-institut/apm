@@ -16,11 +16,11 @@
  *
  */
 
-import { WitnessToken } from './WitnessToken.mjs'
-import * as WitnessTokenType from './WitnessTokenType.mjs'
-import * as WitnessTokenClass from './WitnessTokenClass.mjs'
-import * as WitnessFormat from './EditionWitnessFormatMark.mjs'
-import * as EditionWitnessParagraphStyle from './EditionWitnessParagraphStyle.mjs'
+import { WitnessToken } from './WitnessToken.js'
+import * as WitnessTokenType from './WitnessTokenType.js'
+import * as WitnessTokenClass from './WitnessTokenClass.js'
+import * as WitnessFormat from './EditionWitnessFormatMark.js'
+import * as EditionWitnessParagraphStyle from './EditionWitnessParagraphStyle.js'
 import * as NormalizationSource from '../constants/NormalizationSource.mjs'
 
 /**
@@ -67,6 +67,9 @@ import * as NormalizationSource from '../constants/NormalizationSource.mjs'
  */
 
 export class EditionWitnessToken extends WitnessToken {
+  private markType: string = '';
+  private style: string = '';
+  private formats: string[] = [];
 
   constructor () {
     super()
@@ -74,18 +77,13 @@ export class EditionWitnessToken extends WitnessToken {
     this.__removeAllFormats()
   }
 
-  /**
-   *
-   * @param {string} wordString
-   * @return {EditionWitnessToken}
-   */
-  setWord (wordString) {
+  setWord (wordString: string): this {
     super.setWord(wordString)
     this.__removeAllFormats()
     return this
   }
 
-  setNumberingLabel(label) {
+  setNumberingLabel(label: string): this {
     this.__removeText()
     this.__removeAllFormats()
     this.text = label
@@ -93,55 +91,12 @@ export class EditionWitnessToken extends WitnessToken {
     return this
   }
 
-  /**
-   *
-   * @param {string} style
-   * @return {EditionWitnessToken}
-   */
-  withStyle(style) {
-    this.style = style
-    return this
-  }
-
-  /**
-   *
-   * @param {string[]} formats
-   * @return {EditionWitnessToken}
-   */
-  withFormats(formats) {
-    this.formats = formats
-    return this
-  }
-
-  /**
-   * Creates a paragraph end mark with the given style
-   * @param style
-   */
-  setParagraphEnd(style = EditionWitnessParagraphStyle.NORMAL) {
+  setParagraphEnd(style = EditionWitnessParagraphStyle.NORMAL): this {
     this.setFormatMark(WitnessFormat.PARAGRAPH_END, style)
     return this
   }
 
-  /**
-   * Creates a space with the given type
-   *
-   * @param {string} spaceType
-   */
-  // setSpace(spaceType = SpaceType.NORMAL) {
-  //   this.type = WitnessTokenType.WHITESPACE
-  //   this.setWhitespace(' ')
-  //   this.style = spaceType
-  //   return this
-  // }
-
-  /**
-   *
-   * @param {string} formatMarkName
-   * @param {string}style
-   * @param {string[]}formats
-   * @return {WitnessToken}
-   */
-  setFormatMark(formatMarkName, style = '', formats = []) {
+  setFormatMark(formatMarkName: string, style: string = '', formats: string[] = []): WitnessToken {
     this.tokenType = WitnessTokenType.FORMAT_MARK
     this.markType = formatMarkName
     this.style = style

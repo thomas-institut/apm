@@ -1,10 +1,10 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 // import { PanelController } from './PanelController.mjs'
 // import Split from 'split-grid'
-// import { makeCopyOfArray } from '../toolbox/ArrayUtil.mjs'
+// import { makeCopyOfArray } from '../toolbox/ArrayUtil.ts'
 import { WindowContainer } from './WindowContainer.mjs'
 import { DivContainer } from './DivContainer.mjs'
-import { allTrue } from '../toolbox/ArrayUtil.mjs'
+import { allTrue } from '../lib/ToolBox/ArrayUtil.ts'
 import { GridContainer } from './GridContainer.mjs'
 import { TabbedPanelContainer } from './TabbedPanelContainer.mjs'
 

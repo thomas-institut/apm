@@ -1,4 +1,6 @@
-import {Apparatus} from "@/Edition/Apparatus";
+// noinspection ES6PreferShortImport
+
+import {Apparatus} from "../Edition/Apparatus.js";
 
 export interface CtDataInterface {
     lang: string;

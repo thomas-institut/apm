@@ -17,26 +17,25 @@
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { Edition } from './Edition.mjs'
+import { Edition } from './Edition'
 import { Typesetter } from '@/Typesetter/Typesetter'
 import {FmtTextFactory} from '@/lib/FmtText/FmtTextFactory'
 
-import * as MainTextTokenType from './MainTextTokenType.mjs'
+import * as MainTextTokenType from './MainTextTokenType.js'
 import { TypesetterTokenFactory } from '@/Typesetter/TypesetterTokenFactory'
 import { TypesetterTokenRenderer } from '@/lib/FmtText/Renderer/TypesetterTokenRenderer'
 import { getTextDirectionForLang, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
-import { pushArray } from '../toolbox/ArrayUtil.mjs'
 import { ApparatusCommon } from '@/EditionComposer/ApparatusCommon'
 
-import * as SubEntryType from './SubEntryType.mjs'
+import * as SubEntryType from './SubEntryType.js'
 import { FmtTextUtil } from '@/lib/FmtText/FmtTextUtil'
 
 import * as VerticalAlign from '@/lib/FmtText/VerticalAlign.js'
 import * as FontSize from '@/lib/FmtText/FontSize.js'
 import * as HorizontalAlign from '../Typesetter/HorizontalAlign'
-import { MainText } from './MainText.mjs'
+import { MainText } from './MainText.js'
 import { Paragraph } from '@/Typesetter/Paragraph'
-import { ApparatusUtil } from './ApparatusUtil.mjs'
+import { ApparatusUtil } from './ApparatusUtil.js'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
@@ -458,7 +457,7 @@ export class EditionViewerSvg {
     let sigla = this.edition.getSigla()
     let lastLine = ''
     let firstLineNumberAlreadyPrinted = false
-    app.entries.forEach( (apparatusEntry, aeIndex) => {
+    app.entries.forEach( (apparatusEntry) => {
       //console.log(`Processing apparatus entry ${aeIndex}`)
       let enabledSubEntries = apparatusEntry.subEntries.filter( (se) => {
         return se.enabled
@@ -495,8 +494,8 @@ export class EditionViewerSvg {
         lineTtTokens.push(TypesetterTokenFactory.normalSpace())
         firstLineNumberAlreadyPrinted = true
       }
-      pushArray(ttTokens, lineTtTokens)
-      // LEMMA section
+      ttTokens.push(...lineTtTokens);
+            // LEMMA section
       // preLemma
       let preLemmaTokens = []
       switch(apparatusEntry.preLemma) {
@@ -512,20 +511,20 @@ export class EditionViewerSvg {
         default:
           preLemmaTokens = ApparatusCommon.getKeywordTypesetterTokens(apparatusEntry.preLemma, this.edition.lang)
       }
-      pushArray(ttTokens, preLemmaTokens)
+      ttTokens.push(...preLemmaTokens)
       if (preLemmaTokens.length !== 0) {
         ttTokens.push(TypesetterTokenFactory.normalSpace())
       }
 
       // lemma
-     pushArray(ttTokens, this._getLemmaTypesetterTokens(apparatusEntry, mainTextTypesetTokens, map))
+     ttTokens.push(...this._getLemmaTypesetterTokens(apparatusEntry, mainTextTypesetTokens, map))
 
       // postLemma
       if (apparatusEntry.postLemma !== '') {
         ttTokens.push(TypesetterTokenFactory.normalSpace())
         let postLemmaTokens  = ApparatusCommon.getKeywordTypesetterTokens(apparatusEntry.postLemma, this.edition.lang)
         //let postLemmaTokens = this._getTypesetTokensFromCustomLemmaGroupValue(apparatusEntry.postLemma, this.edition.lang)
-        pushArray(ttTokens, postLemmaTokens)
+        ttTokens.push(...postLemmaTokens)
       }
 
       // separator
@@ -549,7 +548,7 @@ export class EditionViewerSvg {
             FmtTextFactory.fromString(removeExtraWhiteSpace(FmtTextUtil.getPlainText(apparatusEntry.separator)))
           )
       }
-      pushArray(ttTokens, separatorTokens)
+      ttTokens.push(...separatorTokens)
       ttTokens.push(TypesetterTokenFactory.normalSpace())
 
 
@@ -573,7 +572,7 @@ export class EditionViewerSvg {
             typesetterTokens = ApparatusCommon.typesetSubEntryArabic(subEntry.type, theText, witnessIndices, sigla, this.edition.siglaGroups)
             break
         }
-        pushArray(ttTokens, typesetterTokens)
+        ttTokens.push(...typesetterTokens)
         // TODO: change this to a better space
         ttTokens.push(TypesetterTokenFactory.normalSpace())
         // ttTokens.push(TypesetterTokenFactory.normalSpace())

@@ -18,7 +18,7 @@
  *
  */
 
-import {MainText} from './MainText.mjs';
+import {MainText} from './MainText.js';
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {TextBoxMeasurer} from '../lib/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js';
 import {Box} from '../lib/Typesetter2/Box.js';
@@ -27,7 +27,7 @@ import * as TypesetterItemDirection from '../lib/Typesetter2/TypesetterItemDirec
 import * as MetadataKey from '../lib/Typesetter2/MetadataKey.js';
 import * as ListType from '../lib/Typesetter2/ListType.js';
 import {Glue} from '../lib/Typesetter2/Glue.js';
-import * as MainTextTokenType from './MainTextTokenType.mjs';
+import * as MainTextTokenType from './MainTextTokenType.js';
 import {TextBox} from '../lib/Typesetter2/TextBox.js';
 import {
   GOOD_POINT_FOR_A_BREAK, INFINITE_PENALTY, Penalty, REALLY_GOOD_POINT_FOR_A_BREAK
@@ -36,22 +36,22 @@ import {LanguageDetector} from '../toolbox/LanguageDetector.js';
 import {getTextDirectionForLang, isRtl, removeExtraWhiteSpace} from '../toolbox/Util.mjs';
 import {FmtTextFactory} from '../lib/FmtText/FmtTextFactory.js';
 import {ObjectFactory} from '../lib/Typesetter2/ObjectFactory.js';
-import {uniq} from '../toolbox/ArrayUtil.mjs';
+import {uniq} from '../lib/ToolBox/ArrayUtil.js';
 import {Typesetter2StyleSheetTokenRenderer} from '../lib/FmtText/Renderer/Typesetter2StyleSheetTokenRenderer.js';
-import {ApparatusUtil} from './ApparatusUtil.mjs';
+import {ApparatusUtil} from './ApparatusUtil.js';
 import {NumeralStyles} from '../toolbox/NumeralStyles.mjs';
 import {TextBoxFactory} from '../lib/Typesetter2/TextBoxFactory.js';
-import {SiglaGroup} from './SiglaGroup.mjs';
+import {SiglaGroup} from './SiglaGroup.js';
 import {FmtTextUtil} from '../lib/FmtText/FmtTextUtil.js';
 import {ParagraphStyleDef, StyleSheet} from '../lib/Typesetter2/Style/StyleSheet.js';
 import {FontConversions} from '../lib/Typesetter2/FontConversions.js';
-import {ItemLineInfo} from './ItemLineInfo.mjs';
+import {ItemLineInfo} from './ItemLineInfo.js';
 import {TypesetterItem} from '../lib/Typesetter2/TypesetterItem.js';
 import {MARGINALIA} from '../constants/ApparatusType.mjs';
-import {AUTO_FOLIATION} from './SubEntryType.mjs';
-import {ApparatusSubEntry} from "./ApparatusSubEntry.mjs";
+import {AUTO_FOLIATION} from './SubEntryType.js';
+import {ApparatusSubEntry} from "./ApparatusSubEntry.js";
 import {Apparatus} from "./Apparatus.js";
-import {ApparatusEntry} from './ApparatusEntry.mjs';
+import {ApparatusEntry} from './ApparatusEntry.js';
 import {Edition} from "../Edition/Edition.js";
 import {Dimension} from "../lib/Typesetter2/Dimension.js";
 
@@ -312,12 +312,11 @@ export class EditionTypesetting {
     this.extractedItemLineInfoArray = undefined;
   }
 
-  /**
-   *
-   * @param {number} mainTextTokenIndex
-   * @return {number[]}
-   */
-  getWitnessIndicesWithFoliationChanges(mainTextTokenIndex: number): number[] {
+
+  getWitnessIndicesWithFoliationChanges(mainTextTokenIndex: number|undefined): number[] {
+    if (mainTextTokenIndex === undefined) {
+      return [];
+    }
     const edition: Edition = this.options.edition;
     const marginaliaApparatuses: Apparatus[] = edition.apparatuses.filter((apparatus: Apparatus) => {
       return apparatus.type === MARGINALIA;
@@ -678,10 +677,10 @@ export class EditionTypesetting {
 
         case 'shortened':
           // e.g. word1...wordN]
-          tsItems.push(...await this.getTsItemsForString(lemmaComponents.from, 'apparatus', 'detect'));
+          tsItems.push(...await this.getTsItemsForString(lemmaComponents.from ?? '', 'apparatus', 'detect'));
           tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.from));
           tsItems.push(...await this.getTsItemsForString(lemmaComponents.separator ?? '', 'apparatus', 'detect'));
-          tsItems.push(...await this.getTsItemsForString(lemmaComponents.to, 'apparatus', 'detect'));
+          tsItems.push(...await this.getTsItemsForString(lemmaComponents.to ?? '', 'apparatus', 'detect'));
           tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.to));
           resolve(tsItems);
           return;

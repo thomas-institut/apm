@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -16,9 +18,10 @@
  *
  */
 
-import { MainTextToken } from './MainTextToken.mjs'
-import * as EditionMainTextTokenType from './MainTextTokenType.mjs'
+import { MainTextToken } from './MainTextToken.js'
+import * as EditionMainTextTokenType from './MainTextTokenType.js'
 import { FmtTextFactory } from '../lib/FmtText/FmtTextFactory.js'
+import {FmtTextToken} from "../lib/FmtText/FmtTextToken";
 
 export class MainTextTokenFactory {
 
@@ -31,7 +34,7 @@ export class MainTextTokenFactory {
    * @param {string} [lang=''] - The language code for the text token. Defaults to an empty string.
    * @return {MainTextToken} The created text token with assigned properties.
    */
-  static createSimpleText(type, text, editionWitnessTokenIndex, lang = '') {
+  static createSimpleText(type: string, text: string, editionWitnessTokenIndex: number, lang: string = ''): MainTextToken {
     let t = new MainTextToken()
     t.type = type
     t.fmtText = FmtTextFactory.fromString(text)
@@ -49,7 +52,7 @@ export class MainTextTokenFactory {
    * @param {string} [lang=''] - The language code for the token (optional, defaults to an empty string).
    * @return {MainTextToken} A new instance of MainTextToken with the specified attributes.
    */
-  static createWithFmtText(type, fmtText, editionWitnessTokenIndex, lang = '') {
+  static createWithFmtText(type: string, fmtText: FmtTextToken[], editionWitnessTokenIndex: number, lang: string = ''): MainTextToken {
     let t = new MainTextToken()
     t.type = type
     t.fmtText = fmtText
@@ -76,7 +79,7 @@ export class MainTextTokenFactory {
    *
    * @param {MainTextToken}token
    */
-  static clone(token) {
+  static clone(token: MainTextToken) {
     let t = new MainTextToken()
     t.type = token.type
     t.fmtText = token.fmtText

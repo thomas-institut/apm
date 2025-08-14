@@ -17,16 +17,12 @@
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker';
-import {Edition} from '../Edition';
+import {Edition} from '../Edition.js';
 
 export class EditionGenerator {
   protected verbose: boolean;
   protected debug: boolean;
 
-  /**
-   *
-   * @param {any} options
-   */
   constructor(options: any) {
     let optionsSpec = {
       verbose: {type: 'boolean', default: false}, debug: {type: 'boolean', default: false}
@@ -42,10 +38,6 @@ export class EditionGenerator {
     }
   }
 
-  /**
-   *
-   * @return {Edition}
-   */
   generateEdition(): Edition {
     return new Edition();
   }

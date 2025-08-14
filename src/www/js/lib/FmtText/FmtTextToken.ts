@@ -70,6 +70,28 @@ import * as VerticalAlign from './VerticalAlign.js'
 
 export const DEFAULT_GLUE_SPACE = 'normal'
 
+export interface FmtTextTokenInterface {
+
+  type: string;
+
+  text?: string;
+  fontStyle?: string;
+  fontWeight?: string;
+  verticalAlign?: string;
+  fontSize?: number;
+  classList?: string;
+  textDirection?: string;
+
+
+  space?: string;
+  width?: number;
+  stretch?: number;
+  shrink?: number;
+
+  markType?: string;
+  style?: string;
+}
+
 export class FmtTextToken {
 
   type: string;

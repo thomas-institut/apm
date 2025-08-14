@@ -1,11 +1,31 @@
 
-import * as SubEntryType from './SubEntryType.mjs'
-import { numericFieldSort, pushArray } from '../toolbox/ArrayUtil.mjs'
-import { ApparatusSubEntry } from './ApparatusSubEntry.mjs'
+// noinspection ES6PreferShortImport
+
+import * as SubEntryType from './SubEntryType.js'
+import { numericFieldSort } from '../lib/ToolBox/ArrayUtil.js'
+import { ApparatusSubEntry } from './ApparatusSubEntry.js'
 import { KeyStore } from '../toolbox/KeyStore.mjs'
 
 
 export class ApparatusEntry {
+
+  section?: number[];
+  from: number;
+  to: number;
+  preLemma: string;
+  lemma: string;
+  postLemma: string;
+  lemmaText: string;
+  separator: string;
+  tags: string[];
+  subEntries: ApparatusSubEntry[];
+  metadata: KeyStore;
+  /**
+   * Only used for a trick in CtData.ts, which needs to be fixed
+   * @deprecated
+   *
+   **/
+  toDelete?: boolean;
 
   constructor () {
     this.from = -1
@@ -29,12 +49,7 @@ export class ApparatusEntry {
     this.metadata = new KeyStore()
   }
 
-  /**
-   *
-   * @param {ApparatusEntry}entry
-   * @return{ApparatusEntry}
-   */
-  static clone(entry) {
+  static clone(entry: ApparatusEntry): ApparatusEntry {
     let copy = new ApparatusEntry();
     copy.from = entry.from;
     copy.to = entry.to;
@@ -54,10 +69,8 @@ export class ApparatusEntry {
   /**
    * Order the entry's sub-entries according to their current position
    * values and update those to reflect the new order
-   * @param {ApparatusEntry} theEntry
-   * @return {ApparatusEntry}
    */
-  static orderSubEntries(theEntry) {
+  static orderSubEntries(theEntry: ApparatusEntry): ApparatusEntry {
     let entry = ApparatusEntry.clone(theEntry);
 
     let nonPositionedAutoSubEntries = entry.subEntries
@@ -68,8 +81,8 @@ export class ApparatusEntry {
       .filter( (subEntry) => { return subEntry.type !== SubEntryType.AUTO && subEntry.position === -1})
 
     let orderedSubEntries = nonPositionedAutoSubEntries
-    pushArray(orderedSubEntries, positionedEntries)
-    pushArray(orderedSubEntries, nonPositionedCustomSubEntries)
+    orderedSubEntries.push(...positionedEntries);
+    orderedSubEntries.push(...nonPositionedCustomSubEntries);
     entry.subEntries = orderedSubEntries.map ( (subEntry,
       index) => {
         subEntry.position = index
@@ -78,15 +91,11 @@ export class ApparatusEntry {
     return entry;
   }
 
-  /**
-   *
-   * @return {boolean}
-   */
-  allSubEntriesAreOmissions() {
+  allSubEntriesAreOmissions(): boolean {
     return ApparatusEntry.allSubEntriesInEntryObjectAreOmissions(this)
   }
 
-  static allSubEntriesInEntryObjectAreOmissions(entry) {
+  static allSubEntriesInEntryObjectAreOmissions(entry: ApparatusEntry): boolean {
     for (let i = 0; i < entry.subEntries.length; i++) {
       if (entry.subEntries[i].type !== SubEntryType.OMISSION) {
         return false

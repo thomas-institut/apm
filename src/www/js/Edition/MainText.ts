@@ -16,7 +16,9 @@
  *
  */
 
-import * as EditionMainTextTokenType from './MainTextTokenType.mjs'
+import * as EditionMainTextTokenType from './MainTextTokenType.js'
+import {MainTextToken} from "./MainTextToken.js";
+import {MainTextParagraph} from "./MainTextParagraph.js";
 
 /**
  * Functions to deal with an array of MainTexToken
@@ -30,13 +32,13 @@ export class MainText {
    * @param {MainTextToken[]}mainTextTokens
    * @return {MainTextParagraph[]}
    */
-  static getParagraphs(mainTextTokens) {
+  static getParagraphs(mainTextTokens: MainTextToken[]): MainTextParagraph[] {
     if (mainTextTokens.length === 0) {
       return []
     }
-    let paragraphs = []
+    let paragraphs: MainTextParagraph[] = []
 
-    let currentParagraph = { type: '', tokens: []}
+    let currentParagraph: MainTextParagraph = { type: '', tokens: []}
     mainTextTokens.forEach( (token, tokenIndex) => {
       token.originalIndex = tokenIndex
       if (token.type === EditionMainTextTokenType.PARAGRAPH_END) {

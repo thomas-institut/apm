@@ -18,10 +18,10 @@
 
 import { QuillDeltaConverter } from './QuillDeltaConverter'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { pushArray, varsAreEqual } from '../../toolbox/ArrayUtil.mjs'
+import { varsAreEqual } from '@/lib/ToolBox/ArrayUtil'
 import { FmtTextFactory } from '@/lib/FmtText/FmtTextFactory'
 import { FmtTextTokenFactory} from '@/lib/FmtText/FmtTextTokenFactory'
-import * as FmtTextTokenType from '../../Edition/MainTextTokenType.mjs'
+import * as FmtTextTokenType from '../../Edition/MainTextTokenType.js'
 import * as FontWeight from '@/lib/FmtText/FontWeight.js'
 import * as FontStyle from '@/lib/FmtText/FontStyle.js'
 import * as FontSize from '@/lib/FmtText/FontSize.js'
@@ -141,7 +141,7 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
       })
       let fmtText = []
       parsFmtText.forEach( (lineFmtTxt) => {
-        pushArray(fmtText, lineFmtTxt)
+        fmtText.push(...lineFmtTxt);
         if (!this.options.ignoreParagraphs) {
           fmtText.push(FmtTextTokenFactory.paragraphMark())
         }
@@ -154,10 +154,8 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
     })
 
     let fmtText = []
-    opsMap.forEach( (opsFmtText, i) => {
-      // console.log(`Processing opsMap element ${i}`)
-      opsFmtText.forEach( (token, j) => {
-        // console.log(`Processing fmtText element ${j}`)
+    opsMap.forEach( (opsFmtText) => {
+      opsFmtText.forEach( (token) => {
         fmtText.push(token)
       })
     })

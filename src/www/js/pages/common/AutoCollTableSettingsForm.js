@@ -31,7 +31,7 @@ const defaultHelpIcon = '<i class="fas fa-info"></i>'
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 
-import {arraysHaveTheSameValues} from '../../toolbox/ArrayUtil.mjs'
+import {arraysHaveTheSameValues} from '../../lib/ToolBox/ArrayUtil.ts'
 import { urlGen } from './SiteUrlGen'
 
 export class AutomaticCollationTableSettingsForm {

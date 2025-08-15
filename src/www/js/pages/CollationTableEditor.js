@@ -844,38 +844,6 @@ export class CollationTableEditor extends HeaderAndContentPage {
     // }
   }
 
-  // genOnClickExportPdfButton() {
-  //   let thisObject = this
-  //   return function() {
-  //     console.log('Export PDF clicked')
-  //     let buttonHtml = thisObject.exportPdfButton.html()
-  //     thisObject.exportPdfButton.html(`Generating PDF...` + thisObject.icons.busy)
-  //     let svg = thisObject.editionSvgDiv.html()
-  //     if (svg === '') {
-  //       return false
-  //     }
-  //     console.log('Calling API')
-  //     let apiUrl = urlGen.apiConvertSvg()
-  //     $.post(
-  //       apiUrl,
-  //       {data: JSON.stringify({
-  //           pdfId: `ct-${thisObject.options.tableId}`,
-  //           svg: svg
-  //       })}
-  //     ).done(
-  //       apiResponse => {
-  //         window.open(apiResponse.url)
-  //         thisObject.exportPdfButton.html(buttonHtml)
-  //       }
-  //     ).fail (
-  //       error => {
-  //         console.error('API error')
-  //         console.log(error)
-  //       }
-  //     )
-  //     return false
-  //   }
-  // }
 
   checkForWitnessUpdates() {
     let profiler = new SimpleProfiler('Check-Witness-Updates')
@@ -883,31 +851,19 @@ export class CollationTableEditor extends HeaderAndContentPage {
     let button = $(this.witnessesDivSelector + ' .check-witness-update-btn')
     button.html('Checking... ' + this.icons.busy)
     button.attr('title', '')
-    let thisObject = this
 
-    let apiUrl = urlGen.apiWitnessCheckUpdates()
-    let apiCallOptions = {
-      witnesses: []
-    }
-    for (let i = 0; i < this.ctData['witnesses'].length; i++) {
-      if (this.ctData['witnesses'][i]['witnessType'] === WitnessType.FULL_TX) {
-        apiCallOptions.witnesses[i] = {
-          id: this.ctData['witnesses'][i]['ApmWitnessId']
-        }
-      }
-    }
-    $.post(apiUrl, { data: JSON.stringify(apiCallOptions)})
-      .done(function(apiResponse){
-        console.log('Got witness updates info from server')
-        console.log(apiResponse)
-        thisObject.lastWitnessUpdateCheckResponse = apiResponse
-        thisObject.checkingForWitnessUpdates = false
-        thisObject.updateWitnessUpdateCheckInfo(apiResponse)
+    const witnessIds = this.ctData.witnesses.map( w => w.ApmWitnessId);
+    this.apmDataProxy.checkWitnessUpdates(witnessIds).then( (apiResponse) => {
+      console.log('Got witness updates info from server')
+      console.log(apiResponse);
+      if (apiResponse.status !== 'OK') {
+        console.error(`Error checking witness updates: ${apiResponse.status}, ${apiResponse.message}`)
+      } else {
+        this.lastWitnessUpdateCheckResponse = apiResponse
+        this.checkingForWitnessUpdates = false
+        this.updateWitnessUpdateCheckInfo(apiResponse)
         profiler.stop()
-      })
-      .fail( function(resp) {
-        console.error('Error checking witness updates')
-        console.log(resp)
+      }
     })
   }
 
@@ -1558,12 +1514,11 @@ export class CollationTableEditor extends HeaderAndContentPage {
     this.tableEditor.setEditMode(editModeOff)
   }
 
-  genOnColumnAdd() {
-    let thisObject = this
+  genOnColumnAdd () {
     return () => {
-      thisObject.ctData['groupedColumns'] = thisObject.tableEditor.columnSequence.groupedWithNextNumbers
-      if (thisObject.ctData['type']===CollationTableType.EDITION) {
-        thisObject.syncEditionWitnessAndTableEditorFirstRow()
+      this.ctData.groupedColumns = this.tableEditor.columnSequence.getGroupedNumbers()
+      if (this.ctData.type === CollationTableType.EDITION) {
+        this.syncEditionWitnessAndTableEditorFirstRow()
       }
     }
   }

@@ -180,12 +180,12 @@ table.versioninfo td.time {
 
 /* Witness Info Panel */
 
-table.witnesstable {
+table.witness-table {
     margin-top: 20px;
     margin-left: 20px;
 }
 
-table.witnesstable td,th {
+table.witness-table td,th {
     padding: 10px;
 }
 

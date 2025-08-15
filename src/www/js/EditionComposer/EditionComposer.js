@@ -235,7 +235,6 @@ export class EditionComposer extends ApmPage {
       onWitnessOrderChange: this.genOnWitnessOrderChange(),
       onSiglaChange: this.genOnSiglaChange(),
       onCtDataChange: this.genOnCtDataChange('witnessInfoPanel'),
-      checkForWitnessUpdates: this.genCheckWitnessUpdates(),
       updateWitness: this.genUpdateWitness(),
       getWitnessData: this.genGetWitnessData(),
       fetchSiglaPresets: this.genFetchSiglaPresets(),
@@ -243,9 +242,7 @@ export class EditionComposer extends ApmPage {
       addEditionSources: this.genAddEditionSources(),
       saveSiglaPreset: this.genSaveSiglaPreset(),
       getPageInfo: this.genGetPageInfo(),
-      getDocUrl: this.genGetDocUrl(),
-      getPageUrl: this.genGetPageUrl()
-    })
+     })
 
     this.adminPanel = new AdminPanel({
       apmDataProxy: this.apmDataProxy,
@@ -998,36 +995,6 @@ export class EditionComposer extends ApmPage {
       return true
     }
   }
-
-  genCheckWitnessUpdates() {
-    return (currentWitnessUpdateData) => {
-      return new Promise( (resolve, reject) => {
-        let apiUrl = urlGen.apiWitnessCheckUpdates()
-        $.post(apiUrl, { data: JSON.stringify(currentWitnessUpdateData)})
-          .done(function(apiResponse){
-              resolve(apiResponse)
-          })
-          .fail( function(resp) {
-            console.error('Error checking witness updates')
-            console.log(resp)
-            reject()
-          })
-      })
-    }
-  }
-
-  genGetDocUrl() {
-    return (docId) => {
-      return urlGen.siteDocPage(docId)
-    }
-  }
-
-  genGetPageUrl() {
-    return (docId, pageSeq, col) => {
-      return urlGen.sitePageView(docId, pageSeq, col)
-    }
-  }
-
   genGetPageInfo() {
     return (pageIds) => {
       return new Promise( (resolve, reject) => {

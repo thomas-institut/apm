@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021 Universität zu Köln
+ *  Copyright (C) 2021-2025 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,16 +16,7 @@
  *
  */
 
-/**
- * The Witness Info panel in the Editor Composer.
- *
- *  - Table of witnesses
- *  - Witness order
- *  - Sigla (with preset)
- *  - Witness update: update status, check for updates and launch the witness update task
- */
 import {Panel, PanelOptions} from '@/MultiPanelUI/Panel';
-import {OptionsChecker} from '@thomas-inst/optionschecker';
 import * as Util from '../toolbox/Util.mjs';
 import {EditableTextField} from '@/widgets/EditableTextField';
 import * as CollationTableType from '../constants/CollationTableType';
@@ -42,6 +33,8 @@ import {ApmFormats} from '@/pages/common/ApmFormats';
 import {NiceToggle} from '@/widgets/NiceToggle';
 import {ApmDataProxy} from "@/pages/common/ApmDataProxy";
 import {CtDataInterface} from "@/CtData/CtDataInterface";
+import {WitnessUpdateData} from "@/Api/Interfaces/WitnessUpdates";
+import {urlGen} from "@/pages/common/SiteUrlGen";
 
 const icons = {
   moveUp: '<i class="bi bi-arrow-up-short"></i>',
@@ -57,100 +50,68 @@ const icons = {
 };
 
 interface WitnessInfoPanelOptions extends PanelOptions {
-  apmDataProxy?: ApmDataProxy;
-  onSiglaChange?: () => void;
-  onWitnessOrderChange?: () => void;
-  checkForWitnessUpdates?: () => Promise<any>;
-  getPageInfo?: (pageIds: string[]) => Promise<any>;
-  getDocUrl?: () => string;
-  getPageUrl?: (docId: string, seq: number, column: number) => string;
-  getWitnessData?: (witnessId: string) => Promise<any>;
-  updateWitness?: (witnessIndex: number, changeData: any, newWitness: any) => Promise<any>;
-  fetchSiglaPresets?: () => Promise<any>;
-  fetchSources?: () => Promise<any>;
-  addEditionSources?: (sourceDataArray: any[]) => void;
+  apmDataProxy: ApmDataProxy;
+  userId: number;
+  ctData: CtDataInterface;
+  onCtDataChange: (ctData: CtDataInterface) => Promise<void>;
+  saveSiglaPreset: (apiCallData: any) => Promise<any>;
+  onSiglaChange: (newSigla: string[]) => Promise<void>;
+  onWitnessOrderChange: (newOrder: number[]) => Promise<void>;
+  getPageInfo: (pageIds: string[]) => Promise<any>;
+  getPageUrl: (docId: string, seq: number, column: number) => string;
+  getWitnessData: (witnessId: string) => Promise<any>;
+  updateWitness: (witnessIndex: number, changeData: any, newWitness: any) => Promise<boolean>;
+  fetchSiglaPresets: () => Promise<any>;
+  fetchSources: () => Promise<any>;
+  addEditionSources: (sourceDataArray: any[]) => void;
 }
 
+/**
+ * The Witness Info panel in the Editor Composer.
+ *
+ *  - Table of witnesses
+ *  - Witness order
+ *  - Sigla (with preset)
+ *  - Witness update: update status, check for updates and launch the witness update task
+ */
 export class WitnessInfoPanel extends Panel {
-  private options: any;
-  private currentWitnessUpdateData: any;
+  private readonly apmDataProxy: ApmDataProxy;
+  private readonly userId: number;
+
+  private readonly onSiglaChange: (newSigla: string[]) => Promise<void>;
+  private readonly onCtDataChange: (ctData: CtDataInterface) => Promise<void>;
+  private readonly onWitnessOrderChange: (newOrder: number[]) => Promise<void>;
+  private readonly getPageInfo: (pageIds: string[]) => Promise<any[]>;
+  private readonly getWitnessData: (witnessId: string) => Promise<any>;
+  private readonly updateWitness: (witnessIndex: number, changeData: any, newWitness: any) => Promise<boolean>;
+  private readonly fetchSources: () => Promise<any>;
+  private readonly fetchSiglaPresets: () => Promise<any>;
+  private readonly addEditionSources: (sourceDataArray: any[]) => void;
+  private readonly saveSiglaPreset: (apiCallData: any) => Promise<any>;
+
+  private currentWitnessUpdateData: WitnessUpdateData;
   private ctData: CtDataInterface;
   private checkingForWitnessUpdates: boolean;
   private siglaPresets: any[];
   private convertToEditionDiv!: JQuery<HTMLElement>;
   private convertToEditionButton!: JQuery<HTMLElement>;
-  private siglaPresetLoaded: any;
 
-  constructor(options: WitnessInfoPanelOptions = {}) {
+  constructor(options: WitnessInfoPanelOptions) {
     super(options);
-
-    let optionsSpec = {
-      apmDataProxy: {type: 'object'}, onSiglaChange: {
-        type: 'function', default: () => {
-        }
-      }, onWitnessOrderChange: {
-        type: 'function', default: () => {
-        }
-      }, checkForWitnessUpdates: {
-        type: 'function', default: (lastCheckData: any) => {
-          return new Promise(resolve => {
-            console.log(`Should be checking for witness updates`);
-            resolve(lastCheckData);
-          });
-        }
-      }, getPageInfo: {
-        type: 'function', default: (pageIds: number[]) => {
-          return new Promise(resolve => {
-            console.log(`Should be getting page info for ${pageIds.length} page(s)`);
-            resolve([]);
-          });
-        }
-      }, getDocUrl: {
-        type: 'function', default: () => {
-          return '';
-        }
-      }, getPageUrl: {
-        type: 'function', default: () => {
-          return '';
-        }
-      }, getWitnessData: {
-        type: 'function', default: (witnessId: string) => {
-          console.warn(`Not really getting ${witnessId} from server`);
-          return Promise.reject('Not implemented');
-        }
-      }, updateWitness: {
-        type: 'function', required: true
-        // (witnessIndex, changeData, newWitness) => Promise()
-      }, fetchSiglaPresets: {
-        // a function that fetches the sigla presets from the server.
-        // TODO: document data from the Promise resolve and reject
-        // () => {  return Promise() }
-        type: 'function', required: true
-      }, fetchSources: {
-        // a function that fetches available sources
-        // () => { return Promise()}
-        type: 'function', required: true,
-      }, addEditionSources: {
-        // a function that adds source from a given array
-        // (sourceDataArray) => { ...do something... }
-        type: 'function', required: true
-      },
-
-      saveSiglaPreset: {
-        // a function to save a sigla preset
-        // TODO: document apiCallData
-        // (apiCallData) => { return Promise() }
-        type: 'function', required: true
-      }, onCtDataChange: {
-        type: 'function', default: () => {
-        }
-      }, userId: {type: 'NonZeroNumber', required: true}, ctData: {type: 'object', required: true}
-    };
-
-    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'Witness Info Panel'});
-    this.options = oc.getCleanOptions(options);
-    this.ctData = CtData.copyFromObject(this.options.ctData);
-    this.currentWitnessUpdateData = '';
+    this.apmDataProxy = options.apmDataProxy;
+    this.onSiglaChange = options.onSiglaChange;
+    this.onCtDataChange = options.onCtDataChange;
+    this.onWitnessOrderChange = options.onWitnessOrderChange;
+    this.getPageInfo = options.getPageInfo;
+    this.getWitnessData = options.getWitnessData;
+    this.updateWitness = options.updateWitness;
+    this.fetchSiglaPresets = options.fetchSiglaPresets;
+    this.fetchSources = options.fetchSources;
+    this.addEditionSources = options.addEditionSources;
+    this.saveSiglaPreset = options.saveSiglaPreset;
+    this.userId = options.userId;
+    this.ctData = CtData.copyFromObject(options.ctData);
+    this.currentWitnessUpdateData = {status: 'undefined', witnesses: [], timeStamp: '', message: ''};
     this.checkingForWitnessUpdates = false;
     this.siglaPresets = [];
   }
@@ -172,7 +133,7 @@ export class WitnessInfoPanel extends Panel {
   }
 
   async generateHtml(): Promise<string> {
-    return `<div class="witnessinfotable">${await this.genWitnessTableHtml()}</div>
+    return `<div class="witness-info-table">${await this.genWitnessTableHtml()}</div>
         <div class="witness-update-div">
             <span class="witness-update-info"></span>
             <button class="btn  btn-outline-secondary btn-sm check-witness-update-btn"  title="Click to check for updates to witness transcriptions">Check Now</button>
@@ -194,10 +155,10 @@ export class WitnessInfoPanel extends Panel {
   async updatePageInfo(): Promise<void> {
     let pageIds = CtData.getPageIds(this.ctData);
     let allPageIds = flatten(pageIds);
-    let pageInfoArray = await this.options.getPageInfo(allPageIds);
+    let pageInfoArray = await this.getPageInfo(allPageIds);
     // fix docIds
     for (let i = 0; i < pageInfoArray.length; i++) {
-      pageInfoArray[i].docId = await this.options.apmDataProxy.getRealDocId(pageInfoArray[i].docId);
+      pageInfoArray[i].docId = await this.apmDataProxy.getRealDocId(pageInfoArray[i].docId);
     }
     this.ctData['witnesses'].forEach((witness, witnessIndex) => {
       if (witness['witnessType'] === WitnessType.FULL_TX) {
@@ -229,13 +190,13 @@ export class WitnessInfoPanel extends Panel {
             return '';
           }
           if (colWithInfo["numCols"] === 1) {
-            let pageUrl = this.options.getPageUrl(colWithInfo.docId, colWithInfo.seq, 0);
+            let pageUrl = urlGen.sitePageView(colWithInfo.docId, colWithInfo.seq ?? 0, 0);
             if (pageUrl === '') {
               return colWithInfo.foliation;
             }
             return `<a href="${pageUrl}" title="Click to open page transcription in a new tab" target="_blank">${colWithInfo.foliation}</a>`;
           } else {
-            let pageUrl = this.options.getPageUrl(colWithInfo.docId, colWithInfo.seq, colWithInfo.column);
+            let pageUrl = urlGen.sitePageView(colWithInfo.docId, colWithInfo.seq ?? 0, colWithInfo.column);
             let pageString = `${colWithInfo.foliation} c${colWithInfo.column}`;
             if (pageUrl === '') {
               return pageString;
@@ -249,12 +210,12 @@ export class WitnessInfoPanel extends Panel {
   }
 
   postRender() {
-    this.updatePageInfo();
+    this.updatePageInfo().then( () => {});
+    this.updateWitnessInfoDiv(false).then( () => {});
 
-    this.updateWitnessInfoDiv(false);
-    $(this.containerSelector + ' .check-witness-update-btn').on('click', () => {
+    $(this.containerSelector + ' .check-witness-update-btn').on('click', async () => {
       if (!this.checkingForWitnessUpdates) {
-        this.checkForWitnessUpdates();
+        await this.checkForWitnessUpdates();
       }
     });
     this.convertToEditionDiv = $('#convert-to-edition-div');
@@ -269,7 +230,7 @@ export class WitnessInfoPanel extends Panel {
 
     // TODO: change this to sigla group manager UI
     $(`${this.containerSelector} .add-sigla-group-btn`).on('click', this._genOnClickAddSiglaGroupButton());
-    this.ctData['siglaGroups'].forEach((sg, i) => {
+    this.ctData['siglaGroups'].forEach((_sg, i) => {
       $(`${this.containerSelector} .edit-sigla-group-btn-${i}`).on('click', this._genOnClickEditSiglaGroupButton(i));
       $(`${this.containerSelector} .delete-sigla-group-btn-${i}`).on('click', this._genOnClickDeleteSiglaGroup(i));
     });
@@ -293,7 +254,7 @@ export class WitnessInfoPanel extends Panel {
       });
       dialog.show();
       let dialogSelector = dialog.getSelector();
-      this.options.fetchSources().then((sourceArray: any) => {
+      this.fetchSources().then((sourceArray: any) => {
         console.log(`Got sources`);
         console.log(sourceArray);
         let tableHtml = '<table class="source-table">';
@@ -315,7 +276,7 @@ export class WitnessInfoPanel extends Panel {
             }
           });
           if (sourcesToAdd.length !== 0) {
-            this.options.addEditionSources(sourcesToAdd);
+            this.addEditionSources(sourcesToAdd);
           }
           dialog.hide();
           dialog.destroy();
@@ -333,25 +294,26 @@ export class WitnessInfoPanel extends Panel {
       ev.preventDefault();
       ev.stopPropagation();
       this.verbose && console.log(`Edit sigla group ${i}`);
-      this._addEditSiglaGroup(i);
+      this.addEditSiglaGroup(i).then();
     };
   }
 
   _genOnClickDeleteSiglaGroup(i: number) {
-    return (ev: any) => {
+    return async (ev: any) => {
       ev.preventDefault();
       ev.stopPropagation();
-      SiglaGroupsUI.confirmDeleteSiglaGroup(this.ctData['siglaGroups'], i, this.ctData['sigla']).then(() => {
+      try {
+        await SiglaGroupsUI.confirmDeleteSiglaGroup(this.ctData['siglaGroups'], i, this.ctData['sigla']);
         this.verbose && console.log(`Deleting sigla group ${i}`);
-        this.ctData['siglaGroups'] = this.ctData['siglaGroups'].filter((sg, index) => {
+        this.ctData['siglaGroups'] = this.ctData['siglaGroups'].filter((_sg, index) => {
           return index !== i;
         });
-        this.options.onCtDataChange(this.ctData);
-      }, (reason) => {
+        await this.onCtDataChange(this.ctData);
+      } catch (reason) {
         if (reason !== 'Canceled') {
           console.error(`Error confirming deletion of sigla group ${i}`);
         }
-      });
+      }
     };
   }
 
@@ -371,7 +333,7 @@ export class WitnessInfoPanel extends Panel {
 
     // set table html
     if (reRenderTable) {
-      $(this.containerSelector + ' .witnessinfotable').html(await this.genWitnessTableHtml());
+      $(this.containerSelector + ' .witness-info-table').html(await this.genWitnessTableHtml());
     }
 
 
@@ -394,12 +356,11 @@ export class WitnessInfoPanel extends Panel {
       });
     }
     // update witness update check info
-    if (this.currentWitnessUpdateData === '') {
-      this.checkForWitnessUpdates();
+    if (this.currentWitnessUpdateData.status === 'undefined') {
+      await this.checkForWitnessUpdates();
     } else {
       this.showWitnessUpdateData();
     }
-
 
     // set up sigla presets buttons
     $(this.containerSelector + ' .save-sigla-btn').on('click', this.genOnClickSaveSiglaPreset());
@@ -409,7 +370,7 @@ export class WitnessInfoPanel extends Panel {
       $(this.containerSelector + ' .load-sigla-btn').addClass('hidden');
     }
 
-    this.fetchSiglaPresets();
+    this.loadSiglaPresets();
     // setup auto apparatus toggles
     let excluded = this.ctData['excludeFromAutoCriticalApparatus'];
     for (let i = 0; i < this.ctData['witnesses'].length; i++) {
@@ -430,7 +391,7 @@ export class WitnessInfoPanel extends Panel {
         } else {
           this.ctData['excludeFromAutoCriticalApparatus'].push(i);
         }
-        this.options.onCtDataChange(this.ctData);
+        this.onCtDataChange(this.ctData);
       });
     }
 
@@ -454,13 +415,13 @@ export class WitnessInfoPanel extends Panel {
             return v !== i;
           });
         }
-        this.options.onCtDataChange(this.ctData);
+        this.onCtDataChange(this.ctData);
       });
     }
   }
 
-  fetchSiglaPresets() {
-    this.options.fetchSiglaPresets().then((presets: any) => {
+  loadSiglaPresets() {
+    this.fetchSiglaPresets().then((presets: any) => {
       this.siglaPresets = presets;
       this.verbose && console.log(`Fetched sigla presets`);
       this.verbose && console.log(presets);
@@ -498,7 +459,7 @@ export class WitnessInfoPanel extends Panel {
 
       // get user presets
       let userPresets = this.siglaPresets.filter((p) => {
-        return p.userId === this.options.userId;
+        return p.userId === this.userId;
       });
 
       if (userPresets.length === 0) {
@@ -522,7 +483,7 @@ export class WitnessInfoPanel extends Panel {
       // build witness sigla table
       let siglaTableBody = this.ctData.witnesses.filter((w) => {
         return w['witnessType'] === 'fullTx';
-      }).map((w, i) => {
+      }).map((_w, i) => {
         return `<tr></tr><td>${this.ctData['witnessTitles'][i]}</td><td>${this.ctData.sigla[i]}</td></tr>`;
       }).join('');
       $(`${modalSelector} .sigla-table-body`).html(siglaTableBody);
@@ -578,7 +539,7 @@ export class WitnessInfoPanel extends Panel {
           apiCallData.presetId = Util.safeGetIntVal(presetSelect, 'presetSelect');
         }
 
-        this.options.saveSiglaPreset(apiCallData).then(() => {
+        this.saveSiglaPreset(apiCallData).then(() => {
           this.verbose && console.log('Save preset success');
           if (apiCommand === 'new') {
             footInfoLabel.html('New preset created ');
@@ -587,7 +548,7 @@ export class WitnessInfoPanel extends Panel {
           }
           cancelButton.html('Close');
           // reload presets
-          this.fetchSiglaPresets();
+          this.loadSiglaPresets();
         }).catch((resp: any) => {
           if (apiCommand === 'new') {
           }
@@ -609,15 +570,16 @@ export class WitnessInfoPanel extends Panel {
   _genOnClickAddSiglaGroupButton() {
     return () => {
       console.log(`Click on add sigla group button`);
-      this._addEditSiglaGroup(-1);
+      this.addEditSiglaGroup(-1).then();
     };
   }
 
-  _addEditSiglaGroup(index: number) {
-    let sigla = this.ctData['sigla'].filter((s, i) => {
+  private async addEditSiglaGroup(index: number) {
+    let sigla = this.ctData['sigla'].filter((_s, i) => {
       return (i !== this.ctData['editionWitnessIndex']);
     });
-    SiglaGroupsUI.addEditSiglaGroup(this.ctData['siglaGroups'], index, sigla).then((editedSiglaGroup) => {
+    try {
+      const editedSiglaGroup = await SiglaGroupsUI.addEditSiglaGroup(this.ctData['siglaGroups'], index, sigla);
       if (index === -1) {
         console.log(`Adding new sigla group`);
         this.ctData['siglaGroups'].push(editedSiglaGroup);
@@ -625,12 +587,12 @@ export class WitnessInfoPanel extends Panel {
         console.log(`Replacing sigla group at index ${index}`);
         this.ctData['siglaGroups'][index] = editedSiglaGroup;
       }
-      this.options.onCtDataChange(this.ctData);
-    }, (reason) => {
+      this.onCtDataChange(this.ctData).then();
+    } catch (reason) {
       if (reason !== 'Canceled') {
         console.error(`Error editing sigla group: ${reason}`);
       }
-    });
+    }
   }
 
   genOnClickLoadSiglaPreset() {
@@ -665,7 +627,7 @@ export class WitnessInfoPanel extends Panel {
         }).join(''));
       });
 
-      loadButton.on('click', () => {
+      loadButton.on('click', async () => {
         let id = Util.safeGetIntVal(presetSelect, 'presetSelect');
         let p = this.siglaPresets.filter((p) => {
           return p.presetId === id;
@@ -673,12 +635,10 @@ export class WitnessInfoPanel extends Panel {
         this.getWitnessSiglaArrayFromPreset(p).forEach((w) => {
           this.ctData['sigla'][w.index] = w.presetSiglum;
         });
-        this.siglaPresetLoaded = p.title;
         // @ts-expect-error the modal method is added by bootstrap
         $(modalSelector).modal('hide');
         $(modalSelector).remove();
-        this.updateWitnessInfoDiv();
-        this.options.onSiglaChange(this.ctData.sigla);
+        await Promise.all([this.updateWitnessInfoDiv(), this.onSiglaChange(this.ctData.sigla)]);
       });
 
       cancelButton.on('click', () => {
@@ -726,7 +686,7 @@ export class WitnessInfoPanel extends Panel {
                     <select class="preset-select"></select> 
                 </p>
                 <div class="info-div">
-                 <table class="sigla-table witnesstable">
+                 <table class="sigla-table witness-table">
                         <tr><th>Witness</th><th>Current Siglum</th><th>Preset Siglum</th></tr>
                         <tbody class="sigla-table-body">
                         </tbody>
@@ -751,7 +711,7 @@ export class WitnessInfoPanel extends Panel {
             </div>
             <div class="modal-body">
                 <div class="info-div">
-                    <table class="sigla-table witnesstable">
+                    <table class="sigla-table witness-table">
                         <tr><th>Witness</th><th>Siglum</th></tr>
                         <tbody class="sigla-table-body">
                         </tbody>
@@ -781,56 +741,35 @@ export class WitnessInfoPanel extends Panel {
    * Function to be called by EditionComposer after saving to the server
    */
   onDataSave() {
-    this.currentWitnessUpdateData['witnesses'] = this.currentWitnessUpdateData['witnesses'].map((wud: any) => {
-      wud['justUpdated'] = false;
+    this.currentWitnessUpdateData.witnesses = this.currentWitnessUpdateData.witnesses.map((wud) => {
+      wud.justUpdated = false;
       return wud;
     });
     this.showWitnessUpdateData();
   }
 
   markWitnessAsJustUpdated(witnessIndex: number) {
-    this.currentWitnessUpdateData['witnesses'][witnessIndex]['upToDate'] = true;
-    this.currentWitnessUpdateData['witnesses'][witnessIndex]['justUpdated'] = true;
-    this.currentWitnessUpdateData['witnesses'][witnessIndex]['id'] = this.ctData['witnesses'][witnessIndex]['ApmWitnessId'];
+    this.currentWitnessUpdateData.witnesses[witnessIndex].upToDate = true;
+    this.currentWitnessUpdateData.witnesses[witnessIndex].justUpdated = true;
+    this.currentWitnessUpdateData.witnesses[witnessIndex].id = this.ctData.witnesses[witnessIndex].ApmWitnessId;
     this.showWitnessUpdateData();
-  }
-
-  checkForWitnessUpdates() {
-    this.checkingForWitnessUpdates = true;
-    if (this.currentWitnessUpdateData === '') {
-      this.currentWitnessUpdateData = this.getInitialWitnessUpdateData();
-    }
-    $(this.containerSelector + ' .witness-update-info').html(`Checking for witness updates... <i class="fas fa-spinner fa-spin"></i>`);
-    $(this.containerSelector + ' .check-witness-update-btn').prop('disabled', true);
-    this.options.checkForWitnessUpdates(this.currentWitnessUpdateData).then((newWitnessUpdateCheckData: any) => {
-      this.currentWitnessUpdateData = newWitnessUpdateCheckData;
-      // console.log(newWitnessUpdateCheckData)
-      this.showWitnessUpdateData();
-      this.checkingForWitnessUpdates = false;
-    })
-    .catch(() => {
-      console.log(`Error checking witness updates`);
-      $(`span.witness-update-info`).html(`Error checking witness updates, try again later`);
-      $(`button.check-witness-update-btn`).prop('disabled', false);
-      this.checkingForWitnessUpdates = false;
-    });
   }
 
   showWitnessUpdateData() {
     let infoSpan = $(this.containerSelector + ' .witness-update-info');
     let button = $(this.containerSelector + ' .check-witness-update-btn');
     let witnessesUpToDate = true;
-    for (let i = 0; i < this.currentWitnessUpdateData['witnesses'].length; i++) {
-      let witnessUpdateInfo = this.currentWitnessUpdateData['witnesses'][i];
-      let warningTd = $(`${this.containerSelector} td.outofdate-td-${i}`);
-      if (!witnessUpdateInfo['upToDate']) {
-        if (witnessUpdateInfo['lastUpdate'] === -1) {
+    for (let i = 0; i < this.currentWitnessUpdateData.witnesses.length; i++) {
+      let witnessUpdateInfo = this.currentWitnessUpdateData.witnesses[i];
+      let warningTd = $(`${this.containerSelector} td.outOfData-td-${i}`);
+      if (!witnessUpdateInfo.upToDate) {
+        if (witnessUpdateInfo.lastUpdate === '') {
           // witness no longer defined
           warningTd.html(`<span>${icons.checkFail} Chunk no longer present in this witness`);
         } else {
           witnessesUpToDate = false;
           let warningHtml = `<span>${icons.checkFail} Last version:  `;
-          warningHtml += `${ApmFormats.timeString(witnessUpdateInfo['lastUpdate'])} `;
+          warningHtml += `${ApmFormats.timeString(witnessUpdateInfo.lastUpdate)} `;
           warningHtml += `<a title="Click to update witness" class="btn btn-outline-secondary btn-sm witness-update-btn witness-update-btn-${i}">Update</a>`;
           warningTd.html(warningHtml);
           $(`${this.containerSelector} .witness-update-btn-${i}`).on('click', this.genOnClickWitnessUpdate(i));
@@ -864,10 +803,12 @@ export class WitnessInfoPanel extends Panel {
 
   }
 
-  getInitialWitnessUpdateData() {
+  getInitialWitnessUpdateData(): WitnessUpdateData {
     return {
-      status: 'Initial', witnesses: this.ctData['witnesses'].map(witness => {
-        return {id: witness['ApmWitnessId'], upToDate: true};
+      status: 'NotChecked', timeStamp: '', message: '', witnesses: this.ctData.witnesses.map(witness => {
+        return {
+          id: witness.ApmWitnessId, upToDate: true, lastUpdate: '', justUpdated: false
+        };
       })
     };
   }
@@ -877,10 +818,10 @@ export class WitnessInfoPanel extends Panel {
       let dialog = new WitnessUpdateDialog({
         ctData: this.ctData,
         witnessIndex: witnessIndex,
-        newWitnessInfo: this.currentWitnessUpdateData['witnesses'][witnessIndex],
+        newWitnessInfo: this.currentWitnessUpdateData.witnesses[witnessIndex],
         witnessDiffCalculator: new WitnessDiffCalculator({debug: true}),
-        getWitnessData: this.options.getWitnessData,
-        updateWitness: this.options.updateWitness,
+        getWitnessData: this.getWitnessData,
+        updateWitness: this.updateWitness,
         icons: icons,
         debug: true
       });
@@ -902,7 +843,6 @@ export class WitnessInfoPanel extends Panel {
       }
       let classes = Util.getClassArrayFromJQueryObject($(ev.currentTarget.parentNode));
 
-      // let index = thisObject.getWitnessIndexFromClasses(classes)
       let position = this.getWitnessPositionFromClasses(classes);
       let numWitnesses = this.ctData['witnesses'].length;
       // console.log('Click move ' + direction + ' button on witness ' + index + ', position ' + position)
@@ -943,11 +883,12 @@ export class WitnessInfoPanel extends Panel {
 
       ArrayUtil.swapElements(this.ctData['witnessOrder'], position, position + indexOffset);
 
-      $(this.options.containerSelector + ' .witnessinfotable').html('Updating...');
+      $(this.containerSelector + ' .witness-info-table').html('Updating...');
       await this.updateWitnessInfoDiv(true);
       await this.updatePageInfo();
       this._redrawSiglaGroupSigla();
-      this.options.onWitnessOrderChange(this.ctData['witnessOrder']);
+      await this.onWitnessOrderChange(this.ctData.witnessOrder);
+      return true;
     };
   }
 
@@ -971,7 +912,7 @@ export class WitnessInfoPanel extends Panel {
   }
 
   genOnConfirmSiglumEdit(witnessIndex: number) {
-    return (ev: any) => {
+    return async (ev: any) => {
       console.log(`Confirming siglum edit`);
       console.log(ev.detail);
       let newText = Util.removeWhiteSpace(ev.detail['newText']);
@@ -984,16 +925,37 @@ export class WitnessInfoPanel extends Panel {
       }
       console.log('Change in siglum for witness index ' + witnessIndex + ' to ' + newText);
       if (this.ctData['sigla'].indexOf(newText) !== -1) {
-        transientAlert($(this.options.containerSelector + ' .warning-td-' + witnessIndex), '', "Given siglum '" + newText + "' already exists, no changes made", 2000, 'slow');
+        transientAlert($(this.containerSelector + ' .warning-td-' + witnessIndex), '', "Given siglum '" + newText + "' already exists, no changes made", 2000, 'slow');
         editor.setText(this.ctData['sigla'][witnessIndex]);
       }
       // Change the siglum
       this.ctData['sigla'][witnessIndex] = newText;
       this._redrawSiglaGroupSigla();
 
-      this.options.onSiglaChange(this.ctData['sigla']);
+      await this.onSiglaChange(this.ctData.sigla);
       return true;
     };
+  }
+
+  private async checkForWitnessUpdates() {
+    this.checkingForWitnessUpdates = true;
+    if (this.currentWitnessUpdateData.status === 'undefined') {
+      this.currentWitnessUpdateData = this.getInitialWitnessUpdateData();
+    }
+    $(this.containerSelector + ' .witness-update-info').html(`Checking for witness updates... <i class="fas fa-spinner fa-spin"></i>`);
+    $(this.containerSelector + ' .check-witness-update-btn').prop('disabled', true);
+    const witnessIds = this.currentWitnessUpdateData.witnesses.map(w => w.id);
+    const newWitnessUpdateCheckData = await this.apmDataProxy.checkWitnessUpdates(witnessIds);
+    console.log(`Got new witness update data`, newWitnessUpdateCheckData);
+    if (newWitnessUpdateCheckData.status === 'OK') {
+      this.currentWitnessUpdateData = newWitnessUpdateCheckData;
+      this.showWitnessUpdateData();
+    } else {
+      console.warn(`Error checking for witness updates: ${newWitnessUpdateCheckData.message}`);
+      $(`span.witness-update-info`).html(`Error checking witness updates, try again later`);
+      $(`button.check-witness-update-btn`).prop('disabled', false);
+    }
+    this.checkingForWitnessUpdates = false;
   }
 
   private genSiglaGroupsTable(): string {
@@ -1026,12 +988,15 @@ export class WitnessInfoPanel extends Panel {
                 <td></td>
                 <td></td>
                 <td class="warning-td-${witnessIndex}"></td>
-                <td class="outofdate-td-${witnessIndex}"></td>
+                <td class="outOfData-td-${witnessIndex}"></td>
             </tr>`;
           break;
 
         case WitnessType.FULL_TX:
-          let docLink = this.options.getDocUrl(await this.options.apmDataProxy.getRealDocId(witness['docId']));
+          if (witness.docId === undefined) {
+            throw new Error('Witness has no docId');
+          }
+          let docLink = urlGen.siteDocPage(await this.apmDataProxy.getRealDocId((witness.docId)));
           if (docLink !== '') {
             witnessTitle = `<a href="${docLink}" target="_blank" title="Click to open document page in a new tab">
                ${this.ctData['witnessTitles'][witnessIndex]}</a>`;
@@ -1048,7 +1013,7 @@ export class WitnessInfoPanel extends Panel {
                 <td class="auto-app-${witnessIndex}"></td>
                 <td class="auto-fol-${witnessIndex}"></td>
                 <td class="warning-td-${witnessIndex}"></td>
-                <td class="outofdate-td-${witnessIndex}"></td>
+                <td class="outOfData-td-${witnessIndex}"></td>
             </tr>`;
           break;
 
@@ -1059,7 +1024,7 @@ export class WitnessInfoPanel extends Panel {
     }
 
 
-    return `<table class="witnesstable">
+    return `<table class="witness-table">
       <tr>
         <th></th> <!-- Move up/down icons -->
         <th>Witness</th>

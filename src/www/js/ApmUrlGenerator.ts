@@ -78,15 +78,11 @@ export class ApmUrlGenerator {
    * @param {any}id
    * @return {string}
    */
-  getFormattedId(id: any): string {
+  getFormattedId(id: string | number): string {
     if (typeof id === 'string') {
       return id;
     }
-    if (typeof id === 'number') {
-      return Tid.toBase36String(id);
-    }
-
-    return Tid.toBase36String(parseInt(id.toString()));
+    return Tid.toBase36String(id);
   }
 
   sitePageView(docId: any, pageSequence: number, col: number | null = null): string {
@@ -114,7 +110,7 @@ export class ApmUrlGenerator {
    * @param {string}docId
    * @returns {string}
    */
-  siteDocPage(docId: string): string {
+  siteDocPage(docId: string|number): string {
     return `${this.base}/doc/${this.getFormattedId(docId)}`;
   }
 

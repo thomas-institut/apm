@@ -17,12 +17,14 @@
  *  
  */
 
+declare(strict_types=1);
+
 namespace APM\Api;
 
 use APM\Api\ItemStreamFormatter\WitnessPageFormatter;
 use APM\Api\PersonInfoProvider\ApmPersonInfoProvider;
-use APM\Core\Witness\SimpleHtmlWitnessDecorator;
-use APM\Decorators\Witness\ApmTxWitnessDecorator;
+use APM\Api\ResponseData\WitnessUpdateData;
+use APM\Api\ResponseData\WitnessUpdateInfo;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\StandardData\FullTxWitnessDataProvider;
 use APM\System\Document\Exception\DocumentNotFoundException;
@@ -58,9 +60,9 @@ class ApiWitness extends ApiController
 
         $witnessId = $request->getAttribute('witnessId');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $witnessId);
-        
+
         $outputType = $request->getAttribute('outputType', 'full');
-        $useCache = $request->getAttribute('cache',  'usecache') === 'usecache';
+        $useCache = $request->getAttribute('cache', 'usecache') === 'usecache';
 
         $witnessType = WitnessSystemId::getType($witnessId);
 
@@ -74,7 +76,7 @@ class ApiWitness extends ApiController
                     'apiUserTid' => $this->apiUserId,
                     'apiError' => self::ERROR_WITNESS_TYPE_NOT_IMPLEMENTED
                 ]);
-                return $this->responseWithJson($response, [ 'error' => $msg ], 409);
+                return $this->responseWithJson($response, ['error' => $msg], 409);
 
             default:
                 $msg = "Unknown witness type $witnessType";
@@ -82,52 +84,40 @@ class ApiWitness extends ApiController
                     'apiUserTid' => $this->apiUserId,
                     'apiError' => self::ERROR_UNKNOWN_WITNESS_TYPE
                 ]);
-                return $this->responseWithJson($response, [ 'error' => $msg ], 409);
+                return $this->responseWithJson($response, ['error' => $msg], 409);
         }
     }
 
     public function checkWitnessUpdates(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        
-        $inputData = $this->checkAndGetInputData($request, $response, ['witnesses']);
-        //$this->debug('Input data', [ $inputData ]);
-        if (!is_array($inputData)) {
-            return $inputData;
+
+        $witnessArray = json_decode($request->getBody()->__toString(), true);
+        if (!is_array($witnessArray)) {
+            $this->logger->warning("$this->apiCallName: no witnesses in request");
+            return $this->responseWithText($response, 'No witnesses in request', HttpStatus::BAD_REQUEST);
         }
 
-        $witnessArray = $inputData['witnesses'];
-        if ($witnessArray === []) {
-            $this->logger->warning("$this->apiCallName: no witnesses in request");
-        }
-        $responseData = [];
-        $responseData['status'] = 'OK';
-        $responseData['timeStamp'] = TimeString::now();
-        $responseData['witnesses'] = [];
-        foreach($witnessArray as $i => $witness) {
-            if (!isset($witness['id'])) {
-                $msg = "No witness id given in witness $i" ;
-                $this->logger->error($msg, [
-                    'apiUserTid' => $this->apiUserId,
-                    'apiError' => self::ERROR_UNKNOWN_WITNESS_TYPE
-                ]);
-                return $this->responseWithJson($response, [ 'error' => $msg ], 409);
-            }
-            $witnessId = $witness['id'];
+        $responseData = new WitnessUpdateData();
+        $responseData->status = 'OK';
+        $responseData->timeStamp = TimeString::now();
+        $responseData->witnesses = [];
+        foreach ($witnessArray as $witnessId) {
             $witnessType = WitnessSystemId::getType($witnessId);
             switch ($witnessType) {
                 case WitnessType::CHUNK_EDITION:
                 case WitnessType::SOURCE:
                     // just say that chunk edition / source is up-to-date
-                    $responseData['witnesses'][] = [
-                        'id' => $witnessId,
-                        'upToDate' => true,
-                    ];
+                    $info = new WitnessUpdateInfo();
+                    $info->id = $witnessId;
+                    $info->upToDate = true;
+                    $responseData->witnesses[] = $info;
                     break;
 
                 case WitnessType::FULL_TRANSCRIPTION:
                     $witnessInfo = WitnessSystemId::getFullTxInfo($witnessId);
                     $witnessStillDefined = true;
+                    $lastUpdate = '';
                     try {
                         $lastUpdate = $this->systemManager->getTranscriptionManager()->getLastChangeTimestampForWitness(
                             $witnessInfo->workId,
@@ -137,13 +127,13 @@ class ApiWitness extends ApiController
                         );
                     } catch (Exception $e) {
                         if ($e->getCode() === ApmTranscriptionManager::ERROR_DOCUMENT_NOT_FOUND) {
-                           $witnessStillDefined = false;
+                            $witnessStillDefined = false;
                         } else {
                             $this->debug("Exception getting last change time for witness", [
                                 'msg' => $e->getMessage(),
                                 'witnessInfo' => get_object_vars($witnessInfo)
                             ]);
-                            return $this->responseWithJson($response, [ 'error' => 'Problem getting info', 'code' => 0], 409);
+                            return $this->responseWithText($response, 'Error getting last change time for witness', HttpStatus::INTERNAL_SERVER_ERROR);
                         }
                     }
                     if ($witnessStillDefined) {
@@ -158,18 +148,18 @@ class ApiWitness extends ApiController
                             $witnessInfo->typeSpecificInfo['localWitnessId'],
                             $lastUpdate
                         );
-                        $responseData['witnesses'][] = [
-                            'id' => $witnessId,
-                            'upToDate' => $upToDate,
-                            'lastUpdate' => $lastUpdate,
-                            'updatedWitnessId'=> $updatedWitnessId
-                        ];
-                    }else {
-                        $responseData['witnesses'][] = [
-                            'id' => $witnessId,
-                            'upToDate' => false,
-                            'lastUpdate' => -1
-                        ];
+                        $info = new WitnessUpdateInfo();
+                        $info->id = $witnessId;
+                        $info->upToDate = $upToDate;
+                        $info->lastUpdate = $lastUpdate;
+                        $info->updatedWitnessId = $updatedWitnessId;
+                        $responseData->witnesses[] = $info;
+                    } else {
+                        $info = new WitnessUpdateInfo();
+                        $info->id = $witnessId;
+                        $info->upToDate = false;
+                        $info->lastUpdate = '';
+                        $responseData->witnesses[] = $info;
                         $this->debug("Witness $witnessId no longer defined in the system");
                     }
                     break;
@@ -180,10 +170,7 @@ class ApiWitness extends ApiController
                         'apiUserTid' => $this->apiUserId,
                         'apiError' => self::ERROR_WITNESS_TYPE_NOT_IMPLEMENTED
                     ]);
-                    return $this->responseWithJson($response, [ 'error' => $msg ], 409);
-
-
-
+                    return $this->responseWithJson($response, ['error' => $msg], HttpStatus::NOT_IMPLEMENTED);
 
                 default:
                     $msg = "Unknown witness type $witnessType";
@@ -191,13 +178,14 @@ class ApiWitness extends ApiController
                         'apiUserTid' => $this->apiUserId,
                         'apiError' => self::ERROR_UNKNOWN_WITNESS_TYPE
                     ]);
-                    return $this->responseWithJson($response, [ 'error' => $msg ], 409);
+                    return $this->responseWithJson($response, ['error' => $msg], HttpStatus::BAD_REQUEST);
             }
         }
-        return $this->responseWithJson($response, $responseData, 200);
+        return $this->responseWithJson($response, $responseData);
     }
 
-    private function getFullTxWitness(string $requestedWitnessId, string $outputType, Response $response, bool $useCache) : Response {
+    private function getFullTxWitness(string $requestedWitnessId, string $outputType, Response $response, bool $useCache): Response
+    {
         $this->debugCode = false;
         try {
             $witnessInfo = WitnessSystemId::getFullTxInfo($requestedWitnessId);
@@ -209,7 +197,7 @@ class ApiWitness extends ApiController
                 'exceptionErrorCode' => $e->getCode(),
                 'exceptionErrorMsg' => $e->getMessage()
             ]);
-            return $this->responseWithJson($response, [ 'error' => $msg], 409);
+            return $this->responseWithJson($response, ['error' => $msg], 409);
         }
 
         $workId = $witnessInfo->workId;
@@ -224,7 +212,7 @@ class ApiWitness extends ApiController
         } catch (DocumentNotFoundException|EntityDoesNotExistException $e) {
             // cannot get witness
             $msg = "Could not get doc info for witness '" . $requestedWitnessId;
-            $this->logger->error($msg, [ 'exceptionError' => $e->getCode(), 'exceptionMsg' => $e->getMessage(), 'witness'=> $requestedWitnessId]);
+            $this->logger->error($msg, ['exceptionError' => $e->getCode(), 'exceptionMsg' => $e->getMessage(), 'witness' => $requestedWitnessId]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_RUNTIME_ERROR, 'msg' => $msg], HttpStatus::INTERNAL_SERVER_ERROR);
         }
 
@@ -259,8 +247,8 @@ class ApiWitness extends ApiController
         } catch (Exception $e) {
             $msg = $e->getMessage();
             $this->logger->error("Exception trying to get transcription witness. Msg = '$msg'",
-                [ 'locations' => $locations ] );
-            return $this->responseWithJson($response, [ 'error' => $msg ], 409);
+                ['locations' => $locations]);
+            return $this->responseWithJson($response, ['error' => $msg], 409);
         }
         $witnessId = WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $apmWitness->getTimeStamp());
         $html = $this->getWitnessHtml($apmWitness);
@@ -282,10 +270,10 @@ class ApiWitness extends ApiController
         $returnData['segments'] = $locations;
         $returnData['requestedWitnessId'] = $requestedWitnessId;
         $returnData['html'] = $html;
-        $returnData['apiStatus']  = 'OK';
+        $returnData['apiStatus'] = 'OK';
         if ($outputType === 'standardData') {
-            $returnData = [ 'witnessData' => $returnData['standardData']];
-            $returnData['apiStatus']  = 'OK';
+            $returnData = ['witnessData' => $returnData['standardData']];
+            $returnData['apiStatus'] = 'OK';
         }
         $returnData['cached'] = false;
         $returnData['usingCache'] = $useCache;
@@ -323,7 +311,8 @@ class ApiWitness extends ApiController
     }
 
 
-    private function getWitnessHtml(ApmTranscriptionWitness $apmWitness) : string {
+    private function getWitnessHtml(ApmTranscriptionWitness $apmWitness): string
+    {
         $formatter = new WitnessPageFormatter();
         $personInfoProvider = new ApmPersonInfoProvider($this->systemManager->getPersonManager());
         $formatter->setPersonInfoProvider($personInfoProvider);
@@ -342,3 +331,4 @@ class ApiWitness extends ApiController
     }
 
 }
+

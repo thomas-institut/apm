@@ -19,26 +19,22 @@
  */
 
 
-import { deepCopy } from '../toolbox/Util.mjs'
-import { arraysAreEqual, numericSort, uniq } from '../lib/ToolBox/ArrayUtil.js'
+import {arraysAreEqual, numericSort, uniq} from '../lib/ToolBox/ArrayUtil.js';
 import {SiglaGroupInterface} from "../CtData/CtDataInterface";
 
-export class SiglaGroup {
+export class SiglaGroup implements SiglaGroupInterface {
   public siglum: string = '';
-  private witnesses: number[] = [];
+  public witnesses: number[] = [];
 
   static fromObject(obj: SiglaGroupInterface): SiglaGroup {
-    let sg = new SiglaGroup()
-    if (obj.siglum !== undefined) {
-      sg.siglum = obj.siglum
-    }
-
-    if (obj.witnesses !== undefined && Array.isArray(obj.witnesses)) {
-      sg.witnesses = deepCopy(obj.witnesses)
-    }
-    return sg
+    return new SiglaGroup().setFromInterface(obj);
   }
 
+  setFromInterface(sg: SiglaGroupInterface): this {
+    this.siglum = sg.siglum;
+    this.witnesses = sg.witnesses.map(w => w);
+    return this;
+  }
 
 
   /**
@@ -49,16 +45,16 @@ export class SiglaGroup {
    *
    */
   matchWitnesses(witnessesToMatch: number[]): number[] {
-    let matchedWitnesses: number[] = []
-    witnessesToMatch.forEach( (w) => {
+    let matchedWitnesses: number[] = [];
+    witnessesToMatch.forEach((w) => {
       if (this.witnesses.indexOf(w) !== -1) {
-        matchedWitnesses.push(w)
+        matchedWitnesses.push(w);
       }
-    })
-    matchedWitnesses = numericSort(uniq(matchedWitnesses))
+    });
+    matchedWitnesses = numericSort(uniq(matchedWitnesses));
     if (arraysAreEqual(matchedWitnesses, this.witnesses)) {
-      return matchedWitnesses
+      return matchedWitnesses;
     }
-    return []
+    return [];
   }
 }

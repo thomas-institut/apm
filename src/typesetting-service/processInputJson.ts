@@ -5,6 +5,7 @@ import { BasicTypesetter } from '../www/js/lib/Typesetter2/BasicTypesetter.js'
 import { hrtime } from 'node:process'
 import { EditionTypesetting } from '../www/js/Edition/EditionTypesetting.js'
 import {ItemList} from "../www/js/lib/Typesetter2/ItemList.js";
+import {Edition} from "../www/js/Edition/Edition.js";
 
 /**
  * Processes an input data object containing a main text
@@ -68,6 +69,8 @@ export async function processInputJson(data:any): Promise<OutputData> {
 
     data.helperOptions.textBoxMeasurer = data.options.textBoxMeasurer
     debug && console.log(`Edition lang: '${data.helperOptions.edition.lang}', style Id = ${data.helperOptions.styleId}`)
+    // make the data an Edition object
+    data.helperOptions.edition = new Edition().setFromInterface(data.helperOptions.edition)
     data.helperOptions.editionStyleSheet = SystemStyleSheet.getStyleSheet(data.helperOptions.edition.lang, data.helperOptions.styleId);
     let editionTypesettingHelper = new EditionTypesetting(data.helperOptions)
     data.options.getApparatusListToTypeset = (mainTextVerticalList:any, apparatus:any, lineFrom:number, lineTo:number, resetFirstLine: boolean) => {

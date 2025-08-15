@@ -16,6 +16,6 @@
  *
  */
 
-export const BASELINE = ''
-export const SUBSCRIPT = 'subscript'
-export const SUPERSCRIPT = 'superscript'
+export const BASELINE = '';
+export const SUBSCRIPT = 'subscript';
+export const SUPERSCRIPT = 'superscript';

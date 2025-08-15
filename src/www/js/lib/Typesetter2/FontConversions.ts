@@ -1,6 +1,6 @@
-import { ItemList } from './ItemList.js'
-import { TextBox } from './TextBox.js'
-import { LanguageDetector } from '../../toolbox/LanguageDetector.js'
+import {ItemList} from './ItemList.js';
+import {TextBox} from './TextBox.js';
+import {LanguageDetector} from '../../toolbox/LanguageDetector.js';
 
 export interface FontConversionDefinition {
   from: FontDefinition;
@@ -29,67 +29,69 @@ export class FontConversions {
   static applyFontConversions<T>(item: T, fontConversionDefinitions: FontConversionDefinition[], defaultScript: string = 'la'): T {
     if (fontConversionDefinitions.length === 0) {
       // shortcut to avoid further comparisons
-      return item
+      return item;
     }
     if (item instanceof ItemList) {
-      item.setList( item.getList().map( (item) => { return this.applyFontConversions(item, fontConversionDefinitions)}))
-      return item
+      item.setList(item.getList().map((item) => {
+        return this.applyFontConversions(item, fontConversionDefinitions);
+      }));
+      return item;
     }
     if (item instanceof TextBox) {
-      let match = this.findMatch(item, fontConversionDefinitions, defaultScript)
+      let match = this.findMatch(item, fontConversionDefinitions, defaultScript);
       if (match !== null) {
         Object.keys(match.to).forEach((prop) => {
           // @ts-expect-error Accessing TextBox members as array
-          item[prop] = match.to[prop]
-        })
-        return item
+          item[prop] = match.to[prop];
+        });
+        return item;
       }
-      return item
+      return item;
     }
     // any other type
-    return item
+    return item;
   }
 
-  private static findMatch(textBoxItem : TextBox, fontConversionDefinitions: FontConversionDefinition[], defaultScript: string) {
-    let match = null
-    for (let i=0; match === null && i < fontConversionDefinitions.length; i++) {
-      let def = fontConversionDefinitions[i]
+  private static findMatch(textBoxItem: TextBox, fontConversionDefinitions: FontConversionDefinition[], defaultScript: string) {
+    let match = null;
+    for (let i = 0; match === null && i < fontConversionDefinitions.length; i++) {
+      let def = fontConversionDefinitions[i];
       if (def.from === undefined || def.to === undefined) {
-        continue
+        continue;
       }
-      let attributesToMatch = [ 'fontFamily', 'fontWeight', 'fontStyle']
-      let matchFound = true
+      let attributesToMatch = ['fontFamily', 'fontWeight', 'fontStyle'];
+      let matchFound = true;
       for (let j = 0; j < attributesToMatch.length; j++) {
-        let attr = attributesToMatch[j]
+        let attr = attributesToMatch[j];
         // @ts-expect-error Accessing TextBox members as array
         if (def.from[attr] === undefined) {
-          continue
+          continue;
         }
         // @ts-expect-error Accessing TextBox members as array
         if (textBoxItem[attr] !== def.from[attr]) {
           // console.log(`Mismatch`)
-          matchFound = false
-          break
+          matchFound = false;
+          break;
         }
       }
       if (!matchFound) {
-        match  = null
-        continue
+        match = null;
+        continue;
       }
       // style attributes match, check the script
       if (def.from.script !== undefined) {
-        let ld = new LanguageDetector(defaultScript)
-        let textScript = ld.detectScript(textBoxItem.getText())
+        let ld = new LanguageDetector(defaultScript);
+        let textScript = ld.detectScript(textBoxItem.getText());
         if (textScript === def.from.script) {
-          match = def
+          match = def;
         } else {
-          match = null
+          match = null;
         }
       } else {
-        match = def
+        match = def;
       }
 
     }
-    return match
+    return match;
   }
 }

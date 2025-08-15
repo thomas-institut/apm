@@ -16,8 +16,8 @@
  *
  */
 
-import { BidiOrderInfo} from './BidiOrderInfo.js'
-import { BidiOrderInfoArray } from './BidiOrderInfoArray.js'
+import {BidiOrderInfo} from './BidiOrderInfo.js';
+import {BidiOrderInfoArray} from './BidiOrderInfoArray.js';
 
 
 /**
@@ -28,6 +28,7 @@ import { BidiOrderInfoArray } from './BidiOrderInfoArray.js'
  * - `''` : neutral, e.g., whitespace and punctuation
  */
 export type IntrinsicTextDirection = 'ltr' | 'rtl' | 'en' | '';
+
 export class BidiDisplayOrder {
 
   /**
@@ -64,96 +65,96 @@ export class BidiDisplayOrder {
   static getDisplayOrder<T>(items: T[], defaultTextDirection: string, getItemIntrinsicTextDirection: (arg0: T) => IntrinsicTextDirection): BidiOrderInfo[] {
 
     if (items.length === 0) {
-      return []
+      return [];
     }
     if (defaultTextDirection !== 'ltr' && defaultTextDirection !== 'rtl') {
       // console.warn(`Wrong defaultTextDirection '${defaultTextDirection}'`)
       // console.warn(`Detecting default text direction`)
-      let detectedTextDirection = ''
+      let detectedTextDirection = '';
       for (let i = 0; i < items.length; i++) {
-        let itd = getItemIntrinsicTextDirection(items[i])
+        let itd = getItemIntrinsicTextDirection(items[i]);
         if (itd === 'ltr' || itd === 'rtl') {
-          detectedTextDirection = itd
-          break
+          detectedTextDirection = itd;
+          break;
         }
       }
       if (detectedTextDirection === '') {
         // console.warn(`Cannot detect text direction`)
-        return []
+        return [];
       }
       // console.warn(`Setting text direction to ${detectedTextDirection}`)
-      defaultTextDirection = detectedTextDirection
+      defaultTextDirection = detectedTextDirection;
     }
 
     // 1. Determine embedding levels
-    let bidiOrderInfoArray: BidiOrderInfo[] = []
-    let defaultLevel = defaultTextDirection === 'ltr' ? 0 : 1
-    let currentLevel = defaultLevel
-    let currentTextDirection = defaultTextDirection
+    let bidiOrderInfoArray: BidiOrderInfo[] = [];
+    let defaultLevel = defaultTextDirection === 'ltr' ? 0 : 1;
+    let currentLevel = defaultLevel;
+    let currentTextDirection = defaultTextDirection;
 
     items.forEach((item, index) => {
-      let bidiOrderInfo = new BidiOrderInfo()
-      bidiOrderInfo.inputIndex = index
-      bidiOrderInfo.intrinsicTextDirection = getItemIntrinsicTextDirection(item)
+      let bidiOrderInfo = new BidiOrderInfo();
+      bidiOrderInfo.inputIndex = index;
+      bidiOrderInfo.intrinsicTextDirection = getItemIntrinsicTextDirection(item);
       if (bidiOrderInfo.intrinsicTextDirection === 'rtl' && currentTextDirection === 'ltr') {
-        currentLevel = 1
-        currentTextDirection = 'rtl'
+        currentLevel = 1;
+        currentTextDirection = 'rtl';
       } else {
         if (bidiOrderInfo.intrinsicTextDirection === 'ltr' && currentTextDirection === 'rtl') {
-          currentLevel = 0
-          currentTextDirection = 'ltr'
+          currentLevel = 0;
+          currentTextDirection = 'ltr';
         }
       }
-      bidiOrderInfo.embeddingLevel = currentLevel
-      bidiOrderInfoArray.push(bidiOrderInfo)
-    })
-    let levelInfoArray = BidiOrderInfoArray.getLevelInfoFromBidiOrderInfoArray(bidiOrderInfoArray)
+      bidiOrderInfo.embeddingLevel = currentLevel;
+      bidiOrderInfoArray.push(bidiOrderInfo);
+    });
+    let levelInfoArray = BidiOrderInfoArray.getLevelInfoFromBidiOrderInfoArray(bidiOrderInfoArray);
     // Move all neutrals at the end of non-default levels to the default
     // I.e, non-default levels should only contain strong directional text and numbers
     levelInfoArray.forEach((levelInfo) => {
       if (levelInfo.level !== defaultLevel) {
         for (let i = levelInfo.end; i >= levelInfo.start; i--) {
           if (bidiOrderInfoArray[i].intrinsicTextDirection === '') {
-            bidiOrderInfoArray[i].embeddingLevel = defaultLevel
+            bidiOrderInfoArray[i].embeddingLevel = defaultLevel;
           } else {
-            break
+            break;
           }
         }
       }
-    })
+    });
     // set final text direction
-    levelInfoArray = BidiOrderInfoArray.getLevelInfoFromBidiOrderInfoArray(bidiOrderInfoArray)
-    levelInfoArray.forEach( (levelInfo) => {
+    levelInfoArray = BidiOrderInfoArray.getLevelInfoFromBidiOrderInfoArray(bidiOrderInfoArray);
+    levelInfoArray.forEach((levelInfo) => {
       for (let i = levelInfo.start; i <= levelInfo.end; i++) {
-        bidiOrderInfoArray[i].textDirection = levelInfo.level === 0 ? 'ltr' : 'rtl'
+        bidiOrderInfoArray[i].textDirection = levelInfo.level === 0 ? 'ltr' : 'rtl';
       }
-    })
+    });
     // get the items per level, reversing the ones in the reverse direction of the defaultTextDirection
-    let levelRuns: BidiOrderInfo[][] = []
-    levelInfoArray.forEach( (levelInfo) => {
-      let levelRun: BidiOrderInfo[] = []
+    let levelRuns: BidiOrderInfo[][] = [];
+    levelInfoArray.forEach((levelInfo) => {
+      let levelRun: BidiOrderInfo[] = [];
       if ((defaultTextDirection === 'ltr' && levelInfo.level === 0) || (defaultTextDirection === 'rtl' && levelInfo.level === 1)) {
         for (let i = levelInfo.start; i <= levelInfo.end; i++) {
-          levelRun.push(bidiOrderInfoArray[i])
+          levelRun.push(bidiOrderInfoArray[i]);
         }
       } else {
         for (let i = levelInfo.end; i >= levelInfo.start; i--) {
-          levelRun.push(bidiOrderInfoArray[i])
+          levelRun.push(bidiOrderInfoArray[i]);
         }
       }
-      levelRuns.push(levelRun)
-    })
+      levelRuns.push(levelRun);
+    });
 
     // build return array
-    let returnArray: BidiOrderInfo[] = []
-    levelRuns.forEach( (levelRun) => {
-      returnArray.push(...levelRun)
-    })
-    returnArray = returnArray.map( (itemInfo, index) => {
-      itemInfo.displayOrder = index
-      return itemInfo
-    })
-    return returnArray
+    let returnArray: BidiOrderInfo[] = [];
+    levelRuns.forEach((levelRun) => {
+      returnArray.push(...levelRun);
+    });
+    returnArray = returnArray.map((itemInfo, index) => {
+      itemInfo.displayOrder = index;
+      return itemInfo;
+    });
+    return returnArray;
   }
 
 }

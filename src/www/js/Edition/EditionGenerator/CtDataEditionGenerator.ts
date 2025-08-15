@@ -24,7 +24,6 @@ import * as ApparatusType from '@/constants/ApparatusType';
 import {EditionGenerator} from './EditionGenerator';
 import {CriticalApparatusGenerator} from './CriticalApparatusGenerator';
 import {EditionWitnessInfo} from '../EditionWitnessInfo';
-import {Apparatus} from '../Apparatus';
 import {ApparatusTools} from '../ApparatusTools';
 import {ApparatusEntry} from '../ApparatusEntry';
 import {ApparatusSubEntry} from '../ApparatusSubEntry';
@@ -34,11 +33,13 @@ import {SiglaGroup} from '../SiglaGroup';
 import {WitnessDataItem} from '../WitnessDataItem';
 import {MarginalFoliationGenerator} from './MarginalFoliationGenerator';
 import {FoliationChangeInfoInterface} from "../FoliationChangeInfoInterface";
-import {MainTextToken} from "@/Edition/MainTextToken";
+import {MainTextToken} from "../MainTextToken.js";
 import * as WitnessTokenType from "@/Witness/WitnessTokenType";
-import {MainTextTokenFactory} from "@/Edition/MainTextTokenFactory";
-import * as MainTextTokenType from "@/Edition/MainTextTokenType";
+import {MainTextTokenFactory} from "../MainTextTokenFactory.js";
+import * as MainTextTokenType from "../MainTextTokenType.js";
 import {Punctuation} from "@/defaults/Punctuation";
+import {ApparatusEntryInterface, ApparatusInterface, ApparatusSubEntryInterface} from "../EditionInterface.js";
+import {Apparatus} from "@/Edition/Apparatus";
 
 export class CtDataEditionGenerator extends EditionGenerator {
   private options: any;
@@ -66,9 +67,9 @@ export class CtDataEditionGenerator extends EditionGenerator {
     let baseWitnessIndex = this.ctData.editionWitnessIndex ?? this.ctData.witnessOrder[0];
     edition.setLang(this.ctData.lang);
     edition.siglaGroups = this.ctData.siglaGroups.map((sg) => {
-      return SiglaGroup.fromObject(sg);
+      return new SiglaGroup().setFromInterface(sg);
     });
-    edition.infoText = `Edition from ctData, chunkId ${this.ctData.chunkId}, baseWitnessIndex: ${baseWitnessIndex}`;
+    edition.metadata.infoText = `Edition from ctData, chunkId ${this.ctData.chunkId}, baseWitnessIndex: ${baseWitnessIndex}`;
     edition.info = {
       editionId: -1,
       source: 'ctData',
@@ -88,39 +89,23 @@ export class CtDataEditionGenerator extends EditionGenerator {
     edition.setMainText(this.generateMainText(baseWitnessTokens));
     // Automatic apparatus criticus
     let apparatusGenerator = new CriticalApparatusGenerator();
-    let generatedCriticalApparatus = apparatusGenerator.generateCriticalApparatusFromCtData(
-      this.ctData,
-      baseWitnessIndex,
-      edition.mainText
-    );
+    let generatedCriticalApparatus = apparatusGenerator.generateCriticalApparatusFromCtData(this.ctData, baseWitnessIndex, edition.mainText);
 
-    let theMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(
-      baseWitnessTokens.length,
-      edition.mainText
-    );
-    generatedCriticalApparatus = this.mergeCustomApparatusEntries(
-      ApparatusType.CRITICUS,
-      generatedCriticalApparatus,
-      baseWitnessTokens,
-      theMap
-    );
+    let theMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens.length, edition.mainText);
+    generatedCriticalApparatus = this.mergeCustomApparatusEntries(ApparatusType.CRITICUS, generatedCriticalApparatus, baseWitnessTokens, theMap);
 
     // Automatic marginalia
     const marginalFoliationGenerator = new MarginalFoliationGenerator(this.ctData, this.lastFoliationChanges);
     const autoMarginaliaApparatus = marginalFoliationGenerator.generateMarginaliaApparatus(edition.mainText);
 
-    let mergedMarginaliaApparatus = this.mergeCustomApparatusEntries(
-      ApparatusType.MARGINALIA,
-      autoMarginaliaApparatus, baseWitnessTokens,
-      theMap
-    );
+    let mergedMarginaliaApparatus = this.mergeCustomApparatusEntries(ApparatusType.MARGINALIA, autoMarginaliaApparatus, baseWitnessTokens, theMap);
     edition.apparatuses = [generatedCriticalApparatus, mergedMarginaliaApparatus];
     edition.foliationChanges = marginalFoliationGenerator.getCurrentFoliationChanges();
 
-    edition.apparatuses = edition.apparatuses.concat(this.getCustomApparatuses(theMap, baseWitnessTokens));
+    edition.apparatuses.push(...this.getCustomApparatuses(theMap, baseWitnessTokens));
     edition.apparatuses = edition.apparatuses.map((a) => {
       let appWithSortedEntries = ApparatusTools.sortEntries(a);
-      appWithSortedEntries.entries = appWithSortedEntries.entries.map((entry) => {
+      appWithSortedEntries.entries = appWithSortedEntries.entries.map((entry: ApparatusEntry) => {
         return ApparatusEntry.orderSubEntries(entry);
       });
       return appWithSortedEntries;
@@ -136,7 +121,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
    * @param apparatusType
    * @private
    */
-  private getCustomApparatus(apparatusType: string): Apparatus | null {
+  private getCustomApparatus(apparatusType: string): ApparatusInterface | null {
     if (this.ctData.customApparatuses === undefined) {
       return null;
     }
@@ -160,10 +145,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
    * @param ctIndexToMainTextMap
    * @private
    */
-  private mergeCustomApparatusEntries(apparatusType: string,
-                                      generatedApparatus: Apparatus,
-                                      baseWitnessTokens: WitnessTokenInterface[],
-                                      ctIndexToMainTextMap: any[]): Apparatus {
+  private mergeCustomApparatusEntries(apparatusType: string, generatedApparatus: Apparatus, baseWitnessTokens: WitnessTokenInterface[], ctIndexToMainTextMap: any[]): Apparatus {
 
     let customApparatus = this.getCustomApparatus(apparatusType);
     if (customApparatus === null) {
@@ -173,8 +155,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
     customApparatus.entries.forEach((ctDataCustomEntry) => {
       if (ctIndexToMainTextMap[ctDataCustomEntry.from] === undefined) {
         // this is an entry to an empty token in the main text
-        console.warn(`Custom apparatus criticus entry for an empty token, from` +
-          `${ctDataCustomEntry.from} to ${ctDataCustomEntry.to}, lemmaText: '${ctDataCustomEntry.lemmaText}'`);
+        console.warn(`Custom apparatus criticus entry for an empty token, from` + `${ctDataCustomEntry.from} to ${ctDataCustomEntry.to}, lemmaText: '${ctDataCustomEntry.lemmaText}'`);
         console.log('ctIndexToMainTextMap');
         console.log(ctIndexToMainTextMap);
         return;
@@ -193,13 +174,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
       if (mainTextTo === -1) {
         this.debug && console.log(`Custom entry with mainTextTo === -1`);
         this.debug && console.log(ctDataCustomEntry);
-        mainTextTo = CtData.findNonEmptyMainTextToken(
-          ctDataCustomEntry.to,
-          ctIndexToMainTextMap,
-          baseWitnessTokens,
-          false,
-          this.ctData.lang
-        );
+        mainTextTo = CtData.findNonEmptyMainTextToken(ctDataCustomEntry.to, ctIndexToMainTextMap, baseWitnessTokens, false, this.ctData.lang);
         this.debug && console.log(`New mainTextTo = ${mainTextTo}`);
         if (ctDataCustomEntry.from === ctDataCustomEntry.to) {
           // hack to avoid a bug found by Corrado on 27 Jan 2022
@@ -250,16 +225,9 @@ export class CtDataEditionGenerator extends EditionGenerator {
           generatedApparatus.entries[currentEntryIndex].separator = ctDataCustomEntry.separator;
           generatedApparatus.entries[currentEntryIndex].tags = [...ctDataCustomEntry.tags];
           let subEntryArray = this.buildSubEntryArrayFromCustomSubEntries(customSubEntries);
-          generatedApparatus.entries[currentEntryIndex].subEntries = this.mergeCustomSubEntries(
-            generatedApparatus.entries[currentEntryIndex].subEntries,
-            subEntryArray
-          );
+          generatedApparatus.entries[currentEntryIndex].subEntries = this.mergeCustomSubEntries(generatedApparatus.entries[currentEntryIndex].subEntries, subEntryArray);
         }
-        generatedApparatus.entries[currentEntryIndex].subEntries =
-          this.applyCustomAutoSubEntriesToGeneratedSubEntries(
-            generatedApparatus.entries[currentEntryIndex].subEntries,
-            customAutoSubEntries
-          );
+        generatedApparatus.entries[currentEntryIndex].subEntries = this.applyCustomAutoSubEntriesToGeneratedSubEntries(generatedApparatus.entries[currentEntryIndex].subEntries, customAutoSubEntries);
       }
     });
 
@@ -270,27 +238,31 @@ export class CtDataEditionGenerator extends EditionGenerator {
   /**
    * Merges custom sub entries
    * @private
-   * @param {ApparatusSubEntry[]}currentSubEntries
+   * @param {ApparatusSubEntryInterface[]}currentSubEntries
    * @param {ApparatusSubEntry[]}newSubEntries
    */
-  private mergeCustomSubEntries(currentSubEntries: ApparatusSubEntry[], newSubEntries: ApparatusSubEntry[]) {
+  private mergeCustomSubEntries(currentSubEntries: ApparatusSubEntry[], newSubEntries: ApparatusSubEntry[]): ApparatusSubEntry[] {
     // 1. include all automatic subentries
     let mergedArray = currentSubEntries.filter((se) => {
       return se.source === SubEntrySource.AUTO;
     });
-    mergedArray.push(...newSubEntries.filter((se) => { return se.source === SubEntrySource.AUTO;}))
+    mergedArray.push(...newSubEntries.filter((se) => {
+      return se.source === SubEntrySource.AUTO;
+    }));
 
     // 2. get all custom sub entries
     let fullCustomSubEntries = currentSubEntries.filter((se) => {
       return se.source !== SubEntrySource.AUTO;
     });
-    fullCustomSubEntries.push(...newSubEntries.filter((se) => { return se.source !== SubEntrySource.AUTO;}))
+    fullCustomSubEntries.push(...newSubEntries.filter((se) => {
+      return se.source !== SubEntrySource.AUTO;
+    }));
     mergedArray.push(...fullCustomSubEntries);
     return mergedArray;
   }
 
 
-  private hasEntryCustomizations(customEntry: ApparatusEntry) {
+  private hasEntryCustomizations(customEntry: ApparatusEntryInterface) {
     if (customEntry['tags'].length !== 0) {
       return true;
     }
@@ -304,8 +276,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
     return false;
   }
 
-  private applyCustomAutoSubEntriesToGeneratedSubEntries(
-    generatedSubEntries: ApparatusSubEntry[], customAutoSubEntries: ApparatusSubEntry[]): ApparatusSubEntry[] {
+  private applyCustomAutoSubEntriesToGeneratedSubEntries(generatedSubEntries: ApparatusSubEntry[], customAutoSubEntries: ApparatusSubEntryInterface[]): ApparatusSubEntry[] {
 
     return generatedSubEntries.map((subEntry) => {
       let generatedSubEntryHash = subEntry.hashString();
@@ -327,9 +298,8 @@ export class CtDataEditionGenerator extends EditionGenerator {
     });
   }
 
-  private buildSubEntryArrayFromCustomSubEntries(customSubEntries: ApparatusSubEntry[]): ApparatusSubEntry[] {
-    // this.debug && console.log(`Building subEntry array from custom subEntries:`)
-    // this.debug && console.log(customSubEntries)
+  private buildSubEntryArrayFromCustomSubEntries(customSubEntries: ApparatusSubEntryInterface[]): ApparatusSubEntry[] {
+
     return customSubEntries.map((subEntry) => {
       let theSubEntry = new ApparatusSubEntry();
       theSubEntry.type = subEntry.type;
@@ -355,16 +325,15 @@ export class CtDataEditionGenerator extends EditionGenerator {
     });
   }
 
-    private getCustomApparatuses(ctIndexToMainTextMap: number[],
-                       baseWitnessTokens: WitnessTokenInterface[]): Apparatus[] | any[] {
+  private getCustomApparatuses(ctIndexToMainTextMap: number[], baseWitnessTokens: WitnessTokenInterface[]): Apparatus[] {
     if (this.ctData.customApparatuses === undefined) {
       return [];
     }
-    return this.ctData.customApparatuses.filter((apparatus) => {
+    return this.ctData.customApparatuses.filter((ctDataApparatus) => {
       // filter out custom entries from apparatus criticus and marginalia
-      return [ApparatusType.CRITICUS, ApparatusType.MARGINALIA].indexOf(apparatus.type) === -1;
+      return [ApparatusType.CRITICUS, ApparatusType.MARGINALIA].indexOf(ctDataApparatus.type) === -1;
     }).map((apparatus) => {
-      let theApparatus = ApparatusTools.createEmpty();
+      let theApparatus = new Apparatus();
       theApparatus.type = apparatus.type;
       theApparatus.entries = apparatus.entries.map((customEntry) => {
         let theEntry = new ApparatusEntry();
@@ -386,7 +355,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
     });
   }
 
-  private generateMainText(witnessTokens: WitnessTokenInterface[]): MainTextToken[]{
+  private generateMainText(witnessTokens: WitnessTokenInterface[]): MainTextToken[] {
 
     // TODO: find out if we need to care about normalizations here
     const normalized = false;
@@ -396,14 +365,14 @@ export class CtDataEditionGenerator extends EditionGenerator {
     let lang = this.ctData.lang;
     // let collationTableRowForWitness = this.ctData.collationMatrix[this.ctData.editionWitnessIndex];
 
-    for(let witnessTokenIndex = 0; witnessTokenIndex < witnessTokens.length; witnessTokenIndex++) {
-      let witnessToken = witnessTokens[witnessTokenIndex]
+    for (let witnessTokenIndex = 0; witnessTokenIndex < witnessTokens.length; witnessTokenIndex++) {
+      let witnessToken = witnessTokens[witnessTokenIndex];
       if (witnessToken === undefined) {
-        console.warn(`Witness token ${witnessTokenIndex} is undefined`)
-        continue
+        console.warn(`Witness token ${witnessTokenIndex} is undefined`);
+        continue;
       }
       let tokenType = witnessToken.tokenType;
-      if (tokenType === WitnessTokenType.EMPTY){
+      if (tokenType === WitnessTokenType.EMPTY) {
         continue;
       }
       if (tokenType === WitnessTokenType.WHITESPACE) {
@@ -413,98 +382,73 @@ export class CtDataEditionGenerator extends EditionGenerator {
       }
 
       if (tokenType === WitnessTokenType.FORMAT_MARK) {
-        mainTextTokens.push(MainTextTokenFactory.createParagraphEnd(witnessToken.style))
+        mainTextTokens.push(MainTextTokenFactory.createParagraphEnd(witnessToken.style));
         continue;
       }
 
       if (tokenType === WitnessTokenType.NUMBERING_LABEL) {
         // console.log(`Generating main text token for numbering label '${witnessToken.text}'`)
-        mainTextTokens.push(
-          MainTextTokenFactory.createSimpleText(
-            MainTextTokenType.NUMBERING_LABEL,
-            witnessToken.text,
-            witnessTokenIndex,
-            lang)
-        );
-        continue
+        mainTextTokens.push(MainTextTokenFactory.createSimpleText(MainTextTokenType.NUMBERING_LABEL, witnessToken.text, witnessTokenIndex, lang));
+        continue;
       }
 
       if (witnessToken.fmtText === undefined) {
-        mainTextTokens.push(
-          MainTextTokenFactory.createSimpleText(
-            MainTextTokenType.TEXT,
-            getTextFromWitnessToken(
-              witnessToken,
-              normalized,
-              normalizationsToIgnore
-            ),
-            witnessTokenIndex,
-            lang
-          )
-        )
+        mainTextTokens.push(MainTextTokenFactory.createSimpleText(MainTextTokenType.TEXT, getTextFromWitnessToken(witnessToken, normalized, normalizationsToIgnore), witnessTokenIndex, lang));
 
       } else {
-        mainTextTokens.push(
-          MainTextTokenFactory.createWithFmtText(
-            MainTextTokenType.TEXT,
-            witnessToken.fmtText,
-            witnessTokenIndex,
-            lang
-          )
-        )
+        mainTextTokens.push(MainTextTokenFactory.createWithFmtText(MainTextTokenType.TEXT, witnessToken.fmtText, witnessTokenIndex, lang));
       }
     }
 
 
     // Add glue tokens
-    let mainTextTokensWithGlue = []
-    let firstWordAdded = false
-    let nextTokenMustStickToPrevious: boolean = false
-    for(let i = 0; i < mainTextTokens.length; i++) {
-      let mainTextToken = mainTextTokens[i]
+    let mainTextTokensWithGlue = [];
+    let firstWordAdded = false;
+    let nextTokenMustStickToPrevious: boolean = false;
+    for (let i = 0; i < mainTextTokens.length; i++) {
+      let mainTextToken = mainTextTokens[i];
       if (mainTextToken.type === MainTextTokenType.PARAGRAPH_END) {
-        mainTextTokensWithGlue.push(mainTextToken)
-        firstWordAdded = false
-        continue
+        mainTextTokensWithGlue.push(mainTextToken);
+        firstWordAdded = false;
+        continue;
       }
       if (mainTextToken.type === MainTextTokenType.NUMBERING_LABEL) {
         if (firstWordAdded) {
-          mainTextTokensWithGlue.push(MainTextTokenFactory.createNormalGlue())
+          mainTextTokensWithGlue.push(MainTextTokenFactory.createNormalGlue());
         }
-        mainTextTokensWithGlue.push(mainTextToken)
-        nextTokenMustStickToPrevious = false
-        firstWordAdded = true
-        continue
+        mainTextTokensWithGlue.push(mainTextToken);
+        nextTokenMustStickToPrevious = false;
+        firstWordAdded = true;
+        continue;
       }
 
-      if (mainTextToken.type !== MainTextTokenType.TEXT && mainTextToken.type !== MainTextTokenType.FOLIATION_CHANGE_MARKER){
-        continue
+      if (mainTextToken.type !== MainTextTokenType.TEXT && mainTextToken.type !== MainTextTokenType.FOLIATION_CHANGE_MARKER) {
+        continue;
       }
-      let tokenPlainText = mainTextToken.getPlainText()
+      let tokenPlainText = mainTextToken.getPlainText();
       if (tokenPlainText === undefined) {
-        console.warn(`Found main text token with no text at index ${i}`)
-        continue
+        console.warn(`Found main text token with no text at index ${i}`);
+        continue;
       }
 
-      let addGlue = true
+      let addGlue = true;
       if (!firstWordAdded) {
-        addGlue = false
+        addGlue = false;
       }
-      if (Punctuation.characterIsPunctuation(tokenPlainText, lang, false) && Punctuation.sticksToPrevious(tokenPlainText, lang) ) {
-        addGlue = false
+      if (Punctuation.characterIsPunctuation(tokenPlainText, lang, false) && Punctuation.sticksToPrevious(tokenPlainText, lang)) {
+        addGlue = false;
       }
       if (nextTokenMustStickToPrevious) {
-        addGlue = false
+        addGlue = false;
       }
       if (addGlue) {
-        mainTextTokensWithGlue.push(MainTextTokenFactory.createNormalGlue())
+        mainTextTokensWithGlue.push(MainTextTokenFactory.createNormalGlue());
       }
-      mainTextTokensWithGlue.push(mainTextToken)
-      firstWordAdded = true
-      nextTokenMustStickToPrevious = Punctuation.characterIsPunctuation(tokenPlainText, lang, false) &&
-        Punctuation.sticksToNext(tokenPlainText, lang);
+      mainTextTokensWithGlue.push(mainTextToken);
+      firstWordAdded = true;
+      nextTokenMustStickToPrevious = Punctuation.characterIsPunctuation(tokenPlainText, lang, false) && Punctuation.sticksToNext(tokenPlainText, lang);
     }
-    return mainTextTokensWithGlue
+    return mainTextTokensWithGlue;
   }
 }
 
@@ -517,18 +461,18 @@ export class CtDataEditionGenerator extends EditionGenerator {
  * @param {string[]} normalizationSourcesToIgnore
  * @returns {string}
  */
-function getTextFromWitnessToken(witnessToken: WitnessTokenInterface, normalized: boolean, normalizationSourcesToIgnore: string[] = []): string{
+function getTextFromWitnessToken(witnessToken: WitnessTokenInterface, normalized: boolean, normalizationSourcesToIgnore: string[] = []): string {
   let text = witnessToken.text;
   if (!normalized) {
     return text;
   }
   if (witnessToken.normalizedText !== undefined && witnessToken.normalizedText !== '') {
-    let norm = witnessToken.normalizedText
-    let source = witnessToken.normalizationSource !== undefined ? witnessToken.normalizationSource : ''
+    let norm = witnessToken.normalizedText;
+    let source = witnessToken.normalizationSource !== undefined ? witnessToken.normalizationSource : '';
     if (source === '' || normalizationSourcesToIgnore.indexOf(source) === -1) {
       // if source === '', this is  a normalization from the transcription
-      text = norm
+      text = norm;
     }
   }
-  return text
+  return text;
 }

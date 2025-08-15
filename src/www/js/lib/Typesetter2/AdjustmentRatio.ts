@@ -1,4 +1,4 @@
-import { Glue } from './Glue.js'
+import {Glue} from './Glue.js';
 import {TypesetterItem} from "./TypesetterItem.js";
 
 export class AdjustmentRatio {
@@ -20,43 +20,51 @@ export class AdjustmentRatio {
    *
    */
   static calculateAdjustmentRatio(itemArray: TypesetterItem[], desiredSize: number, horizontal: boolean): number | null {
-    let totalSize
+    let totalSize;
     if (horizontal) {
-      totalSize = itemArray.map( (item) => {
-        return item.getWidth()
-      }).reduce( (total, x) => { return total+x}, 0)
+      totalSize = itemArray.map((item) => {
+        return item.getWidth();
+      }).reduce((total, x) => {
+        return total + x;
+      }, 0);
     } else {
-      totalSize = itemArray.map( (item) => {
-        return item.getHeight()
-      }).reduce( (total, x) => { return total+x}, 0)
+      totalSize = itemArray.map((item) => {
+        return item.getHeight();
+      }).reduce((total, x) => {
+        return total + x;
+      }, 0);
     }
     if (desiredSize === totalSize) {
       // right on the money!
-      return 0
+      return 0;
     }
     if (totalSize < desiredSize) {
       // short item array
-      let totalGlueStretch = itemArray.map( (item) => {
+      let totalGlueStretch = itemArray.map((item) => {
         if (item instanceof Glue) {
-          return item.getStretch()
+          return item.getStretch();
         }
-        return 0
-      }).reduce( (total, x) => { return total+x}, 0);
-      if (totalGlueStretch <=0) {
-        return null
+        return 0;
+      }).reduce((total, x) => {
+        return total + x;
+      }, 0);
+      if (totalGlueStretch <= 0) {
+        return null;
       }
       // stretching can be extreme if necessary, so it does not really matter if adjRatio > 1
       return (desiredSize - totalSize) / totalGlueStretch;
     }
     // long item array
-    let totalGlueShrink = itemArray.map ( (item) => {
+    let totalGlueShrink = itemArray.map((item) => {
       if (item instanceof Glue) {
-        return item.getShrink()
+        return item.getShrink();
       }
-      return 0
-    }).reduce( (total, x) => { return total+x}, 0)
-    if (totalGlueShrink <=0) {
-      return null
+      return 0;
+    }).reduce((total, x) => {
+      return total + x;
+    }, 0);
+    if (totalGlueShrink <= 0) {
+      return null;
     }
     let r = (desiredSize - totalSize) / totalGlueShrink;
     // if adjRatio < -1, there's not enough shrink to fit the items, so, return null;
@@ -64,12 +72,11 @@ export class AdjustmentRatio {
   }
 
 
-
   static calculateHorizontalAdjustmentRatio(itemArray: TypesetterItem[], desiredWidth: number): number | null {
-    return this.calculateAdjustmentRatio(itemArray, desiredWidth, true)
+    return this.calculateAdjustmentRatio(itemArray, desiredWidth, true);
   }
 
   static calculateVerticalAdjustmentRatio(itemArray: TypesetterItem[], desiredHeight: number): number | null {
-    return this.calculateAdjustmentRatio(itemArray, desiredHeight, false)
+    return this.calculateAdjustmentRatio(itemArray, desiredHeight, false);
   }
 }

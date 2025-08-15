@@ -16,13 +16,13 @@
  *
  */
 
-import { FmtTextToken } from '../FmtTextToken.js'
+import {FmtTextToken} from '../FmtTextToken.js';
 import {FmtTextUtil} from '../FmtTextUtil.js';
 
 export class AsyncFmtTextRenderer {
 
-  render(fmtText: string | FmtTextToken | FmtTextToken[], lang = '') : Promise<any> {
-    return Promise.resolve(FmtTextUtil.getPlainText(fmtText))
+  render(fmtText: string | FmtTextToken | FmtTextToken[], lang = ''): Promise<any> {
+    return Promise.resolve(FmtTextUtil.getPlainText(fmtText));
   }
 
 }

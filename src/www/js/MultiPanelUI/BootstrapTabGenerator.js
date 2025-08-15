@@ -174,7 +174,7 @@ aria-controls="${tab.id}" title="${linkTitle}" aria-selected="${tab.id === activ
     for (let i = 0; i < this.tabs.length; i++) {
       let tab = this.tabs[i];
       let contentClasses = ['tab-pane']
-      if (tab.contentClasses !== []) {
+      if (tab.contentClasses.length > 0) {
         contentClasses = contentClasses.concat(tab.contentClasses)
       }
       let visible = false

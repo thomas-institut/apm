@@ -19,12 +19,13 @@
  */
 
 
-import { FmtTextUtil } from '../lib/FmtText/FmtTextUtil.js'
-import { deepCopy } from '../toolbox/Util.mjs'
+import {FmtTextUtil} from '../lib/FmtText/FmtTextUtil.js';
+import {deepCopy} from '../toolbox/Util.mjs';
 import {WitnessDataItem} from "./WitnessDataItem.js";
 import {SiglaGroup} from "./SiglaGroup.js";
+import {FmtTextToken} from "../lib/FmtText/FmtTextToken.js";
 
-const enDash = String.fromCodePoint(0x2013)
+const enDash = String.fromCodePoint(0x2013);
 
 export interface LemmaComponents {
   type: string,
@@ -38,77 +39,77 @@ export interface LemmaComponents {
 
 export class ApparatusUtil {
 
-  static getLemmaComponents(apparatusEntryLemma: string, lemmaText: string) : LemmaComponents {
-    let separator = ''
-    let custom = false
-    switch(apparatusEntryLemma) {
+  static getLemmaComponents(apparatusEntryLemma: string | FmtTextToken[], lemmaText: string): LemmaComponents {
+    let separator = '';
+    let custom = false;
+    const theLemma = FmtTextUtil.getPlainText(apparatusEntryLemma);
+
+    switch (theLemma) {
       case '':
       case 'dash':
-        separator = `${enDash}`
-        break
+        separator = `${enDash}`;
+        break;
 
       case 'ellipsis':
-        separator = '...'
-        break
+        separator = '...';
+        break;
 
       default:
-        custom = true
+        custom = true;
     }
     if (custom) {
-      return { type: 'custom', text:  FmtTextUtil.getPlainText(apparatusEntryLemma) }
+      return {type: 'custom', text: FmtTextUtil.getPlainText(apparatusEntryLemma)};
     }
     if (lemmaText === '') {
-      lemmaText = 'pre'
+      lemmaText = 'pre';
     }
-    let lemmaTextWords = lemmaText.split(' ')
+    let lemmaTextWords = lemmaText.split(' ');
     // if lemmaText is short,
     if (lemmaTextWords.length <= 3) {
       return {
-        type: 'full',
-        text:  lemmaText,
-        numWords: lemmaTextWords.length
-      }
+        type: 'full', text: lemmaText, numWords: lemmaTextWords.length
+      };
     }
     return {
       text: '',
       type: 'shortened',
       from: lemmaTextWords[0],
       separator: separator,
-      to:lemmaTextWords[lemmaTextWords.length-1],
-    }
+      to: lemmaTextWords[lemmaTextWords.length - 1],
+    };
   }
 
   static getSiglaData(witnessData: WitnessDataItem[], sigla: string[], siglaGroups: SiglaGroup[]) {
 
     let wData: WitnessDataItem[] = deepCopy(witnessData);
-    let wDataArray = wData.filter( (w) => {
+    let wDataArray = wData.filter((w) => {
       return !w.omitSiglum;
-    }).map ( (w) => {
-      w.siglum = sigla[w.witnessIndex].toString()
-      return w
+    }).map((w) => {
+      w.siglum = sigla[w.witnessIndex].toString();
+      return w;
     });
 
-    siglaGroups.forEach ( (sg) => {
-      let siglaIndexes = wDataArray.map ( (w) => {
+    siglaGroups.forEach((sg) => {
+      let siglaIndexes = wDataArray.map((w) => {
         // turn non-zero hands to -1 so that they are not matched by the sigla group
-        return w.hand === 0 ? w.witnessIndex : -1
-      })
-      let matchedIndexes = sg.matchWitnesses(siglaIndexes)
+        return w.hand === 0 ? w.witnessIndex : -1;
+      });
+      let matchedIndexes = sg.matchWitnesses(siglaIndexes);
       if (matchedIndexes.length !== 0) {
         // change the first matched witness to the group siglum
-        let firstMatchedWitnessPosition = siglaIndexes.indexOf(matchedIndexes[0])
+        let firstMatchedWitnessPosition = siglaIndexes.indexOf(matchedIndexes[0]);
         //console.log(`First matched witness position in array: ${firstMatchedWitnessPosition}`)
-        wDataArray[firstMatchedWitnessPosition].siglum = sg.siglum
-        wDataArray[firstMatchedWitnessPosition].hand = 0
-        wDataArray[firstMatchedWitnessPosition].witnessIndex = -1
+        wDataArray[firstMatchedWitnessPosition].siglum = sg.siglum;
+        wDataArray[firstMatchedWitnessPosition].hand = 0;
+        wDataArray[firstMatchedWitnessPosition].witnessIndex = -1;
         // filter out matched witnesses
-        wDataArray = wDataArray.filter( (w) => {
-          return matchedIndexes.indexOf(w.witnessIndex) === -1
-        })
+        wDataArray = wDataArray.filter((w) => {
+          return matchedIndexes.indexOf(w.witnessIndex) === -1;
+        });
       }
-    })
+    });
 
-    return wDataArray
+    return wDataArray;
   }
 
 }

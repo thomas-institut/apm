@@ -1,4 +1,2 @@
-
-
-export const NORMAL = ''
-export const ITALIC = 'italic'
+export const NORMAL = '';
+export const ITALIC = 'italic';

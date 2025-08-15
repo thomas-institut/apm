@@ -16,43 +16,39 @@
  *
  */
 
-import * as ApparatusType from '../../constants/ApparatusType'
-
-const defaultApparatus = [
-  ApparatusType.CRITICUS,
-  ApparatusType.FONTIUM,
-  ApparatusType.COMPARATIVUS,
-  ApparatusType.MARGINALIA
-]
-
-import { CtDataCleaner } from './CtDataCleaner'
-import { deepCopy } from '@/toolbox/Util'
-import * as CollationTableType from '@/Witness/WitnessTokenClass'
+import * as ApparatusType from '../../constants/ApparatusType';
+import {CtDataCleaner} from './CtDataCleaner';
+import {deepCopy} from '@/toolbox/Util';
+import * as CollationTableType from '@/Witness/WitnessTokenClass';
 import {CtDataInterface} from "../CtDataInterface";
 import {ApparatusTools} from "@/Edition/ApparatusTools";
 
+const defaultApparatus = [ApparatusType.CRITICUS, ApparatusType.FONTIUM, ApparatusType.COMPARATIVUS, ApparatusType.MARGINALIA];
+
 export class DefaultApparatusesCleaner extends CtDataCleaner {
 
-  getCleanCtData (sourceCtData: CtDataInterface): CtDataInterface {
+  getCleanCtData(sourceCtData: CtDataInterface): CtDataInterface {
     if (sourceCtData.type !== CollationTableType.EDITION) {
-      return sourceCtData
+      return sourceCtData;
     }
 
-    let ctData: CtDataInterface = deepCopy(sourceCtData)
+    let ctData: CtDataInterface = deepCopy(sourceCtData);
     // add default apparatuses for editions
     if (ctData.customApparatuses === undefined) {
-      this.verbose && console.log(`Adding custom apparatuses to edition`)
-      ctData.customApparatuses = []
+      this.verbose && console.log(`Adding custom apparatuses to edition`);
+      ctData.customApparatuses = [];
     }
-    defaultApparatus.forEach( (appType) => {
-      let appIndex = ctData.customApparatuses.map( (customApp) => { return customApp.type}).indexOf(appType)
+    defaultApparatus.forEach((appType) => {
+      let appIndex = ctData.customApparatuses.map((customApp) => {
+        return customApp.type;
+      }).indexOf(appType);
       if (appIndex === -1) {
-        this.verbose && console.log(`Adding empty apparatus '${appType}'`)
+        this.verbose && console.log(`Adding empty apparatus '${appType}'`);
         ctData.customApparatuses.push(ApparatusTools.createEmpty());
       }
-    })
+    });
 
-    return ctData
+    return ctData;
 
   }
 

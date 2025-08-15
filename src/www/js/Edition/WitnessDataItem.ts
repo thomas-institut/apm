@@ -17,7 +17,9 @@
  */
 
 
-export class WitnessDataItem  {
+import {WitnessDataItemInterface} from "./EditionInterface.js";
+
+export class WitnessDataItem implements WitnessDataItemInterface {
 
   witnessIndex: number = -1;
   hand: number = -1;
@@ -33,33 +35,35 @@ export class WitnessDataItem  {
    */
   realFoliationChange?: boolean;
 
+  static clone(dataItem: WitnessDataItemInterface) {
+    return new WitnessDataItem().setFromInterface(dataItem);
+  }
 
-  static clone(dataItem: WitnessDataItem) {
-    let copy = new WitnessDataItem()
-    copy.witnessIndex = dataItem.witnessIndex
-    copy.hand = dataItem.hand
-    copy.location = dataItem.location
-    copy.forceHandDisplay = dataItem.forceHandDisplay
+  setFromInterface(dataItem: WitnessDataItemInterface): this {
+    this.witnessIndex = dataItem.witnessIndex;
+    this.hand = dataItem.hand;
+    this.location = dataItem.location;
+    this.forceHandDisplay = dataItem.forceHandDisplay;
     if (dataItem.siglum !== undefined) {
-      copy.siglum = dataItem.siglum
+      this.siglum = dataItem.siglum;
     }
     if (dataItem.omitSiglum !== undefined) {
-      copy.omitSiglum = dataItem.omitSiglum
+      this.omitSiglum = dataItem.omitSiglum;
     }
     if (dataItem.realFoliationChange !== undefined) {
-      copy.realFoliationChange = dataItem.realFoliationChange
+      this.realFoliationChange = dataItem.realFoliationChange;
     }
-    return copy
+    return this;
   }
 
   setWitnessIndex(witnessIndex: number): this {
-    this.witnessIndex = witnessIndex
-    return this
+    this.witnessIndex = witnessIndex;
+    return this;
   }
 
   setHand(hand: number): this {
-    this.hand = hand
-    return this
+    this.hand = hand;
+    return this;
   }
 
 }

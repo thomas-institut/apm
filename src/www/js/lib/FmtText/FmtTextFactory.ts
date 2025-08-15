@@ -30,11 +30,7 @@ spaces, an array mixing FormattedTextToken objects and strings.
   Also, it is not necessary to provide any attribute that can have a sensible default. So, a glue token can
 be just { type: glue }  and a text token { text: 'someString' }
  */
-
-
-
-
-import { FmtTextTokenFactory } from './FmtTextTokenFactory.js'
+import {FmtTextTokenFactory} from './FmtTextTokenFactory.js';
 
 
 export class FmtTextFactory {
@@ -44,24 +40,24 @@ export class FmtTextFactory {
    */
   static fromString(theString: string): FmtTextToken[] {
 
-    let fmtText = []
-    let currentWord = ''
+    let fmtText = [];
+    let currentWord = '';
 
-    Array.from(sanitizeString(theString)).forEach( (char) => {
+    Array.from(sanitizeString(theString)).forEach((char) => {
       if (char === ' ') {
         if (currentWord !== '') {
-          fmtText.push(FmtTextTokenFactory.normalText(currentWord))
-          currentWord = ''
+          fmtText.push(FmtTextTokenFactory.normalText(currentWord));
+          currentWord = '';
         }
-        fmtText.push(FmtTextTokenFactory.normalSpace())
+        fmtText.push(FmtTextTokenFactory.normalSpace());
       } else {
-        currentWord += char
+        currentWord += char;
       }
-    })
+    });
     if (currentWord !== '') {
-      fmtText.push(FmtTextTokenFactory.normalText(currentWord))
+      fmtText.push(FmtTextTokenFactory.normalText(currentWord));
     }
-    return fmtText
+    return fmtText;
   }
 
   /**
@@ -72,31 +68,31 @@ export class FmtTextFactory {
   static fromAnything(theThing: any): FmtTextToken[] {
 
     if (Array.isArray(theThing)) {
-      let fmtText: FmtTextToken[] = []
-      theThing.forEach( (arrayElement) => {
-        fmtText = fmtText.concat( this.fromAnything(arrayElement))
-      })
-      return fmtText
+      let fmtText: FmtTextToken[] = [];
+      theThing.forEach((arrayElement) => {
+        fmtText = fmtText.concat(this.fromAnything(arrayElement));
+      });
+      return fmtText;
     }
     if (typeof theThing === 'object') {
-      return [FmtTextTokenFactory.buildFromObject(theThing)]
+      return [FmtTextTokenFactory.buildFromObject(theThing)];
     }
     if (typeof theThing === 'string') {
-      return this.fromString(theThing)
+      return this.fromString(theThing);
     }
 
     if (theThing.toString() !== undefined) {
-      return FmtTextFactory.fromString(theThing.toString())
+      return FmtTextFactory.fromString(theThing.toString());
     }
-    console.warn(`Cannot create FmtText from given value`)
-    console.log(theThing)
+    console.warn(`Cannot create FmtText from given value`);
+    console.log(theThing);
 
-    return this.empty()
+    return this.empty();
   }
 
 
   static empty(): FmtTextToken[] {
-    return []
+    return [];
   }
 
   /**
@@ -104,12 +100,12 @@ export class FmtTextFactory {
    * @return {FmtTextToken[]}
    */
   static oneNormalSpace(): FmtTextToken[] {
-    let fmtText =[]
-    fmtText.push(FmtTextTokenFactory.normalSpace())
-    return fmtText
+    let fmtText = [];
+    fmtText.push(FmtTextTokenFactory.normalSpace());
+    return fmtText;
   }
 }
 
 function sanitizeString(str: string): string {
-  return str.replace(/\s+/g, ' ')
+  return str.replace(/\s+/g, ' ');
 }

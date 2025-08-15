@@ -16,10 +16,10 @@
  *
  */
 
-import {OptionsChecker} from '@thomas-inst/optionschecker'
+import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { Edition } from './Edition'
 import { Typesetter } from '@/Typesetter/Typesetter'
-import {FmtTextFactory} from '@/lib/FmtText/FmtTextFactory'
+import { FmtTextFactory } from '@/lib/FmtText/FmtTextFactory'
 
 import * as MainTextTokenType from './MainTextTokenType.js'
 import { TypesetterTokenFactory } from '@/Typesetter/TypesetterTokenFactory'
@@ -40,38 +40,38 @@ import { ApparatusUtil } from './ApparatusUtil.js'
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
 
-
-
 export class EditionViewerSvg {
 
   constructor (options) {
 
     let optionsDefinition = {
       edition: { type: 'object', objectClass: Edition, required: true },
-      fontFamily:  { type: 'NonEmptyString', required: true},
+      fontFamily: { type: 'NonEmptyString', required: true },
 
-      entrySeparator: { type: 'string', default: verticalLine},
-      apparatusLineSeparator: { type: 'string', default: doubleVerticalLine},
-      pageWidthInCm: { type: 'NumberGreaterThanZero', default: 21},
-      pageHeightInCm: { type: 'NumberGreaterThanZero', default: 29.7},
-      marginInCm: {type: 'object', default: {
+      entrySeparator: { type: 'string', default: verticalLine },
+      apparatusLineSeparator: { type: 'string', default: doubleVerticalLine },
+      pageWidthInCm: { type: 'NumberGreaterThanZero', default: 21 },
+      pageHeightInCm: { type: 'NumberGreaterThanZero', default: 29.7 },
+      marginInCm: {
+        type: 'object', default: {
           top: 2,
           left: 3,
           bottom: 1,
           right: 3
-        }},
-      mainTextFontSizeInPts: { type: 'NumberGreaterThanZero', default: 12},
-      lineNumbersFontSizeMultiplier: { type: 'NumberGreaterThanZero', default: 0.8},
-      apparatusFontSizeInPts: { type: 'NumberGreaterThanZero', default: 10},
-      mainTextLineHeightInPts: { type: 'NumberGreaterThanZero', default: 15},
-      apparatusLineHeightInPts: { type: 'NumberGreaterThanZero', default: 12},
-      normalSpaceWidthInEms: { type: 'NumberGreaterThanZero', default: 0.33},
-      textToLineNumbersInCm: { type: 'NumberGreaterThanZero', default: 0.5},
-      textToApparatusInCm: { type: 'NumberGreaterThanZero', default: 1.5},
-      interApparatusInCm: { type: 'NumberGreaterThanZero', default: 0.5}
+        }
+      },
+      mainTextFontSizeInPts: { type: 'NumberGreaterThanZero', default: 12 },
+      lineNumbersFontSizeMultiplier: { type: 'NumberGreaterThanZero', default: 0.8 },
+      apparatusFontSizeInPts: { type: 'NumberGreaterThanZero', default: 10 },
+      mainTextLineHeightInPts: { type: 'NumberGreaterThanZero', default: 15 },
+      apparatusLineHeightInPts: { type: 'NumberGreaterThanZero', default: 12 },
+      normalSpaceWidthInEms: { type: 'NumberGreaterThanZero', default: 0.33 },
+      textToLineNumbersInCm: { type: 'NumberGreaterThanZero', default: 0.5 },
+      textToApparatusInCm: { type: 'NumberGreaterThanZero', default: 1.5 },
+      interApparatusInCm: { type: 'NumberGreaterThanZero', default: 0.5 }
     }
 
-    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'EditionViewer'})
+    let oc = new OptionsChecker({ optionsDefinition: optionsDefinition, context: 'EditionViewer' })
     this.options = oc.getCleanOptions(options)
     this.edition = this.options.edition
 
@@ -102,7 +102,7 @@ export class EditionViewerSvg {
    *
    * @return {string}
    */
-  getSvg() {
+  getSvg () {
 
     let textDirection = getTextDirectionForLang(this.edition.lang)
     let svgClass = 'edition-svg'
@@ -113,7 +113,7 @@ export class EditionViewerSvg {
       lineWidth: this.geometry.lineWidth,
       lineHeight: this.geometry.mainTextLineHeight,
       defaultFontSize: this.geometry.mainTextFontSize,
-      lineNumbersFontSizeMultiplier:  this.options.lineNumbersFontSizeMultiplier,
+      lineNumbersFontSizeMultiplier: this.options.lineNumbersFontSizeMultiplier,
       rightToLeft: textDirection === 'rtl',
       defaultFontFamily: this.options.fontFamily,
       normalSpaceWidth: this.options.normalSpaceWidthInEms,
@@ -142,15 +142,15 @@ export class EditionViewerSvg {
       normalSpaceWidth: this.options.normalSpaceWidthInEms
     })
 
-    let apparatusesTypesetTokens = this.edition.apparatuses.map( (app) => {
+    let apparatusesTypesetTokens = this.edition.apparatuses.map((app) => {
       let apparatusParagraph = new Paragraph()
       apparatusParagraph.setLineHeight(this.geometry.apparatusLineHeight)
-        .setTokens(this._getTypesetterTokensForApparatus(app, mainTextTypesetTokens, mainTextToTypesetterTokensMap))
+      .setTokens(this._getTypesetterTokensForApparatus(app, mainTextTypesetTokens, mainTextToTypesetterTokensMap))
 
       return apparatusTypesetter.typesetParagraphs([apparatusParagraph])
     })
-    let apparatusHeights = apparatusesTypesetTokens.map( (tokens) => { return apparatusTypesetter.getTextHeight(tokens)})
-    let totalApparatusHeight = apparatusHeights.reduce( (x, y) => { return x+y})
+    let apparatusHeights = apparatusesTypesetTokens.map((tokens) => { return apparatusTypesetter.getTextHeight(tokens)})
+    let totalApparatusHeight = apparatusHeights.reduce((x, y) => { return x + y})
 
     // console.log(`ApparatusHeights`)
     // console.log(apparatusHeights)
@@ -160,14 +160,11 @@ export class EditionViewerSvg {
     let mainTextHeight = mainTextTypesetter.getTextHeight(mainTextTypesetTokens)
     let mainTextWidth = mainTextTypesetter.getTextWidth()
 
-    let numberNonEmptyApparatuses = apparatusesTypesetTokens.filter( (app) => {return app.length !== 0}).length
+    let numberNonEmptyApparatuses = apparatusesTypesetTokens.filter((app) => {return app.length !== 0}).length
 
     let svgHeight = this.geometry.margin.top + mainTextHeight + this.geometry.textToApparatus +
-    (this.geometry.interApparatus * numberNonEmptyApparatuses) + totalApparatusHeight + this.geometry.margin.bottom
+      (this.geometry.interApparatus * numberNonEmptyApparatuses) + totalApparatusHeight + this.geometry.margin.bottom
     // console.log(`SVG height in px: ${svgHeight}`)
-
-
-
 
     svgHeight = Math.max(Typesetter.px2cm(svgHeight), this.options.pageHeightInCm)
     // console.log(`SVG height in cm: ${svgHeight}`)
@@ -177,45 +174,42 @@ export class EditionViewerSvg {
     // let svgHeightInPx = Typesetter2.cm2px(svgHeight)
     // let svgWidthInPx = Typesetter2.cm2px(svgWidth)
 
-
     let svg = `<svg class="${svgClass}" height="${svgHeight}cm" width="${svgWidth}cm">`
 
-    svg += "<!-- Text tokens -->\n"
+    svg += '<!-- Text tokens -->\n'
     svg += `<g font-size="${this.geometry.mainTextFontSize}" font-family="${this.options.fontFamily}" fill="#000000">`
 
-
-    for(const token of mainTextTypesetTokens) {
+    for (const token of mainTextTypesetTokens) {
       let tokenSvg = mainTextTypesetter.genTokenSvg(this.geometry.margin.left, this.geometry.margin.top, token, false, false)
       if (tokenSvg !== '') {
         svg += tokenSvg
       }
     }
-    svg += "</g>\n"
+    svg += '</g>\n'
 
     // // line numbers
-    let typesetLineNumbers = mainTextTypesetter.typesetLineNumbers(mainTextTypesetTokens,5)
+    let typesetLineNumbers = mainTextTypesetter.typesetLineNumbers(mainTextTypesetTokens, 5)
 
-
-    svg += "<!-- Line numbers -->\n"
+    svg += '<!-- Line numbers -->\n'
     let lineNumbersX = this.geometry.margin.left - this.geometry.textToLineNumbers
     if (textDirection === 'rtl') {
       lineNumbersX = this.geometry.margin.left + mainTextWidth + this.geometry.textToLineNumbers
     }
     svg += `<g font-size="${this.geometry.mainTextFontSize * this.options.lineNumbersFontSizeMultiplier}" font-family="${this.options.fontFamily}" fill="#000000">\n`
-    for(const token of typesetLineNumbers) {
+    for (const token of typesetLineNumbers) {
       let tokenSvg = mainTextTypesetter.genTokenSvg(lineNumbersX, this.geometry.margin.top, token, false, false)
       if (tokenSvg !== '') {
-        svg += "\t\t" +  tokenSvg + "\n"
+        svg += '\t\t' + tokenSvg + '\n'
       }
     }
-    svg += "\n</g>\n"
+    svg += '\n</g>\n'
 
     // apparatuses
 
     let apparatusY = this.geometry.margin.top + mainTextHeight + this.geometry.textToApparatus
-    apparatusesTypesetTokens.forEach( (tokens, index) => {
+    apparatusesTypesetTokens.forEach((tokens, index) => {
       if (index !== 0) {
-        apparatusY += apparatusHeights[index-1]
+        apparatusY += apparatusHeights[index - 1]
         apparatusY += this.geometry.interApparatus
       }
       svg += `<!-- Apparatus ${index} -->\n`
@@ -226,20 +220,20 @@ export class EditionViewerSvg {
 
       if (textDirection === 'rtl') {
         svg += '<line x1="' + (mainTextTypesetter.getTextWidth() + this.geometry.margin.left) + '" y1="' + (apparatusY - 5) + '" ' +
-          'x2="' + (mainTextTypesetter.getTextWidth() + this.geometry.margin.left - 50) + '" y2="' +  (apparatusY - 5) + '" style="stroke: silver; stroke-width: 1" />'
+          'x2="' + (mainTextTypesetter.getTextWidth() + this.geometry.margin.left - 50) + '" y2="' + (apparatusY - 5) + '" style="stroke: silver; stroke-width: 1" />'
       } else {
         svg += '<line x1="' + this.geometry.margin.left + '" y1="' + (apparatusY - 5) + '" ' +
-          'x2="' + (this.geometry.margin.left+50) + '" y2="' +  (apparatusY - 5) + '" style="stroke: silver; stroke-width: 1" />'
+          'x2="' + (this.geometry.margin.left + 50) + '" y2="' + (apparatusY - 5) + '" style="stroke: silver; stroke-width: 1" />'
       }
-      svg += "\n"
+      svg += '\n'
       svg += `<g font-size="${this.geometry.apparatusFontSize}" font-family="${this.options.fontFamily}" fill="#000000">\n`
-      tokens.forEach( (token) => {
+      tokens.forEach((token) => {
         let tokenSvg = mainTextTypesetter.genTokenSvg(this.geometry.margin.left, apparatusY, token, false, false)
         if (tokenSvg !== '') {
-          svg += "\t\t" + mainTextTypesetter.genTokenSvg(this.geometry.margin.left, apparatusY, token, false, false) + "\n"
+          svg += '\t\t' + mainTextTypesetter.genTokenSvg(this.geometry.margin.left, apparatusY, token, false, false) + '\n'
         }
       })
-      svg += "\n</g>\n"
+      svg += '\n</g>\n'
     })
 
     svg += '</svg>'
@@ -252,22 +246,22 @@ export class EditionViewerSvg {
    * @return {string}
    * @private
    */
-  _getLineNumberString(lineNumber) {
+  _getLineNumberString (lineNumber) {
     if (isNaN(lineNumber)) {
       return lineNumber
     }
     return ApparatusCommon.getNumberString(lineNumber, this.edition.lang)
   }
 
-  __getOccurrenceInLine(index, tsTokens, map) {
-    if ( tsTokens[map[index]] === undefined) {
+  __getOccurrenceInLine (index, tsTokens, map) {
+    if (tsTokens[map[index]] === undefined) {
       return 1
     }
     return tsTokens[map[index]].occurrenceInLine
   }
 
-  __getTotalOccurrencesInLine(index, tsTokens, map) {
-    if ( tsTokens[map[index]] === undefined) {
+  __getTotalOccurrencesInLine (index, tsTokens, map) {
+    if (tsTokens[map[index]] === undefined) {
       return 1
     }
     return tsTokens[map[index]].numberOfOccurrencesInLine
@@ -281,9 +275,9 @@ export class EditionViewerSvg {
    * @return {{start: *, end: *}|{start: string, end: string}}
    * @private
    */
-  _getLineNumbersForApparatusEntry(entry, tsTokens, map) {
+  _getLineNumbersForApparatusEntry (entry, tsTokens, map) {
     if (entry.from === -1) {
-      return { start: 'pre', end: 'pre'}
+      return { start: 'pre', end: 'pre' }
     }
     if (tsTokens[map[entry.from]] === undefined) {
       console.warn(`Entry start undefined: from = ${entry.from}, map value = ${map[entry.from]}`)
@@ -303,23 +297,23 @@ export class EditionViewerSvg {
     }
     return {
       start: tsTokens[map[entry.from]].lineNumber,
-      end: entry.to === -1 ? tsTokens[map[entry.from]].lineNumber :  tsTokens[map[entry.to]].lineNumber
+      end: entry.to === -1 ? tsTokens[map[entry.from]].lineNumber : tsTokens[map[entry.to]].lineNumber
     }
   }
 
-  _getTypesetterParagraphsForMainText() {
+  _getTypesetterParagraphsForMainText () {
 
     let typesetterRenderer = new TypesetterTokenRenderer()
 
-    return MainText.getParagraphs(this.edition.mainText).map( (mainTextParagraph) => {
+    return MainText.getParagraphs(this.edition.mainText).map((mainTextParagraph) => {
       let typesetterTokens = []
 
       if (mainTextParagraph.type === 'normal') {
         typesetterTokens.push(TypesetterTokenFactory.normalSpace())
         typesetterTokens.push(TypesetterTokenFactory.normalSpace())
       }
-      mainTextParagraph.tokens.forEach( (mainTextToken) => {
-        switch(mainTextToken.type) {
+      mainTextParagraph.tokens.forEach((mainTextToken) => {
+        switch (mainTextToken.type) {
           case MainTextTokenType.GLUE:
             let theGlue = TypesetterTokenFactory.normalSpace()
             theGlue.mainTextTokenIndex = mainTextToken.originalIndex
@@ -327,20 +321,19 @@ export class EditionViewerSvg {
             break
 
           case MainTextTokenType.TEXT:
-            let fmtTextTypesetterTokens =  typesetterRenderer.render(mainTextToken.fmtText, this.edition.lang)
+            let fmtTextTypesetterTokens = typesetterRenderer.render(mainTextToken.fmtText, this.edition.lang)
             // tag the first typeset token with the main text index
             if (fmtTextTypesetterTokens.length > 0) {
               fmtTextTypesetterTokens[0].mainTextTokenIndex = mainTextToken.originalIndex
             }
             // apply font styles according to paragraph style
-            fmtTextTypesetterTokens = fmtTextTypesetterTokens.map( (typesetterToken) => {
+            fmtTextTypesetterTokens = fmtTextTypesetterTokens.map((typesetterToken) => {
               switch (mainTextParagraph.type) {
                 case 'h1':
                   return typesetterToken.setBold().setFontSize(1.5)
 
                 case 'h2':
                   return typesetterToken.setBold().setFontSize(1.2)
-
 
                 case 'h3':
                   return typesetterToken.setBold()
@@ -349,48 +342,48 @@ export class EditionViewerSvg {
                   return typesetterToken
               }
             })
-            typesetterTokens = typesetterTokens.concat (fmtTextTypesetterTokens)
+            typesetterTokens = typesetterTokens.concat(fmtTextTypesetterTokens)
             break
         }
       })
       let paragraphToTypeset = new Paragraph()
       paragraphToTypeset.setTokens(typesetterTokens)
       let defaultLineHeight = this.geometry.mainTextLineHeight
-      switch(mainTextParagraph.type) {
+      switch (mainTextParagraph.type) {
         case 'normal':
           paragraphToTypeset.setLineHeight(defaultLineHeight).setTextAlignment(HorizontalAlign.JUSTIFIED)
           break
 
         case 'h1':
-          paragraphToTypeset.setLineHeight(defaultLineHeight*1.5)
-            .setSpaceAfter(defaultLineHeight*1.5)
-            .setTextAlignment(HorizontalAlign.CENTERED)
+          paragraphToTypeset.setLineHeight(defaultLineHeight * 1.5)
+          .setSpaceAfter(defaultLineHeight * 1.5)
+          .setTextAlignment(HorizontalAlign.CENTERED)
           break
 
         case 'h2':
-          paragraphToTypeset.setLineHeight(defaultLineHeight*1.2)
-            .setSpaceAfter(defaultLineHeight*1.2)
-            .setTextAlignment(HorizontalAlign.CENTERED)
+          paragraphToTypeset.setLineHeight(defaultLineHeight * 1.2)
+          .setSpaceAfter(defaultLineHeight * 1.2)
+          .setTextAlignment(HorizontalAlign.CENTERED)
           break
 
         case 'h3':
           paragraphToTypeset.setLineHeight(defaultLineHeight)
-            .setSpaceAfter(defaultLineHeight*0.25)
-            .setSpaceBefore(defaultLineHeight*0.5)
-            .setTextAlignment(HorizontalAlign.RAGGED)
+          .setSpaceAfter(defaultLineHeight * 0.25)
+          .setSpaceBefore(defaultLineHeight * 0.5)
+          .setTextAlignment(HorizontalAlign.RAGGED)
           break
       }
       return paragraphToTypeset
     })
   }
 
-  _getLemmaTypesetterTokens(apparatusEntry, typesettingInfo, map) {
+  _getLemmaTypesetterTokens (apparatusEntry, typesettingInfo, map) {
     let lemmaTokens = []
     let lemmaComponents = ApparatusUtil.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText)
 
-    switch(lemmaComponents.type) {
+    switch (lemmaComponents.type) {
       case 'custom':
-        return [ TypesetterTokenFactory.simpleText(lemmaComponents.text).setLang(this.edition.lang)]
+        return [TypesetterTokenFactory.simpleText(lemmaComponents.text).setLang(this.edition.lang)]
 
       case 'full':
         let lemmaNumberString = ''
@@ -404,7 +397,7 @@ export class EditionViewerSvg {
         lemmaTokens.push(TypesetterTokenFactory.simpleText(lemmaComponents.text).setLang(this.edition.lang))
         if (lemmaNumberString !== '') {
           lemmaTokens.push(TypesetterTokenFactory.simpleText(lemmaNumberString)
-            .setVerticalAlign(VerticalAlign.SUPERSCRIPT).setFontSize(FontSize.SUPERSCRIPT))
+          .setVerticalAlign(VerticalAlign.SUPERSCRIPT).setFontSize(FontSize.SUPERSCRIPT))
         }
         return lemmaTokens
 
@@ -412,7 +405,7 @@ export class EditionViewerSvg {
         // determine occurrence numbers
         let lemmaNumberStringFrom = ''
         let occurrenceInLineFrom = this.__getOccurrenceInLine(apparatusEntry.from, typesettingInfo, map)
-        let numberOfOccurrencesInLineFrom = this.__getTotalOccurrencesInLine(apparatusEntry.from, typesettingInfo,  map)
+        let numberOfOccurrencesInLineFrom = this.__getTotalOccurrencesInLine(apparatusEntry.from, typesettingInfo, map)
         if (numberOfOccurrencesInLineFrom > 1) {
           lemmaNumberStringFrom = ApparatusCommon.getNumberString(occurrenceInLineFrom, this.edition.lang)
         }
@@ -427,21 +420,20 @@ export class EditionViewerSvg {
         lemmaTokens.push(TypesetterTokenFactory.simpleText(lemmaComponents.from).setLang(this.edition.lang))
         if (lemmaNumberStringFrom !== '') {
           lemmaTokens.push(TypesetterTokenFactory.simpleText(lemmaNumberStringFrom)
-            .setVerticalAlign(VerticalAlign.SUPERSCRIPT).setFontSize(FontSize.SUPERSCRIPT))
+          .setVerticalAlign(VerticalAlign.SUPERSCRIPT).setFontSize(FontSize.SUPERSCRIPT))
         }
         // TODO: add a little glue around the separator
         lemmaTokens.push(TypesetterTokenFactory.simpleText(lemmaComponents.separator))
         lemmaTokens.push(TypesetterTokenFactory.simpleText(lemmaComponents.to).setLang(this.edition.lang))
         if (lemmaNumberStringTo !== '') {
           lemmaTokens.push(TypesetterTokenFactory.simpleText(lemmaNumberStringTo)
-            .setVerticalAlign(VerticalAlign.SUPERSCRIPT).setFontSize(FontSize.SUPERSCRIPT))
+          .setVerticalAlign(VerticalAlign.SUPERSCRIPT).setFontSize(FontSize.SUPERSCRIPT))
         }
         return lemmaTokens
 
-
       default:
         console.warn(`Unknown lemma component type '${lemmaComponents.type}'`)
-        return [ TypesetterTokenFactory.simpleText('ERROR')]
+        return [TypesetterTokenFactory.simpleText('ERROR')]
     }
   }
 
@@ -452,14 +444,14 @@ export class EditionViewerSvg {
    * @param {number[]} map
    * @private
    */
-  _getTypesetterTokensForApparatus(app, mainTextTypesetTokens, map) {
+  _getTypesetterTokensForApparatus (app, mainTextTypesetTokens, map) {
     let ttTokens = []
     let sigla = this.edition.getSigla()
     let lastLine = ''
     let firstLineNumberAlreadyPrinted = false
-    app.entries.forEach( (apparatusEntry) => {
+    app.entries.forEach((apparatusEntry) => {
       //console.log(`Processing apparatus entry ${aeIndex}`)
-      let enabledSubEntries = apparatusEntry.subEntries.filter( (se) => {
+      let enabledSubEntries = apparatusEntry.subEntries.filter((se) => {
         return se.enabled
       })
       if (enabledSubEntries.length === 0) {
@@ -494,11 +486,11 @@ export class EditionViewerSvg {
         lineTtTokens.push(TypesetterTokenFactory.normalSpace())
         firstLineNumberAlreadyPrinted = true
       }
-      ttTokens.push(...lineTtTokens);
-            // LEMMA section
+      ttTokens.push(...lineTtTokens)
+      // LEMMA section
       // preLemma
       let preLemmaTokens = []
-      switch(apparatusEntry.preLemma) {
+      switch (apparatusEntry.preLemma) {
         case '':
           // don't do anything
           break
@@ -517,22 +509,22 @@ export class EditionViewerSvg {
       }
 
       // lemma
-     ttTokens.push(...this._getLemmaTypesetterTokens(apparatusEntry, mainTextTypesetTokens, map))
+      ttTokens.push(...this._getLemmaTypesetterTokens(apparatusEntry, mainTextTypesetTokens, map))
 
       // postLemma
       if (apparatusEntry.postLemma !== '') {
         ttTokens.push(TypesetterTokenFactory.normalSpace())
-        let postLemmaTokens  = ApparatusCommon.getKeywordTypesetterTokens(apparatusEntry.postLemma, this.edition.lang)
+        let postLemmaTokens = ApparatusCommon.getKeywordTypesetterTokens(apparatusEntry.postLemma, this.edition.lang)
         //let postLemmaTokens = this._getTypesetTokensFromCustomLemmaGroupValue(apparatusEntry.postLemma, this.edition.lang)
         ttTokens.push(...postLemmaTokens)
       }
 
       // separator
       let separatorTokens = []
-      switch(apparatusEntry.separator) {
+      switch (apparatusEntry.separator) {
         case '':
           if (!apparatusEntry.allSubEntriesAreOmissions()) {
-            separatorTokens = [ TypesetterTokenFactory.simpleText(']').setLang(this.edition.lang) ]
+            separatorTokens = [TypesetterTokenFactory.simpleText(']').setLang(this.edition.lang)]
           }
           break
 
@@ -540,7 +532,7 @@ export class EditionViewerSvg {
           break
 
         case 'colon':
-          separatorTokens = [ TypesetterTokenFactory.simpleText(':').setLang(this.edition.lang) ]
+          separatorTokens = [TypesetterTokenFactory.simpleText(':').setLang(this.edition.lang)]
           break
 
         default:
@@ -551,11 +543,9 @@ export class EditionViewerSvg {
       ttTokens.push(...separatorTokens)
       ttTokens.push(TypesetterTokenFactory.normalSpace())
 
-
-
-      enabledSubEntries.forEach( (subEntry) => {
+      enabledSubEntries.forEach((subEntry) => {
         let theText = subEntry.type === SubEntryType.OMISSION ? [] : subEntry.fmtText
-        let witnessIndices = subEntry.witnessData.map ( (wd) => { return wd.witnessIndex})
+        let witnessIndices = subEntry.witnessData.map((wd) => { return wd.witnessIndex})
 
         let typesetterTokens = []
 
@@ -588,7 +578,7 @@ export class EditionViewerSvg {
     return ttTokens
   }
 
-  _getTypesetTokensFromCustomLemmaGroupValue(customText, lang) {
+  _getTypesetTokensFromCustomLemmaGroupValue (customText, lang) {
     console.log(`Getting typeset token from custom lemma group value, lang = ${lang}`)
     console.log(customText)
     let text = removeExtraWhiteSpace(FmtTextUtil.getPlainText(FmtTextFactory.fromAnything(customText)))
@@ -597,16 +587,15 @@ export class EditionViewerSvg {
     switch (lang) {
       case 'he':
       case 'ar':
-        fmtText = FmtTextFactory.fromAnything(text).map( (token) => { return token.setFontSize(0.8)})
+        fmtText = FmtTextFactory.fromAnything(text).map((token) => { return token.setFontSize(0.8)})
         break
 
       default:
-        fmtText = FmtTextFactory.fromAnything(text).map( (token) => { return token.setItalic()})
+        fmtText = FmtTextFactory.fromAnything(text).map((token) => { return token.setItalic()})
     }
 
     return (new TypesetterTokenRenderer()).render(fmtText)
   }
-
 
   /**
    *
@@ -616,18 +605,18 @@ export class EditionViewerSvg {
    * @return {TypesetterToken}
    * @private
    */
-  _getApparatusLineNumberTypesetterToken(entry, mainTextTypesetTokens, map) {
+  _getApparatusLineNumberTypesetterToken (entry, mainTextTypesetTokens, map) {
     let range = this._getLineNumbersForApparatusEntry(entry, mainTextTypesetTokens, map)
-    let lineString =  this._getLineNumberString(range.start)
+    let lineString = this._getLineNumberString(range.start)
     if (range.start !== range.end) {
       lineString += '-' + this._getLineNumberString(range.end)
     }
     return TypesetterTokenFactory.simpleText(lineString).setBold()
   }
 
-  _genMainTokenIndexToTypesetterTokenMap(mainTextTokens, typesetterTokens) {
-    let theMap = mainTextTokens.map ( () => { return -1})
-    typesetterTokens.forEach( (typesetterToken, i) => {
+  _genMainTokenIndexToTypesetterTokenMap (mainTextTokens, typesetterTokens) {
+    let theMap = mainTextTokens.map(() => { return -1})
+    typesetterTokens.forEach((typesetterToken, i) => {
       if (typesetterToken['mainTextTokenIndex'] !== undefined) {
         theMap[typesetterToken['mainTextTokenIndex']] = i
       }

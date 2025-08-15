@@ -27,7 +27,7 @@ export class TextBoxMeasurer {
    */
   getBoxWidth(item: TextBox): Promise<number> {
     // a wild guess based on a monospace font!
-    return Promise.resolve(item.getText().length * item.getFontSize())
+    return Promise.resolve(item.getText().length * item.getFontSize());
   }
 
   /**
@@ -37,7 +37,7 @@ export class TextBoxMeasurer {
    */
   getBoxHeight(item: TextBox): Promise<number> {
     //just the fontSize... this will be different for different fonts
-    return Promise.resolve(item.getFontSize())
+    return Promise.resolve(item.getFontSize());
   }
 
 }

@@ -50,10 +50,11 @@ import {TypesetterItem} from '../lib/Typesetter2/TypesetterItem.js';
 import {MARGINALIA} from '../constants/ApparatusType.js';
 import {AUTO_FOLIATION} from './SubEntryType.js';
 import {ApparatusSubEntry} from "./ApparatusSubEntry.js";
-import {Apparatus} from "./Apparatus.js";
 import {ApparatusEntry} from './ApparatusEntry.js';
-import {Edition} from "../Edition/Edition.js";
+import {ApparatusInterface} from "./EditionInterface.js";
 import {Dimension} from "../lib/Typesetter2/Dimension.js";
+import {Edition} from './Edition.js';
+import {Apparatus} from "./Apparatus.js";
 
 export const MAX_LINE_COUNT = 10000;
 const enDash = '\u2013';
@@ -98,7 +99,7 @@ export class EditionTypesetting {
   constructor(options: any) {
     let oc = new OptionsChecker({
       context: 'EditionTypesetting', optionsDefinition: {
-        edition: {type: 'object'},
+        edition: {type: 'object', objectClass: Edition},
         editionStyleSheet: {type: 'object', objectClass: StyleSheet},
         textBoxMeasurer: {type: 'object', objectClass: TextBoxMeasurer},
         debug: {type: 'boolean', default: false}
@@ -192,6 +193,7 @@ export class EditionTypesetting {
     }
     return this.consolidatedMarginalia;
   }
+
   /**
    *
    * @return {Promise<ItemList>}
@@ -313,12 +315,12 @@ export class EditionTypesetting {
   }
 
 
-  getWitnessIndicesWithFoliationChanges(mainTextTokenIndex: number|undefined): number[] {
+  getWitnessIndicesWithFoliationChanges(mainTextTokenIndex: number | undefined): number[] {
     if (mainTextTokenIndex === undefined) {
       return [];
     }
     const edition: Edition = this.options.edition;
-    const marginaliaApparatuses: Apparatus[] = edition.apparatuses.filter((apparatus: Apparatus) => {
+    const marginaliaApparatuses: Apparatus[] = edition.apparatuses.filter((apparatus: ApparatusInterface) => {
       return apparatus.type === MARGINALIA;
     });
     if (marginaliaApparatuses.length === 0) {
@@ -1129,7 +1131,7 @@ export class EditionTypesetting {
     }
     let detectedLang;
     // take care of common neutral punctuation right away
-    const neutralPunctuationCharacters = ['[', ']','<','>', '(', ')', '{', '}', '«', '»', '.', ',', ';', '...', '"'];
+    const neutralPunctuationCharacters = ['[', ']', '<', '>', '(', ')', '{', '}', '«', '»', '.', ',', ';', '...', '"'];
     if (neutralPunctuationCharacters.indexOf(textBox.getText()) !== -1) {
       detectedLang = this.edition.lang;
     } else {

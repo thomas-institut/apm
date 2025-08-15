@@ -16,10 +16,10 @@
  *
  */
 
-import { FmtTextToken } from './FmtTextToken.js'
-import * as FmtTextTokenType from './FmtTextTokenType.js'
-import * as ParagraphStyle from './ParagraphStyle.js'
-import * as MarkType from './MarkType.js'
+import {FmtTextToken} from './FmtTextToken.js';
+import * as FmtTextTokenType from './FmtTextTokenType.js';
+import * as ParagraphStyle from './ParagraphStyle.js';
+import * as MarkType from './MarkType.js';
 
 export class FmtTextTokenFactory {
 
@@ -29,15 +29,15 @@ export class FmtTextTokenFactory {
    * @returns {FmtTextToken}
    */
   static normalText(someString: string): FmtTextToken {
-    return (new FmtTextToken(FmtTextTokenType.TEXT)).setText(someString)
+    return (new FmtTextToken(FmtTextTokenType.TEXT)).setText(someString);
   }
 
   static normalSpace(): FmtTextToken {
-    return new FmtTextToken(FmtTextTokenType.GLUE)
+    return new FmtTextToken(FmtTextTokenType.GLUE);
   }
 
   static paragraphMark(style = ParagraphStyle.NORMAL): FmtTextToken {
-    return (new FmtTextToken(FmtTextTokenType.MARK)).setMarkType(MarkType.PARAGRAPH).setStyle(style)
+    return (new FmtTextToken(FmtTextTokenType.MARK)).setMarkType(MarkType.PARAGRAPH).setStyle(style);
 
   }
 
@@ -46,34 +46,34 @@ export class FmtTextTokenFactory {
    * @param fmtTextToken
    * @return {FmtTextToken}
    */
-  static clone(fmtTextToken: FmtTextToken) :FmtTextToken {
-    let newText = new FmtTextToken()
-    newText.type = fmtTextToken.type
-    switch(newText.type) {
+  static clone(fmtTextToken: FmtTextToken): FmtTextToken {
+    let newText = new FmtTextToken();
+    newText.type = fmtTextToken.type;
+    switch (newText.type) {
       case FmtTextTokenType.TEXT:
-        newText.text = fmtTextToken.text
-        newText.fontStyle = fmtTextToken.fontStyle
-        newText.fontWeight = fmtTextToken.fontWeight
-        newText.verticalAlign = fmtTextToken.verticalAlign
-        newText.fontSize = fmtTextToken.fontSize
-        newText.classList = fmtTextToken.classList
-        break
+        newText.text = fmtTextToken.text;
+        newText.fontStyle = fmtTextToken.fontStyle;
+        newText.fontWeight = fmtTextToken.fontWeight;
+        newText.verticalAlign = fmtTextToken.verticalAlign;
+        newText.fontSize = fmtTextToken.fontSize;
+        newText.classList = fmtTextToken.classList;
+        break;
 
       case FmtTextTokenType.GLUE:
-        newText.space = fmtTextToken.space // i.e., default size, whatever that means for the typesetter/presenter context
-        break
+        newText.space = fmtTextToken.space; // i.e., default size, whatever that means for the typesetter/presenter context
+        break;
 
 
       case FmtTextTokenType.MARK:
-        newText.markType = fmtTextToken.markType
-        newText.style = fmtTextToken.style
-        break
+        newText.markType = fmtTextToken.markType;
+        newText.style = fmtTextToken.style;
+        break;
 
       default:
-        console.warn(`Unsupported type in FormattedTextToken constructor: ${fmtTextToken.type}`)
-        newText.type = FmtTextTokenType.EMPTY
+        console.warn(`Unsupported type in FormattedTextToken constructor: ${fmtTextToken.type}`);
+        newText.type = FmtTextTokenType.EMPTY;
     }
-    return newText
+    return newText;
   }
 
   /**
@@ -84,47 +84,47 @@ export class FmtTextTokenFactory {
     // console.log(`Building from object`)
     // console.log(someObject)
     if (someObject instanceof FmtTextToken) {
-      return this.clone(someObject)
+      return this.clone(someObject);
     }
     if (someObject.type === undefined) {
-      throw new Error('No type in object')
+      throw new Error('No type in object');
     }
-    switch(someObject.type) {
+    switch (someObject.type) {
       case FmtTextTokenType.TEXT:
-        let newToken = new FmtTextToken(FmtTextTokenType.TEXT)
+        let newToken = new FmtTextToken(FmtTextTokenType.TEXT);
         if (someObject.text === undefined) {
-          throw new Error('No text in object')
+          throw new Error('No text in object');
         }
-        newToken.setText(someObject.text)
-        let keysToCopy = ['verticalAlign', 'fontWeight', 'fontStyle', 'fontSize', 'classList']
-        keysToCopy.forEach( (key) => {
+        newToken.setText(someObject.text);
+        let keysToCopy = ['verticalAlign', 'fontWeight', 'fontStyle', 'fontSize', 'classList'];
+        keysToCopy.forEach((key) => {
           if (someObject[key] !== undefined) {
             // @ts-expect-error Using token as array
-            newToken[key] = someObject[key]
+            newToken[key] = someObject[key];
           }
-        })
-        return newToken
+        });
+        return newToken;
 
       case FmtTextTokenType.GLUE:
-        let glueToken = this.normalSpace()
+        let glueToken = this.normalSpace();
         if (someObject.space !== undefined) {
-          glueToken.space = someObject.space
+          glueToken.space = someObject.space;
         }
-        return glueToken
+        return glueToken;
 
       case FmtTextTokenType.MARK:
-        let markToken = new FmtTextToken(FmtTextTokenType.MARK)
+        let markToken = new FmtTextToken(FmtTextTokenType.MARK);
         if (someObject.markType === undefined) {
-          throw new Error('No mark type in object')
+          throw new Error('No mark type in object');
         }
-        markToken.setMarkType(someObject.markType)
+        markToken.setMarkType(someObject.markType);
         if (someObject.style !== undefined) {
-          markToken.setStyle(someObject.style)
+          markToken.setStyle(someObject.style);
         }
-        return markToken
+        return markToken;
 
       default:
-        throw new Error(`Invalid type '${someObject.type}' in object`)
+        throw new Error(`Invalid type '${someObject.type}' in object`);
     }
   }
 }

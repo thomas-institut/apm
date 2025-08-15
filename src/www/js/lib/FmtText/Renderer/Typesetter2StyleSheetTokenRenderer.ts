@@ -18,19 +18,19 @@
  *
  */
 
-import * as FmtTokenType from '../FmtTextTokenType.js'
-import * as VerticalAlign from '../VerticalAlign.js'
-import * as DefaultStyleSheet from '../../../lib/Typesetter2/Style/DefaultStyleSheet.js'
+import * as FmtTokenType from '../FmtTextTokenType.js';
+import * as VerticalAlign from '../VerticalAlign.js';
+import * as DefaultStyleSheet from '../../../lib/Typesetter2/Style/DefaultStyleSheet.js';
 
-import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { Glue } from '../../../lib/Typesetter2/Glue.js'
-import { StyleSheet } from '../../../lib/Typesetter2/Style/StyleSheet.js'
-import { TextBoxMeasurer } from '../../../lib/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js'
-import { AsyncFmtTextRenderer } from './AsyncFmtTextRenderer.js'
-import * as FontStyle from '../FontStyle.js'
-import * as FontWeight from '../FontWeight.js'
-import { TextBox } from '../../../lib/Typesetter2/TextBox.js'
-import { ObjectFactory } from '../../../lib/Typesetter2/ObjectFactory.js'
+import {OptionsChecker} from '@thomas-inst/optionschecker';
+import {Glue} from '../../../lib/Typesetter2/Glue.js';
+import {StyleSheet} from '../../../lib/Typesetter2/Style/StyleSheet.js';
+import {TextBoxMeasurer} from '../../../lib/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js';
+import {AsyncFmtTextRenderer} from './AsyncFmtTextRenderer.js';
+import * as FontStyle from '../FontStyle.js';
+import * as FontWeight from '../FontWeight.js';
+import {TextBox} from '../../../lib/Typesetter2/TextBox.js';
+import {ObjectFactory} from '../../../lib/Typesetter2/ObjectFactory.js';
 import {TypesetterItem} from "../../../lib/Typesetter2/TypesetterItem.js";
 import {FmtTextToken} from "../FmtTextToken.js";
 
@@ -50,7 +50,7 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
     let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'FmtText Typesetter2 Renderer'});
 
     this.options = oc.getCleanOptions(options);
-    this.ss = new StyleSheet(this.options.styleSheet)
+    this.ss = new StyleSheet(this.options.styleSheet);
 
   }
 
@@ -61,75 +61,75 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
    * @return{ Promise<TypesetterItem[]>}
    */
   renderWithStyle(fmtText: FmtTextToken[], styleNames: string | string[]): Promise<TypesetterItem[]> {
-    return new Promise( async (resolve) => {
-      let items = []
-      for(let tokenIndex = 0; tokenIndex < fmtText.length; tokenIndex++) {
-        let token = fmtText[tokenIndex]
+    return new Promise(async (resolve) => {
+      let items = [];
+      for (let tokenIndex = 0; tokenIndex < fmtText.length; tokenIndex++) {
+        let token = fmtText[tokenIndex];
         if (token.type === FmtTokenType.EMPTY) {
-          continue
+          continue;
         }
-        switch( token.type) {
+        switch (token.type) {
           case FmtTokenType.GLUE:
-            let glueItem = await this.ss.apply(new Glue(), styleNames)  as Glue
+            let glueItem = await this.ss.apply(new Glue(), styleNames) as Glue;
             // token.space  controls glue, if it is a string other than '' then
             // glue should be set according to the named style given by it. However, this is not
             // actually implemented or used right now. An empty string in token.space
             // means that the glue's parameters should be set with the values given by the token's
             // width, stretch and shrink members
             if (token.space === '') {
-              glueItem.setWidth(token.width ?? 0).setStretch(token.stretch ?? 0).setShrink(token.shrink ?? 0)
+              glueItem.setWidth(token.width ?? 0).setStretch(token.stretch ?? 0).setShrink(token.shrink ?? 0);
             }
-            items.push(glueItem)
-            break
+            items.push(glueItem);
+            break;
 
           case FmtTokenType.TEXT:
-            let textBox = await this.ss.apply( (new TextBox().setText(token.text ?? 'Error')), styleNames)
+            let textBox = await this.ss.apply((new TextBox().setText(token.text ?? 'Error')), styleNames);
 
             if (token.fontStyle === FontStyle.ITALIC) {
-              textBox.setFontStyle('italic')
+              textBox.setFontStyle('italic');
             }
             if (token.fontWeight === FontWeight.BOLD) {
-              textBox.setFontWeight('bold')
+              textBox.setFontWeight('bold');
             }
-            if ( (token.fontSize ?? 1)  < 1 && token.verticalAlign === VerticalAlign.BASELINE) {
+            if ((token.fontSize ?? 1) < 1 && token.verticalAlign === VerticalAlign.BASELINE) {
               // console.log(`Setting font size ${token.fontSize}`)
-              textBox.setFontSize(textBox.getFontSize()* (token.fontSize ?? 1))
+              textBox.setFontSize(textBox.getFontSize() * (token.fontSize ?? 1));
               // console.log(textBox)
             }
             if (token.verticalAlign === VerticalAlign.SUPERSCRIPT) {
               // console.log(`Setting superscript`)
-              textBox = await this.ss.apply(textBox, 'superscript')
+              textBox = await this.ss.apply(textBox, 'superscript');
               // console.log(textBox)
             }
             if (token.verticalAlign === VerticalAlign.SUBSCRIPT) {
-              textBox = await this.ss.apply(textBox, 'subscript')
+              textBox = await this.ss.apply(textBox, 'subscript');
             }
             // apply classes
             // TODO: make this generic, for now this will take care of sigla
             if (token.classList !== undefined && token.classList !== '') {
-              let classes = token.classList.split(' ')
+              let classes = token.classList.split(' ');
               if (classes.indexOf('sigla') !== -1) {
                 // SIGLA class
-                textBox = await this.ss.apply( textBox, 'sigla')
-                textBox.setTextDirection(this.options.defaultTextDirection)
+                textBox = await this.ss.apply(textBox, 'sigla');
+                textBox.setTextDirection(this.options.defaultTextDirection);
               }
             }
-            items.push(textBox)
+            items.push(textBox);
         }
       }
       // At this point we have a 1 to 1 mapping of the fmtText item into Typesetter2 items,
       // we need to split the text boxes so that each initial and final punctuation character gets its own box.
       // This is necessary for the Bidi algorithm to properly work
-      let outputItems: TypesetterItem[] = []
-      items.forEach( (item) => {
+      let outputItems: TypesetterItem[] = [];
+      items.forEach((item) => {
         if (item instanceof TextBox) {
-          outputItems.push(...this.expandTextBox(item))
+          outputItems.push(...this.expandTextBox(item));
         } else {
-          outputItems.push(item)
+          outputItems.push(item);
         }
-      })
-      resolve(outputItems)
-    })
+      });
+      resolve(outputItems);
+    });
   }
 
   /**
@@ -138,51 +138,52 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
    * @return TextBox[]
    */
   expandTextBox(textBox: TextBox) {
-    let theText = textBox.getText()
+    let theText = textBox.getText();
     if (theText === '' || theText.length === 1) {
-      return [textBox]
+      return [textBox];
     }
-    const initials = [ '(', '{']
-    const finals = [';', '.', ',', ')', '}']
+    const initials = ['(', '{'];
+    const finals = [';', '.', ',', ')', '}'];
 
-    let initialsChars = []
-    let finalsChars = []
+    let initialsChars = [];
+    let finalsChars = [];
 
     for (let i = 0; i < theText.length; i++) {
       if (initials.includes(theText.charAt(i))) {
-        initialsChars.push(theText.charAt(i))
+        initialsChars.push(theText.charAt(i));
       } else {
-        break
+        break;
       }
     }
 
-    for (let i = theText.length-1; i >= 0; i--) {
+    for (let i = theText.length - 1; i >= 0; i--) {
       if (finals.includes(theText.charAt(i))) {
-        finalsChars.unshift(theText.charAt(i))
+        finalsChars.unshift(theText.charAt(i));
       } else {
-        break
+        break;
       }
     }
     if (initialsChars.length === 0 && finalsChars.length === 0) {
-      return [textBox]
+      return [textBox];
     }
 
-    let parts = []
-    parts.push(...initialsChars)
-    parts.push(theText.substring(initialsChars.length, theText.length - finalsChars.length))
-    parts.push(...finalsChars)
+    let parts = [];
+    parts.push(...initialsChars);
+    parts.push(theText.substring(initialsChars.length, theText.length - finalsChars.length));
+    parts.push(...finalsChars);
 
-    return this.buildTextBoxArrayFromStringArray(parts, textBox)
+    return this.buildTextBoxArrayFromStringArray(parts, textBox);
   }
 
-  buildTextBoxArrayFromStringArray(stringArray: string[], seedTextBox: TextBox): TextBox[]{
-    return stringArray.map( (str) => {
-      let tb = ObjectFactory.fromObject(seedTextBox.getExportObject()) as TextBox
-      tb.setText(str)
-      return tb
-    })
+  buildTextBoxArrayFromStringArray(stringArray: string[], seedTextBox: TextBox): TextBox[] {
+    return stringArray.map((str) => {
+      let tb = ObjectFactory.fromObject(seedTextBox.getExportObject()) as TextBox;
+      tb.setText(str);
+      return tb;
+    });
   }
+
   render(fmtText: FmtTextToken[]): Promise<TypesetterItem[]> {
-    return this.renderWithStyle(fmtText, 'default')
+    return this.renderWithStyle(fmtText, 'default');
   }
 }

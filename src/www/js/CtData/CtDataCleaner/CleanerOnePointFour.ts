@@ -1,8 +1,8 @@
-import { CtDataCleaner } from './CtDataCleaner'
-import { SubEntryPositionsConsistencyCleaner } from './SubEntryPositionsConsistencyCleaner'
-import { ApparatusEntryPositionCleaner } from './ApparatusEntryPositionCleaner'
-import { DefaultApparatusesCleaner } from './DefaultApparatusesCleaner'
-import { EditionWitnessTokenStringParser } from '../../toolbox/EditionWitnessTokenStringParser'
+import {CtDataCleaner} from './CtDataCleaner';
+import {SubEntryPositionsConsistencyCleaner} from './SubEntryPositionsConsistencyCleaner';
+import {ApparatusEntryPositionCleaner} from './ApparatusEntryPositionCleaner';
+import {DefaultApparatusesCleaner} from './DefaultApparatusesCleaner';
+import {EditionWitnessTokenStringParser} from '@/toolbox/EditionWitnessTokenStringParser';
 import {CtDataInterface, WitnessInterface} from "../CtDataInterface";
 
 /**
@@ -10,21 +10,21 @@ import {CtDataInterface, WitnessInterface} from "../CtDataInterface";
  */
 export class CleanerOnePointFour extends CtDataCleaner {
 
-  sourceSchemaVersion () {
-    return '1.4'
+  sourceSchemaVersion() {
+    return '1.4';
   }
 
-  getCleanCtData (ctData: CtDataInterface): CtDataInterface {
+  getCleanCtData(ctData: CtDataInterface): CtDataInterface {
     // make sure all custom apparatuses are there
-    let defaultApparatusesCleaner = new DefaultApparatusesCleaner({verbose: this.verbose})
+    let defaultApparatusesCleaner = new DefaultApparatusesCleaner({verbose: this.verbose});
 
-    ctData = defaultApparatusesCleaner.getCleanCtData(ctData)
+    ctData = defaultApparatusesCleaner.getCleanCtData(ctData);
     // run apparatus cleaners
-    let subEntryPositionsCleaner = new SubEntryPositionsConsistencyCleaner({verbose: this.verbose})
-    let apparatusEntryCleaner = new ApparatusEntryPositionCleaner({ verbose: this.verbose})
+    let subEntryPositionsCleaner = new SubEntryPositionsConsistencyCleaner({verbose: this.verbose});
+    let apparatusEntryCleaner = new ApparatusEntryPositionCleaner({verbose: this.verbose});
 
-    let cleanData =  super.getCleanCtData(ctData)
-    cleanData = subEntryPositionsCleaner.getCleanCtData(cleanData)
+    let cleanData = super.getCleanCtData(ctData);
+    cleanData = subEntryPositionsCleaner.getCleanCtData(cleanData);
     cleanData = apparatusEntryCleaner.getCleanCtData(cleanData);
 
     if (cleanData.type === 'edition' && cleanData.lang === 'he') {
@@ -46,7 +46,7 @@ export class CleanerOnePointFour extends CtDataCleaner {
    * @param editionWitness
    */
   getCleanEditionWitness(editionWitness: WitnessInterface) {
-    editionWitness.tokens = editionWitness.tokens.map( (token, index) => {
+    editionWitness.tokens = editionWitness.tokens.map((token, index) => {
       if (token.tokenType !== 'word') {
         // nothing to do on non-word tokens
         return token;
@@ -63,7 +63,7 @@ export class CleanerOnePointFour extends CtDataCleaner {
         let parsedTokenNormalization = parsedTokens[0].normalizedText ?? '';
 
         if (parsedTokenNormalization !== '' && originalTokenNormalization !== parsedTokenNormalization) {
-          console.log(`Edition witness token ${index} fixed:`)
+          console.log(`Edition witness token ${index} fixed:`);
           token.normalizedText = parsedTokenNormalization;
           token.normalizationSource = parsedTokens[0].normalizationSource;
           console.log(token);
@@ -74,7 +74,7 @@ export class CleanerOnePointFour extends CtDataCleaner {
       } else {
         return token;
       }
-    })
+    });
     return editionWitness;
   }
 }

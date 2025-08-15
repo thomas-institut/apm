@@ -16,7 +16,7 @@
  *
  */
 
-import * as EditionMainTextTokenType from './MainTextTokenType.js'
+import * as EditionMainTextTokenType from './MainTextTokenType.js';
 import {MainTextToken} from "./MainTextToken.js";
 import {MainTextParagraph} from "./MainTextParagraph.js";
 
@@ -34,25 +34,25 @@ export class MainText {
    */
   static getParagraphs(mainTextTokens: MainTextToken[]): MainTextParagraph[] {
     if (mainTextTokens.length === 0) {
-      return []
+      return [];
     }
-    let paragraphs: MainTextParagraph[] = []
+    let paragraphs: MainTextParagraph[] = [];
 
-    let currentParagraph: MainTextParagraph = { type: '', tokens: []}
-    mainTextTokens.forEach( (token, tokenIndex) => {
-      token.originalIndex = tokenIndex
+    let currentParagraph: MainTextParagraph = {type: '', tokens: []};
+    mainTextTokens.forEach((token, tokenIndex) => {
+      token.originalIndex = tokenIndex;
       if (token.type === EditionMainTextTokenType.PARAGRAPH_END) {
-        currentParagraph.type = token.style === '' ? 'normal' : token.style
-        paragraphs.push(currentParagraph)
-        currentParagraph = { type: '', tokens: []}
+        currentParagraph.type = token.style === '' ? 'normal' : token.style;
+        paragraphs.push(currentParagraph);
+        currentParagraph = {type: '', tokens: []};
       } else {
-        token.originalIndex = tokenIndex
-        currentParagraph.tokens.push(token)
+        token.originalIndex = tokenIndex;
+        currentParagraph.tokens.push(token);
       }
-    })
-    currentParagraph.type = 'normal'
-    paragraphs.push(currentParagraph)
-    return paragraphs
+    });
+    currentParagraph.type = 'normal';
+    paragraphs.push(currentParagraph);
+    return paragraphs;
 
   }
 

@@ -22,35 +22,35 @@
 
 
 
-export const PARAGRAPH_NUMBER = 'paragraphNumber'
-export const LINE_NUMBER_IN_PARAGRAPH = 'lineNumberInParagraph'
-export const PARAGRAPH_LINE_COUNT = 'paragraphLineCount'
-export const LINE_NUMBER = 'lineNumber'
-export const LINE_RATIO = 'lineRatio'
-export const ADJUSTMENT_RATIO = 'adjustmentRatio'
-export const UNADJUSTED_LINE_WIDTH = 'unadjustedLineWidth'
-export const LIST_TYPE = 'type'
-export const GLUE_TYPE = 'type'
-export const ITEM_TYPE = 'type'
-export const INTER_LINE_GLUE_SET = 'interLineGlueSet'
-export const HAS_REVERSE_TEXT = 'hasReverseText'
-export const HAS_REORDERED_ITEMS = 'hasReorderedItems'
-export const ORIGINAL_ITEM_ORDER = 'originalItemOrder'
-export const ORIGINAL_ARRAY_INDEX = 'originalArrayIndex'
+export const PARAGRAPH_NUMBER = 'paragraphNumber';
+export const LINE_NUMBER_IN_PARAGRAPH = 'lineNumberInParagraph';
+export const PARAGRAPH_LINE_COUNT = 'paragraphLineCount';
+export const LINE_NUMBER = 'lineNumber';
+export const LINE_RATIO = 'lineRatio';
+export const ADJUSTMENT_RATIO = 'adjustmentRatio';
+export const UNADJUSTED_LINE_WIDTH = 'unadjustedLineWidth';
+export const LIST_TYPE = 'type';
+export const GLUE_TYPE = 'type';
+export const ITEM_TYPE = 'type';
+export const INTER_LINE_GLUE_SET = 'interLineGlueSet';
+export const HAS_REVERSE_TEXT = 'hasReverseText';
+export const HAS_REORDERED_ITEMS = 'hasReorderedItems';
+export const ORIGINAL_ITEM_ORDER = 'originalItemOrder';
+export const ORIGINAL_ARRAY_INDEX = 'originalArrayIndex';
 
-export const MERGED_ITEM = 'mergedItem'
-export const SOURCE_ITEMS = 'sourceItems'
+export const MERGED_ITEM = 'mergedItem';
+export const SOURCE_ITEMS = 'sourceItems';
 
-export const PAGE_NUMBER = 'pageNumber'
-export const PAGE_FOLIATION = 'pageFoliation'
+export const PAGE_NUMBER = 'pageNumber';
+export const PAGE_FOLIATION = 'pageFoliation';
 
-export const MAIN_TEXT_ORIGINAL_INDEX = 'editionMainTextIndex'
-export const LINE_TYPE  = 'lineType'
+export const MAIN_TEXT_ORIGINAL_INDEX = 'editionMainTextIndex';
+export const LINE_TYPE = 'lineType';
 
-export const MAIN_TEXT_LINE_DATA = 'mainTextLineData'
+export const MAIN_TEXT_LINE_DATA = 'mainTextLineData';
 
-export const PAGE_MARGINALIA = 'pageMarginalia'
+export const PAGE_MARGINALIA = 'pageMarginalia';
 
-export const TOKEN_FOR_COUNTING_PURPOSES = 'textTokenForCountingPurposes'
-export const TOKEN_OCCURRENCE_IN_LINE = 'textTokenOccurrenceInLine'
-export const TOKEN_TOTAL_OCCURRENCES_IN_LINE = 'textTokenTotalOccurrencesInLine'
+export const TOKEN_FOR_COUNTING_PURPOSES = 'textTokenForCountingPurposes';
+export const TOKEN_OCCURRENCE_IN_LINE = 'textTokenOccurrenceInLine';
+export const TOKEN_TOTAL_OCCURRENCES_IN_LINE = 'textTokenTotalOccurrencesInLine';

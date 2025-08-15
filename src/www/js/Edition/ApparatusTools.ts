@@ -6,11 +6,13 @@ import * as WitnessTokenType from "../Witness/WitnessTokenType";
 import {Punctuation} from "../defaults/Punctuation";
 
 import {Group} from "./SequenceWithGroups";
-import {Apparatus} from "./Apparatus";
+
+import {ApparatusInterface} from "./EditionInterface.js";
+import {Apparatus} from "@/Edition/Apparatus";
 
 export class ApparatusTools {
 
-  static createEmpty(): Apparatus {
+  static createEmpty(): ApparatusInterface {
     return {
       type: ApparatusType.CRITICUS, entries: []
     };
@@ -23,7 +25,7 @@ export class ApparatusTools {
    * @param mainTextTo
    * @return {number}
    */
-  static findEntryIndex(app: Apparatus, mainTextFrom: number, mainTextTo: number): number {
+  static findEntryIndex(app: ApparatusInterface, mainTextFrom: number, mainTextTo: number): number {
     let index = -1;
     let found = false;
     app.entries.forEach((entry, i) => {
@@ -41,13 +43,11 @@ export class ApparatusTools {
   /**
    * Sorts the entries in ascending order according to their main text indices
    */
-  static sortEntries(app: Apparatus): Apparatus {
-    const newEntries = app.entries.sort((entryA, entryB) => {
+  static sortEntries<T extends Apparatus | ApparatusInterface>(app: T): T {
+    app.entries = app.entries.sort((entryA, entryB) => {
       return compareEntryLocations(entryA.from, entryB.from, entryA.to, entryB.to);
     });
-    return {
-      type: app.type, entries: newEntries
-    };
+    return app;
   }
 
   static getMainTextForGroup(group: Group, mainTextInputTokens: WitnessTokenInterface[], normalized = true, lang = '') {

@@ -28,28 +28,28 @@
  *
  */
 
-const debug = false
+const debug = false;
 
 
 export interface Group {
-  from: number
-  to: number
+  from: number;
+  to: number;
 }
 
 export class SequenceWithGroups {
   private length: number;
   private groupedWithNextNumbers: number[];
 
-  constructor (length: number, initialGroupedWithNextNumbers: number[] = []) {
-    this.length = length
-    this.groupedWithNextNumbers = []
-    initialGroupedWithNextNumbers.forEach( (n) => {
-      this.groupWithNext(n)
-    })
+  constructor(length: number, initialGroupedWithNextNumbers: number[] = []) {
+    this.length = length;
+    this.groupedWithNextNumbers = [];
+    initialGroupedWithNextNumbers.forEach((n) => {
+      this.groupWithNext(n);
+    });
   }
 
   getGroupedNumbers() {
-    return this.groupedWithNextNumbers
+    return this.groupedWithNextNumbers;
   }
 
   /**
@@ -57,33 +57,41 @@ export class SequenceWithGroups {
    * @param number
    */
   removeNumber(number: number) {
-    let currentGroups = this.getGroups()
+    let currentGroups = this.getGroups();
 
     // find groups that include the given number, there should be exactly one of them
-    let numberGroups = currentGroups.filter( (g) => { return g.from<=number && g.to >=number })
+    let numberGroups = currentGroups.filter((g) => {
+      return g.from <= number && g.to >= number;
+    });
     if (numberGroups.length !== 1) {
-      console.error(`Inconsistent groups, found more than one group for number ${number}`)
+      console.error(`Inconsistent groups, found more than one group for number ${number}`);
     }
-    let numberGroup = numberGroups[0]
+    let numberGroup = numberGroups[0];
 
     // initialize new groups with groups before the given number, these groups are passed intact to the new set
-    let newGroups = currentGroups.filter( (g) => { return g.to < number })
+    let newGroups = currentGroups.filter((g) => {
+      return g.to < number;
+    });
 
     if (numberGroup.to !== numberGroup.from) {
       // if the group to which the given number belongs represents an interval longer than one,
       // replace that group with one adjusted to exclude the given number
-      let newNumberGroup = { from: numberGroup.from, to: numberGroup.to - 1 }
+      let newNumberGroup = {from: numberGroup.from, to: numberGroup.to - 1};
       if (number === numberGroup.from) {
-        newNumberGroup.from++
+        newNumberGroup.from++;
       }
-      newGroups.push(newNumberGroup)
+      newGroups.push(newNumberGroup);
     }
     // adjust the groups that come after the given number and add them to the new groups
-    let groupsAfter = currentGroups.filter( (g) => {return g.from > number }).map( (g) => { return {from: g.from-1, to: g.to - 1}})
-    newGroups = newGroups.concat(groupsAfter)
+    let groupsAfter = currentGroups.filter((g) => {
+      return g.from > number;
+    }).map((g) => {
+      return {from: g.from - 1, to: g.to - 1};
+    });
+    newGroups = newGroups.concat(groupsAfter);
     // update the sequence
-    this.groupedWithNextNumbers = this.getGroupedNumbersFromGroupArray(newGroups)
-    this.length--
+    this.groupedWithNextNumbers = this.getGroupedNumbersFromGroupArray(newGroups);
+    this.length--;
   }
 
   /**
@@ -92,8 +100,10 @@ export class SequenceWithGroups {
    * is not grouped with anything
    */
   insertNumberZero() {
-    this.groupedWithNextNumbers = this.groupedWithNextNumbers.map( (n) => { return n+1})
-    this.length++
+    this.groupedWithNextNumbers = this.groupedWithNextNumbers.map((n) => {
+      return n + 1;
+    });
+    this.length++;
   }
 
   /**
@@ -102,109 +112,121 @@ export class SequenceWithGroups {
    * @param number
    */
   insertNumberAfter(number: number) {
-    debug && console.log(`Inserting number after ${number}`)
+    debug && console.log(`Inserting number after ${number}`);
     if (number < 0) {
-      this.insertNumberZero()
-      return
+      this.insertNumberZero();
+      return;
     }
     // the goal is to get a new list of groups for the sequence that will now have 1 more element
     // we start with the current groups
-    let currentGroups = this.getGroups()
+    let currentGroups = this.getGroups();
     // and then determine the groups that come before the number
-    let groupsBeforeNumber = currentGroups.filter( (g) => { return g.from < number && g.to < number})
+    let groupsBeforeNumber = currentGroups.filter((g) => {
+      return g.from < number && g.to < number;
+    });
     // ... the group that currently includes the number
-    let currentGroupsForNumber = currentGroups.filter( (g) => { return g.from<=number && g.to >=number })
+    let currentGroupsForNumber = currentGroups.filter((g) => {
+      return g.from <= number && g.to >= number;
+    });
     if (currentGroupsForNumber.length !== 1) {
-      console.error(`Inconsistent groups, found more than one group for number ${number}`)
-      console.log(currentGroupsForNumber)
+      console.error(`Inconsistent groups, found more than one group for number ${number}`);
+      console.log(currentGroupsForNumber);
     }
-    let numberGroup = currentGroupsForNumber[0]
+    let numberGroup = currentGroupsForNumber[0];
     // ... and the groups after
-    let groupsAfterNumber = currentGroups.filter( (g) => {return g.from > number && g.to > number})
+    let groupsAfterNumber = currentGroups.filter((g) => {
+      return g.from > number && g.to > number;
+    });
 
     // the before groups get into the new list unchanged
-    let newGroups = groupsBeforeNumber
+    let newGroups = groupsBeforeNumber;
     // the current number group may be extended
-    let groupExtended = false
-    debug && console.log(`Current group`)
-    debug && console.log(numberGroup)
-    let updatedNumberGroup = { from: numberGroup.from, to: numberGroup.to}
-    if (numberGroup.to !== numberGroup.from ) {
+    let groupExtended = false;
+    debug && console.log(`Current group`);
+    debug && console.log(numberGroup);
+    let updatedNumberGroup = {from: numberGroup.from, to: numberGroup.to};
+    if (numberGroup.to !== numberGroup.from) {
       // only extend the number's current group if the group represents an interval larger than 1
       if (number !== numberGroup.to) {
         // and if number is not in the boundary
         // i.e., if number is strictly contained in the group
-        updatedNumberGroup.to++
-        groupExtended = true
+        updatedNumberGroup.to++;
+        groupExtended = true;
       }
     }
-    debug && console.log(`Updated group`)
-    debug && console.log(updatedNumberGroup)
-    newGroups.push(updatedNumberGroup)
+    debug && console.log(`Updated group`);
+    debug && console.log(updatedNumberGroup);
+    newGroups.push(updatedNumberGroup);
     // if the current number group was not extended, there should be a new group
     if (!groupExtended) {
-      newGroups.push({from: number, to: number})
+      newGroups.push({from: number, to: number});
     }
     // the groups after should be shifted by one
     groupsAfterNumber = groupsAfterNumber
-      .map( (g) => { return {from: g.from+1, to: g.to + 1}})  // update group boundaries
-      .filter( (g) => { return g.from !== updatedNumberGroup.from && g.to !== updatedNumberGroup.to}) // remove possible duplicate
-    newGroups = newGroups.concat(groupsAfterNumber)
+    .map((g) => {
+      return {from: g.from + 1, to: g.to + 1};
+    })  // update group boundaries
+    .filter((g) => {
+      return g.from !== updatedNumberGroup.from && g.to !== updatedNumberGroup.to;
+    }); // remove possible duplicate
+    newGroups = newGroups.concat(groupsAfterNumber);
 
     // update the sequence
-    this.groupedWithNextNumbers = this.getGroupedNumbersFromGroupArray(newGroups)
-    this.length++
+    this.groupedWithNextNumbers = this.getGroupedNumbersFromGroupArray(newGroups);
+    this.length++;
   }
 
   isGroupedWithNext(number: number) {
-    return this.groupedWithNextNumbers.indexOf(number) !== -1
+    return this.groupedWithNextNumbers.indexOf(number) !== -1;
   }
 
   isGroupedWithPrevious(number: number) {
-    return this.groupedWithNextNumbers.indexOf(number-1) !== -1
+    return this.groupedWithNextNumbers.indexOf(number - 1) !== -1;
   }
 
   groupWithNext(number: number) {
-    if (number >= this.length-1) {
-      console.error(`Out of bounds number, cannot group with next: ${number}`)
+    if (number >= this.length - 1) {
+      console.error(`Out of bounds number, cannot group with next: ${number}`);
     }
     if (!this.isGroupedWithNext(number)) {
-      this.groupedWithNextNumbers.push(number)
+      this.groupedWithNextNumbers.push(number);
     }
   }
 
   ungroupWithNext(number: number) {
-    if (number >= this.length-1 || !this.isGroupedWithNext(number)) {
+    if (number >= this.length - 1 || !this.isGroupedWithNext(number)) {
       // nothing to do
-      return
+      return;
     }
-    this.groupedWithNextNumbers = this.groupedWithNextNumbers.filter( (n) => { return n !== number})
+    this.groupedWithNextNumbers = this.groupedWithNextNumbers.filter((n) => {
+      return n !== number;
+    });
   }
 
-  groupInterval(from: number, to: number ) {
-    for(let i = from; i < to; i++) {
-      this.groupWithNext(i)
+  groupInterval(from: number, to: number) {
+    for (let i = from; i < to; i++) {
+      this.groupWithNext(i);
     }
   }
 
   ungroupInterval(from: number, to: number) {
-    for(let i = from; i < to; i++) {
-      this.ungroupWithNext(i)
+    for (let i = from; i < to; i++) {
+      this.ungroupWithNext(i);
     }
   }
 
   getGroupForNumber(number: number) {
     // naive implementation
-    let minNumber = number
-    let maxNumber = number
+    let minNumber = number;
+    let maxNumber = number;
 
     while (this.isGroupedWithPrevious(minNumber)) {
-      minNumber--
+      minNumber--;
     }
     while (this.isGroupedWithNext(maxNumber)) {
-      maxNumber++
+      maxNumber++;
     }
-    return { from: minNumber, to: maxNumber}
+    return {from: minNumber, to: maxNumber};
   }
 
   /**
@@ -218,37 +240,37 @@ export class SequenceWithGroups {
    *    this defines a group as a set of numbers  G = { x | from <= x <= to}
    * @returns {[]}
    */
-  getGroups() : Group[] {
+  getGroups(): Group[] {
     // semi-brute force!
-    let i = 0
+    let i = 0;
 
-    let groups = []
-    let newGroup = true
-    let currentGroup: Group = { from: -1, to: -1}
-    while(i < this.length) {
+    let groups = [];
+    let newGroup = true;
+    let currentGroup: Group = {from: -1, to: -1};
+    while (i < this.length) {
       if (newGroup) {
-        currentGroup = { from: i, to: i}
-        newGroup = false
+        currentGroup = {from: i, to: i};
+        newGroup = false;
       }
       if (!this.isGroupedWithNext(i)) {
-        currentGroup.to = i
-        groups.push(currentGroup)
-        newGroup = true
+        currentGroup.to = i;
+        groups.push(currentGroup);
+        newGroup = true;
       }
-      i++
+      i++;
     }
-    return groups
+    return groups;
   }
 
 
   getGroupedNumbersFromGroupArray(groupArray: Group[]) {
-    let groupedNumbers: number[] = []
-    groupArray.forEach( (group) => {
+    let groupedNumbers: number[] = [];
+    groupArray.forEach((group) => {
       for (let i = group.from; i < group.to; i++) {
-        groupedNumbers.push(i)
+        groupedNumbers.push(i);
       }
-    })
-    return groupedNumbers
+    });
+    return groupedNumbers;
   }
 
 }

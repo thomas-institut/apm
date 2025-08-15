@@ -17,12 +17,12 @@
  */
 
 
-import { TypesetterItem } from './TypesetterItem.js'
-import * as TypesetterItemDirection from './TypesetterItemDirection.js'
-import * as MetadataKey from './MetadataKey.js'
-import * as GlueType from './GlueType.js'
+import {TypesetterItem} from './TypesetterItem.js';
+import * as TypesetterItemDirection from './TypesetterItemDirection.js';
+import * as MetadataKey from './MetadataKey.js';
+import * as GlueType from './GlueType.js';
 
-export const INFINITE_STRETCH = 100000
+export const INFINITE_STRETCH = 100000;
 
 /**
  * A Glue item with certain width and height that can
@@ -52,55 +52,55 @@ export class Glue extends TypesetterItem {
    */
   shrink: number;
 
-  constructor (direction = TypesetterItemDirection.HORIZONTAL) {
-    super(direction)
-    this.stretch = 0
-    this.shrink = 0
+  constructor(direction = TypesetterItemDirection.HORIZONTAL) {
+    super(direction);
+    this.stretch = 0;
+    this.shrink = 0;
 
     // Glue items start with 0 width and height!
-    this.width = 0
-    this.height = 0
+    this.width = 0;
+    this.height = 0;
+  }
+
+  static createLineFillerGlue() {
+    return (new Glue()).setWidth(0).setStretch(INFINITE_STRETCH).addMetadata(MetadataKey.GLUE_TYPE, GlueType.LINE_FILLER);
   }
 
   getStretch() {
-    return this.stretch
+    return this.stretch;
   }
 
   setStretch(stretch: number): this {
-    this.stretch = stretch
-    return this
+    this.stretch = stretch;
+    return this;
   }
 
   getShrink(): number {
-    return this.shrink
+    return this.shrink;
   }
 
   setShrink(shrink: number): this {
-    this.shrink = shrink
-    return this
+    this.shrink = shrink;
+    return this;
   }
 
-  getExportObject () {
-    let obj =  super.getExportObject()
-    obj.class = 'Glue'
-    obj.stretch = this.stretch
-    obj.shrink = this.shrink
-    return obj
-  }
-
-  setFromObject (object: any, mergeValues: boolean) {
-    super.setFromObject(object, mergeValues)
-    // repeating width and height in the template so that they default to 0, not to -1 as in TypesetterItem
-    const template = {  width: 0, height: 0, stretch: 0, shrink: 0}
-    this.copyValues(template, object, mergeValues)
-    return this
+  getExportObject() {
+    let obj = super.getExportObject();
+    obj.class = 'Glue';
+    obj.stretch = this.stretch;
+    obj.shrink = this.shrink;
+    return obj;
   }
 
 
   // Factory methods
 
-  static createLineFillerGlue() {
-    return ( new Glue()).setWidth(0).setStretch(INFINITE_STRETCH).addMetadata(MetadataKey.GLUE_TYPE, GlueType.LINE_FILLER)
+  setFromObject(object: any, mergeValues: boolean) {
+    super.setFromObject(object, mergeValues);
+    // repeating width and height in the template so that they default to 0, not to -1 as in TypesetterItem
+    const template = {width: 0, height: 0, stretch: 0, shrink: 0};
+    this.copyValues(template, object, mergeValues);
+    return this;
   }
 
 }

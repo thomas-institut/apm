@@ -17,9 +17,9 @@
  */
 
 
-import { TypesetterObject } from './TypesetterObject.js'
-import { ObjectFactory } from './ObjectFactory.js'
-import { TypesetterPage } from './TypesetterPage.js'
+import {TypesetterObject} from './TypesetterObject.js';
+import {ObjectFactory} from './ObjectFactory.js';
+import {TypesetterPage} from './TypesetterPage.js';
 
 /**
  * A typesetter document: an array of pages with metadata
@@ -42,62 +42,64 @@ export class TypesetterDocument extends TypesetterObject {
   private pages: TypesetterPage[] = [];
 
   setPages(pages: TypesetterPage[]) {
-    this.pages = pages
+    this.pages = pages;
   }
 
   getPageCount(): number {
-    return this.pages.length
+    return this.pages.length;
   }
 
   getPage(pageIndex: number): TypesetterPage {
     if (pageIndex >= this.getPageCount()) {
-      throw new Error(`Invalid page index ${pageIndex}`)
+      throw new Error(`Invalid page index ${pageIndex}`);
     }
-    return this.pages[pageIndex]
+    return this.pages[pageIndex];
   }
 
   getPages(): TypesetterPage[] {
-    return this.pages
+    return this.pages;
   }
 
   setDimensionsFromPages() {
     if (this.getPageCount() === 0) {
-      this.width = 0
-      this.height = 0
+      this.width = 0;
+      this.height = 0;
     } else {
       // for the moment, just copy from the first page
-      let firstPage = this.getPage(0)
-      this.width = firstPage.getWidth()
-      this.height = firstPage.getHeight()
+      let firstPage = this.getPage(0);
+      this.width = firstPage.getWidth();
+      this.height = firstPage.getHeight();
     }
   }
 
-  getExportObject () {
-    let obj = super.getExportObject()
-    obj.class = 'TypesetterDocument'
-    obj.width = this.width
-    obj.height = this.height
-    obj.pages = this.pages.map( (page) => { return page.getExportObject()})
-    return obj
+  getExportObject() {
+    let obj = super.getExportObject();
+    obj.class = 'TypesetterDocument';
+    obj.width = this.width;
+    obj.height = this.height;
+    obj.pages = this.pages.map((page) => {
+      return page.getExportObject();
+    });
+    return obj;
   }
 
-  setFromObject (object: any, mergeValues: boolean): this {
-    super.setFromObject(object, mergeValues)
-    const template = {  width: 0, height: 0}
-    this.copyValues(template, object, mergeValues)
+  setFromObject(object: any, mergeValues: boolean): this {
+    super.setFromObject(object, mergeValues);
+    const template = {width: 0, height: 0};
+    this.copyValues(template, object, mergeValues);
     if (object['pages'] !== undefined && Array.isArray(object['pages'])) {
-      this.pages = []
-      object['pages'].forEach( (pageObject, i) => {
-        let newPage = ObjectFactory.fromObject(pageObject)
+      this.pages = [];
+      object['pages'].forEach((pageObject, i) => {
+        let newPage = ObjectFactory.fromObject(pageObject);
         if (newPage instanceof TypesetterPage) {
-          this.pages.push(newPage)
+          this.pages.push(newPage);
         } else {
-          console.error(`Non typesetter page found at index ${i} in input object's pages field`)
-          console.log(pageObject)
-          throw new Error('Non typesetter item found trying to set from Object')
+          console.error(`Non typesetter page found at index ${i} in input object's pages field`);
+          console.log(pageObject);
+          throw new Error('Non typesetter item found trying to set from Object');
         }
-      })
+      });
     }
-    return this
+    return this;
   }
 }

@@ -5,6 +5,13 @@
   "scripts": {
     "build": "rm -fr dist; tsc"
   },
+  "prettier": {
+    "singleQuote": true,
+    "tabWidth": 2,
+    "useTabs": false,
+    "trailingComma": "all",
+    "maxLineLength": 80
+  },
   "dependencies": {
     "@thomas-inst/fmt-text": "^1.0.0",
     "body-parser": "^2.2.0",

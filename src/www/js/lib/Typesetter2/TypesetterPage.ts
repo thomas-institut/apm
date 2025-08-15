@@ -16,9 +16,9 @@
  *
  */
 
-import { TypesetterObject } from './TypesetterObject.js'
-import { ObjectFactory } from './ObjectFactory.js'
-import { TypesetterItem } from './TypesetterItem.js'
+import {TypesetterObject} from './TypesetterObject.js';
+import {ObjectFactory} from './ObjectFactory.js';
+import {TypesetterItem} from './TypesetterItem.js';
 
 /**
  * A typesetter page is a 2D surface of a certain width and height, an array of TypesetterItem to be rendered in the page, and some metadata
@@ -28,62 +28,64 @@ import { TypesetterItem } from './TypesetterItem.js'
  * shiftX and shiftY so that they are rendered in the right places.
  *
  * TODO: consider turning TypesetterPage into an extension of ItemList since it
-  * is essentially just a list of items with width and height
+ * is essentially just a list of items with width and height
  */
 export class TypesetterPage extends TypesetterObject {
   private width: number;
   private height: number;
   private items: TypesetterItem[];
 
-  constructor (pageWidth: number = 0, pageHeight: number = 0, items: TypesetterItem[] = []) {
-    super()
-    this.width = pageWidth
-    this.height = pageHeight
-    this.items = items
+  constructor(pageWidth: number = 0, pageHeight: number = 0, items: TypesetterItem[] = []) {
+    super();
+    this.width = pageWidth;
+    this.height = pageHeight;
+    this.items = items;
   }
 
   addItem(item: TypesetterItem): void {
-    this.items.push(item)
+    this.items.push(item);
   }
 
   getWidth(): number {
-    return this.width
+    return this.width;
   }
 
   getHeight(): number {
-    return this.height
+    return this.height;
   }
 
   getItems(): TypesetterItem[] {
-    return this.items
+    return this.items;
   }
 
-  getExportObject () {
-    let obj = super.getExportObject()
-    obj.class = 'TypesetterPage'
-    obj.width = this.width
-    obj.height = this.height
-    obj.items = this.items.map( (item) => { return item.getExportObject()})
-    return obj
+  getExportObject() {
+    let obj = super.getExportObject();
+    obj.class = 'TypesetterPage';
+    obj.width = this.width;
+    obj.height = this.height;
+    obj.items = this.items.map((item) => {
+      return item.getExportObject();
+    });
+    return obj;
   }
 
-  setFromObject (object: any, mergeValues: boolean) {
-    super.setFromObject(object, mergeValues)
-    const template = {  width: 0, height: 0}
-    this.copyValues(template, object, mergeValues)
+  setFromObject(object: any, mergeValues: boolean) {
+    super.setFromObject(object, mergeValues);
+    const template = {width: 0, height: 0};
+    this.copyValues(template, object, mergeValues);
     if (object['items'] !== undefined && Array.isArray(object['items'])) {
-      this.items = []
-      object['items'].forEach( (itemObject, i) => {
-        let newItem = ObjectFactory.fromObject(itemObject)
+      this.items = [];
+      object['items'].forEach((itemObject, i) => {
+        let newItem = ObjectFactory.fromObject(itemObject);
         if (newItem instanceof TypesetterItem) {
-          this.items.push(newItem)
+          this.items.push(newItem);
         } else {
-          console.error(`Non typesetter item found at index ${i} in input object's items field`)
-          console.log(itemObject)
-          throw new Error('Non typesetter item found trying to set from Object')
+          console.error(`Non typesetter item found at index ${i} in input object's items field`);
+          console.log(itemObject);
+          throw new Error('Non typesetter item found trying to set from Object');
         }
-      })
+      });
     }
-    return this
+    return this;
   }
 }

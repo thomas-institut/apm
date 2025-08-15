@@ -17,9 +17,9 @@
  */
 
 
-import * as TranscriptionTokenType from '../Witness/WitnessTokenType.js'
-import * as MyersDiff from '../toolbox/MyersDiff.mjs'
-import {OptionsChecker} from '@thomas-inst/optionschecker'
+import * as TranscriptionTokenType from '../Witness/WitnessTokenType.js';
+import * as MyersDiff from '../toolbox/MyersDiff.mjs';
+import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {WitnessInterface} from "@/CtData/CtDataInterface";
 
 
@@ -48,96 +48,93 @@ export class WitnessDiffCalculator {
   private readonly verbose: boolean;
   private readonly debug: boolean;
 
-  constructor ( userOptions = {}) {
+  constructor(userOptions = {}) {
     let optionsDefinition = {
-      verbose: {type: 'boolean', default: false},
-      debug: {type: 'boolean', default: false}
-      }
-    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'WitnessDiffCalculator'})
-    this.options = oc.getCleanOptions(userOptions)
+      verbose: {type: 'boolean', default: false}, debug: {type: 'boolean', default: false}
+    };
+    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'WitnessDiffCalculator'});
+    this.options = oc.getCleanOptions(userOptions);
 
-    this.verbose = this.options.verbose
-    this.debug = this.options.debug
+    this.verbose = this.options.verbose;
+    this.debug = this.options.debug;
     if (this.debug) {
-      this.verbose = true
+      this.verbose = true;
     }
   }
 
   getChangesBetweenWitnesses(ctRowIndex: number, ctRow: number[], oldWitness: WitnessInterface, newWitness: WitnessInterface) {
     let changes: Changes = {
-      tokenConversionArray: [],
-      nonCtChanges: [],
-      ctChanges: []
-    }
+      tokenConversionArray: [], nonCtChanges: [], ctChanges: []
+    };
 
     if (this.verbose) {
-      console.groupCollapsed(`WitnessDiffCalculator : getChangesBetweenWitnesses (ctRowIndex = ${ctRowIndex})`)
-      console.log('CtRow')
-      console.log(ctRow)
-      console.log('Old Witness')
-      console.log(oldWitness)
-      console.log('new Witness')
-      console.log(newWitness)
+      console.groupCollapsed(`WitnessDiffCalculator : getChangesBetweenWitnesses (ctRowIndex = ${ctRowIndex})`);
+      console.log('CtRow');
+      console.log(ctRow);
+      console.log('Old Witness');
+      console.log(oldWitness);
+      console.log('new Witness');
+      console.log(newWitness);
     }
 
     // 1. Find changes in the tokens
     if (this.debug) {
-      MyersDiff.setDebugMode()
+      MyersDiff.setDebugMode();
     }
-    let editScript = MyersDiff.calculate(oldWitness['tokens'], newWitness['tokens'], function(a: any,b: any) {
+    let editScript = MyersDiff.calculate(oldWitness['tokens'], newWitness['tokens'], function (a: any, b: any) {
       if (a['tokenType'] === b['tokenType']) {
-        switch(a['tokenType']) {
+        switch (a['tokenType']) {
           case TranscriptionTokenType.WHITESPACE:
           case TranscriptionTokenType.EMPTY:
             // all whitespace and all empty tokens are equal
-            return true
+            return true;
 
           case TranscriptionTokenType.PUNCTUATION:
-            return a['text'] === b['text']
+            return a['text'] === b['text'];
 
           case TranscriptionTokenType.WORD:
             if (a['text'] !== b['text']) {
-              return false
+              return false;
             }
             return a['normalizedText'] === b['normalizedText'];
 
         }
       }
-      return false
-    })
+      return false;
+    });
 
     if (this.debug) {
-      console.log('Edit Script')
-      console.log(editScript)
+      console.log('Edit Script');
+      console.log(editScript);
     }
-    let lastCtColumn = -1
-    let lastCtColumnTokenIndex = -1
-    let lastDel: CtChange = {}
-    let state = 0
+    let lastCtColumn = -1;
+    let lastCtColumnTokenIndex = -1;
+    let lastDel: CtChange = {};
+    let state = 0;
 
-    for(let i=0; i < editScript.length; i++) {
-      let scriptItem = editScript[i]
+    for (let i = 0; i < editScript.length; i++) {
+      let scriptItem = editScript[i];
       // determine the FSM event
-      let ctColIndex = ctRow.indexOf(scriptItem.index)
-      let event = getFsmEvent(scriptItem, ctColIndex, newWitness['tokens'])
+      let ctColIndex = ctRow.indexOf(scriptItem.index);
+      let event = getFsmEvent(scriptItem, ctColIndex, newWitness['tokens']);
       if (this.debug) {
-        console.log(`Event ${i}: ${event}, state ${state}, index ${scriptItem.index}, ctIndex ${ctColIndex}, seq ${scriptItem.seq}, lastCtColumn ${lastCtColumn}`)
+        console.log(`Event ${i}: ${event}, state ${state}, index ${scriptItem.index}, ctIndex ${ctColIndex}, seq ${scriptItem.seq}, lastCtColumn ${lastCtColumn}`);
       }
 
 
       // State Machine
       if (state === 0) {
-        switch(event) {
+        switch (event) {
           case 'KEEP-CT':
-            changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
-            lastCtColumn = ctColIndex
-            lastCtColumnTokenIndex = scriptItem.index
-            break
+            changes.tokenConversionArray[scriptItem.index] = scriptItem.seq;
+            lastCtColumn = ctColIndex;
+            lastCtColumnTokenIndex = scriptItem.index;
+            break;
 
           case 'KEEP':
             // TODO: is this necessary?
-            changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
-            break
+            changes.tokenConversionArray[scriptItem.index] = scriptItem.seq;
+            break;
 
           case 'INS-CT':
             let change: CtChange = {
@@ -145,79 +142,77 @@ export class WitnessDiffCalculator {
               row: ctRowIndex,
               afterCol: lastCtColumn,
               tokenIndexInNewWitness: scriptItem.seq,
-              newToken: newWitness['tokens'][ scriptItem.seq],
+              newToken: newWitness['tokens'][scriptItem.seq],
               currentToken: oldWitness['tokens'][lastCtColumnTokenIndex]
-            }
+            };
             if (lastCtColumn === -1) {
-              change.afterCol = ctColIndex-1
-              change.isStartOfWitness = true
-              this.debug && console.log(`Inserting at the beginning of the witness, after CT column index ${change.afterCol}`)
+              change.afterCol = ctColIndex - 1;
+              change.isStartOfWitness = true;
+              this.debug && console.log(`Inserting at the beginning of the witness, after CT column index ${change.afterCol}`);
             }
 
             if (this.debug) {
-              console.log(`Pushing insertColAfter change`)
-              console.log(change)
+              console.log(`Pushing insertColAfter change`);
+              console.log(change);
             }
-            changes.ctChanges.push(change)
-            break
+            changes.ctChanges.push(change);
+            break;
 
           case 'INS':
             changes.nonCtChanges.push({
-              type: 'insert',
-              index: scriptItem.seq
-            })
-            break
+              type: 'insert', index: scriptItem.seq
+            });
+            break;
 
           case 'DEL-CT':
-            lastDel = scriptItem
-            lastCtColumn = ctColIndex
-            lastCtColumnTokenIndex = scriptItem.index
+            lastDel = scriptItem;
+            lastCtColumn = ctColIndex;
+            lastCtColumnTokenIndex = scriptItem.index;
             if (this.debug) {
-              console.log('-- lastDel')
-              console.log(lastDel)
-              console.log(`-- lastCtColumn: ${lastCtColumn}, lastCtColumnTokenIndex: ${lastCtColumnTokenIndex}`)
+              console.log('-- lastDel');
+              console.log(lastDel);
+              console.log(`-- lastCtColumn: ${lastCtColumn}, lastCtColumnTokenIndex: ${lastCtColumnTokenIndex}`);
             }
-            state = 1
-            break
+            state = 1;
+            break;
 
           case 'DEL':
-            changes.tokenConversionArray[scriptItem.index] = -1
+            changes.tokenConversionArray[scriptItem.index] = -1;
             changes.nonCtChanges.push({
-              type: 'delete',
-              index: scriptItem.index
-            })
-            break
+              type: 'delete', index: scriptItem.index
+            });
+            break;
         }
       } else if (state === 1) {
-        switch(event) {
+        switch (event) {
           case 'KEEP-CT':
-            changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
+            changes.tokenConversionArray[scriptItem.index] = scriptItem.seq;
             let emptyCellChange = {
               type: 'emptyCell',
               row: ctRowIndex,
               col: lastCtColumn,
               currentToken: oldWitness['tokens'][lastCtColumnTokenIndex]
-            }
+            };
             if (this.debug) {
-              console.log(`Pushing change`)
-              console.log(emptyCellChange)
+              console.log(`Pushing change`);
+              console.log(emptyCellChange);
             }
-            changes.ctChanges.push(emptyCellChange)
-            lastCtColumn = ctColIndex
-            lastCtColumnTokenIndex = scriptItem.index
-            state = 0
-            break
+            changes.ctChanges.push(emptyCellChange);
+            lastCtColumn = ctColIndex;
+            lastCtColumnTokenIndex = scriptItem.index;
+            state = 0;
+            break;
 
           case 'KEEP':
-            changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
-            break
+            changes.tokenConversionArray[scriptItem.index] = scriptItem.seq;
+            break;
 
           case 'INS-CT':
             if (lastDel.index === undefined) {
-              throw new Error('lastDel.index is undefined')
+              throw new Error('lastDel.index is undefined');
             }
-            changes.tokenConversionArray[lastDel.index] = scriptItem.seq
-            let replaceChange ={
+            changes.tokenConversionArray[lastDel.index] = scriptItem.seq;
+            let replaceChange = {
               type: 'replace',
               row: ctRowIndex,
               col: lastCtColumn,
@@ -225,108 +220,98 @@ export class WitnessDiffCalculator {
               newIndex: scriptItem.seq,
               currentToken: oldWitness['tokens'][lastDel.index],
               newToken: newWitness['tokens'][scriptItem.seq]
-            }
+            };
             if (this.debug) {
-              console.log(`Pushing replace change`)
-              console.log(replaceChange)
+              console.log(`Pushing replace change`);
+              console.log(replaceChange);
             }
-            changes.ctChanges.push(replaceChange)
+            changes.ctChanges.push(replaceChange);
             if (ctColIndex !== -1) {
-              lastCtColumn = ctColIndex
+              lastCtColumn = ctColIndex;
             }
 
-            lastCtColumnTokenIndex = scriptItem.index
-            state = 0
-            break
+            lastCtColumnTokenIndex = scriptItem.index;
+            state = 0;
+            break;
 
           case 'INS':
             changes.nonCtChanges.push({
-              type: 'insert',
-              index: scriptItem.seq
-            })
-            break
+              type: 'insert', index: scriptItem.seq
+            });
+            break;
 
           case 'DEL-CT':
             if (lastDel.index === undefined) {
-              throw new Error('lastDel.index is undefined')
+              throw new Error('lastDel.index is undefined');
             }
-            changes.tokenConversionArray[lastDel.index] = -1
+            changes.tokenConversionArray[lastDel.index] = -1;
             let change = {
-              type: 'emptyCell',
-              row: ctRowIndex,
-              col: lastCtColumn,
-              currentToken: oldWitness['tokens'][lastDel.index]
-            }
+              type: 'emptyCell', row: ctRowIndex, col: lastCtColumn, currentToken: oldWitness['tokens'][lastDel.index]
+            };
             if (this.debug) {
-              console.log(`Pushing emptyCell change`)
-              console.log(change)
+              console.log(`Pushing emptyCell change`);
+              console.log(change);
             }
-            changes.ctChanges.push(change)
-            lastCtColumn = ctColIndex
-            lastCtColumnTokenIndex = scriptItem.index
-            lastDel = scriptItem
-            break
+            changes.ctChanges.push(change);
+            lastCtColumn = ctColIndex;
+            lastCtColumnTokenIndex = scriptItem.index;
+            lastDel = scriptItem;
+            break;
 
           case 'DEL':
             if (lastDel.index === undefined) {
-              throw new Error('lastDel.index is undefined')
+              throw new Error('lastDel.index is undefined');
             }
-            changes.tokenConversionArray[lastDel.index] = -1
+            changes.tokenConversionArray[lastDel.index] = -1;
             changes.nonCtChanges.push({
-              type: 'delete',
-              index: scriptItem.index
-            })
+              type: 'delete', index: scriptItem.index
+            });
         }
       }
     }
     // no more scriptItem ===> 'END' event
     if (state === 1) {
-      this.debug && console.log(`End of edit script, state = 1`)
+      this.debug && console.log(`End of edit script, state = 1`);
       if (lastDel.index === undefined) {
-        throw new Error('lastDel.index is undefined')
+        throw new Error('lastDel.index is undefined');
       }
-      changes.tokenConversionArray[lastDel.index] = -1
+      changes.tokenConversionArray[lastDel.index] = -1;
       changes.ctChanges.push({
-        type: 'emptyCell',
-        row: ctRowIndex,
-        col: lastCtColumn,
-        currentToken: oldWitness['tokens'][lastDel.index]
-      })
+        type: 'emptyCell', row: ctRowIndex, col: lastCtColumn, currentToken: oldWitness['tokens'][lastDel.index]
+      });
     }
 
     if (this.verbose) {
-      console.groupEnd()
+      console.groupEnd();
     }
-    return changes
+    return changes;
   }
 }
 
 
-
-
-function getFsmEvent(editScript:any, ctIndex: number, newTokens: any[]) {
-  switch(editScript.command) {
+function getFsmEvent(editScript: any, ctIndex: number, newTokens: any[]) {
+  switch (editScript.command) {
     case 0:
       if (ctIndex === -1) {
-        return 'KEEP'
+        return 'KEEP';
       } else {
-        return 'KEEP-CT'
+        return 'KEEP-CT';
       }
 
     case -1:
       if (ctIndex === -1) {
-        return 'DEL'
+        return 'DEL';
       } else {
-        return 'DEL-CT'
+        return 'DEL-CT';
       }
 
     case 1:
       // only insert words into the collation table
-      let newToken = newTokens[editScript.seq]
+      let newToken = newTokens[editScript.seq];
       if (newToken['tokenType'] === TranscriptionTokenType.WORD) {
-        return 'INS-CT'
+        return 'INS-CT';
       } else {
-        return 'INS'
+        return 'INS';
       }
   }
 }

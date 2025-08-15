@@ -16,12 +16,12 @@
  *
  */
 
-import { Glue } from '../Glue.js'
-import { Box } from '../Box.js'
-import * as TypesetterItemDirection from '../TypesetterItemDirection.js'
-import { ItemList } from '../ItemList.js'
-import { Penalty } from '../Penalty.js'
-import { TextBox } from '../TextBox.js'
+import {Glue} from '../Glue.js';
+import {Box} from '../Box.js';
+import * as TypesetterItemDirection from '../TypesetterItemDirection.js';
+import {ItemList} from '../ItemList.js';
+import {Penalty} from '../Penalty.js';
+import {TextBox} from '../TextBox.js';
 import {TypesetterPage} from "../TypesetterPage.js";
 import {TypesetterDocument} from "../TypesetterDocument.js";
 import {TypesetterItem} from "../TypesetterItem.js";
@@ -34,36 +34,36 @@ export class TypesetterRenderer {
    * @param x
    * @param y
    */
-  renderHorizontalList(horizontalList: ItemList, x=0, y=0) {
-    let [shiftX, shiftY] = this.getDeviceCoordinates(horizontalList.getShiftX(), horizontalList.getShiftY())
-    let currentX = x + shiftX
-    let currentY = y + shiftY
-    let textDirection = horizontalList.getTextDirection()
+  renderHorizontalList(horizontalList: ItemList, x = 0, y = 0) {
+    let [shiftX, shiftY] = this.getDeviceCoordinates(horizontalList.getShiftX(), horizontalList.getShiftY());
+    let currentX = x + shiftX;
+    let currentY = y + shiftY;
+    let textDirection = horizontalList.getTextDirection();
     if (textDirection === 'rtl') {
-      let [listWidth, ] = this.getDeviceCoordinates(horizontalList.getWidth(), horizontalList.getHeight())
-      currentX += listWidth
+      let [listWidth,] = this.getDeviceCoordinates(horizontalList.getWidth(), horizontalList.getHeight());
+      currentX += listWidth;
     }
-    horizontalList.getList().forEach( (item) => {
-      let [itemWidth, ] = this.getDeviceCoordinates(item.getWidth(), item.getHeight())
+    horizontalList.getList().forEach((item) => {
+      let [itemWidth,] = this.getDeviceCoordinates(item.getWidth(), item.getHeight());
       if (item.getTextDirection() === textDirection || item.getTextDirection() === '') {
-        this.renderItem(item, currentX, currentY)
+        this.renderItem(item, currentX, currentY);
       } else {
         // a reverse item
-        if (textDirection==='ltr') {
-            // need to render the RTL item to right of its position
-            this.renderItem(item, currentX+itemWidth, currentY)
+        if (textDirection === 'ltr') {
+          // need to render the RTL item to right of its position
+          this.renderItem(item, currentX + itemWidth, currentY);
         } else {
           // need to render the RTL item to left of its position
-          this.renderItem(item, currentX-itemWidth, currentY)
+          this.renderItem(item, currentX - itemWidth, currentY);
         }
       }
 
       if (textDirection === 'ltr') {
-        currentX += itemWidth
+        currentX += itemWidth;
       } else {
-        currentX -= itemWidth
+        currentX -= itemWidth;
       }
-    })
+    });
   }
 
   /**
@@ -72,26 +72,26 @@ export class TypesetterRenderer {
    * @param x
    * @param y
    */
-  renderVerticalList(verticalList: ItemList, x=0, y=0): void {
-    let [shiftX, shiftY] = this.getDeviceCoordinates(verticalList.getShiftX(), verticalList.getShiftY())
-    let currentX = x + shiftX
-    let currentY = y + shiftY
-    verticalList.getList().forEach( (item) => {
-      this.renderItem(item, currentX, currentY)
-      let [, itemHeight] = this.getDeviceCoordinates(item.getWidth(), item.getHeight())
-      currentY += itemHeight
-    })
+  renderVerticalList(verticalList: ItemList, x = 0, y = 0): void {
+    let [shiftX, shiftY] = this.getDeviceCoordinates(verticalList.getShiftX(), verticalList.getShiftY());
+    let currentX = x + shiftX;
+    let currentY = y + shiftY;
+    verticalList.getList().forEach((item) => {
+      this.renderItem(item, currentX, currentY);
+      let [, itemHeight] = this.getDeviceCoordinates(item.getWidth(), item.getHeight());
+      currentY += itemHeight;
+    });
   }
 
   renderPage(page: TypesetterPage, pageIndex = 0): void {
-    page.getItems().forEach( (item) => {
-      let [shiftX, shiftY] = this.getShiftForPageIndex(pageIndex)
-      this.renderItem(item, shiftX, shiftY)
-    })
+    page.getItems().forEach((item) => {
+      let [shiftX, shiftY] = this.getShiftForPageIndex(pageIndex);
+      this.renderItem(item, shiftX, shiftY);
+    });
   }
 
   getShiftForPageIndex(_pageIndex: number): [number, number] {
-    return [0, 0]
+    return [0, 0];
   }
 
   /**
@@ -99,13 +99,13 @@ export class TypesetterRenderer {
    * @param {TypesetterDocument}doc
    */
   renderDocument(doc: TypesetterDocument): void {
-    this._preRenderDocument(doc)
-    doc.getPages().forEach( (page, pageIndex) => {
-      this._preRenderPage(page, pageIndex)
-      this.renderPage(page, pageIndex)
-      this._postRenderPage(page, pageIndex)
-    })
-    this._postRenderDocument(doc)
+    this._preRenderDocument(doc);
+    doc.getPages().forEach((page, pageIndex) => {
+      this._preRenderPage(page, pageIndex);
+      this.renderPage(page, pageIndex);
+      this._postRenderPage(page, pageIndex);
+    });
+    this._postRenderDocument(doc);
   }
 
   _preRenderDocument(_doc: TypesetterDocument): void {
@@ -141,15 +141,15 @@ export class TypesetterRenderer {
    */
   public renderItem(item: TypesetterItem, x: number, y: number) {
     if (item instanceof TextBox) {
-      this.renderTextBox(item, x, y)
+      this.renderTextBox(item, x, y);
     } else if (item instanceof ItemList) {
-      this.renderList(item, x, y)
+      this.renderList(item, x, y);
     } else if (item instanceof Glue) {
-      this.renderGlue(item, x, y)
+      this.renderGlue(item, x, y);
     } else if (item instanceof Box) {
-      this.renderBox(item, x, y)
-    }  else if (item instanceof Penalty) {
-      this.renderPenalty(item, x, y)
+      this.renderBox(item, x, y);
+    } else if (item instanceof Penalty) {
+      this.renderPenalty(item, x, y);
     }
   }
 
@@ -160,14 +160,14 @@ export class TypesetterRenderer {
    * @param {number}y
    */
   renderList(listItem: ItemList, x: number, y: number) {
-    switch(listItem.getDirection()) {
+    switch (listItem.getDirection()) {
       case TypesetterItemDirection.HORIZONTAL:
-        this.renderHorizontalList(listItem,x,y)
-        break
+        this.renderHorizontalList(listItem, x, y);
+        break;
 
       case TypesetterItemDirection.VERTICAL:
-        this.renderVerticalList(listItem,x, y)
-        break
+        this.renderVerticalList(listItem, x, y);
+        break;
     }
   }
 
@@ -217,7 +217,7 @@ export class TypesetterRenderer {
    * Returns the devices coordinates for the given x,y (in pixels)
    */
   getDeviceCoordinates(x: number, y: number): [number, number] {
-    return [x, y]
+    return [x, y];
   }
 
 }

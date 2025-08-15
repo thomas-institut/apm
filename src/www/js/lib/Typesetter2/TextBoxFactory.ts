@@ -16,7 +16,7 @@
  *
  */
 
-import { TextBox } from './TextBox.js'
+import {TextBox} from './TextBox.js';
 
 
 export interface FontDefinition {
@@ -39,31 +39,31 @@ export class TextBoxFactory {
    * @param {'rtl'|'ltr'|''}textDirection
    * @return {TextBox}
    */
-  static simpleText(text: string, fontSpec: FontDefinition = {}, textDirection: 'rtl' | 'ltr' | '' = ''): TextBox{
-    let item = new TextBox()
-    item.setText(text)
+  static simpleText(text: string, fontSpec: FontDefinition = {}, textDirection: 'rtl' | 'ltr' | '' = ''): TextBox {
+    let item = new TextBox();
+    item.setText(text);
 
     if (fontSpec.fontFamily !== undefined) {
-      item.setFontFamily(fontSpec.fontFamily)
+      item.setFontFamily(fontSpec.fontFamily);
     }
 
     if (fontSpec.fontSize !== undefined) {
-      item.setFontSize(fontSpec.fontSize)
+      item.setFontSize(fontSpec.fontSize);
     }
 
     if (fontSpec.fontWeight !== undefined) {
-      item.setFontWeight(fontSpec.fontWeight)
+      item.setFontWeight(fontSpec.fontWeight);
     }
 
     if (fontSpec.fontStyle !== undefined) {
-      item.setFontStyle(fontSpec.fontStyle)
+      item.setFontStyle(fontSpec.fontStyle);
     }
     // TODO: baselineShift
 
-    if (textDirection!=='') {
-      item.setTextDirection(textDirection)
+    if (textDirection !== '') {
+      item.setTextDirection(textDirection);
     }
-    return item
+    return item;
   }
 
 }

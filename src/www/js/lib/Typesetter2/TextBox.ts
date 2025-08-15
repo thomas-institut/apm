@@ -16,11 +16,11 @@
  *
  */
 
-import { Box } from './Box.js'
-import * as TypesetterItemDirection from './TypesetterItemDirection.js'
+import {Box} from './Box.js';
+import * as TypesetterItemDirection from './TypesetterItemDirection.js';
 
-const defaultFontFamily = 'FreeSerif'
-const defaultFontSize = 16
+const defaultFontFamily = 'FreeSerif';
+const defaultFontSize = 16;
 
 
 /**
@@ -33,36 +33,36 @@ export class TextBox extends Box {
   private fontStyle: string;
   private fontWeight: string;
 
-  constructor () {
-    super(TypesetterItemDirection.HORIZONTAL)
+  constructor() {
+    super(TypesetterItemDirection.HORIZONTAL);
     /**
      * A string of printable text
      * @type {string}
      */
-    this.text = ''
+    this.text = '';
     /**
      * A font name that should be consistent with
      * the renderer's font capabilities.
      * @type {string}
      */
-    this.fontFamily = defaultFontFamily
+    this.fontFamily = defaultFontFamily;
 
     /**
      * The font size in pixels
      * @type {number}
      */
-    this.fontSize = defaultFontSize
+    this.fontSize = defaultFontSize;
 
     /**
      * A font style: normal (''), italic, small caps, etc
      * @type {string}
      */
-    this.fontStyle = ''
+    this.fontStyle = '';
     /**
      * The font weight: normal (''), bold, semi-bold
      * @type {string}
      */
-    this.fontWeight = ''
+    this.fontWeight = '';
 
 
     /**
@@ -70,21 +70,21 @@ export class TextBox extends Box {
      * Normally typesetters will invoke some measurement mechanism
      * when laying out the text in a line
      */
-    this.width = -1
-    this.height = -1
+    this.width = -1;
+    this.height = -1;
 
   }
 
   getWidth() {
-    return this.width
+    return this.width;
   }
 
   getHeight() {
-    return this.height
+    return this.height;
   }
 
   getText() {
-    return this.text
+    return this.text;
   }
 
 
@@ -95,44 +95,44 @@ export class TextBox extends Box {
   setText(text: string): this {
     // TODO: detect and reject newlines, control characters, etc
     if (this.text === text) {
-      return this
+      return this;
     }
-    this.text = text
-    this.resetMeasurements()
-    return this
+    this.text = text;
+    this.resetMeasurements();
+    return this;
   }
 
   getFontFamily() {
-    return this.fontFamily
+    return this.fontFamily;
   }
 
   getFontWeight() {
-    return this.fontWeight
+    return this.fontWeight;
   }
 
   setFontWeight(weight: string): this {
-    this.fontWeight = weight
-    return this
+    this.fontWeight = weight;
+    return this;
   }
 
   getFontStyle(): string {
-    return this.fontStyle
+    return this.fontStyle;
   }
 
   setFontStyle(style: string): this {
-    this.fontStyle = style
-    return this
+    this.fontStyle = style;
+    return this;
   }
 
 
-  setFontFamily(fontFamily: string) : this {
-    this.fontFamily = fontFamily
-    this.resetMeasurements()
-    return this
+  setFontFamily(fontFamily: string): this {
+    this.fontFamily = fontFamily;
+    this.resetMeasurements();
+    return this;
   }
 
   getFontSize(): number {
-    return this.fontSize
+    return this.fontSize;
   }
 
   /**
@@ -140,46 +140,42 @@ export class TextBox extends Box {
    * @param {number} fontSize
    */
   setFontSize(fontSize: number): this {
-    this.fontSize = fontSize
-    this.resetMeasurements()
-    return this
+    this.fontSize = fontSize;
+    this.resetMeasurements();
+    return this;
   }
 
   /**
    * Resets the item's width and height to undefined
    */
   resetMeasurements() {
-    this.width = -1
-    this.height = -1
+    this.width = -1;
+    this.height = -1;
   }
 
-  getExportObject () {
-    let obj =  super.getExportObject()
-    obj.class = 'TextBox'
-    obj.text = this.text
-    obj.fontFamily = this.fontFamily
-    obj.fontSize = this.fontSize
+  getExportObject() {
+    let obj = super.getExportObject();
+    obj.class = 'TextBox';
+    obj.text = this.text;
+    obj.fontFamily = this.fontFamily;
+    obj.fontSize = this.fontSize;
     if (this.fontStyle !== '') {
-      obj.fontStyle = this.fontStyle
+      obj.fontStyle = this.fontStyle;
     }
     if (this.fontWeight !== '') {
-      obj.fontWeight = this.fontWeight
+      obj.fontWeight = this.fontWeight;
     }
 
-    return obj
+    return obj;
   }
 
-  setFromObject (object: any, mergeValues: boolean): this {
-    super.setFromObject(object, mergeValues)
+  setFromObject(object: any, mergeValues: boolean): this {
+    super.setFromObject(object, mergeValues);
     const template = {
-      text: '',
-      fontFamily: defaultFontFamily,
-      fontSize: defaultFontSize,
-      fontStyle: '',
-      fontWeight: '',
+      text: '', fontFamily: defaultFontFamily, fontSize: defaultFontSize, fontStyle: '', fontWeight: '',
 
-    }
-    this.copyValues(template, object, mergeValues)
-    return this
+    };
+    this.copyValues(template, object, mergeValues);
+    return this;
   }
 }

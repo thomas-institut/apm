@@ -1,4 +1,4 @@
-import { deepCopy } from '../../toolbox/Util'
+import {deepCopy} from '@/toolbox/Util';
 import {CtDataInterface} from "../CtDataInterface";
 
 /**
@@ -10,12 +10,12 @@ export class CtDataCleaner {
   protected verbose: any;
   protected debug: any;
 
-  constructor (options: any = {}) {
-    this.verbose = options.verbose === undefined ? false : options.verbose
-    this.debug =  options.debug === undefined ? false : options.debug
+  constructor(options: any = {}) {
+    this.verbose = options.verbose === undefined ? false : options.verbose;
+    this.debug = options.debug === undefined ? false : options.debug;
 
     if (this.debug) {
-      this.verbose = true
+      this.verbose = true;
     }
   }
 
@@ -24,7 +24,7 @@ export class CtDataCleaner {
    * @return {string}
    */
   sourceSchemaVersion(): string {
-    return ''
+    return '';
   }
 
 
@@ -33,16 +33,16 @@ export class CtDataCleaner {
    * @param {object} sourceCtData
    * @return {*}
    */
-  getCleanCtData(sourceCtData : CtDataInterface) : CtDataInterface {
+  getCleanCtData(sourceCtData: CtDataInterface): CtDataInterface {
     if (sourceCtData['schemaVersion'] === undefined) {
-      throw new Error('CtData does not have an schema version defined')
+      throw new Error('CtData does not have an schema version defined');
     }
 
     if (sourceCtData['schemaVersion'] !== this.sourceSchemaVersion()) {
-      throw new Error(`Cannot clean schema version ${sourceCtData['schemaVersion']}, expected version ${this.sourceSchemaVersion()}`)
+      throw new Error(`Cannot clean schema version ${sourceCtData['schemaVersion']}, expected version ${this.sourceSchemaVersion()}`);
     }
 
-    return deepCopy(sourceCtData)
+    return deepCopy(sourceCtData);
   }
 
 }

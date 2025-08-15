@@ -349,7 +349,9 @@ export class ApparatusCommon {
 
   static _getSiglaTypesetterTokens(witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[], lang: string) : TypesetterToken[] {
     // TODO: use witnessData instead of witnessIndices, like in the html version
-    let witnessData = witnessIndices.map ( (i) => { return { witnessIndex: i, hand: 0}})
+    let witnessData = witnessIndices.map ( (i) => {
+      return new WitnessDataItem().setWitnessIndex(i).setHand(0)
+      })
     let filledUpWitnessData = ApparatusUtil.getSiglaData(witnessData, sigla, siglaGroups)
 
     // TODO: support hands:

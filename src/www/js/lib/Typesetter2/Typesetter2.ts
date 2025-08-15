@@ -16,9 +16,9 @@
  *
  */
 
-import { ItemList } from './ItemList.js'
-import * as TypesetterItemDirection from './TypesetterItemDirection.js'
-import { TypesetterDocument } from './TypesetterDocument.js'
+import {ItemList} from './ItemList.js';
+import * as TypesetterItemDirection from './TypesetterItemDirection.js';
+import {TypesetterDocument} from './TypesetterDocument.js';
 
 /**
  * The new typesetter class
@@ -27,10 +27,29 @@ import { TypesetterDocument } from './TypesetterDocument.js'
 
 export class Typesetter2 {
 
-  constructor () {
+  constructor() {
     if (this.constructor === Typesetter2) {
-      throw new Error("Abstract classes cannot be instantiated")
+      throw new Error("Abstract classes cannot be instantiated");
     }
+  }
+
+  static cm2px(cm: number): number {
+    return cm * 37.795275590551184; //   = mm * 96 [px/in] / 2.54 [cm/in]
+  }
+
+  static px2cm(px: number): number {
+    return px / 37.795275590551184; //   = px * 1/96 [in/px] * 2.54 [cm/in]
+  }
+
+  static pt2px(pt: number): number {
+    return pt * 4 / 3;  // = pt * 72 [pt/in] *  1/96 [in/px]
+  }
+
+
+  // Unit conversion methods
+
+  static px2pt(px: number): number {
+    return px * 3 / 4;
   }
 
   /**
@@ -43,9 +62,9 @@ export class Typesetter2 {
     // performs type checks and returns the input list if there's no problem
     // the actual typesetting work should be done by a child of this class
     if (list.getDirection() !== TypesetterItemDirection.HORIZONTAL) {
-      throw new Error('typesetHorizontalList called with a vertical list')
+      throw new Error('typesetHorizontalList called with a vertical list');
     }
-    return Promise.resolve(list)
+    return Promise.resolve(list);
   }
 
   /**
@@ -61,9 +80,9 @@ export class Typesetter2 {
     // performs type checks and returns the input list if there's no problem
     // the actual typesetting work should be done by a child of this class
     if (list.getDirection() !== TypesetterItemDirection.VERTICAL) {
-      throw new Error('typesetVerticalList called with a horizontal list')
+      throw new Error('typesetVerticalList called with a horizontal list');
     }
-    return Promise.resolve(list)
+    return Promise.resolve(list);
   }
 
   /**
@@ -82,25 +101,7 @@ export class Typesetter2 {
    * @return {Promise<TypesetterDocument>}
    */
   typeset(_list: ItemList, _data: any = null): Promise<TypesetterDocument> {
-    return Promise.resolve(new TypesetterDocument())
-  }
-
-
-  // Unit conversion methods
-
-  static cm2px(cm: number): number {
-    return cm * 37.795275590551184 //   = mm * 96 [px/in] / 2.54 [cm/in]
-  }
-  static px2cm(px: number): number {
-    return px / 37.795275590551184 //   = px * 1/96 [in/px] * 2.54 [cm/in]
-  }
-
-  static pt2px(pt: number): number {
-    return pt * 4 / 3  // = pt * 72 [pt/in] *  1/96 [in/px]
-  }
-
-  static px2pt(px: number): number {
-    return px * 3 / 4
+    return Promise.resolve(new TypesetterDocument());
   }
 
 

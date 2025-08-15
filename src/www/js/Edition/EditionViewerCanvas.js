@@ -33,8 +33,6 @@ const pageMarginInCanvas = 20
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
 
-
-
 export class EditionViewerCanvas {
 
   constructor (options) {
@@ -43,32 +41,34 @@ export class EditionViewerCanvas {
       context: 'EditionViewerCanvas',
       optionsDefinition: {
         edition: { type: 'object', objectClass: Edition, required: true },
-        editionStyleSheet: { type: 'object', objectClass: StyleSheet},
-        canvasElement: { type: 'object', required: true},
-        fontFamily:  { type: 'NonEmptyString', required: true},
-        scale: { type: 'number', default: 1},
-        entrySeparator: { type: 'string', default: verticalLine},
-        apparatusLineSeparator: { type: 'string', default: doubleVerticalLine},
-        pageWidthInCm: { type: 'NumberGreaterThanZero', default: 21},
-        pageHeightInCm: { type: 'NumberGreaterThanZero', default: 29.7},
-        marginInCm: {type: 'object', default: {
+        editionStyleSheet: { type: 'object', objectClass: StyleSheet },
+        canvasElement: { type: 'object', required: true },
+        fontFamily: { type: 'NonEmptyString', required: true },
+        scale: { type: 'number', default: 1 },
+        entrySeparator: { type: 'string', default: verticalLine },
+        apparatusLineSeparator: { type: 'string', default: doubleVerticalLine },
+        pageWidthInCm: { type: 'NumberGreaterThanZero', default: 21 },
+        pageHeightInCm: { type: 'NumberGreaterThanZero', default: 29.7 },
+        marginInCm: {
+          type: 'object', default: {
             top: 2,
             left: 3,
             bottom: 2,
             right: 3
-          }},
-        mainTextFontSizeInPts: { type: 'NumberGreaterThanZero', default: 12},
-        lineNumbersFontSizeInPts: { type: 'Number', default: 10},
-        resetLineNumbersEachPage: { type: 'boolean', default: false},
-        apparatusFontSizeInPts: { type: 'NumberGreaterThanZero', default: 10},
-        mainTextLineHeightInPts: { type: 'NumberGreaterThanZero', default: 15},
-        apparatusLineHeightInPts: { type: 'NumberGreaterThanZero', default: 12},
-        normalSpaceWidthInEms: { type: 'NumberGreaterThanZero', default: 0.33},
-        textToLineNumbersInCm: { type: 'NumberGreaterThanZero', default: 0.5},
-        textToMarginaliaInCm: { type: 'NumberGreaterThanZero', default: 0.3},
-        textToApparatusInCm: { type: 'NumberGreaterThanZero', default: 1.5},
-        interApparatusInCm: { type: 'NumberGreaterThanZero', default: 0.5},
-        debug: {type: 'boolean', default: false}
+          }
+        },
+        mainTextFontSizeInPts: { type: 'NumberGreaterThanZero', default: 12 },
+        lineNumbersFontSizeInPts: { type: 'Number', default: 10 },
+        resetLineNumbersEachPage: { type: 'boolean', default: false },
+        apparatusFontSizeInPts: { type: 'NumberGreaterThanZero', default: 10 },
+        mainTextLineHeightInPts: { type: 'NumberGreaterThanZero', default: 15 },
+        apparatusLineHeightInPts: { type: 'NumberGreaterThanZero', default: 12 },
+        normalSpaceWidthInEms: { type: 'NumberGreaterThanZero', default: 0.33 },
+        textToLineNumbersInCm: { type: 'NumberGreaterThanZero', default: 0.5 },
+        textToMarginaliaInCm: { type: 'NumberGreaterThanZero', default: 0.3 },
+        textToApparatusInCm: { type: 'NumberGreaterThanZero', default: 1.5 },
+        interApparatusInCm: { type: 'NumberGreaterThanZero', default: 0.5 },
+        debug: { type: 'boolean', default: false }
       }
     })
     this.options = oc.getCleanOptions(options)
@@ -95,7 +95,6 @@ export class EditionViewerCanvas {
       normalSpaceWidthInEms: this.options.normalSpaceWidthInEms
     }
 
-
     this.edition = this.options.edition
     this.canvas = this.options.canvasElement
     this.debug = this.options.debug
@@ -104,20 +103,19 @@ export class EditionViewerCanvas {
 
     this.canvasRenderer.setScale(this.options.scale).setPageMargin(pageMarginInCanvas)
     this.canvasMeasurer = new CanvasTextBoxMeasurer()
-    this.currentScale = this.options.scale;
+    this.currentScale = this.options.scale
     this.editionDoc = null
   }
 
-  getTypesettingParameters() {
+  getTypesettingParameters () {
     return this.typesettingParameters
   }
 
-
-  render() {
-    return new Promise( (resolve) => {
+  render () {
+    return new Promise((resolve) => {
       if (this.editionDoc === null) {
         // need to typeset the edition
-        this.__typesetEdition().then( (doc) => {
+        this.__typesetEdition().then((doc) => {
           this.editionDoc = doc
           // this.debug && console.log(`Edition typeset`)
           // this.debug && console.log(doc)
@@ -131,35 +129,34 @@ export class EditionViewerCanvas {
     })
   }
 
-  getTypesetEdition(){
+  getTypesetEdition () {
     return this.editionDoc
   }
 
-  setScale(newScale) {
-    return new Promise ( (resolve) => {
+  setScale (newScale) {
+    return new Promise((resolve) => {
       this.canvasRenderer.setScale(newScale)
       // this.debug && console.log(`Scale set to ${newScale}`)
-      this.render().then( () => {
-        this.currentScale = newScale;
+      this.render().then(() => {
+        this.currentScale = newScale
         resolve(newScale)
-      }).catch( (err) => {
+      }).catch((err) => {
         console.error(`Error rendering canvas`)
         console.log(err)
       })
     })
   }
 
-  getCurrentScale() {
-    return this.currentScale;
+  getCurrentScale () {
+    return this.currentScale
   }
 
-
-  __renderCanvas(doc) {
-    let [ canvasWidth, canvasHeight] = this.canvasRenderer.getCanvasDimensionsForDoc(doc)
+  __renderCanvas (doc) {
+    let [canvasWidth, canvasHeight] = this.canvasRenderer.getCanvasDimensionsForDoc(doc)
 
     BrowserUtilities.setCanvasHiPDI(this.canvas, canvasWidth, canvasHeight)
     let ctx = this.canvas.getContext('2d')
-    ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
 
     if (doc.getPageCount() === 0) {
       console.log('Nothing to do, no pages to render')
@@ -169,14 +166,12 @@ export class EditionViewerCanvas {
     this.canvasRenderer.renderDocument(doc)
   }
 
-
-  getMainTextListToTypeset() {
+  getMainTextListToTypeset () {
     return this.rawMainTextVerticalListToTypeset
   }
 
-
-  __typesetEdition() {
-    return new Promise( async (resolve) => {
+  __typesetEdition () {
+    return new Promise(async (resolve) => {
       // reset typesetting data
       this.typesettingParameters = undefined
       let helperOptions = {
@@ -190,11 +185,11 @@ export class EditionViewerCanvas {
       // Load fonts
       console.log(`Loading fonts`)
       let fontsToLoad = []
-      this.options.editionStyleSheet.getFontFamilies().forEach( (fontFamily) => {
+      this.options.editionStyleSheet.getFontFamilies().forEach((fontFamily) => {
         fontsToLoad.push(`1em ${fontFamily}`,
           `bold 1em ${fontFamily}`,
           `italic 1em ${fontFamily}`,
-          `bold italic 1em ${fontFamily}` )
+          `bold italic 1em ${fontFamily}`)
       })
 
       for (let i = 0; i < fontsToLoad.length; i++) {
@@ -202,7 +197,7 @@ export class EditionViewerCanvas {
         console.log(` Loaded ${fontsToLoad[i]} `)
       }
       let editionTypesettingHelper = new EditionTypesetting(helperOptions)
-      editionTypesettingHelper.setup().then( async () => {
+      editionTypesettingHelper.setup().then(async () => {
         let verticalListToTypeset = await editionTypesettingHelper.generateListToTypesetFromMainText()
         this.rawMainTextVerticalListToTypeset = verticalListToTypeset.getExportObject()
         this.mainTextVerticalListToTypeset = verticalListToTypeset
@@ -229,12 +224,12 @@ export class EditionViewerCanvas {
             marginLeft: this.geometry.margin.left,
             marginRight: this.geometry.margin.right,
             defaultFontFamily: this.options.fontFamily,
-            defaultFontSize:  this.geometry.mainTextFontSize,
+            defaultFontSize: this.geometry.mainTextFontSize,
             lineSkip: this.geometry.mainTextLineHeight,
             apparatusLineSkip: Dimension.pt2px(this.options.apparatusLineHeightInPts),
-            textToApparatusGlue:  {
+            textToApparatusGlue: {
               height: this.geometry.textToApparatus,
-              shrink: this.geometry.textToApparatus*0.1,
+              shrink: this.geometry.textToApparatus * 0.1,
               stretch: this.geometry.pageHeight - this.geometry.margin.bottom - this.geometry.margin.top
             },
             interApparatusGlue: {
@@ -271,12 +266,12 @@ export class EditionViewerCanvas {
               editionTypesettingHelper.resetExtractedMetadataInfo()
               return Promise.resolve(true)
             },
-            getMarginaliaForLineRange: (lineFrom, lineTo) =>{
+            getMarginaliaForLineRange: (lineFrom, lineTo) => {
               return editionTypesettingHelper.getMarginaliaForLineRange(lineFrom, lineTo)
             },
             debug: false
           },
-          extraData: { apparatuses: this.edition.apparatuses}
+          extraData: { apparatuses: this.edition.apparatuses }
         }
         let ts = new BasicTypesetter(this.typesettingParameters.typesetterOptions)
         let profiler = new BasicProfiler('Typesetting', true)
@@ -284,7 +279,7 @@ export class EditionViewerCanvas {
         profiler.stop('last')
         console.log(`Typeset doc`)
         console.log(tsOutput)
-        resolve (tsOutput)
+        resolve(tsOutput)
       })
     })
   }

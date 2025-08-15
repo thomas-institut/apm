@@ -16,7 +16,7 @@
  *
  */
 
-export const NONE = ''
-export const PARAGRAPH = 'par'
-export const COLUMN = 'col'
-export const PAGE = 'page'
+export const NONE = '';
+export const PARAGRAPH = 'par';
+export const COLUMN = 'col';
+export const PAGE = 'page';

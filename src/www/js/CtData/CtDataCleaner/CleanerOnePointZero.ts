@@ -16,26 +16,25 @@
  *
  */
 
-import * as CollationTableType from '../../constants/CollationTableType'
-import { CtData } from '../CtData'
-import { CtDataCleaner } from './CtDataCleaner'
-import { deepCopy } from '../../toolbox/Util'
-import {DEFAULT_GLUE_SPACE, FmtTextToken} from '@/lib/FmtText/FmtTextToken'
-import { CollationTableConsistencyCleaner } from './CollationTableConsistencyCleaner'
-import { EditionWitnessReferencesCleaner } from './EditionWitnessReferencesCleaner'
-import { EDITION } from '../../constants/CollationTableType'
+import * as CollationTableType from '../../constants/CollationTableType';
+import {CtData} from '../CtData';
+import {CtDataCleaner} from './CtDataCleaner';
+import {deepCopy} from '@/toolbox/Util';
+import {DEFAULT_GLUE_SPACE, FmtTextToken} from '@/lib/FmtText/FmtTextToken';
+import {CollationTableConsistencyCleaner} from './CollationTableConsistencyCleaner';
+import {EditionWitnessReferencesCleaner} from './EditionWitnessReferencesCleaner';
+import {EDITION} from '@/constants/CollationTableType';
 import {CtDataInterface} from "../CtDataInterface";
-import {ApparatusEntry} from "../../Edition/ApparatusEntry";
 
-export class CleanerOnePointZero extends CtDataCleaner{
+export class CleanerOnePointZero extends CtDataCleaner {
   private ctData!: CtDataInterface;
 
   constructor(options = {}) {
-    super(options)
+    super(options);
   }
 
-  sourceSchemaVersion () {
-    return '1.0'
+  sourceSchemaVersion() {
+    return '1.0';
   }
 
   /**
@@ -49,27 +48,27 @@ export class CleanerOnePointZero extends CtDataCleaner{
    * @return {*}
    */
   getCleanCtData(ctData: CtDataInterface): CtDataInterface {
-    this.ctData = super.getCleanCtData(ctData)
+    this.ctData = super.getCleanCtData(ctData);
 
     // fix -1 references in edition witness
     if (this.ctData['type'] === CollationTableType.EDITION) {
-      let referencesCleaner = new EditionWitnessReferencesCleaner()
-      this.ctData = referencesCleaner.getCleanCtData(this.ctData)
+      let referencesCleaner = new EditionWitnessReferencesCleaner();
+      this.ctData = referencesCleaner.getCleanCtData(this.ctData);
     }
 
     // consistency check
-    let consistencyCleaner = new CollationTableConsistencyCleaner()
-    this.ctData = consistencyCleaner.getCleanCtData(this.ctData)
+    let consistencyCleaner = new CollationTableConsistencyCleaner();
+    this.ctData = consistencyCleaner.getCleanCtData(this.ctData);
 
     if (this.ctData['type'] === EDITION) {
       // this may not be necessary
-      this.ctData = CtData.fixFmtText(this.ctData)
+      this.ctData = CtData.fixFmtText(this.ctData);
       // fix glue normal value in fmtText
-      this.ctData = this.fixNormalGlueValueInFmtText(this.ctData)
-      this.ctData = this.fixCustomApparatuses(this.ctData)
+      this.ctData = this.fixNormalGlueValueInFmtText(this.ctData);
+      this.ctData = this.fixCustomApparatuses(this.ctData);
     }
 
-    return this.ctData
+    return this.ctData;
   }
 
   /**
@@ -78,44 +77,43 @@ export class CleanerOnePointZero extends CtDataCleaner{
    * @return {any}
    */
   fixCustomApparatuses(ctDataToFix: CtDataInterface): CtDataInterface {
-    let ctData : CtDataInterface = deepCopy(ctDataToFix)
+    let ctData: CtDataInterface = deepCopy(ctDataToFix);
 
-    ctData.customApparatuses = ctData.customApparatuses.map( (app) => {
-      app.entries = app.entries.map( (entry: ApparatusEntry, entryIndex:number) => {
+    ctData.customApparatuses = ctData.customApparatuses.map((app) => {
+      app.entries = app.entries.map((entry, entryIndex) => {
         // make sure there's no section in the entry
         if (entry.section !== undefined) {
-          this.verbose && console.log(`Deleting 'section' from apparatus '${app['type']}', entry ${entryIndex}`)
-          delete entry.section
+          this.verbose && console.log(`Deleting 'section' from apparatus '${app['type']}', entry ${entryIndex}`);
+          delete entry.section;
         }
-        return entry
-      })
-      return app
-    })
-    return ctData
+        return entry;
+      });
+      return app;
+    });
+    return ctData;
   }
 
   fixNormalGlueValueInFmtText(ctDataToFix: CtDataInterface) {
-    let ctData:CtDataInterface = deepCopy(ctDataToFix)
+    let ctData: CtDataInterface = deepCopy(ctDataToFix);
     for (let i = 0; i < ctData.customApparatuses.length; i++) {
       // console.log(`Custom apparatus ${i}`)
       for (let entryN = 0; entryN < ctData.customApparatuses[i].entries.length; entryN++) {
         // console.log(`Entry ${entryN}`)
-        for (let subEntryN = 0; subEntryN < ctData.customApparatuses[i].entries[entryN].subEntries.length ; subEntryN++) {
+        for (let subEntryN = 0; subEntryN < ctData.customApparatuses[i].entries[entryN].subEntries.length; subEntryN++) {
           // console.log(`Sub entry ${subEntryN}`)
           if (ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText !== undefined) {
             // this is a custom entry, other types do not have a fmtText
-            ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText =
-                ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText.map( (token: FmtTextToken) => {
-                if (token.type === 'glue' && token.space === '') {
-                  token.space = DEFAULT_GLUE_SPACE
-                }
-                return token
-              })
+            ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText = ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText.map((token: FmtTextToken) => {
+              if (token.type === 'glue' && token.space === '') {
+                token.space = DEFAULT_GLUE_SPACE;
+              }
+              return token;
+            });
           }
         }
       }
     }
-    return ctData
+    return ctData;
   }
 
 }

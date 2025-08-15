@@ -1,4 +1,4 @@
-import { CtDataCleaner } from './CtDataCleaner'
+import {CtDataCleaner} from './CtDataCleaner';
 import {CtDataInterface, WitnessTokenInterface} from "../CtDataInterface";
 
 export class ApparatusEntryPositionCleaner extends CtDataCleaner {
@@ -9,76 +9,76 @@ export class ApparatusEntryPositionCleaner extends CtDataCleaner {
    * @return {*}
    * @param ctData
    */
-  getCleanCtData (ctData: CtDataInterface): CtDataInterface {
+  getCleanCtData(ctData: CtDataInterface): CtDataInterface {
     if (ctData.customApparatuses === undefined) {
       // not apparatuses to fix!
-      return ctData
+      return ctData;
     }
-    this.verbose && console.log(`Checking consistency in entry positions`)
-    let errorsFound = false
-    let errorsNotFixed = false
-    let editionWitnessIndex = ctData.editionWitnessIndex
-    let editionWitnessTokens = ctData.witnesses[editionWitnessIndex].tokens
-    ctData.customApparatuses = ctData.customApparatuses.map( (app) => {
+    this.verbose && console.log(`Checking consistency in entry positions`);
+    let errorsFound = false;
+    let errorsNotFixed = false;
+    let editionWitnessIndex = ctData.editionWitnessIndex;
+    let editionWitnessTokens = ctData.witnesses[editionWitnessIndex].tokens;
+    ctData.customApparatuses = ctData.customApparatuses.map((app) => {
       app.entries = app.entries.map((entry, entryIndex) => {
         if (entry.from === entry.to) {
           // nothing to do with entries to a single column
-          return entry
+          return entry;
         }
         // just report for now
-        let fromToken = editionWitnessTokens[entry.from]
-        let toToken = editionWitnessTokens[entry.to]
+        let fromToken = editionWitnessTokens[entry.from];
+        let toToken = editionWitnessTokens[entry.to];
 
         if (fromToken === undefined) {
-          errorsFound = true
-          console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'from' index ${entry.from} refers to undefined token`)
+          errorsFound = true;
+          console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'from' index ${entry.from} refers to undefined token`);
         } else {
           if (fromToken.tokenType !== 'word' && fromToken.tokenType !== 'punctuation') {
-            errorsFound = true
+            errorsFound = true;
             // fix it by looking at the closest word or punctuation token before the toToken
-            console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'from' index ${entry.from} refers to non-printable token (${fromToken.tokenType})`)
-            let newIndex = this.findPrintableIndex(editionWitnessTokens, entry.from, entry.to, true)
+            console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'from' index ${entry.from} refers to non-printable token (${fromToken.tokenType})`);
+            let newIndex = this.findPrintableIndex(editionWitnessTokens, entry.from, entry.to, true);
             if (newIndex === -1) {
-              console.warn(`Could not fix the problem`)
-              errorsNotFixed = true
+              console.warn(`Could not fix the problem`);
+              errorsNotFixed = true;
             } else {
-              console.log(`Problem fixed, new 'from' index is ${newIndex}`)
-              entry.from = newIndex
+              console.log(`Problem fixed, new 'from' index is ${newIndex}`);
+              entry.from = newIndex;
             }
           }
         }
         if (toToken === undefined) {
-          errorsFound = true
-          console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'to' index ${entry.to} refers to undefined token`)
+          errorsFound = true;
+          console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'to' index ${entry.to} refers to undefined token`);
         } else {
           if (toToken.tokenType !== 'word' && toToken.tokenType !== 'punctuation') {
-            errorsFound = true
+            errorsFound = true;
             // fix it by looking at the closest word or punctuation token before the toToken
-            console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'to' index ${entry.to} refers to non-printable token (${toToken.tokenType})`)
-            let newIndex = this.findPrintableIndex(editionWitnessTokens, entry.from, entry.to, false)
+            console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'to' index ${entry.to} refers to non-printable token (${toToken.tokenType})`);
+            let newIndex = this.findPrintableIndex(editionWitnessTokens, entry.from, entry.to, false);
             if (newIndex === -1) {
-              errorsNotFixed = true
-              console.warn(`Could not fix the problem`)
+              errorsNotFixed = true;
+              console.warn(`Could not fix the problem`);
             } else {
-              console.log(`Problem fixed, new 'to' index is ${newIndex }`)
-              entry.to = newIndex
+              console.log(`Problem fixed, new 'to' index is ${newIndex}`);
+              entry.to = newIndex;
             }
           }
         }
-        return entry
-      })
-      return app
-    })
+        return entry;
+      });
+      return app;
+    });
     if (errorsFound) {
       if (errorsNotFixed) {
-        console.warn(`Some errors could not be fixed`)
+        console.warn(`Some errors could not be fixed`);
       } else {
-        this.verbose && console.log(`...all good, all problems fixed`)
+        this.verbose && console.log(`...all good, all problems fixed`);
       }
     } else {
-      this.verbose && console.log(`...all good`)
+      this.verbose && console.log(`...all good`);
     }
-    return ctData
+    return ctData;
   }
 
   /**
@@ -91,27 +91,26 @@ export class ApparatusEntryPositionCleaner extends CtDataCleaner {
    */
   findPrintableIndex(tokens: WitnessTokenInterface[], from: number, to: number, forward: boolean) {
 
-    let index = forward ? from : to
-    let limit = forward ? to : from  // add/subtract 1 so that the limit itself is included in the loop
+    let index = forward ? from : to;
+    let limit = forward ? to : from;  // add/subtract 1 so that the limit itself is included in the loop
 
 
-
-    while(index !== limit) {
+    while (index !== limit) {
       if (tokens[index].tokenType === 'word' || tokens[index].tokenType === 'punctuation') {
-        return index
+        return index;
       }
       if (forward) {
-        index++
+        index++;
         if (index > limit) {
-          break
+          break;
         }
       } else {
-        index--
+        index--;
         if (index < limit) {
-          break
+          break;
         }
       }
     }
-    return -1
+    return -1;
   }
 }

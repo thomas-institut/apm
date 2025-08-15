@@ -16,5 +16,5 @@
  *
  */
 
-export const NORMAL = ''
-export const BOLD = 'bold'
+export const NORMAL = '';
+export const BOLD = 'bold';

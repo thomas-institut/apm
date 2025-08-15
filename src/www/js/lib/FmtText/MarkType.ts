@@ -16,5 +16,5 @@
  *
  */
 
-export const PARAGRAPH = 'par'
-export const SECTION = 'section'
+export const PARAGRAPH = 'par';
+export const SECTION = 'section';

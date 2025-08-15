@@ -17,8 +17,8 @@
  */
 
 
-import { TypesetterItem } from './TypesetterItem.js'
-import * as TypesetterItemDirection from './TypesetterItemDirection.js'
+import {TypesetterItem} from './TypesetterItem.js';
+import * as TypesetterItemDirection from './TypesetterItemDirection.js';
 
 /**
  * A rectangular area of a certain width and height.
@@ -29,16 +29,16 @@ import * as TypesetterItemDirection from './TypesetterItemDirection.js'
  */
 export class Box extends TypesetterItem {
 
-  constructor (direction = TypesetterItemDirection.HORIZONTAL) {
-    super(direction)
-    this.width = 0
-    this.height = 0
+  constructor(direction = TypesetterItemDirection.HORIZONTAL) {
+    super(direction);
+    this.width = 0;
+    this.height = 0;
   }
 
-  getExportObject () {
-    let obj =  super.getExportObject()
-    obj.class = 'Box'
-    return obj
+  getExportObject() {
+    let obj = super.getExportObject();
+    obj.class = 'Box';
+    return obj;
   }
 
 }

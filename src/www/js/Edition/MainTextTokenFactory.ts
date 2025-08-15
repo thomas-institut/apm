@@ -18,10 +18,11 @@
  *
  */
 
-import { MainTextToken } from './MainTextToken.js'
-import * as EditionMainTextTokenType from './MainTextTokenType.js'
-import { FmtTextFactory } from '../lib/FmtText/FmtTextFactory.js'
+import {MainTextToken} from './MainTextToken.js';
+import * as EditionMainTextTokenType from './MainTextTokenType.js';
+import {FmtTextFactory} from '../lib/FmtText/FmtTextFactory.js';
 import {FmtTextToken} from "../lib/FmtText/FmtTextToken";
+import {MainTextTokenType} from "@/Edition/EditionInterface";
 
 export class MainTextTokenFactory {
 
@@ -34,13 +35,13 @@ export class MainTextTokenFactory {
    * @param {string} [lang=''] - The language code for the text token. Defaults to an empty string.
    * @return {MainTextToken} The created text token with assigned properties.
    */
-  static createSimpleText(type: string, text: string, editionWitnessTokenIndex: number, lang: string = ''): MainTextToken {
-    let t = new MainTextToken()
-    t.type = type
-    t.fmtText = FmtTextFactory.fromString(text)
-    t.editionWitnessTokenIndex = editionWitnessTokenIndex
-    t.setLang(lang)
-    return t
+  static createSimpleText(type: MainTextTokenType, text: string, editionWitnessTokenIndex: number, lang: string = ''): MainTextToken {
+    let t = new MainTextToken();
+    t.type = type;
+    t.fmtText = FmtTextFactory.fromString(text);
+    t.editionWitnessTokenIndex = editionWitnessTokenIndex;
+    t.setLang(lang);
+    return t;
   }
 
   /**
@@ -52,27 +53,27 @@ export class MainTextTokenFactory {
    * @param {string} [lang=''] - The language code for the token (optional, defaults to an empty string).
    * @return {MainTextToken} A new instance of MainTextToken with the specified attributes.
    */
-  static createWithFmtText(type: string, fmtText: FmtTextToken[], editionWitnessTokenIndex: number, lang: string = ''): MainTextToken {
-    let t = new MainTextToken()
-    t.type = type
-    t.fmtText = fmtText
-    t.editionWitnessTokenIndex = editionWitnessTokenIndex
-    t.setLang(lang)
-    return t
+  static createWithFmtText(type: MainTextTokenType, fmtText: FmtTextToken[], editionWitnessTokenIndex: number, lang: string = ''): MainTextToken {
+    let t = new MainTextToken();
+    t.type = type;
+    t.fmtText = fmtText;
+    t.editionWitnessTokenIndex = editionWitnessTokenIndex;
+    t.setLang(lang);
+    return t;
   }
 
   static createNormalGlue() {
-    let t = new MainTextToken()
-    t.type = EditionMainTextTokenType.GLUE
-    t.space = 'normal'
-    t.fmtText = FmtTextFactory.oneNormalSpace()
-    return t
+    let t = new MainTextToken();
+    t.type = EditionMainTextTokenType.GLUE;
+    t.space = 'normal';
+    t.fmtText = FmtTextFactory.oneNormalSpace();
+    return t;
   }
 
   static createParagraphEnd(style = '') {
-    let t = new MainTextToken()
-    t.type = EditionMainTextTokenType.PARAGRAPH_END
-    return t.setStyle(style)
+    let t = new MainTextToken();
+    t.type = EditionMainTextTokenType.PARAGRAPH_END;
+    return t.setStyle(style);
   }
 
   /**
@@ -80,15 +81,15 @@ export class MainTextTokenFactory {
    * @param {MainTextToken}token
    */
   static clone(token: MainTextToken) {
-    let t = new MainTextToken()
-    t.type = token.type
-    t.fmtText = token.fmtText
-    t.style = token.style
-    t.editionWitnessTokenIndex = token.editionWitnessTokenIndex
+    let t = new MainTextToken();
+    t.type = token.type;
+    t.fmtText = token.fmtText;
+    t.style = token.style;
+    t.editionWitnessTokenIndex = token.editionWitnessTokenIndex;
     if (token.lang !== undefined) {
-      t.setLang(token.lang)
+      t.setLang(token.lang);
     }
-    return t
+    return t;
   }
 
 }

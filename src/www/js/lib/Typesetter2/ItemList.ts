@@ -22,33 +22,33 @@
  *
  */
 
-import { TypesetterItem } from './TypesetterItem.js'
-import * as TypesetterItemDirection from './TypesetterItemDirection.js'
-import { Glue } from './Glue.js'
-import { ObjectFactory } from './ObjectFactory.js'
-import { TextBox } from './TextBox.js'
-import { Box } from './Box.js'
-import { Penalty } from './Penalty.js'
+import {TypesetterItem} from './TypesetterItem.js';
+import * as TypesetterItemDirection from './TypesetterItemDirection.js';
+import {Glue} from './Glue.js';
+import {ObjectFactory} from './ObjectFactory.js';
+import {TextBox} from './TextBox.js';
+import {Box} from './Box.js';
+import {Penalty} from './Penalty.js';
 
 export class ItemList extends TypesetterItem {
   private list: TypesetterItem[];
 
-  constructor (direction = TypesetterItemDirection.HORIZONTAL) {
-    super(direction)
-    this.list = []
+  constructor(direction = TypesetterItemDirection.HORIZONTAL) {
+    super(direction);
+    this.list = [];
   }
 
   getList(): TypesetterItem[] {
-    return this.list
+    return this.list;
   }
 
   setList(newList: TypesetterItem[]): this {
-    this.list = newList
-    return this
+    this.list = newList;
+    return this;
   }
 
   getItemCount() {
-    return this.list.length
+    return this.list.length;
   }
 
   /**
@@ -56,7 +56,7 @@ export class ItemList extends TypesetterItem {
    * @param {TypesetterItem} item
    */
   pushItem(item: TypesetterItem) {
-    this.list.push(item)
+    this.list.push(item);
   }
 
   /**
@@ -64,43 +64,49 @@ export class ItemList extends TypesetterItem {
    * @param {TypesetterItem[]}itemArray
    */
   pushItemArray(itemArray: TypesetterItem[]) {
-    itemArray.forEach( (item) => {
-      this.pushItem(item)
-    })
+    itemArray.forEach((item) => {
+      this.pushItem(item);
+    });
   }
 
   popItem() {
-    return this.list.pop()
+    return this.list.pop();
   }
 
-  getHeight () {
+  getHeight() {
     if (this.height !== -1) {
-      return this.height
+      return this.height;
     }
     if (this.direction === TypesetterItemDirection.VERTICAL) {
       // the sum of the height of all items in the list
-      return this.list.reduce( (acc, item) => { return acc + item.getHeight()}, 0)
+      return this.list.reduce((acc, item) => {
+        return acc + item.getHeight();
+      }, 0);
     }
     // HORIZONTAL list: return the max height
-    return this.list.reduce( (acc, item) => {
-      return Math.max(acc, item.getHeight())
-    }, -1)
+    return this.list.reduce((acc, item) => {
+      return Math.max(acc, item.getHeight());
+    }, -1);
   }
 
-  getWidth () {
+  getWidth() {
     if (this.width !== -1) {
-      return this.width
+      return this.width;
     }
     if (this.direction === TypesetterItemDirection.HORIZONTAL) {
       // the sum of the width of all items in the list
-      return this.list.reduce( (acc, item) => { return acc + item.getWidth()}, 0)
+      return this.list.reduce((acc, item) => {
+        return acc + item.getWidth();
+      }, 0);
     }
     // VERTICAL list: return the max width
-    return this.list.reduce( (acc, item) => { return Math.max(acc, item.getWidth())}, -1)
+    return this.list.reduce((acc, item) => {
+      return Math.max(acc, item.getWidth());
+    }, -1);
   }
 
-  setHeight (height: number) {
-    return super.setHeight(height)
+  setHeight(height: number) {
+    return super.setHeight(height);
   }
 
   /**
@@ -108,12 +114,12 @@ export class ItemList extends TypesetterItem {
    * returns the number of glue items removed
    */
   trimEndGlue(): number {
-    let numItemsTrimmed = 0
-    while (this.list.length > 0 && this.list[this.list.length-1] instanceof Glue) {
-      numItemsTrimmed++
-      this.list.pop()
+    let numItemsTrimmed = 0;
+    while (this.list.length > 0 && this.list[this.list.length - 1] instanceof Glue) {
+      numItemsTrimmed++;
+      this.list.pop();
     }
-    return numItemsTrimmed
+    return numItemsTrimmed;
   }
 
   /**
@@ -122,21 +128,21 @@ export class ItemList extends TypesetterItem {
    */
   getText(): string {
 
-    let textArray = this.getList().map( (item) => {
-      if (item instanceof  Glue) {
-        return ' '
+    let textArray = this.getList().map((item) => {
+      if (item instanceof Glue) {
+        return ' ';
       }
       if (item instanceof TextBox) {
-        return item.getText()
+        return item.getText();
       }
       if (item instanceof Box) {
-        return `{B:${item.getWidth()}x${item.getHeight()}}`
+        return `{B:${item.getWidth()}x${item.getHeight()}}`;
       }
       if (item instanceof Penalty) {
-        return `{P:${item.getPenalty()}}`
+        return `{P:${item.getPenalty()}}`;
       }
-      return ''
-    })
+      return '';
+    });
     // if (this.hasMetadata(MetadataKey.HAS_REVERSE_TEXT) && this.getMetadata(MetadataKey.HAS_REVERSE_TEXT) === true) {
     //   // TODO: properly implement this!!!
     //   let originalIndexes = this.getList().map( (item) => {
@@ -144,32 +150,34 @@ export class ItemList extends TypesetterItem {
     //   })
     // }
 
-    return textArray.join('')
+    return textArray.join('');
   }
 
-  getExportObject () {
-    let obj =  super.getExportObject()
-    obj.class = 'ItemList'
-    obj.list = this.list.map( (item) => { return item.getExportObject()})
-    return obj
+  getExportObject() {
+    let obj = super.getExportObject();
+    obj.class = 'ItemList';
+    obj.list = this.list.map((item) => {
+      return item.getExportObject();
+    });
+    return obj;
   }
 
-  setFromObject (object: any, mergeValues: boolean): this {
-    super.setFromObject(object, mergeValues)
+  setFromObject(object: any, mergeValues: boolean): this {
+    super.setFromObject(object, mergeValues);
     if (object['list'] !== undefined && Array.isArray(object['list'])) {
-      this.list = []
-      object['list'].forEach( (itemObject, i) => {
-        let newItem = ObjectFactory.fromObject(itemObject)
+      this.list = [];
+      object['list'].forEach((itemObject, i) => {
+        let newItem = ObjectFactory.fromObject(itemObject);
         if (newItem instanceof TypesetterItem) {
-          this.pushItem(newItem)
+          this.pushItem(newItem);
         } else {
-          console.error(`Non typesetter item found at index ${i} in input object's list field`)
-          console.log(itemObject)
-          throw new Error('Non typesetter item found trying to set from Object')
+          console.error(`Non typesetter item found at index ${i} in input object's list field`);
+          console.log(itemObject);
+          throw new Error('Non typesetter item found trying to set from Object');
         }
-      })
+      });
     }
-    return this
+    return this;
   }
 
 }

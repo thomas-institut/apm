@@ -17,11 +17,11 @@
  */
 
 
-import { PageProcessor } from './PageProcessor.js'
-import * as MetadataKey from '../MetadataKey.js'
-import * as ListType from '../ListType.js'
-import { ItemList } from '../ItemList.js'
-import { OptionsChecker } from '@thomas-inst/optionschecker'
+import {PageProcessor} from './PageProcessor.js';
+import * as MetadataKey from '../MetadataKey.js';
+import * as ListType from '../ListType.js';
+import {ItemList} from '../ItemList.js';
+import {OptionsChecker} from '@thomas-inst/optionschecker';
 
 import {TypesetterPage} from "../TypesetterPage.js";
 import {TypesetterItem} from "../TypesetterItem.js";
@@ -39,21 +39,20 @@ export class AddMainTextLinePositionMetadata extends PageProcessor {
 
 
   constructor(options: any) {
-    super()
+    super();
     let oc = new OptionsChecker({
-      context: "AddLineNumbers Page Processor",
-      optionsDefinition: {
-        listTypeToNumber: { type: 'string', default: ListType.MAIN_TEXT_BLOCK},
-        lineTypeToNumber: { type: 'string', default: ''},
-        debug: { type: 'boolean', default: false}
+      context: "AddLineNumbers Page Processor", optionsDefinition: {
+        listTypeToNumber: {type: 'string', default: ListType.MAIN_TEXT_BLOCK},
+        lineTypeToNumber: {type: 'string', default: ''},
+        debug: {type: 'boolean', default: false}
       }
-    })
-    this.options = oc.getCleanOptions(options)
+    });
+    this.options = oc.getCleanOptions(options);
 
-    this.debug = this.options.debug
+    this.debug = this.options.debug;
 
-    this.debug && console.log(`AddMainTextLinePositionMetadata options`)
-    this.debug && console.log(this.options)
+    this.debug && console.log(`AddMainTextLinePositionMetadata options`);
+    this.debug && console.log(this.options);
   }
 
   /**
@@ -62,83 +61,81 @@ export class AddMainTextLinePositionMetadata extends PageProcessor {
    * @param page
    * @return {Promise<TypesetterPage>}
    */
-  process (page: TypesetterPage): Promise<TypesetterPage> {
-    return new Promise( async (resolve) => {
-      let pageItems = page.getItems()
-      let mainTextIndex = pageItems.map( (item) => {
-        return item.hasMetadata(MetadataKey.LIST_TYPE) ? item.getMetadata(MetadataKey.LIST_TYPE) : 'undefined'
-      }).indexOf(ListType.MAIN_TEXT_BLOCK)
+  process(page: TypesetterPage): Promise<TypesetterPage> {
+    return new Promise(async (resolve) => {
+      let pageItems = page.getItems();
+      let mainTextIndex = pageItems.map((item) => {
+        return item.hasMetadata(MetadataKey.LIST_TYPE) ? item.getMetadata(MetadataKey.LIST_TYPE) : 'undefined';
+      }).indexOf(ListType.MAIN_TEXT_BLOCK);
       if (mainTextIndex === -1) {
         // no main text block, nothing to do
-        page.addMetadata(MetadataKey.MAIN_TEXT_LINE_DATA, { mainTextListIndex: -1, lineData: {}})
-        resolve(page)
-        return
+        page.addMetadata(MetadataKey.MAIN_TEXT_LINE_DATA, {mainTextListIndex: -1, lineData: {}});
+        resolve(page);
+        return;
       }
 
       this.debug && console.log(`Adding line position metadata for page ${page.getMetadata(MetadataKey.PAGE_NUMBER)}`);
-      this.debug && console.log(`MainTextBlock at index ${mainTextIndex}`)
+      this.debug && console.log(`MainTextBlock at index ${mainTextIndex}`);
 
       let mainTextList = pageItems[mainTextIndex];
       this.debug && console.log(mainTextList);
       if (mainTextList instanceof ItemList) {
-        let linesWithNumberIndices: number[] = []
-        let mainTextListItems = mainTextList.getList()
+        let linesWithNumberIndices: number[] = [];
+        let mainTextListItems = mainTextList.getList();
         mainTextListItems.forEach((item, itemIndex) => {
           if (!item.hasMetadata(MetadataKey.LIST_TYPE)) {
             this.debug && console.log(`Main text item ${itemIndex} not a list`);
             // no list type =>  do nothing
-            return
+            return;
           }
           if (item.getMetadata(MetadataKey.LIST_TYPE) !== ListType.LINE) {
             // not a line => do nothing
             this.debug && console.log(`Main text item ${itemIndex} is list but not a line: ${item.getMetadata(MetadataKey.LIST_TYPE)}`);
-            return
+            return;
           }
 
           if (this.options.lineTypeToNumber !== '' && item.getMetadata(MetadataKey.LINE_TYPE) !== this.options.lineTypeToNumber) {
             // not the right line type => do nothing
             this.debug && console.log(`Main text item ${itemIndex} is a line but of the right type: ${item.getMetadata(MetadataKey.LIST_TYPE)}`);
-            return
+            return;
           }
           // a line of the right type
-          let lineNumber = item.getMetadata(MetadataKey.LINE_NUMBER)
+          let lineNumber = item.getMetadata(MetadataKey.LINE_NUMBER);
           this.debug && console.log(`MAIN TEXT item ${itemIndex} is line ${lineNumber}`);
           if (lineNumber !== undefined) {
-            linesWithNumberIndices.push(itemIndex)
+            linesWithNumberIndices.push(itemIndex);
           }
-        })
+        });
 
-        this.debug && console.log(`linesWithNumberIndices`)
-        this.debug && console.log(linesWithNumberIndices)
+        this.debug && console.log(`linesWithNumberIndices`);
+        this.debug && console.log(linesWithNumberIndices);
 
-        let yPositions = this._getYPositions(mainTextListItems)
+        let yPositions = this._getYPositions(mainTextListItems);
 
-        let data : LinePositionData[] = []
+        let data: LinePositionData[] = [];
         linesWithNumberIndices.forEach((index) => {
-          let lineNumber = mainTextListItems[index].getMetadata(MetadataKey.LINE_NUMBER)
+          let lineNumber = mainTextListItems[index].getMetadata(MetadataKey.LINE_NUMBER);
           data.push({
-            listIndex: index,
-            lineNumber: lineNumber,
-            y: yPositions[index]
-          })
-        })
-        page.addMetadata(MetadataKey.MAIN_TEXT_LINE_DATA, { mainTextListIndex: mainTextIndex, lineData: data})
+            listIndex: index, lineNumber: lineNumber, y: yPositions[index]
+          });
+        });
+        page.addMetadata(MetadataKey.MAIN_TEXT_LINE_DATA, {mainTextListIndex: mainTextIndex, lineData: data});
       }
-      resolve(page)
-    })
+      resolve(page);
+    });
   }
 
-  _getYPositions(items : TypesetterItem[]) : number[] {
-      let yPositions: number[] = []
-      let currentY = 0
-      items.forEach( (item) => {
-        yPositions.push(currentY)
-        currentY += item.getHeight()
-      })
+  _getYPositions(items: TypesetterItem[]): number[] {
+    let yPositions: number[] = [];
+    let currentY = 0;
+    items.forEach((item) => {
+      yPositions.push(currentY);
+      currentY += item.getHeight();
+    });
 
-      this.debug && console.log(`Y Positions`)
-      this.debug && console.log(yPositions)
+    this.debug && console.log(`Y Positions`);
+    this.debug && console.log(yPositions);
 
-      return yPositions
+    return yPositions;
   }
 }

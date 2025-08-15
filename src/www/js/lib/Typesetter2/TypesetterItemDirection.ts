@@ -16,6 +16,6 @@
  *
  */
 
-export const UNDEFINED = -1
-export const HORIZONTAL = 0
-export const VERTICAL = 1
+export const UNDEFINED = -1;
+export const HORIZONTAL = 0;
+export const VERTICAL = 1;

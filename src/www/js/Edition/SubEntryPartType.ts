@@ -1,5 +1,3 @@
-
-
-export const EMPTY = ''
-export const TEXT = 'text'
-export const SIGLA = 'sigla'
+export const EMPTY = '';
+export const TEXT = 'text';
+export const SIGLA = 'sigla';

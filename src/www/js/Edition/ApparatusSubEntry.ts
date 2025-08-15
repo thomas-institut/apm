@@ -18,19 +18,21 @@
  *
  */
 
-import * as SubEntryType from './SubEntryType.js'
-import * as SubEntrySource from './SubEntrySource.js'
-import { FmtTextToken} from "../lib/FmtText/FmtTextToken";
-import { FmtTextFactory } from '../lib/FmtText/FmtTextFactory.js'
-import { FmtTextUtil } from '../lib/FmtText/FmtTextUtil.js'
-import { hashCodeInt32 } from '../toolbox/Util.mjs'
-import { WitnessDataItem } from './WitnessDataItem.js'
-export class ApparatusSubEntry {
+import * as SubEntryType from './SubEntryType.js';
+import * as SubEntrySource from './SubEntrySource.js';
+import {FmtTextToken} from "../lib/FmtText/FmtTextToken";
+import {FmtTextFactory} from '../lib/FmtText/FmtTextFactory.js';
+import {FmtTextUtil} from '../lib/FmtText/FmtTextUtil.js';
+import {hashCodeInt32} from '../toolbox/Util.mjs';
+import {WitnessDataItem} from './WitnessDataItem.js';
+import {ApparatusSubEntryInterface} from "./EditionInterface.js";
+
+export class ApparatusSubEntry implements ApparatusSubEntryInterface {
 
   plainText!: string;
   type: string;
   enabled: boolean;
-  source: string;
+  source?: string;
   fmtText: FmtTextToken[];
   witnessData: WitnessDataItem[];
   keyword: string;
@@ -38,46 +40,48 @@ export class ApparatusSubEntry {
   tags: string[];
   hash!: string;
 
-  constructor () {
-    this.type = SubEntryType.EMPTY
-    this.enabled = true
-    this.source = SubEntrySource.UNKNOWN
-    this.fmtText = FmtTextFactory.empty()
-    this.witnessData = []
-    this.keyword = ''
+  constructor() {
+    this.type = SubEntryType.EMPTY;
+    this.enabled = true;
+    this.source = SubEntrySource.UNKNOWN;
+    this.fmtText = FmtTextFactory.empty();
+    this.witnessData = [];
+    this.keyword = '';
     this.position = -1;
     this.tags = [];
   }
 
-  static clone(subEntry: ApparatusSubEntry): ApparatusSubEntry {
-    let copy = new ApparatusSubEntry()
-    copy.type = subEntry.type;
-    copy.enabled = subEntry.enabled;
-    copy.source = subEntry.source;
-    copy.fmtText = FmtTextFactory.fromAnything(subEntry.fmtText);
-    copy.position = subEntry.position;
-    copy.keyword = subEntry.keyword;
-    copy.tags = [...subEntry.tags];
-    copy.witnessData = subEntry.witnessData.map( (dataItem) => {
-      return WitnessDataItem.clone(dataItem);
-    })
-    return copy;
+  static clone(subEntry: ApparatusSubEntryInterface): ApparatusSubEntry {
+    return new ApparatusSubEntry().setFromInterface(subEntry);
   }
 
+  setFromInterface(subEntry: ApparatusSubEntryInterface): this {
+    this.type = subEntry.type;
+    this.enabled = subEntry.enabled;
+    this.source = subEntry.source;
+    this.fmtText = FmtTextFactory.fromAnything(subEntry.fmtText);
+    this.position = subEntry.position;
+    this.keyword = subEntry.keyword;
+    this.tags = [...subEntry.tags];
+    this.witnessData = subEntry.witnessData.map((dataItem) => {
+      return new WitnessDataItem().setFromInterface(dataItem);
+    });
+    return this;
+  }
 
   /**
    * Returns an Int32 hash code for the sub entry
    */
   hashString(): string {
-    let witnessDataStringRep = this.witnessData.map( (w) => {
-      return `${w.witnessIndex}:h${w.hand}`
-      }).join('_')
+    let witnessDataStringRep = this.witnessData.map((w) => {
+      return `${w.witnessIndex}:h${w.hand}`;
+    }).join('_');
     // FmtText.check(this.fmtText)
-    let stringRep = `${this.type}-${FmtTextUtil.getPlainText(this.fmtText)}-${witnessDataStringRep}`
+    let stringRep = `${this.type}-${FmtTextUtil.getPlainText(this.fmtText)}-${witnessDataStringRep}`;
     if (stringRep.length > 64) {
-      let theHash = hashCodeInt32(stringRep)
-      stringRep = stringRep.substring(0,48) + '..#' + theHash
+      let theHash = hashCodeInt32(stringRep);
+      stringRep = stringRep.substring(0, 48) + '..#' + theHash;
     }
-    return stringRep
+    return stringRep;
   }
 }

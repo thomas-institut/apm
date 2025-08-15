@@ -16,37 +16,37 @@
  *
  */
 
-import {OptionsChecker} from '@thomas-inst/optionschecker'
-import * as FmtTextTokenType from '../FmtTextTokenType.js'
-import * as FontStyle from '../FontStyle.js'
-import * as FontWeight from '../FontWeight.js'
-import * as FontSize from '../FontSize.js'
-import * as VerticalAlign from '../VerticalAlign.js'
-import { FmtTextRenderer } from './FmtTextRenderer'
+import {OptionsChecker} from '@thomas-inst/optionschecker';
+import * as FmtTextTokenType from '../FmtTextTokenType.js';
+import * as FontStyle from '../FontStyle.js';
+import * as FontWeight from '../FontWeight.js';
+import * as FontSize from '../FontSize.js';
+import * as VerticalAlign from '../VerticalAlign.js';
+import {FmtTextRenderer} from './FmtTextRenderer';
 import {FmtTextToken} from "../FmtTextToken.js";
 
 
-export class HtmlRenderer extends FmtTextRenderer{
+export class HtmlRenderer extends FmtTextRenderer {
   private options: any;
 
-  constructor (options = {}) {
-    super()
+  constructor(options = {}) {
+    super();
     let optionsSpec = {
-      plainMode: { type: 'boolean', default: false},
-      tokenClasses: { type: 'array', default: [ 'token']},
-      tokenIndexClassPrefix: { type: 'string', default: 'token-'},
-      textClasses: { type: 'array', default: ['text']},
-      glueClasses: { type: 'array', default: ['glue']}
-    }
+      plainMode: {type: 'boolean', default: false},
+      tokenClasses: {type: 'array', default: ['token']},
+      tokenIndexClassPrefix: {type: 'string', default: 'token-'},
+      textClasses: {type: 'array', default: ['text']},
+      glueClasses: {type: 'array', default: ['glue']}
+    };
 
-    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'FmtText Html Renderer'})
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'FmtText Html Renderer'});
 
-    this.options = oc.getCleanOptions(options)
+    this.options = oc.getCleanOptions(options);
     if (this.options.plainMode) {
-      this.options.tokenClasses = []
-      this.options.tokenIndexClassPrefix = ''
-      this.options.textClasses = []
-      this.options.glueClasses = []
+      this.options.tokenClasses = [];
+      this.options.tokenIndexClassPrefix = '';
+      this.options.textClasses = [];
+      this.options.glueClasses = [];
     }
   }
 
@@ -58,57 +58,57 @@ export class HtmlRenderer extends FmtTextRenderer{
    */
   render(fmtText: FmtTextToken[], lang = ''): string {
     return fmtText.map((t, i) => {
-      let tokenClasses = this.options.tokenClasses
-      let classes  = []
-      switch(t.type) {
+      let tokenClasses = this.options.tokenClasses;
+      let classes = [];
+      switch (t.type) {
         case FmtTextTokenType.GLUE:
-          tokenClasses = tokenClasses.concat(this.options.glueClasses)
-          classes  = getClassArrayForToken(this.options.tokenIndexClassPrefix, i, tokenClasses)
+          tokenClasses = tokenClasses.concat(this.options.glueClasses);
+          classes = getClassArrayForToken(this.options.tokenIndexClassPrefix, i, tokenClasses);
           if (classes.length === 0) {
-            return ' '
+            return ' ';
           }
-          return `<span class="${classes.join(' ')}"> </span>`
+          return `<span class="${classes.join(' ')}"> </span>`;
 
         case FmtTextTokenType.TEXT :
-          tokenClasses = tokenClasses.concat(this.options.textClasses)
-          classes  = getClassArrayForToken(this.options.tokenIndexClassPrefix, i, tokenClasses)
-          let spanStart = ''
-          let spanEnd = ''
+          tokenClasses = tokenClasses.concat(this.options.textClasses);
+          classes = getClassArrayForToken(this.options.tokenIndexClassPrefix, i, tokenClasses);
+          let spanStart = '';
+          let spanEnd = '';
           if (classes.length !== 0) {
-            spanStart = `<span class="${classes.join(' ')}">`
-            spanEnd = '</span>'
+            spanStart = `<span class="${classes.join(' ')}">`;
+            spanEnd = '</span>';
           }
           if (t.classList !== undefined && t.classList.indexOf('sigla') !== -1) {
             // TODO: don't use this hack. Implement a generic solution for different FmtTextToken classes
-            return `<b class="sigla">${t.text}</b>`
+            return `<b class="sigla">${t.text}</b>`;
           }
-          let textWrappers = []
+          let textWrappers = [];
           if (t.fontStyle === FontStyle.ITALIC) {
-            textWrappers.push('i')
+            textWrappers.push('i');
           }
           if (t.fontWeight === FontWeight.BOLD) {
-            textWrappers.push('b')
+            textWrappers.push('b');
           }
           if (t.verticalAlign === VerticalAlign.SUPERSCRIPT) {
-            textWrappers.push('sup')
+            textWrappers.push('sup');
           }
           if (t.verticalAlign === VerticalAlign.SUBSCRIPT) {
-            textWrappers.push('sub')
+            textWrappers.push('sub');
           }
           if (t.fontSize === FontSize.SMALL && t.verticalAlign === VerticalAlign.BASELINE) {
-            textWrappers.push('small')
+            textWrappers.push('small');
           }
-          let startWrappers = ''
+          let startWrappers = '';
           for (let j = 0; j < textWrappers.length; j++) {
-            startWrappers += `<${textWrappers[j]}>`
+            startWrappers += `<${textWrappers[j]}>`;
           }
-          let endWrappers = ''
-          for (let j = textWrappers.length -1; j >= 0; j--) {
-            endWrappers += `</${textWrappers[j]}>`
+          let endWrappers = '';
+          for (let j = textWrappers.length - 1; j >= 0; j--) {
+            endWrappers += `</${textWrappers[j]}>`;
           }
-          return `${spanStart}${startWrappers}${t.text}${endWrappers}${spanEnd}`
+          return `${spanStart}${startWrappers}${t.text}${endWrappers}${spanEnd}`;
       }
-    }).join('')
+    }).join('');
 
   }
 
@@ -122,14 +122,14 @@ export class HtmlRenderer extends FmtTextRenderer{
  * @return {string[]}
  */
 function getClassArrayForToken(indexPrefix: string, index: number, tokenClasses: string[]): string[] {
-  let indexClass = indexPrefix !== '' ? `${indexPrefix}${index}` : ''
-  let classArray: string[] = []
+  let indexClass = indexPrefix !== '' ? `${indexPrefix}${index}` : '';
+  let classArray: string[] = [];
   if (tokenClasses.length !== 0) {
-    classArray = classArray.concat(tokenClasses)
+    classArray = classArray.concat(tokenClasses);
   }
   if (indexClass !== '') {
-    classArray.push(indexClass)
+    classArray.push(indexClass);
   }
-  return classArray
+  return classArray;
 
 }

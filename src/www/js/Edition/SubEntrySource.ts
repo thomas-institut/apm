@@ -17,7 +17,6 @@
  */
 
 
-
-export const UNKNOWN = 'unknown'
-export const USER = 'user'
-export const AUTO = 'auto'
+export const UNKNOWN = 'unknown';
+export const USER = 'user';
+export const AUTO = 'auto';

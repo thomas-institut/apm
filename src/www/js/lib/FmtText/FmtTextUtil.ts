@@ -16,11 +16,10 @@
  *
  */
 
-import * as FmtTextTokenType from './FmtTextTokenType.js'
-import {FmtTextTokenFactory} from './FmtTextTokenFactory.js'
+import * as FmtTextTokenType from './FmtTextTokenType.js';
+import {FmtTextTokenFactory} from './FmtTextTokenFactory.js';
 import {FmtTextToken, FmtTextTokenInterface} from "./FmtTextToken.js";
 import {FmtTextFactory} from "./FmtTextFactory.js";
-
 
 
 export class FmtTextUtil {
@@ -33,10 +32,10 @@ export class FmtTextUtil {
       return FmtTextFactory.fromString(fmtText);
     }
     if (Array.isArray(fmtText)) {
-      let fmtTextArray: FmtTextToken[] = []
-      fmtText.forEach( (element) => {
-        fmtTextArray = fmtTextArray.concat(this.getCanonical(element))
-      })
+      let fmtTextArray: FmtTextToken[] = [];
+      fmtText.forEach((element) => {
+        fmtTextArray = fmtTextArray.concat(this.getCanonical(element));
+      });
       return fmtTextArray;
     }
     // fmtTest is a single FmtTexToken
@@ -44,7 +43,9 @@ export class FmtTextUtil {
   }
 
   static getPlainText(fmtText: FmtTextToken[] | FmtTextToken | string): string {
-     return this.getCanonical(fmtText).map( (token) => { return this.tokenGetPlainText(token)}).join('')
+    return this.getCanonical(fmtText).map((token) => {
+      return this.tokenGetPlainText(token);
+    }).join('');
   }
 
   static concat(fmtText1: FmtTextToken[] | string, fmtText2: FmtTextToken[] | string): FmtTextToken[] {
@@ -54,7 +55,7 @@ export class FmtTextUtil {
     // pushArray(newFmtText, realFmt1)
     // pushArray(newFmtText, realFmt2)
     // return newFmtText
-    return [ ...this.getCanonical(fmtText1), ...this.getCanonical(fmtText2) ];
+    return [...this.getCanonical(fmtText1), ...this.getCanonical(fmtText2)];
   }
 
   /**
@@ -69,16 +70,18 @@ export class FmtTextUtil {
    */
   static withPlainText(fmtText: FmtTextToken[], newPlainText: string): FmtTextToken[] {
     if (fmtText.length === 0) {
-      return []
+      return [];
     }
-    let textTokens = fmtText.filter( (token) => { return token.type === FmtTextTokenType.TEXT})
+    let textTokens = fmtText.filter((token) => {
+      return token.type === FmtTextTokenType.TEXT;
+    });
     if (textTokens.length === 0) {
       // no text
-      return fmtText
+      return fmtText;
     }
-    let theTextToken = FmtTextTokenFactory.clone(textTokens[0])
-    theTextToken.text = newPlainText
-    return [theTextToken]
+    let theTextToken = FmtTextTokenFactory.clone(textTokens[0]);
+    theTextToken.text = newPlainText;
+    return [theTextToken];
   }
 
   /**
@@ -87,7 +90,7 @@ export class FmtTextUtil {
    * @return {string}
    */
   static tokenGetPlainText(token: FmtTextToken | FmtTextTokenInterface): string {
-    switch(token.type) {
+    switch (token.type) {
       case FmtTextTokenType.GLUE:
         return ' ';
       case FmtTextTokenType.TEXT:

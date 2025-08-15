@@ -15,10 +15,10 @@
  *
  */
 export interface FoliationChangeInfoInterface {
-    collationTableColumn: number;
-    witnessIndex: number;
-    newFoliation: string;
-    previousFoliation: string;
+  collationTableColumn: number;
+  witnessIndex: number;
+  newFoliation: string;
+  previousFoliation: string;
 }
 
 

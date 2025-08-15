@@ -16,7 +16,7 @@
  *
  */
 
-import { deepCopy } from '../../toolbox/Util'
+import {deepCopy} from '@/toolbox/Util';
 import {CtDataInterface} from "../CtDataInterface";
 
 /**
@@ -29,12 +29,12 @@ export class CtDataUpdater {
   protected debug: any;
 
 
-  constructor (options:any = {}) {
-    this.verbose = options.verbose === undefined ? false : options.verbose
-    this.debug =  options.debug === undefined ? false : options.debug
+  constructor(options: any = {}) {
+    this.verbose = options.verbose === undefined ? false : options.verbose;
+    this.debug = options.debug === undefined ? false : options.debug;
 
     if (this.debug) {
-      this.verbose = true
+      this.verbose = true;
     }
   }
 
@@ -43,19 +43,19 @@ export class CtDataUpdater {
    * @return {string}
    */
   sourceSchemaVersion(): string {
-    return ''
+    return '';
   }
 
   targetSchemaVersion(): string {
-    return ''
+    return '';
   }
 
   update(sourceCtData: CtDataInterface): CtDataInterface {
     if (sourceCtData.schemaVersion === undefined) {
-      throw new Error('CtData does not have an schema version defined')
+      throw new Error('CtData does not have an schema version defined');
     }
     if (sourceCtData.schemaVersion !== this.sourceSchemaVersion()) {
-      throw new Error(`Cannot convert from schema version ${sourceCtData.schemaVersion}, expected version ${this.sourceSchemaVersion()}`)
+      throw new Error(`Cannot convert from schema version ${sourceCtData.schemaVersion}, expected version ${this.sourceSchemaVersion()}`);
     }
     return deepCopy(sourceCtData) as CtDataInterface;
   }

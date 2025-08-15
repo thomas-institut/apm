@@ -16,8 +16,8 @@
  *
  */
 
-import * as TypesetterItemDirection from './TypesetterItemDirection.js'
-import { TypesetterObject } from './TypesetterObject.js'
+import * as TypesetterItemDirection from './TypesetterItemDirection.js';
+import {TypesetterObject} from './TypesetterObject.js';
 
 
 /**
@@ -84,36 +84,37 @@ export class TypesetterItem extends TypesetterObject {
    *
    */
   shiftY: number = 0;
-  constructor (direction = TypesetterItemDirection.UNDEFINED) {
-    super()
+
+  constructor(direction = TypesetterItemDirection.UNDEFINED) {
+    super();
     if (this.constructor === TypesetterItem) {
-      throw new Error("Abstract classes cannot be instantiated")
+      throw new Error("Abstract classes cannot be instantiated");
     }
-    this.direction = direction
+    this.direction = direction;
   }
 
 
   getDirection(): number {
-    return this.direction
+    return this.direction;
   }
 
   getTextDirection(): string {
-    return this.textDirection
+    return this.textDirection;
   }
 
   setTextDirection(textDirection: string): this {
-    this.textDirection = textDirection
-    return this
+    this.textDirection = textDirection;
+    return this;
   }
 
   setLeftToRight(): this {
-    this.textDirection = 'ltr'
-    return this
+    this.textDirection = 'ltr';
+    return this;
   }
 
   setRightToLeft(): this {
-    this.textDirection = 'rtl'
-    return this
+    this.textDirection = 'rtl';
+    return this;
   }
 
   /**
@@ -121,77 +122,72 @@ export class TypesetterItem extends TypesetterObject {
    * @return {number}
    */
   getWidth(): number {
-    return this.width
+    return this.width;
   }
 
   setWidth(width: number) {
-    this.width = width
-    return this
+    this.width = width;
+    return this;
   }
 
   getHeight(): number {
-    return this.height
+    return this.height;
   }
 
   setHeight(height: number) {
-    this.height = height
-    return this
+    this.height = height;
+    return this;
   }
 
   getShiftX(): number {
-    return this.shiftX
+    return this.shiftX;
   }
 
 
   setShiftX(x: number): this {
-    this.shiftX = x
-    return this
+    this.shiftX = x;
+    return this;
   }
 
   getShiftY(): number {
-    return this.shiftY
+    return this.shiftY;
   }
 
   setShiftY(y: number): this {
-    this.shiftY = y
-    return this
+    this.shiftY = y;
+    return this;
   }
 
-  getExportObject () {
-    let obj =  super.getExportObject()
-    obj.class = 'TypesetterItem'
+  getExportObject() {
+    let obj = super.getExportObject();
+    obj.class = 'TypesetterItem';
     if (this.width !== -1) {
-      obj.width = this.width
+      obj.width = this.width;
     }
     if (this.height !== -1) {
-      obj.height = this.height
+      obj.height = this.height;
     }
     if (this.shiftX !== 0) {
-      obj.shiftX = this.shiftX
+      obj.shiftX = this.shiftX;
     }
-    if (this.shiftY !== 0){
-      obj.shiftY = this.shiftY
+    if (this.shiftY !== 0) {
+      obj.shiftY = this.shiftY;
     }
     if (this.direction !== TypesetterItemDirection.UNDEFINED) {
-      obj.direction = this.direction
+      obj.direction = this.direction;
     }
     if (this.textDirection !== '') {
-      obj.textDirection = this.textDirection
+      obj.textDirection = this.textDirection;
     }
-    return obj
+    return obj;
   }
 
-  setFromObject (object:any, mergeValues: boolean):this {
-    super.setFromObject(object, mergeValues)
+  setFromObject(object: any, mergeValues: boolean): this {
+    super.setFromObject(object, mergeValues);
     const template = {
-      width: -1,
-      height: -1,
-      shiftX: 0,
-      shiftY: 0,
-      direction: TypesetterItemDirection.UNDEFINED,
-      textDirection: ''
-    }
-    this.copyValues(template, object, mergeValues)
-    return this
+      width: -1, height: -1, shiftX: 0, shiftY: 0, direction: TypesetterItemDirection.UNDEFINED, textDirection: ''
+    };
+    this.copyValues(template, object, mergeValues);
+    return this;
   }
 }

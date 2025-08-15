@@ -43,11 +43,6 @@ export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
     this.debug = false;
   }
 
-
-  private getCacheKeyForTextBox(textBox: TextBox) {
-    return `${textBox.getText()}${textBox.getFontFamily()}${textBox.getFontSize()}${textBox.getFontWeight()}${textBox.getFontStyle()}`;
-  }
-
   getBoxWidth(textBox: TextBox): Promise<number> {
     if (this.useCache) {
       let cacheKey = this.getCacheKeyForTextBox(textBox);
@@ -74,6 +69,10 @@ export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
   getBoxHeight(token: any): Promise<number> {
     // use font data collected from Cairo so that canvas preview and PDF typesetting are almost identical
     return Promise.resolve(FontBaselineInfo.getBaseline(token.getFontFamily(), token.getFontSize()));
+  }
+
+  private getCacheKeyForTextBox(textBox: TextBox) {
+    return `${textBox.getText()}${textBox.getFontFamily()}${textBox.getFontSize()}${textBox.getFontWeight()}${textBox.getFontStyle()}`;
   }
 
   private getCanvas(): HTMLCanvasElement {

@@ -899,7 +899,7 @@ export class MceComposer extends ApmPage {
       chunkId: '',
       baseWitnessIndex: 0
     }
-    this.edition.infoText = `Multi chunk edition`
+    this.edition.metadata.infoText = `Multi chunk edition`
 
     this.edition.siglaGroups = this.mceData.siglaGroups
     this.edition.witnesses = this.mceData.witnesses.map((w, i) => {

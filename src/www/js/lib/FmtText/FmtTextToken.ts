@@ -17,8 +17,6 @@
  */
 
 
-
-
 /*
 
 Essentially a string with some standard attributes, or some empty space
@@ -62,13 +60,13 @@ FmtTextToken := {
  */
 
 
-import * as FmtTextTokenType from './FmtTextTokenType.js'
-import * as FontStyle from './FontStyle.js'
-import * as FontSize from './FontSize.js'
-import * as FontWeight from './FontWeight.js'
-import * as VerticalAlign from './VerticalAlign.js'
+import * as FmtTextTokenType from './FmtTextTokenType.js';
+import * as FontStyle from './FontStyle.js';
+import * as FontSize from './FontSize.js';
+import * as FontWeight from './FontWeight.js';
+import * as VerticalAlign from './VerticalAlign.js';
 
-export const DEFAULT_GLUE_SPACE = 'normal'
+export const DEFAULT_GLUE_SPACE = 'normal';
 
 export interface FmtTextTokenInterface {
 
@@ -114,136 +112,138 @@ export class FmtTextToken {
   style?: string;
 
 
-  constructor (type = FmtTextTokenType.TEXT) {
-    this.type = type
+  constructor(type = FmtTextTokenType.TEXT) {
+    this.type = type;
 
-    switch(type) {
+    switch (type) {
       case FmtTextTokenType.TEXT:
-        this.text = ''
-        this.fontStyle = FontStyle.NORMAL
-        this.fontWeight = FontWeight.NORMAL
-        this.verticalAlign = VerticalAlign.BASELINE
-        this.fontSize = FontSize.NORMAL
-        this.classList = ''  // a space-separated list of arbitrary text labels
-        this.textDirection = '' // if empty, inferred from text, otherwise it can be 'rtl' or 'ltr'
-        break
+        this.text = '';
+        this.fontStyle = FontStyle.NORMAL;
+        this.fontWeight = FontWeight.NORMAL;
+        this.verticalAlign = VerticalAlign.BASELINE;
+        this.fontSize = FontSize.NORMAL;
+        this.classList = '';  // a space-separated list of arbitrary text labels
+        this.textDirection = ''; // if empty, inferred from text, otherwise it can be 'rtl' or 'ltr'
+        break;
 
       case FmtTextTokenType.GLUE:
-        this.space = DEFAULT_GLUE_SPACE // i.e., default size, whatever that means for the typesetter/presenter context
-        break
+        this.space = DEFAULT_GLUE_SPACE; // i.e., default size, whatever that means for the typesetter/presenter context
+        break;
 
       case FmtTextTokenType.MARK:
-        this.markType = ''
-        this.style = ''
-        break
+        this.markType = '';
+        this.style = '';
+        break;
 
       default:
-        console.warn(`Unsupported type in FormattedTextToken constructor: ${type}`)
-        this.type = FmtTextTokenType.EMPTY
+        console.warn(`Unsupported type in FormattedTextToken constructor: ${type}`);
+        this.type = FmtTextTokenType.EMPTY;
     }
   }
 
-  getPlainText() : string {
-    return this.type === FmtTextTokenType.GLUE ? ' ' : (this.text ?? '')
+  getPlainText(): string {
+    return this.type === FmtTextTokenType.GLUE ? ' ' : (this.text ?? '');
   }
 
   setText(text: string): this {
-    this.text = text
-    return this
+    this.text = text;
+    return this;
   }
 
   setFontSize(fontSize: number): this {
-    this.fontSize = fontSize
-    return this
+    this.fontSize = fontSize;
+    return this;
   }
 
   setItalic(): this {
-    this.fontStyle = FontStyle.ITALIC
-    return this
+    this.fontStyle = FontStyle.ITALIC;
+    return this;
   }
 
   setNormalSlant(): this {
-    this.fontStyle = FontStyle.NORMAL
-    return this
+    this.fontStyle = FontStyle.NORMAL;
+    return this;
   }
 
   setBold(): this {
-    this.fontWeight = FontWeight.BOLD
-    return this
+    this.fontWeight = FontWeight.BOLD;
+    return this;
   }
 
   setNormalWeight(): this {
-    this.fontWeight = FontWeight.NORMAL
-    return this
+    this.fontWeight = FontWeight.NORMAL;
+    return this;
   }
 
   setLength(spaceLength: string) {
-    this.space = spaceLength
-    return this
+    this.space = spaceLength;
+    return this;
   }
 
   setSuperScript(): this {
-    this.verticalAlign = VerticalAlign.SUPERSCRIPT
-    return this
+    this.verticalAlign = VerticalAlign.SUPERSCRIPT;
+    return this;
   }
 
   setSubScript(): this {
-    this.verticalAlign = VerticalAlign.SUBSCRIPT
-    return this
+    this.verticalAlign = VerticalAlign.SUBSCRIPT;
+    return this;
   }
 
   setSmallFont(): this {
-    this.fontSize = FontSize.SMALL
-    return this
+    this.fontSize = FontSize.SMALL;
+    return this;
   }
 
   setClass(classList: string): this {
-    this.classList = classList
-    return this
+    this.classList = classList;
+    return this;
   }
 
   addClass(className: string) {
     if (this.classList === '') {
-      this.classList = className
+      this.classList = className;
     } else {
-      this.classList += ' '
-      this.classList += className
+      this.classList += ' ';
+      this.classList += className;
     }
-    return this
+    return this;
   }
 
   removeClass(className: string) {
-    let classArray = this.classList?.split(' ') ?? []
-    this.classList = classArray.filter( (currentClassName) => { return currentClassName !== className}).join(' ')
+    let classArray = this.classList?.split(' ') ?? [];
+    this.classList = classArray.filter((currentClassName) => {
+      return currentClassName !== className;
+    }).join(' ');
     if (this.classList.trim() === '') {
-      this.classList = undefined
+      this.classList = undefined;
     }
-    return this
+    return this;
   }
 
   setMarkType(markType: string) {
-    this.type = FmtTextTokenType.MARK
-    this.markType = markType
-    this.style = ''
-    return this
+    this.type = FmtTextTokenType.MARK;
+    this.markType = markType;
+    this.style = '';
+    return this;
   }
 
-  setStyle(style: string):this {
-    this.style = style
-    return this
+  setStyle(style: string): this {
+    this.style = style;
+    return this;
   }
 
   setTextDirection(textDirection: string): this {
-    this.textDirection = textDirection
-    return this
+    this.textDirection = textDirection;
+    return this;
   }
 
-  setGlue(width: number, stretch = 0, shrink = 0 ): this {
-    this.space = ''
-    this.width = width
-    this.stretch = stretch
-    this.shrink = shrink
-    return this
+  setGlue(width: number, stretch = 0, shrink = 0): this {
+    this.space = '';
+    this.width = width;
+    this.stretch = stretch;
+    this.shrink = shrink;
+    return this;
   }
 
 }

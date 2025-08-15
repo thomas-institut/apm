@@ -22,39 +22,43 @@
  * @param theArray
  */
 export function uniq(theArray: any[]): any[] {
-  return theArray.filter( (item, pos) =>{ return theArray.indexOf(item) === pos})
+  return theArray.filter((item, pos) => {
+    return theArray.indexOf(item) === pos;
+  });
 }
 
 export function swapElements(theArray: any[], index1: number, index2: number): any[] {
-  let element1 = theArray[index1]
-  theArray[index1] = theArray[index2]
-  theArray[index2] = element1
-  return theArray
+  let element1 = theArray[index1];
+  theArray[index1] = theArray[index2];
+  theArray[index2] = element1;
+  return theArray;
 }
 
-export function arraysAreEqual(array1: any[], array2: any[], comparisonFunction = function (a: any,b: any) { return a===b }, depth= 1) {
+export function arraysAreEqual(array1: any[], array2: any[], comparisonFunction = function (a: any, b: any) {
+  return a === b;
+}, depth = 1) {
   if (array1.length !== array2.length) {
-    return false
+    return false;
   }
   if (depth === 1) {
     // simple element by element comparison
-    for(let i = 0; i < array1.length; i++ ) {
+    for (let i = 0; i < array1.length; i++) {
       if (!comparisonFunction(array1[i], array2[i])) {
-        return false
+        return false;
       }
     }
-    return true
+    return true;
   }
   for (let i = 0; i < array1.length; i++) {
-    if (!arraysAreEqual(array1[i], array2[i], comparisonFunction, depth-1)) {
-      return false
+    if (!arraysAreEqual(array1[i], array2[i], comparisonFunction, depth - 1)) {
+      return false;
     }
   }
-  return true
+  return true;
 }
 
-export function varsAreEqual(var1:any, var2:any) {
-  return JSON.stringify(var1) === JSON.stringify(var2)
+export function varsAreEqual(var1: any, var2: any) {
+  return JSON.stringify(var1) === JSON.stringify(var2);
 }
 
 /**
@@ -64,52 +68,59 @@ export function varsAreEqual(var1:any, var2:any) {
  * @param array2
  */
 export function arraysHaveTheSameValues(array1: any[], array2: any[]) {
-  return array1.sort().join(' ') === array2.sort().join(' ')
+  return array1.sort().join(' ') === array2.sort().join(' ');
 }
 
 
 export function prettyPrintArray(array: any[]) {
-  return '[' + array.map( (e) => { return e.toString()}).join(', ') + ']'
+  return '[' + array.map((e) => {
+    return e.toString();
+  }).join(', ') + ']';
 }
+
 export function createSequenceArray(from: number, to: number, increment = 1): number[] {
-  let theArray = []
-  for (let i = from; i <= to; i+=increment) {
-    theArray.push(i)
+  let theArray = [];
+  for (let i = from; i <= to; i += increment) {
+    theArray.push(i);
   }
-  return theArray
+  return theArray;
 }
 
 export function createIndexArray(size: number): number[] {
-  return createSequenceArray(0, size-1, 1)
+  return createSequenceArray(0, size - 1, 1);
 }
 
 export function flatten(theArray: any[]): any[] {
-  let flattenedArray: any[] = []
-  theArray.forEach( (arrayElement) => {
+  let flattenedArray: any[] = [];
+  theArray.forEach((arrayElement) => {
     if (Array.isArray(arrayElement)) {
-      flattenedArray.push(...flatten(arrayElement))
+      flattenedArray.push(...flatten(arrayElement));
     } else {
-      flattenedArray.push(arrayElement)
+      flattenedArray.push(arrayElement);
     }
-  })
-  return flattenedArray
+  });
+  return flattenedArray;
 }
 
 export function numericSort(theArray: any[], asc = true): any[] {
-  return theArray.sort( (a,b) => {
-    if (asc) { return a-b}
-    return b-a
-  })
+  return theArray.sort((a, b) => {
+    if (asc) {
+      return a - b;
+    }
+    return b - a;
+  });
 }
 
 /**
  * Sorts an array based on the numeric value of a field in its elements
  */
-export function numericFieldSort(theArray:any[], fieldName: string, asc= true): any[] {
-  return theArray.sort( (a,b) => {
-    if (asc) { return a[fieldName]-b[fieldName]}
-    return b[fieldName]-a[fieldName]
-  })
+export function numericFieldSort(theArray: any[], fieldName: string, asc = true): any[] {
+  return theArray.sort((a, b) => {
+    if (asc) {
+      return a[fieldName] - b[fieldName];
+    }
+    return b[fieldName] - a[fieldName];
+  });
 }
 
 /**
@@ -119,27 +130,27 @@ export function numericFieldSort(theArray:any[], fieldName: string, asc= true): 
  * @param asc
  */
 export function stringFieldSort(theArray: any[], fieldName: string, asc = true): any[] {
-  return theArray.sort( (a,b) => {
-    let x = a[fieldName].toLowerCase()
-    let y = b[fieldName].toLowerCase()
+  return theArray.sort((a, b) => {
+    let x = a[fieldName].toLowerCase();
+    let y = b[fieldName].toLowerCase();
     if (x < y) {
-      return asc ? -1 : 1
+      return asc ? -1 : 1;
     }
     if (x > y) {
-      return asc ? 1 : -1
+      return asc ? 1 : -1;
     }
-    return 0
-  })
+    return 0;
+  });
 }
 
 /**
  * Pushes all the elements of an array into another one
  * @deprecated use  `theArray.push(...arrayToPush)`
  */
-export function pushArray(theArray: any[], arrayToPush:any[]) {
-  return theArray.push(...arrayToPush)
+export function pushArray(theArray: any[], arrayToPush: any[]) {
+  return theArray.push(...arrayToPush);
 }
 
 export function allTrue(someArray: boolean[]) {
-  return someArray.every( element => element)
+  return someArray.every(element => element);
 }

@@ -16,48 +16,48 @@
  *
  */
 
-import { CtDataCleaner } from './CtDataCleaner'
-import * as TokenClass from '../../constants/CollationTableType'
-import * as TranscriptionTokenType from '../../Witness/WitnessTokenType'
-import { deepCopy } from '../../toolbox/Util'
+import {CtDataCleaner} from './CtDataCleaner';
+import * as TokenClass from '../../constants/CollationTableType';
+import * as TranscriptionTokenType from '../../Witness/WitnessTokenType';
+import {deepCopy} from '@/toolbox/Util';
 import {CtDataInterface} from "../CtDataInterface";
 
 export class EditionWitnessReferencesCleaner extends CtDataCleaner {
 
 
-  getCleanCtData (sourceCtData: CtDataInterface) {
-    let ctData = deepCopy(sourceCtData)
+  getCleanCtData(sourceCtData: CtDataInterface) {
+    let ctData = deepCopy(sourceCtData);
 
-    this.verbose && console.log(`Checking for -1 references in edition witness`)
+    this.verbose && console.log(`Checking for -1 references in edition witness`);
 
-    let editionWitnessIndex = ctData['editionWitnessIndex']
+    let editionWitnessIndex = ctData['editionWitnessIndex'];
     if (editionWitnessIndex === undefined) {
       // not an edition, nothing to do
-      return ctData
+      return ctData;
     }
-    let editionWitnessTokens = ctData.witnesses[editionWitnessIndex]['tokens']
-    let ctEditionRow = ctData.collationMatrix[editionWitnessIndex]
+    let editionWitnessTokens = ctData.witnesses[editionWitnessIndex]['tokens'];
+    let ctEditionRow = ctData.collationMatrix[editionWitnessIndex];
 
-    let foundNullRef = false
-    let newEditionWitnessTokens = ctEditionRow.map ( (ref: number, i: number) => {
+    let foundNullRef = false;
+    let newEditionWitnessTokens = ctEditionRow.map((ref: number, i: number) => {
       if (ref === -1) {
-        this.debug && console.log(`Adding empty token in edition witness at column ${i}`)
-        foundNullRef = true
-        return { 'tokenClass':  TokenClass.EDITION, 'tokenType': TranscriptionTokenType.EMPTY, 'text': ''}
+        this.debug && console.log(`Adding empty token in edition witness at column ${i}`);
+        foundNullRef = true;
+        return {'tokenClass': TokenClass.EDITION, 'tokenType': TranscriptionTokenType.EMPTY, 'text': ''};
       }
-      return editionWitnessTokens[ref]
-    })
+      return editionWitnessTokens[ref];
+    });
 
     if (foundNullRef) {
-      let newCtEditionRow = ctEditionRow.map( (_ref: number, i: number) => {
+      let newCtEditionRow = ctEditionRow.map((_ref: number, i: number) => {
         return i;
-      })
-      ctData.witnesses[editionWitnessIndex]['tokens'] = newEditionWitnessTokens
-      ctData.collationMatrix[editionWitnessIndex] = newCtEditionRow
+      });
+      ctData.witnesses[editionWitnessIndex]['tokens'] = newEditionWitnessTokens;
+      ctData.collationMatrix[editionWitnessIndex] = newCtEditionRow;
 
     } else {
-      this.verbose && console.log('...all good, none found')
+      this.verbose && console.log('...all good, none found');
     }
-    return ctData
+    return ctData;
   }
 }

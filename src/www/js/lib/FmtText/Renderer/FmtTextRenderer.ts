@@ -16,7 +16,7 @@
  *
  */
 
-import { FmtTextToken } from '../FmtTextToken.js'
+import {FmtTextToken} from '../FmtTextToken.js';
 import {FmtTextUtil} from '../FmtTextUtil';
 
 /**
@@ -30,7 +30,7 @@ export class FmtTextRenderer {
    * The default is to return the plain text version of the text
    */
   render(fmtText: FmtTextToken[], lang = ''): any {
-    return FmtTextUtil.getPlainText(fmtText)
+    return FmtTextUtil.getPlainText(fmtText);
   }
 
 }

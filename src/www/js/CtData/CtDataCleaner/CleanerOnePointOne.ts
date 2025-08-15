@@ -16,25 +16,25 @@
  *
  */
 
-import { CtData } from '../CtData'
-import { CtDataCleaner } from './CtDataCleaner'
-import { FmtTextFactory } from '@/lib/FmtText/FmtTextFactory'
-import { deepCopy } from '../../toolbox/Util'
-import * as CollationTableType from '../../Witness/WitnessTokenClass'
-import { CollationTableConsistencyCleaner } from './CollationTableConsistencyCleaner'
-import { EditionWitnessReferencesCleaner } from './EditionWitnessReferencesCleaner'
-import { DefaultApparatusesCleaner } from './DefaultApparatusesCleaner'
+import {CtData} from '../CtData';
+import {CtDataCleaner} from './CtDataCleaner';
+import {FmtTextFactory} from '@/lib/FmtText/FmtTextFactory';
+import {deepCopy} from '@/toolbox/Util';
+import * as CollationTableType from '../../Witness/WitnessTokenClass';
+import {CollationTableConsistencyCleaner} from './CollationTableConsistencyCleaner';
+import {EditionWitnessReferencesCleaner} from './EditionWitnessReferencesCleaner';
+import {DefaultApparatusesCleaner} from './DefaultApparatusesCleaner';
 import {CtDataInterface} from "../CtDataInterface";
 
-export class CleanerOnePointOne extends CtDataCleaner{
+export class CleanerOnePointOne extends CtDataCleaner {
   private ctData!: CtDataInterface;
 
   constructor(options = {}) {
-    super(options)
+    super(options);
   }
 
-  sourceSchemaVersion () {
-    return '1.1'
+  sourceSchemaVersion() {
+    return '1.1';
   }
 
   /**
@@ -48,52 +48,52 @@ export class CleanerOnePointOne extends CtDataCleaner{
    * @return {*}
    */
   getCleanCtData(ctData: CtDataInterface): CtDataInterface {
-    this.ctData = super.getCleanCtData(ctData)
+    this.ctData = super.getCleanCtData(ctData);
 
     // fix -1 references in edition witness
     if (this.ctData['type'] === CollationTableType.EDITION) {
-      let referencesCleaner = new EditionWitnessReferencesCleaner({verbose: this.verbose})
-      this.ctData = referencesCleaner.getCleanCtData(this.ctData)
+      let referencesCleaner = new EditionWitnessReferencesCleaner({verbose: this.verbose});
+      this.ctData = referencesCleaner.getCleanCtData(this.ctData);
     }
 
     // consistency check
-    let consistencyCleaner = new CollationTableConsistencyCleaner({verbose: this.verbose})
-    this.ctData = consistencyCleaner.getCleanCtData(this.ctData)
+    let consistencyCleaner = new CollationTableConsistencyCleaner({verbose: this.verbose});
+    this.ctData = consistencyCleaner.getCleanCtData(this.ctData);
 
 
     if (this.ctData['type'] === CollationTableType.EDITION) {
-      let defaultApparatusesCleaner = new DefaultApparatusesCleaner({verbose: this.verbose})
-      this.ctData = defaultApparatusesCleaner.getCleanCtData(this.ctData)
+      let defaultApparatusesCleaner = new DefaultApparatusesCleaner({verbose: this.verbose});
+      this.ctData = defaultApparatusesCleaner.getCleanCtData(this.ctData);
 
-       this.ctData = this.cleanCustomApparatusesOnePointOne(this.ctData)
+      this.ctData = this.cleanCustomApparatusesOnePointOne(this.ctData);
       // this may not be necessary
-      this.ctData = CtData.fixFmtText(this.ctData)
+      this.ctData = CtData.fixFmtText(this.ctData);
     }
 
-    return this.ctData
+    return this.ctData;
   }
 
   cleanCustomApparatusesOnePointOne(ctDataToClean: CtDataInterface): CtDataInterface {
-    let ctData: CtDataInterface = deepCopy(ctDataToClean)
-    ctData['customApparatuses'] = ctData['customApparatuses'].map( (app) => {
+    let ctData: CtDataInterface = deepCopy(ctDataToClean);
+    ctData['customApparatuses'] = ctData['customApparatuses'].map((app) => {
       app.entries = app.entries.map((entry, entryIndex) => {
         // fix bad lemma values
         if (entry.lemma !== '' && typeof entry.lemma === 'string') {
-          let validLemmaStrings = ['', 'dash', 'ellipsis']
+          let validLemmaStrings = ['', 'dash', 'ellipsis'];
           if (validLemmaStrings.indexOf(entry.lemma) === -1) {
             //invalid lemma string, convert to FmtText
-            this.verbose && console.log(`Fixed invalid lemma string '${entry['lemma']}' in apparatus '${app['type']}', entry ${entryIndex}`)
-            entry.lemma = FmtTextFactory.fromString(entry.lemma)
+            this.verbose && console.log(`Fixed invalid lemma string '${entry['lemma']}' in apparatus '${app['type']}', entry ${entryIndex}`);
+            entry.lemma = FmtTextFactory.fromString(entry.lemma);
           }
         }
-        return entry
-      })
-      return app
-    })
+        return entry;
+      });
+      return app;
+    });
 
-    ctData = CtData.fixReferencesToEmptyTokensInEditionWitness(ctData)
-    ctData = CtData.fixDuplicatedEntriesInCustomApparatuses(ctData)
+    ctData = CtData.fixReferencesToEmptyTokensInEditionWitness(ctData);
+    ctData = CtData.fixDuplicatedEntriesInCustomApparatuses(ctData);
 
-    return ctData
+    return ctData;
   }
 }

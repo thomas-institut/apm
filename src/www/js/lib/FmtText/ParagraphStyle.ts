@@ -17,7 +17,7 @@
  */
 
 
-export const NORMAL = ''
-export const HEADING1 = 'h1'
-export const HEADING2 = 'h2'
-export const HEADING3 = 'h3'
+export const NORMAL = '';
+export const HEADING1 = 'h1';
+export const HEADING2 = 'h2';
+export const HEADING3 = 'h3';

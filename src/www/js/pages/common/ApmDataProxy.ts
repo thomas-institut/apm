@@ -26,7 +26,6 @@ import {SimpleLockManager} from '@/toolbox/SimpleLockManager';
 import * as Entity from '../../constants/Entity';
 import {EntityDataInterface} from "../../../schema/Schema";
 import {WitnessUpdateData} from "@/Api/Interfaces/WitnessUpdates";
-import {TimeString} from "@/toolbox/TimeString";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour

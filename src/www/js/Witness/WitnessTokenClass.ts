@@ -17,5 +17,5 @@
  */
 
 
-export const FULL_TX = 'fullTx'
-export const EDITION = 'edition'
+export const FULL_TX = 'fullTx';
+export const EDITION = 'edition';

@@ -45,7 +45,9 @@ import {UpdaterToOnePointFour} from './CtDataUpdater/UpdaterToOnePointFour';
 import {UpdaterToOnePointFive} from "./CtDataUpdater/UpdaterToOnePointFive";
 import {CleanerOnePointFive} from "./CtDataCleaner/CleanerOnePointFive";
 import {Punctuation} from '@/defaults/Punctuation';
-import {CtDataInterface, NonTokenItemIndex, WitnessInterface, WitnessTokenInterface} from "./CtDataInterface";
+import {
+  ColumnInformation, CtDataInterface, NonTokenItemIndex, WitnessInterface, WitnessTokenInterface
+} from "./CtDataInterface";
 import {FULL_TX} from "@/Witness/WitnessType";
 import {NormalizerRegister} from "@/pages/common/NormalizerRegister";
 import {ApparatusInterface} from "@/Edition/EditionInterface";
@@ -57,12 +59,6 @@ import {ApparatusInterface} from "@/Edition/EditionInterface";
 
 
 const schemaVersions = ['0', '1.0', '1.1', '1.2', '1.3', '1.4', '1.5'];
-
-
-export interface ColumnInformation {
-  pageId: number,
-  column: number,
-}
 
 
 export class CtData {

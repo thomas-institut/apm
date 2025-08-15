@@ -110,8 +110,7 @@ export class BasicTypesetter extends Typesetter2 {
         marginaliaOptions: {type: 'object', default: {}},
         apparatusesAtEndOfDocument: {type: 'boolean', default: false},
         textBoxMeasurer: {
-          type: 'object',
-          objectClass: TextBoxMeasurer
+          type: 'object', objectClass: TextBoxMeasurer
         }, // A function to typeset an apparatus for the given line range must return a Promise
         // for a horizontal ItemList that will then be typeset and added to the document/page
         getApparatusListToTypeset: {
@@ -550,10 +549,7 @@ export class BasicTypesetter extends Typesetter2 {
           firstLine: firstLine, pageNumber: 1
         };
         let bestPage: BestPage = {
-          firstLine: firstLine,
-          lastLine: firstLine - 1,
-          badness: INFINITE_VERTICAL_BADNESS,
-          list: null
+          firstLine: firstLine, lastLine: firstLine - 1, badness: INFINITE_VERTICAL_BADNESS, list: null
         };
         let lastLookedAheadList = null;
         let linesLookedAhead = 0;
@@ -585,10 +581,7 @@ export class BasicTypesetter extends Typesetter2 {
             currentPage.firstLine = currentLine;
             // reset best page
             bestPage = {
-              firstLine: currentLine + 1,
-              lastLine: currentLine,
-              badness: INFINITE_VERTICAL_BADNESS,
-              list: null
+              firstLine: currentLine + 1, lastLine: currentLine, badness: INFINITE_VERTICAL_BADNESS, list: null
             };
             // reset look ahead info
             lastLookedAheadList = null;
@@ -632,10 +625,7 @@ export class BasicTypesetter extends Typesetter2 {
                 currentPage.pageNumber += ejectedPages.length;
                 // reset best page
                 bestPage = {
-                  firstLine: currentLine + 1,
-                  lastLine: currentLine,
-                  badness: INFINITE_VERTICAL_BADNESS,
-                  list: null
+                  firstLine: currentLine + 1, lastLine: currentLine, badness: INFINITE_VERTICAL_BADNESS, list: null
                 };
                 // reset look ahead info
                 lastLookedAheadList = null;
@@ -674,10 +664,7 @@ export class BasicTypesetter extends Typesetter2 {
           this.debug && console.log(`===================`);
           thePages.push(...this.ejectPage(verticalListWithLastHangingLines, currentPage.pageNumber, bestPage.lastLine + 1, lastLine));
           pageTypesettingData.push({
-            firstLine: bestPage.lastLine + 1,
-            lastLine: lastLine,
-            badness: -1,
-            linesLookedAhead: 0
+            firstLine: bestPage.lastLine + 1, lastLine: lastLine, badness: -1, linesLookedAhead: 0
           });
         }
         this.debug && console.log(`Max lines looked ahead: ${maxLinesLookedAhead}`);

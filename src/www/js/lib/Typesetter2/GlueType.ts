@@ -1,3 +1,5 @@
+// noinspection JSUnusedGlobalSymbols
+
 /*
  *  Copyright (C) 2022 Universität zu Köln
  *

@@ -2,10 +2,10 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { tr } from './SiteLang'
 import { ApmDataProxy } from './ApmDataProxy'
 import { ApmPage } from '../ApmPage'
-import { wait } from '../../toolbox/wait'
+import { wait } from '@/toolbox/wait'
 import { GetDataAndProcessDialog } from './GetDataAndProcessDialog'
 import * as Entity from '../../constants/Entity'
-import {getIntVal, getStringVal} from "../../toolbox/UiToolBox";
+import {getIntVal, getStringVal} from "@/toolbox/UiToolBox";
 
 export class DocumentCreationDialog {
   private options: any;

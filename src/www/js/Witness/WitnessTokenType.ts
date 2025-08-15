@@ -18,11 +18,11 @@
 
 
 // Basic
-export const WORD = 'word'
-export const WHITESPACE = 'whitespace'
-export const PUNCTUATION = 'punctuation'
-export const EMPTY = 'empty'
+export const WORD = 'word';
+export const WHITESPACE = 'whitespace';
+export const PUNCTUATION = 'punctuation';
+export const EMPTY = 'empty';
 
 // Used in EditionWitnessToken
-export const FORMAT_MARK = 'formatMark'
-export const NUMBERING_LABEL = 'numberingLabel'
+export const FORMAT_MARK = 'formatMark';
+export const NUMBERING_LABEL = 'numberingLabel';

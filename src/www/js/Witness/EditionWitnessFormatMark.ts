@@ -23,4 +23,4 @@
 
 
 
-export const PARAGRAPH_END = 'par_end'
+export const PARAGRAPH_END = 'par_end';

@@ -16,528 +16,558 @@
  *
  */
 
-import * as Entity from './constants/Entity'
-import { Tid } from './Tid/Tid'
+import * as Entity from './constants/Entity';
+import {Tid} from './Tid/Tid';
 import {TimeString} from "@/toolbox/TimeString.mjs";
 
 export class ApmUrlGenerator {
-    private base: string = '';
-    private apiBase!:string;
-
-    /**
-     *
-     * @param {string }baseUrl
-     */
-    constructor(baseUrl: string) {
-        this.setBase(baseUrl);
-    }
-
-    /**
-     *
-     * @param {string}url
-     */
-    setBase(url: string) {
-        this.base = url;
-        this.apiBase = url + '/api';
-    }
-
-    // -------------------------------
-    //  SITE
-    // -------------------------------
-
-    siteHome() {
-        return this.base;
-    }
-
-    siteDashboard(): string {
-        return `${this.base}/dashboard`
-    }
-
-    siteLogout(): string {
-        return `${this.base}/logout`
-    }
-
-    siteLogin(): string {
-        return `${this.base}/login`
-    }
-
-    siteCollationTableCustom(work: string, chunkNumber : number, lang : string) {
-        return this.base + '/collation-table/auto/' + work + '/' + chunkNumber + '/' + lang + '/custom';
-    }
-    siteCollationTablePreset(work : string, chunkNumber: number, presetId: number) {
-        return this.base + '/collation-table/auto/' + work + '/' + chunkNumber + '/preset/' + presetId;
-    }
-
-    /**
-     * If the input is a string, returns the string unchanged. Otherwise,
-     * if necessary, converts the id to an integer and returns its base36 representation
-     *
-     * E.g.  'asdf' =>  'asdf',  1234 => '0000-00YA'
-     *
-     * @param {any}id
-     * @return {string}
-     */
-    getFormattedId(id:any): string {
-        if (typeof id === 'string') {
-            return id;
-        }
-        if (typeof id === 'number') {
-            return Tid.toBase36String(id);
-        }
-
-        return Tid.toBase36String(parseInt(id.toString()));
-    }
-
-    sitePageView(docId: any, pageSequence: number, col: number|null = null): string {
-        let url = `${this.base}/doc/${this.getFormattedId(docId)}/page/${pageSequence}/view`;
-        if (col !== null && col > 0) {
-            url += `/c/${col}`
-        }
-        return url;
-    }
-
-    siteChunkPage(work: string, chunkNumber : number): string {
-        return `${this.base}/work/${work}/chunk/${chunkNumber}`
-    }
-
-    siteWorks() : string{
-        return `${this.base}/works`;
-    }
-
-    siteWorkPage(workId: any): string {
-        return `${this.base}/work/${this.getFormattedId(workId)}`;
-    }
-
-    /**
-     *
-     * @param {string}docId
-     * @returns {string}
-     */
-    siteDocPage(docId: string): string {
-        return `${this.base}/doc/${this.getFormattedId(docId)}`;
-    }
-
-    siteDocDefinePages(docId: string) {
-        return `${this.base}/doc/${docId}/definepages`
-    }
+  private base: string = '';
+  private apiBase!: string;
+
+  /**
+   *
+   * @param {string }baseUrl
+   */
+  constructor(baseUrl: string) {
+    this.setBase(baseUrl);
+  }
+
+  /**
+   *
+   * @param {string}url
+   */
+  setBase(url: string) {
+    this.base = url;
+    this.apiBase = url + '/api';
+  }
+
+  // -------------------------------
+  //  SITE
+  // -------------------------------
+
+  siteHome() {
+    return this.base;
+  }
+
+  siteDashboard(): string {
+    return `${this.base}/dashboard`;
+  }
+
+  siteLogout(): string {
+    return `${this.base}/logout`;
+  }
+
+  siteLogin(): string {
+    return `${this.base}/login`;
+  }
+
+  siteCollationTableCustom(work: string, chunkNumber: number, lang: string) {
+    return this.base + '/collation-table/auto/' + work + '/' + chunkNumber + '/' + lang + '/custom';
+  }
+
+  siteCollationTablePreset(work: string, chunkNumber: number, presetId: number) {
+    return this.base + '/collation-table/auto/' + work + '/' + chunkNumber + '/preset/' + presetId;
+  }
+
+  /**
+   * If the input is a string, returns the string unchanged. Otherwise,
+   * if necessary, converts the id to an integer and returns its base36 representation
+   *
+   * E.g.  'asdf' =>  'asdf',  1234 => '0000-00YA'
+   *
+   * @param {any}id
+   * @return {string}
+   */
+  getFormattedId(id: any): string {
+    if (typeof id === 'string') {
+      return id;
+    }
+    if (typeof id === 'number') {
+      return Tid.toBase36String(id);
+    }
+
+    return Tid.toBase36String(parseInt(id.toString()));
+  }
+
+  sitePageView(docId: any, pageSequence: number, col: number | null = null): string {
+    let url = `${this.base}/doc/${this.getFormattedId(docId)}/page/${pageSequence}/view`;
+    if (col !== null && col > 0) {
+      url += `/c/${col}`;
+    }
+    return url;
+  }
+
+  siteChunkPage(work: string, chunkNumber: number): string {
+    return `${this.base}/work/${work}/chunk/${chunkNumber}`;
+  }
+
+  siteWorks(): string {
+    return `${this.base}/works`;
+  }
+
+  siteWorkPage(workId: any): string {
+    return `${this.base}/work/${this.getFormattedId(workId)}`;
+  }
+
+  /**
+   *
+   * @param {string}docId
+   * @returns {string}
+   */
+  siteDocPage(docId: string): string {
+    return `${this.base}/doc/${this.getFormattedId(docId)}`;
+  }
+
+  siteDocDefinePages(docId: string) {
+    return `${this.base}/doc/${docId}/definepages`;
+  }
+
+  siteDocs() {
+    return this.base + '/documents';
+  }
 
-    siteDocs() {
-        return this.base + '/documents'
-    }
-
-    siteChunks() {
-        return this.base + '/works'
-    }
-
-    siteUsers() {
-        return this.base + '/users'
-    }
-
-    siteSearch() {
-        return this.base + '/search'
-    }
+  siteChunks() {
+    return this.base + '/works';
+  }
 
-    siteSearchNew() {
-        return this.base + '/searchnew'
-    }
-
-    sitePerson(id: any) {
-        return `${this.base}/person/${this.getFormattedId(id)}`;
-    }
+  siteUsers() {
+    return this.base + '/users';
+  }
 
-    sitePeople() {
-        return this.base + '/people'
-    }
+  siteSearch() {
+    return this.base + '/search';
+  }
 
-    siteMultiChunkEdition(editionId:number) {
-        return `${this.base}/multi-chunk-edition/${editionId}`
-    }
+  siteSearchNew() {
+    return this.base + '/searchnew';
+  }
 
-    siteMultiChunkEditionNew() {
-        return `${this.base}/multi-chunk-edition/new`
-    }
+  sitePerson(id: any) {
+    return `${this.base}/person/${this.getFormattedId(id)}`;
+  }
 
-    siteCollationTableAutomatic(work : string, chunkNumber: number, lang: string, ids : (number|string)[] = []) {
-        let extra = '';
-        if (ids.length > 0) {
-            extra = '/' + ids.join('/');
-        }
-        return this.base + '/collation-table/auto/' + work + '/' + chunkNumber + '/' + lang + extra;
-    }
-    siteCollationTableEdit(tableId: number, version = 0) {
-        let postfix = ''
-        if (version !== 0) {
-            postfix = `/${version}`
-        }
-        return `${this.base}/collation-table/${tableId}${postfix}`
-    }
+  sitePeople() {
+    return this.base + '/people';
+  }
 
-    siteChunkEdition(editionId: number, version = 0) {
-        let postfix = ''
-        if (version !== 0) {
-            postfix = `/${version}`
-        }
-        return `${this.base}/chunk-edition/${editionId}${postfix}`
-    }
+  siteMultiChunkEdition(editionId: number) {
+    return `${this.base}/multi-chunk-edition/${editionId}`;
+  }
 
-    siteChunkEditionNew(workId: string, chunkNumber: number, lang: string) {
-        return `${this.base}/chunk-edition/new/${workId}/${chunkNumber}/${lang}`;
-    }
+  siteMultiChunkEditionNew() {
+    return `${this.base}/multi-chunk-edition/new`;
+  }
 
-    siteEditCollationTableBeta(tableId: number) {
-        return this.base + '/collation-table/edit/' + tableId + '/beta'
+  siteCollationTableAutomatic(work: string, chunkNumber: number, lang: string, ids: (number | string)[] = []) {
+    let extra = '';
+    if (ids.length > 0) {
+      extra = '/' + ids.join('/');
     }
+    return this.base + '/collation-table/auto/' + work + '/' + chunkNumber + '/' + lang + extra;
+  }
 
-    siteBlankThumbnail() {
-        return `${this.base}/images/thumbnail-blank.png`
+  siteCollationTableEdit(tableId: number, version = 0) {
+    let postfix = '';
+    if (version !== 0) {
+      postfix = `/${version}`;
     }
+    return `${this.base}/collation-table/${tableId}${postfix}`;
+  }
 
-    siteOpenSeadragonIconsPrefix() {
-        return `${this.base}/node_modules/openseadragon/build/openseadragon/images/`
+  siteChunkEdition(editionId: number, version = 0) {
+    let postfix = '';
+    if (version !== 0) {
+      postfix = `/${version}`;
     }
+    return `${this.base}/chunk-edition/${editionId}${postfix}`;
+  }
 
-    /**
-     *
-     * @param {number}entityType
-     * @param {number}entityId
-     */
-    siteEntityPage(entityType: number, entityId: number|string) {
-        switch (entityType) {
-            case Entity.tPerson:
-                return this.sitePerson(this.getFormattedId(entityId));
-
-            case Entity.tWork:
-                return this.siteWorkPage(this.getFormattedId(entityId));
-
-            case Entity.tDocument:
-                return this.siteDocPage(this.getFormattedId(entityId));
-        }
-        return '';
-    }
+  siteChunkEditionNew(workId: string, chunkNumber: number, lang: string) {
+    return `${this.base}/chunk-edition/new/${workId}/${chunkNumber}/${lang}`;
+  }
 
-    siteAdminEntity(tid: number) {
-        return `${this.base}/entity/${tid}/admin`;
-    }
+  siteEditCollationTableBeta(tableId: number) {
+    return this.base + '/collation-table/edit/' + tableId + '/beta';
+  }
 
-    siteDevMetadataEditor(tid: number) {
-        return `${this.base}/dev/metadata-editor/${tid}`;
-    }
+  siteBlankThumbnail() {
+    return `${this.base}/images/thumbnail-blank.png`;
+  }
 
-    images() {
-        return this.base + '/images'
-    }
+  siteOpenSeadragonIconsPrefix() {
+    return `${this.base}/node_modules/openseadragon/build/openseadragon/images/`;
+  }
 
+  /**
+   *
+   * @param {number}entityType
+   * @param {number}entityId
+   */
+  siteEntityPage(entityType: number, entityId: number | string) {
+    switch (entityType) {
+      case Entity.tPerson:
+        return this.sitePerson(this.getFormattedId(entityId));
 
-    // -------------------------------
-    // API
-    // -------------------------------
+      case Entity.tWork:
+        return this.siteWorkPage(this.getFormattedId(entityId));
 
-    // ADMIN
-    apiAdminLog() {
-        return `${this.apiBase}/admin/log`
+      case Entity.tDocument:
+        return this.siteDocPage(this.getFormattedId(entityId));
     }
+    return '';
+  }
 
-    apiGetPageInfo() {
-        return `${this.apiBase}/pages/info`
-    }
+  siteAdminEntity(tid: number) {
+    return `${this.base}/entity/${tid}/admin`;
+  }
 
-    apiWhoAmI() {
-        return `${this.apiBase}/whoami`
-    }
+  siteDevMetadataEditor(tid: number) {
+    return `${this.base}/dev/metadata-editor/${tid}`;
+  }
 
+  images() {
+    return this.base + '/images';
+  }
 
-    // TRANSCRIPTIONS
 
-    apiTranscriptionsGetData(docId: any, pageNumber: number, col: number) {
-        return `${this.apiBase}/transcriptions/${docId}/${pageNumber}/${col}/get`
-    }
-    apiTranscriptionsGetDataWithVersion(docId: any, pageNumber:number, col: number, versionID: number) {
-        return `${this.apiBase}/transcriptions/${docId}/${pageNumber}/${col}/get/version/${versionID}`
-    }
-    apiTranscriptionsUpdateData(docId: any, pageNumber: number, col: number) {
-        return `${this.apiBase}/transcriptions/${docId}/${pageNumber}/${col}/update`
-    }
+  // -------------------------------
+  // API
+  // -------------------------------
 
-    apiTranscriptionsByUserDocPageData(userTid: number) {
-        return `${this.apiBase}/transcriptions/byUser/${userTid}/docPageData`
-    }
+  // ADMIN
+  apiAdminLog() {
+    return `${this.apiBase}/admin/log`;
+  }
 
-    apiGetNumColumns(docId: any, pageNumber: number) {
-        return this.apiBase + '/' + docId + '/' + pageNumber + '/numcolumns';
-    }
+  apiGetPageInfo() {
+    return `${this.apiBase}/pages/info`;
+  }
 
-    apiDocGetDocId(docId: any) {
-        return `${this.apiBase}/doc/getId/${docId}`;
-    }
+  apiWhoAmI() {
+    return `${this.apiBase}/whoami`;
+  }
 
-    apiAddColumn(docId: any, pageNumber: number) {
-        return this.apiBase + '/' + docId + '/' + pageNumber + '/newcolumn';
-    }
-    apiUpdatePageSettings(pageId: number) {
-        return this.apiBase + '/page/' + pageId + '/update';
-    }
-    openSeaDragonImagePrefix() {
-        return this.base + '/node_modules/openseadragon/build/openseadragon/images/';
-    }
-    apiCreateUser(personId: number) {
-        return `${this.apiBase}/user/create/${personId}`;
-    }
 
-    apiUpdateProfile(personId: number) {
-        return `${this.apiBase}/user/${personId}/update`;
-    }
+  // TRANSCRIPTIONS
 
-    apiPersonGetEssentialData(personId: number) {
-        return `${this.apiBase}/person/${personId}/data/essential`;
-    }
+  apiTranscriptionsGetData(docId: any, pageNumber: number, col: number) {
+    return `${this.apiBase}/transcriptions/${docId}/${pageNumber}/${col}/get`;
+  }
 
-    apiPersonGetDataForPeoplePage() {
-        return `${this.apiBase}/person/all/dataForPeoplePage`;
-    }
+  apiTranscriptionsGetDataWithVersion(docId: any, pageNumber: number, col: number, versionID: number) {
+    return `${this.apiBase}/transcriptions/${docId}/${pageNumber}/${col}/get/version/${versionID}`;
+  }
 
-    apiPersonCreate() {
-        return `${this.apiBase}/person/create`;
-    }
+  apiTranscriptionsUpdateData(docId: any, pageNumber: number, col: number) {
+    return `${this.apiBase}/transcriptions/${docId}/${pageNumber}/${col}/update`;
+  }
 
-    apiEntityGetSchema(entityType: number) {
-        return `${this.apiBase}/entity/${entityType}/schema`;
-    }
+  apiTranscriptionsByUserDocPageData(userTid: number) {
+    return `${this.apiBase}/transcriptions/byUser/${userTid}/docPageData`;
+  }
 
-    apiEntityTypeGetEntities(entityType: number) {
-        return `${this.apiBase}/entity/${entityType}/entities`
-    }
+  apiGetNumColumns(docId: any, pageNumber: number) {
+    return this.apiBase + '/' + docId + '/' + pageNumber + '/numcolumns';
+  }
 
-    apiUserGetCollationTableInfo(id: number) {
-        return this.apiBase + '/user/' + id + '/collationTables';
-    }
-    apiUserGetMultiChunkEditionInfo(tid: number) {
-        return `${this.apiBase}/user/${tid}/multiChunkEditions`
-    }
+  apiDocGetDocId(docId: any) {
+    return `${this.apiBase}/doc/getId/${docId}`;
+  }
 
-    apiBulkPageSettings() {
-        return this.apiBase + '/page/bulkupdate';
-    }
-    apiAddPages(docId:  any) {
-        return this.apiBase + '/doc/' + docId + '/addpages';
-    }
+  apiAddColumn(docId: any, pageNumber: number) {
+    return this.apiBase + '/' + docId + '/' + pageNumber + '/newcolumn';
+  }
 
-    apiGetPageTypes() {
-        return `${this.apiBase}/page/types`
-    }
-    apiTypesetRaw() {
-        return this.apiBase + '/typeset/raw'
-    }
+  apiUpdatePageSettings(pageId: number) {
+    return this.apiBase + '/page/' + pageId + '/update';
+  }
 
-    apiConvertCollationTable(tableId: number) {
-        return `${this.apiBase}/collation-table/convert/${tableId}`;
-    }
+  openSeaDragonImagePrefix() {
+    return this.base + '/node_modules/openseadragon/build/openseadragon/images/';
+  }
 
-    apiEntityGetData(tid: number) {
-        return `${this.apiBase}/entity/${tid}/data`
-    }
+  apiCreateUser(personId: number) {
+    return `${this.apiBase}/user/create/${personId}`;
+  }
 
-    apiEntityGetPredicateDefinitionsForType(type: number) {
-        return `${this.apiBase}/entity/${type}/predicateDefinitions`
-    }
+  apiUpdateProfile(personId: number) {
+    return `${this.apiBase}/user/${personId}/update`;
+  }
 
-    apiEntityGetStatementQualificationObjects(withData = true) {
-        return `${this.apiBase}/entity/statementQualificationObjects${withData ? '/data' : ''}`;
-    }
+  apiPersonGetEssentialData(personId: number) {
+    return `${this.apiBase}/person/${personId}/data/essential`;
+  }
 
-    apiEntityStatementsEdit() {
-        return `${this.apiBase}/entity/statements/edit`
-    }
+  apiPersonGetDataForPeoplePage() {
+    return `${this.apiBase}/person/all/dataForPeoplePage`;
+  }
 
-    apiCollationTableGet(tableId: number, compactEncodedTimeString = '') {
-        if (compactEncodedTimeString !== '') {
-            return `${this.apiBase}/collation-table/get/${tableId}/${compactEncodedTimeString}`
-        }
-        return `${this.apiBase}/collation-table/get/${tableId}`
-    }
+  apiPersonCreate() {
+    return `${this.apiBase}/person/create`;
+  }
 
-    apiCollationTableVersionInfo(tableId: number, timeStamp: string) {
-        return `${this.apiBase}/collation-table/versionInfo/${tableId}/${TimeString.compactEncode(timeStamp)}`
-    }
+  apiEntityGetSchema(entityType: number) {
+    return `${this.apiBase}/entity/${entityType}/schema`;
+  }
 
-    apiGetActiveEditionInfo() {
-        return `${this.apiBase}/collation-table/info/edition/active`
-    }
+  apiEntityTypeGetEntities(entityType: number) {
+    return `${this.apiBase}/entity/${entityType}/entities`;
+  }
 
-    apiGetMultiChunkEdition(editionId: number, timeStamp = '') {
-        if (timeStamp !== '') {
-            return `${this.apiBase}/edition/multi/get/${editionId}/${timeStamp}`
-        }
-        return `${this.apiBase}/edition/multi/get/${editionId}`
-    }
+  apiUserGetCollationTableInfo(id: number) {
+    return this.apiBase + '/user/' + id + '/collationTables';
+  }
 
-    apiSaveMultiChunkEdition() {
-        return `${this.apiBase}/edition/multi/save`
-    }
+  apiUserGetMultiChunkEditionInfo(tid: number) {
+    return `${this.apiBase}/user/${tid}/multiChunkEditions`;
+  }
 
-    apiEditionSourcesGetAll() {
-        return `${this.apiBase}/edition/sources/all`
-    }
+  apiBulkPageSettings() {
+    return this.apiBase + '/page/bulkupdate';
+  }
 
-    apiEditionSourcesGet(tid: number) {
-        return `${this.apiBase}/edition/source/get/${tid}`;
-    }
+  apiAddPages(docId: any) {
+    return this.apiBase + '/doc/' + docId + '/addpages';
+  }
 
-    apiWitnessToEdition(witnessId: string|number) {
-        return `${this.apiBase}/witness/${witnessId}/to/edition`;
-    }
+  apiGetPageTypes() {
+    return `${this.apiBase}/page/types`;
+  }
 
-    apiWorkGetInfoOld(workId: any) {
-        return `${this.apiBase}/work/${workId}/old-info`;
-    }
+  apiTypesetRaw() {
+    return this.apiBase + '/typeset/raw';
+  }
 
-    apiWorkGetData(workId: any) {
-        return `${this.apiBase}/work/${workId}/data`;
-    }
+  apiConvertCollationTable(tableId: number) {
+    return `${this.apiBase}/collation-table/convert/${tableId}`;
+  }
 
-    apiWorksGetAuthors() {
-        return `${this.apiBase}/works/authors`;
-    }
+  apiEntityGetData(tid: number) {
+    return `${this.apiBase}/entity/${tid}/data`;
+  }
 
-    apiWorkGetChunksWithTranscription(workId: any) {
-        return `${this.apiBase}/work/${workId}/chunksWithTranscription`;
-    }
+  apiEntityGetPredicateDefinitionsForType(type: number) {
+    return `${this.apiBase}/entity/${type}/predicateDefinitions`;
+  }
 
-    apiCollationTableGetActiveTablesForWork(workId: any) {
-        return`${this.apiBase}/collation-table/active/work/${workId}`
-    }
+  apiEntityGetStatementQualificationObjects(withData = true) {
+    return `${this.apiBase}/entity/statementQualificationObjects${withData ? '/data' : ''}`;
+  }
 
-    apiPersonGetWorks(personId: number) {
-        return `${this.apiBase}/person/${personId}/works`;
-    }
-    apiDocumentCreate() {
-        return `${this.apiBase}/doc/create`
-    }
+  apiEntityStatementsEdit() {
+    return `${this.apiBase}/entity/statements/edit`;
+  }
 
-    apiAutomaticCollation() {
-        return this.apiBase + '/collation-table/auto';
-    }
-    apiSaveCollation() {
-        return this.apiBase + '/collation-table/save';
-    }
-    apiAutomaticEdition() {
-        return this.apiBase + '/edition/auto';
-    }
-    apiGetPresets() {
-        return this.apiBase + '/presets/get';
-    }
-    apiPostPresets() {
-        return this.apiBase + '/presets/post';
-    }
-    apiDeletePreset(id: number) {
-        return this.apiBase + '/presets/delete/' + id;
-    }
-    apiGetAutomaticCollationPresets() {
-        return this.apiBase + '/presets/act/get';
-    }
-    apiGetSiglaPresets() {
-        return this.apiBase + '/presets/sigla/get';
-    }
-    apiSaveSiglaPreset() {
-        return this.apiBase + '/presets/sigla/save';
-    }
-    apiWitnessGet(witnessId: any, output = 'full') {
-        return this.apiBase + '/witness/get/' + witnessId + '/' + output;
+  apiCollationTableGet(tableId: number, compactEncodedTimeString = '') {
+    if (compactEncodedTimeString !== '') {
+      return `${this.apiBase}/collation-table/get/${tableId}/${compactEncodedTimeString}`;
     }
-    apiWitnessCheckUpdates() {
-        return this.apiBase + '/witness/check/updates';
-    }
+    return `${this.apiBase}/collation-table/get/${tableId}`;
+  }
 
-    apiSearchKeyword() {
-        return `${this.apiBase}/search/keyword`
-    }
-    apiSearchTranscribers() {
-        return `${this.apiBase}/search/transcribers`
-    }
+  apiCollationTableVersionInfo(tableId: number, timeStamp: string) {
+    return `${this.apiBase}/collation-table/versionInfo/${tableId}/${TimeString.compactEncode(timeStamp)}`;
+  }
 
-    apiSearchTranscriptionTitles() {
-        return `${this.apiBase}/search/transcriptions`
-    }
+  apiGetActiveEditionInfo() {
+    return `${this.apiBase}/collation-table/info/edition/active`;
+  }
 
-    apiSearchEditors() {
-        return `${this.apiBase}/search/editors`
+  apiGetMultiChunkEdition(editionId: number, timeStamp = '') {
+    if (timeStamp !== '') {
+      return `${this.apiBase}/edition/multi/get/${editionId}/${timeStamp}`;
     }
+    return `${this.apiBase}/edition/multi/get/${editionId}`;
+  }
 
-    apiSearchEditionTitles() {
-        return `${this.apiBase}/search/editions`
-    }
+  apiSaveMultiChunkEdition() {
+    return `${this.apiBase}/edition/multi/save`;
+  }
 
-    apiSystemGetLanguages() {
-        return `${this.apiBase}/system/languages`
-    }
+  apiEditionSourcesGetAll() {
+    return `${this.apiBase}/edition/sources/all`;
+  }
 
-    apiPeopleSaveData() {
-        return `${this.apiBase}/person/save`
-    }
+  apiEditionSourcesGet(tid: number) {
+    return `${this.apiBase}/edition/source/get/${tid}`;
+  }
 
-    apiPeopleGetSchema() {
-        return `${this.apiBase}/person/schema`
-    }
+  apiWitnessToEdition(witnessId: string | number) {
+    return `${this.apiBase}/witness/${witnessId}/to/edition`;
+  }
 
-    apiPeopleGetNewId() {
-        return `${this.apiBase}/person/newid`
-    }
+  apiWorkGetInfoOld(workId: any) {
+    return `${this.apiBase}/work/${workId}/old-info`;
+  }
 
+  apiWorkGetData(workId: any) {
+    return `${this.apiBase}/work/${workId}/data`;
+  }
 
+  apiWorksGetAuthors() {
+    return `${this.apiBase}/works/authors`;
+  }
 
-    // External
+  apiWorkGetChunksWithTranscription(workId: any) {
+    return `${this.apiBase}/work/${workId}/chunksWithTranscription`;
+  }
 
-    viafPage(viafId: string) {
-        return `https://viaf.org/viaf/${viafId}`;
-    }
+  apiCollationTableGetActiveTablesForWork(workId: any) {
+    return `${this.apiBase}/collation-table/active/work/${workId}`;
+  }
 
-    wikiDataPage(wikiDataId: string) {
-        return `https://www.wikidata.org/wiki/${wikiDataId}`;
-    }
+  apiPersonGetWorks(personId: number) {
+    return `${this.apiBase}/person/${personId}/works`;
+  }
 
-    orcidPage(orcidId: string) {
-        return `https://orcid.org/${orcidId}`;
-    }
+  apiDocumentCreate() {
+    return `${this.apiBase}/doc/create`;
+  }
 
-    gndExplorePage(gndId: string) {
-        return `https://explore.gnd.network/gnd/${gndId}`;
-    }
+  apiAutomaticCollation() {
+    return this.apiBase + '/collation-table/auto';
+  }
 
-    /**
-     * Returns the logo associated with an entity id.
-     *
-     * Normally the entity is a predicate, for example, an external ID
-     * @param {number}entityId
-     * @return {string}
-     */
-    entityLogoUrl(entityId: number) : string{
-        switch(entityId) {
-            case Entity.pOrcid: return `${this.images()}/orcid-logo.svg`;
-            case Entity.pViafId:  return `${this.images()}/viaf-logo.svg`;
-            case Entity.pGNDId:  return `${this.images()}/gnd-logo.svg`;
-            case Entity.pWikiDataId: return `${this.images()}/wikidata-logo.svg`;
-            case Entity.pLocId: return `${this.images()}/loc-logo.svg`;
-        }
-        return '';
-    }
+  apiSaveCollation() {
+    return this.apiBase + '/collation-table/save';
+  }
 
-    /**
-     * Returns an external url for predicate and its object
-     *
-     * @param {number}predicateId
-     * @param {number|string}predicateObject
-     * @return {string}
-     */
-    entityExternalUrl(predicateId: number, predicateObject: string): string {
-        switch(predicateId) {
-            case Entity.pOrcid: return this.orcidPage(predicateObject);
-            case Entity.pViafId:  return this.viafPage(predicateObject);
-            case Entity.pGNDId:  return this.gndExplorePage(predicateObject);
-            case Entity.pWikiDataId: return this.wikiDataPage(predicateObject);
-            case Entity.pUrl: return predicateObject;
-        }
-        return ''
-    }
+  apiAutomaticEdition() {
+    return this.apiBase + '/edition/auto';
+  }
 
+  apiGetPresets() {
+    return this.apiBase + '/presets/get';
+  }
+
+  apiPostPresets() {
+    return this.apiBase + '/presets/post';
+  }
+
+  apiDeletePreset(id: number) {
+    return this.apiBase + '/presets/delete/' + id;
+  }
+
+  apiGetAutomaticCollationPresets() {
+    return this.apiBase + '/presets/act/get';
+  }
+
+  apiGetSiglaPresets() {
+    return this.apiBase + '/presets/sigla/get';
+  }
+
+  apiSaveSiglaPreset() {
+    return this.apiBase + '/presets/sigla/save';
+  }
+
+  apiWitnessGet(witnessId: any, output = 'full') {
+    return this.apiBase + '/witness/get/' + witnessId + '/' + output;
+  }
+
+  apiWitnessCheckUpdates() {
+    return this.apiBase + '/witness/check/updates';
+  }
+
+  apiSearchKeyword() {
+    return `${this.apiBase}/search/keyword`;
+  }
+
+  apiSearchTranscribers() {
+    return `${this.apiBase}/search/transcribers`;
+  }
+
+  apiSearchTranscriptionTitles() {
+    return `${this.apiBase}/search/transcriptions`;
+  }
+
+  apiSearchEditors() {
+    return `${this.apiBase}/search/editors`;
+  }
+
+  apiSearchEditionTitles() {
+    return `${this.apiBase}/search/editions`;
+  }
+
+  apiSystemGetLanguages() {
+    return `${this.apiBase}/system/languages`;
+  }
+
+  apiPeopleSaveData() {
+    return `${this.apiBase}/person/save`;
+  }
+
+  apiPeopleGetSchema() {
+    return `${this.apiBase}/person/schema`;
+  }
+
+  apiPeopleGetNewId() {
+    return `${this.apiBase}/person/newid`;
+  }
+
+
+  // External
+
+  viafPage(viafId: string) {
+    return `https://viaf.org/viaf/${viafId}`;
+  }
+
+  wikiDataPage(wikiDataId: string) {
+    return `https://www.wikidata.org/wiki/${wikiDataId}`;
+  }
+
+  orcidPage(orcidId: string) {
+    return `https://orcid.org/${orcidId}`;
+  }
+
+  gndExplorePage(gndId: string) {
+    return `https://explore.gnd.network/gnd/${gndId}`;
+  }
+
+  /**
+   * Returns the logo associated with an entity id.
+   *
+   * Normally the entity is a predicate, for example, an external ID
+   * @param {number}entityId
+   * @return {string}
+   */
+  entityLogoUrl(entityId: number): string {
+    switch (entityId) {
+      case Entity.pOrcid:
+        return `${this.images()}/orcid-logo.svg`;
+      case Entity.pViafId:
+        return `${this.images()}/viaf-logo.svg`;
+      case Entity.pGNDId:
+        return `${this.images()}/gnd-logo.svg`;
+      case Entity.pWikiDataId:
+        return `${this.images()}/wikidata-logo.svg`;
+      case Entity.pLocId:
+        return `${this.images()}/loc-logo.svg`;
+    }
+    return '';
+  }
+
+  /**
+   * Returns an external url for predicate and its object
+   *
+   * @param {number}predicateId
+   * @param {number|string}predicateObject
+   * @return {string}
+   */
+  entityExternalUrl(predicateId: number, predicateObject: string): string {
+    switch (predicateId) {
+      case Entity.pOrcid:
+        return this.orcidPage(predicateObject);
+      case Entity.pViafId:
+        return this.viafPage(predicateObject);
+      case Entity.pGNDId:
+        return this.gndExplorePage(predicateObject);
+      case Entity.pWikiDataId:
+        return this.wikiDataPage(predicateObject);
+      case Entity.pUrl:
+        return predicateObject;
+    }
+    return '';
+  }
 
 
 }

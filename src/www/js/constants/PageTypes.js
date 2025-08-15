@@ -5,17 +5,17 @@ export const PageTypes = [
   { id: Entity.PageTypeText, name: 'Text' },
   { id: Entity.PageTypeFrontMatter, name: 'Front Matter' },
   { id: Entity.PageTypeBackMatter, name: 'Back Matter' },
-];
+]
 
-export function getPageTypes() {
-  return PageTypes.map( (pageType) => {return pageType.id});
+export function getPageTypes () {
+  return PageTypes.map((pageType) => {return pageType.id})
 }
 
-export function getPageTypeName(id) {
-  for (let i= 0; i < PageTypes.length; i++) {
+export function getPageTypeName (id) {
+  for (let i = 0; i < PageTypes.length; i++) {
     if (PageTypes[i].id === id) {
-      return PageTypes[i].name;
+      return PageTypes[i].name
     }
   }
-  return 'N/A';
+  return 'N/A'
 }

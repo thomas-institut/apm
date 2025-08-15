@@ -20,26 +20,26 @@
 // TODO: get rid of this class, only getTable is used in DocPage.js
 export class ApmUtil {
   static getLangDefFromLanguagesArray(langArray: any) {
-    let langDef: any = {}
+    let langDef: any = {};
     for (const lang of langArray) {
-      langDef[lang['code']] = lang
+      langDef[lang['code']] = lang;
     }
-    return langDef
+    return langDef;
   }
 
   static getTable(tdArray: string[], colsPerRow: number, tableClass: string): string {
-    let html = '<table class="'+ tableClass + '">'
-    html += '<tr>'
-    for (let i=0; i < tdArray.length; i++) {
+    let html = '<table class="' + tableClass + '">';
+    html += '<tr>';
+    for (let i = 0; i < tdArray.length; i++) {
       if (!(i % colsPerRow)) {
         if (i !== 0) {
-          html += '</tr><tr>'
+          html += '</tr><tr>';
         }
       }
-      html += '<td>' + tdArray[i] + '</td>'
+      html += '<td>' + tdArray[i] + '</td>';
     }
-    html += '</tr></table>'
-    return html
+    html += '</tr></table>';
+    return html;
   }
 }
 

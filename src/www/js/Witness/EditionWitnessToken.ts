@@ -16,12 +16,12 @@
  *
  */
 
-import { WitnessToken } from './WitnessToken.js'
-import * as WitnessTokenType from './WitnessTokenType.js'
-import * as WitnessTokenClass from './WitnessTokenClass.js'
-import * as WitnessFormat from './EditionWitnessFormatMark.js'
-import * as EditionWitnessParagraphStyle from './EditionWitnessParagraphStyle.js'
-import * as NormalizationSource from '../constants/NormalizationSource.js'
+import {WitnessToken} from './WitnessToken.js';
+import * as WitnessTokenType from './WitnessTokenType.js';
+import * as WitnessTokenClass from './WitnessTokenClass.js';
+import * as WitnessFormat from './EditionWitnessFormatMark.js';
+import * as EditionWitnessParagraphStyle from './EditionWitnessParagraphStyle.js';
+import * as NormalizationSource from '../constants/NormalizationSource.js';
 
 /**
  * A token that can appear in an edition witness
@@ -71,58 +71,58 @@ export class EditionWitnessToken extends WitnessToken {
   private style: string = '';
   private formats: string[] = [];
 
-  constructor () {
-    super()
-    this.tokenClass = WitnessTokenClass.EDITION
-    this.__removeAllFormats()
+  constructor() {
+    super();
+    this.tokenClass = WitnessTokenClass.EDITION;
+    this.__removeAllFormats();
   }
 
-  setWord (wordString: string): this {
-    super.setWord(wordString)
-    this.__removeAllFormats()
-    return this
+  setWord(wordString: string): this {
+    super.setWord(wordString);
+    this.__removeAllFormats();
+    return this;
   }
 
   setNumberingLabel(label: string): this {
-    this.__removeText()
-    this.__removeAllFormats()
-    this.text = label
-    this.tokenType = WitnessTokenType.NUMBERING_LABEL
-    return this
+    this.__removeText();
+    this.__removeAllFormats();
+    this.text = label;
+    this.tokenType = WitnessTokenType.NUMBERING_LABEL;
+    return this;
   }
 
   setParagraphEnd(style = EditionWitnessParagraphStyle.NORMAL): this {
-    this.setFormatMark(WitnessFormat.PARAGRAPH_END, style)
-    return this
+    this.setFormatMark(WitnessFormat.PARAGRAPH_END, style);
+    return this;
   }
 
   setFormatMark(formatMarkName: string, style: string = '', formats: string[] = []): WitnessToken {
-    this.tokenType = WitnessTokenType.FORMAT_MARK
-    this.markType = formatMarkName
-    this.style = style
-    this.formats = formats
-    this.__removeText()
-    return this
+    this.tokenType = WitnessTokenType.FORMAT_MARK;
+    this.markType = formatMarkName;
+    this.style = style;
+    this.formats = formats;
+    this.__removeText();
+    return this;
   }
 
 
-  getCtDataObject () {
-    let theObject = super.getCtDataObject()
-    theObject.markType = this.markType
-    theObject.style = this.style
-    theObject.formats = this.formats
-    return theObject
+  getCtDataObject() {
+    let theObject = super.getCtDataObject();
+    theObject.markType = this.markType;
+    theObject.style = this.style;
+    theObject.formats = this.formats;
+    return theObject;
   }
 
   __removeAllFormats() {
-    this.markType = ''
-    this.style = ''
-    this.formats = []
+    this.markType = '';
+    this.style = '';
+    this.formats = [];
   }
 
   __removeText() {
-    this.text = ''
-    this.normalizedText = ''
-    this.normalizationSource = NormalizationSource.NONE
+    this.text = '';
+    this.normalizedText = '';
+    this.normalizationSource = NormalizationSource.NONE;
   }
 }

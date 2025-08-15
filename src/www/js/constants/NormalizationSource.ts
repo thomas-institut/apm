@@ -16,9 +16,9 @@
  *
  */
 
-export const NONE = ''
-export const DEFAULT = 'default'
-export const AUTOMATIC_COLLATION = 'automaticCollation'
-export const COLLATION_EDITOR_AUTOMATIC = 'collationTableEditorAutomatic'
+export const NONE = '';
+export const DEFAULT = 'default';
+export const AUTOMATIC_COLLATION = 'automaticCollation';
+export const COLLATION_EDITOR_AUTOMATIC = 'collationTableEditorAutomatic';
 
-export const PARSER_NORMALIZER = 'parserNormalizer'
+export const PARSER_NORMALIZER = 'parserNormalizer';

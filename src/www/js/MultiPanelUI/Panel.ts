@@ -16,65 +16,68 @@
  *
  */
 
-import {OptionsChecker} from '@thomas-inst/optionschecker'
+
+export interface PanelOptions {
+  verbose?: boolean;
+  debug?: boolean;
+  containerSelector?: string;
+}
 
 /**
  * A panel inside the MultiUI interface
  *
  */
 export class Panel {
-  private verbose: boolean;
+  protected verbose: boolean;
   protected debug: boolean;
   protected containerSelector: string;
   private visible: boolean;
   private mode: string;
 
-  constructor (options = {}) {
-    let optionsSpec = {
-      verbose: { type: 'boolean', default: false},
-      debug: { type: 'boolean', default: false},
-      containerSelector: { type: 'string', required: true}
-    }
-    let oc= new OptionsChecker({optionsDefinition: optionsSpec, context:  'Panel'})
-    let cleanOptions = oc.getCleanOptions(options)
-
-    this.verbose = cleanOptions.verbose
-    this.debug = cleanOptions.debug
+  constructor(options: PanelOptions = {}) {
+    this.verbose = options.verbose ?? false;
+    this.debug = options.debug ?? false;
     if (this.debug) {
-      this.verbose = true
+      this.verbose = true;
     }
-    this.containerSelector = cleanOptions.containerSelector
-    this.visible = false
-    this.mode = ''
+    if (options.containerSelector === undefined) {
+      throw new Error('Panel constructor: containerSelector is required');
+    }
+
+    this.containerSelector = options.containerSelector;
+    this.visible = false;
+    this.mode = '';
   }
 
-  postRender(_id:string, mode:string, visible: boolean): void {
-    this.visible = visible
-    this.mode = mode
+  postRender(_id: string, mode: string, visible: boolean): void {
+    this.visible = visible;
+    this.mode = mode;
   }
 
   onResize(visible: boolean) {
-    this.visible = visible
+    this.visible = visible;
   }
 
   onShown() {
-    this.visible = true
+    this.visible = true;
   }
+
   onHidden() {
-    this.visible = false
+    this.visible = false;
   }
+
   getContentClasses(): string[] {
-    return []
+    return [];
   }
 
-  async generateHtml(tabId: string, mode: string, visible: boolean) {
-    this.visible = visible
-    this.mode = mode
-    return `Panel id ${tabId}, mode ${mode}, ${visible ? 'visible' : 'hidden'}`
+  async generateHtml(tabId: string, mode: string, visible: boolean): Promise<string> {
+    this.visible = visible;
+    this.mode = mode;
+    return `Panel id ${tabId}, mode ${mode}, ${visible ? 'visible' : 'hidden'}`;
   }
 
-  getContainerSelector() {
-    return this.containerSelector
+  getContainerSelector(): string {
+    return this.containerSelector;
   }
 
 }

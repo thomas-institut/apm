@@ -16,5 +16,5 @@
  *
  */
 
-export const COLLATION_TABLE = 'ctable'
-export const EDITION = 'edition'
+export const COLLATION_TABLE = 'ctable';
+export const EDITION = 'edition';

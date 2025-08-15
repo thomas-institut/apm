@@ -16,5 +16,5 @@
  *
  */
 
-export const TOP_WITNESS = 'topWitness';
-export const MOST_COMMON_VARIANT = 'mostCommonVariant';
+export const TOP_WITNESS = 'topWitness'
+export const MOST_COMMON_VARIANT = 'mostCommonVariant'

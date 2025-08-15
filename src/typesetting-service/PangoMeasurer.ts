@@ -17,7 +17,7 @@
  */
 
 
-import { TextBoxMeasurer } from '../www/js/lib/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js'
+import {TextBoxMeasurer} from '../www/js/lib/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js';
 import {TextBox} from "../www/js/lib/Typesetter2/TextBox.js";
 
 
@@ -30,51 +30,51 @@ export interface PangoMeasurements {
   inkHeight?: number;
   inkToBaseLineRatio?: number;
 }
+
 export class PangoMeasurer extends TextBoxMeasurer {
+  protected debug: boolean;
   private cache: Map<any, any>;
   private cacheHits: number;
   private realMeasurements: number;
-  protected debug: boolean;
 
-  constructor () {
+  constructor() {
     super();
     this.cache = new Map();
-    this.cacheHits = 0
-    this.realMeasurements = 0
-    this.debug = false
-  }
-  private getCacheKeyForTextBox(textBox: TextBox): string {
-    return `${textBox.getText()}${textBox.getFontFamily()}${textBox.getFontSize()}${textBox.getFontWeight()}${textBox.getFontStyle()}`
+    this.cacheHits = 0;
+    this.realMeasurements = 0;
+    this.debug = false;
   }
 
-  async getBoxHeight (textBox: TextBox): Promise<number> {
+  async getBoxHeight(textBox: TextBox): Promise<number> {
     let measurements = await this.getMeasurements(textBox);
     return measurements.baseline ?? -1;
   }
 
-  getMeasurements (textBox: TextBox): Promise<PangoMeasurements> {
-    let cacheKey = this. getCacheKeyForTextBox(textBox);
+  getMeasurements(textBox: TextBox): Promise<PangoMeasurements> {
+    let cacheKey = this.getCacheKeyForTextBox(textBox);
     if (this.cache.has(cacheKey)) {
       this.cacheHits++;
       return Promise.resolve(this.cache.get(cacheKey));
     }
     this.realMeasurements++;
-    return new Promise ( (resolve) => {
+    return new Promise((resolve) => {
       this.getPangoMeasurements(textBox).then((measurements) => {
         this.cache.set(cacheKey, measurements);
         resolve(measurements);
-      })
-    })
+      });
+    });
   }
 
-
-
-  async getBoxWidth (textBox: TextBox): Promise<number> {
+  async getBoxWidth(textBox: TextBox): Promise<number> {
     let measurements = await this.getMeasurements(textBox);
-    return measurements.width
+    return measurements.width;
   }
 
-  protected getPangoMeasurements(_textBox: TextBox) : Promise<PangoMeasurements> {
+  protected getPangoMeasurements(_textBox: TextBox): Promise<PangoMeasurements> {
     return Promise.resolve({width: -1, height: -1});
+  }
+
+  private getCacheKeyForTextBox(textBox: TextBox): string {
+    return `${textBox.getText()}${textBox.getFontFamily()}${textBox.getFontSize()}${textBox.getFontWeight()}${textBox.getFontStyle()}`;
   }
 }

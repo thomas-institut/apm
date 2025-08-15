@@ -42,8 +42,7 @@ export class AddMarginalia extends PageProcessor {
         align: {type: 'string', default: 'right'},
         defaultTextDirection: {type: 'string', default: 'ltr'},
         textBoxMeasurer: {
-          type: 'object',
-          objectClass: TextBoxMeasurer
+          type: 'object', objectClass: TextBoxMeasurer
         }, //TODO: add this to actual constructors using value from stylesheet
         glueWidth: {type: 'number', default: 5},
         debug: {type: 'boolean', default: false},

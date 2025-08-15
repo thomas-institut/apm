@@ -1,3 +1,5 @@
+// noinspection JSUnusedGlobalSymbols
+
 // System Entity
 export const System = 1;
 
@@ -27,7 +29,6 @@ export const tGenericEditionSource = 121;
 export const tDocumentType = 122;
 export const tImageSource = 123;
 export const tPageType = 124;
-
 
 
 // Value types
@@ -130,8 +131,6 @@ export const pImageSourceData = 7606;
 export const pUseDeepZoomForImages = 7607;
 
 
-
-
 // Geographical Predicates
 export const pContainedBy = 8001;
 export const pContains = 8002;
@@ -187,7 +186,6 @@ export const CalendarIslamicTabularUlughBeg = 9505;
 export const CalendarIslamicTabularBohras = 9506;
 export const CalendarHebrewObservational = 9507;
 export const CalendarHebrewCalculated = 9508;
-
 
 
 // ID types

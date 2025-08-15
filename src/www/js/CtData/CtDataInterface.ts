@@ -46,7 +46,7 @@ export interface WitnessInterface {
   chunkId: string;
   lang: string;
   witnessType: string;
-  timestamp: string;
+  timeStamp: string;
   ApmWitnessId: string;
   tokens: WitnessTokenInterface[];
 
@@ -107,4 +107,18 @@ export interface FullTxItemAddressInterface {
   itemSeq: number;
   itemId: number;
   ceSeq: number;
+}
+
+export interface ColumnInformation {
+  pageId: number,
+  column: number,
+
+
+  // Set in WitnessInfoPanel
+
+  docId?: number,
+  foliation?: string,
+  seq?: number,
+  numCols?: number,
+
 }

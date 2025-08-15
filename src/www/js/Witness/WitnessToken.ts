@@ -16,8 +16,8 @@
  *
  */
 
-import * as WitnessTokenType from './WitnessTokenType.js'
-import * as NormalizationSource from '../constants/NormalizationSource.js'
+import * as WitnessTokenType from './WitnessTokenType.js';
+import * as NormalizationSource from '../constants/NormalizationSource.js';
 import {WitnessTokenInterface} from "@/CtData/CtDataInterface";
 
 /**
@@ -36,41 +36,40 @@ import {WitnessTokenInterface} from "@/CtData/CtDataInterface";
 
 
 export class WitnessToken {
-  tokenType: string
-  text: string
-  tokenClass: string
-  normalizedText: string
-  normalizationSource: string
+  tokenType: string;
+  text: string;
+  tokenClass: string;
+  normalizedText: string;
+  normalizationSource: string;
 
-  constructor () {
-    this.tokenType = WitnessTokenType.EMPTY
-    this.text = ''
-    this.tokenClass = ''
-    this.normalizedText = ''
-    this.normalizationSource = NormalizationSource.NONE
+  constructor() {
+    this.tokenType = WitnessTokenType.EMPTY;
+    this.text = '';
+    this.tokenClass = '';
+    this.normalizedText = '';
+    this.normalizationSource = NormalizationSource.NONE;
   }
 
 
   setWord(wordString: string): this {
-    this.tokenType = WitnessTokenType.WORD
-    this.text = wordString
-    return this
+    this.tokenType = WitnessTokenType.WORD;
+    this.text = wordString;
+    return this;
   }
 
   setPunctuation(punctuationString: string): this {
-    this.tokenType = WitnessTokenType.PUNCTUATION
-    this.text = punctuationString
-    return this
+    this.tokenType = WitnessTokenType.PUNCTUATION;
+    this.text = punctuationString;
+    return this;
   }
 
   setWhitespace(whiteSpaceString: string = ' '): this {
-    this.tokenType = WitnessTokenType.WHITESPACE
-    this.text = whiteSpaceString
-    this.normalizedText = ''
-    this.normalizationSource = NormalizationSource.NONE
-    return this
+    this.tokenType = WitnessTokenType.WHITESPACE;
+    this.text = whiteSpaceString;
+    this.normalizedText = '';
+    this.normalizationSource = NormalizationSource.NONE;
+    return this;
   }
-
 
 
   /**
@@ -80,15 +79,15 @@ export class WitnessToken {
    * @return {this}
    */
   withNormalization(normalizedText: string, normalizationSource: string = NormalizationSource.DEFAULT): this {
-    this.normalizedText = normalizedText
-    this.normalizationSource = normalizationSource
-    return this
+    this.normalizedText = normalizedText;
+    this.normalizationSource = normalizationSource;
+    return this;
   }
 
   /**
    * Returns a WitnessTokenInterface object
    */
-  getCtDataObject() : WitnessTokenInterface {
+  getCtDataObject(): WitnessTokenInterface {
     return {
       tokenClass: this.tokenClass,
       tokenType: this.tokenType,
@@ -96,6 +95,6 @@ export class WitnessToken {
       fmtText: [],
       normalizedText: this.normalizedText,
       normalizationSource: this.normalizationSource
-    }
+    };
   }
 }

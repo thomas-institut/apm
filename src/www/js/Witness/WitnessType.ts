@@ -16,8 +16,8 @@
  *
  */
 
-export const FULL_TX = 'fullTx'
-export const PARTIAL_TX = 'partialTx'
-export const EDITION = 'edition'
+export const FULL_TX = 'fullTx';
+export const PARTIAL_TX = 'partialTx';
+export const EDITION = 'edition';
 
-export const SOURCE = 'source'
+export const SOURCE = 'source';

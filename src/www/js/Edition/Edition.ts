@@ -11,12 +11,7 @@ import {Apparatus} from "./Apparatus.js";
 export class Edition implements EditionInterface {
   lang: string = '';
   info: EditionInfoInterface = {
-    baseWitnessIndex: -1,
-    chunkId: "",
-    editionId: -1,
-    singleChunk: true,
-    source: "",
-    tableId: -1
+    baseWitnessIndex: -1, chunkId: "", editionId: -1, singleChunk: true, source: "", tableId: -1
   };
   mainText: MainTextToken[] = [];
   apparatuses: Apparatus[] = [];

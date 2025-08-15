@@ -239,7 +239,7 @@ export class CriticalApparatusGenerator {
         entry.lemmaText = ApparatusTools.getMainTextForGroup(columnGroup, baseWitnessTokens, false, lang);
         entry.subEntries = subEntries;
         // other info
-        entry.metadata.ctGroup= columnGroup;
+        entry.metadata.ctGroup = columnGroup;
         entries.push(entry);
         //console.log(`Adding entry, there are now ${entries.length} in the critical apparatus`)
       }

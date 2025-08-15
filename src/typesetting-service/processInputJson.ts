@@ -1,9 +1,9 @@
-import { ObjectFactory } from '../www/js/lib/Typesetter2/ObjectFactory.js'
-import { PangoMeasurerNodeGTK } from './PangoMeasurerNodeGTK.js'
-import { SystemStyleSheet } from '../www/js/defaults/EditionStyles/SystemStyleSheet.js'
-import { BasicTypesetter } from '../www/js/lib/Typesetter2/BasicTypesetter.js'
-import { hrtime } from 'node:process'
-import { EditionTypesetting } from '../www/js/Edition/EditionTypesetting.js'
+import {ObjectFactory} from '../www/js/lib/Typesetter2/ObjectFactory.js';
+import {PangoMeasurerNodeGTK} from './PangoMeasurerNodeGTK.js';
+import {SystemStyleSheet} from '../www/js/defaults/EditionStyles/SystemStyleSheet.js';
+import {BasicTypesetter} from '../www/js/lib/Typesetter2/BasicTypesetter.js';
+import {hrtime} from 'node:process';
+import {EditionTypesetting} from '../www/js/Edition/EditionTypesetting.js';
 import {ItemList} from "../www/js/lib/Typesetter2/ItemList.js";
 import {Edition} from "../www/js/Edition/Edition.js";
 
@@ -29,13 +29,11 @@ export interface Stats {
   measurerStats?: any;
   processingTime?: number;
 }
-export async function processInputJson(data:any): Promise<OutputData> {
+
+export async function processInputJson(data: any): Promise<OutputData> {
   let outputData: OutputData = {
-    error: false,
-    errorMsg: '',
-    output: {},
-    stats: {}
-  }
+    error: false, errorMsg: '', output: {}, stats: {}
+  };
 
 
   if (data.options === undefined) {
@@ -51,7 +49,7 @@ export async function processInputJson(data:any): Promise<OutputData> {
     return outputData;
   }
 
-  let mainTextList : ItemList;
+  let mainTextList: ItemList;
 
   try {
     mainTextList = ObjectFactory.fromObject(data.mainTextList) as unknown as ItemList;
@@ -62,31 +60,31 @@ export async function processInputJson(data:any): Promise<OutputData> {
   }
 
 
-  data.options.textBoxMeasurer = new PangoMeasurerNodeGTK()
+  data.options.textBoxMeasurer = new PangoMeasurerNodeGTK();
 
   if (data.helperOptions !== undefined) {
-    debug && console.log(`Helper options given, so this is an edition!`)
+    debug && console.log(`Helper options given, so this is an edition!`);
 
-    data.helperOptions.textBoxMeasurer = data.options.textBoxMeasurer
-    debug && console.log(`Edition lang: '${data.helperOptions.edition.lang}', style Id = ${data.helperOptions.styleId}`)
+    data.helperOptions.textBoxMeasurer = data.options.textBoxMeasurer;
+    debug && console.log(`Edition lang: '${data.helperOptions.edition.lang}', style Id = ${data.helperOptions.styleId}`);
     // make the data an Edition object
-    data.helperOptions.edition = new Edition().setFromInterface(data.helperOptions.edition)
+    data.helperOptions.edition = new Edition().setFromInterface(data.helperOptions.edition);
     data.helperOptions.editionStyleSheet = SystemStyleSheet.getStyleSheet(data.helperOptions.edition.lang, data.helperOptions.styleId);
-    let editionTypesettingHelper = new EditionTypesetting(data.helperOptions)
-    data.options.getApparatusListToTypeset = (mainTextVerticalList:any, apparatus:any, lineFrom:number, lineTo:number, resetFirstLine: boolean) => {
-      return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine)
-    }
+    let editionTypesettingHelper = new EditionTypesetting(data.helperOptions);
+    data.options.getApparatusListToTypeset = (mainTextVerticalList: any, apparatus: any, lineFrom: number, lineTo: number, resetFirstLine: boolean) => {
+      return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine);
+    };
     data.options.preTypesetApparatuses = () => {
       editionTypesettingHelper.resetExtractedMetadataInfo();
       return Promise.resolve(true);
-    }
+    };
 
-    data.options.getMarginaliaForLineRange =  (lineFrom: number, lineTo: number) =>{
-      return editionTypesettingHelper.getMarginaliaForLineRange(lineFrom, lineTo)
-    }
+    data.options.getMarginaliaForLineRange = (lineFrom: number, lineTo: number) => {
+      return editionTypesettingHelper.getMarginaliaForLineRange(lineFrom, lineTo);
+    };
   }
 
-  let typesetter = new BasicTypesetter(data.options)
+  let typesetter = new BasicTypesetter(data.options);
 
   let start = hrtime.bigint();
   let typesetDoc = await typesetter.typeset(mainTextList, data.extraData);
@@ -94,15 +92,13 @@ export async function processInputJson(data:any): Promise<OutputData> {
 
 
   let end = hrtime.bigint();
-  outputData.stats = getStats(data)
-  outputData.stats.processingTime = Number(end-start)/1000000;
+  outputData.stats = getStats(data);
+  outputData.stats.processingTime = Number(end - start) / 1000000;
   return outputData;
 }
 
-function getStats(data:any) {
+function getStats(data: any) {
   return {
-    measurer: 'PangoGtk',
-    measurerStats: data.options.textBoxMeasurer.getStats(),
-    processingTime: 0,
-  }
+    measurer: 'PangoGtk', measurerStats: data.options.textBoxMeasurer.getStats(), processingTime: 0,
+  };
 }

@@ -29,8 +29,7 @@ if (config.typesettingService === undefined) {
 }
 
 const PORT: number = config.typesettingService['port'] ?? 4711;
-const PdfRenderer: string = config.typesettingService['pdfRenderer'] ??
-  `/usr/bin/python3 /opt/apm/typesetting-service/pdf-renderer.py`;
+const PdfRenderer: string = config.typesettingService['pdfRenderer'] ?? `/usr/bin/python3 /opt/apm/typesetting-service/pdf-renderer.py`;
 const TmpDir: string = config.typesettingService['tmpDir'] ?? '/var/apm/typesetting-tmp';
 const LogFile: string = config.typesettingService['logFile'] ?? '/var/apm/logs/typesetting-service/server.log';
 
@@ -184,7 +183,7 @@ async function readConfig(configFileName: string): Promise<any> {
   return YAML.parse(fileContent.toString());
 }
 
-function logLines(data: any, inputId: string, name: string): void{
+function logLines(data: any, inputId: string, name: string): void {
   const lines: string[] = data.toString().split("\n");
   lines.forEach((line) => {
     line = line.trim();

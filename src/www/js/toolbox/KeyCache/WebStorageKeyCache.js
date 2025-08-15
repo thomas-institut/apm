@@ -17,7 +17,11 @@ export class WebStorageKeyCache extends KeyCache {
   }
 
   storeItemObject (key, itemObject) {
+    try {
       this.storage.setItem(this.getRealKey(key), JSON.stringify(itemObject))
+    } catch (e) {
+      console.log(`Error setting item for key ${key}`, e, itemObject)
+    }
   }
 
   getItemObject (key) {

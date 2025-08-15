@@ -418,6 +418,7 @@ END;
 
         // get all document data
         $documents = $this->getDataFromDareDocumentsTable();
+        $docLangs = $this->getDataFromDareDocLanguageTable();
         $numDocs = count($documents);
 
         print("There are $numDocs documents to process.\nThe processing begins after having collected all data.\n");
@@ -434,7 +435,7 @@ END;
             $signatureFromBilderbergId = end($bilderbergIdSplitted);
             $signatureFromBilderbergId = str_replace('"', '', $signatureFromBilderbergId);
 
-            $createdDoc = $this->createDocument($bilderbergId);
+            $createdDoc = $this->createDocument(str_replace('"', '', $document->bilderbergId));
             $tid = $createdDoc['tid'];
 
             if (str_starts_with($createdDoc['message'], 'NO')) {
@@ -514,6 +515,19 @@ END;
                             }
                         }
 
+                    }
+
+                    // add document type as apm standard predicate
+                    else if ($predicate === 'type') {
+                        $predicate = constant(Entity::class . '::pDocumentType');
+
+                        if (trim($value) === 'ms') {
+                            $value = Entity::DocTypeManuscript;
+                        } else if (trim($value) === 'inc') {
+                            $value = Entity::DocTypeIncunabulum;
+                        }
+
+                    // add pDare-predicate
                     } else {
                         $predicate = constant(Entity::class . '::pDare' . ucfirst($predicate));
                     }
@@ -525,6 +539,37 @@ END;
                     }
 
                     $results['setPredicates']++;
+                }
+            }
+
+            // add language predicate
+            $predicate = Entity::pDocumentLanguage;
+
+            foreach ($docLangs as $entry) {
+                if ($entry->docId === $document->id) {
+
+                    $langCodeDare = $entry->languageId;
+
+                    switch ($langCodeDare) {
+                        case '1':
+                            $value = Entity::LangLatin;
+                            break;
+                        case '2':
+                            $value = Entity::LangHebrew;
+                            break;
+                        case '3':
+                            $value = Entity::LangArabic;
+                            break;
+                    }
+
+                    $this->es->makeStatement($tid, $predicate, $value, $creatorTid, "Imported automatically from dare documents table.");
+
+                    if ($verbose) {
+                        print("\t\tvalue for predicate $predicate has been set.\n");
+                    }
+
+                    $results['setPredicates']++;
+
                 }
             }
 
@@ -1018,6 +1063,16 @@ SPARQL;
     {
         $docsFromDareFile = "/var/apm/share/documents_dare.csv";
         return $this->readCsvWithSingleHeaderToObjectArray($docsFromDareFile);
+    }
+
+    /**
+     * returns the data contained in the dare documents csv-table
+     * @return array
+     */
+    private function getDataFromDareDocLanguageTable() : array
+    {
+        $data = "/var/apm/share/docs_dare_languages.csv";
+        return $this->readCsvWithSingleHeaderToObjectArray($data);
     }
 
     /**

@@ -167,7 +167,6 @@ class Entity implements TidDefiner
 
 // Dare Document Predicates
 
-    const int pDareType = 7609;
     const int pDareHasImages = 7610;
     const int pDareImagesComplete = 7611;
     const int pDareHasPlaceholders = 7612;

@@ -103,7 +103,7 @@ export class DocumentsPage extends NormalPage {
       }
 
       let locationData = await this.getLocationData(doc['docInfo']['tid']);
-      
+
       data.push({
         title: `<a href="${urlGen.siteDocPage(Tid.toBase36String(doc['docInfo']['id']))}">${doc['docInfo']['title']}</a>`,
         type:  await this.apmDataProxy.getEntityName(doc['docInfo']['doc_type']),

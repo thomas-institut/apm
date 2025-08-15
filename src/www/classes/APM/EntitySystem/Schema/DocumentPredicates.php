@@ -107,17 +107,6 @@ const DocumentPredicateDefs = [
         'flags' => []
     ],
     [
-        'id' => Entity::pDareType,
-        'type' => Entity::tAttribute,
-        'name' => 'Dare Document Type',
-        'descr' => "Describes the type of a document in Dare.",
-        'allowedSubjectTypes' => [Entity::tDocument],
-        'allowedObjectTypes'=> null,
-        'canBeCancelled' => true,
-        'singleProperty' => true,
-        'flags' => [],
-    ],
-    [
         'id' => Entity::pDareHasImages,
         'type' => Entity::tAttribute,
         'name' => 'Has Images (Dare)',

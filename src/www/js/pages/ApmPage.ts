@@ -1,19 +1,18 @@
-import { OptionsChecker} from "@thomas-inst/optionschecker";
-import {setBaseUrl, urlGen} from './common/SiteUrlGen'
-import { ApmDataProxy } from './common/ApmDataProxy'
-import { defaultLanguage, setSiteLanguage, tr, validLanguages } from './common/SiteLang'
-import { WebStorageKeyCache } from '../toolbox/KeyCache/WebStorageKeyCache'
-import { ApmFormats } from './common/ApmFormats'
-import { DataId_EC_ViewOptions } from '../constants/WebStorageDataId'
+import {OptionsChecker} from "@thomas-inst/optionschecker";
+import {setBaseUrl, urlGen} from './common/SiteUrlGen';
+import {ApmDataProxy} from './common/ApmDataProxy';
+import {defaultLanguage, setSiteLanguage, tr, validLanguages} from './common/SiteLang';
+import {WebStorageKeyCache} from '@/toolbox/KeyCache/WebStorageKeyCache';
+import {ApmFormats} from './common/ApmFormats';
+import {DataId_EC_ViewOptions} from '@/constants/WebStorageDataId';
 import {CommonData, CommonDataOptionsDefinition} from "./CommonData";
 import {SimpleLockManager} from "@/toolbox/SimpleLockManager";
 
 
-
-const langCacheKey = 'apmSiteLanguage'
+const langCacheKey = 'apmSiteLanguage';
 const langCacheDataId = 'v1';
 const CachePrefix = 'Apm';
-const AppSettingsUrl = 'app-settings.json'
+const AppSettingsUrl = 'app-settings.json';
 
 const debug = true;
 
@@ -41,85 +40,94 @@ export class ApmPage {
    * @param options
    */
   constructor(options: any = null) {
+    // @ts-ignore
+    // Stop the loading sign from writing to the window's body
+    window.loading = false;
     let start = Date.now();
 
-    this.constructorPromise = new Promise(
-        async (resolve, reject) => {
-          if (options !== null && options.commonData !== undefined) {
-            let optionsChecker = new OptionsChecker({
-              context: 'ApmPage Common Data',
-              optionsDefinition: CommonDataOptionsDefinition
-            })
-            this.commonData = optionsChecker.getCleanOptions(options.commonData);
-            setBaseUrl(this.commonData.baseUrl);
-            this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, CachePrefix, [DataId_EC_ViewOptions]);
-            this.userId = this.commonData.userInfo.id;
-          } else {
-            debug && console.log(`No options given, getting settings from backend`);
-            // read basic settings from JSON
+    this.constructorPromise = new Promise(async (resolve, reject) => {
+      if (options !== null && options.commonData !== undefined) {
+        let optionsChecker = new OptionsChecker({
+          context: 'ApmPage Common Data', optionsDefinition: CommonDataOptionsDefinition
+        });
+        this.commonData = optionsChecker.getCleanOptions(options.commonData);
+        setBaseUrl(this.commonData.baseUrl);
+        this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, CachePrefix, [DataId_EC_ViewOptions]);
+        this.userId = this.commonData.userInfo.id;
+      } else {
+        debug && console.log(`No options given, getting settings from backend`);
+        // read basic settings from JSON
 
-            let appSettings: any = {}
-            try {
-              let response = await fetch(AppSettingsUrl);
-              appSettings = await response.json();
-            } catch(e) {
-              reject(`Error reading app settings: ${e}`);
-            }
-            debug && console.log(`Got app settings`, appSettings);
-            setBaseUrl(appSettings.baseUrl);
-            this.commonData = {
-              baseUrl: appSettings.baseUrl,
-              appName: appSettings.appName,
-              appVersion: `${appSettings.appVersion} (${appSettings.versionDate}) ${appSettings.versionExtra}`.trim(),
-              copyrightNotice: appSettings.copyrightNotice,
-              devMode: appSettings.devMode,
-              cacheDataId: appSettings.cacheDataId,
-              showLanguageSelector: appSettings.showLanguageSelector,
-              renderTimestamp: Math.round(Date.now() / 1000),
-              userInfo: {}
-            }
-            setBaseUrl(this.commonData.baseUrl);
-            this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, CachePrefix, [DataId_EC_ViewOptions]);
-
-            let userData = await this.apmDataProxy.whoAmI();
-
-            if (userData === null) {
-              // this means the user is not authorized
-              window.location.href = urlGen.siteLogin();
-            }
-            this.userId = userData.id;
-            this.commonData.userInfo = userData;
-
-            debug && console.log(`Common data`, this.commonData);
-          }
-
-          this.userName = this.commonData.userInfo.userName;
-
-          this.localCache = new WebStorageKeyCache('local', this.commonData.cacheDataId);
-
-          this.showLanguageSelector = this.commonData.showLanguageSelector;
-          if (this.showLanguageSelector) {
-            this.siteLanguage = this.commonData.siteLanguage ?? '';
-            if (this.siteLanguage === '' || this.siteLanguage === 'detect') {
-              // console.log(`No site language given, detecting language`);
-              this.siteLanguage = this.detectBrowserLanguage();
-            }
-            setSiteLanguage(this.siteLanguage);
-            ApmFormats.setLanguage(this.siteLanguage);
-            console.log(`Site language set to '${this.siteLanguage}'`);
-          } else {
-            this.siteLanguage = 'en';
-          }
-
-          this.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-          ApmFormats.setTimeZone(this.timeZone);
-
-          console.log(`Client timezone is '${this.timeZone}', currently ${ApmFormats.getTimeZoneOffsetStringForDate(new Date(), false, false)}`);
-          let end = Date.now();
-          console.log(`ApmPage ready in ${end - start} ms`);
-          resolve();
+        let appSettings: any = {};
+        try {
+          let response = await fetch(AppSettingsUrl);
+          appSettings = await response.json();
+        } catch (e) {
+          reject(`Error reading app settings: ${e}`);
         }
-    );
+        debug && console.log(`Got app settings`, appSettings);
+        setBaseUrl(appSettings.baseUrl);
+        this.commonData = {
+          baseUrl: appSettings.baseUrl,
+          appName: appSettings.appName,
+          appVersion: `${appSettings.appVersion} (${appSettings.versionDate}) ${appSettings.versionExtra}`.trim(),
+          copyrightNotice: appSettings.copyrightNotice,
+          devMode: appSettings.devMode,
+          cacheDataId: appSettings.cacheDataId,
+          showLanguageSelector: appSettings.showLanguageSelector,
+          renderTimestamp: Math.round(Date.now() / 1000),
+          userInfo: {}
+        };
+        setBaseUrl(this.commonData.baseUrl);
+        this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, CachePrefix, [DataId_EC_ViewOptions]);
+
+        let userData = await this.apmDataProxy.whoAmI();
+
+        if (userData === null) {
+          // this means the user is not authorized
+          window.location.href = urlGen.siteLogin();
+        }
+        this.userId = userData.id;
+        this.commonData.userInfo = userData;
+
+        debug && console.log(`Common data`, this.commonData);
+      }
+
+      this.userName = this.commonData.userInfo.userName;
+
+      this.localCache = new WebStorageKeyCache('local', this.commonData.cacheDataId);
+
+      this.showLanguageSelector = this.commonData.showLanguageSelector;
+      if (this.showLanguageSelector) {
+        this.siteLanguage = this.commonData.siteLanguage ?? '';
+        if (this.siteLanguage === '' || this.siteLanguage === 'detect') {
+          // console.log(`No site language given, detecting language`);
+          this.siteLanguage = this.detectBrowserLanguage();
+        }
+        setSiteLanguage(this.siteLanguage);
+        ApmFormats.setLanguage(this.siteLanguage);
+        console.log(`Site language set to '${this.siteLanguage}'`);
+      } else {
+        this.siteLanguage = 'en';
+      }
+
+      this.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      ApmFormats.setTimeZone(this.timeZone);
+
+      console.log(`Client timezone is '${this.timeZone}', currently ${ApmFormats.getTimeZoneOffsetStringForDate(new Date(), false, false)}`);
+      let end = Date.now();
+      console.log(`ApmPage ready in ${end - start} ms`);
+      resolve();
+    });
+  }
+
+  /**
+   * Generates HTML for a standard loading message with a spinner
+   * @param msg
+   * @return {string}
+   */
+  static genLoadingMessageHtml(msg = 'Loading data'): string {
+    return `${tr(msg)} <span class="spinner-border spinner-border-sm" role="status"></span>`;
   }
 
   async initPage() {
@@ -132,16 +140,6 @@ export class ApmPage {
     return this.commonData.userInfo['isRoot'];
   }
 
-
-  /**
-   * Generates HTML for a standard loading message with a spinner
-   * @param msg
-   * @return {string}
-   */
-  static genLoadingMessageHtml(msg = 'Loading data'): string {
-    return `${tr(msg)} <span class="spinner-border spinner-border-sm" role="status"></span>`
-  }
-
   /**
    * Returns the object needed to properly set up a DataTables object using
    * APM's language-aware strings
@@ -149,22 +147,14 @@ export class ApmPage {
    */
   getDataTablesLanguageOption(): object {
     return {
-      processing:     tr('Processing'),
-        search:         tr('DataTables:Search'),
-        emptyTable:     tr('Empty Table'),
-        paginate: {
-          first:      tr('First'),
-          previous:   tr('Previous'),
-          next:       tr('Next'),
-          last:       tr('Last')
-        },
-      info: tr('Showing _START_ to _END_ of _TOTAL_ rows'),
-      lengthMenu: tr('Show _MENU_ entries')
-    }
+      processing: tr('Processing'), search: tr('DataTables:Search'), emptyTable: tr('Empty Table'), paginate: {
+        first: tr('First'), previous: tr('Previous'), next: tr('Next'), last: tr('Last')
+      }, info: tr('Showing _START_ to _END_ of _TOTAL_ rows'), lengthMenu: tr('Show _MENU_ entries')
+    };
   }
 
 
-  saveLangInCache(lang : string) {
+  saveLangInCache(lang: string) {
     this.localCache.store(langCacheKey, lang, 0, langCacheDataId);
   }
 
@@ -177,23 +167,23 @@ export class ApmPage {
     // First, let's see if there's something in the cache
     let cacheLang = this.localCache.retrieve(langCacheKey, langCacheDataId);
     if (validLanguages.indexOf(cacheLang) !== -1) {
-      console.log(`Site language detected in browser cache`)
-      return cacheLang
+      console.log(`Site language detected in browser cache`);
+      return cacheLang;
     }
     // If not, go over browser languages
-    let browserLanguages = navigator.languages
+    let browserLanguages = navigator.languages;
     for (let i = 0; i < browserLanguages.length; i++) {
-      let lang = browserLanguages[i]
+      let lang = browserLanguages[i];
       if (validLanguages.indexOf(lang) !== -1) {
-        return lang
+        return lang;
       }
-      lang = lang.split('-')[0]  // two-letter code
+      lang = lang.split('-')[0];  // two-letter code
       if (validLanguages.indexOf(lang) !== -1) {
-        return lang
+        return lang;
       }
     }
-    console.log(`Site language not detected, returning default`)
-    return defaultLanguage
+    console.log(`Site language not detected, returning default`);
+    return defaultLanguage;
   }
 
 }

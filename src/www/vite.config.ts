@@ -1,12 +1,12 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
-//import vue from '@vitejs/plugin-vue' // optional
 import { resolve } from 'path'
+import react from '@vitejs/plugin-react'
 
 
 export default defineConfig({
 
-  //plugins: [vue()],
+  plugins: [react({})],
   build: {
     outDir: 'dist',
     manifest: true,
@@ -30,7 +30,7 @@ export default defineConfig({
         MceComposer: resolve(__dirname, 'js/MceComposer/MceComposer.js'),
         CollationTableEditor: resolve(__dirname, 'js/pages/CollationTableEditor.js'),
         AutomaticCollationTable: resolve(__dirname, 'js/pages/AutomaticCollationTable/AutomaticCollationTable.js'),
-        PageViewer: resolve(__dirname, 'js/pages/PageViewer/PageViewer.js')
+        PageViewer: resolve(__dirname, 'js/pages/PageViewer/PageViewer.js'),
       },
       output: {
         entryFileNames: '[name]-[hash].js',

@@ -29,7 +29,7 @@ export const ELEMENT_LINE_GAP = 8
 export const ELEMENT_ADDITION = 9
 
 
-export class Element {
+export class Element extends FloatingElement {
   static getValidMarginalPlacements () {
     return [
       'margin left',

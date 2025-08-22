@@ -1,21 +1,22 @@
-import { NormalPage } from './NormalPage'
-import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { urlGen } from './common/SiteUrlGen'
-import { Tid } from '../Tid/Tid'
-import { CollapsePanel } from '../widgets/CollapsePanel'
-import { tr } from './common/SiteLang'
-import { UserDocDataCommon } from './common/UserDocDataCommon'
-import { ApmPage } from './ApmPage'
-import { UserProfileEditorDialog } from './common/UserProfileEditorDialog'
-import { MakeUserDialog } from './common/MakeUserDialog'
-import * as Entity from '../constants/Entity'
-import { MetadataEditorSchema } from '../defaults/MetadataEditorSchemata/MetadataEditorSchema'
-import { MetadataEditor2 } from '../MetadataEditor/MetadataEditor2'
-import {SchemaInterface} from "../defaults/MetadataEditorSchemata/SchemaInterface";
+import {NormalPage} from './NormalPage';
+import {OptionsChecker} from '@thomas-inst/optionschecker';
+import {urlGen} from './common/SiteUrlGen';
+import {Tid} from '@/Tid/Tid';
+import {CollapsePanel} from '@/widgets/CollapsePanel';
+import {tr} from './common/SiteLang';
+import {UserDocDataCommon} from './common/UserDocDataCommon';
+import {ApmPage} from './ApmPage';
+import {UserProfileEditorDialog} from './common/UserProfileEditorDialog';
+import {MakeUserDialog} from './common/MakeUserDialog';
+import * as Entity from '../constants/Entity';
+import {MetadataEditorSchema} from '@/defaults/MetadataEditorSchemata/MetadataEditorSchema';
+import {MetadataEditor2} from '@/MetadataEditor/MetadataEditor2';
+import {SchemaInterface} from "@/defaults/MetadataEditorSchemata/SchemaInterface";
 
 const CONTRIBUTION_MCE = 'mcEditions';
 const CONTRIBUTION_TX = 'transcriptions';
 const CONTRIBUTION_CT = 'collationTables';
+
 export class PersonPage extends NormalPage {
   private personData: any;
   private readonly personId: any;
@@ -31,16 +32,14 @@ export class PersonPage extends NormalPage {
   private transcriptionsCollapse!: CollapsePanel;
 
 
-  constructor (options:any) {
+  constructor(options: any) {
     super(options);
 
     let oc = new OptionsChecker({
-      context: 'PersonPage',
-      optionsDefinition: {
-        personData: { type: 'object'},
-        canManageUsers: { type: 'boolean'},
+      context: 'PersonPage', optionsDefinition: {
+        personData: {type: 'object'}, canManageUsers: {type: 'boolean'},
       }
-    })
+    });
 
     let cleanOptions = oc.getCleanOptions(options);
 
@@ -54,13 +53,13 @@ export class PersonPage extends NormalPage {
     this.userContributions = [];
     this.works = [];
 
-    this.initPage().then( () => {
-      console.log(`Page for person ${Tid.toBase36String(this.personId)} (${this.personId}) initialized`)
-    })
+    this.initPage().then(() => {
+      console.log(`Page for person ${Tid.toBase36String(this.personId)} (${this.personId}) initialized`);
+    });
   }
 
 
-  async initPage () {
+  async initPage() {
     await super.initPage();
     document.title = this.personData.name;
     this.entityData = await this.apmDataProxy.getEntityData(this.personId);
@@ -80,22 +79,18 @@ export class PersonPage extends NormalPage {
 
     if (this.personData.isUser) {
       $('button.edit-user-profile-btn').on('click', this.genOnClickEditUserProfileButton());
-      this.mcEditionsCollapse = this.constructCollapse('#multi-chunk-editions', tr('Multi-Chunk Editions'), [ 'first'])
-      this.chunkEditionsCollapse = this.constructCollapse('#chunk-editions', tr('Chunk Editions'))
-      this.collationTablesCollapse = this.constructCollapse('#collation-tables', tr('Collation Tables'))
-      this.transcriptionsCollapse = this.constructCollapse('#transcriptions', tr('Transcriptions'))
-      await Promise.all( [
-        this.fetchMultiChunkEditions(),
-        this.fetchCollationTablesAndEditions(),
-        this.fetchTranscriptions()
-      ])
+      this.mcEditionsCollapse = this.constructCollapse('#multi-chunk-editions', tr('Multi-Chunk Editions'), ['first']);
+      this.chunkEditionsCollapse = this.constructCollapse('#chunk-editions', tr('Chunk Editions'));
+      this.collationTablesCollapse = this.constructCollapse('#collation-tables', tr('Collation Tables'));
+      this.transcriptionsCollapse = this.constructCollapse('#transcriptions', tr('Transcriptions'));
+      await Promise.all([this.fetchMultiChunkEditions(), this.fetchCollationTablesAndEditions(), this.fetchTranscriptions()]);
 
       if (this.userContributions.length === 0) {
-          $("div.data-status").html(`<em>${tr('UserContributions:None')}</em>`);
+        $("div.data-status").html(`<em>${tr('UserContributions:None')}</em>`);
       } else {
         $("div.data-status").addClass('hidden');
-        this.userContributions.forEach( (contrib) => {
-          switch(contrib) {
+        this.userContributions.forEach((contrib) => {
+          switch (contrib) {
             case CONTRIBUTION_TX:
               $('#transcriptions').removeClass('hidden');
               break;
@@ -109,10 +104,9 @@ export class PersonPage extends NormalPage {
               $('#collation-tables').removeClass('hidden');
               break;
           }
-        })
+        });
       }
-    }
-    else {
+    } else {
       $('button.edit-user-profile-btn').on('click', this.genOnClickMakeUserButton());
     }
 
@@ -132,10 +126,10 @@ export class PersonPage extends NormalPage {
   }
 
   async fetchCollationTablesAndEditions() {
-    let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.personId))
+    let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.personId));
     if (data['tableInfo'].length !== 0) {
       this.userContributions.push(CONTRIBUTION_CT);
-      let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo'])
+      let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo']);
       this.chunkEditionsCollapse.setContent(listHtml.singleChunkEditions);
       this.collationTablesCollapse.setContent(listHtml.cTables);
     }
@@ -143,20 +137,20 @@ export class PersonPage extends NormalPage {
   }
 
   async fetchTranscriptions() {
-    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.personId))
+    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.personId));
     if (data['docIds'].length !== 0) {
       this.userContributions.push(CONTRIBUTION_TX);
-      this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data))
+      this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data));
     }
 
   }
 
-  constructCollapse(selector: string, title: string, headerClasses:string[] = []) {
+  constructCollapse(selector: string, title: string, headerClasses: string[] = []) {
     return new CollapsePanel({
       containerSelector: selector,
       title: title,
       content: ApmPage.genLoadingMessageHtml(),
-      contentClasses: [ 'user-profile-section-content'],
+      contentClasses: ['user-profile-section-content'],
       headerClasses: headerClasses,
       iconWhenHidden: '<small><i class="bi bi-caret-right-fill"></i></small>',
       iconWhenShown: '<small><i class="bi bi-caret-down-fill"></i></small>',
@@ -164,20 +158,20 @@ export class PersonPage extends NormalPage {
       headerElement: 'h3',
       initiallyShown: false,
       debug: false
-    })
+    });
   }
 
   async genContentHtml() {
-    let breadcrumbHtml = this.getBreadcrumbNavHtml([
-      { label: tr('People'), url:  urlGen.sitePeople()},
-      { label: tr('Person Details'), active: true}
-    ])
+    let breadcrumbHtml = this.getBreadcrumbNavHtml([{
+      label: tr('People'),
+      url: urlGen.sitePeople()
+    }, {label: tr('Person Details'), active: true}]);
     let entityAdminHtml = '';
     if (this.isUserRoot()) {
       entityAdminHtml = `<div class="entity-admin">
                 <a class="entity-page-button" href="${urlGen.siteAdminEntity(this.personData.id)}">[ ${tr('Entity Page')} ]</a>
                 <a class="dev-metadata-editor-button" href="${urlGen.siteDevMetadataEditor(this.personData.id)}">[ ${tr('Dev Metadata Editor')} ]</a>
-                </div>`
+                </div>`;
     }
 
     return `<div>${breadcrumbHtml}</div>
@@ -193,7 +187,7 @@ export class PersonPage extends NormalPage {
       return '';
     }
     let html = `<h2>Works</h2>`;
-    html += this.works.map( (work, index) => {
+    html += this.works.map((work, index) => {
       return `<div class="work-div work-div-${index}"><a href="${urlGen.siteWorkPage(work['workId'])}">${work['workId']}: ${work['title']}</a></div>`;
     }).join('');
     return html;
@@ -220,24 +214,16 @@ export class PersonPage extends NormalPage {
       if (this.canManageUsers || !this.userData.isReadOnly) {
         userAdminHtml = `<button class="btn btn-primary edit-user-profile-btn">Edit User Profile</button>`;
       }
-      let privateDataToDisplay =  [
-        [ tr('Username'), this.userData.userName],
-        [ tr('User Email Address'), this.userData['emailAddress']]
-        ];
+      let privateDataToDisplay = [[tr('Username'), this.userData.userName], [tr('User Email Address'), this.userData['emailAddress']]];
 
       if (this.canManageUsers) {
-        privateDataToDisplay.push(...[
-          [ tr('Disabled'), this.userData.disabled ? tr('Yes') : tr('No')],
-          [ tr('Root'), this.userData.root ? tr('Yes') : tr('No')],
-          [ tr('Read Only'), this.userData.readOnly ? tr('Yes') : tr('No')],
-          [ tr('Tags'), '[ ' + this.userData.tags.join(', ') + ' ]'],
-        ])
+        privateDataToDisplay.push(...[[tr('Disabled'), this.userData.disabled ? tr('Yes') : tr('No')], [tr('Root'), this.userData.root ? tr('Yes') : tr('No')], [tr('Read Only'), this.userData.readOnly ? tr('Yes') : tr('No')], [tr('Tags'), '[ ' + this.userData.tags.join(', ') + ' ]'],]);
       }
 
-      userPrivateDataHtml = privateDataToDisplay.map ( (displayTuple) => {
-        let [ predicateName, predicateValue] = displayTuple;
+      userPrivateDataHtml = privateDataToDisplay.map((displayTuple) => {
+        let [predicateName, predicateValue] = displayTuple;
         return this.getPredicateHtml(predicateName, predicateValue);
-      }).join('')
+      }).join('');
 
 
     }
@@ -249,7 +235,7 @@ export class PersonPage extends NormalPage {
         <div id="multi-chunk-editions" class="user-profile-section hidden"></div>
         <div id="chunk-editions" class="user-profile-section hidden"></div>
         <div id="collation-tables" class="user-profile-section hidden"></div>
-        <div id="transcriptions" class="user-profile-section hidden"></div>`
+        <div id="transcriptions" class="user-profile-section hidden"></div>`;
   }
 
   genOnClickEditUserProfileButton() {
@@ -259,25 +245,24 @@ export class PersonPage extends NormalPage {
         personData: this.personData,
         canManageUsers: this.canManageUsers,
         apmDataProxy: this.apmDataProxy,
-      })).show().then( (profileUpdated) => {
+      })).show().then((profileUpdated) => {
         if (profileUpdated) {
           window.location.reload();
         }
       });
-    }
+    };
   }
 
-  genOnClickMakeUserButton () {
+  genOnClickMakeUserButton() {
     return () => {
       (new MakeUserDialog({
-        personData: this.personData,
-        apmDataProxy: this.apmDataProxy,
-      })).show().then( (userCreated) => {
+        personData: this.personData, apmDataProxy: this.apmDataProxy,
+      })).show().then((userCreated) => {
         if (userCreated) {
           window.location.reload();
         }
       });
-    }
+    };
   }
 
 }

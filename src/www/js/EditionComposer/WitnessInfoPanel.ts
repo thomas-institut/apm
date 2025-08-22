@@ -489,7 +489,6 @@ export class WitnessInfoPanel extends Panel {
       $(`${modalSelector} .sigla-table-body`).html(siglaTableBody);
 
       cancelButton.on('click', () => {
-        // @ts-expect-error the modal method is added by bootstrap
         $(modalSelector).modal('hide');
         $(modalSelector).remove();
       });
@@ -560,7 +559,6 @@ export class WitnessInfoPanel extends Panel {
       });
 
       // go!
-      // @ts-expect-error the modal method is added by bootstrap
       $(modalSelector).modal({
         backdrop: 'static', keyboard: false, show: true
       });
@@ -635,20 +633,17 @@ export class WitnessInfoPanel extends Panel {
         this.getWitnessSiglaArrayFromPreset(p).forEach((w) => {
           this.ctData['sigla'][w.index] = w.presetSiglum;
         });
-        // @ts-expect-error the modal method is added by bootstrap
         $(modalSelector).modal('hide');
         $(modalSelector).remove();
         await Promise.all([this.updateWitnessInfoDiv(), this.onSiglaChange(this.ctData.sigla)]);
       });
 
       cancelButton.on('click', () => {
-        // @ts-expect-error the modal method is added by bootstrap
         $(modalSelector).modal('hide');
         $(modalSelector).remove();
       });
 
       // go!
-      // @ts-expect-error the modal method is added by bootstrap
       $(modalSelector).modal({
         backdrop: 'static', keyboard: false, show: true
       });

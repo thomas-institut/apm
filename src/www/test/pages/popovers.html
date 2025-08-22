@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Popover stuff</title>
+    <style>
+        :root {
+            --my-popover-padding: 5px;
+        }
+        body {
+            font-family: sans-serif;
+            font-size: 12pt;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .myPopover {
+            font-size: 90%;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+        }
+
+        .tooltip {
+            background-color: silver;
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 0.7em;
+        }
+
+
+        .myPopover h3 {
+            background-color: gainsboro;
+            border-bottom: 1px solid #ccc;
+            margin: 0;
+            padding: var(--my-popover-padding);
+        }
+        .myPopover p {
+            padding: var(--my-popover-padding);
+        }
+
+        .buttonsDiv {
+            display: flex;
+            flex-direction: row;
+            gap: 3em;
+        }
+    </style>
+
+    <script type="module" src="popovers.ts"></script>
+</head>
+<body>
+</body>
+</html>

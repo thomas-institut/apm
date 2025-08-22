@@ -12,7 +12,7 @@ import { NullObjectValidator } from './NullObjectValidator'
 import { StatementArray } from '@/EntityData/StatementArray'
 import {getStringVal} from "@/toolbox/UiToolBox";
 import {StatementDataInterface} from "../../schema/Schema";
-
+import {Popover, withPopover} from "@/widgets/Popover";
 
 const SubjectIcon = '<b class="mde-icon">Subject</b>';
 const PredicateIcon = '<b class="mde-icon">Predicate</b>'
@@ -26,7 +26,7 @@ const PredicateResetIcon = '<i class="bi bi-arrow-counterclockwise"></i>'
 const EmptyJqueryElement = $('');
 
 interface StatementElements {
-  qualificationHelpIcons: any;
+  qualificationHelpIcons: { [key: number]: JQuery<HTMLElement>};
   qualificationPredicateResets: any;
   qualificationInputs: any;
   statusDiv: JQuery<HTMLElement>;
@@ -42,6 +42,7 @@ interface StatementElements {
   editButton: JQuery;
   cancelButton: JQuery;
   infoButton: JQuery;
+  infoButtonPopover: Popover | null;
 }
 
 export class BasicPredicateEditor {
@@ -55,7 +56,7 @@ export class BasicPredicateEditor {
   private allowedQualifications: number[];
   private statements: any[];
   private currentStatements: any[];
-  private readonly currentModes: string[];
+  // private readonly currentModes: string[];
   private readonly isRelation: boolean;
   private readonly getEntityName: any;
   private readonly getEntityType: any;
@@ -164,7 +165,7 @@ export class BasicPredicateEditor {
     this.allowedQualifications = this.predicateDefinition.allowedQualifications ?? [];
     this.statements = this.options.statements;
     this.currentStatements = this.getCurrentStatements(this.statements);
-    this.currentModes = [];
+    // this.currentModes = [];
     this.isRelation = this.predicateDefinition.type === Entity.tRelation;
     this.getEntityName = this.options.getEntityName;
     this.getEntityType = this.options.getEntityType;
@@ -190,7 +191,7 @@ export class BasicPredicateEditor {
       mode = this.options.initialMode;
     }
     $(this.containerSelector).html('').html(await this.getHtml());
-    let displayedStatements = [ ...this.currentStatements];
+    let displayedStatements: StatementDataInterface[] = [ ...this.currentStatements];
     if (this.currentStatements.length === 0) {
       displayedStatements = [ this.getNewStatementSkeletonObject()];
     }
@@ -199,13 +200,24 @@ export class BasicPredicateEditor {
     }
     this.statementElements = [];
     await Promise.all(displayedStatements.map( async (statement) => {
+      const infoButton = $(`${this.containerSelector} .info-button-${statement.id}`);
+      const domElement = infoButton.get(0);
+      let infoButtonPopover = null;
+      if (domElement !== undefined) {
+        infoButtonPopover = new Popover(domElement, {
+          content: await this.getInfoPopoverHtml(statement),
+          popoverClass: 'popover'
+        });
+      }
+
       this.statementElements[statement.id] = {
         objectElement: $(`${this.containerSelector} .mde-predicate-object-${statement.id}`),
         editElement:  $(`${this.containerSelector} .bpe-predicate-edit-${statement.id}`),
         iconsSpan: $(`${this.containerSelector} .mde-predicate-icons-${statement.id}`),
         editButton: $(`${this.containerSelector} .edit-button-${statement.id}`),
         cancelButton: $(`${this.containerSelector} .cancel-button-${statement.id}`),
-        infoButton: $(`${this.containerSelector} .info-button-${statement.id}`),
+        infoButton: infoButton,
+        infoButtonPopover: infoButtonPopover,
         qualificationHelpIcons: {},
         qualificationInputs: {},
         qualificationPredicateResets: {},
@@ -216,7 +228,6 @@ export class BasicPredicateEditor {
         attributeValueInput: EmptyJqueryElement,
         editSaveButton: EmptyJqueryElement,
         editCancelButton: EmptyJqueryElement,
-
       }
       let elements = this.statementElements[statement.id];
       elements.objectElement.on('mouseenter', () => {
@@ -228,20 +239,10 @@ export class BasicPredicateEditor {
 
       elements.editButton.on('click', this.genOnClickEditButton(statement));
       elements.infoButton.on('click', this.genOnClickInfoButton(statement));
-      // @ts-ignore
-      elements.infoButton.popover({
-        content: await this.getInfoPopoverHtml(statement),
-        html: true,
-        title: await this.getInfoPopoverTitle(),
-      }).on('mouseenter', () => {
-        // @ts-ignore
-        elements.infoButton.popover('show');
-      }).on('mouseleave', () => {
-        // @ts-ignore
-        elements.infoButton.popover('hide');
-      });
+
+
       elements.cancelButton.on('click', this.genOnClickCancelStatementButton(statement));
-      this.currentModes[statement.id] = 'show';
+      // this.currentModes[statement.id] = 'show';
     }));
 
     if (mode === 'edit') {
@@ -251,11 +252,6 @@ export class BasicPredicateEditor {
     }
   }
 
-  /**
-   *
-   * @param {object}statement
-   * @return {Promise<void>}
-   */
   async switchToEditMode(statement:StatementDataInterface): Promise<void> {
     this.statementElements[statement.id].editElement
       .removeClass('hidden bpe-predicate-edit-relation')
@@ -306,8 +302,12 @@ export class BasicPredicateEditor {
         .on('keyup', this.genOnInputChangeEditMode(statement, 'qualification', predicate));
       this.statementElements[statement.id].qualificationPredicateResets[predicate]
         .on('click', this.genOnClickQualificationPredicateReset(statement, predicate));
-      this.statementElements[statement.id].qualificationHelpIcons[predicate].popover({trigger: 'hover'});
-
+      const helpIcon = this.statementElements[statement.id].qualificationHelpIcons[predicate];
+      withPopover(helpIcon.get()[0], {
+        popoverClass: 'popover',
+        arrowSize: 6,
+        content: `<div class='popover-body'>${helpIcon.attr('data-content')}</div>`,
+      })
     })
     this.statementElements[statement.id].editCancelButton.on('click', (ev) => {
       ev.preventDefault();
@@ -683,8 +683,10 @@ export class BasicPredicateEditor {
   genOnClickInfoButton(statement: StatementDataInterface) {
     return async (ev: any) => {
       ev.preventDefault();
-      // @ts-ignore
-      this.statementElements[statement.id].infoButton.popover('hide');
+      const popover = this.statementElements[statement.id].infoButtonPopover
+      if (popover !== null) {
+        await popover.hide();
+      }
       if (this.statements.length === 0) {
         return;
       }
@@ -1010,15 +1012,6 @@ export class BasicPredicateEditor {
     return this.options.logoUrl !== '' ? `<img src="${this.options.logoUrl}" class="mde-predicate-logo" alt="${name}" title="${name}">` : label;
   }
 
-  async getInfoPopoverTitle() {
-    let predicateName = this.getPredicateName();
-    let predicateDescription = this.predicateDefinition['description'];
-    if (predicateName === predicateDescription) {
-      predicateDescription = '';
-    }
-    return `<div>${predicateName}</div><div class="bpe-popover-subtitle">${predicateDescription}</div>`;
-  }
-
   async getInfoPopoverHtml(statement: StatementDataInterface) {
     if (statement.id === this.getNewStatementSkeletonObject().id) {
       if (this.currentStatements.length === 0) {
@@ -1044,7 +1037,15 @@ export class BasicPredicateEditor {
     if (this.currentStatements.length < this.statements.length) {
       html += `<div class="bpe-popover-more-info-line">There are cancelled statements. Click info icon to see full list</div>`
     }
-    return html;
+    let predicateName = this.getPredicateName();
+    let predicateDescription = this.predicateDefinition['description'];
+    if (predicateName === predicateDescription) {
+      predicateDescription = '';
+    }
+
+
+    return `<h3 class="popover-header">${predicateName} <div class="bpe-popover-subtitle">${predicateDescription}</div></h3>
+        <div class="popover-body">${html}</div>`;
   }
 
   async getStatementCard(statement: StatementDataInterface, extraClasses: string[] = [], includeParts = [ true, true, true]) {

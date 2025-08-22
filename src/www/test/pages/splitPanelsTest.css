@@ -1,0 +1,62 @@
+:root {
+    --standard-padding: 5px;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+.app {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+}
+
+.header {
+    flex-grow: 0;
+}
+
+.panelContainer {
+    flex-grow: 1;
+    margin: 5px;
+    overflow-y: auto;
+}
+
+.panel {
+
+    /*height: 100%;*/
+    overflow-y: auto;
+}
+
+.simplePanel {
+  padding: var(--standard-padding);
+  border: 1px solid #eee;
+}
+
+
+
+.divider {
+
+}
+
+.toolBar {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    background-color: #e9edec;
+    padding: 0 var(--standard-padding);
+
+}
+
+.toolBar .btn {
+    margin: 3px;
+    color: gray;
+    padding: 0;
+    font-weight: bold;
+}
+
+.panelWithToolBarContent {
+    background-color: ivory;
+    padding: var(--standard-padding);
+}
+

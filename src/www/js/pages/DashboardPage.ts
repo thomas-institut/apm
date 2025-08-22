@@ -16,84 +16,83 @@
  *
  */
 
-import { CollapsePanel } from "../widgets/CollapsePanel"
-import { UserDocDataCommon } from './common/UserDocDataCommon'
-import { tr } from './common/SiteLang'
-import { NormalPage } from './NormalPage'
-import { urlGen } from './common/SiteUrlGen'
-import { ApmPage } from './ApmPage'
-import { Tid } from '../Tid/Tid'
-import { NewChunkEditionDialog } from './common/NewChunkEditionDialog'
+import {CollapsePanel} from "@/widgets/CollapsePanel";
+import {UserDocDataCommon} from './common/UserDocDataCommon';
+import {tr} from './common/SiteLang';
+import {NormalPage} from './NormalPage';
+import {urlGen} from './common/SiteUrlGen';
+import {ApmPage} from './ApmPage';
+import {Tid} from '@/Tid/Tid';
+import {NewChunkEditionDialog} from './common/NewChunkEditionDialog';
 
-const newMceEditionIcon = '<i class="bi bi-file-plus"></i>'
+
+const newMceEditionIcon = '<i class="bi bi-file-plus"></i>';
+const UserDataTtl = 10;
 
 export class DashboardPage extends NormalPage {
 
-  mcEditionsCollapse! : CollapsePanel;
+  mcEditionsCollapse!: CollapsePanel;
   chunkEditionsCollapse!: CollapsePanel;
-  collationTablesCollapse! : CollapsePanel;
-  transcriptionsCollapse! : CollapsePanel;
+  collationTablesCollapse!: CollapsePanel;
+  transcriptionsCollapse!: CollapsePanel;
   adminCollapse!: CollapsePanel;
 
   constructor(options: any = null) {
     const start = Date.now();
     super(options);
     console.log(`Dashboard Page`);
-    this.initPage().then( () => {
-      console.log(`Dashboard page ready in ${Date.now() - start} ms`)
-    })
+    this.initPage().then(() => {
+      console.log(`Dashboard page ready in ${Date.now() - start} ms`);
+    });
+
   }
 
 
   async initPage() {
     await super.initPage();
     document.title = tr('Dashboard');
-    this.mcEditionsCollapse = this.constructCollapse('#multi-chunk-editions', tr('Multi-Chunk Editions'), [ 'first'])
-    this.chunkEditionsCollapse = this.constructCollapse('#chunk-editions', tr('Chunk Editions'))
-    this.collationTablesCollapse = this.constructCollapse('#collation-tables', tr('Collation Tables'))
-    this.transcriptionsCollapse = this.constructCollapse('#transcriptions', tr('Transcriptions'))
-    this.adminCollapse = this.constructCollapse('#admin',tr('Admin'))
-    this.adminCollapse.setContent(this.genAdminSectionHtml())
+    this.mcEditionsCollapse = this.constructCollapse('#multi-chunk-editions', tr('Multi-Chunk Editions'), ['first']);
+    this.chunkEditionsCollapse = this.constructCollapse('#chunk-editions', tr('Chunk Editions'));
+    this.collationTablesCollapse = this.constructCollapse('#collation-tables', tr('Collation Tables'));
+    this.transcriptionsCollapse = this.constructCollapse('#transcriptions', tr('Transcriptions'));
+    this.adminCollapse = this.constructCollapse('#admin', tr('Admin'));
+    this.adminCollapse.setContent(this.genAdminSectionHtml());
 
-    await Promise.all( [
-      this.fetchMultiChunkEditions(),
-      this.fetchCollationTablesAndEditions(),
-      this.fetchTranscriptions()
-    ])
+    await Promise.all([this.fetchMultiChunkEditions(), this.fetchCollationTablesAndEditions(), this.fetchTranscriptions()]);
 
     $('.new-chunk-edition-btn').on('click', (ev) => {
       ev.preventDefault();
-      let d = new NewChunkEditionDialog({ apmDataProxy: this.apmDataProxy});
+      let d = new NewChunkEditionDialog({apmDataProxy: this.apmDataProxy});
       d.createNewChunkEdition();
-    })
+    });
   }
 
   async fetchMultiChunkEditions() {
-    let data = await this.apmDataProxy.get(urlGen.apiUserGetMultiChunkEditionInfo(this.userId));
-    let html = UserDocDataCommon.generateMultiChunkEditionsListHtml(data)
-    let newMceUrl = urlGen.siteMultiChunkEditionNew()
-    html += `<p class="new-mce"><a href="${newMceUrl}" title="${tr('Click to start a new multi-chunk edition')}" target="_blank">${newMceEditionIcon} ${tr('Create new multi-chunk edition')}</a></p>`
-    this.mcEditionsCollapse.setContent(html)
+    let data = await this.apmDataProxy.get(urlGen.apiUserGetMultiChunkEditionInfo(this.userId), false, UserDataTtl);
+    let html = UserDocDataCommon.generateMultiChunkEditionsListHtml(data);
+    let newMceUrl = urlGen.siteMultiChunkEditionNew();
+    html += `<p class="new-mce"><a href="${newMceUrl}" title="${tr('Click to start a new multi-chunk edition')}" target="_blank">${newMceEditionIcon} ${tr('Create new multi-chunk edition')}</a></p>`;
+    this.mcEditionsCollapse.setContent(html);
   }
 
   async fetchCollationTablesAndEditions() {
-   let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.userId))
-   let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo']);
-   let newChunkEditionHtml = `<p class="new-mce"><a href="" class="new-chunk-edition-btn" 
+    let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.userId), false, UserDataTtl);
+    let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo']);
+    let newChunkEditionHtml = `<p class="new-mce"><a href="" class="new-chunk-edition-btn" 
         title="${tr("Click to create a new chunk edition")}">${newMceEditionIcon} ${tr('Create new chunk edition')}</a></p>`;
-   this.chunkEditionsCollapse.setContent(listHtml.singleChunkEditions + newChunkEditionHtml);
-   this.collationTablesCollapse.setContent(listHtml.cTables)
+    this.chunkEditionsCollapse.setContent(listHtml.singleChunkEditions + newChunkEditionHtml);
+    this.collationTablesCollapse.setContent(listHtml.cTables);
 
 
   }
 
   async fetchTranscriptions() {
-    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.userId))
-    this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data))
+    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.userId), false, UserDataTtl);
+    this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data));
   }
 
-  getExtraClassesForPageContentDiv () {
-    return [ 'dashboard'];
+  getExtraClassesForPageContentDiv() {
+    return ['dashboard'];
   }
 
   /**
@@ -101,24 +100,26 @@ export class DashboardPage extends NormalPage {
    * @return {Promise<string>}
    */
   async genContentHtml(): Promise<string> {
-    return `<div id="multi-chunk-editions" class="dashboard-section"></div>
+    return `
+<!--        <div id="hello-world" class="dashboard-section"></div>-->
+        <div id="multi-chunk-editions" class="dashboard-section"></div>
         <div id="chunk-editions" class="dashboard-section"></div>
         <div id="collation-tables" class="dashboard-section"></div>
         <div id="transcriptions" class="dashboard-section"></div>
-        <div id="admin" class="dashboard-section"></div> `
+        <div id="admin" class="dashboard-section"></div> `;
   }
 
   genAdminSectionHtml() {
     return `
-        <p><a href="${urlGen.sitePerson(Tid.toBase36String(this.userId))}">${tr("Edit profile / Change Password")}</a></p>`
+        <p><a href="${urlGen.sitePerson(Tid.toBase36String(this.userId))}">${tr("Edit profile / Change Password")}</a></p>`;
   }
 
-  constructCollapse(selector: string, title: string, headerClasses : string[] = []): CollapsePanel {
+  constructCollapse(selector: string, title: string, headerClasses: string[] = []): CollapsePanel {
     return new CollapsePanel({
       containerSelector: selector,
       title: title,
       content: ApmPage.genLoadingMessageHtml(),
-      contentClasses: [ 'dashboard-section-content'],
+      contentClasses: ['dashboard-section-content'],
       headerClasses: headerClasses,
       iconWhenHidden: '<small><i class="bi bi-caret-right-fill"></i></small>',
       iconWhenShown: '<small><i class="bi bi-caret-down-fill"></i></small>',
@@ -126,8 +127,8 @@ export class DashboardPage extends NormalPage {
       headerElement: 'h1',
       initiallyShown: true,
       debug: false
-    })
+    });
   }
 }
 
-(window as any).DashboardPage = DashboardPage
+(window as any).DashboardPage = DashboardPage;

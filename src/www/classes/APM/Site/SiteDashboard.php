@@ -20,9 +20,8 @@
 namespace APM\Site;
 
 use APM\SystemProfiler;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
-use ThomasInstitut\DataCache\ItemNotInCacheException;
+use Psr\Http\Message\ServerRequestInterface as Request;
 
 /**
  * Site Controller class
@@ -41,15 +40,13 @@ class SiteDashboard extends SiteController
         SystemProfiler::setName("Site:" . __FUNCTION__);
         return $this->renderStandardPage(
             $response,
-            'Dashboard',
+            '',
             "Dashboard",
             "DashboardPage",
             "js/pages/DashboardPage.ts",
             null,
             [],
-            [ 'dashboard.css'],
-            [],
-            false
+            ['dashboard.css']
         );
     }
 }

@@ -21,11 +21,12 @@
 
 
 body, .popover {
-    font-family:  var(--default-font-family), sans-serif;
+    font-family: var(--default-font-family), sans-serif;
     font-size: var(--default-font-size);
     color: var(--default-font-color);
     text-align: inherit;
 }
+
 
 .container {
     width: 100% !important;
@@ -55,8 +56,9 @@ body, .popover {
 }
 
 .navbar {
-    margin-bottom: 20px;  /* To make it the same as bs3, in bs4 it's 0 */
+    margin-bottom: 20px; /* To make it the same as bs3, in bs4 it's 0 */
 }
+
 .dd-menu-item {
     font-size: 0.85em;
 }
@@ -66,7 +68,7 @@ body, .popover {
 }
 
 .text-warning {
-    color: #8a6d3b !important;  /* Fix BS4's awful warning colour! */
+    color: #8a6d3b !important; /* Fix BS4's awful warning colour! */
 }
 
 .hidden {
@@ -79,7 +81,8 @@ a, a:visited {
     text-decoration: none;
     color: var(--dimmed-blue-color);
 }
-a:hover{
+
+a:hover {
     color: blue;
 }
 
@@ -96,7 +99,7 @@ ul.list-indented li {
     padding: 0;
     margin-bottom: 1rem;
     margin-left: 1.5rem;
-    text-indent: -1.5rem;  /* Hanging indentation on list items */
+    text-indent: -1.5rem; /* Hanging indentation on list items */
 }
 
 /* PAGE TABLES, e.g. in document pages */
@@ -132,16 +135,18 @@ td.withouttranscription a {
     color: silver;
 }
 
-td.without-transcription a{
-    color:silver
+td.without-transcription a {
+    color: silver
 }
 
 .foliation-set {
-   font-weight: bold;
+    font-weight: bold;
 }
+
 .out-of-sequence {
-   background-color: #f5f0e7;
+    background-color: #f5f0e7;
 }
+
 div.page-table-div {
     margin-bottom: 1em;
 }
@@ -152,6 +157,7 @@ div.page-table-legend {
     margin-left: 3em;
     margin-bottom: 2em;
 }
+
 .in-text {
     margin-left: 5px;
     margin-right: 5px;
@@ -188,8 +194,8 @@ ul.chunk-list {
     padding: 0;
 }
 
-ul.chunk-list  li {
-    padding:0;
+ul.chunk-list li {
+    padding: 0;
     margin: 5px 0 30px 10px;
 }
 
@@ -306,12 +312,12 @@ div.def-pages-edit-div input[type="number"] {
 }
 
 nav {
-    padding:0;
+    padding: 0;
     line-height: 1em;
 }
 
 ol.breadcrumb {
-    padding:0;
+    padding: 0;
 }
 
 
@@ -342,7 +348,7 @@ body.normal-page {
     border-bottom: 1px solid var(--very-light-gray);
 }
 
-.normal-page  div.page-content {
+.normal-page div.page-content {
     padding-left: var(--container-side-padding);
     padding-right: var(--container-side-padding);
     overflow-y: auto;
@@ -425,7 +431,7 @@ body.h-and-c-page {
     width: max-content;
 }
 
-.mde-section-list-icons .btn-sm{
+.mde-section-list-icons .btn-sm {
     font-size: 0.6em;
 }
 
@@ -439,7 +445,7 @@ body.h-and-c-page {
     column-gap: 0.5em;
 }
 
-.mde-predicate-logo{
+.mde-predicate-logo {
     max-height: 2.5em;
     min-width: 3em;
 }
@@ -455,7 +461,7 @@ body.h-and-c-page {
     flex-wrap: wrap;
     column-gap: 3em;
     row-gap: 3em;
-    width:100%;
+    width: 100%;
 }
 
 .mde-statement-divs {
@@ -490,9 +496,11 @@ div.mde-statement-card {
 .bpe-popover-more-info-line {
     margin-top: 1em;
 }
+
 .bpe-statement-popover.mde-statement-card {
     font-size: 0.8em;
 }
+
 .ghost {
     visibility: hidden;
 }
@@ -530,6 +538,7 @@ p.bpe-popover-tagline {
     width: 100%;
     margin-right: 2em;
 }
+
 .bpe-predicate-edit-attribute input[type=text] {
     width: 100%;
     margin-right: 2em;
@@ -539,7 +548,7 @@ p.bpe-popover-tagline {
     margin-bottom: 2em;
 }
 
-.bpe-cancellation-confirm-statement .mde-statement-card{
+.bpe-cancellation-confirm-statement .mde-statement-card {
     column-gap: 1em;
 }
 
@@ -592,12 +601,17 @@ table.bpe-statement-history tr.event-creation {
     display: none !important;
 }
 
-table.fixed { table-layout:fixed; }
-table.fixed td { overflow: hidden; }
+table.fixed {
+    table-layout: fixed;
+}
+
+table.fixed td {
+    overflow: hidden;
+}
 
 .nice-toggle-button-on {
     font-size: 0.8em;
-    border: 1px solid  var(--default-font-color);
+    border: 1px solid var(--default-font-color);
     border-radius: 3px;
     padding: 2px;
     cursor: pointer;

@@ -17,7 +17,6 @@
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-// import {prettyPrintArray} from '../toolbox/ArrayUtil'
 
 /**
  * Helper class to generate a Bootstrap4 html code for a set of tabs and content

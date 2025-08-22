@@ -15,6 +15,7 @@
   "author": "Rafael Nájera <rafael.najera@uni-koeln.de>",
   "license": "GPL-3.0",
   "dependencies": {
+    "@floating-ui/dom": "^1.7.3",
     "@pdf-lib/fontkit": "^1.1.1",
     "@popperjs/core": "^2.9.2",
     "@thomas-inst/matrix": "^1.0.0",
@@ -31,13 +32,20 @@
     "openseadragon": "^4.1.0",
     "pdf-lib": "^1.17.1",
     "quill": "^1.3.7",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "split-grid": "^1.0.11",
     "twig": "^1.15.4",
     "vanilla-jsoneditor": "^0.17.7"
   },
   "devDependencies": {
+    "@types/bootstrap": "^4.6.2",
     "@types/jquery": "^3.5.5",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.1",
     "happy-dom": "^18.0.1",
+    "lorem-ipsum": "^2.0.8",
     "openapi-typescript": "^7.8.0",
     "standard": "^17.0.0",
     "typescript": "^5.8.3",

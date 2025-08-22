@@ -37,4 +37,5 @@ src/python/.idea
 /dev-logs/**
 /dev-tmp/
 /src/www/app-settings.json
-
+# public may be there only in development so that vite does not complain about a missing favicon
+/src/www/public/

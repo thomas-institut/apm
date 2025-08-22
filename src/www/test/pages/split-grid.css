@@ -1,0 +1,76 @@
+:root {
+    --shade-color: #7a7a7a;
+    --standard-padding: 0.25em;
+}
+
+
+body {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+.pageHeaderDiv {
+    flex-grow: 0;
+    font-size: 2em;
+    margin: 0;
+    padding: 0;
+    font-weight: bold;
+}
+
+.panelsContainer {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: var(--standard-padding);
+    margin: 0;
+}
+
+.pageContentFooter {
+    background-color: silver;
+    flex-grow: 0;
+}
+
+
+.panel {
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.left-panel {
+    border: 1px solid var(--shade-color);
+    padding: var(--standard-padding);
+}
+
+.right-panel {
+    border: 1px solid var(--shade-color);
+}
+
+.insidePanel {
+    padding: var(--standard-padding);
+}
+
+.divider {
+    margin: 0;
+    padding: 0;
+}
+
+.shaded {
+    background-color: var(--shade-color);
+}
+
+.panelWithToolbar {
+    display: flex;
+    flex-direction: column;
+}
+
+.panelToolbar {
+    flex: 0 0 min-content;
+    background-color: #eee;
+}
+
+.panelWithToolbarContent {
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+}

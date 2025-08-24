@@ -3,10 +3,10 @@
  * Site-wide url generator
  *
  */
-import { ApmUrlGenerator } from '../../ApmUrlGenerator'
+import { ApmUrlGenerator } from '@/ApmUrlGenerator'
 
 export var urlGen = new ApmUrlGenerator('')
 
-export function setBaseUrl(baseUrl : string) {
-  urlGen.setBase(baseUrl)
+export function setBaseUrl(baseUrl : string, apiUrl = '') {
+  urlGen.setBase(baseUrl, apiUrl)
 }

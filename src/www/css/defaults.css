@@ -69,6 +69,8 @@
     --dimmed-blue-color: #337ab7;  /* For dimmed links*/
     --dimmed-text-color: #c2c2c2;
     --very-light-gray: #e7e7e7;
+    --top-bar-font-color: rgba(0, 0, 0, 0.5);
+    --top-bar-font-color-hover: rgba(0, 0, 0, 0.9);
 
     /* OTHER */
     --small-font-size: 0.8em;

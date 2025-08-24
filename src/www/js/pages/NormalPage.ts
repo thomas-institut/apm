@@ -20,7 +20,7 @@ import { setSiteLanguage, tr } from './common/SiteLang'
 import { urlGen } from './common/SiteUrlGen'
 import { ApmPage } from './ApmPage'
 import { ApmFormats } from './common/ApmFormats'
-import { Tid } from '../Tid/Tid'
+import { Tid } from '@/Tid/Tid'
 
 
 export interface BreadCrumb {

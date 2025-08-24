@@ -1,0 +1,42 @@
+@import url('../css/fonts.css');
+@import url('../css/defaults.css');
+
+/* override bootstrap */
+
+body {
+    font-family: var(--default-font-family), sans-serif;
+    font-size: var(--default-font-size);
+    color: var(--default-font-color);
+    text-align: inherit;
+
+}
+
+/* Make the container covers the whole page */
+.container {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* We want a compact top bar */
+.navbar {
+    padding: 0 !important;
+    border-bottom: 1px solid var(--very-light-gray);
+    margin-bottom: 0.5rem;
+}
+
+.navbar-brand {
+    padding: 0;
+}
+/* For some unfathomable reason Bootstrap does not add space between nav-link and nav-item divs, let's fix it */
+.nav-link, .nav-item {
+    margin-right: 1rem;
+}
+
+/* Use dimmed colors for the top bar */
+.navbar a {
+    color: var(--top-bar-font-color)
+}
+
+.navbar a:hover {
+    color: var(--top-bar-font-color-hover)
+}

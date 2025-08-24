@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href='/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
+    <title></title>
+    <style>
+        .loader {
+            margin-top: 1em;
+            border: 1em solid #f3f3f3; /* Light grey */
+            border-top: 1em solid gray; /* Blue */
+            border-radius: 50%;
+            width: 4em;
+            height: 4em;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <script type="module">
+      if (location.port === '5173') {
+        // running in Vite dev server, need to inject React Refresh hook
+        // to support HMR in development
+        import('/@react-refresh').then((ReactRefresh) => {
+          ReactRefresh.injectIntoGlobalHook(window);
+          window.$RefreshReg$ = () => {};
+          window.$RefreshSig$ = () => (type) => type;
+          window.__vite_plugin_react_preamble_installed__ = true;
+        });
+
+      }
+    </script>
+</head>
+<body>
+<script>
+  window.loading = true;
+  setTimeout( () => {
+    if (window.loading) {
+      document.body.innerHTML = '<div style="margin: 40px; color: gray">APM is taking some time to load, please stand by... <div class="loader"></div></div>';
+      setTimeout( () => {
+        if (window.loading) {
+          document.body.innerHTML = '<div style="margin: 40px; color: red">Oops, something went wrong loading APM. Please try again.</div>';
+        }
+      }, 30000)
+    }
+  }, 500);
+</script>
+</body>
+<script type="module" src="./index.tsx"></script>
+</html>

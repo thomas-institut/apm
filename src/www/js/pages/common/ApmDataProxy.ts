@@ -67,6 +67,10 @@ export class ApmDataProxy {
   private readonly cachedFetcher: CachedFetcher;
   private readonly localCachedFetcher: CachedFetcher;
 
+  private useBearerAuthentication: boolean = false;
+  private getBearerToken: () => Promise<string | null> = () => Promise.resolve(null);
+  private setBearerToken: (t: string, ttl: number) => Promise<void> = () => Promise.resolve();
+
   /**
    *
    * @param {string}cacheDataId
@@ -98,6 +102,13 @@ export class ApmDataProxy {
         console.log(`Removed ${total} items from web caches:  ${sessionRemovedItemCount} session, ${localRemovedItemCount} local`);
       }
     });
+  }
+
+  public withBearerAuthentication( retrieveToken: () => Promise<string | null>, setToken: (t: string, ttl: number) => Promise<void> ): this {
+    this.useBearerAuthentication = true;
+    this.getBearerToken = retrieveToken;
+    this.setBearerToken = setToken;
+    return this;
   }
 
   async getPersonEssentialData(personId: number): Promise<any> {
@@ -167,14 +178,39 @@ export class ApmDataProxy {
    *
    */
   async whoAmI(): Promise<any> {
-    let response = await fetch(urlGen.apiWhoAmI());
-    if (response.status === 200) {
-      return response.json();
+    if (this.useBearerAuthentication) {
+      let token = await this.getBearerToken();
+      if (token === null) {
+        return null;
+      }
     }
-    if (response.status === 401) {
+    try {
+      return await this.get(urlGen.apiWhoAmI(), false, 300);
+    } catch (error) {
+      console.warn(`Error getting whoami`, error);
       return null;
     }
-    throw new Error(`Error ${response.status} fetching ${urlGen.apiWhoAmI()}`);
+  }
+
+  async apiLogin(username: string, password: string, rememberMe: boolean): Promise<boolean> {
+    try {
+      const resp = await fetch(urlGen.apiLogin(), {
+        method: 'POST',
+        body: JSON.stringify({user: username, pwd: password, rememberMe: rememberMe ? 'on': ''})
+      });
+      if (resp.status === 200) {
+        const data = await resp.json();
+        if (data.status === 'OK') {
+          await this.setBearerToken(data.token, data.ttl ?? 15 * 24 * 3600);
+          return true;
+        }
+        return false;
+      }
+    } catch (error) {
+      console.warn(`Error logging in`, error);
+      return false;
+    }
+    return false;
   }
 
   async getRealDocId(docId: number): Promise<number> {
@@ -261,7 +297,7 @@ export class ApmDataProxy {
       return await this.post(urlGen.apiWitnessCheckUpdates(), witnessIds, true);
     } catch (error) {
       console.error(`Error checking witness updates`, error);
-      return { status: 'Error', message: 'Error checking witness updates', witnesses: [], timeStamp: ''};
+      return {status: 'Error', message: 'Error checking witness updates', witnesses: [], timeStamp: ''};
     }
   }
 
@@ -312,17 +348,28 @@ export class ApmDataProxy {
     let key = encodeURI(url);
     let fetcher = sessionCache ? this.cachedFetcher : this.localCachedFetcher;
     return fetcher.fetch(key, () => {
-      return new Promise((resolve, reject) => {
+      return new Promise( async (resolve, reject) => {
         if (['GET', 'POST'].indexOf(method) === -1) {
           reject(`Invalid method ${method} for URL ${url}`);
         }
+        let fetchOptions: any = { method: method };
+        if (this.useBearerAuthentication) {
+          const token = await this.getBearerToken();
+          if (token === null) {
+            reject(`No authentication token available`);
+            return;
+          }
+          fetchOptions['headers'] = { 'Authorization': `Bearer ${token}` };
+        }
         const actualPayload = useRawData ? payload : {data: JSON.stringify(payload)};
-        const fetchFunction = method === 'GET' ? () => {
-          return fetch(url);
-        } : () => {
-          return fetch(url, {method: method, body: JSON.stringify(actualPayload)});
-        };
 
+        const fetchFunction = method === 'GET' ? () => {
+          return fetch(url, fetchOptions);
+        } : () => {
+          fetchOptions['headers']['Content-Type'] = 'application/json';
+          fetchOptions['body'] = JSON.stringify(actualPayload);
+          return fetch(url, fetchOptions);
+        };
 
         fetchFunction().then((response) => {
           if (response.status === 200) {

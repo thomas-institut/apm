@@ -36,11 +36,11 @@ class SystemConfig
     }
 
 
-    static private function genAppSettings(array $config): array
+    static public function genAppSettings(array $config): array
     {
         $now = TimeString::now();
         return [
-            '_info' => "Auto generated $now, do not edit.",
+            '_info' => "Auto generated $now",
             'baseUrl' => BaseUrlDetector::detectBaseUrl($config['subDir']),
             'devMode' => $config['devMode'],
             'showLanguageSelector' => $config['siteShowLanguageSelector'],

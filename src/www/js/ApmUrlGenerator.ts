@@ -24,21 +24,14 @@ export class ApmUrlGenerator {
   private base: string = '';
   private apiBase!: string;
 
-  /**
-   *
-   * @param {string }baseUrl
-   */
-  constructor(baseUrl: string) {
-    this.setBase(baseUrl);
+   constructor(baseUrl: string, apiUrl = '') {
+    this.setBase(baseUrl, apiUrl);
   }
 
-  /**
-   *
-   * @param {string}url
-   */
-  setBase(url: string) {
+
+  setBase(url: string, apiUrl = '') {
     this.base = url;
-    this.apiBase = url + '/api';
+    this.apiBase = apiUrl === '' ? url + '/api' : apiUrl;
   }
 
   // -------------------------------
@@ -241,6 +234,10 @@ export class ApmUrlGenerator {
 
   apiWhoAmI() {
     return `${this.apiBase}/whoami`;
+  }
+
+  apiLogin() {
+    return `${this.apiBase}/login`;
   }
 
 

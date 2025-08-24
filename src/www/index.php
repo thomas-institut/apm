@@ -32,6 +32,7 @@ use APM\Site\SiteMetadataEditor;
 use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePeople;
 use APM\Site\SiteSearch;
+use APM\Site\SiteSettings;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Logger;
@@ -122,10 +123,11 @@ try {
 
 
 // Create routes
-createLoginRoutes($app, $container);
+createSiteUnauthenticatedRoutes($app, $container);
 createSiteRoutes($app, $container);
 createSiteDevRoutes($app, $container);
 createApiAuthenticatedRoutes($app, $container);
+createApiUnauthenticatedRoutes($app, $container);
 
 // RUN!!
 SystemProfiler::lap('Ready');
@@ -309,6 +311,14 @@ function createSiteRoutes(App $app, ContainerInterface $container) : void
 
     })->add( function(Request $request, RequestHandlerInterface $handler) use($container){
         return (new Authenticator($container))->authenticateSiteRequest($request, $handler);
+    });
+}
+
+function createApiUnauthenticatedRoutes(App $app, ContainerInterface $container) : void {
+    $app->group('/api', function (RouteCollectorProxy $group) use ($container){
+       $group->post('/login', function(Request $request, Response $response) use ($container){
+           return (new Authenticator($container))->login($request, $response, false);
+       });
     });
 }
 function createApiAuthenticatedRoutes(App $app, ContainerInterface $container) : void {
@@ -831,7 +841,7 @@ function createApiTypesettingRoutes(RouteCollectorProxy $group, ContainerInterfa
         })
         ->setName('api.typeset.raw');
 }
-function createLoginRoutes(App $app, ContainerInterface $container) : void {
+function createSiteUnauthenticatedRoutes(App $app, ContainerInterface $container) : void {
     $app->any('/login',
         function(Request $request, Response $response) use ($container){
             return (new Authenticator($container))->login($request, $response);
@@ -843,6 +853,10 @@ function createLoginRoutes(App $app, ContainerInterface $container) : void {
             return (new Authenticator($container))->logout($request, $response);
         })
         ->setName('logout');
+
+    $app->get('/app-settings', function(Request $request, Response $response) use ($container){
+        return (new SiteSettings($container))->getSiteSettings($request, $response);
+    });
 }
 function createSiteDevRoutes(App $app, ContainerInterface $container) : void {
 

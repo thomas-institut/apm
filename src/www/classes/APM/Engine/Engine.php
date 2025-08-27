@@ -21,9 +21,9 @@ use Psr\Log\NullLogger;
 abstract class Engine implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
-    const ERROR_NO_ERROR = 0;
+    const int ERROR_NO_ERROR = 0;
 
-    const DEFAULT_ENGINE_NAME = 'Generic Edition Engine';
+    const string DEFAULT_ENGINE_NAME = 'Generic Edition Engine';
 
     protected float $duration;
     protected int $errorCode;
@@ -84,14 +84,14 @@ abstract class Engine implements LoggerAwareInterface
         return $this->getErrorContext();
     }
 
-    public function getRunDetails() : array {
-        return [
-            'engineName' => $this->getName(),
-            'errorCode' => $this->getErrorCode(),
-            'errorContext' => $this->getErrorContext(),
-            'runDateTime' => $this->getRunDateTimeString(),
-            'duration' => $this->getDuration()
-        ];
+    public function getRunDetails() : EngineRunDetails {
+        $details = new EngineRunDetails();
+        $details->engineName = $this->getName();
+        $details->errorCode = $this->getErrorCode();
+        $details->errorContext = $this->getErrorContext();
+        $details->runDateTime = $this->getRunDateTimeString();
+        $details->duration = $this->getDuration();
+        return $details;
     }
 
     public function getName() : string {

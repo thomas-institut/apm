@@ -30,7 +30,6 @@ const devBaseUrl = '/reactAPM';
 
 export const langCacheKey = 'apmSiteLanguage';
 const langCacheDataId = 'v1';
-const CachePrefix = 'Apm';
 
 const AppSettingsUrl: string = devMode ? `http://localhost:8888/app-settings` : "app-settings";
 
@@ -56,7 +55,7 @@ const DefaultAppContext: AppContextProps = {
   showLanguageSelector: false,
   siteLanguage: 'en',
   localCache: new WebStorageKeyCache('local', 'apm-cache'),
-  dataProxy: new ApmDataProxy('apm-cache', CachePrefix, [DataId_EC_ViewOptions])
+  dataProxy: new ApmDataProxy('apm-cache', [DataId_EC_ViewOptions])
 };
 
 export const AppContext: Context<AppContextProps> = createContext(DefaultAppContext);
@@ -69,7 +68,8 @@ fetch(AppSettingsUrl).then(async (response) => {
 
   setBaseUrl(baseUrl, apiBaseUrl);
   const localCache = new WebStorageKeyCache('local', settings.cacheDataId);
-  const apmDataProxy = new ApmDataProxy(settings.cacheDataId, CachePrefix, [DataId_EC_ViewOptions]);
+  const apmDataProxy = new ApmDataProxy(settings.cacheDataId, [DataId_EC_ViewOptions]);
+  await apmDataProxy.initialize();
   apmDataProxy.withBearerAuthentication(() => {
     return Promise.resolve(localCache.retrieve('apm-token'));
   }, (token: string, ttl: number) => {
@@ -88,7 +88,7 @@ fetch(AppSettingsUrl).then(async (response) => {
 
     if (siteLanguage === '' || siteLanguage === 'detect') {
       // console.log(`No site language given, detecting language`);
-      siteLanguage = detectBrowserLanguage(localCache);
+      siteLanguage = await detectBrowserLanguage(localCache);
     }
     setSiteLanguage(siteLanguage);
     ApmFormats.setLanguage(siteLanguage);
@@ -140,9 +140,9 @@ fetch(AppSettingsUrl).then(async (response) => {
  * If none of the user languages is available, returns the default language.
  * @return {string}
  */
-function detectBrowserLanguage(localCache: WebStorageKeyCache): string {
+async function detectBrowserLanguage(localCache: WebStorageKeyCache): Promise<string> {
   // First, let's see if there's something in the cache
-  let cacheLang = localCache.retrieve(langCacheKey, langCacheDataId);
+  let cacheLang = await localCache.retrieve(langCacheKey, langCacheDataId);
   if (validLanguages.indexOf(cacheLang) !== -1) {
     return cacheLang;
   }

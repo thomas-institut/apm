@@ -614,7 +614,11 @@ export class BasicPredicateEditor {
       allowedEntityData.push( { id: id, name: await this.options.getEntityName(id) });
     }
 
-    allowedEntityData.sort( (a,b) => { if (a.name < b.name) return -1; if (a.name > b.name) return 1; return 0;} );
+    allowedEntityData.sort( (a,b) => { if (a.name < b.name) {
+      return -1;
+    } if (a.name > b.name) {
+      return 1;
+    } return 0;} );
 
     let optionsHtml =`<option value="${this.selectEmptyValue} ${statement.object === -1 ? 'selected': ''}"></option>`;
     for (let i = 0; i < allowedEntityData.length; i++) {
@@ -645,7 +649,9 @@ export class BasicPredicateEditor {
         allowedEntityData.push( { id: id, name: await this.options.getEntityName(id) });
       }
 
-      allowedEntityData.sort( (a,b) => { if (a.name < b.name) return -1; if (a.name > b.name) return 1; return 0;} );
+      allowedEntityData.sort( (a,b) => { if (a.name < b.name) {
+        return -1;
+      } if (a.name > b.name) return 1; return 0;} );
 
       let optionsHtml =`<option value="${this.selectEmptyValue}"></option>`;
       for (let i = 0; i < allowedEntityData.length; i++) {

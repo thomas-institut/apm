@@ -44,8 +44,8 @@ export class EditionPreviewPanel extends PanelWithToolbar {
   private cacheKey: string;
   private styleSheets: SystemStyles;
   private styleSheetIds: string[];
-  private currentStyleSheetId: string;
-  private currentStyleSheet: StyleSheet;
+  private currentStyleSheetId!: string;
+  private currentStyleSheet!: StyleSheet;
   private downloadPdfButton!: JQuery<HTMLElement>;
   private updatePreviewButton!: JQuery<HTMLElement>;
   private viewer!: EditionViewerCanvas;
@@ -80,11 +80,10 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     this.cacheKey = this.getStorageKeyFromEdition();
     this.styleSheets = SystemStyleSheet.getStyleSheetsForLanguage(this.edition.lang);
     this.styleSheetIds = Object.keys(this.styleSheets);
-    const initialViewSettings = this.webCache.retrieve(this.cacheKey) ?? {
-      styleSheetId: this.styleSheetIds[0]
-    };
-    this.currentStyleSheetId = initialViewSettings.styleSheetId;
-    this.currentStyleSheet = SystemStyleSheet.getStyleSheet(this.edition.lang, this.currentStyleSheetId);
+    this.webCache.retrieve(this.cacheKey).then((data) => {
+      this.currentStyleSheetId = data?.styleSheetId ?? this.styleSheetIds[0];
+      this.currentStyleSheet = SystemStyleSheet.getStyleSheet(this.edition.lang, this.currentStyleSheetId);
+    })
   }
 
   generateToolbarHtml(_tabId: string, _mode: string, _visible: boolean): string {
@@ -140,12 +139,12 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     }
   }
 
-  public updateData(edition: Edition): void {
+  public async updateData(edition: Edition): Promise<void> {
     // this.verbose && console.log(`Updating data`);
     // this.ctData = ctData
     this.edition = edition;
     this.cacheKey = this.getStorageKeyFromEdition();
-    const savedViewSettings = this.webCache.retrieve(this.cacheKey) ?? {
+    const savedViewSettings = await this.webCache.retrieve(this.cacheKey) ?? {
       styleSheetId: this.styleSheetIds[0]
     };
     this.currentStyleSheetId = savedViewSettings.styleSheetId;

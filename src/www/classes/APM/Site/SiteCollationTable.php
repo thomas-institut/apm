@@ -228,63 +228,91 @@ class SiteCollationTable extends SiteController
             return $docManager->getDocInfo($id);
         }, $docs);
 
-        if ($ctData['type'] === 'edition') {
-            return $this->renderStandardPage(
-              $response,
-              '',
-              'Edit Collation Table',
-              'EditionComposer',
-              'js/EditionComposer/EditionComposer.js',
-                [
-                  'workId' => $workId,
-                  'chunkNumber' => intval($chunkNumber),
-                  'tableId' => $tableId,
-                  'collationTableData' => $ctData,
-                  'workInfo' => $workInfo,
-                  'peopleInfo' => $peopleInfo,
-                  'docInfo' => $docInfoArray,
-                  'versionInfo' => $versionInfoArray,
-                  'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
-                  'versionId' => $versionId,
-                  'lastVersion' => $isLastVersion
-                ],
-                [],
-                [
-                    '../node_modules/quill/dist/quill.core.css',
-                    'collationtable.css',
-                    'multi-panel-ui/styles.css',
-                    'edition-composer.css',
-                    'collation.edit.css'
-                ],
-                [ 'js/SimpleProfiler.js']
-            );
-        } else {
-            return $this->renderStandardPage(
-                $response,
-                '',
-                'Edit Collation Table',
-                'CollationTableEditor',
-                'js/pages/CollationTableEditor.js',
-                [
-                    'workId' => $workId,
-                    'chunkNumber' => intval($chunkNumber),
-                    'tableId' => $tableId,
-                    'collationTableData' => $ctData,
-                    'workInfo' => $workInfo,
-                    'peopleInfo' => $peopleInfo,
-                    'docInfo' => $docInfoArray,
-                    'versionInfo' => $versionInfoArray,
-                ],
-                [],
-                [
-                    'collationtable.css',
-                    'collation.edit.css'
-                ],
-                [ 'js/SimpleProfiler.js']
-            );
-        }
+        return $this->renderStandardPage(
+            $response,
+            '',
+            'Edit Collation Table',
+            'EditionComposer',
+            'js/EditionComposer/EditionComposer.ts',
+            [
+                'workId' => $workId,
+                'chunkNumber' => intval($chunkNumber),
+                'tableId' => $tableId,
+                'collationTableData' => $ctData,
+                'workInfo' => $workInfo,
+                'peopleInfo' => $peopleInfo,
+                'docInfo' => $docInfoArray,
+                'versionInfo' => $versionInfoArray,
+                'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
+                'versionId' => $versionId,
+                'lastVersion' => $isLastVersion
+            ],
+            [],
+            [
+                '../node_modules/quill/dist/quill.core.css',
+                'collationtable.css',
+                'multi-panel-ui/styles.css',
+                'edition-composer.css',
+                'collation.edit.css'
+            ],
+            [ 'js/SimpleProfiler.js']
+        );
 
-
+//        if ($ctData['type'] === 'edition') {
+//            return $this->renderStandardPage(
+//              $response,
+//              '',
+//              'Edit Collation Table',
+//              'EditionComposer',
+//              'js/EditionComposer/EditionComposer.js',
+//                [
+//                  'workId' => $workId,
+//                  'chunkNumber' => intval($chunkNumber),
+//                  'tableId' => $tableId,
+//                  'collationTableData' => $ctData,
+//                  'workInfo' => $workInfo,
+//                  'peopleInfo' => $peopleInfo,
+//                  'docInfo' => $docInfoArray,
+//                  'versionInfo' => $versionInfoArray,
+//                  'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
+//                  'versionId' => $versionId,
+//                  'lastVersion' => $isLastVersion
+//                ],
+//                [],
+//                [
+//                    '../node_modules/quill/dist/quill.core.css',
+//                    'collationtable.css',
+//                    'multi-panel-ui/styles.css',
+//                    'edition-composer.css',
+//                    'collation.edit.css'
+//                ],
+//                [ 'js/SimpleProfiler.js']
+//            );
+//        } else {
+//            return $this->renderStandardPage(
+//                $response,
+//                '',
+//                'Edit Collation Table',
+//                'CollationTableEditor',
+//                'js/pages/CollationTableEditor.js',
+//                [
+//                    'workId' => $workId,
+//                    'chunkNumber' => intval($chunkNumber),
+//                    'tableId' => $tableId,
+//                    'collationTableData' => $ctData,
+//                    'workInfo' => $workInfo,
+//                    'peopleInfo' => $peopleInfo,
+//                    'docInfo' => $docInfoArray,
+//                    'versionInfo' => $versionInfoArray,
+//                ],
+//                [],
+//                [
+//                    'collationtable.css',
+//                    'collation.edit.css'
+//                ],
+//                [ 'js/SimpleProfiler.js']
+//            );
+//        }
     }
 
     protected function getMentionedPeopleFromVersionArray($versionArray) : array {

@@ -83,7 +83,7 @@ export class CollationTableConsistencyCleaner extends CtDataCleaner {
               }
               ctMatrix.setValue(wIndex, lastGoodCtCol + 1, i);
               row = ctMatrix.getRow(wIndex);
-              lastGoodCtCol = lastGoodCtCol + 1;
+              lastGoodCtCol += 1;
               lastTokenInCt = i;
               console.log(`--- Fixed, ${nColsToShift !== 0 ? 'shifted ' + nColsToShift + ' cols' : ' no shift needed'}, token now in ct col ${lastGoodCtCol + 1}`);
             }

@@ -31,7 +31,7 @@ export default function Login() {
     const password = passwordInput.current?.value.trim() ?? '';
     if (userName && password) {
       // let's roll
-      const success = await context.dataProxy.apiLogin(userName, password);
+      const success = await context.dataProxy.apiLogin(userName, password, true);
       if (success) {
         window.location.href = context.reactAppBaseUrl + '/';
       } else {

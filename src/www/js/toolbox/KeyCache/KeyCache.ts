@@ -17,15 +17,18 @@
  */
 
 /**
- * A generic cache with expiration times and dataId
+ * A generic cache with expiration times and dataId.
  *
  * Each cache entry is tagged with an expiration date and a dataId
  * Only stored entries that match the given dataId and are not expired
  * are returned when querying the cache.
  *
  * Normally, descendant of this class only need to implement
- * the protected methods: storeItemObject, getItemObject,
- * deleteItemObject and getKeys
+ * the protected methods:
+ * - storeItemObject
+ * - getItemObject,
+ * - deleteItemObject
+ * - getKeys
  */
 
 /**
@@ -58,16 +61,14 @@ export class KeyCache {
    * that number of seconds the key/value pair will
    * no longer be accessible.
    *
-   * If the given dataId parameter is null, the default dataId is used,
+   * If the given dataId parameter is null, the default dataId is used.
    *
-   * @param {string}key
-   * @param {any}data
-   * @param {number}ttl
-   * @param {string|null}dataId
+   * If the key already exists, the value will be replaced (independently of the ttl and dataId)
+   *
    */
-  public store(key: string, data: any, ttl: number = 0, dataId: string | null = null) : void{
+  public async store(key: string, data: any, ttl: number = 0, dataId: string | null = null) : Promise<void>{
     let now = this.now()
-    this.storeItemObject(key, {
+    await this.storeItemObject(key, {
       data: data,
       dataId: dataId ?? this.defaultDataId,
       expires: ttl > 0 ? now + ttl : -1,
@@ -75,7 +76,7 @@ export class KeyCache {
     })
   }
 
-  getRealKey(key: string): string {
+  protected getRealKey(key: string): string {
     return `${this.prefix}${key}`;
   }
 
@@ -90,12 +91,12 @@ export class KeyCache {
    * @param {string | null} dataId
    * @return {*|null}
    */
-  public retrieve(key: string, dataId: string | null = null): any | null {
-    let itemData = this.getItemObject(key)
+  public async retrieve(key: string, dataId: string | null = null): Promise<any | null> {
+    let itemData = await this.getItemObject(key)
     if (itemData === undefined || itemData === null)  {
       return null
     }
-    if (itemData['dataId'] === (dataId ?? this.defaultDataId)) {
+    if (itemData.dataId === (dataId ?? this.defaultDataId)) {
       if (itemData.expires === -1) {
         // enforce max ttl
         let realExpirationTime = itemData.setAt + MaxTtl;
@@ -110,7 +111,7 @@ export class KeyCache {
     }
 
     // item is expired or its dataId does not math the cache's dataId, so completely delete it from cache
-    this.delete(key)
+    await this.delete(key)
     return null
   }
 
@@ -118,8 +119,8 @@ export class KeyCache {
    * Deletes the item with the given key from the cache
    * @param {string} key
    */
-  public delete(key: string) : void {
-    this.deleteItemObject(key)
+  public async delete(key: string) : Promise<void> {
+    await this.deleteItemObject(key)
   }
 
   /**
@@ -133,34 +134,34 @@ export class KeyCache {
    * @param ignoreDataIds array of dataIds to ignore
    * @return {number}
    */
-  public cleanCache(before = -1, ignoreDataIds: string[] = []): number {
+  public async cleanCache(before = -1, ignoreDataIds: string[] = []): Promise<number> {
     let now = this.now();
     let removedItemCount = 0;
-    this.getKeys().forEach( (key) => {
-      let itemObject = this.getItemObject(key);
+    for (const key of await this.getKeys()) {
+      let itemObject = await this.getItemObject(key);
       if (itemObject === null) {
         removedItemCount++;
-        this.delete(key);
-        return;
+        await this.delete(key);
+        break;
       }
       if (itemObject.dataId !== this.defaultDataId) {
         if (ignoreDataIds.indexOf(itemObject.dataId) === -1) {
           removedItemCount++;
-          this.delete(key);
+          await this.delete(key);
         }
-        return;
+        break;
       }
       let expirationTime = itemObject.expires === -1 ? itemObject.setAt + MaxTtl : itemObject.expires;
       if (expirationTime < now) {
         removedItemCount++;
-        this.delete(key);
-        return;
+        await this.delete(key);
+        break;
       }
       if (itemObject.setAt <= before) {
         removedItemCount++;
-        this.delete(key);
+        await this.delete(key);
       }
-    })
+    }
     return removedItemCount;
 
   }
@@ -173,11 +174,11 @@ export class KeyCache {
    * Returns all the keys currently in the cache, including
    * keys for expired items
    */
-  protected getKeys(): string[] {
+  protected async getKeys(): Promise<string[]> {
    return this.getKeysFromRealKeysArray(Object.keys(this.cache));
   }
 
-  getKeysFromRealKeysArray(realKeysArray : string[]): string[] {
+  protected getKeysFromRealKeysArray(realKeysArray : string[]): string[] {
     let prefixLength = this.prefix.length;
     return realKeysArray.filter( (realKey) => {
       return realKey.substring(0, prefixLength) === this.prefix;
@@ -192,7 +193,7 @@ export class KeyCache {
    * @param {string} key
    * @return { InternalCacheObject}
    */
-  protected getItemObject(key: string): InternalCacheObject|null {
+  protected async getItemObject(key: string): Promise<InternalCacheObject | null> {
     return this.cache[this.getRealKey(key)];
   }
 
@@ -201,7 +202,7 @@ export class KeyCache {
    * @param {string}key
    * @param {InternalCacheObject}itemObject
    */
-  protected storeItemObject(key : string, itemObject: InternalCacheObject): void {
+  protected async storeItemObject(key : string, itemObject: InternalCacheObject): Promise<void> {
     this.cache[this.getRealKey(key)] = itemObject;
   }
 
@@ -210,7 +211,7 @@ export class KeyCache {
    * @param {string}key
    * @protected
    */
-  protected deleteItemObject(key: string): void {
+  protected async deleteItemObject(key: string): Promise<void> {
     delete this.cache[this.getRealKey(key)];
   }
 

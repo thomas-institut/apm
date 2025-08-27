@@ -11,7 +11,6 @@ import {SimpleLockManager} from "@/toolbox/SimpleLockManager";
 
 const langCacheKey = 'apmSiteLanguage';
 const langCacheDataId = 'v1';
-const CachePrefix = 'Apm';
 const AppSettingsUrl = 'app-settings.json';
 
 const debug = true;
@@ -52,7 +51,8 @@ export class ApmPage {
         });
         this.commonData = optionsChecker.getCleanOptions(options.commonData);
         setBaseUrl(this.commonData.baseUrl);
-        this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, CachePrefix, [DataId_EC_ViewOptions]);
+        this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, [DataId_EC_ViewOptions]);
+        await this.apmDataProxy.initialize();
         this.userId = this.commonData.userInfo.id;
       } else {
         debug && console.log(`No options given, getting settings from backend`);
@@ -79,7 +79,7 @@ export class ApmPage {
           userInfo: {}
         };
         setBaseUrl(this.commonData.baseUrl);
-        this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, CachePrefix, [DataId_EC_ViewOptions]);
+        this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, [DataId_EC_ViewOptions]);
 
         let userData = await this.apmDataProxy.whoAmI();
 
@@ -102,7 +102,7 @@ export class ApmPage {
         this.siteLanguage = this.commonData.siteLanguage ?? '';
         if (this.siteLanguage === '' || this.siteLanguage === 'detect') {
           // console.log(`No site language given, detecting language`);
-          this.siteLanguage = this.detectBrowserLanguage();
+          this.siteLanguage = await this.detectBrowserLanguage();
         }
         setSiteLanguage(this.siteLanguage);
         ApmFormats.setLanguage(this.siteLanguage);
@@ -154,8 +154,8 @@ export class ApmPage {
   }
 
 
-  saveLangInCache(lang: string) {
-    this.localCache.store(langCacheKey, lang, 0, langCacheDataId);
+  async saveLangInCache(lang: string) {
+    await this.localCache.store(langCacheKey, lang, 0, langCacheDataId);
   }
 
   /**
@@ -163,9 +163,9 @@ export class ApmPage {
    * If none of the user languages is available, returns the default language.
    * @return {string}
    */
-  detectBrowserLanguage(): string {
+  async detectBrowserLanguage(): Promise<string> {
     // First, let's see if there's something in the cache
-    let cacheLang = this.localCache.retrieve(langCacheKey, langCacheDataId);
+    let cacheLang = await this.localCache.retrieve(langCacheKey, langCacheDataId);
     if (validLanguages.indexOf(cacheLang) !== -1) {
       console.log(`Site language detected in browser cache`);
       return cacheLang;

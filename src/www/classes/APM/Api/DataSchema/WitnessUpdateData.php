@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\Api\ResponseData;
+namespace APM\Api\DataSchema;
 
 class WitnessUpdateData
 {

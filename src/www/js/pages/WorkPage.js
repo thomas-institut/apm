@@ -34,7 +34,7 @@ export class WorkPage extends NormalPage {
 
     let apiChunkData = await this.apmDataProxy.get(urlGen.apiWorkGetChunksWithTranscription(this.workData.workId));
     console.log(`Transcription Data`, apiChunkData);
-    let apiCollationTableData = await this.apmDataProxy.get(urlGen.apiCollationTableGetActiveTablesForWork(this.workData.workId));
+    let apiCollationTableData = await this.apmDataProxy.get(urlGen.apiCollationTable_activeForWork(this.workData.workId));
     console.log(`Collation Table Data`, apiCollationTableData)
 
     this.aggregatedData = this.aggregateChunkData(apiChunkData['chunks'], apiCollationTableData);

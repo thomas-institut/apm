@@ -35,14 +35,14 @@ export class CachedFetcher {
    * @param {number} ttl
    * @return { Promise<{}>}
    */
-  fetch( key: string, fetcher: () => Promise<any>, forceActualFetch: boolean = false, ttl: number = -1): Promise<{}> {
+  fetch( key: string, fetcher: () => Promise<any>, forceActualFetch: boolean = false, ttl: number = -1): Promise<any> {
     return new Promise(async (resolve, reject) => {
 
       await this.lockManager.getLock(key);
       if (forceActualFetch) {
-        this.cache.delete(key)
+        await this.cache.delete(key)
       }
-      let cachedData = this.cache.retrieve(key)
+      let cachedData = await this.cache.retrieve(key)
       if (cachedData !== null) {
         this.lockManager.releaseLock(key);
         resolve(cachedData);
@@ -52,12 +52,12 @@ export class CachedFetcher {
       let  startTime = Date.now();
 
       this.verbose && console.log(`Doing actual fetch for '${key}' at ${startTime / 1000}`);
-      fetcher().then((data) => {
+      fetcher().then( async (data) => {
         this.debug && console.log(`Got data for '${key}' in ${Date.now() - startTime} ms`);
         let actualTtl = ttl === -1 ? this.defaultTtl : ttl;
         this.debug && console.log(`Actual ttl for '${key}' is ${actualTtl}`);
         if (actualTtl > 0) {
-          this.cache.store(key, data, actualTtl);
+          await this.cache.store(key, data, actualTtl);
         }
         this.lockManager.releaseLock(key);
         resolve(data);

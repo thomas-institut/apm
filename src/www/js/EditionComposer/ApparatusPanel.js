@@ -269,8 +269,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
     let ctIndexFrom = -1
     let ctIndexTo = -1
     if (from === -1) {
-      if (theEntry.metadata.has('ctGroup')) {
-        ctIndexFrom = theEntry.metadata.get('ctGroup').from
+      if (theEntry.metadata['ctGroup'] !== undefined) {
+        ctIndexFrom = theEntry.metadata['ctGroup'].from
       } else {
         console.warn(`Undefined collation table indexes for existing apparatus entry`)
         console.log(theEntry)
@@ -279,8 +279,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
       ctIndexFrom = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex)
     }
     if (to === -1) {
-      if (theEntry.metadata.has('ctGroup')) {
-        ctIndexTo = theEntry.metadata.get('ctGroup').from
+      if (theEntry.metadata['ctGroup'] !== undefined) {
+        ctIndexTo = theEntry.metadata['ctGroup'].from
       } else {
         console.warn(`Undefined collation table indexes for existing apparatus entry`)
         console.log(theEntry)
@@ -288,9 +288,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
     } else {
       ctIndexTo = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex)
     }
-    theEntry.metadata.delete('ctGroup')
-    theEntry.metadata.add('ctGroup', { from: ctIndexFrom, to: ctIndexTo})
-
+    delete theEntry.metadata['ctGroup']
+    theEntry.metadata['ctGroup'] = { from: ctIndexFrom, to: ctIndexTo}
     return theEntry
   }
 
@@ -320,7 +319,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     // Edition text
     $(`${formSelector} div.entry-text`).html(this.entryInEditor.lemmaText)
     // Collation table columns
-    $(`${formSelector} .ct-table-cols`).html(this._getCtColumnsText(this.entryInEditor.metadata.get('ctGroup').from, this.entryInEditor.metadata.get('ctGroup').to))
+    $(`${formSelector} .ct-table-cols`).html(this._getCtColumnsText(this.entryInEditor.metadata['ctGroup'].from, this.entryInEditor.metadata['ctGroup'].to))
     // Lemma and separator section
     this._loadLemmaGroupVariableInForm('preLemma', this.entryInEditor, this.preLemmaToggle, this.customPreLemmaTextInput)
     this._loadLemmaGroupVariableInForm('lemma', this.entryInEditor, this.lemmaToggle, this.customLemmaTextInput)
@@ -964,8 +963,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
       let infoDiv =$(`${this.getApparatusEntryFormSelector()} div.info-div`)
       infoDiv.html(`Updating edition...`)
       let entryForCtData = {
-        from: this.editedEntry.metadata.get('ctGroup').from,
-        to: this.editedEntry.metadata.get('ctGroup').to,
+        from: this.editedEntry.metadata['ctGroup'].from,
+        to: this.editedEntry.metadata['ctGroup'].to,
         preLemma:  this.editedEntry.preLemma,
         lemma: this.editedEntry.lemma,
         postLemma: this.editedEntry.postLemma,
@@ -1171,7 +1170,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.verbose && console.log(`Showing apparatus entry form`)
     $(this.getApparatusEntryFormSelector()).removeClass('hidden')
     this._getEditEntryButtonElement().html(icons.cancelEdit).attr('title', cancelEditButtonTitle).removeClass('hidden')
-    this.options.highlightCollationTableRange(this.entryInEditor.metadata.get('ctGroup').from, this.entryInEditor.metadata.get('ctGroup').to)
+    this.options.highlightCollationTableRange(this.entryInEditor.metadata['ctGroup'].from, this.entryInEditor.metadata['ctGroup'].to)
     this.apparatusEntryFormIsVisible = true
     this.fitDivs()
   }
@@ -1340,13 +1339,13 @@ export class ApparatusPanel extends  PanelWithToolbar {
     if(this.currentSelectedEntryIndex !== -1) {
       this.options.highlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], true)
       if (this.apparatusEntryFormIsVisible) {
-        this.options.highlightCollationTableRange(this.entryInEditor.metadata.get('ctGroup').from, this.entryInEditor.metadata.get('ctGroup').to)
+        this.options.highlightCollationTableRange(this.entryInEditor.metadata['ctGroup'].from, this.entryInEditor.metadata['ctGroup'].to)
       } else {
         this.options.highlightCollationTableRange(-1, -1)
       }
     } else {
       if (this.apparatusEntryFormIsVisible) {
-        this.options.highlightCollationTableRange(this.entryInEditor.metadata.get('ctGroup').from, this.entryInEditor.metadata.get('ctGroup').to)
+        this.options.highlightCollationTableRange(this.entryInEditor.metadata['ctGroup'].from, this.entryInEditor.metadata['ctGroup'].to)
       } else {
         this.options.highlightCollationTableRange(-1, -1)
       }

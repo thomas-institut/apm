@@ -26,11 +26,18 @@ import {SimpleLockManager} from '@/toolbox/SimpleLockManager';
 import * as Entity from '../../constants/Entity';
 import {EntityDataInterface} from "../../../schema/Schema";
 import {WitnessUpdateData} from "@/Api/Interfaces/WitnessUpdates";
+import {IndexedDbKeyCache} from "@/toolbox/KeyCache/IndexedDbKeyCache";
+import {ApiCollationTable_versionInfo} from "@/Api/DataSchema/ApiCollationTable_versionInfo";
+import {ApiCollationTable_auto} from "@/Api/DataSchema/ApiCollationTable_auto";
+import {
+  ApiCollationTable_convertToEdition, ApiCollationTable_convertToEdition_input
+} from "@/Api/DataSchema/ApiCollationTable_convertToEdition";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
 const TtlOneDay = 24 * 3600; // 24 hours
 
+const CachePrefix = 'ApmData:';
 
 const CleaningDelayInSeconds = 1;
 
@@ -40,14 +47,10 @@ const EntityDataCacheKeyPrefix = 'EntityData';
 const MaxSystemEntityId = 10000000;
 
 
-export interface CollationTableVersionInfo {
-  tableId: number;
-  title: string;
-  type: string;
-  timeFrom: string;
-  timeUntil: string;
-  isLatestVersion: boolean;
-  archived: boolean;
+export interface DataProxyError {
+  errorType: 'http' | 'authentication' | 'method' | 'network' | 'other';
+  httpStatus: number;
+  message: string;
 }
 
 export interface PdfUrlResponse {
@@ -55,56 +58,67 @@ export interface PdfUrlResponse {
   errorMsg?: string;
 }
 
+
+interface Caches {
+  memory: KeyCache;
+  session: WebStorageKeyCache;
+  local: WebStorageKeyCache;
+  longTerm: IndexedDbKeyCache;
+}
+
+type CacheNames = 'memory' | 'session' | 'local' | 'longTerm';
+
 /**
  * Class to wrap most API calls to the APM and provide caching
  * for different types of data
  */
 export class ApmDataProxy {
   private readonly cacheDataId: string;
-  private readonly caches: { [key: string]: KeyCache };
+  private readonly caches: Caches;
   private readonly lockManager: SimpleLockManager;
   private readonly localCacheLockManager: SimpleLockManager;
   private readonly cachedFetcher: CachedFetcher;
   private readonly localCachedFetcher: CachedFetcher;
+  private readonly ignoreDataIds: string[] = [];
 
   private useBearerAuthentication: boolean = false;
-  private getBearerToken: () => Promise<string | null> = () => Promise.resolve(null);
-  private setBearerToken: (t: string, ttl: number) => Promise<void> = () => Promise.resolve();
 
   /**
    *
    * @param {string}cacheDataId
-   * @param {string}cachePrefix
    * @param ignoreDataIds list of dataIds to ignore when cleaning
    */
-  constructor(cacheDataId: string, cachePrefix: string, ignoreDataIds: string[] = []) {
+  constructor(cacheDataId: string, ignoreDataIds: string[] = []) {
     this.cacheDataId = cacheDataId;
-    this.caches = {
-      memory: new KeyCache(),
-      session: new WebStorageKeyCache('session', this.cacheDataId, cachePrefix),
-      local: new WebStorageKeyCache('local', this.cacheDataId, cachePrefix)
-    };
-
     this.lockManager = new SimpleLockManager();
     this.localCacheLockManager = new SimpleLockManager();
-
+    this.caches = {
+      memory: new KeyCache(),
+      session: new WebStorageKeyCache('session', this.cacheDataId, CachePrefix),
+      local: new WebStorageKeyCache('local', this.cacheDataId, CachePrefix),
+      longTerm: new IndexedDbKeyCache('ApmData', this.cacheDataId)
+    };
     this.cachedFetcher = new CachedFetcher(this.caches.session, 0, this.lockManager);
     this.localCachedFetcher = new CachedFetcher(this.caches.local, 0, this.localCacheLockManager);
+    this.ignoreDataIds = ignoreDataIds;
 
+  }
 
-    wait(CleaningDelayInSeconds * 1000).then(() => {
+  public async initialize(): Promise<void> {
+    await this.caches.longTerm.initialize();
+    wait(CleaningDelayInSeconds * 1000).then(async () => {
+      let sessionRemovedItemCount = await this.caches.session.cleanCache(-1, this.ignoreDataIds);
+      let localRemovedItemCount = await this.caches.local.cleanCache(-1, this.ignoreDataIds);
+      let longTermRemovedItemCount = await this.caches.longTerm.cleanCache(-1, this.ignoreDataIds);
 
-      let sessionRemovedItemCount = this.caches.session.cleanCache(-1, ignoreDataIds);
-      let localRemovedItemCount = this.caches.local.cleanCache(-1, ignoreDataIds);
-
-      let total = sessionRemovedItemCount + localRemovedItemCount;
+      let total = sessionRemovedItemCount + localRemovedItemCount + longTermRemovedItemCount;
       if (total > 0) {
-        console.log(`Removed ${total} items from web caches:  ${sessionRemovedItemCount} session, ${localRemovedItemCount} local`);
+        console.log(`Removed ${total} items from web caches:  ${sessionRemovedItemCount} session, ${localRemovedItemCount} local, ${longTermRemovedItemCount} long term`);
       }
     });
   }
 
-  public withBearerAuthentication( retrieveToken: () => Promise<string | null>, setToken: (t: string, ttl: number) => Promise<void> ): this {
+  public withBearerAuthentication(retrieveToken: () => Promise<string | null>, setToken: (t: string, ttl: number) => Promise<void>): this {
     this.useBearerAuthentication = true;
     this.getBearerToken = retrieveToken;
     this.setBearerToken = setToken;
@@ -135,11 +149,23 @@ export class ApmDataProxy {
     }
   }
 
+  async collationTable_auto(apiCallOptions: any): Promise<ApiCollationTable_auto> {
+    return await this.post(urlGen.apiCollationTable_auto(), apiCallOptions, true);
+  }
 
-  async getCollationTableVersionInfo(tableId: number, versionTimeString: string): Promise<CollationTableVersionInfo | null> {
+  /**
+   *
+   * @param apiCallOptions
+   * @throws {DataProxyError}
+   */
+  async collationTable_convertToEdition(apiCallOptions: ApiCollationTable_convertToEdition_input): Promise<ApiCollationTable_convertToEdition> {
+    return await this.post(urlGen.apiCollationTable_convertToEdition(apiCallOptions.tableId), apiCallOptions, true);
+  }
+
+  async collationTable_versionInfo(tableId: number, versionTimeString: string): Promise<ApiCollationTable_versionInfo | null> {
 
     try {
-      return await this.get(urlGen.apiCollationTableVersionInfo(tableId, versionTimeString));
+      return await this.get(urlGen.apiCollationTable_versionInfo(tableId, versionTimeString));
     } catch (error) {
       console.error(`Error getting collation table version info ${tableId}, ${versionTimeString}`, error);
       return null;
@@ -147,10 +173,10 @@ export class ApmDataProxy {
   }
 
   async getAllPersonEssentialData(): Promise<any> {
-    let data = this.caches.memory.retrieve("allPeopleData");
+    let data = await this.caches.memory.retrieve("allPeopleData");
     if (data === null) {
       data = await this.get(urlGen.apiPersonGetDataForPeoplePage(), true);
-      this.caches.memory.store('allPeopleData', data, 5);
+      await this.caches.memory.store('allPeopleData', data, 5);
     }
     return data;
   }
@@ -195,8 +221,7 @@ export class ApmDataProxy {
   async apiLogin(username: string, password: string, rememberMe: boolean): Promise<boolean> {
     try {
       const resp = await fetch(urlGen.apiLogin(), {
-        method: 'POST',
-        body: JSON.stringify({user: username, pwd: password, rememberMe: rememberMe ? 'on': ''})
+        method: 'POST', body: JSON.stringify({user: username, pwd: password, rememberMe: rememberMe ? 'on' : ''})
       });
       if (resp.status === 200) {
         const data = await resp.json();
@@ -215,11 +240,11 @@ export class ApmDataProxy {
 
   async getRealDocId(docId: number): Promise<number> {
     let cacheKey = `docId-${docId}`;
-    let realDocId = this.caches.local.retrieve(cacheKey);
+    let realDocId = await this.caches.local.retrieve(cacheKey);
     if (realDocId === null) {
       let resp = await this.get(urlGen.apiDocGetDocId(docId), true);
       realDocId = resp['docId'];
-      this.caches.local.store(cacheKey, realDocId);
+      await this.caches.local.store(cacheKey, realDocId);
     }
     return realDocId;
 
@@ -247,29 +272,6 @@ export class ApmDataProxy {
 
   async getAvailableImagesSources() {
     return this.getEntityNameTuples(await this.getAlmostStaticData('ImageSources', urlGen.apiEntityTypeGetEntities(Entity.tImageSource)));
-  }
-
-  /**
-   * Resolves to an array of tuples containing the id and the name for each of the entities
-   * in the given array
-   * @param {number[]}entityIdArray
-   */
-  async getEntityNameTuples(entityIdArray: number[]) {
-    return Promise.all(entityIdArray.map(async (id) => {
-      return [id, await this.getEntityName(id)];
-    }));
-  }
-
-
-  async getAlmostStaticData(name: string, url: string): Promise<any> {
-    let cache = this.caches['local'];
-    let data = cache.retrieve(name);
-    if (data !== null) {
-      return data;
-    }
-    let serverData = await this.get(url, true);
-    cache.store(name, serverData, TtlOneDay);
-    return serverData;
   }
 
   /**
@@ -332,68 +334,6 @@ export class ApmDataProxy {
     return this.get(urlGen.apiPersonGetWorks(personTid), false, TtlOneMinute);
   }
 
-
-  /**
-   *
-   * @param {string}url
-   * @param {string} method
-   * @param {any}payload
-   * @param {boolean}forceActualFetch
-   * @param {boolean}useRawData if true, the payload is posted as is, otherwise the payload is encapsulated on an object { data: payload}
-   * @param {number} ttl
-   * @param sessionCache
-   * @return {Promise<any>}
-   */
-  fetch(url: string, method: string = 'GET', payload: any, forceActualFetch: boolean = false, useRawData: boolean = false, ttl: number = -1, sessionCache = true): Promise<any> {
-    let key = encodeURI(url);
-    let fetcher = sessionCache ? this.cachedFetcher : this.localCachedFetcher;
-    return fetcher.fetch(key, () => {
-      return new Promise( async (resolve, reject) => {
-        if (['GET', 'POST'].indexOf(method) === -1) {
-          reject(`Invalid method ${method} for URL ${url}`);
-        }
-        let fetchOptions: any = { method: method };
-        if (this.useBearerAuthentication) {
-          const token = await this.getBearerToken();
-          if (token === null) {
-            reject(`No authentication token available`);
-            return;
-          }
-          fetchOptions['headers'] = { 'Authorization': `Bearer ${token}` };
-        }
-        const actualPayload = useRawData ? payload : {data: JSON.stringify(payload)};
-
-        const fetchFunction = method === 'GET' ? () => {
-          return fetch(url, fetchOptions);
-        } : () => {
-          fetchOptions['headers']['Content-Type'] = 'application/json';
-          fetchOptions['body'] = JSON.stringify(actualPayload);
-          return fetch(url, fetchOptions);
-        };
-
-        fetchFunction().then((response) => {
-          if (response.status === 200) {
-            return response.json().then((data) => {
-              resolve(data);
-            });
-          } else {
-            reject(`Error ${response.status} fetching ${url}`);
-          }
-        });
-      });
-    }, forceActualFetch, ttl);
-  }
-
-  /**
-   * Post to the APM server.
-   * @param {string}url
-   * @param {any}payload
-   * @param {boolean}useRawData if true, the payload is posted as is, otherwise the payload is encapsulated in an object `{ data: payload}`
-   */
-  post(url: string, payload: any, useRawData: boolean = false): Promise<any> {
-    return this.fetch(url, 'POST', payload, true, useRawData);
-  }
-
   /**
    * Gets a URL with caching if needed.
    *
@@ -410,49 +350,6 @@ export class ApmDataProxy {
   }
 
   /**
-   * Stores the data for an entity in the browser's cache
-   *
-   * @param {Object} data - The entity's data object
-   * @param {?number} [ttl=null] if null, the default cache strategy will be used
-   * @private
-   */
-  storeEntityDataInCache(data: any, ttl: number | null = null) {
-    let cache = this.caches.session;
-    if (ttl === null) {
-      if (data.id <= MaxSystemEntityId) {
-        // system entity, data will change only on a change of schema, which
-        // entails a change in dataId too, so we can use
-        // an arbitrarily long TTL
-        ttl = 90 * 24 * 3600;  // 3 months
-        cache = this.caches.local;
-      } else {
-        // any other entity gets one hour
-        ttl = 3600;  // 1 hour
-      }
-    }
-    if (ttl < 0) {
-      // do nothing
-      return;
-    }
-    // since in many cases a lot of entities get queried at the same time,
-    // it makes sense to introduce some variability in the TTL
-    ttl = this.getTtlWithVariability(ttl);
-
-    // console.log(`Storing entity ${data.id} data in cache with ttl = ${ttl}`);
-
-    // use the session cache, so that all entity data can disappear when resetting the browser
-    cache.store(`${EntityDataCacheKeyPrefix}-${data.id}`, data, ttl);
-  }
-
-  retrieveEntityDataFromCache(id: number) {
-    let cache = this.caches.session;
-    if (id <= MaxSystemEntityId) {
-      cache = this.caches.local;
-    }
-    return cache.retrieve(`${EntityDataCacheKeyPrefix}-${id}`);
-  }
-
-  /**
    * Returns an entity's type.
    *
    * @param {number }id
@@ -461,12 +358,12 @@ export class ApmDataProxy {
     // Since entities do not change types, these values can be
     // cached for a long time
     let cacheKey = `${EntityTypeCacheKeyPrefix}-${id}`;
-    let type = this.caches.local.retrieve(cacheKey, this.cacheDataId);
+    let type = await this.caches.local.retrieve(cacheKey, this.cacheDataId);
     if (type === null) {
       let data = await this.getEntityData(id);
-      this.storeEntityDataInCache(data);
+      await this.storeEntityDataInCache(data);
       type = data['type'];
-      this.caches.local.store(cacheKey, type, this.getTtlWithVariability(30 * 24 * 3600));
+      await this.caches.local.store(cacheKey, type, this.getTtlWithVariability(60 * 24 * 3600));
     }
     return type;
   }
@@ -483,28 +380,6 @@ export class ApmDataProxy {
     return (await this.getEntityData(id))['name'];
   }
 
-  /**
-   * Introduces random variability to a given TTL
-   * @param {number}ttl  TTL in seconds
-   * @param variability  +/- percentage of variability
-   * @private
-   */
-  getTtlWithVariability(ttl: number, variability = 5) {
-    return ttl * (1 - variability / 100) + (ttl / variability) * Math.random();
-  }
-
-
-  async getEntityDataRaw(tid: number): Promise<EntityDataInterface> {
-    console.log(`Fetching data for entity ${tid} from the server`);
-    let url = urlGen.apiEntityGetData(tid);
-    // use a lock here too, just in case some guerrilla function somewhere
-    // else in the code is trying to do the same
-    await this.lockManager.getLock(url);
-    let data: EntityDataInterface = await $.get(urlGen.apiEntityGetData(tid));
-    this.lockManager.releaseLock(url);
-    return data;
-  }
-
   async apiEntityStatementsEdit(commands: any) {
     return $.post(urlGen.apiEntityStatementsEdit(), JSON.stringify(commands));
 
@@ -516,18 +391,18 @@ export class ApmDataProxy {
    * @param {boolean}forceFetch
    * @return {Promise<any>}
    */
-  async getEntityData(id: number, forceFetch: boolean = false): Promise<any> {
+  async getEntityData(id: number, forceFetch: boolean = false): Promise<EntityDataInterface> {
     let lockKey = `GetEntityData-${id}`;
     await this.lockManager.getLock(lockKey);
-    let data;
+    let data: EntityDataInterface;
     if (forceFetch) {
       data = await this.getEntityDataRaw(id);
-      this.storeEntityDataInCache(data);
+      await this.storeEntityDataInCache(data);
     } else {
-      data = this.retrieveEntityDataFromCache(id);
+      data = await this.retrieveEntityDataFromCache(id);
       if (data === null) {
         data = await this.getEntityDataRaw(id);
-        this.storeEntityDataInCache(data);
+        await this.storeEntityDataInCache(data);
       }
     }
     this.lockManager.releaseLock(lockKey);
@@ -567,7 +442,6 @@ export class ApmDataProxy {
     return this.fetch(urlGen.apiEntityTypeGetEntities(typeTid), 'GET', {}, false, false, TtlOneHour);
   }
 
-
   /**
    *
    * @param {string} entityType
@@ -577,8 +451,10 @@ export class ApmDataProxy {
    * @return {Promise<any>}
    * @private
    */
-  getApmEntityData(entityType: string, dataType: string, entityId: number, cacheName: string = 'local'): Promise<any> {
-    return new Promise((resolve, reject) => {
+  getApmEntityData(entityType: string, dataType: string, entityId: number, cacheName: CacheNames = 'local'): Promise<any> {
+
+    // @ts-ignore
+    return new Promise(async (resolve, reject) => {
       let ttl = TtlOneDay;
       let getUrl = '';
       switch (entityType) {
@@ -603,14 +479,14 @@ export class ApmDataProxy {
         reject(`Invalid entity type ${entityType} : ${dataType}`);
       }
       let cacheKey = this.getCacheKey(entityType, dataType, entityId);
-      let cache = this.caches[cacheName];
-      let cachedInfo = cache.retrieve(cacheKey);
+      let cache: KeyCache = this.caches[cacheName];
+      let cachedInfo = await cache.retrieve(cacheKey);
       if (cachedInfo !== null) {
         resolve(cachedInfo);
         return;
       }
       console.log(`Cache key ${cacheKey} not found, getting data from server`);
-      this.get(getUrl, true).then((serverData) => {
+      this.get(getUrl, true).then(async (serverData) => {
         let dataToStore = null;
         switch (entityType) {
           case 'Person':
@@ -624,12 +500,182 @@ export class ApmDataProxy {
           case 'Work':
             dataToStore = serverData;
         }
-        cache.store(cacheKey, dataToStore, ttl * (1 + Math.random()));
-        resolve(dataToStore);
+        await cache.store(cacheKey, dataToStore, ttl * (1 + Math.random())).then(() => {
+          resolve(dataToStore);
+        });
       }).catch((e) => {
         reject(e);
       });
     });
+  }
+
+  /**
+   * Gets edition source information from server
+   * @param tid
+   */
+  getEditionSource(tid: number): Promise<any> {
+    return this.fetch(urlGen.apiEditionSourcesGet(tid), 'GET', {}, false, false, TtlOneHour);
+  }
+
+  /**
+   * Resolves to an array of tuples containing the id and the name for each of the entities
+   * in the given array
+   * @param {number[]}entityIdArray
+   */
+  private async getEntityNameTuples(entityIdArray: number[]) {
+    return Promise.all(entityIdArray.map(async (id) => {
+      return [id, await this.getEntityName(id)];
+    }));
+  }
+
+  private async getAlmostStaticData(name: string, url: string): Promise<any> {
+    let cache = this.caches.local;
+    let data = await cache.retrieve(name);
+    if (data !== null) {
+      return data;
+    }
+    let serverData = await this.get(url, true);
+    await cache.store(name, serverData, TtlOneDay);
+    return serverData;
+  }
+
+  /**
+   *
+   * @param {string}url
+   * @param {string} method
+   * @param {any}payload
+   * @param {boolean}forceActualFetch
+   * @param {boolean}useRawData if true, the payload is posted as is, otherwise the payload is encapsulated on an object { data: payload}
+   * @param {number} ttl
+   * @param sessionCache
+   * @return {Promise<any>}
+   * @throws {DataProxyError}
+   */
+  private fetch(url: string, method: string = 'GET', payload: any, forceActualFetch: boolean = false, useRawData: boolean = false, ttl: number = -1, sessionCache = true): Promise<any> {
+    let key = encodeURI(url);
+    let fetcher = sessionCache ? this.cachedFetcher : this.localCachedFetcher;
+    return fetcher.fetch(key, () => {
+      return new Promise(async (resolve, reject: (e: DataProxyError) => void) => {
+        if (['GET', 'POST'].indexOf(method) === -1) {
+          reject({
+            errorType: 'method',
+            httpStatus: -1,
+            message: `Invalid method ${method} for URL ${url}`
+          });
+        }
+        let fetchOptions: any = {method: method};
+        if (this.useBearerAuthentication) {
+          const token = await this.getBearerToken();
+          if (token === null) {
+            reject({
+              errorType: 'authentication',
+              httpStatus: -1,
+              message: `No authentication token available`
+            })
+            return;
+          }
+          fetchOptions['headers'] = {'Authorization': `Bearer ${token}`};
+        }
+        const actualPayload = useRawData ? payload : {data: JSON.stringify(payload)};
+
+        const fetchFunction = method === 'GET' ? () => {
+          return fetch(url, fetchOptions);
+        } : () => {
+          fetchOptions['headers'] = fetchOptions['headers'] || {};
+          fetchOptions['headers']['Content-Type'] = 'application/json';
+          fetchOptions['body'] = JSON.stringify(actualPayload);
+          return fetch(url, fetchOptions);
+        };
+
+        fetchFunction().then((response) => {
+          if (response.status === 200) {
+            return response.json().then((data) => {
+              resolve(data);
+            });
+          } else {
+            console.log(`Error fetching ${url}`, response);
+            reject({
+              errorType: 'http',
+              httpStatus: response.status,
+              message: `Error ${response.status} fetching ${url}`
+            })
+          }
+        });
+      });
+    }, forceActualFetch, ttl);
+  }
+
+  /**
+   * Post to the APM server.
+   * @param {string}url
+   * @param {any}payload
+   * @param {boolean}useRawData if true, the payload is posted as is, otherwise the payload is encapsulated in an object `{ data: payload}`
+   */
+  private post(url: string, payload: any, useRawData: boolean = false): Promise<any> {
+    return this.fetch(url, 'POST', payload, true, useRawData);
+  }
+
+  /**
+   * Stores the data for an entity in the browser's cache
+   *
+   * @param {Object} data - The entity's data object
+   * @param {?number} [ttl=null] if null, the default cache strategy will be used
+   * @private
+   */
+  private async storeEntityDataInCache(data: any, ttl: number | null = null) {
+    let cache = this.caches.local;
+    if (ttl === null) {
+      if (data.id <= MaxSystemEntityId) {
+        // system entity, data will change only on a change of schema, which
+        // entails a change in dataId too, so we can use
+        // an arbitrarily long TTL
+        ttl = 90 * 24 * 3600;  // 3 months
+      } else {
+        // any other entity gets one hour
+        ttl = 3600;  // 1 hour
+      }
+    }
+    if (ttl < 0) {
+      // do nothing
+      return;
+    }
+    // since in many cases a lot of entities get queried at the same time,
+    // it makes sense to introduce some variability in the TTL
+    ttl = this.getTtlWithVariability(ttl);
+
+    // console.log(`Storing entity ${data.id} data in cache with ttl = ${ttl}`);
+
+    // use the session cache, so that all entity data can disappear when resetting the browser
+    await cache.store(`${EntityDataCacheKeyPrefix}:${data.id}`, data, ttl);
+  }
+
+  private async retrieveEntityDataFromCache(id: number): Promise<any> {
+    let cache = this.caches.local;
+    if (id <= MaxSystemEntityId) {
+      cache = this.caches.local;
+    }
+    return cache.retrieve(`${EntityDataCacheKeyPrefix}:${id}`);
+  }
+
+  /**
+   * Introduces random variability to a given TTL
+   * @param {number}ttl  TTL in seconds
+   * @param variability  +/- percentage of variability
+   * @private
+   */
+  private getTtlWithVariability(ttl: number, variability = 5) {
+    return ttl * (1 - variability / 100) + (ttl / variability) * Math.random();
+  }
+
+  private async getEntityDataRaw(tid: number): Promise<EntityDataInterface> {
+    console.log(`Fetching data for entity ${tid} from the server`);
+    let url = urlGen.apiEntityGetData(tid);
+    // use a lock here too, just in case some guerrilla function somewhere
+    // else in the code is trying to do the same
+    await this.lockManager.getLock(url);
+    let data: EntityDataInterface = await $.get(urlGen.apiEntityGetData(tid));
+    this.lockManager.releaseLock(url);
+    return data;
   }
 
   /**
@@ -638,7 +684,7 @@ export class ApmDataProxy {
    * @return {{name, id, username}}
    * @private
    */
-  getPersonDataToStoreFromServerData(serverData: any): { name: string; id: number; username: string } {
+  private getPersonDataToStoreFromServerData(serverData: any): { name: string; id: number; username: string } {
     return serverData;
   }
 
@@ -648,7 +694,7 @@ export class ApmDataProxy {
    * @return {{id, dareId, authorId, title}}
    * @private
    */
-  getWorkDataToStoreFromServerData(serverData: any): {
+  private getWorkDataToStoreFromServerData(serverData: any): {
     id: number; dareId: string; authorId: number; authorTid: number; title: string
   } {
     return {
@@ -669,20 +715,16 @@ export class ApmDataProxy {
    * @return {string}
    * @private
    */
-  getCacheKey(entityType: string, dataType: string, entityId: number, attribute: string = ''): string {
+  private getCacheKey(entityType: string, dataType: string, entityId: number, attribute: string = ''): string {
     if (dataType === '') {
       dataType = 'default';
     }
-    return `${entityType}-${dataType}-${entityId}${attribute === '' ? '' : '-' + attribute}`;
+    return `${entityType}:${dataType}:${entityId}${attribute === '' ? '' : ':' + attribute}`;
   }
 
-  /**
-   * Gets edition source information from server
-   * @param tid
-   */
-  getEditionSource(tid: number): Promise<any> {
-    return this.fetch(urlGen.apiEditionSourcesGet(tid), 'GET', {}, false, false, TtlOneHour);
-  }
+  private getBearerToken: () => Promise<string | null> = () => Promise.resolve(null);
+
+  private setBearerToken: (t: string, ttl: number) => Promise<void> = () => Promise.resolve();
 
 
 }

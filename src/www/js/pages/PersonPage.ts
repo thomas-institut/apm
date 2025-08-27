@@ -12,6 +12,7 @@ import * as Entity from '../constants/Entity';
 import {MetadataEditorSchema} from '@/defaults/MetadataEditorSchemata/MetadataEditorSchema';
 import {MetadataEditor2} from '@/MetadataEditor/MetadataEditor2';
 import {SchemaInterface} from "@/defaults/MetadataEditorSchemata/SchemaInterface";
+import {EntityDataInterface} from "../../schema/Schema";
 
 const CONTRIBUTION_MCE = 'mcEditions';
 const CONTRIBUTION_TX = 'transcriptions';
@@ -24,7 +25,7 @@ export class PersonPage extends NormalPage {
   private readonly userData: any;
   private userContributions: any[];
   private works: any[];
-  private entityData: any;
+  private entityData!: EntityDataInterface;
   private schema: SchemaInterface | null = null;
   private mcEditionsCollapse!: CollapsePanel;
   private chunkEditionsCollapse!: CollapsePanel;

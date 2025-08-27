@@ -104,9 +104,9 @@ export class NormalPage extends ApmPage {
   }
 
   genOnClickLangChange(lang: string) {
-    return (ev :any) => {
+    return async (ev :any) => {
       ev.preventDefault()
-      this.saveLangInCache(lang)
+      await this.saveLangInCache(lang)
       this.changeLanguage(lang)
     }
   }

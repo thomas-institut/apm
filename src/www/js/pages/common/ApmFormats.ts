@@ -1,5 +1,5 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { TimeString } from '../../toolbox/TimeString'
+import { TimeString } from '@/toolbox/TimeString'
 
 let language = 'en';
 let timeZone = 'UTC';

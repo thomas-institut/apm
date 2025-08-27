@@ -31,7 +31,7 @@ import {SiglaGroupsUI} from './SiglaGroupsUI';
 import {ConfirmDialog, EXTRA_LARGE_DIALOG} from '@/pages/common/ConfirmDialog';
 import {ApmFormats} from '@/pages/common/ApmFormats';
 import {NiceToggle} from '@/widgets/NiceToggle';
-import {ApmDataProxy} from "@/pages/common/ApmDataProxy";
+import {ApmDataProxy, DataProxyError} from "@/pages/common/ApmDataProxy";
 import {CtDataInterface} from "@/CtData/CtDataInterface";
 import {WitnessUpdateData} from "@/Api/Interfaces/WitnessUpdates";
 import {urlGen} from "@/pages/common/SiteUrlGen";
@@ -46,7 +46,8 @@ const icons = {
   checkCross: '<i class="fas fa-times"></i>',
   externalLink: '<i class="bi bi-box-arrow-up-right"></i>',
   editSiglaGroup: '<i class="bi bi-pencil"></i>',
-  deleteSiglaGroup: '<i class="bi bi-trash"></i>'
+  deleteSiglaGroup: '<i class="bi bi-trash"></i>',
+  busy: '<i class="fas fa-circle-notch fa-spin"></i>',
 };
 
 interface WitnessInfoPanelOptions extends PanelOptions {
@@ -58,7 +59,7 @@ interface WitnessInfoPanelOptions extends PanelOptions {
   onSiglaChange: (newSigla: string[]) => Promise<void>;
   onWitnessOrderChange: (newOrder: number[]) => Promise<void>;
   getPageInfo: (pageIds: string[]) => Promise<any>;
-  getPageUrl: (docId: string, seq: number, column: number) => string;
+  // getPageUrl: (docId: string, seq: number, column: number) => string;
   getWitnessData: (witnessId: string) => Promise<any>;
   updateWitness: (witnessIndex: number, changeData: any, newWitness: any) => Promise<boolean>;
   fetchSiglaPresets: () => Promise<any>;
@@ -95,6 +96,7 @@ export class WitnessInfoPanel extends Panel {
   private siglaPresets: any[];
   private convertToEditionDiv!: JQuery<HTMLElement>;
   private convertToEditionButton!: JQuery<HTMLElement>;
+  private convertingToEdition: boolean;
 
   constructor(options: WitnessInfoPanelOptions) {
     super(options);
@@ -113,6 +115,7 @@ export class WitnessInfoPanel extends Panel {
     this.ctData = CtData.copyFromObject(options.ctData);
     this.currentWitnessUpdateData = {status: 'undefined', witnesses: [], timeStamp: '', message: ''};
     this.checkingForWitnessUpdates = false;
+    this.convertingToEdition = false;
     this.siglaPresets = [];
   }
 
@@ -210,8 +213,10 @@ export class WitnessInfoPanel extends Panel {
   }
 
   postRender() {
-    this.updatePageInfo().then( () => {});
-    this.updateWitnessInfoDiv(false).then( () => {});
+    this.updatePageInfo().then(() => {
+    });
+    this.updateWitnessInfoDiv(false).then(() => {
+    });
 
     $(this.containerSelector + ' .check-witness-update-btn').on('click', async () => {
       if (!this.checkingForWitnessUpdates) {
@@ -320,6 +325,52 @@ export class WitnessInfoPanel extends Panel {
   genOnClickConvertToEditionButton() {
     return () => {
       console.log(`Click on convert to edition button`);
+      if (this.ctData['type'] !== CollationTableType.COLLATION_TABLE) {
+        console.log(`Not a collation table, cannot convert`);
+        return;
+      }
+      let modalSelector = '#convert-to-edition-modal';
+      $('body').remove(modalSelector)
+      .append(this.getConvertToEditionDialogHtml(this.ctData['witnessTitles'][this.ctData.witnessOrder[0]]));
+      let cancelButton = $(`${modalSelector} .cancel-btn`);
+      let submitButton = $(`${modalSelector} .submit-btn`);
+      let resultSpan = $(`${modalSelector} .result`);
+      let mostCommonVariantCheck = $(`${modalSelector} .most-common-variant-check`);
+      let topWitnessCheck = $(`${modalSelector} .top-witness-check`);
+      cancelButton.on('click', () => {
+        $(modalSelector).modal('hide');
+      });
+      submitButton.on('click', async () => {
+        cancelButton.addClass('hidden');
+        submitButton.addClass('hidden');
+        mostCommonVariantCheck.prop('disabled', true);
+        topWitnessCheck.prop('disabled', true);
+        //let initStrategy = topWitnessCheck.prop('checked') ? CollationTableInitStrategy.TOP_WITNESS : CollationTableInitStrategy.MOST_COMMON_VARIANT;
+        $(modalSelector + ' .modal-body').addClass('text-muted');
+        resultSpan.html(`Waiting for server's response... ${icons.busy}`).addClass('text-warning');
+        this.convertingToEdition = true;
+        try {
+          const apiResponse = await this.apmDataProxy.collationTable_convertToEdition({
+            tableId: this.ctData.tableId,
+            initStrategy: 'topWitness'
+          });
+          resultSpan.html(`<b>Done!</b> The new edition is available <b><a href="${urlGen.siteChunkEdition(this.ctData.tableId)}">here</a></b>`);
+          resultSpan.removeClass('text-warning')
+          .addClass('text-success');
+          this.convertingToEdition = false;
+        } catch (e: unknown) {
+          const error = e as DataProxyError;
+          resultSpan.html(`<b>Error! Please report to administrator.<br/>Error type ${error.errorType}, status ${error.httpStatus}`)
+          .removeClass('text-warning')
+          .addClass('text-danger');
+          cancelButton.removeClass('hidden');
+          this.convertingToEdition = false;
+        }
+      });
+      $(modalSelector).modal({
+        backdrop: 'static', keyboard: false, show: false
+      });
+      $(modalSelector).modal('show');
     };
   }
 
@@ -572,27 +623,6 @@ export class WitnessInfoPanel extends Panel {
     };
   }
 
-  private async addEditSiglaGroup(index: number) {
-    let sigla = this.ctData['sigla'].filter((_s, i) => {
-      return (i !== this.ctData['editionWitnessIndex']);
-    });
-    try {
-      const editedSiglaGroup = await SiglaGroupsUI.addEditSiglaGroup(this.ctData['siglaGroups'], index, sigla);
-      if (index === -1) {
-        console.log(`Adding new sigla group`);
-        this.ctData['siglaGroups'].push(editedSiglaGroup);
-      } else {
-        console.log(`Replacing sigla group at index ${index}`);
-        this.ctData['siglaGroups'][index] = editedSiglaGroup;
-      }
-      this.onCtDataChange(this.ctData).then();
-    } catch (reason) {
-      if (reason !== 'Canceled') {
-        console.error(`Error editing sigla group: ${reason}`);
-      }
-    }
-  }
-
   genOnClickLoadSiglaPreset() {
     return () => {
       console.log('Click on load sigla preset');
@@ -774,7 +804,7 @@ export class WitnessInfoPanel extends Panel {
         if (witnessUpdateInfo['justUpdated']) {
           let warningHtml = `<span>${icons.checkOK} Just updated. Don't forget to save!`;
           warningTd.html(warningHtml);
-          $(`${this.containerSelector} td.timestamp-td-${i}`).html(ApmFormats.timeString(this.ctData.witnesses[i].timeStamp));
+          $(`${this.containerSelector} td.timestamp-td-${i}`).html(ApmFormats.timeString(this.ctData.witnesses[i]?.timeStamp ?? ''));
         } else {
           // witness up to date, not just updated
           warningTd.html('');
@@ -932,6 +962,61 @@ export class WitnessInfoPanel extends Panel {
     };
   }
 
+  private getConvertToEditionDialogHtml(firstWitnessTitle: string) {
+    return `
+<div id="convert-to-edition-modal" class="modal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Main Text</h5>
+            </div>
+            <div class="modal-body">
+                <div class="info">
+                    <p>This will convert this saved collation table into an edition.</p>
+                </div>
+               <div class="form">
+                    <p>Choose how to initialize the main text:</p>
+                    <div class="form-group form-check">
+                        <input type="radio" name="init-edition" class="form-check-input most-common-variant-check" disabled>
+                        <label class="form-check-label" for="exampleCheck1">Use the most common variant in each column (coming soon...)</label>
+                    </div>
+                    <div class="form-group form-check">
+                        <input type="radio" name="init-edition" class="form-check-input top-witness-check" checked>
+                        <label class="form-check-label" for="exampleCheck1">Copy current top witness: <b>${firstWitnessTitle}</b></label>
+                    </div>
+               </div>
+            </div>
+            <div class="modal-footer">
+                <span class="result"></span>
+                <button type="button" class="btn btn-danger submit-btn">Submit</button>
+                <button type="button" class="btn btn-primary cancel-btn">Cancel</button>
+            </div>
+      </div>
+    </div>
+</div>`;
+  }
+
+  private async addEditSiglaGroup(index: number) {
+    let sigla = this.ctData['sigla'].filter((_s, i) => {
+      return (i !== this.ctData['editionWitnessIndex']);
+    });
+    try {
+      const editedSiglaGroup = await SiglaGroupsUI.addEditSiglaGroup(this.ctData['siglaGroups'], index, sigla);
+      if (index === -1) {
+        console.log(`Adding new sigla group`);
+        this.ctData['siglaGroups'].push(editedSiglaGroup);
+      } else {
+        console.log(`Replacing sigla group at index ${index}`);
+        this.ctData['siglaGroups'][index] = editedSiglaGroup;
+      }
+      this.onCtDataChange(this.ctData).then();
+    } catch (reason) {
+      if (reason !== 'Canceled') {
+        console.error(`Error editing sigla group: ${reason}`);
+      }
+    }
+  }
+
   private async checkForWitnessUpdates() {
     this.checkingForWitnessUpdates = true;
     if (this.currentWitnessUpdateData.status === 'undefined') {
@@ -1003,7 +1088,7 @@ export class WitnessInfoPanel extends Panel {
                 </td>
                 <td>${witnessTitle}</td>
                 <td class="info-td-${witnessIndex}"></td>
-                <td class="timestamp-td-${witnessIndex}">${ApmFormats.timeString(witness.timeStamp)}</td>
+                <td class="timestamp-td-${witnessIndex}">${ApmFormats.timeString(witness.timeStamp ?? '')}</td>
                 <td class="siglum-${witnessIndex}">${siglum}</td>
                 <td class="auto-app-${witnessIndex}"></td>
                 <td class="auto-fol-${witnessIndex}"></td>

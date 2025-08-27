@@ -331,9 +331,7 @@ export class ApmUrlGenerator {
     return this.apiBase + '/typeset/raw';
   }
 
-  apiConvertCollationTable(tableId: number) {
-    return `${this.apiBase}/collation-table/convert/${tableId}`;
-  }
+
 
   apiEntityGetData(tid: number) {
     return `${this.apiBase}/entity/${tid}/data`;
@@ -351,20 +349,39 @@ export class ApmUrlGenerator {
     return `${this.apiBase}/entity/statements/edit`;
   }
 
-  apiCollationTableGet(tableId: number, compactEncodedTimeString = '') {
+  // API: CollationTable
+
+  apiCollationTable_auto() {
+    return this.apiBase + '/collationTable/auto';
+  }
+
+  apiCollationTable_save() {
+    return this.apiBase + '/collationTable/save';
+  }
+
+  apiCollationTable_activeEditions() {
+    return `${this.apiBase}/collationTable/active/editions`;
+  }
+
+  apiCollationTable_activeForWork(workId: any) {
+    return `${this.apiBase}/collationTable/active/forWork/${workId}`;
+  }
+
+  apiCollationTable_convertToEdition(tableId: number) {
+    return `${this.apiBase}/collationTable/${tableId}/convertToEdition`;
+  }
+
+  apiCollationTable_get(tableId: number, compactEncodedTimeString = '') {
     if (compactEncodedTimeString !== '') {
-      return `${this.apiBase}/collation-table/get/${tableId}/${compactEncodedTimeString}`;
+      return `${this.apiBase}/collationTable/${tableId}/get/${compactEncodedTimeString}`;
     }
-    return `${this.apiBase}/collation-table/get/${tableId}`;
+    return `${this.apiBase}/collationTable/${tableId}/get`;
   }
 
-  apiCollationTableVersionInfo(tableId: number, timeStamp: string) {
-    return `${this.apiBase}/collation-table/versionInfo/${tableId}/${TimeString.compactEncode(timeStamp)}`;
+  apiCollationTable_versionInfo(tableId: number, timeStamp: string) {
+    return `${this.apiBase}/collationTable/${tableId}/versionInfo/${TimeString.compactEncode(timeStamp)}`;
   }
 
-  apiGetActiveEditionInfo() {
-    return `${this.apiBase}/collation-table/info/edition/active`;
-  }
 
   apiGetMultiChunkEdition(editionId: number, timeStamp = '') {
     if (timeStamp !== '') {
@@ -405,9 +422,7 @@ export class ApmUrlGenerator {
     return `${this.apiBase}/work/${workId}/chunksWithTranscription`;
   }
 
-  apiCollationTableGetActiveTablesForWork(workId: any) {
-    return `${this.apiBase}/collation-table/active/work/${workId}`;
-  }
+
 
   apiPersonGetWorks(personId: number) {
     return `${this.apiBase}/person/${personId}/works`;
@@ -417,13 +432,7 @@ export class ApmUrlGenerator {
     return `${this.apiBase}/doc/create`;
   }
 
-  apiAutomaticCollation() {
-    return this.apiBase + '/collation-table/auto';
-  }
 
-  apiSaveCollation() {
-    return this.apiBase + '/collation-table/save';
-  }
 
   apiAutomaticEdition() {
     return this.apiBase + '/edition/auto';

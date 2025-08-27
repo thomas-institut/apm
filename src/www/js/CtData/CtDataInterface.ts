@@ -15,7 +15,7 @@ export interface CtDataInterface {
   tableId: number;
   customApparatuses: CustomApparatusInterface[];
   schemaVersion: string;
-  type: string;
+  type: 'edition' | 'ctable';
   title: string;
   collationMatrix: number[][];
   groupedColumns: number[];
@@ -43,10 +43,11 @@ export interface CustomApparatusInterface {
 
 
 export interface WitnessInterface {
-  chunkId: string;
-  lang: string;
+
+  chunkId?: string;
+  lang?: string;
   witnessType: string;
-  timeStamp: string;
+  timeStamp?: string;
   ApmWitnessId: string;
   tokens: WitnessTokenInterface[];
 
@@ -57,6 +58,9 @@ export interface WitnessInterface {
   docId?: number;
   items?: FullTxItemInterface[];
   nonTokenItemIndexes?: NonTokenItemIndex[];
+
+  // used by Source witnesses
+  title?: string;
 }
 
 

@@ -17,12 +17,11 @@
  */
 
 
-import { Panel } from '../MultiPanelUI/Panel'
+import { Panel } from '@/MultiPanelUI/Panel'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { KeyCache } from '../toolbox/KeyCache/KeyCache'
-import { urlGen } from '../pages/common/SiteUrlGen'
-import { ApmDataProxy } from '../pages/common/ApmDataProxy'
-import { ApmFormats } from '../pages/common/ApmFormats'
+import { urlGen } from '@/pages/common/SiteUrlGen'
+import { ApmDataProxy } from '@/pages/common/ApmDataProxy'
+import { ApmFormats } from '@/pages/common/ApmFormats'
 
 const defaultIcons = {
   alert: '<i class="fas fa-exclamation-triangle"></i>',
@@ -59,7 +58,6 @@ export class ChunkSearchPanel extends Panel {
     this.apmDataProxy = this.options.apmDataProxy;
     this.activeEditionsData = null
     this.lastFilter = ''
-    this.cache = new KeyCache()
   }
 
   async updateData(mceData) {
@@ -122,7 +120,7 @@ export class ChunkSearchPanel extends Panel {
   genOnClickLoadActiveEditionData() {
     return async () => {
       this.loadActiveEditionDataButton.html(`Loading ... ${this.icons.busy}`);
-      this.activeEditionsData = await this.apmDataProxy.get(urlGen.apiGetActiveEditionInfo());
+      this.activeEditionsData = await this.apmDataProxy.get(urlGen.apiCollationTable_activeEditions());
       console.log(`Active edition data`, this.activeEditionsData);
       this.activeEditionTableContainer.html(await this.genActiveEditionTable(this.activeEditionsData));
       this.setupActiveEditionTableButtons(this.activeEditionsData);

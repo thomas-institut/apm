@@ -49,7 +49,7 @@ export default defineConfig({
         AdminEntityPage: resolve(__dirname, 'js/pages/AdminEntityPage/AdminEntityPage.js'),
         DevelopmentEntityDataEditor: resolve(__dirname, 'js/pages/DevelopmentEntityDataEditor.js'),
         SearchPage: resolve(__dirname, 'js/pages/SearchPage.js'),
-        EditionComposer: resolve(__dirname, 'js/EditionComposer/EditionComposer.js'),
+        EditionComposer: resolve(__dirname, 'js/EditionComposer/EditionComposer.ts'),
         MceComposer: resolve(__dirname, 'js/MceComposer/MceComposer.js'),
         CollationTableEditor: resolve(__dirname, 'js/pages/CollationTableEditor.js'),
         AutomaticCollationTable: resolve(__dirname, 'js/pages/AutomaticCollationTable/AutomaticCollationTable.js'),

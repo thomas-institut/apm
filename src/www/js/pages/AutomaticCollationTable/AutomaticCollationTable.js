@@ -16,19 +16,15 @@
  *  
  */
 
-
-
 import { TableEditor } from '../common/TableEditor'
-import  *  as CollationTableUtil from '../common/CollationTableUtil'
-import {defaultLanguageDefinition} from '../../defaults/languages'
+import * as CollationTableUtil from '../common/CollationTableUtil'
+import { defaultLanguageDefinition } from '@/defaults/languages'
 import * as PopoverFormatter from '../common/CollationTablePopovers'
-import {OptionsChecker} from '@thomas-inst/optionschecker'
-import {CollationTableFormatter} from './CollationTableFormatter'
-import { AutomaticCollationTableSettingsForm} from '../common/AutoCollTableSettingsForm'
-import {AutomaticCollationTableViewSettingsForm} from './AutomaticCollationTableViewSettingsForm'
-import { CtDataEditionGenerator } from '../../Edition/EditionGenerator/CtDataEditionGenerator'
-import { EditionViewerSvg } from '../../Edition/EditionViewerSvg'
-import { CtData } from '../../CtData/CtData'
+import { OptionsChecker } from '@thomas-inst/optionschecker'
+import { CollationTableFormatter } from './CollationTableFormatter'
+import { AutomaticCollationTableSettingsForm } from '../common/AutoCollTableSettingsForm'
+import { AutomaticCollationTableViewSettingsForm } from './AutomaticCollationTableViewSettingsForm'
+import { CtData } from '@/CtData/CtData'
 import { urlGen } from '../common/SiteUrlGen'
 import { tr } from '../common/SiteLang'
 import { deepCopy } from '../../toolbox/Util.mjs'
@@ -36,33 +32,32 @@ import { ApmFormats } from '../common/ApmFormats'
 import { HeaderAndContentPage } from '../HeaderAndContentPage'
 
 export class AutomaticCollationTable extends HeaderAndContentPage {
-  
-  constructor(options) {
-    super(options);
+
+  constructor (options) {
+    super(options)
     console.log('ACT mini app starting')
     console.log('Available Witnesses:')
     console.log(options.availableWitnesses)
     console.log('ACT options')
     console.log(options)
 
-
-
     let oc = new OptionsChecker({
-      context: "AutomaticCollationTable",
+      context: 'AutomaticCollationTable',
       optionsDefinition: {
-        error: { type: 'boolean', default: false},
-        errorMessage: { type: 'string', default: ''},
-        workId : { type: 'string', required: true},
-        initialApiOptions: {type: 'object', required: true},
-        chunkNumber: {type: 'NonZeroNumber', required: true},
-        langDef : { type: 'object', default: defaultLanguageDefinition },
+        error: { type: 'boolean', default: false },
+        errorMessage: { type: 'string', default: '' },
+        workId: { type: 'string', required: true },
+        initialApiOptions: { type: 'object', required: true },
+        chunkNumber: { type: 'NonZeroNumber', required: true },
+        langDef: { type: 'object', default: defaultLanguageDefinition },
         availableWitnesses: { type: 'Array', default: [] },
-        suppressTimestampsInApiCalls: { type: 'boolean', default: false},
+        suppressTimestampsInApiCalls: { type: 'boolean', default: false },
         loadNow: { type: 'boolean', default: false },
-        isPartial: { type: 'boolean'},
-        langName: { type: 'string'},
+        isPartial: { type: 'boolean' },
+        langName: { type: 'string' },
         isPreset: { type: 'boolean', default: false },
-        preset: { type: 'object', default: {
+        preset: {
+          type: 'object', default: {
             id: -1,
             title: '',
             userTid: -1,
@@ -70,26 +65,23 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
             editable: false
           }
         },
-        normalizerData: { type: 'Array', default: []}
+        normalizerData: { type: 'Array', default: [] }
       }
     })
     this.options = oc.getCleanOptions(options)
 
-    this.showError = this.options.error;
-    this.errorMessage = this.options.errorMessage;
-
-
+    this.showError = this.options.error
+    this.errorMessage = this.options.errorMessage
 
     if (!this.showError) {
       this.rtlClass = 'rtltext'
       this.ltrClass = 'ltrtext'
       this.availableWitnesses = this.options.availableWitnesses
 
-      this.apiCollationUrl = urlGen.apiAutomaticCollation()
-      this.apiSaveCollationUrl = urlGen.apiSaveCollation()
+      this.apiSaveCollationUrl = urlGen.apiCollationTable_save()
       this.updating = false
       // generate witness titles
-      for(const witness of this.availableWitnesses) {
+      for (const witness of this.availableWitnesses) {
         let title = witness['typeSpecificInfo'].docInfo.title
         if (witness['typeSpecificInfo']['localWitnessId'] !== 'A') {
           title += ' (' + witness['typeSpecificInfo']['localWitnessId'] + ')'
@@ -98,7 +90,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
 
       }
 
-      this.initialApiOptions = deepCopy(this.options.initialApiOptions);
+      this.initialApiOptions = deepCopy(this.options.initialApiOptions)
 
       this.apiCallOptions = this.options.initialApiOptions
       // if there are no witnesses in the initialApiOptions witnesses array,
@@ -106,7 +98,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
 
       if (this.apiCallOptions.witnesses.length === 0) {
         //console.log('Including all witnesses in ApiCallOptions')
-        for(const witness of this.availableWitnesses) {
+        for (const witness of this.availableWitnesses) {
           let sysId = witness.systemId
           if (this.options.suppressTimestampsInApiCalls) {
             sysId = this.supressTimestampFromSystemId(sysId)
@@ -121,18 +113,17 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
 
     }
 
-    this.initPage().then( () => {
-      console.log(`Automatic Collation Table initialized`);
+    this.initPage().then(() => {
+      console.log(`Automatic Collation Table initialized`)
     })
-
 
   }
 
   async initPage () {
-    await super.initPage();
+    await super.initPage()
 
     if (this.showError) {
-      return;
+      return
     }
 
     this.collationTableDiv = $('#collationtablediv')
@@ -148,7 +139,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     this.witnessInfoDiv = $('#versioninfo')
     this.lastTimeLabel = $('#lastTimeLabel')
     this.editionContainer = $('#editiondiv')
-    this.editionDiv = $('#theedition')
+    // this.editionDiv = $('#theedition')
     this.collationTableActionsDiv = $('#collationTableActions')
     this.saveTableButton = $('#savetablebutton')
     this.ctData = null
@@ -171,9 +162,8 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     // save table button
     this.saveTableButton.on('click', this.genOnClickSaveTableButton())
 
-
     this.viewSettingsFormManager = new AutomaticCollationTableViewSettingsForm(this.viewSettingsFormSelector)
-    this.viewSettingsButton.on('click',  () => {
+    this.viewSettingsButton.on('click', () => {
       if (this.viewSettingsFormManager.isHidden()) {
         this.viewSettingsFormManager.show(this.viewSettings)
       } else {
@@ -181,9 +171,8 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
       }
     })
 
-
     this.witnessInfoDiv.addClass('hidden')
-    this.versionInfoButton.on('click',  () => {
+    this.versionInfoButton.on('click', () => {
       if (this.witnessInfoDiv.hasClass('hidden')) {
         this.witnessInfoDiv.removeClass('hidden')
         this.versionInfoButton.html('<i class="fas fa-angle-down" aria-hidden="true"></i>')
@@ -209,23 +198,22 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
       this.tableEditor.redrawTable()
     })
 
-
     let actSettingsFormOptions = {
-      containerSelector : this.editSettingsFormSelector,
+      containerSelector: this.editSettingsFormSelector,
       availableWitnesses: this.availableWitnesses,
       langDef: this.options.langDef,
-      userId:  this.userId,
+      userId: this.userId,
       isPreset: this.options.isPreset,
-      suppressTimestampsInSettings:  this.options.suppressTimestampsInApiCalls,
+      suppressTimestampsInSettings: this.options.suppressTimestampsInApiCalls,
       applyButtonText: 'Redo collation',
       normalizerData: this.options.normalizerData
     }
     if (this.options.isPreset) {
       actSettingsFormOptions.preset = this.options.preset
     }
-    this.editSettingsFormManager =  new AutomaticCollationTableSettingsForm(actSettingsFormOptions)
+    this.editSettingsFormManager = new AutomaticCollationTableSettingsForm(actSettingsFormOptions)
 
-    this.editSettingsButton.on('click',  () => {
+    this.editSettingsButton.on('click', () => {
       if (this.editSettingsFormManager.isHidden()) {
         this.editSettingsFormManager.show(this.apiCallOptions)
       } else {
@@ -252,9 +240,9 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     })
 
     this.collationTableDiv.popover({
-      trigger: "hover",
+      trigger: 'hover',
       selector: '.withpopover',
-      delay: {show: 500 , hide:0},
+      delay: { show: 500, hide: 0 },
       placement: 'top',
       html: true,
       container: 'body'
@@ -284,8 +272,8 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
 
   }
 
-  genOnClickSaveTableButton() {
-    return  () => {
+  genOnClickSaveTableButton () {
+    return () => {
       if (this.tableSaved) {
         console.log('Save table button clicked, but table is already saved')
         return false
@@ -298,9 +286,9 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
       }
       $.post(
         this.apiSaveCollationUrl,
-        {data: JSON.stringify(apiCallOptions)}
-      ).done(  (apiResponse) =>{
-        console.log("Success saving table")
+        { data: JSON.stringify(apiCallOptions) }
+      ).done((apiResponse) => {
+        console.log('Success saving table')
         console.log(apiResponse)
         let tableId = apiResponse['tableId']
         let url = urlGen.siteCollationTableEdit(tableId)
@@ -308,164 +296,136 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
         this.collationTableActionsDiv.html('Table saved: <a href="' + url + '">Edit table</a>')
 
       }).fail((resp) => {
-        console.error("Cannot save table")
+        console.error('Cannot save table')
         console.log(resp)
       })
 
     }
   }
 
-  updateEditionPreview() {
-    this.editionDiv.html("Generating edition... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
-    let eg = new CtDataEditionGenerator({ ctData: this.ctData})
-    let edition = eg.generateEdition()
-    console.log(`Edition Recalculated`)
-    console.log(edition)
-    let editionViewer = new EditionViewerSvg({
-      edition: edition,
-      fontFamily:  this.options.langDef[edition.lang].editionFont
-    })
-
-    this.editionDiv.html(editionViewer.getSvg())
-
-  }
-
-  getLastChangeInData() {
+  getLastChangeInData () {
     let ctData = this.ctData
     let lastChangeInData = ''
-    for(const witness of ctData['witnesses']) {
+    for (const witness of ctData['witnesses']) {
       if (witness['timeStamp'] > lastChangeInData) {
         lastChangeInData = witness['timeStamp']
       }
     }
     return lastChangeInData
-
   }
 
-  getTitleFromOptions() {
+  getTitleFromOptions () {
     return this.editSettingsFormManager.getTitleFromSettings(this.apiCallOptions)
   }
-  
-  fetchCollationTable() {
-    //console.log('All set to call API at ' + this.apiCollationUrl)
-    //console.log('API call options:')
-    //console.log(this.apiCallOptions)
+
+  fetchCollationTable () {
     this.updating = true
     this.redoButton.prop('disabled', true)
     this.actTitleElement.html(this.getTitleFromOptions())
     this.status.html('Collating... <i class="fa fa-spinner fa-spin fa-fw"></i>')
-    //this.collationTableDiv.html('')
     this.collationTableDivNew.html('')
     this.collationTableActionsDiv.addClass('hidden')
     this.collationEngineDetailsElement.html('')
     this.editionContainer.addClass('hidden')
     this.lastTimeLabel.html('TBD...')
     this.witnessInfoDiv.html('TBD...')
-
-    $.post(
-      this.apiCollationUrl, 
-      { data: JSON.stringify(this.apiCallOptions) }
-    )
-    .done( (apiResponse) => {
+    this.apmDataProxy.collationTable_auto(this.apiCallOptions).then((apiResponse) => {
       console.log('Automatic collation successful. Data:')
       console.log(apiResponse)
       this.setDataFromApiResponse(apiResponse)
       this.status.html('Collating... done,<br/>Formatting table <i class="fa fa-spinner fa-spin fa-fw"></i>')
-      this.lastChangeInData = this.getLastChangeInData();
-      this.lastTimeLabel.html(ApmFormats.time(this.lastChangeInData));
+      this.lastChangeInData = this.getLastChangeInData()
+      this.lastTimeLabel.html(ApmFormats.time(this.lastChangeInData))
       this.witnessInfoDiv.html(this.getVersionInfoHtml())
 
       this.setCsvDownloadFile()
-      
+
       this.status.html('')
       this.redoButton.prop('disabled', false)
       this.updating = false
       this.collationEngineDetailsElement.html(this.getCollationEngineDetailsHtml())
       this.collationTableActionsDiv.removeClass('hidden')
-
-      this.updateEditionPreview()
-
       this.collationTableDivNew.popover({
-        trigger: "hover",
+        trigger: 'hover',
         selector: '.withpopover',
-        delay: {show: 500 , hide:0},
-        placement: "auto top",
+        delay: { show: 500, hide: 0 },
+        placement: 'auto top',
         html: true,
         container: 'body'
       })
       this.setupTableEditor()
-    })
-    .fail((resp) => {
+    }).catch((resp) => {
       console.log('Error in automatic collation, resp:')
       console.log(resp)
       let failMsg = 'Collating... fail <i class="fa fa-frown-o" aria-hidden="true"></i><br/> '
       failMsg += '<span class="small">HTTP code ' + resp.status + '</span>'
-      if (typeof(resp.responseJSON) !== 'undefined') {
-        failMsg += '<br/><span class="small"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i>&nbsp;Error '  + resp.responseJSON.error + '</span>'
+      if (typeof (resp.responseJSON) !== 'undefined') {
+        failMsg += '<br/><span class="small"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i>&nbsp;Error ' + resp.responseJSON.error + '</span>'
       }
       this.status.html(failMsg)
       this.updating = false
     })
   }
 
-  setDataFromApiResponse(apiResponse) {
-    this.ctData = CtData.getCleanAndUpdatedCtData( apiResponse.collationTable, true, true)
+  /**
+   *
+   * @param {ApiCollationTable_auto}apiResponse
+   */
+  setDataFromApiResponse (apiResponse) {
+    this.ctData = CtData.getCleanAndUpdatedCtData(apiResponse.collationTable, true, true)
     this.peopleInfo = apiResponse.people
     this.collationEngineDetails = apiResponse.collationEngineDetails
     this.aggregatedNonTokenItemIndexes = CtData.calculateAggregatedNonTokenItemIndexes(this.ctData)
   }
 
-  getCollationEngineDetailsHtml() {
+  getCollationEngineDetailsHtml () {
     let ced = this.collationEngineDetails
-    let cedHtml = '<b>Engine:</b> ' + ced['engineName'] + '<br/>'
+    let cedHtml = '<b>Engine:</b> ' + ced.engineName + '<br/>'
 
     cedHtml += '<b>Cached:</b> ' + ced.cached + '<br/>'
     if (!ced.cached) {
-      cedHtml += '<b>Date/Time:</b> '  + ced['runDateTime'] + '<br/>'
-      cedHtml += '<b>Collation Runtime:</b> ' + Math.round(ced['duration']*1000.0) + ' ms' + '<br/>'
-      cedHtml += '<b>Total Runtime:</b> ' + Math.round(ced['totalDuration']*1000.0) + ' ms'
+      cedHtml += '<b>Date/Time:</b> ' + ced.runDateTime + '<br/>'
+      cedHtml += '<b>Collation Runtime:</b> ' + Math.round(ced.duration * 1000.0) + ' ms' + '<br/>'
+      cedHtml += '<b>Total Runtime:</b> ' + Math.round(ced.totalDuration * 1000.0) + ' ms'
     } else {
-      cedHtml += '<b>Original Date/Time:</b> '  + ced['runDateTime'] + '<br/>'
-      cedHtml += '<b>Original Collation Runtime:</b> ' + Math.round(ced['duration']*1000.0) + ' ms' + '<br/>'
-      cedHtml += '<b>Original Total Runtime:</b> ' + Math.round(ced['totalDuration']*1000.0) + ' ms' + '<br/>'
-      cedHtml += '<b>Cached Runtime:</b> ' + Math.round(ced['cachedRunTime']*1000.0) + ' ms' + '<br/>'
-
+      cedHtml += '<b>Original Date/Time:</b> ' + ced.runDateTime + '<br/>'
+      cedHtml += '<b>Original Collation Runtime:</b> ' + Math.round(ced.duration * 1000.0) + ' ms' + '<br/>'
+      cedHtml += '<b>Original Total Runtime:</b> ' + Math.round(ced.totalDuration * 1000.0) + ' ms' + '<br/>'
+      cedHtml += '<b>Cached Runtime:</b> ' + Math.round(ced.cachedRunTime * 1000.0) + ' ms' + '<br/>'
     }
-
     return cedHtml
   }
 
-  setCsvDownloadFile() {
+  setCsvDownloadFile () {
     let href = 'data:text/csv,' + encodeURIComponent(this.generateCsv())
     this.exportCsvButton.attr('href', href)
   }
 
-
-  generateCsv(sep = ',') {
+  generateCsv (sep = ',') {
     let collationTable = this.ctData
     let sigla = collationTable.sigla
     let numWitnesses = collationTable.witnesses.length
 
     let output = ''
-    for (let i=0; i < numWitnesses; i++) {
+    for (let i = 0; i < numWitnesses; i++) {
       let siglum = sigla[i]
       output += siglum + sep
       let ctRefRow = collationTable.collationMatrix[i]
       for (let tkRefIndex = 0; tkRefIndex < ctRefRow.length; tkRefIndex++) {
         let tokenRef = ctRefRow[tkRefIndex]
         let tokenCsvRep = ''
-        if (tokenRef !== -1 ) {
+        if (tokenRef !== -1) {
           let token = collationTable.witnesses[i].tokens[tokenRef]
           tokenCsvRep = this.getCsvRepresentationForToken(token, this.options.showNormalizations)
         }
         output += tokenCsvRep + sep
       }
-      output += "\n"
+      output += '\n'
     }
     return output
   }
 
-  getCsvRepresentationForToken(tkn, showNormalizations) {
+  getCsvRepresentationForToken (tkn, showNormalizations) {
     if (tkn.empty) {
       return ''
     }
@@ -476,16 +436,15 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     return '"' + text + '"'
   }
 
-
-  getVersionInfoHtml() {
+  getVersionInfoHtml () {
     let sigla = this.ctData['sigla']
     let witnesses = this.ctData['witnesses']
     let html = ''
     html += '<ul>'
-    for(let i=0; i < witnesses.length; i++) {
+    for (let i = 0; i < witnesses.length; i++) {
       let witness = witnesses[i]
       let siglum = sigla[i]
-      if(witness['witnessType'] === 'fullTx') {
+      if (witness['witnessType'] === 'fullTx') {
         html += '<li><b>' + siglum + '</b>: ' + ApmFormats.time(witness['timeStamp']) + '</li>'
       }
     }
@@ -494,16 +453,16 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     return html
   }
 
-  supressTimestampFromSystemId(systemId) {
+  supressTimestampFromSystemId (systemId) {
     let fields = systemId.split('-')
-    if (fields.length === 6 ) {
+    if (fields.length === 6) {
       fields.pop()
     }
     return fields.join('-')
   }
 
   // Functions for  Table Editor
-  setupTableEditor() {
+  setupTableEditor () {
     let collationTable = this.ctData
 
     // div text direction
@@ -543,9 +502,9 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     this.tableEditor.redrawTable()
   }
 
-  genGenerateCellTdExtraAttributesFunction() {
+  genGenerateCellTdExtraAttributesFunction () {
     let thisObject = this
-    return function(row, col, value) {
+    return function (row, col, value) {
       if (value === -1) {
         return ''
       }
@@ -556,15 +515,15 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
         thisObject.getPostNotes(row, col, value),
         thisObject.peopleInfo
       )
-      return [{ attr: 'data-content', val: popoverHtml}]
+      return [{ attr: 'data-content', val: popoverHtml }]
     }
   }
 
-  genGenerateCellContentFunction() {
+  genGenerateCellContentFunction () {
     let thisObject = this
     let noteIconSpan = ' <span class="noteicon"><i class="far fa-comment"></i></span>'
     let normalizationSymbol = '<b><sub>N</sub></b>'
-    return function(row, col, value) {
+    return function (row, col, value) {
       if (value === -1) {
         return '&mdash;'
       }
@@ -586,7 +545,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
         if (theItem['text'] !== undefined) {
           itemText = theItem['text'].substring(itemData['charRange'].from, itemData['charRange'].to + 1)
         }
-        if (theItem.type === 'TextualItem' && itemText!== "\n") {
+        if (theItem.type === 'TextualItem' && itemText !== '\n') {
           cellHtml += '<span class="' + thisObject.getClassesFromItem(theItem).join(' ') + '">'
           cellHtml += itemText
           cellHtml += '</span>'
@@ -601,29 +560,29 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     }
   }
 
-  getPostNotes(row, col, tokenIndex) {
+  getPostNotes (row, _col, tokenIndex) {
     //console.log('Get post notes: r' + row + ' c' + col + ' i' + tokenIndex)
     let postItemIndexes = this.aggregatedNonTokenItemIndexes[row][tokenIndex]['post']
     let itemWithAddressArray = this.ctData['witnesses'][row]['items']
     let notes = []
-    for(const itemIndex of postItemIndexes) {
+    for (const itemIndex of postItemIndexes) {
       let theItem = itemWithAddressArray[itemIndex]
       let itemNotes = []
       if (theItem['notes'] !== undefined) {
         itemNotes = theItem['notes']
       }
-      for(const note of itemNotes) {
+      for (const note of itemNotes) {
         notes.push(note)
       }
     }
     return notes
   }
 
-  genGenerateCellClassesFunction() {
+  genGenerateCellClassesFunction () {
     let thisObject = this
-    return function(row, col, value) {
+    return function (row, col, value) {
       if (value === -1) {
-        return [ 'emptytoken']
+        return ['emptytoken']
       }
       let tokenArray = thisObject.ctData['witnesses'][row]['tokens']
       let itemWithAddressArray = thisObject.ctData['witnesses'][row]['items']
@@ -646,7 +605,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
       if (itemZero['lang'] !== undefined) {
         lang = itemZero['lang']
       }
-      classes.push( 'text-' + lang)
+      classes.push('text-' + lang)
       if (token['sourceItems'].length === 1) {
         // td inherits the classes from the single source item
         return classes.concat(thisObject.getClassesFromItem(itemZero))
@@ -655,13 +614,13 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     }
   }
 
-  getClassesFromItem(item) {
+  getClassesFromItem (item) {
     let classes = []
     let hand = 0
     if (item.hand !== undefined) {
       hand = item.hand
     }
-    classes.push( 'hand-' + hand)
+    classes.push('hand-' + hand)
 
     if (item.format !== undefined && item.format !== '') {
       classes.push(item.format)
@@ -681,29 +640,32 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     return classes
   }
 
-  getTokenClasses(token) {
+  getTokenClasses (token) {
     let classes = []
     classes.push('tokentype_' + token.tokenType)
     return classes
   }
 
-  genGenerateTableClassesFunction() {
+  genGenerateTableClassesFunction () {
     return () => {
-      return [ `te-table-${this.ctData['lang']}`];
+      return [`te-table-${this.ctData['lang']}`]
     }
   }
 
-  async getHeaderHtml(){
+  async getHeaderHtml () {
     let breadcrumbHtml = this.getBreadcrumbNavHtml([
-      { label :tr('Works'), url:  urlGen.siteWorks()},
-      { label : this.options.workId, url: urlGen.siteWorkPage(this.options.workId)},
-      { label : `Chunk ${this.options.chunkNumber}`, url: urlGen.siteChunkPage(this.options.workId, this.options.chunkNumber)},
-      { label: tr('Automatic Collation Table')},
-      { label: `${tr(this.options.langName)} ${this.options.isPartial ? `(${tr('Partial')})` : ''}`, active: true}
+      { label: tr('Works'), url: urlGen.siteWorks() },
+      { label: this.options.workId, url: urlGen.siteWorkPage(this.options.workId) },
+      {
+        label: `Chunk ${this.options.chunkNumber}`,
+        url: urlGen.siteChunkPage(this.options.workId, this.options.chunkNumber)
+      },
+      { label: tr('Automatic Collation Table') },
+      { label: `${tr(this.options.langName)} ${this.options.isPartial ? `(${tr('Partial')})` : ''}`, active: true }
     ])
-    let workInfo = await this.apmDataProxy.getWorkDataOld(this.options.workId);
-    let authorInfo = await this.apmDataProxy.getPersonEssentialData(workInfo.authorTid);
-    let ctInfoDiv;
+    let workInfo = await this.apmDataProxy.getWorkDataOld(this.options.workId)
+    let authorInfo = await this.apmDataProxy.getPersonEssentialData(workInfo.authorTid)
+    let ctInfoDiv
     if (this.showError) {
       ctInfoDiv = `<p>${authorInfo.name}, <em>${workInfo.title}</em>, chunk ${this.options.chunkNumber}</p>`
     } else {
@@ -738,10 +700,10 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
         </div>
         <div class="col-md-3 text-right">
             <div id="collationtablebuttons" >
-                <button title="Toggle Edition"
-                    id="quickedbutton" class="btn btn-default btn-lg noborder">
-                    <i class="fas fa-align-left" aria-hidden="true"></i>
-                </button>
+<!--                <button title="Toggle Edition"-->
+<!--                    id="quickedbutton" class="btn btn-default btn-lg noborder">-->
+<!--                    <i class="fas fa-align-left" aria-hidden="true"></i>-->
+<!--                </button>-->
 
                 <button title="Reload the collation table with the most recent data" 
                     id="redobutton" class="btn btn-default btn-lg noborder">
@@ -762,11 +724,10 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     <div id="status" class="text-danger"></div>`
   }
 
-
-  async genContentHtml() {
+  async genContentHtml () {
     if (this.showError) {
       return `<div class="alert alert-danger" role="alert">
-        <h1><i class="fas fa-exclamation-triangle" aria-hidden="true"></i>${'Error'}</h1>
+        <h1><i class="fas fa-exclamation-triangle" aria-hidden="true"></i>Error</h1>
         <p class="lead">${tr(this.errorMessage)}</p>
     </div>`
     }
@@ -779,8 +740,6 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     <div id="collationEngineDetails" class="text-muted small"> </div>`
   }
 }
-
-
 
 // Load as global variable so that it can be referenced in the Twig template
 window.AutomaticCollationTable = AutomaticCollationTable

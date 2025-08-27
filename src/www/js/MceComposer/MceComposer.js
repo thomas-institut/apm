@@ -43,8 +43,7 @@ import { CtData } from '@/CtData/CtData'
 import { urlGen } from '@/pages/common/SiteUrlGen'
 import { ApmPage } from '@/pages/ApmPage'
 import { ApmFormats } from '@/pages/common/ApmFormats'
-import { IndexedDbKeyCache } from '@/toolbox/KeyCache/IndexedDbKeyCache'
-import { ApmDataProxy } from '@/pages/common/ApmDataProxy'
+import { IndexedDbAux } from '@/toolbox/KeyCache/IndexedDbAux'
 
 const defaultIcons = {
   moveUp: '&uarr;',
@@ -93,7 +92,7 @@ export class MceComposer extends ApmPage {
       }
     })
 
-    this.dbCache = new IndexedDbKeyCache('APM', 1, 'CtData');
+    this.dbCache = new IndexedDbAux('APM', 1, 'CtData');
 
     this.options = oc.getCleanOptions(options)
     this.icons = defaultIcons
@@ -179,8 +178,8 @@ export class MceComposer extends ApmPage {
           this.lastSave = data.validFrom
           document.title = this.mceData.title
           this.loadAllSingleChunkEditions().then(() => {
-            this.regenerateEdition().then(() => {
-              this.previewPanel.updateData(this.edition)
+            this.regenerateEdition().then( async () => {
+              await this.previewPanel.updateData(this.edition)
               this.editionPanel.updateData(this.mceData)
               this.chunkSearchPanel.updateData(this.mceData).then(() => {
                 this.updateSaveUI()
@@ -584,7 +583,7 @@ export class MceComposer extends ApmPage {
         return
       }
       console.log(`Deleting chunk ${chunkIndex}`)
-      let removedChunk = this.mceData.chunks.splice(chunkIndex, 1)
+      // let removedChunk = this.mceData.chunks.splice(chunkIndex, 1)
       this.singleChunkEditions.splice(chunkIndex, 1)
       this.chunksToUpdateStatuses.splice(chunkIndex, 1)
 
@@ -603,13 +602,11 @@ export class MceComposer extends ApmPage {
       console.log(`New MceData`)
       console.log(this.mceData)
       this.editionPanel.updateData(this.mceData)
-      this.chunkSearchPanel.updateData(this.mceData).then ( () => {
+      this.chunkSearchPanel.updateData(this.mceData).then ( async () => {
         this.updateSaveUI();
-        this.regenerateEdition().then( () => {
-          this.previewPanel.updateData(this.edition)
-          resolve()
-        }, (error) => { reject(error)})
-      })
+        await this.regenerateEdition();
+        await this.previewPanel.updateData(this.edition);
+      });
     })
   }
 
@@ -645,8 +642,8 @@ export class MceComposer extends ApmPage {
         this.editionPanel.updateData(this.mceData);
         this.chunkSearchPanel.updateData(this.mceData).then ( () => {
           this.updateSaveUI();
-          this.regenerateEdition().then( () => {
-            this.previewPanel.updateData(this.edition);
+          this.regenerateEdition().then( async () => {
+            await this.previewPanel.updateData(this.edition);
             resolve();
           }, (error) => { reject(error)})
         })
@@ -698,8 +695,8 @@ export class MceComposer extends ApmPage {
       this.mceData.chunkOrder = newOrder
       this.editionPanel.updateData(this.mceData)
       this.updateSaveUI()
-      this.regenerateEdition().then( () => {
-        this.previewPanel.updateData(this.edition)
+      this.regenerateEdition().then( async () => {
+        await this.previewPanel.updateData(this.edition)
         resolve()
       }, (error) => { reject(error)})
     })
@@ -725,7 +722,7 @@ export class MceComposer extends ApmPage {
     this.updateSaveUI();
     this.previewPanel.disableUpdatePreview();
     await this.regenerateEdition();
-    this.previewPanel.updateData(this.edition);
+    await this.previewPanel.updateData(this.edition);
     this.lockManager.releaseLock('autoMarginalFoliation');
   }
 
@@ -734,25 +731,21 @@ export class MceComposer extends ApmPage {
       this.mceData.sigla = newSigla
       this.editionPanel.updateData(this.mceData)
       this.updateSaveUI()
-      this.regenerateEdition().then( () => {
-        this.previewPanel.updateData(this.edition)
+      this.regenerateEdition().then( async () => {
+        await this.previewPanel.updateData(this.edition)
         resolve()
       }, (error) => { reject(error)})
     })
   }
 
-  updateChunkBreak(chunkIndex, newBreak, source) {
-    return new Promise ( (resolve, reject) => {
-      this.mceData.chunks[chunkIndex].break = newBreak
-      if (source !== 'editionPanel') {
-        this.editionPanel.updateData(this.mceData)
-      }
-      this.updateSaveUI()
-      this.regenerateEdition().then( () => {
-        this.previewPanel.updateData(this.edition)
-        resolve()
-      }, (error) => { reject(error)})
-    })
+  async updateChunkBreak(chunkIndex, newBreak, source) {
+    this.mceData.chunks[chunkIndex].break = newBreak
+    if (source !== 'editionPanel') {
+      this.editionPanel.updateData(this.mceData)
+    }
+    this.updateSaveUI()
+    await this.regenerateEdition();
+    await this.previewPanel.updateData(this.edition)
   }
 
   updateSiglaGroups(newSiglaGroups, source ) {
@@ -762,8 +755,8 @@ export class MceComposer extends ApmPage {
         this.editionPanel.updateData(this.mceData)
       }
       this.updateSaveUI()
-      this.regenerateEdition().then( () => {
-        this.previewPanel.updateData(this.edition)
+      this.regenerateEdition().then( async () => {
+        await this.previewPanel.updateData(this.edition)
         resolve()
       }, (error) => { reject(error)})
     })
@@ -787,7 +780,7 @@ export class MceComposer extends ApmPage {
       if (versionTimeString !== '' && useCache) {
         let cachedData = await this.dbCache.retrieve(dbKey);
         if (cachedData !== null) {
-          const versionInfo = await this.apmDataProxy.getCollationTableVersionInfo(tableId, versionTimeString);
+          const versionInfo = await this.apmDataProxy.collationTable_versionInfo(tableId, versionTimeString);
           if (versionInfo !== null) {
             cachedData.isLatestVersion = versionInfo.isLatestVersion;
             resolve(cachedData);
@@ -796,16 +789,16 @@ export class MceComposer extends ApmPage {
         }
       }
       // really get from server
-      let url = urlGen.apiCollationTableGet(tableId, TimeString.compactEncode(versionTimeString))
+      let url = urlGen.apiCollationTable_get(tableId, TimeString.compactEncode(versionTimeString))
       this.apmDataProxy.get(url).then( async (data) => {
         /** @var {SingleChunkApiData} data */
         console.log(`Got data table ${tableId}, timeStamp '${versionTimeString}'`)
         console.log(data)
         data.ctData = CtData.getCleanAndUpdatedCtData(data.ctData)
         // cache doc info
-        data['docInfo'].forEach ( (docInfo) => {
-          this.cache.store(`DOC-${docInfo['docId']}`, docInfo)
-        })
+        for(const docInfo of data.docInfo) {
+          await this.cache.store(`DOC-${docInfo['docId']}`, docInfo)
+        }
         // cache data
         await this.dbCache.store(dbKey, data);
         resolve(data)
@@ -1115,7 +1108,7 @@ export class MceComposer extends ApmPage {
           witnessIndex = this.getWitnessIndexByWitnessId(witnessId);
           if (witnessIndex === -1) {
             // new witness
-            let docInfo = this.cache.retrieve(`DOC-${ctDataWitnessInfo.docId}`)
+            let docInfo = await this.cache.retrieve(`DOC-${ctDataWitnessInfo.docId}`)
             let title = `Doc ${ctDataWitnessInfo.docId}`
             if (docInfo !== null) {
               title = docInfo.title

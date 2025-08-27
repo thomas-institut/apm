@@ -1,24 +1,41 @@
-export class IndexedDbKeyCache {
+import {InternalCacheObject, KeyCache} from "@/toolbox/KeyCache/KeyCache";
+
+
+const VersionNumber = 2;
+const storeName = 'cache';
+
+export class IndexedDbKeyCache extends KeyCache {
 
   private readonly dbName: string;
   private readonly storeName: string;
-  private readonly versionNumber: number;
   private db!: IDBDatabase;
   private status: string;
-  constructor(dbName: string, version: number, storeName: string = dbName) {
+
+  /**
+   * Creates a new IndexedDbKeyCache on the given IndexedDB database.
+   *
+   * The database is created if it does not exist and is meant to be exclusively used by this
+   * KeyCache instance. It should not be created or upgraded by any other means except by the
+   * initialize() method in this instance.
+   *
+   * @param dbName - the name of the database to use
+   * @param dataId - default dataId to use for all entries
+   */
+  constructor(dbName: string, dataId: string = '') {
+    super(dataId);
     this.dbName = dbName;
     this.storeName = storeName;
-    this.versionNumber = version;
     this.status = 'NotInitialized';
   }
 
-  public getStatus(): string {
-    return this.status;
-  }
 
   public initialize(): Promise<boolean> {
     return new Promise((resolve) => {
-      const DBOpenRequest = window.indexedDB.open(this.dbName, this.versionNumber);
+      const DBOpenRequest = window.indexedDB?.open(this.dbName, VersionNumber);
+      if (DBOpenRequest === undefined) {
+        console.log('IndexedDB not supported in this browser.');
+        resolve(false);
+      }
       // Register two event handlers to act on the database being opened successfully, or not
       DBOpenRequest.onerror = () => {
         this.status = 'error';
@@ -30,42 +47,61 @@ export class IndexedDbKeyCache {
         resolve(true);
       };
       DBOpenRequest.onupgradeneeded = (event) => {
-        console.log(`Upgrading database from version ${event.oldVersion} to version ${event.newVersion}`)
+        console.log(`Upgrading database from version ${event.oldVersion} to version ${event.newVersion}`);
         this.db = DBOpenRequest.result;
         const store = this.db.createObjectStore(this.storeName, {keyPath: 'key'});
         store.createIndex('value', 'value', {unique: false});
-      }
+      };
     });
   }
 
-  public async store(key: string, value: any) : Promise<void> {
-    return new Promise ( (resolve, reject) => {
-      const store = this.db.transaction(this.storeName, 'readwrite').objectStore(this.storeName);
-      const req = store.put({key: key, value: value});
-      req.onsuccess = () => {
-        resolve();
-      };
-      req.onerror = () =>{
-        reject();
-      }
-    })
+  protected async storeItemObject(key: string, value: InternalCacheObject): Promise<void> {
+    if (this.status !== 'success') {
+      throw new Error('Database not initialized');
+    }
+    const store = this.db.transaction(this.storeName, 'readwrite').objectStore(this.storeName);
+    await getRequestResult(() => store.put({key: key, value: value}));
   }
 
-  public async retrieve(key: string) : Promise<any> {
-    return new Promise ( (resolve, reject) => {
-      const store = this.db.transaction(this.storeName, 'readonly').objectStore(this.storeName);
-      const req = store.get(key);
-      req.onsuccess = () => {
-        if (req.result === undefined) {
-          resolve(null);
-          return;
-        }
-        resolve(req.result.value ?? null);
-      };
-      req.onerror = () =>{
-        reject();
-      }
-    })
+  protected async getItemObject(key: string): Promise<InternalCacheObject | null> {
+    if (this.status !== 'success') {
+      throw new Error('Database not initialized');
+    }
+    const store = this.db.transaction(this.storeName, 'readonly').objectStore(this.storeName);
+    const result = await getRequestResult(() => store.get(key));
+    if (result === undefined) {
+      return null;
+    }
+    return result.value ?? null;
   }
+
+  protected async deleteItemObject(key: string): Promise<void> {
+    if (this.status !== 'success') {
+      throw new Error('Database not initialized');
+    }
+    const store = this.db.transaction(this.storeName, 'readwrite').objectStore(this.storeName);
+    await getRequestResult(() => store.delete(key));
+  }
+
+  protected async getKeys(): Promise<string[]> {
+    if (this.status !== 'success') {
+      throw new Error('Database not initialized');
+    }
+    const store = this.db.transaction(this.storeName, 'readwrite').objectStore(this.storeName);
+    return await getRequestResult(() => store.getAllKeys());
+  }
+
+}
+
+function getRequestResult(makeRequest: () => IDBRequest): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const request = makeRequest();
+    request.onsuccess = () => {
+      resolve(request.result);
+    };
+    request.onerror = () => {
+      reject(request.error);
+    };
+  });
 
 }

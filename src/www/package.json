@@ -47,6 +47,7 @@
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^5.0.1",
+    "fake-indexeddb": "^6.1.0",
     "happy-dom": "^18.0.1",
     "lorem-ipsum": "^2.0.8",
     "openapi-typescript": "^7.8.0",

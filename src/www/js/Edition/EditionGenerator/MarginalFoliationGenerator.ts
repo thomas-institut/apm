@@ -25,6 +25,9 @@ export class MarginalFoliationGenerator {
    */
   constructor(ctData: CtDataInterface, lastFoliations: FoliationChangeInfoInterface[] = []) {
     this.ctData = ctData;
+    if (this.ctData.editionWitnessIndex === undefined) {
+      this.ctData.editionWitnessIndex = 0;
+    }
     this.lastFoliations = lastFoliations;
   }
 
@@ -46,7 +49,7 @@ export class MarginalFoliationGenerator {
   static getFoliationChangeInfoArray(ctData: CtDataInterface, lastFoliations: FoliationChangeInfoInterface[] = []): FoliationChangeInfoInterface[] {
     let foliationChangeInfoArray: FoliationChangeInfoInterface[] = [];
     let mainTextCollationRow = ctData.collationMatrix[ctData.editionWitnessIndex];
-    let baseWitnessTokens = ctData.witnesses[ctData.editionWitnessIndex].tokens;
+    let baseWitnessTokens = ctData.witnesses[ctData.editionWitnessIndex].tokens ?? [] as WitnessTokenInterface[];
     ctData.includeInAutoMarginalFoliation.forEach((witnessIndex) => {
       let lastFoliation = getLastFoliationForWitness(lastFoliations, witnessIndex);
       const witnessItems = ctData.witnesses[witnessIndex].items ?? [];
@@ -63,7 +66,11 @@ export class MarginalFoliationGenerator {
           return;
         }
 
+        if (ctData.witnesses[witnessIndex].tokens === undefined) {
+          throw new Error(`Witness ${witnessIndex} has no tokens`);
+        }
         const witnessToken = ctData.witnesses[witnessIndex].tokens[witnessTokenIndex];
+
 
         let newFoliation = getFoliationForToken(witnessToken, witnessItems);
         if (newFoliation !== null && newFoliation !== lastFoliation) {
@@ -103,7 +110,7 @@ export class MarginalFoliationGenerator {
   generateMarginaliaApparatus(mainText: MainTextToken[]): Apparatus {
     let app = new Apparatus();
     app.type = MARGINALIA;
-    let mainTextCollationRow = this.ctData.collationMatrix[this.ctData.editionWitnessIndex];
+    let mainTextCollationRow = this.ctData.collationMatrix[this.ctData.editionWitnessIndex ?? 0];
 
     mainTextCollationRow.forEach((mainTextTokenIndex, collationTableColumnNumber) => {
       if (mainTextTokenIndex === -1) {
@@ -138,8 +145,9 @@ export class MarginalFoliationGenerator {
           });
           return;
         }
-        const editionWitnessTokenIndex = this.ctData.collationMatrix[this.ctData.editionWitnessIndex][collationTableColumnNumber];
 
+        const editionWitnessTokenIndex = this.ctData.collationMatrix[this.ctData.editionWitnessIndex][collationTableColumnNumber];
+        // @ts-ignore
         const editionWitnessToken = this.ctData.witnesses[this.ctData.editionWitnessIndex].tokens[editionWitnessTokenIndex];
 
         let entry = new ApparatusEntry();

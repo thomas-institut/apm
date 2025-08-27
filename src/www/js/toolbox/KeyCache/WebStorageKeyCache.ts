@@ -17,11 +17,11 @@ export class WebStorageKeyCache extends KeyCache {
     this.storage = type === 'session' ? window.sessionStorage : window.localStorage
   }
 
-  storeItemObject (key: string, itemObject : InternalCacheObject ):void {
+  async storeItemObject (key: string, itemObject : InternalCacheObject ):Promise<void> {
       this.storage.setItem(this.getRealKey(key), JSON.stringify(itemObject))
   }
 
-  getItemObject (key : string) : InternalCacheObject|null {
+  async getItemObject (key : string) : Promise<InternalCacheObject | null> {
     let val = this.storage.getItem(this.getRealKey(key))
     if (val === null) {
       return null
@@ -34,11 +34,11 @@ export class WebStorageKeyCache extends KeyCache {
     }
   }
 
-  deleteItemObject(key: string): void {
+  async deleteItemObject(key: string): Promise<void> {
     this.storage.removeItem(this.getRealKey(key));
   }
 
-  getKeys() : string[] {
+  async getKeys() : Promise<string[]> {
     let storageLength = this.storage.length
     let realKeys = []
     for (let i = 0; i < storageLength; i++) {

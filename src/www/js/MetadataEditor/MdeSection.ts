@@ -1,12 +1,13 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { ApmDataProxy } from '../pages/common/ApmDataProxy'
+import { ApmDataProxy } from '@/pages/common/ApmDataProxy'
+import {EntityDataInterface} from "../../schema/Schema";
 
 /**
  * A section in the metadata editor
  */
 export class MdeSection {
   protected options: any;
-  protected entityData: any;
+  protected entityData: EntityDataInterface;
   protected schema: any;
   protected title: string;
   protected containerSelector: any;

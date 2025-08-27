@@ -21,7 +21,9 @@
 namespace APM\Api;
 
 
+use APM\Api\DataSchema\ApiCollationTable_auto;
 use APM\Api\PersonInfoProvider\ApmPersonInfoProvider;
+use APM\Api\DataSchema\ApiCollationTable_versionInfo;
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
 use APM\Core\Collation\CollationTable;
@@ -51,13 +53,13 @@ use ThomasInstitut\ToolBox\DataCacheToolBox;
  * API Controller class
  *
  */
-class ApiCollation extends ApiController
+class ApiCollationTable extends ApiController
 {
 
     /**
      * Class Name for reporting purposes
      */
-    const string CLASS_NAME = 'CollationTables';
+    const string CLASS_NAME = 'apiCollationTable';
 
     const int ERROR_NOT_ENOUGH_WITNESSES = 2001;
     const int ERROR_BAD_WITNESS = 2002;
@@ -66,9 +68,11 @@ class ApiCollation extends ApiController
     const int ERROR_INVALID_COLLATION_TABLE_ID = 2005;
     const int ERROR_COLLATION_TABLE_DOES_NOT_EXIST = 2006;
 
+    const int ERROR_CANNOT_CONVERT = 6001;
 
 
-    public function  getActiveEditions(Response $response): Response
+
+    public function  activeEditions(Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $activeEditions = $this->systemManager->getCollationTableManager()->getActiveEditionTableInfo();
@@ -82,7 +86,7 @@ class ApiCollation extends ApiController
         return $this->responseWithJson($response, $infoArray);
     }
 
-    public function getActiveTablesForWork(Request $request, Response $response) : Response {
+    public function activeForWork(Request $request, Response $response) : Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
         $workId = $request->getAttribute("workId");
@@ -108,7 +112,6 @@ class ApiCollation extends ApiController
         $tableId = intval($request->getAttribute('tableId'));
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":$tableId");;
         $ctManager = $this->systemManager->getCollationTableManager();
-        $timeStamp = '';
         $compactEncodedTimeStamp =  $request->getAttribute('timestamp', '');
         if ($compactEncodedTimeStamp !== '') {
             $timeStamp = TimeString::compactDecode($compactEncodedTimeStamp);
@@ -117,19 +120,21 @@ class ApiCollation extends ApiController
         }
 
         $ctInfo = $ctManager->getCollationTableInfo($tableId, $timeStamp);
-        return $this->responseWithJson($response, [
-           'tableId' => $tableId,
-           'type' => $ctInfo->type,
-           'title' => $ctInfo->title,
-           'timeFrom' => $ctInfo->timeFrom,
-           'timeUntil' => $ctInfo->timeUntil,
-           'archived' => $ctInfo->archived,
-           'isLatestVersion' => $ctInfo->timeUntil === TimeString::END_OF_TIMES
-        ]);
+        $data = new ApiCollationTable_versionInfo();
+        $data->tableId = $tableId;
+        $data->type = $ctInfo->type;
+        $data->title = $ctInfo->title;
+        $data->timeFrom = $ctInfo->timeFrom;
+        $data->timeUntil = $ctInfo->timeUntil;
+        $data->archived = $ctInfo->archived;
+        $data->isLatestVersion = $ctInfo->timeUntil === TimeString::END_OF_TIMES;
+
+
+        return $this->responseWithJson($response, $data);
     }
 
 
-    public function getTable(Request $request, Response $response): Response
+    public function get(Request $request, Response $response): Response
     {
 
         $tableId = intval($request->getAttribute('tableId'));
@@ -220,16 +225,24 @@ class ApiCollation extends ApiController
      * @param Response $response
      * @return Response
      */
-    public function automaticCollation(Request $request, Response $response): Response
+    public function auto(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+
+        $inputDataObject = json_decode($request->getBody()->getContents(), true);
+
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $requiredFields = [ 'work', 'chunk', 'lang', 'witnesses'];
 
-        $inputDataObject = $this->checkAndGetInputData($request, $response, $requiredFields);
-        if (!is_array($inputDataObject)) {
-            return $inputDataObject;
+        foreach($requiredFields as $field) {
+            if (!isset($inputDataObject[$field])) {
+                $msg = "Missing required parameter '$field'";
+                $this->logger->error($msg);
+                return $this->responseWithJson($response, ['error' => self::API_ERROR_MISSING_REQUIRED_FIELD, 'msg' => $msg], HttpStatus::BAD_REQUEST);
+            }
         }
+
+
 
         $workId = $inputDataObject['work'];
         $chunkNumber = intval($inputDataObject['chunk']);
@@ -410,7 +423,7 @@ class ApiCollation extends ApiController
                         [ 'apiUserTid' => $this->apiUserId,
                         'apiError' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR,
                         'data' => $collatexInput, 
-                        'collationEngineDetails' => $collationEngine->getRunDetails()
+                        'collationEngineDetails' => get_object_vars($collationEngine->getRunDetails())
                     ]);
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR, 'msg' => $msg], 409);
         }
@@ -424,9 +437,8 @@ class ApiCollation extends ApiController
         catch(Exception $ex) {
             $msg = 'Error processing collation engine output into collation object';
             $this->logger->error($msg, 
-                    [ 'apiUserTid' => $this->apiUserId,
+                    [ 'apiUserId' => $this->apiUserId,
                         'apiError' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING,
-//                        'data' => $inputDataObject,
                          'collationEngineDetails' => $collationEngine->getRunDetails(),
                         'exceptionMessage' => $ex->getMessage()
                         ]);
@@ -459,34 +471,33 @@ class ApiCollation extends ApiController
         $standardData->chunkId = $standardData->witnesses[0]->chunkId;
 
 
-        $userTids = $ctStandardDataProvider->getUserTidsFromData($standardData);
+        $userIds = $ctStandardDataProvider->getUserTidsFromData($standardData);
         $people = [];
-        foreach($userTids as $userTid) {
+        foreach($userIds as $userTid) {
             $people[$userTid] = [
                 'fullName' => $personInfoProvider->getNormalizedName($userTid),
                 'shortName' => $personInfoProvider->getShortName($userTid)
                 ];
         }
 
-        $collationEngineDetails = $collationEngine->getRunDetails();
+        $collationEngineDetails = get_object_vars($collationEngine->getRunDetails());
         $collationEngineDetails['cached'] = false;
-
         $collationEngineDetails['totalDuration'] =  intval(SystemProfiler::getCurrentTotalTimeInMs())/1000;
 
-        $responseData = [
-            'type' => 'auto',
-            'collationTableCacheId' => $collationTableCacheId,
-            'collationEngineDetails' => $collationEngineDetails,
-            'collationTable' => $standardData,
-            'automaticNormalizationsApplied' => $normalizerNames,
-            'people' => $people,
-        ];
+        $responseData2 = new ApiCollationTable_auto();
+        $responseData2->type = 'auto';
+        $responseData2->collationEngineDetails = $collationEngineDetails;
+        $responseData2->collationTable = $standardData;
+        $responseData2->automaticNormalizationsApplied = $normalizerNames;
+        $responseData2->people = $people;
 
-        $jsonToCache = json_encode($responseData, JSON_UNESCAPED_UNICODE);
+
+
+        $jsonToCache = json_encode($responseData2, JSON_UNESCAPED_UNICODE);
         if ($useCache) {
             // let's cache it!
 
-            $stringToCache = DataCacheToolBox::toStringToCache($responseData, true);
+            $stringToCache = DataCacheToolBox::toStringToCache($responseData2, true);
             $this->logger->debug("Caching automatic collation, " . strlen($stringToCache) . " bytes");
             $cache->set($cacheKey, $stringToCache);
 
@@ -496,7 +507,7 @@ class ApiCollation extends ApiController
         return $this->responseWithRawJson($response, $jsonToCache);
     }
 
-    public function saveCollationTable(Request $request, Response $response): Response
+    public function save(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $requiredFields = [ 'collationTable'];
@@ -713,25 +724,49 @@ class ApiCollation extends ApiController
         return $this->responseWithJson($response, $responseData);
     }
 
+    public function convertToEdition(Request $request, Response $response): Response
+    {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        $inputData = json_decode($request->getBody()->getContents(), true);
 
-//    /**
-//     * @param string $workId
-//     * @param int $chunkNumber
-//     * @param string $langCode
-//     * @return WitnessInfo[]
-//     */
-//    protected function getValidWitnessesForChunkLang(string $workId, int $chunkNumber, string $langCode) : array {
-//        $this->logger->debug("Getting valid witnesses for $workId, $chunkNumber, $langCode");
-//        $tm = $this->systemManager->getTranscriptionManager();
-//
-//        $vw = $tm->getWitnessesForChunk($workId, $chunkNumber);
-//
-//        $vWL = [];
-//        foreach($vw as $witnessInfo) {
-//            if ($witnessInfo->languageCode === $langCode) {
-//                $vWL[] = $witnessInfo;
-//            }
-//        }
-//        return $vWL;
-//    }
+        $requiredFields = [ 'tableId', 'initStrategy'];
+
+        foreach($requiredFields as $field) {
+            if (!isset($inputData[$field])) {
+                $msg = "Missing required parameter '$field'";
+                $this->logger->error($msg);
+                return $this->responseWithJson($response, ['error' => self::API_ERROR_MISSING_REQUIRED_FIELD, 'msg' => $msg], HttpStatus::BAD_REQUEST);
+            }
+        }
+
+        $this->debug('Input data', [ $inputData ]);
+
+        $tableId = intval($inputData['tableId']);
+        $initStrategy = $inputData['initStrategy'];
+        $ctManager = $this->systemManager->getCollationTableManager();
+
+        $this->systemManager->onCollationTableSaved($this->apiUserId, $tableId);
+
+        try {
+            $ctManager->convertToEdition($tableId, $initStrategy, $this->apiUserId, TimeString::now());
+        } catch (Exception $e) {
+            // table ID does not exist!
+            $msg = "Error converting table to edition: '" . $e->getMessage() . "', error " . $e->getCode();
+            $this->logger->error($msg,
+                [ 'apiUserId' => $this->apiUserId,
+                    'apiError' => self::ERROR_CANNOT_CONVERT,
+                    'data' => $inputData,
+                ]);
+            return $this->responseWithJson($response, ['error' => self::ERROR_CANNOT_CONVERT], HttpStatus::BAD_REQUEST);
+        }
+
+        return $this->responseWithJson($response, [
+            'status' => 'OK',
+            'tableId' => $tableId,
+            'url' => $this->router->urlFor('chunk-edition.edit', ['tableId' => $tableId])]);
+
+    }
+
+
+
 }

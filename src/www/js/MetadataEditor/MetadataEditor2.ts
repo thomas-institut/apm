@@ -1,14 +1,15 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { ApmDataProxy } from '../pages/common/ApmDataProxy'
+import { ApmDataProxy } from '@/pages/common/ApmDataProxy'
 import * as SectionType from '../defaults/MetadataEditorSchemata/SectionType'
 import { HeaderSection } from './HeaderSection'
 import { MdeSection } from './MdeSection'
 import { PredicateListSection } from './PredicateListSection'
+import {EntityDataInterface} from "../../schema/Schema";
 
 export class MetadataEditor2 {
   private options: any;
   private readonly containerSelector: any;
-  private entityData: any;
+  private entityData: EntityDataInterface;
   private typeData: any;
   private sections: any;
 
@@ -58,7 +59,7 @@ export class MetadataEditor2 {
               predicateDefinitions: this.typeData['predicateDefinitions'],
               qualificationDefinitions: this.typeData['qualificationDefinitions'],
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
-              entityData: this.options.entityData,
+              entityData: this.entityData,
               sectionSchema: sectionSchema,
               onEntityDataChange: this.genOnEntityDataChange(sectionIndex),
               getInfoString: this.genGetInfoString()

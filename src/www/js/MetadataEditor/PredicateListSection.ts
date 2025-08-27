@@ -1,9 +1,9 @@
 import { MdeSection } from './MdeSection'
-import { EntityData } from '../EntityData/EntityData'
+import { EntityData } from '@/EntityData/EntityData'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { BasicPredicateEditor } from './BasicPredicateEditor'
-import { urlGen } from '../pages/common/SiteUrlGen'
-import { StatementArray } from '../EntityData/StatementArray'
+import { urlGen } from '@/pages/common/SiteUrlGen'
+import { StatementArray } from '@/EntityData/StatementArray'
 
 const ShowAllLabel =  'Show All';
 const ShowActiveDataLabel = 'Show Minimal'

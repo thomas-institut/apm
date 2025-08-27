@@ -1,7 +1,7 @@
 import { MdeSection } from './MdeSection'
-import { EntityData } from '../EntityData/EntityData'
+import { EntityData } from '@/EntityData/EntityData'
 import * as Entity from '../constants/Entity'
-import { Tid } from '../Tid/Tid'
+import { Tid } from '@/Tid/Tid'
 
 export class HeaderSection extends MdeSection {
   private readonly preDescriptionInfoStringProviders: any[];

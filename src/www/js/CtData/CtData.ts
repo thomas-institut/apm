@@ -121,10 +121,11 @@ export class CtData {
     let column: WitnessTokenInterface[] = [];
     ctData.collationMatrix.forEach((tokenRefs, row) => {
       let ref = tokenRefs[col];
-      if (ref === -1) {
+      const tokens = ctData.witnesses[row].tokens;
+      if (ref === -1 || tokens === undefined) {
         column[row] = {fmtText: [], text: "", tokenClass: "", tokenType: WitnessTokenType.EMPTY};
       } else {
-        column[row] = ctData.witnesses[row].tokens[ref];
+        column[row] = tokens[ref];
       }
     });
     return column;
@@ -348,9 +349,12 @@ export class CtData {
    * @param {number} tokenIndex
    */
   static emptyWitnessToken(ctData: CtDataInterface, witnessIndex: number, tokenIndex: number) {
+   if (ctData.witnesses[witnessIndex].tokens === undefined) {
+      return ctData;
+    }
     ctData.witnesses[witnessIndex].tokens[tokenIndex].text = '';
     ctData.witnesses[witnessIndex].tokens[tokenIndex].tokenType = WitnessTokenType.EMPTY;
-    if (ctData.type === CollationTableType.EDITION && witnessIndex === ctData['editionWitnessIndex']) {
+    if (ctData.type === CollationTableType.EDITION && witnessIndex === ctData.editionWitnessIndex) {
       // find CT column that refers to this token
       let ctColumnIndex = ctData.collationMatrix[witnessIndex].indexOf(tokenIndex);
       if (ctColumnIndex === -1) {
@@ -374,6 +378,9 @@ export class CtData {
     let editionWitnessIndex = ctData.editionWitnessIndex;
     let ctRow = ctData.collationMatrix[editionWitnessIndex];
     let editionWitnessTokens = ctData.witnesses[editionWitnessIndex].tokens;
+    if (editionWitnessTokens === undefined) {
+      throw new Error(`Edition witness ${editionWitnessIndex} has no tokens`);
+    }
     let ctColumnStart = 0;
     let ctColumnEnd = ctRow.length - 1;
     if (ctColumnIndex >= 0) {
@@ -506,7 +513,7 @@ export class CtData {
    */
   static getCtWitnessTokens(ctData: CtDataInterface, witnessIndex: number): WitnessTokenInterface[] {
     return ctData.collationMatrix[witnessIndex]
-    .map(tokenRef => tokenRef === -1 ? {
+    .map(tokenRef => (tokenRef === -1 || ctData.witnesses[witnessIndex].tokens === undefined) ? {
       tokenType: WitnessTokenType.EMPTY, text: '', tokenClass: '', fmtText: []
     } : ctData.witnesses[witnessIndex].tokens[tokenRef]);
   }
@@ -545,7 +552,10 @@ export class CtData {
 
     if (ctData.type === CollationTableType.EDITION) {
       // 2. insert empty tokens in edition witness
-      let editionIndex = ctData['editionWitnessIndex'];
+      let editionIndex = ctData.editionWitnessIndex;
+      if (ctData.witnesses[editionIndex].tokens === undefined) {
+        throw new Error(`Edition witness ${editionIndex} has no tokens`);
+      }
       for (let i = 0; i < numCols; i++) {
         ctData.witnesses[editionIndex].tokens.splice(col + 1, 0, {
           tokenClass: 'edition', tokenType: WitnessTokenType.EMPTY, text: "", fmtText: []
@@ -712,7 +722,7 @@ export class CtData {
       return [];
     }
     let rawNonTokenItemIndexes = witnessData.nonTokenItemIndexes ?? [];
-    let numTokens = witnessData.tokens.length;
+    let numTokens = witnessData.tokens === undefined ? 0 : witnessData.tokens.length;
 
     let resultingArray: NonTokenItemIndex[] = [];
 

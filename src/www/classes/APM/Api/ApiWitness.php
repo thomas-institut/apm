@@ -23,8 +23,8 @@ namespace APM\Api;
 
 use APM\Api\ItemStreamFormatter\WitnessPageFormatter;
 use APM\Api\PersonInfoProvider\ApmPersonInfoProvider;
-use APM\Api\ResponseData\WitnessUpdateData;
-use APM\Api\ResponseData\WitnessUpdateInfo;
+use APM\Api\DataSchema\WitnessUpdateData;
+use APM\Api\DataSchema\WitnessUpdateInfo;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\StandardData\FullTxWitnessDataProvider;
 use APM\System\Document\Exception\DocumentNotFoundException;
@@ -283,30 +283,6 @@ class ApiWitness extends ApiController
             $this->codeDebug("Turning tx manager's cache back on");
             $transcriptionManager->useCache();
         }
-
-//     TODO: Erase this eventually, I don't think it's needed anywhere
-
-//        if ($outputType === 'deco1') {
-//            $this->codeDebug("Output deco1");
-//            $decorator = new SimpleHtmlWitnessDecorator();
-//            $theWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
-//            $theTokens = $decorator->getDecoratedTokens($theWitness);
-//            $html = '';
-//            foreach($theTokens as $decoratedToken) {
-//                $html .=  $decoratedToken;
-//            }
-//            return $this->responseWithText($response, $html);
-//        }
-//
-//        if ($outputType === 'deco2') {
-//            $this->codeDebug("Output deco2");
-//            $decorator = new ApmTxWitnessDecorator();
-//            $decorator->setLogger($this->logger);
-//            $theWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
-//            $theTokens = $decorator->getDecoratedTokens($theWitness);
-//            return $this->responseWithJson($response, $theTokens);
-//        }
-
         return $this->responseWithJson($response, $returnData);
     }
 
